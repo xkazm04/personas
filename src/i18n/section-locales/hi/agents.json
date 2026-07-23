@@ -2805,5 +2805,23 @@
   "sigil_edit_review_off": "कोई ह्यूमन रिव्यू गेट नहीं — क्रियाएँ स्वायत्त रूप से होती हैं।",
   "sigil_edit_review_on": "इस क्षमता के कार्य करने से पहले ह्यूमन रिव्यू आवश्यक है।",
   "sigil_edit_service_label": "सेवा: {key}",
-  "sigil_edit_when_label": "कब"
+  "sigil_edit_when_label": "कब",
+  "assertions": {
+    "action_heal": "हीलिंग का प्रयास करें",
+    "action_log": "केवल लॉग करें",
+    "action_review": "समीक्षा के लिए भेजें",
+    "add": "गेट जोड़ें",
+    "cancel": "रद्द करें",
+    "create": "बनाएँ",
+    "delete": "गेट हटाएँ",
+    "empty": "अभी तक कोई क्वालिटी गेट नहीं।",
+    "name_placeholder": "गेट का नाम (उदा. कुल राशि का उल्लेख होना चाहिए)",
+    "on_failure_label": "विफलता पर",
+    "phrase_placeholder": "वाक्यांश, अल्पविराम से अलग",
+    "subtitle": "हर रन के आउटपुट की जाँच करें और विफलताओं को समीक्षा या हीलिंग पर भेजें।",
+    "title": "क्वालिटी गेट",
+    "type_contains": "शामिल होना चाहिए",
+    "type_label": "जाँच",
+    "type_not_contains": "शामिल नहीं होना चाहिए"
+  }
 }

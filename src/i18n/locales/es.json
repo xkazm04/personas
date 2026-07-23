@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "No hay control de revisión humana: las acciones son autónomas.",
     "sigil_edit_review_on": "Se requiere revisión humana antes de que esta capacidad actúe.",
     "sigil_edit_service_label": "Servicio: {key}",
-    "sigil_edit_when_label": "Cuándo"
+    "sigil_edit_when_label": "Cuándo",
+    "assertions": {
+      "action_heal": "Intentar reparación",
+      "action_log": "Solo registrar",
+      "action_review": "Enviar a revisión",
+      "add": "Añadir control",
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "delete": "Eliminar control",
+      "empty": "Aún no hay controles de calidad.",
+      "name_placeholder": "Nombre del control (p. ej. Debe citar un total)",
+      "on_failure_label": "Si falla",
+      "phrase_placeholder": "Frase(s), separadas por comas",
+      "subtitle": "Revisa el resultado de cada ejecución y envía los fallos a revisión o reparación.",
+      "title": "Controles de calidad",
+      "type_contains": "Debe contener",
+      "type_label": "Comprobación",
+      "type_not_contains": "No debe contener"
+    }
   },
   "vault": {
     "workspace_connect": "Conexión de espacio de trabajo",

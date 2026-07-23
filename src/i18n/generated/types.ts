@@ -3621,6 +3621,24 @@ export type Translations = {
         notification_channels: string;
       };
     };
+    assertions: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      add: string;
+      name_placeholder: string;
+      type_label: string;
+      type_contains: string;
+      type_not_contains: string;
+      phrase_placeholder: string;
+      on_failure_label: string;
+      action_log: string;
+      action_review: string;
+      action_heal: string;
+      create: string;
+      cancel: string;
+      delete: string;
+    };
   };
   director: {
     panel_title: string;

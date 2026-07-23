@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "Không có cổng xét duyệt của con người — hành động được thực hiện tự động.",
     "sigil_edit_review_on": "Cần có xét duyệt của con người trước khi năng lực này hành động.",
     "sigil_edit_service_label": "Dịch vụ: {key}",
-    "sigil_edit_when_label": "Khi"
+    "sigil_edit_when_label": "Khi",
+    "assertions": {
+      "action_heal": "Thử khắc phục",
+      "action_log": "Chỉ ghi log",
+      "action_review": "Gửi đến duyệt",
+      "add": "Thêm cổng",
+      "cancel": "Hủy",
+      "create": "Tạo",
+      "delete": "Xóa cổng",
+      "empty": "Chưa có cổng chất lượng nào.",
+      "name_placeholder": "Tên cổng (ví dụ: Phải trích dẫn tổng số)",
+      "on_failure_label": "Khi thất bại",
+      "phrase_placeholder": "Cụm từ, phân tách bằng dấu phẩy",
+      "subtitle": "Kiểm tra đầu ra của mỗi lần chạy và định tuyến lỗi đến duyệt hoặc khắc phục.",
+      "title": "Cổng chất lượng",
+      "type_contains": "Phải chứa",
+      "type_label": "Kiểm tra",
+      "type_not_contains": "Không được chứa"
+    }
   },
   "vault": {
     "workspace_connect": "Kết nối không gian làm việc",

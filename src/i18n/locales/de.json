@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "Kein Human-Review-Gate — Aktionen laufen autonom.",
     "sigil_edit_review_on": "Vor dieser Capability-Aktion ist eine Human-Review erforderlich.",
     "sigil_edit_service_label": "Dienst: {key}",
-    "sigil_edit_when_label": "Wann"
+    "sigil_edit_when_label": "Wann",
+    "assertions": {
+      "action_heal": "Reparatur versuchen",
+      "action_log": "Nur protokollieren",
+      "action_review": "Zur Überprüfung senden",
+      "add": "Prüfung hinzufügen",
+      "cancel": "Abbrechen",
+      "create": "Erstellen",
+      "delete": "Prüfung löschen",
+      "empty": "Noch keine Qualitätsprüfungen.",
+      "name_placeholder": "Name der Prüfung (z. B. Muss eine Summe nennen)",
+      "on_failure_label": "Bei Fehler",
+      "phrase_placeholder": "Ausdruck/Ausdrücke, durch Kommas getrennt",
+      "subtitle": "Prüfe die Ausgabe jeder Ausführung und leite Fehler zur Überprüfung oder Reparatur weiter.",
+      "title": "Qualitätsprüfungen",
+      "type_contains": "Muss enthalten",
+      "type_label": "Prüfung",
+      "type_not_contains": "Darf nicht enthalten"
+    }
   },
   "vault": {
     "workspace_connect": "Workspace-Verbindung",

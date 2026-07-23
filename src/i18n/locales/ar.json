@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "لا توجد بوابة مراجعة بشرية — الإجراءات تتم بشكل مستقل.",
     "sigil_edit_review_on": "المراجعة البشرية مطلوبة قبل أن تتصرف هذه القدرة.",
     "sigil_edit_service_label": "الخدمة: {key}",
-    "sigil_edit_when_label": "عند"
+    "sigil_edit_when_label": "عند",
+    "assertions": {
+      "action_heal": "محاولة الإصلاح",
+      "action_log": "التسجيل فقط",
+      "action_review": "إرسال إلى المراجعة",
+      "add": "إضافة بوابة",
+      "cancel": "إلغاء",
+      "create": "إنشاء",
+      "delete": "حذف البوابة",
+      "empty": "لا توجد بوابات جودة بعد.",
+      "name_placeholder": "اسم البوابة (مثال: يجب ذكر الإجمالي)",
+      "on_failure_label": "عند الفشل",
+      "phrase_placeholder": "عبارة أو عبارات، مفصولة بفواصل",
+      "subtitle": "تحقّق من مخرجات كل تشغيل ووجّه حالات الفشل إلى المراجعة أو الإصلاح.",
+      "title": "بوابات الجودة",
+      "type_contains": "يجب أن يحتوي",
+      "type_label": "التحقق",
+      "type_not_contains": "يجب ألا يحتوي"
+    }
   },
   "vault": {
     "workspace_connect": "ربط مساحة العمل",

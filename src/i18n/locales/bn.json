@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "কোনো হিউম্যান রিভিউ গেট নেই — অ্যাকশনগুলো স্বতন্ত্রভাবে সম্পন্ন হয়।",
     "sigil_edit_review_on": "এই ক্যাপাবিলিটি কাজ করার আগে হিউম্যান রিভিউ আবশ্যক।",
     "sigil_edit_service_label": "সার্ভিস: {key}",
-    "sigil_edit_when_label": "কখন"
+    "sigil_edit_when_label": "কখন",
+    "assertions": {
+      "action_heal": "নিরাময়ের চেষ্টা করুন",
+      "action_log": "শুধু লগ করুন",
+      "action_review": "পর্যালোচনায় পাঠান",
+      "add": "গেট যোগ করুন",
+      "cancel": "বাতিল",
+      "create": "তৈরি করুন",
+      "delete": "গেট মুছুন",
+      "empty": "এখনও কোনো কোয়ালিটি গেট নেই।",
+      "name_placeholder": "গেটের নাম (যেমন মোট উল্লেখ করতে হবে)",
+      "on_failure_label": "ব্যর্থতায়",
+      "phrase_placeholder": "শব্দগুচ্ছ, কমা দিয়ে পৃথক",
+      "subtitle": "প্রতিটি রানের আউটপুট যাচাই করুন এবং ব্যর্থতাগুলো পর্যালোচনা বা নিরাময়ে পাঠান।",
+      "title": "কোয়ালিটি গেট",
+      "type_contains": "থাকতে হবে",
+      "type_label": "যাচাই",
+      "type_not_contains": "থাকা যাবে না"
+    }
   },
   "vault": {
     "workspace_connect": "ওয়ার্কস্পেস কানেক্ট",

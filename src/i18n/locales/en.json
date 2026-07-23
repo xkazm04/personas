@@ -3614,6 +3614,24 @@
         "model_profile": "Model",
         "notification_channels": "Notifications"
       }
+    },
+    "assertions": {
+      "title": "Quality gates",
+      "subtitle": "Check every run's output and route failures to review or healing.",
+      "empty": "No quality gates yet.",
+      "add": "Add gate",
+      "name_placeholder": "Gate name (e.g. Must cite a total)",
+      "type_label": "Check",
+      "type_contains": "Must contain",
+      "type_not_contains": "Must not contain",
+      "phrase_placeholder": "Phrase(s), comma-separated",
+      "on_failure_label": "On failure",
+      "action_log": "Log only",
+      "action_review": "Send to review",
+      "action_heal": "Attempt healing",
+      "create": "Create",
+      "cancel": "Cancel",
+      "delete": "Delete gate"
     }
   },
   "director": {

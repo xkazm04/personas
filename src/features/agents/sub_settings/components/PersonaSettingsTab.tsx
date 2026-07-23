@@ -16,6 +16,7 @@ import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorP
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
+import { PersonaAssertionsSection } from './PersonaAssertionsSection';
 import { INPUT_FIELD, inputFieldClass } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
@@ -287,6 +288,9 @@ export function PersonaSettingsTab({
 
         </div>
       </div>
+
+      {/* Quality gates — output assertions evaluated on every run. */}
+      {personaId && <PersonaAssertionsSection personaId={personaId} />}
 
       {/* Save status + Danger */}
       <SettingsStatusBar

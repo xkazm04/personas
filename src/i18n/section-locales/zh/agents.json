@@ -2805,5 +2805,23 @@
   "sigil_edit_review_off": "无人工审核关卡 — 操作自主执行。",
   "sigil_edit_review_on": "此能力执行前需要人工审核。",
   "sigil_edit_service_label": "服务：{key}",
-  "sigil_edit_when_label": "触发条件"
+  "sigil_edit_when_label": "触发条件",
+  "assertions": {
+    "action_heal": "尝试修复",
+    "action_log": "仅记录",
+    "action_review": "发送至审核",
+    "add": "添加质量门",
+    "cancel": "取消",
+    "create": "创建",
+    "delete": "删除质量门",
+    "empty": "暂无质量门。",
+    "name_placeholder": "质量门名称（例如：必须引用总计）",
+    "on_failure_label": "失败时",
+    "phrase_placeholder": "短语（多个用逗号分隔）",
+    "subtitle": "检查每次运行的输出，并将失败项转至审核或修复。",
+    "title": "质量门",
+    "type_contains": "必须包含",
+    "type_label": "检查",
+    "type_not_contains": "不得包含"
+  }
 }

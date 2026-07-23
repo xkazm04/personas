@@ -2805,5 +2805,23 @@
   "sigil_edit_review_off": "Aucune validation humaine requise — les actions sont autonomes.",
   "sigil_edit_review_on": "Une validation humaine est requise avant que cette capacité n'agisse.",
   "sigil_edit_service_label": "Service : {key}",
-  "sigil_edit_when_label": "Quand"
+  "sigil_edit_when_label": "Quand",
+  "assertions": {
+    "action_heal": "Tenter une réparation",
+    "action_log": "Journaliser uniquement",
+    "action_review": "Envoyer en révision",
+    "add": "Ajouter un contrôle",
+    "cancel": "Annuler",
+    "create": "Créer",
+    "delete": "Supprimer le contrôle",
+    "empty": "Aucun contrôle qualité pour le moment.",
+    "name_placeholder": "Nom du contrôle (p. ex. Doit citer un total)",
+    "on_failure_label": "En cas d'échec",
+    "phrase_placeholder": "Expression(s), séparées par des virgules",
+    "subtitle": "Vérifiez le résultat de chaque exécution et acheminez les échecs vers la révision ou la réparation.",
+    "title": "Contrôles qualité",
+    "type_contains": "Doit contenir",
+    "type_label": "Vérification",
+    "type_not_contains": "Ne doit pas contenir"
+  }
 }

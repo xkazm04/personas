@@ -2805,5 +2805,23 @@
   "sigil_edit_review_off": "人によるレビューゲートはありません — アクションは自律的に実行されます。",
   "sigil_edit_review_on": "このケイパビリティが動作する前に人によるレビューが必要です。",
   "sigil_edit_service_label": "サービス: {key}",
-  "sigil_edit_when_label": "条件"
+  "sigil_edit_when_label": "条件",
+  "assertions": {
+    "action_heal": "修復を試みる",
+    "action_log": "ログのみ",
+    "action_review": "レビューへ送信",
+    "add": "ゲートを追加",
+    "cancel": "キャンセル",
+    "create": "作成",
+    "delete": "ゲートを削除",
+    "empty": "品質ゲートはまだありません。",
+    "name_placeholder": "ゲート名（例：合計の記載が必須）",
+    "on_failure_label": "失敗時",
+    "phrase_placeholder": "フレーズ（カンマ区切り）",
+    "subtitle": "実行ごとの出力をチェックし、失敗をレビューまたは修復へ振り分けます。",
+    "title": "品質ゲート",
+    "type_contains": "含む必要あり",
+    "type_label": "チェック",
+    "type_not_contains": "含んではならない"
+  }
 }
