@@ -201,7 +201,23 @@ tracing consolidate here; wiring one monitoring connector lights all four)*
   `llm_tracking_credential_id` on the dev project (or the missing credential
   is the ONE named follow-up when it doesn't exist in the Vault yet).
 
-### 14. App cost  *(last — composes what the run decided)*
+### 14. Security  *(wall row; usually reached via dimension-scoped dispatch)*
+- **Assess**: dependency audit story (npm audit / cargo-deny / Renovate-class
+  bot), secret hygiene (secret-scan hook or CI job, no tracked .env files),
+  security workflows (CodeQL/audit schedules), input-handling posture at
+  trust boundaries (webhooks, file imports, IPC).
+- **Offer**: Skip · Audit + secret-scan baseline: dep audit in CI + secret
+  scan pre-commit (recommended first rung) · Scheduled scanning: CodeQL/audit
+  workflows on a cadence · Findings pass: run the audit NOW and fix/waive
+  what it surfaces (mature repos).
+- **Execute**: wire real tools the stack already trusts; findings reported
+  impact-first (severity = impact, confidence separate, file:line, root-cause
+  fix at the sink, coverage disclosure); never bulk-suppress warnings to make
+  a scan green.
+- **Done**: security level none→audited→gated per what actually runs; open
+  findings listed honestly in the report (and the manifest note), not hidden.
+
+### 15. App cost  *(last — composes what the run decided)*
 - **Assess**: `app-cost.json` at root? In `.gitignore`?
 - **Offer**: Skip · Compose the cost file from this run's connector decisions
   (recommended) — hosting/db/monitoring/LLM services chosen above, each with

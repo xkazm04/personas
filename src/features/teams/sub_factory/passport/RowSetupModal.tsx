@@ -9,8 +9,9 @@
 // terminal in the project's repo root — Fleet is the LLM engine here, not the
 // Dev Runner. The cell's icon then flips to the state-tinted terminal icon.
 import { useMemo, useRef, useState } from 'react';
-import { Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { MessagesSquare, Rocket, ScanSearch, ShieldCheck, Sparkles, X } from 'lucide-react';
 
+import { listCredentials } from '@/api/vault/credentials';
 import { BaseModal } from '@/features/shared/components/modals';
 import { toastCatch } from '@/lib/silentCatch';
 
@@ -18,6 +19,7 @@ import type { AppPassport } from './passportModel';
 import { INK } from './passportInk';
 import { applicableDeployActions } from './improve/deployActions';
 import { useImprove } from './improve/ImproveContext';
+import { buildDimensionOnboardPrompt } from './onboardDispatch';
 import { dispatchRowToFleet, passportDispatchKey } from './passportFleet';
 import { ROW_DIRECTIONS, buildDirectionPrompt } from './rowDirections';
 
@@ -32,6 +34,16 @@ interface Direction {
 const ROW_ICON: Record<string, typeof ShieldCheck> = {
   tests: ScanSearch, security: ShieldCheck, evals: Sparkles, migrations: ScanSearch,
 };
+
+/** Row key → the passport-onboard skill's dimension label (guided sessions). */
+const ROW_DIMENSION: Record<string, string> = {
+  evals: 'Evals',
+  security: 'Security',
+  tests: 'Tests',
+  migrations: 'Database & migrations',
+};
+
+const GUIDED_ID = '__guided__';
 
 export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDispatched, onClose }: {
   rowKey: string;
@@ -75,9 +87,30 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
     return [...scanActs, ...generics.filter((g) => !scanActs.some((s) => s.label === g.label))].slice(0, 3);
   }, [rowKey, passport, raw]);
 
+  const dispatch = (prompt: string) => {
+    if (!raw) return;
+    dispatchRowToFleet(passportDispatchKey(rowKey, slug), raw.project.root_path, prompt)
+      .then(() => { setBusy(false); onDispatched(); onClose(); })
+      .catch((e) => { setBusy(false); toastCatch('passport fleet deploy')(e); });
+  };
+
   const deploy = () => {
+    if (!raw) return;
+    // Guided session — the passport-onboard skill scoped to this dimension:
+    // the terminal runs the skill's select rounds and WAITS for the operator.
+    if (selected === GUIDED_ID) {
+      setBusy(true);
+      listCredentials()
+        .then((creds) => dispatch(buildDimensionOnboardPrompt(
+          passport, raw, creds,
+          { key: rowKey, label: ROW_DIMENSION[rowKey] ?? rowLabel },
+          instruction,
+        )))
+        .catch((e) => { setBusy(false); toastCatch('passport fleet deploy')(e); });
+      return;
+    }
     const dir = directions.find((d) => d.id === selected);
-    if (!dir || !raw) return;
+    if (!dir) return;
     setBusy(true);
     // Generic directions come fully framed by buildDirectionPrompt; scan-derived
     // prompts get the same instruction + working contract appended here.
@@ -87,9 +120,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
         (instruction.trim() ? ` Additional instructions from the operator: ${instruction.trim()}.` : '') +
         ' Work in this repository, commit atomically with clear messages, and finish with a short report: what changed, what you verified, what remains.'
       : base;
-    dispatchRowToFleet(passportDispatchKey(rowKey, slug), raw.project.root_path, prompt)
-      .then(() => { setBusy(false); onDispatched(); onClose(); })
-      .catch((e) => { setBusy(false); toastCatch('passport fleet deploy')(e); });
+    dispatch(prompt);
   };
 
   const Icon = ROW_ICON[rowKey] ?? Sparkles;
@@ -112,6 +143,32 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
         </div>
 
         <div className="grid gap-2 mt-3" data-testid="row-setup-directions">
+          {(() => {
+            const on = selected === GUIDED_ID;
+            return (
+              <button
+                type="button"
+                onClick={() => setSelected(on ? null : GUIDED_ID)}
+                className="text-left rounded-card px-3 py-2.5 transition-colors focus-ring"
+                style={{
+                  border: `1px solid ${on ? INK.violet : `${INK.violet}44`}`,
+                  background: on ? `${INK.violet}0d` : `${INK.violet}06`,
+                }}
+                data-testid="direction-guided"
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <MessagesSquare className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
+                  <span className="typo-caption font-semibold text-foreground truncate">Guided session</span>
+                  <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
+                    interactive
+                  </span>
+                </span>
+                <span className="block typo-caption text-foreground/55 mt-0.5 pl-[22px]">
+                  The onboarding skill scoped to this dimension — it assesses, offers you select choices in the terminal, and executes what you accept.
+                </span>
+              </button>
+            );
+          })()}
           {directions.map((d) => {
             const on = selected === d.id;
             return (

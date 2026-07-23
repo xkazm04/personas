@@ -28,7 +28,10 @@ const CONNECTOR_TYPES = new Set([
   'supabase', 'neon', 'postgres_proxy', 'convex', 'upstash',
 ]);
 
-export function buildOnboardPrompt(p: AppPassport, raw: ImproveRaw, creds: PersonaCredential[]): string {
+/** The shared dispatched-mode context block (identity, snapshot, slots,
+ *  connector metadata) — used by the full onboarding door AND the per-row
+ *  guided sessions. */
+function composeContextBlock(p: AppPassport, raw: ImproveRaw, creds: PersonaCredential[]): string {
   const a = p.automationReadiness;
   const pr = p.productionReadiness;
   const proj = raw.project;
@@ -66,8 +69,6 @@ export function buildOnboardPrompt(p: AppPassport, raw: ImproveRaw, creds: Perso
     .join('\n- ');
 
   return [
-    'Invoke the passport-onboard skill (/passport-onboard) and run it in DISPATCHED mode with the context block below. If the skill is not available in this environment, say so and stop — do not improvise the flow.',
-    '',
     '--- CONTEXT BLOCK (from the Personas passport wall) ---',
     `Project: ${p.identity.name} (${p.identity.slug})`,
     `Root: ${proj.root_path}`,
@@ -84,8 +85,42 @@ export function buildOnboardPrompt(p: AppPassport, raw: ImproveRaw, creds: Perso
       ? `Available Vault connectors (metadata only — ids reference encrypted vault entries, values NEVER move):\n- ${connectors}`
       : 'Available Vault connectors: none of the connector-flavored types exist yet — offering "add in Personas → Vault first" is the path for those dimensions.',
     '--- END CONTEXT BLOCK ---',
+  ].filter(Boolean).join('\n');
+}
+
+const SHARED_TAIL = [
+  'Binding note: you are a CLI session without app IPC. When a connector decision lands, name the EXACT binding (credential name + slot) as the single follow-up — the user binds it on the wall cell popover. If the local test-automation harness responds on http://127.0.0.1:17320, you may bind via IPC yourself per connectors.md.',
+  'Finish by writing/refreshing the public-safe app-passport.json manifest (levels + tool names + skipped-by-choice only; never credential ids, URLs, costs, or local paths) and end your final report with the PASSPORT_ONBOARD_RESULT line.',
+].join('\n');
+
+export function buildOnboardPrompt(p: AppPassport, raw: ImproveRaw, creds: PersonaCredential[]): string {
+  return [
+    'Invoke the passport-onboard skill (/passport-onboard) and run it in DISPATCHED mode with the context block below. If the skill is not available in this environment, say so and stop — do not improvise the flow.',
     '',
-    'Binding note: you are a CLI session without app IPC. When a connector decision lands, name the EXACT binding (credential name + slot) as the single follow-up — the user binds it on the wall cell popover. If the local test-automation harness responds on http://127.0.0.1:17320, you may bind via IPC yourself per connectors.md.',
-    'Finish by writing/refreshing the public-safe app-passport.json manifest (levels + tool names + skipped-by-choice only; never credential ids, URLs, costs, or local paths) and end your final report with the PASSPORT_ONBOARD_RESULT line.',
+    composeContextBlock(p, raw, creds),
+    '',
+    SHARED_TAIL,
+  ].join('\n');
+}
+
+/** Per-row guided session — the skill scoped to ONE dimension. The operator
+ *  is present in the terminal: the skill's batched selects render there and
+ *  the run WAITS for answers (the same feedback loop as a full onboarding). */
+export function buildDimensionOnboardPrompt(
+  p: AppPassport,
+  raw: ImproveRaw,
+  creds: PersonaCredential[],
+  dimension: { key: string; label: string },
+  instruction?: string,
+): string {
+  return [
+    `Invoke the passport-onboard skill (/passport-onboard) and run it in DISPATCHED mode SCOPED to a single dimension: **${dimension.label}**. If the skill is not available in this environment, say so and stop — do not improvise the flow.`,
+    '',
+    'Scoped-mode rules: assess ONLY this dimension (inline — no group assessors); present ONE decision round of selects (Skip · path A · path B with exactly one Recommended, Other stays first-class) and WAIT for the operator — they are watching this terminal; execute exactly what they accept; re-assess; refresh ONLY this dimension in app-passport.json.',
+    instruction?.trim() ? `Operator instructions for this run: ${instruction.trim()}` : '',
+    '',
+    composeContextBlock(p, raw, creds),
+    '',
+    SHARED_TAIL,
   ].filter(Boolean).join('\n');
 }

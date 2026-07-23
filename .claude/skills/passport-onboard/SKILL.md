@@ -29,6 +29,15 @@ the snapshot for state; skip re-deriving what it already says.
 itself (the deterministic checks are in `references/dimensions.md`), and
 connector availability is a QUESTION for the user, not an assumption.
 
+**Dimension-scoped (wall row → Fleet).** The dispatch names ONE dimension
+(e.g. "SCOPED to a single dimension: Tests"). Run the same loop shrunk to it:
+assess that dimension inline (no group assessors), present ONE decision round
+of selects and WAIT — the operator is watching this terminal and answers the
+way they would a full run; execute exactly what they accept (parallel
+builders still allowed if the accepted path splits); re-assess; refresh ONLY
+that dimension's entry in `app-passport.json`. Everything else — hard rules,
+binding doctrine, honest levels, the report shape — applies unchanged.
+
 **Prior manifest.** In EITHER mode, if `app-passport.json` exists at the repo
 root, read it first: trust its levels as of `generatedAt` (re-verify only the
 cheap checks), and NEVER re-ask a dimension it marks `skippedByChoice` —
