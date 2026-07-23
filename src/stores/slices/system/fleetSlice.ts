@@ -51,6 +51,10 @@ export interface FleetSlice {
   fleetHookPort: number;
   fleetHooksInstalled: boolean;
   fleetSessionsLoading: boolean;
+  /** True when the last fleet-session snapshot fetch failed. Cleared on the
+   *  next success. Lets surfaces (e.g. the Mastermind data-health banner) show
+   *  fleet as an honestly-failed family instead of silently empty. */
+  fleetSessionsError: boolean;
   /** Currently-focused session in the grid — the one whose terminal pane renders. */
   fleetActiveSessionId: string | null;
   /** True while the fullscreen terminal-grid overlay is open. In-memory; the
@@ -124,6 +128,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetHookPort: 0,
   fleetHooksInstalled: false,
   fleetSessionsLoading: false,
+  fleetSessionsError: false,
   fleetActiveSessionId: null,
   fleetGridOpen: false,
   fleetOrphanCount: 0,
@@ -154,11 +159,12 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
         fleetHookPort: snapshot.hookPort,
         fleetHooksInstalled: snapshot.hooksInstalled,
         fleetSessionsLoading: false,
+        fleetSessionsError: false,
         error: null,
       });
     } catch (err) {
       reportError(err, 'Failed to load Fleet sessions', set, {
-        stateUpdates: { fleetSessionsLoading: false },
+        stateUpdates: { fleetSessionsLoading: false, fleetSessionsError: true },
       });
     }
   },

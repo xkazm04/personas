@@ -18253,6 +18253,8 @@
     "family_relations": "관계",
     "family_scans": "아이디어 스캔",
     "island_state_errors": "색상은 실시간 모니터링 오류 기준",
-    "island_state_readiness": "색상은 준비도 점수 기준"
+    "island_state_readiness": "색상은 준비도 점수 기준",
+    "family_fleet": "플릿",
+    "family_kpi": "KPI"
   }
 }

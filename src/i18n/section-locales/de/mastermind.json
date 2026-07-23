@@ -14,5 +14,7 @@
   "family_relations": "Beziehungen",
   "family_scans": "Ideen-Scans",
   "island_state_errors": "Farbe aus Live-Überwachungsfehlern",
-  "island_state_readiness": "Farbe aus Reifegrad-Werten"
+  "island_state_readiness": "Farbe aus Reifegrad-Werten",
+  "family_fleet": "Flotte",
+  "family_kpi": "KPI"
 }

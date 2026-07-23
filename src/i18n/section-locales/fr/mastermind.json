@@ -14,5 +14,7 @@
   "family_relations": "Relations",
   "family_scans": "Analyses d'idées",
   "island_state_errors": "Couleur selon les erreurs de surveillance en direct",
-  "island_state_readiness": "Couleur selon les scores de préparation"
+  "island_state_readiness": "Couleur selon les scores de préparation",
+  "family_fleet": "Flotte",
+  "family_kpi": "KPI"
 }

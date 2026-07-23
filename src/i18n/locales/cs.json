@@ -18253,6 +18253,8 @@
     "family_relations": "Vztahy",
     "family_scans": "Skenování nápadů",
     "island_state_errors": "Barva podle živých chyb monitorování",
-    "island_state_readiness": "Barva podle skóre připravenosti"
+    "island_state_readiness": "Barva podle skóre připravenosti",
+    "family_fleet": "Flotila",
+    "family_kpi": "KPI"
   }
 }

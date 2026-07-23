@@ -18,10 +18,17 @@ export type { KpiRollup } from './dimRegistry';
 
 /** All dimension nodes for a project, in registry order — each dimension's
  *  status/detail/progress comes from its own registry `derive()`. */
-function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitorErrors: number | null | undefined): DimNode[] {
+/** Which data families hard-failed — drives the `unknown` cell state so a
+ *  failed fetch never renders as a fake "never scanned" / "absent". */
+export interface FamilyHealth {
+  scansUnknown?: boolean;
+  kpiUnknown?: boolean;
+}
+
+function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitorErrors: number | null | undefined, families: FamilyHealth): DimNode[] {
   return DIM_ORDER.map((key) => {
     const entry = DIM_REGISTRY[key];
-    const d = entry.derive(p, { kpi, lastScanAt, monitorErrors });
+    const d = entry.derive(p, { kpi, lastScanAt, monitorErrors, scansUnknown: families.scansUnknown, kpiUnknown: families.kpiUnknown });
     return { key, label: entry.label, status: d.status, detail: d.detail, reached: d.reached, steps: d.steps, days: d.days ?? null };
   });
 }
@@ -35,7 +42,7 @@ function readinessState(p: AppPassport): IslandState {
   return 'critical';
 }
 
-function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined): Island {
+function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined, families: FamilyHealth): Island {
   const pos = spiralPlace(i, p.identity.slug);
   // Colour = static readiness combined with the live monitoring signal (fresh
   // errors → critical, quiet-but-open issues → warning). Fleet "attention" is
@@ -54,7 +61,7 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastSca
     lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
     automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
-    nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues),
+    nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues, families),
     fleet: [],
     personasRunning: [],
     attention: false,
@@ -90,9 +97,10 @@ export function deriveScene(
   kpiByProject?: Map<string, KpiRollup>,
   ideaScanAt?: Map<string, string | null>,
   monitoringByProject?: Map<string, MonitoringSummary | undefined>,
+  families: FamilyHealth = {},
 ): Scene {
   if (passports.length > 0) {
-    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug), monitoringByProject?.get(p.identity.slug)));
+    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug), monitoringByProject?.get(p.identity.slug), families));
     return { islands, edges: deriveEdges(meta, new Set(islands.map((i) => i.slug))), demo: false };
   }
   if (loading) return { islands: [], edges: [], demo: false };

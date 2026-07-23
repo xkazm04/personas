@@ -18253,6 +18253,8 @@
     "data_health_title": "Some canvas data failed to load",
     "family_relations": "Relations",
     "family_scans": "Idea scans",
-    "family_monitoring": "Monitoring"
+    "family_monitoring": "Monitoring",
+    "family_kpi": "KPIs",
+    "family_fleet": "Fleet"
   }
 }

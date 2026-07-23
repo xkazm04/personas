@@ -34,8 +34,11 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { CanvasToolbar } from './lib/CanvasToolbar';
-import { deriveScene, type KpiRollup } from './lib/deriveScene';
+import { DataHealthBar } from './lib/DataHealthBar';
+import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
@@ -80,18 +83,24 @@ export default function MastermindPage() {
 }
 
 function MastermindInner() {
+  const { t } = useTranslation();
   const { passports, rawByProject, loading, error, reload } = usePassportData();
-  const { projects: factoryProjects } = useFactoryData();
+  const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
   // Scene store — the single batched spine: cross-project relations (meta) +
   // idea scans, each fetched with ≤1 IPC and invalidated by event, not polled.
+  // Each family carries a fetch STATUS so failures surface honestly.
   const meta = useSceneStore((s) => s.meta);
   const scans = useSceneStore((s) => s.scans);
   const sentry = useSceneStore((s) => s.sentry);
+  const metaStatus = useSceneStore((s) => s.metaStatus);
+  const scansStatus = useSceneStore((s) => s.scansStatus);
+  const sentryStatus = useSceneStore((s) => s.sentryStatus);
   const loadMeta = useSceneStore((s) => s.loadMeta);
   const loadScans = useSceneStore((s) => s.loadScans);
   const loadSentry = useSceneStore((s) => s.loadSentry);
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
+  const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [mode, setMode] = useState<CanvasMode>('edit');
@@ -133,6 +142,7 @@ function MastermindInner() {
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
   const fleetStartSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
+  const fleetSessionsError = useSystemStore((s) => s.fleetSessionsError);
   const projects = useSystemStore(useShallow((s) => s.projects));
 
   useEffect(() => {
@@ -268,7 +278,32 @@ function MastermindInner() {
     return m;
   }, [scans]);
 
-  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry), [passports, meta, loading, kpiByProject, ideaScanAt, sentry]);
+  // Family health → honest `unknown` cells: a hard-failed scans/KPI family
+  // renders Ideas/KPI cells as "data unavailable" (muted), never a fake
+  // "never scanned"/"absent". (A `stale` family keeps its last-good data.)
+  const families = useMemo<FamilyHealth>(
+    () => ({ scansUnknown: scansStatus === 'failed', kpiUnknown: Boolean(factoryError) }),
+    [scansStatus, factoryError],
+  );
+  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families), [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families]);
+
+  // Which data families are currently not clean (failed OR showing stale data).
+  const bad = (s: string) => s === 'failed' || s === 'stale';
+  const failedFamilies = useMemo(() => {
+    const out: string[] = [];
+    if (bad(metaStatus)) out.push(t.mastermind.family_relations);
+    if (bad(scansStatus)) out.push(t.mastermind.family_scans);
+    if (factoryError) out.push(t.mastermind.family_kpi);
+    if (bad(sentryStatus)) out.push(t.mastermind.family_monitoring);
+    if (fleetSessionsError) out.push(t.mastermind.family_fleet);
+    return out;
+  }, [metaStatus, scansStatus, factoryError, sentryStatus, fleetSessionsError, t]);
+
+  const onRetryData = useCallback(() => {
+    retryFailed();
+    if (factoryError) factoryReload();
+    if (fleetSessionsError) void fleetRefresh();
+  }, [retryFailed, factoryError, factoryReload, fleetSessionsError, fleetRefresh]);
   // Saved positions + live fleet + per-dim Improve actionability overlay the
   // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
   // canvas cell is clickable exactly when its wall row would show a gear.
@@ -393,7 +428,10 @@ function MastermindInner() {
       void fetchProjects();
       reload();
       return { id: project.id };
-    } catch {
+    } catch (err) {
+      // Surface a Sentry breadcrumb rather than swallowing — the modal reads
+      // `undefined` as "create failed" and keeps its form open.
+      silentCatch('mastermind handleCreateProject')(err);
       return undefined;
     }
   };
@@ -491,6 +529,8 @@ function MastermindInner() {
           {error}
         </div>
       )}
+
+      <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
     </div>
     </ImproveProvider>
   );

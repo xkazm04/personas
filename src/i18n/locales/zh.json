@@ -18253,6 +18253,8 @@
     "family_relations": "关系",
     "family_scans": "创意扫描",
     "island_state_errors": "颜色来自实时监控错误",
-    "island_state_readiness": "颜色来自就绪度评分"
+    "island_state_readiness": "颜色来自就绪度评分",
+    "family_fleet": "舰队",
+    "family_kpi": "KPI"
   }
 }

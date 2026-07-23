@@ -5,7 +5,11 @@
 
 export type IslandState = 'healthy' | 'building' | 'warning' | 'critical';
 
-export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert';
+// `unknown` is distinct from `absent`: absent = "we looked, this wiring isn't
+// there" (an honest zero); unknown = "the data family that feeds this cell
+// failed to load, so we genuinely don't know" — never rendered as a fake
+// absent/never-scanned. Its ink is a muted amber-grey (see DIM_INK).
+export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unknown';
 
 // DimKey is derived from the dimension registry (the single source of truth for
 // the dimension system) so a new registry entry extends the key space with no

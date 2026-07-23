@@ -18253,6 +18253,8 @@
     "family_relations": "Relasi",
     "family_scans": "Pemindaian ide",
     "island_state_errors": "Warna dari kesalahan pemantauan langsung",
-    "island_state_readiness": "Warna dari skor kesiapan"
+    "island_state_readiness": "Warna dari skor kesiapan",
+    "family_fleet": "Armada",
+    "family_kpi": "KPI"
   }
 }

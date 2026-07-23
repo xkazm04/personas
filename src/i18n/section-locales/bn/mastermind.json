@@ -14,5 +14,7 @@
   "family_relations": "সম্পর্ক",
   "family_scans": "আইডিয়া স্ক্যান",
   "island_state_errors": "লাইভ মনিটরিং ত্রুটি থেকে রঙ",
-  "island_state_readiness": "প্রস্তুতির স্কোর থেকে রঙ"
+  "island_state_readiness": "প্রস্তুতির স্কোর থেকে রঙ",
+  "family_fleet": "ফ্লিট",
+  "family_kpi": "KPI"
 }

@@ -16,6 +16,9 @@ export const DIM_INK: Record<DimStatus, string> = {
   partial: 'var(--status-info)',
   risk: 'var(--status-warning)',
   alert: 'var(--status-error)',
+  // Muted amber-grey — "data unavailable", deliberately distinct from the plain
+  // neutral of `absent` so an unknown cell never reads as an honest zero.
+  unknown: 'color-mix(in srgb, var(--status-warning) 32%, var(--status-neutral))',
 };
 
 /** Fleet session state → ink. Mirrors the Fleet grid's accent palette

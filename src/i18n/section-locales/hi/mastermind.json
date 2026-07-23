@@ -14,5 +14,7 @@
   "family_relations": "संबंध",
   "family_scans": "आइडिया स्कैन",
   "island_state_errors": "रंग लाइव मॉनिटरिंग त्रुटियों से",
-  "island_state_readiness": "रंग तैयारी स्कोर से"
+  "island_state_readiness": "रंग तैयारी स्कोर से",
+  "family_fleet": "फ्लीट",
+  "family_kpi": "KPI"
 }

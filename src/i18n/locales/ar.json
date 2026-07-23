@@ -18253,6 +18253,8 @@
     "family_relations": "العلاقات",
     "family_scans": "فحوصات الأفكار",
     "island_state_errors": "اللون مستمد من أخطاء المراقبة المباشرة",
-    "island_state_readiness": "اللون مستمد من درجات الجاهزية"
+    "island_state_readiness": "اللون مستمد من درجات الجاهزية",
+    "family_fleet": "الأسطول",
+    "family_kpi": "مؤشرات الأداء"
   }
 }

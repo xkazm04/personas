@@ -14,5 +14,7 @@
   "family_relations": "Quan hệ",
   "family_scans": "Quét ý tưởng",
   "island_state_errors": "Màu theo lỗi giám sát trực tiếp",
-  "island_state_readiness": "Màu theo điểm mức độ sẵn sàng"
+  "island_state_readiness": "Màu theo điểm mức độ sẵn sàng",
+  "family_fleet": "Hạm đội",
+  "family_kpi": "KPI"
 }

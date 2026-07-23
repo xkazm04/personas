@@ -18260,5 +18260,7 @@ export type Translations = {
     family_relations: string;
     family_scans: string;
     family_monitoring: string;
+    family_kpi: string;
+    family_fleet: string;
   };
 };

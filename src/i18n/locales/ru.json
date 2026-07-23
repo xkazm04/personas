@@ -18253,6 +18253,8 @@
     "family_relations": "Связи",
     "family_scans": "Сканирование идей",
     "island_state_errors": "Цвет по ошибкам мониторинга в реальном времени",
-    "island_state_readiness": "Цвет по оценкам готовности"
+    "island_state_readiness": "Цвет по оценкам готовности",
+    "family_fleet": "Флот",
+    "family_kpi": "KPI"
   }
 }
