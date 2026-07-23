@@ -20,6 +20,7 @@ import { sortByNameAsc, type AppPassport } from './passportModel';
 import { InkTabs } from './passportInk';
 import type { CoverBodyProps } from './CoverBody';
 import type { WarningItem } from './WarningBadge';
+import { onboardDispatchKey } from './onboardDispatch';
 import { PassportTerminalModal, usePassportFleetSessions } from './passportFleet';
 import { RowSetupModal } from './RowSetupModal';
 import { WallOverviewGrid } from './WallOverviewGrid';
@@ -88,15 +89,22 @@ export function ProjectsPassportWall({
     }
   }, [passports, sort]);
 
-  const coverProps = (p: AppPassport): CoverBodyProps => ({
-    p,
-    openable: Boolean(openSlugs?.has(p.identity.slug) && onOpen),
-    onOpen,
-    attention: attentionByProject?.get(p.identity.slug) ?? [],
-    onJumpKpi,
-    stats: headerStats?.get(p.identity.slug) ?? null,
-    favicon: faviconBySlug?.get(p.identity.slug) ?? null,
-  });
+  const coverProps = (p: AppPassport): CoverBodyProps => {
+    const onboardKey = onboardDispatchKey(p.identity.slug);
+    return {
+      p,
+      openable: Boolean(openSlugs?.has(p.identity.slug) && onOpen),
+      onOpen,
+      attention: attentionByProject?.get(p.identity.slug) ?? [],
+      onJumpKpi,
+      stats: headerStats?.get(p.identity.slug) ?? null,
+      favicon: faviconBySlug?.get(p.identity.slug) ?? null,
+      onboard: {
+        session: fleetSessions.get(onboardKey) ?? null,
+        onOpenTerminal: () => setTerminalKey(onboardKey),
+      },
+    };
+  };
 
   return (
     <div>

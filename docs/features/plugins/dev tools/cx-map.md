@@ -52,7 +52,7 @@ lifecycle · competition`.
 | Workspace | "what is the team doing/saying?" | Flight Deck / Red Room / collab chat | per-team |
 | Goals | "what are we trying to achieve?" | goal constellation / progress board (+ advancement loop, default-OFF tick) | per-project |
 | KPIs | "are the numbers on target?" | KPI console, per-use-case scoping, needs-attention rows | per-project |
-| Factory | "can agents develop this? can I ship it?" | **passport wall** — readiness certificates as comparison columns, improve-cell ladders, golden gauge, standards scan, improve plan | **fleet** (cross-project) |
+| Factory | "can agents develop this? can I ship it?" | **passport wall** — readiness certificates as comparison columns, improve-cell ladders, golden gauge, standards scan, improve plan, per-cover **Onboard door** (compass icon → Fleet-dispatched guided onboarding via the passport-onboard skill; live session = tinted terminal icon; writes the public-safe `app-passport.json` manifest) | **fleet** (cross-project) |
 | Manage (`projects`) | project CRUD, bindings, archive | table + modals | fleet |
 | Lifecycle | Dev Clone setup | setup flow | per-project |
 | Competition | competitions on projects | boards | per-project |

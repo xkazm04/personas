@@ -5,15 +5,22 @@
 // (warning badge, standards scan, markdown export) stay on the title row.
 // Exported (via ProjectsPassportWall) for reuse as the Mastermind project
 // sidebar's header.
-import { Activity, ArrowUpRight, Boxes, Database, FileDown, KeyRound, Server } from 'lucide-react';
+import { useState } from 'react';
+import { Activity, ArrowUpRight, Boxes, Compass, Database, FileDown, KeyRound, Server, TerminalSquare } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import { listCredentials } from '@/api/vault/credentials';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { toastCatch } from '@/lib/silentCatch';
 import { passportToMarkdown } from './passportExport';
 import { AUTOMATION_LABEL, PROD_BAND_LABEL, type AppPassport } from './passportModel';
 import { INK, scoreInk } from './passportInk';
 import { trendDelta } from './passportHistory';
 import { resolveTechIcon } from './techIcons';
+import { useImprove } from './improve/ImproveContext';
+import { buildOnboardPrompt, onboardDispatchKey } from './onboardDispatch';
+import { dispatchRowToFleet, PASSPORT_FLEET_INK } from './passportFleet';
 import { StandardsScan } from './improve/StandardsScan';
 import { WarningBadge, type WarningItem } from './WarningBadge';
 
@@ -32,6 +39,68 @@ export interface CoverBodyProps {
   stats: HeaderStatsShape | null;
   /** Real app favicon (data URL); null → the worst-state dot stays. */
   favicon?: string | null;
+  /** Guided-onboarding door (wall only; absent on the Mastermind sidebar):
+   *  the live `passport:onboard:<slug>` session if one runs, and the terminal
+   *  opener. Dispatch itself happens here via ImproveContext + Fleet. */
+  onboard?: { session: FleetSession | null; onOpenTerminal: () => void };
+}
+
+const ONBOARD_COPY = {
+  idle: 'Onboard with Fleet — guided passport onboarding in this repo',
+  active: 'Onboarding session live — open terminal',
+  noRaw: 'passport onboard dispatch',
+};
+
+function OnboardDoor({ p, onboard }: { p: AppPassport; onboard: NonNullable<CoverBodyProps['onboard']> }) {
+  const improve = useImprove();
+  const [busy, setBusy] = useState(false);
+  const s = onboard.session;
+
+  if (s) {
+    const ink = PASSPORT_FLEET_INK[String(s.state)] ?? 'rgba(148,163,184,.5)';
+    return (
+      <button
+        type="button"
+        onClick={onboard.onOpenTerminal}
+        title={ONBOARD_COPY.active}
+        className="flex-shrink-0 p-0.5 transition-colors focus-ring"
+        style={{ color: ink }}
+        data-testid={`passport-onboard-live-${p.identity.slug}`}
+      >
+        <TerminalSquare className="w-3.5 h-3.5" aria-hidden />
+      </button>
+    );
+  }
+
+  const raw = improve?.getRaw(p.identity.slug);
+  if (!raw) return null;
+
+  const dispatch = () => {
+    if (busy) return;
+    setBusy(true);
+    listCredentials()
+      .then((creds) => dispatchRowToFleet(
+        onboardDispatchKey(p.identity.slug),
+        raw.project.root_path,
+        buildOnboardPrompt(p, raw, creds),
+      ))
+      // R20 doctrine: no auto-open — the tinted icon appears via the 5s poll.
+      .then(() => setBusy(false))
+      .catch((e) => { setBusy(false); toastCatch(ONBOARD_COPY.noRaw)(e); });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={dispatch}
+      disabled={busy}
+      title={ONBOARD_COPY.idle}
+      className="flex-shrink-0 p-0.5 text-foreground/45 hover:text-primary disabled:opacity-40 transition-colors focus-ring"
+      data-testid={`passport-onboard-${p.identity.slug}`}
+    >
+      <Compass className="w-3.5 h-3.5" aria-hidden />
+    </button>
+  );
 }
 
 function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
@@ -74,7 +143,7 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
 }
 
 export function CoverBody({
-  p, openable, onOpen, attention, onJumpKpi, stats, favicon = null,
+  p, openable, onOpen, attention, onJumpKpi, stats, favicon = null, onboard,
 }: CoverBodyProps) {
   const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
   const trend = trendDelta(p.identity.slug)?.golden ?? 0;
@@ -108,6 +177,7 @@ export function CoverBody({
           <span title={p.identity.purpose} className="typo-body font-semibold tracking-tight truncate block">{p.identity.name}</span>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
+        {onboard && <OnboardDoor p={p} onboard={onboard} />}
         <StandardsScan slug={p.identity.slug} projectName={p.identity.name} />
         <CopyButton
           text={passportToMarkdown(p, Date.now())}
