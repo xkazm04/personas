@@ -2,6 +2,8 @@
 // dimension tiles form a layer around it (3×3; a second layer would open for
 // overflow dimensions). Same band LOD as the other variants — fullscale icons
 // at far/mid, labels at near, details at close; identity on the banner.
+import { memo } from 'react';
+
 import { DimTile } from '../lib/DimTile';
 import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetBadges } from '../lib/FleetBadges';
@@ -28,7 +30,8 @@ const RING: Array<[number, number]> = [
   [0, -2], [1, -2], [-1, -2], [2, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+// React.memo'd — see MosaicIsland for the render-free-navigation rationale.
+export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
@@ -126,4 +129,4 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       />
     </g>
   );
-}
+});

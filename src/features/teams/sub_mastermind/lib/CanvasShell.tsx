@@ -3,8 +3,14 @@
 // routing. Variants supply only the island renderer. Round 5 (Figma pass):
 // edit-first — groups move/resize inline (GroupLayer owns that), the connect
 // tool links projects via island taps, headers open the project sidebar.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+//
+// Round 14 (render-free navigation): the world <g> is driven imperatively while
+// panning (see useCanvasCamera), islands are React.memo'd with referentially
+// stable callbacks, and islands whose centre falls outside the viewport (plus a
+// generous margin) are culled from the render. Together these keep a 50–100
+// project portfolio at 60fps — a pan does zero island re-renders and a wheel
+// zoom commits at most once per animation frame.
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
@@ -18,6 +24,7 @@ import { LinkLayer } from './LinkLayer';
 import { NoteEditor } from './NoteEditor';
 import { NoteLayer } from './NoteLayer';
 import { Route } from './Route';
+import { useEventCallback } from './useEventCallback';
 import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
 import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
@@ -25,6 +32,9 @@ import { useCanvasCamera } from './useCanvasCamera';
 
 const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
 const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
+// Half an island footprint (~900×800 world units) plus slack, so an island is
+// only culled once its whole body is well clear of the viewport — no popping.
+const CULL_MARGIN = 700;
 
 export interface IslandCtx {
   z: number;
@@ -60,7 +70,8 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const { cam, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef);
+  const worldRef = useRef<SVGGElement>(null);
+  const { cam, camRef, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef, worldRef);
   const [hover, setHover] = useState<string | null>(null);
   const [groups, setGroups] = useState<GroupRect[]>(loadGroups);
   const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -74,6 +85,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [menu, setMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [highlight, setHighlight] = useState<{ slug: string; key: string } | null>(null);
   const [fleetMenu, setFleetMenu] = useState<{ slug: string; state: string; x: number; y: number } | null>(null);
+  const [viewport, setViewport] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
@@ -97,6 +109,20 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return () => window.removeEventListener('keydown', h);
   }, []);
 
+  // Track the viewport box so culling knows what world rect is on screen.
+  useLayoutEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setViewport((v) => (v.w === r.width && v.h === r.height ? v : { w: r.width, h: r.height }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useLayoutEffect(() => {
     if (!fitted.current && scene.islands.length > 0) {
       fit(sceneBounds(scene.islands));
@@ -116,9 +142,30 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return s;
   }, [hover, scene.edges]);
 
+  // Visible world rect (committed camera + one generous margin). Recomputed only
+  // on committed camera changes — a render-free pan keeps the last rect and its
+  // margin covers the drag; release re-culls. `null` until the viewport is
+  // measured (render everything so nothing is missing on first paint).
+  const visibleRect = useMemo(() => {
+    if (!viewport.w || !viewport.h) return null;
+    const m = CULL_MARGIN;
+    return {
+      minX: -cam.x / cam.z - m,
+      maxX: (viewport.w - cam.x) / cam.z + m,
+      minY: -cam.y / cam.z - m,
+      maxY: (viewport.h - cam.y) / cam.z + m,
+    };
+  }, [viewport, cam]);
+  const isVisible = useCallback((i: Island) => (
+    !visibleRect || (i.x >= visibleRect.minX && i.x <= visibleRect.maxX && i.y >= visibleRect.minY && i.y <= visibleRect.maxY)
+  ), [visibleRect]);
+
+  // Gesture-time world math reads the LIVE camera (camRef) so it stays correct
+  // even mid-pan, when `cam` state is intentionally stale for render-freedom.
   const toWorld = (e: { clientX: number; clientY: number }) => {
     const rect = svgRef.current!.getBoundingClientRect();
-    return { x: (e.clientX - rect.left - cam.x) / cam.z, y: (e.clientY - rect.top - cam.y) / cam.z };
+    const c = camRef.current;
+    return { x: (e.clientX - rect.left - c.x) / c.z, y: (e.clientY - rect.top - c.y) / c.z };
   };
 
   const commitGroups = (next: GroupRect[], persist = true) => {
@@ -140,55 +187,11 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
-  const onIslandMenu = (slug: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const p = toScreen(e);
-    const rect = svgRef.current?.getBoundingClientRect();
-    setMenu({
-      slug,
-      x: Math.min(p.x, (rect?.width ?? 600) - 320),
-      y: Math.min(p.y, (rect?.height ?? 400) - 340),
-    });
-  };
-
-  const onFleetList = (slug: string, state: string, e: React.MouseEvent) => {
-    const p = toScreen(e);
-    const rect = svgRef.current?.getBoundingClientRect();
-    setFleetMenu({
-      slug,
-      state,
-      x: Math.min(p.x, (rect?.width ?? 600) - 244),
-      y: Math.min(p.y + 10, (rect?.height ?? 400) - 280),
-    });
-  };
-
   const createLink = (from: string, to: string) => {
     const l: UserLink = { id: `l${Date.now().toString(36)}`, from, to, label: '', dashed: false, color: LINK_PALETTE[0] };
     commitLinks([...links, l]);
     setLinkSource(null);
     setEditingLink(l.id);
-  };
-
-  // Connect tool, tap flow (fallback to the drag gesture): first tap marks the
-  // source, second creates the link. Tapping the source again (or sea) cancels.
-  const onIslandTap = (slug: string) => {
-    if (mode !== 'connect') {
-      onProjectOpen(slug);
-      return;
-    }
-    if (!linkSource) setLinkSource(slug);
-    else if (linkSource === slug) setLinkSource(null);
-    else createLink(linkSource, slug);
-  };
-
-  // Connect tool, drag flow: capture on the svg so moves keep arriving while
-  // the rubber band follows the cursor; release near another island links it.
-  const onConnectStart = (slug: string, e: React.PointerEvent) => {
-    if (mode !== 'connect' || e.button !== 0) return;
-    e.stopPropagation();
-    svgRef.current?.setPointerCapture(e.pointerId);
-    connectDrag.current = { id: e.pointerId, from: slug, sx: e.clientX, sy: e.clientY };
   };
 
   /** Nearest island to a world point within a generous drop radius. */
@@ -203,11 +206,52 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return best;
   };
 
-  const onIslandFocus = (slug: string) => {
+  // --- island-facing callbacks — referentially stable so React.memo'd islands
+  //     skip re-rendering when only the camera transform (pan) changed. ----------
+  const onHover = useEventCallback(setHover);
+  const onIslandTap = useEventCallback((slug: string) => {
+    // Connect tool, tap flow (fallback to the drag gesture): first tap marks the
+    // source, second creates the link. Tapping the source again (or sea) cancels.
+    if (mode !== 'connect') {
+      onProjectOpen(slug);
+      return;
+    }
+    if (!linkSource) setLinkSource(slug);
+    else if (linkSource === slug) setLinkSource(null);
+    else createLink(linkSource, slug);
+  });
+  const onConnectStart = useEventCallback((slug: string, e: React.PointerEvent) => {
+    // Connect tool, drag flow: capture on the svg so moves keep arriving while
+    // the rubber band follows the cursor; release near another island links it.
+    if (mode !== 'connect' || e.button !== 0) return;
+    e.stopPropagation();
+    svgRef.current?.setPointerCapture(e.pointerId);
+    connectDrag.current = { id: e.pointerId, from: slug, sx: e.clientX, sy: e.clientY };
+  });
+  const onIslandFocus = useEventCallback((slug: string) => {
     const i = bySlug.get(slug);
     // Linear tween to the island — no sudden jump (double-click zoom brief).
     if (i) fit({ minX: i.x - 480, maxX: i.x + 480, minY: i.y - 400, maxY: i.y + 400 }, true);
-  };
+  });
+  const onIslandMenu = useEventCallback((slug: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const p = toScreen(e);
+    const rect = svgRef.current?.getBoundingClientRect();
+    setMenu({ slug, x: Math.min(p.x, (rect?.width ?? 600) - 320), y: Math.min(p.y, (rect?.height ?? 400) - 340) });
+  });
+  const onFleetList = useEventCallback((slug: string, state: string, e: React.MouseEvent) => {
+    const p = toScreen(e);
+    const rect = svgRef.current?.getBoundingClientRect();
+    setFleetMenu({ slug, state, x: Math.min(p.x, (rect?.width ?? 600) - 244), y: Math.min(p.y + 10, (rect?.height ?? 400) - 280) });
+  });
+  // Page-supplied callbacks — stabilized so a page re-render (fleet poll, etc.)
+  // doesn't invalidate every island's props.
+  const onIslandMoveStable = useEventCallback(onIslandMove);
+  const onIslandCommitStable = useEventCallback(onIslandCommit);
+  const onFleetOpenStable = useEventCallback(onFleetOpen);
+  const onDimOpenStable = useEventCallback(onDimOpen);
+  const onPersonasOpenStable = useEventCallback(onPersonasOpen);
 
   // Group mode: left-drag draws; middle-drag still pans (forwarded to camera).
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -288,6 +332,28 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
     return { x: ((a.x + b.x) / 2) * cam.z + cam.x, y: ((a.y + b.y) / 2) * cam.z + cam.y };
   }, [editingLinkObj, bySlug, cam]);
 
+  // Per-island context — created fresh per island, but every field is either a
+  // primitive or a stable callback, so React.memo'd islands compare equal and
+  // skip re-rendering unless z / band / mode / their own dim/highlight changed.
+  const ctxFor = (i: Island): IslandCtx => ({
+    z: cam.z,
+    band,
+    mode,
+    dimmed: lit !== null && !lit.has(i.slug),
+    onHover,
+    onIslandMove: onIslandMoveStable,
+    onIslandCommit: onIslandCommitStable,
+    onFleetOpen: onFleetOpenStable,
+    onIslandTap,
+    onConnectStart,
+    onIslandFocus,
+    onIslandMenu,
+    highlightKey: highlight?.slug === i.slug ? highlight.key : null,
+    onFleetList,
+    onDimOpen: onDimOpenStable,
+    onPersonasOpen: onPersonasOpenStable,
+  });
+
   return (
     <>
       <svg
@@ -314,7 +380,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
 
         <rect width="100%" height="100%" fill="url(#mm-sea)" />
 
-        <g transform={`translate(${cam.x} ${cam.y}) scale(${cam.z})`}>
+        <g ref={worldRef} transform={`translate(${cam.x} ${cam.y}) scale(${cam.z})`}>
           <GroupLayer
             groups={groups}
             draft={draft ? normalize(draft) : null}
@@ -337,36 +403,9 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             clickable={mode === 'edit' || mode === 'connect'}
             onEdit={setEditingLink}
           />
-          <AnimatePresence>
-            {scene.islands.map((i) => (
-              <motion.g
-                key={i.slug}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'linear' }}
-              >
-                {renderIsland(i, {
-                  z: cam.z,
-                  band,
-                  mode,
-                  dimmed: lit !== null && !lit.has(i.slug),
-                  onHover: setHover,
-                  onIslandMove,
-                  onIslandCommit,
-                  onFleetOpen,
-                  onIslandTap,
-                  onConnectStart,
-                  onIslandFocus,
-                  onIslandMenu,
-                  highlightKey: highlight?.slug === i.slug ? highlight.key : null,
-                  onFleetList,
-                  onDimOpen,
-                  onPersonasOpen,
-                })}
-              </motion.g>
-            ))}
-          </AnimatePresence>
+          {/* Islands: culled to the visible world rect (+ margin), each memoized
+              so a render-free pan re-renders none of them. */}
+          {scene.islands.map((i) => (isVisible(i) ? renderIsland(i, ctxFor(i)) : null))}
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
           {/* connect overlay — ABOVE the islands so source/target/rubber are
               unmistakable (the round-5 under-island ring was barely visible) */}

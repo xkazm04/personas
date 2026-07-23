@@ -4,7 +4,7 @@
 //              readable from orbit), title large on the banner
 //   near     → icon + uppercase label
 //   close    → + tool detail + progress
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { DimGlyph } from '../lib/DimGlyph';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
@@ -32,7 +32,11 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+// React.memo'd: the shell hands it referentially-stable callbacks + primitive
+// scalars, so a render-free pan (camera transform only) re-renders zero islands.
+// It re-renders only when its own props change — a committed z/band on zoom, a
+// mode switch, or its own dim/highlight state.
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied — banner, badges,
@@ -111,7 +115,7 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
       />
     </g>
   );
-}
+});
 
 function MosaicCell({ node, x, y, band, highlighted, onAction }: {
   node: DimNode;
