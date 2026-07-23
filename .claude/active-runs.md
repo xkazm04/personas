@@ -1152,6 +1152,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### wall-perf-fixes — passport wall data-loading remediation (6 findings) — session fable-5 — COMPLETED
+- Started+completed 2026-07-23. Commit: d915d211a (cherry-picked from worktree-mm-wall).
+- Shipped: module-scope stale-while-revalidate snapshot cache (remounts paint instantly; <60s cache skips rebuild — Factory↔Mastermind toggles cost 0 IPC) · phase-0 metadata-only paint (first load renders covers after 2 IPC, skills×N no longer gates) · ProjectsLayer headerStats+favicon effects keyed on slug/root signature (were re-running per publish phase — 2-3× per mount) · both fan-outs bounded via mapWithConcurrency(5) + module-scope favicon cache per root_path · usePassportFleetSessions store-event-driven (5s listSessions poll DELETED; dispatchRowToFleet keeps its one-shot guard) · telemetry sweep (doc-rot/mem-health/skill mining) throttled to 15min/app-session.
+- LIVE SMOKE (running dev app, HMR): wall renders 7 covers w/ favicons + CTX stats + KPI columns; Factory→Mastermind→Factory remount paints INSTANTLY from cache (content present on immediate post-nav query — previously seconds of loading). Log clean (store-monitor mount alerts only).
+- Gates: tsc 0 · vitest FULL 2537/2537 · eslint 0 errors. usePassportData shared with Mastermind — both consumers verified.
+- Paths: src/features/teams/sub_factory/{ProjectsLayer.tsx, passport/usePassportData.ts, passport/passportFleet.tsx, passport/ProjectsPassportWall.tsx}.
+
 ### mm-perf-fixes — optimizer-scan remediation (7 findings) — session fable-5 — COMPLETED
 - Started+completed 2026-07-23. Commit: 83777b8be (cherry-picked from worktree-mm-perf 2ee62e9eb) + doc-sync.
 - Shipped: render-free island drag (imperative <g> transform, single commit on release; GroupLayer member moves imperative too; onIslandMove DELETED end-to-end) · content-stable island identity in MastermindPage.positioned (per-slug cache — fleet ticks re-render 1 island, not all; O(n²) passports.find → Map) · quantized island z (1.06 steps) · imperative hover dimming via data-mm-island (dimmed prop DELETED from IslandCtx) · per-state radialGradient halos (mm-coast feGaussianBlur DELETED) · mid-pan culling commit per ~350 world units · two-phase passport publish in usePassportData (SHARED with wall; evidence probe concurrency 5→10, recordSnapshot final-build only).
