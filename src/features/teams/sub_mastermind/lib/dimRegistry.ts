@@ -3,7 +3,7 @@
 // the rest of the canvas needs to know about it:
 //   • label / category        — identity + (reserved) grouping
 //   • derive(passport, extras) — status/detail/progress from a readiness passport
-//   • icon / forge             — lucide outline + optional Mastermind-native glyph
+//   • icon                     — the lucide outline the cells and menus render
 //   • rowKey / action          — Passport-wall Improve mapping + actionability kind
 //   • payloadKind              — how a far/mid cell renders (generic icon vs a
 //                                dedicated numeric payload, e.g. Ideas' day count)
@@ -12,8 +12,7 @@
 // this registry. Adding a future dimension (Memory, Billing, Integrations…) is
 // therefore a ONE-entry change here — see `addingADimension` below.
 //
-// This module owns no JSX literals (forge geometry lives in dimGlyphsForge, the
-// glyph library) so it stays a plain `.ts`.
+// This module owns no JSX literals, so it stays a plain `.ts`.
 import {
   Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, KeyRound,
   Lightbulb, Server, ShieldCheck, Wand2, Workflow, type LucideIcon,
@@ -24,7 +23,6 @@ import {
   SECURITY_SCALE, TESTS_SCALE, type AppPassport,
 } from '@/features/teams/sub_factory/passport/passportModel';
 
-import { FORGE_GLYPH } from './dimGlyphsForge';
 import type { DimStatus } from './types';
 
 /** Per-project KPI rollup (Factory data): total active KPIs + off-track count. */
@@ -39,6 +37,12 @@ export interface DimDeriveExtras {
    *  `undefined` = no supported credential bound (readiness-only); a number
    *  (incl. 0) = a live reading the Monitoring cell should surface. */
   monitorErrors?: number | null;
+  /** True when the idea-scan family hard-failed to load — the Ideas cell then
+   *  renders `unknown` (data unavailable) instead of a fake "never scanned". */
+  scansUnknown?: boolean;
+  /** True when the KPI/Factory family hard-failed to load — the KPI cell then
+   *  renders `unknown` instead of a fake "absent". */
+  kpiUnknown?: boolean;
 }
 
 /** The dynamic fields a dimension computes from a passport. */
@@ -67,8 +71,6 @@ export interface DimRegistryEntry {
   label: string;
   category: DimCategory;
   icon: LucideIcon;
-  /** Mastermind-native solid glyph; absent → DimGlyph falls back to `icon`. */
-  forge?: () => React.ReactNode;
   /** Passport-wall row key this dimension maps to (null = no wall counterpart). */
   rowKey: string | null;
   action: DimActionKind;
@@ -88,8 +90,8 @@ const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'ab
 
 // Canvas node order — the lattice slots map onto this 1:1 (MosaicIsland.AXIAL /
 // InverseIsland.RING). DimKey is derived from this tuple (NOT from the registry
-// value types) so the key space stays decoupled from FORGE_GLYPH/derive and free
-// of circular type references. DO NOT reorder without updating those lattices.
+// value types) so the key space stays decoupled from the entry value types
+// and free of circular type references. DO NOT reorder without updating those lattices.
 export const DIM_ORDER = [
   'db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents',
   'skills', 'llm', 'kpi', 'ideas',
@@ -103,7 +105,7 @@ export type DimKey = typeof DIM_ORDER[number];
 // ── The registry. Keyed by DimKey; entries must appear in DIM_ORDER order. ────
 export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   db: {
-    label: 'Database', category: 'runtime', icon: Database, forge: FORGE_GLYPH.db,
+    label: 'Database', category: 'runtime', icon: Database,
     rowKey: 'migrations', action: 'deploy', payloadKind: 'icon',
     derive: (p) => {
       const db = p.stack.persistence.filter((x) => x.kind !== 'none');
@@ -115,7 +117,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   monitoring: {
-    label: 'Monitoring', category: 'runtime', icon: Activity, forge: FORGE_GLYPH.monitoring,
+    label: 'Monitoring', category: 'runtime', icon: Activity,
     rowKey: 'observability', action: 'deploy', payloadKind: 'icon',
     derive: (p, { monitorErrors }) => {
       const monTools = [p.stack.monitoring.errorTracking, p.stack.monitoring.logs, p.stack.monitoring.metrics, p.stack.monitoring.tracing]
@@ -140,7 +142,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   ci: {
-    label: 'CI', category: 'delivery', icon: Workflow, forge: FORGE_GLYPH.ci,
+    label: 'CI', category: 'delivery', icon: Workflow,
     rowKey: 'ci', action: 'standards', payloadKind: 'icon',
     derive: (p) => {
       const ci = ord(CI_SCALE, p.productionReadiness.ci.level);
@@ -152,7 +154,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   tests: {
-    label: 'Tests', category: 'delivery', icon: FlaskConical, forge: FORGE_GLYPH.tests,
+    label: 'Tests', category: 'delivery', icon: FlaskConical,
     rowKey: 'tests', action: 'deploy', payloadKind: 'icon',
     derive: (p) => {
       const tests = ord(TESTS_SCALE, p.productionReadiness.tests.level);
@@ -164,7 +166,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   security: {
-    label: 'Security', category: 'delivery', icon: ShieldCheck, forge: FORGE_GLYPH.security,
+    label: 'Security', category: 'delivery', icon: ShieldCheck,
     rowKey: 'security', action: 'deploy', payloadKind: 'icon',
     derive: (p) => {
       const sec = ord(SECURITY_SCALE, p.productionReadiness.security.level);
@@ -176,17 +178,17 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   hosting: {
-    label: 'Hosting', category: 'runtime', icon: Server, forge: FORGE_GLYPH.hosting,
+    label: 'Hosting', category: 'runtime', icon: Server,
     rowKey: 'hosting', action: 'deploy', payloadKind: 'icon',
     derive: (p) => ({ status: presence(p.stack.hosting), detail: p.stack.hosting ?? null, reached: 0, steps: 0 }),
   },
   auth: {
-    label: 'Auth', category: 'runtime', icon: KeyRound, forge: FORGE_GLYPH.auth,
+    label: 'Auth', category: 'runtime', icon: KeyRound,
     rowKey: null, action: null, payloadKind: 'icon',
     derive: (p) => ({ status: presence(p.stack.auth), detail: p.stack.auth ?? null, reached: 0, steps: 0 }),
   },
   agents: {
-    label: 'Agents', category: 'agentic', icon: Bot, forge: FORGE_GLYPH.agents,
+    label: 'Agents', category: 'agentic', icon: Bot,
     rowKey: 'aiflow', action: 'deploy', payloadKind: 'icon',
     derive: (p) => {
       const agents = ord(AUTOMATION_SCALE, p.automationReadiness.level);
@@ -198,29 +200,33 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   skills: {
-    label: 'Skills', category: 'agentic', icon: Wand2, forge: FORGE_GLYPH.skills,
+    label: 'Skills', category: 'agentic', icon: Wand2,
     rowKey: 'skills', action: 'deploy', payloadKind: 'icon',
     derive: (p) => ({ status: p.automationReadiness.artifacts.skills ? 'solid' : 'absent', detail: p.automationReadiness.artifacts.skills ? 'installed' : null, reached: 0, steps: 0 }),
   },
   llm: {
-    label: 'LLM cost', category: 'agentic', icon: BrainCircuit, forge: FORGE_GLYPH.llm,
+    label: 'LLM cost', category: 'agentic', icon: BrainCircuit,
     rowKey: 'llmtracking', action: 'deploy', payloadKind: 'icon',
     derive: (p) => ({ status: p.stack.llmTracking ? 'solid' : 'absent', detail: p.stack.llmTracking ?? null, reached: 0, steps: 0 }),
   },
   kpi: {
-    label: 'KPIs', category: 'product', icon: Gauge, forge: FORGE_GLYPH.kpi,
+    label: 'KPIs', category: 'product', icon: Gauge,
     rowKey: null, action: null, payloadKind: 'icon',
-    derive: (_p, { kpi }) => ({
-      status: !kpi || kpi.total === 0 ? 'absent' : kpi.off > 0 ? 'alert' : 'solid',
-      detail: !kpi || kpi.total === 0 ? null : kpi.off > 0 ? `${kpi.off} off-track` : `${kpi.total} on track`,
-      reached: 0, steps: 0,
-    }),
+    derive: (_p, { kpi, kpiUnknown }) => {
+      if (kpiUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0 };
+      return {
+        status: !kpi || kpi.total === 0 ? 'absent' : kpi.off > 0 ? 'alert' : 'solid',
+        detail: !kpi || kpi.total === 0 ? null : kpi.off > 0 ? `${kpi.off} off-track` : `${kpi.total} on track`,
+        reached: 0, steps: 0,
+      };
+    },
   },
   ideas: {
     // Freshness bands: green <7d, amber 7–30d, red >30d, grey when never scanned.
-    label: 'Ideas', category: 'product', icon: Lightbulb, forge: FORGE_GLYPH.ideas,
+    label: 'Ideas', category: 'product', icon: Lightbulb,
     rowKey: null, action: 'ideas', payloadKind: 'days',
-    derive: (_p, { lastScanAt }) => {
+    derive: (_p, { lastScanAt, scansUnknown }) => {
+      if (scansUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0, days: null };
       const days = lastScanAt ? Math.max(0, Math.floor((Date.now() - new Date(lastScanAt).getTime()) / 86_400_000)) : null;
       return {
         status: days === null ? 'absent' : days < 7 ? 'solid' : days <= 30 ? 'risk' : 'alert',
@@ -233,9 +239,9 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
 
 // addingADimension:
 //   1. In THIS file: add the key to DIM_ORDER and its entry to DIM_REGISTRY
-//      (label/category/icon/derive/rowKey/action/payloadKind; `forge` optional —
-//      omit it to fall back to `icon`). deriveScene/dimMeta/dimActions/DimGlyph
-//      and both cell renderers pick it up with no further edits.
+//      (label/category/icon/derive/rowKey/action/payloadKind).
+//      deriveScene/dimMeta/dimActions/DimGlyph and both cell renderers pick it
+//      up with no further edits.
 //   2. Open a lattice slot for it: add a [q,r] coord to MosaicIsland.AXIAL AND a
 //      [col,row] coord to InverseIsland.RING (both currently hold 12 — the 13th+
 //      slots are the only render-side change a new dimension needs).

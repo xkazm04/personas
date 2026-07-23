@@ -9,14 +9,12 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { dimBrand } from './dimMeta';
 import { DIM_REGISTRY } from './dimRegistry';
-import { GLYPH_SETS, useIconSet } from './iconSet';
 import { DIM_INK, mix } from './ink';
 import type { DimNode, Island } from './types';
 
 const COPY = { empty: 'not set up' };
 
 function MenuGlyph({ node }: { node: DimNode }) {
-  const set = useIconSet();
   const entry = DIM_REGISTRY[node.key];
   const absent = node.status === 'absent';
   const brand = !absent ? dimBrand(node) : null;
@@ -25,15 +23,6 @@ function MenuGlyph({ node }: { node: DimNode }) {
     return (
       <svg width={15} height={15} viewBox="0 0 24 24" fill={brand.icon.color ?? 'currentColor'} style={{ color: ink }} aria-hidden className="shrink-0">
         <path d={brand.icon.path} />
-      </svg>
-    );
-  }
-  // Drawn sets (forge/concept) with lucide fallback for glyph-less dimensions.
-  const glyph = set !== 'line' ? (GLYPH_SETS[set][node.key] as (() => React.ReactNode) | undefined) : undefined;
-  if (glyph) {
-    return (
-      <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" style={{ color: ink }} aria-hidden className="shrink-0">
-        {glyph()}
       </svg>
     );
   }

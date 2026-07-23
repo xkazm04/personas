@@ -43,7 +43,6 @@ import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/l
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
-import { IconSetProvider, loadIconSet, saveIconSet, type IconSetId } from './lib/iconSet';
 import { PersonaListPopover } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
@@ -56,10 +55,6 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
-  iconSwitcher: 'Dimension icon set',
-  iconConcept: 'Concept',
-  iconForge: 'Forge',
-  iconLine: 'Line',
   loadingLayout: 'Loading canvas layout',
 };
 
@@ -67,12 +62,6 @@ type VariantId = 'mosaic' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
   { id: 'mosaic', label: COPY.mosaic },
   { id: 'inverse', label: COPY.inverse },
-];
-
-const ICON_TABS: Array<{ id: IconSetId; label: string }> = [
-  { id: 'concept', label: COPY.iconConcept },
-  { id: 'forge', label: COPY.iconForge },
-  { id: 'line', label: COPY.iconLine },
 ];
 
 const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
@@ -105,7 +94,6 @@ function MastermindInner() {
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [variant, setVariant] = useState<VariantId>('mosaic');
-  const [iconSet, setIconSet] = useState<IconSetId>(loadIconSet);
   const [mode, setMode] = useState<CanvasMode>('edit');
   // Durable layout hydrates once per session from the DB (async IPC). Until it
   // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
@@ -412,7 +400,6 @@ function MastermindInner() {
 
   return (
     <ImproveProvider value={improve}>
-    <IconSetProvider value={iconSet}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
       {/* Hold the canvas back until the durable layout doc has hydrated, so the
           variant's sync layout initializers read the persisted doc. */}
@@ -433,18 +420,9 @@ function MastermindInner() {
         <LoadingSpinner label={COPY.loadingLayout} />
       )}
 
-      {/* prototype-only switchers — canvas variant + dimension icon set */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5">
+      {/* prototype-only variant switcher */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
-        <SegmentedTabs
-          tabs={ICON_TABS}
-          activeTab={iconSet}
-          onTabChange={(id) => { setIconSet(id); saveIconSet(id); }}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel={COPY.iconSwitcher}
-        />
       </div>
 
       <ProjectListSidebar
@@ -514,7 +492,6 @@ function MastermindInner() {
         </div>
       )}
     </div>
-    </IconSetProvider>
     </ImproveProvider>
   );
 }
