@@ -18,7 +18,7 @@ vi.mock('@/api/fleet/fleet', () => ({
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
-import { FleetSessionInsights } from '../FleetSessionInsights';
+import { FleetSessionInsights, __resetInsightsCacheForTests } from '../FleetSessionInsights';
 
 const SUMMARY = {
   claudeSessionId: 'sess1',
@@ -37,7 +37,10 @@ const SUMMARY = {
 } as unknown as FleetTranscriptSummary;
 
 describe('FleetSessionInsights', () => {
-  beforeEach(() => vi.mocked(fleetApi.readTranscript).mockReset());
+  beforeEach(() => {
+    __resetInsightsCacheForTests();
+    vi.mocked(fleetApi.readTranscript).mockReset();
+  });
 
   it('fetches + renders the transcript rollup', async () => {
     vi.mocked(fleetApi.readTranscript).mockResolvedValue(SUMMARY);

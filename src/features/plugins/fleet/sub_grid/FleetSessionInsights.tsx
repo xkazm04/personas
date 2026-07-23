@@ -20,21 +20,42 @@ interface Props {
  * (the transcript outlives the PTY), so it doubles as a "what did this run do"
  * review surface.
  */
+/** Short-lived summary cache (optimizer pass): the panel remounts on every
+ *  session-focus change and every terminal↔insights toggle, and each mount
+ *  refetched the rollup — toggling back and forth re-read the same data
+ *  seconds apart. Manual refresh bypasses the cache. */
+const SUMMARY_CACHE = new Map<string, { summary: FleetTranscriptSummary; at: number }>();
+const SUMMARY_TTL_MS = 15_000;
+
+/** Test-only: the module-scope cache leaks between vitest cases otherwise. */
+export function __resetInsightsCacheForTests(): void {
+  SUMMARY_CACHE.clear();
+}
+
 export function FleetSessionInsights({ claudeSessionId }: Props) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
-  const [summary, setSummary] = useState<FleetTranscriptSummary | null>(null);
+  const [summary, setSummary] = useState<FleetTranscriptSummary | null>(
+    () => (claudeSessionId ? SUMMARY_CACHE.get(claudeSessionId)?.summary ?? null : null),
+  );
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!claudeSessionId) return;
+    const cached = SUMMARY_CACHE.get(claudeSessionId);
+    if (!force && cached && Date.now() - cached.at < SUMMARY_TTL_MS) {
+      setSummary(cached.summary);
+      setFailed(false);
+      return;
+    }
     setLoading(true);
     setFailed(false);
     try {
       // Prefer the incremental rollup (delta-only, scale-friendly); fall back
       // to a full transcript read if the rollup isn't available yet.
       const s = (await sessionMetadata(claudeSessionId)) ?? (await readTranscript(claudeSessionId));
+      SUMMARY_CACHE.set(claudeSessionId, { summary: s, at: Date.now() });
       setSummary(s);
     } catch (e) {
       setFailed(true);
@@ -65,7 +86,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       <div className="h-full flex flex-col items-center justify-center text-center p-6">
         <AlertCircle className="w-8 h-8 mb-2 text-amber-400" aria-hidden="true" />
         <p className="typo-caption text-foreground mb-3">{f.insights_error}</p>
-        <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={load}>
+        <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => load(true)}>
           {t.common.refresh}
         </Button>
       </div>
@@ -86,7 +107,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
           variant="ghost"
           size="icon-sm"
           className="ml-auto"
-          onClick={load}
+          onClick={() => load(true)}
           aria-label={t.common.refresh}
           title={t.common.refresh}
         >

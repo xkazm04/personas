@@ -8,7 +8,7 @@ import { FleetStatusDots } from './FleetStatusDots';
 import { FleetStateSparkline } from './FleetStateSparkline';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useNowTick, formatAgo } from './relativeAgo';
+import { formatAgo } from './relativeAgo';
 
 
 /**
@@ -40,23 +40,33 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const transitions = useSystemStore((s) => s.fleetTransitions[session.id]);
   const { t } = useTranslation();
-  const now = useNowTick();
 
   // State provenance — WHY the row shows this state, from the three signals
   // the backend derives state from (hooks, PTY output, transcript growth).
   // Rides the status-dot tooltip so diagnosing a mislabeled session no
   // longer needs PERSONAS_FLEET_DEBUG and a dev console.
+  //
+  // Computed LAZILY on pointer-enter (optimizer pass): the tooltip is the only
+  // consumer of a live "now", and ticking every card each 30s re-rendered the
+  // whole list to refresh text nobody was hovering. Pointer-enter always fires
+  // before the browser shows the tooltip, so it is never stale when seen.
   const f = t.plugins.fleet;
-  const sig = (ms: bigint | number) =>
-    Number(ms) > 0 ? formatAgo(t, Number(ms), now) : f.provenance_never;
-  const provenance = [
-    session.stateReason,
-    `${f.provenance_hook_activity} ${sig(session.lastActivityMs)}`,
-    `${f.provenance_console} ${sig(session.lastPtyOutputMs)}`,
-    `${f.provenance_transcript} ${sig(session.lastGrewMs)}`,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const [provenance, setProvenance] = useState('');
+  const refreshProvenance = useCallback(() => {
+    const now = Date.now();
+    const sig = (ms: bigint | number) =>
+      Number(ms) > 0 ? formatAgo(t, Number(ms), now) : f.provenance_never;
+    setProvenance(
+      [
+        session.stateReason,
+        `${f.provenance_hook_activity} ${sig(session.lastActivityMs)}`,
+        `${f.provenance_console} ${sig(session.lastPtyOutputMs)}`,
+        `${f.provenance_transcript} ${sig(session.lastGrewMs)}`,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    );
+  }, [session, t, f]);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -125,6 +135,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     <button
       type="button"
       onClick={handleOpen}
+      onPointerEnter={refreshProvenance}
       data-testid={`fleet-session-row-${session.id}`}
       data-active={isActive || undefined}
       className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-card border transition-colors text-left ${
