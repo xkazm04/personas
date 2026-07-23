@@ -2,9 +2,6 @@
 
 ## Active
 
-### passport-onboard-politicas — 2nd field run of /passport-onboard on fresh repo C:\Users\mkdol\dolla\politicas — session fable-5
-- Started: 2026-07-23. Status: started. Project registered in app as 674f1dd5 (politicas).
-- Paths: edits land in the politicas repo (own git); Personas side only this ledger + possible skill refinements.
 
 
 
@@ -1139,6 +1136,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### passport-onboard-politicas — 2nd field run of /passport-onboard COMPLETE (fresh repo, zero-start dimensions) — session fable-5
+- Started+completed 2026-07-23. Registered as dev project 674f1dd5; politicas master: 53cc2cc memory seed (5 decision entries + CLAUDE.md convention), c161388 real README + 4-entry doc-map, a61bcc8 platform (Vercel prep no-vercel.json-justified, lefthook CI ACTIVATED with hooks live, Sentry env-gated silent-no-op + lint-rule hook made real), 65b6e5c app-cost gitignore; app-cost.json composed ($0 baseline, Hlidac license flagged); app context scan completed → 24 contexts (none→FULL). At-target untouched: instructions/skills/tests; N/A: auth/evals/llm-tracking; Database SKIPPED by user (PGlite dep being wired by a concurrent data session on feat/data-layer-datahub — skip vindicated).
+- HAZARD CODIFIED into the skill: concurrent session SWITCHED the shared checkout's branch mid-run — builders must verify branch and commit to target via pinned worktree; extend foreign-owned files via target-branch worktree + minimal unstaged append (.gitignore case).
+- User follow-ups: connect repo in Vercel dashboard, set SENTRY vars for prod/preview, bind GitHub+Sentry connectors on the wall, confirm Hlidac license before budgeting.
 
 ### passport-onboard-skill — .claude/skills/passport-onboard authored + full live field-test on brainiac — session fable-5
 - Started+completed 2026-07-23. Personas commits: skill authored (SKILL.md + references/{dimensions,connectors}.md) + `28dfa65e4` field-test refinements. Brainiac run: 8 commits on its master (a467da0 CLAUDE.md standards, 6a096d6 doc-map 12 entries, e721a91 skills adopt code-review+simplify / REJECT kpi-sim+ship-loop with reasons, 936bfba ops hardening: DEPLOY.md + backup/restore scripts + break-glass playbook, 03e3eeb 19 wiremock provider+breaker tests, ce1b2ff Sentry(test+prod, BRAINIAC_ENV-gated) + vendored LightTrack client at QwenProvider::complete chokepoint (local+test, prod skipped), 21740ff divergence eval profile + Stage::Divergence routing, 59ec459 gitignored app-cost.json) + auto-memory refresh (7 index entries).
