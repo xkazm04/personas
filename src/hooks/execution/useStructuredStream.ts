@@ -13,6 +13,7 @@ import type {
   HeartbeatEvent,
   SubagentStartedEvent,
   SubagentUpdateEvent,
+  SubagentMessageEvent,
 } from '@/lib/types/terminalEvents';
 
 export interface StreamHandlers {
@@ -26,6 +27,7 @@ export interface StreamHandlers {
   onHeartbeat?: (event: HeartbeatEvent) => void;
   onSubagentStarted?: (event: SubagentStartedEvent) => void;
   onSubagentUpdate?: (event: SubagentUpdateEvent) => void;
+  onSubagentMessage?: (event: SubagentMessageEvent) => void;
 }
 
 /**
@@ -80,6 +82,9 @@ export function useStructuredStream(
           break;
         case 'subagent_update':
           h.onSubagentUpdate?.(payload);
+          break;
+        case 'subagent_message':
+          h.onSubagentMessage?.(payload);
           break;
       }
     });

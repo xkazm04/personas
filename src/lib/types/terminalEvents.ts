@@ -98,6 +98,20 @@ export interface SubagentUpdateEvent {
   duration_ms?: number;
 }
 
+/**
+ * Content produced BY a subagent, attributed to its parent Task call. Only
+ * arrives when the persona opted into `deep_fanout` (personas then passes
+ * `--forward-subagent-text`, CLI >= 2.1.211).
+ */
+export interface SubagentMessageEvent {
+  type: 'subagent_message';
+  execution_id: string;
+  /** tool_use_id of the parent Task call — matches SubagentStartedEvent.tool_use_id. */
+  parent_tool_use_id: string;
+  text: string;
+  tool_name?: string;
+}
+
 export type StructuredExecutionEvent =
   | TextEvent
   | ToolUseEvent
@@ -108,4 +122,5 @@ export type StructuredExecutionEvent =
   | FileChangeEvent
   | HeartbeatEvent
   | SubagentStartedEvent
-  | SubagentUpdateEvent;
+  | SubagentUpdateEvent
+  | SubagentMessageEvent;

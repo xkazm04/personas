@@ -13,6 +13,72 @@ fn truncate_field(text: &str, max_len: usize) -> String {
     }
 }
 
+/// P4 fan-out attribution key. Every `assistant`/`user` stream message carries a
+/// top-level `parent_tool_use_id`: `null` for the root agent, or the parent
+/// `Task` tool call's id for a subagent's own messages (see
+/// `engine/p4_fanout_DESIGN.md`). Returns `Some(id)` only for subagent messages.
+fn subagent_parent_id(value: &serde_json::Value) -> Option<String> {
+    value
+        .get("parent_tool_use_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+}
+
+/// Build a [`StreamLineType::SubagentMessage`] from a subagent-attributed
+/// message's content blocks. Text blocks are joined; a tool call contributes its
+/// name. The display string is indented to match the `task_started` /
+/// `task_notification` log lines so a fan-out reads as a nested block.
+fn subagent_message(
+    parent_tool_use_id: String,
+    content: Option<&Vec<serde_json::Value>>,
+) -> (StreamLineType, Option<String>) {
+    let mut text = String::new();
+    let mut tool_name: Option<String> = None;
+
+    for block in content.into_iter().flatten() {
+        match block.get("type").and_then(|t| t.as_str()).unwrap_or("") {
+            "text" => {
+                if let Some(t) = block.get("text").and_then(|t| t.as_str()) {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(t);
+                }
+            }
+            "tool_use" => {
+                if tool_name.is_none() {
+                    tool_name = block
+                        .get("name")
+                        .and_then(|n| n.as_str())
+                        .map(String::from);
+                }
+            }
+            "tool_result" => {
+                if tool_name.is_none() {
+                    tool_name = Some("tool_result".to_string());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let display = if !text.is_empty() {
+        Some(format!("  subagent: {}", truncate_field(&text, MAX_TOOL_RESULT_DISPLAY)))
+    } else {
+        tool_name.as_ref().map(|n| format!("  subagent using tool: {n}"))
+    };
+
+    (
+        StreamLineType::SubagentMessage {
+            parent_tool_use_id,
+            text,
+            tool_name,
+        },
+        display,
+    )
+}
+
 /// Parse a single stdout JSON line from Claude CLI stream-json format.
 ///
 /// Returns a tuple of (StreamLineType, Option<display_string>).
@@ -134,6 +200,14 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
         "assistant" => {
             let content = value.pointer("/message/content").and_then(|c| c.as_array());
 
+            // P4 attribution: a non-null top-level `parent_tool_use_id` means this
+            // message was produced by a SUBAGENT, not the root agent. Route it to
+            // `SubagentMessage` so it never masquerades as root-agent output in the
+            // legacy text channel / chat bubble. `null` (root agent) falls through.
+            if let Some(parent) = subagent_parent_id(&value) {
+                return subagent_message(parent, content);
+            }
+
             match content {
                 Some(blocks) => {
                     let mut first_type: Option<StreamLineType> = None;
@@ -234,6 +308,12 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
         "user" => {
             // Check for tool_result content
             let content = value.pointer("/message/content").and_then(|c| c.as_array());
+
+            // Same P4 attribution rule as the `assistant` arm: a subagent's
+            // tool_results are not the root agent's tool_results.
+            if let Some(parent) = subagent_parent_id(&value) {
+                return subagent_message(parent, content);
+            }
 
             if let Some(blocks) = content {
                 for block in blocks {
@@ -1317,6 +1397,57 @@ Finished."#;
         assert!(parse_usage_limit("rate limit exceeded").is_none());
         assert!(parse_usage_limit("Command not found").is_none());
         assert!(parse_usage_limit("").is_none());
+    }
+
+    #[test]
+    fn test_parent_tool_use_id_attributes_messages_to_subagents() {
+        // Root agent: `parent_tool_use_id` is null -> normal AssistantText.
+        let root = r#"{"type":"assistant","parent_tool_use_id":null,"message":{"content":[{"type":"text","text":"root says hi"}]}}"#;
+        match parse_stream_line(root).0 {
+            StreamLineType::AssistantText { text } => assert_eq!(text, "root says hi"),
+            other => panic!("expected AssistantText, got {other:?}"),
+        }
+
+        // Subagent text -> SubagentMessage, attributed to the parent Task call.
+        let sub = r#"{"type":"assistant","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"text","text":"ALPHA"}]}}"#;
+        let (line_type, display) = parse_stream_line(sub);
+        match line_type {
+            StreamLineType::SubagentMessage { parent_tool_use_id, text, tool_name } => {
+                assert_eq!(parent_tool_use_id, "toolu_01");
+                assert_eq!(text, "ALPHA");
+                assert_eq!(tool_name, None);
+            }
+            other => panic!("expected SubagentMessage, got {other:?}"),
+        }
+        // The display must carry the `  subagent` prefix — `classifyLine` keys off
+        // it to keep subagent chatter out of the chat bubble.
+        assert!(display.unwrap().starts_with("  subagent"));
+
+        // A subagent's tool call carries the name, not the root tool timeline.
+        let sub_tool = r#"{"type":"assistant","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"tool_use","name":"Grep","input":{}}]}}"#;
+        match parse_stream_line(sub_tool).0 {
+            StreamLineType::SubagentMessage { text, tool_name, .. } => {
+                assert!(text.is_empty());
+                assert_eq!(tool_name.as_deref(), Some("Grep"));
+            }
+            other => panic!("expected SubagentMessage, got {other:?}"),
+        }
+
+        // A subagent's tool_result must NOT surface as the root agent's ToolResult.
+        let sub_result = r#"{"type":"user","parent_tool_use_id":"toolu_01","message":{"content":[{"type":"tool_result","content":"42 matches"}]}}"#;
+        match parse_stream_line(sub_result).0 {
+            StreamLineType::SubagentMessage { parent_tool_use_id, .. } => {
+                assert_eq!(parent_tool_use_id, "toolu_01");
+            }
+            other => panic!("expected SubagentMessage, got {other:?}"),
+        }
+
+        // A root tool_result is unaffected.
+        let root_result = r#"{"type":"user","message":{"content":[{"type":"tool_result","content":"42 matches"}]}}"#;
+        assert!(matches!(
+            parse_stream_line(root_result).0,
+            StreamLineType::ToolResult { .. }
+        ));
     }
 
     #[test]

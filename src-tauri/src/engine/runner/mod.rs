@@ -2295,6 +2295,12 @@ pub async fn run_execution(
                                     total_tokens: *total_tokens,
                                     duration_ms: *duration_ms,
                                 }),
+                                StreamLineType::SubagentMessage { parent_tool_use_id, text, tool_name } => Some(StructuredExecutionEvent::SubagentMessage {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    parent_tool_use_id: parent_tool_use_id.clone(),
+                                    text: text.clone(),
+                                    tool_name: tool_name.clone(),
+                                }),
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {

@@ -7,6 +7,10 @@ export function classifyLine(line: string): TerminalLineStyle {
   if (line.startsWith('[System]')) return 'meta';
   if (line.startsWith('> Using tool:')) return 'tool';
   if (line.startsWith('  Tool result:')) return 'tool';
+  // P4 fan-out: every subagent-attributed line the runner emits is indented and
+  // prefixed with `subagent`. Classifying it as meta (not text) keeps subagent
+  // chatter out of the chat bubble, which filters this channel to `text` only.
+  if (line.startsWith('  subagent')) return 'meta';
   if (line.startsWith('> Analyzing') || line.startsWith('> Attempt') || line.startsWith('> Resuming') || line.startsWith('> Query succeeded') || line.startsWith('> Max retries')) return 'info';
   if (line.startsWith('> ') && !line.startsWith('> _')) return 'code';
   if (line.startsWith('Session started') || line.startsWith('Completed in') || line.startsWith('Cost: $') || line.startsWith('=== ')) return 'status';

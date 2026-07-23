@@ -1245,6 +1245,19 @@ async fn spawn_cli_and_collect_structured(
                         ts_ms_relative: ts_ms,
                     });
                 }
+                StreamLineType::SubagentMessage {
+                    text, tool_name, ..
+                } => {
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "subagent_message".to_string(),
+                        tool_name,
+                        tool_args_preview: None,
+                        tool_result_preview: None,
+                        text_preview: (!text.is_empty()).then_some(text),
+                        ts_ms_relative: ts_ms,
+                    });
+                }
                 StreamLineType::Unknown => {}
             }
         })

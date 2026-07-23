@@ -11,6 +11,8 @@ interface Agent {
   status: string;
   tokens?: number;
   ms?: number;
+  /** Latest content this subagent produced (needs `deep_fanout` — see below). */
+  last?: string;
 }
 
 /**
@@ -46,6 +48,22 @@ export function SubagentTree({ executionId }: { executionId: string }) {
         n.set(ev.task_id, { ...a, status: ev.status, tokens: ev.total_tokens, ms: ev.duration_ms });
         return n;
       }),
+    // Attributed content. `parent_tool_use_id` is the parent Task call, which is
+    // what `subagent_started` stored as `parent` — so a Task call that spawned
+    // several subagents shows its latest line on each of them.
+    onSubagentMessage: (ev) =>
+      setAgents((m) => {
+        const line = ev.text.trim() || (ev.tool_name ?? '');
+        if (!line) return m;
+        let changed = false;
+        const n = new Map(m);
+        for (const [id, a] of m) {
+          if (a.parent !== ev.parent_tool_use_id) continue;
+          n.set(id, { ...a, last: line });
+          changed = true;
+        }
+        return changed ? n : m;
+      }),
   });
 
   if (agents.size === 0) return null;
@@ -59,17 +77,21 @@ export function SubagentTree({ executionId }: { executionId: string }) {
       </div>
       <div className="space-y-1.5">
         {list.map((a, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between gap-3 rounded-input bg-secondary/40 px-2.5 py-1.5"
-          >
-            <span className="typo-body text-foreground truncate">
-              {a.desc || a.type}
-            </span>
-            <span className="typo-code text-foreground/90 shrink-0 font-mono">
-              {a.status}
-              {a.tokens != null ? <> · <Numeric value={a.tokens} /></> : ''}
-            </span>
+          <div key={i} className="rounded-input bg-secondary/40 px-2.5 py-1.5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="typo-body text-foreground truncate">
+                {a.desc || a.type}
+              </span>
+              <span className="typo-code text-foreground/90 shrink-0 font-mono">
+                {a.status}
+                {a.tokens != null ? <> · <Numeric value={a.tokens} /></> : ''}
+              </span>
+            </div>
+            {a.last ? (
+              <div className="typo-code text-foreground/90 font-mono mt-1 line-clamp-2 break-words">
+                {a.last}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

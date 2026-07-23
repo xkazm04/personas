@@ -137,6 +137,24 @@ pub enum StreamLineType {
         total_tokens: Option<u64>,
         duration_ms: Option<u64>,
     },
+    /// An `assistant`/`user` stream message that belongs to a **subagent**, not
+    /// the root agent — identified by a non-null top-level `parent_tool_use_id`
+    /// whose value is the parent `Task` tool call's id (P4 fan-out attribution;
+    /// see `engine/p4_fanout_DESIGN.md`).
+    ///
+    /// Without this variant these lines fall through the generic `assistant` /
+    /// `user` arms and are rendered as if the ROOT agent produced them, which
+    /// makes subagent chatter indistinguishable from the main thread in
+    /// `executionOutput` and the chat bubble. Routing them here keeps the legacy
+    /// text channel clean and lets the fan-out tree attribute the content.
+    ///
+    /// `text` is the joined text blocks (empty when the message only carried a
+    /// tool call); `tool_name` is set when the subagent invoked a tool.
+    SubagentMessage {
+        parent_tool_use_id: String,
+        text: String,
+        tool_name: Option<String>,
+    },
     Unknown,
 }
 
@@ -674,6 +692,16 @@ pub enum StructuredExecutionEvent {
         status: String,
         total_tokens: Option<u64>,
         duration_ms: Option<u64>,
+    },
+    /// Content produced BY a subagent, attributed to its parent `Task` call via
+    /// `parent_tool_use_id`. Only reaches the stream when the persona opted into
+    /// `deep_fanout` (personas passes `--forward-subagent-text`, CLI ≥ 2.1.211).
+    #[serde(rename = "subagent_message")]
+    SubagentMessage {
+        execution_id: String,
+        parent_tool_use_id: String,
+        text: String,
+        tool_name: Option<String>,
     },
     FileChange {
         execution_id: String,
