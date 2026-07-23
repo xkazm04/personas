@@ -18246,6 +18246,13 @@
     "tidy_tooltip": "Uspořádat mapu — seřadit projekty podle propojení",
     "undo_tidy": "Vrátit uspořádání",
     "zoom_in": "Přiblížit",
-    "zoom_out": "Oddálit"
+    "zoom_out": "Oddálit",
+    "attention_tooltip": "Relace čeká na váš vstup",
+    "data_health_title": "Některá data plátna se nepodařilo načíst",
+    "family_monitoring": "Monitorování",
+    "family_relations": "Vztahy",
+    "family_scans": "Skenování nápadů",
+    "island_state_errors": "Barva podle živých chyb monitorování",
+    "island_state_readiness": "Barva podle skóre připravenosti"
   }
 }

@@ -7,5 +7,12 @@
   "tidy_tooltip": "Rapikan peta — atur proyek berdasarkan koneksi",
   "undo_tidy": "Urungkan rapikan",
   "zoom_in": "Perbesar",
-  "zoom_out": "Perkecil"
+  "zoom_out": "Perkecil",
+  "attention_tooltip": "Sesi membutuhkan masukan Anda",
+  "data_health_title": "Sebagian data kanvas gagal dimuat",
+  "family_monitoring": "Pemantauan",
+  "family_relations": "Relasi",
+  "family_scans": "Pemindaian ide",
+  "island_state_errors": "Warna dari kesalahan pemantauan langsung",
+  "island_state_readiness": "Warna dari skor kesiapan"
 }

@@ -18246,6 +18246,13 @@
     "fit_all": "Fit all projects",
     "tidy": "Tidy map",
     "tidy_tooltip": "Tidy map — arrange projects by connection",
-    "undo_tidy": "Undo tidy"
+    "undo_tidy": "Undo tidy",
+    "island_state_readiness": "Colour from readiness scores",
+    "island_state_errors": "Colour from live monitoring errors",
+    "attention_tooltip": "A session needs your input",
+    "data_health_title": "Some canvas data failed to load",
+    "family_relations": "Relations",
+    "family_scans": "Idea scans",
+    "family_monitoring": "Monitoring"
   }
 }

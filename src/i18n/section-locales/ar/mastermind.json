@@ -7,5 +7,12 @@
   "tidy_tooltip": "ترتيب الخريطة — رتّب المشاريع حسب الصلة",
   "undo_tidy": "تراجع عن الترتيب",
   "zoom_in": "تكبير",
-  "zoom_out": "تصغير"
+  "zoom_out": "تصغير",
+  "attention_tooltip": "جلسة تحتاج إلى إدخالك",
+  "data_health_title": "تعذّر تحميل بعض بيانات اللوحة",
+  "family_monitoring": "المراقبة",
+  "family_relations": "العلاقات",
+  "family_scans": "فحوصات الأفكار",
+  "island_state_errors": "اللون مستمد من أخطاء المراقبة المباشرة",
+  "island_state_readiness": "اللون مستمد من درجات الجاهزية"
 }

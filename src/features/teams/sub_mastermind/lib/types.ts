@@ -63,6 +63,17 @@ export interface Island {
   /** Names of personas with an execution in progress for this project's team
    *  (page attaches them — same persona→team→project join the Monitor uses). */
   personasRunning: string[];
+  /** Live "needs you" marker — true when a fleet session on this project is
+   *  awaiting input or has gone stale (page attaches it from the resolved
+   *  fleet). Rendered at every zoom band on the counter-scaled banner. */
+  attention: boolean;
+  /** Live unresolved-issue count from the bound monitoring credential, or null
+   *  when no supported credential is bound (honestly unknown → readiness-only
+   *  colour). Surfaced in the Monitoring cell detail. */
+  monitorErrors: number | null;
+  /** What drove `state`: static readiness scores, or a live monitoring signal
+   *  (fresh errors / open issues). Named in the banner tooltip. */
+  stateSource: 'readiness' | 'errors';
 }
 
 export interface IslandEdge {

@@ -18246,6 +18246,13 @@
     "tidy_tooltip": "Ordenar mapa — organizar los proyectos por conexión",
     "undo_tidy": "Deshacer orden",
     "zoom_in": "Acercar",
-    "zoom_out": "Alejar"
+    "zoom_out": "Alejar",
+    "attention_tooltip": "Una sesión necesita tu intervención",
+    "data_health_title": "No se pudieron cargar algunos datos del lienzo",
+    "family_monitoring": "Monitoreo",
+    "family_relations": "Relaciones",
+    "family_scans": "Escaneos de ideas",
+    "island_state_errors": "Color según errores de monitoreo en vivo",
+    "island_state_readiness": "Color según puntuaciones de preparación"
   }
 }

@@ -13,6 +13,8 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
+import { listCredentials } from '@/api/vault/credentials';
+import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
@@ -26,7 +28,7 @@ import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -38,6 +40,7 @@ import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { IconSetProvider, loadIconSet, saveIconSet, type IconSetId } from './lib/iconSet';
@@ -95,9 +98,12 @@ function MastermindInner() {
   // idea scans, each fetched with ≤1 IPC and invalidated by event, not polled.
   const meta = useSceneStore((s) => s.meta);
   const scans = useSceneStore((s) => s.scans);
+  const sentry = useSceneStore((s) => s.sentry);
   const loadMeta = useSceneStore((s) => s.loadMeta);
   const loadScans = useSceneStore((s) => s.loadScans);
+  const loadSentry = useSceneStore((s) => s.loadSentry);
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
+  const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [iconSet, setIconSet] = useState<IconSetId>(loadIconSet);
   const [mode, setMode] = useState<CanvasMode>('edit');
@@ -151,6 +157,22 @@ function MastermindInner() {
     void loadMeta();
     void loadScans();
   }, [loadMeta, loadScans]);
+
+  // Vault credentials — needed to resolve each project's bound monitoring
+  // connector (Sentry) for live error counts. One fetch; refreshed with reload.
+  useEffect(() => {
+    let live = true;
+    listCredentials().then((c) => { if (live) setCredentials(c); }).catch(silentCatch('mastermind listCredentials'));
+    return () => { live = false; };
+  }, []);
+
+  // Live monitoring: fetch real error counts for projects with a bound,
+  // supported monitoring credential. Throttled in the store (no new polling) —
+  // re-runs when the project set or credentials change.
+  useEffect(() => {
+    if (projects.length === 0) return;
+    void loadSentry(projects, credentials);
+  }, [projects, credentials, loadSentry]);
 
   // One-time layout hydration: read the durable doc from the DB, then re-seed
   // the state that was initialized from the (empty) pre-hydration doc and drop
@@ -258,7 +280,7 @@ function MastermindInner() {
     return m;
   }, [scans]);
 
-  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt), [passports, meta, loading, kpiByProject, ideaScanAt]);
+  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry), [passports, meta, loading, kpiByProject, ideaScanAt, sentry]);
   // Saved positions + live fleet + per-dim Improve actionability overlay the
   // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
   // canvas cell is clickable exactly when its wall row would show a gear.
@@ -271,7 +293,11 @@ function MastermindInner() {
       const passport = passports.find((p) => p.identity.slug === i.slug);
       const raw = rawByProject.get(i.slug);
       const nodes = i.nodes.map((n) => ({ ...n, ...dimAction(n.key, passport, raw) }));
-      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes };
+      // Attention derives from the RESOLVED fleet (live for real projects, the
+      // demo fleet for demo islands) — a needs-you marker the banner shows at
+      // every zoom band.
+      const attention = computeAttention(fleet);
+      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
     }),
   }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject]);
 

@@ -18246,6 +18246,13 @@
     "tidy_tooltip": "맵 정리 — 연결 기준으로 프로젝트 배치",
     "undo_tidy": "정리 실행 취소",
     "zoom_in": "확대",
-    "zoom_out": "축소"
+    "zoom_out": "축소",
+    "attention_tooltip": "세션이 입력을 기다리고 있습니다",
+    "data_health_title": "일부 캔버스 데이터를 불러오지 못했습니다",
+    "family_monitoring": "모니터링",
+    "family_relations": "관계",
+    "family_scans": "아이디어 스캔",
+    "island_state_errors": "색상은 실시간 모니터링 오류 기준",
+    "island_state_readiness": "색상은 준비도 점수 기준"
   }
 }

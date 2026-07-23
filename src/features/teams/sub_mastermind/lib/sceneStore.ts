@@ -20,7 +20,11 @@ import {
   type CrossProjectMetadataMap,
 } from '@/api/devTools/devTools';
 import type { DevScan } from '@/lib/bindings/DevScan';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { silentCatch } from '@/lib/silentCatch';
+
+import { loadMonitoringSummaries, type MonitoringSummary } from './liveState';
 
 /** Per-family fetch lifecycle. `stale` = loaded once but a newer load failed,
  *  so the shown data is real but no longer guaranteed current. */
@@ -83,6 +87,10 @@ interface SceneStore {
   metaStatus: FamilyStatus;
   scans: Map<string, DevScan[]>;
   scansStatus: FamilyStatus;
+  /** Live monitoring rollup per project id — only projects with a bound,
+   *  supported monitoring credential appear. Absent key = honestly unknown. */
+  sentry: Map<string, MonitoringSummary>;
+  sentryStatus: FamilyStatus;
 
   /** Cross-project relations/similarity map (one IPC). */
   loadMeta: () => Promise<void>;
@@ -90,15 +98,27 @@ interface SceneStore {
   loadScans: () => Promise<void>;
   /** Re-fetch only one project's scan rows (scoped IPC) and merge them in. */
   invalidateScans: (projectId: string) => Promise<void>;
+  /** Fetch live monitoring stats for the given projects (bounded concurrency).
+   *  Throttled to MONITOR_MIN_INTERVAL unless `force`; retryFailed reuses the
+   *  last inputs. */
+  loadSentry: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
   /** Retry every family currently in a failed/stale state. */
   retryFailed: () => void;
 }
+
+/** Minimum gap between live-monitoring refreshes — sentry rides the scene
+ *  store's invalidation cycle but never hammers the remote API. */
+const MONITOR_MIN_INTERVAL = 60_000;
+let lastSentryAt = 0;
+let lastSentryInputs: { projects: readonly DevProject[]; credentials: readonly PersonaCredential[] } | null = null;
 
 export const useSceneStore = create<SceneStore>((set, get) => ({
   meta: null,
   metaStatus: 'idle',
   scans: new Map(),
   scansStatus: 'idle',
+  sentry: new Map(),
+  sentryStatus: 'idle',
 
   loadMeta: async () => {
     set({ metaStatus: 'loading' });
@@ -137,9 +157,27 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   },
 
+  loadSentry: async (projects, credentials, force = false) => {
+    const now = Date.now();
+    if (!force && now - lastSentryAt < MONITOR_MIN_INTERVAL && get().sentryStatus === 'loaded') return;
+    lastSentryAt = now;
+    lastSentryInputs = { projects, credentials };
+    set({ sentryStatus: 'loading' });
+    try {
+      const map = await loadMonitoringSummaries(projects, credentials);
+      set({ sentry: map, sentryStatus: 'loaded' });
+    } catch (err) {
+      silentCatch('mastermind sceneStore.loadSentry')(err);
+      set((s) => ({ sentryStatus: failStatus(s.sentryStatus) }));
+    }
+  },
+
   retryFailed: () => {
     const s = get();
     if (s.metaStatus === 'failed' || s.metaStatus === 'stale') void s.loadMeta();
     if (s.scansStatus === 'failed' || s.scansStatus === 'stale') void s.loadScans();
+    if ((s.sentryStatus === 'failed' || s.sentryStatus === 'stale') && lastSentryInputs) {
+      void s.loadSentry(lastSentryInputs.projects, lastSentryInputs.credentials, true);
+    }
   },
 }));

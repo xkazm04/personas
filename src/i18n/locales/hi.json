@@ -18246,6 +18246,13 @@
     "tidy_tooltip": "मानचित्र व्यवस्थित करें — प्रोजेक्ट को कनेक्शन के अनुसार व्यवस्थित करें",
     "undo_tidy": "व्यवस्थित करना पूर्ववत करें",
     "zoom_in": "ज़ूम इन",
-    "zoom_out": "ज़ूम आउट"
+    "zoom_out": "ज़ूम आउट",
+    "attention_tooltip": "एक सत्र को आपके इनपुट की आवश्यकता है",
+    "data_health_title": "कुछ कैनवास डेटा लोड नहीं हो सका",
+    "family_monitoring": "मॉनिटरिंग",
+    "family_relations": "संबंध",
+    "family_scans": "आइडिया स्कैन",
+    "island_state_errors": "रंग लाइव मॉनिटरिंग त्रुटियों से",
+    "island_state_readiness": "रंग तैयारी स्कोर से"
   }
 }

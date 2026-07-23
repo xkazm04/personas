@@ -7,5 +7,12 @@
   "tidy_tooltip": "マップを整理 — 関連ごとにプロジェクトを配置",
   "undo_tidy": "整理を元に戻す",
   "zoom_in": "拡大",
-  "zoom_out": "縮小"
+  "zoom_out": "縮小",
+  "attention_tooltip": "セッションが入力を待っています",
+  "data_health_title": "一部のキャンバスデータを読み込めませんでした",
+  "family_monitoring": "モニタリング",
+  "family_relations": "関連",
+  "family_scans": "アイデアスキャン",
+  "island_state_errors": "色はライブ監視エラーに基づきます",
+  "island_state_readiness": "色は準備状況スコアに基づきます"
 }

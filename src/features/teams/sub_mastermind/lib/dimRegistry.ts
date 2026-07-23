@@ -35,6 +35,10 @@ export interface DimDeriveExtras {
   kpi: KpiRollup | undefined;
   /** ISO timestamp of the last idea scan (null/undefined = never scanned). */
   lastScanAt: string | null | undefined;
+  /** Live unresolved-issue count from the bound monitoring credential.
+   *  `undefined` = no supported credential bound (readiness-only); a number
+   *  (incl. 0) = a live reading the Monitoring cell should surface. */
+  monitorErrors?: number | null;
 }
 
 /** The dynamic fields a dimension computes from a passport. */
@@ -113,10 +117,21 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   monitoring: {
     label: 'Monitoring', category: 'runtime', icon: Activity, forge: FORGE_GLYPH.monitoring,
     rowKey: 'observability', action: 'deploy', payloadKind: 'icon',
-    derive: (p) => {
+    derive: (p, { monitorErrors }) => {
       const monTools = [p.stack.monitoring.errorTracking, p.stack.monitoring.logs, p.stack.monitoring.metrics, p.stack.monitoring.tracing]
         .filter((x): x is string => Boolean(x));
       const obs = ord(OBSERVABILITY_SCALE, p.productionReadiness.observability.level);
+      // Live error count from a bound monitoring credential takes over the cell:
+      // open issues flip it to alert and name the count next to the tool. When
+      // no credential is bound (monitorErrors == null/undefined) the cell keeps
+      // its static observability-wiring derivation (honest fallback).
+      if (monitorErrors != null && monitorErrors > 0) {
+        return {
+          status: 'alert',
+          detail: `${monTools[0] ?? 'Sentry'} · ${monitorErrors}`,
+          reached: obs.reached, steps: obs.steps,
+        };
+      }
       return {
         status: monTools.length === 0 && obs.reached === 0 ? 'absent' : obs.pos >= 0.5 ? 'solid' : 'partial',
         detail: monTools[0] ?? null,

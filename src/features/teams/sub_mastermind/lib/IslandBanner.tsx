@@ -2,7 +2,9 @@
 // but counter-scaled by 1/z, so it keeps a constant SCREEN size at every zoom
 // (the Civilization city-label pattern). Round 3: the title grows as the
 // camera pulls back (far > mid > near) so distant identity reads instantly.
-import { mix, SERIF, STATE_INK } from './ink';
+import { useTranslation } from '@/i18n/useTranslation';
+
+import { FLEET_INK, mix, SERIF, STATE_INK } from './ink';
 import type { Island, ZoomBand } from './types';
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -23,6 +25,7 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
   /** Right-click on the header — opens the dimension context menu. */
   onContextMenu?: (e: React.MouseEvent<SVGGElement>) => void;
 }) {
+  const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const name = trunc(island.name, 26);
   const hasFlag = island.blockers > 0;
@@ -31,6 +34,10 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
   const metaW = (hasFlag ? 24 : 0) + 44;
   const w = Math.min(430, Math.max(150, name.length * fs * 0.58 + metaW + 62));
   const k = 1 / z;
+  // Names the source of the island's colour (static readiness vs a live
+  // monitoring signal), plus the attention state — a lightweight native tooltip.
+  const stateLabel = island.stateSource === 'errors' ? t.mastermind.island_state_errors : t.mastermind.island_state_readiness;
+  const title = island.attention ? `${stateLabel} · ${t.mastermind.attention_tooltip}` : stateLabel;
   return (
     <g transform={`translate(0 ${topWorldY}) scale(${k})`} pointerEvents={handleProps || onContextMenu ? undefined : 'none'}>
       <g
@@ -40,11 +47,21 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
         onContextMenu={onContextMenu}
         data-testid={`mm-header-${island.slug}`}
       >
+        <title>{title}</title>
         <rect
           x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2}
           fill={mix('var(--background)', 86)}
           stroke={mix(ink, 55)} strokeWidth={1.25}
         />
+        {/* Attention ring around the identity dot — a static "needs you"
+            marker (no idle animation). Constant screen size at every zoom. */}
+        {island.attention && (
+          <circle
+            cx={-w / 2 + h / 2} r={fs * 0.58}
+            fill="none" stroke={FLEET_INK.awaiting_input} strokeWidth={2}
+            data-testid={`mm-attention-${island.slug}`}
+          />
+        )}
         <circle cx={-w / 2 + h / 2} r={fs * 0.33} fill={ink} />
         <text x={-w / 2 + h / 2 + 12} y={fs * 0.36} fontSize={fs} fontWeight={600} fontFamily={SERIF} fill="var(--foreground)" letterSpacing="0.01em">
           {name}

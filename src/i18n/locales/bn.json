@@ -18246,6 +18246,13 @@
     "tidy_tooltip": "মানচিত্র গুছিয়ে নিন — সংযোগ অনুসারে প্রকল্প সাজান",
     "undo_tidy": "গোছানো পূর্বাবস্থায় ফেরান",
     "zoom_in": "জুম ইন",
-    "zoom_out": "জুম আউট"
+    "zoom_out": "জুম আউট",
+    "attention_tooltip": "একটি সেশনের আপনার ইনপুট প্রয়োজন",
+    "data_health_title": "ক্যানভাসের কিছু ডেটা লোড করা যায়নি",
+    "family_monitoring": "মনিটরিং",
+    "family_relations": "সম্পর্ক",
+    "family_scans": "আইডিয়া স্ক্যান",
+    "island_state_errors": "লাইভ মনিটরিং ত্রুটি থেকে রঙ",
+    "island_state_readiness": "প্রস্তুতির স্কোর থেকে রঙ"
   }
 }

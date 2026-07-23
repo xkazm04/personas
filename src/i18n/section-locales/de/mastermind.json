@@ -7,5 +7,12 @@
   "tidy_tooltip": "Karte aufräumen — Projekte nach Verbindung anordnen",
   "undo_tidy": "Aufräumen rückgängig",
   "zoom_in": "Vergrößern",
-  "zoom_out": "Verkleinern"
+  "zoom_out": "Verkleinern",
+  "attention_tooltip": "Eine Sitzung benötigt Ihre Eingabe",
+  "data_health_title": "Einige Canvas-Daten konnten nicht geladen werden",
+  "family_monitoring": "Überwachung",
+  "family_relations": "Beziehungen",
+  "family_scans": "Ideen-Scans",
+  "island_state_errors": "Farbe aus Live-Überwachungsfehlern",
+  "island_state_readiness": "Farbe aus Reifegrad-Werten"
 }

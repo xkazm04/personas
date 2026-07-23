@@ -18253,5 +18253,12 @@ export type Translations = {
     tidy: string;
     tidy_tooltip: string;
     undo_tidy: string;
+    island_state_readiness: string;
+    island_state_errors: string;
+    attention_tooltip: string;
+    data_health_title: string;
+    family_relations: string;
+    family_scans: string;
+    family_monitoring: string;
   };
 };

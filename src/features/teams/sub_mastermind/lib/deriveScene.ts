@@ -9,6 +9,7 @@ import {
 
 import { DIM_ORDER, DIM_REGISTRY, type KpiRollup } from './dimRegistry';
 import { spiralPlace } from './hex';
+import { combineIslandState, type MonitoringSummary } from './liveState';
 import type { DimNode, DimStatus, FleetNode, Island, IslandEdge, IslandState, Scene } from './types';
 
 // KpiRollup's home is the registry (its Ideas/KPI derive functions consume it);
@@ -17,15 +18,16 @@ export type { KpiRollup } from './dimRegistry';
 
 /** All dimension nodes for a project, in registry order — each dimension's
  *  status/detail/progress comes from its own registry `derive()`. */
-function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined): DimNode[] {
+function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitorErrors: number | null | undefined): DimNode[] {
   return DIM_ORDER.map((key) => {
     const entry = DIM_REGISTRY[key];
-    const d = entry.derive(p, { kpi, lastScanAt });
+    const d = entry.derive(p, { kpi, lastScanAt, monitorErrors });
     return { key, label: entry.label, status: d.status, detail: d.detail, reached: d.reached, steps: d.steps, days: d.days ?? null };
   });
 }
 
-function islandState(p: AppPassport): IslandState {
+/** Static readiness state — the worst of the two readiness scores. */
+function readinessState(p: AppPassport): IslandState {
   const worst = Math.min(p.automationReadiness.score, p.productionReadiness.score);
   if (worst >= 78) return 'healthy';
   if (worst >= 55) return 'building';
@@ -33,22 +35,29 @@ function islandState(p: AppPassport): IslandState {
   return 'critical';
 }
 
-function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined): Island {
+function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined): Island {
   const pos = spiralPlace(i, p.identity.slug);
+  // Colour = static readiness combined with the live monitoring signal (fresh
+  // errors → critical, quiet-but-open issues → warning). Fleet "attention" is
+  // attached by the page from the resolved fleet (default false here).
+  const { state, source } = combineIslandState(readinessState(p), monitoring);
   return {
     slug: p.identity.slug,
     name: p.identity.name,
     purpose: p.identity.purpose,
     x: pos.x, y: pos.y,
-    state: islandState(p),
+    state,
+    stateSource: source,
+    monitorErrors: monitoring?.unresolvedIssues ?? null,
     autoScore: p.automationReadiness.score,
     prodScore: p.productionReadiness.score,
     lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
     automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
-    nodes: dimNodes(p, kpi, lastScanAt),
+    nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues),
     fleet: [],
     personasRunning: [],
+    attention: false,
   };
 }
 
@@ -80,9 +89,10 @@ export function deriveScene(
   loading: boolean,
   kpiByProject?: Map<string, KpiRollup>,
   ideaScanAt?: Map<string, string | null>,
+  monitoringByProject?: Map<string, MonitoringSummary | undefined>,
 ): Scene {
   if (passports.length > 0) {
-    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug)));
+    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug), monitoringByProject?.get(p.identity.slug)));
     return { islands, edges: deriveEdges(meta, new Set(islands.map((i) => i.slug))), demo: false };
   }
   if (loading) return { islands: [], edges: [], demo: false };
@@ -104,6 +114,11 @@ const mk = (slug: string, name: string, purpose: string, i: number, state: Islan
   nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: DIM_REGISTRY[key].label, status, detail, reached, steps, days: days ?? null })),
   fleet,
   personasRunning: DEMO_PERSONAS[slug] ?? [],
+  // Live fields: the page attaches `attention` from the resolved fleet (demo
+  // fleet included); colour stays readiness-derived in the demo scene.
+  attention: false,
+  monitorErrors: null,
+  stateSource: 'readiness',
 });
 
 function demoScene(): Scene {
