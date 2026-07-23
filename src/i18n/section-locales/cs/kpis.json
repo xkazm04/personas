@@ -214,6 +214,16 @@
   "sim_running": "Simulace běží — otevřít terminál",
   "sim_finished": "Simulace dokončena — otevřít terminál",
   "sim_rerun": "Spustit znovu",
+  "conv_gap_label": "Poslední rozdíl:",
+  "conv_sim_label": "simulace",
+  "conv_real_label": "reálné",
+  "conv_share_of_span": "{pct} % cílového rozpětí",
+  "conv_verdict_converging": "Sbíhá se",
+  "conv_verdict_diverging": "Rozbíhá se",
+  "conv_verdict_stable": "Stabilní",
+  "conv_verdict_insufficient": "Potřebuje více simulací",
+  "conv_stale_hint": "Produkční měření je o {days} d starší než simulace — potvrďte přes „Změřit teď“.",
+  "conv_no_prod": "Zatím žádné produkční měření — simulace se nemá k čemu přibližovat.",
   "sim_skipped_toast": "{count} řádků výsledků bylo zamítnuto validací — viz zpráva o běhu",
   "trend_sim_suffix": "simulováno"
 }

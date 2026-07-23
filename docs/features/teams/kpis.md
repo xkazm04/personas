@@ -169,10 +169,19 @@ the **KPI simulation** — a long Dev-runner operation
 The dashboard's **Environment switcher** flips the Trend chart between
 channels; simulated series render dashed with a "· simulated" legend suffix
 and a standing caption naming the honesty rule. The detail drawer chips every
-non-production measurement (env + "Simulated · LLM engine"); the story chart
-stays production-only. Results are auto-ingested when the session exits
-(`dev_tools_kpi_sim_ingest` — validates evidence, refuses production-claiming
-sims, caps proposals) with a manual **Import results** fallback.
+non-production measurement (env + "Simulated · LLM engine"). Results are
+auto-ingested when the session settles (`dev_tools_kpi_sim_ingest` — validates
+evidence, refuses production-claiming sims, caps + name-dedupes proposals)
+with a manual **Import results** fallback.
+
+The detail modal's story chart carries the **convergence view** (P3): the
+production channel stays the solid truth line, the sim channel overlays dashed
+(hollow dots), and a readout names the latest gap in KPI units and as a share
+of the target span, with a verdict across successive sim runs
+(converging / diverging / stable / needs-more-runs, `kpiConvergence.ts`). A
+production reading older than the sim is flagged stale with a "use Measure now
+to confirm" nudge rather than treated as current truth — the sim may simply be
+fresher.
 
 ## Athena can manage KPIs
 

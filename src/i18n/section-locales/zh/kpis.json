@@ -214,6 +214,16 @@
   "sim_running": "模拟运行中 — 打开终端",
   "sim_finished": "模拟已完成 — 打开终端",
   "sim_rerun": "重新运行",
+  "conv_gap_label": "最新差距：",
+  "conv_sim_label": "模拟",
+  "conv_real_label": "实际",
+  "conv_share_of_span": "目标区间的 {pct}%",
+  "conv_verdict_converging": "正在收敛",
+  "conv_verdict_diverging": "正在发散",
+  "conv_verdict_stable": "稳定",
+  "conv_verdict_insufficient": "需要更多模拟运行",
+  "conv_stale_hint": "生产环境读数比模拟旧 {days} 天 — 请使用「立即测量」确认。",
+  "conv_no_prod": "尚无生产环境测量 — 模拟没有可收敛的实际数据。",
   "sim_skipped_toast": "{count} 行结果被验证拒绝 — 详见运行报告",
   "trend_sim_suffix": "模拟"
 }

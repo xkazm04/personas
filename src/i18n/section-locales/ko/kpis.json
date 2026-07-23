@@ -214,6 +214,16 @@
   "sim_running": "시뮬레이션 실행 중 — 터미널 열기",
   "sim_finished": "시뮬레이션 완료 — 터미널 열기",
   "sim_rerun": "다시 실행",
+  "conv_gap_label": "최근 격차:",
+  "conv_sim_label": "시뮬레이션",
+  "conv_real_label": "실측",
+  "conv_share_of_span": "목표 범위의 {pct}%",
+  "conv_verdict_converging": "수렴 중",
+  "conv_verdict_diverging": "발산 중",
+  "conv_verdict_stable": "안정",
+  "conv_verdict_insufficient": "시뮬레이션 실행 더 필요",
+  "conv_stale_hint": "프로덕션 측정값이 시뮬레이션보다 {days}일 오래되었습니다 — «지금 측정»으로 확인하세요.",
+  "conv_no_prod": "아직 프로덕션 측정값이 없습니다 — 시뮬레이션이 수렴할 실측 데이터가 없습니다.",
   "sim_skipped_toast": "결과 행 {count}개가 유효성 검사에서 거부되었습니다 — 실행 보고서를 확인하세요",
   "trend_sim_suffix": "시뮬레이션됨"
 }
