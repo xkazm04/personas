@@ -5,6 +5,7 @@
 
 
 
+
 ### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
 - Started: 2026-07-23. Status: code complete, gates running (vitest 2401 green, i18n strict clean, cargo check clean; ts-rs regen via CARGO_TARGET_DIR=target-bindings — main target/debug has the exe lock + STATUS_ENTRYPOINT_NOT_FOUND test issue). Live verify + L1/L2 comparison runs next.
 - Paths: src-tauri/src/db/migrations/incremental.rs (env column + source CHECK widen on dev_kpi_measurements), src-tauri/src/commands/infrastructure/kpi_sim.rs (NEW: prepare/ingest), src-tauri/src/lib.rs (registration), src-tauri/src/engine/kpi_eval.rs (sim write path, no roll-forward), src/lib/bindings/DevKpiMeasurement.ts (regen), src/api/** (kpi sim api), src/features/teams/sub_kpis/{KPIDashboard,KpiDetailModal,useKpiDetail,kpiSim*} (env switcher, dashed sim series, LLM-engine provenance, Simulate dispatch + import), .claude/skills/kpi-sim/ (NEW skill), docs/plans/kpi-simulation-skill.md (decision updates).
@@ -1136,6 +1137,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### passport-onboard-personas — 3rd field run of /passport-onboard COMPLETE (Personas repo itself, completion-checklist mode) — session fable-5
+- Started+completed 2026-07-23. 10/14 dimensions already ✓ at target (assessed by 3 parallel Opus readers); 4 improved on master: 218adf076 freshness (CLAUDE.md real counts 2,400+ tests / ~17k i18n keys; 5 relocated doc-map targets repaired, 0 dangling), 6433b6610 golden evals (5 suites + fixtures over prompt builders/sanitizers, 69/69 green, zero live LLM calls), 2f8dd27d0 per-call LLM usage table (Calls subtab on Overview→Activity, reuses list_all_executions + existing i18n keys ONLY, live-verified via harness: window filter 24h→0 / All→50 of 3116), 18bed9943 app-cost gitignore (+app-cost.json composed, personal).
+- CONNECTOR BINDING DOCTRINE shipped first (d2e36af14 skill update): Vault is source of truth, .env is runtime-only; bindings executed via IPC — personas 07fe9de7 + politicas 674f1dd5 + brainiac (NEWLY REGISTERED cbe16611, app scan → 25 contexts) all now mon✓(Sentry 0c99120d)+pr✓(GitHub aab5e74b). llm slot unbound everywhere — awaits a tracklight credential in Vault (LightTrack prod undeployed; user chose in-app view for Personas itself).
+- User choices honored: Database schema_version ledger SKIPPED (kpi-sim session hot on incremental.rs), LightTrack chokepoint declined in favor of local-first in-app view.
 
 ### passport-onboard-politicas — 2nd field run of /passport-onboard COMPLETE (fresh repo, zero-start dimensions) — session fable-5
 - Started+completed 2026-07-23. Registered as dev project 674f1dd5; politicas master: 53cc2cc memory seed (5 decision entries + CLAUDE.md convention), c161388 real README + 4-entry doc-map, a61bcc8 platform (Vercel prep no-vercel.json-justified, lefthook CI ACTIVATED with hooks live, Sentry env-gated silent-no-op + lint-rule hook made real), 65b6e5c app-cost gitignore; app-cost.json composed ($0 baseline, Hlidac license flagged); app context scan completed → 24 contexts (none→FULL). At-target untouched: instructions/skills/tests; N/A: auth/evals/llm-tracking; Database SKIPPED by user (PGlite dep being wired by a concurrent data session on feat/data-layer-datahub — skip vindicated).
