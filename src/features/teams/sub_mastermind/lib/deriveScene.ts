@@ -9,7 +9,9 @@ import {
 
 import { DIM_ORDER, DIM_REGISTRY, type KpiRollup } from './dimRegistry';
 import { spiralPlace } from './hex';
+import { buildIslandStats } from './islandStats';
 import { combineIslandState, type MonitoringSummary } from './liveState';
+import { mockStats } from './statsMock';
 import type { DimNode, DimStatus, FleetNode, Island, IslandEdge, IslandState, Scene } from './types';
 
 // KpiRollup's home is the registry (its Ideas/KPI derive functions consume it);
@@ -23,12 +25,13 @@ export type { KpiRollup } from './dimRegistry';
 export interface FamilyHealth {
   scansUnknown?: boolean;
   kpiUnknown?: boolean;
+  goalsUnknown?: boolean;
 }
 
-function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitorErrors: number | null | undefined, families: FamilyHealth): DimNode[] {
+function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitorErrors: number | null | undefined, goalsOngoing: number | undefined, families: FamilyHealth): DimNode[] {
   return DIM_ORDER.map((key) => {
     const entry = DIM_REGISTRY[key];
-    const d = entry.derive(p, { kpi, lastScanAt, monitorErrors, scansUnknown: families.scansUnknown, kpiUnknown: families.kpiUnknown });
+    const d = entry.derive(p, { kpi, lastScanAt, monitorErrors, goalsOngoing, scansUnknown: families.scansUnknown, kpiUnknown: families.kpiUnknown, goalsUnknown: families.goalsUnknown });
     return { key, label: entry.label, status: d.status, detail: d.detail, reached: d.reached, steps: d.steps, days: d.days ?? null };
   });
 }
@@ -42,7 +45,7 @@ function readinessState(p: AppPassport): IslandState {
   return 'critical';
 }
 
-function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined, families: FamilyHealth): Island {
+function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined, monitoring: MonitoringSummary | undefined, llmSpend: number | null | undefined, goalsOngoing: number | undefined, families: FamilyHealth): Island {
   const pos = spiralPlace(i, p.identity.slug);
   // Colour = static readiness combined with the live monitoring signal (fresh
   // errors → critical, quiet-but-open issues → warning). Fleet "attention" is
@@ -61,10 +64,11 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastSca
     lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
     automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
-    nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues, families),
+    nodes: dimNodes(p, kpi, lastScanAt, monitoring?.unresolvedIssues, goalsOngoing, families),
     fleet: [],
     personasRunning: [],
     attention: false,
+    stats: buildIslandStats(p, { kpi, monitoring, llmSpend }),
   };
 }
 
@@ -98,9 +102,19 @@ export function deriveScene(
   ideaScanAt?: Map<string, string | null>,
   monitoringByProject?: Map<string, MonitoringSummary | undefined>,
   families: FamilyHealth = {},
+  llmSpendByProject?: Map<string, number | null>,
+  goalsOngoingByProject?: Map<string, number>,
 ): Scene {
   if (passports.length > 0) {
-    const islands = passports.map((p, i) => toIsland(p, i, kpiByProject?.get(p.identity.slug), ideaScanAt?.get(p.identity.slug), monitoringByProject?.get(p.identity.slug), families));
+    const islands = passports.map((p, i) => toIsland(
+      p, i,
+      kpiByProject?.get(p.identity.slug),
+      ideaScanAt?.get(p.identity.slug),
+      monitoringByProject?.get(p.identity.slug),
+      llmSpendByProject?.get(p.identity.slug),
+      goalsOngoingByProject?.get(p.identity.slug),
+      families,
+    ));
     return { islands, edges: deriveEdges(meta, new Set(islands.map((i) => i.slug))), demo: false };
   }
   if (loading) return { islands: [], edges: [], demo: false };
@@ -127,6 +141,7 @@ const mk = (slug: string, name: string, purpose: string, i: number, state: Islan
   attention: false,
   monitorErrors: null,
   stateSource: 'readiness',
+  stats: mockStats(slug),
 });
 
 function demoScene(): Scene {
@@ -135,36 +150,36 @@ function demoScene(): Scene {
       ['db', 'solid', 'SQLite', 0, 0], ['monitoring', 'solid', 'Sentry', 3, 4], ['ci', 'solid', 'GitHub Actions', 3, 5],
       ['tests', 'solid', '81% cov', 4, 4], ['security', 'partial', null, 1, 4], ['hosting', 'solid', 'Installer', 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'solid', 'Integrated', 3, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'alert', '2 off-track', 0, 0], ['ideas', 'solid', '2d ago', 0, 0, 2]],
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'alert', '2 off-track', 0, 0], ['ideas', 'solid', '2d ago', 0, 0, 2], ['goals', 'partial', '3 active', 0, 0, 3]],
       [{ id: 'demo-f1', label: 'ui-scan', state: 'running' }, { id: 'demo-f2', label: 'i18n-sweep', state: 'awaiting_input' }, { id: 'demo-f6', label: 'doc-sync', state: 'running' }, { id: 'demo-f7', label: 'bench', state: 'idle' }]),
     mk('demo-web', 'Atlas Web', 'Marketing site + mobile dashboard', 1, 'building', 66, 58, 'Beta', 'Augmented', 2, [
       ['db', 'solid', 'Postgres', 0, 0], ['monitoring', 'partial', 'Vercel logs', 1, 4], ['ci', 'solid', 'Vercel', 4, 5],
       ['tests', 'risk', 'smoke', 1, 4], ['security', 'absent', null, 0, 4], ['hosting', 'solid', 'Vercel', 0, 0],
       ['auth', 'solid', 'Clerk', 0, 0], ['agents', 'partial', 'Augmented', 2, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '4 on track', 0, 0], ['ideas', 'risk', '12d ago', 0, 0, 12]],
+      ['skills', 'absent', null, 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '4 on track', 0, 0], ['ideas', 'risk', '12d ago', 0, 0, 12], ['goals', 'partial', '2 active', 0, 0, 2]],
       [{ id: 'demo-f3', label: 'seo-pass', state: 'idle' }]),
     mk('demo-sonar', 'ChainSonar', 'On-chain anomaly scanner', 2, 'warning', 48, 39, 'Alpha', 'Assisted', 4, [
       ['db', 'partial', 'Mongo', 0, 0], ['monitoring', 'absent', null, 0, 4], ['ci', 'partial', null, 1, 5],
       ['tests', 'absent', null, 0, 4], ['security', 'absent', null, 0, 4], ['hosting', 'solid', 'Fly.io', 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'risk', 'Assisted', 1, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'alert', '45d ago', 0, 0, 45]],
+      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'alert', '45d ago', 0, 0, 45], ['goals', 'partial', '1 active', 0, 0, 1]],
       [{ id: 'demo-f4', label: 'bugfix', state: 'stale' }]),
     mk('demo-codex', 'Codex Companion', 'Personal memory companion', 3, 'critical', 31, 24, 'Prototype', 'Manual', 6, [
       ['db', 'absent', null, 0, 0], ['monitoring', 'absent', null, 0, 4], ['ci', 'absent', null, 0, 5],
       ['tests', 'absent', null, 0, 4], ['security', 'absent', null, 0, 4], ['hosting', 'absent', null, 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'risk', 'Manual', 0, 4],
-      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'absent', null, 0, 0]]),
+      ['skills', 'absent', null, 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'absent', null, 0, 0], ['ideas', 'absent', null, 0, 0], ['goals', 'absent', null, 0, 0]]),
     mk('demo-vibe', 'Vibeman', 'Context-map generator for repos', 4, 'building', 72, 61, 'Beta', 'Integrated', 1, [
       ['db', 'solid', 'SQLite', 0, 0], ['monitoring', 'partial', 'logs', 1, 4], ['ci', 'solid', 'GitHub Actions', 2, 5],
       ['tests', 'partial', '54% cov', 2, 4], ['security', 'partial', null, 1, 4], ['hosting', 'absent', null, 0, 0],
       ['auth', 'absent', null, 0, 0], ['agents', 'solid', 'Integrated', 3, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'solid', '2 on track', 0, 0], ['ideas', 'solid', 'today', 0, 0, 0]],
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'absent', null, 0, 0], ['kpi', 'solid', '2 on track', 0, 0], ['ideas', 'solid', 'today', 0, 0, 0], ['goals', 'partial', '1 active', 0, 0, 1]],
       [{ id: 'demo-f5', label: 'kb-refresh', state: 'hibernated' }]),
     mk('demo-ascent', 'Ascent', 'AI-native onboarding grader', 5, 'healthy', 90, 79, 'GA', 'Autonomous', 0, [
       ['db', 'solid', 'Postgres', 0, 0], ['monitoring', 'solid', 'Datadog', 4, 4], ['ci', 'solid', 'CircleCI', 4, 5],
       ['tests', 'solid', '88% cov', 3, 4], ['security', 'solid', 'Snyk', 2, 4], ['hosting', 'solid', 'AWS', 0, 0],
       ['auth', 'solid', 'Auth.js', 0, 0], ['agents', 'solid', 'Autonomous', 4, 4],
-      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '6 on track', 0, 0], ['ideas', 'risk', '9d ago', 0, 0, 9]]),
+      ['skills', 'solid', 'installed', 0, 0], ['llm', 'solid', 'connected', 0, 0], ['kpi', 'solid', '6 on track', 0, 0], ['ideas', 'risk', '9d ago', 0, 0, 9], ['goals', 'partial', '4 active', 0, 0, 4]]),
   ];
   const edges: IslandEdge[] = [
     { from: 'demo-desktop', to: 'demo-web', kind: 'relation', strength: 1, label: 'shares API' },

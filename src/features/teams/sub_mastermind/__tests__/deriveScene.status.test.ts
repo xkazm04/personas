@@ -104,12 +104,12 @@ describe('deriveScene — KPI rollup states', () => {
 });
 
 describe('deriveScene — scene shape', () => {
-  it('every island carries all 12 dimensions', () => {
+  it('every island carries all 13 dimensions', () => {
     const scene = deriveScene([makePassport({ slug: 'a' })], null, false);
     const keys = scene.islands[0].nodes.map((n) => n.key);
-    expect(keys).toHaveLength(12);
+    expect(keys).toHaveLength(13);
     expect(new Set(keys)).toEqual(
-      new Set<DimKey>(['db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents', 'skills', 'llm', 'kpi', 'ideas']),
+      new Set<DimKey>(['db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents', 'skills', 'llm', 'kpi', 'ideas', 'goals']),
     );
   });
 
@@ -118,8 +118,8 @@ describe('deriveScene — scene shape', () => {
     const demo = deriveScene([], null, false);
     expect(demo.demo).toBe(true);
     expect(demo.islands.length).toBeGreaterThan(0);
-    // Demo islands also carry the full 12-dim shape.
-    for (const isl of demo.islands) expect(isl.nodes).toHaveLength(12);
+    // Demo islands also carry the full 13-dim shape.
+    for (const isl of demo.islands) expect(isl.nodes).toHaveLength(13);
   });
 
   it('empty + loading → blank scene (no demo flash)', () => {

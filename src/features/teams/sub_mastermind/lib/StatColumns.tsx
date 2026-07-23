@@ -3,24 +3,24 @@
 // the number (space-efficient far-zoom design that blends with the map).
 // Text carries a background halo (paintOrder stroke) so values stay legible
 // on the open sea; counter-scaled, so sizing holds at every zoom.
-import { AlertTriangle, Bot, CircleDollarSign, FlaskConical, Gauge, HeartPulse, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Bot, CircleDollarSign, FlaskConical, Gauge, Rocket, type LucideIcon } from 'lucide-react';
 
 import { mix, SERIF } from './ink';
-import { STAT_TONE_INK, type MockStat } from './statsMock';
+import { STAT_TONE_INK, type IslandStat } from './islandStats';
 
 const STAT_ICON: Record<string, LucideIcon> = {
   kpi: Gauge,
   errors: AlertTriangle,
-  uptime: HeartPulse,
-  coverage: FlaskConical,
-  autonomy: Bot,
-  budget: CircleDollarSign,
+  llm: CircleDollarSign,
+  tests: FlaskConical,
+  auto: Bot,
+  prod: Rocket,
 };
 
 const ROW_H = 32;
 
 export function StatColumns({ stats, z, leftX, rightX }: {
-  stats: MockStat[];
+  stats: IslandStat[];
   z: number;
   /** World-space X of the island's left/right visual edges. */
   leftX: number;
@@ -34,7 +34,7 @@ export function StatColumns({ stats, z, leftX, rightX }: {
   );
 }
 
-function Col({ items, z, x, side }: { items: MockStat[]; z: number; x: number; side: 'left' | 'right' }) {
+function Col({ items, z, x, side }: { items: IslandStat[]; z: number; x: number; side: 'left' | 'right' }) {
   const h = items.length * ROW_H;
   const sign = side === 'left' ? -1 : 1;
   return (

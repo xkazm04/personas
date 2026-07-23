@@ -16,9 +16,10 @@
 import { create } from 'zustand';
 
 import {
-  getCrossProjectMetadata, listScans,
+  getCrossProjectMetadata, listAllGoals, listScans,
   type CrossProjectMetadataMap,
 } from '@/api/devTools/devTools';
+import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
@@ -32,7 +33,7 @@ export type FamilyStatus = 'idle' | 'loading' | 'loaded' | 'failed' | 'stale';
 
 /** The data families the scene store fetches. Fleet + KPI are tracked too (for
  *  the health banner) but their data lives in the system/factory stores. */
-export type SceneFamily = 'relations' | 'scans' | 'sentry';
+export type SceneFamily = 'relations' | 'scans' | 'sentry' | 'goals' | 'llmSpend';
 
 /** How many idea-scan rows to pull in the single batched list call. Generous
  *  enough to cover the most-recent scans of every project at realistic counts;
@@ -91,6 +92,12 @@ interface SceneStore {
    *  supported monitoring credential appear. Absent key = honestly unknown. */
   sentry: Map<string, MonitoringSummary>;
   sentryStatus: FamilyStatus;
+  /** All dev goals grouped by project id (one batched IPC). */
+  goals: Map<string, DevGoal[]>;
+  goalsStatus: FamilyStatus;
+  /** 30d LLM spend per project id — only wired projects appear (see llmSpend.ts). */
+  llmSpend: Map<string, number | null>;
+  llmSpendStatus: FamilyStatus;
 
   /** Cross-project relations/similarity map (one IPC). */
   loadMeta: () => Promise<void>;
@@ -102,6 +109,10 @@ interface SceneStore {
    *  Throttled to MONITOR_MIN_INTERVAL unless `force`; retryFailed reuses the
    *  last inputs. */
   loadSentry: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
+  /** All goals across all projects in one batched IPC, grouped by project. */
+  loadGoals: () => Promise<void>;
+  /** 30d LLM spend for every wired project (bounded concurrency, throttled). */
+  loadLlmSpend: (projects: readonly DevProject[], credentials: readonly PersonaCredential[], force?: boolean) => Promise<void>;
   /** Retry every family currently in a failed/stale state. */
   retryFailed: () => void;
 }
@@ -112,6 +123,11 @@ const MONITOR_MIN_INTERVAL = 60_000;
 let lastSentryAt = 0;
 let lastSentryInputs: { projects: readonly DevProject[]; credentials: readonly PersonaCredential[] } | null = null;
 
+/** LLM spend is a remote trace-API sum — refresh sparingly (5 min). */
+const LLM_SPEND_MIN_INTERVAL = 300_000;
+let lastLlmSpendAt = 0;
+let lastLlmSpendInputs: { projects: readonly DevProject[]; credentials: readonly PersonaCredential[] } | null = null;
+
 export const useSceneStore = create<SceneStore>((set, get) => ({
   meta: null,
   metaStatus: 'idle',
@@ -119,6 +135,10 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
   scansStatus: 'idle',
   sentry: new Map(),
   sentryStatus: 'idle',
+  goals: new Map(),
+  goalsStatus: 'idle',
+  llmSpend: new Map(),
+  llmSpendStatus: 'idle',
 
   loadMeta: async () => {
     set({ metaStatus: 'loading' });
@@ -172,12 +192,50 @@ export const useSceneStore = create<SceneStore>((set, get) => ({
     }
   },
 
+  loadGoals: async () => {
+    set({ goalsStatus: 'loading' });
+    try {
+      const rows = await listAllGoals();
+      const m = new Map<string, DevGoal[]>();
+      for (const g of rows) {
+        const list = m.get(g.project_id);
+        if (list) list.push(g);
+        else m.set(g.project_id, [g]);
+      }
+      set({ goals: m, goalsStatus: 'loaded' });
+    } catch (err) {
+      silentCatch('mastermind sceneStore.loadGoals')(err);
+      set((s) => ({ goalsStatus: failStatus(s.goalsStatus) }));
+    }
+  },
+
+  loadLlmSpend: async (projects, credentials, force = false) => {
+    const now = Date.now();
+    if (!force && now - lastLlmSpendAt < LLM_SPEND_MIN_INTERVAL && get().llmSpendStatus === 'loaded') return;
+    lastLlmSpendAt = now;
+    lastLlmSpendInputs = { projects, credentials };
+    set({ llmSpendStatus: 'loading' });
+    try {
+      // Late import keeps the tracing adapters out of the canvas's first chunk.
+      const { loadLlmSpendMap } = await import('./llmSpend');
+      const map = await loadLlmSpendMap(projects, credentials);
+      set({ llmSpend: map, llmSpendStatus: 'loaded' });
+    } catch (err) {
+      silentCatch('mastermind sceneStore.loadLlmSpend')(err);
+      set((s) => ({ llmSpendStatus: failStatus(s.llmSpendStatus) }));
+    }
+  },
+
   retryFailed: () => {
     const s = get();
     if (s.metaStatus === 'failed' || s.metaStatus === 'stale') void s.loadMeta();
     if (s.scansStatus === 'failed' || s.scansStatus === 'stale') void s.loadScans();
+    if (s.goalsStatus === 'failed' || s.goalsStatus === 'stale') void s.loadGoals();
     if ((s.sentryStatus === 'failed' || s.sentryStatus === 'stale') && lastSentryInputs) {
       void s.loadSentry(lastSentryInputs.projects, lastSentryInputs.credentials, true);
+    }
+    if ((s.llmSpendStatus === 'failed' || s.llmSpendStatus === 'stale') && lastLlmSpendInputs) {
+      void s.loadLlmSpend(lastLlmSpendInputs.projects, lastLlmSpendInputs.credentials, true);
     }
   },
 }));

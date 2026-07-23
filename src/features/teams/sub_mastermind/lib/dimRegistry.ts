@@ -15,7 +15,7 @@
 // This module owns no JSX literals, so it stays a plain `.ts`.
 import {
   Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, KeyRound,
-  Lightbulb, Server, ShieldCheck, Wand2, Workflow, type LucideIcon,
+  Lightbulb, Server, ShieldCheck, Target, Wand2, Workflow, type LucideIcon,
 } from 'lucide-react';
 
 import {
@@ -43,6 +43,11 @@ export interface DimDeriveExtras {
   /** True when the KPI/Factory family hard-failed to load — the KPI cell then
    *  renders `unknown` instead of a fake "absent". */
   kpiUnknown?: boolean;
+  /** Number of ongoing (not done) dev goals for this project. */
+  goalsOngoing?: number;
+  /** True when the goals family hard-failed to load — the Goals cell then
+   *  renders `unknown` instead of a fake "no goals". */
+  goalsUnknown?: boolean;
 }
 
 /** The dynamic fields a dimension computes from a passport. */
@@ -51,7 +56,9 @@ export interface DimDerived {
   detail: string | null;
   reached: number;
   steps: number;
-  /** Ideas-style numeric payload — whole days since a timestamp (null = n/a). */
+  /** Numeric far/mid payload: whole days for `payloadKind: 'days'` (Ideas'
+   *  freshness) or a plain count for `payloadKind: 'count'` (Goals). Null =
+   *  no payload → the cell falls back to its fullscale glyph. */
   days?: number | null;
 }
 
@@ -60,12 +67,14 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
- *  popover, ideas = the idea-scan dispatch popover, null = never actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | null;
+ *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
+ *  list popover, null = never actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
- *  `days` = a large day-counter (Ideas' freshness), glyph shrunk to a corner. */
-export type DimPayloadKind = 'icon' | 'days';
+ *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
+ *  = a large plain number (Goals). Numeric kinds shrink the glyph to a corner. */
+export type DimPayloadKind = 'icon' | 'days' | 'count';
 
 export interface DimRegistryEntry {
   label: string;
@@ -94,7 +103,7 @@ const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'ab
 // and free of circular type references. DO NOT reorder without updating those lattices.
 export const DIM_ORDER = [
   'db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents',
-  'skills', 'llm', 'kpi', 'ideas',
+  'skills', 'llm', 'kpi', 'ideas', 'goals',
 ] as const;
 
 /** The dimension key space. A new dimension = add its key here AND its entry to
@@ -232,6 +241,23 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
         status: days === null ? 'absent' : days < 7 ? 'solid' : days <= 30 ? 'risk' : 'alert',
         detail: days === null ? null : days === 0 ? 'today' : `${days}d ago`,
         reached: 0, steps: 0, days,
+      };
+    },
+  },
+  goals: {
+    // Ongoing (not done) dev goals. Count > 0 paints the cell active (info)
+    // and renders the count as the far/mid payload; 0 = grey icon-only cell
+    // ("no active goals" is honest, not a gap). Click lists the goal names.
+    label: 'Goals', category: 'product', icon: Target,
+    rowKey: null, action: 'goals', payloadKind: 'count',
+    derive: (_p, { goalsOngoing, goalsUnknown }) => {
+      if (goalsUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0, days: null };
+      const n = goalsOngoing ?? 0;
+      return {
+        status: n > 0 ? 'partial' : 'absent',
+        detail: n > 0 ? `${n} active` : null,
+        reached: 0, steps: 0,
+        days: n > 0 ? n : null,
       };
     },
   },

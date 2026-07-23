@@ -10,7 +10,6 @@ import { DimTile } from '../lib/DimTile';
 import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
-import { mockStats } from '../lib/statsMock';
 import { StatColumns } from '../lib/StatColumns';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -29,7 +28,7 @@ const GAP = 8;
 // silently dropped by the render loop's `if (!cell) return null`.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
-  [0, -2], [1, -2], [-1, -2], [2, -2],
+  [0, -2], [1, -2], [-1, -2], [2, -2], [-2, -2],
 ];
 
 // React.memo'd — see MosaicIsland for the render-free-navigation rationale.
@@ -131,7 +130,7 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
       {band !== 'far' && (
-        <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />
+        <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />
       )}
       <FleetBadges
         fleet={island.fleet}

@@ -124,7 +124,7 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 
 ### 3. Idea Scanner — run 21 specialized agents
 
-1. Open **Idea Scanner**. Agents are grouped into four categories: **Technical, User Experience, Business, Mastermind**.
+1. Open **Idea Scanner**. Agents are grouped into four categories: **Technical, User Experience, Business, Mastermind**. Each agent tile shows its scan-history rollup in the corner: when it last ran and its total run count (derived from the project's scan history).
 2. Pick agents manually (single, multiple, or **Select All**) and press **Run Scan**, or press **Auto-Scan** to iterate every mapped context and pick agents by keyword heuristic (see *Scan Agents → auto-match rules* below).
 2a. **Configure** (gear) opens a full-page scan-configuration modal with two settings, both threaded through `dev_tools_run_scan` → `run_scan_core` → the LLM prompt: **Context scope** — restrict the scan to selected context groups / contexts (selecting a group toggles all its contexts; the prompt then instructs agents to analyze ONLY those areas; the scope section only appears once a codebase has been mapped), and **Target findings** (granularity) — a per-area target count injected as a "Target volume" hint (quality stays the gate, never padding). The button carries a badge when a scope/target is active; the scope resets on project switch. (Previously `context_id` was accepted but ignored — scans were always whole-project.)
 3. A **ScanProgress** card streams live progress while the run is active. Ideas arrive as `DevIdea` rows with category, agent key, effort/impact/risk (1-10 each), and an optional `reasoning` blob.

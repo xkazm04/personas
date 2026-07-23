@@ -14,7 +14,6 @@ import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
-import { mockStats } from '../lib/statsMock';
 import { StatColumns } from '../lib/StatColumns';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
@@ -28,7 +27,7 @@ const CELL = 56;
 // are silently dropped by the render loop's `if (!ax) return null`.
 const AXIAL: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
-  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0],
+  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0], [0, -2],
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
@@ -111,7 +110,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {band !== 'far' && <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
+      {band !== 'far' && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
       <FleetBadges
         fleet={island.fleet}
         personas={island.personasRunning}
@@ -171,12 +170,13 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
         <polygon points={hexPoints(0, 0, CELL + 1)} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} strokeLinejoin="round" />
       )}
       {zoomedOut ? (
-        DIM_REGISTRY[node.key]?.payloadKind === 'days' && node.days != null ? (
-          // days-payload cell: the count IS the payload when zoomed out (Ideas' freshness)
+        DIM_REGISTRY[node.key]?.payloadKind !== 'icon' && node.days != null ? (
+          // numeric-payload cell: the number IS the payload when zoomed out
+          // (Ideas' freshness in days, Goals' active count)
           <>
             <DimGlyph node={node} x={-8} y={-34} size={16} strokeWidth={1.75} color={ink} />
             <text y={18} textAnchor="middle" fontSize={30} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
-              {node.days}d
+              {node.days}{DIM_REGISTRY[node.key]?.payloadKind === 'days' ? 'd' : ''}
             </text>
           </>
         ) : (

@@ -23,6 +23,9 @@ export function dimAction(
 ): { rowKey: string | null; action: DimNode['action'] } {
   const entry = DIM_REGISTRY[dimKey];
   if (entry.action === 'ideas') return { rowKey: null, action: passport ? 'ideas' : null };
+  // Goals: actionable on real projects; the page decoration downgrades a
+  // zero-count cell to inert (an empty list is nothing to show).
+  if (entry.action === 'goals') return { rowKey: null, action: passport ? 'goals' : null };
   const rowKey = entry.rowKey;
   if (!rowKey || !passport) return { rowKey: rowKey ?? null, action: null };
   if (entry.action === 'standards') {

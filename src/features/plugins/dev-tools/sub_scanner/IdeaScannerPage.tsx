@@ -457,6 +457,22 @@ export default function IdeaScannerPage() {
     }
   }, [activeProjectId, autoScanRunning, fetchContexts, runScan, ds, tx]);
 
+  // Per-agent scan-history rollup: last run date + total run count, derived by
+  // exploding each DevScan row's comma-joined scan_type across its agent keys.
+  const agentRunStats = useMemo(() => {
+    const m = new Map<string, { lastAt: string; runs: number }>();
+    for (const s of scans) {
+      for (const k of s.scan_type.split(',').map((x) => x.trim()).filter(Boolean)) {
+        const cur = m.get(k);
+        if (cur) {
+          cur.runs += 1;
+          if (s.created_at > cur.lastAt) cur.lastAt = s.created_at;
+        } else m.set(k, { lastAt: s.created_at, runs: 1 });
+      }
+    }
+    return m;
+  }, [scans]);
+
   // Group agents by category, alphabetised by label within each column
   const agentsByCategory = useMemo(() => {
     const map = new Map<string, typeof SCAN_AGENTS[number][]>();
@@ -664,6 +680,7 @@ export default function IdeaScannerPage() {
                         selected={selectedAgents.has(agent.key)}
                         onToggle={() => toggleAgent(agent.key)}
                         recommended={recommendedAgentKeys.has(agent.key)}
+                        runStats={agentRunStats.get(agent.key) ?? null}
                       />
                     ))}
                   </div>

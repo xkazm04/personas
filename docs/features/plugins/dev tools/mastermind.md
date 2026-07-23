@@ -34,7 +34,7 @@ MastermindPage (data joins, popover/sidebar state, mode + variant state)
         └── renderIsland(island, ctx) → MosaicIsland | InverseIsland
             ├── IslandBanner (counter-scaled header = drag handle)
             ├── dimension cells (MosaicCell hexes | DimTile rects)
-            ├── StatColumns (side stats, band-gated)
+            ├── StatColumns (side stats, band-gated — REAL sensors via lib/islandStats: KPI attainment, live Sentry errors, 30d LLM spend via lib/llmSpend, tests/auto/prod from the passport; demo islands keep statsMock)
             └── FleetBadges (terminals + personas ops row)
 ```
 
@@ -74,6 +74,8 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | Fleet sessions | `systemStore.fleetSessions` (+ event-driven refresh); session→project by **longest `cwd` ↔ `root_path` prefix match** (a session has no project id) | |
 | Running personas | `overviewStore.activeProcesses` (status `running`, `personaId`) → persona → `home_team_id` → `dev_projects.team_id` — the Monitor's join | teamless projects can't attribute persona work |
 | Live monitoring | `liveState.loadMonitoringSummaries` — per-project bound monitoring credential → the Observability tab's Sentry adapter | absent credential ⇒ readiness-only colour |
+| Goals | `sceneStore` → `dev_tools_list_all_goals` (one batched IPC, grouped by project) | ongoing = `isOngoing` from sub_goals/goalStatus |
+| LLM spend | `sceneStore` → `lib/llmSpend` — `fetchLlmPinpoints(serviceType, credId, '30d')` per project with a bound live tracing credential (LlmTrackingCell's sum), 5-min throttle | absent key ⇒ not wired ("—") |
 | Layout artifacts | `layoutStore` (app-settings document) | |
 
 **Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands). A centered **DemoNotice card** (`lib/DemoNotice.tsx`) makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project; dismissing it leaves a corner "sample data" badge for the session. Demo islands are inert for Improve/terminal actions. The canvas is also held back behind a spinner during the FIRST passport load (not just layout hydration), so an in-flight fetch never renders as an empty world.
@@ -82,7 +84,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 ## 5. Dimensions (the island body)
 
-12 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
+13 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
 
 | Key | Label | Derived from | Improve rowKey → popover |
 | --- | --- | --- | --- |
@@ -98,6 +100,9 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
 | `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
+| `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
+
+**Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the far/mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
 
 **Ideas freshness rule:** `<7d` green (`solid`), `7–30d` amber (`risk`), `>30d` red (`alert`), never-scanned grey (`absent`). At far/mid zoom the cell renders the **day count** (`12d`) as its payload (`payloadKind` in the registry) instead of an icon.
 

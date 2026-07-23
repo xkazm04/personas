@@ -35,12 +35,15 @@ import { useToastStore } from '@/stores/toastStore';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+
 import { CanvasToolbar } from './lib/CanvasToolbar';
 import { DataHealthBar } from './lib/DataHealthBar';
 import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { GoalListPopover } from './lib/GoalListPopover';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { computeAttention } from './lib/liveState';
@@ -85,12 +88,17 @@ function MastermindInner() {
   const meta = useSceneStore((s) => s.meta);
   const scans = useSceneStore((s) => s.scans);
   const sentry = useSceneStore((s) => s.sentry);
+  const storeGoals = useSceneStore((s) => s.goals);
+  const llmSpend = useSceneStore((s) => s.llmSpend);
   const metaStatus = useSceneStore((s) => s.metaStatus);
   const scansStatus = useSceneStore((s) => s.scansStatus);
   const sentryStatus = useSceneStore((s) => s.sentryStatus);
+  const goalsStatus = useSceneStore((s) => s.goalsStatus);
   const loadMeta = useSceneStore((s) => s.loadMeta);
   const loadScans = useSceneStore((s) => s.loadScans);
   const loadSentry = useSceneStore((s) => s.loadSentry);
+  const loadGoals = useSceneStore((s) => s.loadGoals);
+  const loadLlmSpend = useSceneStore((s) => s.loadLlmSpend);
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
@@ -131,6 +139,7 @@ function MastermindInner() {
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -157,11 +166,12 @@ function MastermindInner() {
     void fleetRefresh();
   }, [fleetRefresh, fleetStartSessionListeners]);
 
-  // Batched scene spine: one relations fetch + one scans fetch on mount.
+  // Batched scene spine: one relations + one scans + one goals fetch on mount.
   useEffect(() => {
     void loadMeta();
     void loadScans();
-  }, [loadMeta, loadScans]);
+    void loadGoals();
+  }, [loadMeta, loadScans, loadGoals]);
 
   // Vault credentials — needed to resolve each project's bound monitoring
   // connector (Sentry) for live error counts. One fetch; refreshed with reload.
@@ -171,13 +181,14 @@ function MastermindInner() {
     return () => { live = false; };
   }, []);
 
-  // Live monitoring: fetch real error counts for projects with a bound,
-  // supported monitoring credential. Throttled in the store (no new polling) —
-  // re-runs when the project set or credentials change.
+  // Live monitoring + LLM spend: fetch real error counts / 30d trace spend for
+  // projects with the respective bound credentials. Both throttled in the
+  // store (no new polling) — re-run when projects or credentials change.
   useEffect(() => {
     if (projects.length === 0) return;
     void loadSentry(projects, credentials);
-  }, [projects, credentials, loadSentry]);
+    void loadLlmSpend(projects, credentials);
+  }, [projects, credentials, loadSentry, loadLlmSpend]);
 
   // One-time layout hydration: read the durable doc from the DB, then re-seed
   // the state that was initialized from the (empty) pre-hydration doc and drop
@@ -285,14 +296,27 @@ function MastermindInner() {
     return m;
   }, [scans]);
 
+  // Ongoing (not done) goal count per project — the Goals dimension payload.
+  const goalsOngoingByProject = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [slug, rows] of storeGoals) {
+      const n = rows.filter((g) => isOngoing(g.status)).length;
+      if (n > 0) m.set(slug, n);
+    }
+    return m;
+  }, [storeGoals]);
+
   // Family health → honest `unknown` cells: a hard-failed scans/KPI family
   // renders Ideas/KPI cells as "data unavailable" (muted), never a fake
   // "never scanned"/"absent". (A `stale` family keeps its last-good data.)
   const families = useMemo<FamilyHealth>(
-    () => ({ scansUnknown: scansStatus === 'failed', kpiUnknown: Boolean(factoryError) }),
-    [scansStatus, factoryError],
+    () => ({ scansUnknown: scansStatus === 'failed', kpiUnknown: Boolean(factoryError), goalsUnknown: goalsStatus === 'failed' }),
+    [scansStatus, factoryError, goalsStatus],
   );
-  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families), [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families]);
+  const scene = useMemo(
+    () => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject),
+    [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families, llmSpend, goalsOngoingByProject],
+  );
 
   // Which data families are currently not clean (failed OR showing stale data).
   const bad = (s: string) => s === 'failed' || s === 'stale';
@@ -350,11 +374,16 @@ function MastermindInner() {
         next.set(i.slug, c);
         return c.out;
       }
-      const nodes = i.nodes.map((n) => ({
-        ...n,
-        ...dimAction(n.key, passport, raw),
-        ...(n.key === 'ideas' && busy ? { busy: true } : {}),
-      }));
+      const nodes = i.nodes.map((n) => {
+        const decorated = {
+          ...n,
+          ...dimAction(n.key, passport, raw),
+          ...(n.key === 'ideas' && busy ? { busy: true } : {}),
+        };
+        // A zero-count Goals cell has nothing to list — inert, no affordance.
+        if (n.key === 'goals' && !(n.days && n.days > 0)) decorated.action = null;
+        return decorated;
+      });
       // Attention derives from the RESOLVED fleet (live for real projects, the
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
@@ -402,6 +431,10 @@ function MastermindInner() {
   const onDimOpen = (slug: string, node: DimNode, e: React.MouseEvent) => {
     if (node.action === 'ideas') {
       setScanPopup({ slug, x: e.clientX, y: e.clientY });
+      return;
+    }
+    if (node.action === 'goals') {
+      setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
       return;
     }
     if (!node.action || !node.rowKey) return;
@@ -544,6 +577,15 @@ function MastermindInner() {
           x={personaMenu.x}
           y={personaMenu.y}
           onClose={() => setPersonaMenu(null)}
+        />
+      )}
+
+      {goalPopup && (
+        <GoalListPopover
+          titles={(storeGoals.get(goalPopup.slug) ?? []).filter((g) => isOngoing(g.status)).map((g) => g.title)}
+          x={goalPopup.x}
+          y={goalPopup.y}
+          onClose={() => setGoalPopup(null)}
         />
       )}
 

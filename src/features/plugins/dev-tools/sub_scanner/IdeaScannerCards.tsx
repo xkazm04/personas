@@ -106,11 +106,15 @@ export function AgentCard({
   selected,
   onToggle,
   recommended = false,
+  runStats = null,
 }: {
   agent: ScanAgentDef;
   selected: boolean;
   onToggle: () => void;
   recommended?: boolean;
+  /** This agent's scan history rollup: when it last ran + how many runs total
+   *  (derived client-side from the project's DevScan rows). Null = never ran. */
+  runStats?: { lastAt: string; runs: number } | null;
 }) {
   const { t } = useTranslation();
   const ac = agentColor(agent);
@@ -147,6 +151,14 @@ export function AgentCard({
           <Square className="w-3.5 h-3.5 text-foreground" />
         )}
       </span>
+
+      {/* Scan-history rollup — bottom-left: last run + total run count */}
+      {runStats && (
+        <span className="absolute bottom-1 left-1.5 z-10 inline-flex items-center gap-1 typo-caption text-foreground/60 tabular-nums pointer-events-none">
+          <Clock className="w-3 h-3" aria-hidden />
+          {relativeTime(runStats.lastAt)} · {runStats.runs}×
+        </span>
+      )}
 
       {/* Help tooltip — top-right */}
       <span

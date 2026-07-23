@@ -16,6 +16,7 @@ export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unk
 // edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
 // from this file, also type-only). Imported for local use AND re-exported.
 import type { DimKey } from './dimRegistry';
+import type { IslandStat } from './islandStats';
 
 export type { DimKey };
 
@@ -41,9 +42,9 @@ export interface DimNode {
   rowKey?: string | null;
   /** Improve action available for this cell (page-decorated from the engine):
    *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
-   *  popover, ideas = the idea-scan dispatch popover, null = inert (no click,
-   *  no hover affordance). */
-  action?: 'standards' | 'deploy' | 'ideas' | null;
+   *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
+   *  list popover, null = inert (no click, no hover affordance). */
+  action?: 'standards' | 'deploy' | 'ideas' | 'goals' | null;
   /** Ideas dimension only: whole days since the last idea scan (null = never). */
   days?: number | null;
   /** An action we dispatched for this cell is still in flight (Ideas scan) —
@@ -81,6 +82,10 @@ export interface Island {
   /** What drove `state`: static readiness scores, or a live monitoring signal
    *  (fresh errors / open issues). Named in the banner tooltip. */
   stateSource: 'readiness' | 'errors';
+  /** The six side-column stats — real sensors for live projects (KPI
+   *  attainment, live errors, 30d LLM spend, tests/auto/prod from the
+   *  passport), deterministic mocks for demo islands. */
+  stats: IslandStat[];
 }
 
 export interface IslandEdge {

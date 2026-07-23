@@ -45,6 +45,7 @@ describe('dimActions — dim → wall-row mapping (via the dimension registry)',
       llm: 'llmtracking',
       kpi: null,
       ideas: null,
+      goals: null,
     });
   });
 });
