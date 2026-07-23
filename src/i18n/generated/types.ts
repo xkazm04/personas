@@ -18247,5 +18247,11 @@ export type Translations = {
     open_terminal: string;
     terminal_disabled_demo: string;
     terminal_disabled_no_path: string;
+    zoom_out: string;
+    zoom_in: string;
+    fit_all: string;
+    tidy: string;
+    tidy_tooltip: string;
+    undo_tidy: string;
   };
 };

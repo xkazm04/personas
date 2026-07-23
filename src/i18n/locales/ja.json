@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "ターミナルを開く",
     "terminal_disabled_demo": "デモプロジェクト — 実際のプロジェクトからターミナルを開いてください",
-    "terminal_disabled_no_path": "このプロジェクトにはフォルダーパスがありません"
+    "terminal_disabled_no_path": "このプロジェクトにはフォルダーパスがありません",
+    "fit_all": "すべてのプロジェクトに合わせる",
+    "tidy": "マップを整理",
+    "tidy_tooltip": "マップを整理 — 関連ごとにプロジェクトを配置",
+    "undo_tidy": "整理を元に戻す",
+    "zoom_in": "拡大",
+    "zoom_out": "縮小"
   }
 }

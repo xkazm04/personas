@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "Otevřít terminál",
     "terminal_disabled_demo": "Ukázkový projekt — otevřete terminál ze skutečného projektu",
-    "terminal_disabled_no_path": "Tento projekt nemá cestu ke složce"
+    "terminal_disabled_no_path": "Tento projekt nemá cestu ke složce",
+    "fit_all": "Přizpůsobit všem projektům",
+    "tidy": "Uspořádat mapu",
+    "tidy_tooltip": "Uspořádat mapu — seřadit projekty podle propojení",
+    "undo_tidy": "Vrátit uspořádání",
+    "zoom_in": "Přiblížit",
+    "zoom_out": "Oddálit"
   }
 }

@@ -1,5 +1,11 @@
 {
   "open_terminal": "Buka terminal",
   "terminal_disabled_demo": "Proyek demo — buka terminal dari proyek nyata",
-  "terminal_disabled_no_path": "Proyek ini tidak memiliki jalur folder"
+  "terminal_disabled_no_path": "Proyek ini tidak memiliki jalur folder",
+  "fit_all": "Paskan semua proyek",
+  "tidy": "Rapikan peta",
+  "tidy_tooltip": "Rapikan peta — atur proyek berdasarkan koneksi",
+  "undo_tidy": "Urungkan rapikan",
+  "zoom_in": "Perbesar",
+  "zoom_out": "Perkecil"
 }

@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "Abrir terminal",
     "terminal_disabled_demo": "Proyecto de demostración — abre un terminal desde un proyecto real",
-    "terminal_disabled_no_path": "Este proyecto no tiene ruta de carpeta"
+    "terminal_disabled_no_path": "Este proyecto no tiene ruta de carpeta",
+    "fit_all": "Ajustar todos los proyectos",
+    "tidy": "Ordenar mapa",
+    "tidy_tooltip": "Ordenar mapa — organizar los proyectos por conexión",
+    "undo_tidy": "Deshacer orden",
+    "zoom_in": "Acercar",
+    "zoom_out": "Alejar"
   }
 }

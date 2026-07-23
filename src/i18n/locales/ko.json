@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "터미널 열기",
     "terminal_disabled_demo": "데모 프로젝트 — 실제 프로젝트에서 터미널을 여세요",
-    "terminal_disabled_no_path": "이 프로젝트에는 폴더 경로가 없습니다"
+    "terminal_disabled_no_path": "이 프로젝트에는 폴더 경로가 없습니다",
+    "fit_all": "모든 프로젝트 맞춤",
+    "tidy": "맵 정리",
+    "tidy_tooltip": "맵 정리 — 연결 기준으로 프로젝트 배치",
+    "undo_tidy": "정리 실행 취소",
+    "zoom_in": "확대",
+    "zoom_out": "축소"
   }
 }

@@ -16,6 +16,8 @@ import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
 import { loadNotes, saveNotes } from './notes';
+import { loadPositions } from './positions';
+import { tidyLayout, type TidyResult } from './tidyLayout';
 import { FleetListPopover } from './FleetListPopover';
 import { GroupLayer } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
@@ -86,6 +88,9 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const [highlight, setHighlight] = useState<{ slug: string; key: string } | null>(null);
   const [fleetMenu, setFleetMenu] = useState<{ slug: string; state: string; x: number; y: number } | null>(null);
   const [viewport, setViewport] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  // Single-level undo for the one-shot Tidy: the exact pre-tidy positions +
+  // group rects. Present ⇒ the Undo affordance shows.
+  const [undoSnap, setUndoSnap] = useState<{ positions: TidyResult; groups: GroupRect[] } | null>(null);
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
@@ -252,6 +257,64 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   const onFleetOpenStable = useEventCallback(onFleetOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
   const onPersonasOpenStable = useEventCallback(onPersonasOpen);
+
+  // --- Tidy map: one-shot relation-aware arrangement + single-level undo. -------
+  // Islands are moved through the existing per-island commit (updates the page's
+  // position overrides + persists via savePositions); the camera does the one
+  // allowed animated transition. No per-island animation, no idle simulation.
+  const onTidy = useEventCallback(() => {
+    const list = scene.islands;
+    if (list.length < 2) return;
+    // Snapshot the exact prior layout for undo.
+    const prior: TidyResult = {};
+    for (const i of list) prior[i.slug] = { x: i.x, y: i.y };
+    setUndoSnap({ positions: prior, groups: groups.map((g) => ({ ...g })) });
+
+    // Pinned = user-moved islands (an entry in the positions store).
+    const pinned = new Set(Object.keys(loadPositions()));
+    // Group membership is geometric (centre inside the rect) — same test the
+    // GroupLayer uses when a group carries its islands.
+    const groupConstraints = groups.map((g) => ({
+      members: list.filter((i) => i.x >= g.x && i.x <= g.x + g.w && i.y >= g.y && i.y <= g.y + g.h).map((i) => i.slug),
+    }));
+    const next = tidyLayout({
+      islands: list.map((i) => ({ slug: i.slug, x: i.x, y: i.y })),
+      edges: scene.edges.map((e) => ({ from: e.from, to: e.to, strength: e.strength })),
+      pinned,
+      groups: groupConstraints,
+    });
+
+    // Slide each group rect by its members' centroid delta so the box follows
+    // its (now contiguous) cluster instead of being left behind.
+    const movedGroups = groups.map((g, gi) => {
+      const members = groupConstraints[gi]?.members ?? [];
+      if (members.length === 0) return g;
+      let dx = 0, dy = 0;
+      for (const s of members) {
+        const pr = prior[s]!;
+        const nx = next[s] ?? pr;
+        dx += nx.x - pr.x;
+        dy += nx.y - pr.y;
+      }
+      return { ...g, x: g.x + dx / members.length, y: g.y + dy / members.length };
+    });
+    if (movedGroups.some((g, i) => g.x !== groups[i]!.x || g.y !== groups[i]!.y)) commitGroups(movedGroups);
+
+    for (const i of list) {
+      const p = next[i.slug];
+      if (p && (p.x !== i.x || p.y !== i.y)) onIslandCommit(i.slug, p.x, p.y);
+    }
+    fit(sceneBounds(list.map((i) => ({ ...i, x: next[i.slug]?.x ?? i.x, y: next[i.slug]?.y ?? i.y }))), true);
+  });
+
+  const onUndoTidy = useEventCallback(() => {
+    if (!undoSnap) return;
+    for (const [slug, p] of Object.entries(undoSnap.positions)) onIslandCommit(slug, p.x, p.y);
+    commitGroups(undoSnap.groups);
+    const restored = scene.islands.map((i) => ({ ...i, ...(undoSnap.positions[i.slug] ?? {}) }));
+    setUndoSnap(null);
+    fit(sceneBounds(restored), true);
+  });
 
   // Group mode: left-drag draws; middle-drag still pans (forwarded to camera).
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -421,7 +484,13 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
       </svg>
 
       <ZoomBadge z={cam.z} />
-      <ZoomControls onZoomBy={zoomBy} onFit={() => fit(sceneBounds(scene.islands), true)} />
+      <ZoomControls
+        onZoomBy={zoomBy}
+        onFit={() => fit(sceneBounds(scene.islands), true)}
+        onTidy={onTidy}
+        onUndo={onUndoTidy}
+        canUndo={undoSnap !== null}
+      />
 
       {/* inline label editor for the group being named/renamed */}
       {editingGroup && (

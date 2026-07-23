@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "打开终端",
     "terminal_disabled_demo": "演示项目 — 请从真实项目打开终端",
-    "terminal_disabled_no_path": "此项目没有文件夹路径"
+    "terminal_disabled_no_path": "此项目没有文件夹路径",
+    "fit_all": "适应所有项目",
+    "tidy": "整理布局",
+    "tidy_tooltip": "整理布局 — 按关联排列项目",
+    "undo_tidy": "撤销整理",
+    "zoom_in": "放大",
+    "zoom_out": "缩小"
   }
 }

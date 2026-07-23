@@ -18240,6 +18240,12 @@
   "mastermind": {
     "open_terminal": "Mở terminal",
     "terminal_disabled_demo": "Dự án demo — mở terminal từ một dự án thực",
-    "terminal_disabled_no_path": "Dự án này không có đường dẫn thư mục"
+    "terminal_disabled_no_path": "Dự án này không có đường dẫn thư mục",
+    "fit_all": "Vừa tất cả dự án",
+    "tidy": "Sắp xếp bản đồ",
+    "tidy_tooltip": "Sắp xếp bản đồ — sắp xếp dự án theo kết nối",
+    "undo_tidy": "Hoàn tác sắp xếp",
+    "zoom_in": "Phóng to",
+    "zoom_out": "Thu nhỏ"
   }
 }
