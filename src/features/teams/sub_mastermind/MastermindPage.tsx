@@ -12,6 +12,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 
 import { getCrossProjectMetadata, listScans, runScan, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
+import { spawnSession } from '@/api/fleet/fleet';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
@@ -310,6 +311,27 @@ function MastermindInner() {
     setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
   };
 
+  // Island context-menu "Open terminal": a project can host one when it's a real
+  // (non-demo) project with a folder path. slug === dev-tools project id.
+  const canOpenTerminal = useCallback(
+    (slug: string) => !slug.startsWith('demo-') && Boolean(projects.find((p) => p.id === slug)?.root_path),
+    [projects],
+  );
+
+  // Spawn a plain interactive Fleet session in the project root (no prompt) and
+  // open its preview immediately; the next fleet poll docks it in the badges.
+  const openTerminal = useCallback(async (slug: string) => {
+    const root = projects.find((p) => p.id === slug)?.root_path;
+    if (!root) return;
+    try {
+      const id = await spawnSession(root);
+      setPreviewId(id);
+      void fleetRefresh();
+    } catch (err) {
+      toastCatch('mastermind spawn terminal')(err);
+    }
+  }, [projects, fleetRefresh]);
+
   // Dispatch ONE agent's idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
   const runIdeaScan = async (agentKey: string) => {
@@ -368,6 +390,8 @@ function MastermindInner() {
         onProjectOpen={setOpenSlug}
         onDimOpen={onDimOpen}
         onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+        onOpenTerminal={openTerminal}
+        canOpenTerminal={canOpenTerminal}
       />
 
       {/* prototype-only switchers — canvas variant + dimension icon set */}

@@ -18243,4 +18243,9 @@ export type Translations = {
     auto_your_cockpit_is_empty_88e25bb2: string;
     auto_your_turn_d9e169df: string;
   };
+  mastermind: {
+    open_terminal: string;
+    terminal_disabled_demo: string;
+    terminal_disabled_no_path: string;
+  };
 };

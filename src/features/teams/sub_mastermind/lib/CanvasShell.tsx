@@ -56,7 +56,7 @@ export interface IslandCtx {
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -444,6 +444,8 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             island={island}
             x={menu.x}
             y={menu.y}
+            terminalEnabled={canOpenTerminal(menu.slug)}
+            onOpenTerminal={() => { onOpenTerminal(menu.slug); setMenu(null); setHighlight(null); }}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}
           />

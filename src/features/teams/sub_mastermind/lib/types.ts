@@ -125,6 +125,12 @@ export interface VariantProps {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — open the persona name list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Island context-menu "Open terminal" — spawn an interactive Fleet session
+   *  in the project's root and open its preview. */
+  onOpenTerminal: (slug: string) => void;
+  /** Whether a given island can host a terminal (real project + root_path);
+   *  false for demo islands and projects without a folder path. */
+  canOpenTerminal: (slug: string) => boolean;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

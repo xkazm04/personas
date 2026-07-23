@@ -3,6 +3,10 @@
 // tool is identified). Hovering a row highlights the matching hex/grid cell on
 // the canvas so the mapping is unambiguous. Item click is a no-op for now —
 // the per-dimension action layer comes later.
+import { SquareTerminal } from 'lucide-react';
+
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { dimBrand } from './dimMeta';
 import { DIM_REGISTRY } from './dimRegistry';
 import { GLYPH_SETS, useIconSet } from './iconSet';
@@ -38,15 +42,24 @@ function MenuGlyph({ node }: { node: DimNode }) {
   return <Icon className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} style={{ color: ink }} aria-hidden />;
 }
 
-export function IslandMenu({ island, x, y, onHoverDim, onClose }: {
+export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onHoverDim, onClose }: {
   island: Island;
   /** Screen-space anchor (cursor position, clamped by the caller). */
   x: number;
   y: number;
+  /** Whether an interactive terminal can be spawned for this project. */
+  terminalEnabled: boolean;
+  /** "Open terminal" action — spawn a Fleet session in the project root. */
+  onOpenTerminal: () => void;
   onHoverDim: (key: string | null) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const items = [...island.nodes].sort((a, b) => a.label.localeCompare(b.label));
+  const isDemo = island.slug.startsWith('demo-');
+  const terminalTitle = terminalEnabled
+    ? undefined
+    : isDemo ? t.mastermind.terminal_disabled_demo : t.mastermind.terminal_disabled_no_path;
   return (
     <div
       className="absolute z-30 w-[307px] rounded-card border border-primary/15 bg-secondary/95 backdrop-blur-sm shadow-elevation-4 overflow-hidden"
@@ -59,7 +72,21 @@ export function IslandMenu({ island, x, y, onHoverDim, onClose }: {
       <div className="px-3 py-2 border-b border-primary/10 bg-primary/5">
         <span className="typo-label text-foreground/90 truncate block">{island.name}</span>
       </div>
-      <ul className="max-h-[300px] overflow-y-auto py-1">
+      {/* action row — spawn an interactive terminal in the project root */}
+      <div className="py-1 border-b border-primary/10">
+        <button
+          type="button"
+          disabled={!terminalEnabled}
+          title={terminalTitle}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-foreground/70 enabled:hover:bg-secondary/40 enabled:hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={terminalEnabled ? () => { onOpenTerminal(); onHoverDim(null); } : undefined}
+          data-testid="mm-menu-open-terminal"
+        >
+          <SquareTerminal className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} aria-hidden />
+          <span>{t.mastermind.open_terminal}</span>
+        </button>
+      </div>
+      <ul className="max-h-[260px] overflow-y-auto py-1">
         {items.map((n) => {
           const absent = n.status === 'absent';
           return (

@@ -18236,5 +18236,10 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "打开终端",
+    "terminal_disabled_demo": "演示项目 — 请从真实项目打开终端",
+    "terminal_disabled_no_path": "此项目没有文件夹路径"
   }
 }
