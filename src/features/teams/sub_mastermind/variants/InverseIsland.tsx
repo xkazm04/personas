@@ -23,12 +23,14 @@ const GAP = 8;
 // layer-2 opens along the top row for dimensions 9-12 — the "layers around
 // the core" growth direction. Order matches the dimension registry's DIM_ORDER
 // 1:1 (index N → dimension N).
-// LATTICE SLOTS 13+: a 13th dimension needs one more [col,row] coord appended
-// here (continue layer-2, e.g. [2,-1] / [-2,-2]); cells beyond RING.length are
+// LATTICE SLOTS 16+: a 16th dimension needs one more [col,row] coord appended
+// here (continue layer-2, e.g. [2,0] / [-2,0]); cells beyond RING.length are
 // silently dropped by the render loop's `if (!cell) return null`.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
-  [0, -2], [1, -2], [-1, -2], [2, -2], [-2, -2],
+  [0, -2], [1, -2], [-1, -2], [2, -2],
+  [-2, -2], // slot 13 (goals)
+  [2, -1], [-2, -1], // slots 14-15 (datalinks, support) — layer-2 continues
 ];
 
 // React.memo'd — see MosaicIsland for the render-free-navigation rationale.

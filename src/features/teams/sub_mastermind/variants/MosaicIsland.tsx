@@ -22,12 +22,14 @@ import type { DimNode, Island, ZoomBand } from '../lib/types';
 const CELL = 56;
 // Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-12.
 // Order matches the dimension registry's DIM_ORDER 1:1 (index N → dimension N).
-// LATTICE SLOTS 13+: a 13th dimension needs one more [q,r] axial coord appended
-// here (the next free ring-2 cap, e.g. [0,-2] / [0,2]); cells beyond AXIAL.length
+// LATTICE SLOTS 16+: a 16th dimension needs one more [q,r] axial coord appended
+// here (the next free ring-2 cells, e.g. [2,-2] / [1,1]); cells beyond AXIAL.length
 // are silently dropped by the render loop's `if (!ax) return null`.
 const AXIAL: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
-  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0], [0, -2],
+  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0],
+  [0, -2], // slot 13 (goals) — top ring-2 cap
+  [0, 2], [-2, 2], // slots 14-15 (datalinks, support) — the next free ring-2 caps
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 

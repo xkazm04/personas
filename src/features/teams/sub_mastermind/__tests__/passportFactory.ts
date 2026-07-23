@@ -31,6 +31,8 @@ export interface PassportOverrides {
   auth?: string | null;
   llmTracking?: string | null;
   skills?: boolean;
+  dataLinks?: string[];
+  supportChannels?: string[];
 }
 
 /** A minimal passport whose every readiness dimension reads "absent" until an
@@ -62,6 +64,8 @@ export function makePassport(o: PassportOverrides = {}): AppPassport {
       hosting: o.hosting ?? null,
       auth: o.auth ?? null,
       integrations: [],
+      dataLinks: o.dataLinks,
+      supportChannels: o.supportChannels,
     },
     automationReadiness: {
       level: o.automationLevel ?? 'L1',

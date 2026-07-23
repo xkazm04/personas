@@ -46,6 +46,9 @@ describe('dimActions — dim → wall-row mapping (via the dimension registry)',
       kpi: null,
       ideas: null,
       goals: null,
+      // Prototype dims (2026-07-23): deliberately inert — no wall row yet.
+      datalinks: null,
+      support: null,
     });
   });
 });

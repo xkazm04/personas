@@ -84,7 +84,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 ## 5. Dimensions (the island body)
 
-13 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
+15 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
 
 | Key | Label | Derived from | Improve rowKey → popover |
 | --- | --- | --- | --- |
@@ -101,6 +101,8 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
 | `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
+| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | — (inert for now) |
+| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | — (inert for now) |
 
 **Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the far/mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
 
@@ -110,7 +112,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 **Actionability affordance:** a cell whose registry/engine checks yield an action gets `cursor: pointer` + a quiet primary ring on hover; inert cells ignore clicks and show no affordance.
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up. Lattice capacity: Hex ring-2 and Inverse layer-2 currently hold 12; beyond ~14–15, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15 (`goals` plus the 2026-07-23 `datalinks`/`support` additions took the last comfortable slots); we are AT the ~15 ceiling — before injecting more, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
 
 ## 6. Zoom bands and level-of-detail
 

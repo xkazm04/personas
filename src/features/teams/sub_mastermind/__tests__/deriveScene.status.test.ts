@@ -103,13 +103,29 @@ describe('deriveScene — KPI rollup states', () => {
   });
 });
 
+describe('datalinks + support — binary prototype dims (grey/green only)', () => {
+  it('datalinks: no links→absent, linked→solid with names', () => {
+    expect(dim('datalinks', {}).status).toBe('absent');
+    const linked = dim('datalinks', { dataLinks: ['Pumper'] });
+    expect(linked.status).toBe('solid');
+    expect(linked.detail).toBe('Pumper');
+  });
+
+  it('support: no channel→absent, bound→solid with channel types', () => {
+    expect(dim('support', {}).status).toBe('absent');
+    const bound = dim('support', { supportChannels: ['Email', 'Discord'] });
+    expect(bound.status).toBe('solid');
+    expect(bound.detail).toBe('Email · Discord');
+  });
+});
+
 describe('deriveScene — scene shape', () => {
-  it('every island carries all 13 dimensions', () => {
+  it('every island carries all 15 dimensions', () => {
     const scene = deriveScene([makePassport({ slug: 'a' })], null, false);
     const keys = scene.islands[0].nodes.map((n) => n.key);
-    expect(keys).toHaveLength(13);
+    expect(keys).toHaveLength(15);
     expect(new Set(keys)).toEqual(
-      new Set<DimKey>(['db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents', 'skills', 'llm', 'kpi', 'ideas', 'goals']),
+      new Set<DimKey>(['db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents', 'skills', 'llm', 'kpi', 'ideas', 'goals', 'datalinks', 'support']),
     );
   });
 
@@ -118,8 +134,8 @@ describe('deriveScene — scene shape', () => {
     const demo = deriveScene([], null, false);
     expect(demo.demo).toBe(true);
     expect(demo.islands.length).toBeGreaterThan(0);
-    // Demo islands also carry the full 13-dim shape.
-    for (const isl of demo.islands) expect(isl.nodes).toHaveLength(13);
+    // Demo islands also carry the full 15-dim shape.
+    for (const isl of demo.islands) expect(isl.nodes).toHaveLength(15);
   });
 
   it('empty + loading → blank scene (no demo flash)', () => {
