@@ -133,8 +133,12 @@ Rules:
 
 Re-run the Phase-1 checks for every touched dimension. Close with a compact
 table: dimension → before → after → what was skipped (user's choice vs
-blocked), plus the exact follow-ups the user still owns (e.g. "add the Sentry
-DSN to the test env in Personas Vault"). If dispatched from the wall, end with
+blocked), plus the exact follow-ups the user still owns. Connector-flavored
+dimensions must ALSO show their `dev_projects` slot binding in the after
+column — bind it yourself when the app is reachable (connectors.md § Binding
+closes the loop); a report that hands the user `.env` homework for Sentry/
+GitHub instead of a binding is a field-test failure we've already made once.
+If dispatched from the wall, end with
 one line the wall can grep: `PASSPORT_ONBOARD_RESULT: <n> improved, <n>
 skipped, <n> blocked`.
 
