@@ -472,6 +472,121 @@ export function generateMarkdownReport(
   }
 }
 
+// ── Version comparison report ─────────────────────────────────────
+//
+// A client-presentable "v3 vs v4" artifact built from the consolidated
+// Versions & Ratings data — the exact billable deliverable an agency wants
+// (UAT 2026-07-20, FA-AGY-LAB-03). Unlike the A/B-run report it needs no fresh
+// (expensive) measurement: it renders the ratings already in the table, which
+// are now a sound like-for-like comparison because every version is graded on
+// one shared scenario set (the scenario-pinning fix). Pure functions over
+// LabVersionRating — no store/DOM access — so they are trivially testable.
+
+import type { LabVersionRating } from '@/lib/bindings/LabVersionRating';
+
+interface VersionComparisonRow {
+  versionNumber: number;
+  modelId: string;
+  composite: number | null;
+  costUsd: number;
+  costUnknown: boolean;
+  durationMs: number;
+  sampleCount: number;
+  partialCoverage: boolean;
+  degradedCount: number;
+}
+
+function toComparisonRows(ratings: ReadonlyArray<LabVersionRating>): VersionComparisonRow[] {
+  return [...ratings]
+    .sort((a, b) => b.versionNumber - a.versionNumber || a.modelId.localeCompare(b.modelId))
+    .map((r) => ({
+      versionNumber: r.versionNumber,
+      modelId: r.modelId,
+      composite: r.compositeScore,
+      costUsd: r.costUsd,
+      costUnknown: r.costUnknown,
+      durationMs: r.durationMs,
+      sampleCount: r.sampleCount,
+      partialCoverage: r.partialCoverage,
+      degradedCount: r.degradedCount,
+    }));
+}
+
+function fmtRowCost(row: VersionComparisonRow): string {
+  return row.costUnknown ? 'not tracked' : `$${row.costUsd.toFixed(3)}`;
+}
+function fmtRowLatency(ms: number): string {
+  return ms > 0 ? `${(ms / 1000).toFixed(1)}s` : '—';
+}
+function confidenceNote(row: VersionComparisonRow): string {
+  const parts: string[] = [`n=${row.sampleCount}`];
+  if (row.partialCoverage) parts.push('partial coverage');
+  if (row.degradedCount > 0) parts.push(`${row.degradedCount} degraded`);
+  return parts.join(', ');
+}
+
+/** Self-contained HTML "Version Comparison" report from Versions & Ratings data. */
+export function versionComparisonHtml(
+  personaName: string,
+  ratings: ReadonlyArray<LabVersionRating>,
+  date: string,
+): string {
+  const rows = toComparisonRows(ratings);
+  const best = rows.reduce<VersionComparisonRow | null>(
+    (b, r) => (r.composite != null && (b == null || r.composite > (b.composite ?? -1)) ? r : b),
+    null,
+  );
+  const body = rows.length === 0
+    ? `<div class="card">No measured versions yet — measure a version in the Lab to populate this comparison.</div>`
+    : `<h2>Version × Model</h2>
+<table>
+<thead><tr><th>Version</th><th>Model</th><th>Rating</th><th>Cost</th><th>Latency</th><th>Confidence</th></tr></thead>
+<tbody>
+${rows.map((r) => {
+  const isBest = best != null && r.versionNumber === best.versionNumber && r.modelId === best.modelId && r.composite != null;
+  const scoreCell = r.composite == null
+    ? '<span style="color:var(--muted)">not measured</span>'
+    : `<span class="score" style="color:${scoreHexColor(r.composite)};font-size:1rem">${r.composite}</span> <span style="color:var(--muted)">${escHtml(scoreLabel(r.composite))}</span>`;
+  return `<tr><td>v${r.versionNumber}${isBest ? ' <span class="badge winner">best</span>' : ''}</td><td>${escHtml(r.modelId)}</td><td>${scoreCell}</td><td>${escHtml(fmtRowCost(r))}</td><td>${escHtml(fmtRowLatency(r.durationMs))}</td><td style="color:var(--muted);font-size:0.78rem">${escHtml(confidenceNote(r))}</td></tr>`;
+}).join('\n')}
+</tbody>
+</table>
+<p style="color:var(--muted);font-size:0.78rem;margin-top:0.75rem">All versions are graded on the same generated scenario set, so ratings are directly comparable. "Confidence" surfaces sample size and any partial-coverage / degraded-judge caveats.</p>`;
+  return wrapHtml(`Version Comparison — ${personaName}`, body, {
+    date,
+    mode: 'Version Comparison',
+    persona: personaName,
+  });
+}
+
+/** Clipboard-friendly markdown variant of the version comparison. */
+export function versionComparisonMarkdown(
+  personaName: string,
+  ratings: ReadonlyArray<LabVersionRating>,
+  date: string,
+): string {
+  const rows = toComparisonRows(ratings);
+  const lines = [
+    `# Version Comparison — ${personaName}`,
+    ``,
+    `_${date}_`,
+    ``,
+  ];
+  if (rows.length === 0) {
+    lines.push('No measured versions yet.');
+  } else {
+    lines.push('| Version | Model | Rating | Cost | Latency | Confidence |');
+    lines.push('|---|---|---|---|---|---|');
+    for (const r of rows) {
+      const rating = r.composite == null ? 'not measured' : `${r.composite} (${scoreLabel(r.composite)})`;
+      lines.push(`| v${r.versionNumber} | ${r.modelId} | ${rating} | ${fmtRowCost(r)} | ${fmtRowLatency(r.durationMs)} | ${confidenceNote(r)} |`);
+    }
+    lines.push('');
+    lines.push('_All versions graded on the same generated scenario set — ratings are directly comparable._');
+  }
+  return lines.join('\n');
+}
+
 export function downloadHtmlReport(html: string, filename: string): void {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
