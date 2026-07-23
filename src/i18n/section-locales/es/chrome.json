@@ -74,5 +74,6 @@
   "collapse_sidebar": "Contraer barra lateral",
   "network_settings": "Configuracion de red",
   "dark": "Oscuro",
-  "light": "Claro"
+  "light": "Claro",
+  "footer_section_nav_aria": "Ir a la sección"
 }

@@ -517,7 +517,8 @@
     "collapse_sidebar": "Thu gọn thanh bên",
     "network_settings": "Cài đặt mạng",
     "dark": "Tối",
-    "light": "Sáng"
+    "light": "Sáng",
+    "footer_section_nav_aria": "Đến mục"
   },
   "sidebar": {
     "home": "Trang chủ",

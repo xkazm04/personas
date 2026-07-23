@@ -74,5 +74,6 @@
   "collapse_sidebar": "Sbalit boční panel",
   "network_settings": "Nastavení sítě",
   "dark": "Tmavý",
-  "light": "Světlý"
+  "light": "Světlý",
+  "footer_section_nav_aria": "Přejít do sekce"
 }

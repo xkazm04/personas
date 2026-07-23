@@ -517,7 +517,8 @@
     "collapse_sidebar": "طي الشريط الجانبي",
     "network_settings": "إعدادات الشبكة",
     "dark": "داكن",
-    "light": "فاتح"
+    "light": "فاتح",
+    "footer_section_nav_aria": "الانتقال إلى القسم"
   },
   "sidebar": {
     "home": "الرئيسية",

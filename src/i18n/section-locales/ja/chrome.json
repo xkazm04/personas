@@ -74,5 +74,6 @@
   "collapse_sidebar": "サイドバーを折りたたむ",
   "network_settings": "ネットワーク設定",
   "dark": "ダーク",
-  "light": "ライト"
+  "light": "ライト",
+  "footer_section_nav_aria": "セクションへ移動"
 }

@@ -74,5 +74,6 @@
   "collapse_sidebar": "收起侧栏",
   "network_settings": "网络设置",
   "dark": "深色",
-  "light": "浅色"
+  "light": "浅色",
+  "footer_section_nav_aria": "前往板块"
 }

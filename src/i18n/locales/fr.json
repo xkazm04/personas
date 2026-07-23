@@ -517,7 +517,8 @@
     "collapse_sidebar": "Réduire la barre latérale",
     "network_settings": "Paramètres réseau",
     "dark": "Sombre",
-    "light": "Clair"
+    "light": "Clair",
+    "footer_section_nav_aria": "Aller à la section"
   },
   "sidebar": {
     "home": "Accueil",

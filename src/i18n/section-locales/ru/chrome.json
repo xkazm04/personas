@@ -74,5 +74,6 @@
   "collapse_sidebar": "Свернуть панель",
   "network_settings": "Настройки сети",
   "dark": "Тёмная",
-  "light": "Светлая"
+  "light": "Светлая",
+  "footer_section_nav_aria": "Перейти к разделу"
 }

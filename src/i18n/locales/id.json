@@ -517,7 +517,8 @@
     "collapse_sidebar": "Ciutkan bilah samping",
     "network_settings": "Pengaturan jaringan",
     "dark": "Gelap",
-    "light": "Terang"
+    "light": "Terang",
+    "footer_section_nav_aria": "Buka bagian"
   },
   "sidebar": {
     "home": "Beranda",

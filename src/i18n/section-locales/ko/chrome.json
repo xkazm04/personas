@@ -74,5 +74,6 @@
   "collapse_sidebar": "사이드바 접기",
   "network_settings": "네트워크 설정",
   "dark": "다크",
-  "light": "라이트"
+  "light": "라이트",
+  "footer_section_nav_aria": "섹션으로 이동"
 }

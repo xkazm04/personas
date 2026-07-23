@@ -517,7 +517,8 @@
     "collapse_sidebar": "Collapse sidebar",
     "network_settings": "Network settings",
     "dark": "Dark",
-    "light": "Light"
+    "light": "Light",
+    "footer_section_nav_aria": "Go to section"
   },
   "sidebar": {
     "home": "Home",

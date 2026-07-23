@@ -524,6 +524,7 @@ export type Translations = {
     network_settings: string;
     dark: string;
     light: string;
+    footer_section_nav_aria: string;
   };
   sidebar: {
     home: string;

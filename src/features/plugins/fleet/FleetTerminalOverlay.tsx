@@ -8,6 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
 import { FleetAttentionLegend } from './FleetAttentionLegend';
 import { FleetDebugLogButton } from './FleetDebugLogButton';
+import { DESKTOP_FOOTER_HEIGHT_PX } from '@/features/shared/chrome/DesktopFooter';
 import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
@@ -127,14 +128,21 @@ export function FleetTerminalOverlay({
       : tx(t.plugins.fleet.sessions_other, { count });
 
   return createPortal(
-    // Fullscreen terminal grid — a working surface (labeled region), not a
-    // centered dialog, so it doesn't use BaseModal. It starts below the 48px
-    // titlebar (`top-12`) rather than `inset-0` so the always-on-top titlebar
-    // (z-9999) — including its global Back button and the window controls —
-    // stays visible and usable above it. Dismissal: titlebar/overlay Back or
-    // Escape.
+    // Terminal grid — a working surface (labeled region), not a centered
+    // dialog, so it doesn't use BaseModal. It is deliberately NOT `inset-0`:
+    // it stops below the 48px titlebar (`top-12`) so the always-on-top titlebar
+    // — window controls and the global Back button — stays usable, and it stops
+    // ABOVE the desktop footer so the footer keeps working as the app's
+    // navigation strip while the sidebar is covered (see FooterSectionNav).
+    //
+    // The footer gap is reserved in layout, not left to z-order. Overlapping
+    // and relying on the footer's higher z-index is what failed before: the
+    // footer lives under a `contain: layout` ancestor, so its z-index was
+    // scoped to that subtree and this portal painted straight over it.
+    // Dismissal: titlebar/overlay Back, Escape, or the footer's fleet toggle.
     <div
-      className="fleet-typescale fixed left-0 right-0 bottom-0 top-12 z-[200] flex flex-col bg-background"
+      className="fleet-typescale fixed left-0 right-0 top-12 z-[200] flex flex-col bg-background"
+      style={{ bottom: DESKTOP_FOOTER_HEIGHT_PX }}
       data-testid="fleet-terminal-overlay"
       role="region"
       aria-label={t.plugins.fleet.grid_overlay_aria}

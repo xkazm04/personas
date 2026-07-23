@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard, Map, Compass } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
@@ -15,6 +16,7 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 import SystemLoadFooterIcon from '@/features/shared/chrome/SystemLoadFooterIcon';
+import { FooterSectionNav } from '@/features/shared/chrome/FooterSectionNav';
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/plugins/radio/components/RadioFooter'));
@@ -24,6 +26,16 @@ const FleetFooterIcon = lazy(() => import('@/features/plugins/fleet/FleetFooterI
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
+
+/**
+ * Height of the desktop footer bar in px (the `h-8` below).
+ *
+ * Exported so fullscreen surfaces can stop *above* the footer rather than
+ * relying on z-order to sit under it — reserving the space keeps the footer's
+ * controls clickable and keeps the surface's own bottom edge visible. Zero on
+ * mobile, where the footer isn't rendered at all.
+ */
+export const DESKTOP_FOOTER_HEIGHT_PX = IS_MOBILE ? 0 : 32;
 
 // ---------------------------------------------------------------------------
 // Account icon -- Google sign-in shortcut + auth status
@@ -549,12 +561,28 @@ function OnboardingReplayFooterIcon() {
 
 export default function DesktopFooter() {
   const radioEnabled = useSystemStore((s) => s.radioEnabled);
-  // Lift the footer above the Fleet grid overlay (z-200 portal) while it's open
-  // so it stays visible/usable in grid mode (the Fleet toggle is the way out).
+  // Grid mode covers the sidebar, so the footer takes over as the way into
+  // other sections (see FooterSectionNav) — and lifts above the z-200 overlay.
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   if (IS_MOBILE) return null;
 
-  return (
+  // PORTAL, not an in-place render — this is load-bearing, not tidiness.
+  //
+  // `PersonasPage`'s root carries `contain: layout style`. Layout containment
+  // makes that element BOTH a stacking context and the containing block for
+  // fixed-position descendants, so a footer rendered inside it can only stack
+  // against PersonasPage's own children: any `z-[210]` it wears is scoped to a
+  // context that itself sits at z-auto. The fleet grid overlay is portaled to
+  // <body> at z-200, so it painted over the entire PersonasPage subtree —
+  // footer included — no matter how high the footer's z-index went. Portaling
+  // the footer to <body> puts the two in the same stacking context, which is
+  // what finally makes the z-index mean what it says. It also fixes the
+  // footer's upward popovers (theme / account / project picker / fleet), which
+  // open INTO the overlay's region and were being painted underneath it.
+  //
+  // Visually identical either way: the bar is `position: fixed` with explicit
+  // insets, so it never depended on its DOM parent for placement.
+  return createPortal(
     <div
       role="contentinfo"
       className={`fixed bottom-0 left-0 right-0 ${fleetGridOpen ? 'z-[210]' : 'z-40'} flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background`}
@@ -582,16 +610,22 @@ export default function DesktopFooter() {
         </Suspense>
       </div>
 
-      {/* Center cluster: radio controls. Absolute-centered so left/right
-          cluster widths don't shift its position. Off by default — user
-          opts in via Settings → Account; preference is persisted. */}
-      {radioEnabled && (
+      {/* Center cluster, absolute-centered so left/right cluster widths don't
+          shift it. In grid mode it carries section navigation — the sidebar is
+          covered then, and this is the only way to reach another module without
+          first dismissing the grid. That takes precedence over radio: one is
+          navigation, the other is a nicety. */}
+      {fleetGridOpen ? (
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+          <FooterSectionNav />
+        </div>
+      ) : radioEnabled ? (
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
           <Suspense fallback={null}>
             <RadioFooter />
           </Suspense>
         </div>
-      )}
+      ) : null}
 
       {/* Right cluster: fleet toggle + system load + tour + project picker. */}
       <div className="flex items-center gap-1.5">
@@ -609,6 +643,7 @@ export default function DesktopFooter() {
         <TourResumeFooterIcon />
         <ProjectPickerFooterIcon />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
