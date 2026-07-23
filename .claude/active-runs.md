@@ -3,8 +3,9 @@
 ## Active
 
 
+
 ### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
-- Started: 2026-07-23. Status: started.
+- Started: 2026-07-23. Status: code complete, gates running (vitest 2401 green, i18n strict clean, cargo check clean; ts-rs regen via CARGO_TARGET_DIR=target-bindings — main target/debug has the exe lock + STATUS_ENTRYPOINT_NOT_FOUND test issue). Live verify + L1/L2 comparison runs next.
 - Paths: src-tauri/src/db/migrations/incremental.rs (env column + source CHECK widen on dev_kpi_measurements), src-tauri/src/commands/infrastructure/kpi_sim.rs (NEW: prepare/ingest), src-tauri/src/lib.rs (registration), src-tauri/src/engine/kpi_eval.rs (sim write path, no roll-forward), src/lib/bindings/DevKpiMeasurement.ts (regen), src/api/** (kpi sim api), src/features/teams/sub_kpis/{KPIDashboard,KpiDetailModal,useKpiDetail,kpiSim*} (env switcher, dashed sim series, LLM-engine provenance, Simulate dispatch + import), .claude/skills/kpi-sim/ (NEW skill), docs/plans/kpi-simulation-skill.md (decision updates).
 - Main checkout. Ledger NOT staged separately.
 
@@ -1080,6 +1081,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### passport-onboard-skill — .claude/skills/passport-onboard authored + full live field-test on brainiac — session fable-5
+- Started+completed 2026-07-23. Personas commits: skill authored (SKILL.md + references/{dimensions,connectors}.md) + `28dfa65e4` field-test refinements. Brainiac run: 8 commits on its master (a467da0 CLAUDE.md standards, 6a096d6 doc-map 12 entries, e721a91 skills adopt code-review+simplify / REJECT kpi-sim+ship-loop with reasons, 936bfba ops hardening: DEPLOY.md + backup/restore scripts + break-glass playbook, 03e3eeb 19 wiremock provider+breaker tests, ce1b2ff Sentry(test+prod, BRAINIAC_ENV-gated) + vendored LightTrack client at QwenProvider::complete chokepoint (local+test, prod skipped), 21740ff divergence eval profile + Stage::Divergence routing, 59ec459 gitignored app-cost.json) + auto-memory refresh (7 index entries).
+- PROCESS PROVEN: 3 parallel assessors → 4 pipelined select rounds (all recommended accepted; ONE custom "Other" answer — LightTrack — handled first-class: catalog `tracklight` confirmed self-hosted-capable, wire contract read from C:\Users\mkdol\dolla\LightTrack, client vendored over CI-breaking path dep) → 8 parallel Opus builders committing atomically to ONE shared checkout (explicit-path staging + lock retries + worktree patch-staging for co-mingled Cargo.toml/lock held; one cosmetic chmod-amend cross-fold, correctly left alone) → deterministic re-check all green.
+- NEXT: wall integration — dispatchRowToFleet-style "Onboard" dispatch composing the context block (passport snapshot + env slots + connector metadata) and pointing the Fleet session at this skill; onboarding-relevant per-env connector picks could then bind dev_projects slots on completion.
 
 ### brainiac-p3-memory-health — Brainiac-adoption P3: memory dispute claims + recall demotion + knowledge-health snapshots + governed rung — session fable-5
 - Started+completed 2026-07-23. Commit `9c5c57ebd` (66 files — includes the concurrent kpi-sim session's compiling kpi_sim.rs hunks under land-together; their session owns its completion entry).
