@@ -180,7 +180,8 @@
     "evaluator": "自动测量",
     "health_snapshot": "健康快照",
     "manual": "手动录入",
-    "scan": "扫描"
+    "scan": "扫描",
+    "simulation": "模拟 · LLM 引擎"
   },
   "kpi_scope_label": "范围",
   "kpi_scope_this_context": "此上下文",
@@ -192,5 +193,25 @@
   "attn_reason_pace": "落后",
   "evaluate_measured": "已测量 {count} 个 KPI。",
   "evaluate_none_due": "没有到期需要测量的 KPI。",
-  "evaluate_partial": "已测量 {measured} 个，{failed} 个失败"
+  "evaluate_partial": "已测量 {measured} 个，{failed} 个失败",
+  "env_filter_label": "环境",
+  "env_labels": {
+    "local": "本地",
+    "production": "生产环境",
+    "test": "测试环境"
+  },
+  "env_no_sim_series": "此环境中尚无模拟数据序列 — 运行一次模拟以生成数据。",
+  "env_sim_caption": "由 LLM 引擎模拟 — 仅供参考。进度、状态和自动驾驶始终读取生产环境数据。",
+  "sim_button": "模拟 KPI",
+  "sim_dispatched_toast": "已针对 {count} 个 KPI 发起模拟 — 可通过终端图标跟踪进度",
+  "sim_import": "导入结果",
+  "sim_import_hint": "从仓库中导入最新完成的模拟运行结果",
+  "sim_ingested_toast": "模拟结果已导入：{measurements} 项测量、{proposals} 项提案、{findings} 项发现",
+  "sim_mode_l1": "静态 (L1)",
+  "sim_mode_l1_hint": "仅基于代码的模拟 — 不会驱动实时应用。",
+  "sim_mode_l1l2": "静态 + 实时 (L1+L2)",
+  "sim_mode_l1l2_hint": "静态阶段完成后，会话还会在存在驱动器的情况下驱动正在运行的应用。",
+  "sim_running": "模拟运行中 — 打开终端",
+  "sim_skipped_toast": "{count} 行结果被验证拒绝 — 详见运行报告",
+  "trend_sim_suffix": "模拟"
 }

@@ -180,7 +180,8 @@
     "evaluator": "Automaticky měřeno",
     "health_snapshot": "Snímek stavu",
     "manual": "Ruční zadání",
-    "scan": "Skenování"
+    "scan": "Skenování",
+    "simulation": "Simulováno · LLM engine"
   },
   "kpi_scope_label": "Rozsah",
   "kpi_scope_this_context": "Tento kontext",
@@ -192,5 +193,25 @@
   "attn_reason_pace": "Pozadu",
   "evaluate_measured": "Změřeno {count} KPI.",
   "evaluate_none_due": "Žádné KPI nebylo ke změření.",
-  "evaluate_partial": "Změřeno {measured}, {failed} selhalo"
+  "evaluate_partial": "Změřeno {measured}, {failed} selhalo",
+  "env_filter_label": "Prostředí",
+  "env_labels": {
+    "local": "Lokální",
+    "production": "Produkce",
+    "test": "Test"
+  },
+  "env_no_sim_series": "V tomto prostředí zatím nejsou žádná simulovaná data — spusťte simulaci pro jejich vyplnění.",
+  "env_sim_caption": "Simulováno LLM enginem — pouze orientační. Tempo, stav a autopilot vždy čtou z produkce.",
+  "sim_button": "Simulovat KPI",
+  "sim_dispatched_toast": "Simulace spuštěna pro {count} KPI — sleduje ji ikona terminálu",
+  "sim_import": "Importovat výsledky",
+  "sim_import_hint": "Načíst nejnovější dokončený běh simulace z repozitáře",
+  "sim_ingested_toast": "Simulace načtena: {measurements} měření, {proposals} návrhů, {findings} zjištění",
+  "sim_mode_l1": "Statická (L1)",
+  "sim_mode_l1_hint": "Simulace založená pouze na kódu — živá aplikace se neovládá.",
+  "sim_mode_l1l2": "Statická + živá (L1+L2)",
+  "sim_mode_l1l2_hint": "Po statickém průchodu relace ovládá i běžící aplikaci tam, kde existuje driver.",
+  "sim_running": "Simulace běží — otevřít terminál",
+  "sim_skipped_toast": "{count} řádků výsledků bylo zamítnuto validací — viz zpráva o běhu",
+  "trend_sim_suffix": "simulováno"
 }

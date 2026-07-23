@@ -61,7 +61,9 @@ export function KpiDetailModal({
         <div className="max-w-2xl mx-auto space-y-5">
           <HeroBlock kpi={kpi} />
           <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
-            <KpiStoryChart kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
+            {/* The story chart tells the REAL story — production channel only;
+                simulated (local/test) rows stay in the history list, chipped. */}
+            <KpiStoryChart kpi={kpi} measurements={detail.measurements.filter((m) => (m.env ?? 'production') === 'production')} linkedGoals={detail.linkedGoals} />
           </Panel>
           <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
           <HowMeasured kpi={kpi} />
@@ -224,8 +226,15 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
                   <span className="typo-caption text-foreground/80">
                     <RelativeTime timestamp={m.measured_at} />
                   </span>
-                  <span className="ml-auto typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-secondary/40 text-foreground">
-                    {sourceLabels[m.source] ?? m.source}
+                  <span className="ml-auto inline-flex items-center gap-1">
+                    {(m.env ?? 'production') !== 'production' && (
+                      <span className="typo-caption px-1.5 py-0.5 rounded border border-violet-400/30 bg-violet-500/10 text-violet-300" data-testid="kpi-measurement-env-chip">
+                        {(t.kpis.env_labels as Record<string, string>)[m.env] ?? m.env}
+                      </span>
+                    )}
+                    <span className="typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-secondary/40 text-foreground">
+                      {sourceLabels[m.source] ?? m.source}
+                    </span>
                   </span>
                 </div>
                 {prov.summary && (

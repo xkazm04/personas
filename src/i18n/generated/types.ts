@@ -17488,7 +17488,28 @@ export type Translations = {
       manual: string;
       scan: string;
       health_snapshot: string;
+      simulation: string;
     };
+    env_filter_label: string;
+    env_labels: {
+      production: string;
+      test: string;
+      local: string;
+    };
+    env_sim_caption: string;
+    env_no_sim_series: string;
+    trend_sim_suffix: string;
+    sim_button: string;
+    sim_running: string;
+    sim_mode_l1: string;
+    sim_mode_l1_hint: string;
+    sim_mode_l1l2: string;
+    sim_mode_l1l2_hint: string;
+    sim_import: string;
+    sim_import_hint: string;
+    sim_dispatched_toast: string;
+    sim_ingested_toast: string;
+    sim_skipped_toast: string;
     pause_button: string;
     resume_button: string;
     archive_button: string;

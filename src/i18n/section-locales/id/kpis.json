@@ -180,7 +180,8 @@
     "evaluator": "Diukur otomatis",
     "health_snapshot": "Snapshot kesehatan",
     "manual": "Entri manual",
-    "scan": "Pindai"
+    "scan": "Pindai",
+    "simulation": "Disimulasikan · Mesin LLM"
   },
   "kpi_scope_label": "Cakupan",
   "kpi_scope_this_context": "Konteks ini",
@@ -192,5 +193,25 @@
   "attn_reason_pace": "Tertinggal",
   "evaluate_measured": "{count} KPI diukur.",
   "evaluate_none_due": "Tidak ada KPI yang jatuh tempo untuk diukur.",
-  "evaluate_partial": "{measured} diukur, {failed} gagal"
+  "evaluate_partial": "{measured} diukur, {failed} gagal",
+  "env_filter_label": "Lingkungan",
+  "env_labels": {
+    "local": "Lokal",
+    "production": "Produksi",
+    "test": "Uji"
+  },
+  "env_no_sim_series": "Belum ada seri simulasi di lingkungan ini — jalankan simulasi untuk mengisinya.",
+  "env_sim_caption": "Disimulasikan oleh mesin LLM — hanya bersifat saran. Pace, status, dan autopilot selalu membaca produksi.",
+  "sim_button": "Simulasikan KPI",
+  "sim_dispatched_toast": "Simulasi dikirim untuk {count} KPI — ikon terminal melacaknya",
+  "sim_import": "Impor hasil",
+  "sim_import_hint": "Serap hasil simulasi terbaru yang selesai dari repo",
+  "sim_ingested_toast": "Simulasi diserap: {measurements} pengukuran, {proposals} proposal, {findings} temuan",
+  "sim_mode_l1": "Statis (L1)",
+  "sim_mode_l1_hint": "Hanya simulasi berbasis kode — tidak menjalankan aplikasi live.",
+  "sim_mode_l1l2": "Statis + live (L1+L2)",
+  "sim_mode_l1l2_hint": "Setelah tahap statis, sesi ini juga menjalankan aplikasi yang berjalan jika driver tersedia.",
+  "sim_running": "Simulasi berjalan — buka terminal",
+  "sim_skipped_toast": "{count} baris hasil ditolak oleh validasi — lihat laporan proses",
+  "trend_sim_suffix": "simulasi"
 }

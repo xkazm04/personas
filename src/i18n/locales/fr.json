@@ -17503,7 +17503,8 @@
       "evaluator": "Mesuré automatiquement",
       "health_snapshot": "Instantané de santé",
       "manual": "Saisie manuelle",
-      "scan": "Analyse"
+      "scan": "Analyse",
+      "simulation": "Simulé · moteur LLM"
     },
     "kpi_scope_label": "Portée",
     "kpi_scope_this_context": "Ce contexte",
@@ -17515,7 +17516,27 @@
     "attn_reason_pace": "En retard",
     "evaluate_measured": "{count} KPI mesurés.",
     "evaluate_none_due": "Aucun KPI à mesurer.",
-    "evaluate_partial": "{measured} mesurés, {failed} en échec"
+    "evaluate_partial": "{measured} mesurés, {failed} en échec",
+    "env_filter_label": "Environnement",
+    "env_labels": {
+      "local": "Local",
+      "production": "Production",
+      "test": "Test"
+    },
+    "env_no_sim_series": "Aucune série simulée dans cet environnement pour l'instant — lancez une simulation pour la remplir.",
+    "env_sim_caption": "Simulé par le moteur LLM — à titre indicatif uniquement. Le rythme, le statut et le pilotage automatique se basent toujours sur la production.",
+    "sim_button": "Simuler les KPI",
+    "sim_dispatched_toast": "Simulation lancée sur {count} KPI — l'icône terminal en suit la progression",
+    "sim_import": "Importer les résultats",
+    "sim_import_hint": "Ingérer la dernière exécution de simulation terminée dans le dépôt",
+    "sim_ingested_toast": "Simulation ingérée : {measurements} mesures, {proposals} propositions, {findings} constats",
+    "sim_mode_l1": "Statique (L1)",
+    "sim_mode_l1_hint": "Simulation basée uniquement sur le code — aucune application en direct n'est pilotée.",
+    "sim_mode_l1l2": "Statique + en direct (L1+L2)",
+    "sim_mode_l1l2_hint": "Après la passe statique, la session pilote aussi l'application en cours d'exécution lorsqu'un pilote existe.",
+    "sim_running": "Simulation en cours — ouvrir le terminal",
+    "sim_skipped_toast": "{count} lignes de résultats ont été refusées par la validation — voir le rapport d'exécution",
+    "trend_sim_suffix": "simulé"
   },
   "deliberation": {
     "agenda": "Ordre du jour",

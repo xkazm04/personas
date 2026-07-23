@@ -180,7 +180,8 @@
     "evaluator": "स्वतः-मापित",
     "health_snapshot": "स्वास्थ्य स्नैपशॉट",
     "manual": "मैन्युअल प्रविष्टि",
-    "scan": "स्कैन"
+    "scan": "स्कैन",
+    "simulation": "सिम्युलेटेड · LLM इंजन"
   },
   "kpi_scope_label": "दायरा",
   "kpi_scope_this_context": "यह संदर्भ",
@@ -192,5 +193,25 @@
   "attn_reason_pace": "पीछे",
   "evaluate_measured": "{count} KPI मापे गए।",
   "evaluate_none_due": "मापने के लिए कोई KPI देय नहीं था।",
-  "evaluate_partial": "{measured} मापे गए, {failed} विफल"
+  "evaluate_partial": "{measured} मापे गए, {failed} विफल",
+  "env_filter_label": "एनवायरनमेंट",
+  "env_labels": {
+    "local": "लोकल",
+    "production": "प्रोडक्शन",
+    "test": "टेस्ट"
+  },
+  "env_no_sim_series": "इस एनवायरनमेंट में अभी तक कोई सिम्युलेटेड सीरीज़ नहीं है — इसे भरने के लिए एक सिमुलेशन चलाएं।",
+  "env_sim_caption": "LLM इंजन द्वारा सिम्युलेटेड — केवल सलाहकार। पेस, स्टेटस और ऑटोपायलट हमेशा प्रोडक्शन से रीड करते हैं।",
+  "sim_button": "KPI सिमुलेट करें",
+  "sim_dispatched_toast": "{count} KPI पर सिमुलेशन भेजा गया — टर्मिनल आइकन इसे ट्रैक करता है",
+  "sim_import": "परिणाम इम्पोर्ट करें",
+  "sim_import_hint": "रेपो से नवीनतम पूर्ण हुआ सिमुलेशन रन इनजेस्ट करें",
+  "sim_ingested_toast": "सिमुलेशन इनजेस्ट किया गया: {measurements} मेजरमेंट, {proposals} प्रपोज़ल, {findings} फाइंडिंग",
+  "sim_mode_l1": "स्टैटिक (L1)",
+  "sim_mode_l1_hint": "केवल कोड-आधारित सिमुलेशन — कोई लाइव ऐप नहीं चलाया जाता।",
+  "sim_mode_l1l2": "स्टैटिक + लाइव (L1+L2)",
+  "sim_mode_l1l2_hint": "स्टैटिक पास के बाद, सेशन उस चल रहे ऐप को भी चलाता है जहां ड्राइवर मौजूद है।",
+  "sim_running": "सिमुलेशन चल रहा है — टर्मिनल खोलें",
+  "sim_skipped_toast": "{count} रिजल्ट रो वैलिडेशन द्वारा अस्वीकृत किए गए — रन रिपोर्ट देखें",
+  "trend_sim_suffix": "सिम्युलेटेड"
 }

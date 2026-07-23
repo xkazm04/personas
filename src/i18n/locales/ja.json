@@ -17503,7 +17503,8 @@
       "evaluator": "自動測定",
       "health_snapshot": "ヘルススナップショット",
       "manual": "手動入力",
-      "scan": "スキャン"
+      "scan": "スキャン",
+      "simulation": "シミュレーション ・ LLMエンジン"
     },
     "kpi_scope_label": "スコープ",
     "kpi_scope_this_context": "このコンテキスト",
@@ -17515,7 +17516,27 @@
     "attn_reason_pace": "遅延",
     "evaluate_measured": "{count} 件の KPI を測定しました。",
     "evaluate_none_due": "測定対象の KPI はありませんでした。",
-    "evaluate_partial": "{measured} 件測定、{failed} 件失敗"
+    "evaluate_partial": "{measured} 件測定、{failed} 件失敗",
+    "env_filter_label": "環境",
+    "env_labels": {
+      "local": "ローカル",
+      "production": "本番",
+      "test": "テスト"
+    },
+    "env_no_sim_series": "この環境にはまだシミュレーションデータがありません。シミュレーションを実行して追加してください。",
+    "env_sim_caption": "LLMエンジンによるシミュレーションです(参考情報のみ)。ペース、ステータス、オートパイロットは常に本番データを参照します。",
+    "sim_button": "KPIをシミュレート",
+    "sim_dispatched_toast": "{count}件のKPIに対してシミュレーションを開始しました — ターミナルアイコンで進捗を確認できます",
+    "sim_import": "結果をインポート",
+    "sim_import_hint": "リポジトリから最新の完了済みシミュレーション結果を取り込みます",
+    "sim_ingested_toast": "シミュレーションを取り込みました: 測定値{measurements}件、提案{proposals}件、所見{findings}件",
+    "sim_mode_l1": "静的 (L1)",
+    "sim_mode_l1_hint": "コードに基づくシミュレーションのみ — 実際のアプリは操作しません。",
+    "sim_mode_l1l2": "静的 + ライブ (L1+L2)",
+    "sim_mode_l1l2_hint": "静的パスの後、ドライバーが存在する場合はセッションが稼働中のアプリも操作します。",
+    "sim_running": "シミュレーション実行中 — ターミナルを開く",
+    "sim_skipped_toast": "{count}件の結果行が検証により拒否されました — 実行レポートを確認してください",
+    "trend_sim_suffix": "シミュレーション"
   },
   "deliberation": {
     "agenda": "議題",

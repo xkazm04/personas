@@ -145,6 +145,35 @@ global flags, so existing setups are unchanged. The discovery loop (idea scan /
 backlog triage / Athena reactions) still rides its global flags today and folds
 into Suggest/Full in a follow-up.
 
+## Environments & simulation (the LLM-engine channel)
+
+Measurements carry an **environment** (`local` / `test` / `production` — the
+same vocabulary as the Factory passport's env split). Production is the
+authoritative channel: pace, off-track status, goal derivation and autopilot
+read **only** real telemetry (`current_value` rolls forward from
+evaluator/manual/connector measurements alone). The other two channels hold
+the **KPI simulation** — a long Dev-runner operation
+(`docs/plans/kpi-simulation-skill.md`) dispatched from the dashboard's
+**Simulate KPIs** button: a Fleet Claude Code session in the managed repo that
+
+- **measures locally** what a repo command can honestly measure (class 1 —
+  authored `measure_config` procedures arrive as adopt-proposals),
+- **simulates user behavior** with UAT-style Characters walking KPI-bound
+  journeys — `Static (L1)` over the code, or `Static + live (L1+L2)` driving
+  the running app where a driver exists (class 2 — lands as `simulation`
+  measurements, env-tagged, dashed on the chart),
+- **predicts real-world targets** from web benchmarks (class 3 — never a
+  measurement; lands as adjust/new/retire proposals with citations in the
+  existing review queue, or as `kpi_sim` findings in the triage spine).
+
+The dashboard's **Environment switcher** flips the Trend chart between
+channels; simulated series render dashed with a "· simulated" legend suffix
+and a standing caption naming the honesty rule. The detail drawer chips every
+non-production measurement (env + "Simulated · LLM engine"); the story chart
+stays production-only. Results are auto-ingested when the session exits
+(`dev_tools_kpi_sim_ingest` — validates evidence, refuses production-claiming
+sims, caps proposals) with a manual **Import results** fallback.
+
 ## Athena can manage KPIs
 
 The companion sees each project's active KPIs in her prompt and can steer this
