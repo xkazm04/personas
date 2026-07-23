@@ -81,6 +81,26 @@ export const DEPLOY_ACTIONS: DeployAction[] = [
       ].join('\n'),
   },
   {
+    id: 'docs-refresh',
+    row: 'docs',
+    label: 'Refresh stale docs',
+    hint: 'Deploy Claude Code to update the docs whose coupled sources changed after them',
+    kind: 'task',
+    applicable: (p) => (p.automationReadiness.artifacts.docRot?.dirty ?? 0) > 0,
+    taskTitle: (project) => `Refresh stale docs in ${project.name}`,
+    prompt: (_project, p) =>
+      [
+        `${p.automationReadiness.artifacts.docRot?.dirty ?? 0} docs in this repo are STALE: source paths they document changed after the doc's last update.`,
+        '',
+        'For each stale doc (git tells you which — compare each doc\'s last commit against commits touching the source areas it references):',
+        '1. Read the doc, then read what actually changed in its coupled sources since the doc was last touched (`git log` + the diffs).',
+        '2. Update ONLY what those changes made wrong or missing — keep unaffected sections byte-identical.',
+        '3. Never describe behaviour you cannot point to in the current code; when a documented feature was removed, say so rather than silently deleting the section.',
+        '',
+        'Prefer several small accurate edits over one rewrite. Do not touch application code.',
+      ].join('\n'),
+  },
+  {
     id: 'memory-seed',
     row: 'memory',
     label: 'Set up agent memory',

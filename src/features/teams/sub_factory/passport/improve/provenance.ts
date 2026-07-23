@@ -46,9 +46,13 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
     case 'docs': {
       const ev = raw.evidence;
       const n = ev?.docs_file_count ?? 0;
-      if (ev?.has_doc_map) return `${n} docs pages + a doc-map manifest — source→doc coupling is managed.`;
-      if (n >= 3) return `${n} markdown pages under docs/, but no doc-map coupling them to source.`;
-      return ev?.has_readme ? 'README only — no docs/ tree detected.' : 'No README or docs/ detected.';
+      const rot = raw.docRot;
+      const rotBit = rot && rot.dirty > 0
+        ? ` Rot scan: ${rot.dirty} of ${rot.tracked} tracked docs are stale vs their coupled sources.`
+        : rot ? ` Rot scan: all ${rot.tracked} tracked docs are current.` : '';
+      if (ev?.has_doc_map) return `${n} docs pages + a doc-map manifest — source→doc coupling is managed.${rotBit}`;
+      if (n >= 3) return `${n} markdown pages under docs/, but no doc-map coupling them to source.${rotBit}`;
+      return (ev?.has_readme ? 'README only — no docs/ tree detected.' : 'No README or docs/ detected.') + rotBit;
     }
     case 'memory': {
       const ev = raw.evidence;

@@ -4099,6 +4099,56 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Doc-rot telemetry (Brainiac-adoption P2). doc_status = the local
+    // `dirty_at` (git-derived: coupled sources newer than the doc);
+    // doc_read_events = APPEND-ONLY reads mined from transcripts, stamped
+    // `was_dirty` at insert so "rot being consumed" survives the doc later
+    // getting fixed (Brainiac 0025's harm-ranking signal). Resetting
+    // skill_scan_state is deliberate: the shared transcript miner now also
+    // extracts doc reads, and already-consumed bytes must be re-mined once to
+    // backfill them (skill events dedup via their unique index, so the replay
+    // is idempotent). MUST stay INSIDE `run_incremental`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "doc_rot_telemetry",
+            description: "Git-derived doc dirty tracking + append-only doc read events (+ one-time miner watermark reset)",
+            already_applied: |conn| has_table(conn, "doc_read_events"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS doc_status (
+                        project_id         TEXT NOT NULL,
+                        doc_path           TEXT NOT NULL,
+                        coupled_scope      TEXT,
+                        last_doc_commit    TEXT,
+                        last_source_commit TEXT,
+                        dirty_since        TEXT,
+                        changed_sources    TEXT,
+                        scanned_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (project_id, doc_path)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_doc_status_dirty
+                        ON doc_status(project_id, dirty_since) WHERE dirty_since IS NOT NULL;
+                    CREATE TABLE IF NOT EXISTS doc_read_events (
+                        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                        project_id TEXT NOT NULL,
+                        doc_path   TEXT NOT NULL,
+                        session_id TEXT,
+                        was_dirty  INTEGER NOT NULL DEFAULT 0,
+                        read_at    TEXT NOT NULL
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_dre_dedup
+                        ON doc_read_events(session_id, project_id, doc_path, read_at);
+                    CREATE INDEX IF NOT EXISTS idx_dre_doc
+                        ON doc_read_events(project_id, doc_path, read_at DESC);
+                    DELETE FROM skill_scan_state;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

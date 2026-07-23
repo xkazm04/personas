@@ -703,6 +703,7 @@ export const FINDING_ORIGINS = [
   "sentry_spike",
   "kpi_offtrack",
   "skill_dormant",
+  "doc_rot",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -1246,6 +1247,40 @@ export const scanSkillUsage = () =>
 
 export const getSkillUsageOverview = () =>
   safeInvoke<SkillUsageRow[]>([], "skill_usage_overview", {});
+
+// -- doc-rot telemetry (Brainiac-adoption P2) ---------------------------------
+
+/** One tracked doc + its rot state and read aggregates. Mirrors the Rust
+ *  `DocRotRow` (snake_case). `unscoped` = no coupling known (doc-map or
+ *  referenced paths) — tracked but never dirty-able. */
+export interface DocRotRow {
+  project_id: string;
+  doc_path: string;
+  unscoped: boolean;
+  last_doc_commit: string | null;
+  last_source_commit: string | null;
+  /** The local dirty_at — set while coupled sources are newer than the doc. */
+  dirty_since: string | null;
+  changed_sources: string[];
+  scanned_at: string;
+  reads_30d: number;
+  /** Reads that happened while the doc was already dirty — rot being consumed. */
+  dirty_reads_30d: number;
+  last_read_at: string | null;
+}
+
+/** Git-based doc-rot scan over every registered project. Throttled per project
+ *  (6h) unless `force`; one bounded `git log` per repo. */
+export const scanDocRot = (force = false) =>
+  invoke<{ projects_scanned: number; docs_tracked: number; dirty: number }>(
+    "doc_rot_scan",
+    { force },
+    undefined,
+    120_000,
+  );
+
+export const getDocRotOverview = () =>
+  safeInvoke<DocRotRow[]>([], "doc_rot_overview", {});
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });

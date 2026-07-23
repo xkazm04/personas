@@ -18,6 +18,8 @@ export interface ImproveRaw {
   skillUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null; dormant: boolean }>;
   /** Source-side liveliness per ADOPTABLE skill (how alive it is where it lives). */
   catalogUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null }>;
+  /** Doc-rot rollup (P2 git scan): absent = the scan hasn't run for this project. */
+  docRot?: { tracked: number; dirty: number; neverRead: number };
   /** Deterministic repo file-evidence (D1) — real test/CI/CLAUDE.md/migration signals. */
   evidence?: RepoEvidence | null;
   /** Skills installed elsewhere (other projects / global) but missing here. */

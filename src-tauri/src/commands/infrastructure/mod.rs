@@ -25,6 +25,7 @@ pub mod research_lab;
 pub mod scraper;
 pub mod settings;
 pub mod setup;
+pub mod doc_rot;
 pub mod skill_files;
 pub mod skill_usage;
 pub mod standards_scan;

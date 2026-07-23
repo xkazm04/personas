@@ -6,7 +6,7 @@
 // project rows (used after a Tier-0 config write — no need to re-scan).
 import { useCallback, useEffect, useState } from 'react';
 
-import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, type RepoEvidence, type SkillUsageRow } from '@/api/devTools/devTools';
+import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
@@ -48,11 +48,23 @@ export function usePassportData(): PassportData {
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
-    const [globalSkills, projectSkillLists, usageRows] = await Promise.all([
+    const [globalSkills, projectSkillLists, usageRows, docRotRows] = await Promise.all([
       listSkillsGlobal().catch(() => []),
       Promise.all(map.projects.map((m) => listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const))),
       getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
+      getDocRotOverview().catch(() => [] as DocRotRow[]),
     ]);
+    // Doc-rot rollup per project (P2): dirty docs + tracked docs that no
+    // session has ever read since telemetry began. Absent rows = scan hasn't
+    // run for that project → no rollup, never a guessed zero.
+    const docRotByProject = new Map<string, { tracked: number; dirty: number; neverRead: number }>();
+    for (const r of docRotRows) {
+      let agg = docRotByProject.get(r.project_id);
+      if (!agg) { agg = { tracked: 0, dirty: 0, neverRead: 0 }; docRotByProject.set(r.project_id, agg); }
+      agg.tracked += 1;
+      if (r.dirty_since) agg.dirty += 1;
+      if (r.last_read_at === null) agg.neverRead += 1;
+    }
     // Usage telemetry (P1) — registry rows keyed for the two lookups the wall
     // needs: this project's copy first, the global library copy as fallback.
     const usageByProject = new Map<string, Map<string, SkillUsageRow>>();
@@ -137,8 +149,9 @@ export function usePassportData(): PassportData {
           return !(hash && globalByHash.has(hash));
         })
         .map((s) => ({ name: s.name, description: s.description }));
-      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence });
-      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts }));
+      const docRot = docRotByProject.get(meta.project_id);
+      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot });
+      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot }));
     }
     const sorted = sortByNameAsc(passports);
     // Append to the local readiness history (deduped) so the cover sparkline +
@@ -155,14 +168,17 @@ export function usePassportData(): PassportData {
     return () => { cancelled = true; };
   }, [build]);
 
-  // Skill-usage mining (P1) — kick the incremental transcript sweep once per
-  // mount, then re-derive so fresh invoke counts reach the cells. Bounded per
-  // call (`exhausted` → continue, max 3 rounds ≈ 144MB, only ever on a cold
-  // store) and warn-only: telemetry must never break the wall.
+  // Telemetry sweeps (P1 skills + P2 doc rot) — once per mount, then re-derive
+  // so fresh counts reach the cells. ORDER MATTERS: the rot scan runs before
+  // transcript mining so backfilled doc reads stamp `was_dirty` against real
+  // dirty state. Both bounded (rot scan 6h-throttled per project; mining
+  // `exhausted` → continue, max 3 rounds) and warn-only: telemetry must never
+  // break the wall.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
+        await scanDocRot().catch(silentCatch('usePassportData:docRotScan'));
         for (let i = 0; i < 3; i++) {
           const s = await scanSkillUsage();
           if (cancelled || !s.exhausted) break;

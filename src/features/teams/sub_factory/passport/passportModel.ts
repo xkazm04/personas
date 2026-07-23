@@ -133,6 +133,13 @@ export interface PassportArtifacts {
   memory: MemoryLevel;
   /** Documentation posture, graded from the evidence probe (P0). */
   docs: DocsLevel;
+  /** Doc-rot rollup (P2 git scan): dirty = coupled sources newer than the doc;
+   *  neverRead = tracked docs no session has read since telemetry began.
+   *  Absent when the rot scan hasn't run — the row omits its health sub-label
+   *  rather than guessing zeros. The MATURITY ladder above stays stable;
+   *  volatile health rides here (deliberate deviation from the plan's 'fresh'
+   *  rung — a ladder that bounces week-to-week isn't a maturity ladder). */
+  docRot?: { tracked: number; dirty: number; neverRead: number };
   manifest: boolean;
   evals: EvalsLevel;
   skills: boolean;

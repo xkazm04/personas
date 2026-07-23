@@ -50,7 +50,7 @@ const DIM_ACTION: Record<string, { kind: PlanKind; tier: number; deployRow?: str
 const SUM_W = RUBRIC.reduce((a, d) => a + d.weight, 0);
 
 function passportOf(raw: ImproveRaw): AppPassport {
-  return derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts });
+  return derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot });
 }
 
 /** Every below-target gap across the fleet, ranked by impact-per-effort. */

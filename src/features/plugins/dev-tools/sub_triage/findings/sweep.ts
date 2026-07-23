@@ -11,6 +11,7 @@
 // reads as "nothing else to do".
 import {
   createFinding,
+  getDocRotOverview,
   getSkillUsageOverview,
   listFindingDedupKeys,
   listSkills,
@@ -35,6 +36,7 @@ import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/imp
 import { silentCatch } from '@/lib/silentCatch';
 
 import {
+  emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
   emitPassportGaps,
@@ -162,6 +164,21 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   } catch (e) {
     silentCatch('findings/sweep:skills')(e);
     skippedSensors.push('skills');
+  }
+
+  // -- E7: doc rot (P2 git-derived dirty tracking) ------------------------------
+  // Empty overview for this project = the rot scan never ran (or no docs) —
+  // the sensor is skipped, never guessed.
+  try {
+    const rot = (await getDocRotOverview()).filter((r) => r.project_id === project.id);
+    if (rot.length === 0) {
+      skippedSensors.push('docs');
+    } else {
+      drafts.push(...emitDocRotFindings(rot));
+    }
+  } catch (e) {
+    silentCatch('findings/sweep:docs')(e);
+    skippedSensors.push('docs');
   }
 
   // -- VERIFY (Phase 3A) ------------------------------------------------------

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
   emitPassportGaps,
@@ -8,6 +9,7 @@ import {
   emitSkillDormantFindings,
   emitStandardsFindings,
   type DormantSkill,
+  type RottingDoc,
 } from '../emitters';
 import {
   LLM_COST_THRESHOLD_USD,
@@ -211,5 +213,38 @@ describe('emitSkillDormantFindings (E6)', () => {
     const out = emitSkillDormantFindings([skill({ name: 'ghost' })]);
     expect(out[0]!.description).toContain('never invoked');
     expect(out[0]!.description).not.toMatch(/undefined|null/);
+  });
+});
+
+describe('emitDocRotFindings (E7)', () => {
+  const doc = (over: Partial<RottingDoc>): RottingDoc => ({
+    doc_path: 'docs/x.md',
+    dirty_since: '2026-06-01 00:00:00',
+    changed_sources: ['src/x/one.rs'],
+    reads_30d: 0,
+    dirty_reads_30d: 0,
+    ...over,
+  });
+
+  it('ranks consumed rot first, then oldest staleness, capped', () => {
+    const out = emitDocRotFindings([
+      doc({ doc_path: 'docs/clean.md', dirty_since: null }),
+      doc({ doc_path: 'docs/old.md', dirty_since: '2026-03-01 00:00:00' }),
+      doc({ doc_path: 'docs/read-while-stale.md', dirty_since: '2026-07-01 00:00:00', dirty_reads_30d: 4 }),
+      doc({ doc_path: 'docs/mid.md', dirty_since: '2026-05-01 00:00:00' }),
+      doc({ doc_path: 'docs/newest.md', dirty_since: '2026-07-10 00:00:00' }),
+    ]);
+    expect(out).toHaveLength(3); // DOC_ROT_TOP_N
+    expect(out[0]!.dedupKey).toBe('doc:docs/read-while-stale.md');
+    expect(out[0]!.impact).toBe(4); // consumed rot outranks quiet rot
+    expect(out[1]!.dedupKey).toBe('doc:docs/old.md');
+    expect(out[0]!.description).toContain('WHILE stale');
+  });
+
+  it('carries the changed sources into the refresh prompt + evidence', () => {
+    const out = emitDocRotFindings([doc({ changed_sources: ['src/a.rs', 'src/b.rs'] })]);
+    expect(out[0]!.description).toContain('src/a.rs');
+    expect(out[0]!.evidence).toMatchObject({ changedSources: ['src/a.rs', 'src/b.rs'] });
+    expect(out[0]!.description).not.toMatch(/undefined/);
   });
 });

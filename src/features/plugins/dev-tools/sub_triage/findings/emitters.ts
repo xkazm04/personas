@@ -21,6 +21,7 @@ import { slugifyUseCase } from '@/lib/useCaseSlug';
 
 import type { FindingDraft, KpiAttention, SentryIssue } from './types';
 import {
+  DOC_ROT_TOP_N,
   LLM_COST_THRESHOLD_USD,
   PASSPORT_MAX_TIER,
   SENTRY_COUNT_THRESHOLD,
@@ -266,6 +267,58 @@ export function emitSkillDormantFindings(skills: DormantSkill[]): FindingDraft[]
       dedupKey: `skill:${s.scope}:${s.name}`,
       impact: 2,
       effort: 1,
+      risk: 1,
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// E7 — doc rot (Brainiac-adoption P2: the local dirty_at, harm-ranked by reads)
+// ---------------------------------------------------------------------------
+
+/** The subset of `DocRotRow` this emitter reads — already filtered to the
+ *  project. Dirtiness is computed upstream (git: coupled sources newer than
+ *  the doc); this emitter ranks and phrases. */
+export interface RottingDoc {
+  doc_path: string;
+  dirty_since: string | null;
+  changed_sources: string[];
+  reads_30d: number;
+  dirty_reads_30d: number;
+}
+
+/** Harm-ranked: docs being read WHILE stale first (rot being consumed —
+ *  Brainiac's `was_dirty` signal), then oldest staleness. The description IS
+ *  the Dev-runner refresh prompt seed: it carries the exact changed sources so
+ *  the accepted task updates what changed instead of rewriting the doc. */
+export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
+  return docs
+    .filter((d) => d.dirty_since !== null)
+    .sort((a, b) =>
+      b.dirty_reads_30d !== a.dirty_reads_30d
+        ? b.dirty_reads_30d - a.dirty_reads_30d
+        : (a.dirty_since ?? '').localeCompare(b.dirty_since ?? ''),
+    )
+    .slice(0, DOC_ROT_TOP_N)
+    .map((d) => ({
+      origin: 'doc_rot' as const,
+      title: `Refresh stale doc: ${d.doc_path}`,
+      description:
+        `The doc ${d.doc_path} is stale since ${d.dirty_since}: coupled source paths changed after its last update` +
+        (d.changed_sources.length ? ` (${d.changed_sources.slice(0, 5).join(', ')})` : '') +
+        `${d.dirty_reads_30d > 0 ? `, and it was read ${d.dirty_reads_30d}× in the last 30 days WHILE stale — agents are grounding in outdated content` : ''}. ` +
+        `Read the doc and the changed sources, then update ONLY what those changes made wrong or missing — ` +
+        `do not rewrite unaffected sections and do not invent behaviour not present in the code.`,
+      category: 'maintainability',
+      evidence: {
+        docPath: d.doc_path,
+        dirtySince: d.dirty_since,
+        changedSources: d.changed_sources,
+        reads30d: d.reads_30d,
+        dirtyReads30d: d.dirty_reads_30d,
+      },
+      dedupKey: `doc:${d.doc_path}`,
+      impact: d.dirty_reads_30d > 0 ? 4 : 2,
+      effort: 2,
       risk: 1,
     }));
 }

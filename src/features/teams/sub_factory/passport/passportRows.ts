@@ -137,7 +137,13 @@ export const SECTIONS: SectionSpec[] = [
       ] }) },
       { key: 'context', label: 'Context coverage', info: 'How much of the codebase is mapped into the contexts agents navigate. Graded from the project context scan — none / partial / full.', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
       { key: 'instructions', label: 'Agent instructions', info: 'Guidance coding agents read before touching the repo — a CLAUDE.md file and/or an assigned team policy.', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
-      { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in — from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map so freshness is managed.', get: (p) => (ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs])) },
+      { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in — from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map. The sub-line is the git rot scan: dirty = coupled sources changed after the doc’s last update; unread = no session has opened it since telemetry began.', get: (p) => {
+        const rot = p.automationReadiness.artifacts.docRot;
+        const bits: string[] = [];
+        if (rot && rot.dirty > 0) bits.push(`${rot.dirty} dirty`);
+        if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
+        return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
+      } },
       { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries.', get: (p) => (ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory])) },
       { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
         const c = p.automationReadiness.artifacts.skillCounts;

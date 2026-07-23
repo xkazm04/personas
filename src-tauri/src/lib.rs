@@ -2641,6 +2641,9 @@ pub fn run() {
             // Skill usage telemetry (Brainiac-adoption P1)
             commands::infrastructure::skill_usage::skill_usage_scan,
             commands::infrastructure::skill_usage::skill_usage_overview,
+            // Doc-rot telemetry (Brainiac-adoption P2)
+            commands::infrastructure::doc_rot::doc_rot_scan,
+            commands::infrastructure::doc_rot::doc_rot_overview,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,

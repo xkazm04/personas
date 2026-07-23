@@ -25,6 +25,10 @@
 //! (built-ins like /model) are recorded but never surface — aggregation joins
 //! the registry; there is NO fake "fetch denominator" locally (Claude Code
 //! loads skills silently), so the overview reports invocations only.
+//!
+//! P2: the same mining pass also extracts DOC READS (`Read` tool_use into the
+//! repo's markdown) into `doc_read_events`, stamped `was_dirty` against
+//! `doc_status` at insert time — one watermark, one file walk, two signals.
 
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -57,6 +61,8 @@ pub struct SkillUsageScanSummary {
     pub files_scanned: u32,
     pub files_skipped: u32,
     pub events_added: u32,
+    /// P2: doc-read events extracted in the same pass.
+    pub doc_reads_added: u32,
     pub bytes_read: u64,
     pub registry_new: u32,
     pub registry_changed: u32,
@@ -229,14 +235,39 @@ struct MinedEvent {
     occurred_at: String,
 }
 
-/// Extract skill invocations from one COMPLETE transcript line. Two shapes:
-/// `tool_use` blocks named `Skill` (agent-invoked, `input.skill`) and
-/// `<command-name>/x</command-name>` markers (user-typed slash commands —
-/// built-ins included; aggregation filters them via the registry join).
-fn mine_line(line: &str, fallback_session: &str, out: &mut Vec<MinedEvent>) {
+/// One observed doc read (P2), pre-insert. `doc_path` is repo-relative with
+/// forward slashes, casing as the transcript reported it.
+struct MinedRead {
+    doc_path: String,
+    session_id: String,
+    read_at: String,
+}
+
+/// Normalize a filesystem path for case-insensitive prefix comparison on
+/// Windows: lowercase + forward slashes.
+fn norm_path(p: &str) -> String {
+    p.replace('\\', "/").to_lowercase()
+}
+
+/// Extract skill invocations (and P2: doc reads) from one COMPLETE transcript
+/// line. Three shapes: `tool_use` blocks named `Skill` (agent-invoked,
+/// `input.skill`), `<command-name>/x</command-name>` markers (user-typed slash
+/// commands — built-ins included; aggregation filters them via the registry
+/// join), and `Read` tool_use whose `file_path` is a markdown file inside the
+/// project root (`root_norm`, normalized lowercase/forward-slash, no trailing
+/// slash — pass an empty string to skip read mining).
+fn mine_line(
+    line: &str,
+    fallback_session: &str,
+    root_norm: &str,
+    root_len: usize,
+    out: &mut Vec<MinedEvent>,
+    reads: &mut Vec<MinedRead>,
+) {
     let has_tool = line.contains("\"name\":\"Skill\"");
     let has_cmd = line.contains("<command-name>");
-    if !has_tool && !has_cmd {
+    let has_read = !root_norm.is_empty() && line.contains("\"name\":\"Read\"");
+    if !has_tool && !has_cmd && !has_read {
         return;
     }
     let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
@@ -251,27 +282,61 @@ fn mine_line(line: &str, fallback_session: &str, out: &mut Vec<MinedEvent>) {
         .unwrap_or(fallback_session)
         .to_string();
 
-    if has_tool {
+    if has_tool || has_read {
         if let Some(content) = v
             .get("message")
             .and_then(|m| m.get("content"))
             .and_then(|c| c.as_array())
         {
             for block in content {
-                if block.get("type").and_then(|t| t.as_str()) == Some("tool_use")
-                    && block.get("name").and_then(|n| n.as_str()) == Some("Skill")
-                {
-                    if let Some(skill) = block
-                        .get("input")
-                        .and_then(|i| i.get("skill"))
-                        .and_then(|s| s.as_str())
-                    {
-                        out.push(MinedEvent {
-                            skill_name: skill.to_string(),
-                            session_id: session.clone(),
-                            occurred_at: ts.to_string(),
-                        });
+                if block.get("type").and_then(|t| t.as_str()) != Some("tool_use") {
+                    continue;
+                }
+                match block.get("name").and_then(|n| n.as_str()) {
+                    Some("Skill") => {
+                        if let Some(skill) = block
+                            .get("input")
+                            .and_then(|i| i.get("skill"))
+                            .and_then(|s| s.as_str())
+                        {
+                            out.push(MinedEvent {
+                                skill_name: skill.to_string(),
+                                session_id: session.clone(),
+                                occurred_at: ts.to_string(),
+                            });
+                        }
                     }
+                    Some("Read") if !root_norm.is_empty() => {
+                        let Some(fp) = block
+                            .get("input")
+                            .and_then(|i| i.get("file_path"))
+                            .and_then(|s| s.as_str())
+                        else {
+                            continue;
+                        };
+                        let norm = norm_path(fp);
+                        if norm.starts_with(root_norm)
+                            && norm.len() > root_len + 1
+                            && norm.as_bytes()[root_len] == b'/'
+                            && (norm.ends_with(".md") || norm.ends_with(".mdx"))
+                        {
+                            // Relative path keeps the transcript's casing for display;
+                            // joins against doc_status use lower() on both sides.
+                            // get() guards the byte index if lowercasing ever
+                            // shifted a non-ASCII length.
+                            let fwd = fp.replace('\\', "/");
+                            let Some(rel) = fwd.get(root_len + 1..) else { continue };
+                            if rel.is_empty() {
+                                continue;
+                            }
+                            reads.push(MinedRead {
+                                doc_path: rel.to_string(),
+                                session_id: session.clone(),
+                                read_at: ts.to_string(),
+                            });
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -303,6 +368,7 @@ fn mine_file(
     conn: &rusqlite::Connection,
     path: &Path,
     project_id: &str,
+    project_root: &str,
     budget: u64,
     summary: &mut SkillUsageScanSummary,
 ) -> Result<u64, AppError> {
@@ -345,10 +411,13 @@ fn mine_file(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
+    let root_norm = norm_path(project_root.trim_end_matches(['\\', '/']));
+    let root_len = root_norm.len();
     let mut events: Vec<MinedEvent> = Vec::new();
+    let mut reads: Vec<MinedRead> = Vec::new();
     for line in String::from_utf8_lossy(chunk).lines() {
         if !line.trim().is_empty() {
-            mine_line(line, &fallback_session, &mut events);
+            mine_line(line, &fallback_session, &root_norm, root_len, &mut events, &mut reads);
         }
     }
 
@@ -364,6 +433,25 @@ fn mine_file(
             rusqlite::params![ev.skill_name, project_id, ev.session_id, ev.occurred_at],
         )?;
         summary.events_added += added as u32;
+    }
+
+    // P2: doc reads, stamped was_dirty against doc_status AT INSERT — so "the
+    // agent consumed a stale doc" survives the doc later being fixed
+    // (Brainiac's document_reads.was_dirty, mined retroactively: the stamp
+    // compares the READ time against dirty_since, not against "now").
+    for rd in &reads {
+        let added = conn.execute(
+            "INSERT OR IGNORE INTO doc_read_events
+               (project_id, doc_path, session_id, was_dirty, read_at)
+             SELECT ?1, ?2, ?3,
+               COALESCE((SELECT s.dirty_since IS NOT NULL AND datetime(?4) >= s.dirty_since
+                         FROM doc_status s
+                         WHERE s.project_id = ?1 AND lower(s.doc_path) = lower(?2)), 0),
+               datetime(?4)
+             WHERE datetime(?4) IS NOT NULL",
+            rusqlite::params![project_id, rd.doc_path, rd.session_id, rd.read_at],
+        )?;
+        summary.doc_reads_added += added as u32;
     }
 
     offset += consumed;
@@ -422,16 +510,16 @@ pub fn skill_usage_scan(state: State<'_, Arc<AppState>>) -> Result<SkillUsageSca
         return Ok(summary);
     };
     let projects_dir = home.join(".claude").join("projects");
-    let by_encoded: std::collections::HashMap<String, String> = projects
+    let by_encoded: std::collections::HashMap<String, (String, String)> = projects
         .iter()
-        .map(|(pid, root)| (encode_claude_project_dir(root), pid.clone()))
+        .map(|(pid, root)| (encode_claude_project_dir(root), (pid.clone(), root.clone())))
         .collect();
 
     let mut budget = MAX_BYTES_PER_SCAN;
     let max_age = std::time::Duration::from_secs(MAX_FILE_AGE_DAYS * 86_400);
     let now = std::time::SystemTime::now();
 
-    'outer: for (encoded, pid) in &by_encoded {
+    'outer: for (encoded, (pid, root)) in &by_encoded {
         let dir = projects_dir.join(encoded);
         let Ok(rd) = std::fs::read_dir(&dir) else { continue };
         for entry in rd.flatten() {
@@ -454,7 +542,7 @@ pub fn skill_usage_scan(state: State<'_, Arc<AppState>>) -> Result<SkillUsageSca
                 summary.exhausted = true;
                 break 'outer;
             }
-            match mine_file(&conn, &path, pid, budget, &mut summary) {
+            match mine_file(&conn, &path, pid, root, budget, &mut summary) {
                 Ok(consumed) => {
                     budget = budget.saturating_sub(consumed);
                     summary.bytes_read += consumed;
@@ -529,13 +617,21 @@ pub fn skill_usage_overview(
 
 #[cfg(test)]
 mod tests {
-    use super::mine_line;
+    use super::{mine_line, norm_path, MinedEvent, MinedRead};
+
+    fn run(line: &str, session: &str, root: &str) -> (Vec<MinedEvent>, Vec<MinedRead>) {
+        let root_norm = norm_path(root.trim_end_matches(['\\', '/']));
+        let root_len = root_norm.len();
+        let mut out = Vec::new();
+        let mut reads = Vec::new();
+        mine_line(line, session, &root_norm, root_len, &mut out, &mut reads);
+        (out, reads)
+    }
 
     #[test]
     fn mines_skill_tool_use_blocks() {
         let line = r#"{"type":"assistant","timestamp":"2026-07-08T17:46:08.021Z","sessionId":"s1","message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"prototype","args":"x"}}]}}"#;
-        let mut out = Vec::new();
-        mine_line(line, "fallback", &mut out);
+        let (out, _) = run(line, "fallback", "");
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].skill_name, "prototype");
         assert_eq!(out[0].session_id, "s1");
@@ -545,8 +641,7 @@ mod tests {
     #[test]
     fn mines_command_name_markers_stripping_slash() {
         let line = r#"{"type":"user","timestamp":"2026-07-08T10:00:00.000Z","message":{"content":"<command-name>/research</command-name> then <command-name>/model</command-name>"}}"#;
-        let mut out = Vec::new();
-        mine_line(line, "file-stem", &mut out);
+        let (out, _) = run(line, "file-stem", "");
         let names: Vec<&str> = out.iter().map(|e| e.skill_name.as_str()).collect();
         assert_eq!(names, vec!["research", "model"]);
         assert_eq!(out[0].session_id, "file-stem"); // no sessionId in entry
@@ -554,9 +649,32 @@ mod tests {
 
     #[test]
     fn ignores_lines_without_markers_or_timestamp() {
-        let mut out = Vec::new();
-        mine_line(r#"{"type":"user","message":{"content":"plain"}}"#, "f", &mut out);
-        mine_line(r#"{"message":{"content":"<command-name>/x</command-name>"}}"#, "f", &mut out); // no timestamp
-        assert!(out.is_empty());
+        let (a, _) = run(r#"{"type":"user","message":{"content":"plain"}}"#, "f", "");
+        let (b, _) = run(r#"{"message":{"content":"<command-name>/x</command-name>"}}"#, "f", ""); // no timestamp
+        assert!(a.is_empty() && b.is_empty());
+    }
+
+    #[test]
+    fn mines_doc_reads_inside_root_only_markdown_only() {
+        let root = r"C:\Users\x\repo";
+        let mk = |fp: &str| {
+            format!(
+                r#"{{"type":"assistant","timestamp":"2026-07-08T10:00:00.000Z","sessionId":"s1","message":{{"content":[{{"type":"tool_use","name":"Read","input":{{"file_path":"{}"}}}}]}}}}"#,
+                fp.replace('\\', "\\\\"),
+            )
+        };
+        // backslashed path inside root, markdown → mined, relativized, case kept
+        let (_, reads) = run(&mk(r"C:\Users\x\repo\docs\Features\Guide.md"), "f", root);
+        assert_eq!(reads.len(), 1);
+        assert_eq!(reads[0].doc_path, "docs/Features/Guide.md");
+        // non-markdown inside root → ignored
+        let (_, none) = run(&mk(r"C:\Users\x\repo\src\main.rs"), "f", root);
+        assert!(none.is_empty());
+        // markdown OUTSIDE root → ignored
+        let (_, outside) = run(&mk(r"C:\Users\x\other\README.md"), "f", root);
+        assert!(outside.is_empty());
+        // read mining disabled (empty root) → ignored
+        let (_, off) = run(&mk(r"C:\Users\x\repo\README.md"), "f", "");
+        assert!(off.is_empty());
     }
 }

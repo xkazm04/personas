@@ -81,7 +81,12 @@ function levelFromScore(score: number): AutomationLevel {
 export function derivePassportFromMetadata(
   meta: CrossProjectProjectMetadata,
   project: DevProject,
-  opts?: { hasSkills?: boolean; evidence?: RepoEvidence | null; skillCounts?: { reused: number; own: number } },
+  opts?: {
+    hasSkills?: boolean;
+    evidence?: RepoEvidence | null;
+    skillCounts?: { reused: number; own: number; dormant?: number };
+    docRot?: { tracked: number; dirty: number; neverRead: number };
+  },
 ): AppPassport {
   const hasSkills = Boolean(opts?.hasSkills);
   // Deep evidence (D1) — real file signals from the repo probe. Null on older
@@ -311,6 +316,7 @@ export function derivePassportFromMetadata(
         evals: evalsLevel,
         skills: hasSkills,
         skillCounts: opts?.skillCounts,
+        docRot: opts?.docRot,
       },
       selfVerify,
       aiInWorkflow,

@@ -5,7 +5,7 @@
 // that raised it, and a popover showing the raw evidence that justified emission,
 // so the user can judge the claim instead of trusting it.
 import { useState } from 'react';
-import { Activity, AlertTriangle, DollarSign, ClipboardCheck, MoonStar, Target, Info } from 'lucide-react';
+import { Activity, AlertTriangle, DollarSign, ClipboardCheck, FileClock, MoonStar, Target, Info } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { FindingOrigin } from '@/api/devTools/devTools';
@@ -43,6 +43,11 @@ const ORIGIN_META: Record<
     label: 'Dormant skill',
     icon: MoonStar,
     tw: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
+  },
+  doc_rot: {
+    label: 'Stale doc',
+    icon: FileClock,
+    tw: 'bg-orange-500/10 text-orange-300 border-orange-500/25',
   },
 };
 
