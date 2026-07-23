@@ -6,17 +6,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { STATE_INK } from './ink';
 import type { Island } from './types';
-
-const COPY = {
-  title: 'Projects',
-  open: 'Show project list',
-  close: 'Hide project list',
-  newProject: 'New project',
-  show: 'Show in canvas',
-  hide: 'Hide from canvas',
-};
 
 const LINEAR = { duration: 0.2, ease: 'linear' as const };
 
@@ -29,6 +22,7 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
   onToggleVisible: (slug: string) => void;
   onNewProject: () => void;
 }) {
+  const { t } = useTranslation();
   const sorted = [...islands].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -42,8 +36,8 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
             exit={{ opacity: 0 }}
             transition={LINEAR}
             onClick={onOpenToggle}
-            aria-label={COPY.open}
-            title={COPY.open}
+            aria-label={t.mastermind.projects_open}
+            title={t.mastermind.projects_open}
             className="absolute top-3 left-3 z-10 p-2 rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm text-foreground/70 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
             data-testid="mm-projects-open"
           >
@@ -64,13 +58,13 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
           >
             {/* header band — matches the app sidebar's section header */}
             <div className="flex items-center gap-1.5 px-4 py-3 border-b border-primary/10 bg-primary/5">
-              <span className="typo-label text-foreground/90">{COPY.title}</span>
+              <span className="typo-label text-foreground/90">{t.mastermind.projects_title}</span>
               <span className="typo-caption text-foreground/50 tabular-nums">{sorted.length}</span>
               <button
                 type="button"
                 onClick={onNewProject}
-                aria-label={COPY.newProject}
-                title={COPY.newProject}
+                aria-label={t.mastermind.new_project}
+                title={t.mastermind.new_project}
                 className="ml-auto p-1 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring"
                 data-testid="mm-projects-new"
               >
@@ -79,8 +73,8 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
               <button
                 type="button"
                 onClick={onOpenToggle}
-                aria-label={COPY.close}
-                title={COPY.close}
+                aria-label={t.mastermind.projects_close}
+                title={t.mastermind.projects_close}
                 className="p-1 rounded-interactive text-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors focus-ring"
                 data-testid="mm-projects-close"
               >
@@ -99,9 +93,9 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
                       <button
                         type="button"
                         onClick={() => onToggleVisible(i.slug)}
-                        aria-label={isHidden ? COPY.show : COPY.hide}
+                        aria-label={isHidden ? t.mastermind.show_in_canvas : t.mastermind.hide_from_canvas}
                         aria-pressed={!isHidden}
-                        title={isHidden ? COPY.show : COPY.hide}
+                        title={isHidden ? t.mastermind.show_in_canvas : t.mastermind.hide_from_canvas}
                         className="p-1 rounded-interactive text-foreground/55 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
                         data-testid={`mm-project-visibility-${i.slug}`}
                       >

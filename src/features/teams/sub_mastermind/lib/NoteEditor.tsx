@@ -4,11 +4,11 @@
 // pick is what lands on the canvas. Commits live; Enter (no Shift) closes.
 import { Check, Trash2 } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { NOTE_FONT } from './ink';
 import { NOTE_SIZE_PX } from './notes';
 import type { CanvasNote, NoteFont, NoteSize } from './types';
-
-const COPY = { placeholder: 'Write a note…', done: 'Done', remove: 'Remove note' };
 
 // Button font size ≈ the applied world size, scaled to fit a control row.
 const SIZES: Array<{ id: NoteSize; label: string; fs: number }> = [
@@ -35,6 +35,7 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const chip = (active: boolean) =>
     `px-2.5 py-1 typo-caption rounded-interactive transition-colors focus-ring ${
       active ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/60 hover:text-foreground hover:bg-primary/5'
@@ -51,7 +52,7 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
         autoFocus
         value={note.text}
         rows={2}
-        placeholder={COPY.placeholder}
+        placeholder={t.mastermind.note_placeholder}
         onChange={(e) => onChange({ text: e.target.value })}
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onClose(); }
@@ -95,7 +96,7 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
         <button
           type="button"
           onClick={onDelete}
-          aria-label={COPY.remove}
+          aria-label={t.mastermind.note_remove}
           className="p-1.5 rounded-interactive text-status-error/80 hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
           data-testid="mm-note-delete"
         >
@@ -104,7 +105,7 @@ export function NoteEditor({ note, x, y, onChange, onDelete, onClose }: {
         <button
           type="button"
           onClick={onClose}
-          aria-label={COPY.done}
+          aria-label={t.common.done}
           className="p-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring"
           data-testid="mm-note-done"
         >

@@ -46,6 +46,9 @@ export interface DimNode {
   action?: 'standards' | 'deploy' | 'ideas' | null;
   /** Ideas dimension only: whole days since the last idea scan (null = never). */
   days?: number | null;
+  /** An action we dispatched for this cell is still in flight (Ideas scan) —
+   *  the cell pulses so the feedback lives where the click happened. */
+  busy?: boolean;
 }
 
 export interface Island {

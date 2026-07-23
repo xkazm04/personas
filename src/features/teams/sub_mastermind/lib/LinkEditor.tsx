@@ -3,11 +3,11 @@
 // palette, delete. Commits live; Enter or Done closes.
 import { Check, Trash2 } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { LINK_PALETTE } from './links';
 import { mix } from './ink';
 import type { UserLink } from './types';
-
-const COPY = { placeholder: 'Label this connection…', full: 'Full', dashed: 'Dashed', done: 'Done', remove: 'Remove connection' };
 
 export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
   link: UserLink;
@@ -18,6 +18,7 @@ export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
   onDelete: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const styleBtn = (dashed: boolean, label: string) => (
     <button
       type="button"
@@ -46,13 +47,13 @@ export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
       <input
         autoFocus
         value={link.label}
-        placeholder={COPY.placeholder}
+        placeholder={t.mastermind.link_placeholder}
         onChange={(e) => onChange({ label: e.target.value })}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') onClose(); }}
         className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40"
         data-testid="mm-link-label-input"
       />
-      <div className="flex items-center gap-1">{styleBtn(false, COPY.full)}{styleBtn(true, COPY.dashed)}</div>
+      <div className="flex items-center gap-1">{styleBtn(false, t.mastermind.link_full)}{styleBtn(true, t.mastermind.link_dashed)}</div>
       <div className="flex items-center gap-1.5">
         {LINK_PALETTE.map((c) => (
           <button
@@ -68,7 +69,7 @@ export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
         <button
           type="button"
           onClick={onDelete}
-          aria-label={COPY.remove}
+          aria-label={t.mastermind.link_remove}
           className="ml-auto p-1.5 rounded-interactive text-status-error/80 hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
           data-testid="mm-link-delete"
         >
@@ -77,7 +78,7 @@ export function LinkEditor({ link, x, y, onChange, onDelete, onClose }: {
         <button
           type="button"
           onClick={onClose}
-          aria-label={COPY.done}
+          aria-label={t.common.done}
           className="p-1.5 rounded-interactive text-primary hover:bg-primary/10 transition-colors focus-ring"
           data-testid="mm-link-done"
         >

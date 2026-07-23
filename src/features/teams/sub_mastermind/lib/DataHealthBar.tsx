@@ -5,6 +5,8 @@
 // honestly "absent". This compact page-level chrome (NOT inside the SVG) names
 // exactly which families failed and offers a retry; it renders NOTHING when
 // every family is clean, so a healthy canvas carries zero added chrome.
+// Anchored ABOVE the mode toolbar (both are bottom-center) — the two must
+// never overlap: losing mode switching the moment data degrades is a trap.
 import { AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
@@ -19,7 +21,7 @@ export function DataHealthBar({ failed, onRetry }: {
   if (failed.length === 0) return null;
   return (
     <div
-      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-interactive bg-secondary border border-status-warning/40 shadow-elevation-2"
+      className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-interactive bg-secondary border border-status-warning/40 shadow-elevation-2"
       role="status"
       data-testid="mm-data-health"
     >

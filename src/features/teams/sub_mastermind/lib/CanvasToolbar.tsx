@@ -1,36 +1,37 @@
-// Bottom canvas toolbar — mouse-mode switch. View = pan/zoom; Edit = drag a
-// project island to rearrange the map (position persists). Prototype copy is
-// hardcoded (COPY const) pending consolidation i18n.
+// Bottom canvas toolbar — mouse-mode switch. Edit = drag a project island to
+// rearrange the map (position persists); Group/Connect/Note draw on the canvas.
 import { BoxSelect, Move, Spline, Type } from 'lucide-react';
+
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 
 import type { CanvasMode } from './types';
 
-const COPY = { edit: 'Edit', group: 'Group', connect: 'Connect', note: 'Note', label: 'Canvas mode' };
-
-// One-line orientation per mode — what the mouse does right now.
-const HINTS: Record<CanvasMode, string> = {
-  edit: 'Drag a header to move · click it for details',
-  group: 'Drag on the canvas to draw a group',
-  connect: 'Drag from one project to another',
-  note: 'Click on the canvas to write a note',
-};
-
-const MODES: Array<{ id: CanvasMode; icon: typeof Move; label: string; key: string }> = [
-  { id: 'edit', icon: Move, label: COPY.edit, key: 'E' },
-  { id: 'group', icon: BoxSelect, label: COPY.group, key: 'G' },
-  { id: 'connect', icon: Spline, label: COPY.connect, key: 'C' },
-  { id: 'note', icon: Type, label: COPY.note, key: 'N' },
+const MODES: Array<{ id: CanvasMode; icon: typeof Move; key: string }> = [
+  { id: 'edit', icon: Move, key: 'E' },
+  { id: 'group', icon: BoxSelect, key: 'G' },
+  { id: 'connect', icon: Spline, key: 'C' },
+  { id: 'note', icon: Type, key: 'N' },
 ];
 
+const modeLabel = (t: Translations, id: CanvasMode) =>
+  ({ edit: t.mastermind.mode_edit, group: t.mastermind.mode_group, connect: t.mastermind.mode_connect, note: t.mastermind.mode_note })[id];
+
+// One-line orientation per mode — what the mouse does right now.
+const modeHint = (t: Translations, id: CanvasMode) =>
+  ({ edit: t.mastermind.hint_edit, group: t.mastermind.hint_group, connect: t.mastermind.hint_connect, note: t.mastermind.hint_note })[id];
+
 export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onModeChange: (m: CanvasMode) => void }) {
+  const { t } = useTranslation();
   return (
     <div
       className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 p-1 rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm"
       role="group"
-      aria-label={COPY.label}
+      aria-label={t.mastermind.toolbar_label}
     >
-      {MODES.map(({ id, icon: Icon, label, key }) => {
+      {MODES.map(({ id, icon: Icon, key }) => {
         const active = mode === id;
+        const label = modeLabel(t, id);
         return (
           <button
             key={id}
@@ -49,7 +50,7 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
         );
       })}
       <span className="hidden sm:inline typo-caption text-foreground/55 border-l border-primary/15 pl-2.5 pr-1.5 ml-1 whitespace-nowrap">
-        {HINTS[mode]}
+        {modeHint(t, mode)}
       </span>
     </div>
   );

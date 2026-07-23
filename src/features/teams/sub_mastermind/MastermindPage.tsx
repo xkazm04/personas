@@ -4,9 +4,8 @@
 // and open Fleet CLI sessions as clickable dock nodes per island.
 //
 // ── PROTOTYPE SCAFFOLD (/prototype round 4, throwaway) ──────────────────────
-// Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired). 11
-// dimensions per island; Fleet dock nodes open the CLI preview popover.
-// Prototype copy is hardcoded (COPY const) pending consolidation i18n.
+// Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired); the
+// switcher stays until the module is complete and a final view mode is chosen.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
@@ -38,6 +37,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { CanvasToolbar } from './lib/CanvasToolbar';
 import { DataHealthBar } from './lib/DataHealthBar';
+import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
@@ -53,19 +53,7 @@ import type { CanvasMode, DimNode, FleetNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
-const COPY = {
-  mosaic: 'Hex Puzzle',
-  inverse: 'Inverse Grid',
-  demo: 'demo data — no projects scanned yet',
-  switcher: 'Mastermind prototype variant',
-  loadingLayout: 'Loading canvas layout',
-};
-
 type VariantId = 'mosaic' | 'inverse';
-const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
-  { id: 'mosaic', label: COPY.mosaic },
-  { id: 'inverse', label: COPY.inverse },
-];
 
 const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
 
@@ -84,7 +72,7 @@ export default function MastermindPage() {
 
 function MastermindInner() {
   const { t } = useTranslation();
-  const { passports, rawByProject, loading, error, reload } = usePassportData();
+  const { passports, rawByProject, loading, error, reload, rescan, rescanning } = usePassportData();
   const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
   // Scene store — the single batched spine: cross-project relations (meta) +
@@ -114,12 +102,27 @@ function MastermindInner() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
-  const [scanBusy, setScanBusy] = useState(false);
-  // Project of the last idea scan WE dispatched — lets a scan-completion event
-  // (which carries only a job id) invalidate exactly that project's rollup
-  // instead of a blanket refetch. Null → scan came from elsewhere, fall back
-  // to a single batched reload.
-  const pendingScanSlug = useRef<string | null>(null);
+  // Projects with an idea scan WE dispatched still in flight. Per-project (a
+  // scan for one project must not disable the popover for another), and each
+  // entry carries a safety timeout so a missed terminal event can never wedge
+  // the Ideas dimension until remount.
+  const [busySlugs, setBusySlugs] = useState<ReadonlySet<string>>(new Set());
+  const scanTimers = useRef(new Map<string, number>());
+  const clearScanBusy = useCallback((slug: string) => {
+    const timer = scanTimers.current.get(slug);
+    if (timer !== undefined) { window.clearTimeout(timer); scanTimers.current.delete(slug); }
+    setBusySlugs((prev) => {
+      if (!prev.has(slug)) return prev;
+      const next = new Set(prev);
+      next.delete(slug);
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    const timers = scanTimers.current;
+    return () => { for (const id of timers.values()) window.clearTimeout(id); timers.clear(); };
+  }, []);
+  const [demoDismissed, setDemoDismissed] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -194,12 +197,12 @@ function MastermindInner() {
   const onScanStatus = useCallback((event: { payload: { status: string } }) => {
     const { status } = event.payload;
     if (status === 'completed' || status === 'completed_with_warning' || status === 'failed') {
-      const slug = pendingScanSlug.current;
-      if (slug) { void invalidateScans(slug); pendingScanSlug.current = null; }
-      else void loadScans();
-      setScanBusy(false);
+      const pending = [...scanTimers.current.keys()];
+      if (pending.length > 0) {
+        for (const slug of pending) { void invalidateScans(slug); clearScanBusy(slug); }
+      } else void loadScans();
     }
-  }, [invalidateScans, loadScans]);
+  }, [invalidateScans, loadScans, clearScanBusy]);
   useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
 
   // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
@@ -291,19 +294,21 @@ function MastermindInner() {
   const bad = (s: string) => s === 'failed' || s === 'stale';
   const failedFamilies = useMemo(() => {
     const out: string[] = [];
+    if (error) out.push(t.mastermind.family_passports);
     if (bad(metaStatus)) out.push(t.mastermind.family_relations);
     if (bad(scansStatus)) out.push(t.mastermind.family_scans);
     if (factoryError) out.push(t.mastermind.family_kpi);
     if (bad(sentryStatus)) out.push(t.mastermind.family_monitoring);
     if (fleetSessionsError) out.push(t.mastermind.family_fleet);
     return out;
-  }, [metaStatus, scansStatus, factoryError, sentryStatus, fleetSessionsError, t]);
+  }, [error, metaStatus, scansStatus, factoryError, sentryStatus, fleetSessionsError, t]);
 
   const onRetryData = useCallback(() => {
     retryFailed();
+    if (error) reload();
     if (factoryError) factoryReload();
     if (fleetSessionsError) void fleetRefresh();
-  }, [retryFailed, factoryError, factoryReload, fleetSessionsError, fleetRefresh]);
+  }, [retryFailed, error, reload, factoryError, factoryReload, fleetSessionsError, fleetRefresh]);
   // Saved positions + live fleet + per-dim Improve actionability overlay the
   // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
   // canvas cell is clickable exactly when its wall row would show a gear.
@@ -315,14 +320,18 @@ function MastermindInner() {
       const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? [];
       const passport = passports.find((p) => p.identity.slug === i.slug);
       const raw = rawByProject.get(i.slug);
-      const nodes = i.nodes.map((n) => ({ ...n, ...dimAction(n.key, passport, raw) }));
+      const nodes = i.nodes.map((n) => ({
+        ...n,
+        ...dimAction(n.key, passport, raw),
+        ...(n.key === 'ideas' && busySlugs.has(i.slug) ? { busy: true } : {}),
+      }));
       // Attention derives from the RESOLVED fleet (live for real projects, the
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
       const attention = computeAttention(fleet);
       return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
     }),
-  }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject]);
+  }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject, busySlugs]);
 
   const onIslandMove = (slug: string, x: number, y: number) =>
     setOverrides((prev) => ({ ...prev, [slug]: { x, y } }));
@@ -390,9 +399,12 @@ function MastermindInner() {
   // Dispatch ONE agent's idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
   const runIdeaScan = async (agentKey: string) => {
-    if (!scanPopup || scanBusy) return;
-    setScanBusy(true);
-    pendingScanSlug.current = scanPopup.slug;
+    if (!scanPopup || busySlugs.has(scanPopup.slug)) return;
+    const slug = scanPopup.slug;
+    setBusySlugs((prev) => new Set(prev).add(slug));
+    // Safety net: if the terminal IDEA_SCAN_STATUS event never reaches us,
+    // release the project after 3 minutes instead of wedging its Ideas cell.
+    scanTimers.current.set(slug, window.setTimeout(() => clearScanBusy(slug), 180_000));
     useOverviewStore.getState().processStarted(
       'idea_scan',
       undefined,
@@ -400,13 +412,13 @@ function MastermindInner() {
       { section: 'plugins', tab: 'idea-scanner' },
     );
     try {
-      await runScan(scanPopup.slug, [agentKey]);
+      await runScan(slug, [agentKey]);
       addToast(`Idea scan dispatched (${agentKey})`, 'success');
-      void invalidateScans(scanPopup.slug);
+      void invalidateScans(slug);
       setScanPopup(null);
     } catch (err) {
       useOverviewStore.getState().processEnded('idea_scan', 'failed');
-      setScanBusy(false);
+      clearScanBusy(slug);
       toastCatch('mastermind idea scan')(err);
     }
   };
@@ -439,9 +451,11 @@ function MastermindInner() {
   return (
     <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      {/* Hold the canvas back until the durable layout doc has hydrated, so the
-          variant's sync layout initializers read the persisted doc. */}
-      {layoutReady ? (
+      {/* Hold the canvas back until the durable layout doc has hydrated (so the
+          variant's sync layout initializers read the persisted doc) AND the
+          first passport load has resolved — an empty world during the fetch
+          reads as "you have nothing", not "loading". */}
+      {layoutReady && !(loading && passports.length === 0) ? (
         <Canvas
           scene={canvasScene}
           mode={mode}
@@ -455,12 +469,20 @@ function MastermindInner() {
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
-        <LoadingSpinner label={COPY.loadingLayout} />
+        <LoadingSpinner label={layoutReady ? t.mastermind.loading_projects : t.mastermind.loading_layout} />
       )}
 
-      {/* prototype-only variant switcher */}
+      {/* variant switcher — stays until the module is complete and a final view mode is chosen */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-        <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
+        <SegmentedTabs
+          tabs={[{ id: 'mosaic', label: t.mastermind.variant_mosaic }, { id: 'inverse', label: t.mastermind.variant_inverse }]}
+          activeTab={variant}
+          onTabChange={setVariant}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.mastermind.variant_switcher}
+        />
       </div>
 
       <ProjectListSidebar
@@ -504,7 +526,7 @@ function MastermindInner() {
           name={positioned.islands.find((i) => i.slug === scanPopup.slug)?.name ?? scanPopup.slug}
           scans={scans.get(scanPopup.slug) ?? []}
           anchor={{ x: scanPopup.x, y: scanPopup.y }}
-          busy={scanBusy}
+          busy={busySlugs.has(scanPopup.slug)}
           onRun={(agentKey) => void runIdeaScan(agentKey)}
           onClose={() => setScanPopup(null)}
         />
@@ -519,14 +541,17 @@ function MastermindInner() {
         editProject={null}
       />
 
-      {scene.demo && (
-        <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
-          {COPY.demo}
-        </div>
+      {scene.demo && layoutReady && !demoDismissed && (
+        <DemoNotice
+          scanning={rescanning}
+          onScan={rescan}
+          onNewProject={() => setNewProjectOpen(true)}
+          onDismiss={() => setDemoDismissed(true)}
+        />
       )}
-      {error && (
-        <div className="absolute top-14 right-3 z-10 typo-caption text-status-error px-2 py-1 rounded-interactive bg-secondary/60">
-          {error}
+      {scene.demo && demoDismissed && (
+        <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
+          {t.mastermind.demo_badge}
         </div>
       )}
 

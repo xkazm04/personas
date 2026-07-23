@@ -5,17 +5,13 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { CoverBody, IMPROVABLE_ROWS, InkWallCell } from '@/features/teams/sub_factory/passport/ProjectsPassportWall';
 import { ImproveCell } from '@/features/teams/sub_factory/passport/improve/ImproveCell';
 import { SECTIONS } from '@/features/teams/sub_factory/passport/passportRows';
 import { SectionIcon } from '@/features/teams/sub_factory/passport/passportWidgets';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
-
-const COPY = {
-  title: 'Project passport',
-  close: 'Close sidebar',
-  demo: 'Demo project — the passport column arrives with live data. Scan projects in Factory to light this up.',
-};
 
 export function ProjectSidebar({ passport, name, onClose }: {
   passport: AppPassport | null;
@@ -23,6 +19,7 @@ export function ProjectSidebar({ passport, name, onClose }: {
   name: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   // Headline rows live on the cover already — mirror the wall's filtering.
   const bodySections = SECTIONS.map((s) => ({ ...s, rows: s.rows.filter((r) => !r.headline) }));
 
@@ -36,11 +33,11 @@ export function ProjectSidebar({ passport, name, onClose }: {
       data-testid="mm-project-sidebar"
     >
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 bg-secondary/95 border-b border-primary/10">
-        <span className="typo-label text-foreground/90">{COPY.title}</span>
+        <span className="typo-label text-foreground/90">{t.mastermind.passport_title}</span>
         <button
           type="button"
           onClick={onClose}
-          aria-label={COPY.close}
+          aria-label={t.mastermind.sidebar_close}
           className="ml-auto p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
           data-testid="mm-sidebar-close"
         >
@@ -83,7 +80,7 @@ export function ProjectSidebar({ passport, name, onClose }: {
         ) : (
           <>
             <span className="typo-heading-lg tracking-tight block">{name}</span>
-            <p className="typo-caption text-foreground/55 mt-2">{COPY.demo}</p>
+            <p className="typo-caption text-foreground/55 mt-2">{t.mastermind.passport_demo}</p>
           </>
         )}
       </div>

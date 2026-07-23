@@ -10,14 +10,7 @@ import { Lightbulb, X } from 'lucide-react';
 import { AGENT_CATEGORIES, SCAN_AGENTS } from '@/features/plugins/dev-tools/constants/scanAgents';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-
-const COPY = {
-  title: 'Idea scan',
-  never: 'Never scanned — run the first one.',
-  last: 'Last scan',
-  running: 'Dispatching…',
-  close: 'Close',
-};
+import { useTranslation } from '@/i18n/useTranslation';
 
 const WIDTH = 316;
 
@@ -30,6 +23,7 @@ export function IdeaScanPopover({ name, scans, anchor, busy, onRun, onClose }: {
   onRun: (agentKey: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const last = scans[0];
@@ -59,11 +53,11 @@ export function IdeaScanPopover({ name, scans, anchor, busy, onRun, onClose }: {
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-foreground/10">
         <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" aria-hidden />
-        <span className="typo-caption font-semibold text-foreground truncate">{COPY.title} — {name}</span>
+        <span className="typo-caption font-semibold text-foreground truncate">{t.mastermind.scan_title} — {name}</span>
         <button
           type="button"
           onClick={onClose}
-          aria-label={COPY.close}
+          aria-label={t.common.close}
           className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
@@ -71,11 +65,11 @@ export function IdeaScanPopover({ name, scans, anchor, busy, onRun, onClose }: {
       </div>
 
       <div className="px-3 py-1.5 border-b border-foreground/[0.07] typo-caption text-foreground/55">
-        {busy ? COPY.running : last ? (
+        {busy ? t.mastermind.scan_running : last ? (
           <span className="inline-flex items-center gap-1">
-            {COPY.last} <RelativeTime timestamp={last.created_at} className="tabular-nums" /> · {last.scan_type.split(',')[0]}{last.scan_type.includes(',') ? '…' : ''}
+            {t.mastermind.scan_last} <RelativeTime timestamp={last.created_at} className="tabular-nums" /> · {last.scan_type.split(',')[0]}{last.scan_type.includes(',') ? '…' : ''}
           </span>
-        ) : COPY.never}
+        ) : t.mastermind.scan_never}
       </div>
 
       <div className="max-h-[340px] overflow-y-auto px-3 py-2 space-y-2.5">

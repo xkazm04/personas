@@ -9,10 +9,10 @@ import { useState } from 'react';
 
 import { DimGlyph } from './DimGlyph';
 import { DIM_REGISTRY } from './dimRegistry';
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { DIM_INK, mix, SERIF } from './ink';
 import type { DimNode, ZoomBand } from './types';
-
-const COPY = { empty: 'not set up' };
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -28,6 +28,7 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
   /** Set only when the tile has an Improve action — enables click + hover affordance. */
   onAction?: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useTranslation();
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
   const zoomedOut = band === 'far' || band === 'mid';
@@ -38,6 +39,7 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
   return (
     <g
       transform={`translate(${x} ${y})`}
+      className={node.busy ? 'animate-pulse' : undefined}
       opacity={absent && !lit ? 0.6 : 1}
       style={onAction ? { cursor: 'pointer' } : undefined}
       onPointerEnter={onAction ? () => setHovered(true) : undefined}
@@ -46,7 +48,7 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
       onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
     >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
-      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}`}</title>
       <rect
         width={w} height={h} rx={8}
         fill={absent ? mix('var(--secondary)', 40, 'var(--background)') : mix(ink, 16, 'var(--background)')}
@@ -87,7 +89,7 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
           {band === 'close' && (
             <>
               <text x={8} y={h - 18} fontSize={10} fontStyle="italic" fontFamily={SERIF} fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 68)}>
-                {trunc(node.detail ?? (absent ? COPY.empty : ''), Math.floor(w / 6))}
+                {trunc(node.detail ?? (absent ? t.mastermind.cell_empty : ''), Math.floor(w / 6))}
               </text>
               {node.steps > 0 && !absent && (
                 <g transform={`translate(8 ${h - 9})`}>

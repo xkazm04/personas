@@ -12,8 +12,6 @@ import { DIM_REGISTRY } from './dimRegistry';
 import { DIM_INK, mix } from './ink';
 import type { DimNode, Island } from './types';
 
-const COPY = { empty: 'not set up' };
-
 function MenuGlyph({ node }: { node: DimNode }) {
   const entry = DIM_REGISTRY[node.key];
   const absent = node.status === 'absent';
@@ -91,7 +89,7 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onHo
                 <MenuGlyph node={n} />
                 <span className={absent ? 'text-foreground/50' : undefined}>{n.label}</span>
                 <span className="ml-auto typo-caption text-foreground/50 truncate max-w-[150px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
-                  {n.detail ?? (absent ? COPY.empty : '')}
+                  {n.detail ?? (absent ? t.mastermind.cell_empty : '')}
                 </span>
               </button>
             </li>

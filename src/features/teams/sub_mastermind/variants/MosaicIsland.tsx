@@ -6,6 +6,8 @@
 //   close    → + tool detail + progress
 import { memo, useState } from 'react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { DimGlyph } from '../lib/DimGlyph';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
@@ -30,13 +32,12 @@ const AXIAL: Array<[number, number]> = [
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
-const COPY = { empty: 'not set up' };
-
 // React.memo'd: the shell hands it referentially-stable callbacks + primitive
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
 // mode switch, or its own dim/highlight state.
 export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+  const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied — banner, badges,
@@ -92,7 +93,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
       )}
       {band === 'close' && (
         <text y={21} textAnchor="middle" fontSize={7} letterSpacing="0.16em" fill={mix('var(--foreground)', 55)} style={{ textTransform: 'uppercase' }}>
-          auto·prod
+          {t.mastermind.score_legend}
         </text>
       )}
 
@@ -126,6 +127,7 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
   /** Set only when the cell has an Improve action — enables click + hover affordance. */
   onAction?: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useTranslation();
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
   const zoomedOut = band === 'far' || band === 'mid';
@@ -135,6 +137,7 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
   return (
     <g
       transform={`translate(${x} ${y})`}
+      className={node.busy ? 'animate-pulse' : undefined}
       opacity={absent && !lit ? 0.6 : 1}
       style={onAction ? { cursor: 'pointer' } : undefined}
       onPointerEnter={onAction ? () => setHovered(true) : undefined}
@@ -143,7 +146,7 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
       onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
     >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
-      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}`}</title>
       <polygon
         points={hexPoints(0, 0, CELL - 1.5)}
         fill={absent ? mix('var(--secondary)', 45, 'var(--background)') : mix(ink, 20, 'var(--secondary)')}
@@ -183,7 +186,7 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
           {band === 'close' && (
             <>
               <text y={24} textAnchor="middle" fontSize={9.5} fontStyle="italic" fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 65)}>
-                {node.detail ?? (absent ? COPY.empty : '')}
+                {node.detail ?? (absent ? t.mastermind.cell_empty : '')}
               </text>
               {node.steps > 0 && !absent && (
                 <g transform="translate(0 34)">

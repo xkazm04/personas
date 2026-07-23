@@ -4,9 +4,9 @@
 import { useEffect, useRef } from 'react';
 import { Bot } from 'lucide-react';
 
-import { mix } from './ink';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const COPY = { title: 'Personas in progress' };
+import { mix } from './ink';
 
 export function PersonaListPopover({ names, x, y, onClose }: {
   names: string[];
@@ -15,6 +15,7 @@ export function PersonaListPopover({ names, x, y, onClose }: {
   y: number;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -34,7 +35,7 @@ export function PersonaListPopover({ names, x, y, onClose }: {
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-primary/5">
         <Bot className="w-4 h-4 shrink-0" style={{ color: 'var(--status-processing)' }} aria-hidden />
-        <span className="typo-label text-foreground/90">{COPY.title}</span>
+        <span className="typo-label text-foreground/90">{t.mastermind.personas_title}</span>
         <span className="ml-auto typo-caption text-foreground/50 tabular-nums">{names.length}</span>
       </div>
       <ul className="max-h-[240px] overflow-y-auto py-1">

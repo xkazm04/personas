@@ -12,6 +12,8 @@
 // zoom commits at most once per animation frame.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { mix } from './ink';
 import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
@@ -32,7 +34,7 @@ import { ZoomControls } from './ZoomControls';
 import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
 
-const COPY = { labelPlaceholder: 'Group label…', defaultLabel: 'Group' };
+
 const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
 // Half an island footprint (~900×800 world units) plus slack, so an island is
 // only culled once its whole body is well clear of the viewport — no popping.
@@ -71,6 +73,7 @@ export interface IslandCtx {
 export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const { cam, camRef, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef, worldRef);
@@ -353,7 +356,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
         const r = normalize(draft);
         setDraft(null);
         if (r.w >= MIN_GROUP_SIZE && r.h >= MIN_GROUP_SIZE) {
-          const g: GroupRect = { id: `g${Date.now().toString(36)}`, label: COPY.defaultLabel, ...r };
+          const g: GroupRect = { id: `g${Date.now().toString(36)}`, label: t.mastermind.group_default_label, ...r };
           commitGroups([...groups, g]);
           setEditing(g.id);
         }
@@ -498,7 +501,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
           key={editingGroup.id}
           autoFocus
           defaultValue={editingGroup.label}
-          placeholder={COPY.labelPlaceholder}
+          placeholder={t.mastermind.group_label_placeholder}
           className="absolute z-20 px-2 py-1 typo-caption rounded-input bg-secondary border border-primary/40 text-foreground outline-none w-44"
           style={{ left: editingGroup.x * cam.z + cam.x + 4, top: editingGroup.y * cam.z + cam.y - 34 }}
           onKeyDown={(e) => {
@@ -506,7 +509,7 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             if (e.key === 'Escape') setEditing(null);
           }}
           onBlur={(e) => {
-            const label = e.target.value.trim() || COPY.defaultLabel;
+            const label = e.target.value.trim() || t.mastermind.group_default_label;
             commitGroups(groups.map((g) => (g.id === editingGroup.id ? { ...g, label } : g)));
             setEditing(null);
           }}
