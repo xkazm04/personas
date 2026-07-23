@@ -11,7 +11,7 @@ npm run dev              # Vite dev server (port 1420)
 npm run tauri dev        # Full Tauri desktop dev mode
 npx tsc --noEmit         # TypeScript check (tsc not on PATH on Windows)
 npm run lint             # ESLint
-npm run test             # Vitest (675+ tests)
+npm run test             # Vitest (2,400+ tests)
 npx vite build           # Production frontend build
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
@@ -246,7 +246,7 @@ function MyComponent() {
 }
 ```
 
-**Source of truth**: `src/i18n/locales/en.json` (~11,500 leaf keys across 60 top-level sections — `common`, `agents`, `vault`, `overview`, `triggers`, …)
+**Source of truth**: `src/i18n/locales/en.json` (~17,000 leaf keys across 60 top-level sections — `common`, `agents`, `vault`, `overview`, `triggers`, …)
 **14 languages**: en, zh, ar, hi, ru, id, es, fr, bn, ja, vi, de, ko, cs
 **Fallback**: Non-English bundles are split per top-level section and lazy-loaded as separate JS chunks. The `t` proxy deep-merges each section over its English counterpart so missing sub-keys resolve to English automatically (translation lag never renders `undefined`); a section that hasn't loaded yet shows English while the chunk is in flight.
 
