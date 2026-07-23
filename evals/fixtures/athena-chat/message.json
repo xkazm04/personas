@@ -1,0 +1,54 @@
+{
+  "_comment": "Inputs buildSummariseChatPrompt() receives when the user clicks 'Play in chat' on a persona message. message mirrors src/lib/bindings/PersonaMessage.ts enriched with persona_name; linkedReviews mirror src/lib/bindings/PersonaManualReview.ts. The sparse.* fixtures exercise the missing-field fallbacks.",
+  "message": {
+    "id": "m-42",
+    "persona_id": "p-invoice",
+    "persona_name": "Invoice Watcher",
+    "execution_id": "exec-42",
+    "title": "Weekly invoice digest",
+    "content": "Processed 12 invoices this week; 2 need approval before payment.",
+    "content_type": "markdown",
+    "priority": "normal",
+    "is_read": false,
+    "metadata": null,
+    "created_at": "2026-07-21T09:00:00Z",
+    "read_at": null,
+    "thread_id": null,
+    "use_case_id": null
+  },
+  "linkedReviews": [
+    {
+      "id": "r-1",
+      "execution_id": "exec-42",
+      "persona_id": "p-invoice",
+      "title": "Approve $4,200 payment to Vendor X",
+      "description": null,
+      "severity": "high",
+      "context_data": null,
+      "suggested_actions": null,
+      "status": "pending",
+      "reviewer_notes": null,
+      "resolved_at": null,
+      "created_at": "2026-07-21T09:00:00Z",
+      "updated_at": "2026-07-21T09:00:00Z",
+      "use_case_id": null,
+      "assignment_id": null,
+      "step_id": null
+    }
+  ],
+  "sparseMessage": {
+    "id": "m-empty",
+    "persona_id": "p-x",
+    "execution_id": null,
+    "title": null,
+    "content": "",
+    "content_type": "text",
+    "priority": "normal",
+    "is_read": false,
+    "metadata": null,
+    "created_at": "2026-07-21T09:00:00Z",
+    "read_at": null,
+    "thread_id": null,
+    "use_case_id": null
+  }
+}
