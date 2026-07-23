@@ -17553,6 +17553,8 @@
     "sim_mode_l1l2": "Static + en vivo (L1+L2)",
     "sim_mode_l1l2_hint": "Tras el pase Static, la sesión también controla la app en ejecución donde exista un driver.",
     "sim_running": "Simulación en curso — abrir terminal",
+    "sim_finished": "Simulación finalizada — abrir terminal",
+    "sim_rerun": "Repetir",
     "sim_skipped_toast": "{count} filas de resultados fueron rechazadas por la validación — consulta el informe de ejecución",
     "trend_sim_suffix": "simulado"
   },

@@ -212,6 +212,8 @@
   "sim_mode_l1l2": "静态 + 实时 (L1+L2)",
   "sim_mode_l1l2_hint": "静态阶段完成后，会话还会在存在驱动器的情况下驱动正在运行的应用。",
   "sim_running": "模拟运行中 — 打开终端",
+  "sim_finished": "模拟已完成 — 打开终端",
+  "sim_rerun": "重新运行",
   "sim_skipped_toast": "{count} 行结果被验证拒绝 — 详见运行报告",
   "trend_sim_suffix": "模拟"
 }

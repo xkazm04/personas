@@ -212,6 +212,8 @@
   "sim_mode_l1l2": "정적 + 실시간 (L1+L2)",
   "sim_mode_l1l2_hint": "정적 분석 후, 드라이버가 있는 경우 세션이 실행 중인 앱도 직접 조작합니다.",
   "sim_running": "시뮬레이션 실행 중 — 터미널 열기",
+  "sim_finished": "시뮬레이션 완료 — 터미널 열기",
+  "sim_rerun": "다시 실행",
   "sim_skipped_toast": "결과 행 {count}개가 유효성 검사에서 거부되었습니다 — 실행 보고서를 확인하세요",
   "trend_sim_suffix": "시뮬레이션됨"
 }

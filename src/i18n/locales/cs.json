@@ -17553,6 +17553,8 @@
     "sim_mode_l1l2": "Statická + živá (L1+L2)",
     "sim_mode_l1l2_hint": "Po statickém průchodu relace ovládá i běžící aplikaci tam, kde existuje driver.",
     "sim_running": "Simulace běží — otevřít terminál",
+    "sim_finished": "Simulace dokončena — otevřít terminál",
+    "sim_rerun": "Spustit znovu",
     "sim_skipped_toast": "{count} řádků výsledků bylo zamítnuto validací — viz zpráva o běhu",
     "trend_sim_suffix": "simulováno"
   },

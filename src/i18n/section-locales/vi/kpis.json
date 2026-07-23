@@ -212,6 +212,8 @@
   "sim_mode_l1l2": "Tĩnh + trực tiếp (L1+L2)",
   "sim_mode_l1l2_hint": "Sau bước tĩnh, phiên chạy còn thao tác trên ứng dụng đang chạy ở nơi có driver.",
   "sim_running": "Đang chạy mô phỏng — mở terminal",
+  "sim_finished": "Mô phỏng hoàn tất — mở terminal",
+  "sim_rerun": "Chạy lại",
   "sim_skipped_toast": "{count} dòng kết quả bị từ chối khi kiểm tra hợp lệ — xem báo cáo lần chạy",
   "trend_sim_suffix": "mô phỏng"
 }

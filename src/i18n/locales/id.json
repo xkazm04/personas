@@ -17553,6 +17553,8 @@
     "sim_mode_l1l2": "Statis + live (L1+L2)",
     "sim_mode_l1l2_hint": "Setelah tahap statis, sesi ini juga menjalankan aplikasi yang berjalan jika driver tersedia.",
     "sim_running": "Simulasi berjalan — buka terminal",
+    "sim_finished": "Simulasi selesai — buka terminal",
+    "sim_rerun": "Jalankan ulang",
     "sim_skipped_toast": "{count} baris hasil ditolak oleh validasi — lihat laporan proses",
     "trend_sim_suffix": "simulasi"
   },

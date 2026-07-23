@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlaskConical, FolderInput, TerminalSquare } from 'lucide-react';
 
 import { kpiSimIngest, kpiSimPrepare, type KpiSimIngestSummary } from '@/api/devTools/kpis';
-import { listSessions } from '@/api/fleet/fleet';
+import { killSession, listSessions } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -88,10 +88,17 @@ export function KpiSimControl({ projectId, onIngested }: {
     return () => { alive = false; clearInterval(timer); };
   }, [key, ingest]);
 
+  // A finished interactive session parks at `idle` and keeps holding the
+  // dispatch key — treat it as done: the primary button opens its terminal,
+  // and Re-run reclaims the key (kill the parked session, then spawn fresh).
+  const sessionActive = session !== null
+    && (session.state === 'spawning' || session.state === 'running' || session.state === 'awaiting_input');
+
   const dispatch = async () => {
     if (!project) return;
     setBusy(true);
     try {
+      if (session && !sessionActive) await killSession(session.id);
       const prep = await kpiSimPrepare(projectId);
       await dispatchRowToFleet(key, prep.root_path, buildKpiSimPrompt(project, mode));
       addToast(tx(t.kpis.sim_dispatched_toast, { count: prep.kpi_count }), 'success');
@@ -116,21 +123,34 @@ export function KpiSimControl({ projectId, onIngested }: {
       >
         {session && ink ? (
           <TerminalSquare
-            className={`w-3.5 h-3.5 ${session.state === 'running' || session.state === 'spawning' ? 'animate-pulse' : ''}`}
+            className={`w-3.5 h-3.5 ${sessionActive ? 'animate-pulse' : ''}`}
             style={{ color: ink }}
             aria-hidden
           />
         ) : (
           <FlaskConical className="w-3.5 h-3.5" aria-hidden />
         )}
-        {session ? t.kpis.sim_running : t.kpis.sim_button}
+        {session ? (sessionActive ? t.kpis.sim_running : t.kpis.sim_finished) : t.kpis.sim_button}
       </button>
 
-      {!session && (
+      {(!session || !sessionActive) && (
         <span className="inline-flex items-center gap-1">
           <ModeChip active={mode === 'l1'} onClick={() => setMode('l1')} label={t.kpis.sim_mode_l1} title={t.kpis.sim_mode_l1_hint} />
           <ModeChip active={mode === 'l1l2'} onClick={() => setMode('l1l2')} label={t.kpis.sim_mode_l1l2} title={t.kpis.sim_mode_l1l2_hint} />
         </span>
+      )}
+
+      {session && !sessionActive && (
+        <button
+          type="button"
+          onClick={dispatch}
+          disabled={busy || !project}
+          className="inline-flex items-center gap-1 typo-caption font-medium rounded-interactive border border-primary/25 text-primary px-2 py-1 hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
+          data-testid="kpi-sim-rerun"
+        >
+          <FlaskConical className="w-3.5 h-3.5" aria-hidden />
+          {t.kpis.sim_rerun}
+        </button>
       )}
 
       <button

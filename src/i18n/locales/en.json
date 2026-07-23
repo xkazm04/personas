@@ -17513,6 +17513,8 @@
     "trend_sim_suffix": "simulated",
     "sim_button": "Simulate KPIs",
     "sim_running": "Simulation running — open terminal",
+    "sim_finished": "Simulation finished — open terminal",
+    "sim_rerun": "Re-run",
     "sim_mode_l1": "Static (L1)",
     "sim_mode_l1_hint": "Code-grounded simulation only — no live app is driven.",
     "sim_mode_l1l2": "Static + live (L1+L2)",

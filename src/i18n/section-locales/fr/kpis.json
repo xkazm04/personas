@@ -212,6 +212,8 @@
   "sim_mode_l1l2": "Statique + en direct (L1+L2)",
   "sim_mode_l1l2_hint": "Après la passe statique, la session pilote aussi l'application en cours d'exécution lorsqu'un pilote existe.",
   "sim_running": "Simulation en cours — ouvrir le terminal",
+  "sim_finished": "Simulation terminée — ouvrir le terminal",
+  "sim_rerun": "Relancer",
   "sim_skipped_toast": "{count} lignes de résultats ont été refusées par la validation — voir le rapport d'exécution",
   "trend_sim_suffix": "simulé"
 }

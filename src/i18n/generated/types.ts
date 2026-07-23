@@ -17519,6 +17519,8 @@ export type Translations = {
     trend_sim_suffix: string;
     sim_button: string;
     sim_running: string;
+    sim_finished: string;
+    sim_rerun: string;
     sim_mode_l1: string;
     sim_mode_l1_hint: string;
     sim_mode_l1l2: string;

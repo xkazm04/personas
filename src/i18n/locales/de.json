@@ -17553,6 +17553,8 @@
     "sim_mode_l1l2": "Statisch + live (L1+L2)",
     "sim_mode_l1l2_hint": "Nach dem statischen Durchlauf steuert die Session zusätzlich die laufende App, sofern ein Treiber existiert.",
     "sim_running": "Simulation läuft — Terminal öffnen",
+    "sim_finished": "Simulation abgeschlossen — Terminal öffnen",
+    "sim_rerun": "Erneut ausführen",
     "sim_skipped_toast": "{count} Ergebniszeilen wurden von der Validierung abgelehnt — siehe Laufbericht",
     "trend_sim_suffix": "simuliert"
   },
