@@ -54,8 +54,66 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.199 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.218 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.201–2.1.218: floor advanced to 2.1.218 — an unusually dense range
+        //   on personas's exact `-p`/stream-json surface (not the usual TUI /
+        //   agents-daemon noise). Decisive items: 2.1.208 fixes TRUNCATED
+        //   stream-json output and a MISSING `result` message when piping large
+        //   responses from `claude -p` — personas persists cost/duration/tokens
+        //   on the `result` event (`runner/mod.rs`), so that bug produced silently
+        //   un-costed executions; 2.1.214 fixes the sibling exit-drain truncation
+        //   for slow-reading pipeline consumers (the drain now scales with queued
+        //   bytes instead of a flat 2s cap). 2.1.208 also fixes memory leaks that
+        //   hit long headless sessions (unbounded growth from large tool-result
+        //   payloads; MCP stdio stderr accumulating up to 64 MB per server) and
+        //   caches tool-pool assembly for up to 7x faster tool rounds in print/SDK
+        //   sessions with many MCP tools (personas binds MCP gateways). Windows
+        //   (personas is a Windows desktop app piping the prompt to stdin):
+        //   2.1.211 fixes headless print-mode crashing / silently exiting when
+        //   stdin is unreadable; 2.1.208 fixes stream-json input killing the
+        //   session on blank CRLF lines; 2.1.218 fixes `\u`-prefixed path segments
+        //   (`C:\Users\unicorn`) being corrupted into CJK in tool inputs.
+        //   Observability: 2.1.212 fixes OTLP records missing `trace_id`/`span_id`
+        //   when `TRACEPARENT` is set in SDK/headless mode — personas sets
+        //   TRACEPARENT (`prompt/cli_args.rs`, `runner/mod.rs`), so that bug was
+        //   live for us. Process hygiene: 2.1.212 fixes SIGTERM during a Bash tool
+        //   orphaning the command's process tree in print/SDK mode (now aborts the
+        //   turn, kills the tree, exits 143) — personas calls `driver.kill()` on
+        //   timeout/cancel and already treats a killed run as failed, so no arm
+        //   for 143 is needed, but fewer orphaned trees is a direct win. SECURITY:
+        //   2.1.207 fixes remote managed settings from a non-interactive run
+        //   (`claude -p`) being PERMANENTLY RECORDED AS CONSENTED without ever
+        //   showing the security consent dialog — below this version, personas's
+        //   spawns were silently consenting on an org-managed user's behalf.
+        //   2.1.218 also fixes an engine teardown race that could start and
+        //   abandon a phantom turn, and a tool-executor error that could be
+        //   silently dropped. Sub-agent governance (relevant because `deep_fanout`
+        //   is a shipped persona parameter — `prompt/mod.rs::FANOUT_DIRECTIVE`):
+        //   2.1.211 added `--forward-subagent-text` /
+        //   `CLAUDE_CODE_FORWARD_SUBAGENT_TEXT` (subagent text + thinking in
+        //   stream-json — ADOPTED, gated on `deep_fanout`, see `cli_args.rs`);
+        //   2.1.212 added `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` (default 200)
+        //   and `CLAUDE_CODE_MAX_WEB_SEARCHES_PER_SESSION` (default 200);
+        //   2.1.217 added `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default 20),
+        //   made subagents NO LONGER SPAWN NESTED SUBAGENTS BY DEFAULT (opt back
+        //   in via `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`), and fixed
+        //   `--max-budget-usd` not halting background subagents. Those four env
+        //   knobs are NOT pinned — the shipped defaults are sane and pinning would
+        //   cap fan-out personas the user deliberately opted in; recorded here so
+        //   a future run can pin them if drift bites (same argument shape as the
+        //   `--effort` pin). NOT reachable from personas: the 2.1.208/2.1.212
+        //   `set_model` control-request fixes (control requests need
+        //   `--input-format stream-json`; personas pipes plain text on stdin), all
+        //   `EnterWorktree`/`ExitWorktree` + worktree-isolation fixes (personas
+        //   drives no CLI worktrees in `-p`; Fleet's PTY path doesn't either), the
+        //   2.1.212 plan-mode permission fixes (personas passes
+        //   `--dangerously-skip-permissions`), and 2.1.214's
+        //   `CLAUDE_CODE_OTEL_CONTENT_MAX_LENGTH` (personas's OTEL content is
+        //   nowhere near the 60 KB cap). Everything else in the range is
+        //   interactive-TUI / `claude agents` daemon / `ultracode` / voice /
+        //   Remote Control / Claude-in-Chrome / `/code-review` surface personas
+        //   never reaches in headless `-p`. /research run 2026-07-23.
         // - 2.1.182–2.1.200: floor advanced to 2.1.199 — a cluster of streaming /
         //   retry reliability fixes lands on personas's exact `-p`/stream-json
         //   spawn surface. 2.1.199 (a) preserves the partial stream-json response
@@ -291,7 +349,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.199")
+        Some("2.1.218")
     }
 }
 
@@ -378,6 +436,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.199");
+        assert_eq!(min.unwrap(), "2.1.218");
     }
 }
