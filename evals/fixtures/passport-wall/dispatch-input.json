@@ -1,0 +1,5 @@
+{
+  "_comment": "Inputs buildDirectionPrompt() receives when the passport wall dispatches a unified-setup row to a Fleet Dev-runner session. projectName + the operator's free-text instruction; the direction body itself comes from ROW_DIRECTIONS in src/features/teams/sub_factory/passport/rowDirections.ts.",
+  "projectName": "acme-api",
+  "operatorInstruction": "Focus on the payments module first."
+}

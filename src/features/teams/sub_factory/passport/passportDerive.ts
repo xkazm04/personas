@@ -87,6 +87,10 @@ export function derivePassportFromMetadata(
     skillCounts?: { reused: number; own: number; dormant?: number };
     docRot?: { tracked: number; dirty: number; neverRead: number };
     memHealth?: { score: number; prevScore: number | null; disputed: number; capturedAt: string };
+    /** Related data-processing project NAMES (resolved from data_links ids). */
+    dataLinks?: string[];
+    /** Support channel types derived from the bound support credential. */
+    supportChannels?: string[];
   },
 ): AppPassport {
   const hasSkills = Boolean(opts?.hasSkills);
@@ -106,10 +110,16 @@ export function derivePassportFromMetadata(
   if (has('rust-backend')) languages.push({ name: 'Rust', primary: languages.length === 0 });
   if (languages.length === 0) languages.push({ name: project.tech_stack === 'react' ? 'JavaScript' : 'Unknown', primary: true });
 
-  const frameworks: string[] = [];
-  if (project.tech_stack === 'react' || has('frontend')) frameworks.push('React');
-  if (has('node-backend')) frameworks.push('Node');
-  if (has('rust-backend')) frameworks.push('Tauri');
+  // Frameworks: prefer the manifest probe (real names + versions — "Next.js
+  // 15.3" instead of the layer heuristic's bare "React"); fall back to the
+  // tech-layer heuristic for unprobed repos / older backends.
+  let frameworks: string[] = (ev?.frameworks ?? []).map((f) => (f.version ? `${f.name} ${f.version}` : f.name));
+  if (frameworks.length === 0) {
+    frameworks = [];
+    if (project.tech_stack === 'react' || has('frontend')) frameworks.push('React');
+    if (has('node-backend')) frameworks.push('Node');
+    if (has('rust-backend')) frameworks.push('Tauri');
+  }
   const runtime = [has('node-backend') || has('frontend') ? 'node' : null, has('rust-backend') ? 'rust' : null]
     .filter(Boolean).join(' + ') || undefined;
 
@@ -310,6 +320,8 @@ export function derivePassportFromMetadata(
       integrations,
       environments,
       appCost: parseAppCost(ev?.app_cost_raw),
+      dataLinks: opts?.dataLinks,
+      supportChannels: opts?.supportChannels,
     },
     automationReadiness: {
       level: levelFromScore(autoScore),

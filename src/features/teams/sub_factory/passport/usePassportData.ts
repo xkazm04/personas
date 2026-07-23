@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, scanMemoryHealth, getMemoryHealthOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow, type MemoryHealthRow } from '@/api/devTools/devTools';
+import { listCredentials } from '@/api/vault/credentials';
 import { silentCatch } from '@/lib/silentCatch';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
@@ -29,6 +30,29 @@ interface PassportData {
 }
 
 const EMPTY = new Map<string, ImproveRaw>();
+
+/** Support-connector serviceType → the incoming channel type it represents.
+ *  Unknown serviceTypes fall through to their raw name (honest, not hidden). */
+const SUPPORT_CHANNEL: Record<string, string> = {
+  discord: 'Discord',
+  gmail: 'Email',
+  microsoft_outlook: 'Email',
+  smtp: 'Email',
+  imap: 'Email',
+};
+
+/** Parse the `data_links` JSON column (array of dev_project ids). Tolerant —
+ *  malformed content reads as no links, never a crash. Shared with the
+ *  Data-analysis cell's link picker. */
+export function parseDataLinkIds(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const arr: unknown = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 /** Max per-project probes in flight at once. Opening the Passport wall / the
  *  Mastermind canvas at 30+ projects previously fired an unbounded Promise.all
@@ -78,14 +102,18 @@ export function usePassportData(): PassportData {
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
-    const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows] = await Promise.all([
+    const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows, credentials] = await Promise.all([
       listSkillsGlobal().catch(() => []),
       mapWithConcurrency(map.projects, PROBE_CONCURRENCY, (m) =>
         listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const)),
       getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
       getDocRotOverview().catch(() => [] as DocRotRow[]),
       getMemoryHealthOverview().catch(() => [] as MemoryHealthRow[]),
+      // Vault credentials — resolve each project's bound support connector to
+      // its channel type (Support dimension). Tolerant: no vault, no channels.
+      listCredentials().catch(() => []),
     ]);
+    const credServiceById = new Map(credentials.map((c) => [c.id, c.serviceType.toLowerCase()]));
     // Doc-rot rollup per project (P2): dirty docs + tracked docs that no
     // session has ever read since telemetry began. Absent rows = scan hasn't
     // run for that project → no rollup, never a guessed zero.
@@ -181,8 +209,17 @@ export function usePassportData(): PassportData {
       const docRot = docRotByProject.get(meta.project_id);
       const mh = memHealthByProject.get(meta.project_id);
       const memHealth = mh ? { score: mh.score, prevScore: mh.prev_score, disputed: mh.disputed, capturedAt: mh.captured_at } : undefined;
+      // Support dimension: the bound support credential's serviceType → the
+      // incoming channel type it represents.
+      const supportService = project.support_credential_id ? credServiceById.get(project.support_credential_id) : undefined;
+      const supportChannels = supportService ? [SUPPORT_CHANNEL[supportService] ?? supportService] : [];
+      // Data-analysis dimension: user-declared related project ids → names.
+      // Unknown ids (deleted projects) drop out rather than rendering stale.
+      const dataLinks = parseDataLinkIds(project.data_links)
+        .map((id) => byId.get(id)?.name)
+        .filter((n): n is string => Boolean(n));
       rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot, memHealth });
-      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth }));
+      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth, dataLinks, supportChannels }));
     }
     return { passports: sortByNameAsc(passports), rawByProject };
     };

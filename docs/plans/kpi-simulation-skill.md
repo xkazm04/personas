@@ -148,7 +148,7 @@ tier for class-1 procedures only (those are free after adoption).
 | **P0** | Schema axis (`env` + `'simulation'` source, no roll-forward write path) + dashed sim series on the trend chart + env chip in the drawer | A hand-inserted sim row renders dashed, never moves `current_value`, never triggers derivation |
 | **P1** | Skill engine + overlay + result schema; manual Fleet dispatch from the KPI dashboard; manual import | One real project: class-1 procedures authored + adopted; class-2 L1 sim lands as dashed series; class-3 target adjustment appears in the proposals queue with citations |
 | **P2** | Auto-ingest on terminal event; findings emitter (`origin: kpi_sim`); accepted-limits loop | Dispatch → walk away → measurements + proposals appear; rejected proposals never re-proposed |
-| **P3** | Cadence: adopted class-1 recipes ride autopilot Measure (no LLM); `predict` refresh on demand; per-env trend comparison (sim `test` line vs real `production` line converging = the prediction was good) | The sim-vs-real gap is visible per KPI and shrinks release over release |
+| **P3** | Cadence: adopted class-1 recipes ride autopilot Measure (no LLM); `predict` refresh on demand; per-env trend comparison (sim `test` line vs real `production` line converging = the prediction was good) | **SHIPPED 2026-07-23.** (a) **Convergence view**: detail-modal story chart overlays the sim channel dashed over the solid production line; readout = signed gap in KPI units + share of target span + converging/diverging/stable verdict across runs + stale-production nudge into Measure-now (`kpiConvergence.ts`, 7 unit tests; live: gap +13.86 %, 77 % of span, 42d-stale). (b) **`predict` mode**: a research-only class-3 refresh (`buildKpiPredictPrompt` — zero measurements, benchmark-cited target proposals only) behind a "Refresh predictions" button. (c) **Adoption path** (closes the autopilot-cadence loop): `KpiSimSuggestions` surfaces the sim's `adopt_measure_config`/`adjust_target`/`retire` findings next to their KPIs; one-click Apply calls `updateKpi` (adopt → codebase measure + weekly cadence, so it then rides the existing **Measure** tier free) and resolves the finding. Live-verified on ai-paralegal: Apply moved Sign-Off-Age target 2→3d, finding → accepted, panel 2→1. **Prediction ledger (grading class-3 forecasts vs later production) remains the one open P3 item — deferred until enough production data accrues to grade against.** |
 
 ## Decisions (2026-07-23, execution round)
 
@@ -178,6 +178,43 @@ tier for class-1 procedures only (those are free after adoption).
    (Claude Code CLI as the engine) will judge whether L2 meaningfully improves
    result quality over L1 alone — the open question the P3 convergence view
    later answers continuously.
+
+## First L1-vs-L2 comparison (2026-07-23, ai-paralegal, Claude Code CLI engine)
+
+Two live runs over the same 5 managed KPIs (`kpi-sim/runs/2026-07-23-1119` L1;
+`…-1401` L1+L2), both dispatched from the dashboard/Fleet path:
+
+| | L1 (static) | L1+L2 (live) |
+|---|---|---|
+| Wall-clock | ~17 min | ~30 min (12 live gens ≈ 14 min) |
+| Measurements | 2 (class-1 commands) | 3 (+ the class-2 bounce-rate 0/9, env `test`, conf 0.5) |
+| Refusals | 3 KPIs honestly unmeasured | same 3-way honesty held |
+| Unique findings | dead-enum KPI, parse zero-blind-spot, unmeasurable trio, zero-citation trust gap, benchmark-calibrated target | everything L1 found (coverage byte-identical — deterministic) **plus** the class L1 is structurally blind to |
+
+**What L2 uniquely bought:** (1) the measurement L1 *refused* to fake — it drove
+the app's real demand-draft LLM call 12× through the repo's own eval-gate
+harness (it correctly chose the documented harness over standing up
+Playwright) and judged real output against the reused uat Characters' bars;
+(2) a genuinely new defect no static pass could see — 6/9 raw drafts carry
+reviewer-visible preamble/"Notes for attorney review" trailers that every hard
+gate misses and the critique pass doesn't strip (clean in PDF, rendered on
+screen/copy/docx); (3) an evidence-backed *positive* verdict (senior-grade
+substance, real citations, prompt-injection resisted) that L1 could only
+hypothesize; (4) live-web benchmark validation (Princeton CITP 6.57 % floor →
+the 5 % target is aggressive-but-credible).
+
+**Verdict:** L1 is the right default cadence — cheap, catches structural and
+measurability gaps, never fabricates. L2 is not "better L1" but a different
+instrument: it measures *actual output quality of the AI surfaces*, the one
+thing this product category lives on. Run L1 routinely, L2 deliberately (per
+release, or whenever class-2 KPIs carry the decision). Caveat: L2 was cheap
+here *because the repo ships an eval harness* — repos without one degrade to
+L1 + a "no live-simulation path" finding, per doctrine.
+
+**Fixed from live testing:** idle-parked sessions (auto-ingest on idle, honest
+"finished" label, Re-run reclaims the dispatch key) and duplicate proposals on
+re-runs (snapshot now carries `proposed` KPIs as never-re-propose context;
+ingest dedupes new-KPI names against all statuses).
 
 ## Open questions
 

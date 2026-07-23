@@ -17,6 +17,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { paceDescriptor } from './kpiMath';
+import { computeConvergence, splitChannels, type Convergence } from './kpiConvergence';
 import { categoryMeta, kindMeta, cadenceMeta, TRACK_COLOR } from './kpiMeta';
 import { describeMeasurement } from './describeMeasurement';
 import { summarizeEvidence } from './kpiMeasurementProvenance';
@@ -61,9 +62,9 @@ export function KpiDetailModal({
         <div className="max-w-2xl mx-auto space-y-5">
           <HeroBlock kpi={kpi} />
           <Panel title={t.kpis.chart_trend_title} icon={Gauge}>
-            {/* The story chart tells the REAL story — production channel only;
-                simulated (local/test) rows stay in the history list, chipped. */}
-            <KpiStoryChart kpi={kpi} measurements={detail.measurements.filter((m) => (m.env ?? 'production') === 'production')} linkedGoals={detail.linkedGoals} />
+            {/* P3 convergence: production stays the solid truth line; the sim
+                channel overlays dashed, and the readout names the gap. */}
+            <StoryWithConvergence kpi={kpi} measurements={detail.measurements} linkedGoals={detail.linkedGoals} />
           </Panel>
           <KpiSteeringPanel kpi={kpi} linkedGoals={detail.linkedGoals} measurements={detail.measurements} />
           <HowMeasured kpi={kpi} />
@@ -187,6 +188,88 @@ function HeroBlock({ kpi }: { kpi: DevKpi }) {
       <p className="typo-caption text-foreground/80">
         {kpi.target_date ? tx(t.kpis.due_by, { date: kpi.target_date.slice(0, 10) }) : ''}
       </p>
+    </div>
+  );
+}
+
+/** P3 — the story chart with the sim-vs-real convergence readout. With no
+ *  simulated measurements this is exactly the plain production story chart. */
+function StoryWithConvergence({
+  kpi,
+  measurements,
+  linkedGoals,
+}: {
+  kpi: DevKpi;
+  measurements: ReturnType<typeof useKpiDetail>['measurements'];
+  linkedGoals: ReturnType<typeof useKpiDetail>['linkedGoals'];
+}) {
+  const { t, tx } = useTranslation();
+  const { production, sim } = useMemo(() => splitChannels(measurements), [measurements]);
+  const conv: Convergence = useMemo(
+    () => computeConvergence(measurements, kpi.target_value, kpi.baseline_value),
+    [measurements, kpi.target_value, kpi.baseline_value],
+  );
+
+  const verdictLabel: Record<Convergence['verdict'], string> = {
+    converging: t.kpis.conv_verdict_converging,
+    diverging: t.kpis.conv_verdict_diverging,
+    stable: t.kpis.conv_verdict_stable,
+    insufficient: t.kpis.conv_verdict_insufficient,
+  };
+  const verdictTone: Record<Convergence['verdict'], string> = {
+    converging: 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300',
+    diverging: 'border-red-400/30 bg-red-500/10 text-red-300',
+    stable: 'border-border/25 bg-secondary/40 text-foreground',
+    insufficient: 'border-border/25 bg-secondary/40 text-foreground opacity-70',
+  };
+
+  return (
+    <div>
+      <KpiStoryChart kpi={kpi} measurements={production} simMeasurements={sim} linkedGoals={linkedGoals} />
+      {sim.length > 0 && (
+        <div className="mt-2 space-y-1" data-testid="kpi-convergence-readout">
+          {/* channel legend */}
+          <div className="flex items-center gap-3 typo-caption text-foreground opacity-80">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-4 border-t-2" style={{ borderColor: 'var(--primary)' }} aria-hidden />
+              {t.kpis.env_labels.production}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: '#8B5CF6' }} aria-hidden />
+              {t.kpis.trend_sim_suffix}
+            </span>
+            <span className={`ml-auto typo-caption px-1.5 py-0.5 rounded border ${verdictTone[conv.verdict]}`} data-testid="kpi-convergence-verdict">
+              {verdictLabel[conv.verdict]}
+            </span>
+          </div>
+          {production.length === 0 ? (
+            <p className="typo-caption text-foreground opacity-70">{t.kpis.conv_no_prod}</p>
+          ) : conv.latest ? (
+            <>
+              <p className="typo-body text-foreground">
+                {t.kpis.conv_gap_label}{' '}
+                <span className="font-medium tabular-nums">
+                  {conv.latest.gap > 0 ? '+' : ''}
+                  <Numeric value={conv.latest.gap} /> {kpi.unit}
+                </span>{' '}
+                <span className="opacity-80">
+                  ({t.kpis.conv_sim_label} <Numeric value={conv.latest.simValue} /> · {t.kpis.conv_real_label}{' '}
+                  <Numeric value={conv.latest.prodValue} />
+                  {conv.latest.normalized != null && (
+                    <> · {tx(t.kpis.conv_share_of_span, { pct: Math.round(conv.latest.normalized * 100) })}</>
+                  )}
+                  )
+                </span>
+              </p>
+              {conv.latest.prodStaleDays >= 2 && (
+                <p className="typo-caption text-amber-300/90" data-testid="kpi-convergence-stale">
+                  {tx(t.kpis.conv_stale_hint, { days: conv.latest.prodStaleDays })}
+                </p>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

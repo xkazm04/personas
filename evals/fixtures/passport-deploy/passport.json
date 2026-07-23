@@ -1,0 +1,52 @@
+{
+  "_comment": "An AppPassport (src/features/teams/sub_factory/passport/passportModel.ts) for a repo with real automation/production gaps, so the deploy-dispatch actions in deployActions.ts are applicable and their golden prompts get built. project is the minimal DevProject the taskTitle closures read (.name). Only the fields the applicable()/prompt()/stackLine() closures touch are load-bearing; the rest keep the shape faithful.",
+  "project": { "id": "dp-acme", "name": "acme-api", "root_path": "C:/repos/acme-api" },
+  "passport": {
+    "passport": "app-passport",
+    "passportVersion": "1",
+    "identity": {
+      "name": "acme-api",
+      "slug": "acme-api",
+      "purpose": "Billing API for the Acme storefront.",
+      "archetype": "team",
+      "lifecycle": "beta",
+      "criticality": "business"
+    },
+    "stack": {
+      "languages": [ { "name": "TypeScript", "primary": true }, { "name": "SQL" } ],
+      "frameworks": [ "Fastify", "Drizzle" ],
+      "persistence": [ { "kind": "relational", "engine": "Postgres" } ],
+      "monitoring": { "errorTracking": null, "logs": null, "metrics": null, "tracing": null },
+      "hosting": null,
+      "integrations": [],
+      "appCost": null
+    },
+    "automationReadiness": {
+      "level": "L2",
+      "score": 40,
+      "artifacts": {
+        "agentInstructions": [],
+        "contextGraph": "partial",
+        "memory": "none",
+        "docs": "none",
+        "docRot": { "tracked": 3, "dirty": 2, "neverRead": 0 },
+        "manifest": false,
+        "evals": "none",
+        "skills": false
+      },
+      "selfVerify": { "build": true, "test": false, "lint": true, "typecheck": true },
+      "aiInWorkflow": false,
+      "blockers": []
+    },
+    "productionReadiness": {
+      "band": "internal",
+      "score": 30,
+      "ci": { "level": "build" },
+      "tests": { "level": "none" },
+      "security": { "level": "none" },
+      "observability": { "level": "none" },
+      "delivery": { "migrations": "none", "iac": false, "rollback": false },
+      "blockers": []
+    }
+  }
+}

@@ -35,6 +35,8 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
             .unwrap_or(false),
         pr_credential_id: row.get("pr_credential_id").unwrap_or(None),
         llm_tracking_credential_id: row.get("llm_tracking_credential_id").unwrap_or(None),
+        support_credential_id: row.get("support_credential_id").unwrap_or(None),
+        data_links: row.get("data_links").unwrap_or(None),
         test_env_url: row.get("test_env_url").unwrap_or(None),
         test_env_branch: row.get("test_env_branch").unwrap_or(None),
         main_branch: row.get("main_branch").unwrap_or(None),
@@ -313,6 +315,8 @@ pub fn update_project(
     test_env_branch: Option<Option<&str>>,
     main_branch: Option<Option<&str>>,
     llm_tracking_credential_id: Option<Option<&str>>,
+    support_credential_id: Option<Option<&str>>,
+    data_links: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -422,6 +426,22 @@ pub fn update_project(
         push_field_param!(
             llm_tracking_credential_id.map(|o| o.map(|s| s.to_string())),
             "llm_tracking_credential_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            support_credential_id.map(|o| o.map(|s| s.to_string())),
+            "support_credential_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            data_links.map(|o| o.map(|s| s.to_string())),
+            "data_links",
             sets,
             param_idx,
             param_values,

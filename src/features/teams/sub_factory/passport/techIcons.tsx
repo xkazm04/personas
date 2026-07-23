@@ -76,7 +76,20 @@ export function resolveTechIcon(label: string): { icon: BrandIcon; residual: str
   const idx = tokens.findIndex((t) => ALIASES[t]);
   if (idx === -1) return null;
   const matched = tokens[idx]!;
-  const residual = tokens.filter((t, i) => i !== idx && !STOP.has(t)).join(' ');
+  // Residual from WHITESPACE-split words (not the alias tokenizer) so version
+  // dots survive — "Next.js 16.2" → "16.2", never "16 2". A word drops when it
+  // carries the matched brand or reduces to brand-suffix noise.
+  const residual = label
+    .split(/\s+/)
+    .filter((w) => {
+      const wl = w.toLowerCase();
+      if (wl.includes(matched)) return false;
+      const bare = wl.replace(/[^a-z0-9.]+/g, '');
+      return bare !== '' && !STOP.has(bare);
+    })
+    // trim wrapping punctuation ("(drizzle)" → "drizzle") but keep inner dots
+    .map((w) => w.replace(/^[^\w.]+|[^\w.]+$/g, ''))
+    .join(' ');
   return { icon: ICONS[ALIASES[matched]!]!, residual };
 }
 

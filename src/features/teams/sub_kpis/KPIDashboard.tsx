@@ -22,6 +22,7 @@ import { AutopilotControl } from './AutopilotControl';
 import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
 import { KpiSignalBoard } from './KpiSignalBoard';
 import { KpiSimControl } from './KpiSimControl';
+import { KpiSimSuggestions } from './KpiSimSuggestions';
 
 /** Observation channels for the trend chart. Production is the authoritative
  *  channel (pace/status/autopilot always read it); test/local carry the
@@ -207,6 +208,12 @@ export function KPIDashboard({
         <div className="rounded-card border border-primary/15 bg-secondary/10 px-4 py-3">
           <KpiSimControl projectId={autopilotProject} onIngested={() => { if (activeIdsKey) void fetchKpiTrends(activeIdsKey.split(',')); }} />
         </div>
+      )}
+
+      {/* Sim suggestions — one-click apply of the sim's adopt/adjust/retire
+          proposals (P3 adoption path). Renders only when there are any. */}
+      {autopilotProject && (
+        <KpiSimSuggestions projectId={autopilotProject} onApplied={() => { if (activeIdsKey) void fetchKpiTrends(activeIdsKey.split(',')); }} />
       )}
 
       {/* Environment switcher — which observation channel the trend reads.

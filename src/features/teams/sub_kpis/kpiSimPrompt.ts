@@ -13,7 +13,7 @@
 // contract here MUST stay in sync with `kpi_sim.rs::dev_tools_kpi_sim_ingest`.
 import type { DevProject } from '@/lib/bindings/DevProject';
 
-export type KpiSimMode = 'l1' | 'l1l2';
+export type KpiSimMode = 'l1' | 'l1l2' | 'predict';
 
 export function kpiSimDispatchKey(projectId: string): string {
   return `kpi-sim:${projectId}`;
@@ -23,7 +23,28 @@ export function kpiSimTaskTitle(project: DevProject): string {
   return `KPI simulation — ${project.name}`;
 }
 
+/** Shared scaffolding both the sim modes and the predict mode use — the same
+ *  result.json contract feeds `kpi_sim.rs::dev_tools_kpi_sim_ingest`, so the
+ *  output shape MUST stay identical regardless of mode. */
+const GROUND_TRUTH = 'GROUND TRUTH: read `kpi-sim/snapshot.json` at the repo root first. It holds the project identity and every managed KPI (id, name, category, measure_kind, measure_config, unit, direction, baseline/target/current, cadence, tier, status). KPI ids in your output MUST come from this file verbatim. KPIs with status "proposed" are PENDING HUMAN REVIEW from an earlier run/scan — never re-propose them (by id or by name) and do not measure them; they are context only.';
+
+const OUTPUT_CONTRACT = [
+  '== OUTPUT (the contract — the app ingests this file) ==',
+  'Create `kpi-sim/runs/<YYYY-MM-DD-HHmm>/` containing:',
+  '1. `result.json` — EXACTLY this shape (unknown fields are ignored; bad rows are skipped and reported):',
+  '{',
+  '  "sim_run_id": "<run dir name>",',
+  '  "measurements": [ { "kpi_id": "<from snapshot>", "value": <number>, "env": "local"|"test", "confidence": <0-1>, "evidence": { ...cmd/output_tail OR characters/completed/journals..., "cert": "L1"|"L2" }, "note": "<one line>" } ],',
+  '  "proposals": [ { "kind": "adopt_measure_config"|"adjust_target"|"retire", "kpi_id": "<from snapshot>", "payload": { ... }, "rationale": "<why>", "citations": ["<url or source>"] },',
+  '                 { "kind": "new_kpi", "payload": { "name", "description", "category": "technical"|"quality"|"traffic"|"value", "measure_kind": "codebase"|"manual"|"derived"|"connector", "measure_config": {...}, "unit", "direction": "up"|"down", "baseline_value", "target_value", "cadence": "manual"|"daily"|"weekly" }, "rationale", "citations": [] } ],',
+  '  "findings": [ { "title": "<sharp one-liner>", "description": "<detail>", "kpi_id": "<optional>", "evidence": { ... } } ]',
+  '}',
+  'For an `adjust_target` proposal the payload is {"target_value": <number>, "target_date": "<YYYY-MM-DD optional>"}. The app applies proposals only after a human accepts them.',
+].join('\n');
+
 export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string {
+  if (mode === 'predict') return buildKpiPredictPrompt(project);
+
   const l2Block = mode === 'l1l2'
     ? [
         'L2 (LIVE simulation) IS ENABLED for this run. After L1, if the app can actually be exercised:',
@@ -39,7 +60,7 @@ export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string
   return [
     `You are orchestrating a KPI SIMULATION for the project "${project.name}" (this repo). You are the ORCHESTRATOR — plan, dispatch research subagents, execute measurements, and synthesize a machine-readable result. Use the Task/Agent tool for fan-out research; when the harness lets you pick a subagent model, use a faster sonnet-class model for research subagents and keep synthesis/judgement in this session.`,
     '',
-    'GROUND TRUTH: read `kpi-sim/snapshot.json` at the repo root first. It holds the project identity and every managed KPI (id, name, category, measure_kind, measure_config, unit, direction, baseline/target/current, cadence, tier). KPI ids in your output MUST come from this file verbatim.',
+    GROUND_TRUTH,
     '',
     'SKILL AWARENESS: check `.claude/skills/` for a kpi-sim or uat skill, and the repo root for a `uat/` overlay (characters/, journeys/) or a `kpi-sim/bindings/` directory. If present, follow/reuse them (Characters especially — do not invent a second cast). If absent, use the embedded procedure below — do NOT install anything.',
     '',
@@ -59,18 +80,43 @@ export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string
     '- At most 8 new-KPI proposals; prefer adjusting/adopting over inventing.',
     '- Run repo commands with sensible timeouts; a command that fails is evidence of a class-1 gap (finding), not a reason to fabricate.',
     '',
-    '== OUTPUT (the contract — the app ingests this file) ==',
-    'Create `kpi-sim/runs/<YYYY-MM-DD-HHmm>/` containing:',
-    '1. `result.json` — EXACTLY this shape (unknown fields are ignored; bad rows are skipped and reported):',
-    '{',
-    '  "sim_run_id": "<run dir name>",',
-    '  "measurements": [ { "kpi_id": "<from snapshot>", "value": <number>, "env": "local"|"test", "confidence": <0-1>, "evidence": { ...cmd/output_tail OR characters/completed/journals..., "cert": "L1"|"L2" }, "note": "<one line>" } ],',
-    '  "proposals": [ { "kind": "adopt_measure_config"|"adjust_target"|"retire", "kpi_id": "<from snapshot>", "payload": { ... }, "rationale": "<why>", "citations": ["<url or source>"] },',
-    '                 { "kind": "new_kpi", "payload": { "name", "description", "category": "technical"|"quality"|"traffic"|"value", "measure_kind": "codebase"|"manual"|"derived"|"connector", "measure_config": {...}, "unit", "direction": "up"|"down", "baseline_value", "target_value", "cadence": "manual"|"daily"|"weekly" }, "rationale", "citations": [] } ],',
-    '  "findings": [ { "title": "<sharp one-liner>", "description": "<detail>", "kpi_id": "<optional>", "evidence": { ... } } ]',
-    '}',
+    OUTPUT_CONTRACT,
     '2. `report.md` — the human story: per-KPI class + what you did + the value with its provenance + what you propose. Findings-first, honest about what you could NOT simulate.',
     '',
     'Before finishing: adversarially re-check your own result.json — delete any value you cannot trace to evidence, then validate it is parseable JSON. Print a final summary line: measurements / proposals / findings counts.',
+  ].join('\n');
+}
+
+/** PREDICT mode — the fast class-3-only refresh: web-research benchmarks to
+ *  re-calibrate real-world targets, WITHOUT running any local measurement or
+ *  journey walk. Emits ONLY proposals + findings (never a measurement), so it
+ *  never touches the production/sim trend — it only re-aims targets. */
+export function buildKpiPredictPrompt(project: DevProject): string {
+  return [
+    `You are running a KPI TARGET-PREDICTION REFRESH for the project "${project.name}" (this repo). This is a FAST, research-only pass — you do NOT measure anything, do NOT run repo commands, do NOT walk journeys, and do NOT emit a single measurement. Use the Task/Agent tool to fan out web research (sonnet-class subagents) and keep synthesis in this session.`,
+    '',
+    GROUND_TRUTH,
+    '',
+    'SKILL AWARENESS: if the repo has a `kpi-sim/bindings/` dir or a `uat/` overlay, read it for domain context (comparable products, the target market) — but install nothing.',
+    '',
+    '== WHAT TO DO ==',
+    'For EACH KPI in the snapshot, decide whether an outside benchmark should re-aim its target:',
+    '- Prioritise the real-world traffic/value KPIs (users, visitors, revenue, retention, conversion, latency-SLO, cost) — these are where an external benchmark matters most.',
+    '- For each, web-research 2-4 CURRENT comparable products / industry benchmarks (WebSearch + WebFetch). Read enough to ground a number, not just a headline. Prefer recent, named sources over vibes.',
+    '- If the evidence says the current target is materially off (too soft or unreachable), emit a proposal kind:"adjust_target" with payload {"target_value": <n>, "target_date": "<YYYY-MM-DD optional>"}, a one-paragraph rationale, and 2-4 citations (real URLs where possible; clearly mark any training-data estimate).',
+    '- If a genuinely important outcome has no KPI at all, emit at most a couple of kind:"new_kpi" proposals (same payload shape as a normal KPI).',
+    '- If a KPI is chasing a target the market shows is meaningless, emit kind:"retire" with the reasoning.',
+    '- Anything worth flagging that is not a target change → a finding.',
+    '',
+    '== HARD RULES ==',
+    '- ZERO measurements. `"measurements": []` is REQUIRED — the target refresh never produces a data point; a prediction is a claim about what to AIM for, not what IS.',
+    '- Every proposal carries citations. No citation, no proposal.',
+    '- Do not modify application code or KPIs. Your ONLY writes are `kpi-sim/runs/<run-id>/` artifacts (and `.gitignore` for `kpi-sim/` if needed).',
+    '- Do not re-propose a KPI already status "proposed" in the snapshot.',
+    '',
+    OUTPUT_CONTRACT,
+    '2. `report.md` — per-KPI: the benchmark you found, the source, and why the target should (or should NOT) move. Lead with the targets you are re-aiming.',
+    '',
+    'Before finishing: confirm `measurements` is an empty array, every proposal has ≥1 citation, and result.json parses. Print a final summary line: 0 measurements / <n> proposals / <n> findings.',
   ].join('\n');
 }

@@ -109,16 +109,25 @@ function ts(s: string): number {
 export function KpiStoryChart({
   kpi,
   measurements,
+  simMeasurements = [],
   linkedGoals,
 }: {
   kpi: DevKpi;
   measurements: DevKpiMeasurement[];
+  /** P3 convergence overlay — simulated (local/test) points rendered as a
+   *  dashed line + hollow dots over the solid production story. Empty = the
+   *  chart behaves exactly as before. */
+  simMeasurements?: DevKpiMeasurement[];
   linkedGoals: DevGoal[];
 }) {
   const { t, tx } = useTranslation();
 
   const model = useMemo(() => {
     const points = [...measurements]
+      .map((m) => ({ t: ts(m.measured_at), v: m.value }))
+      .filter((p) => Number.isFinite(p.t))
+      .sort((a, b) => a.t - b.t);
+    const simPoints = [...simMeasurements]
       .map((m) => ({ t: ts(m.measured_at), v: m.value }))
       .filter((p) => Number.isFinite(p.t))
       .sort((a, b) => a.t - b.t);
@@ -135,12 +144,12 @@ export function KpiStoryChart({
       .filter((e) => Number.isFinite(e.t));
 
     const now = Date.now();
-    const tMin = Math.min(first.t, ...goalEvents.map((e) => e.t));
-    const tMax = Math.max(now, last.t);
+    const tMin = Math.min(first.t, ...goalEvents.map((e) => e.t), ...simPoints.map((p) => p.t));
+    const tMax = Math.max(now, last.t, ...simPoints.map((p) => p.t));
     const tSpan = Math.max(tMax - tMin, 1);
 
     const values = points.map((p) => p.v);
-    const vCandidates = [...values];
+    const vCandidates = [...values, ...simPoints.map((p) => p.v)];
     if (kpi.target_value != null) vCandidates.push(kpi.target_value);
     if (kpi.baseline_value != null) vCandidates.push(kpi.baseline_value);
     const vMin = Math.min(...vCandidates);
@@ -153,11 +162,13 @@ export function KpiStoryChart({
     return {
       line: points.map((p) => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' '),
       lastPoint: { x: x(last.t), y: y(last.v) },
+      simLine: simPoints.map((p) => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' '),
+      simDots: simPoints.map((p) => ({ x: x(p.t), y: y(p.v) })),
       targetY: kpi.target_value != null ? y(kpi.target_value) : null,
       todayX: x(now),
       goalMarks: goalEvents.map((e) => ({ x: x(e.t), done: e.done, title: e.title })),
     };
-  }, [measurements, linkedGoals, kpi.target_value, kpi.baseline_value]);
+  }, [measurements, simMeasurements, linkedGoals, kpi.target_value, kpi.baseline_value]);
 
   if (!model) {
     return <p className="typo-caption text-foreground opacity-80">{t.kpis.chart_no_data}</p>;
@@ -202,6 +213,14 @@ export function KpiStoryChart({
             strokeDasharray={g.done ? undefined : '3 3'}
             opacity="0.8"
           />
+        ))}
+        {/* the simulated overlay — dashed + hollow dots, visually subordinate
+            to the solid production truth line */}
+        {model.simDots.length > 1 && (
+          <polyline points={model.simLine} fill="none" stroke="#8B5CF6" strokeWidth="1.25" strokeDasharray="5 4" opacity="0.85" />
+        )}
+        {model.simDots.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y} r="2.2" fill="var(--background)" stroke="#8B5CF6" strokeWidth="1.25" />
         ))}
         {/* the measurement line */}
         <polyline points={model.line} fill="none" stroke="var(--primary)" strokeWidth="1.5" />

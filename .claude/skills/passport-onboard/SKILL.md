@@ -29,6 +29,22 @@ the snapshot for state; skip re-deriving what it already says.
 itself (the deterministic checks are in `references/dimensions.md`), and
 connector availability is a QUESTION for the user, not an assumption.
 
+**Dimension-scoped (wall row → Fleet).** The dispatch names ONE dimension
+(e.g. "SCOPED to a single dimension: Tests"). Run the same loop shrunk to it:
+assess that dimension inline (no group assessors), present ONE decision round
+of selects and WAIT — the operator is watching this terminal and answers the
+way they would a full run; execute exactly what they accept (parallel
+builders still allowed if the accepted path splits); re-assess; refresh ONLY
+that dimension's entry in `app-passport.json`. Everything else — hard rules,
+binding doctrine, honest levels, the report shape — applies unchanged.
+
+**Prior manifest.** In EITHER mode, if `app-passport.json` exists at the repo
+root, read it first: trust its levels as of `generatedAt` (re-verify only the
+cheap checks), and NEVER re-ask a dimension it marks `skippedByChoice` —
+surface it as "skipped on <date>, say the word to revisit" in the round intro
+instead of a question. The manifest is how onboarding decisions survive
+between runs.
+
 ## The loop: Assess → Decide (batched) → Execute (parallel) → Re-assess
 
 ### Phase 1 — Assess (parallel, read-only)
@@ -133,8 +149,33 @@ Rules:
 
 Re-run the Phase-1 checks for every touched dimension. Close with a compact
 table: dimension → before → after → what was skipped (user's choice vs
-blocked), plus the exact follow-ups the user still owns (e.g. "add the Sentry
-DSN to the test env in Personas Vault"). If dispatched from the wall, end with
+blocked), plus the exact follow-ups the user still owns. Connector-flavored
+dimensions must ALSO show their `dev_projects` slot binding in the after
+column — bind it yourself when the app is reachable (connectors.md § Binding
+closes the loop); a report that hands the user `.env` homework for Sentry/
+GitHub instead of a binding is a field-test failure we've already made once.
+Before the report, write/refresh the **public-safe manifest**
+`app-passport.json` at the repo root (commit it with the run when the run
+commits — it is publishable by design):
+
+```json
+{
+  "schemaVersion": 1,
+  "generatedAt": "<ISO date>",
+  "generatedBy": "personas passport-onboard",
+  "dimensions": {
+    "<dimension-key>": { "level": "<honest level>", "tool": "<tool NAME or null>", "skippedByChoice": false, "note": "<optional 1-liner>" }
+  }
+}
+```
+
+PUBLIC-SAFE means levels + tool *names* only — NEVER credential ids, URLs,
+env values, costs (`app-cost.json` stays private/gitignored), or local paths.
+Its jobs: (1) re-runs read it as the prior and honor `skippedByChoice`;
+(2) any CLI agent in the repo gets instant maturity context without Personas
+(the `context-map.json` pattern); (3) substrate for a future CI verify check.
+
+If dispatched from the wall, end with
 one line the wall can grep: `PASSPORT_ONBOARD_RESULT: <n> improved, <n>
 skipped, <n> blocked`.
 

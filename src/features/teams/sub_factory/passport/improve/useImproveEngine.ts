@@ -37,8 +37,13 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
       const updates =
         field === 'pr' ? { prCredentialId: credId }
         : field === 'llm_tracking' ? { llmTrackingCredentialId: credId }
+        : field === 'support' ? { supportCredentialId: credId }
         : { monitoringCredentialId: credId };
       await updateProject(slug, updates);
+      reload();
+    },
+    setDataLinks: async (slug, projectIds) => {
+      await updateProject(slug, { dataLinks: projectIds.length > 0 ? JSON.stringify(projectIds) : null });
       reload();
     },
     queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },

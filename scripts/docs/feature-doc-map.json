@@ -337,7 +337,7 @@
       "marketingModule": "home"
     },
     {
-      "doc": "docs/features/cockpit.md",
+      "doc": "docs/features/companion/cockpit.md",
       "sourceGlobs": [
         "src/features/home/sub_cockpit/**",
         "src/features/plugins/companion/inbox/**",
@@ -386,7 +386,7 @@
       ]
     },
     {
-      "doc": "docs/features/artist.md",
+      "doc": "docs/features/plugins/artist/artist.md",
       "sourceGlobs": [
         "src/features/plugins/artist/**",
         "src-tauri/src/commands/artist/**"
@@ -433,7 +433,7 @@
       ]
     },
     {
-      "doc": "docs/features/drive/README.md",
+      "doc": "docs/features/plugins/drive/README.md",
       "sourceGlobs": [
         "src/features/plugins/drive/**",
         "src-tauri/src/commands/drive.rs"
@@ -455,7 +455,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/research-lab.md",
+      "doc": "docs/features/plugins/research-lab.md",
       "sourceGlobs": [
         "src/features/plugins/research-lab/**",
         "src-tauri/src/commands/infrastructure/research_lab.rs"
@@ -463,7 +463,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/twin.md",
+      "doc": "docs/features/plugins/twin.md",
       "sourceGlobs": [
         "src/features/plugins/twin/**",
         "src-tauri/src/commands/infrastructure/twin.rs"

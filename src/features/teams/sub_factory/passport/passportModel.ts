@@ -83,6 +83,12 @@ export interface PassportStack {
   auth?: string | null;
   integrations: PassportIntegration[];
   secretsFrom?: string;
+  /** Related projects whose codebase post-processes this app's data
+   *  (Data-analysis dimension). User-declared for now; names, display-ready. */
+  dataLinks?: string[];
+  /** Incoming customer-support channel types (Email / Discord …), derived from
+   *  the bound support connector (Support dimension). */
+  supportChannels?: string[];
   /** Per-environment sources for the env-dependent dimensions (db / monitoring
    *  / hosting). Absent on passports built before the env split — rows fall
    *  back to their legacy single-value fields. */

@@ -1,0 +1,96 @@
+{
+  "_comment": "SynthesisPromptArgs the research-lab report-synthesis persona is grounded on. Shapes mirror src/api/researchLab/researchLab.ts (ResearchProject / ResearchHypothesis / ResearchExperiment / ResearchFinding). longFindingDescription exercises the 300-char truncation cap in buildSynthesisPrompt.",
+  "project": {
+    "id": "rp-hybrid-retrieval",
+    "name": "Hybrid Retrieval Latency Study",
+    "description": "Comparing dense-only vs hybrid dense+lexical retrieval on tail queries for the org-memory service.",
+    "domain": "Information Retrieval",
+    "status": "active",
+    "thesis": "Hybrid retrieval beats dense-only on rare tail queries without hurting p95 latency.",
+    "scopeConstraints": null,
+    "teamId": null,
+    "obsidianVaultPath": null,
+    "createdAt": "2026-07-01T09:00:00Z",
+    "updatedAt": "2026-07-20T09:00:00Z"
+  },
+  "hypotheses": [
+    {
+      "id": "h1",
+      "projectId": "rp-hybrid-retrieval",
+      "statement": "Adding BM25 lexical signal raises NDCG@10 on tail queries by at least 3 points.",
+      "rationale": null,
+      "status": "supported",
+      "confidence": 0.82,
+      "parentHypothesisId": null,
+      "generatedBy": "researcher",
+      "supportingEvidence": null,
+      "counterEvidence": null,
+      "linkedExperiments": null,
+      "createdAt": "2026-07-02T09:00:00Z",
+      "updatedAt": "2026-07-18T09:00:00Z"
+    },
+    {
+      "id": "h2",
+      "projectId": "rp-hybrid-retrieval",
+      "statement": "Reciprocal-rank fusion adds under 5ms to p95 retrieval latency.",
+      "rationale": null,
+      "status": "testing",
+      "confidence": 0.55,
+      "parentHypothesisId": null,
+      "generatedBy": "researcher",
+      "supportingEvidence": null,
+      "counterEvidence": null,
+      "linkedExperiments": null,
+      "createdAt": "2026-07-03T09:00:00Z",
+      "updatedAt": "2026-07-19T09:00:00Z"
+    }
+  ],
+  "experiments": [
+    {
+      "id": "e1",
+      "projectId": "rp-hybrid-retrieval",
+      "hypothesisId": "h1",
+      "name": "NDCG@10 sweep on the tail-query benchmark",
+      "methodology": "Run dense-only and RRF-fused retrieval over the 500-query tail set; report NDCG@10 and leakage rate.",
+      "inputSchema": null,
+      "successCriteria": null,
+      "status": "complete",
+      "pipelineId": null,
+      "createdAt": "2026-07-05T09:00:00Z",
+      "updatedAt": "2026-07-17T09:00:00Z"
+    }
+  ],
+  "findings": [
+    {
+      "id": "f1",
+      "projectId": "rp-hybrid-retrieval",
+      "title": "Hybrid RRF lifts tail NDCG@10 from 0.79 to 0.876 with zero leaks",
+      "description": "On the 500-query tail benchmark, reciprocal-rank fusion of dense + BM25 improved NDCG@10 by 8.6 points over dense-only while holding the cross-user leak count at zero.",
+      "confidence": 0.9,
+      "category": "quantitative",
+      "sourceExperimentIds": "e1",
+      "sourceIds": null,
+      "hypothesisIds": "h1",
+      "generatedBy": "researcher",
+      "status": "confirmed",
+      "createdAt": "2026-07-17T09:00:00Z",
+      "updatedAt": "2026-07-17T09:00:00Z"
+    },
+    {
+      "id": "f2",
+      "projectId": "rp-hybrid-retrieval",
+      "title": "Fusion latency overhead is within budget",
+      "longFindingDescription": true,
+      "description": "The reciprocal-rank fusion pass added measurable but bounded latency across every percentile we sampled, and the overhead stayed inside the service-level budget even under the most adversarial concurrent-load profile we could construct, which included cold-cache tail queries interleaved with large batch reindex jobs running on the same node, meaning the fused path never breached the p95 ceiling the SLA commits to downstream consumers.",
+      "confidence": 0.6,
+      "category": "quantitative",
+      "sourceExperimentIds": "e1",
+      "sourceIds": null,
+      "hypothesisIds": "h2",
+      "generatedBy": "researcher",
+      "status": "tentative",
+      "createdAt": "2026-07-18T09:00:00Z",
+      "updatedAt": "2026-07-18T09:00:00Z"
+    }
+  ]
+}

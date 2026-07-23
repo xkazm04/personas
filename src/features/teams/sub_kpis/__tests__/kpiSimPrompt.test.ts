@@ -41,4 +41,20 @@ describe('kpiSimPrompt', () => {
     expect(p).toContain('uat/');
     expect(p).toContain('do NOT install anything');
   });
+
+  it('predict mode is research-only — forbids measurements, keeps the contract', () => {
+    const p = buildKpiSimPrompt(project, 'predict');
+    // Research-only, target-refresh framing.
+    expect(p).toContain('TARGET-PREDICTION REFRESH');
+    expect(p).toContain('do NOT measure anything');
+    // Zero-measurement guardrail is explicit and load-bearing.
+    expect(p).toContain('"measurements": []');
+    // Still the SAME ingest contract (so kpi_sim.rs parses it identically).
+    expect(p).toContain('result.json');
+    expect(p).toContain('adjust_target');
+    expect(p).toContain('citations');
+    // Must NOT drag in the simulation-only class machinery.
+    expect(p).not.toContain('CLASS 2');
+    expect(p).not.toContain('L2 (LIVE simulation)');
+  });
 });
