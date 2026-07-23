@@ -217,7 +217,8 @@
     "debug_log_start": "Rekam",
     "debug_log_start_title": "Rekam log debug tingkat tinggi untuk perubahan status armada, hibernasi, dan keputusan Athena",
     "debug_log_started": "Log debug Fleet dimulai — perubahan status, hibernasi, dan keputusan Athena sedang direkam.",
-    "debug_log_stop": "Merekam"
+    "debug_log_stop": "Merekam",
+    "debug_log_stop_title": "Hentikan perekaman debug armada dan simpan log"
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

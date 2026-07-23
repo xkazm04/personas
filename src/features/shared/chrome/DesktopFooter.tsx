@@ -23,6 +23,14 @@ const RadioFooter = lazy(() => import('@/features/plugins/radio/components/Radio
 // Fleet status cluster (DEV-only). Lazy so the fleet module graph stays out of
 // the always-mounted footer chunk.
 const FleetFooterIcon = lazy(() => import('@/features/plugins/fleet/FleetFooterIcon'));
+// Debug-recorder stop pill (DEV-only). Renders nothing unless a recording is
+// running, but must be MOUNTED whenever the app is, so the recorder can always
+// be stopped even after you leave the grid where it was started.
+const FleetDebugLogFooterPill = lazy(() =>
+  import('@/features/plugins/fleet/FleetDebugLogFooterPill').then((m) => ({
+    default: m.FleetDebugLogFooterPill,
+  })),
+);
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
@@ -627,10 +635,14 @@ export default function DesktopFooter() {
         </div>
       ) : null}
 
-      {/* Right cluster: fleet toggle + system load + tour + project picker. */}
+      {/* Right cluster: debug-recorder stop + fleet toggle + system load + tour
+          + project picker. */}
       <div className="flex items-center gap-1.5">
         {import.meta.env.DEV && (
           <>
+            <Suspense fallback={null}>
+              <FleetDebugLogFooterPill />
+            </Suspense>
             <Suspense fallback={null}>
               <FleetFooterIcon />
             </Suspense>

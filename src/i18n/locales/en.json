@@ -12305,7 +12305,8 @@
       "debug_log_stop": "Recording",
       "debug_log_start_title": "Record a high-level debug log of fleet state changes, hibernations and Athena decisions",
       "debug_log_started": "Fleet debug log started — state changes, hibernations and Athena decisions are being recorded.",
-      "debug_log_saved": "Fleet debug log saved · {events} events → {path}"
+      "debug_log_saved": "Fleet debug log saved · {events} events → {path}",
+      "debug_log_stop_title": "Stop the fleet debug recording and save the log"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

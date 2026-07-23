@@ -12312,6 +12312,7 @@ export type Translations = {
       debug_log_start_title: string;
       debug_log_started: string;
       debug_log_saved: string;
+      debug_log_stop_title: string;
     };
     title: string;
     subtitle: string;

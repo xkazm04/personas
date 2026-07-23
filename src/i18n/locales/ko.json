@@ -12038,7 +12038,8 @@
       "debug_log_start": "기록",
       "debug_log_start_title": "플릿 상태 변화, 최대 절전, Athena 결정을 담은 상위 수준 디버그 로그를 기록합니다",
       "debug_log_started": "Fleet 디버그 로그를 시작했습니다 — 상태 변화, 최대 절전, Athena 결정을 기록 중입니다.",
-      "debug_log_stop": "기록 중"
+      "debug_log_stop": "기록 중",
+      "debug_log_stop_title": "플릿 디버그 기록을 중지하고 로그 저장"
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

@@ -12038,7 +12038,8 @@
       "debug_log_start": "录制",
       "debug_log_start_title": "录制舰队状态变化、休眠与 Athena 决策的高层调试日志",
       "debug_log_started": "Fleet 调试日志已开始 — 正在记录状态变化、休眠与 Athena 决策。",
-      "debug_log_stop": "录制中"
+      "debug_log_stop": "录制中",
+      "debug_log_stop_title": "停止舰队调试录制并保存日志"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

@@ -93,6 +93,14 @@ export interface FleetSlice {
   /** Terminal color theme; `auto` follows the app appearance. Persisted. */
   fleetTerminalTheme: FleetTerminalTheme;
 
+  /** DEV debug recorder — mirrored into the store so the stop control is
+   *  reachable from the always-present footer, not only the grid overlay
+   *  header (which unmounts the moment you leave grid mode). In-memory; the
+   *  Rust recorder is the source of truth, this is its cached status. */
+  fleetDebugLogActive: boolean;
+  fleetDebugLogEvents: number;
+  fleetDebugLogPath: string | null;
+
   fleetRefresh: () => Promise<void>;
   /** Attach the three live Fleet session listeners (state / exited / registry)
    *  to this store — ONCE per process. Any surface that shows fleet sessions
@@ -115,6 +123,10 @@ export interface FleetSlice {
   fleetNudgeTerminalFont: (delta: number) => void;
   fleetSetTerminalCopyOnSelect: (on: boolean) => void;
   fleetSetTerminalTheme: (theme: FleetTerminalTheme) => void;
+  /** Adopt a `FleetDebugLogStatus` snapshot from the Rust recorder. Called by
+   *  the shared `useFleetDebugLog` hook on start / stop / poll, so every mount
+   *  point (grid button, footer stop pill) reads one truth. */
+  fleetApplyDebugLogStatus: (status: { active: boolean; events: number; path: string | null }) => void;
   /** Append a transition for a session (no-op if it repeats the last state). */
   fleetRecordTransition: (id: string, state: FleetSessionState) => void;
   /** Patch a single session by id in place (used by event handlers). */
@@ -143,6 +155,9 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetTerminalFontSize: FONT_DEFAULT,
   fleetTerminalCopyOnSelect: true,
   fleetTerminalTheme: 'auto',
+  fleetDebugLogActive: false,
+  fleetDebugLogEvents: 0,
+  fleetDebugLogPath: null,
 
   fleetRefresh: async () => {
     // Sync the persisted auto-hibernate policy to the always-on Rust ticker.
@@ -258,6 +273,13 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSetTerminalCopyOnSelect: (on) => set({ fleetTerminalCopyOnSelect: on }),
 
   fleetSetTerminalTheme: (theme) => set({ fleetTerminalTheme: theme }),
+
+  fleetApplyDebugLogStatus: (status) =>
+    set({
+      fleetDebugLogActive: status.active,
+      fleetDebugLogEvents: status.events,
+      fleetDebugLogPath: status.path,
+    }),
 
   fleetRecordTransition: (id, state) =>
     set((s) => {

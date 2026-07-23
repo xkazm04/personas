@@ -217,7 +217,8 @@
     "debug_log_start": "Grabar",
     "debug_log_start_title": "Grabar un registro de depuración de alto nivel de los cambios de estado de la flota, las hibernaciones y las decisiones de Athena",
     "debug_log_started": "Registro de depuración de Fleet iniciado: se están grabando los cambios de estado, las hibernaciones y las decisiones de Athena.",
-    "debug_log_stop": "Grabando"
+    "debug_log_stop": "Grabando",
+    "debug_log_stop_title": "Detener la grabación de depuración de la flota y guardar el registro"
   },
   "title": "Plugins",
   "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

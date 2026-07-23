@@ -217,7 +217,8 @@
     "debug_log_start": "Enregistrer",
     "debug_log_start_title": "Enregistrer un journal de débogage de haut niveau des changements d’état de la flotte, des mises en veille et des décisions d’Athena",
     "debug_log_started": "Journal de débogage Fleet démarré — les changements d’état, les mises en veille et les décisions d’Athena sont enregistrés.",
-    "debug_log_stop": "Enregistrement"
+    "debug_log_stop": "Enregistrement",
+    "debug_log_stop_title": "Arrêter l’enregistrement de débogage de la flotte et enregistrer le journal"
   },
   "title": "Extensions",
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

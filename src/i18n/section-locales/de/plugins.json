@@ -217,7 +217,8 @@
     "debug_log_start": "Aufzeichnen",
     "debug_log_start_title": "Ein übergeordnetes Debug-Log zu Flotten-Statuswechseln, Ruhezuständen und Athenas Entscheidungen aufzeichnen",
     "debug_log_started": "Fleet-Debug-Log gestartet — Statuswechsel, Ruhezustände und Athenas Entscheidungen werden aufgezeichnet.",
-    "debug_log_stop": "Zeichnet auf"
+    "debug_log_stop": "Zeichnet auf",
+    "debug_log_stop_title": "Fleet-Debug-Aufzeichnung stoppen und Log speichern"
   },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

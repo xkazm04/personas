@@ -1,9 +1,11 @@
 /**
  * The debug recorder lives in Rust and outlives this button (and the whole
- * grid overlay), so the contract worth pinning is that the button *reflects
- * the backend* rather than its own memory: it adopts a recording already in
- * progress on mount, and it hands back the file path on stop — that path being
- * the entire artifact of a debugging run.
+ * grid overlay), so state is held in the fleet store and driven through
+ * `useFleetDebugLog`. The contract here is that the grid-header button reflects
+ * that shared state and toggles it: start when idle, stop when armed.
+ *
+ * The store and the fleet API are mocked at the module boundary; `useToastStore`
+ * is stubbed because the shared hook toasts on start/stop.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -13,16 +15,32 @@ import type { FleetDebugLogStatus } from '@/lib/bindings/FleetDebugLogStatus';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
-vi.mock('@/api/fleet/fleet', () => ({
-  debugLogStart: vi.fn(),
-  debugLogStop: vi.fn(),
-  debugLogStatus: vi.fn(),
+const applied: Array<{ active: boolean; events: number; path: string | null }> = [];
+const store = {
+  fleetApplyDebugLogStatus: (s: { active: boolean; events: number; path: string | null }) => {
+    applied.push(s);
+    store.fleetDebugLogActive = s.active;
+    store.fleetDebugLogEvents = s.events;
+    store.fleetDebugLogPath = s.path;
+  },
+  fleetDebugLogActive: false,
+  fleetDebugLogEvents: 0,
+  fleetDebugLogPath: null as string | null,
+};
+
+vi.mock('@/stores/systemStore', () => ({
+  useSystemStore: (selector: (s: typeof store) => unknown) => selector(store),
 }));
 
 const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
-  useToastStore: (selector: (s: { addToast: typeof addToast }) => unknown) =>
-    selector({ addToast }),
+  useToastStore: (selector: (s: { addToast: typeof addToast }) => unknown) => selector({ addToast }),
+}));
+
+vi.mock('@/api/fleet/fleet', () => ({
+  debugLogStart: vi.fn(),
+  debugLogStop: vi.fn(),
+  debugLogStatus: vi.fn(),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
@@ -38,62 +56,47 @@ const status = (o: Partial<FleetDebugLogStatus> = {}): FleetDebugLogStatus => ({
 
 describe('FleetDebugLogButton', () => {
   beforeEach(() => {
-    vi.mocked(fleetApi.debugLogStatus).mockReset();
-    vi.mocked(fleetApi.debugLogStart).mockReset();
-    vi.mocked(fleetApi.debugLogStop).mockReset();
+    applied.length = 0;
+    store.fleetDebugLogActive = false;
+    store.fleetDebugLogEvents = 0;
+    store.fleetDebugLogPath = null;
     addToast.mockReset();
+    vi.mocked(fleetApi.debugLogStatus).mockReset().mockResolvedValue(status());
+    vi.mocked(fleetApi.debugLogStart).mockReset().mockResolvedValue(status({ active: true, path: 'C:/x/a.log' }));
+    vi.mocked(fleetApi.debugLogStop).mockReset().mockResolvedValue(status({ active: false, events: 12, path: 'C:/x/a.log' }));
   });
 
-  it('offers to record when the backend is idle', async () => {
-    vi.mocked(fleetApi.debugLogStatus).mockResolvedValue(status());
+  it('offers to record when the store shows idle', async () => {
     render(<FleetDebugLogButton />);
-    await waitFor(() =>
-      expect(screen.getByTestId('fleet-debug-log-toggle')).toHaveAttribute('aria-pressed', 'false'),
-    );
-    expect(screen.getByTestId('fleet-debug-log-toggle')).toHaveTextContent('Record');
-  });
-
-  it('adopts a recording that was already running before it mounted', async () => {
-    // The grid overlay unmounts every time the operator minimizes it; the
-    // recorder does not stop. A button that trusted its own state would offer
-    // to "Record" while a run was already in flight.
-    vi.mocked(fleetApi.debugLogStatus).mockResolvedValue(
-      status({ active: true, events: 42, path: 'C:/x/fleet-2026-07-23_14-05-31.log' }),
-    );
-    render(<FleetDebugLogButton />);
-    const button = await screen.findByTestId('fleet-debug-log-toggle');
-    await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'));
-    expect(button).toHaveTextContent('42');
-    expect(fleetApi.debugLogStart).not.toHaveBeenCalled();
+    const button = screen.getByTestId('fleet-debug-log-toggle');
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(button).toHaveTextContent('Record');
   });
 
   it('starts a recording when clicked while idle', async () => {
-    vi.mocked(fleetApi.debugLogStatus).mockResolvedValue(status());
-    vi.mocked(fleetApi.debugLogStart).mockResolvedValue(status({ active: true, path: 'C:/x/a.log' }));
     render(<FleetDebugLogButton />);
-    await userEvent.click(await screen.findByTestId('fleet-debug-log-toggle'));
+    await userEvent.click(screen.getByTestId('fleet-debug-log-toggle'));
     await waitFor(() => expect(fleetApi.debugLogStart).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(screen.getByTestId('fleet-debug-log-toggle')).toHaveAttribute('aria-pressed', 'true'),
-    );
+    expect(applied.at(-1)).toMatchObject({ active: true });
   });
 
-  it('surfaces the log path and event count on stop', async () => {
-    vi.mocked(fleetApi.debugLogStatus).mockResolvedValue(status({ active: true, events: 7 }));
-    vi.mocked(fleetApi.debugLogStop).mockResolvedValue(
-      status({ active: false, events: 118, path: 'C:/data/fleet-debug/fleet-2026-07-23.log' }),
-    );
+  it('reflects a recording that another surface already started', () => {
+    store.fleetDebugLogActive = true;
+    store.fleetDebugLogEvents = 42;
     render(<FleetDebugLogButton />);
-    const button = await screen.findByTestId('fleet-debug-log-toggle');
-    await waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'true'));
+    const button = screen.getByTestId('fleet-debug-log-toggle');
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button).toHaveTextContent('42');
+  });
 
-    await userEvent.click(button);
+  it('stops the recording when clicked while armed, and toasts the path', async () => {
+    store.fleetDebugLogActive = true;
+    render(<FleetDebugLogButton />);
+    await userEvent.click(screen.getByTestId('fleet-debug-log-toggle'));
     await waitFor(() => expect(fleetApi.debugLogStop).toHaveBeenCalled());
-
-    const [message, , duration] = addToast.mock.calls[0] ?? [];
-    expect(message).toContain('C:/data/fleet-debug/fleet-2026-07-23.log');
-    expect(message).toContain('118');
-    // The path is the deliverable — a default-length toast would lose it.
+    expect(fleetApi.debugLogStart).not.toHaveBeenCalled();
+    const [message, , duration] = addToast.mock.calls.at(-1) ?? [];
+    expect(message).toContain('C:/x/a.log');
     expect(duration).toBeGreaterThanOrEqual(10_000);
   });
 });
