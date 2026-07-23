@@ -5,6 +5,7 @@
 
 
 
+
 ### passport-unified-setup-r19 — unified Evals/Security/Tests/Migrations flow, Fleet as engine — session fable-5 (cockpit line)
 - Started: 2026-07-22. Status: COMMITTED 87314c14b (passportFleet.tsx + RowSetupModal.tsx) + pushed master.
 - Paths: src/features/teams/sub_factory/passport/{passportFleet.tsx NEW, RowSetupModal.tsx NEW, ProjectsPassportWall.tsx INTEGRATION UNCOMMITTED}.
@@ -1073,6 +1074,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### brainiac-p2-doc-rot — Brainiac-adoption P2: git doc-rot loop + doc-reads mining + doc_rot findings — session fable-5
+- Started+completed 2026-07-23. Commits: `bb2f11d20` (P2 core) + `b4a6faaa2` (heuristic precision: file refs couple per-file after the first fleet scan marked 78% dirty via directory coupling).
+- Shipped: doc_rot.rs (doc_rot_scan: ONE bounded `git log --name-only` per repo → path→newest-commit map, 5000-commit horizon, 6h throttle + force; coupling = doc-map globs → referenced-paths (exist-verified, per-file) → UNSCOPED never-dirty; dirty_since keeps the EARLIEST un-absorbed change; deleted docs drop rows); doc_status + APPEND-ONLY doc_read_events (migration also resets skill_scan_state ONCE so the shared miner re-mines history to backfill reads — skill events dedup makes replay idempotent); miner extracts Read-tool markdown reads in the same pass, was_dirty stamped at insert vs read-time dirty state; doc_rot origin (7th) + E7 emitter harm-ranked (dirty-reads first, top 3, dedup doc:<path>, presence-shaped verify) with the changed sources IN the description = the refresh-task prompt; Documentation cell "N dirty · M unread" sub-line (maturity ladder deliberately stable — no 'fresh' rung); docs-refresh Dev-runner action; docRot threaded through all projection derives; rot scan ordered BEFORE mining on wall mount.
+- LIVE-VERIFIED: 11 repos, 1723 docs tracked (personas truncated at the 400 cap — reported, not silent), ~1.3k dirty (honest for hourly-shipping repos; per-file coupling shaved it), read-while-stale stamping proven (harness INDEX.md read 1× while dirty), wall renders "Structured · 145 dirty · 177 unread · 2/3". E7 not sweep-fired live (would create real triage findings unasked; emitter unit-tested 2 cases).
+- KNOWN BIAS (noted in plan doc): reads = Read-tool only; Grep/Bash doc access invisible. GOTCHA: app-restart detection via #__probe div vanishing beats health polling (health answers from the old binary).
+- Next: P3 memory claims/TTL/health snapshots (last planned phase; then P4 advisory extras).
 
 ### brainiac-p1-skill-usage — Brainiac-adoption P1: skill usage telemetry via transcript mining + dormancy — session fable-5
 - Started+completed 2026-07-23. Commits: `9fed7a945` (P1 core) + `643119a79` (first_seen_at from filesystem creation time — the fix that made dormancy honest on day one).
