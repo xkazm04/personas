@@ -2,14 +2,14 @@
 
 ## Active
 
-
-
-
-
-### kpi-simulation-p0p2 — docs/plans/kpi-simulation-skill.md execution: env axis on measurements + env switcher UI + kpi-sim skill/dispatch/ingest — session fable-5
-- Started: 2026-07-23. Status: code complete, gates running (vitest 2401 green, i18n strict clean, cargo check clean; ts-rs regen via CARGO_TARGET_DIR=target-bindings — main target/debug has the exe lock + STATUS_ENTRYPOINT_NOT_FOUND test issue). Live verify + L1/L2 comparison runs next.
-- Paths: src-tauri/src/db/migrations/incremental.rs (env column + source CHECK widen on dev_kpi_measurements), src-tauri/src/commands/infrastructure/kpi_sim.rs (NEW: prepare/ingest), src-tauri/src/lib.rs (registration), src-tauri/src/engine/kpi_eval.rs (sim write path, no roll-forward), src/lib/bindings/DevKpiMeasurement.ts (regen), src/api/** (kpi sim api), src/features/teams/sub_kpis/{KPIDashboard,KpiDetailModal,useKpiDetail,kpiSim*} (env switcher, dashed sim series, LLM-engine provenance, Simulate dispatch + import), .claude/skills/kpi-sim/ (NEW skill), docs/plans/kpi-simulation-skill.md (decision updates).
+### passport-wall-extensions — stack-first + framework versions + Data-analysis/Support dimensions — session fable-5
+- Started: 2026-07-23. Status: started.
+- Paths: src/features/teams/sub_factory/passport/** (passportRows, passportModel, passportDerive, usePassportData, wallConfig, improve/{connectors,ImproveCell,ImproveContext,+DataLinksPopover new}), src/features/teams/sub_factory/ProjectsLayer.tsx, src/api/devTools/devTools.ts, src-tauri/src/commands/infrastructure/{dev_tools.rs (RepoEvidence frameworks, update_project), context_generation.rs (prompt)}, src-tauri/src/db/{migrations/incremental.rs, models/dev_tools.rs, repos/dev_tools.rs} (support_credential_id + data_links columns), src/lib/bindings/DevProject.ts (regen).
 - Main checkout. Ledger NOT staged separately.
+
+
+
+
 
 
 ### fleet-footer-grid-overlay — Fleet UX: footer state-count icon (custom ship glyph) + app-wide grid overlay — session opus-4-8[1m]
@@ -1137,6 +1137,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### kpi-simulation-p0p2 — env axis + switcher UI + kpi-sim dispatch/ingest + L1-vs-L2 comparison — session fable-5
+- Started+completed 2026-07-23. Commits: Rust half rode in `9c5c57ebd` (land-together; attribution in 96d022309), `96d022309` (frontend+skill+i18n 19 keys ×13 locales+docs), `c61e895c7` (auto-ingest on idle), `f47e95b7d` (idle label + Re-run reclaims key, +2 keys ×14), `fa0a1d1e2` (proposal name-dedup + snapshot carries proposed; L1-vs-L2 verdict in plan doc). Pushed through f47e95b7d; fa0a1d1e2 push pending the concurrent session's DevProject compile fix.
+- Shipped: dev_kpi_measurements env axis (table rebuild, 'simulation' source, no-roll-forward write path — sims NEVER move current_value/pace/autopilot); dashboard Environment switcher (Production/Test/Local, dashed sim series + '· simulated' legend + honesty caption); KpiDetailModal env chips + 'Simulated · LLM engine' label, story chart production-only; KpiSimControl (mode chips L1 / L1+L2 → Fleet `kpi-sim:<project>`, terminal modal, auto-ingest, Import); kpi_sim.rs prepare/ingest (evidence-required, env-guarded, capped, run-marker idempotent, name-dedup); kpiSimPrompt.ts three-class doctrine (self-contained, skill-aware); .claude/skills/kpi-sim.
+- LIVE L1+L2 comparison on ai-paralegal (runs 1119/1401, full loop through the real UI/Fleet/ingest): L1 17min found dead-enum KPI + parse blind spot + refused 3 unmeasurable; L2 30min additionally MEASURED the bounce-rate via the repo's own eval harness (12 live gens) + found the preamble-contamination defect static analysis can't see. Verdict in plan doc: L1 = default cadence, L2 = different instrument (real AI-output quality), run deliberately.
+- GOTCHAS: fleet interactive sessions finish into `idle` (never `exited`) and keep holding the dispatch key; test exes can't launch on this box even in fresh CARGO_TARGET_DIR (bindings HAND-SYNCED, per brainiac precedent, CI regen backstop); /eval readback via hidden-div + /query; /click ignores its text field; editing src-tauri while verifying live restarts the app (dev watcher).
 
 ### passport-onboard-personas — 3rd field run of /passport-onboard COMPLETE (Personas repo itself, completion-checklist mode) — session fable-5
 - Started+completed 2026-07-23. 10/14 dimensions already ✓ at target (assessed by 3 parallel Opus readers); 4 improved on master: 218adf076 freshness (CLAUDE.md real counts 2,400+ tests / ~17k i18n keys; 5 relocated doc-map targets repaired, 0 dangling), 6433b6610 golden evals (5 suites + fixtures over prompt builders/sanitizers, 69/69 green, zero live LLM calls), 2f8dd27d0 per-call LLM usage table (Calls subtab on Overview→Activity, reuses list_all_executions + existing i18n keys ONLY, live-verified via harness: window filter 24h→0 / All→50 of 3116), 18bed9943 app-cost gitignore (+app-cost.json composed, personal).
