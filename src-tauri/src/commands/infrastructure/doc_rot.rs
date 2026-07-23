@@ -213,16 +213,21 @@ fn heuristic_scope(root: &Path, doc_rel: &str, top_dirs: &[String]) -> Vec<Strin
             if token.len() <= needle.len() {
                 continue;
             }
-            // Couple to the token's DIRECTORY (a file reference couples to its
-            // folder — sibling churn is what makes prose stale).
-            let dir = match token.rfind('/') {
-                Some(i) if root.join(&token[..i]).is_dir() => format!("{}/", &token[..i]),
-                _ if root.join(token).is_dir() => format!("{token}/"),
-                _ => continue,
+            // Precision rule (learned from the first fleet scan, where
+            // dir-level coupling marked 78% of all docs dirty): a FILE
+            // reference couples to that file exactly; only a DIRECTORY
+            // reference couples to the directory. A vanished token couples to
+            // nothing — unknown is not rot.
+            let target = if root.join(token).is_file() {
+                token.to_string()
+            } else if root.join(token).is_dir() {
+                format!("{token}/")
+            } else {
+                continue;
             };
-            if !prefixes.iter().any(|p| dir.starts_with(p.as_str())) {
-                prefixes.retain(|p| !p.starts_with(&dir));
-                prefixes.push(dir);
+            if !prefixes.iter().any(|p| target.starts_with(p.as_str())) {
+                prefixes.retain(|p| !p.starts_with(&target));
+                prefixes.push(target);
                 if prefixes.len() >= MAX_SCOPE_PREFIXES {
                     return prefixes;
                 }

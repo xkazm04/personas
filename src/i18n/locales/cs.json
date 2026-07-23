@@ -6901,7 +6901,25 @@
       "view_source_execution": "Zobrazit zdrojové spuštění",
       "delete_memory": "Smazat paměť",
       "close": "Zavřít",
-      "derived_from_label": "Syntetizováno z"
+      "derived_from_label": "Syntetizováno z",
+      "claim_error_toast": "Námitky se nepodařilo aktualizovat",
+      "claim_filed_toast": "Námitka podána — paměť je při vybavování upozaděna, dokud se nerozhodne",
+      "claim_note_placeholder": "Proč je tato paměť chybná nebo zastaralá? (volitelné)",
+      "claim_outdated": "Označit jako zastaralou",
+      "claim_resolution_deprecated": "vyřazeno",
+      "claim_resolution_dismissed": "zamítnuto",
+      "claim_resolution_reverified": "znovu ověřeno",
+      "claim_resolve_deprecate": "Vyřadit a archivovat",
+      "claim_resolve_dismiss": "Zamítnout námitky",
+      "claim_resolve_reverify": "Znovu ověřit",
+      "claim_resolved_toast": "Námitky vyřešeny",
+      "claim_verdict_helpful": "užitečná",
+      "claim_verdict_outdated": "zastaralá",
+      "claim_verdict_wrong": "chybná",
+      "claim_wrong": "Označit jako chybnou",
+      "claims_empty": "Proti této paměti nejsou žádné námitky.",
+      "claims_label": "Námitky",
+      "claims_open_badge": "{count} otevřených"
     },
     "memory_table": {
       "agent": "Agent",
@@ -17511,7 +17529,8 @@
       "evaluator": "Automaticky měřeno",
       "health_snapshot": "Snímek stavu",
       "manual": "Ruční zadání",
-      "scan": "Skenování"
+      "scan": "Skenování",
+      "simulation": "Simulováno · LLM engine"
     },
     "kpi_scope_label": "Rozsah",
     "kpi_scope_this_context": "Tento kontext",
@@ -17523,7 +17542,29 @@
     "attn_reason_pace": "Pozadu",
     "evaluate_measured": "Změřeno {count} KPI.",
     "evaluate_none_due": "Žádné KPI nebylo ke změření.",
-    "evaluate_partial": "Změřeno {measured}, {failed} selhalo"
+    "evaluate_partial": "Změřeno {measured}, {failed} selhalo",
+    "env_filter_label": "Prostředí",
+    "env_labels": {
+      "local": "Lokální",
+      "production": "Produkce",
+      "test": "Test"
+    },
+    "env_no_sim_series": "V tomto prostředí zatím nejsou žádná simulovaná data — spusťte simulaci pro jejich vyplnění.",
+    "env_sim_caption": "Simulováno LLM enginem — pouze orientační. Tempo, stav a autopilot vždy čtou z produkce.",
+    "sim_button": "Simulovat KPI",
+    "sim_dispatched_toast": "Simulace spuštěna pro {count} KPI — sleduje ji ikona terminálu",
+    "sim_import": "Importovat výsledky",
+    "sim_import_hint": "Načíst nejnovější dokončený běh simulace z repozitáře",
+    "sim_ingested_toast": "Simulace načtena: {measurements} měření, {proposals} návrhů, {findings} zjištění",
+    "sim_mode_l1": "Statická (L1)",
+    "sim_mode_l1_hint": "Simulace založená pouze na kódu — živá aplikace se neovládá.",
+    "sim_mode_l1l2": "Statická + živá (L1+L2)",
+    "sim_mode_l1l2_hint": "Po statickém průchodu relace ovládá i běžící aplikaci tam, kde existuje driver.",
+    "sim_running": "Simulace běží — otevřít terminál",
+    "sim_finished": "Simulace dokončena — otevřít terminál",
+    "sim_rerun": "Spustit znovu",
+    "sim_skipped_toast": "{count} řádků výsledků bylo zamítnuto validací — viz zpráva o běhu",
+    "trend_sim_suffix": "simulováno"
   },
   "deliberation": {
     "agenda": "Agenda",

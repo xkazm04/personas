@@ -129,6 +129,7 @@ row_mapper!(row_to_memory -> PersonaMemory {
     use_case_id [opt],
     home_team_id [opt],
     derived_from [opt],
+    open_claim_count [opt_i32],
 });
 
 /// Map user-provided sort column to a safe SQL column name.

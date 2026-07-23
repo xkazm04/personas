@@ -23,6 +23,7 @@ import type { FindingDraft, KpiAttention, SentryIssue } from './types';
 import {
   DOC_ROT_TOP_N,
   LLM_COST_THRESHOLD_USD,
+  MEMORY_DISPUTED_TOP_N,
   PASSPORT_MAX_TIER,
   SENTRY_COUNT_THRESHOLD,
   SENTRY_TOP_N,
@@ -319,6 +320,56 @@ export function emitDocRotFindings(docs: RottingDoc[]): FindingDraft[] {
       dedupKey: `doc:${d.doc_path}`,
       impact: d.dirty_reads_30d > 0 ? 4 : 2,
       effort: 2,
+      risk: 1,
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// E8 — disputed memories (Brainiac-adoption P3: open claims are a pending
+// human decision, and unresolved beliefs keep getting served)
+// ---------------------------------------------------------------------------
+
+/** The subset of `DisputedMemoryRow` this emitter reads — already filtered to
+ *  the project. Openness is upstream (the claims repo's counter); this emitter
+ *  ranks and phrases. */
+export interface DisputedMemory {
+  memory_id: string;
+  memory_title: string;
+  persona_name: string;
+  open_claims: number;
+  latest_verdict: string | null;
+  latest_note: string | null;
+}
+
+/** Most-disputed first, capped. NOT a Claude task seed — resolution is a
+ *  human decision in Overview → Memories (reverify / deprecate / dismiss);
+ *  the description says exactly that. Clears via the normal probe path once
+ *  the claims are answered. */
+export function emitMemoryDisputedFindings(memories: DisputedMemory[]): FindingDraft[] {
+  return memories
+    .filter((m) => m.open_claims > 0)
+    .sort((a, b) => b.open_claims - a.open_claims)
+    .slice(0, MEMORY_DISPUTED_TOP_N)
+    .map((m) => ({
+      origin: 'memory_disputed' as const,
+      title: `Resolve disputed memory: “${m.memory_title}”`,
+      description:
+        `${m.persona_name}'s memory “${m.memory_title}” carries ${m.open_claims} open ` +
+        `${m.open_claims === 1 ? 'claim' : 'claims'} that it is ${m.latest_verdict ?? 'wrong'}` +
+        (m.latest_note ? ` (“${m.latest_note}”)` : '') +
+        `. While disputed it is demoted in recall but still served. Decide its fate in ` +
+        `Overview → Memories: reverify (the claim was mistaken), deprecate (archive the memory), ` +
+        `or dismiss the claims.`,
+      category: 'maintainability',
+      evidence: {
+        memoryId: m.memory_id,
+        personaName: m.persona_name,
+        openClaims: m.open_claims,
+        latestVerdict: m.latest_verdict,
+      },
+      dedupKey: `memory:${m.memory_id}`,
+      impact: m.open_claims >= 2 ? 4 : 3,
+      effort: 1,
       risk: 1,
     }));
 }

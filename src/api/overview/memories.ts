@@ -16,6 +16,37 @@ export type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
 export const listMemoryCategories = () =>
   invoke<MemoryCategoryInfo[]>("list_memory_categories");
 
+// -- Dispute claims (Brainiac-adoption P3) ------------------------------------
+// A negative claim (`wrong`/`outdated`) stays OPEN until a human resolves it
+// (reverified/deprecated/dismissed); open claims sink the memory in recall and
+// raise `memory_disputed` findings. Hand-typed to mirror the Rust structs.
+
+export type ClaimVerdict = 'helpful' | 'wrong' | 'outdated';
+export type ClaimResolution = 'reverified' | 'deprecated' | 'dismissed';
+
+export interface MemoryClaim {
+  id: string;
+  memory_id: string;
+  verdict: ClaimVerdict;
+  note: string | null;
+  source: string;
+  created_at: string;
+  resolution: ClaimResolution | null;
+  resolution_note: string | null;
+  resolved_at: string | null;
+}
+
+export const fileMemoryClaim = (memoryId: string, verdict: ClaimVerdict, note?: string) =>
+  invoke<MemoryClaim>("file_memory_claim", { memoryId, verdict, note, source: "user" });
+
+/** Answers EVERY open claim on the memory with one decision. `deprecated`
+ *  also archives the memory (the sanctioned outcome — never automatic). */
+export const resolveMemoryClaims = (memoryId: string, resolution: ClaimResolution, note?: string) =>
+  invoke<number>("resolve_memory_claims", { memoryId, resolution, note });
+
+export const listMemoryClaims = (memoryId: string) =>
+  invoke<MemoryClaim[]>("list_memory_claims", { memoryId });
+
 /** Valid importance range: 1 (low) to 5 (critical). */
 export const IMPORTANCE_MIN = 1;
 export const IMPORTANCE_MAX = 5;

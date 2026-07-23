@@ -345,3 +345,30 @@ export async function activateKpiBinding(
 export async function listKpiBindings(kpiId: string): Promise<DevKpiBinding[]> {
   return invoke<DevKpiBinding[]>("dev_tools_kpi_list_bindings", { kpiId });
 }
+
+// -- KPI simulation (docs/plans/kpi-simulation-skill.md) ----------------------
+//
+// The simulation itself is a long Dev-runner Fleet session in the managed repo
+// (dispatched by KpiSimControl); these two commands are the app-side ends:
+// write the grounding snapshot before spawn, ingest result.json after exit.
+
+export type { KpiSimPrepared } from '@/lib/bindings/KpiSimPrepared';
+export type { KpiSimIngestSummary } from '@/lib/bindings/KpiSimIngestSummary';
+import type { KpiSimPrepared } from '@/lib/bindings/KpiSimPrepared';
+import type { KpiSimIngestSummary } from '@/lib/bindings/KpiSimIngestSummary';
+
+/** Write `<repo>/kpi-sim/snapshot.json` (project + managed KPIs + env axis). */
+export async function kpiSimPrepare(projectId: string): Promise<KpiSimPrepared> {
+  return invoke<KpiSimPrepared>("dev_tools_kpi_sim_prepare", { projectId });
+}
+
+/** Ingest the newest un-ingested `kpi-sim/runs/<id>/result.json` (or a given
+ *  run dir). Simulated measurements land env-tagged and NEVER roll
+ *  `current_value` forward; KPI mutations land as proposals/findings only. */
+export async function kpiSimIngest(projectId: string, runDir?: string): Promise<KpiSimIngestSummary> {
+  return invoke<KpiSimIngestSummary>(
+    "dev_tools_kpi_sim_ingest",
+    { projectId, runDir: runDir ?? null },
+    { timeoutMs: 60_000 },
+  );
+}

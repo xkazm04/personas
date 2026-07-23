@@ -4862,6 +4862,7 @@ fn row_to_kpi_measurement(row: &Row) -> rusqlite::Result<DevKpiMeasurement> {
         value: row.get("value")?,
         measured_at: row.get("measured_at")?,
         source: row.get("source")?,
+        env: row.get("env")?,
         evidence: row.get("evidence")?,
         note: row.get("note")?,
     })
@@ -5159,6 +5160,41 @@ pub fn record_kpi_measurement(
         if n == 0 {
             return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
         }
+        conn.query_row(
+            "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+            params![id],
+            row_to_kpi_measurement,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+/// Record a SIMULATED measurement (docs/plans/kpi-simulation-skill.md).
+/// Deliberately does NOT roll `current_value`/`last_measured_at` forward —
+/// simulated values are advisory series points and must never drive pace,
+/// off-track derivation, or autopilot. `env` is restricted to the
+/// non-production channels: a simulation never claims production.
+pub fn record_kpi_simulation_measurement(
+    pool: &DbPool,
+    kpi_id: &str,
+    value: f64,
+    env: &str,
+    evidence: Option<&str>,
+    note: Option<&str>,
+) -> Result<DevKpiMeasurement, AppError> {
+    if !matches!(env, "local" | "test") {
+        return Err(AppError::Validation(format!(
+            "Simulation env must be 'local' or 'test', got '{env}' — simulated values never claim production"
+        )));
+    }
+    timed_query!("dev_kpi_measurements", "dev_kpis::record_kpi_simulation_measurement", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env, evidence, note)
+             VALUES (?1,?2,?3,'simulation',?4,?5,?6)",
+            params![id, kpi_id, value, env, evidence, note],
+        )?;
         conn.query_row(
             "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
             params![id],

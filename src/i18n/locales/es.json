@@ -6901,7 +6901,25 @@
       "view_source_execution": "Ver Ejecución de Origen",
       "delete_memory": "Eliminar Memoria",
       "close": "Cerrar",
-      "derived_from_label": "Sintetizado a partir de"
+      "derived_from_label": "Sintetizado a partir de",
+      "claim_error_toast": "No se pudieron actualizar las objeciones",
+      "claim_filed_toast": "Objeción registrada — la memoria queda relegada en el recuerdo hasta resolverse",
+      "claim_note_placeholder": "¿Por qué esta memoria es errónea u obsoleta? (opcional)",
+      "claim_outdated": "Marcar como obsoleta",
+      "claim_resolution_deprecated": "retirada",
+      "claim_resolution_dismissed": "descartada",
+      "claim_resolution_reverified": "reverificada",
+      "claim_resolve_deprecate": "Retirar y archivar",
+      "claim_resolve_dismiss": "Descartar objeciones",
+      "claim_resolve_reverify": "Reverificar",
+      "claim_resolved_toast": "Objeciones resueltas",
+      "claim_verdict_helpful": "útil",
+      "claim_verdict_outdated": "obsoleta",
+      "claim_verdict_wrong": "errónea",
+      "claim_wrong": "Marcar como errónea",
+      "claims_empty": "No hay objeciones contra esta memoria.",
+      "claims_label": "Objeciones",
+      "claims_open_badge": "{count} abiertas"
     },
     "memory_table": {
       "agent": "Agente",
@@ -17511,7 +17529,8 @@
       "evaluator": "Medición automática",
       "health_snapshot": "Instantánea de salud",
       "manual": "Entrada manual",
-      "scan": "Escaneo"
+      "scan": "Escaneo",
+      "simulation": "Simulado · motor LLM"
     },
     "kpi_scope_label": "Ámbito",
     "kpi_scope_this_context": "Este contexto",
@@ -17523,7 +17542,29 @@
     "attn_reason_pace": "Atrasado",
     "evaluate_measured": "{count} KPI medidos.",
     "evaluate_none_due": "No había KPIs pendientes de medición.",
-    "evaluate_partial": "{measured} medidos, {failed} con error"
+    "evaluate_partial": "{measured} medidos, {failed} con error",
+    "env_filter_label": "Entorno",
+    "env_labels": {
+      "local": "Local",
+      "production": "Producción",
+      "test": "Prueba"
+    },
+    "env_no_sim_series": "Aún no hay series simuladas en este entorno; ejecuta una simulación para completarla.",
+    "env_sim_caption": "Simulado por el motor LLM — solo orientativo. El ritmo, el estado y el piloto automático siempre usan producción.",
+    "sim_button": "Simular KPIs",
+    "sim_dispatched_toast": "Simulación enviada para {count} KPIs — el icono de terminal la sigue",
+    "sim_import": "Importar resultados",
+    "sim_import_hint": "Incorpora la ejecución de simulación más reciente finalizada del repositorio",
+    "sim_ingested_toast": "Simulación incorporada: {measurements} mediciones, {proposals} propuestas, {findings} hallazgos",
+    "sim_mode_l1": "Static (L1)",
+    "sim_mode_l1_hint": "Solo simulación basada en código — no se controla la app en vivo.",
+    "sim_mode_l1l2": "Static + en vivo (L1+L2)",
+    "sim_mode_l1l2_hint": "Tras el pase Static, la sesión también controla la app en ejecución donde exista un driver.",
+    "sim_running": "Simulación en curso — abrir terminal",
+    "sim_finished": "Simulación finalizada — abrir terminal",
+    "sim_rerun": "Repetir",
+    "sim_skipped_toast": "{count} filas de resultados fueron rechazadas por la validación — consulta el informe de ejecución",
+    "trend_sim_suffix": "simulado"
   },
   "deliberation": {
     "agenda": "Agenda",

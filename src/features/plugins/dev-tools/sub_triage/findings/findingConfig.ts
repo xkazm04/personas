@@ -35,6 +35,11 @@ export const SKILL_DORMANT_TOP_N = 3;
  *  that are actually hurting. */
 export const DOC_ROT_TOP_N = 3;
 
+/** At most this many disputed-memory findings per sweep, most-disputed first —
+ *  each one is a pending human decision (reverify/deprecate/dismiss), and
+ *  decisions don't parallelize. */
+export const MEMORY_DISPUTED_TOP_N = 3;
+
 /** Hard cap on new findings per sweep. Anything beyond is dropped and REPORTED —
  *  a silent truncation would read as "nothing else to do". */
 export const SWEEP_CAP = 10;

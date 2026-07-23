@@ -141,12 +141,17 @@ fn parse_ts(ts: &str) -> Option<DateTime<Utc>> {
 
 /// Decayed value of a memory at `now`.
 ///
-/// `score = importance × 0.5^(age / half_life(category)) × access_boost`
+/// `score = importance × 0.5^(age / half_life(category)) × access_boost × dispute_penalty`
 ///
 /// - `age` is measured from `last_accessed_at` when set (a memory that
 ///   keeps getting injected stays fresh), else `created_at`.
 /// - `access_boost = 1 + 0.25·ln(1 + access_count)` — repeated real use
 ///   raises value, logarithmically so a hot counter can't dominate.
+/// - `dispute_penalty = 1 − 0.35·tanh(open_claims / 2)` (Brainiac-adoption
+///   P3) — a memory with open `wrong`/`outdated` claims sinks in recall,
+///   bounded at −35% so a dispute demotes but never silently deletes; the
+///   forgetting pass inherits the same penalty, so an unresolved disputed
+///   memory also ages out faster. Resolution restores full score.
 /// - Unparseable timestamps score as age 0 (never punish a row for a
 ///   malformed timestamp).
 pub fn decay_score(m: &PersonaMemory, now: DateTime<Utc>) -> f64 {
@@ -161,7 +166,8 @@ pub fn decay_score(m: &PersonaMemory, now: DateTime<Utc>) -> f64 {
     let half_life = category_half_life_days(&m.category);
     let decay = 0.5_f64.powf(age_days / half_life);
     let access_boost = 1.0 + 0.25 * ((1.0 + m.access_count.max(0) as f64).ln());
-    (m.importance as f64) * decay * access_boost
+    let dispute_penalty = 1.0 - 0.35 * (m.open_claim_count.max(0) as f64 / 2.0).tanh();
+    (m.importance as f64) * decay * access_boost * dispute_penalty
 }
 
 /// Chars this memory will occupy in the injected prompt section. Mirrors
@@ -476,6 +482,7 @@ mod tests {
             use_case_id: None,
             home_team_id: None,
             derived_from: None,
+            open_claim_count: 0,
         }
     }
 
@@ -484,6 +491,20 @@ mod tests {
         let m = mem("a", "learned", 4, 0, 0);
         let s = decay_score(&m, Utc::now());
         assert!((s - 4.0).abs() < 0.05, "fresh score should ≈ importance, got {s}");
+    }
+
+    #[test]
+    fn open_claims_demote_but_never_zero_out() {
+        let now = Utc::now();
+        let clean = mem("a", "fact", 4, 0, 0);
+        let mut disputed = mem("b", "fact", 4, 0, 0);
+        disputed.open_claim_count = 2;
+        let (sc, sd) = (decay_score(&clean, now), decay_score(&disputed, now));
+        assert!(sd < sc, "a disputed memory must sink below its clean twin");
+        // Bounded: even heavily disputed keeps ≥65% of its value — demoted, not deleted.
+        let mut heavy = mem("c", "fact", 4, 0, 0);
+        heavy.open_claim_count = 50;
+        assert!(decay_score(&heavy, now) > sc * 0.64);
     }
 
     #[test]

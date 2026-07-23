@@ -36,7 +36,7 @@ export function DeployPopover({
   const [busy, setBusy] = useState<string | null>(null);
 
   const raw = engine?.getRaw(slug);
-  const passport = raw ? derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot }) : null;
+  const passport = raw ? derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot, memHealth: raw.memHealth }) : null;
   const actions = passport ? applicableDeployActions(rowKey, passport) : [];
   const showConnector = Boolean(passport && connectorSpecFor(rowKey)?.applicable(passport));
   const ladder = passport ? ladderFor(rowKey, passport) : null;
@@ -93,7 +93,7 @@ export function DeployPopover({
   // called this and re-walked the whole fleet each time).
   function eligibleForBatch(a: DeployAction) {
     return (engine!.allRaw() ?? [])
-      .map((r) => ({ r, p: derivePassportFromMetadata(r.meta, r.project, { hasSkills: r.hasSkills, evidence: r.evidence, skillCounts: r.skillCounts, docRot: r.docRot }) }))
+      .map((r) => ({ r, p: derivePassportFromMetadata(r.meta, r.project, { hasSkills: r.hasSkills, evidence: r.evidence, skillCounts: r.skillCounts, docRot: r.docRot, memHealth: r.memHealth }) }))
       .filter(({ p }) => a.applicable(p));
   }
   const batchByAction = new Map(actions.map((a) => [a.id, eligibleForBatch(a)]));

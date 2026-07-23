@@ -180,7 +180,8 @@
     "evaluator": "Đo tự động",
     "health_snapshot": "Ảnh chụp tình trạng",
     "manual": "Nhập thủ công",
-    "scan": "Quét"
+    "scan": "Quét",
+    "simulation": "Mô phỏng · Engine LLM"
   },
   "kpi_scope_label": "Phạm vi",
   "kpi_scope_this_context": "Ngữ cảnh này",
@@ -192,5 +193,27 @@
   "attn_reason_pace": "Chậm",
   "evaluate_measured": "Đã đo {count} KPI.",
   "evaluate_none_due": "Không có KPI nào đến hạn đo.",
-  "evaluate_partial": "Đã đo {measured}, {failed} thất bại"
+  "evaluate_partial": "Đã đo {measured}, {failed} thất bại",
+  "env_filter_label": "Môi trường",
+  "env_labels": {
+    "local": "Cục bộ",
+    "production": "Production",
+    "test": "Kiểm thử"
+  },
+  "env_no_sim_series": "Chưa có chuỗi dữ liệu mô phỏng nào trong môi trường này — hãy chạy mô phỏng để lấp đầy.",
+  "env_sim_caption": "Được mô phỏng bởi engine LLM — chỉ mang tính tham khảo. Nhịp độ, trạng thái và chế độ tự động luôn đọc từ production.",
+  "sim_button": "Mô phỏng KPI",
+  "sim_dispatched_toast": "Đã gửi mô phỏng cho {count} KPI — biểu tượng terminal sẽ theo dõi tiến trình",
+  "sim_import": "Nhập kết quả",
+  "sim_import_hint": "Nạp lần chạy mô phỏng mới nhất đã hoàn tất từ repo",
+  "sim_ingested_toast": "Đã nạp mô phỏng: {measurements} số đo, {proposals} đề xuất, {findings} phát hiện",
+  "sim_mode_l1": "Tĩnh (L1)",
+  "sim_mode_l1_hint": "Chỉ mô phỏng dựa trên mã nguồn — không thao tác trên ứng dụng đang chạy.",
+  "sim_mode_l1l2": "Tĩnh + trực tiếp (L1+L2)",
+  "sim_mode_l1l2_hint": "Sau bước tĩnh, phiên chạy còn thao tác trên ứng dụng đang chạy ở nơi có driver.",
+  "sim_running": "Đang chạy mô phỏng — mở terminal",
+  "sim_finished": "Mô phỏng hoàn tất — mở terminal",
+  "sim_rerun": "Chạy lại",
+  "sim_skipped_toast": "{count} dòng kết quả bị từ chối khi kiểm tra hợp lệ — xem báo cáo lần chạy",
+  "trend_sim_suffix": "mô phỏng"
 }

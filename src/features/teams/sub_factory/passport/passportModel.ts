@@ -140,6 +140,12 @@ export interface PassportArtifacts {
    *  volatile health rides here (deliberate deviation from the plan's 'fresh'
    *  rung — a ladder that bounces week-to-week isn't a maturity ladder). */
   docRot?: { tracked: number; dirty: number; neverRead: number };
+  /** Memory-engine health for the project's bound team (P3 snapshots):
+   *  composite score, previous snapshot's score (trend), live disputed count.
+   *  Absent when the project has no team or the health sweep hasn't run —
+   *  and required for the `governed` memory rung (the loop must demonstrably
+   *  be running, not merely exist app-wide). */
+  memoryHealth?: { score: number; prevScore: number | null; disputed: number };
   manifest: boolean;
   evals: EvalsLevel;
   skills: boolean;

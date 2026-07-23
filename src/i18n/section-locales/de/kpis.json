@@ -180,7 +180,8 @@
     "evaluator": "Automatisch gemessen",
     "health_snapshot": "Health-Snapshot",
     "manual": "Manuelle Eingabe",
-    "scan": "Scan"
+    "scan": "Scan",
+    "simulation": "Simuliert · LLM-Engine"
   },
   "kpi_scope_label": "Bereich",
   "kpi_scope_this_context": "Dieser Kontext",
@@ -192,5 +193,27 @@
   "attn_reason_pace": "Im Rückstand",
   "evaluate_measured": "{count} KPI(s) gemessen.",
   "evaluate_none_due": "Keine KPIs zur Messung fällig.",
-  "evaluate_partial": "{measured} gemessen, {failed} fehlgeschlagen"
+  "evaluate_partial": "{measured} gemessen, {failed} fehlgeschlagen",
+  "env_filter_label": "Umgebung",
+  "env_labels": {
+    "local": "Lokal",
+    "production": "Produktion",
+    "test": "Test"
+  },
+  "env_no_sim_series": "Noch keine simulierte Reihe in dieser Umgebung — führe eine Simulation aus, um sie zu füllen.",
+  "env_sim_caption": "Von der LLM-Engine simuliert — nur zur Orientierung. Tempo, Status und Autopilot beziehen sich immer auf Produktion.",
+  "sim_button": "KPIs simulieren",
+  "sim_dispatched_toast": "Simulation für {count} KPIs gestartet — das Terminal-Symbol verfolgt den Fortschritt",
+  "sim_import": "Ergebnisse importieren",
+  "sim_import_hint": "Den neuesten abgeschlossenen Simulationslauf aus dem Repo übernehmen",
+  "sim_ingested_toast": "Simulation übernommen: {measurements} Messungen, {proposals} Vorschläge, {findings} Erkenntnisse",
+  "sim_mode_l1": "Statisch (L1)",
+  "sim_mode_l1_hint": "Nur codebasierte Simulation — keine Live-App wird gesteuert.",
+  "sim_mode_l1l2": "Statisch + live (L1+L2)",
+  "sim_mode_l1l2_hint": "Nach dem statischen Durchlauf steuert die Session zusätzlich die laufende App, sofern ein Treiber existiert.",
+  "sim_running": "Simulation läuft — Terminal öffnen",
+  "sim_finished": "Simulation abgeschlossen — Terminal öffnen",
+  "sim_rerun": "Erneut ausführen",
+  "sim_skipped_toast": "{count} Ergebniszeilen wurden von der Validierung abgelehnt — siehe Laufbericht",
+  "trend_sim_suffix": "simuliert"
 }

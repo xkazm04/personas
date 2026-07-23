@@ -704,6 +704,8 @@ export const FINDING_ORIGINS = [
   "kpi_offtrack",
   "skill_dormant",
   "doc_rot",
+  "kpi_sim",
+  "memory_disputed",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -1281,6 +1283,49 @@ export const scanDocRot = (force = false) =>
 
 export const getDocRotOverview = () =>
   safeInvoke<DocRotRow[]>([], "doc_rot_overview", {});
+
+// -- knowledge-health snapshots + disputed memories (Brainiac-adoption P3) ----
+
+/** Latest per-project memory-health snapshot + live disputed count. Mirrors
+ *  the Rust `MemoryHealthRow` (snake_case). */
+export interface MemoryHealthRow {
+  project_id: string;
+  score: number;
+  prev_score: number | null;
+  currency: number;
+  consistency: number;
+  governance: number;
+  stale_count: number;
+  total_count: number;
+  open_claims: number;
+  disputed: number;
+  captured_at: string;
+}
+
+/** One disputed memory projected onto a dev project (the `memory_disputed`
+ *  findings sensor). Mirrors the Rust `DisputedMemoryRow`. */
+export interface DisputedMemoryRow {
+  project_id: string;
+  memory_id: string;
+  memory_title: string;
+  persona_id: string;
+  persona_name: string;
+  open_claims: number;
+  latest_verdict: string | null;
+  latest_note: string | null;
+  last_claim_at: string | null;
+}
+
+/** Snapshot the memory health of every team-bound project (6h throttle per
+ *  project unless `force`). Append-only trend points. */
+export const scanMemoryHealth = (force = false) =>
+  invoke<{ projects_scanned: number }>("memory_health_scan", { force }, undefined, 60_000);
+
+export const getMemoryHealthOverview = () =>
+  safeInvoke<MemoryHealthRow[]>([], "memory_health_overview", {});
+
+export const getMemoryDisputedOverview = () =>
+  safeInvoke<DisputedMemoryRow[]>([], "memory_disputed_overview", {});
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });

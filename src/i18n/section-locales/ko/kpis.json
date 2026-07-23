@@ -180,7 +180,8 @@
     "evaluator": "자동 측정",
     "health_snapshot": "건강 상태 스냅샷",
     "manual": "수동 입력",
-    "scan": "스캔"
+    "scan": "스캔",
+    "simulation": "시뮬레이션됨 · LLM 엔진"
   },
   "kpi_scope_label": "범위",
   "kpi_scope_this_context": "이 컨텍스트",
@@ -192,5 +193,27 @@
   "attn_reason_pace": "지연",
   "evaluate_measured": "KPI {count}개를 측정했습니다.",
   "evaluate_none_due": "측정 대상 KPI가 없습니다.",
-  "evaluate_partial": "{measured}개 측정, {failed}개 실패"
+  "evaluate_partial": "{measured}개 측정, {failed}개 실패",
+  "env_filter_label": "환경",
+  "env_labels": {
+    "local": "로컬",
+    "production": "프로덕션",
+    "test": "테스트"
+  },
+  "env_no_sim_series": "이 환경에는 아직 시뮬레이션 시리즈가 없습니다 — 시뮬레이션을 실행해 채워보세요.",
+  "env_sim_caption": "LLM 엔진이 시뮬레이션함 — 참고용입니다. 진행률, 상태, 자동 파일럿은 항상 프로덕션 값을 따릅니다.",
+  "sim_button": "KPI 시뮬레이션",
+  "sim_dispatched_toast": "{count}개 KPI에 대해 시뮬레이션을 실행했습니다 — 터미널 아이콘에서 진행 상황을 확인하세요",
+  "sim_import": "결과 가져오기",
+  "sim_import_hint": "저장소에서 가장 최근에 완료된 시뮬레이션 실행을 가져옵니다",
+  "sim_ingested_toast": "시뮬레이션을 가져왔습니다: 측정값 {measurements}개, 제안 {proposals}개, 발견 사항 {findings}개",
+  "sim_mode_l1": "정적 (L1)",
+  "sim_mode_l1_hint": "코드 기반 시뮬레이션만 수행 — 실행 중인 앱은 조작하지 않습니다.",
+  "sim_mode_l1l2": "정적 + 실시간 (L1+L2)",
+  "sim_mode_l1l2_hint": "정적 분석 후, 드라이버가 있는 경우 세션이 실행 중인 앱도 직접 조작합니다.",
+  "sim_running": "시뮬레이션 실행 중 — 터미널 열기",
+  "sim_finished": "시뮬레이션 완료 — 터미널 열기",
+  "sim_rerun": "다시 실행",
+  "sim_skipped_toast": "결과 행 {count}개가 유효성 검사에서 거부되었습니다 — 실행 보고서를 확인하세요",
+  "trend_sim_suffix": "시뮬레이션됨"
 }

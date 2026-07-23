@@ -180,7 +180,8 @@
     "evaluator": "مقاس تلقائياً",
     "health_snapshot": "لقطة الصحة",
     "manual": "إدخال يدوي",
-    "scan": "فحص"
+    "scan": "فحص",
+    "simulation": "محاكاة · محرك LLM"
   },
   "kpi_scope_label": "النطاق",
   "kpi_scope_this_context": "هذا السياق",
@@ -192,5 +193,27 @@
   "attn_reason_pace": "متأخر",
   "evaluate_measured": "تم قياس {count} من مؤشرات KPI.",
   "evaluate_none_due": "لا توجد مؤشرات KPI مستحقة للقياس.",
-  "evaluate_partial": "تم قياس {measured}، وفشل {failed}"
+  "evaluate_partial": "تم قياس {measured}، وفشل {failed}",
+  "env_filter_label": "البيئة",
+  "env_labels": {
+    "local": "محلي",
+    "production": "الإنتاج",
+    "test": "اختبار"
+  },
+  "env_no_sim_series": "لا توجد سلسلة محاكاة في هذه البيئة بعد — شغّل محاكاة لملئها.",
+  "env_sim_caption": "تمت المحاكاة بواسطة محرك LLM — للاسترشاد فقط. الوتيرة والحالة والطيار الآلي تعتمد دائمًا على بيانات الإنتاج.",
+  "sim_button": "محاكاة مؤشرات KPI",
+  "sim_dispatched_toast": "تم إرسال المحاكاة عبر {count} من مؤشرات KPI — أيقونة الطرفية تتابعها",
+  "sim_import": "استيراد النتائج",
+  "sim_import_hint": "استيعاب أحدث عملية محاكاة مكتملة من المستودع",
+  "sim_ingested_toast": "تم استيعاب المحاكاة: {measurements} قياسًا، {proposals} اقتراحًا، {findings} ملاحظة",
+  "sim_mode_l1": "ثابت (L1)",
+  "sim_mode_l1_hint": "محاكاة قائمة على الكود فقط — دون تشغيل التطبيق الفعلي.",
+  "sim_mode_l1l2": "ثابت + مباشر (L1+L2)",
+  "sim_mode_l1l2_hint": "بعد المرحلة الثابتة، تقوم الجلسة أيضًا بتشغيل التطبيق الفعلي حيثما توفّر مشغّل.",
+  "sim_running": "المحاكاة قيد التشغيل — افتح الطرفية",
+  "sim_finished": "انتهت المحاكاة — افتح الطرفية",
+  "sim_rerun": "إعادة التشغيل",
+  "sim_skipped_toast": "تم رفض {count} من صفوف النتائج أثناء التحقق — راجع تقرير التشغيل",
+  "trend_sim_suffix": "محاكاة"
 }

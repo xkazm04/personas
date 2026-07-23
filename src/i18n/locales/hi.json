@@ -6901,7 +6901,25 @@
       "view_source_execution": "स्रोत निष्पादन देखें",
       "delete_memory": "मेमोरी हटाएं",
       "close": "बंद करें",
-      "derived_from_label": "इनसे संश्लेषित"
+      "derived_from_label": "इनसे संश्लेषित",
+      "claim_error_toast": "आपत्तियाँ अपडेट नहीं हो सकीं",
+      "claim_filed_toast": "आपत्ति दर्ज — समाधान होने तक स्मृति रिकॉल में नीचे रहेगी",
+      "claim_note_placeholder": "यह स्मृति गलत या पुरानी क्यों है? (वैकल्पिक)",
+      "claim_outdated": "पुरानी चिह्नित करें",
+      "claim_resolution_deprecated": "हटाई गई",
+      "claim_resolution_dismissed": "खारिज",
+      "claim_resolution_reverified": "पुनः सत्यापित",
+      "claim_resolve_deprecate": "हटाएँ और संग्रहित करें",
+      "claim_resolve_dismiss": "आपत्तियाँ खारिज करें",
+      "claim_resolve_reverify": "पुनः सत्यापित करें",
+      "claim_resolved_toast": "आपत्तियाँ सुलझा दी गईं",
+      "claim_verdict_helpful": "उपयोगी",
+      "claim_verdict_outdated": "पुरानी",
+      "claim_verdict_wrong": "गलत",
+      "claim_wrong": "गलत चिह्नित करें",
+      "claims_empty": "इस स्मृति के विरुद्ध कोई आपत्ति नहीं।",
+      "claims_label": "आपत्तियाँ",
+      "claims_open_badge": "{count} खुली"
     },
     "memory_table": {
       "agent": "एजेंट",
@@ -17511,7 +17529,8 @@
       "evaluator": "स्वतः-मापित",
       "health_snapshot": "स्वास्थ्य स्नैपशॉट",
       "manual": "मैन्युअल प्रविष्टि",
-      "scan": "स्कैन"
+      "scan": "स्कैन",
+      "simulation": "सिम्युलेटेड · LLM इंजन"
     },
     "kpi_scope_label": "दायरा",
     "kpi_scope_this_context": "यह संदर्भ",
@@ -17523,7 +17542,29 @@
     "attn_reason_pace": "पीछे",
     "evaluate_measured": "{count} KPI मापे गए।",
     "evaluate_none_due": "मापने के लिए कोई KPI देय नहीं था।",
-    "evaluate_partial": "{measured} मापे गए, {failed} विफल"
+    "evaluate_partial": "{measured} मापे गए, {failed} विफल",
+    "env_filter_label": "एनवायरनमेंट",
+    "env_labels": {
+      "local": "लोकल",
+      "production": "प्रोडक्शन",
+      "test": "टेस्ट"
+    },
+    "env_no_sim_series": "इस एनवायरनमेंट में अभी तक कोई सिम्युलेटेड सीरीज़ नहीं है — इसे भरने के लिए एक सिमुलेशन चलाएं।",
+    "env_sim_caption": "LLM इंजन द्वारा सिम्युलेटेड — केवल सलाहकार। पेस, स्टेटस और ऑटोपायलट हमेशा प्रोडक्शन से रीड करते हैं।",
+    "sim_button": "KPI सिमुलेट करें",
+    "sim_dispatched_toast": "{count} KPI पर सिमुलेशन भेजा गया — टर्मिनल आइकन इसे ट्रैक करता है",
+    "sim_import": "परिणाम इम्पोर्ट करें",
+    "sim_import_hint": "रेपो से नवीनतम पूर्ण हुआ सिमुलेशन रन इनजेस्ट करें",
+    "sim_ingested_toast": "सिमुलेशन इनजेस्ट किया गया: {measurements} मेजरमेंट, {proposals} प्रपोज़ल, {findings} फाइंडिंग",
+    "sim_mode_l1": "स्टैटिक (L1)",
+    "sim_mode_l1_hint": "केवल कोड-आधारित सिमुलेशन — कोई लाइव ऐप नहीं चलाया जाता।",
+    "sim_mode_l1l2": "स्टैटिक + लाइव (L1+L2)",
+    "sim_mode_l1l2_hint": "स्टैटिक पास के बाद, सेशन उस चल रहे ऐप को भी चलाता है जहां ड्राइवर मौजूद है।",
+    "sim_running": "सिमुलेशन चल रहा है — टर्मिनल खोलें",
+    "sim_finished": "सिमुलेशन पूर्ण — टर्मिनल खोलें",
+    "sim_rerun": "फिर से चलाएँ",
+    "sim_skipped_toast": "{count} रिजल्ट रो वैलिडेशन द्वारा अस्वीकृत किए गए — रन रिपोर्ट देखें",
+    "trend_sim_suffix": "सिम्युलेटेड"
   },
   "deliberation": {
     "agenda": "एजेंडा",

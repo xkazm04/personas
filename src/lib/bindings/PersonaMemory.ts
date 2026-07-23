@@ -67,4 +67,13 @@ home_team_id: string | null,
  * only by the reflection apply path
  * (`repos::core::memories::create_synthesized`).
  */
-derived_from: Array<string> | null, };
+derived_from: Array<string> | null,
+/**
+ * Open NEGATIVE dispute claims (`wrong`/`outdated`, unresolved) against
+ * this memory — Brainiac-adoption P3. Denormalized counter maintained
+ * exclusively by `repos::core::memory_claims` (file/resolve in the same
+ * transaction as the claim row). Read by `engine::memory_recall`'s decay
+ * scorer: disputed memories sink in recall (bounded tanh penalty) but are
+ * never silently removed — resolution is a human decision.
+ */
+open_claim_count: number, };

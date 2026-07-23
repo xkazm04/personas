@@ -21,6 +21,13 @@ import { TRACK_COLOR } from './kpiMeta';
 import { AutopilotControl } from './AutopilotControl';
 import { distancePct, type DistanceGroup, type DistanceRow } from './kpiDistance';
 import { KpiSignalBoard } from './KpiSignalBoard';
+import { KpiSimControl } from './KpiSimControl';
+
+/** Observation channels for the trend chart. Production is the authoritative
+ *  channel (pace/status/autopilot always read it); test/local carry the
+ *  LLM-engine simulation series — advisory, rendered dashed. */
+type KpiEnv = 'production' | 'test' | 'local';
+const ENVS: KpiEnv[] = ['production', 'test', 'local'];
 
 /** Normalize one measurement onto the same axis for the trend chart. */
 function normValue(kpi: DevKpi, v: number): number | null {
@@ -54,6 +61,7 @@ export function KPIDashboard({
   const fetchKpiTrends = useSystemStore((s) => s.fetchKpiTrends);
 
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [envFilter, setEnvFilter] = useState<KpiEnv>('production');
 
   const projectName = useMemo(() => {
     const m = new Map<string, string>();
@@ -122,14 +130,18 @@ export function KPIDashboard({
   const trendModel = useMemo(() => {
     const series = filtered
       .map((kpi) => {
-        const ms = kpiTrends[kpi.id] ?? [];
+        // One env at a time — legacy rows (pre env-axis) count as production.
+        const ms = (kpiTrends[kpi.id] ?? []).filter(
+          (m) => (m.env ?? 'production') === envFilter,
+        );
+        const simulated = ms.some((m) => m.source === 'simulation');
         const pts = ms
           .map((m) => ({
             t: new Date(m.measured_at.replace(' ', 'T')).getTime(),
             v: normValue(kpi, m.value),
           }))
           .filter((p): p is { t: number; v: number } => Number.isFinite(p.t) && p.v != null);
-        return { kpi, pts };
+        return { kpi, pts, simulated };
       })
       .filter((s) => s.pts.length >= 2);
     if (series.length === 0) return null;
@@ -143,7 +155,7 @@ export function KPIDashboard({
       return row;
     });
     return { series, rows };
-  }, [filtered, kpiTrends]);
+  }, [filtered, kpiTrends, envFilter]);
 
   if (loading && kpis.length === 0) {
     return (
@@ -189,6 +201,30 @@ export function KPIDashboard({
         <AutopilotControl projectId={autopilotProject} className="rounded-card border border-primary/15 bg-secondary/10 px-4 py-3" />
       )}
 
+      {/* Simulation dispatch — the long Dev-runner operation for the selected
+          project (kpi-simulation-skill P1/P2). */}
+      {autopilotProject && (
+        <div className="rounded-card border border-primary/15 bg-secondary/10 px-4 py-3">
+          <KpiSimControl projectId={autopilotProject} onIngested={() => { if (activeIdsKey) void fetchKpiTrends(activeIdsKey.split(',')); }} />
+        </div>
+      )}
+
+      {/* Environment switcher — which observation channel the trend reads.
+          Production is authoritative; test/local are the simulated channels. */}
+      <div className="flex items-center gap-1.5 flex-wrap" data-testid="kpi-env-switcher">
+        <span className="typo-label text-foreground/45">{t.kpis.env_filter_label}</span>
+        {ENVS.map((env) => (
+          <FilterChip key={env} active={envFilter === env} onClick={() => setEnvFilter(env)}>
+            {t.kpis.env_labels[env]}
+          </FilterChip>
+        ))}
+        {envFilter !== 'production' && (
+          <span className="typo-caption text-foreground/60" data-testid="kpi-env-sim-caption">
+            {t.kpis.env_sim_caption}
+          </span>
+        )}
+      </div>
+
       {/* Summary strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label={t.kpis.stat_active} value={filtered.length} />
@@ -206,6 +242,11 @@ export function KPIDashboard({
       <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
 
       {/* Trend — progress vs target over time */}
+      {!trendModel && envFilter !== 'production' && (
+        <p className="typo-caption text-foreground/60 rounded-card border border-primary/15 bg-secondary/10 px-4 py-3">
+          {t.kpis.env_no_sim_series}
+        </p>
+      )}
       {trendModel && (
         <ChartPanel title={t.kpis.chart_trend_title} icon={TrendingUp}>
           <LazyChart
@@ -240,11 +281,13 @@ export function KPIDashboard({
                     }}
                   />
                   <R.Legend
-                    formatter={(id: string) =>
-                      trendModel.series.find((s) => s.kpi.id === id)?.kpi.name ?? id
-                    }
+                    formatter={(id: string) => {
+                      const s = trendModel.series.find((x) => x.kpi.id === id);
+                      if (!s) return id;
+                      return s.simulated ? `${s.kpi.name} · ${t.kpis.trend_sim_suffix}` : s.kpi.name;
+                    }}
                   />
-                  {trendModel.series.map(({ kpi }) => (
+                  {trendModel.series.map(({ kpi, simulated }) => (
                     <R.Line
                       key={kpi.id}
                       dataKey={kpi.id}
@@ -252,6 +295,9 @@ export function KPIDashboard({
                       connectNulls
                       stroke={TRACK_COLOR[paceDescriptor(kpi).track]}
                       strokeWidth={2}
+                      // Simulated (LLM-engine) series read dashed — visually
+                      // distinct from real telemetry at a glance.
+                      strokeDasharray={simulated ? '6 4' : undefined}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5, onClick: () => onOpen(kpi.id) }}
                     />

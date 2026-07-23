@@ -150,6 +150,35 @@ tier for class-1 procedures only (those are free after adoption).
 | **P2** | Auto-ingest on terminal event; findings emitter (`origin: kpi_sim`); accepted-limits loop | Dispatch → walk away → measurements + proposals appear; rejected proposals never re-proposed |
 | **P3** | Cadence: adopted class-1 recipes ride autopilot Measure (no LLM); `predict` refresh on demand; per-env trend comparison (sim `test` line vs real `production` line converging = the prediction was good) | The sim-vs-real gap is visible per KPI and shrinks release over release |
 
+## Decisions (2026-07-23, execution round)
+
+1. **UI — environment switcher in the KPI module.** The dashboard gains an
+   `Environment: Production | Test | Local` chip row driving the Trend chart's
+   observation channel. Simulated series render **dashed** with a
+   "· simulated" legend suffix; a standing caption states the honesty rule
+   ("Simulated by the LLM engine — advisory only; pace, status and autopilot
+   always read production"). The detail drawer chips every non-production
+   measurement with its env + a "Simulated · LLM engine" source label; the
+   story chart stays production-only. Stat cards / signal board / pace math
+   are untouched (they read `current_value`, which sims never move).
+2. **Skill distribution — run FROM Personas into managed repos.** Most repos
+   have never seen `/uat`; requiring adoption would kill the operation's reach.
+   The engine therefore lives in the DISPATCH PROMPT
+   (`sub_kpis/kpiSimPrompt.ts`, self-contained doctrine + result contract);
+   the session is skill-AWARE (uses a repo's `.claude/skills/kpi-sim` or
+   `uat/` overlay when present) but never skill-dependent. The Personas-side
+   `.claude/skills/kpi-sim` is the canonical reference + hand-run variant;
+   per-repo adoption stays an optional later optimization via the passport
+   Skills module.
+3. **Per-env observations only** (measurement axis). Per-env *targets* —
+   the door to A/B-style target experiments — deferred until the observation
+   layer proves out.
+4. **L1 + L2 both designed in from the start.** The dispatch offers
+   `Static (L1)` and `Static + live (L1+L2)`; the first live comparison runs
+   (Claude Code CLI as the engine) will judge whether L2 meaningfully improves
+   result quality over L1 alone — the open question the P3 convergence view
+   later answers continuously.
+
 ## Open questions
 
 1. **Where does class-2 L2 (live harness) run?** The app instance is a

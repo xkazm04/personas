@@ -45,8 +45,8 @@ export function ImprovePopover({
     const current = parseStandards(raw.project.standards_config);
     const picked = applicable.filter((a) => selected.has(a.id));
     const projectedStandards = applyStandardsActions(current, picked, raw.project);
-    const before = derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot });
-    const after = derivePassportFromMetadata(raw.meta, { ...raw.project, standards_config: serializeStandards(projectedStandards) }, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot });
+    const before = derivePassportFromMetadata(raw.meta, raw.project, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot, memHealth: raw.memHealth });
+    const after = derivePassportFromMetadata(raw.meta, { ...raw.project, standards_config: serializeStandards(projectedStandards) }, { hasSkills: raw.hasSkills, evidence: raw.evidence, skillCounts: raw.skillCounts, docRot: raw.docRot, memHealth: raw.memHealth });
     return { picked, projectedStandards, before, after };
   }, [raw, applicable, selected]);
 

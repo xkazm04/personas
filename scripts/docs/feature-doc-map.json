@@ -579,7 +579,7 @@
       "sourceGlobs": [
         "src/features/teams/sub_kpis/**",
         "src/api/devTools/kpis.ts",
-        "src-tauri/src/commands/infrastructure/kpi_scan.rs"
+        "src-tauri/src/commands/infrastructure/kpi_scan.rs", "src-tauri/src/commands/infrastructure/kpi_sim.rs"
       ]
     },
     {

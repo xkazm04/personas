@@ -144,7 +144,13 @@ export const SECTIONS: SectionSpec[] = [
         if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
         return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
       } },
-      { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries.', get: (p) => (ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory])) },
+      { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries; Governed = the team memory engine’s review/claims/health loop is running (the sub-line is its latest health score and open disputes).', get: (p) => {
+        const h = p.automationReadiness.artifacts.memoryHealth;
+        const bits: string[] = [];
+        if (h) bits.push(`health ${h.score}`);
+        if (h && h.disputed > 0) bits.push(`${h.disputed} disputed`);
+        return ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory], bits.length ? bits.join(' · ') : undefined);
+      } },
       { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
         const c = p.automationReadiness.artifacts.skillCounts;
         if (!c) return { kind: 'bool', on: p.automationReadiness.artifacts.skills };
