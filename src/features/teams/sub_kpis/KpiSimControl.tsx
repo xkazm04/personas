@@ -63,7 +63,11 @@ export function KpiSimControl({ projectId, onIngested }: {
   }, [projectId, addToast, tx, t, onIngested]);
 
   // Poll the fleet registry for this project's sim session (5s, same cadence
-  // as the passport wall). Exited/vanished after being live → auto-ingest.
+  // as the passport wall). Auto-ingest when the WORK ends — which for an
+  // interactive CLI session means settling to `idle` (the prompt), not
+  // `exited`: a finished session sits idle forever (live-test finding,
+  // 2026-07-23). Ingest is idempotent (run-dir marker), so firing on
+  // idle/exit/vanish after an active phase is safe.
   useEffect(() => {
     let alive = true;
     wasLive.current = false;
@@ -72,10 +76,10 @@ export function KpiSimControl({ projectId, onIngested }: {
         .then((snap) => {
           if (!alive) return;
           const s = snap.sessions.find((x) => x.name === key) ?? null;
-          const liveNow = s !== null && s.state !== 'exited';
-          if (wasLive.current && !liveNow) ingest(true);
-          wasLive.current = liveNow;
-          setSession(liveNow ? s : null);
+          const active = s !== null && (s.state === 'spawning' || s.state === 'running' || s.state === 'awaiting_input');
+          if (wasLive.current && !active) ingest(true);
+          wasLive.current = active;
+          setSession(s !== null && s.state !== 'exited' ? s : null);
         })
         .catch(silentCatch('kpiSim:poll'));
     };
