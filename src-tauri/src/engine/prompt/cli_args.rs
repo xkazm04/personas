@@ -143,6 +143,20 @@ pub(super) fn build_cli_args_inner(
                 args.push(format!("{turns}"));
             }
         }
+
+        // P4 fan-out observability. Without this flag a subagent's own text and
+        // thinking never reach stream-json, so the fan-out tree can show THAT a
+        // subagent ran and its token usage but not WHAT it did. Scoped to
+        // `deep_fanout` personas — a non-fan-out execution spawns no subagents,
+        // so the flag would be dead weight, and on a fan-out it meaningfully
+        // increases stream volume. The parser attributes the extra lines via
+        // `parent_tool_use_id` (`engine/parser.rs::subagent_message`) so they
+        // never masquerade as root-agent output. Flag introduced in CLI 2.1.211
+        // (`CLAUDE_CODE_FORWARD_SUBAGENT_TEXT` is the env-var equivalent);
+        // personas' floor is ≥ 2.1.218, so it is always recognized.
+        if super::deep_fanout_enabled(persona) {
+            args.push("--forward-subagent-text".to_string());
+        }
     }
 
     let mut cli_args = CliArgs {

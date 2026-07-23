@@ -1072,6 +1072,25 @@ mod tests {
     }
 
     #[test]
+    fn deep_fanout_adds_forward_subagent_text_flag() {
+        let mut persona = test_persona();
+        // Off by default — no flag, so ordinary executions don't pay the extra
+        // subagent stream volume.
+        let base = build_cli_args(Some(&persona), None);
+        assert!(!base.args.contains(&"--forward-subagent-text".to_string()));
+
+        persona.parameters = Some(
+            serde_json::json!([{ "key": "deep_fanout", "type": "boolean", "value": true }])
+                .to_string(),
+        );
+        let args = build_cli_args(Some(&persona), None);
+        assert!(
+            args.args.contains(&"--forward-subagent-text".to_string()),
+            "deep_fanout=true should forward subagent text (CLI >= 2.1.211)"
+        );
+    }
+
+    #[test]
     fn assemble_prompt_honors_deliberate_parameter() {
         let mut persona = test_persona();
         persona.parameters = Some(
