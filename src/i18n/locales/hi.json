@@ -17566,7 +17566,18 @@
     "conv_stale_hint": "प्रोडक्शन रीडिंग सिमुलेशन से {days} दिन पुरानी है — पुष्टि के लिए «अभी मापें» इस्तेमाल करें।",
     "conv_no_prod": "अभी कोई प्रोडक्शन माप नहीं — सिमुलेशन के पास मिलान के लिए कुछ वास्तविक नहीं है।",
     "sim_skipped_toast": "{count} रिजल्ट रो वैलिडेशन द्वारा अस्वीकृत किए गए — रन रिपोर्ट देखें",
-    "trend_sim_suffix": "सिम्युलेटेड"
+    "trend_sim_suffix": "सिम्युलेटेड",
+    "predict_button": "पूर्वानुमान रीफ़्रेश करें",
+    "predict_dispatched_toast": "{count} KPIs पर पूर्वानुमान रीफ़्रेश भेजा गया — बेंचमार्क, कोई मापन नहीं",
+    "predict_hint": "केवल-रिसर्च पास: मौजूदा बेंचमार्क से लक्ष्य फिर से तय करें — कोई मापन नहीं, कोई स्थानीय रन नहीं।",
+    "suggest_adjust": "{name} के लिए लक्ष्य समायोजित करें",
+    "suggest_adopt": "{name} के लिए स्थानीय मापन अपनाएं",
+    "suggest_applied_toast": "{name} पर लागू किया गया",
+    "suggest_apply": "लागू करें",
+    "suggest_dismiss": "खारिज करें",
+    "suggest_retire": "{name} रिटायर करें",
+    "suggest_sources": "{count} स्रोत",
+    "suggest_title": "सिमुलेशन सुझाव ({count})"
   },
   "deliberation": {
     "agenda": "एजेंडा",

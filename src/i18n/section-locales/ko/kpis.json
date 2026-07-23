@@ -225,5 +225,16 @@
   "conv_stale_hint": "프로덕션 측정값이 시뮬레이션보다 {days}일 오래되었습니다 — «지금 측정»으로 확인하세요.",
   "conv_no_prod": "아직 프로덕션 측정값이 없습니다 — 시뮬레이션이 수렴할 실측 데이터가 없습니다.",
   "sim_skipped_toast": "결과 행 {count}개가 유효성 검사에서 거부되었습니다 — 실행 보고서를 확인하세요",
-  "trend_sim_suffix": "시뮬레이션됨"
+  "trend_sim_suffix": "시뮬레이션됨",
+  "predict_button": "예측 새로고침",
+  "predict_dispatched_toast": "KPI {count}개에 대해 예측 새로고침을 실행했습니다 — 벤치마크 기준, 측정 없음",
+  "predict_hint": "리서치 전용 작업: 현재 벤치마크로 목표치를 재조정합니다 — 측정이나 로컬 실행은 없습니다.",
+  "suggest_adjust": "{name} 목표 조정",
+  "suggest_adopt": "{name}에 로컬 측정 적용",
+  "suggest_applied_toast": "{name}에 적용됨",
+  "suggest_apply": "적용",
+  "suggest_dismiss": "닫기",
+  "suggest_retire": "{name} 폐기",
+  "suggest_sources": "출처 {count}개",
+  "suggest_title": "시뮬레이션 제안 ({count})"
 }

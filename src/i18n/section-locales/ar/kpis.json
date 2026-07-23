@@ -225,5 +225,16 @@
   "conv_stale_hint": "قراءة الإنتاج أقدم من المحاكاة بـ {days} يومًا — استخدم «قِس الآن» للتأكيد.",
   "conv_no_prod": "لا يوجد قياس إنتاج بعد — لا يوجد شيء فعلي تتقارب معه المحاكاة.",
   "sim_skipped_toast": "تم رفض {count} من صفوف النتائج أثناء التحقق — راجع تقرير التشغيل",
-  "trend_sim_suffix": "محاكاة"
+  "trend_sim_suffix": "محاكاة",
+  "predict_button": "تحديث التوقعات",
+  "predict_dispatched_toast": "تم إرسال تحديث التوقعات لعدد {count} من مؤشرات KPI — معايير مرجعية فقط، بلا قياس",
+  "predict_hint": "تمريرة بحثية فقط: إعادة توجيه الأهداف بناءً على المعايير المرجعية الحالية — بلا قياس وبلا تشغيل محلي.",
+  "suggest_adjust": "ضبط الهدف لـ {name}",
+  "suggest_adopt": "اعتماد القياس المحلي لـ {name}",
+  "suggest_applied_toast": "تم التطبيق على {name}",
+  "suggest_apply": "تطبيق",
+  "suggest_dismiss": "تجاهل",
+  "suggest_retire": "إيقاف {name}",
+  "suggest_sources": "{count} مصادر",
+  "suggest_title": "اقتراحات المحاكاة ({count})"
 }

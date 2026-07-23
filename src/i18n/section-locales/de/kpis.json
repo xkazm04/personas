@@ -225,5 +225,16 @@
   "conv_stale_hint": "Der Produktionswert ist {days} Tage älter als die Simulation — mit „Jetzt messen“ bestätigen.",
   "conv_no_prod": "Noch keine Produktionsmessung — die Simulation hat nichts Reales zum Annähern.",
   "sim_skipped_toast": "{count} Ergebniszeilen wurden von der Validierung abgelehnt — siehe Laufbericht",
-  "trend_sim_suffix": "simuliert"
+  "trend_sim_suffix": "simuliert",
+  "predict_button": "Prognosen aktualisieren",
+  "predict_dispatched_toast": "Prognoseaktualisierung für {count} KPIs gestartet — Benchmarks, keine Messung",
+  "predict_hint": "Nur Recherche: Zielwerte anhand aktueller Benchmarks neu ausrichten — keine Messung, kein lokaler Lauf.",
+  "suggest_adjust": "Zielwert für {name} anpassen",
+  "suggest_adopt": "Lokale Messung für {name} übernehmen",
+  "suggest_applied_toast": "Auf {name} angewendet",
+  "suggest_apply": "Übernehmen",
+  "suggest_dismiss": "Verwerfen",
+  "suggest_retire": "{name} zurückziehen",
+  "suggest_sources": "{count} Quellen",
+  "suggest_title": "Simulationsvorschläge ({count})"
 }

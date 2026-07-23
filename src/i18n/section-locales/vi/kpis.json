@@ -225,5 +225,16 @@
   "conv_stale_hint": "Số đo production cũ hơn mô phỏng {days} ngày — dùng «Đo ngay» để xác nhận.",
   "conv_no_prod": "Chưa có số đo production — mô phỏng không có dữ liệu thực để hội tụ.",
   "sim_skipped_toast": "{count} dòng kết quả bị từ chối khi kiểm tra hợp lệ — xem báo cáo lần chạy",
-  "trend_sim_suffix": "mô phỏng"
+  "trend_sim_suffix": "mô phỏng",
+  "predict_button": "Làm mới dự đoán",
+  "predict_dispatched_toast": "Đã gửi làm mới dự đoán cho {count} KPI — chỉ chuẩn đối chiếu, không đo lường",
+  "predict_hint": "Chỉ mang tính nghiên cứu: đặt lại mục tiêu từ các chuẩn đối chiếu hiện tại — không đo lường, không chạy cục bộ.",
+  "suggest_adjust": "Điều chỉnh mục tiêu cho {name}",
+  "suggest_adopt": "Áp dụng đo lường cục bộ cho {name}",
+  "suggest_applied_toast": "Đã áp dụng cho {name}",
+  "suggest_apply": "Áp dụng",
+  "suggest_dismiss": "Bỏ qua",
+  "suggest_retire": "Ngừng dùng {name}",
+  "suggest_sources": "{count} nguồn",
+  "suggest_title": "Đề xuất mô phỏng ({count})"
 }

@@ -225,5 +225,16 @@
   "conv_stale_hint": "Pembacaan produksi {days} hari lebih tua dari simulasi — gunakan «Ukur sekarang» untuk konfirmasi.",
   "conv_no_prod": "Belum ada pengukuran produksi — simulasi tidak punya acuan riil untuk didekati.",
   "sim_skipped_toast": "{count} baris hasil ditolak oleh validasi — lihat laporan proses",
-  "trend_sim_suffix": "simulasi"
+  "trend_sim_suffix": "simulasi",
+  "predict_button": "Segarkan prediksi",
+  "predict_dispatched_toast": "Penyegaran prediksi dikirim untuk {count} KPI — benchmark, tanpa pengukuran",
+  "predict_hint": "Proses berbasis riset saja: sesuaikan ulang target dari benchmark saat ini — tanpa pengukuran, tanpa proses lokal.",
+  "suggest_adjust": "Sesuaikan target untuk {name}",
+  "suggest_adopt": "Terapkan pengukuran lokal untuk {name}",
+  "suggest_applied_toast": "Diterapkan ke {name}",
+  "suggest_apply": "Terapkan",
+  "suggest_dismiss": "Abaikan",
+  "suggest_retire": "Pensiunkan {name}",
+  "suggest_sources": "{count} sumber",
+  "suggest_title": "Saran simulasi ({count})"
 }

@@ -17531,6 +17531,17 @@ export type Translations = {
     conv_verdict_insufficient: string;
     conv_stale_hint: string;
     conv_no_prod: string;
+    predict_button: string;
+    predict_hint: string;
+    predict_dispatched_toast: string;
+    suggest_title: string;
+    suggest_adopt: string;
+    suggest_adjust: string;
+    suggest_retire: string;
+    suggest_sources: string;
+    suggest_apply: string;
+    suggest_dismiss: string;
+    suggest_applied_toast: string;
     sim_mode_l1: string;
     sim_mode_l1_hint: string;
     sim_mode_l1l2: string;

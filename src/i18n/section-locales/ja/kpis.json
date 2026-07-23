@@ -225,5 +225,16 @@
   "conv_stale_hint": "本番の測定値はシミュレーションより {days} 日古いです — 「今すぐ測定」で確認してください。",
   "conv_no_prod": "本番の測定値がまだありません — シミュレーションが収束すべき実データがありません。",
   "sim_skipped_toast": "{count}件の結果行が検証により拒否されました — 実行レポートを確認してください",
-  "trend_sim_suffix": "シミュレーション"
+  "trend_sim_suffix": "シミュレーション",
+  "predict_button": "予測を更新",
+  "predict_dispatched_toast": "{count} 件のKPIで予測更新を実行しました — ベンチマークのみ、計測なし",
+  "predict_hint": "リサーチのみのパス: 現在のベンチマークから目標を再設定します — 計測やローカル実行は行いません。",
+  "suggest_adjust": "{name} の目標を調整",
+  "suggest_adopt": "{name} のローカル計測を採用",
+  "suggest_applied_toast": "{name} に適用しました",
+  "suggest_apply": "適用",
+  "suggest_dismiss": "却下",
+  "suggest_retire": "{name} を廃止",
+  "suggest_sources": "{count} 件のソース",
+  "suggest_title": "シミュレーション提案 ({count})"
 }

@@ -2,10 +2,17 @@
 
 ## Active
 
-### passport-wall-extensions — stack-first + framework versions + Data-analysis/Support dimensions — session fable-5
-- Started: 2026-07-23. Status: started.
-- Paths: src/features/teams/sub_factory/passport/** (passportRows, passportModel, passportDerive, usePassportData, wallConfig, improve/{connectors,ImproveCell,ImproveContext,+DataLinksPopover new}), src/features/teams/sub_factory/ProjectsLayer.tsx, src/api/devTools/devTools.ts, src-tauri/src/commands/infrastructure/{dev_tools.rs (RepoEvidence frameworks, update_project), context_generation.rs (prompt)}, src-tauri/src/db/{migrations/incremental.rs, models/dev_tools.rs, repos/dev_tools.rs} (support_credential_id + data_links columns), src/lib/bindings/DevProject.ts (regen).
+### kpi-sim-p3-remainder — predict mode + sim-suggestions adoption path (autopilot cadence loop) — session opus-4-8[1m]
+- Started: 2026-07-23. Status: code complete, gates green, live-verified. Frontend-only (no Rust/schema — deliberately, to avoid the concurrent passport-wall-extensions session on db/models/repos).
+- Paths: src/features/teams/sub_kpis/{kpiSimPrompt.ts (predict mode), KpiSimControl.tsx (predict button + mode-param dispatch), KpiSimSuggestions.tsx NEW, KPIDashboard.tsx (mount suggestions), __tests__/kpiSimPrompt.test.ts}, src/i18n/locales/** (kpis.predict_*/suggest_* — 11 keys ×13 locales), docs/{plans/kpi-simulation-skill.md, features/teams/kpis.md}.
+- Reuses existing commands only (updateKpi, listIdeas, acceptIdea, rejectIdea, kpiSimPrepare/Ingest) — no new IPC. Live-verified: predict button renders; suggestions panel shows the 2 actionable kpi_sim findings (10 informational filtered); Apply moved Sign-Off-Age target 2→3, finding→accepted, panel 2→1.
 - Main checkout. Ledger NOT staged separately.
+
+### passport-wall-extensions — stack-first + framework versions + Data-analysis/Support dimensions — session fable-5
+- Started: 2026-07-23. Status: COMPLETED — commit `c2a194f36` on master (UNPUSHED; tree carries the kpi-sim session's in-flight sub_kpis TS errors, so pre-push typecheck would fail — push after their entry lands).
+- Shipped: (1) Stack section leads the Compare matrix. (2) Frameworks row = real names+versions from a new RepoEvidence.frameworks probe (package.json exact deps incl. Next.js/Nuxt + Cargo.toml Tauri/Axum/Actix; clean_semver → "Next.js 16.2"); context-scan prompt + detect_tech_layers updated; techIcons residual join is whitespace-based (version dots survive). (3) Data analysis row (Tooling): user-declared related data-processing projects via DataLinksPopover → new dev_projects.data_links JSON column; picker lists ALL registered projects (listProjects, wider than the cross-scanned wall). DECISION (user): manual link only — no scan detection; verified NO code evidence of Brainiac↔Pumper exists in either repo. (4) Support row (Tooling): channel types (Email/Discord) from new dev_projects.support_credential_id via the standard ConnectorSection bind (discord/gmail/microsoft_outlook); bindField union + engine.setDataLinks added.
+- Live-verified end-to-end: dev-watcher auto-rebuilt the app with the new Rust → migration live; registered Pumper (512809db) + regenerated cross-project metadata (brainiac/politicas/Pumper now have wall columns); linked Brainiac→Pumper via the popover — cell persists + renders "Pumper"; Support popover opens with the customer-support category; "Next.js · 16.2 / React · 19.2" chips live.
+- GOTCHAS: (a) `cargo test export_bindings` unrunnable locally right now — default target hits the exe-launch issue AND the tauri dev-watcher holds cargo locks (CARGO_TARGET_DIR=target-bindings sat 25min at 0 files); DevProject.ts hand-patched to exact ts-rs emission (trailing ", " separators, Rust doc verbatim) — CI binding-drift job is the verification. (b) The wall only shows CROSS-SCANNED projects; registered-but-never-scanned ones (brainiac was one) need a header Rescan (cheap aggregation) to appear. (c) probe.mjs stashes the wrapper's return value AFTER sync code runs — early-exit stash gets clobbered; use a second stash div for staged diagnostics.
 
 
 

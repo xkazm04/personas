@@ -6,7 +6,7 @@
 // when it exits, the results are auto-ingested (P2) — with a manual import
 // fallback for runs finished while the app was closed.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlaskConical, FolderInput, TerminalSquare } from 'lucide-react';
+import { FlaskConical, FolderInput, Radar, TerminalSquare } from 'lucide-react';
 
 import { kpiSimIngest, kpiSimPrepare, type KpiSimIngestSummary } from '@/api/devTools/kpis';
 import { killSession, listSessions } from '@/api/fleet/fleet';
@@ -94,14 +94,20 @@ export function KpiSimControl({ projectId, onIngested }: {
   const sessionActive = session !== null
     && (session.state === 'spawning' || session.state === 'running' || session.state === 'awaiting_input');
 
-  const dispatch = async () => {
+  // `runMode` overrides the chip state — predict shares the same dispatch key +
+  // ingest path (it's the same "operation" for this project, so it can't run
+  // alongside a sim), but carries the research-only prompt.
+  const dispatch = async (runMode: KpiSimMode) => {
     if (!project) return;
     setBusy(true);
     try {
       if (session && !sessionActive) await killSession(session.id);
       const prep = await kpiSimPrepare(projectId);
-      await dispatchRowToFleet(key, prep.root_path, buildKpiSimPrompt(project, mode));
-      addToast(tx(t.kpis.sim_dispatched_toast, { count: prep.kpi_count }), 'success');
+      await dispatchRowToFleet(key, prep.root_path, buildKpiSimPrompt(project, runMode));
+      addToast(
+        tx(runMode === 'predict' ? t.kpis.predict_dispatched_toast : t.kpis.sim_dispatched_toast, { count: prep.kpi_count }),
+        'success',
+      );
       wasLive.current = true;
     } catch (e) {
       toastCatch('kpiSim:dispatch')(e);
@@ -116,7 +122,7 @@ export function KpiSimControl({ projectId, onIngested }: {
     <div className="flex items-center gap-2 flex-wrap" data-testid="kpi-sim-control">
       <button
         type="button"
-        onClick={session ? () => setTerminalOpen(true) : dispatch}
+        onClick={session ? () => setTerminalOpen(true) : () => dispatch(mode)}
         disabled={busy || !project}
         className="inline-flex items-center gap-1.5 typo-caption font-medium rounded-interactive border border-primary/25 bg-primary/10 text-primary px-2.5 py-1 hover:bg-primary/20 disabled:opacity-50 transition-colors focus-ring"
         data-testid="kpi-sim-button"
@@ -143,13 +149,29 @@ export function KpiSimControl({ projectId, onIngested }: {
       {session && !sessionActive && (
         <button
           type="button"
-          onClick={dispatch}
+          onClick={() => dispatch(mode)}
           disabled={busy || !project}
           className="inline-flex items-center gap-1 typo-caption font-medium rounded-interactive border border-primary/25 text-primary px-2 py-1 hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
           data-testid="kpi-sim-rerun"
         >
           <FlaskConical className="w-3.5 h-3.5" aria-hidden />
           {t.kpis.sim_rerun}
+        </button>
+      )}
+
+      {/* Predict — the class-3-only benchmark refresh; re-aims targets without
+          measuring. Disabled while any session holds the key. */}
+      {!sessionActive && (
+        <button
+          type="button"
+          onClick={() => dispatch('predict')}
+          disabled={busy || !project || session !== null}
+          title={t.kpis.predict_hint}
+          className="inline-flex items-center gap-1 typo-caption font-medium rounded-interactive border border-primary/20 text-foreground/80 hover:text-foreground px-2 py-1 hover:bg-primary/5 disabled:opacity-50 transition-colors focus-ring"
+          data-testid="kpi-predict-button"
+        >
+          <Radar className="w-3.5 h-3.5" aria-hidden />
+          {t.kpis.predict_button}
         </button>
       )}
 
