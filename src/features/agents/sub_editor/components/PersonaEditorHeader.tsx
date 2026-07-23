@@ -9,6 +9,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
+import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { PersonaDraft } from '../libs/PersonaDraft';
@@ -161,11 +162,27 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       title={effective.name}
       style={accentStyle}
       // Header shows the persona name only — the description lives in the
-      // Settings tab. The Lab quality badge stays as dev-only chrome.
+      // Settings tab. The setup badge is always visible (it self-hides when the
+      // persona is ready); the Lab quality badge stays as dev-only chrome.
+      // The setup badge is what tells a user landing here straight after promote
+      // that their agent still needs a credential before it can run — the
+      // post-promote editor previously showed no such signal (UAT 2026-07-20,
+      // SF-BPI-01: "Ready to use. It wasn't. Nothing told me").
       subtitle={
+        // Only occupy the subtitle row when there's actually something to show:
+        // a setup problem (any tier) or the dev-only quality badge. A ready
+        // persona in a shipped build keeps the clean name-only header.
+        effective.setup_status === 'needs_credentials' ||
+        effective.setup_status === 'misconfigured' ||
         import.meta.env.DEV ? (
           <span className="flex items-center gap-2">
-            <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />
+            <SetupStatusBadge
+              status={effective.setup_status}
+              setupDetail={effective.setup_detail}
+            />
+            {import.meta.env.DEV && (
+              <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />
+            )}
           </span>
         ) : undefined
       }
