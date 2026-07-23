@@ -88,6 +88,8 @@ pub fn dev_tools_update_project(
     test_env_branch: Option<Option<String>>,
     main_branch: Option<Option<String>>,
     llm_tracking_credential_id: Option<Option<String>>,
+    support_credential_id: Option<Option<String>>,
+    data_links: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -106,6 +108,8 @@ pub fn dev_tools_update_project(
         test_env_branch.as_ref().map(|o| o.as_deref()),
         main_branch.as_ref().map(|o| o.as_deref()),
         llm_tracking_credential_id.as_ref().map(|o| o.as_deref()),
+        support_credential_id.as_ref().map(|o| o.as_deref()),
+        data_links.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -1912,6 +1916,8 @@ fn detect_tech_layers(
     for item in &all {
         let lower = item.to_lowercase();
         if lower.contains("react")
+            || lower.contains("next")
+            || lower.contains("nuxt")
             || lower.contains("vue")
             || lower.contains("svelte")
             || lower.contains("angular")
@@ -3408,6 +3414,38 @@ pub struct RepoEvidence {
     /// user-maintained (and expected-gitignored) monthly-cost ledger. None when
     /// the file doesn't exist; parsed leniently on the frontend.
     pub app_cost_raw: Option<String>,
+    // -- Frameworks (passport stack row) -------------------------------------
+    /// Application frameworks detected from the dependency manifests
+    /// (package.json exact dep names, Cargo.toml), with cleaned versions —
+    /// real "Next.js 15.3" instead of the tech-layer heuristic's bare "React".
+    pub frameworks: Vec<FrameworkEvidence>,
+}
+
+/// One detected application framework + its manifest version (cleaned to
+/// major.minor, e.g. "^19.1.0" → "19.1"). Part of [`RepoEvidence`].
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct FrameworkEvidence {
+    pub name: String,
+    pub version: Option<String>,
+}
+
+/// Clean a manifest version spec to a display "major[.minor]" — strips range
+/// operators and pre-release/build tails; None when nothing numeric remains.
+fn clean_semver(spec: &str) -> Option<String> {
+    let trimmed = spec.trim_start_matches(['^', '~', '=', 'v', '>', '<', ' ']);
+    let numeric: String = trimmed
+        .chars()
+        .take_while(|c| c.is_ascii_digit() || *c == '.')
+        .collect();
+    if numeric.is_empty() || !numeric.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let parts: Vec<&str> = numeric.split('.').filter(|p| !p.is_empty()).collect();
+    match parts.len() {
+        0 => None,
+        1 => Some(parts[0].to_string()),
+        _ => Some(format!("{}.{}", parts[0], parts[1])),
+    }
 }
 
 fn re_exists(root: &std::path::Path, rel: &str) -> bool {
@@ -3602,12 +3640,41 @@ pub fn dev_tools_probe_repo_evidence(
                 ev.package_scripts = scripts.keys().cloned().collect();
             }
             let mut deps = String::new();
+            let mut dep_versions: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
             for key in ["dependencies", "devDependencies"] {
                 if let Some(obj) = json.get(key).and_then(|v| v.as_object()) {
-                    for dk in obj.keys() {
-                        deps.push_str(&dk.to_lowercase());
+                    for (dk, dv) in obj {
+                        let lower = dk.to_lowercase();
+                        deps.push_str(&lower);
                         deps.push(' ');
+                        if let Some(vs) = dv.as_str() {
+                            dep_versions.entry(lower).or_insert_with(|| vs.to_string());
+                        }
                     }
+                }
+            }
+            // Application frameworks + versions — exact dep-name lookups (a
+            // `contains` would false-positive on react-dom / vue-router / …).
+            for (dep, label) in [
+                ("next", "Next.js"),
+                ("nuxt", "Nuxt"),
+                ("react", "React"),
+                ("vue", "Vue"),
+                ("svelte", "Svelte"),
+                ("@angular/core", "Angular"),
+                ("astro", "Astro"),
+                ("express", "Express"),
+                ("@nestjs/core", "NestJS"),
+                ("fastify", "Fastify"),
+                ("@remix-run/react", "Remix"),
+                ("@tauri-apps/api", "Tauri"),
+            ] {
+                if let Some(vs) = dep_versions.get(dep) {
+                    ev.frameworks.push(FrameworkEvidence {
+                        name: label.to_string(),
+                        version: clean_semver(vs),
+                    });
                 }
             }
             ev.test_framework = if deps.contains("vitest") {
@@ -3658,6 +3725,31 @@ pub fn dev_tools_probe_repo_evidence(
             || re_exists(root, "tox.ini")
         {
             ev.test_framework = Some("pytest".into());
+        }
+    }
+
+    // Rust frameworks from Cargo manifests (root + the Tauri convention path).
+    // Line-based on purpose — a TOML parser dependency isn't warranted for
+    // three dep names; a table-style dep still yields its `version = "…"`.
+    for manifest in ["Cargo.toml", "src-tauri/Cargo.toml"] {
+        let Ok(txt) = std::fs::read_to_string(root.join(manifest)) else {
+            continue;
+        };
+        for (dep, label) in [("tauri", "Tauri"), ("axum", "Axum"), ("actix-web", "Actix")] {
+            if ev.frameworks.iter().any(|f| f.name == label) {
+                continue;
+            }
+            let hit = txt.lines().find(|l| {
+                let t = l.trim_start();
+                t.starts_with(&format!("{dep} ")) || t.starts_with(&format!("{dep}="))
+            });
+            if let Some(line) = hit {
+                let version = line.split('"').nth(1).and_then(clean_semver);
+                ev.frameworks.push(FrameworkEvidence {
+                    name: label.to_string(),
+                    version,
+                });
+            }
         }
     }
 

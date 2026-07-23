@@ -26,6 +26,18 @@ pr_credential_id: string | null,
  */
 llm_tracking_credential_id: string | null, 
 /**
+ * Credential row id for the incoming customer-support channel (Discord /
+ * Gmail / Outlook …) — the passport's Support dimension. Nullable; set via
+ * `dev_tools_update_project`. Added 2026-07-23.
+ */
+support_credential_id: string | null, 
+/**
+ * JSON array of related dev_project ids whose codebase post-processes this
+ * project's data (the passport's Data-analysis dimension). User-declared
+ * for now; nullable. Added 2026-07-23.
+ */
+data_links: string | null, 
+/**
  * URL of the living test environment this team delivers into (e.g. a
  * staging/preview deployment). Nullable; set once the env exists.
  */

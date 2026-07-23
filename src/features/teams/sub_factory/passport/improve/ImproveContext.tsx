@@ -42,7 +42,10 @@ export interface ImproveEngine {
    *  same delta_mode as the Dev-Tools Context Map). Returns the scan id. */
   runContextScan: (slug: string, delta?: boolean) => Promise<string | undefined>;
   /** Bind a vault credential to a project slot (Tier-2 connector wire) + re-derive. */
-  bindConnector: (slug: string, credentialId: string, field: 'monitoring' | 'pr' | 'llm_tracking') => Promise<void>;
+  bindConnector: (slug: string, credentialId: string, field: 'monitoring' | 'pr' | 'llm_tracking' | 'support') => Promise<void>;
+  /** Set the project's related data-processing projects (Data-analysis
+   *  dimension; user-declared) + re-derive. Empty array clears. */
+  setDataLinks: (slug: string, projectIds: string[]) => Promise<void>;
   /** Queue a Claude-Code upgrade task (Tier-3) without running it yet. */
   queueTask: (slug: string, title: string, prompt: string) => Promise<void>;
   /** Queue AND dispatch a Claude-Code upgrade task — runs the CLI, auto-PRs on green. Returns the task id. */

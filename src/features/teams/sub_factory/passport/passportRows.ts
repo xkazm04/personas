@@ -120,9 +120,23 @@ function appCostCell(c: AppCost | null | undefined): CellValue {
   };
 }
 
-// -- the sections (order: automation readiness → production → stack → tooling) -
+// -- the sections (order: stack → automation readiness → production → tooling;
+//    Stack leads so a column reads "what this app IS" right under its cover) --
 
 export const SECTIONS: SectionSpec[] = [
+  {
+    key: 'stack',
+    label: 'Stack',
+    icon: 'layers',
+    rows: [
+      { key: 'languages', label: 'Languages', info: 'Programming languages detected in the repo by the cross-project scan.', get: (p) => ({ kind: 'chips', items: p.stack.languages.map((l) => l.name) }) },
+      { key: 'runtime', label: 'Runtime', info: 'The runtime the app executes on (node, rust, …), detected from the repo.', get: (p) => ({ kind: 'present', label: p.stack.runtime ?? null }) },
+      { key: 'frameworks', label: 'Frameworks', info: 'Application frameworks read from the dependency manifests (package.json / Cargo.toml) with their versions — meta-frameworks like Next.js included.', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
+      { key: 'persistence', label: 'Database', info: 'The database per environment — local / test / production. An empty slot means no source or config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.db, { local: persistenceChips(p).join(' · ') || null }) },
+      { key: 'hosting', label: 'Hosting', info: 'Where the app runs per environment — local / test / production. An empty slot means no hosting config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.hosting, { test: p.stack.hosting ?? null }) },
+      { key: 'auth', label: 'Auth', info: 'The auth method (Clerk / Auth.js / Supabase / …) detected from the repo’s dependencies.', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
+    ],
+  },
   {
     key: 'automation',
     label: 'Readiness for full automation',
@@ -179,19 +193,6 @@ export const SECTIONS: SectionSpec[] = [
     ],
   },
   {
-    key: 'stack',
-    label: 'Stack',
-    icon: 'layers',
-    rows: [
-      { key: 'languages', label: 'Languages', info: 'Programming languages detected in the repo by the cross-project scan.', get: (p) => ({ kind: 'chips', items: p.stack.languages.map((l) => l.name) }) },
-      { key: 'runtime', label: 'Runtime', info: 'The runtime the app executes on (node, rust, …), detected from the repo.', get: (p) => ({ kind: 'present', label: p.stack.runtime ?? null }) },
-      { key: 'frameworks', label: 'Frameworks', info: 'Application frameworks detected in the repo.', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
-      { key: 'persistence', label: 'Database', info: 'The database per environment — local / test / production. An empty slot means no source or config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.db, { local: persistenceChips(p).join(' · ') || null }) },
-      { key: 'hosting', label: 'Hosting', info: 'Where the app runs per environment — local / test / production. An empty slot means no hosting config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.hosting, { test: p.stack.hosting ?? null }) },
-      { key: 'auth', label: 'Auth', info: 'The auth method (Clerk / Auth.js / Supabase / …) detected from the repo’s dependencies.', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
-    ],
-  },
-  {
     key: 'tooling',
     label: 'Tooling & integrations',
     icon: 'plug',
@@ -204,6 +205,8 @@ export const SECTIONS: SectionSpec[] = [
       { key: 'tracing', label: 'Tracing', info: 'Distributed tracing, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.tracing }) },
       { key: 'llmtracking', label: 'LLM tracking', info: 'An LLM-observability connector — tracks this project’s model calls and 30-day spend.', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
       { key: 'appcost', label: 'App cost', info: `Monthly running cost of the app's known services, read from ${APP_COST_FILENAME} at the repo root (user-maintained, gitignored). NA until the file exists — the cell can dispatch an agent to create it.`, get: (p) => appCostCell(p.stack.appCost) },
+      { key: 'datalinks', label: 'Data analysis', info: 'Related projects whose tooling post-processes this app’s internal data (declared by hand for now — click the cell to link projects; a future scan may propose them).', get: (p) => ({ kind: 'chips', items: p.stack.dataLinks ?? [] }) },
+      { key: 'support', label: 'Support', info: 'Incoming customer-support channels (Email, Discord, …) — wired by binding a support connector from your vault; deeper support metrics come later.', get: (p) => ({ kind: 'chips', items: p.stack.supportChannels ?? [] }) },
     ],
   },
 ];

@@ -4392,6 +4392,18 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN llm_tracking_credential_id TEXT;")
         .ok();
 
+    // -- dev_projects: customer-support connector slot + data-analysis links --
+    // `support_credential_id`: credential pointer for the incoming customer-
+    // support channel (Discord / Gmail / Outlook …) — drives the passport's
+    // Support dimension. `data_links`: JSON array of related dev_project ids
+    // whose codebase post-processes this project's data (user-declared for
+    // now; a future scan may propose them) — drives the passport's
+    // Data-analysis dimension. Both nullable; set via dev_tools_update_project.
+    // Added 2026-07-23.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN support_credential_id TEXT;")
+        .ok();
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN data_links TEXT;").ok();
+
     // -- dev_projects: static_scan_config -------------------------------------
     // JSON envelope { tool: "fallow"|"knip"|..., command: [..argv..] } that
     // configures which static-analysis CLI the static_scan runner spawns for

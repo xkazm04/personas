@@ -67,7 +67,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null; llmTrackingCredentialId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null; llmTrackingCredentialId?: string | null; supportCredentialId?: string | null; dataLinks?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -93,6 +93,12 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // Option<Option<String>>: binds the LLM-observability connector credential
     // (distinct slot from monitoring). String SETS, null CLEARS, undefined leaves.
     llmTrackingCredentialId: updates.llmTrackingCredentialId,
+    // Option<Option<String>>: the incoming customer-support channel credential
+    // (passport Support dimension). String SETS, null CLEARS, undefined leaves.
+    supportCredentialId: updates.supportCredentialId,
+    // Option<Option<String>>: JSON array of related dev_project ids whose code
+    // post-processes this project's data (passport Data-analysis dimension).
+    dataLinks: updates.dataLinks,
   });
 
 /** Set or clear the project's standards & branching policy (Pipeline Stage 3).
@@ -361,6 +367,11 @@ export interface RepoEvidence {
    *  repo root), null when the file doesn't exist. Optional for the same
    *  older-backend reason as the fields above. */
   app_cost_raw?: string | null;
+  /** Application frameworks detected from the dependency manifests
+   *  (package.json exact dep names, Cargo.toml) with cleaned versions —
+   *  "Next.js 15.3" instead of the tech-layer heuristic's bare "React".
+   *  Optional for the older-backend reason above. */
+  frameworks?: Array<{ name: string; version: string | null }>;
 }
 
 export const probeRepoEvidence = (rootPath: string) =>

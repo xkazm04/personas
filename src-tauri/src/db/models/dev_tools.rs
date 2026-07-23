@@ -107,6 +107,14 @@ pub struct DevProject {
     /// LangSmith, …). Distinct from `monitoring_credential_id` (app monitoring);
     /// nullable, set via `dev_tools_update_project`. Added 2026-06-23.
     pub llm_tracking_credential_id: Option<String>,
+    /// Credential row id for the incoming customer-support channel (Discord /
+    /// Gmail / Outlook …) — the passport's Support dimension. Nullable; set via
+    /// `dev_tools_update_project`. Added 2026-07-23.
+    pub support_credential_id: Option<String>,
+    /// JSON array of related dev_project ids whose codebase post-processes this
+    /// project's data (the passport's Data-analysis dimension). User-declared
+    /// for now; nullable. Added 2026-07-23.
+    pub data_links: Option<String>,
     /// URL of the living test environment this team delivers into (e.g. a
     /// staging/preview deployment). Nullable; set once the env exists.
     pub test_env_url: Option<String>,

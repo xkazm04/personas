@@ -189,6 +189,7 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 - **db_tables**: If this context reads/writes database tables, list them (e.g., ["users", "sessions", "auth_tokens"])
 - **api_surface**: If this context exposes or consumes APIs, describe them briefly (e.g., "POST /api/auth/login, GET /api/auth/session")
 - **cross_refs**: List other context names this code depends on or is depended on by (e.g., ["user-profile", "notification-service"])
+- **tech_stack**: Name the CONCRETE frameworks in play, read from the dependency manifest (package.json / Cargo.toml) — include meta-frameworks like Next.js or Nuxt explicitly when present (not just "React"), and append the major.minor version where the manifest states it (e.g., ["Next.js 15.3", "React 19.1", "TypeScript"])
 - **category (REQUIRED)**: the context's primary technical layer — EXACTLY one of: `ui`, `api`, `lib`, `data`, `test`, `config`. NOTE: "integration" is a GROUP domain, NOT a context category — never use it here.
 - **business_feature (REQUIRED)**: a short human-readable feature name (often similar to the context name, in Title Case)
 
@@ -203,7 +204,7 @@ To create a context group:
 
 To create a context within a group:
 ```
-{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "context-name", "description": "2-3 sentence description of business purpose, how it works, and key dependencies", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "db_tables": ["users", "sessions"], "api_surface": "POST /api/auth/login", "cross_refs": ["user-profile"], "tech_stack": ["React", "TypeScript"], "category": "api", "business_feature": "User Authentication"}}}}
+{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "context-name", "description": "2-3 sentence description of business purpose, how it works, and key dependencies", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "db_tables": ["users", "sessions"], "api_surface": "POST /api/auth/login", "cross_refs": ["user-profile"], "tech_stack": ["Next.js 15.3", "React 19.1", "TypeScript"], "category": "api", "business_feature": "User Authentication"}}}}
 ```
 
 At the end, output a summary:

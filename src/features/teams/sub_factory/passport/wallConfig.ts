@@ -13,7 +13,7 @@ export const IMPROVABLE_ROWS = new Set([
   'ci', 'selfverify', 'context', 'instructions', 'docs', 'memory',
   'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
-  'monitoring', 'appcost',
+  'monitoring', 'appcost', 'datalinks', 'support',
 ]);
 
 // R19 — the UNIFIED setup rows: always-available setup icon (any level, not

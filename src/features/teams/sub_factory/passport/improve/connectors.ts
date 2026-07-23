@@ -14,7 +14,7 @@ export interface ConnectorSpec {
   /** Credential serviceTypes that satisfy this row. */
   serviceTypes: string[];
   /** Which DevProject credential slot binding writes. */
-  bindField: 'monitoring' | 'pr' | 'llm_tracking';
+  bindField: 'monitoring' | 'pr' | 'llm_tracking' | 'support';
   /** The row's gap exists (so wiring a connector is offered). */
   applicable: (p: AppPassport) => boolean;
 }
@@ -96,6 +96,15 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
     serviceTypes: LLM_TRACKING_SERVICE_TYPES,
     bindField: 'llm_tracking',
     applicable: (p) => !p.stack.llmTracking,
+  },
+  // Support — the incoming customer-support channel (its own credential slot).
+  // Always applicable so an already-bound channel can be switched.
+  support: {
+    rowKey: 'support',
+    categoryLabel: 'customer-support channel (Email / Discord)',
+    serviceTypes: ['discord', 'gmail', 'microsoft_outlook'],
+    bindField: 'support',
+    applicable: () => true,
   },
 };
 
