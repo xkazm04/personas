@@ -4,12 +4,15 @@
 // the canvas so the mapping is unambiguous. Item click is a no-op for now —
 // the per-dimension action layer comes later.
 import { dimBrand, DIM_ICON } from './dimMeta';
+import { FORGE_GLYPH } from './dimGlyphsForge';
+import { useIconSet } from './iconSet';
 import { DIM_INK, mix } from './ink';
 import type { DimNode, Island } from './types';
 
 const COPY = { empty: 'not set up' };
 
 function MenuGlyph({ node }: { node: DimNode }) {
+  const set = useIconSet();
   const absent = node.status === 'absent';
   const brand = !absent ? dimBrand(node) : null;
   const ink = absent ? 'var(--muted-foreground)' : DIM_INK[node.status];
@@ -17,6 +20,13 @@ function MenuGlyph({ node }: { node: DimNode }) {
     return (
       <svg width={15} height={15} viewBox="0 0 24 24" fill={brand.icon.color ?? 'currentColor'} style={{ color: ink }} aria-hidden className="shrink-0">
         <path d={brand.icon.path} />
+      </svg>
+    );
+  }
+  if (set === 'forge') {
+    return (
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" style={{ color: ink }} aria-hidden className="shrink-0">
+        {FORGE_GLYPH[node.key]()}
       </svg>
     );
   }

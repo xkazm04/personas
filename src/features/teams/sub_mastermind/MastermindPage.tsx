@@ -37,6 +37,7 @@ import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { loadPositions, savePositions } from './lib/positions';
+import { IconSetProvider, loadIconSet, saveIconSet, type IconSetId } from './lib/iconSet';
 import { PersonaListPopover } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
@@ -49,12 +50,20 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
+  iconSwitcher: 'Dimension icon set',
+  iconForge: 'Forge',
+  iconLine: 'Line',
 };
 
 type VariantId = 'mosaic' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
   { id: 'mosaic', label: COPY.mosaic },
   { id: 'inverse', label: COPY.inverse },
+];
+
+const ICON_TABS: Array<{ id: IconSetId; label: string }> = [
+  { id: 'forge', label: COPY.iconForge },
+  { id: 'line', label: COPY.iconLine },
 ];
 
 const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
@@ -91,6 +100,7 @@ function MastermindInner() {
   const improve = useImproveEngine(rawByProject, reload);
   const [meta, setMeta] = useState<CrossProjectMetadataMap | null>(null);
   const [variant, setVariant] = useState<VariantId>('mosaic');
+  const [iconSet, setIconSet] = useState<IconSetId>(loadIconSet);
   const [mode, setMode] = useState<CanvasMode>('edit');
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -345,6 +355,7 @@ function MastermindInner() {
 
   return (
     <ImproveProvider value={improve}>
+    <IconSetProvider value={iconSet}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
       <Canvas
         scene={canvasScene}
@@ -357,9 +368,18 @@ function MastermindInner() {
         onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
       />
 
-      {/* prototype-only variant switcher */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
+      {/* prototype-only switchers — canvas variant + dimension icon set */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
+        <SegmentedTabs
+          tabs={ICON_TABS}
+          activeTab={iconSet}
+          onTabChange={(id) => { setIconSet(id); saveIconSet(id); }}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={COPY.iconSwitcher}
+        />
       </div>
 
       <ProjectListSidebar
@@ -429,6 +449,7 @@ function MastermindInner() {
         </div>
       )}
     </div>
+    </IconSetProvider>
     </ImproveProvider>
   );
 }
