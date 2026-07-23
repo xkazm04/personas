@@ -454,6 +454,7 @@ pub async fn auto_resolve_if_allowed(
                 "deferred",
                 Some("below_confidence_bar"),
             );
+            escalate_fleet_consult(app, &approval.params_json);
             return Ok(false);
         }
         // Phase 2.4 execution-time re-check: `confidence` is uncalibrated and a
@@ -482,6 +483,7 @@ pub async fn auto_resolve_if_allowed(
                     "deferred",
                     Some("screen_changed"),
                 );
+                escalate_fleet_consult(app, &approval.params_json);
                 return Ok(false);
             }
         }
@@ -565,6 +567,17 @@ pub async fn auto_resolve_if_allowed(
             "auto_failed"
         };
         record_fleet_decision(&state.db, &action, &approval.params_json, outcome, None);
+        // Her assessment RESOLVED (typed or failed to type) — drop the
+        // "Athena's on it" window now instead of letting it lapse; the typed
+        // input's own hooks (UserPromptSubmit → Running) drive the state next.
+        if let Some(sid) = serde_json::from_str::<serde_json::Value>(&approval.params_json)
+            .ok()
+            .as_ref()
+            .and_then(|v| v.get("session_id"))
+            .and_then(|v| v.as_str())
+        {
+            crate::commands::companion::fleet_bridge::resolve_athena_assessment(app, sid, None);
+        }
     }
 
     // Notify-only orb indicator (user policy "safety net" = Notify only): when a
@@ -585,6 +598,32 @@ pub async fn auto_resolve_if_allowed(
 /// screen-hash + stable conversation id from `fleet_bridge` / the registry.
 /// `outcome` is `"auto_fired"` | `"auto_failed"` | `"deferred"`; `defer_reason`
 /// explains a defer.
+/// A fleet PTY-write proposal was left pending as a consult — make the TARGET
+/// SESSION say so. The orb bubble alone was missable; the session is what the
+/// operator watches, so it escalates to a visible `AwaitingInput` with the
+/// proposal in the reason (which also clears the masking "Athena's on it"
+/// window). Recovery actions (`fleet_wake`/`fleet_resume`) don't come through
+/// here — their targets are hibernated/orphaned rows with nothing to escalate.
+fn escalate_fleet_consult(app: &tauri::AppHandle, params_json: &str) {
+    let v: serde_json::Value = serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
+    let Some(sid) = v.get("session_id").and_then(|x| x.as_str()) else { return };
+    let proposal = v
+        .get("text")
+        .or_else(|| v.get("message"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("");
+    let capped: String = proposal.chars().take(120).collect();
+    let reason = if capped.is_empty() {
+        "Athena needs your review — approve or reject her proposal on the tile".to_string()
+    } else {
+        format!(
+            "Athena needs your review — she proposes: {capped}{}",
+            if proposal.chars().count() > 120 { "…" } else { "" }
+        )
+    };
+    crate::commands::companion::fleet_bridge::resolve_athena_assessment(app, sid, Some(&reason));
+}
+
 fn record_fleet_decision(
     db: &crate::db::DbPool,
     action: &str,

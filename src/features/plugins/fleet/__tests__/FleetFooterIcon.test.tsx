@@ -73,12 +73,13 @@ describe('FleetFooterIcon — click contract', () => {
     expect(actions.setSidebarSection).not.toHaveBeenCalled();
   });
 
-  it('treats exited and hibernated sessions as no grid to show', async () => {
-    // Neither can host a tile, so the overlay would be empty — navigate instead.
+  it('raises the grid even when only tombstones remain — they hold their tiles', async () => {
+    // Exited/hibernated sessions keep in-place tombstone tiles now (dismiss /
+    // wake), so the grid is worth opening as long as ANYTHING is tracked.
     mount([session('exited'), session('hibernated')]);
     await userEvent.click(screen.getByTestId('footer-fleet-toggle'));
-    expect(actions.fleetSetGridOpen).not.toHaveBeenCalled();
-    expect(actions.setDevToolsTab).toHaveBeenCalledWith('fleet');
+    expect(actions.fleetSetGridOpen).toHaveBeenCalledWith(true);
+    expect(actions.setSidebarSection).not.toHaveBeenCalled();
   });
 });
 

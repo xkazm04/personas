@@ -208,6 +208,7 @@ pub fn spawn_headless_session(
         master: Mutex::new(None),
         writer: Mutex::new(Some(Box::new(stdin))),
         hibernating: std::sync::atomic::AtomicBool::new(false),
+        dozing: false,
         output: output.clone(),
         killer: Some(Mutex::new(Box::new(PidKiller(child_pid)))),
     };

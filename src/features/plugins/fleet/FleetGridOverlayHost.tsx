@@ -20,7 +20,7 @@ export default function FleetGridOverlayHost() {
     sessions,
     liveSessions,
     activeSessionId,
-    setActiveSession,
+    selectSession,
     approvals,
     canSpawn,
     askingAthena,
@@ -56,7 +56,7 @@ export default function FleetGridOverlayHost() {
         open
         sessions={liveSessions}
         activeSessionId={activeSessionId}
-        onSelect={setActiveSession}
+        onSelect={selectSession}
         onClose={close}
         approvals={approvals}
         askingSessionIds={askingAthena}

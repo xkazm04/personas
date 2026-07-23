@@ -466,9 +466,19 @@ fn orchestrate_session(
         ),
     };
 
+    // Every orchestration reply must be readable by THIS operator and typeable
+    // into a CLI — the model otherwise sometimes drifts into another language
+    // (a Spanish defer note reached the chat on 2026-07-23's live run).
+    let directive = format!(
+        "{directive}\n\nWrite your reply and any rationale in English. Any text you propose to type \
+         into a session must match the language of its on-screen prompt (usually English)."
+    );
+
     // P3 — show the operator that Athena has TAKEN this ticket and is reasoning:
     // flip the tile to the light-blue "Athena's on it" state for her work window.
-    // Cleared automatically once she acts (→ Running) or the window lapses.
+    // Cleared the moment her assessment resolves (auto-fire / consult / defer —
+    // see `resolve_athena_assessment`) or, as a backstop, when the ticker sweeps
+    // the lapsed window.
     if crate::commands::fleet::registry::registry().mark_athena_active(session_id) {
         crate::commands::fleet::pty::emit_registry_changed(app, "updated", session_id);
     }
@@ -811,6 +821,71 @@ fn spawn_dev_reflection(
 /// through the same proactive-nudge path the op-wrap-up reconciler uses: a card
 /// the user can engage/dismiss. `turn_ref` is the per-turn id, so the
 /// (kind, ref) dedupe never collides across sequential decisions. Best-effort.
+/// Resolve an orchestration assessment on the session itself — the missing
+/// half of the defer path.
+///
+/// Before this, a DEFER left only an orb card: the "Athena's on it" window
+/// stayed lit (masking the violet awaiting state until it lapsed — and the
+/// frontend never saw the lapse), the session's reason still described the
+/// original prompt, and nothing on the grid said "she looked, it's your call".
+/// Observed live 2026-07-23: three tiles stuck light-blue, zero replies, the
+/// defer note only in the chat window.
+///
+/// `escalate_reason` = `Some(text)` marks the session as needing the human
+/// (state → `AwaitingInput` + that reason, which lights the violet border, the
+/// Needs-You banner, the footer chip and the OS notification); `None` just
+/// drops the "Athena's on it" window (auto-fire — the typed input's own hooks
+/// drive the state from here).
+pub fn resolve_athena_assessment(
+    app: &tauri::AppHandle,
+    session_id: &str,
+    escalate_reason: Option<&str>,
+) {
+    let reg = crate::commands::fleet::registry::registry();
+    match escalate_reason {
+        Some(reason) => {
+            if let Some(prev) = reg.escalate_to_awaiting(session_id, reason) {
+                crate::commands::fleet::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "awaiting_input",
+                    Some(reason.to_string()),
+                );
+            }
+        }
+        None => {
+            if reg.clear_athena_active(session_id) {
+                crate::commands::fleet::pty::emit_registry_changed(app, "updated", session_id);
+            }
+        }
+    }
+}
+
+/// First line of a defer note, capped for a `state_reason` / banner chip.
+fn defer_reason_line(note: &str) -> String {
+    let first = note.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim();
+    let capped: String = first.chars().take(140).collect();
+    format!(
+        "Athena left this to you: {}{}",
+        capped,
+        if first.chars().count() > 140 { "…" } else { "" }
+    )
+}
+
+/// A fleet_orchestration turn ended in a prose DEFER (no action dispatched).
+/// Surface it on the session (escalate + reason) and in the debug log, then
+/// let the caller route the full note to the orb.
+pub fn note_fleet_defer(app: &tauri::AppHandle, session_id: &str, note: &str) {
+    crate::commands::fleet::debug_log::athena_with(
+        session_id,
+        "decision DEFERRED",
+        "prose note, no action — left to the operator",
+        &[("note", note.to_string())],
+    );
+    resolve_athena_assessment(app, session_id, Some(&defer_reason_line(note)));
+}
+
 pub fn surface_fleet_orb_note(
     app: &tauri::AppHandle,
     pool: &crate::db::UserDbPool,

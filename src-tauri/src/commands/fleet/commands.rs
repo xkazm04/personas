@@ -179,6 +179,11 @@ pub async fn fleet_wake_session(
     let (claude_session_id, cwd) = registry()
         .resume_target(&session_id)
         .ok_or_else(|| format!("session not resumable: {session_id}"))?;
+    // The resumed session is a CONTINUATION of this conversation, so the new
+    // row inherits the old row's spawn time (grid tiles are ordered by it —
+    // without this, waking moved the tile to the end of the grid) and any
+    // user-given name.
+    let lineage = registry().lineage_of(&session_id);
     let cols = cols.unwrap_or(120);
     let rows = rows.unwrap_or(32);
     // A wake consumes a live slot like any spawn — make room first if capped.
@@ -196,6 +201,9 @@ pub async fn fleet_wake_session(
         cols,
         rows,
     )?;
+    if let Some((created_at_ms, name)) = lineage {
+        registry().adopt_lineage(&new_id, created_at_ms, name);
+    }
     // Logged against the NEW id (the one that lives on) with the old one in the
     // detail, so a reader can follow a hibernate → wake chain across the id
     // change instead of seeing a session vanish and an unrelated one appear.

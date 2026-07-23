@@ -99,4 +99,11 @@ stateReason: string | null,
  * affordance so her work is visible. Only meaningful while `AwaitingInput`;
  * once she acts (→ `Running`) or the window lapses, it's `false`.
  */
-athenaActive: boolean, };
+athenaActive: boolean,
+/**
+ * Light sleep: the process was freed while the session sat parked in
+ * `Stale`/`AwaitingInput`, but `state` deliberately still shows what it
+ * was doing. The UI renders a small sleep indicator and wakes the session
+ * (`claude --resume`, same-slot) when the operator selects it.
+ */
+dozing: boolean, };

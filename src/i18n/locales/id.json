@@ -12039,7 +12039,10 @@
       "debug_log_start_title": "Rekam log debug tingkat tinggi untuk perubahan status armada, hibernasi, dan keputusan Athena",
       "debug_log_started": "Log debug Fleet dimulai — perubahan status, hibernasi, dan keputusan Athena sedang direkam.",
       "debug_log_stop": "Merekam",
-      "debug_log_stop_title": "Hentikan perekaman debug armada dan simpan log"
+      "debug_log_stop_title": "Hentikan perekaman debug armada dan simpan log",
+      "dismiss_session": "Singkirkan sesi",
+      "doze_tooltip": "Tidur untuk menghemat sumber daya — pilih sesi untuk membangunkannya",
+      "tombstone_wake_hint": "Klik untuk membangunkan"
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

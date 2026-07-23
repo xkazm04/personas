@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { X, Pencil } from 'lucide-react';
+import { MoonStar, Pencil, X } from 'lucide-react';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { killSession, removeSession, renameSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
@@ -146,6 +146,16 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       title={session.cwd}
     >
       <FleetStatusDots state={session.state} reason={provenance} />
+      {session.dozing && (
+        <span
+          data-testid={`fleet-session-dozing-${session.id}`}
+          className="shrink-0 inline-flex"
+          title={t.plugins.fleet.doze_tooltip}
+          aria-label={t.plugins.fleet.doze_tooltip}
+        >
+          <MoonStar className="w-3 h-3 text-indigo-300" aria-hidden="true" />
+        </span>
+      )}
 
       {/* Label area — either the static "project · name" or the inline edit input. */}
       {editing ? (

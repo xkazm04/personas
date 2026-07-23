@@ -464,6 +464,7 @@ pub fn spawn_session(
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
+        dozing: false,
         output: output.clone(),
         killer: Some(Mutex::new(killer)),
     };
@@ -726,6 +727,17 @@ pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: 
     // emit Exited, and skip exit reconciliation (the conversation lives on and
     // can be resumed). The MCP/temp-file cleanup in the spawning task still
     // runs — the process really is gone.
+    if registry().is_dozing(session_id) {
+        // Light sleep (doze): the ticker killed the child to free resources but
+        // the session keeps its DISPLAYED state — this exit is planned, not a
+        // death. Don't mark Exited, don't reconcile; just confirm the pid is
+        // gone so process_scan stops tracking it. Selecting the session wakes
+        // it via `claude --resume`.
+        tracing::debug!(session_id = %session_id, "fleet reaper: child exited for doze (state kept)");
+        registry().clear_child_pid(session_id);
+        emit_registry_changed(app, "updated", session_id);
+        return;
+    }
     if registry().is_hibernating(session_id) {
         tracing::debug!(session_id = %session_id, "fleet reaper: child exited for hibernation");
         // Confirmed gone — now drop the PID record (hibernate kept it so

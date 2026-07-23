@@ -12313,6 +12313,9 @@ export type Translations = {
       debug_log_started: string;
       debug_log_saved: string;
       debug_log_stop_title: string;
+      doze_tooltip: string;
+      dismiss_session: string;
+      tombstone_wake_hint: string;
     };
     title: string;
     subtitle: string;

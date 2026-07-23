@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
-import { spawnSession, killSession, writeInput } from '@/api/fleet/fleet';
+import { spawnSession, killSession, removeSession, wakeSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
@@ -41,8 +41,41 @@ export function useFleetOverlayActions() {
     [activeProjectId, projects],
   );
 
-  /** Tileable sessions in locked spawn order — what the grid renders. */
+  /** All sessions in locked spawn order — what the grid renders (exited /
+   *  hibernated included, as in-place tombstones — see fleetSessionScope). */
   const liveSessions = useMemo(() => gridSessions(sessions), [sessions]);
+
+  // Selecting a session is also how a sleeping one comes back: a DOZING row
+  // (process freed, state kept) or a hibernated tombstone resumes via
+  // `claude --resume` the moment the operator returns to it — "wake on
+  // return", no separate button hunt. The guard set stops a double-click from
+  // resuming the same conversation twice while the first wake is in flight.
+  const wakingRef = useRef<Set<string>>(new Set());
+  const selectSession = useCallback(
+    async (id: string) => {
+      const target = sessions.find((s) => s.id === id);
+      const sleeping = target && (target.dozing || target.state === 'hibernated');
+      if (!sleeping) {
+        setActiveSession(id);
+        return;
+      }
+      if (wakingRef.current.has(id)) return;
+      wakingRef.current.add(id);
+      setActiveSession(id);
+      try {
+        // Wake replaces the row (new session id, SAME grid slot — the new row
+        // inherits createdAtMs); follow the focus to the resumed session.
+        const newId = await wakeSession(id);
+        setActiveSession(newId);
+        refresh();
+      } catch (e) {
+        toastCatch('useFleetOverlayActions:wake', 'Failed to wake the sleeping session')(e);
+      } finally {
+        wakingRef.current.delete(id);
+      }
+    },
+    [sessions, setActiveSession, refresh],
+  );
 
   const handleSpawn = useCallback(async () => {
     if (!activeProject || spawning) return;
@@ -58,13 +91,19 @@ export function useFleetOverlayActions() {
     }
   }, [activeProject, spawning, refresh, setActiveSession]);
 
+  // The tile's trash control is state-aware: a live session is KILLED (its
+  // tile stays, as an exited tombstone), a tombstone is DISMISSED (removed —
+  // the one deliberate way a tile ever leaves the grid).
   const handleKill = useCallback(async (id: string) => {
+    const target = sessions.find((s) => s.id === id);
+    const tombstone = target && (target.state === 'exited' || target.state === 'hibernated');
     try {
-      await killSession(id);
+      if (tombstone) await removeSession(id);
+      else await killSession(id);
     } catch (e) {
       toastCatch('useFleetOverlayActions:kill', 'Failed to kill session')(e);
     }
-  }, []);
+  }, [sessions]);
 
   const handleApprove = useCallback(async (id: string) => {
     try {
@@ -122,6 +161,7 @@ export function useFleetOverlayActions() {
     liveSessions,
     activeSessionId,
     setActiveSession,
+    selectSession,
     activeProject,
     approvals,
     spawning,

@@ -326,6 +326,14 @@ pub struct FleetSessionInner {
     /// the child's exit as `Hibernated` (resumable) instead of `Exited` (dead)
     /// and skips exit reconciliation. Reset on wake/respawn.
     pub hibernating: std::sync::atomic::AtomicBool,
+    /// Light sleep ("doze"): the process was killed to free resources while the
+    /// session sat in `Stale`/`AwaitingInput`, but — unlike `Hibernated` — the
+    /// DISPLAYED state is left untouched so the operator still sees what the
+    /// session was doing; the UI shows a small sleep indicator instead and
+    /// wakes the session (via `claude --resume`) when they return to it. Set by
+    /// [`FleetRegistry::doze`]; consumed by the reaper (keep state, don't mark
+    /// `Exited`); cleared implicitly when the row is replaced on wake.
+    pub dozing: bool,
     /// Bounded ring of recent PTY output + the live-subscription flag. Shared
     /// (`Arc`) with the reader task, which pushes every chunk here and forwards
     /// over IPC only while subscribed. See [`OutputRing`].
@@ -361,6 +369,7 @@ impl FleetSessionInner {
             // or the window lapses, the tile drops back to its real state.
             athena_active: self.athena_active_until_ms > now_ms()
                 && matches!(self.state, FleetSessionState::AwaitingInput),
+            dozing: self.dozing,
         }
     }
 }
@@ -844,6 +853,134 @@ impl FleetRegistry {
         true
     }
 
+    /// Light sleep — free the process of a session parked in `Stale` /
+    /// `AwaitingInput`, WITHOUT changing its displayed state (contrast
+    /// [`Self::hibernate`], which flips the row to `Hibernated`). The operator
+    /// keeps seeing what the session was doing; the `dozing` DTO flag drives a
+    /// small sleep indicator, and returning to the session wakes it via
+    /// `claude --resume`.
+    ///
+    /// Re-validates everything under the lock (the ticker's snapshot is stale
+    /// by the time this runs): still in a doze-eligible state, an actual live
+    /// process to free, and a bound `claude_session_id` to resume from —
+    /// never-attached sessions fail the last check by construction, which is
+    /// right: there is no conversation to come back to.
+    pub fn doze(&self, session_id: &str) -> bool {
+        use std::sync::atomic::Ordering;
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false };
+        if session.dozing
+            || !matches!(
+                session.state,
+                FleetSessionState::Stale | FleetSessionState::AwaitingInput
+            )
+            || !matches!(session.mode, FleetSessionMode::Interactive)
+            || session.claude_session_id.is_none()
+            || session.child_pid.is_none()
+        {
+            return false;
+        }
+        session.dozing = true;
+        // NOT `hibernating` — the reaper's dozing branch keeps the state.
+        session.hibernating.store(false, Ordering::SeqCst);
+        if let Some(k) = &session.killer {
+            if let Ok(mut k) = k.lock() {
+                let _ = k.kill();
+            }
+        }
+        if let Ok(mut w) = session.writer.lock() { *w = None; }
+        if let Ok(mut m) = session.master.lock() { *m = None; }
+        true
+    }
+
+    /// Whether the session is in the light-sleep state (see [`Self::doze`]).
+    pub fn is_dozing(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| s.dozing).unwrap_or(false)
+    }
+
+    /// Drop the "Athena's on it" window immediately — called when her
+    /// assessment RESOLVES (auto-fire, consult, or a prose defer) so the tile
+    /// flips to the session's real state the moment there is an outcome,
+    /// instead of wearing light-blue until the window lapses. Returns true if
+    /// a window was actually cleared (caller emits registry-changed).
+    pub fn clear_athena_active(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false };
+        let was = session.athena_active_until_ms != 0;
+        session.athena_active_until_ms = 0;
+        was
+    }
+
+    /// Expire lapsed "Athena's on it" windows and return the affected ids.
+    ///
+    /// The DTO computes `athena_active` from the deadline at SNAPSHOT time, but
+    /// the frontend only re-snapshots on an event — so without this sweep a
+    /// lapsed window kept the tile light-blue forever (observed live 2026-07-23:
+    /// three tiles stuck "Athena" masking their violet awaiting state). The
+    /// ticker calls this each tick and emits registry-changed for each id.
+    pub fn sweep_expired_athena(&self) -> Vec<String> {
+        let now = now_ms();
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut expired = Vec::new();
+        for session in map.values_mut() {
+            if session.athena_active_until_ms != 0 && session.athena_active_until_ms <= now {
+                session.athena_active_until_ms = 0;
+                expired.push(session.id.clone());
+            }
+        }
+        expired
+    }
+
+    /// Make a session visibly need the operator: force `AwaitingInput` with
+    /// `reason` (unless the session is terminal), clearing any "Athena's on it"
+    /// window so the violet state can actually show. Returns the previous state
+    /// token when anything changed, `None` for terminal/missing sessions —
+    /// the caller emits the state event outside the lock.
+    ///
+    /// This is the "Athena looked and it's genuinely your call" escalation:
+    /// her defer used to leave only an orb card, which is easy to miss — the
+    /// session itself is the thing the operator watches, so the session is
+    /// what must say "needs you".
+    pub fn escalate_to_awaiting(&self, session_id: &str, reason: &str) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if matches!(
+            session.state,
+            FleetSessionState::Exited | FleetSessionState::Hibernated
+        ) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        session.state = FleetSessionState::AwaitingInput;
+        session.state_reason = Some(reason.to_string());
+        session.last_activity_ms = now_ms();
+        Some(prev)
+    }
+
+    /// `(created_at_ms, name)` of a session — read by `fleet_wake_session`
+    /// before it replaces the row, so the resumed session can inherit them.
+    pub fn lineage_of(&self, session_id: &str) -> Option<(i64, Option<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| (s.created_at_ms, s.name.clone()))
+    }
+
+    /// Stamp an inherited `created_at_ms` (+ user rename) onto a freshly
+    /// spawned row. Grid tiles are ordered by spawn time so their positions
+    /// stay put; without this, waking a hibernated/dozing session minted a new
+    /// row with a NEW timestamp and the tile jumped to the end of the grid —
+    /// the resumed conversation is a continuation, so it keeps its slot.
+    pub fn adopt_lineage(&self, session_id: &str, created_at_ms: i64, name: Option<String>) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            session.created_at_ms = created_at_ms;
+            if session.name.is_none() {
+                session.name = name;
+            }
+        }
+    }
+
     /// Whether `hibernate` was called on this session (consumed by the reaper
     /// to choose Hibernated vs Exited on child exit).
     pub fn is_hibernating(&self, session_id: &str) -> bool {
@@ -860,7 +997,10 @@ impl FleetRegistry {
     pub fn resume_target(&self, session_id: &str) -> Option<(String, PathBuf)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let s = map.get(session_id)?;
-        if !matches!(s.state, FleetSessionState::Hibernated) {
+        // Hibernated rows AND dozing rows (light sleep — process freed, state
+        // kept) are both resumable; everything else has a live process or
+        // nothing to come back to.
+        if !matches!(s.state, FleetSessionState::Hibernated) && !s.dozing {
             return None;
         }
         let csid = s.claude_session_id.clone()?;
@@ -1035,6 +1175,7 @@ mod tests {
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
+            dozing: false,
             output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
             killer: None,
         }

@@ -121,6 +121,7 @@ export default function FleetGridPage() {
     liveSessions,
     activeSessionId,
     setActiveSession,
+    selectSession,
     activeProject,
     spawning,
     handleSpawn,
@@ -238,9 +239,11 @@ export default function FleetGridPage() {
 
   // Stable callbacks so React.memo on FleetSessionCard isn't broken by a
   // new closure identity every render.
+  // Selection goes through the wake-aware path: activating a dozing (or
+  // hibernated) session resumes it — "wake on return".
   const handleActivate = useCallback(
-    (id: string) => setActiveSession(id),
-    [setActiveSession],
+    (id: string) => void selectSession(id),
+    [selectSession],
   );
   const handleRemovedLocal = useCallback(
     (id: string) => removeLocal(id),

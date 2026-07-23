@@ -5,7 +5,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { FleetShipIcon } from './FleetShipIcon';
 import { FleetFooterPopover } from './FleetFooterPopover';
 import { FLEET_STATE_META, fleetStateCounts } from './fleetStateMeta';
-import { isGridEligible } from './fleetSessionScope';
 
 /** How many state chips fit beside the glyph before folding into "+N". */
 const MAX_CHIPS = 3;
@@ -35,9 +34,9 @@ export default function FleetFooterIcon() {
   const [hovered, setHovered] = useState(false);
 
   const counts = useMemo(() => fleetStateCounts(sessions), [sessions]);
-  // Only sessions that can host a tile decide whether the grid is worth
-  // raising — the same predicate the overlay tiles by.
-  const gridCount = useMemo(() => sessions.filter(isGridEligible).length, [sessions]);
+  // Every session keeps a grid tile now (exited/hibernated render as in-place
+  // tombstones), so "is the grid worth raising?" is simply "is anything tracked?".
+  const gridCount = sessions.length;
   const needsYou = counts.awaiting_input;
 
   // Chips skip `exited`: a finished session is history, not a live state worth

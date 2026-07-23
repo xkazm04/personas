@@ -156,6 +156,7 @@ export function craftStalePrompt(s: FleetSession): string {
     `Fleet flagged session "${label}" (project ${s.projectLabel}) as stale — no activity for several minutes. ` +
     `Assess what it was doing and decide the single best next step to unblock it. ` +
     `If there's a clear winner, propose a fleet_send_input action with the exact text to type (press_enter true) for the operator to approve. ` +
-    `If it needs human judgment or is actually finished, say so instead of proposing an action.`
+    `If it needs human judgment or is actually finished, say so instead of proposing an action. ` +
+    `Reply in English; any text you propose to type must match the language of the session's prompt (usually English).`
   );
 }

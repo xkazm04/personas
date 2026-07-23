@@ -468,8 +468,85 @@ fn tick_once(app: &AppHandle) {
         }
     }
 
+    // "Athena's on it" windows are deadlines the DTO evaluates lazily — sweep
+    // the lapsed ones and emit, or the frontend's last snapshot wears the
+    // light-blue border forever (observed live: tiles stuck "Athena" masking
+    // their violet awaiting state after her turn deferred without an action).
+    for sid in registry().sweep_expired_athena() {
+        super::pty::emit_registry_changed(app, "updated", &sid);
+    }
+
+    doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
+}
+
+/// Seconds a session may sit in `Stale` / `AwaitingInput` before its process
+/// is dozed (light sleep — freed but displayed state kept; see
+/// `registry::doze`). Override with `PERSONAS_FLEET_DOZE_SECS`; `0` disables.
+const DOZE_AFTER_SECS: i64 = 60;
+
+/// Light-sleep pass: free the process of any session that has sat in `Stale`
+/// or `AwaitingInput` past `DOZE_AFTER_SECS` — the operator clearly isn't
+/// mid-reply, and four parked `claude` processes cost real RAM/CPU. Unlike
+/// auto-hibernate this keeps the DISPLAYED state (the tile still says what the
+/// session was doing, with a sleep indicator), always applies (no settings
+/// toggle — it's the resource floor), and wakes on the operator's return
+/// (selecting the session resumes it via `claude --resume`).
+///
+/// Timing derives from signals that already exist rather than a new
+/// state-age field:
+/// - `AwaitingInput` stamps `last_activity_ms` on entry and any real progress
+///   revives the session out of the state — so `now - idle_since ≥ doze` means
+///   "has been waiting on the human for at least that long".
+/// - `Stale` *means* `idle_since` is already past the stale cutoff, so "stale
+///   for a minute" is `idle_since ≥ cutoff + doze`.
+///
+/// Athena interplay: her orchestration wake fires within seconds of
+/// `AwaitingInput` and her verdict lands well inside the doze window; a
+/// session she auto-fires goes `Running` (never dozed), a deferred one is
+/// exactly the "waiting on the human" case doze exists for. `doze()` itself
+/// re-validates state + a bound claude id under the lock, so never-attached
+/// rows (nothing to resume) are skipped by construction.
+fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
+    let doze_secs = env_secs("PERSONAS_FLEET_DOZE_SECS", DOZE_AFTER_SECS);
+    if doze_secs <= 0 {
+        return;
+    }
+    let doze_ms = doze_secs * 1000;
+
+    // Snapshot candidates without holding the lock across the kills.
+    let candidates: Vec<String> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                if s.dozing || s.child_pid.is_none() {
+                    return false;
+                }
+                let idle_since = s.last_grew_ms.max(s.last_activity_ms);
+                match s.state {
+                    FleetSessionState::AwaitingInput => now - idle_since >= doze_ms,
+                    FleetSessionState::Stale => now - idle_since >= stale_cutoff_ms + doze_ms,
+                    _ => false,
+                }
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+
+    for sid in candidates {
+        if registry().doze(&sid) {
+            tracing::info!(session_id = %sid, "fleet doze: freed a parked session's process (state kept)");
+            super::debug_log::sleep_event(
+                &sid,
+                "dozed",
+                &format!("parked {doze_secs}s+ — process freed, state kept; select to wake"),
+            );
+            // No state event — the state deliberately didn't change. The
+            // registry-changed refresh carries the `dozing` flag to the UI.
+            super::pty::emit_registry_changed(app, "updated", &sid);
+        }
+    }
 }
 
 /// Auto-hibernate Idle/Stale sessions that have been inactive past the

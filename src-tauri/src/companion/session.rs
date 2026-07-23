@@ -813,6 +813,20 @@ pub async fn send_turn(
     // card. Skip when she produced an approval (the orb already shows that) or
     // said nothing actionable (a "progressing fine" no-op stays quiet).
     if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
+        // A defer must also land ON the session it's about: escalate it to a
+        // visible "needs you" (violet border, banner, footer, notification)
+        // with her note as the reason, and clear the "Athena's on it" window
+        // that would otherwise mask it. An orb card alone was missable —
+        // observed live: tiles stuck light-blue while her notes sat unread.
+        if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
+            if trigger_kind == "fleet_orchestration" {
+                crate::commands::companion::fleet_bridge::note_fleet_defer(
+                    app,
+                    fleet_sid,
+                    &reply_text,
+                );
+            }
+        }
         crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
             app,
             &user_db,

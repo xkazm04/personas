@@ -1,7 +1,6 @@
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
-import { isGridEligible } from './fleetSessionScope';
 
 // The overlay drags in xterm + the terminal manager, so it is only imported
 // once the grid is actually raised. Keeping it out of the app-boot graph is
@@ -43,10 +42,10 @@ export default function FleetGridLayer() {
     void refresh();
   }, [startSessionListeners, refresh]);
 
-  const gridCount = useMemo(() => sessions.filter(isGridEligible).length, [sessions]);
-
-  // If every session exits or sleeps while the grid is up, minimize rather
-  // than leave an empty fullscreen surface covering the app.
+  // Exited/hibernated sessions keep their tiles (in-place tombstones), so the
+  // grid only auto-minimizes once NOTHING is tracked at all — i.e. the last
+  // tombstone was dismissed. Tiles never vanish out from under the operator.
+  const gridCount = sessions.length;
   useEffect(() => {
     if (gridOpen && gridCount === 0) setGridOpen(false);
   }, [gridOpen, gridCount, setGridOpen]);

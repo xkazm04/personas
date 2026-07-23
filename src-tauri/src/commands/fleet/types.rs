@@ -148,6 +148,11 @@ pub struct FleetSession {
     /// affordance so her work is visible. Only meaningful while `AwaitingInput`;
     /// once she acts (→ `Running`) or the window lapses, it's `false`.
     pub athena_active: bool,
+    /// Light sleep: the process was freed while the session sat parked in
+    /// `Stale`/`AwaitingInput`, but `state` deliberately still shows what it
+    /// was doing. The UI renders a small sleep indicator and wakes the session
+    /// (`claude --resume`, same-slot) when the operator selects it.
+    pub dozing: bool,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

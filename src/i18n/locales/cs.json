@@ -12039,7 +12039,10 @@
       "debug_log_start_title": "Nahrát přehledový ladicí log změn stavů flotily, uspání a rozhodnutí Athény",
       "debug_log_started": "Ladicí log Fleet spuštěn — zaznamenávají se změny stavů, uspání a rozhodnutí Athény.",
       "debug_log_stop": "Nahrává se",
-      "debug_log_stop_title": "Zastavit ladicí nahrávání flotily a uložit log"
+      "debug_log_stop_title": "Zastavit ladicí nahrávání flotily a uložit log",
+      "dismiss_session": "Odebrat relaci",
+      "doze_tooltip": "Spí kvůli úspoře zdrojů — probuďte ji výběrem",
+      "tombstone_wake_hint": "Kliknutím probudíte"
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
