@@ -4,7 +4,7 @@
 //              readable from orbit), title large on the banner
 //   near     → icon + uppercase label
 //   close    → + tool detail + progress
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -36,10 +36,11 @@ const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2)
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
 // mode switch, or its own dim/highlight state.
-export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
-  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
+  const rootRef = useRef<SVGGElement>(null);
+  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, rootRef, onCommit: onIslandCommit, onSelect: onIslandTap });
   // Cluster extents depend on how many cells are occupied — banner, badges,
   // halo, and stat columns track them.
   const pts = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r));
@@ -53,16 +54,21 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
 
   return (
     <g
+      ref={rootRef}
+      data-mm-island={island.slug}
       transform={`translate(${island.x} ${island.y})`}
-      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
+      style={{ transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
       onPointerDown={mode === 'connect' ? (e) => onConnectStart(island.slug, e) : undefined}
       onDoubleClick={(e) => { e.stopPropagation(); onIslandFocus(island.slug); }}
       data-testid={`mm-island-${island.slug}`}
     >
-      {/* state halo behind the honeycomb — keeps the island recognizable when tiny */}
-      <circle r={haloR} fill={mix(ink, 10, 'var(--secondary)')} opacity={0.5} filter="url(#mm-coast)" />
+      {/* state halo behind the honeycomb — keeps the island recognizable when
+          tiny. A shared per-state radial gradient replaces the old Gaussian
+          filter: visually the same soft coast, none of the per-island blur
+          rasterization cost during zoom. */}
+      <circle r={haloR * 1.18} fill={`url(#mm-halo-${island.state})`} opacity={0.5} />
 
       {island.nodes.map((n, k) => {
         const ax = AXIAL[k];

@@ -14,11 +14,11 @@ const MIN_SIZE = 90;
 
 type BodyDrag = {
   id: number; sx: number; sy: number; z: number; g0: GroupRect;
-  contained: Array<{ slug: string; x0: number; y0: number }>;
+  contained: Array<{ slug: string; x0: number; y0: number; el: SVGGElement | null }>;
   resizing: boolean;
 };
 
-export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, onIslandMove, onIslandCommit, onRename, onDelete }: {
+export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, onIslandCommit, onRename, onDelete }: {
   groups: GroupRect[];
   /** Live drag rectangle while drawing, world coords (normalized). */
   draft: { x: number; y: number; w: number; h: number } | null;
@@ -27,7 +27,6 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
   /** Island centres — a group carries the islands inside it when moved. */
   islands: Array<{ slug: string; x: number; y: number }>;
   onGroupsChange: (next: GroupRect[], persist: boolean) => void;
-  onIslandMove: (slug: string, x: number, y: number) => void;
   onIslandCommit: (slug: string, x: number, y: number) => void;
   onRename: (id: string) => void;
   onDelete: (id: string) => void;
@@ -43,9 +42,14 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = {
       id: e.pointerId, sx: e.clientX, sy: e.clientY, z, g0: g, resizing,
+      // Member islands move imperatively during the drag (their <g> transform
+      // is written directly — no per-move React state), then commit on release.
       contained: resizing ? [] : islands
         .filter((i) => i.x >= g.x && i.x <= g.x + g.w && i.y >= g.y && i.y <= g.y + g.h)
-        .map((i) => ({ slug: i.slug, x0: i.x, y0: i.y })),
+        .map((i) => ({
+          slug: i.slug, x0: i.x, y0: i.y,
+          el: (e.currentTarget as SVGElement).ownerSVGElement?.querySelector<SVGGElement>(`[data-mm-island="${CSS.escape(i.slug)}"]`) ?? null,
+        })),
     };
   };
 
@@ -60,7 +64,7 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
     onGroupsChange(groups.map((g) => (g.id === moved.id ? moved : g)), persist);
     for (const c of d.contained) {
       if (persist) onIslandCommit(c.slug, c.x0 + dx, c.y0 + dy);
-      else onIslandMove(c.slug, c.x0 + dx, c.y0 + dy);
+      else c.el?.setAttribute('transform', `translate(${c.x0 + dx} ${c.y0 + dy})`);
     }
     if (persist) drag.current = null;
   };

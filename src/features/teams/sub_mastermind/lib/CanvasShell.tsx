@@ -14,7 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { mix } from './ink';
+import { mix, STATE_INK } from './ink';
 import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
 import { loadNotes, saveNotes } from './notes';
@@ -44,9 +44,7 @@ export interface IslandCtx {
   z: number;
   band: ZoomBand;
   mode: CanvasMode;
-  dimmed: boolean;
   onHover: (slug: string | null) => void;
-  onIslandMove: (slug: string, x: number, y: number) => void;
   onIslandCommit: (slug: string, x: number, y: number) => void;
   onFleetOpen: (sessionId: string) => void;
   /** Island tapped (header click in edit, any click in connect) — the shell
@@ -70,7 +68,7 @@ export interface IslandCtx {
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -139,6 +137,11 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   }, [scene.islands, fit]);
 
   const band = zoomBand(cam.z);
+  // Quantized z for island props (~6% steps): a wheel-zoom gesture commits
+  // state every frame, but islands only re-render when the quantized value
+  // crosses a step — ~12 renders per zoom doubling instead of one per frame.
+  // Counter-scaled banners are ≤3% off exact between steps; imperceptible.
+  const zq = useMemo(() => Math.pow(1.06, Math.round(Math.log(cam.z) / Math.log(1.06))), [cam.z]);
   const bySlug = useMemo(() => new Map(scene.islands.map((i) => [i.slug, i])), [scene.islands]);
   const lit = useMemo(() => {
     if (!hover) return null;
@@ -154,6 +157,19 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   // on committed camera changes — a render-free pan keeps the last rect and its
   // margin covers the drag; release re-culls. `null` until the viewport is
   // measured (render everything so nothing is missing on first paint).
+  // Neighbor-dimming is applied imperatively: flipping a `dimmed` prop on
+  // every island made each hover enter/leave a full-world render. Opacity is
+  // the only thing that changes — write it straight to the island <g>s (they
+  // carry data-mm-island + a CSS opacity transition).
+  useLayoutEffect(() => {
+    const els = worldRef.current?.querySelectorAll<SVGGElement>('[data-mm-island]');
+    if (!els) return;
+    for (const el of els) {
+      const slug = el.getAttribute('data-mm-island')!;
+      el.style.opacity = lit === null ? '' : lit.has(slug) ? '1' : '0.3';
+    }
+  }, [lit]);
+
   const visibleRect = useMemo(() => {
     if (!viewport.w || !viewport.h) return null;
     const m = CULL_MARGIN;
@@ -255,7 +271,6 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   });
   // Page-supplied callbacks — stabilized so a page re-render (fleet poll, etc.)
   // doesn't invalidate every island's props.
-  const onIslandMoveStable = useEventCallback(onIslandMove);
   const onIslandCommitStable = useEventCallback(onIslandCommit);
   const onFleetOpenStable = useEventCallback(onFleetOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
@@ -402,12 +417,10 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
   // primitive or a stable callback, so React.memo'd islands compare equal and
   // skip re-rendering unless z / band / mode / their own dim/highlight changed.
   const ctxFor = (i: Island): IslandCtx => ({
-    z: cam.z,
+    z: zq,
     band,
     mode,
-    dimmed: lit !== null && !lit.has(i.slug),
     onHover,
-    onIslandMove: onIslandMoveStable,
     onIslandCommit: onIslandCommitStable,
     onFleetOpen: onFleetOpenStable,
     onIslandTap,
@@ -439,9 +452,17 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             <stop offset="55%" stopColor="var(--background)" />
             <stop offset="100%" stopColor={mix('var(--secondary)', 45, 'var(--background)')} />
           </radialGradient>
-          <filter id="mm-coast" x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur stdDeviation="14" />
-          </filter>
+          {/* Per-state halo gradients — the soft "coast" behind each island.
+              Replaces the old feGaussianBlur filter: hundreds of live blur
+              surfaces re-rasterized on every zoom frame; four shared gradients
+              cost nothing. */}
+          {(Object.keys(STATE_INK) as Array<keyof typeof STATE_INK>).map((state) => (
+            <radialGradient key={state} id={`mm-halo-${state}`}>
+              <stop offset="0%" stopColor={mix(STATE_INK[state], 10, 'var(--secondary)')} stopOpacity="1" />
+              <stop offset="62%" stopColor={mix(STATE_INK[state], 10, 'var(--secondary)')} stopOpacity="1" />
+              <stop offset="100%" stopColor={mix(STATE_INK[state], 10, 'var(--secondary)')} stopOpacity="0" />
+            </radialGradient>
+          ))}
         </defs>
 
         <rect width="100%" height="100%" fill="url(#mm-sea)" />
@@ -454,7 +475,6 @@ export function CanvasShell({ scene, mode, onIslandMove, onIslandCommit, onFleet
             mode={mode}
             islands={scene.islands}
             onGroupsChange={commitGroups}
-            onIslandMove={onIslandMove}
             onIslandCommit={onIslandCommit}
             onRename={setEditing}
             onDelete={(id) => commitGroups(groups.filter((g) => g.id !== id))}

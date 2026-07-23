@@ -2,7 +2,7 @@
 // dimension tiles form a layer around it (3×3; a second layer would open for
 // overflow dimensions). Same band LOD as the other variants — fullscale icons
 // at far/mid, labels at near, details at close; identity on the banner.
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -33,10 +33,11 @@ const RING: Array<[number, number]> = [
 ];
 
 // React.memo'd — see MosaicIsland for the render-free-navigation rationale.
-export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
-  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
+  const rootRef = useRef<SVGGElement>(null);
+  const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, rootRef, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
   // Formation extents grow with layer 2 — halo, banner, badges track them.
   const used = RING.slice(0, island.nodes.length);
@@ -49,18 +50,28 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
 
   return (
     <g
+      ref={rootRef}
+      data-mm-island={island.slug}
       transform={`translate(${island.x} ${island.y})`}
-      style={{ opacity: dimmed ? 0.3 : 1, transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
+      style={{ transition: 'opacity 200ms ease', cursor: mode === 'connect' ? 'pointer' : undefined }}
       onPointerEnter={() => onHover(island.slug)}
       onPointerLeave={() => onHover(null)}
       onPointerDown={mode === 'connect' ? (e) => onConnectStart(island.slug, e) : undefined}
       onDoubleClick={(e) => { e.stopPropagation(); onIslandFocus(island.slug); }}
       data-testid={`mm-island-${island.slug}`}
     >
+      {/* two-layer plate replaces the old Gaussian-blurred halo: an outer,
+          fainter rounded rect fakes the soft coast without any per-island
+          filter rasterization during zoom. */}
+      <rect
+        x={leftX - 16} y={topY - 26}
+        width={rightX - leftX + 32} height={botY - topY + 52}
+        rx={38} fill={mix(ink, 9, 'var(--secondary)')} opacity={0.22}
+      />
       <rect
         x={leftX - 2} y={topY - 12}
         width={rightX - leftX + 4} height={botY - topY + 24}
-        rx={26} fill={mix(ink, 9, 'var(--secondary)')} opacity={0.55} filter="url(#mm-coast)"
+        rx={26} fill={mix(ink, 9, 'var(--secondary)')} opacity={0.55}
       />
 
       {island.nodes.map((n, k) => {

@@ -15,6 +15,12 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObje
 
 import type { Camera } from './types';
 
+// Mid-pan commit threshold, in WORLD units (≈ CanvasShell's CULL_MARGIN / 2):
+// pan stays render-free frame-to-frame, but after this much world travel one
+// state commit lands so the culling window follows the camera — long pans no
+// longer drag across empty sea until release.
+const PAN_COMMIT_WORLD = 350;
+
 const MIN_Z = 0.06;
 const MAX_Z = 3;
 
@@ -52,7 +58,7 @@ export function useCanvasCamera(
 ): CameraControl {
   const [cam, setCam] = useState<Camera>({ x: 0, y: 0, z: 0.5 });
   const camRef = useRef(cam);
-  const drag = useRef<{ id: number; sx: number; sy: number; cx: number; cy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ id: number; sx: number; sy: number; cx: number; cy: number; moved: boolean; ccx: number; ccy: number } | null>(null);
   // Keep the live camera synced to committed state — EXCEPT mid-pan, when camRef
   // holds the uncommitted pan position that the imperative transform is driven
   // from (a `setPanning` re-render must not clobber it back to the stale cam).
@@ -141,7 +147,7 @@ export function useCanvasCamera(
   const onPointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0 && e.button !== 1) return;
     cancelTween();
-    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, cx: camRef.current.x, cy: camRef.current.y, moved: false };
+    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, cx: camRef.current.x, cy: camRef.current.y, moved: false, ccx: camRef.current.x, ccy: camRef.current.y };
     e.currentTarget.setPointerCapture(e.pointerId);
   }, [cancelTween]);
 
@@ -158,8 +164,15 @@ export function useCanvasCamera(
       const next = { ...camRef.current, x: d.cx + dx, y: d.cy + dy };
       camRef.current = next;
       // Render-free pan: drive the world transform directly; commit on release.
-      if (worldRef?.current) applyLive(next);
-      else setCam(next);
+      if (worldRef?.current) {
+        applyLive(next);
+        // Culling follows the camera: one commit per PAN_COMMIT_WORLD of travel.
+        if (Math.hypot(next.x - d.ccx, next.y - d.ccy) / next.z > PAN_COMMIT_WORLD) {
+          d.ccx = next.x;
+          d.ccy = next.y;
+          setCam(next);
+        }
+      } else setCam(next);
     }
   }, [worldRef, applyLive]);
 

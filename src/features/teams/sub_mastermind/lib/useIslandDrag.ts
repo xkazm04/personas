@@ -1,9 +1,14 @@
-// Island header dragging (edit mode). Attached to the island's BANNER — the
-// header is the move handle (Figma-like); the body below stays free for cell
-// interactions and canvas panning. Distinguishes click from drag: under 4px of
-// travel on release fires onSelect (opens the project sidebar) instead of a
-// position commit. Inert when disabled (hooks stay unconditional).
-import { useRef } from 'react';
+// Island header dragging (edit mode) — RENDER-FREE (optimizer pass): the
+// island's root <g> transform is written imperatively during the drag, exactly
+// like the camera's pan path, and React state is committed exactly ONCE on
+// release (onCommit → position override + persist). Dragging one island no
+// longer re-renders the world. Attached to the island's BANNER — the header is
+// the move handle (Figma-like); the body stays free for cell interactions and
+// panning. Under 4px of travel on release fires onSelect (opens the project
+// sidebar) instead of a commit. Edges and group rectangles attached to the
+// island catch up at commit — the same trade the render-free pan made.
+// Inert when disabled (hooks stay unconditional).
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 
 export interface IslandDragHandlers {
   onPointerDown: (e: React.PointerEvent<SVGGElement>) => void;
@@ -12,24 +17,33 @@ export interface IslandDragHandlers {
   onPointerCancel: (e: React.PointerEvent<SVGGElement>) => void;
 }
 
-export function useIslandDrag({ enabled, z, slug, x, y, onMove, onCommit, onSelect }: {
+export function useIslandDrag({ enabled, z, slug, x, y, rootRef, onCommit, onSelect }: {
   enabled: boolean;
   z: number;
   slug: string;
   x: number;
   y: number;
-  onMove: (slug: string, x: number, y: number) => void;
+  /** The island's root <g> — its transform is driven directly mid-drag. */
+  rootRef: RefObject<SVGGElement | null>;
   onCommit: (slug: string, x: number, y: number) => void;
   /** Fired when the pointer released without meaningful travel (a click). */
   onSelect?: (slug: string) => void;
 }): IslandDragHandlers {
-  const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; z: number; moved: boolean } | null>(null);
+  const drag = useRef<{ id: number; sx: number; sy: number; ox: number; oy: number; z: number; moved: boolean; lx: number; ly: number } | null>(null);
+
+  // If unrelated state (a fleet tick, hover) re-renders the island mid-drag,
+  // React reconciles the root transform back to the stale committed position —
+  // re-assert the live one (mirrors useCanvasCamera's pan guard).
+  useLayoutEffect(() => {
+    const d = drag.current;
+    if (d?.moved) rootRef.current?.setAttribute('transform', `translate(${d.lx} ${d.ly})`);
+  });
 
   const onPointerDown = (e: React.PointerEvent<SVGGElement>) => {
     if (!enabled || e.button !== 0) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x, oy: y, z, moved: false };
+    drag.current = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x, oy: y, z, moved: false, lx: x, ly: y };
   };
 
   const at = (d: NonNullable<typeof drag.current>, e: React.PointerEvent) => ({
@@ -43,7 +57,9 @@ export function useIslandDrag({ enabled, z, slug, x, y, onMove, onCommit, onSele
     if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 4) d.moved = true;
     if (d.moved) {
       const p = at(d, e);
-      onMove(slug, p.x, p.y);
+      d.lx = p.x;
+      d.ly = p.y;
+      rootRef.current?.setAttribute('transform', `translate(${p.x} ${p.y})`);
     }
   };
 

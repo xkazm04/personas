@@ -130,9 +130,8 @@ export interface CanvasNote {
 export interface VariantProps {
   scene: Scene;
   mode: CanvasMode;
-  /** Live drag update — island world position while dragging. */
-  onIslandMove: (slug: string, x: number, y: number) => void;
-  /** Drag finished — persist the position. */
+  /** Drag finished — persist the position. (Mid-drag movement is imperative
+   *  — see useIslandDrag — so there is no per-move callback.) */
   onIslandCommit: (slug: string, x: number, y: number) => void;
   /** Fleet node clicked — open the CLI preview popover for this session. */
   onFleetOpen: (sessionId: string) => void;

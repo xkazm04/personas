@@ -57,6 +57,10 @@ type VariantId = 'mosaic' | 'inverse';
 
 const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
 
+/** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
+const EMPTY_FLEET: FleetNode[] = [];
+const EMPTY_NAMES: string[] = [];
+
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
 
@@ -312,29 +316,58 @@ function MastermindInner() {
   // Saved positions + live fleet + per-dim Improve actionability overlay the
   // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
   // canvas cell is clickable exactly when its wall row would show a gear.
-  const positioned = useMemo(() => ({
-    ...scene,
-    islands: scene.islands.map((i) => {
+  //
+  // CONTENT-STABLE IDENTITY (optimizer pass): every input here churns object
+  // identity — fleetByProject rebuilds all its arrays on every session event
+  // (sub-second cadence while any CLI runs). Handing each memoized island a
+  // fresh object every tick re-rendered the whole world once a second. The
+  // cache below reuses the previous island object whenever that island's
+  // actual inputs are unchanged, so a fleet tick re-renders only the island
+  // whose dock changed.
+  const passportBySlug = useMemo(() => new Map(passports.map((p) => [p.identity.slug, p])), [passports]);
+  const islandCache = useRef(new Map<string, {
+    base: unknown; passport: unknown; raw: unknown;
+    oX: number | undefined; oY: number | undefined;
+    fleetKey: string; personasKey: string; busy: boolean;
+    out: (typeof scene.islands)[number];
+  }>());
+  const positioned = useMemo(() => {
+    const cache = islandCache.current;
+    const next = new Map<string, NonNullable<ReturnType<typeof cache.get>>>();
+    const islands = scene.islands.map((i) => {
       const o = overrides[i.slug];
-      const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? [];
-      const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? [];
-      const passport = passports.find((p) => p.identity.slug === i.slug);
+      const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? EMPTY_FLEET;
+      const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? EMPTY_NAMES;
+      const passport = passportBySlug.get(i.slug);
       const raw = rawByProject.get(i.slug);
+      const busy = busySlugs.has(i.slug);
+      const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
+      const personasKey = personasRunning.join('|');
+      const c = cache.get(i.slug);
+      if (c && c.base === i && c.passport === passport && c.raw === raw
+        && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
+        && c.personasKey === personasKey && c.busy === busy) {
+        next.set(i.slug, c);
+        return c.out;
+      }
       const nodes = i.nodes.map((n) => ({
         ...n,
         ...dimAction(n.key, passport, raw),
-        ...(n.key === 'ideas' && busySlugs.has(i.slug) ? { busy: true } : {}),
+        ...(n.key === 'ideas' && busy ? { busy: true } : {}),
       }));
       // Attention derives from the RESOLVED fleet (live for real projects, the
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
       const attention = computeAttention(fleet);
-      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
-    }),
-  }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject, busySlugs]);
+      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
+      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, out };
+      next.set(i.slug, entry);
+      return out;
+    });
+    islandCache.current = next;
+    return { ...scene, islands };
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs]);
 
-  const onIslandMove = (slug: string, x: number, y: number) =>
-    setOverrides((prev) => ({ ...prev, [slug]: { x, y } }));
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {
       const next = { ...prev, [slug]: { x, y } };
@@ -459,7 +492,6 @@ function MastermindInner() {
         <Canvas
           scene={canvasScene}
           mode={mode}
-          onIslandMove={onIslandMove}
           onIslandCommit={onIslandCommit}
           onFleetOpen={setPreviewId}
           onProjectOpen={setOpenSlug}

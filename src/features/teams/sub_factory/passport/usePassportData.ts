@@ -35,6 +35,8 @@ const EMPTY = new Map<string, ImproveRaw>();
  *  of listSkills × N and probeRepoEvidence × N simultaneously; this caps the
  *  concurrency so the fan-out stays polite without serialising it. */
 const PROBE_CONCURRENCY = 5;
+/** The evidence probe is local-filesystem IPC (not remote) — wider is fine. */
+const PROBE_FS_CONCURRENCY = 10;
 
 /** Run `fn` over `items` with at most `limit` promises in flight; results keep
  *  input order. */
@@ -130,16 +132,9 @@ export function usePassportData(): PassportData {
     for (const [, list] of projectSkillLists) for (const s of list) nameOwners.set(s.name, (nameOwners.get(s.name) ?? 0) + 1);
     const isShared = (name: string) => globalNames.has(name) || (nameOwners.get(name) ?? 0) > 1;
 
-    // Deep evidence (D1): a deterministic file probe per project, in parallel.
-    // Defensive — null on older builds (command unregistered) or unreadable paths,
-    // in which case the derive falls back to its heuristics.
-    const evidenceById = new Map<string, RepoEvidence | null>();
-    await mapWithConcurrency(map.projects, PROBE_CONCURRENCY, async (m) => {
-      const proj = byId.get(m.project_id);
-      const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch(() => null) : null;
-      evidenceById.set(m.project_id, ev);
-    });
-
+    // Assemble passports + raw rows from everything above, for a given
+    // evidence map — called twice (see TWO-PHASE PUBLISH below).
+    const assemble = (evidenceById: Map<string, RepoEvidence | null>) => {
     const rawByProject = new Map<string, ImproveRaw>();
     const passports: AppPassport[] = [];
     for (const meta of map.projects) {
@@ -189,11 +184,32 @@ export function usePassportData(): PassportData {
       rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot, memHealth });
       passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth }));
     }
-    const sorted = sortByNameAsc(passports);
+    return { passports: sortByNameAsc(passports), rawByProject };
+    };
+
+    // TWO-PHASE PUBLISH (optimizer pass): the evidence probe is the slowest
+    // fan-out (N local-FS IPC calls) and used to gate the ENTIRE first paint.
+    // Phase 1 publishes evidence-less passports the moment the metadata +
+    // skills resolve (derives fall back to their heuristics); phase 2 merges
+    // real evidence in as one second commit. History snapshots only record the
+    // final, evidence-complete build.
+    const phase1 = assemble(new Map());
+    setState({ passports: phase1.passports, rawByProject: phase1.rawByProject, loading: false, error: null, generatedAt: map.generated_at });
+
+    // Deep evidence (D1): a deterministic file probe per project, in parallel.
+    // Defensive — null on older builds (command unregistered) or unreadable paths,
+    // in which case the derive falls back to its heuristics.
+    const evidenceById = new Map<string, RepoEvidence | null>();
+    await mapWithConcurrency(map.projects, PROBE_FS_CONCURRENCY, async (m) => {
+      const proj = byId.get(m.project_id);
+      const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch(() => null) : null;
+      evidenceById.set(m.project_id, ev);
+    });
+    const phase2 = assemble(evidenceById);
     // Append to the local readiness history (deduped) so the cover sparkline +
     // "since last scan" delta accrue across scans. Best-effort, never blocks.
-    recordSnapshot(sorted, Date.now());
-    setState({ passports: sorted, rawByProject, loading: false, error: null, generatedAt: map.generated_at });
+    recordSnapshot(phase2.passports, Date.now());
+    setState({ passports: phase2.passports, rawByProject: phase2.rawByProject, loading: false, error: null, generatedAt: map.generated_at });
   }, []);
 
   useEffect(() => {
