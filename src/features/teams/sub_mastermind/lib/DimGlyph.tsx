@@ -1,8 +1,9 @@
-// Dimension glyph for SVG canvas cells: the identified tool's official brand
-// mark (Supabase, Sentry, GitHub Actions… — same simple-icons set the Passport
-// wall renders) when the detail names one, else the generic lucide icon.
-// Absent cells always stay generic + muted.
-import { dimBrand, DIM_ICON } from './dimMeta';
+// Dimension glyph for SVG canvas cells. Precedence: the identified tool's
+// official brand mark (Supabase, Sentry… — the same simple-icons set the
+// Passport wall renders) always wins; otherwise the dimension's lucide outline
+// from the registry. Absent cells stay generic + muted (no tool to brand).
+import { dimBrand } from './dimMeta';
+import { DIM_REGISTRY } from './dimRegistry';
 import type { DimNode } from './types';
 
 export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
@@ -14,6 +15,7 @@ export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
   color: string;
   strokeWidth?: number;
 }) {
+  const entry = DIM_REGISTRY[node.key];
   const brand = node.status !== 'absent' ? dimBrand(node) : null;
   if (brand) {
     return (
@@ -22,6 +24,7 @@ export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
       </svg>
     );
   }
-  const Icon = DIM_ICON[node.key];
+  const Icon = entry?.icon;
+  if (!Icon) return null;
   return <Icon x={x} y={y} width={size} height={size} strokeWidth={strokeWidth} style={{ color }} />;
 }

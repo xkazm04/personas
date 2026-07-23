@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "No hay control de revisión humana: las acciones son autónomas.",
     "sigil_edit_review_on": "Se requiere revisión humana antes de que esta capacidad actúe.",
     "sigil_edit_service_label": "Servicio: {key}",
-    "sigil_edit_when_label": "Cuándo"
+    "sigil_edit_when_label": "Cuándo",
+    "assertions": {
+      "action_heal": "Intentar reparación",
+      "action_log": "Solo registrar",
+      "action_review": "Enviar a revisión",
+      "add": "Añadir control",
+      "cancel": "Cancelar",
+      "create": "Crear",
+      "delete": "Eliminar control",
+      "empty": "Aún no hay controles de calidad.",
+      "name_placeholder": "Nombre del control (p. ej. Debe citar un total)",
+      "on_failure_label": "Si falla",
+      "phrase_placeholder": "Frase(s), separadas por comas",
+      "subtitle": "Revisa el resultado de cada ejecución y envía los fallos a revisión o reparación.",
+      "title": "Controles de calidad",
+      "type_contains": "Debe contener",
+      "type_label": "Comprobación",
+      "type_not_contains": "No debe contener"
+    }
   },
   "vault": {
     "workspace_connect": "Conexión de espacio de trabajo",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "Abrir terminal",
+    "terminal_disabled_demo": "Proyecto de demostración — abre un terminal desde un proyecto real",
+    "terminal_disabled_no_path": "Este proyecto no tiene ruta de carpeta",
+    "fit_all": "Ajustar todos los proyectos",
+    "tidy": "Ordenar mapa",
+    "tidy_tooltip": "Ordenar mapa — organizar los proyectos por conexión",
+    "undo_tidy": "Deshacer orden",
+    "zoom_in": "Acercar",
+    "zoom_out": "Alejar",
+    "attention_tooltip": "Una sesión necesita tu intervención",
+    "data_health_title": "No se pudieron cargar algunos datos del lienzo",
+    "family_monitoring": "Monitoreo",
+    "family_relations": "Relaciones",
+    "family_scans": "Escaneos de ideas",
+    "island_state_errors": "Color según errores de monitoreo en vivo",
+    "island_state_readiness": "Color según puntuaciones de preparación",
+    "family_fleet": "Flota",
+    "family_kpi": "KPI"
   }
 }

@@ -3621,6 +3621,24 @@ export type Translations = {
         notification_channels: string;
       };
     };
+    assertions: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      add: string;
+      name_placeholder: string;
+      type_label: string;
+      type_contains: string;
+      type_not_contains: string;
+      phrase_placeholder: string;
+      on_failure_label: string;
+      action_log: string;
+      action_review: string;
+      action_heal: string;
+      create: string;
+      cancel: string;
+      delete: string;
+    };
   };
   director: {
     panel_title: string;
@@ -18263,5 +18281,25 @@ export type Translations = {
     auto_your_browser_does_not_support_video_playba_8f8c2d0d: string;
     auto_your_cockpit_is_empty_88e25bb2: string;
     auto_your_turn_d9e169df: string;
+  };
+  mastermind: {
+    open_terminal: string;
+    terminal_disabled_demo: string;
+    terminal_disabled_no_path: string;
+    zoom_out: string;
+    zoom_in: string;
+    fit_all: string;
+    tidy: string;
+    tidy_tooltip: string;
+    undo_tidy: string;
+    island_state_readiness: string;
+    island_state_errors: string;
+    attention_tooltip: string;
+    data_health_title: string;
+    family_relations: string;
+    family_scans: string;
+    family_monitoring: string;
+    family_kpi: string;
+    family_fleet: string;
   };
 };

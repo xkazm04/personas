@@ -226,6 +226,15 @@ pub const COMPANION_CONSTITUTION_VERSION: &str = "companion_constitution_version
 /// the user dismisses the pill or completes a milestone.
 pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
 
+/// Mastermind development-canvas layout (JSON-encoded, versioned document).
+/// One doc holds all five canvas-layout artifact kinds — island positions,
+/// user-drawn group rectangles, project links, free-text notes, and the
+/// hidden-project set — that were previously five machine-local localStorage
+/// keys. Moving them into the app DB makes the map a durable, portable artifact
+/// (survives a browser-data clear) and the substrate for future shared boards.
+/// Written debounced on layout edits; read once at Mastermind page mount.
+pub const MASTERMIND_LAYOUT: &str = "mastermind.layout.v1";
+
 /// Phase 5 v1: persisted global gate for the Claude CLI session-resume
 /// awareness feature. Set by the SetupPanel desktop-awareness toggle;
 /// read by both the windowed runner (in-memory `AmbientContextFusion`
@@ -675,6 +684,7 @@ const ALLOWED_KEYS: &[&str] = &[
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
+    MASTERMIND_LAYOUT,
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_DEV_MODE,
@@ -922,7 +932,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | ENGINE_CAPABILITIES
         | GITLAB_PIPELINE_NOTIFICATION_PREFS
         | DEV_TOOLS_CROSS_PROJECT_METADATA
-        | ONBOARDING_QUEST_STATE => validate_json_wellformed(key, value),
+        | ONBOARDING_QUEST_STATE
+        | MASTERMIND_LAYOUT => validate_json_wellformed(key, value),
         _ => Ok(()),
     }
 }
@@ -1023,6 +1034,10 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     CLOUD_SYNC_TOTAL_ROWS,
     // Disk-content version stamp (engine-managed on app start, not user-set).
     COMPANION_CONSTITUTION_VERSION,
+    // Mastermind canvas layout: written debounced on every island drag / group
+    // draw / note edit. It is UI-view state, not an auditable config change, so
+    // auditing it would flood the History tab with layout noise.
+    MASTERMIND_LAYOUT,
 ];
 
 /// Prefix families that are internal bookkeeping (per-table cloud-sync cursors).
@@ -1156,6 +1171,20 @@ mod tests {
         assert!(validate_key("byom_policy").is_ok());
         assert!(validate_key("health_digest_enabled").is_ok());
         assert!(validate_key("dev_tools_cross_project_metadata").is_ok());
+    }
+
+    #[test]
+    fn mastermind_layout_key_registered_validated_and_unaudited() {
+        // Wave-8 smoke finding: unknown keys WARN on read but are REJECTED on
+        // write, so a layout doc keyed on an unregistered key could never
+        // persist. Pin the allow-list membership + the JSON value contract.
+        assert_eq!(MASTERMIND_LAYOUT, "mastermind.layout.v1");
+        assert!(validate_key(MASTERMIND_LAYOUT).is_ok());
+        // Value contract: well-formed JSON accepted, garbage rejected.
+        assert!(validate_value(MASTERMIND_LAYOUT, r#"{"version":1,"positions":{}}"#).is_ok());
+        assert!(validate_value(MASTERMIND_LAYOUT, "{not json").is_err());
+        // Layout writes are frequent UI-view state → excluded from the audit log.
+        assert_eq!(audit_category(MASTERMIND_LAYOUT), None);
     }
 
     #[test]

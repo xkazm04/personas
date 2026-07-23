@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "无人工审核关卡 — 操作自主执行。",
     "sigil_edit_review_on": "此能力执行前需要人工审核。",
     "sigil_edit_service_label": "服务：{key}",
-    "sigil_edit_when_label": "触发条件"
+    "sigil_edit_when_label": "触发条件",
+    "assertions": {
+      "action_heal": "尝试修复",
+      "action_log": "仅记录",
+      "action_review": "发送至审核",
+      "add": "添加质量门",
+      "cancel": "取消",
+      "create": "创建",
+      "delete": "删除质量门",
+      "empty": "暂无质量门。",
+      "name_placeholder": "质量门名称（例如：必须引用总计）",
+      "on_failure_label": "失败时",
+      "phrase_placeholder": "短语（多个用逗号分隔）",
+      "subtitle": "检查每次运行的输出，并将失败项转至审核或修复。",
+      "title": "质量门",
+      "type_contains": "必须包含",
+      "type_label": "检查",
+      "type_not_contains": "不得包含"
+    }
   },
   "vault": {
     "workspace_connect": "工作区连接",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "打开终端",
+    "terminal_disabled_demo": "演示项目 — 请从真实项目打开终端",
+    "terminal_disabled_no_path": "此项目没有文件夹路径",
+    "fit_all": "适应所有项目",
+    "tidy": "整理布局",
+    "tidy_tooltip": "整理布局 — 按关联排列项目",
+    "undo_tidy": "撤销整理",
+    "zoom_in": "放大",
+    "zoom_out": "缩小",
+    "attention_tooltip": "会话需要您的输入",
+    "data_health_title": "部分画布数据加载失败",
+    "family_monitoring": "监控",
+    "family_relations": "关系",
+    "family_scans": "创意扫描",
+    "island_state_errors": "颜色来自实时监控错误",
+    "island_state_readiness": "颜色来自就绪度评分",
+    "family_fleet": "舰队",
+    "family_kpi": "KPI"
   }
 }

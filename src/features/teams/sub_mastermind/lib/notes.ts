@@ -1,25 +1,9 @@
-// Persisted canvas text notes (note tool). Prototype-stage persistence:
-// localStorage, shared across canvas variants like positions/groups/links.
-import type { CanvasNote, NoteSize } from './types';
+// Canvas text notes (note tool). Persistence now lives in the durable layout
+// store (one versioned DB document); this module keeps the per-size font map
+// and the stable load/save import surface for callers.
+import type { NoteSize } from './types';
 
-const KEY = 'mastermind.notes.v1';
+export { loadNotes, saveNotes } from './layoutStore';
 
 /** World-px font size per note size step (xl = section headers). */
 export const NOTE_SIZE_PX: Record<NoteSize, number> = { sm: 16, md: 26, lg: 42, xl: 64 };
-
-export function loadNotes(): CanvasNote[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as CanvasNote[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveNotes(notes: CanvasNote[]): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(notes));
-  } catch {
-    // best-effort — a full/blocked storage never breaks the canvas
-  }
-}

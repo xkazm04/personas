@@ -2805,5 +2805,23 @@
   "sigil_edit_review_off": "Tidak ada gerbang tinjauan manusia — tindakan berjalan otonom.",
   "sigil_edit_review_on": "Tinjauan manusia diperlukan sebelum kapabilitas ini bertindak.",
   "sigil_edit_service_label": "Layanan: {key}",
-  "sigil_edit_when_label": "Kapan"
+  "sigil_edit_when_label": "Kapan",
+  "assertions": {
+    "action_heal": "Coba perbaikan",
+    "action_log": "Catat saja",
+    "action_review": "Kirim ke tinjauan",
+    "add": "Tambah gerbang",
+    "cancel": "Batal",
+    "create": "Buat",
+    "delete": "Hapus gerbang",
+    "empty": "Belum ada gerbang kualitas.",
+    "name_placeholder": "Nama gerbang (mis. Harus mencantumkan total)",
+    "on_failure_label": "Saat gagal",
+    "phrase_placeholder": "Frasa, dipisahkan koma",
+    "subtitle": "Periksa output setiap eksekusi dan arahkan kegagalan ke tinjauan atau perbaikan.",
+    "title": "Gerbang kualitas",
+    "type_contains": "Harus memuat",
+    "type_label": "Pemeriksaan",
+    "type_not_contains": "Tidak boleh memuat"
+  }
 }

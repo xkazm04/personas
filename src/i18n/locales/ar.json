@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "لا توجد بوابة مراجعة بشرية — الإجراءات تتم بشكل مستقل.",
     "sigil_edit_review_on": "المراجعة البشرية مطلوبة قبل أن تتصرف هذه القدرة.",
     "sigil_edit_service_label": "الخدمة: {key}",
-    "sigil_edit_when_label": "عند"
+    "sigil_edit_when_label": "عند",
+    "assertions": {
+      "action_heal": "محاولة الإصلاح",
+      "action_log": "التسجيل فقط",
+      "action_review": "إرسال إلى المراجعة",
+      "add": "إضافة بوابة",
+      "cancel": "إلغاء",
+      "create": "إنشاء",
+      "delete": "حذف البوابة",
+      "empty": "لا توجد بوابات جودة بعد.",
+      "name_placeholder": "اسم البوابة (مثال: يجب ذكر الإجمالي)",
+      "on_failure_label": "عند الفشل",
+      "phrase_placeholder": "عبارة أو عبارات، مفصولة بفواصل",
+      "subtitle": "تحقّق من مخرجات كل تشغيل ووجّه حالات الفشل إلى المراجعة أو الإصلاح.",
+      "title": "بوابات الجودة",
+      "type_contains": "يجب أن يحتوي",
+      "type_label": "التحقق",
+      "type_not_contains": "يجب ألا يحتوي"
+    }
   },
   "vault": {
     "workspace_connect": "ربط مساحة العمل",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "فتح الطرفية",
+    "terminal_disabled_demo": "مشروع تجريبي — افتح طرفية من مشروع حقيقي",
+    "terminal_disabled_no_path": "لا يحتوي هذا المشروع على مسار مجلد",
+    "fit_all": "احتواء كل المشاريع",
+    "tidy": "ترتيب الخريطة",
+    "tidy_tooltip": "ترتيب الخريطة — رتّب المشاريع حسب الصلة",
+    "undo_tidy": "تراجع عن الترتيب",
+    "zoom_in": "تكبير",
+    "zoom_out": "تصغير",
+    "attention_tooltip": "جلسة تحتاج إلى إدخالك",
+    "data_health_title": "تعذّر تحميل بعض بيانات اللوحة",
+    "family_monitoring": "المراقبة",
+    "family_relations": "العلاقات",
+    "family_scans": "فحوصات الأفكار",
+    "island_state_errors": "اللون مستمد من أخطاء المراقبة المباشرة",
+    "island_state_readiness": "اللون مستمد من درجات الجاهزية",
+    "family_fleet": "الأسطول",
+    "family_kpi": "مؤشرات الأداء"
   }
 }

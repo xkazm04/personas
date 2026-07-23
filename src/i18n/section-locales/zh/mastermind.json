@@ -1,0 +1,20 @@
+{
+  "open_terminal": "打开终端",
+  "terminal_disabled_demo": "演示项目 — 请从真实项目打开终端",
+  "terminal_disabled_no_path": "此项目没有文件夹路径",
+  "fit_all": "适应所有项目",
+  "tidy": "整理布局",
+  "tidy_tooltip": "整理布局 — 按关联排列项目",
+  "undo_tidy": "撤销整理",
+  "zoom_in": "放大",
+  "zoom_out": "缩小",
+  "attention_tooltip": "会话需要您的输入",
+  "data_health_title": "部分画布数据加载失败",
+  "family_monitoring": "监控",
+  "family_relations": "关系",
+  "family_scans": "创意扫描",
+  "island_state_errors": "颜色来自实时监控错误",
+  "island_state_readiness": "颜色来自就绪度评分",
+  "family_fleet": "舰队",
+  "family_kpi": "KPI"
+}

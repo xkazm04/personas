@@ -48,7 +48,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
           <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <button
             onClick={() => onChange(!value)}
-            className={`px-2.5 py-1 rounded-xl typo-heading border transition-all ${
+            className={`px-2.5 py-1 rounded-modal typo-heading border transition-all ${
               value
                 ? 'bg-primary/10 border-primary/25 text-primary'
                 : 'bg-secondary/40 border-primary/10 text-foreground'
@@ -59,14 +59,18 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
         </div>
       );
     default: // text
+      // A resizable textarea, not a single-line input: run inputs are commonly a
+      // pasted document, transcript, or URL list — a one-line box makes those
+      // unenterable (the same trap that killed the adoption brand-voice field,
+      // UAT 2026-07-20). `field-sizing-content` keeps it compact for short values.
       return (
-        <div className="flex items-center gap-2">
-          <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
-          <input
-            type="text"
+        <div className="flex items-start gap-2">
+          <label className="typo-heading text-foreground w-24 flex-shrink-0 pt-1.5">{field.label}</label>
+          <textarea
             value={String(value ?? field.default ?? '')}
             onChange={(e) => onChange(e.target.value)}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg typo-body text-foreground placeholder:text-foreground focus-ring"
+            rows={2}
+            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring resize-y min-h-[2rem]"
           />
         </div>
       );

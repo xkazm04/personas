@@ -4,35 +4,43 @@
 //              readable from orbit), title large on the banner
 //   near     → icon + uppercase label
 //   close    → + tool detail + progress
+import { memo, useState } from 'react';
+
 import { DimGlyph } from '../lib/DimGlyph';
+import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
-import { FleetDock } from '../lib/FleetDock';
+import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
 import { StatColumns } from '../lib/StatColumns';
-import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
-// Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-11.
-// Order matches deriveScene's node order; every cap shares an edge with the
-// ring so the puzzle stays interlocked.
+// Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-12.
+// Order matches the dimension registry's DIM_ORDER 1:1 (index N → dimension N).
+// LATTICE SLOTS 13+: a 13th dimension needs one more [q,r] axial coord appended
+// here (the next free ring-2 cap, e.g. [0,-2] / [0,2]); cells beyond AXIAL.length
+// are silently dropped by the render loop's `if (!ax) return null`.
 const AXIAL: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
-  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0],
+  [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0],
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
 const COPY = { empty: 'not set up' };
 
-export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, statsStyle }: { island: Island } & IslandCtx) {
+// React.memo'd: the shell hands it referentially-stable callbacks + primitive
+// scalars, so a render-free pan (camera transform only) re-renders zero islands.
+// It re-renders only when its own props change — a committed z/band on zoom, a
+// mode switch, or its own dim/highlight state.
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
-  // Cluster extents depend on how many cells are occupied (8 dims stay within
-  // r=±1 caps; 11 reach r=±2) — banner, dock, halo, and stat panels track them.
+  // Cluster extents depend on how many cells are occupied — banner, badges,
+  // halo, and stat columns track them.
   const pts = AXIAL.slice(0, island.nodes.length).map(([q, r]) => cellXY(q, r));
   const ys = pts.map((p) => p.y);
   const xs = pts.map((p) => p.x);
@@ -59,7 +67,17 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         const ax = AXIAL[k];
         if (!ax) return null;
         const p = cellXY(ax[0], ax[1]);
-        return <MosaicCell key={n.key} node={n} x={p.x} y={p.y} band={band} highlighted={highlightKey === n.key} />;
+        return (
+          <MosaicCell
+            key={n.key}
+            node={n}
+            x={p.x}
+            y={p.y}
+            band={band}
+            highlighted={highlightKey === n.key}
+            onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
+          />
+        );
       })}
 
       {/* core cell */}
@@ -86,20 +104,44 @@ export function MosaicIsland({ island, z, band, mode, dimmed, onHover, onIslandM
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {statsStyle === 'panels' && <StatPanels stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
-      {statsStyle === 'columns' && <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
-      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 12} onOpen={onFleetOpen} />
+      {band !== 'far' && <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />}
+      <FleetBadges
+        fleet={island.fleet}
+        personas={island.personasRunning}
+        z={z}
+        yWorld={botY + 12}
+        onOpenList={(state, e) => onFleetList(island.slug, state, e)}
+        onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+      />
     </g>
   );
-}
+});
 
-function MosaicCell({ node, x, y, band, highlighted }: { node: DimNode; x: number; y: number; band: ZoomBand; highlighted: boolean }) {
+function MosaicCell({ node, x, y, band, highlighted, onAction }: {
+  node: DimNode;
+  x: number;
+  y: number;
+  band: ZoomBand;
+  highlighted: boolean;
+  /** Set only when the cell has an Improve action — enables click + hover affordance. */
+  onAction?: (e: React.MouseEvent) => void;
+}) {
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
   const zoomedOut = band === 'far' || band === 'mid';
+  const [hovered, setHovered] = useState(false);
+  const lit = highlighted || (hovered && Boolean(onAction));
 
   return (
-    <g transform={`translate(${x} ${y})`} opacity={absent && !highlighted ? 0.6 : 1}>
+    <g
+      transform={`translate(${x} ${y})`}
+      opacity={absent && !lit ? 0.6 : 1}
+      style={onAction ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onAction ? () => setHovered(true) : undefined}
+      onPointerLeave={onAction ? () => setHovered(false) : undefined}
+      onPointerDown={onAction ? (e) => e.stopPropagation() : undefined}
+      onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
+    >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
       <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
       <polygon
@@ -115,9 +157,23 @@ function MosaicCell({ node, x, y, band, highlighted }: { node: DimNode; x: numbe
           <polygon points={hexPoints(0, 0, CELL + 9)} fill="none" stroke={mix('var(--primary)', 35)} strokeWidth={2} strokeLinejoin="round" />
         </>
       )}
+      {/* actionable-cell hover affordance — a quiet "this is interactive" ring */}
+      {!highlighted && hovered && onAction && (
+        <polygon points={hexPoints(0, 0, CELL + 1)} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} strokeLinejoin="round" />
+      )}
       {zoomedOut ? (
-        // fullscale icon — the cell IS the icon when zoomed out
-        <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
+        DIM_REGISTRY[node.key]?.payloadKind === 'days' && node.days != null ? (
+          // days-payload cell: the count IS the payload when zoomed out (Ideas' freshness)
+          <>
+            <DimGlyph node={node} x={-8} y={-34} size={16} strokeWidth={1.75} color={ink} />
+            <text y={18} textAnchor="middle" fontSize={30} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {node.days}d
+            </text>
+          </>
+        ) : (
+          // fullscale icon — the cell IS the icon when zoomed out
+          <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
+        )
       ) : (
         <>
           <DimGlyph node={node} x={-11} y={-30} size={22} strokeWidth={1.75} color={absent ? 'var(--muted-foreground)' : ink} />

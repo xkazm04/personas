@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "कोई ह्यूमन रिव्यू गेट नहीं — क्रियाएँ स्वायत्त रूप से होती हैं।",
     "sigil_edit_review_on": "इस क्षमता के कार्य करने से पहले ह्यूमन रिव्यू आवश्यक है।",
     "sigil_edit_service_label": "सेवा: {key}",
-    "sigil_edit_when_label": "कब"
+    "sigil_edit_when_label": "कब",
+    "assertions": {
+      "action_heal": "हीलिंग का प्रयास करें",
+      "action_log": "केवल लॉग करें",
+      "action_review": "समीक्षा के लिए भेजें",
+      "add": "गेट जोड़ें",
+      "cancel": "रद्द करें",
+      "create": "बनाएँ",
+      "delete": "गेट हटाएँ",
+      "empty": "अभी तक कोई क्वालिटी गेट नहीं।",
+      "name_placeholder": "गेट का नाम (उदा. कुल राशि का उल्लेख होना चाहिए)",
+      "on_failure_label": "विफलता पर",
+      "phrase_placeholder": "वाक्यांश, अल्पविराम से अलग",
+      "subtitle": "हर रन के आउटपुट की जाँच करें और विफलताओं को समीक्षा या हीलिंग पर भेजें।",
+      "title": "क्वालिटी गेट",
+      "type_contains": "शामिल होना चाहिए",
+      "type_label": "जाँच",
+      "type_not_contains": "शामिल नहीं होना चाहिए"
+    }
   },
   "vault": {
     "workspace_connect": "वर्कस्पेस कनेक्ट",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "टर्मिनल खोलें",
+    "terminal_disabled_demo": "डेमो प्रोजेक्ट — किसी वास्तविक प्रोजेक्ट से टर्मिनल खोलें",
+    "terminal_disabled_no_path": "इस प्रोजेक्ट में कोई फ़ोल्डर पथ नहीं है",
+    "fit_all": "सभी प्रोजेक्ट फ़िट करें",
+    "tidy": "मानचित्र व्यवस्थित करें",
+    "tidy_tooltip": "मानचित्र व्यवस्थित करें — प्रोजेक्ट को कनेक्शन के अनुसार व्यवस्थित करें",
+    "undo_tidy": "व्यवस्थित करना पूर्ववत करें",
+    "zoom_in": "ज़ूम इन",
+    "zoom_out": "ज़ूम आउट",
+    "attention_tooltip": "एक सत्र को आपके इनपुट की आवश्यकता है",
+    "data_health_title": "कुछ कैनवास डेटा लोड नहीं हो सका",
+    "family_monitoring": "मॉनिटरिंग",
+    "family_relations": "संबंध",
+    "family_scans": "आइडिया स्कैन",
+    "island_state_errors": "रंग लाइव मॉनिटरिंग त्रुटियों से",
+    "island_state_readiness": "रंग तैयारी स्कोर से",
+    "family_fleet": "फ्लीट",
+    "family_kpi": "KPI"
   }
 }

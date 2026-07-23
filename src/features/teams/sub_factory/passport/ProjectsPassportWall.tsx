@@ -45,7 +45,7 @@ import { RowSetupModal } from './RowSetupModal';
 // tooling rows (errors/logs/metrics/tracing → connector wire), hosting (deploy),
 // the env-split monitoring row (connector wire), app cost (agent-created cost
 // file), aiflow + skills. Each opens the cell popover with its ladder + actions.
-const IMPROVABLE_ROWS = new Set([
+export const IMPROVABLE_ROWS = new Set([
   'ci', 'selfverify', 'context', 'instructions', 'docs', 'memory',
   'observability', 'aiflow', 'skills',
   'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',

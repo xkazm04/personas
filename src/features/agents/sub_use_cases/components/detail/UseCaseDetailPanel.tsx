@@ -5,6 +5,7 @@ import { UseCaseModelDropdown } from './UseCaseModelDropdown';
 import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
 import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 import { InputStageSummary, PipelineArrow } from './UseCaseDetailSections';
+import { StructuredField } from '@/features/agents/sub_lab/use-cases/StructuredField';
 import { useUseCaseDetail } from '../../libs/useUseCaseDetail';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -25,6 +26,9 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
     setSelectedFixtureId,
     fixtures,
     selectedFixture,
+    inputSchema,
+    draftInputs,
+    setDraftInput,
     modelConfig,
     canCancel,
     channels,
@@ -189,6 +193,27 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
         <span className="row-start-2 col-start-3 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
         <span className="row-start-2 col-start-5 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
       </div>
+
+      {/* Ad-hoc run inputs — one field per declared input_schema entry. This is
+          the reachable channel for a user to feed their OWN data into a run
+          (previously only a saved fixture or the canned sample_input could). A
+          selected fixture supplies the inputs instead, so the form steps aside
+          to avoid two competing input sources. */}
+      {inputSchema.length > 0 && !selectedFixtureId && (
+        <div className="space-y-1.5 rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
+          <span className="typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
+          <div className="space-y-1.5">
+            {inputSchema.map((field) => (
+              <StructuredField
+                key={field.key}
+                field={field}
+                value={draftInputs[field.key]}
+                onChange={(v) => setDraftInput(field.key, v)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Full-width row: progress indicator and save error */}
       {(isTestRunning && testRunProgress || saveError) && (

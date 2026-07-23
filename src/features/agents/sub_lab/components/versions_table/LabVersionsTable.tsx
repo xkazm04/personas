@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GitBranch, Star, AlertTriangle } from 'lucide-react';
+import { GitBranch, Star, AlertTriangle, FileDown, ClipboardCopy, Check } from 'lucide-react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import {
+  versionComparisonHtml,
+  versionComparisonMarkdown,
+  downloadHtmlReport,
+} from '../../libs/reportGenerator';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -73,6 +79,7 @@ export function LabVersionsTable() {
   const [measureRow, setMeasureRow] = useState<VersionRow | null>(null);
   const [diffRow, setDiffRow] = useState<VersionRow | null>(null);
   const [reconcile, setReconcile] = useState<{ conflicts: OverrideConflict[]; promotedLabel: string } | null>(null);
+  const [reportCopied, setReportCopied] = useState(false);
 
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -278,6 +285,41 @@ export function LabVersionsTable() {
           <h3 className="typo-section-title text-foreground">{lab.vr_title}</h3>
           <p className="typo-caption text-foreground">{lab.vr_subtitle}</p>
         </div>
+        {/* Export a client-presentable "v3 vs v4" comparison from the measured
+            ratings — the billable artifact (UAT 2026-07-20, FA-AGY-LAB-03).
+            Built from data already in the table; no fresh run needed. */}
+        {versionRatings.some((r) => r.compositeScore != null) && (
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              data-testid="vr-export-comparison-html"
+              onClick={() => {
+                const name = selectedPersona?.name ?? 'Agent';
+                const html = versionComparisonHtml(name, versionRatings, new Date().toLocaleDateString());
+                const safe = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+                downloadHtmlReport(html, `${safe}-version-comparison.html`);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              {t.agent_lab.export_download_html}
+            </button>
+            <button
+              type="button"
+              data-testid="vr-export-comparison-md"
+              onClick={async () => {
+                const name = selectedPersona?.name ?? 'Agent';
+                await copyText(versionComparisonMarkdown(name, versionRatings, new Date().toLocaleDateString()));
+                setReportCopied(true);
+                setTimeout(() => setReportCopied(false), 2000);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors"
+            >
+              {reportCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+              {reportCopied ? t.agent_lab.export_copied : t.agent_lab.export_copy_markdown}
+            </button>
+          </div>
+        )}
       </div>
 
       <UnifiedTable<VersionRow>

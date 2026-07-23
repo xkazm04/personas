@@ -5,7 +5,7 @@ import { useEditorDirty } from '@/features/agents/sub_editor';
 import { getUseCaseById } from './useCaseHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';
 import type { UseCaseItem } from '@/features/agents/sub_lab/use-cases/UseCasesList';
-import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture } from '@/lib/types/frontendTypes';
+import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture, UseCaseInputField } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
 import { useManualPersonaRun } from './useManualPersonaRun';
 import { createLogger } from "@/lib/log";
@@ -24,6 +24,61 @@ export function useUseCaseDetail(useCaseId: string) {
   const [isDirty, setIsDirty] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [selectedFixtureId, setSelectedFixtureId] = useState<string | null>(null);
+
+  // Ad-hoc run inputs, one value per declared `input_schema` field. This is the
+  // channel that lets a user feed their OWN data into a run — previously the run
+  // could only use a saved fixture or the template's canned `sample_input`, so a
+  // use case that declared an input_schema (e.g. "paste the newsletter to
+  // repurpose") had no reachable way to receive it (UAT 2026-07-20, CM-AT-02:
+  // the only input_schema renderer, UseCaseExecutionPanel, was orphaned).
+  // The persisted `input_schema` is typed `UseCaseInputField[]` but real
+  // design_context rows store the tool/JSON-schema shape `{name, type:"string",
+  // description, required}` — `parseDesignContext` casts without normalizing, so
+  // the type is a lie the orphaned renderer never handled. Normalize both shapes
+  // to a proper UI field (name→key/label, JSON types→the widget enum) and drop
+  // any entry with no usable key.
+  const inputSchema = useMemo<UseCaseInputField[]>(() => {
+    const raw = (useCase?.input_schema ?? []) as unknown as Array<Record<string, unknown>>;
+    return raw
+      .map((f): UseCaseInputField | null => {
+        const key = String(f.key ?? f.name ?? '').trim();
+        if (!key) return null;
+        const t = String(f.type ?? 'text').toLowerCase();
+        const type: UseCaseInputField['type'] =
+          t === 'number' || t === 'integer' || t === 'float'
+            ? 'number'
+            : t === 'boolean' || t === 'bool'
+              ? 'boolean'
+              : t === 'select' && Array.isArray(f.options)
+                ? 'select'
+                : 'text';
+        return {
+          key,
+          label: String(f.label ?? f.name ?? key),
+          type,
+          default: f.default,
+          options: Array.isArray(f.options) ? (f.options as string[]) : undefined,
+        };
+      })
+      .filter((f): f is UseCaseInputField => f !== null);
+  }, [useCase?.input_schema]);
+  const [draftInputs, setDraftInputs] = useState<Record<string, unknown>>({});
+  const draftKey = `${selectedPersona?.id ?? ''}:${useCaseId}`;
+  // Reseed from field defaults / sample_input whenever the use case (or persona)
+  // changes — keyed so switching use cases doesn't leak inputs across them.
+  useEffect(() => {
+    const seeded: Record<string, unknown> = {};
+    for (const f of inputSchema) {
+      const sample = (useCase?.sample_input ?? {})[f.key];
+      seeded[f.key] = sample ?? f.default ?? '';
+    }
+    setDraftInputs(seeded);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftKey]);
+  const setDraftInput = useCallback((key: string, value: unknown) => {
+    setDraftInputs((prev) => ({ ...prev, [key]: value }));
+  }, []);
+  const hasSchemaInputs = inputSchema.length > 0;
 
   const fixtures = useMemo(() => useCase?.test_fixtures ?? [], [useCase?.test_fixtures]);
   const selectedFixture = useMemo(
@@ -89,9 +144,11 @@ export function useUseCaseDetail(useCaseId: string) {
   const { isManualRunning, run: runManualPersonaRun } = useManualPersonaRun();
   const handleManualRun = useCallback(async () => {
     if (!selectedPersona) return;
-    // Prefer the selected fixture's inputs (or the use case's sample_input
-    // as a fallback).
-    const inputs = selectedFixture?.inputs ?? useCase?.sample_input;
+    // Input precedence: an explicitly selected fixture wins; otherwise the
+    // user's ad-hoc draft inputs (when the use case declares an input_schema);
+    // finally the template's canned sample_input.
+    const inputs =
+      selectedFixture?.inputs ?? (hasSchemaInputs ? draftInputs : useCase?.sample_input);
     await runManualPersonaRun({
       personaId: selectedPersona.id,
       personaName: selectedPersona.name,
@@ -99,7 +156,7 @@ export function useUseCaseDetail(useCaseId: string) {
       inputs,
       errorContext: 'use-case:manual-run',
     });
-  }, [selectedPersona, selectedFixture, useCase?.sample_input, useCaseId, runManualPersonaRun]);
+  }, [selectedPersona, selectedFixture, hasSchemaInputs, draftInputs, useCase?.sample_input, useCaseId, runManualPersonaRun]);
 
   const handleCancelTest = useCallback(async () => {
     if (testRunProgress?.runId) {
@@ -209,6 +266,9 @@ export function useUseCaseDetail(useCaseId: string) {
     setSelectedFixtureId,
     fixtures,
     selectedFixture,
+    inputSchema,
+    draftInputs,
+    setDraftInput,
     resolved,
     modelConfig,
     canCancel,

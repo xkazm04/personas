@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "人によるレビューゲートはありません — アクションは自律的に実行されます。",
     "sigil_edit_review_on": "このケイパビリティが動作する前に人によるレビューが必要です。",
     "sigil_edit_service_label": "サービス: {key}",
-    "sigil_edit_when_label": "条件"
+    "sigil_edit_when_label": "条件",
+    "assertions": {
+      "action_heal": "修復を試みる",
+      "action_log": "ログのみ",
+      "action_review": "レビューへ送信",
+      "add": "ゲートを追加",
+      "cancel": "キャンセル",
+      "create": "作成",
+      "delete": "ゲートを削除",
+      "empty": "品質ゲートはまだありません。",
+      "name_placeholder": "ゲート名（例：合計の記載が必須）",
+      "on_failure_label": "失敗時",
+      "phrase_placeholder": "フレーズ（カンマ区切り）",
+      "subtitle": "実行ごとの出力をチェックし、失敗をレビューまたは修復へ振り分けます。",
+      "title": "品質ゲート",
+      "type_contains": "含む必要あり",
+      "type_label": "チェック",
+      "type_not_contains": "含んではならない"
+    }
   },
   "vault": {
     "workspace_connect": "ワークスペース接続",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "ターミナルを開く",
+    "terminal_disabled_demo": "デモプロジェクト — 実際のプロジェクトからターミナルを開いてください",
+    "terminal_disabled_no_path": "このプロジェクトにはフォルダーパスがありません",
+    "fit_all": "すべてのプロジェクトに合わせる",
+    "tidy": "マップを整理",
+    "tidy_tooltip": "マップを整理 — 関連ごとにプロジェクトを配置",
+    "undo_tidy": "整理を元に戻す",
+    "zoom_in": "拡大",
+    "zoom_out": "縮小",
+    "attention_tooltip": "セッションが入力を待っています",
+    "data_health_title": "一部のキャンバスデータを読み込めませんでした",
+    "family_monitoring": "モニタリング",
+    "family_relations": "関連",
+    "family_scans": "アイデアスキャン",
+    "island_state_errors": "色はライブ監視エラーに基づきます",
+    "island_state_readiness": "色は準備状況スコアに基づきます",
+    "family_fleet": "フリート",
+    "family_kpi": "KPI"
   }
 }

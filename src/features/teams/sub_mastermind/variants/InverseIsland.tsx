@@ -2,13 +2,14 @@
 // dimension tiles form a layer around it (3×3; a second layer would open for
 // overflow dimensions). Same band LOD as the other variants — fullscale icons
 // at far/mid, labels at near, details at close; identity on the banner.
+import { memo } from 'react';
+
 import { DimTile } from '../lib/DimTile';
 import { mix, scoreInkVar, STATE_INK } from '../lib/ink';
-import { FleetDock } from '../lib/FleetDock';
+import { FleetBadges } from '../lib/FleetBadges';
 import { IslandBanner } from '../lib/IslandBanner';
 import { mockStats } from '../lib/statsMock';
 import { StatColumns } from '../lib/StatColumns';
-import { StatPanels } from '../lib/StatPanels';
 import { useIslandDrag } from '../lib/useIslandDrag';
 import type { IslandCtx } from '../lib/CanvasShell';
 import type { Island } from '../lib/types';
@@ -18,21 +19,30 @@ const CW = 104;
 const CH = 92;
 const GAP = 8;
 // Layer-1 cells clockwise from north (N, NE, E, SE, S, SW, W, NW), then
-// layer-2 opens along the top row for dimensions 9-11 — the "layers around
-// the core" growth direction.
+// layer-2 opens along the top row for dimensions 9-12 — the "layers around
+// the core" growth direction. Order matches the dimension registry's DIM_ORDER
+// 1:1 (index N → dimension N).
+// LATTICE SLOTS 13+: a 13th dimension needs one more [col,row] coord appended
+// here (continue layer-2, e.g. [2,-1] / [-2,-2]); cells beyond RING.length are
+// silently dropped by the render loop's `if (!cell) return null`.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
-  [0, -2], [1, -2], [-1, -2],
+  [0, -2], [1, -2], [-1, -2], [2, -2],
 ];
 
-export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onFleetOpen, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, statsStyle }: { island: Island } & IslandCtx) {
+// React.memo'd — see MosaicIsland for the render-free-navigation rationale.
+export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, dimmed, onHover, onIslandMove, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
   const ink = STATE_INK[island.state];
   const drag = useIslandDrag({ enabled: mode === 'edit', z, slug: island.slug, x: island.x, y: island.y, onMove: onIslandMove, onCommit: onIslandCommit, onSelect: onIslandTap });
   const zoomedIn = bandGte(band, 'near');
-  // Formation extents grow with layer 2 — halo, banner, and dock track them.
-  const rows = RING.slice(0, island.nodes.length).map(([, r]) => r);
+  // Formation extents grow with layer 2 — halo, banner, badges track them.
+  const used = RING.slice(0, island.nodes.length);
+  const rows = used.map(([, r]) => r);
+  const cols = used.map(([c]) => c);
   const topY = (Math.min(0, ...rows)) * (CH + GAP) - CH / 2;
   const botY = (Math.max(0, ...rows)) * (CH + GAP) + CH / 2;
+  const leftX = (Math.min(-1, ...cols)) * (CW + GAP) - CW / 2 - 10;
+  const rightX = (Math.max(1, ...cols)) * (CW + GAP) + CW / 2 + 10;
 
   return (
     <g
@@ -45,8 +55,8 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
       data-testid={`mm-island-${island.slug}`}
     >
       <rect
-        x={-CW * 1.5 - GAP - 12} y={topY - 12}
-        width={CW * 3 + GAP * 2 + 24} height={botY - topY + 24}
+        x={leftX - 2} y={topY - 12}
+        width={rightX - leftX + 4} height={botY - topY + 24}
         rx={26} fill={mix(ink, 9, 'var(--secondary)')} opacity={0.55} filter="url(#mm-coast)"
       />
 
@@ -55,7 +65,19 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         if (!cell) return null;
         const tx = cell[0] * (CW + GAP) - CW / 2;
         const ty = cell[1] * (CH + GAP) - CH / 2;
-        return <DimTile key={n.key} node={n} x={tx} y={ty} w={CW} h={CH} band={band} highlighted={highlightKey === n.key} />;
+        return (
+          <DimTile
+            key={n.key}
+            node={n}
+            x={tx}
+            y={ty}
+            w={CW}
+            h={CH}
+            band={band}
+            highlighted={highlightKey === n.key}
+            onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
+          />
+        );
       })}
 
       {/* core — the center cell */}
@@ -94,13 +116,17 @@ export function InverseIsland({ island, z, band, mode, dimmed, onHover, onIsland
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
       />
-      {statsStyle === 'panels' && (
-        <StatPanels stats={mockStats(island.slug)} z={z} leftX={-(CW * 1.5 + GAP + 10)} rightX={CW * 1.5 + GAP + 10} />
+      {band !== 'far' && (
+        <StatColumns stats={mockStats(island.slug)} z={z} leftX={leftX} rightX={rightX} />
       )}
-      {statsStyle === 'columns' && (
-        <StatColumns stats={mockStats(island.slug)} z={z} leftX={-(CW * 1.5 + GAP + 10)} rightX={CW * 1.5 + GAP + 10} />
-      )}
-      <FleetDock fleet={island.fleet} z={z} yWorld={botY + 14} onOpen={onFleetOpen} />
+      <FleetBadges
+        fleet={island.fleet}
+        personas={island.personasRunning}
+        z={z}
+        yWorld={botY + 14}
+        onOpenList={(state, e) => onFleetList(island.slug, state, e)}
+        onOpenPersonas={(e) => onPersonasOpen(island.slug, e)}
+      />
     </g>
   );
-}
+});

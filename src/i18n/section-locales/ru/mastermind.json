@@ -1,0 +1,20 @@
+{
+  "open_terminal": "Открыть терминал",
+  "terminal_disabled_demo": "Демо-проект — откройте терминал из реального проекта",
+  "terminal_disabled_no_path": "У этого проекта нет пути к папке",
+  "fit_all": "Показать все проекты",
+  "tidy": "Упорядочить карту",
+  "tidy_tooltip": "Упорядочить карту — расставить проекты по связям",
+  "undo_tidy": "Отменить упорядочивание",
+  "zoom_in": "Приблизить",
+  "zoom_out": "Отдалить",
+  "attention_tooltip": "Сессия ожидает вашего ввода",
+  "data_health_title": "Не удалось загрузить некоторые данные холста",
+  "family_monitoring": "Мониторинг",
+  "family_relations": "Связи",
+  "family_scans": "Сканирование идей",
+  "island_state_errors": "Цвет по ошибкам мониторинга в реальном времени",
+  "island_state_readiness": "Цвет по оценкам готовности",
+  "family_fleet": "Флот",
+  "family_kpi": "KPI"
+}

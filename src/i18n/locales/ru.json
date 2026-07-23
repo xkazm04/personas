@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "Проверка человеком не требуется — действия выполняются автономно.",
     "sigil_edit_review_on": "Перед выполнением этой возможности требуется проверка человеком.",
     "sigil_edit_service_label": "Сервис: {key}",
-    "sigil_edit_when_label": "Когда"
+    "sigil_edit_when_label": "Когда",
+    "assertions": {
+      "action_heal": "Попытаться исправить",
+      "action_log": "Только записать в журнал",
+      "action_review": "Отправить на проверку",
+      "add": "Добавить гейт",
+      "cancel": "Отмена",
+      "create": "Создать",
+      "delete": "Удалить гейт",
+      "empty": "Пока нет гейтов качества.",
+      "name_placeholder": "Название гейта (напр. Должен указывать итог)",
+      "on_failure_label": "При сбое",
+      "phrase_placeholder": "Фраза(ы) через запятую",
+      "subtitle": "Проверяйте вывод каждого запуска и направляйте сбои на проверку или исправление.",
+      "title": "Гейты качества",
+      "type_contains": "Должен содержать",
+      "type_label": "Проверка",
+      "type_not_contains": "Не должен содержать"
+    }
   },
   "vault": {
     "workspace_connect": "Подключение рабочей области",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "Открыть терминал",
+    "terminal_disabled_demo": "Демо-проект — откройте терминал из реального проекта",
+    "terminal_disabled_no_path": "У этого проекта нет пути к папке",
+    "fit_all": "Показать все проекты",
+    "tidy": "Упорядочить карту",
+    "tidy_tooltip": "Упорядочить карту — расставить проекты по связям",
+    "undo_tidy": "Отменить упорядочивание",
+    "zoom_in": "Приблизить",
+    "zoom_out": "Отдалить",
+    "attention_tooltip": "Сессия ожидает вашего ввода",
+    "data_health_title": "Не удалось загрузить некоторые данные холста",
+    "family_monitoring": "Мониторинг",
+    "family_relations": "Связи",
+    "family_scans": "Сканирование идей",
+    "island_state_errors": "Цвет по ошибкам мониторинга в реальном времени",
+    "island_state_readiness": "Цвет по оценкам готовности",
+    "family_fleet": "Флот",
+    "family_kpi": "KPI"
   }
 }

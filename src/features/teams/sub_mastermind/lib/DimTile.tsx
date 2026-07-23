@@ -5,7 +5,10 @@
 //   close    → + tool detail + ordinal progress bar
 // Used by Grid Board and Inverse Grid; the Hex Puzzle renders the same LOD in
 // its hex-shaped cell.
+import { useState } from 'react';
+
 import { DimGlyph } from './DimGlyph';
+import { DIM_REGISTRY } from './dimRegistry';
 import { DIM_INK, mix, SERIF } from './ink';
 import type { DimNode, ZoomBand } from './types';
 
@@ -13,7 +16,7 @@ const COPY = { empty: 'not set up' };
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-export function DimTile({ node, x, y, w, h, band, highlighted = false }: {
+export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction }: {
   node: DimNode;
   x: number;
   y: number;
@@ -22,14 +25,26 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false }: {
   band: ZoomBand;
   /** Context-menu hover echo — unmistakably THIS tile. */
   highlighted?: boolean;
+  /** Set only when the tile has an Improve action — enables click + hover affordance. */
+  onAction?: (e: React.MouseEvent) => void;
 }) {
   const ink = DIM_INK[node.status];
   const absent = node.status === 'absent';
   const zoomedOut = band === 'far' || band === 'mid';
   const big = Math.min(w, h) * 0.62;
+  const [hovered, setHovered] = useState(false);
+  const lit = highlighted || (hovered && Boolean(onAction));
 
   return (
-    <g transform={`translate(${x} ${y})`} opacity={absent && !highlighted ? 0.6 : 1}>
+    <g
+      transform={`translate(${x} ${y})`}
+      opacity={absent && !lit ? 0.6 : 1}
+      style={onAction ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onAction ? () => setHovered(true) : undefined}
+      onPointerLeave={onAction ? () => setHovered(false) : undefined}
+      onPointerDown={onAction ? (e) => e.stopPropagation() : undefined}
+      onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
+    >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
       <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ' — not set up' : ''}`}</title>
       <rect
@@ -44,11 +59,25 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false }: {
           <rect x={-8} y={-8} width={w + 16} height={h + 16} rx={13} fill="none" stroke={mix('var(--primary)', 35)} strokeWidth={2} />
         </>
       )}
+      {/* actionable-tile hover affordance — a quiet "this is interactive" ring */}
+      {!highlighted && hovered && onAction && (
+        <rect x={-2} y={-2} width={w + 4} height={h + 4} rx={9.5} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} />
+      )}
       {zoomedOut ? (
-        <DimGlyph
-          node={node} x={(w - big) / 2} y={(h - big) / 2} size={big} strokeWidth={1.6}
-          color={absent ? 'var(--muted-foreground)' : ink}
-        />
+        DIM_REGISTRY[node.key]?.payloadKind === 'days' && node.days != null ? (
+          // days-payload tile: the count IS the payload when zoomed out (Ideas' freshness)
+          <>
+            <DimGlyph node={node} x={w / 2 - 8} y={10} size={16} strokeWidth={1.75} color={ink} />
+            <text x={w / 2} y={h - 20} textAnchor="middle" fontSize={28} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {node.days}d
+            </text>
+          </>
+        ) : (
+          <DimGlyph
+            node={node} x={(w - big) / 2} y={(h - big) / 2} size={big} strokeWidth={1.6}
+            color={absent ? 'var(--muted-foreground)' : ink}
+          />
+        )
       ) : (
         <>
           <DimGlyph node={node} x={8} y={8} size={18} strokeWidth={1.75} color={absent ? 'var(--muted-foreground)' : ink} />

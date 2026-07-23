@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "Bez brány lidské kontroly — akce probíhají autonomně.",
     "sigil_edit_review_on": "Před provedením této schopnosti je vyžadována lidská kontrola.",
     "sigil_edit_service_label": "Služba: {key}",
-    "sigil_edit_when_label": "Kdy"
+    "sigil_edit_when_label": "Kdy",
+    "assertions": {
+      "action_heal": "Zkusit opravu",
+      "action_log": "Pouze zaznamenat",
+      "action_review": "Odeslat ke kontrole",
+      "add": "Přidat bránu",
+      "cancel": "Zrušit",
+      "create": "Vytvořit",
+      "delete": "Smazat bránu",
+      "empty": "Zatím žádné brány kvality.",
+      "name_placeholder": "Název brány (např. Musí uvádět součet)",
+      "on_failure_label": "Při selhání",
+      "phrase_placeholder": "Fráze oddělené čárkami",
+      "subtitle": "Kontrolujte výstup každého běhu a selhání směrujte ke kontrole nebo opravě.",
+      "title": "Brány kvality",
+      "type_contains": "Musí obsahovat",
+      "type_label": "Kontrola",
+      "type_not_contains": "Nesmí obsahovat"
+    }
   },
   "vault": {
     "workspace_connect": "Připojení Workspace",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "Otevřít terminál",
+    "terminal_disabled_demo": "Ukázkový projekt — otevřete terminál ze skutečného projektu",
+    "terminal_disabled_no_path": "Tento projekt nemá cestu ke složce",
+    "fit_all": "Přizpůsobit všem projektům",
+    "tidy": "Uspořádat mapu",
+    "tidy_tooltip": "Uspořádat mapu — seřadit projekty podle propojení",
+    "undo_tidy": "Vrátit uspořádání",
+    "zoom_in": "Přiblížit",
+    "zoom_out": "Oddálit",
+    "attention_tooltip": "Relace čeká na váš vstup",
+    "data_health_title": "Některá data plátna se nepodařilo načíst",
+    "family_monitoring": "Monitorování",
+    "family_relations": "Vztahy",
+    "family_scans": "Skenování nápadů",
+    "island_state_errors": "Barva podle živých chyb monitorování",
+    "island_state_readiness": "Barva podle skóre připravenosti",
+    "family_fleet": "Flotila",
+    "family_kpi": "KPI"
   }
 }

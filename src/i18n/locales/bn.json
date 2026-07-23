@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "কোনো হিউম্যান রিভিউ গেট নেই — অ্যাকশনগুলো স্বতন্ত্রভাবে সম্পন্ন হয়।",
     "sigil_edit_review_on": "এই ক্যাপাবিলিটি কাজ করার আগে হিউম্যান রিভিউ আবশ্যক।",
     "sigil_edit_service_label": "সার্ভিস: {key}",
-    "sigil_edit_when_label": "কখন"
+    "sigil_edit_when_label": "কখন",
+    "assertions": {
+      "action_heal": "নিরাময়ের চেষ্টা করুন",
+      "action_log": "শুধু লগ করুন",
+      "action_review": "পর্যালোচনায় পাঠান",
+      "add": "গেট যোগ করুন",
+      "cancel": "বাতিল",
+      "create": "তৈরি করুন",
+      "delete": "গেট মুছুন",
+      "empty": "এখনও কোনো কোয়ালিটি গেট নেই।",
+      "name_placeholder": "গেটের নাম (যেমন মোট উল্লেখ করতে হবে)",
+      "on_failure_label": "ব্যর্থতায়",
+      "phrase_placeholder": "শব্দগুচ্ছ, কমা দিয়ে পৃথক",
+      "subtitle": "প্রতিটি রানের আউটপুট যাচাই করুন এবং ব্যর্থতাগুলো পর্যালোচনা বা নিরাময়ে পাঠান।",
+      "title": "কোয়ালিটি গেট",
+      "type_contains": "থাকতে হবে",
+      "type_label": "যাচাই",
+      "type_not_contains": "থাকা যাবে না"
+    }
   },
   "vault": {
     "workspace_connect": "ওয়ার্কস্পেস কানেক্ট",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "টার্মিনাল খুলুন",
+    "terminal_disabled_demo": "ডেমো প্রকল্প — একটি প্রকৃত প্রকল্প থেকে টার্মিনাল খুলুন",
+    "terminal_disabled_no_path": "এই প্রকল্পের কোনো ফোল্ডার পাথ নেই",
+    "fit_all": "সব প্রকল্প ফিট করুন",
+    "tidy": "মানচিত্র গুছিয়ে নিন",
+    "tidy_tooltip": "মানচিত্র গুছিয়ে নিন — সংযোগ অনুসারে প্রকল্প সাজান",
+    "undo_tidy": "গোছানো পূর্বাবস্থায় ফেরান",
+    "zoom_in": "জুম ইন",
+    "zoom_out": "জুম আউট",
+    "attention_tooltip": "একটি সেশনের আপনার ইনপুট প্রয়োজন",
+    "data_health_title": "ক্যানভাসের কিছু ডেটা লোড করা যায়নি",
+    "family_monitoring": "মনিটরিং",
+    "family_relations": "সম্পর্ক",
+    "family_scans": "আইডিয়া স্ক্যান",
+    "island_state_errors": "লাইভ মনিটরিং ত্রুটি থেকে রঙ",
+    "island_state_readiness": "প্রস্তুতির স্কোর থেকে রঙ",
+    "family_fleet": "ফ্লিট",
+    "family_kpi": "KPI"
   }
 }

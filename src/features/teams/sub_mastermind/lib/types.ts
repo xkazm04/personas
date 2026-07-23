@@ -5,11 +5,19 @@
 
 export type IslandState = 'healthy' | 'building' | 'warning' | 'critical';
 
-export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert';
+// `unknown` is distinct from `absent`: absent = "we looked, this wiring isn't
+// there" (an honest zero); unknown = "the data family that feeds this cell
+// failed to load, so we genuinely don't know" — never rendered as a fake
+// absent/never-scanned. Its ink is a muted amber-grey (see DIM_INK).
+export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unknown';
 
-export type DimKey =
-  | 'db' | 'monitoring' | 'ci' | 'tests' | 'security' | 'hosting' | 'auth' | 'agents'
-  | 'skills' | 'llm' | 'kpi';
+// DimKey is derived from the dimension registry (the single source of truth for
+// the dimension system) so a new registry entry extends the key space with no
+// edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
+// from this file, also type-only). Imported for local use AND re-exported.
+import type { DimKey } from './dimRegistry';
+
+export type { DimKey };
 
 /** One open Fleet CLI session docked to a project island. Colour resolves from
  *  `state` (FleetSessionState) at render time via FLEET_INK. */
@@ -28,6 +36,16 @@ export interface DimNode {
   /** Ordinal progress within the dimension's scale; 0/0 for boolean dimensions. */
   reached: number;
   steps: number;
+  /** Passport-wall row key this dimension maps to (page-decorated; null = no
+   *  wall counterpart, e.g. auth/kpi). */
+  rowKey?: string | null;
+  /** Improve action available for this cell (page-decorated from the engine):
+   *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
+   *  popover, ideas = the idea-scan dispatch popover, null = inert (no click,
+   *  no hover affordance). */
+  action?: 'standards' | 'deploy' | 'ideas' | null;
+  /** Ideas dimension only: whole days since the last idea scan (null = never). */
+  days?: number | null;
 }
 
 export interface Island {
@@ -46,6 +64,20 @@ export interface Island {
   nodes: DimNode[];
   /** Open Fleet CLI sessions working in this project (page attaches them). */
   fleet: FleetNode[];
+  /** Names of personas with an execution in progress for this project's team
+   *  (page attaches them — same persona→team→project join the Monitor uses). */
+  personasRunning: string[];
+  /** Live "needs you" marker — true when a fleet session on this project is
+   *  awaiting input or has gone stale (page attaches it from the resolved
+   *  fleet). Rendered at every zoom band on the counter-scaled banner. */
+  attention: boolean;
+  /** Live unresolved-issue count from the bound monitoring credential, or null
+   *  when no supported credential is bound (honestly unknown → readiness-only
+   *  colour). Surfaced in the Monitoring cell detail. */
+  monitorErrors: number | null;
+  /** What drove `state`: static readiness scores, or a live monitoring signal
+   *  (fresh errors / open issues). Named in the banner tooltip. */
+  stateSource: 'readiness' | 'errors';
 }
 
 export interface IslandEdge {
@@ -79,9 +111,6 @@ export type CanvasMode = 'edit' | 'group' | 'connect' | 'note';
 
 export type NoteSize = 'sm' | 'md' | 'lg' | 'xl';
 
-/** Prototype toggle for the per-island stats treatments: panels (round-9
- *  boxed side panels) vs columns (round-10 transparent icon+value columns). */
-export type StatsStyle = 'panels' | 'columns' | 'off';
 export type NoteFont = 'inter' | 'roboto' | 'caveat';
 
 /** Free text note placed on the canvas (note tool). World coordinates. */
@@ -106,8 +135,17 @@ export interface VariantProps {
   onFleetOpen: (sessionId: string) => void;
   /** Project header clicked (not dragged) — open the project sidebar. */
   onProjectOpen: (slug: string) => void;
-  /** Which stats-panel treatment to render (prototype A/B). */
-  statsStyle: StatsStyle;
+  /** Actionable dimension cell clicked — open its Improve popover at the
+   *  cursor (same popovers the Passport wall uses). */
+  onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
+  /** In-progress-personas badge clicked — open the persona name list. */
+  onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Island context-menu "Open terminal" — spawn an interactive Fleet session
+   *  in the project's root and open its preview. */
+  onOpenTerminal: (slug: string) => void;
+  /** Whether a given island can host a terminal (real project + root_path);
+   *  false for demo islands and projects without a folder path. */
+  canOpenTerminal: (slug: string) => boolean;
 }
 
 // Zoom bands — the single source of truth for level-of-detail. Round-3 split:

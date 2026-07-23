@@ -30,6 +30,34 @@ interface PassportData {
 
 const EMPTY = new Map<string, ImproveRaw>();
 
+/** Max per-project probes in flight at once. Opening the Passport wall / the
+ *  Mastermind canvas at 30+ projects previously fired an unbounded Promise.all
+ *  of listSkills × N and probeRepoEvidence × N simultaneously; this caps the
+ *  concurrency so the fan-out stays polite without serialising it. */
+const PROBE_CONCURRENCY = 5;
+
+/** Run `fn` over `items` with at most `limit` promises in flight; results keep
+ *  input order. */
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const width = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(
+    Array.from({ length: width }, async () => {
+      for (;;) {
+        const i = cursor++;
+        if (i >= items.length) return;
+        results[i] = await fn(items[i]!, i);
+      }
+    }),
+  );
+  return results;
+}
+
 export function usePassportData(): PassportData {
   const [state, setState] = useState<{ passports: AppPassport[]; rawByProject: Map<string, ImproveRaw>; loading: boolean; error: string | null; generatedAt: string | null }>(
     { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null },
@@ -50,7 +78,8 @@ export function usePassportData(): PassportData {
     // catalog (name → first source) so a project can adopt skills its siblings have.
     const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows] = await Promise.all([
       listSkillsGlobal().catch(() => []),
-      Promise.all(map.projects.map((m) => listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const))),
+      mapWithConcurrency(map.projects, PROBE_CONCURRENCY, (m) =>
+        listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const)),
       getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
       getDocRotOverview().catch(() => [] as DocRotRow[]),
       getMemoryHealthOverview().catch(() => [] as MemoryHealthRow[]),
@@ -105,11 +134,11 @@ export function usePassportData(): PassportData {
     // Defensive — null on older builds (command unregistered) or unreadable paths,
     // in which case the derive falls back to its heuristics.
     const evidenceById = new Map<string, RepoEvidence | null>();
-    await Promise.all(map.projects.map(async (m) => {
+    await mapWithConcurrency(map.projects, PROBE_CONCURRENCY, async (m) => {
       const proj = byId.get(m.project_id);
       const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch(() => null) : null;
       evidenceById.set(m.project_id, ev);
-    }));
+    });
 
     const rawByProject = new Map<string, ImproveRaw>();
     const passports: AppPassport[] = [];

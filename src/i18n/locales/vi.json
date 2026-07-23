@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "Không có cổng xét duyệt của con người — hành động được thực hiện tự động.",
     "sigil_edit_review_on": "Cần có xét duyệt của con người trước khi năng lực này hành động.",
     "sigil_edit_service_label": "Dịch vụ: {key}",
-    "sigil_edit_when_label": "Khi"
+    "sigil_edit_when_label": "Khi",
+    "assertions": {
+      "action_heal": "Thử khắc phục",
+      "action_log": "Chỉ ghi log",
+      "action_review": "Gửi đến duyệt",
+      "add": "Thêm cổng",
+      "cancel": "Hủy",
+      "create": "Tạo",
+      "delete": "Xóa cổng",
+      "empty": "Chưa có cổng chất lượng nào.",
+      "name_placeholder": "Tên cổng (ví dụ: Phải trích dẫn tổng số)",
+      "on_failure_label": "Khi thất bại",
+      "phrase_placeholder": "Cụm từ, phân tách bằng dấu phẩy",
+      "subtitle": "Kiểm tra đầu ra của mỗi lần chạy và định tuyến lỗi đến duyệt hoặc khắc phục.",
+      "title": "Cổng chất lượng",
+      "type_contains": "Phải chứa",
+      "type_label": "Kiểm tra",
+      "type_not_contains": "Không được chứa"
+    }
   },
   "vault": {
     "workspace_connect": "Kết nối không gian làm việc",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "Mở terminal",
+    "terminal_disabled_demo": "Dự án demo — mở terminal từ một dự án thực",
+    "terminal_disabled_no_path": "Dự án này không có đường dẫn thư mục",
+    "fit_all": "Vừa tất cả dự án",
+    "tidy": "Sắp xếp bản đồ",
+    "tidy_tooltip": "Sắp xếp bản đồ — sắp xếp dự án theo kết nối",
+    "undo_tidy": "Hoàn tác sắp xếp",
+    "zoom_in": "Phóng to",
+    "zoom_out": "Thu nhỏ",
+    "attention_tooltip": "Một phiên đang chờ bạn nhập",
+    "data_health_title": "Không thể tải một số dữ liệu canvas",
+    "family_monitoring": "Giám sát",
+    "family_relations": "Quan hệ",
+    "family_scans": "Quét ý tưởng",
+    "island_state_errors": "Màu theo lỗi giám sát trực tiếp",
+    "island_state_readiness": "Màu theo điểm mức độ sẵn sàng",
+    "family_fleet": "Hạm đội",
+    "family_kpi": "KPI"
   }
 }

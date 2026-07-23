@@ -3614,7 +3614,25 @@
     "sigil_edit_review_off": "사람 검토 절차 없이 자율적으로 작동합니다.",
     "sigil_edit_review_on": "이 기능이 작동하려면 사람의 검토가 필요합니다.",
     "sigil_edit_service_label": "서비스: {key}",
-    "sigil_edit_when_label": "실행 조건"
+    "sigil_edit_when_label": "실행 조건",
+    "assertions": {
+      "action_heal": "복구 시도",
+      "action_log": "기록만",
+      "action_review": "검토로 보내기",
+      "add": "게이트 추가",
+      "cancel": "취소",
+      "create": "생성",
+      "delete": "게이트 삭제",
+      "empty": "아직 품질 게이트가 없습니다.",
+      "name_placeholder": "게이트 이름 (예: 합계를 반드시 인용)",
+      "on_failure_label": "실패 시",
+      "phrase_placeholder": "문구(쉼표로 구분)",
+      "subtitle": "모든 실행의 출력을 확인하고 실패를 검토 또는 복구로 라우팅합니다.",
+      "title": "품질 게이트",
+      "type_contains": "반드시 포함",
+      "type_label": "검사",
+      "type_not_contains": "포함 금지"
+    }
   },
   "vault": {
     "workspace_connect": "워크스페이스 연결",
@@ -18257,5 +18275,25 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "mastermind": {
+    "open_terminal": "터미널 열기",
+    "terminal_disabled_demo": "데모 프로젝트 — 실제 프로젝트에서 터미널을 여세요",
+    "terminal_disabled_no_path": "이 프로젝트에는 폴더 경로가 없습니다",
+    "fit_all": "모든 프로젝트 맞춤",
+    "tidy": "맵 정리",
+    "tidy_tooltip": "맵 정리 — 연결 기준으로 프로젝트 배치",
+    "undo_tidy": "정리 실행 취소",
+    "zoom_in": "확대",
+    "zoom_out": "축소",
+    "attention_tooltip": "세션이 입력을 기다리고 있습니다",
+    "data_health_title": "일부 캔버스 데이터를 불러오지 못했습니다",
+    "family_monitoring": "모니터링",
+    "family_relations": "관계",
+    "family_scans": "아이디어 스캔",
+    "island_state_errors": "색상은 실시간 모니터링 오류 기준",
+    "island_state_readiness": "색상은 준비도 점수 기준",
+    "family_fleet": "플릿",
+    "family_kpi": "KPI"
   }
 }

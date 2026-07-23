@@ -1,0 +1,20 @@
+{
+  "open_terminal": "Otevřít terminál",
+  "terminal_disabled_demo": "Ukázkový projekt — otevřete terminál ze skutečného projektu",
+  "terminal_disabled_no_path": "Tento projekt nemá cestu ke složce",
+  "fit_all": "Přizpůsobit všem projektům",
+  "tidy": "Uspořádat mapu",
+  "tidy_tooltip": "Uspořádat mapu — seřadit projekty podle propojení",
+  "undo_tidy": "Vrátit uspořádání",
+  "zoom_in": "Přiblížit",
+  "zoom_out": "Oddálit",
+  "attention_tooltip": "Relace čeká na váš vstup",
+  "data_health_title": "Některá data plátna se nepodařilo načíst",
+  "family_monitoring": "Monitorování",
+  "family_relations": "Vztahy",
+  "family_scans": "Skenování nápadů",
+  "island_state_errors": "Barva podle živých chyb monitorování",
+  "island_state_readiness": "Barva podle skóre připravenosti",
+  "family_fleet": "Flotila",
+  "family_kpi": "KPI"
+}

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Plug, Zap, Bell } from 'lucide-react';
+import { Plug, Bell } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSavedDesignResult } from '../libs/designStateHelpers';
 import { allIndices } from '../DesignTabHelpers';
 import { PersonaParametersCard } from './PersonaParametersCard';
+import { TriggerConfig } from '@/features/triggers/sub_triggers/TriggerConfig';
 
 /**
  * The Design hub's section sub-tabs. Each renders the same read-only
@@ -66,29 +67,43 @@ export function DesignConnectorsPanel() {
   );
 }
 
-/** Events & Triggers — read-only view of the saved design's triggers + subs. */
+/**
+ * Events & Triggers. Live trigger management (create / arm / disarm / delete)
+ * via `TriggerConfig`, plus a read-only view of any event subscriptions the
+ * original build proposed.
+ *
+ * Was previously read-only only (`onTriggerToggle={NOOP}`), so this — the sub-tab
+ * a user opens to manage triggers — offered no way to create one; the only
+ * self-service create path in the whole app was the type-locked Studio commit
+ * modal (UAT 2026-07-20, CM-STA-02). The Design tab is ungated, so mounting the
+ * manager here also gives Starter users (who can't reach the TEAM-gated Events
+ * section) a trigger surface at last.
+ */
 export function DesignEventsPanel() {
-  const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const saved = useSavedDesignResult(selectedPersona);
 
-  const isEmpty =
-    !saved ||
-    ((saved.suggested_triggers?.length ?? 0) === 0 &&
-      (selectedPersona?.triggers?.length ?? 0) === 0 &&
-      (saved.suggested_event_subscriptions?.length ?? 0) === 0);
-  if (isEmpty) return <SectionEmpty icon={Zap} title={t.agents.design_subtabs.triggers} />;
+  // Show the design's proposed subscriptions read-only (TriggerConfig doesn't
+  // manage bus subscriptions). Suggested *triggers* are intentionally not shown
+  // here — once promoted they are live triggers, already listed+editable by
+  // TriggerConfig above, so surfacing them again would duplicate the list.
+  const hasSubscriptions = (saved?.suggested_event_subscriptions?.length ?? 0) > 0;
 
   return (
-    <EventsSection
-      result={saved}
-      selectedTriggerIndices={allIndices(saved.suggested_triggers)}
-      onTriggerToggle={NOOP}
-      suggestedSubscriptions={saved.suggested_event_subscriptions}
-      selectedSubscriptionIndices={allIndices(saved.suggested_event_subscriptions)}
-      readOnly
-      actualTriggers={selectedPersona?.triggers ?? []}
-    />
+    <div className="space-y-6">
+      <TriggerConfig />
+      {saved && hasSubscriptions && (
+        <EventsSection
+          result={{ ...saved, suggested_triggers: [] }}
+          selectedTriggerIndices={allIndices([])}
+          onTriggerToggle={NOOP}
+          suggestedSubscriptions={saved.suggested_event_subscriptions}
+          selectedSubscriptionIndices={allIndices(saved.suggested_event_subscriptions)}
+          readOnly
+          actualTriggers={[]}
+        />
+      )}
+    </div>
   );
 }
 

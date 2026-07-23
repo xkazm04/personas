@@ -1,0 +1,20 @@
+{
+  "open_terminal": "टर्मिनल खोलें",
+  "terminal_disabled_demo": "डेमो प्रोजेक्ट — किसी वास्तविक प्रोजेक्ट से टर्मिनल खोलें",
+  "terminal_disabled_no_path": "इस प्रोजेक्ट में कोई फ़ोल्डर पथ नहीं है",
+  "fit_all": "सभी प्रोजेक्ट फ़िट करें",
+  "tidy": "मानचित्र व्यवस्थित करें",
+  "tidy_tooltip": "मानचित्र व्यवस्थित करें — प्रोजेक्ट को कनेक्शन के अनुसार व्यवस्थित करें",
+  "undo_tidy": "व्यवस्थित करना पूर्ववत करें",
+  "zoom_in": "ज़ूम इन",
+  "zoom_out": "ज़ूम आउट",
+  "attention_tooltip": "एक सत्र को आपके इनपुट की आवश्यकता है",
+  "data_health_title": "कुछ कैनवास डेटा लोड नहीं हो सका",
+  "family_monitoring": "मॉनिटरिंग",
+  "family_relations": "संबंध",
+  "family_scans": "आइडिया स्कैन",
+  "island_state_errors": "रंग लाइव मॉनिटरिंग त्रुटियों से",
+  "island_state_readiness": "रंग तैयारी स्कोर से",
+  "family_fleet": "फ्लीट",
+  "family_kpi": "KPI"
+}

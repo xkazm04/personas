@@ -7,22 +7,49 @@
 // Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired). 11
 // dimensions per island; Fleet dock nodes open the CLI preview popover.
 // Prototype copy is hardcoded (COPY const) pending consolidation i18n.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 
-import { getCrossProjectMetadata, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
+import { runScan } from '@/api/devTools/devTools';
+import { spawnSession } from '@/api/fleet/fleet';
+import { listCredentials } from '@/api/vault/credentials';
+import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
+import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
 import { collectKpiAttention, groupKpis } from '@/features/teams/sub_factory/factoryModel';
+import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
+import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
+import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
+import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
+import { EventName } from '@/lib/eventRegistry';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
+
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { CanvasToolbar } from './lib/CanvasToolbar';
-import { deriveScene, type KpiRollup } from './lib/deriveScene';
+import { DataHealthBar } from './lib/DataHealthBar';
+import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
+import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { IdeaScanPopover } from './lib/IdeaScanPopover';
+import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { computeAttention } from './lib/liveState';
+import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
+import { PersonaListPopover } from './lib/PersonaListPopover';
+import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, FleetNode, StatsStyle } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
@@ -31,17 +58,8 @@ const COPY = {
   inverse: 'Inverse Grid',
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
-  statsSwitcher: 'Stats treatment (prototype)',
-  statsPanels: 'Panels',
-  statsColumns: 'Columns',
-  statsOff: 'No stats',
+  loadingLayout: 'Loading canvas layout',
 };
-
-const STATS_TABS: Array<{ id: StatsStyle; label: string }> = [
-  { id: 'panels', label: COPY.statsPanels },
-  { id: 'columns', label: COPY.statsColumns },
-  { id: 'off', label: COPY.statsOff },
-];
 
 type VariantId = 'mosaic' | 'inverse';
 const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
@@ -65,33 +83,124 @@ export default function MastermindPage() {
 }
 
 function MastermindInner() {
-  const { passports, loading, error } = usePassportData();
-  const { projects: factoryProjects } = useFactoryData();
-  const [meta, setMeta] = useState<CrossProjectMetadataMap | null>(null);
+  const { t } = useTranslation();
+  const { passports, rawByProject, loading, error, reload } = usePassportData();
+  const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
+  const improve = useImproveEngine(rawByProject, reload);
+  // Scene store — the single batched spine: cross-project relations (meta) +
+  // idea scans, each fetched with ≤1 IPC and invalidated by event, not polled.
+  // Each family carries a fetch STATUS so failures surface honestly.
+  const meta = useSceneStore((s) => s.meta);
+  const scans = useSceneStore((s) => s.scans);
+  const sentry = useSceneStore((s) => s.sentry);
+  const metaStatus = useSceneStore((s) => s.metaStatus);
+  const scansStatus = useSceneStore((s) => s.scansStatus);
+  const sentryStatus = useSceneStore((s) => s.sentryStatus);
+  const loadMeta = useSceneStore((s) => s.loadMeta);
+  const loadScans = useSceneStore((s) => s.loadScans);
+  const loadSentry = useSceneStore((s) => s.loadSentry);
+  const invalidateScans = useSceneStore((s) => s.invalidateScans);
+  const retryFailed = useSceneStore((s) => s.retryFailed);
+  const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [mode, setMode] = useState<CanvasMode>('edit');
+  // Durable layout hydrates once per session from the DB (async IPC). Until it
+  // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
+  // initializers read the hydrated doc, not an empty one. `isLayoutHydrated()`
+  // is already true on remounts, so this only gates the first-ever mount.
+  const [layoutReady, setLayoutReady] = useState(isLayoutHydrated);
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [statsStyle, setStatsStyle] = useState<StatsStyle>('columns');
+  const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
+  const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [scanBusy, setScanBusy] = useState(false);
+  // Project of the last idea scan WE dispatched — lets a scan-completion event
+  // (which carries only a job id) invalidate exactly that project's rollup
+  // instead of a blanket refetch. Null → scan came from elsewhere, fall back
+  // to a single batched reload.
+  const pendingScanSlug = useRef<string | null>(null);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
+  const [newProjectOpen, setNewProjectOpen] = useState(false);
+  const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const { startBackgroundScan } = useContextScanBackground();
+  // In-progress personas — same sources + persona→team→project join the
+  // Monitor's project columns use (active processes attributed to personas).
+  const agentPersonas = useAgentStore(useShallow((s) => s.personas));
+  const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
+  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
+  useEffect(() => { void fetchPersonaSummaries(); }, [fetchPersonaSummaries]);
+  const addToast = useToastStore((s) => s.addToast);
+  const storeCreateProject = useSystemStore((s) => s.createProject);
+  const storeUpdateProject = useSystemStore((s) => s.updateProject);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
-  // Fleet sessions: the live-event listeners live in FleetGridPage only, so
-  // off that page the store is a snapshot — refresh on mount + a slow poll.
+  // Fleet sessions: the live FLEET_SESSION_* listeners now register once at the
+  // store level, so the canvas reflects state changes in <1s with NO poll —
+  // just one snapshot fetch on mount to seed the store, then events keep it live.
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
+  const fleetStartSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
+  const fleetSessionsError = useSystemStore((s) => s.fleetSessionsError);
   const projects = useSystemStore(useShallow((s) => s.projects));
 
   useEffect(() => {
+    fleetStartSessionListeners();
     void fleetRefresh();
-    const t = setInterval(() => void fleetRefresh(), 5000);
-    return () => clearInterval(t);
-  }, [fleetRefresh]);
+  }, [fleetRefresh, fleetStartSessionListeners]);
 
+  // Batched scene spine: one relations fetch + one scans fetch on mount.
+  useEffect(() => {
+    void loadMeta();
+    void loadScans();
+  }, [loadMeta, loadScans]);
+
+  // Vault credentials — needed to resolve each project's bound monitoring
+  // connector (Sentry) for live error counts. One fetch; refreshed with reload.
   useEffect(() => {
     let live = true;
-    getCrossProjectMetadata().then((m) => { if (live) setMeta(m); }).catch(() => {});
+    listCredentials().then((c) => { if (live) setCredentials(c); }).catch(silentCatch('mastermind listCredentials'));
     return () => { live = false; };
   }, []);
+
+  // Live monitoring: fetch real error counts for projects with a bound,
+  // supported monitoring credential. Throttled in the store (no new polling) —
+  // re-runs when the project set or credentials change.
+  useEffect(() => {
+    if (projects.length === 0) return;
+    void loadSentry(projects, credentials);
+  }, [projects, credentials, loadSentry]);
+
+  // One-time layout hydration: read the durable doc from the DB, then re-seed
+  // the state that was initialized from the (empty) pre-hydration doc and drop
+  // the canvas gate. Runs at most once per session (guarded by layoutReady).
+  useEffect(() => {
+    if (layoutReady) return;
+    let live = true;
+    void hydrateLayout().then(() => {
+      if (!live) return;
+      setOverrides(loadPositions());
+      setHiddenSlugs(loadHidden());
+      setLayoutReady(true);
+    });
+    return () => { live = false; };
+  }, [layoutReady]);
+
+  // A scan finishing anywhere (here or in the Idea Scanner page) refreshes the
+  // freshness data. When WE dispatched it we know the project, so invalidate
+  // only that project's rollup (scoped IPC); otherwise fall back to one batched
+  // reload (still ≤1 IPC — the whole family is a single list call).
+  const onScanStatus = useCallback((event: { payload: { status: string } }) => {
+    const { status } = event.payload;
+    if (status === 'completed' || status === 'completed_with_warning' || status === 'failed') {
+      const slug = pendingScanSlug.current;
+      if (slug) { void invalidateScans(slug); pendingScanSlug.current = null; }
+      else void loadScans();
+      setScanBusy(false);
+    }
+  }, [invalidateScans, loadScans]);
+  useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
 
   // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
   // Esc for half-drawn links/editors). Ignored while typing.
@@ -140,16 +249,80 @@ function MastermindInner() {
     return m;
   }, [sessions, projects]);
 
-  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject), [passports, meta, loading, kpiByProject]);
-  // Saved positions + live fleet docks overlay the derived scene.
+  // Running-persona names per project: process.personaId → persona →
+  // home_team_id → dev project with that team_id.
+  const personasByProject = useMemo(() => {
+    const byId = new Map(agentPersonas.map((p) => [p.id, p]));
+    const namesByTeam = new Map<string, string[]>();
+    const seen = new Set<string>();
+    for (const proc of Object.values(activeProcesses)) {
+      if (proc.status !== 'running' || !proc.personaId || seen.has(proc.personaId)) continue;
+      seen.add(proc.personaId);
+      const persona = byId.get(proc.personaId);
+      const team = persona?.home_team_id;
+      if (!persona || !team) continue;
+      const list = namesByTeam.get(team);
+      if (list) list.push(persona.name);
+      else namesByTeam.set(team, [persona.name]);
+    }
+    const m = new Map<string, string[]>();
+    for (const proj of projects) {
+      if (proj.team_id && namesByTeam.has(proj.team_id)) m.set(proj.id, namesByTeam.get(proj.team_id)!);
+    }
+    return m;
+  }, [agentPersonas, activeProcesses, projects]);
+
+  const ideaScanAt = useMemo(() => {
+    const m = new Map<string, string | null>();
+    for (const [slug, rows] of scans) m.set(slug, rows[0]?.created_at ?? null);
+    return m;
+  }, [scans]);
+
+  // Family health → honest `unknown` cells: a hard-failed scans/KPI family
+  // renders Ideas/KPI cells as "data unavailable" (muted), never a fake
+  // "never scanned"/"absent". (A `stale` family keeps its last-good data.)
+  const families = useMemo<FamilyHealth>(
+    () => ({ scansUnknown: scansStatus === 'failed', kpiUnknown: Boolean(factoryError) }),
+    [scansStatus, factoryError],
+  );
+  const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt, sentry, families), [passports, meta, loading, kpiByProject, ideaScanAt, sentry, families]);
+
+  // Which data families are currently not clean (failed OR showing stale data).
+  const bad = (s: string) => s === 'failed' || s === 'stale';
+  const failedFamilies = useMemo(() => {
+    const out: string[] = [];
+    if (bad(metaStatus)) out.push(t.mastermind.family_relations);
+    if (bad(scansStatus)) out.push(t.mastermind.family_scans);
+    if (factoryError) out.push(t.mastermind.family_kpi);
+    if (bad(sentryStatus)) out.push(t.mastermind.family_monitoring);
+    if (fleetSessionsError) out.push(t.mastermind.family_fleet);
+    return out;
+  }, [metaStatus, scansStatus, factoryError, sentryStatus, fleetSessionsError, t]);
+
+  const onRetryData = useCallback(() => {
+    retryFailed();
+    if (factoryError) factoryReload();
+    if (fleetSessionsError) void fleetRefresh();
+  }, [retryFailed, factoryError, factoryReload, fleetSessionsError, fleetRefresh]);
+  // Saved positions + live fleet + per-dim Improve actionability overlay the
+  // derived scene. Actionability mirrors the wall's ImproveCell checks, so a
+  // canvas cell is clickable exactly when its wall row would show a gear.
   const positioned = useMemo(() => ({
     ...scene,
     islands: scene.islands.map((i) => {
       const o = overrides[i.slug];
       const fleet = scene.demo ? i.fleet : fleetByProject.get(i.slug) ?? [];
-      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet };
+      const personasRunning = scene.demo ? i.personasRunning : personasByProject.get(i.slug) ?? [];
+      const passport = passports.find((p) => p.identity.slug === i.slug);
+      const raw = rawByProject.get(i.slug);
+      const nodes = i.nodes.map((n) => ({ ...n, ...dimAction(n.key, passport, raw) }));
+      // Attention derives from the RESOLVED fleet (live for real projects, the
+      // demo fleet for demo islands) — a needs-you marker the banner shows at
+      // every zoom band.
+      const attention = computeAttention(fleet);
+      return { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
     }),
-  }), [scene, overrides, fleetByProject]);
+  }), [scene, overrides, fleetByProject, personasByProject, passports, rawByProject]);
 
   const onIslandMove = (slug: string, x: number, y: number) =>
     setOverrides((prev) => ({ ...prev, [slug]: { x, y } }));
@@ -160,24 +333,144 @@ function MastermindInner() {
       return next;
     });
 
+  // Sidebar hide/show filter — the canvas renders only visible islands; the
+  // project list sees all of them.
+  const canvasScene = useMemo(() => ({
+    ...positioned,
+    islands: positioned.islands.filter((i) => !hiddenSlugs.has(i.slug)),
+  }), [positioned, hiddenSlugs]);
+
+  const toggleVisible = (slug: string) =>
+    setHiddenSlugs((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      saveHidden(next);
+      return next;
+    });
+
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
   const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
   const Canvas = VARIANTS[variant];
 
+  // Canvas cell → the same Improve popovers the Passport wall opens, anchored
+  // at the click point (they flip/clamp against the window themselves). The
+  // Ideas dimension opens the scan-dispatch popover instead.
+  const onDimOpen = (slug: string, node: DimNode, e: React.MouseEvent) => {
+    if (node.action === 'ideas') {
+      setScanPopup({ slug, x: e.clientX, y: e.clientY });
+      return;
+    }
+    if (!node.action || !node.rowKey) return;
+    setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
+  };
+
+  // Island context-menu "Open terminal": a project can host one when it's a real
+  // (non-demo) project with a folder path. slug === dev-tools project id.
+  const canOpenTerminal = useCallback(
+    (slug: string) => !slug.startsWith('demo-') && Boolean(projects.find((p) => p.id === slug)?.root_path),
+    [projects],
+  );
+
+  // Spawn a plain interactive Fleet session in the project root (no prompt) and
+  // open its preview immediately; the next fleet poll docks it in the badges.
+  const openTerminal = useCallback(async (slug: string) => {
+    const root = projects.find((p) => p.id === slug)?.root_path;
+    if (!root) return;
+    try {
+      const id = await spawnSession(root);
+      setPreviewId(id);
+      void fleetRefresh();
+    } catch (err) {
+      toastCatch('mastermind spawn terminal')(err);
+    }
+  }, [projects, fleetRefresh]);
+
+  // Dispatch ONE agent's idea scan for the popup's project through the
+  // canonical recorded pipeline (writes the DevScan row the freshness reads).
+  const runIdeaScan = async (agentKey: string) => {
+    if (!scanPopup || scanBusy) return;
+    setScanBusy(true);
+    pendingScanSlug.current = scanPopup.slug;
+    useOverviewStore.getState().processStarted(
+      'idea_scan',
+      undefined,
+      `Idea Scan (${agentKey})`,
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
+    try {
+      await runScan(scanPopup.slug, [agentKey]);
+      addToast(`Idea scan dispatched (${agentKey})`, 'success');
+      void invalidateScans(scanPopup.slug);
+      setScanPopup(null);
+    } catch (err) {
+      useOverviewStore.getState().processEnded('idea_scan', 'failed');
+      setScanBusy(false);
+      toastCatch('mastermind idea scan')(err);
+    }
+  };
+
+  // New project — same mechanism as the Projects manager (ProjectModal +
+  // store create/update, path-dedup included).
+  const handleCreateProject = async (data: { name: string; path: string; projectType: string; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string; mainBranch: string }) => {
+    const existing = projects.find((p) => p.root_path === data.path);
+    if (existing) return { id: existing.id };
+    try {
+      const project = await storeCreateProject(data.name, data.path, '', data.projectType, data.githubUrl || undefined, data.teamId ?? undefined);
+      await storeUpdateProject(project.id, {
+        teamId: data.teamId,
+        prCredentialId: data.prCredentialId,
+        testEnvUrl: data.testEnvUrl || null,
+        testEnvBranch: data.testEnvBranch || null,
+        mainBranch: data.mainBranch || null,
+      });
+      void fetchProjects();
+      reload();
+      return { id: project.id };
+    } catch (err) {
+      // Surface a Sentry breadcrumb rather than swallowing — the modal reads
+      // `undefined` as "create failed" and keeps its form open.
+      silentCatch('mastermind handleCreateProject')(err);
+      return undefined;
+    }
+  };
+
   return (
+    <ImproveProvider value={improve}>
     <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
-      <Canvas scene={positioned} mode={mode} onIslandMove={onIslandMove} onIslandCommit={onIslandCommit} onFleetOpen={setPreviewId} onProjectOpen={setOpenSlug} statsStyle={statsStyle} />
+      {/* Hold the canvas back until the durable layout doc has hydrated, so the
+          variant's sync layout initializers read the persisted doc. */}
+      {layoutReady ? (
+        <Canvas
+          scene={canvasScene}
+          mode={mode}
+          onIslandMove={onIslandMove}
+          onIslandCommit={onIslandCommit}
+          onFleetOpen={setPreviewId}
+          onProjectOpen={setOpenSlug}
+          onDimOpen={onDimOpen}
+          onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+          onOpenTerminal={openTerminal}
+          canOpenTerminal={canOpenTerminal}
+        />
+      ) : (
+        <LoadingSpinner label={COPY.loadingLayout} />
+      )}
 
       {/* prototype-only variant switcher */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
         <SegmentedTabs tabs={VARIANT_TABS} activeTab={variant} onTabChange={setVariant} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.switcher} />
       </div>
 
-      {/* prototype-only stats treatment switcher */}
-      <div className="absolute top-3 left-3 z-10">
-        <SegmentedTabs tabs={STATS_TABS} activeTab={statsStyle} onTabChange={setStatsStyle} variant="segment" size="sm" fullWidth={false} ariaLabel={COPY.statsSwitcher} />
-      </div>
+      <ProjectListSidebar
+        islands={positioned.islands}
+        hidden={hiddenSlugs}
+        open={projectsOpen}
+        onOpenToggle={() => setProjectsOpen((v) => !v)}
+        onToggleVisible={toggleVisible}
+        onNewProject={() => setNewProjectOpen(true)}
+      />
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
 
@@ -185,9 +478,46 @@ function MastermindInner() {
         <FleetPreviewPanel sessionId={previewId} session={previewSession} onClose={() => setPreviewId(null)} />
       )}
 
-      {openIsland && (
-        <ProjectSidebar passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+      <AnimatePresence>
+        {openIsland && (
+          <ProjectSidebar key="project-sidebar" passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+        )}
+      </AnimatePresence>
+
+      {personaMenu && (
+        <PersonaListPopover
+          names={positioned.islands.find((i) => i.slug === personaMenu.slug)?.personasRunning ?? []}
+          x={personaMenu.x}
+          y={personaMenu.y}
+          onClose={() => setPersonaMenu(null)}
+        />
       )}
+
+      {improvePopup && (improvePopup.standards ? (
+        <ImprovePopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
+      ) : (
+        <DeployPopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
+      ))}
+
+      {scanPopup && (
+        <IdeaScanPopover
+          name={positioned.islands.find((i) => i.slug === scanPopup.slug)?.name ?? scanPopup.slug}
+          scans={scans.get(scanPopup.slug) ?? []}
+          anchor={{ x: scanPopup.x, y: scanPopup.y }}
+          busy={scanBusy}
+          onRun={(agentKey) => void runIdeaScan(agentKey)}
+          onClose={() => setScanPopup(null)}
+        />
+      )}
+
+      <ProjectModal
+        open={newProjectOpen}
+        onClose={() => setNewProjectOpen(false)}
+        onCreate={handleCreateProject}
+        onUpdate={async (id, data) => { await storeUpdateProject(id, { name: data.name, githubUrl: data.githubUrl, teamId: data.teamId }); }}
+        onScanNow={startBackgroundScan}
+        editProject={null}
+      />
 
       {scene.demo && (
         <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
@@ -199,6 +529,9 @@ function MastermindInner() {
           {error}
         </div>
       )}
+
+      <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />
     </div>
+    </ImproveProvider>
   );
 }

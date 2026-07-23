@@ -1,0 +1,20 @@
+{
+  "open_terminal": "Mở terminal",
+  "terminal_disabled_demo": "Dự án demo — mở terminal từ một dự án thực",
+  "terminal_disabled_no_path": "Dự án này không có đường dẫn thư mục",
+  "fit_all": "Vừa tất cả dự án",
+  "tidy": "Sắp xếp bản đồ",
+  "tidy_tooltip": "Sắp xếp bản đồ — sắp xếp dự án theo kết nối",
+  "undo_tidy": "Hoàn tác sắp xếp",
+  "zoom_in": "Phóng to",
+  "zoom_out": "Thu nhỏ",
+  "attention_tooltip": "Một phiên đang chờ bạn nhập",
+  "data_health_title": "Không thể tải một số dữ liệu canvas",
+  "family_monitoring": "Giám sát",
+  "family_relations": "Quan hệ",
+  "family_scans": "Quét ý tưởng",
+  "island_state_errors": "Màu theo lỗi giám sát trực tiếp",
+  "island_state_readiness": "Màu theo điểm mức độ sẵn sàng",
+  "family_fleet": "Hạm đội",
+  "family_kpi": "KPI"
+}
