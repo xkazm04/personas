@@ -1,10 +1,24 @@
 import type { StateCreator } from 'zustand';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { SystemStore } from '../../storeTypes';
 import { reportError } from '../../storeTypes';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
+import { EventName } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
+
+// Module-level guard so the three Tauri session listeners attach exactly once
+// per app process, no matter how many surfaces (Fleet grid, Mastermind canvas,
+// …) call fleetStartSessionListeners. Kept on globalThis so an HMR reload of
+// this module doesn't double-register. The unlisten handles are retained only
+// for completeness — the registry is process-lifetime, never torn down.
+const FLEET_LISTENER_KEY = '__personasFleetSessionListeners';
+type FleetListenerFlag = { started: boolean; unlisten: UnlistenFn[] };
+const fleetListenerFlag = (): FleetListenerFlag => {
+  const g = globalThis as unknown as Record<string, FleetListenerFlag | undefined>;
+  return (g[FLEET_LISTENER_KEY] ??= { started: false, unlisten: [] });
+};
 
 /** One recorded lifecycle transition for the per-session sparkline. */
 export interface FleetTransition {
@@ -76,6 +90,12 @@ export interface FleetSlice {
   fleetTerminalTheme: FleetTerminalTheme;
 
   fleetRefresh: () => Promise<void>;
+  /** Attach the three live Fleet session listeners (state / exited / registry)
+   *  to this store — ONCE per process. Any surface that shows fleet sessions
+   *  (Fleet grid, Mastermind canvas) calls this on mount so the store stays
+   *  live-accurate without a poll. Idempotent; grid-local UI side effects
+   *  (awaiting-input notifications, live-slot toasts) stay in the grid page. */
+  fleetStartSessionListeners: () => void;
   fleetSetActiveSession: (id: string | null) => void;
   fleetSetGridOpen: (open: boolean) => void;
   fleetSetOrphanCount: (n: number) => void;
@@ -141,6 +161,48 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
         stateUpdates: { fleetSessionsLoading: false },
       });
     }
+  },
+
+  fleetStartSessionListeners: () => {
+    const flag = fleetListenerFlag();
+    if (flag.started) return;
+    flag.started = true;
+
+    // FLEET_SESSION_STATE: patch the session row + record the transition. The
+    // grid page keeps its OWN listener for the user-facing notification/toast
+    // side effects — this one owns only the store mutation (no double-handling).
+    void listen<{ session_id: string; state: string; reason?: string }>(
+      EventName.FLEET_SESSION_STATE,
+      (event) => {
+        const { session_id, state, reason } = event.payload;
+        get().fleetPatchSession(session_id, {
+          state: state as FleetSessionState,
+          stateReason: reason ?? null,
+          lastActivityMs: BigInt(Date.now()),
+        });
+        get().fleetRecordTransition(session_id, state as FleetSessionState);
+      },
+    ).then((un) => flag.unlisten.push(un));
+
+    void listen<{ session_id: string; exit_code: number | null }>(
+      EventName.FLEET_SESSION_EXITED,
+      (event) => {
+        get().fleetPatchSession(event.payload.session_id, {
+          state: 'exited' as FleetSessionState,
+          exitCode: event.payload.exit_code,
+          lastActivityMs: BigInt(Date.now()),
+        });
+        get().fleetRecordTransition(event.payload.session_id, 'exited' as FleetSessionState);
+      },
+    ).then((un) => flag.unlisten.push(un));
+
+    void listen<{ kind: 'added' | 'removed' | 'updated'; session_id: string }>(
+      EventName.FLEET_REGISTRY_CHANGED,
+      (event) => {
+        if (event.payload.kind === 'removed') get().fleetRemoveSessionLocal(event.payload.session_id);
+        else void get().fleetRefresh(); // added/updated → re-fetch the full row
+      },
+    ).then((un) => flag.unlisten.push(un));
   },
 
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),

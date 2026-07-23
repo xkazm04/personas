@@ -7,11 +7,11 @@
 // Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired). 11
 // dimensions per island; Fleet dock nodes open the CLI preview popover.
 // Prototype copy is hardcoded (COPY const) pending consolidation i18n.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 
-import { getCrossProjectMetadata, listScans, runScan, type CrossProjectMetadataMap } from '@/api/devTools/devTools';
+import { runScan } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -25,7 +25,6 @@ import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/Im
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
-import type { DevScan } from '@/lib/bindings/DevScan';
 import { EventName } from '@/lib/eventRegistry';
 import { toastCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
@@ -39,6 +38,7 @@ import { dimAction } from './lib/dimActions';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { IconSetProvider, loadIconSet, saveIconSet, type IconSetId } from './lib/iconSet';
 import { PersonaListPopover } from './lib/PersonaListPopover';
@@ -91,7 +91,13 @@ function MastermindInner() {
   const { passports, rawByProject, loading, error, reload } = usePassportData();
   const { projects: factoryProjects } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
-  const [meta, setMeta] = useState<CrossProjectMetadataMap | null>(null);
+  // Scene store — the single batched spine: cross-project relations (meta) +
+  // idea scans, each fetched with ≤1 IPC and invalidated by event, not polled.
+  const meta = useSceneStore((s) => s.meta);
+  const scans = useSceneStore((s) => s.scans);
+  const loadMeta = useSceneStore((s) => s.loadMeta);
+  const loadScans = useSceneStore((s) => s.loadScans);
+  const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const [variant, setVariant] = useState<VariantId>('mosaic');
   const [iconSet, setIconSet] = useState<IconSetId>(loadIconSet);
   const [mode, setMode] = useState<CanvasMode>('edit');
@@ -106,7 +112,11 @@ function MastermindInner() {
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
-  const [scansBySlug, setScansBySlug] = useState<Map<string, DevScan[]>>(new Map());
+  // Project of the last idea scan WE dispatched — lets a scan-completion event
+  // (which carries only a job id) invalidate exactly that project's rollup
+  // instead of a blanket refetch. Null → scan came from elsewhere, fall back
+  // to a single batched reload.
+  const pendingScanSlug = useRef<string | null>(null);
   const [projectsOpen, setProjectsOpen] = useState(false);
   const [hiddenSlugs, setHiddenSlugs] = useState<Set<string>>(loadHidden);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -123,17 +133,24 @@ function MastermindInner() {
   const storeUpdateProject = useSystemStore((s) => s.updateProject);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
-  // Fleet sessions: the live-event listeners live in FleetGridPage only, so
-  // off that page the store is a snapshot — refresh on mount + a slow poll.
+  // Fleet sessions: the live FLEET_SESSION_* listeners now register once at the
+  // store level, so the canvas reflects state changes in <1s with NO poll —
+  // just one snapshot fetch on mount to seed the store, then events keep it live.
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
+  const fleetStartSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
   const projects = useSystemStore(useShallow((s) => s.projects));
 
   useEffect(() => {
+    fleetStartSessionListeners();
     void fleetRefresh();
-    const t = setInterval(() => void fleetRefresh(), 5000);
-    return () => clearInterval(t);
-  }, [fleetRefresh]);
+  }, [fleetRefresh, fleetStartSessionListeners]);
+
+  // Batched scene spine: one relations fetch + one scans fetch on mount.
+  useEffect(() => {
+    void loadMeta();
+    void loadScans();
+  }, [loadMeta, loadScans]);
 
   // One-time layout hydration: read the durable doc from the DB, then re-seed
   // the state that was initialized from the (empty) pre-hydration doc and drop
@@ -150,40 +167,19 @@ function MastermindInner() {
     return () => { live = false; };
   }, [layoutReady]);
 
-  useEffect(() => {
-    let live = true;
-    getCrossProjectMetadata().then((m) => { if (live) setMeta(m); }).catch(() => {});
-    return () => { live = false; };
-  }, []);
-
-  // Idea-scan history per project — feeds the Ideas dimension's freshness
-  // colour + the dispatch popover's context line. DevScan rows in the DB
-  // already carry scan_type + created_at, so this is a read, not new storage.
-  const refreshScans = useCallback(async (slugs: string[]) => {
-    const entries = await Promise.all(
-      slugs.map(async (slug) => [slug, await listScans(slug, 20)] as const),
-    );
-    setScansBySlug((prev) => {
-      const next = new Map(prev);
-      for (const [slug, rows] of entries) next.set(slug, rows);
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (passports.length === 0) return;
-    void refreshScans(passports.map((p) => p.identity.slug));
-  }, [passports, refreshScans]);
-
   // A scan finishing anywhere (here or in the Idea Scanner page) refreshes the
-  // freshness data.
+  // freshness data. When WE dispatched it we know the project, so invalidate
+  // only that project's rollup (scoped IPC); otherwise fall back to one batched
+  // reload (still ≤1 IPC — the whole family is a single list call).
   const onScanStatus = useCallback((event: { payload: { status: string } }) => {
     const { status } = event.payload;
     if (status === 'completed' || status === 'completed_with_warning' || status === 'failed') {
-      void refreshScans(passports.map((p) => p.identity.slug));
+      const slug = pendingScanSlug.current;
+      if (slug) { void invalidateScans(slug); pendingScanSlug.current = null; }
+      else void loadScans();
       setScanBusy(false);
     }
-  }, [passports, refreshScans]);
+  }, [invalidateScans, loadScans]);
   useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
 
   // Keyboard: E/G/C switch modes, Esc closes panels (the shell handles its own
@@ -258,9 +254,9 @@ function MastermindInner() {
 
   const ideaScanAt = useMemo(() => {
     const m = new Map<string, string | null>();
-    for (const [slug, rows] of scansBySlug) m.set(slug, rows[0]?.created_at ?? null);
+    for (const [slug, rows] of scans) m.set(slug, rows[0]?.created_at ?? null);
     return m;
-  }, [scansBySlug]);
+  }, [scans]);
 
   const scene = useMemo(() => deriveScene(passports, meta, loading, kpiByProject, ideaScanAt), [passports, meta, loading, kpiByProject, ideaScanAt]);
   // Saved positions + live fleet + per-dim Improve actionability overlay the
@@ -347,6 +343,7 @@ function MastermindInner() {
   const runIdeaScan = async (agentKey: string) => {
     if (!scanPopup || scanBusy) return;
     setScanBusy(true);
+    pendingScanSlug.current = scanPopup.slug;
     useOverviewStore.getState().processStarted(
       'idea_scan',
       undefined,
@@ -356,7 +353,7 @@ function MastermindInner() {
     try {
       await runScan(scanPopup.slug, [agentKey]);
       addToast(`Idea scan dispatched (${agentKey})`, 'success');
-      void refreshScans([scanPopup.slug]);
+      void invalidateScans(scanPopup.slug);
       setScanPopup(null);
     } catch (err) {
       useOverviewStore.getState().processEnded('idea_scan', 'failed');
@@ -463,7 +460,7 @@ function MastermindInner() {
       {scanPopup && (
         <IdeaScanPopover
           name={positioned.islands.find((i) => i.slug === scanPopup.slug)?.name ?? scanPopup.slug}
-          scans={scansBySlug.get(scanPopup.slug) ?? []}
+          scans={scans.get(scanPopup.slug) ?? []}
           anchor={{ x: scanPopup.x, y: scanPopup.y }}
           busy={scanBusy}
           onRun={(agentKey) => void runIdeaScan(agentKey)}

@@ -106,6 +106,7 @@ const GROUP_ORDER: ReadonlyArray<{
 export default function FleetGridPage() {
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
   const refresh = useSystemStore((s) => s.fleetRefresh);
+  const startSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
   const recordTransition = useSystemStore((s) => s.fleetRecordTransition);
@@ -177,16 +178,18 @@ export default function FleetGridPage() {
     actionsRef.current.refresh();
     fetchProjects().catch(silentCatch('FleetGridPage:fetchProjects'));
 
+    // Store-level registration owns the session-row mutations (patch / record
+    // transition / remove / re-fetch) for FLEET_SESSION_STATE / _EXITED /
+    // _REGISTRY_CHANGED — attached once per process so the canvas and other
+    // surfaces stay live without a poll. This page keeps only its own
+    // UI-LOCAL side effects (awaiting-input push notification + live-slot
+    // eviction toast) on FLEET_SESSION_STATE — no double store-handling.
+    startSessionListeners();
+
     const unStateP = listen<{ session_id: string; state: string; reason?: string }>(
       EventName.FLEET_SESSION_STATE,
       (event) => {
         const { session_id, state, reason } = event.payload;
-        actionsRef.current.patchSession(session_id, {
-          state: state as FleetSessionState,
-          stateReason: reason ?? null,
-          lastActivityMs: BigInt(Date.now()),
-        });
-        actionsRef.current.recordTransition(session_id, state as FleetSessionState);
 
         // Live-slot cap eviction is safe (Idle/Stale only, resumable) but was
         // SILENT: the tile just vanished from the live grid with the reason
@@ -228,34 +231,8 @@ export default function FleetGridPage() {
       },
     );
 
-    const unExitedP = listen<{ session_id: string; exit_code: number | null }>(
-      EventName.FLEET_SESSION_EXITED,
-      (event) => {
-        actionsRef.current.patchSession(event.payload.session_id, {
-          state: 'exited' as FleetSessionState,
-          exitCode: event.payload.exit_code,
-          lastActivityMs: BigInt(Date.now()),
-        });
-        actionsRef.current.recordTransition(event.payload.session_id, 'exited' as FleetSessionState);
-      },
-    );
-
-    const unRegistryP = listen<{ kind: 'added' | 'removed' | 'updated'; session_id: string }>(
-      EventName.FLEET_REGISTRY_CHANGED,
-      (event) => {
-        if (event.payload.kind === 'removed') {
-          actionsRef.current.removeLocal(event.payload.session_id);
-        } else {
-          // Added or updated → re-fetch to get the full row.
-          actionsRef.current.refresh();
-        }
-      },
-    );
-
     return () => {
       unStateP.then((fn) => fn());
-      unExitedP.then((fn) => fn());
-      unRegistryP.then((fn) => fn());
     };
     // Effect intentionally has no deps — actions live behind a ref above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
