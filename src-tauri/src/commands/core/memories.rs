@@ -5,6 +5,7 @@ use ts_rs::TS;
 
 use crate::db::models::{CreatePersonaMemoryInput, MemoryCategoryInfo, PersonaMemory};
 use crate::db::repos::core::memories as repo;
+use crate::db::repos::core::memory_claims::{self as claims_repo, DisputedMemoryRow, MemoryClaim};
 use crate::db::repos::core::memory_review_proposal::{
     self as proposal_repo, CreateProposalInput, MemoryReviewProposal, ProposalEntry,
 };
@@ -45,6 +46,57 @@ pub fn list_memories(
         sort_column.as_deref(),
         sort_direction.as_deref(),
     )
+}
+
+// -- Memory dispute claims (Brainiac-adoption P3) -----------------------------
+// See `repos::core::memory_claims` for the loop's semantics: negative claims
+// stay open until a human answers; resolution is memory-level; `deprecated`
+// archives. The commands are thin auth + delegation shims.
+
+#[tauri::command]
+pub fn file_memory_claim(
+    state: State<'_, Arc<AppState>>,
+    memory_id: String,
+    verdict: String,
+    note: Option<String>,
+    source: Option<String>,
+) -> Result<MemoryClaim, AppError> {
+    require_auth_sync(&state)?;
+    claims_repo::file_claim(
+        &state.db,
+        &memory_id,
+        &verdict,
+        note.as_deref(),
+        source.as_deref().unwrap_or("user"),
+    )
+}
+
+#[tauri::command]
+pub fn resolve_memory_claims(
+    state: State<'_, Arc<AppState>>,
+    memory_id: String,
+    resolution: String,
+    note: Option<String>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    claims_repo::resolve_memory_claims(&state.db, &memory_id, &resolution, note.as_deref())
+}
+
+#[tauri::command]
+pub fn list_memory_claims(
+    state: State<'_, Arc<AppState>>,
+    memory_id: String,
+) -> Result<Vec<MemoryClaim>, AppError> {
+    require_auth_sync(&state)?;
+    claims_repo::list_claims(&state.db, &memory_id)
+}
+
+#[tauri::command]
+pub fn memory_disputed_overview(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<DisputedMemoryRow>, AppError> {
+    require_auth_sync(&state)?;
+    claims_repo::disputed_overview(&state.db)
 }
 
 #[tauri::command]

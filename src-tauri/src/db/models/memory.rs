@@ -321,6 +321,14 @@ pub struct PersonaMemory {
     /// (`repos::core::memories::create_synthesized`).
     #[serde(default)]
     pub derived_from: Option<Json<Vec<String>>>,
+    /// Open NEGATIVE dispute claims (`wrong`/`outdated`, unresolved) against
+    /// this memory — Brainiac-adoption P3. Denormalized counter maintained
+    /// exclusively by `repos::core::memory_claims` (file/resolve in the same
+    /// transaction as the claim row). Read by `engine::memory_recall`'s decay
+    /// scorer: disputed memories sink in recall (bounded tanh penalty) but are
+    /// never silently removed — resolution is a human decision.
+    #[serde(default)]
+    pub open_claim_count: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

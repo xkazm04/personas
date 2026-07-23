@@ -6,7 +6,7 @@
 // project rows (used after a Tier-0 config write — no need to re-scan).
 import { useCallback, useEffect, useState } from 'react';
 
-import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow } from '@/api/devTools/devTools';
+import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, scanMemoryHealth, getMemoryHealthOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow, type MemoryHealthRow } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
@@ -48,11 +48,12 @@ export function usePassportData(): PassportData {
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
-    const [globalSkills, projectSkillLists, usageRows, docRotRows] = await Promise.all([
+    const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows] = await Promise.all([
       listSkillsGlobal().catch(() => []),
       Promise.all(map.projects.map((m) => listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const))),
       getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
       getDocRotOverview().catch(() => [] as DocRotRow[]),
+      getMemoryHealthOverview().catch(() => [] as MemoryHealthRow[]),
     ]);
     // Doc-rot rollup per project (P2): dirty docs + tracked docs that no
     // session has ever read since telemetry began. Absent rows = scan hasn't
@@ -65,6 +66,10 @@ export function usePassportData(): PassportData {
       if (r.dirty_since) agg.dirty += 1;
       if (r.last_read_at === null) agg.neverRead += 1;
     }
+    // Memory-health rollup per project (P3) — the latest snapshot + live
+    // disputed count. Absent = the project has no bound team or the sweep
+    // hasn't run; the memory row then omits its health sub-label.
+    const memHealthByProject = new Map(memHealthRows.map((r) => [r.project_id, r]));
     // Usage telemetry (P1) — registry rows keyed for the two lookups the wall
     // needs: this project's copy first, the global library copy as fallback.
     const usageByProject = new Map<string, Map<string, SkillUsageRow>>();
@@ -150,8 +155,10 @@ export function usePassportData(): PassportData {
         })
         .map((s) => ({ name: s.name, description: s.description }));
       const docRot = docRotByProject.get(meta.project_id);
-      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot });
-      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot }));
+      const mh = memHealthByProject.get(meta.project_id);
+      const memHealth = mh ? { score: mh.score, prevScore: mh.prev_score, disputed: mh.disputed, capturedAt: mh.captured_at } : undefined;
+      rawByProject.set(project.id, { project, meta, hasSkills, skillCounts, skillUsage, catalogUsage, skillsToAdd, skillsToShare, evidence, docRot, memHealth });
+      passports.push(derivePassportFromMetadata(meta, project, { hasSkills, evidence, skillCounts, docRot, memHealth }));
     }
     const sorted = sortByNameAsc(passports);
     // Append to the local readiness history (deduped) so the cover sparkline +
@@ -179,6 +186,7 @@ export function usePassportData(): PassportData {
     void (async () => {
       try {
         await scanDocRot().catch(silentCatch('usePassportData:docRotScan'));
+        await scanMemoryHealth().catch(silentCatch('usePassportData:memHealthScan'));
         for (let i = 0; i < 3; i++) {
           const s = await scanSkillUsage();
           if (cancelled || !s.exhausted) break;

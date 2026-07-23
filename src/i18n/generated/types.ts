@@ -7330,6 +7330,24 @@ export type Translations = {
       delete_memory: string;
       close: string;
       derived_from_label: string;
+      claims_label: string;
+      claims_open_badge: string;
+      claims_empty: string;
+      claim_wrong: string;
+      claim_outdated: string;
+      claim_note_placeholder: string;
+      claim_filed_toast: string;
+      claim_resolved_toast: string;
+      claim_error_toast: string;
+      claim_resolve_reverify: string;
+      claim_resolve_deprecate: string;
+      claim_resolve_dismiss: string;
+      claim_verdict_wrong: string;
+      claim_verdict_outdated: string;
+      claim_verdict_helpful: string;
+      claim_resolution_reverified: string;
+      claim_resolution_deprecated: string;
+      claim_resolution_dismissed: string;
     };
     memory_table: {
       agent: string;

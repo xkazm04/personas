@@ -86,6 +86,7 @@ export function derivePassportFromMetadata(
     evidence?: RepoEvidence | null;
     skillCounts?: { reused: number; own: number; dormant?: number };
     docRot?: { tracked: number; dirty: number; neverRead: number };
+    memHealth?: { score: number; prevScore: number | null; disputed: number; capturedAt: string };
   },
 ): AppPassport {
   const hasSkills = Boolean(opts?.hasSkills);
@@ -160,8 +161,14 @@ export function derivePassportFromMetadata(
   const memFiles = ev?.memory_file_count ?? 0;
   const memIndex = ev?.memory_index_lines ?? 0;
   const memAge = ev?.memory_age_days ?? null;
+  // `governed` (P3): the review/decay/claims loop is demonstrably RUNNING for
+  // this project — a fresh knowledge-health snapshot exists for its bound
+  // team. Requires the curated bar first; the snapshot alone doesn't make
+  // sloppy memory governed.
+  const curated = memIndex >= 5 && memAge != null && memAge <= 30;
   const memoryLevel: MemoryLevel = !(ev?.has_repo_memory || memFiles > 0) ? 'none'
-    : memIndex >= 5 && memAge != null && memAge <= 30 ? 'curated'
+    : curated && opts?.memHealth ? 'governed'
+    : curated ? 'curated'
     : 'adhoc';
 
   // Documentation (P0) — a doc-map manifest means freshness is *managed*
@@ -182,7 +189,7 @@ export function derivePassportFromMetadata(
     + (evalsLevel !== 'none' ? 7 : 0)
     + (ev?.has_claude_md ? 6 : 0)
     + (meta.active_goal_count > 0 ? 9 : 0)
-    + (memoryLevel === 'curated' ? 7 : memoryLevel === 'adhoc' ? 3 : 0)
+    + (memoryLevel === 'governed' ? 9 : memoryLevel === 'curated' ? 7 : memoryLevel === 'adhoc' ? 3 : 0)
     + (docsLevel === 'synced' ? 8 : docsLevel === 'structured' ? 5 : docsLevel === 'readme' ? 2 : 0),
   );
 
@@ -317,6 +324,9 @@ export function derivePassportFromMetadata(
         skills: hasSkills,
         skillCounts: opts?.skillCounts,
         docRot: opts?.docRot,
+        memoryHealth: opts?.memHealth
+          ? { score: opts.memHealth.score, prevScore: opts.memHealth.prevScore, disputed: opts.memHealth.disputed }
+          : undefined,
       },
       selfVerify,
       aiInWorkflow,

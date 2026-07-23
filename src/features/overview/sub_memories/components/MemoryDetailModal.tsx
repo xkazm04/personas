@@ -8,6 +8,7 @@ import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ImportanceBar } from './MemoryCard';
+import { MemoryClaimsSection } from './MemoryClaimsSection';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function parseTags(tags: string[] | null): string[] {
@@ -125,6 +126,9 @@ export default function MemoryDetailModal({
               </div>
             </div>
           )}
+
+          {/* Dispute claims (P3) — file wrong/outdated, resolve open disputes */}
+          <MemoryClaimsSection memoryId={memory.id} />
 
           {/* Source execution link */}
           {memory.source_execution_id && (

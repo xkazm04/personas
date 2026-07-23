@@ -352,8 +352,13 @@ pub struct DevKpiMeasurement {
     pub kpi_id: String,
     pub value: f64,
     pub measured_at: String,
-    /// 'evaluator' | 'manual' | 'scan' | 'health_snapshot'
+    /// 'evaluator' | 'manual' | 'scan' | 'health_snapshot' | 'simulation'
     pub source: String,
+    /// Observation environment: 'local' | 'test' | 'production'. Real
+    /// (connector/manual/evaluator-in-prod) measurements default to
+    /// 'production'; simulation rows are 'local'/'test' ONLY — a simulated
+    /// value never claims the production channel.
+    pub env: String,
     pub evidence: Option<String>,
     pub note: Option<String>,
 }
@@ -574,7 +579,7 @@ pub struct DevIdea {
     /// Which sensor raised this (the findings spine — see
     /// `docs/plans/dev-findings-loop.md`). `None` = a classic Idea-Scanner idea.
     /// One of: `standards_finding` | `passport_gap` | `llm_cost` | `sentry_spike`
-    /// | `kpi_offtrack` | `skill_dormant` | `doc_rot`.
+    /// | `kpi_offtrack` | `skill_dormant` | `doc_rot` | `kpi_sim` | `memory_disputed`.
     pub origin: Option<String>,
     /// The use case the emitting signal belongs to. Orphan-tolerant (no FK).
     pub use_case_id: Option<String>,
@@ -601,7 +606,7 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 
 /// The sensors that can raise a finding. Kept as a validated allowlist so a typo
 /// in an emitter can't quietly create a new origin the triage UI won't render.
-pub const FINDING_ORIGINS: [&str; 7] = [
+pub const FINDING_ORIGINS: [&str; 9] = [
     "standards_finding",
     "passport_gap",
     "llm_cost",
@@ -609,6 +614,8 @@ pub const FINDING_ORIGINS: [&str; 7] = [
     "kpi_offtrack",
     "skill_dormant",
     "doc_rot",
+    "kpi_sim",
+    "memory_disputed",
 ];
 
 // ============================================================================

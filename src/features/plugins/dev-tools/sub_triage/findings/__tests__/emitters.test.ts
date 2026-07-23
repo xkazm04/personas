@@ -4,10 +4,12 @@ import {
   emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
+  emitMemoryDisputedFindings,
   emitPassportGaps,
   emitSentryFindings,
   emitSkillDormantFindings,
   emitStandardsFindings,
+  type DisputedMemory,
   type DormantSkill,
   type RottingDoc,
 } from '../emitters';
@@ -246,5 +248,37 @@ describe('emitDocRotFindings (E7)', () => {
     expect(out[0]!.description).toContain('src/a.rs');
     expect(out[0]!.evidence).toMatchObject({ changedSources: ['src/a.rs', 'src/b.rs'] });
     expect(out[0]!.description).not.toMatch(/undefined/);
+  });
+});
+
+describe('emitMemoryDisputedFindings (E8)', () => {
+  const mem = (over: Partial<DisputedMemory>): DisputedMemory => ({
+    memory_id: 'm1',
+    memory_title: 'API base URL is api.example.com',
+    persona_name: 'QA Guardian',
+    open_claims: 1,
+    latest_verdict: 'outdated',
+    latest_note: null,
+    ...over,
+  });
+
+  it('ranks most-disputed first, caps, and phrases resolution as a human decision', () => {
+    const out = emitMemoryDisputedFindings([
+      mem({ memory_id: 'a', open_claims: 1 }),
+      mem({ memory_id: 'b', open_claims: 3 }),
+      mem({ memory_id: 'c', open_claims: 0 }), // not disputed — excluded
+      mem({ memory_id: 'd', open_claims: 2 }),
+      mem({ memory_id: 'e', open_claims: 1 }),
+    ]);
+    expect(out).toHaveLength(3); // MEMORY_DISPUTED_TOP_N
+    expect(out[0]!.dedupKey).toBe('memory:b');
+    expect(out[0]!.impact).toBe(4); // ≥2 claims escalates
+    expect(out[0]!.description).toContain('reverify');
+    expect(out.every((d) => d.origin === 'memory_disputed')).toBe(true);
+  });
+
+  it('handles a null latest verdict/note without rendering null', () => {
+    const out = emitMemoryDisputedFindings([mem({ latest_verdict: null, latest_note: null })]);
+    expect(out[0]!.description).not.toMatch(/undefined|null/);
   });
 });

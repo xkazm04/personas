@@ -59,8 +59,12 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       const files = ev?.memory_file_count ?? 0;
       const idx = ev?.memory_index_lines ?? 0;
       const age = ev?.memory_age_days;
-      if (files > 0) return `Claude auto-memory: ${files} files, ${idx} index entries${age != null ? `, updated ${age}d ago` : ''}.`;
-      return ev?.has_repo_memory ? 'In-repo memory artifact detected (MEMORY.md / .claude/memory).' : 'No agent memory detected for this repo.';
+      const mh = raw.memHealth;
+      const healthBit = mh
+        ? ` Team memory health ${mh.score}/100${mh.disputed > 0 ? `, ${mh.disputed} disputed memor${mh.disputed === 1 ? 'y' : 'ies'} awaiting resolution` : ''}.`
+        : '';
+      if (files > 0) return `Claude auto-memory: ${files} files, ${idx} index entries${age != null ? `, updated ${age}d ago` : ''}.${healthBit}`;
+      return (ev?.has_repo_memory ? 'In-repo memory artifact detected (MEMORY.md / .claude/memory).' : 'No agent memory detected for this repo.') + healthBit;
     }
     case 'aiflow':
       return project.pr_credential_id || project.auto_pr_on_success ? 'PR automation is wired.' : 'No automated PR / team pipeline wired.';

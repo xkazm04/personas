@@ -4149,6 +4149,66 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Memory claims + knowledge health (Brainiac-adoption P3). memory_claims =
+    // the open-until-resolved dispute loop (Brainiac memory_feedback): a
+    // negative claim (`wrong`/`outdated`) stays OPEN until a human answers
+    // reverified/deprecated/dismissed; `helpful` asserts nothing to fix and is
+    // never "open". persona_memories.open_claim_count is the denormalized
+    // open-NEGATIVE counter the decay scorer reads (MEMORY CONTRACT-adjacent:
+    // only the claims repo writes it). knowledge_health_snapshots = per-scope
+    // currency/consistency/governance rollups for trend lines (Brainiac 0014).
+    // NOTE deliberate deviations from the adoption plan, recorded there too:
+    // no `valid_to` column (category half-life decay + the working-tier 30-day
+    // expiry + ACTIVE_CAP already implement TTL/neglect in continuous form)
+    // and no `superseded_by` (derived_from + archive cover lineage until a
+    // real supersession writer exists). MUST stay INSIDE `run_incremental`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "memory_claims_health",
+            description: "Memory dispute claims (open-until-resolved) + open-claim counter + knowledge health snapshots",
+            already_applied: |conn| has_table(conn, "memory_claims"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS memory_claims (
+                        id              TEXT PRIMARY KEY,
+                        memory_id       TEXT NOT NULL REFERENCES persona_memories(id) ON DELETE CASCADE,
+                        verdict         TEXT NOT NULL CHECK (verdict IN ('helpful','wrong','outdated')),
+                        note            TEXT,
+                        source          TEXT NOT NULL DEFAULT 'user',
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        resolution      TEXT CHECK (resolution IN ('reverified','deprecated','dismissed')),
+                        resolution_note TEXT,
+                        resolved_at     TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_memory_claims_memory
+                        ON memory_claims(memory_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_memory_claims_open
+                        ON memory_claims(memory_id)
+                        WHERE resolution IS NULL AND verdict != 'helpful';
+                    ALTER TABLE persona_memories ADD COLUMN open_claim_count INTEGER NOT NULL DEFAULT 0;
+                    CREATE TABLE IF NOT EXISTS knowledge_health_snapshots (
+                        id          TEXT PRIMARY KEY,
+                        scope_kind  TEXT NOT NULL CHECK (scope_kind IN ('persona','team','project')),
+                        scope_id    TEXT NOT NULL,
+                        captured_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        score       INTEGER NOT NULL,
+                        currency    INTEGER,
+                        consistency INTEGER,
+                        governance  INTEGER,
+                        stale_count INTEGER,
+                        total_count INTEGER,
+                        open_claims INTEGER
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_khs_scope
+                        ON knowledge_health_snapshots(scope_kind, scope_id, captured_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -5120,10 +5180,59 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                         value       REAL NOT NULL,
                         measured_at TEXT NOT NULL DEFAULT (datetime('now')),
                         source      TEXT NOT NULL DEFAULT 'manual'
-                                    CHECK(source IN ('evaluator','manual','scan','health_snapshot')),
+                                    CHECK(source IN ('evaluator','manual','scan','health_snapshot','simulation')),
+                        env         TEXT NOT NULL DEFAULT 'production'
+                                    CHECK(env IN ('local','test','production')),
                         evidence    TEXT,
                         note        TEXT
                     );
+                    CREATE INDEX IF NOT EXISTS idx_dev_kpi_measurements_kpi
+                        ON dev_kpi_measurements(kpi_id, measured_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    // KPI simulation (docs/plans/kpi-simulation-skill.md P0): measurements gain
+    // an ENVIRONMENT axis (local / test / production — same vocabulary as the
+    // passport env split) and a 'simulation' source. SQLite can't widen a CHECK
+    // in place, so legacy tables are rebuilt (copy → drop → rename); fresh DBs
+    // get the new shape from the CREATE above and skip this via the guard.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpi_measurements_env_sim",
+            description: "env axis + simulation source on KPI measurements (table rebuild)",
+            already_applied: |conn| {
+                let sql: String = conn.query_row(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_kpi_measurements'",
+                    [],
+                    |r| r.get(0),
+                )?;
+                Ok(sql.contains("'simulation'")
+                    && has_column(conn, "dev_kpi_measurements", "env")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE dev_kpi_measurements_env_sim_new (
+                        id          TEXT PRIMARY KEY,
+                        kpi_id      TEXT NOT NULL REFERENCES dev_kpis(id) ON DELETE CASCADE,
+                        value       REAL NOT NULL,
+                        measured_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        source      TEXT NOT NULL DEFAULT 'manual'
+                                    CHECK(source IN ('evaluator','manual','scan','health_snapshot','simulation')),
+                        env         TEXT NOT NULL DEFAULT 'production'
+                                    CHECK(env IN ('local','test','production')),
+                        evidence    TEXT,
+                        note        TEXT
+                    );
+                    INSERT INTO dev_kpi_measurements_env_sim_new
+                        (id, kpi_id, value, measured_at, source, evidence, note)
+                        SELECT id, kpi_id, value, measured_at, source, evidence, note
+                        FROM dev_kpi_measurements;
+                    DROP TABLE dev_kpi_measurements;
+                    ALTER TABLE dev_kpi_measurements_env_sim_new RENAME TO dev_kpi_measurements;
                     CREATE INDEX IF NOT EXISTS idx_dev_kpi_measurements_kpi
                         ON dev_kpi_measurements(kpi_id, measured_at DESC);",
                 )?;
@@ -6275,6 +6384,7 @@ mod tests {
             ("dev_context_groups", "domain"),
             ("persona_memories", "derived_from"),
             ("persona_memory_review_proposal", "team_id"),
+            ("dev_kpi_measurements", "env"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

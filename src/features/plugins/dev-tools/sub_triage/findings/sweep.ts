@@ -12,6 +12,7 @@
 import {
   createFinding,
   getDocRotOverview,
+  getMemoryDisputedOverview,
   getSkillUsageOverview,
   listFindingDedupKeys,
   listSkills,
@@ -39,6 +40,7 @@ import {
   emitDocRotFindings,
   emitKpiFindings,
   emitLlmCostFindings,
+  emitMemoryDisputedFindings,
   emitPassportGaps,
   emitSentryFindings,
   emitSkillDormantFindings,
@@ -179,6 +181,18 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   } catch (e) {
     silentCatch('findings/sweep:docs')(e);
     skippedSensors.push('docs');
+  }
+
+  // -- E8: disputed memories (P3 claims loop) -----------------------------------
+  // Zero rows is a HEALTHY state, not a skipped sensor — the overview command
+  // itself degrades to [] only on older builds, which safeInvoke masks the
+  // same way, so this sensor never invents disputes either way.
+  try {
+    const disputed = (await getMemoryDisputedOverview()).filter((m) => m.project_id === project.id);
+    drafts.push(...emitMemoryDisputedFindings(disputed));
+  } catch (e) {
+    silentCatch('findings/sweep:memory')(e);
+    skippedSensors.push('memory');
   }
 
   // -- VERIFY (Phase 3A) ------------------------------------------------------

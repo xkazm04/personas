@@ -20,6 +20,8 @@ export interface ImproveRaw {
   catalogUsage?: Record<string, { invokes30d: number; lastInvokedAt: string | null }>;
   /** Doc-rot rollup (P2 git scan): absent = the scan hasn't run for this project. */
   docRot?: { tracked: number; dirty: number; neverRead: number };
+  /** Memory-health snapshot rollup (P3): absent = no bound team / sweep not run. */
+  memHealth?: { score: number; prevScore: number | null; disputed: number; capturedAt: string };
   /** Deterministic repo file-evidence (D1) — real test/CI/CLAUDE.md/migration signals. */
   evidence?: RepoEvidence | null;
   /** Skills installed elsewhere (other projects / global) but missing here. */

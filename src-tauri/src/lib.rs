@@ -1736,6 +1736,10 @@ pub fn run() {
             // Core -- Memories
             commands::core::memories::list_memory_categories,
             commands::core::memories::list_memories,
+            commands::core::memories::file_memory_claim,
+            commands::core::memories::resolve_memory_claims,
+            commands::core::memories::list_memory_claims,
+            commands::core::memories::memory_disputed_overview,
             commands::core::memories::list_memories_with_stats,
             commands::core::memories::get_memory_count,
             commands::core::memories::get_memory_stats,
@@ -2644,6 +2648,9 @@ pub fn run() {
             // Doc-rot telemetry (Brainiac-adoption P2)
             commands::infrastructure::doc_rot::doc_rot_scan,
             commands::infrastructure::doc_rot::doc_rot_overview,
+            // Knowledge-health snapshots (Brainiac-adoption P3)
+            commands::infrastructure::memory_health::memory_health_scan,
+            commands::infrastructure::memory_health::memory_health_overview,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,
@@ -3052,6 +3059,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements,
             commands::infrastructure::dev_tools::dev_tools_record_kpi_measurement,
             commands::infrastructure::kpi_scan::dev_tools_scan_kpis,
+            commands::infrastructure::kpi_sim::dev_tools_kpi_sim_prepare,
+            commands::infrastructure::kpi_sim::dev_tools_kpi_sim_ingest,
             commands::infrastructure::kpi_scan::dev_tools_cancel_kpi_scan,
             commands::infrastructure::kpi_scan::dev_tools_get_kpi_scan_status,
             commands::infrastructure::llm_spend::llm_spend_dashboard,

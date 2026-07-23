@@ -853,6 +853,7 @@ mod tests {
             use_case_id: None,
             home_team_id: None,
             derived_from: None,
+            open_claim_count: 0,
         }
     }
 
