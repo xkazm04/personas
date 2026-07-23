@@ -4,103 +4,25 @@
 // scanned yet, a built-in demo scene keeps the canvas evaluable.
 import type { CrossProjectMetadataMap } from '@/api/devTools/devTools';
 import {
-  AUTOMATION_LABEL, AUTOMATION_SCALE, CI_SCALE, LIFECYCLE_LABEL,
-  OBSERVABILITY_SCALE, SECURITY_SCALE, TESTS_SCALE,
-  type AppPassport,
+  AUTOMATION_LABEL, LIFECYCLE_LABEL, type AppPassport,
 } from '@/features/teams/sub_factory/passport/passportModel';
 
+import { DIM_ORDER, DIM_REGISTRY, type KpiRollup } from './dimRegistry';
 import { spiralPlace } from './hex';
 import type { DimNode, DimStatus, FleetNode, Island, IslandEdge, IslandState, Scene } from './types';
 
-// Prototype-stage copy (local COPY const, mirroring ProjectsPassportWall) —
-// consolidation wires these through i18n.
-const LABEL = {
-  db: 'Database', monitoring: 'Monitoring', ci: 'CI', tests: 'Tests',
-  security: 'Security', hosting: 'Hosting', auth: 'Auth', agents: 'Agents',
-  skills: 'Skills', llm: 'LLM cost', kpi: 'KPIs', ideas: 'Ideas',
-} as const;
+// KpiRollup's home is the registry (its Ideas/KPI derive functions consume it);
+// re-exported here so existing importers (MastermindPage) keep their path.
+export type { KpiRollup } from './dimRegistry';
 
-/** Per-project KPI rollup (Factory data): total active KPIs + off-track count. */
-export interface KpiRollup { total: number; off: number }
-
-const ord = <T extends string>(scale: T[], v: T) => {
-  const i = Math.max(0, scale.indexOf(v));
-  return { reached: i, steps: scale.length - 1, pos: scale.length > 1 ? i / (scale.length - 1) : 0 };
-};
-
-/** Days since the last idea scan → node fields. Freshness bands: green <7d,
- *  amber 7–30d, red >30d, grey when the scanner was never used. */
-function ideasNode(lastScanAt: string | null | undefined): DimNode {
-  const days = lastScanAt ? Math.max(0, Math.floor((Date.now() - new Date(lastScanAt).getTime()) / 86_400_000)) : null;
-  return {
-    key: 'ideas', label: LABEL.ideas,
-    status: days === null ? 'absent' : days < 7 ? 'solid' : days <= 30 ? 'risk' : 'alert',
-    detail: days === null ? null : days === 0 ? 'today' : `${days}d ago`,
-    reached: 0, steps: 0, days,
-  };
-}
-
-function dimNodes(p: AppPassport, kpi: KpiRollup | undefined): DimNode[] {
-  const { stack, productionReadiness: prod, automationReadiness: auto } = p;
-  const db = stack.persistence.filter((x) => x.kind !== 'none');
-  const monTools = [stack.monitoring.errorTracking, stack.monitoring.logs, stack.monitoring.metrics, stack.monitoring.tracing]
-    .filter((x): x is string => Boolean(x));
-  const obs = ord(OBSERVABILITY_SCALE, prod.observability.level);
-  const ci = ord(CI_SCALE, prod.ci.level);
-  const tests = ord(TESTS_SCALE, prod.tests.level);
-  const sec = ord(SECURITY_SCALE, prod.security.level);
-  const agents = ord(AUTOMATION_SCALE, auto.level);
-  const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'absent');
-
-  return [
-    {
-      key: 'db', label: LABEL.db,
-      status: db.length === 0 ? 'absent' : db.some((x) => x.migrations && x.migrations !== 'none') ? 'solid' : 'partial',
-      detail: db.map((x) => x.engine ?? x.kind).join(' · ') || null,
-      reached: 0, steps: 0,
-    },
-    {
-      key: 'monitoring', label: LABEL.monitoring,
-      status: monTools.length === 0 && obs.reached === 0 ? 'absent' : obs.pos >= 0.5 ? 'solid' : 'partial',
-      detail: monTools[0] ?? null,
-      reached: obs.reached, steps: obs.steps,
-    },
-    {
-      key: 'ci', label: LABEL.ci,
-      status: ci.reached === 0 ? 'absent' : ci.pos >= 0.5 ? 'solid' : 'partial',
-      detail: prod.ci.provider ?? null,
-      reached: ci.reached, steps: ci.steps,
-    },
-    {
-      key: 'tests', label: LABEL.tests,
-      status: tests.reached === 0 ? 'absent' : tests.pos >= 0.7 ? 'solid' : tests.pos >= 0.5 ? 'partial' : 'risk',
-      detail: prod.tests.coveragePct != null ? `${prod.tests.coveragePct}% cov` : prod.tests.frameworks?.[0] ?? null,
-      reached: tests.reached, steps: tests.steps,
-    },
-    {
-      key: 'security', label: LABEL.security,
-      status: sec.reached === 0 ? 'absent' : sec.pos >= 0.5 ? 'solid' : 'partial',
-      detail: prod.security.tools?.[0] ?? null,
-      reached: sec.reached, steps: sec.steps,
-    },
-    { key: 'hosting', label: LABEL.hosting, status: presence(stack.hosting), detail: stack.hosting ?? null, reached: 0, steps: 0 },
-    { key: 'auth', label: LABEL.auth, status: presence(stack.auth), detail: stack.auth ?? null, reached: 0, steps: 0 },
-    {
-      key: 'agents', label: LABEL.agents,
-      status: agents.pos >= 0.75 ? 'solid' : agents.pos >= 0.5 ? 'partial' : 'risk',
-      detail: AUTOMATION_LABEL[auto.level],
-      reached: agents.reached, steps: agents.steps,
-    },
-    // Round-4 additions from the Factory/Passport surface:
-    { key: 'skills', label: LABEL.skills, status: auto.artifacts.skills ? 'solid' : 'absent', detail: auto.artifacts.skills ? 'installed' : null, reached: 0, steps: 0 },
-    { key: 'llm', label: LABEL.llm, status: stack.llmTracking ? 'solid' : 'absent', detail: stack.llmTracking ?? null, reached: 0, steps: 0 },
-    {
-      key: 'kpi', label: LABEL.kpi,
-      status: !kpi || kpi.total === 0 ? 'absent' : kpi.off > 0 ? 'alert' : 'solid',
-      detail: !kpi || kpi.total === 0 ? null : kpi.off > 0 ? `${kpi.off} off-track` : `${kpi.total} on track`,
-      reached: 0, steps: 0,
-    },
-  ];
+/** All dimension nodes for a project, in registry order — each dimension's
+ *  status/detail/progress comes from its own registry `derive()`. */
+function dimNodes(p: AppPassport, kpi: KpiRollup | undefined, lastScanAt: string | null | undefined): DimNode[] {
+  return DIM_ORDER.map((key) => {
+    const entry = DIM_REGISTRY[key];
+    const d = entry.derive(p, { kpi, lastScanAt });
+    return { key, label: entry.label, status: d.status, detail: d.detail, reached: d.reached, steps: d.steps, days: d.days ?? null };
+  });
 }
 
 function islandState(p: AppPassport): IslandState {
@@ -124,7 +46,7 @@ function toIsland(p: AppPassport, i: number, kpi: KpiRollup | undefined, lastSca
     lifecycle: LIFECYCLE_LABEL[p.identity.lifecycle],
     automationLabel: AUTOMATION_LABEL[p.automationReadiness.level],
     blockers: p.automationReadiness.blockers.length + p.productionReadiness.blockers.length,
-    nodes: [...dimNodes(p, kpi), ideasNode(lastScanAt)],
+    nodes: dimNodes(p, kpi, lastScanAt),
     fleet: [],
     personasRunning: [],
   };
@@ -179,7 +101,7 @@ type Row = [DimNode['key'], DimStatus, string | null, number, number, (number | 
 const mk = (slug: string, name: string, purpose: string, i: number, state: IslandState,
   autoScore: number, prodScore: number, lifecycle: string, automationLabel: string, blockers: number, rows: Row[], fleet: FleetNode[] = []): Island => ({
   slug, name, purpose, ...spiralPlace(i, slug), state, autoScore, prodScore, lifecycle, automationLabel, blockers,
-  nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: LABEL[key], status, detail, reached, steps, days: days ?? null })),
+  nodes: rows.map(([key, status, detail, reached, steps, days]) => ({ key, label: DIM_REGISTRY[key].label, status, detail, reached, steps, days: days ?? null })),
   fleet,
   personasRunning: DEMO_PERSONAS[slug] ?? [],
 });

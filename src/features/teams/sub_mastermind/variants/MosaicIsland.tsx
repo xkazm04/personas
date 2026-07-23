@@ -7,6 +7,7 @@
 import { useState } from 'react';
 
 import { DimGlyph } from '../lib/DimGlyph';
+import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
 import { FleetBadges } from '../lib/FleetBadges';
@@ -19,7 +20,10 @@ import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
 // Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-12.
-// Order matches deriveScene's node order.
+// Order matches the dimension registry's DIM_ORDER 1:1 (index N → dimension N).
+// LATTICE SLOTS 13+: a 13th dimension needs one more [q,r] axial coord appended
+// here (the next free ring-2 cap, e.g. [0,-2] / [0,2]); cells beyond AXIAL.length
+// are silently dropped by the render loop's `if (!ax) return null`.
 const AXIAL: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [0, 1], [-1, 1], [-1, 0],
   [2, -1], [-2, 1], [1, -2], [-1, 2], [2, 0], [-2, 0],
@@ -154,8 +158,8 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
         <polygon points={hexPoints(0, 0, CELL + 1)} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} strokeLinejoin="round" />
       )}
       {zoomedOut ? (
-        node.key === 'ideas' && node.days != null ? (
-          // ideas cell: days-since-last-scan IS the payload when zoomed out
+        DIM_REGISTRY[node.key]?.payloadKind === 'days' && node.days != null ? (
+          // days-payload cell: the count IS the payload when zoomed out (Ideas' freshness)
           <>
             <DimGlyph node={node} x={-8} y={-34} size={16} strokeWidth={1.75} color={ink} />
             <text y={18} textAnchor="middle" fontSize={30} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>

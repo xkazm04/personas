@@ -7,9 +7,13 @@ export type IslandState = 'healthy' | 'building' | 'warning' | 'critical';
 
 export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert';
 
-export type DimKey =
-  | 'db' | 'monitoring' | 'ci' | 'tests' | 'security' | 'hosting' | 'auth' | 'agents'
-  | 'skills' | 'llm' | 'kpi' | 'ideas';
+// DimKey is derived from the dimension registry (the single source of truth for
+// the dimension system) so a new registry entry extends the key space with no
+// edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
+// from this file, also type-only). Imported for local use AND re-exported.
+import type { DimKey } from './dimRegistry';
+
+export type { DimKey };
 
 /** One open Fleet CLI session docked to a project island. Colour resolves from
  *  `state` (FleetSessionState) at render time via FLEET_INK. */

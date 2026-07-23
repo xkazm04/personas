@@ -1,9 +1,12 @@
 // Dimension glyph for SVG canvas cells. Precedence: the identified tool's
 // official brand mark (Supabase, Sentry… — the same simple-icons set the
 // Passport wall renders) always wins; otherwise the active icon set decides
-// between the Forge solid glyph and the lucide outline. Absent cells stay
-// generic + muted (there is no tool to brand).
-import { dimBrand, DIM_ICON } from './dimMeta';
+// between a drawn glyph set (forge/concept) and the lucide outline. Absent
+// cells stay generic + muted (there is no tool to brand).
+// A registry dimension missing from a drawn set falls through to its lucide
+// icon — new dimensions never crash a glyph set that hasn't drawn them yet.
+import { dimBrand } from './dimMeta';
+import { DIM_REGISTRY } from './dimRegistry';
 import { GLYPH_SETS, useIconSet } from './iconSet';
 import type { DimNode } from './types';
 
@@ -17,6 +20,7 @@ export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
   strokeWidth?: number;
 }) {
   const set = useIconSet();
+  const entry = DIM_REGISTRY[node.key];
   const brand = node.status !== 'absent' ? dimBrand(node) : null;
   if (brand) {
     return (
@@ -26,12 +30,16 @@ export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
     );
   }
   if (set !== 'line') {
-    return (
-      <svg x={x} y={y} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }} aria-hidden>
-        {GLYPH_SETS[set][node.key]()}
-      </svg>
-    );
+    const glyph = GLYPH_SETS[set][node.key] as (() => React.ReactNode) | undefined;
+    if (glyph) {
+      return (
+        <svg x={x} y={y} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }} aria-hidden>
+          {glyph()}
+        </svg>
+      );
+    }
   }
-  const Icon = DIM_ICON[node.key];
+  const Icon = entry?.icon;
+  if (!Icon) return null;
   return <Icon x={x} y={y} width={size} height={size} strokeWidth={strokeWidth} style={{ color }} />;
 }

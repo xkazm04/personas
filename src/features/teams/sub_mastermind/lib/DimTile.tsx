@@ -8,6 +8,7 @@
 import { useState } from 'react';
 
 import { DimGlyph } from './DimGlyph';
+import { DIM_REGISTRY } from './dimRegistry';
 import { DIM_INK, mix, SERIF } from './ink';
 import type { DimNode, ZoomBand } from './types';
 
@@ -63,8 +64,8 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
         <rect x={-2} y={-2} width={w + 4} height={h + 4} rx={9.5} fill="none" stroke={mix('var(--primary)', 70)} strokeWidth={2} />
       )}
       {zoomedOut ? (
-        node.key === 'ideas' && node.days != null ? (
-          // ideas tile: days-since-last-scan IS the payload when zoomed out
+        DIM_REGISTRY[node.key]?.payloadKind === 'days' && node.days != null ? (
+          // days-payload tile: the count IS the payload when zoomed out (Ideas' freshness)
           <>
             <DimGlyph node={node} x={w / 2 - 8} y={10} size={16} strokeWidth={1.75} color={ink} />
             <text x={w / 2} y={h - 20} textAnchor="middle" fontSize={28} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>

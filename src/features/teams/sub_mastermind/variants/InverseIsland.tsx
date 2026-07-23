@@ -17,8 +17,12 @@ const CW = 104;
 const CH = 92;
 const GAP = 8;
 // Layer-1 cells clockwise from north (N, NE, E, SE, S, SW, W, NW), then
-// layer-2 opens along the top row for dimensions 9-11 — the "layers around
-// the core" growth direction.
+// layer-2 opens along the top row for dimensions 9-12 — the "layers around
+// the core" growth direction. Order matches the dimension registry's DIM_ORDER
+// 1:1 (index N → dimension N).
+// LATTICE SLOTS 13+: a 13th dimension needs one more [col,row] coord appended
+// here (continue layer-2, e.g. [2,-1] / [-2,-2]); cells beyond RING.length are
+// silently dropped by the render loop's `if (!cell) return null`.
 const RING: Array<[number, number]> = [
   [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1],
   [0, -2], [1, -2], [-1, -2], [2, -2],

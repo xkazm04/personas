@@ -11,7 +11,6 @@
 //     evenodd`, so a glyph is one shape that works on any cell fill/theme.
 //   • Linework, where a mass would read as a blob (pulse, cycle, gauge), runs at
 //     2.4–3.6 stroke — heavy enough to belong to the same family.
-import type { DimKey } from './types';
 
 /** Circle as a path subpath — used for evenodd knockouts (holes). */
 const hole = (cx: number, cy: number, r: number) =>
@@ -28,7 +27,14 @@ const rackUnit = (t: number) =>
   `M10.6 ${t + 2.2}H14.6a.9 .9 0 0 1 0 1.8H10.6a.9 .9 0 0 1 0-1.8Z` +
   `M16.4 ${t + 2.2}H20.4a.9 .9 0 0 1 0 1.8H16.4a.9 .9 0 0 1 0-1.8Z`;
 
-export const FORGE_GLYPH: Record<DimKey, () => React.ReactNode> = {
+// This is a glyph LIBRARY keyed by dimension key. It is intentionally typed as
+// a plain string-keyed record (not `Record<DimKey, …>`) so it stays decoupled
+// from the dimension registry — DimKey is derived FROM the registry, and the
+// registry references these glyphs, so a `DimKey`-typed annotation here would be
+// a circular type reference. Not every dimension needs a bespoke Forge glyph: a
+// registry entry without one falls back to its lucide icon (see DimGlyph), and a
+// new dimension can land here with or without a matching glyph.
+export const FORGE_GLYPH: Record<string, () => React.ReactNode> = {
   // Cylinder stack — silhouette with two curved seams punched out.
   db: () => (
     <path

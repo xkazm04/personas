@@ -7,36 +7,25 @@ import { connectorSpecFor } from '@/features/teams/sub_factory/passport/improve/
 import type { ImproveRaw } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 
+import { DIM_REGISTRY } from './dimRegistry';
 import type { DimKey, DimNode } from './types';
 
-/** Canvas dim key → wall row key (null = no wall counterpart yet). */
-export const DIM_TO_ROW: Record<DimKey, string | null> = {
-  db: 'migrations',
-  monitoring: 'observability',
-  ci: 'ci',
-  tests: 'tests',
-  security: 'security',
-  hosting: 'hosting',
-  auth: null,
-  agents: 'aiflow',
-  skills: 'skills',
-  llm: 'llmtracking',
-  kpi: null,
-  ideas: null,
-};
-
-/** Mirror of ImproveCell's applicability checks (ci is a Tier-0 standards row).
- *  The ideas dimension is always actionable on a real project — its click opens
- *  the scan-dispatch popover (running one IS the setup path). */
+/** Mirror of ImproveCell's applicability checks, driven by the dimension
+ *  registry: `rowKey` (wall counterpart) and `action` (resolution kind) come
+ *  from the entry. Standards dimensions (ci) gate on a Tier-0 standards config;
+ *  deploy dimensions gate on deploy/connector/skills applicability; the ideas
+ *  dimension is always actionable on a real project (its click opens the
+ *  scan-dispatch popover — running one IS the setup path). */
 export function dimAction(
   dimKey: DimKey,
   passport: AppPassport | undefined,
   raw: ImproveRaw | undefined,
 ): { rowKey: string | null; action: DimNode['action'] } {
-  if (dimKey === 'ideas') return { rowKey: null, action: passport ? 'ideas' : null };
-  const rowKey = DIM_TO_ROW[dimKey];
+  const entry = DIM_REGISTRY[dimKey];
+  if (entry.action === 'ideas') return { rowKey: null, action: passport ? 'ideas' : null };
+  const rowKey = entry.rowKey;
   if (!rowKey || !passport) return { rowKey: rowKey ?? null, action: null };
-  if (rowKey === 'ci') {
+  if (entry.action === 'standards') {
     const has = raw ? applicableStandardsActions(raw.project.standards_config).length > 0 : false;
     return { rowKey, action: has ? 'standards' : null };
   }
