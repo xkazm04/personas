@@ -7,10 +7,13 @@
 // icon tinted by the session state; clicking it opens the terminal modal —
 // the same mechanism Mastermind's FleetPreviewPanel ships (an embedded
 // managed FleetTerminalPane + a quick-reply row), lifted into a BaseModal.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Send, X } from 'lucide-react';
 
 import { listSessions, renameSession, spawnSession, writeInput } from '@/api/fleet/fleet';
+import { useShallow } from 'zustand/react/shallow';
+
+import { useSystemStore } from '@/stores/systemStore';
 import { BaseModal } from '@/features/shared/components/modals';
 import { FleetTerminalPane } from '@/features/plugins/fleet/FleetTerminalPane';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -32,29 +35,25 @@ export const PASSPORT_FLEET_INK: Record<string, string> = {
   hibernated: 'rgba(148,163,184,.45)',
 };
 
-/** Poll the fleet registry for every wall dispatch (5s cadence, one call).
- *  Exited sessions free their key — the row's gear returns. */
+/** Live fleet sessions per wall dispatch key — event-driven via the store's
+ *  global FLEET_SESSION_* listeners (the same spine the Mastermind canvas
+ *  uses): sub-second updates, zero polling. Replaces the old 5s listSessions
+ *  interval. Exited sessions free their key — the row's gear returns. */
 export function usePassportFleetSessions(): Map<string, FleetSession> {
-  const [map, setMap] = useState<Map<string, FleetSession>>(new Map());
+  const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
+  const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
+  const fleetStartSessionListeners = useSystemStore((s) => s.fleetStartSessionListeners);
   useEffect(() => {
-    let alive = true;
-    const poll = () => {
-      listSessions()
-        .then((snap) => {
-          if (!alive) return;
-          const m = new Map<string, FleetSession>();
-          for (const s of snap.sessions) {
-            if (s.name && s.name.startsWith('passport:') && s.state !== 'exited') m.set(s.name, s);
-          }
-          setMap(m);
-        })
-        .catch(silentCatch('passportFleet:poll'));
-    };
-    poll();
-    const t = setInterval(poll, 5000);
-    return () => { alive = false; clearInterval(t); };
-  }, []);
-  return map;
+    fleetStartSessionListeners();
+    void fleetRefresh();
+  }, [fleetRefresh, fleetStartSessionListeners]);
+  return useMemo(() => {
+    const m = new Map<string, FleetSession>();
+    for (const s of sessions) {
+      if (s.name && s.name.startsWith('passport:') && s.state !== 'exited') m.set(s.name, s);
+    }
+    return m;
+  }, [sessions]);
 }
 
 /** Spawn the Fleet terminal in the PROJECT'S REPO ROOT, seeded with the

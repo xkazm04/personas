@@ -149,7 +149,7 @@ export function ProjectsPassportWall({
           rowLabel={setupModal.rowLabel}
           passport={setupModal.passport}
           currentLabel={setupModal.currentLabel}
-          onDispatched={() => { /* R20: no auto-open — the cell's fleet icon is the door; it appears via the 5s poll */ }}
+          onDispatched={() => { /* R20: no auto-open — the cell's fleet icon is the door; it appears via the store's fleet events */ }}
           onClose={() => setSetupModal(null)}
         />
       )}

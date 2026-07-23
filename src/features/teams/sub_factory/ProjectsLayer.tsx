@@ -23,9 +23,13 @@ import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
 import { useImproveEngine } from './passport/improve/useImproveEngine';
-import { usePassportData } from './passport/usePassportData';
+import { mapWithConcurrency, usePassportData } from './passport/usePassportData';
 import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
+
+/** root_path → favicon data URL (null = probed, none found). Module scope —
+ *  repo favicons don't change mid-session; remounts must not re-probe N repos. */
+const FAVICON_CACHE = new Map<string, string | null>();
 
 export function ProjectsLayer({
   onOpen,
@@ -47,42 +51,55 @@ export function ProjectsLayer({
   // project. Fetched once per passport set (2 light IPC calls per project);
   // covers render dim placeholders until it lands.
   const [headerStats, setHeaderStats] = useState<Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>>(new Map());
+  // Keyed on the SLUG SET, not the passports array identity — usePassportData
+  // publishes multiple phases per load (0/1/2), and keying on identity re-ran
+  // this N×2-IPC fan-out once per phase. Bounded concurrency for 30+ projects.
+  const slugsKey = useMemo(() => passports.map((p) => p.identity.slug).sort().join('|'), [passports]);
   useEffect(() => {
-    if (passports.length === 0) return;
+    if (slugsKey === '') return;
+    const slugs = slugsKey.split('|');
     let alive = true;
-    void Promise.all(
-      passports.map(async (p) => {
-        const slug = p.identity.slug;
-        const [ctxs, kpis] = await Promise.all([listContexts(slug), listKpis(slug)]);
-        const active = kpis.filter((k) => k.status === 'active');
-        const passed = active.filter((k) => kpiTrack(k) === 'met').length;
-        return [slug, { contexts: ctxs.length, kpiPassed: passed, kpiTotal: active.length }] as const;
-      }),
-    )
+    void mapWithConcurrency(slugs, 5, async (slug) => {
+      const [ctxs, kpis] = await Promise.all([listContexts(slug), listKpis(slug)]);
+      const active = kpis.filter((k) => k.status === 'active');
+      const passed = active.filter((k) => kpiTrack(k) === 'met').length;
+      return [slug, { contexts: ctxs.length, kpiPassed: passed, kpiTotal: active.length }] as const;
+    })
       .then((entries) => { if (alive) setHeaderStats(new Map(entries)); })
       .catch(silentCatch('ProjectsLayer:headerStats'));
     return () => { alive = false; };
-  }, [passports]);
+  }, [slugsKey]);
 
   // R21 — real app favicons for the covers (probed from each project's repo);
   // covers fall back to the status dot where none exists.
   const [faviconBySlug, setFaviconBySlug] = useState<Map<string, string>>(new Map());
+  // Favicons never change within a session — cache the probe result per
+  // root_path at module scope, key the effect on the slug→root signature
+  // (identity churns once per publish phase), and bound the FS fan-out.
+  const faviconKey = useMemo(
+    () => [...rawByProject.entries()].map(([slug, raw]) => `${slug}→${raw.project.root_path ?? ''}`).sort().join('|'),
+    [rawByProject],
+  );
   useEffect(() => {
-    if (rawByProject.size === 0) return;
+    if (faviconKey === '') return;
+    const pairs = faviconKey.split('|').map((e) => e.split('→') as [string, string]);
     let alive = true;
-    void Promise.all(
-      [...rawByProject.entries()].map(async ([slug, raw]) => {
-        const url = raw.project.root_path ? await getProjectFavicon(raw.project.root_path) : null;
-        return [slug, url] as const;
-      }),
-    )
+    void mapWithConcurrency(pairs, 5, async ([slug, root]) => {
+      if (!root) return [slug, null] as const;
+      let url = FAVICON_CACHE.get(root);
+      if (url === undefined) {
+        url = await getProjectFavicon(root).catch(() => null);
+        FAVICON_CACHE.set(root, url);
+      }
+      return [slug, url] as const;
+    })
       .then((entries) => {
         if (!alive) return;
         setFaviconBySlug(new Map(entries.filter((e): e is [string, string] => e[1] !== null)));
       })
       .catch(silentCatch('ProjectsLayer:favicons'));
     return () => { alive = false; };
-  }, [rawByProject]);
+  }, [faviconKey]);
 
   // Off-track (crit) KPIs per project — folds the old AttentionBand into the
   // matrix as a per-project warning badge on each cover.

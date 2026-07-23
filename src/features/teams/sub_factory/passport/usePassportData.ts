@@ -63,8 +63,9 @@ const PROBE_CONCURRENCY = 5;
 const PROBE_FS_CONCURRENCY = 10;
 
 /** Run `fn` over `items` with at most `limit` promises in flight; results keep
- *  input order. */
-async function mapWithConcurrency<T, R>(
+ *  input order. Exported — every per-project fan-out in the factory surface
+ *  should go through this instead of an unbounded Promise.all. */
+export async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
   fn: (item: T, index: number) => Promise<R>,
@@ -84,13 +85,38 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
+/** Last successfully published snapshot — module scope so a REMOUNT paints
+ *  instantly from cache (stale-while-revalidate) instead of a big-bang reload.
+ *  Refreshed on every publish; a background rebuild still runs on mount when
+ *  the cache is older than CACHE_FRESH_MS. */
+let cachedSnapshot: {
+  passports: AppPassport[];
+  rawByProject: Map<string, ImproveRaw>;
+  generatedAt: string | null;
+  at: number;
+} | null = null;
+const CACHE_FRESH_MS = 60_000;
+
+/** Telemetry sweeps are app-session work, not per-mount work — visiting the
+ *  wall five times in ten minutes must not mine transcripts five times. */
+let lastSweepAt = 0;
+const SWEEP_MIN_INTERVAL_MS = 15 * 60_000;
+
 export function usePassportData(): PassportData {
   const [state, setState] = useState<{ passports: AppPassport[]; rawByProject: Map<string, ImproveRaw>; loading: boolean; error: string | null; generatedAt: string | null }>(
-    { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null },
+    () => cachedSnapshot
+      ? { passports: cachedSnapshot.passports, rawByProject: cachedSnapshot.rawByProject, loading: false, error: null, generatedAt: cachedSnapshot.generatedAt }
+      : { passports: [], rawByProject: EMPTY, loading: true, error: null, generatedAt: null },
   );
   const [rescanning, setRescanning] = useState(false);
 
   const build = useCallback(async (regen: boolean) => {
+    // Every publish also refreshes the module cache so the NEXT mount paints
+    // from it instantly.
+    const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null) => {
+      cachedSnapshot = { passports, rawByProject, generatedAt, at: Date.now() };
+      setState({ passports, rawByProject, loading: false, error: null, generatedAt });
+    };
     const [projects, cached] = await Promise.all([
       listProjects(),
       regen ? generateCrossProjectMetadata() : getCrossProjectMetadata(),
@@ -99,6 +125,24 @@ export function usePassportData(): PassportData {
     // when projects exist but have never been cross-scanned.
     const map = cached ?? (await generateCrossProjectMetadata());
     const byId = new Map(projects.map((p) => [p.id, p]));
+
+    // PHASE 0 — metadata-only paint (2 IPC total): covers render immediately
+    // with no skills/telemetry extras (derives fall back to their heuristics;
+    // those cells fill in on the phase-1 publish moments later). Only for the
+    // first-ever load of an app session — a cached snapshot or a rescan means
+    // real data is already on screen, and painting a degraded frame over it
+    // would be a regression, not progress.
+    if (!cachedSnapshot && !regen) {
+      const p0: AppPassport[] = [];
+      const raw0 = new Map<string, ImproveRaw>();
+      for (const meta of map.projects) {
+        const project = byId.get(meta.project_id);
+        if (!project) continue;
+        raw0.set(project.id, { project, meta });
+        p0.push(derivePassportFromMetadata(meta, project));
+      }
+      publish(sortByNameAsc(p0), raw0, map.generated_at);
+    }
 
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
@@ -231,7 +275,7 @@ export function usePassportData(): PassportData {
     // real evidence in as one second commit. History snapshots only record the
     // final, evidence-complete build.
     const phase1 = assemble(new Map());
-    setState({ passports: phase1.passports, rawByProject: phase1.rawByProject, loading: false, error: null, generatedAt: map.generated_at });
+    publish(phase1.passports, phase1.rawByProject, map.generated_at);
 
     // Deep evidence (D1): a deterministic file probe per project, in parallel.
     // Defensive — null on older builds (command unregistered) or unreadable paths,
@@ -246,10 +290,15 @@ export function usePassportData(): PassportData {
     // Append to the local readiness history (deduped) so the cover sparkline +
     // "since last scan" delta accrue across scans. Best-effort, never blocks.
     recordSnapshot(phase2.passports, Date.now());
-    setState({ passports: phase2.passports, rawByProject: phase2.rawByProject, loading: false, error: null, generatedAt: map.generated_at });
+    publish(phase2.passports, phase2.rawByProject, map.generated_at);
   }, []);
 
   useEffect(() => {
+    // Stale-while-revalidate: the cached snapshot already painted via the
+    // useState initializer. A fresh cache (< CACHE_FRESH_MS) skips the rebuild
+    // entirely (rapid tab toggles cost zero IPC); a stale one refreshes in the
+    // background behind the instantly-painted data.
+    if (cachedSnapshot && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return;
     let cancelled = false;
     build(false).catch((e) => {
       if (!cancelled) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));
@@ -264,6 +313,8 @@ export function usePassportData(): PassportData {
   // `exhausted` → continue, max 3 rounds) and warn-only: telemetry must never
   // break the wall.
   useEffect(() => {
+    if (Date.now() - lastSweepAt < SWEEP_MIN_INTERVAL_MS) return;
+    lastSweepAt = Date.now();
     let cancelled = false;
     void (async () => {
       try {
