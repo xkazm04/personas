@@ -50,12 +50,14 @@ Key libs (all under `lib/`):
 | `liveState.ts` | Live island colour: real Sentry error counts via bound monitoring credentials + fleet attention (awaiting/stale); pure combination logic, unit-tested; honest fallback to readiness-only colour |
 | `layoutStore.ts` | **Durable layout doc** — positions, groups, links, notes, hidden set as ONE versioned JSON document in app settings (`mastermind.layout.v1`); sync in-memory reads, debounced (~500 ms) write-through; one-time localStorage migration; browser-only fallback |
 | `positions.ts` / `groups.ts` / `links.ts` / `notes.ts` | Stable import surfaces re-exporting layoutStore (plus `LINK_PALETTE`, `NOTE_SIZE_PX`, `NOTE_FONT`) |
-| `useCanvasCamera.ts` | Camera: wheel zoom-to-cursor (native non-passive listener), pointer-capture pan, dblclick zoom, `fit(bounds, animate?)` with **linear rAF tween** (~380 ms) cancelled by any input |
+| `useCanvasCamera.ts` | Camera: wheel zoom-to-cursor (native non-passive listener), pointer-capture pan (**render-free** — world transform driven imperatively; one culling commit per ~350 world units of travel), dblclick zoom, `fit(bounds, animate?)` with **linear rAF tween** (~380 ms) cancelled by any input |
 | `tidyLayout.ts` | One-shot relation-aware layout (bounded spring-electrical pass + overlap resolution). Deterministic (no Date/random); user-pinned islands are immovable anchors; group members pulled to their centroid |
 | `hex.ts` | Hex geometry, axial→pixel, deterministic `spiralPlace` + `hash01` |
 | `ink.ts` | `STATE_INK`, `DIM_INK`, `FLEET_INK`, `scoreInkVar`, `mix()`, font stacks |
-| `useIslandDrag.ts` | Header-handle drag with click-vs-drag threshold (≤4 px release = select) |
+| `useIslandDrag.ts` | Header-handle drag with click-vs-drag threshold (≤4 px release = select). **Render-free**: the island <g> transform is written imperatively mid-drag; state commits once on release (GroupLayer moves member islands the same way) |
 | `useEventCallback.ts` | Stable-identity callbacks so memoized islands skip re-renders |
+
+**Render scale (optimizer pass, hundreds of islands):** island props carry a **quantized z** (~6% steps — islands re-render ~12× per zoom doubling, not per frame); `positioned` islands in MastermindPage are **content-stable** (per-slug cache; a fleet tick re-renders only the affected island); neighbor-dimming on hover writes opacity **imperatively** to the island `<g>`s (`data-mm-island`); halos are shared per-state **radialGradients** / layered plates, not per-island Gaussian filters; passports publish **two-phase** (evidence-less first paint, probe evidence merged in a second commit).
 | `CanvasShell.tsx` | Everything shared per §1/§7/§8; owns groups/links/notes state + editors |
 | `DataHealthBar.tsx` | Page chrome naming FAILED data families (relations/scans/monitoring/KPI/fleet) + retry; renders nothing when clean |
 
