@@ -53,6 +53,14 @@ and wait for typed input). Rules:
   passport, in this order: Foundation → Environments & Infra → Quality &
   Telemetry → (only if reached) App cost confirmation. Never 14 sequential
   single questions; never one overwhelming mega-round.
+- **Pipeline rounds behind assessors**: present a group's round as soon as ITS
+  assessor returns — don't hold the user for the slowest group. (Field-proven:
+  zero dead wait across three rounds.)
+- **"Other" answers are first-class, not noise.** A user may name their OWN
+  tool for a connector-flavored dimension. Then: check the Personas catalog
+  for its service type first; if the tool's repo is local, read its client
+  contract there (env var names, wire shape); prefer VENDORING a minimal
+  client over a cross-repo path dependency that would break CI.
 - Every question offers: **Skip** · concrete path A · concrete path B with
   **(Recommended)** on exactly one option · and the built-in Other lets the
   user type a custom direction. Options name OUTCOMES ("Wire Sentry to test +
@@ -88,6 +96,20 @@ Rules:
   `references/dimensions.md`. Skills first: each builder brief opens by
   telling the agent to check `.claude/skills/` in this repo and
   `~/.claude/skills/` for a matching skill and follow it over the brief.
+- **MERGE briefs whose file scopes collide** (e.g. hosting + backup + auth all
+  touch the deploy docs and env examples → one ops-hardening agent). Colliding
+  scopes cost more in contention than a combined brief costs in focus.
+- **Shared-checkout commit discipline** (every builder brief carries this):
+  stage ONLY your explicit paths (never `-A`); verify the staged set matches
+  your intent before committing; on `index.lock`, wait 3-10s and retry up to
+  6×; expect HEAD to advance mid-run (rebasing onto it is fine); for
+  co-mingled manifest files (Cargo.toml/lock, package.json) isolate your hunks
+  via a temporary worktree + patch-staging rather than staging the whole file;
+  NEVER `commit --amend` once concurrent agents may have committed — the amend
+  lands on THEIR commit.
+- Pre-existing lint/format noise in a touched area gets REPORTED, never fixed
+  silently (it may be another session's in-flight work or a toolchain
+  artifact).
 - Builders self-verify (build/test/lint as available) before reporting.
   Nothing is committed unless the user asked for commits; report a per-agent
   diffstat instead.
