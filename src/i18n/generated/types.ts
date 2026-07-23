@@ -12306,6 +12306,11 @@ export type Translations = {
       footer_hint_open_page: string;
       footer_needs_you_one: string;
       footer_needs_you_other: string;
+      debug_log_start: string;
+      debug_log_stop: string;
+      debug_log_start_title: string;
+      debug_log_started: string;
+      debug_log_saved: string;
     };
     title: string;
     subtitle: string;

@@ -212,7 +212,12 @@
     "footer_needs_you_one": "{count} relace vás potřebuje",
     "footer_needs_you_other": "{count} relací vás potřebuje",
     "footer_open_page": "Otevřít stránku Fleet",
-    "footer_title": "Flotila"
+    "footer_title": "Flotila",
+    "debug_log_saved": "Ladicí log Fleet uložen · {events} událostí → {path}",
+    "debug_log_start": "Nahrát",
+    "debug_log_start_title": "Nahrát přehledový ladicí log změn stavů flotily, uspání a rozhodnutí Athény",
+    "debug_log_started": "Ladicí log Fleet spuštěn — zaznamenávají se změny stavů, uspání a rozhodnutí Athény.",
+    "debug_log_stop": "Nahrává se"
   },
   "title": "Pluginy",
   "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",

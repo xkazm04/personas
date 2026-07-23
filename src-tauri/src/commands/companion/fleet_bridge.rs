@@ -248,7 +248,15 @@ fn orchestrate_session(
     project_label: &str,
     situation: FleetSituation,
 ) {
+    use crate::commands::fleet::debug_log;
     if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
+        // The single most common "why did Athena do nothing?" answer. Worth a
+        // line — silence here is indistinguishable from a bug otherwise.
+        debug_log::athena(
+            session_id,
+            "skipped",
+            &format!("autonomous mode is OFF · situation={}", situation.label()),
+        );
         return;
     }
     let now = crate::commands::fleet::registry::now_ms();
@@ -256,6 +264,16 @@ fn orchestrate_session(
         let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(&last) = t.get(session_id) {
             if now - last < ATTENTION_MIN_INTERVAL_MS {
+                debug_log::athena(
+                    session_id,
+                    "skipped",
+                    &format!(
+                        "throttled · woken {}s ago (min {}s) · situation={}",
+                        (now - last) / 1000,
+                        ATTENTION_MIN_INTERVAL_MS / 1000,
+                        situation.label()
+                    ),
+                );
                 return;
             }
         }
@@ -304,11 +322,21 @@ fn orchestrate_session(
             if crate::db::repos::fleet_decisions::has_prior_autofire(&state.db, &csid, &hex)
                 .unwrap_or(false)
             {
+                debug_log::athena(
+                    session_id,
+                    "skipped",
+                    &format!("already auto-fired on this exact screen (hash {hex}) — durable dedupe"),
+                );
                 return;
             }
         }
         let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
         if sigs.insert(session_id.to_string(), sig) == Some(sig) {
+            debug_log::athena(
+                session_id,
+                "skipped",
+                "screen unchanged since the last assessment — nothing new to decide",
+            );
             return; // same decision as last assessment — nothing new to decide
         }
     }
@@ -327,10 +355,29 @@ fn orchestrate_session(
     // judges the next step against what this session is actually FOR — done vs
     // needs-next — instead of reasoning only from the current screen. Empty for a
     // session with no tracked goal (an ad-hoc user spawn).
-    let objective_block = match session_objective(session_id) {
+    let objective = session_objective(session_id);
+    let objective_block = match &objective {
         Some(obj) => format!("\nThis session's objective: {obj}\n"),
         None => String::new(),
     };
+
+    // Past every gate — she is actually being woken. The screen is reported by
+    // SIZE only; its contents are the user's code and never enter the log. An
+    // empty screen here is itself a finding: it means she reasoned blind.
+    debug_log::athena(
+        session_id,
+        "wake",
+        &format!(
+            "situation={} · screen={} · objective={}",
+            situation.label(),
+            if screen_text.trim().is_empty() {
+                "EMPTY (reasoning blind)".to_string()
+            } else {
+                format!("{}ch", screen_text.chars().count())
+            },
+            objective.as_deref().unwrap_or("(none tracked)"),
+        ),
+    );
 
     let directive = match &situation {
         FleetSituation::AwaitingInput => format!(

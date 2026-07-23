@@ -47,6 +47,26 @@ pub enum FleetSessionState {
     Exited,
 }
 
+/// The wire token for a state — what ships in `FLEET_SESSION_STATE` payloads,
+/// the `fleet_decisions` ledger and the debug log.
+///
+/// Matches this enum's `#[serde(rename_all = "snake_case")]` exactly. It lives
+/// here rather than in one lane because four independent emitters (hooks, the
+/// staleness ticker, the transcript watcher, the headless reader) all need it,
+/// and a token that drifts between lanes would silently split the frontend's
+/// state machine.
+pub fn state_to_token(s: FleetSessionState) -> &'static str {
+    match s {
+        FleetSessionState::Spawning => "spawning",
+        FleetSessionState::Running => "running",
+        FleetSessionState::AwaitingInput => "awaiting_input",
+        FleetSessionState::Idle => "idle",
+        FleetSessionState::Stale => "stale",
+        FleetSessionState::Hibernated => "hibernated",
+        FleetSessionState::Exited => "exited",
+    }
+}
+
 /// How a Fleet session's `claude` process is driven.
 ///
 /// `Interactive` = a PTY child (ConPTY on Windows) rendering the full TUI —

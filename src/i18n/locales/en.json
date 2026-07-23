@@ -12299,7 +12299,12 @@
       "footer_hint_close_grid": "Click to close the terminal grid",
       "footer_hint_open_page": "Click to open Fleet",
       "footer_needs_you_one": "{count} session needs you",
-      "footer_needs_you_other": "{count} sessions need you"
+      "footer_needs_you_other": "{count} sessions need you",
+      "debug_log_start": "Record",
+      "debug_log_stop": "Recording",
+      "debug_log_start_title": "Record a high-level debug log of fleet state changes, hibernations and Athena decisions",
+      "debug_log_started": "Fleet debug log started — state changes, hibernations and Athena decisions are being recorded.",
+      "debug_log_saved": "Fleet debug log saved · {events} events → {path}"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

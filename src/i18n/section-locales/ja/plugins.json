@@ -212,7 +212,12 @@
     "footer_needs_you_one": "{count} 件のセッションが対応待ちです",
     "footer_needs_you_other": "{count} 件のセッションが対応待ちです",
     "footer_open_page": "Fleet ページを開く",
-    "footer_title": "フリート"
+    "footer_title": "フリート",
+    "debug_log_saved": "Fleet デバッグログを保存しました · {events} 件のイベント → {path}",
+    "debug_log_start": "記録",
+    "debug_log_start_title": "フリートの状態変化・休止・Athena の判断を記録する高レベルのデバッグログを取得します",
+    "debug_log_started": "Fleet デバッグログを開始しました — 状態変化、休止、Athena の判断を記録しています。",
+    "debug_log_stop": "記録中"
   },
   "title": "プラグイン",
   "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",

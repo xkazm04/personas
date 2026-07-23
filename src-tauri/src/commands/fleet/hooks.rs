@@ -20,12 +20,11 @@ use axum::routing::post;
 use axum::{Json, Router};
 use serde::Serialize;
 use serde_json::Value;
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Manager};
 
-use crate::engine::event_registry::event_name;
 
 use super::registry::{now_ms, registry};
-use super::types::FleetSessionState;
+use super::types::{state_to_token, FleetSessionState};
 
 /// Returns the axum Router to be registered under `/fleet`. Hits:
 ///   POST /fleet/hooks/sessionstart
@@ -109,13 +108,12 @@ async fn receive_hook(
             // session). Only emits on a real transition, so per-tool volume stays
             // low — see `revive_to_running_on_activity`.
             if registry().revive_to_running_on_activity(sid) {
-                let _ = app.emit(
-                    event_name::FLEET_SESSION_STATE,
-                    FleetStatePayload {
-                        session_id: sid.to_string(),
-                        state: state_to_token(FleetSessionState::Running),
-                        reason: Some("Tool activity — session is working".to_string()),
-                    },
+                super::pty::emit_session_state(
+                    &app,
+                    sid,
+                    None,
+                    state_to_token(FleetSessionState::Running),
+                    Some("Tool activity — session is working".to_string()),
                 );
             }
         } else {
@@ -292,6 +290,7 @@ fn apply_hook(
         return;
     }
 
+    let prev_state = session.state;
     session.state = new_state;
     session.last_activity_ms = now_ms();
     session.state_reason = Some(reason.clone());
@@ -301,13 +300,12 @@ fn apply_hook(
     // own bus and we don't want to risk reentry).
     drop(map);
 
-    let _ = app.emit(
-        event_name::FLEET_SESSION_STATE,
-        FleetStatePayload {
-            session_id: session_id.to_string(),
-            state: state_to_token(new_state),
-            reason: Some(reason),
-        },
+    super::pty::emit_session_state(
+        app,
+        session_id,
+        Some(state_to_token(prev_state)),
+        state_to_token(new_state),
+        Some(reason),
     );
 
     // Active fleet orchestration, fired Rust-direct (no frontend dependency):
@@ -325,27 +323,8 @@ fn apply_hook(
     }
 }
 
-fn state_to_token(s: FleetSessionState) -> &'static str {
-    match s {
-        FleetSessionState::Spawning => "spawning",
-        FleetSessionState::Running => "running",
-        FleetSessionState::AwaitingInput => "awaiting_input",
-        FleetSessionState::Idle => "idle",
-        FleetSessionState::Stale => "stale",
-        FleetSessionState::Hibernated => "hibernated",
-        FleetSessionState::Exited => "exited",
-    }
-}
-
 #[derive(Serialize)]
 struct HookAck {
     ok: bool,
     matched_session_id: Option<String>,
-}
-
-#[derive(Serialize, Clone)]
-struct FleetStatePayload {
-    session_id: String,
-    state: &'static str,
-    reason: Option<String>,
 }

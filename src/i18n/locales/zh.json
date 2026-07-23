@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count} 个会话需要你处理",
       "footer_needs_you_other": "{count} 个会话需要你处理",
       "footer_open_page": "打开 Fleet 页面",
-      "footer_title": "舰队"
+      "footer_title": "舰队",
+      "debug_log_saved": "Fleet 调试日志已保存 · {events} 条事件 → {path}",
+      "debug_log_start": "录制",
+      "debug_log_start_title": "录制舰队状态变化、休眠与 Athena 决策的高层调试日志",
+      "debug_log_started": "Fleet 调试日志已开始 — 正在记录状态变化、休眠与 Athena 决策。",
+      "debug_log_stop": "录制中"
     },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

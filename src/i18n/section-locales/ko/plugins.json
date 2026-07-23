@@ -212,7 +212,12 @@
     "footer_needs_you_one": "{count}개 세션이 응답을 기다립니다",
     "footer_needs_you_other": "{count}개 세션이 응답을 기다립니다",
     "footer_open_page": "Fleet 페이지 열기",
-    "footer_title": "플릿"
+    "footer_title": "플릿",
+    "debug_log_saved": "Fleet 디버그 로그 저장됨 · 이벤트 {events}개 → {path}",
+    "debug_log_start": "기록",
+    "debug_log_start_title": "플릿 상태 변화, 최대 절전, Athena 결정을 담은 상위 수준 디버그 로그를 기록합니다",
+    "debug_log_started": "Fleet 디버그 로그를 시작했습니다 — 상태 변화, 최대 절전, Athena 결정을 기록 중입니다.",
+    "debug_log_stop": "기록 중"
   },
   "title": "플러그인",
   "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

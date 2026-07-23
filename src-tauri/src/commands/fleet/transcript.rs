@@ -23,10 +23,8 @@ use std::thread;
 use std::time::Duration;
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use tauri::{AppHandle, Emitter};
-use serde::Serialize;
+use tauri::AppHandle;
 
-use crate::engine::event_registry::event_name;
 
 use super::registry::{now_ms, registry};
 use super::types::FleetSessionState;
@@ -34,13 +32,6 @@ use super::types::FleetSessionState;
 /// Returns `~/.claude/projects/` if the home dir is resolvable.
 pub fn projects_dir() -> Option<PathBuf> {
     dirs::home_dir().map(|h| h.join(".claude").join("projects"))
-}
-
-#[derive(Serialize, Clone)]
-struct FleetStatePayload {
-    session_id: String,
-    state: &'static str,
-    reason: Option<String>,
 }
 
 /// Spawn the JSONL transcript watcher. Idempotent — call once from setup().
@@ -213,14 +204,7 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
     }
 
     if let Some(sid) = bound {
-        let _ = app.emit(
-            event_name::FLEET_SESSION_STATE,
-            FleetStatePayload {
-                session_id: sid.clone(),
-                state: "idle",
-                reason: Some("Bound to transcript".into()),
-            },
-        );
+        super::pty::emit_session_state(app, &sid, None, "idle", Some("Bound to transcript".into()));
         super::pty::emit_registry_changed(app, "updated", &sid);
     }
 }
@@ -263,14 +247,7 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
     }
 
     if let Some((sid, _state, reason)) = maybe_emit {
-        let _ = app.emit(
-            event_name::FLEET_SESSION_STATE,
-            FleetStatePayload {
-                session_id: sid,
-                state: "idle",
-                reason: Some(reason),
-            },
-        );
+        super::pty::emit_session_state(app, &sid, None, "idle", Some(reason));
     }
     matched
 }

@@ -601,6 +601,32 @@ fn record_fleet_decision(
             .filter(|s| !s.is_empty())
     };
     let session_id = get("session_id").unwrap_or_default();
+
+    // Debug-log tap. This fn is the single choke point every fleet verdict
+    // passes through — auto-fired, auto-failed, and both defer reasons — so one
+    // tap here covers Athena's whole decision surface. Records what she decided
+    // and what she typed; never the terminal screen she read (see debug_log).
+    if crate::commands::fleet::debug_log::is_armed() && !session_id.is_empty() {
+        let mut extra: Vec<(&str, String)> = Vec::new();
+        if let Some(text) = get("text").or_else(|| get("message")) {
+            extra.push(("sent", text));
+        }
+        if let Some(why) = get("rationale") {
+            extra.push(("why", why));
+        }
+        crate::commands::fleet::debug_log::athena_with(
+            &session_id,
+            &format!("decision {}", outcome.to_uppercase()),
+            &format!(
+                "action={action} class={} conf={}{}",
+                get("decision_class").unwrap_or_else(|| "?".into()),
+                get("confidence").unwrap_or_else(|| "?".into()),
+                defer_reason.map(|r| format!(" reason={r}")).unwrap_or_default(),
+            ),
+            &extra,
+        );
+    }
+
     let screen_hash =
         crate::commands::companion::fleet_bridge::recorded_decision_hash_hex(&session_id)
             .unwrap_or_default();

@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count} Sitzung braucht dich",
       "footer_needs_you_other": "{count} Sitzungen brauchen dich",
       "footer_open_page": "Fleet-Seite öffnen",
-      "footer_title": "Flotte"
+      "footer_title": "Flotte",
+      "debug_log_saved": "Fleet-Debug-Log gespeichert · {events} Ereignisse → {path}",
+      "debug_log_start": "Aufzeichnen",
+      "debug_log_start_title": "Ein übergeordnetes Debug-Log zu Flotten-Statuswechseln, Ruhezuständen und Athenas Entscheidungen aufzeichnen",
+      "debug_log_started": "Fleet-Debug-Log gestartet — Statuswechsel, Ruhezustände und Athenas Entscheidungen werden aufgezeichnet.",
+      "debug_log_stop": "Zeichnet auf"
     },
     "title": "Plugins",
     "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

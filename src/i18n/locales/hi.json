@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count} सत्र को आपकी ज़रूरत है",
       "footer_needs_you_other": "{count} सत्रों को आपकी ज़रूरत है",
       "footer_open_page": "Fleet पेज खोलें",
-      "footer_title": "फ्लीट"
+      "footer_title": "फ्लीट",
+      "debug_log_saved": "Fleet डीबग लॉग सहेजा गया · {events} इवेंट → {path}",
+      "debug_log_start": "रिकॉर्ड",
+      "debug_log_start_title": "फ्लीट स्थिति परिवर्तन, हाइबरनेशन और Athena के निर्णयों का उच्च-स्तरीय डीबग लॉग रिकॉर्ड करें",
+      "debug_log_started": "Fleet डीबग लॉग शुरू — स्थिति परिवर्तन, हाइबरनेशन और Athena के निर्णय रिकॉर्ड हो रहे हैं।",
+      "debug_log_stop": "रिकॉर्डिंग"
     },
     "title": "प्लगइन",
     "subtitle": "प्लगइन से अपने कार्यक्षेत्र को विस्तारित करें। साइडबार में दिखाने या छिपाने के लिए टॉगल करें।",

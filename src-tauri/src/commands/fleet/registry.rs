@@ -19,7 +19,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use portable_pty::MasterPty;
 
-use super::types::{FleetSession, FleetSessionMode, FleetSessionState};
+use super::types::{state_to_token, FleetSession, FleetSessionMode, FleetSessionState};
 
 /// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
 /// app's memory per session regardless of how much a 1M-token run prints: a
@@ -412,6 +412,47 @@ impl FleetRegistry {
                 s.cwd.to_string_lossy().into_owned(),
             )
         })
+    }
+
+    /// Current `state_reason` without blocking — the debug log's detail column
+    /// for an exit, where the reason already carries claude's own final line.
+    /// See `try_lookup_label` for why this must not block.
+    pub fn try_state_reason(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.try_lock().ok()?;
+        map.get(session_id).and_then(|s| s.state_reason.clone())
+    }
+
+    /// Best-effort label (`name` if the operator renamed it, else the project
+    /// label) that **never blocks**.
+    ///
+    /// Exists for [`super::debug_log`], which is called from inside the fleet's
+    /// hot paths — including some that already hold this very lock. `Mutex` is
+    /// not reentrant, so a blocking lookup there would deadlock the app in a
+    /// debugging tool. Contention is instead reported as `None` and the caller
+    /// degrades to the short session id.
+    pub fn try_lookup_label(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.try_lock().ok()?;
+        map.get(session_id)
+            .map(|s| s.name.clone().unwrap_or_else(|| s.project_label.clone()))
+    }
+
+    /// `(id, label, state)` for every tracked session, without blocking — the
+    /// debug log's start banner. `None` means "the registry was busy", which
+    /// the banner reports as "none tracked yet" rather than stalling a
+    /// user-initiated start.
+    pub fn try_session_summaries(&self) -> Option<Vec<(String, String, &'static str)>> {
+        let map = self.sessions.try_lock().ok()?;
+        Some(
+            map.iter()
+                .map(|(id, s)| {
+                    (
+                        id.clone(),
+                        s.name.clone().unwrap_or_else(|| s.project_label.clone()),
+                        state_to_token(s.state),
+                    )
+                })
+                .collect(),
+        )
     }
 
     /// Whether `session_id` names a tracked session that Athena spawned

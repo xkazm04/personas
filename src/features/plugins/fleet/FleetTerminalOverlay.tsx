@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
 import { FleetAttentionLegend } from './FleetAttentionLegend';
+import { FleetDebugLogButton } from './FleetDebugLogButton';
 import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
@@ -163,6 +164,9 @@ export function FleetTerminalOverlay({
           <Play className="w-3.5 h-3.5" />
           {t.plugins.fleet.new_session}
         </button>
+        {/* Debug recorder — DEV-only, and deliberately adjacent to New session:
+            arming it is a decision you make while watching the grid. */}
+        {import.meta.env.DEV && <FleetDebugLogButton />}
         <button
           type="button"
           data-testid="fleet-overlay-skills"

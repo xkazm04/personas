@@ -23,6 +23,8 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 | Footer status cluster | `src/features/plugins/fleet/FleetFooterIcon.tsx` + `FleetFooterPopover.tsx` + `FleetShipIcon.tsx` (mounted by `DesktopFooter`) |
 | Shared state palette / scope | `src/features/plugins/fleet/fleetStateMeta.ts` (order + colours + labels), `fleetSessionScope.ts` (`isGridEligible` / `gridSessions`) |
 | Shared grid actions | `src/features/plugins/fleet/useFleetOverlayActions.ts` (spawn / kill / approve / reject / ask-Athena / apply-skill — one implementation for the page and the layer) |
+| Debug recorder (DEV) | `src-tauri/src/commands/fleet/debug_log.rs` + `FleetDebugLogButton.tsx` — see [Debug recorder](#debug-recorder-dev--why-did-the-fleet-do-that) |
+| State emit choke point | `src-tauri/src/commands/fleet/pty.rs::emit_session_state` (all four lanes emit `FLEET_SESSION_STATE` through it; `types::state_to_token` is the shared token map) |
 | Skill library drawer | `src/features/plugins/fleet/SkillLibraryDrawer.tsx` (left slide-in; browse shared library + click-to-apply to the focused terminal + per-skill install; reuses `sub_skills/useSkillData` + `SkillInstallModal`) |
 | Session insights | `src/features/plugins/fleet/sub_grid/FleetSessionInsights.tsx` (transcript rollup; shown via the right-column Terminal/Insights toggle and per-tile in the grid overlay) |
 | Context-size pill | `src/features/plugins/fleet/sub_grid/FleetContextPill.tsx` (CLI-header efficiency indicator — `last_context_tokens` from the transcript, colored green→amber→red as the conversation grows) |
@@ -87,6 +89,29 @@ Priority of signals: **process exit > hooks > JSONL mtime > inactivity ticker**.
 **State provenance in the UI.** Hovering a session row's status dots now shows *why* the row is in its state: the last state-change reason plus the three deriving signals with ages — `hook activity Xs ago · console output Xs ago · transcript growth Xs ago` (`lastActivityMs` / `lastPtyOutputMs` / `lastGrewMs` on `FleetSession`, refreshed by the shared 30s tick). When idle/working ever look mixed again, the misclassifying signal is readable in-app instead of needing `PERSONAS_FLEET_DEBUG` and a dev console.
 
 **Tunable cutoffs (Fleet → Settings → State detection cutoffs).** The stale (default 6 min) and frozen (default 2 min) cutoffs are user-tunable from a Settings card — persisted in the fleet slice and pushed to the Rust ticker on change + on every Fleet refresh (`fleet_set_state_cutoffs`, clamped server-side), the same plumbing as auto-hibernate. Power users running slow models or huge fleets calibrate state accuracy here instead of via env knobs.
+
+### Debug recorder (DEV) — "why did the fleet do that?"
+
+`Record` in the grid overlay header, next to **New session** (`FleetDebugLogButton`, DEV-only). It arms `debug_log.rs`, which appends a high-level, human-readable log to `<app-data>/fleet-debug/fleet-<timestamp>.log` until you stop it. The stop toast carries the path (30 s, because that path is the artifact).
+
+**Why it's Rust-side and not a frontend event tap.** The three things worth debugging are all decided where the operator can't see them: state is decided by four independent signal sources, hibernation by a background ticker that runs whether or not the UI is open, and Athena's orchestration reasons on a path that is *deliberately silent* in the chat (see the orb-only note above). A frontend recorder would only ever see the flattened `{session_id, state, reason}` that crosses IPC — never her confidence, her decision class, or the reason she skipped a session entirely.
+
+**What it records** — one line per event, `[elapsed] KIND  session  headline | detail`:
+
+| Kind | Covers |
+|---|---|
+| `LIFE` | spawned (interactive/headless, bare vs with-task), killed, exited (with claude's own final line via `mark_exited`) |
+| `STATE` | every lifecycle transition, `from → to` plus the deciding reason — tapped at `pty::emit_session_state`, the single emit point all four lanes now funnel through |
+| `SLEEP` | hibernations split by cause (manual · auto-idle · live-slot eviction · slot freed for a spawn) and wakes, logged against the new session id with the old one in the detail so a hibernate → wake chain stays followable across the id change |
+| `ATHENA` | every orchestration **wake** (situation, screen size, objective), every **skip** with its reason (autonomous mode off · throttled · screen unchanged · already auto-fired on this screen), and every **verdict** (`AUTO_FIRED` / `AUTO_FAILED` / `DEFERRED` + class + confidence + defer reason) with the text she sent and her rationale |
+
+The Athena taps sit at the two natural choke points — `fleet_bridge::orchestrate_session` for wakes/skips and `approvals::record_fleet_decision` for verdicts — so every situation flavour (`awaiting_input` / `idle_needs_next` / `stuck`) and every action (`fleet_send_input`, `fleet_intervene`, `fleet_wake`, `fleet_resume`) is covered by construction.
+
+**What it deliberately does NOT record:** terminal contents. An Athena wake logs the *size* of the screen she read (`screen=1841ch`, or `EMPTY (reasoning blind)` — itself a finding), never the frame. Those carry the user's code and paths, and the file is meant to be shareable. Also absent by design: PTY bytes, per-tool hooks, transcript deltas — this is a causal spine, not a trace.
+
+**Cost when off:** one relaxed atomic load per fleet event (`debug_log::is_armed`). Nothing is opened, allocated or written until armed.
+
+**Sharp edges.** The recorder is global Rust state, so it survives the overlay unmounting and keeps recording after you minimize the grid — the button re-adopts the running recording when the overlay reopens (that's what the `status` poll is for), and re-arming while active is a no-op rather than a second file. Label resolution uses the registry's non-blocking `try_lookup_*` accessors: `record` is called from paths that already hold the registry lock and `std::sync::Mutex` is not reentrant, so a blocking lookup would deadlock the app inside a debugging tool. Keep that rule for any field added later. Each line is flushed immediately — the point is to survive whatever is being debugged, including a hang or a hard exit.
 
 **Test knobs (prod-safe, env-gated):** `PERSONAS_FLEET_STALE_SECS` / `PERSONAS_FLEET_NEVER_ATTACHED_SECS` shorten the cutoffs for fast observation (default 6 min / 2 min when unset; env knobs take precedence over the Settings-tuned values); `PERSONAS_FLEET_DEBUG=1` makes the ticker log each session's decision inputs (`state · cc · idle · grewAgo · size`) every tick to the dev console — the fastest way to see *why* a session is (mis)classified. Drive the whole loop via the test-automation server (`npm run tauri:dev:test`, HTTP `:17320`; `fleet-spawn` / `footer-fleet-toggle` / `fleet-session-row-*` test-ids).
 

@@ -212,7 +212,12 @@
     "footer_needs_you_one": "{count} جلسة تحتاج إليك",
     "footer_needs_you_other": "{count} جلسة تحتاج إليك",
     "footer_open_page": "فتح صفحة Fleet",
-    "footer_title": "الأسطول"
+    "footer_title": "الأسطول",
+    "debug_log_saved": "تم حفظ سجل تصحيح Fleet · {events} حدثًا ← {path}",
+    "debug_log_start": "تسجيل",
+    "debug_log_start_title": "سجِّل سجلًا عالي المستوى لتغيّرات حالة الأسطول والإسبات وقرارات Athena",
+    "debug_log_started": "بدأ سجل تصحيح Fleet — يجري تسجيل تغيّرات الحالة والإسبات وقرارات Athena.",
+    "debug_log_stop": "جارٍ التسجيل"
   },
   "title": "الإضافات",
   "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",

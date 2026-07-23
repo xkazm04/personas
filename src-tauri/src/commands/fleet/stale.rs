@@ -13,10 +13,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
-use serde::Serialize;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 
-use crate::engine::event_registry::event_name;
 
 use super::registry::{now_ms, registry};
 use super::transcript_read::transcript_size;
@@ -152,13 +150,6 @@ fn effective_secs(env_key: &str, override_atomic: &AtomicU64, default: i64) -> i
     let user = override_atomic.load(Ordering::Relaxed);
     let base = if user > 0 { user as i64 } else { default };
     env_secs(env_key, base)
-}
-
-#[derive(Serialize, Clone)]
-struct FleetStatePayload {
-    session_id: String,
-    state: &'static str,
-    reason: Option<String>,
 }
 
 /// Spawn the staleness ticker. Idempotent — the caller should call this
@@ -440,20 +431,10 @@ fn tick_once(app: &AppHandle) {
 
     // Emit state changes outside the lock.
     for sid in revived {
-        let _ = app.emit(
-            event_name::FLEET_SESSION_STATE,
-            FleetStatePayload { session_id: sid, state: "running", reason: Some("Transcript growing".into()) },
-        );
+        super::pty::emit_session_state(app, &sid, None, "running", Some("Transcript growing".into()));
     }
     for sid in newly_stale {
-        let _ = app.emit(
-            event_name::FLEET_SESSION_STATE,
-            FleetStatePayload {
-                session_id: sid,
-                state: "stale",
-                reason: Some("No log growth".into()),
-            },
-        );
+        super::pty::emit_session_state(app, &sid, None, "stale", Some("No log growth".into()));
     }
 
     // Test/debug: log every non-terminal session's decision inputs each tick so
@@ -522,13 +503,12 @@ fn auto_hibernate_pass(app: &AppHandle) {
         // between our snapshot above and now — never sleep a live turn.
         if registry().hibernate(&sid, true) {
             tracing::info!(session_id = %sid, "fleet auto-hibernate: slept idle session");
-            let _ = app.emit(
-                event_name::FLEET_SESSION_STATE,
-                FleetStatePayload {
-                    session_id: sid,
-                    state: "hibernated",
-                    reason: Some(format!("Auto-hibernated after {} min idle", after_secs / 60)),
-                },
+            super::pty::emit_session_state(
+                app,
+                &sid,
+                None,
+                "hibernated",
+                Some(format!("Auto-hibernated after {} min idle", after_secs / 60)),
             );
         }
     }
@@ -603,15 +583,14 @@ fn live_slot_pass(app: &AppHandle) {
         // between the snapshot and now. Never sleep a live turn.
         if registry().hibernate(&sid, true) {
             tracing::info!(session_id = %sid, cap, "fleet live-slots: hibernated overflow session");
-            let _ = app.emit(
-                event_name::FLEET_SESSION_STATE,
-                FleetStatePayload {
-                    session_id: sid,
-                    state: "hibernated",
-                    reason: Some(format!(
-                        "Hibernated to stay within the live-session limit ({cap}) — wake to resume"
-                    )),
-                },
+            super::pty::emit_session_state(
+                app,
+                &sid,
+                None,
+                "hibernated",
+                Some(format!(
+                    "Hibernated to stay within the live-session limit ({cap}) — wake to resume"
+                )),
             );
         }
     }
@@ -633,15 +612,14 @@ pub fn free_slot_for_spawn(app: &AppHandle) {
     if let Some(sid) = evict.first() {
         if registry().hibernate(sid, true) {
             tracing::info!(session_id = %sid, cap, "fleet live-slots: hibernated to make room for a new session");
-            let _ = app.emit(
-                event_name::FLEET_SESSION_STATE,
-                FleetStatePayload {
-                    session_id: sid.clone(),
-                    state: "hibernated",
-                    reason: Some(format!(
-                        "Hibernated to free a live-session slot (limit {cap}) — wake to resume"
-                    )),
-                },
+            super::pty::emit_session_state(
+                app,
+                sid,
+                None,
+                "hibernated",
+                Some(format!(
+                    "Hibernated to free a live-session slot (limit {cap}) — wake to resume"
+                )),
             );
         }
     }

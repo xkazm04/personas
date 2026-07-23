@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count} phiên đang cần bạn",
       "footer_needs_you_other": "{count} phiên đang cần bạn",
       "footer_open_page": "Mở trang Fleet",
-      "footer_title": "Hạm đội"
+      "footer_title": "Hạm đội",
+      "debug_log_saved": "Đã lưu nhật ký gỡ lỗi Fleet · {events} sự kiện → {path}",
+      "debug_log_start": "Ghi lại",
+      "debug_log_start_title": "Ghi nhật ký gỡ lỗi tổng quan về thay đổi trạng thái hạm đội, ngủ đông và quyết định của Athena",
+      "debug_log_started": "Đã bắt đầu nhật ký gỡ lỗi Fleet — đang ghi lại thay đổi trạng thái, ngủ đông và quyết định của Athena.",
+      "debug_log_stop": "Đang ghi"
     },
     "title": "Plugin",
     "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

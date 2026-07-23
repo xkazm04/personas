@@ -53,12 +53,6 @@ struct OutputPayload<'a> {
 
 /// `fleet-session-state` payload (mirrors the ticker's shape).
 #[derive(Serialize, Clone)]
-struct StatePayload<'a> {
-    session_id: &'a str,
-    state: &'a str,
-    reason: Option<String>,
-}
-
 /// PID-based kill handle so headless sessions ride the exact same
 /// `session.killer` path close/hibernate already use for PTY children.
 /// Targeted (never a blanket kill), same mechanism as `fleet_kill_pid`.
@@ -302,10 +296,7 @@ fn push_display_line(app: &AppHandle, session_id: &str, ring: &Arc<Mutex<OutputR
 /// Apply a state transition + emit the same events the other lanes emit.
 fn transition(app: &AppHandle, session_id: &str, state: FleetSessionState, tag: &str, reason: &str) {
     if registry().set_state_direct(session_id, state, reason) {
-        let _ = app.emit(
-            event_name::FLEET_SESSION_STATE,
-            StatePayload { session_id, state: tag, reason: Some(reason.to_string()) },
-        );
+        super::pty::emit_session_state(app, session_id, None, tag, Some(reason.to_string()));
         emit_registry_changed(app, "updated", session_id);
     }
 }

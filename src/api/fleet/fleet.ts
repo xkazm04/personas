@@ -12,6 +12,7 @@ import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
+import type { FleetDebugLogStatus } from '@/lib/bindings/FleetDebugLogStatus';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -232,3 +233,21 @@ export const killPid = (pid: number) =>
  */
 export const resumeOrphan = (pid: number, cwd: string) =>
   invoke<string>('fleet_resume_orphan', { pid, cwd });
+
+/**
+ * Arm the DEV fleet debug recorder — opens a fresh log file and starts
+ * capturing the causal spine (state transitions, hibernations, every Athena
+ * orchestration wake / skip / verdict). Resolves with the file path.
+ *
+ * Deliberately operator-driven: nothing is recorded until this is called, so
+ * the cost when idle is one atomic load per fleet event. Re-arming while
+ * already recording is a no-op that returns the run in progress, so a
+ * double-click can't split a session across two files.
+ */
+export const debugLogStart = () => invoke<FleetDebugLogStatus>('fleet_debug_log_start');
+
+/** Disarm the recorder, write the summary banner and close the file. */
+export const debugLogStop = () => invoke<FleetDebugLogStatus>('fleet_debug_log_stop');
+
+/** Poll recorder state — drives the Grid button's live event counter. */
+export const debugLogStatus = () => invoke<FleetDebugLogStatus>('fleet_debug_log_status');

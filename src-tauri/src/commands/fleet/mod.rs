@@ -17,6 +17,7 @@
 //! build profiles.
 
 pub mod commands;
+pub mod debug_log;
 pub mod headless;
 pub mod hook_install;
 pub mod hooks;

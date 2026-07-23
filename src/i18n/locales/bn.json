@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count}টি সেশনের আপনাকে প্রয়োজন",
       "footer_needs_you_other": "{count}টি সেশনের আপনাকে প্রয়োজন",
       "footer_open_page": "Fleet পৃষ্ঠা খুলুন",
-      "footer_title": "ফ্লিট"
+      "footer_title": "ফ্লিট",
+      "debug_log_saved": "Fleet ডিবাগ লগ সংরক্ষিত · {events}টি ইভেন্ট → {path}",
+      "debug_log_start": "রেকর্ড",
+      "debug_log_start_title": "ফ্লিট স্টেট পরিবর্তন, হাইবারনেশন ও Athena-র সিদ্ধান্তের উচ্চস্তরের ডিবাগ লগ রেকর্ড করুন",
+      "debug_log_started": "Fleet ডিবাগ লগ শুরু হয়েছে — স্টেট পরিবর্তন, হাইবারনেশন ও Athena-র সিদ্ধান্ত রেকর্ড করা হচ্ছে।",
+      "debug_log_stop": "রেকর্ড হচ্ছে"
     },
     "title": "প্লাগিন",
     "subtitle": "প্লাগিন দিয়ে আপনার ওয়ার্কস্পেস প্রসারিত করুন। সাইডবার থেকে দেখাতে বা লুকাতে টগল করুন।",

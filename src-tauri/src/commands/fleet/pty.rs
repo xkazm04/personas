@@ -736,6 +736,17 @@ pub(super) fn finalize_child_exit(app: &AppHandle, session_id: &str, exit_code: 
     }
 
     registry().mark_exited(session_id, exit_code);
+    // `mark_exited` folds claude's own last screen line into the exit reason for
+    // a non-zero code, so this line usually self-explains a crash.
+    super::debug_log::lifecycle(
+        session_id,
+        &match exit_code {
+            Some(0) => "exited (clean)".to_string(),
+            Some(code) => format!("exited (code {code})"),
+            None => "exited (no code)".to_string(),
+        },
+        &registry().try_state_reason(session_id).unwrap_or_default(),
+    );
     let _ = app.emit(
         event_name::FLEET_SESSION_EXITED,
         ExitedPayload {
@@ -797,6 +808,46 @@ fn rust_reconcile_after_exit(app: &AppHandle, session_id: &str, exit_code: Optio
     // D7 — exited session has updated state + the reconciler may have
     // synthesized + mutated. Nudge the live-ops strip.
     crate::companion::orchestration::emit_digest_changed(app);
+}
+
+/// Announce a lifecycle state transition — the single emit point for
+/// `FLEET_SESSION_STATE`.
+///
+/// Four lanes decide a session's state independently (hooks, the staleness
+/// ticker, the transcript watcher, the headless stream-json reader) and each
+/// used to build its own copy of this payload. Funnelling them here keeps the
+/// wire shape identical across lanes and, more usefully, gives the fleet
+/// exactly one place where "a session changed state" is observable — which is
+/// what [`super::debug_log`] taps. Add a new lane and it is logged for free;
+/// emit the event by hand and it silently isn't.
+///
+/// `from` is the previous state token when the caller knows it (the log renders
+/// `idle → running`); pass `None` when the transition already landed in the
+/// registry before the emit.
+pub fn emit_session_state(
+    app: &AppHandle,
+    session_id: &str,
+    from: Option<&str>,
+    state: &str,
+    reason: Option<String>,
+) {
+    super::debug_log::state_change(session_id, from, state, reason.as_deref().unwrap_or(""));
+    let _ = app.emit(
+        event_name::FLEET_SESSION_STATE,
+        SessionStatePayload {
+            session_id,
+            state,
+            reason,
+        },
+    );
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+struct SessionStatePayload<'a> {
+    session_id: &'a str,
+    state: &'a str,
+    reason: Option<String>,
 }
 
 /// Emit a registry-changed event from a Tauri command.

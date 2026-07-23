@@ -12032,7 +12032,12 @@
       "footer_needs_you_one": "{count} sesi membutuhkan Anda",
       "footer_needs_you_other": "{count} sesi membutuhkan Anda",
       "footer_open_page": "Buka halaman Fleet",
-      "footer_title": "Armada"
+      "footer_title": "Armada",
+      "debug_log_saved": "Log debug Fleet tersimpan · {events} peristiwa → {path}",
+      "debug_log_start": "Rekam",
+      "debug_log_start_title": "Rekam log debug tingkat tinggi untuk perubahan status armada, hibernasi, dan keputusan Athena",
+      "debug_log_started": "Log debug Fleet dimulai — perubahan status, hibernasi, dan keputusan Athena sedang direkam.",
+      "debug_log_stop": "Merekam"
     },
     "title": "Plugin",
     "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

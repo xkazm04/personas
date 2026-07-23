@@ -39,7 +39,16 @@ pub async fn fleet_spawn_session(
     // Live-slot scheduler: if a cap is set and the fleet is at it, hibernate
     // the oldest idle session first so the new one starts inside the budget.
     super::stale::free_slot_for_spawn(&app);
-    pty::spawn_session(app, cwd, args, cols, rows)
+    let id = pty::spawn_session(app, cwd, args.clone(), cols, rows)?;
+    super::debug_log::lifecycle(
+        &id,
+        "spawned",
+        &format!(
+            "interactive · {}",
+            if args.iter().any(|a| !a.starts_with('-')) { "with task" } else { "bare prompt" }
+        ),
+    );
+    Ok(id)
 }
 
 /// Spawn a headless (stream-json) `claude -p` session rooted at `cwd`, seeded
@@ -56,7 +65,9 @@ pub async fn fleet_spawn_headless_session(
     let cwd = PathBuf::from(cwd);
     // Headless spawns consume a live slot like any other session.
     super::stale::free_slot_for_spawn(&app);
-    super::headless::spawn_headless_session(app, cwd, task, args.unwrap_or_default())
+    let id = super::headless::spawn_headless_session(app, cwd, task, args.unwrap_or_default())?;
+    super::debug_log::lifecycle(&id, "spawned", "headless · with task");
+    Ok(id)
 }
 
 /// Write UTF-8 `text` to the session's PTY stdin. Does NOT append a
@@ -114,6 +125,7 @@ pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<()
     if !registry().close_pty_handles(&session_id) {
         return Err(format!("session not found: {session_id}"));
     }
+    super::debug_log::lifecycle(&session_id, "killed", "operator killed the session");
     pty::emit_registry_changed(&app, "updated", &session_id);
     Ok(())
 }
@@ -145,6 +157,7 @@ pub async fn fleet_hibernate_session(app: AppHandle, session_id: String) -> Resu
     // session, whatever state it's in (Running / AwaitingInput included).
     let ok = registry().hibernate(&session_id, false);
     if ok {
+        super::debug_log::sleep_event(&session_id, "hibernated", "manual · operator clicked Sleep");
         // "updated" → the frontend re-fetches the snapshot and sees Hibernated.
         pty::emit_registry_changed(&app, "updated", &session_id);
     }
@@ -183,6 +196,14 @@ pub async fn fleet_wake_session(
         cols,
         rows,
     )?;
+    // Logged against the NEW id (the one that lives on) with the old one in the
+    // detail, so a reader can follow a hibernate → wake chain across the id
+    // change instead of seeing a session vanish and an unrelated one appear.
+    super::debug_log::sleep_event(
+        &new_id,
+        "woken",
+        &format!("resumed from hibernated session {}", &session_id[..session_id.len().min(6)]),
+    );
     if registry().remove(&session_id) {
         pty::emit_registry_changed(&app, "removed", &session_id);
     }
@@ -274,6 +295,30 @@ pub async fn fleet_remove_session(app: AppHandle, session_id: String) -> Result<
         pty::emit_registry_changed(&app, "removed", &session_id);
     }
     Ok(removed)
+}
+
+/// Arm the DEV fleet debug recorder and open a fresh log file.
+///
+/// Operator-driven on purpose: this is a "I'm about to reproduce something"
+/// tool, not always-on telemetry. Nothing is written until it's armed, and the
+/// returned path is what the operator hands over afterwards.
+#[tauri::command]
+pub async fn fleet_debug_log_start(
+    app: AppHandle,
+) -> Result<super::debug_log::FleetDebugLogStatus, String> {
+    super::debug_log::start(&app)
+}
+
+/// Disarm the recorder, write the summary banner and close the file.
+#[tauri::command]
+pub async fn fleet_debug_log_stop() -> Result<super::debug_log::FleetDebugLogStatus, String> {
+    super::debug_log::stop()
+}
+
+/// Current recorder state — drives the Grid button's label + live event count.
+#[tauri::command]
+pub async fn fleet_debug_log_status() -> Result<super::debug_log::FleetDebugLogStatus, String> {
+    Ok(super::debug_log::status())
 }
 
 // Compile-time sanity: every Tauri command returns a Send + Sync future

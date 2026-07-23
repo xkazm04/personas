@@ -1859,7 +1859,7 @@ mod apply_progress_tests {
             Some(Some("https://staging.example.test")),
             Some(Some("staging")),
             Some(Some("main")),
-            None,
+            None, None, None,
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
@@ -1869,7 +1869,7 @@ mod apply_progress_tests {
         // LEAVE UNCHANGED: outer None → value persists.
         let p = update_project(
             &pool, &p.id,
-            None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
@@ -1880,7 +1880,7 @@ mod apply_progress_tests {
             &pool, &p.id,
             None, None, None, None, None, None, None, None, None,
             Some(None), Some(None), Some(None),
-            None,
+            None, None, None,
         )
         .unwrap();
         assert_eq!(p.test_env_url, None);
