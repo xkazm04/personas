@@ -2,11 +2,11 @@
 // so any surface with passport raw data (the Wall, the Mastermind canvas) can
 // provide the identical row-action machinery. Behaviour is a verbatim lift:
 // Tier-0 standards writes, context scans + activity dock, connector binds,
-// skills installs, and Claude-Code deploy dispatch with dock + busy-cell
+// and Claude-Code deploy dispatch with dock + busy-cell
 // resolution via eventBridge.
 import { useMemo } from 'react';
 
-import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill } from '@/api/devTools/devTools';
+import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject } from '@/api/devTools/devTools';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 
@@ -39,10 +39,6 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
         : field === 'llm_tracking' ? { llmTrackingCredentialId: credId }
         : { monitoringCredentialId: credId };
       await updateProject(slug, updates);
-      reload();
-    },
-    installSkills: async (slug, items) => {
-      await Promise.all(items.map((it) => installSkill(it.name, it.source, slug, false)));
       reload();
     },
     queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },
