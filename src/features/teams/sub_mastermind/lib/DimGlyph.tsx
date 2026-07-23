@@ -4,8 +4,7 @@
 // between the Forge solid glyph and the lucide outline. Absent cells stay
 // generic + muted (there is no tool to brand).
 import { dimBrand, DIM_ICON } from './dimMeta';
-import { FORGE_GLYPH } from './dimGlyphsForge';
-import { useIconSet } from './iconSet';
+import { GLYPH_SETS, useIconSet } from './iconSet';
 import type { DimNode } from './types';
 
 export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
@@ -26,10 +25,10 @@ export function DimGlyph({ node, x, y, size, color, strokeWidth = 1.6 }: {
       </svg>
     );
   }
-  if (set === 'forge') {
+  if (set !== 'line') {
     return (
       <svg x={x} y={y} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" style={{ color }} aria-hidden>
-        {FORGE_GLYPH[node.key]()}
+        {GLYPH_SETS[set][node.key]()}
       </svg>
     );
   }

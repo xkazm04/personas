@@ -4,8 +4,7 @@
 // the canvas so the mapping is unambiguous. Item click is a no-op for now —
 // the per-dimension action layer comes later.
 import { dimBrand, DIM_ICON } from './dimMeta';
-import { FORGE_GLYPH } from './dimGlyphsForge';
-import { useIconSet } from './iconSet';
+import { GLYPH_SETS, useIconSet } from './iconSet';
 import { DIM_INK, mix } from './ink';
 import type { DimNode, Island } from './types';
 
@@ -23,10 +22,10 @@ function MenuGlyph({ node }: { node: DimNode }) {
       </svg>
     );
   }
-  if (set === 'forge') {
+  if (set !== 'line') {
     return (
       <svg width={15} height={15} viewBox="0 0 24 24" fill="currentColor" style={{ color: ink }} aria-hidden className="shrink-0">
-        {FORGE_GLYPH[node.key]()}
+        {GLYPH_SETS[set][node.key]()}
       </svg>
     );
   }

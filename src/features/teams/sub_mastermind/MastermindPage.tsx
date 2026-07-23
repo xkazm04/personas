@@ -51,6 +51,7 @@ const COPY = {
   demo: 'demo data — no projects scanned yet',
   switcher: 'Mastermind prototype variant',
   iconSwitcher: 'Dimension icon set',
+  iconConcept: 'Concept',
   iconForge: 'Forge',
   iconLine: 'Line',
 };
@@ -62,6 +63,7 @@ const VARIANT_TABS: Array<{ id: VariantId; label: string }> = [
 ];
 
 const ICON_TABS: Array<{ id: IconSetId; label: string }> = [
+  { id: 'concept', label: COPY.iconConcept },
   { id: 'forge', label: COPY.iconForge },
   { id: 'line', label: COPY.iconLine },
 ];
