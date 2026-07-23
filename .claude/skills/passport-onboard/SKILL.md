@@ -107,6 +107,19 @@ Rules:
   via a temporary worktree + patch-staging rather than staging the whole file;
   NEVER `commit --amend` once concurrent agents may have committed — the amend
   lands on THEIR commit.
+- **Never trust the checkout's branch.** A concurrent session may have
+  switched the shared checkout to ITS branch mid-run — check
+  `git branch --show-current` before any git op, and when the target branch
+  (master unless the user said otherwise) isn't checked out, commit through a
+  temporary worktree pinned to the target instead of switching the shared
+  checkout. A commit that lands on a foreign branch gets cherry-picked to the
+  target and surgically removed from the foreign branch ONLY if that removal
+  cannot take concurrent work with it — otherwise leave the duplicate and say
+  so (identical changes reconcile at merge).
+- When another session owns a file you must extend (e.g. `.gitignore` for the
+  app-cost rule), commit the change on the TARGET branch via a worktree and
+  make at most a minimal unstaged append in the shared checkout — protective,
+  merge-trivial, and their commit carries it forward.
 - Pre-existing lint/format noise in a touched area gets REPORTED, never fixed
   silently (it may be another session's in-flight work or a toolchain
   artifact).
