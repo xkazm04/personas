@@ -348,9 +348,18 @@ function MastermindInner() {
   // cache below reuses the previous island object whenever that island's
   // actual inputs are unchanged, so a fleet tick re-renders only the island
   // whose dock changed.
+  //
+  // The base island is compared by CONTENT, not identity: `deriveScene` is a
+  // pure rebuild, so each of the ~9 data families landing in its own microtask
+  // on first mount (passport phases 0/1/2, relations, scans, goals, KPI,
+  // monitoring, LLM spend) produced a brand-new object for EVERY island and
+  // blew the cache on `base === i` — the whole world reconciled ~10× in the
+  // first seconds. Most of those arrivals change one family's cells on a few
+  // islands; a stringify per island (µs) is nothing against re-rendering
+  // ~150 SVG nodes each (ms), so the comparison buys back the freeze.
   const passportBySlug = useMemo(() => new Map(passports.map((p) => [p.identity.slug, p])), [passports]);
   const islandCache = useRef(new Map<string, {
-    base: unknown; passport: unknown; raw: unknown;
+    baseKey: string; passport: unknown; raw: unknown;
     oX: number | undefined; oY: number | undefined;
     fleetKey: string; personasKey: string; busy: boolean;
     out: (typeof scene.islands)[number];
@@ -367,8 +376,9 @@ function MastermindInner() {
       const busy = busySlugs.has(i.slug);
       const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
       const personasKey = personasRunning.join('|');
+      const baseKey = JSON.stringify(i);
       const c = cache.get(i.slug);
-      if (c && c.base === i && c.passport === passport && c.raw === raw
+      if (c && c.baseKey === baseKey && c.passport === passport && c.raw === raw
         && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
         && c.personasKey === personasKey && c.busy === busy) {
         next.set(i.slug, c);
@@ -389,7 +399,7 @@ function MastermindInner() {
       // every zoom band.
       const attention = computeAttention(fleet);
       const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
-      const entry = { base: i, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, out };
+      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, out };
       next.set(i.slug, entry);
       return out;
     });

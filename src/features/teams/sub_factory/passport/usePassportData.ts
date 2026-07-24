@@ -321,20 +321,35 @@ export function usePassportData(): PassportData {
     if (Date.now() - lastSweepAt < SWEEP_MIN_INTERVAL_MS) return;
     lastSweepAt = Date.now();
     let cancelled = false;
-    void (async () => {
-      try {
-        await scanDocRot().catch(silentCatch('usePassportData:docRotScan'));
-        await scanMemoryHealth().catch(silentCatch('usePassportData:memHealthScan'));
-        for (let i = 0; i < 3; i++) {
-          const s = await scanSkillUsage();
-          if (cancelled || !s.exhausted) break;
+    const run = () => {
+      if (cancelled) return;
+      void (async () => {
+        try {
+          await scanDocRot().catch(silentCatch('usePassportData:docRotScan'));
+          await scanMemoryHealth().catch(silentCatch('usePassportData:memHealthScan'));
+          for (let i = 0; i < 3; i++) {
+            const s = await scanSkillUsage();
+            if (cancelled || !s.exhausted) break;
+          }
+          if (!cancelled) build(false).catch(silentCatch('usePassportData:usageRebuild'));
+        } catch (e) {
+          silentCatch('usePassportData:skillUsageScan')(e);
         }
-        if (!cancelled) build(false).catch(silentCatch('usePassportData:usageRebuild'));
-      } catch (e) {
-        silentCatch('usePassportData:skillUsageScan')(e);
-      }
-    })();
-    return () => { cancelled = true; };
+      })();
+    };
+    // DEFERRED OFF FIRST PAINT: this sweep is background telemetry that ends in
+    // a second full `build()` — running it in the mount tick put transcript
+    // mining and another N-project fan-out in direct competition with the
+    // fetches the canvas is actually waiting on. Idle (or a 4s floor) means the
+    // surface is interactive first; the 15-min throttle above is unchanged.
+    const idle = typeof requestIdleCallback === 'function'
+      ? requestIdleCallback(run, { timeout: 10_000 })
+      : window.setTimeout(run, 4_000);
+    return () => {
+      cancelled = true;
+      if (typeof requestIdleCallback === 'function') cancelIdleCallback(idle as number);
+      else window.clearTimeout(idle as number);
+    };
   }, [build]);
 
   const rescan = useCallback(() => {

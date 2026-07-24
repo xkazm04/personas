@@ -17,6 +17,8 @@ import type { DevContextGroup } from '@/lib/bindings/DevContextGroup';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
+import { mapWithConcurrency } from './passport/usePassportData';
+
 import type {
   MockProject,
   MockGroup,
@@ -30,6 +32,9 @@ import type {
 } from './factoryModel';
 
 // -- mapping ------------------------------------------------------------------
+
+/** Projects resolved at once in the per-project fan-out (3 IPC each). */
+const PROJECT_FANOUT_CONCURRENCY = 5;
 
 const CONTEXT_CATS: ContextCategory[] = ['ui', 'api', 'lib', 'data', 'test', 'config'];
 const KPI_CATS: KpiCategory[] = ['technical', 'quality', 'traffic', 'value'];
@@ -235,8 +240,12 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
         for (const m of measurements) (seriesByKpi.get(m.kpi_id) ?? seriesByKpi.set(m.kpi_id, []).get(m.kpi_id)!).push(m.value);
         for (const [, arr] of seriesByKpi) arr.reverse(); // bulk is newest-first → oldest→newest
 
-        const perProject = await Promise.all(
-          projects.map(async (p) => {
+        // Bounded fan-out: this was a bare Promise.all over every project — 3N
+        // IPC calls issued simultaneously (groups + contexts + use cases). On
+        // the Mastermind canvas, which mounts this provider alongside the
+        // passport build, that saturated the IPC channel the first-paint calls
+        // also travel on. Same helper every other factory fan-out uses.
+        const perProject = await mapWithConcurrency(projects, PROJECT_FANOUT_CONCURRENCY, async (p) => {
             const [groups, contexts, useCases] = await Promise.all([
               devApi.listContextGroups(p.id),
               devApi.listContexts(p.id),
@@ -250,8 +259,7 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
               (k) => k.project_id === p.id && (k.status === 'active' || k.status === 'paused'),
             );
             return assembleProject(p, groups, contexts, pk, seriesByKpi, useCases);
-          }),
-        );
+        });
         if (!cancelled) setData({ projects: perProject, loading: false, error: null });
       } catch (err) {
         if (!cancelled) setData({ projects: [], loading: false, error: err instanceof Error ? err.message : String(err) });

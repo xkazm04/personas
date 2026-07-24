@@ -10,7 +10,7 @@
 // generous margin) are culled from the render. Together these keep a 50–100
 // project portfolio at 60fps — a pan does zero island re-renders and a wheel
 // zoom commits at most once per animation frame.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -39,6 +39,8 @@ const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
 // Half an island footprint (~900×800 world units) plus slack, so an island is
 // only culled once its whole body is well clear of the viewport — no popping.
 const CULL_MARGIN = 700;
+// Islands committed per animation frame on first mount (see mountBudget).
+const MOUNT_WAVE = 5;
 
 export interface IslandCtx {
   z: number;
@@ -180,9 +182,34 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       maxY: (viewport.h - cam.y) / cam.z + m,
     };
   }, [viewport, cam]);
-  const isVisible = useCallback((i: Island) => (
-    !visibleRect || (i.x >= visibleRect.minX && i.x <= visibleRect.maxX && i.y >= visibleRect.minY && i.y <= visibleRect.maxY)
-  ), [visibleRect]);
+
+  // Islands actually on screen. Before the viewport is measured this is EMPTY,
+  // not "everything": the measure + fit layout effects both run before paint,
+  // so rendering the whole world in that first pass only to cull it in the
+  // second cost N×~150 SVG nodes of pure waste — a large slice of the
+  // first-open freeze. Nothing is missing; paint happens after pass 2.
+  const visibleIslands = useMemo(
+    () => (visibleRect
+      ? scene.islands.filter((i) => i.x >= visibleRect.minX && i.x <= visibleRect.maxX && i.y >= visibleRect.minY && i.y <= visibleRect.maxY)
+      : []),
+    [scene.islands, visibleRect],
+  );
+
+  // ...and they mount in WAVES. Culling alone still commits every on-screen
+  // island in ONE synchronous pass; at 30+ projects (13 dimension cells +
+  // stat columns + banner each) that pass is seconds of blocked main thread.
+  // MOUNT_WAVE islands per animation frame lets the first ones paint while the
+  // rest stream in. The budget only ever grows, so a later pan (already past
+  // the island count) mounts immediately with no re-stagger.
+  const [mountBudget, setMountBudget] = useState(MOUNT_WAVE);
+  useEffect(() => {
+    if (mountBudget >= visibleIslands.length) return;
+    const id = requestAnimationFrame(() => setMountBudget((n) => n + MOUNT_WAVE));
+    return () => cancelAnimationFrame(id);
+  }, [mountBudget, visibleIslands.length]);
+  const mountedIslands = mountBudget >= visibleIslands.length
+    ? visibleIslands
+    : visibleIslands.slice(0, mountBudget);
 
   // Gesture-time world math reads the LIVE camera (camRef) so it stays correct
   // even mid-pan, when `cam` state is intentionally stale for render-freedom.
@@ -489,9 +516,9 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             clickable={mode === 'edit' || mode === 'connect'}
             onEdit={setEditingLink}
           />
-          {/* Islands: culled to the visible world rect (+ margin), each memoized
-              so a render-free pan re-renders none of them. */}
-          {scene.islands.map((i) => (isVisible(i) ? renderIsland(i, ctxFor(i)) : null))}
+          {/* Islands: culled to the visible world rect (+ margin) and mounted in
+              waves, each memoized so a render-free pan re-renders none of them. */}
+          {mountedIslands.map((i) => renderIsland(i, ctxFor(i)))}
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
           {/* connect overlay — ABOVE the islands so source/target/rubber are
               unmistakable (the round-5 under-island ring was barely visible) */}
