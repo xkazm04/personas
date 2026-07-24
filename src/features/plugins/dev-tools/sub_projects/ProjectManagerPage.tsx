@@ -24,6 +24,16 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
 import { ProjectTeamPreviewModal } from './ProjectTeamPreviewModal';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+// ── /prototype SCAFFOLD (workspace layer, throwaway) ────────────────────────
+// Two directional chromes for the workspace layer above projects; the toggle
+// below picks between them and goes away with the losing variant.
+import { MoveToWorkspaceButton } from '../sub_workspaces/MoveToWorkspaceButton';
+import { WorkspaceRail } from '../sub_workspaces/WorkspaceRail';
+import { WorkspaceTabs } from '../sub_workspaces/WorkspaceTabs';
+import { scopeProjects, setActiveWorkspace, useWorkspaces } from '../sub_workspaces/workspaceStore';
+
+type WorkspaceChrome = 'rail' | 'tabs';
+const CHROME_KEY = 'proto.workspaceChrome.v1';
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -41,8 +51,27 @@ export default function ProjectManagerPage() {
 
   // Map store data into view-models. Goals are managed in the dedicated Goals
   // module (sub_goals), so the project list no longer tracks goal counts here.
-  const projects: Project[] = storeProjects.map((p) => toProject(p, 0));
+  const allProjects: Project[] = storeProjects.map((p) => toProject(p, 0));
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
+
+  // Workspace layer (prototype): the table, its counts and — critically — its
+  // bulk selection all work off the SCOPED list. Select-all + bulk-archive
+  // reaching projects from another workspace would be data loss.
+  const { workspaces, activeId: activeWorkspaceId } = useWorkspaces();
+  const projects = useMemo(
+    () => scopeProjects(allProjects, workspaces, activeWorkspaceId),
+    [allProjects, workspaces, activeWorkspaceId],
+  );
+  const [chrome, setChrome] = useState<WorkspaceChrome>(() => {
+    try { return (localStorage.getItem(CHROME_KEY) as WorkspaceChrome | null) ?? 'rail'; } catch { return 'rail'; }
+  });
+  const toggleChrome = useCallback(() => {
+    setChrome((c) => {
+      const next: WorkspaceChrome = c === 'rail' ? 'tabs' : 'rail';
+      try { localStorage.setItem(CHROME_KEY, next); } catch { /* best-effort */ }
+      return next;
+    });
+  }, []);
 
   // Teams roster for the bound-binding badges in the project table
   // (cycle 5). Fetched on mount so the pills resolve immediately without
@@ -397,9 +426,39 @@ export default function ProjectManagerPage() {
           >
             {t.plugins.dev_projects.new_project}
           </Button>
+          {/* prototype-only: swap the workspace chrome direction */}
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={toggleChrome}
+              title={`Workspace chrome: ${chrome} (click to swap)`}
+              className="ml-auto px-2 py-1 rounded-interactive typo-caption font-mono text-foreground/45 hover:text-foreground hover:bg-secondary/40 transition-colors"
+              data-testid="workspace-chrome-toggle"
+            >
+              {chrome}
+            </button>
+          )}
         </ActionRow>
 
-        <div className="space-y-3">
+        {chrome === 'tabs' && (
+          <WorkspaceTabs
+            projects={allProjects}
+            workspaces={workspaces}
+            activeId={activeWorkspaceId}
+            onSelect={setActiveWorkspace}
+          />
+        )}
+
+        <div className={chrome === 'rail' ? 'flex gap-4 items-start' : undefined}>
+          {chrome === 'rail' && (
+            <WorkspaceRail
+              projects={allProjects}
+              workspaces={workspaces}
+              activeId={activeWorkspaceId}
+              onSelect={setActiveWorkspace}
+            />
+          )}
+          <div className="space-y-3 min-w-0 flex-1">
           <div className="flex items-center gap-3">
             <h3 className="typo-label font-semibold text-primary uppercase tracking-wider">
               {t.plugins.dev_projects.all_projects}({projects.length})
@@ -410,6 +469,11 @@ export default function ProjectManagerPage() {
                 <span className="typo-caption text-amber-300 font-medium tabular-nums">
                   {selectedIds.size} {selectedIds.size === 1 ? t.plugins.dev_projects.bulk_selected_one : t.plugins.dev_projects.bulk_selected_many}
                 </span>
+                <MoveToWorkspaceButton
+                  workspaces={workspaces}
+                  selectedIds={selectedIds}
+                  onMoved={clearSelection}
+                />
                 <Button
                   variant="accent"
                   accentColor="amber"
@@ -458,6 +522,7 @@ export default function ProjectManagerPage() {
               ariaLabel={t.plugins.dev_projects.all_projects}
             />
           )}
+          </div>
         </div>
       </ContentBody>
 

@@ -17,6 +17,12 @@ import { DebtText } from '@/i18n/DebtText';
 
 import SystemLoadFooterIcon from '@/features/shared/chrome/SystemLoadFooterIcon';
 import { FooterSectionNav } from '@/features/shared/chrome/FooterSectionNav';
+// ── /prototype SCAFFOLD (workspace switcher round, throwaway) ───────────────
+// Two directional replacements for ProjectPickerFooterIcon, both handling
+// workspace + project in one expanded control. The cycler below picks between
+// them (and the current baseline); it goes away with the losing variants.
+import { SwitcherBreadcrumb } from '@/features/plugins/dev-tools/sub_workspaces/SwitcherBreadcrumb';
+import { SwitcherCommandSheet } from '@/features/plugins/dev-tools/sub_workspaces/SwitcherCommandSheet';
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/plugins/radio/components/RadioFooter'));
@@ -465,6 +471,49 @@ function ProjectPickerFooterIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// /prototype SCAFFOLD — switcher variant cycler (throwaway).
+// Baseline (today's project-only picker) → Breadcrumb → Command sheet.
+// ---------------------------------------------------------------------------
+
+type SwitcherVariant = 'baseline' | 'breadcrumb' | 'sheet';
+const SWITCHER_KEY = 'proto.footerSwitcher.v1';
+const SWITCHER_ORDER: SwitcherVariant[] = ['baseline', 'breadcrumb', 'sheet'];
+const SWITCHER_LABEL: Record<SwitcherVariant, string> = {
+  baseline: 'base', breadcrumb: 'crumb', sheet: 'sheet',
+};
+
+function WorkspaceSwitcherSlot() {
+  const [variant, setVariant] = useState<SwitcherVariant>(() => {
+    try { return (localStorage.getItem(SWITCHER_KEY) as SwitcherVariant | null) ?? 'breadcrumb'; } catch { return 'breadcrumb'; }
+  });
+  const cycle = useCallback(() => {
+    setVariant((v) => {
+      const next = SWITCHER_ORDER[(SWITCHER_ORDER.indexOf(v) + 1) % SWITCHER_ORDER.length]!;
+      try { localStorage.setItem(SWITCHER_KEY, next); } catch { /* best-effort */ }
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="flex items-center gap-1">
+      {import.meta.env.DEV && (
+        <button
+          onClick={cycle}
+          title={`Switcher variant: ${variant} (click to cycle)`}
+          className="h-7 px-1.5 rounded-lg typo-caption text-foreground/45 hover:text-foreground hover:bg-secondary/50 transition-colors font-mono"
+          data-testid="footer-switcher-variant"
+        >
+          {SWITCHER_LABEL[variant]}
+        </button>
+      )}
+      {variant === 'baseline' && <ProjectPickerFooterIcon />}
+      {variant === 'breadcrumb' && <SwitcherBreadcrumb />}
+      {variant === 'sheet' && <SwitcherCommandSheet />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Resume-tour action — appears only when a guided tour was started, made
 // partial progress, and was then dismissed (not completed). Lets the user
 // pick the tour back up from the footer without hunting for the launcher.
@@ -653,7 +702,7 @@ export default function DesktopFooter() {
         <div className="w-px h-4 bg-primary/10" />
         <OnboardingReplayFooterIcon />
         <TourResumeFooterIcon />
-        <ProjectPickerFooterIcon />
+        <WorkspaceSwitcherSlot />
       </div>
     </div>,
     document.body,
