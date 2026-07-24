@@ -2,9 +2,6 @@
 
 ## Active
 
-### perfect-wave-fleet — /perfect build: 3 fleet directions — session opus-5[1m] — started
-- 2026-07-24. Builder worktree `.claude/worktrees/perfect-fleet` (branch worktree-perfect-fleet, fork 8e744ee70). Directions: fleet-registry-durability (DB table + boot rehydrate) / fleet-limit-eta (reset-time parser + countdown chip) / fleet-run-harvest (run grouping + harvest panel). Declared paths: src-tauri/src/commands/fleet/**, src-tauri/src/db/{migrations,repos}/** (new fleet table only), src/features/plugins/fleet/**, src/features/fleet/**, src/api/fleet*, src/lib/bindings/, src/i18n/locales/*.json.
-
 ### decision-mirror-p1p2 — operator decision capture + reflect-me — session fable-5 — COMPLETED
 - 2026-07-24 close. Commit **825216625** (pushed): docs/concepts/decision-mirror.md (5-phase roadmap), AskUserQuestion PostToolUse hook (machine-local registration; script scripts/decision-ledger/capture-decision.mjs, hook+correction modes, error-proof) -> .claude/decision-ledger/ (doubly gitignored), CLAUDE.md correction-journal duty, /reflect-me skill. Personas-only scope by design; hook activates from the NEXT session. First real ledger entry: the add-A correction. Phase 3 next: generate the fleet decision policy from profile.md.
 
@@ -266,6 +263,12 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### perfect-wave-fleet — /perfect build: 3 fleet directions — session opus-5[1m] — COMPLETED 3/3
+- 2026-07-24 wrap. ONE Opus builder (shared FleetSession DTO + registry.rs + emit-path coupling made a 3-way partition unsafe), directions sequenced. Commits: **b24f84ccd** fleet-registry-durability (fleet_sessions table via guarded incremental migration + repo; writes piggyback pty::emit_session_state/emit_registry_changed onto a dedicated fleet-persist thread; boot rehydrate as DOZING TOMBSTONES so the existing wake path resurrects them unchanged; exited rows aged out at 24h) · **824d9a9dd** fleet-limit-eta (banner reset-time parser anchored on "resets"/"reset at"/…, LOCAL wall-clock, ambiguity→None so the blind cadence never regresses; ONE scheduled retry at reset+2min; limitResetAtMs DTO + countdown chip on tiles and in the footer) · **347e14e44** fleet-run-harvest (2-min dispatch-window run grouping stamped at both spawn paths, Harvest panel off the Sessions action row, markdown export). Director: **e11b7dec8** cleanup, **21b5a03a2** doc-sync, **42e0d0575** fixes a PRE-EXISTING master test bug (civil-time epoch two days off, builder-flagged).
+- Gates on master: tsc 0 · eslint 0 errors · vitest 2556/2556 · cargo check at the 148-warning lib baseline · `fleet::` Rust 98/98 · i18n 0/0 x14. Worktree + branch removed, node_modules junction verified gone first.
+- RECORDED, NOT FIXED: (1) the long-standing STATUS_ENTRYPOINT_NOT_FOUND Rust-test loader failure is ROOT-CAUSED — the crate imports TaskDialogIndirect, which lives only in the comctl32 v6 side-by-side assembly, and the test exe's default MSVC manifest doesn't request it; durable fix = manifest link-args in src-tauri/.cargo/config.toml. (2) Pre-existing ts-rs binding drift on master (AppendMessageResult.ts genuinely stale + 5 whitespace-drift files) — likely red CI binding-drift job. Both are carry-in candidates for the next propose round.
+- NOT LIVE-DRIVEN (smoke debt): restart→resume, restored-tile wake, limit chip against a real limit window, Harvest panel on a real finished run, 24h exited ageing.
 
 ### fleet-debug-recorder — DEV fleet debug log (state / hibernation / Athena) + Grid Record button — session opus-4-8[1m] — COMPLETED (awaiting user's 30-min run)
 - Started: 2026-07-23. Completed: 2026-07-23. Commit: **5f03e26ad** (50 files, unpushed). Follows ea8747a0d in the same session.
