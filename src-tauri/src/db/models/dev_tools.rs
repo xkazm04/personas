@@ -183,6 +183,10 @@ pub struct WorkspaceKnowledge {
     pub statement: String,
     /// Evidence verbatim: code, config, before/after. Markdown.
     pub detail_md: Option<String>,
+    /// Free-form slash-path taxonomy node ('ui/motion/reveals'), authored by
+    /// harvest agents. The library derives its arbitrary-depth topic tree from
+    /// this; None = uncategorized. Added 2026-07-24.
+    pub topic: Option<String>,
     /// JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
     /// which member projects this practice can apply to. Opaque to the repo.
     pub applicability: Option<String>,

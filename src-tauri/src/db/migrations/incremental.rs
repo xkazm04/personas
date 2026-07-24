@@ -5932,6 +5932,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                         title             TEXT NOT NULL,
                         statement         TEXT NOT NULL,
                         detail_md         TEXT,
+                        topic             TEXT,
                         applicability     TEXT,
                         status            TEXT NOT NULL DEFAULT 'observed'
                                           CHECK(status IN ('observed','proposed','adopted','deprecated','rejected')),
@@ -5977,6 +5978,19 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                     conn,
                     "ALTER TABLE dev_projects ADD COLUMN workspace_id TEXT REFERENCES dev_workspaces(id);",
                 )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_knowledge.topic",
+            description: "Free-form slash-path taxonomy node for a practice (e.g. 'ui/motion/reveals'), authored by harvest agents. The library derives its arbitrary-depth topic tree from this column; nullable = uncategorized. Added as a separate ALTER so DBs that created workspace_knowledge before this column pick it up.",
+            already_applied: |conn| has_column(conn, "workspace_knowledge", "topic"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN topic TEXT;")?;
                 Ok(())
             },
         },
@@ -6475,6 +6489,7 @@ mod tests {
             ("persona_memory_review_proposal", "team_id"),
             ("dev_kpi_measurements", "env"),
             ("dev_projects", "workspace_id"),
+            ("workspace_knowledge", "topic"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

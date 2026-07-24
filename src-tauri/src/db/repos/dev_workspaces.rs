@@ -44,6 +44,7 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<WorkspaceKnowledge> {
         title: row.get("title")?,
         statement: row.get("statement")?,
         detail_md: row.get("detail_md")?,
+        topic: row.get("topic")?,
         applicability: row.get("applicability")?,
         status: row.get("status")?,
         origin_project_id: row.get("origin_project_id")?,
@@ -429,6 +430,7 @@ pub fn create_knowledge(
     title: &str,
     statement: &str,
     detail_md: Option<&str>,
+    topic: Option<&str>,
     applicability: Option<&str>,
     origin_project_id: Option<&str>,
 ) -> Result<WorkspaceKnowledge, AppError> {
@@ -452,9 +454,9 @@ pub fn create_knowledge(
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO workspace_knowledge
-                 (id, workspace_id, kind, title, statement, detail_md, applicability,
+                 (id, workspace_id, kind, title, statement, detail_md, topic, applicability,
                   status, origin_project_id, provenance, valid_from, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'proposed', ?8, ?9, ?10, ?10, ?10)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'proposed', ?9, ?10, ?11, ?11, ?11)",
             params![
                 id,
                 workspace_id,
@@ -462,6 +464,7 @@ pub fn create_knowledge(
                 title.trim(),
                 statement.trim(),
                 detail_md,
+                topic.map(|t| t.trim()).filter(|t| !t.is_empty()),
                 applicability,
                 origin_project_id,
                 provenance,
@@ -480,6 +483,7 @@ pub fn update_knowledge(
     title: Option<&str>,
     statement: Option<&str>,
     detail_md: Option<Option<&str>>,
+    topic: Option<Option<&str>>,
     applicability: Option<Option<&str>>,
 ) -> Result<WorkspaceKnowledge, AppError> {
     if let Some(k) = kind {
@@ -517,6 +521,14 @@ pub fn update_knowledge(
         push_field_param!(
             statement.map(|s| s.trim().to_string()),
             "statement",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            topic.map(|o| o.map(|s| s.to_string())),
+            "topic",
             sets,
             param_idx,
             param_values,

@@ -109,6 +109,7 @@ pub fn dev_tools_workspace_knowledge_create(
     title: String,
     statement: String,
     detail_md: Option<String>,
+    topic: Option<String>,
     applicability: Option<String>,
     origin_project_id: Option<String>,
 ) -> Result<WorkspaceKnowledge, AppError> {
@@ -120,6 +121,7 @@ pub fn dev_tools_workspace_knowledge_create(
         &title,
         &statement,
         detail_md.as_deref(),
+        topic.as_deref(),
         applicability.as_deref(),
         origin_project_id.as_deref(),
     )
@@ -133,6 +135,7 @@ pub fn dev_tools_workspace_knowledge_update(
     title: Option<String>,
     statement: Option<String>,
     detail_md: Option<Option<String>>,
+    topic: Option<Option<String>>,
     applicability: Option<Option<String>>,
 ) -> Result<WorkspaceKnowledge, AppError> {
     require_auth_sync(&state)?;
@@ -143,6 +146,7 @@ pub fn dev_tools_workspace_knowledge_update(
         title.as_deref(),
         statement.as_deref(),
         detail_md.as_ref().map(|o| o.as_deref()),
+        topic.as_ref().map(|o| o.as_deref()),
         applicability.as_ref().map(|o| o.as_deref()),
     )
 }

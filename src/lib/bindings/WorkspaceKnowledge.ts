@@ -23,6 +23,12 @@ statement: string,
  */
 detail_md: string | null, 
 /**
+ * Free-form slash-path taxonomy node ('ui/motion/reveals'), authored by
+ * harvest agents. The library derives its arbitrary-depth topic tree from
+ * this; None = uncategorized. Added 2026-07-24.
+ */
+topic: string | null, 
+/**
  * JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
  * which member projects this practice can apply to. Opaque to the repo.
  */
