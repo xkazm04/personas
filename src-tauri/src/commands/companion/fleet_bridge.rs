@@ -634,8 +634,16 @@ enum MechanicalCue {
 /// template echoes (`FLEET:DONE — <one-line summary>`) are rejected by the
 /// leading `<`.
 fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
-    let start = lines.len().saturating_sub(15);
-    let tail = lines[start..].join("\n");
+    // Blank vt100 rows and the composer chrome eat most of the raw bottom-15
+    // window (probe 3: the recap sat just above it and fell through to a full
+    // Athena turn) — window over CONTENT rows instead.
+    let content: Vec<&String> = lines.iter().filter(|l| !l.trim().is_empty()).collect();
+    let start = content.len().saturating_sub(18);
+    let tail = content[start..]
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
     let mut best: Option<(usize, bool)> = None; // (byte offset, is_done)
     for (needle, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
         if let Some(i) = tail.rfind(needle) {
@@ -680,7 +688,28 @@ fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
     else {
         return false;
     };
-    match mechanical_cue(&lines) {
+    let cue = mechanical_cue(&lines);
+    if cue.is_none() {
+        // Forensics: a marker is visible SOMEWHERE on screen but the matcher
+        // rejected it — log the content tail so the next miss diagnoses from
+        // the log instead of another probe cycle.
+        let joined = lines.join("\n");
+        if joined.contains("FLEET:") {
+            let content: Vec<&str> = lines
+                .iter()
+                .filter(|l| !l.trim().is_empty())
+                .map(|s| s.as_str())
+                .collect();
+            let content_tail = content[content.len().saturating_sub(18)..].join("\n");
+            tracing::info!(
+                target: "fleet_mechanical",
+                session_id = %session_id,
+                tail = %content_tail.chars().take(1600).collect::<String>(),
+                "FLEET: marker on screen but no cue matched"
+            );
+        }
+    }
+    match cue {
         Some(MechanicalCue::Done(summary)) => {
             let reg = crate::commands::fleet::registry::registry();
             if let Some(prev) = reg.mark_finished(session_id, &summary) {
