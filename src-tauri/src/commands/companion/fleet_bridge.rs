@@ -344,6 +344,13 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
                     "no longer parked at drain time — moved on without needing the assessment",
                 );
                 clear_pending_assessment(&e.session_id);
+                // Roll back the signature the WAKE recorded — no assessment
+                // actually happened, and if the session re-parks on this same
+                // screen the dedupe would wrongly suppress the next wake
+                // (observed on the smoke probe: a dropped wake cost the
+                // follow-up question ~6 min of sweep latency).
+                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                sigs.remove(&e.session_id);
             }
             parked
         })
