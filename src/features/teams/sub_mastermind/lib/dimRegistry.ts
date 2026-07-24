@@ -68,8 +68,9 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
  *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
- *  list popover, null = never actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | null;
+ *  list popover, skills-run = the "run an installed skill via Fleet" modal
+ *  (green Skills cell only), null = never actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
  *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`

@@ -43,6 +43,7 @@ import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
+import { SkillRunModal } from './lib/SkillRunModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { GoalListPopover } from './lib/GoalListPopover';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
@@ -115,6 +116,8 @@ function MastermindInner() {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   // Slug whose "Dispatch Fleet…" instruction modal is open (null = closed).
   const [dispatchSlug, setDispatchSlug] = useState<string | null>(null);
+  // Slug whose "Run a skill" modal is open (green Skills cell click; null = closed).
+  const [skillRunSlug, setSkillRunSlug] = useState<string | null>(null);
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   // Projects with an idea scan WE dispatched still in flight. Per-project (a
@@ -450,6 +453,11 @@ function MastermindInner() {
       setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
       return;
     }
+    // Green Skills cell — run an installed skill via a background Fleet session.
+    if (node.action === 'skills-run') {
+      setSkillRunSlug(slug);
+      return;
+    }
     if (!node.action || !node.rowKey) return;
     setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
   };
@@ -492,6 +500,13 @@ function MastermindInner() {
       throw err;
     }
   }, [projects, fleetRefresh, addToast, tx, t]);
+
+  // "Run a skill" — same background dispatch as above, seeded with `/skill args`
+  // (a leading-slash first prompt is recognized as a slash command by Claude).
+  const dispatchSkill = useCallback(async (slug: string, skill: string, args: string) => {
+    const command = args.trim() ? `/${skill} ${args.trim()}` : `/${skill}`;
+    return dispatchFleet(slug, command);
+  }, [dispatchFleet]);
 
   // Dispatch ONE agent's idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
@@ -628,6 +643,18 @@ function MastermindInner() {
             name={island?.name ?? dispatchSlug}
             onDispatch={(instruction) => dispatchFleet(dispatchSlug, instruction)}
             onClose={() => setDispatchSlug(null)}
+          />
+        );
+      })()}
+
+      {skillRunSlug && (() => {
+        const island = positioned.islands.find((i) => i.slug === skillRunSlug);
+        return (
+          <SkillRunModal
+            slug={skillRunSlug}
+            name={island?.name ?? skillRunSlug}
+            onRun={(skill, args) => dispatchSkill(skillRunSlug, skill, args)}
+            onClose={() => setSkillRunSlug(null)}
           />
         );
       })()}

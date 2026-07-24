@@ -26,8 +26,8 @@ const mockStandards = vi.mocked(applicableStandardsActions);
 const mockConnector = vi.mocked(connectorSpecFor);
 
 const passport = makePassport();
-const raw = (standardsConfig: string | null = null, skillsToAdd: ImproveRaw['skillsToAdd'] = []) =>
-  ({ project: { standards_config: standardsConfig }, skillsToAdd }) as unknown as ImproveRaw;
+const raw = (standardsConfig: string | null = null, skillsToAdd: ImproveRaw['skillsToAdd'] = [], hasSkills = false) =>
+  ({ project: { standards_config: standardsConfig }, skillsToAdd, hasSkills }) as unknown as ImproveRaw;
 
 describe('dimActions — dim → wall-row mapping (via the dimension registry)', () => {
   it('maps every canvas dim to its wall row (snapshot)', () => {
@@ -93,8 +93,18 @@ describe('dimActions — dimAction applicability', () => {
     expect(dimAction('monitoring', passport, raw()).action).toBe('deploy');
   });
 
-  it('skills with pending installs → deploy', () => {
+  it('skills with pending installs (none installed) → deploy (adopt path)', () => {
     expect(dimAction('skills', passport, raw(null, [{ name: 'x', source: null, description: null }])).action).toBe('deploy');
+  });
+
+  it('skills already installed (green) → skills-run, regardless of pending installs', () => {
+    // hasSkills wins over the adopt path — a green cell RUNS a skill.
+    expect(dimAction('skills', passport, raw(null, [], true)).action).toBe('skills-run');
+    expect(dimAction('skills', passport, raw(null, [{ name: 'x', source: null, description: null }], true)).action).toBe('skills-run');
+  });
+
+  it('skills with nothing installed and nothing to adopt → inert', () => {
+    expect(dimAction('skills', passport, raw(null, [], false)).action).toBeNull();
   });
 
   it('a real row with no applicable action is inert', () => {
