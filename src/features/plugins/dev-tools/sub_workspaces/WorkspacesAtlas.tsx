@@ -1,23 +1,28 @@
-// Variant A2 — "Atlas": the portfolio map. Workspaces are TERRITORIES seen
-// from above: a card grid where each card is a workspace crest (colour wash,
-// watermark landmark, live tallies, member preview chips). Clicking a card
-// unfolds its detail band beneath the grid. Optimised for the overview-first
-// mental model — you survey the whole org before descending into one group.
+// Atlas — the WINNING shell (round A): the portfolio map. Workspaces are
+// territories seen from above: a crest card grid (colour wash, watermark,
+// live tallies, member chips), with the selected workspace unfolding a full
+// detail band beneath — identity management, membership editor, and the
+// knowledge library. Round-A siblings (Rail, Cockpit) were deleted; Rail's
+// management affordances (rename / recolour / delete) migrated here.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Landmark, Plus } from 'lucide-react';
+import { Landmark, Plus, Trash2 } from 'lucide-react';
+
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 
 import {
   CreateWorkspaceInline,
-  KnowledgePeek,
   MembershipPanel,
   useWorkspaceCenter,
 } from './centerShared';
+import KnowledgeLibrary from './KnowledgeLibrary';
+import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {
   const center = useWorkspaceCenter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const open = center.workspaces.find((w) => w.id === openId) ?? null;
 
@@ -28,7 +33,8 @@ export default function WorkspacesAtlas() {
           const stats = center.stats[ws.id];
           const members = ws.projectIds
             .map((id) => center.projectById.get(id)?.name)
-            .filter(Boolean) as string[];
+            .filter((n): n is string => Boolean(n))
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
           const isOpen = openId === ws.id;
           return (
             <button
@@ -96,24 +102,71 @@ export default function WorkspacesAtlas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="mt-6 rounded-card border border-primary/15 p-5"
+            className="mt-6 rounded-card border border-primary/15 p-5 flex flex-col gap-5"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: open.color }} />
-              <h2 className="typo-section-title text-foreground">{open.name}</h2>
-            </div>
-            <div className="grid grid-cols-[3fr_2fr] gap-6">
-              <MembershipPanel workspace={open} projects={center.projects} />
-              <div>
-                <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
-                  Knowledge library
+            <header className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <input
+                  key={open.id}
+                  defaultValue={open.name}
+                  onBlur={(e) => renameWorkspace(open.id, e.target.value)}
+                  className="typo-title-lg text-foreground bg-transparent border-b border-transparent focus:border-primary/30 focus:outline-none w-full"
+                  aria-label="Workspace name"
+                />
+                <div className="mt-2 flex items-center gap-1.5">
+                  {WORKSPACE_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      aria-label={`Set colour ${c}`}
+                      onClick={() => recolorWorkspace(open.id, c)}
+                      className={`h-4 w-4 rounded-full transition-transform ${
+                        open.color === c
+                          ? 'ring-2 ring-foreground/60 ring-offset-1 ring-offset-background'
+                          : 'hover:scale-110'
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
                 </div>
-                <KnowledgePeek items={center.knowledge[open.id] ?? []} />
               </div>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(open.id)}
+                aria-label="Delete workspace"
+                className="shrink-0 rounded-interactive p-2 text-foreground/70 hover:text-status-error hover:bg-status-error/10 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </header>
+
+            <MembershipPanel workspace={open} projects={center.projects} />
+
+            <div className="min-h-[480px] flex flex-col">
+              <KnowledgeLibrary
+                workspace={open}
+                rows={center.knowledge[open.id] ?? []}
+                projectById={center.projectById}
+                onChanged={center.refreshKnowledge}
+              />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete this workspace?"
+          body="Projects stay untouched — they just become unassigned. The workspace's knowledge library is removed."
+          danger
+          onConfirm={() => {
+            deleteWorkspace(confirmDelete);
+            setConfirmDelete(null);
+            setOpenId(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
