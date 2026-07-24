@@ -474,10 +474,6 @@ The 5 new directions follow the same constraints as Phase 2:
 
 Loop back to **Phase 3** with the chosen direction (or, for a campaign, run its planned cycles back-to-back per the Campaign lane rules). The loop has no built-in stopping condition.
 
-### Optional codex-gf feature log
-
-After every 3rd cycle (or after a cycle that landed >5 files), POST a single entry to the codex-gf feature log per CLAUDE.md's "Feature Log Sync" section. Probe `http://localhost:3001/api/feature-log` for 200; if not 200, silently skip. The log entry summarizes the *session arc* up to that point, not the single most recent cycle.
-
 ---
 
 ## Phase 6: Clean exit + learn

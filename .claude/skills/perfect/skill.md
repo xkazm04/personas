@@ -127,7 +127,7 @@ Loop while `pool < 10` and the user hasn't said stop:
 ### Phase W — Wrap (every session, even interrupted ones)
 1. Update every touched vault note; write the session note with the **`next:` pointer** (e.g. `next: propose — cursor at overview-analytics, pool 7/10` or `next: build wave 2 — trigger-system + agent-lab remain`).
 2. `Perfect.md` headline refreshed: pool count, queue cursor, shipped-total, last-session link.
-3. Move the active-runs ledger entry to Recently completed with SHAs. Best-effort POST to the codex-gf feature log (silent on failure).
+3. Move the active-runs ledger entry to Recently completed with SHAs.
 4. **Reflect on the skill itself**: 2-4 bullets in `config.md → ## Skill improvement log` — what dragged, what the user overrode, what the next round should change. This log is the input for the between-rounds skill revision.
 
 ## Direction quality bar (what earns a slot in the 5)
