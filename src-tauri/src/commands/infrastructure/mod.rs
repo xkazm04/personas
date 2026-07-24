@@ -12,6 +12,7 @@ pub mod context_map_export;
 pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod dev_workspaces;
+pub mod workspace_harvest;
 pub mod director;
 pub mod git_checkpoint;
 pub mod gitlab;

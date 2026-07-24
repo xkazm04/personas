@@ -16,7 +16,7 @@ use crate::error::AppError;
 // Row mappers
 // ============================================================================
 
-fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
+pub(crate) fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
     Ok(DevProject {
         id: row.get("id")?,
         name: row.get("name")?,

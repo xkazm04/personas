@@ -900,6 +900,19 @@ pub fn ingest_candidates(
 // Deterministic miners (no LLM) — Arc 2
 // ============================================================================
 
+/// Full member projects of a workspace (name-sorted). Used by harvest prepare
+/// to compose the sibling roster.
+pub fn list_workspace_projects(pool: &DbPool, workspace_id: &str) -> Result<Vec<DevProject>, AppError> {
+    timed_query!("dev_projects", "dev_workspaces::list_workspace_projects", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_projects WHERE workspace_id = ?1 ORDER BY name COLLATE NOCASE",
+        )?;
+        let rows = stmt.query_map(params![workspace_id], crate::db::repos::dev_tools::row_to_project)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
 /// Workspace member projects (id + tech_stack), the "siblings" a miner
 /// compares across. Empty when the workspace has no members.
 fn workspace_members(pool: &DbPool, workspace_id: &str) -> Result<Vec<(String, Option<String>)>, AppError> {
