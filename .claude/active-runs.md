@@ -2,6 +2,9 @@
 
 ## Active
 
+### decision-mirror-p1p2 — operator decision capture + reflect-me — session fable-5 — COMPLETED
+- 2026-07-24 close. Commit **825216625** (pushed): docs/concepts/decision-mirror.md (5-phase roadmap), AskUserQuestion PostToolUse hook (machine-local registration; script scripts/decision-ledger/capture-decision.mjs, hook+correction modes, error-proof) -> .claude/decision-ledger/ (doubly gitignored), CLAUDE.md correction-journal duty, /reflect-me skill. Personas-only scope by design; hook activates from the NEXT session. First real ledger entry: the add-A correction. Phase 3 next: generate the fleet decision policy from profile.md.
+
 ### perfect-round-fleet — /perfect propose on the fleet arc — session fable-5 — COMPLETED
 - 2026-07-24 wrap. Context [[fleet]] opened in the Perfect vault (Director's same-day build knowledge as scout). Slate 5 -> 3 ACCEPTED into the pool (fleet-registry-durability M / fleet-run-harvest M / fleet-limit-eta S), 2 rejected (dispatch-plans: agent scripting suffices, F5-recipes framing later; onboard-repo: protocol proves out in pof first). Pool 3/10; next `/perfect build` ships the 3 as one wave. fleet.md gained the consolidated autonomy-machine code-reference table (same commit range).
 
