@@ -1065,6 +1065,28 @@ impl FleetRegistry {
         Some(prev)
     }
 
+    /// Mechanical completion (fleet protocol `FLEET:DONE`): the session
+    /// declared its assigned task complete in its end-of-turn recap. Parks the
+    /// row in `Finished` with the declared summary as the reason — the
+    /// operator decides what happens next; orchestration leaves it alone.
+    /// Only parked states transition (a session that resumed working keeps
+    /// fresher truth). Returns the previous state token on success.
+    pub fn mark_finished(&self, session_id: &str, summary: &str) -> Option<&'static str> {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get_mut(session_id)?;
+        if !matches!(
+            session.state,
+            FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
+        ) {
+            return None;
+        }
+        let prev = state_to_token(session.state);
+        session.athena_active_until_ms = 0;
+        session.state = FleetSessionState::Finished;
+        session.state_reason = Some(format!("Task complete: {summary}"));
+        Some(prev)
+    }
+
     /// `(created_at_ms, name)` of a session — read by `fleet_wake_session`
     /// before it replaces the row, so the resumed session can inherit them.
     pub fn lineage_of(&self, session_id: &str) -> Option<(i64, Option<String>)> {

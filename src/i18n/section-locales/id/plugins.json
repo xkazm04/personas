@@ -178,6 +178,7 @@
     "compact_hint": "Ringkas percakapan ini agar setiap giliran jauh lebih hemat — menggantikan riwayat panjang dengan ringkasan singkat.",
     "compact_unavailable_hint": "Tersedia saat sesi ini diam di antara giliran.",
     "compact_toast": "Memadatkan {name}…",
+    "state_finished": "Selesai",
     "state_hibernated": "Hibernasi",
     "dot_console_hibernated": "Proses dihibernasi — dapat dilanjutkan",
     "sleep_session": "Hibernasi",

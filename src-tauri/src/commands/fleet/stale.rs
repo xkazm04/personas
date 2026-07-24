@@ -192,12 +192,16 @@ fn staleness_transition(
     use FleetSessionState::*;
     if grew {
         return match state {
-            Stale | Idle => Some(Running),
+            // Finished included: the operator handed it more work — it's a
+            // live session again.
+            Stale | Idle | Finished => Some(Running),
             _ => None,
         };
     }
     match state {
-        Stale | AwaitingInput | Exited | Hibernated => None,
+        // Finished is a declared-complete park — silence is its normal
+        // condition, never staleness.
+        Stale | AwaitingInput | Exited | Hibernated | Finished => None,
         Running | Idle | Spawning if now - idle_since_ms >= cutoff_ms => Some(Stale),
         _ => None,
     }
@@ -648,6 +652,9 @@ fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
                 match s.state {
                     FleetSessionState::AwaitingInput => now - idle_since >= doze_ms,
                     FleetSessionState::Stale => now - idle_since >= stale_cutoff_ms + doze_ms,
+                    // Declared complete — nothing left to type; free the
+                    // process on the same window as awaiting.
+                    FleetSessionState::Finished => now - idle_since >= doze_ms,
                     _ => false,
                 }
             })

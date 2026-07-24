@@ -118,6 +118,7 @@ fn state_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput  => "awaiting_input",
         FleetSessionState::Idle           => "idle",
         FleetSessionState::Stale          => "stale",
+        FleetSessionState::Finished       => "finished",
         FleetSessionState::Hibernated     => "hibernated",
         FleetSessionState::Exited         => "exited",
     }
@@ -130,6 +131,8 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput  => "awaiting input",
         FleetSessionState::Idle           => "idle",
         FleetSessionState::Stale          => "stale",
+        FleetSessionState::Finished       => "task complete",
+        FleetSessionState::Finished       => "finished",
         FleetSessionState::Hibernated     => "hibernated",
         FleetSessionState::Exited         => "exited",
     }
@@ -163,6 +166,9 @@ pub fn current_state_digest() -> String {
             FleetSessionState::Stale         => stale += 1,
             FleetSessionState::Spawning      => spawning += 1,
             FleetSessionState::Hibernated    => hibernated += 1,
+            // Finished counts as idle capacity for the digest — declared
+            // complete, awaiting the operator.
+            FleetSessionState::Finished      => idle += 1,
             FleetSessionState::Exited        => {}
         }
     }

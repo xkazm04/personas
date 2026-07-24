@@ -12285,6 +12285,7 @@ export type Translations = {
       compact_hint: string;
       compact_unavailable_hint: string;
       compact_toast: string;
+      state_finished: string;
       state_hibernated: string;
       dot_console_hibernated: string;
       sleep_session: string;

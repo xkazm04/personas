@@ -470,9 +470,10 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
          action whose `session_id` is that session's FULL id copied verbatim, `text` = exactly what \
          to type (an option number, or the text), press_enter true, plus a one-line `rationale`, a \
          `confidence` (high|medium|low) and a `decision_class` (drive_forward|choice). Preferences \
-         between reasonable options are YOURS — pick the sensible default. Ordinary in-project \
-         permission prompts: approve. Multi-select questions: give the option numbers like \"1,3\" — \
-         the system drives the menu keys itself.\n\
+         between reasonable options are YOURS — approve the MAXIMUM the session recommends unless a \
+         choice would harm the project's architecture or security (those two are the only brakes). \
+         Ordinary in-project permission prompts: approve. Multi-select questions: give the option \
+         numbers like \"1,3\" — the system drives the menu keys itself.\n\
          • Otherwise reply ONE line for it, prefixed with its 8-char id: `<id8>: OK: <one line>` \
          (progressing fine, or simply finished — stays off the operator's screen) or \
          `<id8>: NEEDS-YOU: <one line>` (ONLY for destructive/irreversible operations, spending, \
@@ -609,6 +610,111 @@ pub fn orchestrate_on_awaiting(
     );
 }
 
+/// A machine-readable cue the SESSION left in its end-of-turn recap — the
+/// mechanical fleet protocol taught by the target repo's CLAUDE.md:
+///   `FLEET:DONE — <one-line summary>`  → task complete, park as Finished
+///   `FLEET:NEXT — <one concrete step>` → obvious continuation, drive forward
+/// Both are handled WITHOUT an Athena turn (the whole point — round-2 spent
+/// 27 turns on pure completion confirmations).
+enum MechanicalCue {
+    Done(String),
+    Next(String),
+}
+
+/// Scan the BOTTOM of a parked screen for the newest protocol marker. Only the
+/// last ~15 lines count — the marker is specified as the recap's final line,
+/// and restricting the window keeps echoes of the protocol *documentation*
+/// higher in the scrollback from false-triggering. Line-start match only.
+fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
+    let tail = lines.iter().rev().take(15).collect::<Vec<_>>();
+    for line in tail {
+        // Newest first (we iterate bottom-up), so the first hit wins.
+        let t = line.trim_start();
+        for (prefix, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
+            if let Some(rest) = t.strip_prefix(prefix) {
+                let text = rest
+                    .trim_start_matches([' ', '—', '-', ':', '–'])
+                    .trim()
+                    .to_string();
+                if text.is_empty() {
+                    continue;
+                }
+                return Some(if is_done {
+                    MechanicalCue::Done(text)
+                } else {
+                    MechanicalCue::Next(text)
+                });
+            }
+        }
+    }
+    None
+}
+
+/// Per-session hash of the screen a FLEET:NEXT drive last fired on — one
+/// mechanical drive per distinct screen; if the same screen comes back the
+/// mechanical lane stands aside and the normal Athena path takes over.
+fn mechanical_next_signatures() -> &'static Mutex<HashMap<String, u64>> {
+    static SIGS: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+    SIGS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Mechanical protocol check — runs BEFORE the throttle/dedupe gates (it is
+/// free: no Athena turn). Returns `true` when the cue was consumed and normal
+/// orchestration should not run for this wake.
+fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
+    let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id)
+    else {
+        return false;
+    };
+    match mechanical_cue(&lines) {
+        Some(MechanicalCue::Done(summary)) => {
+            let reg = crate::commands::fleet::registry::registry();
+            if let Some(prev) = reg.mark_finished(session_id, &summary) {
+                crate::commands::fleet::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "finished",
+                    Some(format!("Task complete: {summary}")),
+                );
+                crate::commands::fleet::debug_log::athena(
+                    session_id,
+                    "finished (mechanical)",
+                    &format!("FLEET:DONE — {summary}"),
+                );
+                clear_pending_assessment(session_id);
+            }
+            true
+        }
+        Some(MechanicalCue::Next(step)) => {
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::{Hash, Hasher};
+            let mut h = DefaultHasher::new();
+            lines.join("\n").hash(&mut h);
+            let sig = h.finish();
+            {
+                let mut m = mechanical_next_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                if m.insert(session_id.to_string(), sig) == Some(sig) {
+                    // Same screen as the last mechanical drive — it didn't
+                    // move the session; let Athena reason about it instead.
+                    return false;
+                }
+            }
+            crate::commands::fleet::debug_log::athena(
+                session_id,
+                "MECHANICAL next-step",
+                &format!("FLEET:NEXT — driving: {step}"),
+            );
+            let _ = crate::commands::fleet::registry::registry().write_text_line(
+                session_id,
+                "Proceed with your recommended next step.",
+            );
+            true
+        }
+        None => false,
+    }
+}
+
 /// Shared per-session orchestration wake used by every fleet trigger — the
 /// hook-path + timer re-check pass `AwaitingInput`, the proactive tick's
 /// stuck-recovery passes `Stuck`. Gated on autonomous mode + a 60 s per-session
@@ -630,6 +736,11 @@ fn orchestrate_session(
             "skipped",
             &format!("autonomous mode is OFF · situation={}", situation.label()),
         );
+        return;
+    }
+    // Mechanical protocol first — a FLEET:DONE / FLEET:NEXT recap cue resolves
+    // this wake without an Athena turn (and without consuming the throttle).
+    if matches!(situation, FleetSituation::AwaitingInput) && handle_mechanical_cue(app, session_id) {
         return;
     }
     let now = crate::commands::fleet::registry::now_ms();

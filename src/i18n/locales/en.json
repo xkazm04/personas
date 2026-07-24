@@ -12279,6 +12279,7 @@
       "compact_hint": "Summarize this conversation so each turn costs far less — replaces the long history with a short recap.",
       "compact_unavailable_hint": "Available once this session is idle between turns.",
       "compact_toast": "Compacting {name}…",
+      "state_finished": "Finished",
       "state_hibernated": "Hibernated",
       "dot_console_hibernated": "Process hibernated — resumable",
       "sleep_session": "Hibernate",

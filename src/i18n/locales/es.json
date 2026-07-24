@@ -12007,6 +12007,7 @@
       "compact_hint": "Resume esta conversación para que cada turno cueste mucho menos — reemplaza el historial largo con un resumen breve.",
       "compact_unavailable_hint": "Disponible cuando la sesión esté inactiva entre turnos.",
       "compact_toast": "Compactando {name}…",
+      "state_finished": "Finalizado",
       "state_hibernated": "Hibernada",
       "dot_console_hibernated": "Proceso hibernado — se puede reanudar",
       "sleep_session": "Hibernar",

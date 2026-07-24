@@ -38,6 +38,13 @@ pub enum FleetSessionState {
     /// No hook activity AND no JSONL writes for `STALE_AFTER_SECS` (see
     /// [`registry`]). Likely user walked away or session hung.
     Stale,
+    /// The session declared its assigned task COMPLETE via the mechanical
+    /// fleet protocol (`FLEET:DONE — <summary>` in its end-of-turn recap; see
+    /// the target repo's CLAUDE.md fleet section). Detected without an Athena
+    /// turn. The session stays resumable — the operator decides whether to
+    /// close it or hand it more work; orchestration and the limit-retry lane
+    /// leave it alone.
+    Finished,
     /// Operator-initiated sleep: the PTY child was killed to free the process,
     /// but `claude_session_id` + `cwd` are retained so the conversation can be
     /// resurrected via `claude --resume`. NOT terminal — distinct from
@@ -62,6 +69,7 @@ pub fn state_to_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput => "awaiting_input",
         FleetSessionState::Idle => "idle",
         FleetSessionState::Stale => "stale",
+        FleetSessionState::Finished => "finished",
         FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
     }

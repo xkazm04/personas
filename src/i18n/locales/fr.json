@@ -12007,6 +12007,7 @@
       "compact_hint": "Résume cette conversation pour réduire considérablement le coût de chaque tour — remplace le long historique par un bref récapitulatif.",
       "compact_unavailable_hint": "Disponible lorsque cette session est inactive entre les tours.",
       "compact_toast": "Compactage de {name}…",
+      "state_finished": "Terminé",
       "state_hibernated": "En hibernation",
       "dot_console_hibernated": "Processus en hibernation — reprise possible",
       "sleep_session": "Hiberner",
