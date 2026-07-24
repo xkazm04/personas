@@ -199,6 +199,13 @@ impl<'a> DispatchContext<'a> {
 /// (≥ 6 pending) so triage always fires well before producers go quiet.
 pub const IDEA_BACKLOG_CAP: i64 = 15;
 
+/// Backlog aging window: a `pending` idea untouched for this many days that
+/// never became work (no linked task) is archived by `archive_stale_ideas` —
+/// reversibly, keeping its `dedup_key` so it can never be re-proposed. Sized so
+/// a fortnightly triage rhythm never loses live signal, while a backlog nobody
+/// touched for a month stops occupying the cap.
+pub const IDEA_STALE_DAYS: i64 = 30;
+
 /// This is the core dispatch function. It handles all 6 protocol message types:
 /// - `UserMessage` -> messages repo + frontend event + OS notification
 /// - `PersonaAction` -> events repo (persona_action event type)
@@ -909,25 +916,60 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         "[BACKLOG] propose_backlog skipped — backlog saturated (≥ {IDEA_BACKLOG_CAP} pending): {title}"
                     ));
                 } else {
-                    match crate::db::repos::dev_tools::create_idea(
-                        ctx.pool,
-                        project_id.as_deref(),
-                        None,
-                        "team_proposed",
-                        category.as_deref(),
-                        title,
-                        description.as_deref(),
-                        None,
-                        Some("pending"),
-                        *effort,
-                        *impact,
-                        *risk,
-                        None,
-                        None,
-                    ) {
-                        Ok(idea) => ctx
+                    // Guarded insert (docs/plans/backlog-memory-loop.md Phase 1):
+                    // a persona proposing what the backlog already holds — in any
+                    // status, including a human's earlier "no" — is suppressed
+                    // rather than stacked. Project-less proposals have no dedup
+                    // scope to key on, so they keep the ungated path.
+                    let outcome = match project_id.as_deref() {
+                        Some(pid) => {
+                            let key = crate::db::repos::dev_tools::scan_dedup_key(
+                                "team_proposed",
+                                None,
+                                title,
+                            );
+                            crate::db::repos::dev_tools::create_idea_deduped(
+                                ctx.pool,
+                                pid,
+                                None,
+                                "team_proposed",
+                                category.as_deref(),
+                                title,
+                                description.as_deref(),
+                                None,
+                                *effort,
+                                *impact,
+                                *risk,
+                                None,
+                                None,
+                                &key,
+                            )
+                        }
+                        None => crate::db::repos::dev_tools::create_idea(
+                            ctx.pool,
+                            None,
+                            None,
+                            "team_proposed",
+                            category.as_deref(),
+                            title,
+                            description.as_deref(),
+                            None,
+                            Some("pending"),
+                            *effort,
+                            *impact,
+                            *risk,
+                            None,
+                            None,
+                        )
+                        .map(Some),
+                    };
+                    match outcome {
+                        Ok(Some(idea)) => ctx
                             .logger
                             .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
+                        Ok(None) => ctx.logger.log(&format!(
+                            "[BACKLOG] Skipped '{title}' — already in the backlog"
+                        )),
                         Err(e) => ctx
                             .logger
                             .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),

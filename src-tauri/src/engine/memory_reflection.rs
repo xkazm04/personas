@@ -611,25 +611,57 @@ fn write_product_findings(
             f.description.as_deref().unwrap_or("").trim(),
             sources.join(", ")
         );
-        match dev_repo::create_idea(
-            pool,
-            project_id,
-            None,
-            "memory_reflection",
-            Some("technical"),
-            title,
-            Some(description.trim()),
-            f.reason.as_deref(),
-            None, // pending
-            None,
-            None,
-            None,
-            None,
-            None,
-        ) {
-            Ok(_) => {
+        // Guarded insert (docs/plans/backlog-memory-loop.md Phase 1). The
+        // `seen_titles` check above only sees pending+accepted; the dedup gate
+        // additionally honours REJECTED and ARCHIVED items, so a finding the
+        // human already refused never returns through the reflection door.
+        let outcome = match project_id {
+            Some(pid) => {
+                let key = dev_repo::scan_dedup_key("memory_reflection", None, title);
+                dev_repo::create_idea_deduped(
+                    pool,
+                    pid,
+                    None,
+                    "memory_reflection",
+                    Some("technical"),
+                    title,
+                    Some(description.trim()),
+                    f.reason.as_deref(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    &key,
+                )
+            }
+            None => dev_repo::create_idea(
+                pool,
+                None,
+                None,
+                "memory_reflection",
+                Some("technical"),
+                title,
+                Some(description.trim()),
+                f.reason.as_deref(),
+                None, // pending
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .map(Some),
+        };
+        match outcome {
+            Ok(Some(_)) => {
                 seen_titles.insert(normalize_title(title));
                 created += 1;
+            }
+            Ok(None) => {
+                // Already held (any status) — record it locally so this pass
+                // doesn't retry the same title through a different finding.
+                seen_titles.insert(normalize_title(title));
             }
             Err(e) => {
                 tracing::warn!(error = %e, title, "reflection findings: create_idea failed");

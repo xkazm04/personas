@@ -2836,6 +2836,48 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Filler words dropped when normalizing an idea title into a dedup token.
+/// Deliberately conservative — only words that never carry the *subject* of an
+/// idea. Verbs ("add", "fix", "extract") stay: dropping them would collapse
+/// "add retry" and "remove retry" onto the same key.
+const IDEA_TITLE_STOPWORDS: &[&str] = &[
+    "a", "an", "the", "to", "for", "in", "of", "and", "or", "on", "with", "into", "from", "at",
+    "by", "is", "are", "be", "that", "this", "its", "it",
+];
+
+/// Normalize an idea title into a stable dedup token: lowercased, split on
+/// non-alphanumerics, filler words dropped, first 12 significant words joined
+/// with `-`. Two rewordings of the same idea ("Add retry to the fetch helper" /
+/// "Add retry to fetch helper") collapse to one token, so a re-scan cannot
+/// re-surface an item the backlog already holds under a slightly new phrasing.
+pub fn normalize_idea_title(title: &str) -> String {
+    let mut words: Vec<String> = title
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty() && !IDEA_TITLE_STOPWORDS.contains(w))
+        .map(|w| w.to_string())
+        .collect();
+    words.truncate(12);
+    words.join("-")
+}
+
+/// Stable dedup key for an LLM-scanner idea. Shares the findings spine's
+/// `<producer>:<signal>` key space (see `create_finding`) so BOTH writers into
+/// `dev_ideas` are governed by the same idempotency guard — the scanner is no
+/// longer a second, unguarded door into the backlog.
+///
+/// `scope` is the context scoping of the scan (a context id, or `all` for a
+/// whole-project scan): the same title raised for two different areas of the
+/// codebase is genuinely two ideas, so the scope is part of the identity.
+pub fn scan_dedup_key(scan_type: &str, scope: Option<&str>, title: &str) -> String {
+    format!(
+        "scan:{}:{}:{}",
+        scan_type,
+        scope.unwrap_or("all"),
+        normalize_idea_title(title)
+    )
+}
+
 pub fn create_idea(
     pool: &DbPool,
     project_id: Option<&str>,
@@ -2851,6 +2893,111 @@ pub fn create_idea(
     risk: Option<i32>,
     provider: Option<&str>,
     model: Option<&str>,
+) -> Result<DevIdea, AppError> {
+    #[allow(clippy::too_many_arguments)]
+    insert_idea(
+        pool,
+        project_id,
+        context_id,
+        scan_type,
+        category,
+        title,
+        description,
+        reasoning,
+        status,
+        effort,
+        impact,
+        risk,
+        provider,
+        model,
+        None,
+    )
+}
+
+/// `create_idea` + the findings spine's idempotency guard. Returns `Ok(None)`
+/// when an idea with this `dedup_key` already exists for the project **in ANY
+/// status** — including `rejected` and `archived`, so a human "no" and an aged
+/// -out item both stay durable and are never re-proposed.
+///
+/// This is the gate every *generated* idea goes through (LLM scanner, static
+/// scan, reflection product-findings, Strategist proposals). Hand-written ideas
+/// (`dev_tools_create_idea`) keep the ungated `create_idea` — a human typing a
+/// duplicate on purpose is a decision, not a defect.
+#[allow(clippy::too_many_arguments)]
+pub fn create_idea_deduped(
+    pool: &DbPool,
+    project_id: &str,
+    context_id: Option<&str>,
+    scan_type: &str,
+    category: Option<&str>,
+    title: &str,
+    description: Option<&str>,
+    reasoning: Option<&str>,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+    provider: Option<&str>,
+    model: Option<&str>,
+    dedup_key: &str,
+) -> Result<Option<DevIdea>, AppError> {
+    if title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+    if dedup_key.trim().is_empty() {
+        return Err(AppError::Validation("Idea dedup_key cannot be empty".into()));
+    }
+
+    {
+        let conn = pool.get()?;
+        let existing: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND dedup_key = ?2",
+            params![project_id, dedup_key],
+            |r| r.get(0),
+        )?;
+        if existing > 0 {
+            return Ok(None);
+        }
+    }
+
+    insert_idea(
+        pool,
+        Some(project_id),
+        context_id,
+        scan_type,
+        category,
+        title,
+        description,
+        reasoning,
+        Some("pending"),
+        effort,
+        impact,
+        risk,
+        provider,
+        model,
+        Some(dedup_key),
+    )
+    .map(Some)
+}
+
+/// The single INSERT both `create_idea` and `create_idea_deduped` go through,
+/// so the column set can never drift between the guarded and unguarded doors.
+#[allow(clippy::too_many_arguments)]
+fn insert_idea(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    context_id: Option<&str>,
+    scan_type: &str,
+    category: Option<&str>,
+    title: &str,
+    description: Option<&str>,
+    reasoning: Option<&str>,
+    status: Option<&str>,
+    effort: Option<i32>,
+    impact: Option<i32>,
+    risk: Option<i32>,
+    provider: Option<&str>,
+    model: Option<&str>,
+    dedup_key: Option<&str>,
 ) -> Result<DevIdea, AppError> {
     if title.trim().is_empty() {
         return Err(AppError::Validation("Title cannot be empty".into()));
@@ -2871,12 +3018,54 @@ pub fn create_idea(
 
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
-            params![id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, now],
+            "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, dedup_key, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)",
+            params![id, project_id, context_id, scan_type, category, title, description, reasoning, status, effort, impact, risk, provider, model, dedup_key, now],
         )?;
 
         get_idea_by_id(pool, &id)
+    })
+}
+
+/// Reversible aging for the backlog: pending ideas older than `older_than_days`
+/// that never became work (no linked task) move to `archived`. Mirrors the
+/// memory engine's `run_decay_forgetting` — nothing is deleted, the row keeps
+/// its `dedup_key` (so archiving can never reopen the duplication door), and a
+/// human can restore it by setting the status back to `pending`.
+///
+/// Returns the number of ideas archived.
+pub fn archive_stale_ideas(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    older_than_days: i64,
+) -> Result<i64, AppError> {
+    if older_than_days <= 0 {
+        return Err(AppError::Validation(
+            "archive_stale_ideas: older_than_days must be positive".into(),
+        ));
+    }
+
+    timed_query!("dev_ideas", "dev_ideas::archive_stale_ideas", {
+        let cutoff = (chrono::Utc::now() - chrono::Duration::days(older_than_days)).to_rfc3339();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+
+        let affected = match project_id {
+            Some(pid) => conn.execute(
+                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                 WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
+                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                params![now, cutoff, pid],
+            )?,
+            None => conn.execute(
+                "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+                 WHERE status = 'pending' AND created_at < ?2
+                   AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
+                params![now, cutoff],
+            )?,
+        };
+
+        Ok(affected as i64)
     })
 }
 
@@ -5997,3 +6186,10 @@ mod use_case_tests {
         assert!(created.is_empty(), "1:1 labels are context titles, not use cases");
     }
 }
+
+// Phase 1 backlog memory spine tests (docs/plans/backlog-memory-loop.md) live in
+// their own file for size; `#[path]` keeps them a child module of this one, so
+// `use super::*` still reaches the repo's private items.
+#[cfg(test)]
+#[path = "dev_tools_backlog_tests.rs"]
+mod backlog_memory_tests;

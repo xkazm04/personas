@@ -43,7 +43,11 @@ interface TriageIdea {
   effort: number;
   impact: number;
   risk: number;
-  status: 'pending' | 'accepted' | 'rejected';
+  // `archived` = aged out of the backlog by the aging pass
+  // (docs/plans/backlog-memory-loop.md Phase 1) — reversible, keeps its dedup
+  // key, and is deliberately absent from the triage deck (which filters to
+  // `pending`). Listed here so an archived row is never mistyped as pending.
+  status: 'pending' | 'accepted' | 'rejected' | 'archived';
   /** Which sensor raised this (findings spine). `null` = a classic scanner idea. */
   origin: string | null;
   /** JSON evidence behind a finding — rendered in the badge's popover. */

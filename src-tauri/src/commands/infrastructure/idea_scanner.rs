@@ -66,6 +66,7 @@ fn build_idea_scan_prompt(
     agents: &[&ScanAgentMeta],
     context_summary: Option<&str>,
     rejected_titles: Option<&str>,
+    live_titles: Option<&str>,
     team_ledger: Option<&str>,
     scoped: bool,
     target_count: Option<i32>,
@@ -106,6 +107,14 @@ fn build_idea_scan_prompt(
         .map(|s| format!("\n## Already Rejected — the human triaged these away; do NOT re-surface them or close variants\n{s}\n"))
         .unwrap_or_default();
 
+    // Duplicate suppression (prompt half — see run_scan_core). The backlog
+    // already holds these; re-proposing one is wasted work that the dedup gate
+    // will drop on insert anyway.
+    let live_hint = live_titles
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Already In The Backlog — these are open or accepted right now; do NOT propose them again or reword them as new ideas. Find NEW ground.\n{s}\n"))
+        .unwrap_or_default();
+
     // The owning team's shared ledger — settled decisions + hard constraints
     // from prior increments. Ideas must BUILD ON these, never contradict or
     // re-propose them.
@@ -124,7 +133,7 @@ fn build_idea_scan_prompt(
 You are analyzing a codebase to generate actionable improvement ideas. You have been activated with specific scan agent perspectives that determine what to look for.
 
 ## Project ID: {project_id}
-{context_hint}{rejected_hint}{ledger_hint}
+{context_hint}{rejected_hint}{live_hint}{ledger_hint}
 ## Active Scan Agents
 {agent_section}
 {granularity_hint}
@@ -366,6 +375,19 @@ pub async fn run_scan_core(
 ) -> Result<serde_json::Value, AppError> {
     let project = repo::get_project_by_id(&db, &project_id)?;
 
+    // Backlog aging (Phase 1, docs/plans/backlog-memory-loop.md): before
+    // measuring backpressure, retire pending ideas that have sat untouched past
+    // the stale window and never became work. Reversible (status → 'archived',
+    // row + dedup_key intact), so this frees the cap for fresh signal without
+    // ever deleting a decision or reopening the duplication door.
+    match repo::archive_stale_ideas(&db, Some(&project_id), crate::engine::dispatch::IDEA_STALE_DAYS) {
+        Ok(n) if n > 0 => {
+            tracing::info!(project_id = %project_id, archived = n, "Archived stale pending ideas before scan");
+        }
+        Err(e) => tracing::warn!(error = %e, "Stale-idea archival failed; continuing scan"),
+        _ => {}
+    }
+
     // Backlog backpressure: skip the whole scan round when the project's
     // pending backlog is already saturated — producers must not stack ideas
     // faster than triage + promotion can drain them (mirrors the per-idea
@@ -455,6 +477,23 @@ pub async fn run_scan_core(
                     .join("\n")
             });
 
+    // Duplicate suppression, prompt half (Phase 1): the `dedup_key` guard in
+    // `create_idea_deduped` catches exact re-proposals, but only AFTER the model
+    // has spent tokens writing them. Showing the model what the backlog already
+    // holds (pending + accepted, the LIVE items) makes it spend those tokens on
+    // new ground instead — and catches paraphrases a normalized key cannot.
+    let live_titles: Option<String> = {
+        let mut live: Vec<String> = Vec::new();
+        for status in ["pending", "accepted"] {
+            if let Ok(rows) =
+                repo::list_ideas(&db, Some(&project_id), Some(status), None, Some(40), None)
+            {
+                live.extend(rows.into_iter().map(|i| format!("- {}", i.title)));
+            }
+        }
+        (!live.is_empty()).then(|| live.join("\n"))
+    };
+
     // Cooperation through memory: when the project is team-owned, give the
     // scan the team's shared ledger (decisions/constraints from prior work) so
     // new ideas build on what shipped and respect settled constraints instead
@@ -476,10 +515,23 @@ pub async fn run_scan_core(
         &selected_agents,
         context_summary.as_deref(),
         rejected_titles.as_deref(),
+        live_titles.as_deref(),
         team_ledger.as_deref(),
         scoped,
         target_count,
     );
+
+    // Scope token for the dedup key: the same title raised against two
+    // different areas of the codebase is genuinely two ideas, so scope is part
+    // of an idea's identity. Sorted for stability across call orderings.
+    let scope_token = match &context_ids {
+        Some(ids) if !ids.is_empty() => {
+            let mut sorted = ids.clone();
+            sorted.sort();
+            sorted.join("+")
+        }
+        _ => "all".to_string(),
+    };
 
     let app_handle = app.clone();
     let pool = db.clone();
@@ -501,6 +553,7 @@ pub async fn run_scan_core(
                 &project_id,
                 &root_path,
                 prompt_text,
+                &scope_token,
             ) => res
         };
 
@@ -621,6 +674,9 @@ pub fn dev_tools_get_idea_scan_status(
 #[derive(Debug, Clone, Copy, Default)]
 struct IdeaScanCounts {
     ideas_created: i32,
+    /// Ideas the model proposed that the dedup gate suppressed as already-held
+    /// (any status). Surfaced so suppression is visible, never silent.
+    ideas_deduped: i32,
     triage_decisions: i32,
     relations_created: i32,
 }
@@ -631,7 +687,7 @@ impl IdeaScanCounts {
     /// exit tolerance) where the kind doesn't matter, only whether progress
     /// was made.
     fn total(&self) -> i32 {
-        self.ideas_created + self.triage_decisions + self.relations_created
+        self.ideas_created + self.ideas_deduped + self.triage_decisions + self.relations_created
     }
 }
 
@@ -642,6 +698,9 @@ async fn run_idea_scan(
     project_id: &str,
     root_path: &str,
     prompt_text: String,
+    // Context scoping of this scan, folded into every idea's dedup key so the
+    // same title raised for two different areas stays two distinct ideas.
+    scope_token: &str,
 ) -> Result<IdeaScanCounts, AppError> {
     IDEA_SCAN_JOBS.emit_line(app, scan_id, "[Milestone] Starting idea scan...");
 
@@ -732,23 +791,39 @@ async fn run_idea_scan(
                                 // Use the caller-supplied project_id, not the
                                 // LLM-parsed one, to prevent data integrity
                                 // violations from hallucinated project IDs.
-                                match repo::create_idea(
+                                // Guarded insert (Phase 1): the same gate the
+                                // findings spine uses. An idea whose dedup key
+                                // already exists for this project in ANY status
+                                // — pending, accepted, rejected, archived — is
+                                // suppressed rather than stacked, so re-scans
+                                // stop rebuilding the same backlog.
+                                let dedup_key =
+                                    repo::scan_dedup_key(&scan_type, Some(scope_token), &title);
+                                match repo::create_idea_deduped(
                                     pool,
-                                    Some(project_id),
+                                    project_id,
                                     None, // context_id
                                     &scan_type,
                                     Some(&category),
                                     &title,
                                     description.as_deref(),
                                     reasoning.as_deref(),
-                                    Some("pending"),
                                     effort,
                                     impact,
                                     risk,
                                     Some("claude"),
                                     Some("claude-sonnet-4-6"),
+                                    &dedup_key,
                                 ) {
-                                    Ok(_) => {
+                                    Ok(None) => {
+                                        counts.ideas_deduped += 1;
+                                        IDEA_SCAN_JOBS.emit_line(
+                                            app,
+                                            scan_id,
+                                            format!("[Duplicate] [{scan_type}] {title} — already in the backlog, suppressed"),
+                                        );
+                                    }
+                                    Ok(Some(_)) => {
                                         counts.ideas_created += 1;
                                         IDEA_SCAN_JOBS.emit_line(
                                             app,
@@ -846,8 +921,8 @@ async fn run_idea_scan(
                 app,
                 scan_id,
                 format!(
-                    "[Warning] Scan timed out after 20 minutes but {} ideas / {} triage decisions / {} goal relations were applied. Treating as partial success.",
-                    counts.ideas_created, counts.triage_decisions, counts.relations_created
+                    "[Warning] Scan timed out after 20 minutes but {} ideas / {} duplicates suppressed / {} triage decisions / {} goal relations were applied. Treating as partial success.",
+                    counts.ideas_created, counts.ideas_deduped, counts.triage_decisions, counts.relations_created
                 ),
             );
             return Ok(counts);
@@ -896,8 +971,8 @@ async fn run_idea_scan(
         app,
         scan_id,
         format!(
-            "[Complete] Generated {} ideas, applied {} triage decisions, {} goal relations",
-            counts.ideas_created, counts.triage_decisions, counts.relations_created
+            "[Complete] Generated {} ideas ({} suppressed as duplicates), applied {} triage decisions, {} goal relations",
+            counts.ideas_created, counts.ideas_deduped, counts.triage_decisions, counts.relations_created
         ),
     );
 
@@ -1186,6 +1261,8 @@ pub async fn run_backlog_triage(
                 &project_id,
                 &root_path,
                 prompt_text,
+                // Backlog triage is a project-wide pass, not a scoped scan.
+                "all",
             ) => res
         };
         match result {

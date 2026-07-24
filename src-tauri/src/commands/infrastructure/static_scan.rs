@@ -121,30 +121,44 @@ pub async fn dev_tools_run_static_scan(
     // impossible to reconcile by hand. We persist what we can, count failures,
     // and always drive the scan to a terminal status below.
     let mut ideas_created: i32 = 0;
+    let mut ideas_deduped: i32 = 0;
     let mut insert_failures: u32 = 0;
     for f in &findings {
-        match repo::create_idea(
+        // Static tools are deterministic: re-running one over unchanged code
+        // re-emits byte-identical findings. The dedup gate
+        // (docs/plans/backlog-memory-loop.md Phase 1) is what keeps a second run
+        // from cloning the whole backlog.
+        let dedup_key = repo::scan_dedup_key(&scan_type, None, &f.title);
+        match repo::create_idea_deduped(
             &state.db,
-            Some(&project_id),
+            &project_id,
             None,
             &scan_type,
             Some("technical"),
             &f.title,
             f.description.as_deref(),
             f.reasoning.as_deref(),
-            None,
             f.effort,
             f.impact,
             f.risk,
             None,
             None,
+            &dedup_key,
         ) {
-            Ok(_) => ideas_created += 1,
+            Ok(Some(_)) => ideas_created += 1,
+            Ok(None) => ideas_deduped += 1,
             Err(e) => {
                 insert_failures += 1;
                 tracing::warn!(error = %e, title = %f.title, "static scan: failed to persist finding");
             }
         }
+    }
+    if ideas_deduped > 0 {
+        tracing::info!(
+            project_id = %project_id,
+            suppressed = ideas_deduped,
+            "static scan: suppressed findings already in the backlog"
+        );
     }
 
     // Guarantee a terminal status so the UI never polls a stuck 'running' scan.
