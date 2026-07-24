@@ -622,38 +622,46 @@ enum MechanicalCue {
 }
 
 /// Scan the BOTTOM of a parked screen for the newest protocol marker. Only the
-/// last ~15 lines count — the marker is specified as the recap's final line,
-/// and restricting the window keeps echoes of the protocol *documentation*
-/// higher in the scrollback from false-triggering. Line-start match only.
+/// last ~15 rows count — the marker is specified as the recap's final line,
+/// keeping echoes of the protocol *documentation* higher in scrollback out.
+///
+/// The rows are vt100 WRAP FRAGMENTS, not logical lines — a marker lands at
+/// row start only when the wrap happens to break there (probe 2: FLEET:DONE
+/// did, FLEET:NEXT didn't and fell through to a full Athena turn). So: match
+/// the LAST marker occurrence anywhere in the joined tail, and require an
+/// explicit dash/colon separator before the payload — prose mentions of the
+/// protocol ("FLEET:DONE marks a fully-complete task…") have none, and
+/// template echoes (`FLEET:DONE — <one-line summary>`) are rejected by the
+/// leading `<`.
 fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
-    let tail = lines.iter().rev().take(15).collect::<Vec<_>>();
-    for line in tail {
-        // Newest first (we iterate bottom-up), so the first hit wins. Claude
-        // Code prefixes reply lines with a "●" bullet (observed live on the
-        // protocol probe: the NEXT cue rendered as "● FLEET:NEXT — …" and
-        // fell through to a full Athena turn) — strip list decoration first.
-        let t = line
-            .trim_start()
-            .trim_start_matches(['●', '•', '*', '-', '>'])
-            .trim_start();
-        for (prefix, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
-            if let Some(rest) = t.strip_prefix(prefix) {
-                let text = rest
-                    .trim_start_matches([' ', '—', '-', ':', '–'])
-                    .trim()
-                    .to_string();
-                if text.is_empty() {
-                    continue;
-                }
-                return Some(if is_done {
-                    MechanicalCue::Done(text)
-                } else {
-                    MechanicalCue::Next(text)
-                });
+    let start = lines.len().saturating_sub(15);
+    let tail = lines[start..].join("\n");
+    let mut best: Option<(usize, bool)> = None; // (byte offset, is_done)
+    for (needle, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
+        if let Some(i) = tail.rfind(needle) {
+            if best.is_none_or(|(bi, _)| i > bi) {
+                best = Some((i, is_done));
             }
         }
     }
-    None
+    let (i, is_done) = best?;
+    let after = tail[i + "FLEET:DONE".len()..].trim_start();
+    let payload = after
+        .strip_prefix('—')
+        .or_else(|| after.strip_prefix('–'))
+        .or_else(|| after.strip_prefix('-'))
+        .or_else(|| after.strip_prefix(':'))?;
+    // The payload runs to the end of the visual row; a wrapped continuation on
+    // the next row is fine to lose — this is a cue, not a transcript.
+    let text: String = payload.trim_start().lines().next()?.trim().chars().take(200).collect();
+    if text.is_empty() || text.starts_with('<') {
+        return None;
+    }
+    Some(if is_done {
+        MechanicalCue::Done(text)
+    } else {
+        MechanicalCue::Next(text)
+    })
 }
 
 /// Per-session hash of the screen a FLEET:NEXT drive last fired on — one
