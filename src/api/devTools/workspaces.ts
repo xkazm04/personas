@@ -235,3 +235,27 @@ export async function projectWorkspacePractices(
 ): Promise<ProjectionResult[]> {
   return invoke<ProjectionResult[]>('dev_tools_workspace_project_practices', { workspaceId });
 }
+
+// -- adoption verification (Arc 3) -------------------------------------------
+
+export interface VerifyStatus {
+  job_id: string;
+  status: string;
+  error?: string | null;
+  lines?: string[];
+  checked?: number;
+  diverged?: number;
+}
+
+/** Verify that a project's adopted practices still hold in its code. A failed
+ *  verdict marks that project's cell `diverged` — it never un-adopts. */
+export async function verifyWorkspaceAdoptions(
+  workspaceId: string,
+  projectId: string,
+): Promise<string> {
+  return invoke<string>('dev_tools_workspace_verify_adoptions', { workspaceId, projectId });
+}
+
+export async function getVerifyStatus(jobId: string): Promise<VerifyStatus> {
+  return invoke<VerifyStatus>('dev_tools_workspace_get_verify_status', { jobId });
+}

@@ -1219,7 +1219,10 @@
       "state_dispatched": "रोलआउट जारी",
       "state_diverged": "भिन्न",
       "state_na": "लागू नहीं",
-      "state_proposed": "अभी अपनाया नहीं"
+      "state_proposed": "अभी अपनाया नहीं",
+      "verify_action": "{project} की अपनाई गई प्रथाएँ सत्यापित करें",
+      "verify_result": "{project}: {checked} सत्यापित, {diverged} विचलित।",
+      "verify_started": "{project} की अपनाई गई प्रथाओं का सत्यापन हो रहा है।"
     }
   },
   "doc_signing": {

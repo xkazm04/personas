@@ -13048,7 +13048,10 @@
         "state_dispatched": "Zavádění probíhá",
         "state_diverged": "Odchýleno",
         "state_na": "Nerelevantní",
-        "state_proposed": "Zatím nepřijato"
+        "state_proposed": "Zatím nepřijato",
+        "verify_action": "Ověřit převzaté postupy projektu {project}",
+        "verify_result": "{project}: ověřeno {checked}, odchýleno {diverged}.",
+        "verify_started": "Ověřují se převzaté postupy projektu {project}."
       }
     },
     "doc_signing": {

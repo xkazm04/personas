@@ -1219,7 +1219,10 @@
       "state_dispatched": "রোলআউট চলছে",
       "state_diverged": "বিচ্যুত",
       "state_na": "প্রযোজ্য নয়",
-      "state_proposed": "এখনও গৃহীত নয়"
+      "state_proposed": "এখনও গৃহীত নয়",
+      "verify_action": "{project}-এর গৃহীত অনুশীলন যাচাই করুন",
+      "verify_result": "{project}: {checked}টি যাচাই হয়েছে, {diverged}টি বিচ্যুত।",
+      "verify_started": "{project}-এর গৃহীত অনুশীলনগুলি যাচাই করা হচ্ছে।"
     }
   },
   "doc_signing": {

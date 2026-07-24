@@ -13317,7 +13317,10 @@
         "state_dispatched": "Rollout in progress",
         "state_diverged": "Diverged",
         "state_proposed": "Not adopted yet",
-        "state_na": "Not applicable"
+        "state_na": "Not applicable",
+        "verify_action": "Verify {project} adoptions",
+        "verify_started": "Verifying {project}'s adopted practices.",
+        "verify_result": "{project}: {checked} verified, {diverged} diverged."
       }
     },
     "doc_signing": {

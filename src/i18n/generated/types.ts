@@ -13324,6 +13324,9 @@ export type Translations = {
         state_diverged: string;
         state_proposed: string;
         state_na: string;
+        verify_action: string;
+        verify_started: string;
+        verify_result: string;
       };
     };
     doc_signing: {

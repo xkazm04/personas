@@ -1219,7 +1219,10 @@
       "state_dispatched": "적용 진행 중",
       "state_diverged": "이탈됨",
       "state_na": "해당 없음",
-      "state_proposed": "아직 채택 안 됨"
+      "state_proposed": "아직 채택 안 됨",
+      "verify_action": "{project} 도입 항목 검증",
+      "verify_result": "{project}: {checked}건 검증, {diverged}건 이탈.",
+      "verify_started": "{project}에 도입된 관행을 검증하는 중입니다."
     }
   },
   "doc_signing": {

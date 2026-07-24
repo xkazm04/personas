@@ -3052,6 +3052,9 @@ pub fn run() {
             commands::infrastructure::workspace_divergence::dev_tools_workspace_run_divergence,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_get_divergence_status,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_cancel_divergence,
+            commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions,
+            commands::infrastructure::workspace_verify::dev_tools_workspace_get_verify_status,
+            commands::infrastructure::workspace_verify::dev_tools_workspace_cancel_verify,
             // Dev Tools -- Goals
             commands::infrastructure::dev_tools::dev_tools_list_goals,
             commands::infrastructure::dev_tools::dev_tools_get_goal,

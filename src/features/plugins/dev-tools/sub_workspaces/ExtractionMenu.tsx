@@ -3,7 +3,7 @@
 //  • Harvest — dispatch a Fleet session per member repo that reads the repo and
 //    proposes practices; Import pulls the finished run into the library.
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Pickaxe, Play, DownloadCloud, ChevronDown, GitCompare, Loader2 } from 'lucide-react';
+import { Sparkles, Pickaxe, Play, DownloadCloud, ChevronDown, GitCompare, Loader2, ShieldCheck } from 'lucide-react';
 
 import { listSessions, renameSession, spawnSession } from '@/api/fleet/fleet';
 import {
@@ -12,6 +12,8 @@ import {
   prepareWorkspaceHarvest,
   runWorkspaceDivergence,
   runWorkspaceMiners,
+  getVerifyStatus,
+  verifyWorkspaceAdoptions,
 } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
@@ -116,6 +118,42 @@ export function ExtractionMenu({
       addToast(tw.divergence_started, 'success');
     } catch (err) {
       toastCatch('workspaces:divergence')(err);
+    } finally {
+      setBusy(null);
+      setOpen(false);
+    }
+  };
+
+  /** Verify a project's adopted practices still hold. A failed verdict marks
+   *  that project's cell `diverged` — never un-adopts. */
+  const verify = async (project: DevProject) => {
+    setBusy(`verify:${project.id}`);
+    try {
+      const jobId = await verifyWorkspaceAdoptions(workspace.id, project.id);
+      addToast(tx(tw.verify_started, { project: project.name }), 'success');
+      const timer = setInterval(() => {
+        void getVerifyStatus(jobId)
+          .then((s) => {
+            if (s.status === 'completed') {
+              clearInterval(timer);
+              addToast(
+                tx(tw.verify_result, {
+                  project: project.name,
+                  checked: s.checked ?? 0,
+                  diverged: s.diverged ?? 0,
+                }),
+                (s.diverged ?? 0) > 0 ? 'warning' : 'success',
+              );
+              onChanged();
+            } else if (s.status === 'failed' || s.status === 'not_found') {
+              clearInterval(timer);
+              if (s.error) addToast(s.error, 'error');
+            }
+          })
+          .catch(silentCatch('workspaces:verifyPoll'));
+      }, 3000);
+    } catch (err) {
+      toastCatch('workspaces:verify')(err);
     } finally {
       setBusy(null);
       setOpen(false);
@@ -248,6 +286,15 @@ export function ExtractionMenu({
                   className="rounded-interactive p-1 text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors disabled:opacity-50"
                 >
                   <DownloadCloud className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={tx(tw.verify_action, { project: p.name })}
+                  onClick={() => verify(p)}
+                  disabled={busy === `verify:${p.id}`}
+                  className="rounded-interactive p-1 text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}

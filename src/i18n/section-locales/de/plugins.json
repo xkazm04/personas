@@ -1219,7 +1219,10 @@
       "state_dispatched": "Rollout läuft",
       "state_diverged": "Abweichend",
       "state_na": "Nicht zutreffend",
-      "state_proposed": "Noch nicht übernommen"
+      "state_proposed": "Noch nicht übernommen",
+      "verify_action": "Übernahmen von {project} prüfen",
+      "verify_result": "{project}: {checked} geprüft, {diverged} abgewichen.",
+      "verify_started": "Übernommene Praktiken von {project} werden geprüft."
     }
   },
   "doc_signing": {

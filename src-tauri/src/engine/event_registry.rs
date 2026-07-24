@@ -170,6 +170,9 @@ event_names! {
     // Workspace divergence pass (cross-project practice synthesis)
     DIVERGENCE_SCAN_STATUS     => "divergence-scan-status",
     DIVERGENCE_SCAN_OUTPUT     => "divergence-scan-output",
+    // Adoption verification (does an adopted practice still hold in the repo?)
+    VERIFY_SCAN_STATUS         => "verify-scan-status",
+    VERIFY_SCAN_OUTPUT         => "verify-scan-output",
     KPI_SCAN_STATUS            => "kpi-scan-status",
     KPI_SCAN_OUTPUT            => "kpi-scan-output",
     KPI_SCAN_COMPLETE          => "kpi-scan-complete",

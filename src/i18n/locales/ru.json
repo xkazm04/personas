@@ -13048,7 +13048,10 @@
         "state_dispatched": "Внедрение идёт",
         "state_diverged": "Расхождение",
         "state_na": "Неприменимо",
-        "state_proposed": "Ещё не принято"
+        "state_proposed": "Ещё не принято",
+        "verify_action": "Проверить внедрения в {project}",
+        "verify_result": "{project}: проверено — {checked}, отклонений — {diverged}.",
+        "verify_started": "Проверка практик, внедрённых в {project}."
       }
     },
     "doc_signing": {

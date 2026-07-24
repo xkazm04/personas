@@ -1219,7 +1219,10 @@
       "state_dispatched": "Đang triển khai",
       "state_diverged": "Đã lệch",
       "state_na": "Không áp dụng",
-      "state_proposed": "Chưa áp dụng"
+      "state_proposed": "Chưa áp dụng",
+      "verify_action": "Xác minh các thực hành đã áp dụng của {project}",
+      "verify_result": "{project}: đã xác minh {checked}, {diverged} sai lệch.",
+      "verify_started": "Đang xác minh các thực hành đã áp dụng của {project}."
     }
   },
   "doc_signing": {

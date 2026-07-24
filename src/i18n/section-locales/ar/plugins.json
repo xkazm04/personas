@@ -1219,7 +1219,10 @@
       "state_dispatched": "التطبيق جارٍ",
       "state_diverged": "متباعد",
       "state_na": "غير منطبق",
-      "state_proposed": "غير معتمد بعد"
+      "state_proposed": "غير معتمد بعد",
+      "verify_action": "التحقق من ممارسات {project} المعتمدة",
+      "verify_result": "{project}: تم التحقق من {checked}، وانحرفت {diverged}.",
+      "verify_started": "جارٍ التحقق من الممارسات المعتمدة في {project}."
     }
   },
   "doc_signing": {

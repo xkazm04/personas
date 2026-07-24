@@ -1219,7 +1219,10 @@
       "state_dispatched": "Déploiement en cours",
       "state_diverged": "Divergent",
       "state_na": "Non applicable",
-      "state_proposed": "Pas encore adopté"
+      "state_proposed": "Pas encore adopté",
+      "verify_action": "Vérifier les adoptions de {project}",
+      "verify_result": "{project} : {checked} vérifiées, {diverged} divergentes.",
+      "verify_started": "Vérification des pratiques adoptées de {project}."
     }
   },
   "doc_signing": {
