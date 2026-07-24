@@ -13032,7 +13032,23 @@
         "divergence_running": "Đang so sánh…",
         "divergence_started": "Đã bắt đầu phân tích khác biệt — đang so sánh các thực hành trong không gian làm việc.",
         "harvest_auto_imported": "Đã thu thập xong — {project}: thêm {inserted}, bỏ qua {skipped}.",
-        "harvest_dispatched": "Đang thu thập {project} trong Fleet — kết quả sẽ được nhập tự động khi hoàn tất."
+        "harvest_dispatched": "Đang thu thập {project} trong Fleet — kết quả sẽ được nhập tự động khi hoàn tất.",
+        "project_hint": "Ghi các thực hành đã áp dụng của không gian làm việc vào bộ nhớ Claude của từng kho mã thành viên, để các phiên sau tự động tuân theo.",
+        "project_to_repos": "Ghi vào các kho mã",
+        "projected": "Đã ghi vào {projects} kho mã — tối đa {practices} thực hành mỗi kho.",
+        "projected_skipped": "Không ghi được vào {count} kho mã.",
+        "rollout_action": "Triển khai vào {project}",
+        "rollout_already": "{project} đã có một đợt triển khai đang chạy.",
+        "rollout_dispatch": "Triển khai",
+        "rollout_dispatched": "Đang triển khai vào {project} trong Fleet.",
+        "rollout_mark_adopted": "Đánh dấu {project} là đã áp dụng",
+        "rollout_mark_diverged": "Đánh dấu {project} là đã lệch",
+        "rollout_title": "Triển khai vào các dự án",
+        "state_adopted": "Đã áp dụng ở đây",
+        "state_dispatched": "Đang triển khai",
+        "state_diverged": "Đã lệch",
+        "state_na": "Không áp dụng",
+        "state_proposed": "Chưa áp dụng"
       }
     },
     "doc_signing": {

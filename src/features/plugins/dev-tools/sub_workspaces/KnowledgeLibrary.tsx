@@ -3,14 +3,18 @@
 // behavior is visible before the harvest engine exists) and renders the
 // consolidated tree + paginated DataGrid. Demo rows never touch the DB.
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Share2 } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { projectWorkspacePractices } from '@/api/devTools/workspaces';
+import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { CreatePracticeModal } from './CreatePracticeModal';
+import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import { generateMockLibrary } from './libraryMock';
@@ -28,14 +32,40 @@ export default function KnowledgeLibrary({
   projectById: Map<string, DevProject>;
   onChanged: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
   // Default the demo corpus on for near-empty workspaces so the surface never
   // looks broken before harvesting exists; let the user toggle it off.
   const [demo, setDemo] = useState<boolean | null>(null);
   const [creating, setCreating] = useState(false);
+  const [projecting, setProjecting] = useState(false);
+  const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
+  const addToast = useToastStore((s) => s.addToast);
   const useDemo = demo ?? rows.length < 12;
+
+  // Ambient distribution: write the workspace's adopted canon into every
+  // member repo's Claude memory, so future sessions there carry it for free.
+  const projectToRepos = async () => {
+    setProjecting(true);
+    try {
+      const results = await projectWorkspacePractices(workspace.id);
+      const ok = results.filter((r) => !r.skipped);
+      const failed = results.filter((r) => r.skipped);
+      const practices = ok.reduce((n, r) => Math.max(n, r.practices), 0);
+      addToast(
+        tx(w.projected, { projects: ok.length, practices }),
+        ok.length > 0 ? 'success' : 'warning',
+      );
+      if (failed.length > 0) {
+        addToast(tx(w.projected_skipped, { count: failed.length }), 'warning');
+      }
+    } catch (err) {
+      toastCatch('workspaces:project')(err);
+    } finally {
+      setProjecting(false);
+    }
+  };
 
   const items = useMemo(() => {
     const real = rows.map(viewFromRow);
@@ -72,6 +102,16 @@ export default function KnowledgeLibrary({
             memberProjects={memberProjects}
             onChanged={onChanged}
           />
+          <button
+            type="button"
+            onClick={projectToRepos}
+            disabled={projecting}
+            title={w.project_hint}
+            className="typo-label flex items-center gap-1.5 rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            {w.project_to_repos}
+          </button>
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="w-4 h-4" />
             {w.new_practice}
@@ -80,8 +120,26 @@ export default function KnowledgeLibrary({
       </div>
 
       <div className="flex-1 min-h-0">
-        <KnowledgeTree items={items} projectById={projectById} />
+        <KnowledgeTree
+          items={items}
+          projectById={projectById}
+          onRowClick={(item) => {
+            const row = rows.find((r) => r.id === item.id);
+            if (row) setRollout(row);
+          }}
+        />
       </div>
+
+      {rollout && (
+        <PracticeRolloutModal
+          practice={rollout}
+          workspaceName={workspace.name}
+          workspaceId={workspace.id}
+          memberProjects={memberProjects}
+          onClose={() => setRollout(null)}
+          onChanged={onChanged}
+        />
+      )}
 
       {creating && (
         <CreatePracticeModal

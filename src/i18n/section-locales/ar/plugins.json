@@ -1203,7 +1203,23 @@
       "divergence_running": "جارٍ المقارنة…",
       "divergence_started": "بدأ تحليل الاختلافات — تجري مقارنة الممارسات عبر مساحة العمل.",
       "harvest_auto_imported": "اكتمل الحصاد — {project}: تمت إضافة {inserted}، وتم تخطي {skipped}.",
-      "harvest_dispatched": "جارٍ حصاد {project} في Fleet — سيتم استيراد النتائج تلقائيًا عند الانتهاء."
+      "harvest_dispatched": "جارٍ حصاد {project} في Fleet — سيتم استيراد النتائج تلقائيًا عند الانتهاء.",
+      "project_hint": "يكتب الممارسات المعتمدة في مساحة العمل داخل ذاكرة Claude لكل مستودع عضو، لتتبعها الجلسات المستقبلية تلقائيًا.",
+      "project_to_repos": "الكتابة في المستودعات",
+      "projected": "تمت الكتابة في {projects} مستودع — حتى {practices} ممارسة لكل منها.",
+      "projected_skipped": "تعذّرت الكتابة في {count} مستودع.",
+      "rollout_action": "التطبيق في {project}",
+      "rollout_already": "يوجد بالفعل تطبيق جارٍ في {project}.",
+      "rollout_dispatch": "تطبيق",
+      "rollout_dispatched": "جارٍ التطبيق في {project} عبر Fleet.",
+      "rollout_mark_adopted": "تعليم {project} كمعتمد",
+      "rollout_mark_diverged": "تعليم {project} كمتباعد",
+      "rollout_title": "التطبيق على المشاريع",
+      "state_adopted": "معتمد هنا",
+      "state_dispatched": "التطبيق جارٍ",
+      "state_diverged": "متباعد",
+      "state_na": "غير منطبق",
+      "state_proposed": "غير معتمد بعد"
     }
   },
   "doc_signing": {

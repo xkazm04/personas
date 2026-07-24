@@ -13308,6 +13308,22 @@ export type Translations = {
         divergence_result: string;
         divergence_failed: string;
         harvest_auto_imported: string;
+        project_to_repos: string;
+        project_hint: string;
+        projected: string;
+        projected_skipped: string;
+        rollout_title: string;
+        rollout_dispatch: string;
+        rollout_action: string;
+        rollout_dispatched: string;
+        rollout_already: string;
+        rollout_mark_adopted: string;
+        rollout_mark_diverged: string;
+        state_adopted: string;
+        state_dispatched: string;
+        state_diverged: string;
+        state_proposed: string;
+        state_na: string;
       };
     };
     doc_signing: {

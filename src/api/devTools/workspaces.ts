@@ -10,6 +10,7 @@ import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DevWorkspace } from "@/lib/bindings/DevWorkspace";
 import type { HarvestPrepared } from "@/lib/bindings/HarvestPrepared";
 import type { IngestSummary } from "@/lib/bindings/IngestSummary";
+import type { ProjectionResult } from "@/lib/bindings/ProjectionResult";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
@@ -220,4 +221,17 @@ export async function getDivergenceStatus(jobId: string): Promise<DivergenceStat
 
 export async function cancelWorkspaceDivergence(jobId: string): Promise<void> {
   return invoke<void>('dev_tools_workspace_cancel_divergence', { jobId });
+}
+
+// -- distribution (Arc 3) ----------------------------------------------------
+
+export type { ProjectionResult };
+
+/** Project the workspace's adopted practices into every member repo as a
+ *  Claude Code memory file (`.claude/workspace-practices.md` + one @import
+ *  line in CLAUDE.md). Never rewrites the user's own prose. */
+export async function projectWorkspacePractices(
+  workspaceId: string,
+): Promise<ProjectionResult[]> {
+  return invoke<ProjectionResult[]>('dev_tools_workspace_project_practices', { workspaceId });
 }

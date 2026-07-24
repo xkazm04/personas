@@ -1203,7 +1203,23 @@
       "divergence_running": "Comparaison…",
       "divergence_started": "Analyse des divergences lancée — comparaison des pratiques dans l'espace de travail.",
       "harvest_auto_imported": "Collecte terminée — {project} : {inserted} ajoutées, {skipped} ignorées.",
-      "harvest_dispatched": "Collecte de {project} dans Fleet — les résultats seront importés automatiquement à la fin."
+      "harvest_dispatched": "Collecte de {project} dans Fleet — les résultats seront importés automatiquement à la fin.",
+      "project_hint": "Écrit les pratiques adoptées de l'espace de travail dans la mémoire Claude de chaque dépôt membre, afin que les sessions futures les appliquent automatiquement.",
+      "project_to_repos": "Projeter vers les dépôts",
+      "projected": "Projeté dans {projects} dépôt(s) — jusqu'à {practices} pratiques chacun.",
+      "projected_skipped": "Écriture impossible dans {count} dépôt(s).",
+      "rollout_action": "Déployer vers {project}",
+      "rollout_already": "{project} a déjà un déploiement en cours.",
+      "rollout_dispatch": "Déployer",
+      "rollout_dispatched": "Déploiement vers {project} dans Fleet.",
+      "rollout_mark_adopted": "Marquer {project} comme adopté",
+      "rollout_mark_diverged": "Marquer {project} comme divergent",
+      "rollout_title": "Déployer vers les projets",
+      "state_adopted": "Adopté ici",
+      "state_dispatched": "Déploiement en cours",
+      "state_diverged": "Divergent",
+      "state_na": "Non applicable",
+      "state_proposed": "Pas encore adopté"
     }
   },
   "doc_signing": {

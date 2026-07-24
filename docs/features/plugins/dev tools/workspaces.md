@@ -98,9 +98,34 @@ All machine-harvested candidates route through one governed door
 blocks re-proposal ("rejection is knowledge"). Everything still waits for a
 human `adopt`.
 
+## Distribution (Arc 3 — shipped)
+
+An adopted practice is worth little if it only lives in the app's database.
+Two paths carry it out to the repos:
+
+- **Project to repos** (ambient, the autonomy lever) — writes each member repo's
+  applicable adopted practices into `.claude/workspace-practices.md` and ensures
+  a single `@import` line in that repo's `CLAUDE.md`, so **every future Claude
+  Code session there carries the workspace's canon at zero dispatch cost**. The
+  generated file is fully owned (overwritten wholesale); CLAUDE.md only ever
+  gains one line — the projection never parses or rewrites your own prose.
+  Practices are grouped by topic area and annotated with that project's rollout
+  state. Command: `dev_tools_workspace_project_practices`.
+  *(Deliberate deviation from the plan's marker-block sketch: this follows the
+  existing `engine/claude_md_projection.rs` precedent, which is strictly safer.)*
+- **Roll out** (push) — click an **adopted** practice to open its rollout
+  surface: each member project with its current state and a dispatch that sends
+  a Fleet Dev-runner session into that repo with the practice, its evidence, and
+  a customize-for-this-codebase instruction. The prompt requires the session to
+  survey first and to return `DECLINED: <why>` if the practice genuinely doesn't
+  fit — a rollout that can't refuse produces cargo-culted code. Dispatch flips
+  the cell to `dispatched`; you mark `adopted` or `diverged` after reading the
+  verdict.
+
 ## Later arcs (planned)
 
-Divergence pass — "N projects solve the same problem M ways → one recommended
-practice" (Arc 2 follow-up). Adopt-dispatch via Fleet + managed CLAUDE.md
-projection into member repos + weekly digest (Arc 3), workspace-scoped skills
-(Arc 4), health pillars + Mastermind alignment (Arc 5).
+Weekly digest ("what the workspace adopted/deprecated this week" — a computed
+view, never stored) and adoption verification (a rescan flipping `adopted` →
+`diverged` when evidence contradicts; surfaced, never auto-un-adopted) are the
+remaining Arc-3 pieces. Then workspace-scoped skills (Arc 4), health pillars +
+Mastermind alignment (Arc 5).

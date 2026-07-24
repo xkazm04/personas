@@ -205,6 +205,25 @@ pub fn dev_tools_workspace_adoption_set(
 }
 
 // ============================================================================
+// Distribution — ambient projection (Arc 3)
+// ============================================================================
+
+/// Project the workspace's adopted practices into every member repo as a
+/// Claude Code memory file, so future CLI sessions in those repos carry the
+/// workspace's canon without a dispatch. Writes an owned file under
+/// `.claude/` and appends at most one `@import` line to CLAUDE.md — it never
+/// rewrites the user's own prose. Best-effort per project: an unwritable repo
+/// is reported in its result row, not fatal to the run.
+#[tauri::command]
+pub fn dev_tools_workspace_project_practices(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<Vec<crate::engine::workspace_projection::ProjectionResult>, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::workspace_projection::project_workspace_practices(&state.db, &workspace_id)
+}
+
+// ============================================================================
 // Extraction engine — deterministic miners (Arc 2)
 // ============================================================================
 

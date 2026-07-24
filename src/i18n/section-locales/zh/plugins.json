@@ -1203,7 +1203,23 @@
       "divergence_running": "对比中…",
       "divergence_started": "差异分析已启动 — 正在对比工作区内各项目的实践。",
       "harvest_auto_imported": "采集完成 — {project}：新增 {inserted} 条，跳过 {skipped} 条。",
-      "harvest_dispatched": "正在 Fleet 中采集 {project} — 完成后将自动导入结果。"
+      "harvest_dispatched": "正在 Fleet 中采集 {project} — 完成后将自动导入结果。",
+      "project_hint": "将工作区已采纳的实践写入每个成员仓库的 Claude 记忆文件，使该仓库中今后的会话自动遵循这些实践。",
+      "project_to_repos": "写入各仓库",
+      "projected": "已写入 {projects} 个仓库——每个最多 {practices} 条实践。",
+      "projected_skipped": "有 {count} 个仓库无法写入。",
+      "rollout_action": "推行到 {project}",
+      "rollout_already": "{project} 已有正在进行的推行。",
+      "rollout_dispatch": "推行",
+      "rollout_dispatched": "正在 Fleet 中向 {project} 推行。",
+      "rollout_mark_adopted": "将 {project} 标记为已采纳",
+      "rollout_mark_diverged": "将 {project} 标记为已偏离",
+      "rollout_title": "推行到各项目",
+      "state_adopted": "此处已采纳",
+      "state_dispatched": "推行进行中",
+      "state_diverged": "已偏离",
+      "state_na": "不适用",
+      "state_proposed": "尚未采纳"
     }
   },
   "doc_signing": {

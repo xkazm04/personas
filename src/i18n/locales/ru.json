@@ -13032,7 +13032,23 @@
         "divergence_running": "Сравнение…",
         "divergence_started": "Анализ расхождений запущен — сравниваем практики в рабочей области.",
         "harvest_auto_imported": "Сбор завершён — {project}: добавлено {inserted}, пропущено {skipped}.",
-        "harvest_dispatched": "Сбор практик из {project} в Fleet — результаты импортируются автоматически по завершении."
+        "harvest_dispatched": "Сбор практик из {project} в Fleet — результаты импортируются автоматически по завершении.",
+        "project_hint": "Записывает принятые в рабочем пространстве практики в память Claude каждого репозитория-участника, чтобы будущие сессии учитывали их автоматически.",
+        "project_to_repos": "Записать в репозитории",
+        "projected": "Записано в {projects} репозиторий(ев) — до {practices} практик в каждый.",
+        "projected_skipped": "Не удалось записать в {count} репозиторий(ев).",
+        "rollout_action": "Внедрить в {project}",
+        "rollout_already": "В {project} внедрение уже выполняется.",
+        "rollout_dispatch": "Внедрить",
+        "rollout_dispatched": "Внедрение в {project} запущено в Fleet.",
+        "rollout_mark_adopted": "Отметить {project} как принятый",
+        "rollout_mark_diverged": "Отметить {project} как расходящийся",
+        "rollout_title": "Внедрить в проекты",
+        "state_adopted": "Принято здесь",
+        "state_dispatched": "Внедрение идёт",
+        "state_diverged": "Расхождение",
+        "state_na": "Неприменимо",
+        "state_proposed": "Ещё не принято"
       }
     },
     "doc_signing": {

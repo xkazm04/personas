@@ -13032,7 +13032,23 @@
         "divergence_running": "তুলনা করা হচ্ছে…",
         "divergence_started": "পার্থক্য বিশ্লেষণ শুরু হয়েছে — ওয়ার্কস্পেসজুড়ে চর্চাগুলো তুলনা করা হচ্ছে।",
         "harvest_auto_imported": "সংগ্রহ সম্পন্ন — {project}: {inserted}টি যোগ হয়েছে, {skipped}টি বাদ পড়েছে।",
-        "harvest_dispatched": "Fleet-এ {project} সংগ্রহ করা হচ্ছে — শেষ হলে ফলাফল স্বয়ংক্রিয়ভাবে আমদানি হবে।"
+        "harvest_dispatched": "Fleet-এ {project} সংগ্রহ করা হচ্ছে — শেষ হলে ফলাফল স্বয়ংক্রিয়ভাবে আমদানি হবে।",
+        "project_hint": "ওয়ার্কস্পেসের গৃহীত প্র্যাকটিসগুলো প্রতিটি সদস্য রিপোজিটরির Claude মেমোরিতে লেখে, যাতে সেখানকার ভবিষ্যৎ সেশন স্বয়ংক্রিয়ভাবে সেগুলো অনুসরণ করে।",
+        "project_to_repos": "রিপোতে লিখুন",
+        "projected": "{projects}টি রিপোতে লেখা হয়েছে — প্রতিটিতে সর্বোচ্চ {practices}টি প্র্যাকটিস।",
+        "projected_skipped": "{count}টি রিপোতে লেখা যায়নি।",
+        "rollout_action": "{project}-এ প্রয়োগ করুন",
+        "rollout_already": "{project}-এ ইতিমধ্যেই একটি রোলআউট চলছে।",
+        "rollout_dispatch": "প্রয়োগ করুন",
+        "rollout_dispatched": "Fleet-এ {project}-এ প্রয়োগ করা হচ্ছে।",
+        "rollout_mark_adopted": "{project}-কে গৃহীত হিসেবে চিহ্নিত করুন",
+        "rollout_mark_diverged": "{project}-কে বিচ্যুত হিসেবে চিহ্নিত করুন",
+        "rollout_title": "প্রকল্পগুলোতে প্রয়োগ করুন",
+        "state_adopted": "এখানে গৃহীত",
+        "state_dispatched": "রোলআউট চলছে",
+        "state_diverged": "বিচ্যুত",
+        "state_na": "প্রযোজ্য নয়",
+        "state_proposed": "এখনও গৃহীত নয়"
       }
     },
     "doc_signing": {

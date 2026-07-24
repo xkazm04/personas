@@ -281,7 +281,7 @@ pub fn delete_workspace(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// `tech_stack` must contain at least one entry (case-insensitive substring).
 /// Arc-1 heuristic — richer RepoEvidence matching arrives with the harvest
 /// engine.
-fn applicability_matches(applicability: Option<&str>, tech_stack: Option<&str>) -> bool {
+pub fn applicability_matches(applicability: Option<&str>, tech_stack: Option<&str>) -> bool {
     let Some(raw) = applicability else { return true };
     let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
         return true;

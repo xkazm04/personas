@@ -63,9 +63,12 @@ function AltitudeChip({
 export default function KnowledgeTree({
   items,
   projectById,
+  onRowClick,
 }: {
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
+  /** Open the rollout surface for an adopted practice. */
+  onRowClick?: (item: KnowledgeItemView) => void;
 }) {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
@@ -326,6 +329,13 @@ export default function KnowledgeTree({
           columns={columns}
           data={rows}
           getRowKey={(r) => r.id}
+          // Only adopted, non-demo practices have somewhere to go — a rollout
+          // needs real canon and a real row id.
+          onRowClick={
+            onRowClick
+              ? (r) => { if (r.status === 'adopted' && !r.mock) onRowClick(r); }
+              : undefined
+          }
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}

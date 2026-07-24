@@ -13032,7 +13032,23 @@
         "divergence_running": "Porovnávání…",
         "divergence_started": "Analýza rozdílů byla spuštěna — porovnáváme postupy napříč pracovním prostorem.",
         "harvest_auto_imported": "Sběr dokončen — {project}: {inserted} přidáno, {skipped} přeskočeno.",
-        "harvest_dispatched": "Sbírám postupy z {project} ve Fleet — výsledky se po dokončení naimportují automaticky."
+        "harvest_dispatched": "Sbírám postupy z {project} ve Fleet — výsledky se po dokončení naimportují automaticky.",
+        "project_hint": "Zapíše přijaté praktiky pracovního prostoru do Claude paměti každého členského repozitáře, aby se jimi budoucí relace automaticky řídily.",
+        "project_to_repos": "Zapsat do repozitářů",
+        "projected": "Zapsáno do {projects} repozitářů — až {practices} praktik do každého.",
+        "projected_skipped": "Do {count} repozitářů se nepodařilo zapsat.",
+        "rollout_action": "Zavést do {project}",
+        "rollout_already": "V {project} už zavádění probíhá.",
+        "rollout_dispatch": "Zavést",
+        "rollout_dispatched": "Zavádím do {project} přes Fleet.",
+        "rollout_mark_adopted": "Označit {project} jako přijatý",
+        "rollout_mark_diverged": "Označit {project} jako odchýlený",
+        "rollout_title": "Zavést do projektů",
+        "state_adopted": "Zde přijato",
+        "state_dispatched": "Zavádění probíhá",
+        "state_diverged": "Odchýleno",
+        "state_na": "Nerelevantní",
+        "state_proposed": "Zatím nepřijato"
       }
     },
     "doc_signing": {

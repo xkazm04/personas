@@ -3046,6 +3046,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_list,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_set,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
+            commands::infrastructure::dev_workspaces::dev_tools_workspace_project_practices,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_harvest_prepare,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_knowledge_ingest,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_run_divergence,

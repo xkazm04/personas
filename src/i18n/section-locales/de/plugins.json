@@ -1203,7 +1203,23 @@
       "divergence_running": "Vergleiche…",
       "divergence_started": "Abweichungsanalyse gestartet – Praktiken im Workspace werden verglichen.",
       "harvest_auto_imported": "Auswertung abgeschlossen — {project}: {inserted} hinzugefügt, {skipped} übersprungen.",
-      "harvest_dispatched": "{project} wird in Fleet ausgewertet — die Ergebnisse werden nach Abschluss automatisch importiert."
+      "harvest_dispatched": "{project} wird in Fleet ausgewertet — die Ergebnisse werden nach Abschluss automatisch importiert.",
+      "project_hint": "Schreibt die übernommenen Praktiken des Workspace in den Claude-Speicher jedes Mitglieds-Repos, damit künftige Sitzungen sie automatisch berücksichtigen.",
+      "project_to_repos": "In Repos schreiben",
+      "projected": "In {projects} Repo(s) geschrieben – bis zu {practices} Praktiken je Repo.",
+      "projected_skipped": "{count} Repo(s) konnten nicht beschrieben werden.",
+      "rollout_action": "In {project} ausrollen",
+      "rollout_already": "Für {project} läuft bereits ein Rollout.",
+      "rollout_dispatch": "Ausrollen",
+      "rollout_dispatched": "Rollout in {project} über Fleet gestartet.",
+      "rollout_mark_adopted": "{project} als übernommen markieren",
+      "rollout_mark_diverged": "{project} als abweichend markieren",
+      "rollout_title": "In Projekte ausrollen",
+      "state_adopted": "Hier übernommen",
+      "state_dispatched": "Rollout läuft",
+      "state_diverged": "Abweichend",
+      "state_na": "Nicht zutreffend",
+      "state_proposed": "Noch nicht übernommen"
     }
   },
   "doc_signing": {

@@ -13032,7 +13032,23 @@
         "divergence_running": "Membandingkan…",
         "divergence_started": "Analisis perbedaan dimulai — membandingkan praktik di seluruh ruang kerja.",
         "harvest_auto_imported": "Pemanenan selesai — {project}: {inserted} ditambahkan, {skipped} dilewati.",
-        "harvest_dispatched": "Memanen {project} di Fleet — hasil akan diimpor otomatis setelah selesai."
+        "harvest_dispatched": "Memanen {project} di Fleet — hasil akan diimpor otomatis setelah selesai.",
+        "project_hint": "Menulis praktik yang diadopsi workspace ke memori Claude di setiap repo anggota, agar sesi berikutnya di sana mengikutinya secara otomatis.",
+        "project_to_repos": "Tulis ke repo",
+        "projected": "Ditulis ke {projects} repo — hingga {practices} praktik di tiap repo.",
+        "projected_skipped": "{count} repo tidak dapat ditulis.",
+        "rollout_action": "Terapkan ke {project}",
+        "rollout_already": "{project} sudah memiliki penerapan yang berjalan.",
+        "rollout_dispatch": "Terapkan",
+        "rollout_dispatched": "Menerapkan ke {project} di Fleet.",
+        "rollout_mark_adopted": "Tandai {project} sebagai diadopsi",
+        "rollout_mark_diverged": "Tandai {project} sebagai menyimpang",
+        "rollout_title": "Terapkan ke proyek",
+        "state_adopted": "Diadopsi di sini",
+        "state_dispatched": "Penerapan berjalan",
+        "state_diverged": "Menyimpang",
+        "state_na": "Tidak berlaku",
+        "state_proposed": "Belum diadopsi"
       }
     },
     "doc_signing": {

@@ -1203,7 +1203,23 @@
       "divergence_running": "비교 중…",
       "divergence_started": "차이점 분석을 시작했습니다 — 워크스페이스 전반의 방식을 비교하는 중입니다.",
       "harvest_auto_imported": "수집 완료 — {project}: {inserted}개 추가, {skipped}개 건너뜀.",
-      "harvest_dispatched": "Fleet에서 {project} 수집 중 — 완료되면 결과가 자동으로 가져와집니다."
+      "harvest_dispatched": "Fleet에서 {project} 수집 중 — 완료되면 결과가 자동으로 가져와집니다.",
+      "project_hint": "워크스페이스에서 채택한 관행을 각 멤버 저장소의 Claude 메모리에 기록하여, 이후 세션이 자동으로 이를 따르도록 합니다.",
+      "project_to_repos": "저장소에 반영",
+      "projected": "{projects}개 저장소에 반영했습니다 — 각각 최대 {practices}개 관행.",
+      "projected_skipped": "{count}개 저장소에 기록하지 못했습니다.",
+      "rollout_action": "{project}에 적용",
+      "rollout_already": "{project}에서 이미 적용이 진행 중입니다.",
+      "rollout_dispatch": "적용",
+      "rollout_dispatched": "Fleet에서 {project}에 적용 중입니다.",
+      "rollout_mark_adopted": "{project}을(를) 채택됨으로 표시",
+      "rollout_mark_diverged": "{project}을(를) 이탈됨으로 표시",
+      "rollout_title": "프로젝트에 적용",
+      "state_adopted": "여기서 채택됨",
+      "state_dispatched": "적용 진행 중",
+      "state_diverged": "이탈됨",
+      "state_na": "해당 없음",
+      "state_proposed": "아직 채택 안 됨"
     }
   },
   "doc_signing": {

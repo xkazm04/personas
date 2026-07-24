@@ -13301,7 +13301,23 @@
         "divergence_running": "Comparing…",
         "divergence_result": "Divergence: {proposed} proposed, {inserted} added.",
         "divergence_failed": "The divergence pass failed.",
-        "harvest_auto_imported": "Harvest finished — {project}: {inserted} added, {skipped} skipped."
+        "harvest_auto_imported": "Harvest finished — {project}: {inserted} added, {skipped} skipped.",
+        "project_to_repos": "Project to repos",
+        "project_hint": "Write the workspace's adopted practices into each member repo's Claude memory, so future sessions there carry them automatically.",
+        "projected": "Projected into {projects} repo(s) — up to {practices} practices each.",
+        "projected_skipped": "{count} repo(s) could not be written.",
+        "rollout_title": "Roll out to projects",
+        "rollout_dispatch": "Roll out",
+        "rollout_action": "Roll out to {project}",
+        "rollout_dispatched": "Rolling out to {project} in Fleet.",
+        "rollout_already": "{project} already has a rollout running.",
+        "rollout_mark_adopted": "Mark {project} as adopted",
+        "rollout_mark_diverged": "Mark {project} as diverged",
+        "state_adopted": "Adopted here",
+        "state_dispatched": "Rollout in progress",
+        "state_diverged": "Diverged",
+        "state_proposed": "Not adopted yet",
+        "state_na": "Not applicable"
       }
     },
     "doc_signing": {

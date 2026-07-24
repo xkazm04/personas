@@ -32,6 +32,7 @@ pub mod capability_contract;
 pub mod chain;
 pub mod chunker;
 pub mod claude_md_projection;
+pub mod workspace_projection;
 pub mod cli_capabilities;
 pub mod cli_mcp_config;
 pub mod cli_process;

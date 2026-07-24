@@ -13032,7 +13032,23 @@
         "divergence_running": "比較中…",
         "divergence_started": "相違点の分析を開始しました — ワークスペース全体のプラクティスを比較しています。",
         "harvest_auto_imported": "収集が完了しました — {project}：{inserted} 件追加、{skipped} 件スキップ。",
-        "harvest_dispatched": "Fleet で {project} を収集中 — 完了すると結果が自動的に取り込まれます。"
+        "harvest_dispatched": "Fleet で {project} を収集中 — 完了すると結果が自動的に取り込まれます。",
+        "project_hint": "ワークスペースで採用中のプラクティスを各メンバーリポジトリの Claude メモリに書き込み、今後のセッションが自動的に従うようにします。",
+        "project_to_repos": "各リポジトリへ反映",
+        "projected": "{projects} 個のリポジトリに反映しました（各最大 {practices} 件のプラクティス）。",
+        "projected_skipped": "{count} 個のリポジトリに書き込めませんでした。",
+        "rollout_action": "{project} に展開",
+        "rollout_already": "{project} では既に展開が進行中です。",
+        "rollout_dispatch": "展開",
+        "rollout_dispatched": "Fleet で {project} に展開中です。",
+        "rollout_mark_adopted": "{project} を採用済みにする",
+        "rollout_mark_diverged": "{project} を乖離ありにする",
+        "rollout_title": "プロジェクトへ展開",
+        "state_adopted": "採用済み",
+        "state_dispatched": "展開中",
+        "state_diverged": "乖離あり",
+        "state_na": "対象外",
+        "state_proposed": "未採用"
       }
     },
     "doc_signing": {

@@ -1203,7 +1203,23 @@
       "divergence_running": "तुलना हो रही है…",
       "divergence_started": "भिन्नता विश्लेषण शुरू हुआ — वर्कस्पेस की प्रथाओं की तुलना की जा रही है।",
       "harvest_auto_imported": "संग्रह पूरा हुआ — {project}: {inserted} जोड़े गए, {skipped} छोड़े गए।",
-      "harvest_dispatched": "Fleet में {project} का संग्रह चल रहा है — पूरा होते ही परिणाम अपने आप आयात हो जाएंगे।"
+      "harvest_dispatched": "Fleet में {project} का संग्रह चल रहा है — पूरा होते ही परिणाम अपने आप आयात हो जाएंगे।",
+      "project_hint": "वर्कस्पेस की अपनाई गई प्रैक्टिस को हर सदस्य रिपॉज़िटरी की Claude मेमोरी में लिखता है, ताकि वहाँ के भावी सेशन उन्हें अपने आप अपनाएँ।",
+      "project_to_repos": "रिपॉज़िटरी में लिखें",
+      "projected": "{projects} रिपॉज़िटरी में लिखा गया — हर एक में अधिकतम {practices} प्रैक्टिस।",
+      "projected_skipped": "{count} रिपॉज़िटरी में नहीं लिखा जा सका।",
+      "rollout_action": "{project} में लागू करें",
+      "rollout_already": "{project} में पहले से रोलआउट चल रहा है।",
+      "rollout_dispatch": "लागू करें",
+      "rollout_dispatched": "Fleet में {project} पर लागू किया जा रहा है।",
+      "rollout_mark_adopted": "{project} को अपनाया गया चिह्नित करें",
+      "rollout_mark_diverged": "{project} को भिन्न चिह्नित करें",
+      "rollout_title": "प्रोजेक्ट्स में लागू करें",
+      "state_adopted": "यहाँ अपनाया गया",
+      "state_dispatched": "रोलआउट जारी",
+      "state_diverged": "भिन्न",
+      "state_na": "लागू नहीं",
+      "state_proposed": "अभी अपनाया नहीं"
     }
   },
   "doc_signing": {
