@@ -75,5 +75,13 @@
   "network_settings": "Netzwerkeinstellungen",
   "dark": "Dunkel",
   "light": "Hell",
-  "footer_section_nav_aria": "Zum Bereich wechseln"
+  "footer_section_nav_aria": "Zum Bereich wechseln",
+  "workspace_all_projects": "Alle Projekte",
+  "workspace_empty_in_workspace": "Keine Projekte in diesem Arbeitsbereich",
+  "workspace_manage_projects": "Projekte verwalten",
+  "workspace_new": "Neuer Arbeitsbereich",
+  "workspace_no_active_project": "Kein aktives Projekt",
+  "workspace_pick_project": "Projekt wählen",
+  "workspace_projects": "Projekte",
+  "workspace_workspaces": "Arbeitsbereiche"
 }

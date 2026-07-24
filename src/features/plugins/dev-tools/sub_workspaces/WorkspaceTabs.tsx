@@ -10,15 +10,10 @@
 import { useState } from 'react';
 import { ChevronDown, Layers, Plus } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import { createWorkspace, unassignedProjects, type Workspace } from './workspaceStore';
 import { WorkspaceEditMenu } from './WorkspaceEditMenu';
-
-const COPY = {
-  all: 'All projects',
-  unassigned: 'Unassigned',
-  newWorkspace: 'New workspace',
-  hint: 'Group projects into workspaces to scope every module to one.',
-};
 
 export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
   projects: { id: string }[];
@@ -26,6 +21,14 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
   activeId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useTranslation();
+  const dp = t.plugins.dev_projects;
+  const COPY = {
+    all: dp.workspace_all_projects,
+    unassigned: dp.workspace_unassigned,
+    newWorkspace: dp.workspace_new,
+    hint: dp.workspace_hint,
+  };
   const [editing, setEditing] = useState<string | null>(null);
   const loose = unassignedProjects(projects, workspaces).length;
 
@@ -80,7 +83,7 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
 
         <button
           type="button"
-          onClick={() => createWorkspace('New workspace')}
+          onClick={() => createWorkspace(COPY.newWorkspace)}
           aria-label={COPY.newWorkspace}
           title={COPY.newWorkspace}
           className="ml-auto inline-flex items-center gap-1 px-3 py-2 typo-caption text-primary hover:bg-primary/5 transition-colors whitespace-nowrap focus-ring"

@@ -75,5 +75,13 @@
   "network_settings": "Configuracion de red",
   "dark": "Oscuro",
   "light": "Claro",
-  "footer_section_nav_aria": "Ir a la sección"
+  "footer_section_nav_aria": "Ir a la sección",
+  "workspace_all_projects": "Todos los proyectos",
+  "workspace_empty_in_workspace": "No hay proyectos en este espacio de trabajo",
+  "workspace_manage_projects": "Gestionar proyectos",
+  "workspace_new": "Nuevo espacio de trabajo",
+  "workspace_no_active_project": "Ningún proyecto activo",
+  "workspace_pick_project": "Elegir proyecto",
+  "workspace_projects": "Proyectos",
+  "workspace_workspaces": "Espacios de trabajo"
 }

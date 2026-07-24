@@ -75,5 +75,13 @@
   "network_settings": "Pengaturan jaringan",
   "dark": "Gelap",
   "light": "Terang",
-  "footer_section_nav_aria": "Buka bagian"
+  "footer_section_nav_aria": "Buka bagian",
+  "workspace_all_projects": "Semua proyek",
+  "workspace_empty_in_workspace": "Tidak ada proyek di ruang kerja ini",
+  "workspace_manage_projects": "Kelola proyek",
+  "workspace_new": "Ruang kerja baru",
+  "workspace_no_active_project": "Tidak ada proyek aktif",
+  "workspace_pick_project": "Pilih proyek",
+  "workspace_projects": "Proyek",
+  "workspace_workspaces": "Ruang kerja"
 }

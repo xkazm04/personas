@@ -518,7 +518,15 @@
     "network_settings": "নেটওয়ার্ক সেটিংস",
     "dark": "গাঢ়",
     "light": "হালকা",
-    "footer_section_nav_aria": "বিভাগে যান"
+    "footer_section_nav_aria": "বিভাগে যান",
+    "workspace_all_projects": "সব প্রকল্প",
+    "workspace_empty_in_workspace": "এই ওয়ার্কস্পেসে কোনো প্রকল্প নেই",
+    "workspace_manage_projects": "প্রকল্প পরিচালনা",
+    "workspace_new": "নতুন ওয়ার্কস্পেস",
+    "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
+    "workspace_pick_project": "প্রকল্প বাছুন",
+    "workspace_projects": "প্রকল্প",
+    "workspace_workspaces": "ওয়ার্কস্পেস"
   },
   "sidebar": {
     "home": "হোম",
@@ -14549,7 +14557,17 @@
       "test_env_url_placeholder": "https://staging.example.com",
       "test_env_branch": "টেস্ট পরিবেশের শাখা",
       "test_env_branch_placeholder": "main",
-      "open_test_env": "টেস্ট পরিবেশ খুলুন"
+      "open_test_env": "টেস্ট পরিবেশ খুলুন",
+      "workspace_all_projects": "সব প্রকল্প",
+      "workspace_delete": "ওয়ার্কস্পেস মুছুন",
+      "workspace_delete_confirm": "মুছুন — প্রকল্প থাকবে",
+      "workspace_done": "সম্পন্ন",
+      "workspace_hint": "প্রকল্পগুলিকে ওয়ার্কস্পেসে দলবদ্ধ করুন যাতে প্রতিটি মডিউলের পরিধি একটিতে সীমিত থাকে।",
+      "workspace_move_heading": "ওয়ার্কস্পেসে সরান",
+      "workspace_move_to": "সরান…",
+      "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম",
+      "workspace_new": "নতুন ওয়ার্কস্পেস",
+      "workspace_unassigned": "অনির্ধারিত"
     },
     "dev_runner": {
       "self_healing": "স্ব-নিরাময়",

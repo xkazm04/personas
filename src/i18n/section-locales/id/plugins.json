@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "Cabang lingkungan pengujian",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "Buka lingkungan pengujian"
+    "open_test_env": "Buka lingkungan pengujian",
+    "workspace_all_projects": "Semua proyek",
+    "workspace_delete": "Hapus ruang kerja",
+    "workspace_delete_confirm": "Hapus — proyek tetap ada",
+    "workspace_done": "Selesai",
+    "workspace_hint": "Kelompokkan proyek ke dalam ruang kerja untuk membatasi setiap modul pada satu ruang kerja.",
+    "workspace_move_heading": "Pindahkan ke ruang kerja",
+    "workspace_move_to": "Pindahkan ke…",
+    "workspace_name_placeholder": "Nama ruang kerja",
+    "workspace_new": "Ruang kerja baru",
+    "workspace_unassigned": "Belum ditetapkan"
   },
   "dev_runner": {
     "self_healing": "Perbaikan mandiri",

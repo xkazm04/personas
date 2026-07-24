@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "टेस्ट परिवेश शाखा",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "टेस्ट परिवेश खोलें"
+    "open_test_env": "टेस्ट परिवेश खोलें",
+    "workspace_all_projects": "सभी प्रोजेक्ट",
+    "workspace_delete": "वर्कस्पेस हटाएँ",
+    "workspace_delete_confirm": "हटाएँ — प्रोजेक्ट बने रहेंगे",
+    "workspace_done": "हो गया",
+    "workspace_hint": "प्रोजेक्ट को वर्कस्पेस में समूहित करें ताकि हर मॉड्यूल का दायरा एक तक सीमित रहे।",
+    "workspace_move_heading": "वर्कस्पेस में ले जाएँ",
+    "workspace_move_to": "यहाँ ले जाएँ…",
+    "workspace_name_placeholder": "वर्कस्पेस नाम",
+    "workspace_new": "नया वर्कस्पेस",
+    "workspace_unassigned": "अनिर्दिष्ट"
   },
   "dev_runner": {
     "self_healing": "स्व-उपचार",

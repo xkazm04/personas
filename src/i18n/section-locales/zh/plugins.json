@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "测试环境分支",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "打开测试环境"
+    "open_test_env": "打开测试环境",
+    "workspace_all_projects": "所有项目",
+    "workspace_delete": "删除工作区",
+    "workspace_delete_confirm": "删除 — 项目保留",
+    "workspace_done": "完成",
+    "workspace_hint": "将项目分组到工作区，可将每个模块的范围限定为其中一个。",
+    "workspace_move_heading": "移动到工作区",
+    "workspace_move_to": "移动到…",
+    "workspace_name_placeholder": "工作区名称",
+    "workspace_new": "新建工作区",
+    "workspace_unassigned": "未分配"
   },
   "dev_runner": {
     "self_healing": "自愈",

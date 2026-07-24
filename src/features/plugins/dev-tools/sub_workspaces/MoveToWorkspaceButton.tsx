@@ -4,19 +4,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { FolderInput } from 'lucide-react';
 
-import { assignProject, type Workspace } from './workspaceStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const COPY = {
-  move: 'Move to…',
-  none: 'Unassigned',
-  heading: 'Move to workspace',
-};
+import { assignProject, type Workspace } from './workspaceStore';
 
 export function MoveToWorkspaceButton({ workspaces, selectedIds, onMoved }: {
   workspaces: Workspace[];
   selectedIds: Set<string>;
   onMoved: () => void;
 }) {
+  const { t } = useTranslation();
+  const dp = t.plugins.dev_projects;
+  const COPY = {
+    move: dp.workspace_move_to,
+    none: dp.workspace_unassigned,
+    heading: dp.workspace_move_heading,
+  };
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

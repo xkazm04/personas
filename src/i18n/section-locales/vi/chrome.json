@@ -75,5 +75,13 @@
   "network_settings": "Cài đặt mạng",
   "dark": "Tối",
   "light": "Sáng",
-  "footer_section_nav_aria": "Đến mục"
+  "footer_section_nav_aria": "Đến mục",
+  "workspace_all_projects": "Tất cả dự án",
+  "workspace_empty_in_workspace": "Không có dự án nào trong không gian làm việc này",
+  "workspace_manage_projects": "Quản lý dự án",
+  "workspace_new": "Không gian làm việc mới",
+  "workspace_no_active_project": "Không có dự án đang hoạt động",
+  "workspace_pick_project": "Chọn dự án",
+  "workspace_projects": "Dự án",
+  "workspace_workspaces": "Không gian làm việc"
 }

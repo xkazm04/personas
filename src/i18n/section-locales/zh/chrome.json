@@ -75,5 +75,13 @@
   "network_settings": "网络设置",
   "dark": "深色",
   "light": "浅色",
-  "footer_section_nav_aria": "前往板块"
+  "footer_section_nav_aria": "前往板块",
+  "workspace_all_projects": "所有项目",
+  "workspace_empty_in_workspace": "此工作区中没有项目",
+  "workspace_manage_projects": "管理项目",
+  "workspace_new": "新建工作区",
+  "workspace_no_active_project": "无活动项目",
+  "workspace_pick_project": "选择项目",
+  "workspace_projects": "项目",
+  "workspace_workspaces": "工作区"
 }

@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "Test-Umgebungs-Branch",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "Test-Umgebung öffnen"
+    "open_test_env": "Test-Umgebung öffnen",
+    "workspace_all_projects": "Alle Projekte",
+    "workspace_delete": "Arbeitsbereich löschen",
+    "workspace_delete_confirm": "Löschen — Projekte bleiben",
+    "workspace_done": "Fertig",
+    "workspace_hint": "Gruppieren Sie Projekte in Arbeitsbereichen, um jedes Modul auf einen davon zu beschränken.",
+    "workspace_move_heading": "In Arbeitsbereich verschieben",
+    "workspace_move_to": "Verschieben nach…",
+    "workspace_name_placeholder": "Name des Arbeitsbereichs",
+    "workspace_new": "Neuer Arbeitsbereich",
+    "workspace_unassigned": "Nicht zugeordnet"
   },
   "dev_runner": {
     "self_healing": "Selbstheilung",

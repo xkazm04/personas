@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard, Map, Compass } from 'lucide-react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, Keyboard, Map, Compass } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,18 +11,15 @@ import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { DebtText } from '@/i18n/DebtText';
 
 
 
 import SystemLoadFooterIcon from '@/features/shared/chrome/SystemLoadFooterIcon';
 import { FooterSectionNav } from '@/features/shared/chrome/FooterSectionNav';
-// ── /prototype SCAFFOLD (workspace switcher round, throwaway) ───────────────
-// Two directional replacements for ProjectPickerFooterIcon, both handling
-// workspace + project in one expanded control. The cycler below picks between
-// them (and the current baseline); it goes away with the losing variants.
+// The workspace + project switcher (breadcrumb direction, chosen 2026-07-24).
+// Supersedes the old project-only ProjectPickerFooterIcon, which it fully
+// replaces: same actions (pick / clear / manage) plus the workspace scope.
 import { SwitcherBreadcrumb } from '@/features/plugins/dev-tools/sub_workspaces/SwitcherBreadcrumb';
-import { SwitcherCommandSheet } from '@/features/plugins/dev-tools/sub_workspaces/SwitcherCommandSheet';
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/plugins/radio/components/RadioFooter'));
@@ -355,165 +352,6 @@ function ShortcutsFooterIcon() {
 }
 
 // ---------------------------------------------------------------------------
-// Active Dev Tools project picker -- compact right-side switcher so users
-// can change the active codebase without opening the Dev Tools plugin UI.
-// Hidden when no projects exist (avoids advertising an empty state).
-// ---------------------------------------------------------------------------
-
-function ProjectPickerFooterIcon() {
-  const projects = useSystemStore((s) => s.projects);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const setActiveProject = useSystemStore((s) => s.setActiveProject);
-  const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const loadedRef = useRef(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-    void fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const activeProject = useMemo(
-    () => projects.find((p) => p.id === activeProjectId) ?? null,
-    [projects, activeProjectId],
-  );
-
-  if (projects.length === 0) return null;
-
-  const buttonLabel = activeProject?.name ?? 'Pick project';
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        data-testid="footer-project-picker"
-        className={`flex items-center gap-1.5 h-7 px-2 rounded-lg transition-colors max-w-[180px] ${
-          activeProject
-            ? 'text-indigo-300/90 hover:bg-indigo-500/10'
-            : 'text-foreground hover:bg-secondary/50'
-        }`}
-        title={activeProject?.root_path ?? 'Pick active Dev Tools project'}
-        aria-label={`Active project: ${buttonLabel}`}
-      >
-        <FolderGit2 className="w-4 h-4 flex-shrink-0" />
-        <span className="text-[11px] font-medium truncate min-w-0">{buttonLabel}</span>
-        <ChevronUp className={`w-3 h-3 flex-shrink-0 transition-transform ${open ? '' : 'rotate-180'}`} />
-      </button>
-
-      {open && (
-        <div className="animate-fade-slide-in absolute bottom-full right-0 mb-2 w-64 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50">
-          <div className="px-2 py-1 mb-1 border-b border-primary/10">
-            <p className="text-[10px] uppercase tracking-wider text-foreground font-mono"><DebtText k="auto_active_project_687de263" /></p>
-          </div>
-          <div className="max-h-64 overflow-y-auto">
-            {/* Deselect — clears the active project (show all personas). */}
-            <button
-              onClick={() => { void setActiveProject(null); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption transition-colors text-left ${
-                activeProjectId === null
-                  ? 'bg-indigo-500/10 text-indigo-300'
-                  : 'text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              <X className="w-3.5 h-3.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0 text-[12px] font-medium truncate">{t.chrome.project_picker_none}</div>
-              {activeProjectId === null && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
-            </button>
-            {projects.map((p) => {
-              const isActive = p.id === activeProjectId;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => { void setActiveProject(p.id); setOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption transition-colors text-left ${
-                    isActive
-                      ? 'bg-indigo-500/10 text-indigo-300'
-                      : 'text-foreground hover:bg-secondary/40'
-                  }`}
-                >
-                  <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-medium truncate">{p.name}</div>
-                    {p.root_path && (
-                      <div className="text-[10px] text-foreground truncate">{p.root_path}</div>
-                    )}
-                  </div>
-                  {isActive && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-1 pt-1 border-t border-primary/10">
-            <button
-              onClick={() => { setSidebarSection('plugins'); setOpen(false); }}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] text-foreground hover:bg-secondary/40 transition-colors"
-            >
-              <DebtText k="auto_manage_in_dev_tools_70c6b5fa" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// /prototype SCAFFOLD — switcher variant cycler (throwaway).
-// Baseline (today's project-only picker) → Breadcrumb → Command sheet.
-// ---------------------------------------------------------------------------
-
-type SwitcherVariant = 'baseline' | 'breadcrumb' | 'sheet';
-const SWITCHER_KEY = 'proto.footerSwitcher.v1';
-const SWITCHER_ORDER: SwitcherVariant[] = ['baseline', 'breadcrumb', 'sheet'];
-const SWITCHER_LABEL: Record<SwitcherVariant, string> = {
-  baseline: 'base', breadcrumb: 'crumb', sheet: 'sheet',
-};
-
-function WorkspaceSwitcherSlot() {
-  const [variant, setVariant] = useState<SwitcherVariant>(() => {
-    try { return (localStorage.getItem(SWITCHER_KEY) as SwitcherVariant | null) ?? 'breadcrumb'; } catch { return 'breadcrumb'; }
-  });
-  const cycle = useCallback(() => {
-    setVariant((v) => {
-      const next = SWITCHER_ORDER[(SWITCHER_ORDER.indexOf(v) + 1) % SWITCHER_ORDER.length]!;
-      try { localStorage.setItem(SWITCHER_KEY, next); } catch { /* best-effort */ }
-      return next;
-    });
-  }, []);
-
-  return (
-    <div className="flex items-center gap-1">
-      {import.meta.env.DEV && (
-        <button
-          onClick={cycle}
-          title={`Switcher variant: ${variant} (click to cycle)`}
-          className="h-7 px-1.5 rounded-lg typo-caption text-foreground/45 hover:text-foreground hover:bg-secondary/50 transition-colors font-mono"
-          data-testid="footer-switcher-variant"
-        >
-          {SWITCHER_LABEL[variant]}
-        </button>
-      )}
-      {variant === 'baseline' && <ProjectPickerFooterIcon />}
-      {variant === 'breadcrumb' && <SwitcherBreadcrumb />}
-      {variant === 'sheet' && <SwitcherCommandSheet />}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Resume-tour action — appears only when a guided tour was started, made
 // partial progress, and was then dismissed (not completed). Lets the user
 // pick the tour back up from the footer without hunting for the launcher.
@@ -702,7 +540,7 @@ export default function DesktopFooter() {
         <div className="w-px h-4 bg-primary/10" />
         <OnboardingReplayFooterIcon />
         <TourResumeFooterIcon />
-        <WorkspaceSwitcherSlot />
+        <SwitcherBreadcrumb />
       </div>
     </div>,
     document.body,

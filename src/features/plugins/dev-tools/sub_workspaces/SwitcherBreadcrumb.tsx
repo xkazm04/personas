@@ -14,22 +14,23 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronUp, FolderGit2, Layers, Plus, X } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { createWorkspace } from './workspaceStore';
 import { useWorkspaceSwitch } from './useWorkspaceSwitch';
 
-const COPY = {
-  allWorkspaces: 'All projects',
-  workspaces: 'Workspaces',
-  projectsIn: 'Projects',
-  none: 'No active project',
-  newWorkspace: 'New workspace',
-  pick: 'Pick project',
-  manage: 'Manage projects',
-  empty: 'No projects in this workspace',
-};
-
 export function SwitcherBreadcrumb() {
+  const { t } = useTranslation();
+  const COPY = {
+    allWorkspaces: t.chrome.workspace_all_projects,
+    workspaces: t.chrome.workspace_workspaces,
+    projectsIn: t.chrome.workspace_projects,
+    none: t.chrome.workspace_no_active_project,
+    newWorkspace: t.chrome.workspace_new,
+    pick: t.chrome.workspace_pick_project,
+    manage: t.chrome.workspace_manage_projects,
+    empty: t.chrome.workspace_empty_in_workspace,
+  };
   const {
     scoped, workspaces, activeId, activeProjectId, activeProject,
     activeWorkspace, setActiveProject, switchWorkspace,
@@ -111,7 +112,7 @@ export function SwitcherBreadcrumb() {
                 ))}
               </div>
               <button
-                onClick={() => createWorkspace('New workspace')}
+                onClick={() => createWorkspace(COPY.newWorkspace)}
                 className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-primary/10 typo-caption text-primary hover:bg-primary/5 transition-colors"
                 data-testid="footer-workspace-new"
               >

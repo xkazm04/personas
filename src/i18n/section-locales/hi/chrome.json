@@ -75,5 +75,13 @@
   "network_settings": "नेटवर्क सेटिंग्स",
   "dark": "डार्क",
   "light": "लाइट",
-  "footer_section_nav_aria": "अनुभाग पर जाएँ"
+  "footer_section_nav_aria": "अनुभाग पर जाएँ",
+  "workspace_all_projects": "सभी प्रोजेक्ट",
+  "workspace_empty_in_workspace": "इस वर्कस्पेस में कोई प्रोजेक्ट नहीं है",
+  "workspace_manage_projects": "प्रोजेक्ट प्रबंधित करें",
+  "workspace_new": "नया वर्कस्पेस",
+  "workspace_no_active_project": "कोई सक्रिय प्रोजेक्ट नहीं",
+  "workspace_pick_project": "प्रोजेक्ट चुनें",
+  "workspace_projects": "प्रोजेक्ट",
+  "workspace_workspaces": "वर्कस्पेस"
 }

@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "Ветка тестовой среды",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "Открыть тестовую среду"
+    "open_test_env": "Открыть тестовую среду",
+    "workspace_all_projects": "Все проекты",
+    "workspace_delete": "Удалить рабочее пространство",
+    "workspace_delete_confirm": "Удалить — проекты останутся",
+    "workspace_done": "Готово",
+    "workspace_hint": "Сгруппируйте проекты в рабочие пространства, чтобы ограничить каждый модуль одним из них.",
+    "workspace_move_heading": "Переместить в рабочее пространство",
+    "workspace_move_to": "Переместить в…",
+    "workspace_name_placeholder": "Название рабочего пространства",
+    "workspace_new": "Новое рабочее пространство",
+    "workspace_unassigned": "Без назначения"
   },
   "dev_runner": {
     "self_healing": "Самовосстановление",

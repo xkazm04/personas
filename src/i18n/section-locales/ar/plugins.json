@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "فرع بيئة الاختبار",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "فتح بيئة الاختبار"
+    "open_test_env": "فتح بيئة الاختبار",
+    "workspace_all_projects": "كل المشاريع",
+    "workspace_delete": "حذف مساحة العمل",
+    "workspace_delete_confirm": "حذف — تبقى المشاريع",
+    "workspace_done": "تم",
+    "workspace_hint": "جمّع المشاريع في مساحات عمل لحصر كل وحدة في واحدة منها.",
+    "workspace_move_heading": "نقل إلى مساحة عمل",
+    "workspace_move_to": "نقل إلى…",
+    "workspace_name_placeholder": "اسم مساحة العمل",
+    "workspace_new": "مساحة عمل جديدة",
+    "workspace_unassigned": "غير معيَّن"
   },
   "dev_runner": {
     "self_healing": "المعالجة الذاتية",

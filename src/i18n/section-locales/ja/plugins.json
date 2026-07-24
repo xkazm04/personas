@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "テスト環境ブランチ",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "テスト環境を開く"
+    "open_test_env": "テスト環境を開く",
+    "workspace_all_projects": "すべてのプロジェクト",
+    "workspace_delete": "ワークスペースを削除",
+    "workspace_delete_confirm": "削除 — プロジェクトは残ります",
+    "workspace_done": "完了",
+    "workspace_hint": "プロジェクトをワークスペースにまとめると、各モジュールの範囲を 1 つに絞れます。",
+    "workspace_move_heading": "ワークスペースに移動",
+    "workspace_move_to": "移動先…",
+    "workspace_name_placeholder": "ワークスペース名",
+    "workspace_new": "新しいワークスペース",
+    "workspace_unassigned": "未割り当て"
   },
   "dev_runner": {
     "self_healing": "自己修復",

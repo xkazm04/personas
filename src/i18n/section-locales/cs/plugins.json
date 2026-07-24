@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "Větev testovacího prostředí",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "Otevřít testovací prostředí"
+    "open_test_env": "Otevřít testovací prostředí",
+    "workspace_all_projects": "Všechny projekty",
+    "workspace_delete": "Smazat pracovní prostor",
+    "workspace_delete_confirm": "Smazat — projekty zůstanou",
+    "workspace_done": "Hotovo",
+    "workspace_hint": "Seskupte projekty do pracovních prostorů a zužte tak každý modul na jeden z nich.",
+    "workspace_move_heading": "Přesunout do pracovního prostoru",
+    "workspace_move_to": "Přesunout do…",
+    "workspace_name_placeholder": "Název pracovního prostoru",
+    "workspace_new": "Nový pracovní prostor",
+    "workspace_unassigned": "Nezařazené"
   },
   "dev_runner": {
     "self_healing": "Self-healing",

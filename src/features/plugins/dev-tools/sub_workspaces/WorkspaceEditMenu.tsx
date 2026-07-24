@@ -4,21 +4,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Trash2 } from 'lucide-react';
 
-import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS, type Workspace } from './workspaceStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
-const COPY = {
-  namePlaceholder: 'Workspace name',
-  delete: 'Delete workspace',
-  deleteConfirm: 'Delete — projects stay',
-  done: 'Done',
-};
+import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS, type Workspace } from './workspaceStore';
 
 export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
   ws: Workspace;
   onClose: () => void;
-  /** Positioning classes from the caller (rail anchors left, tabs anchor below). */
+  /** Positioning classes from the caller (the tabs strip anchors below). */
   className?: string;
 }) {
+  const { t } = useTranslation();
+  const dp = t.plugins.dev_projects;
+  const COPY = {
+    namePlaceholder: dp.workspace_name_placeholder,
+    delete: dp.workspace_delete,
+    deleteConfirm: dp.workspace_delete_confirm,
+    done: dp.workspace_done,
+  };
   const [name, setName] = useState(ws.name);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef<HTMLDivElement>(null);

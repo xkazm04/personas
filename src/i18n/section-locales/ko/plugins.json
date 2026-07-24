@@ -2728,7 +2728,17 @@
     "test_env_url_placeholder": "https://staging.example.com",
     "test_env_branch": "테스트 환경 브랜치",
     "test_env_branch_placeholder": "main",
-    "open_test_env": "테스트 환경 열기"
+    "open_test_env": "테스트 환경 열기",
+    "workspace_all_projects": "모든 프로젝트",
+    "workspace_delete": "워크스페이스 삭제",
+    "workspace_delete_confirm": "삭제 — 프로젝트는 유지됩니다",
+    "workspace_done": "완료",
+    "workspace_hint": "프로젝트를 워크스페이스로 묶으면 모든 모듈의 범위를 하나로 좁힐 수 있습니다.",
+    "workspace_move_heading": "워크스페이스로 이동",
+    "workspace_move_to": "이동…",
+    "workspace_name_placeholder": "워크스페이스 이름",
+    "workspace_new": "새 워크스페이스",
+    "workspace_unassigned": "미할당"
   },
   "dev_runner": {
     "self_healing": "자가 복구",

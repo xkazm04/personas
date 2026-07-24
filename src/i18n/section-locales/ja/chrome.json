@@ -75,5 +75,13 @@
   "network_settings": "ネットワーク設定",
   "dark": "ダーク",
   "light": "ライト",
-  "footer_section_nav_aria": "セクションへ移動"
+  "footer_section_nav_aria": "セクションへ移動",
+  "workspace_all_projects": "すべてのプロジェクト",
+  "workspace_empty_in_workspace": "このワークスペースにプロジェクトはありません",
+  "workspace_manage_projects": "プロジェクトを管理",
+  "workspace_new": "新しいワークスペース",
+  "workspace_no_active_project": "アクティブなプロジェクトなし",
+  "workspace_pick_project": "プロジェクトを選択",
+  "workspace_projects": "プロジェクト",
+  "workspace_workspaces": "ワークスペース"
 }

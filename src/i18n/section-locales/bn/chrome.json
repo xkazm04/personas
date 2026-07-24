@@ -75,5 +75,13 @@
   "network_settings": "নেটওয়ার্ক সেটিংস",
   "dark": "গাঢ়",
   "light": "হালকা",
-  "footer_section_nav_aria": "বিভাগে যান"
+  "footer_section_nav_aria": "বিভাগে যান",
+  "workspace_all_projects": "সব প্রকল্প",
+  "workspace_empty_in_workspace": "এই ওয়ার্কস্পেসে কোনো প্রকল্প নেই",
+  "workspace_manage_projects": "প্রকল্প পরিচালনা",
+  "workspace_new": "নতুন ওয়ার্কস্পেস",
+  "workspace_no_active_project": "কোনো সক্রিয় প্রকল্প নেই",
+  "workspace_pick_project": "প্রকল্প বাছুন",
+  "workspace_projects": "প্রকল্প",
+  "workspace_workspaces": "ওয়ার্কস্পেস"
 }

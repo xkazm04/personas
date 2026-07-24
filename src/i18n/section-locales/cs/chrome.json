@@ -75,5 +75,13 @@
   "network_settings": "Nastavení sítě",
   "dark": "Tmavý",
   "light": "Světlý",
-  "footer_section_nav_aria": "Přejít do sekce"
+  "footer_section_nav_aria": "Přejít do sekce",
+  "workspace_all_projects": "Všechny projekty",
+  "workspace_empty_in_workspace": "V tomto pracovním prostoru nejsou žádné projekty",
+  "workspace_manage_projects": "Spravovat projekty",
+  "workspace_new": "Nový pracovní prostor",
+  "workspace_no_active_project": "Žádný aktivní projekt",
+  "workspace_pick_project": "Vybrat projekt",
+  "workspace_projects": "Projekty",
+  "workspace_workspaces": "Pracovní prostory"
 }

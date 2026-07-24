@@ -518,7 +518,15 @@
     "network_settings": "Configuracion de red",
     "dark": "Oscuro",
     "light": "Claro",
-    "footer_section_nav_aria": "Ir a la sección"
+    "footer_section_nav_aria": "Ir a la sección",
+    "workspace_all_projects": "Todos los proyectos",
+    "workspace_empty_in_workspace": "No hay proyectos en este espacio de trabajo",
+    "workspace_manage_projects": "Gestionar proyectos",
+    "workspace_new": "Nuevo espacio de trabajo",
+    "workspace_no_active_project": "Ningún proyecto activo",
+    "workspace_pick_project": "Elegir proyecto",
+    "workspace_projects": "Proyectos",
+    "workspace_workspaces": "Espacios de trabajo"
   },
   "sidebar": {
     "home": "Inicio",
@@ -14549,7 +14557,17 @@
       "test_env_url_placeholder": "https://staging.example.com",
       "test_env_branch": "Rama del entorno de pruebas",
       "test_env_branch_placeholder": "main",
-      "open_test_env": "Abrir entorno de pruebas"
+      "open_test_env": "Abrir entorno de pruebas",
+      "workspace_all_projects": "Todos los proyectos",
+      "workspace_delete": "Eliminar espacio de trabajo",
+      "workspace_delete_confirm": "Eliminar — los proyectos se mantienen",
+      "workspace_done": "Listo",
+      "workspace_hint": "Agrupa los proyectos en espacios de trabajo para acotar cada módulo a uno.",
+      "workspace_move_heading": "Mover a espacio de trabajo",
+      "workspace_move_to": "Mover a…",
+      "workspace_name_placeholder": "Nombre del espacio de trabajo",
+      "workspace_new": "Nuevo espacio de trabajo",
+      "workspace_unassigned": "Sin asignar"
     },
     "dev_runner": {
       "self_healing": "Auto-Sanación",
