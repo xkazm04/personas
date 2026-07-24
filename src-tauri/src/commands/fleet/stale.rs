@@ -534,7 +534,7 @@ const LIMIT_RESET_GRACE_MS: i64 = 2 * 60 * 1000;
 /// A stated time that has already passed today is read as tomorrow (a limit
 /// hit at 11pm resetting "7:50am" is the next morning).
 pub fn parse_limit_reset(screen: &str, now_ms: i64) -> Option<i64> {
-    use chrono::{Datelike, Duration, Local, NaiveTime, TimeZone};
+    use chrono::{Duration, Local, NaiveTime, TimeZone};
 
     let lower = screen.to_lowercase();
     // Anchor on the word that introduces the time so we never pick up an
@@ -567,7 +567,6 @@ pub fn parse_limit_reset(screen: &str, now_ms: i64) -> Option<i64> {
     };
     // Sanity floor: a "reset" more than 24h out is a misparse, not a limit.
     let ms = resolved.timestamp_millis();
-    let _ = now.year();
     if ms - now_ms > 24 * 60 * 60 * 1000 {
         return None;
     }
