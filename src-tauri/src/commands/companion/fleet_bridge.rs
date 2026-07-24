@@ -628,8 +628,14 @@ enum MechanicalCue {
 fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
     let tail = lines.iter().rev().take(15).collect::<Vec<_>>();
     for line in tail {
-        // Newest first (we iterate bottom-up), so the first hit wins.
-        let t = line.trim_start();
+        // Newest first (we iterate bottom-up), so the first hit wins. Claude
+        // Code prefixes reply lines with a "●" bullet (observed live on the
+        // protocol probe: the NEXT cue rendered as "● FLEET:NEXT — …" and
+        // fell through to a full Athena turn) — strip list decoration first.
+        let t = line
+            .trim_start()
+            .trim_start_matches(['●', '•', '*', '-', '>'])
+            .trim_start();
         for (prefix, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
             if let Some(rest) = t.strip_prefix(prefix) {
                 let text = rest
