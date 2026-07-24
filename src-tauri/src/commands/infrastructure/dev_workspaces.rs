@@ -203,3 +203,23 @@ pub fn dev_tools_workspace_adoption_set(
         fleet_key.as_deref(),
     )
 }
+
+// ============================================================================
+// Extraction engine — deterministic miners (Arc 2)
+// ============================================================================
+
+/// Run the deterministic (no-LLM) miners over a workspace and ingest their
+/// candidates as `observed` knowledge with miner provenance. Cheap signal
+/// before any harvest-skill LLM spend: cross-project shared findings +
+/// cross-project skill-adoption gaps. Idempotent — dedup-gated on each
+/// candidate's key (incl. the 90-day rejected window).
+#[tauri::command]
+pub fn dev_tools_workspace_run_miners(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<repo::IngestSummary, AppError> {
+    require_auth_sync(&state)?;
+    let mut candidates = repo::mine_shared_findings(&state.db, &workspace_id)?;
+    candidates.extend(repo::mine_shared_skills(&state.db, &workspace_id)?);
+    repo::ingest_candidates(&state.db, &workspace_id, &candidates, "miner", None)
+}

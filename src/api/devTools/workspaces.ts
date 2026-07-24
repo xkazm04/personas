@@ -8,6 +8,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DevWorkspace } from "@/lib/bindings/DevWorkspace";
+import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
@@ -159,4 +160,15 @@ export async function setWorkspaceAdoption(
     note,
     fleetKey,
   });
+}
+
+// -- extraction engine (Arc 2) -----------------------------------------------
+
+export type { IngestSummary };
+
+/** Run the deterministic (no-LLM) miners over a workspace and ingest their
+ *  candidates as `observed` knowledge with miner provenance. Cheap signal
+ *  before any harvest-skill LLM spend. Idempotent (dedup-gated). */
+export async function runWorkspaceMiners(workspaceId: string): Promise<IngestSummary> {
+  return invoke<IngestSummary>("dev_tools_workspace_run_miners", { workspaceId });
 }
