@@ -2,6 +2,9 @@
 
 ## Active
 
+### perfect-wave-fleet — /perfect build: 3 fleet directions — session opus-5[1m] — started
+- 2026-07-24. Builder worktree `.claude/worktrees/perfect-fleet` (branch worktree-perfect-fleet, fork 8e744ee70). Directions: fleet-registry-durability (DB table + boot rehydrate) / fleet-limit-eta (reset-time parser + countdown chip) / fleet-run-harvest (run grouping + harvest panel). Declared paths: src-tauri/src/commands/fleet/**, src-tauri/src/db/{migrations,repos}/** (new fleet table only), src/features/plugins/fleet/**, src/features/fleet/**, src/api/fleet*, src/lib/bindings/, src/i18n/locales/*.json.
+
 ### decision-mirror-p1p2 — operator decision capture + reflect-me — session fable-5 — COMPLETED
 - 2026-07-24 close. Commit **825216625** (pushed): docs/concepts/decision-mirror.md (5-phase roadmap), AskUserQuestion PostToolUse hook (machine-local registration; script scripts/decision-ledger/capture-decision.mjs, hook+correction modes, error-proof) -> .claude/decision-ledger/ (doubly gitignored), CLAUDE.md correction-journal duty, /reflect-me skill. Personas-only scope by design; hook activates from the NEXT session. First real ledger entry: the add-A correction. Phase 3 next: generate the fleet decision policy from profile.md.
 
