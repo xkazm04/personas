@@ -31,6 +31,18 @@
   projects it can apply to. Author one by hand via **New practice** in the
   library header (lands as `proposed`); the harvest engine (Arc 2) fills the
   rest automatically.
+- **Categorization axes** (orthogonal to the topic tree) let the library rank
+  and filter by *quality*, not just subject: `abstraction`
+  (macro / meso / micro — the altitude), `ftype` (finding-type taxonomy:
+  architecture / module-boundary / data-flow / extensibility / api-design /
+  state-mgmt / error-strategy / concurrency-reliability / perf-strategy /
+  micro-technique), `durability` (durable / situational / mechanical),
+  `governing_id` (roll a micro-instance up under a macro doctrine), and
+  `evidence_count` (prevalence). The library's **Altitude** column + a default-on
+  **Hide lint layer** toggle drop `micro` / `mechanical` items — a practice
+  library surfaces *doctrine*, not lint-enforceable rules (route those to
+  eslint/clippy). Machine writers (miners, harvest) set these; hand-authored
+  items may leave them null.
 - **Governance ladder** — `observed` (machine-harvested) → `proposed` →
   `adopted` / `rejected`, plus `deprecated` (optionally superseded by a newer
   practice). **Agents only ever propose; adoption is always your decision.**
