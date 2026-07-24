@@ -1,0 +1,159 @@
+// Workspace Knowledge Center API (docs/plans/workspace-knowledge-center.md) —
+// wrappers over the dev_tools_workspace_* Tauri commands. Workspaces group dev
+// projects (single workspace per project via dev_projects.workspace_id);
+// workspace_knowledge is the governed cross-project practice library
+// (observed → proposed → adopted ladder, agents propose / humans adopt);
+// workspace_practice_adoption is the per-project adoption matrix.
+import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+
+import type { DevProject } from "@/lib/bindings/DevProject";
+import type { DevWorkspace } from "@/lib/bindings/DevWorkspace";
+import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
+import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
+import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
+
+export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
+export type KnowledgeStatus = "observed" | "proposed" | "adopted" | "deprecated" | "rejected";
+export type KnowledgeDecision = "propose" | "adopt" | "reject" | "deprecate";
+export type AdoptionState = "na" | "proposed" | "dispatched" | "adopted" | "diverged";
+
+/** Parsed shape of `WorkspaceKnowledge.applicability` (stored as JSON text). */
+export interface Applicability {
+  layers?: string[];
+  languages?: string[];
+  frameworks?: string[];
+  conditions?: string[];
+}
+
+// -- workspaces --------------------------------------------------------------
+
+export async function listWorkspaces(): Promise<DevWorkspace[]> {
+  return invoke<DevWorkspace[]>("dev_tools_workspace_list", {});
+}
+
+export async function createWorkspace(
+  name: string,
+  color?: string,
+  description?: string,
+): Promise<DevWorkspace> {
+  return invoke<DevWorkspace>("dev_tools_workspace_create", { name, color, description });
+}
+
+/** Field-wise update. `null` clears a nullable column; `undefined` leaves it unchanged. */
+export async function updateWorkspace(
+  id: string,
+  patch: { name?: string; color?: string | null; description?: string | null },
+): Promise<DevWorkspace> {
+  return invoke<DevWorkspace>("dev_tools_workspace_update", { id, ...patch });
+}
+
+/** Delete a workspace. Member projects are unassigned, never deleted. */
+export async function deleteWorkspace(id: string): Promise<boolean> {
+  return invoke<boolean>("dev_tools_workspace_delete", { id });
+}
+
+/** Move a project into a workspace (or out of every one when `null`). */
+export async function assignProjectToWorkspace(
+  projectId: string,
+  workspaceId: string | null,
+): Promise<DevProject> {
+  return invoke<DevProject>("dev_tools_workspace_assign_project", { projectId, workspaceId });
+}
+
+/** One-time import of the localStorage prototype (idempotent on name). */
+export async function importLocalWorkspaces(
+  items: WorkspaceImportItem[],
+): Promise<DevWorkspace[]> {
+  return invoke<DevWorkspace[]>("dev_tools_workspace_import_local", { items });
+}
+
+// -- knowledge ---------------------------------------------------------------
+
+export async function listWorkspaceKnowledge(
+  workspaceId: string,
+  status?: KnowledgeStatus,
+): Promise<WorkspaceKnowledge[]> {
+  return invoke<WorkspaceKnowledge[]>("dev_tools_workspace_knowledge_list", {
+    workspaceId,
+    status,
+  });
+}
+
+export interface CreateKnowledgeInput {
+  workspaceId: string;
+  kind: KnowledgeKind;
+  title: string;
+  statement: string;
+  detailMd?: string;
+  /** JSON-encoded {@link Applicability}. */
+  applicability?: string;
+  originProjectId?: string;
+}
+
+/** Author a practice by hand — lands as `proposed` with human provenance. */
+export async function createWorkspaceKnowledge(
+  input: CreateKnowledgeInput,
+): Promise<WorkspaceKnowledge> {
+  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_create", { ...input });
+}
+
+/** Field-wise update. `null` clears a nullable column; `undefined` leaves it unchanged. */
+export async function updateWorkspaceKnowledge(
+  id: string,
+  patch: {
+    kind?: KnowledgeKind;
+    title?: string;
+    statement?: string;
+    detailMd?: string | null;
+    applicability?: string | null;
+  },
+): Promise<WorkspaceKnowledge> {
+  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_update", { id, ...patch });
+}
+
+/**
+ * The governance gate. `adopt` fans the practice out to every member project
+ * as its to-adopt queue; `reject` keeps the row for miner dedup;
+ * `deprecate` optionally records a successor.
+ */
+export async function decideWorkspaceKnowledge(
+  id: string,
+  decision: KnowledgeDecision,
+  supersededBy?: string,
+): Promise<WorkspaceKnowledge> {
+  return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_decide", {
+    id,
+    decision,
+    supersededBy,
+  });
+}
+
+export async function deleteWorkspaceKnowledge(id: string): Promise<boolean> {
+  return invoke<boolean>("dev_tools_workspace_knowledge_delete", { id });
+}
+
+// -- adoption matrix ---------------------------------------------------------
+
+export async function listWorkspaceAdoption(
+  workspaceId: string,
+): Promise<WorkspacePracticeAdoption[]> {
+  return invoke<WorkspacePracticeAdoption[]>("dev_tools_workspace_adoption_list", {
+    workspaceId,
+  });
+}
+
+export async function setWorkspaceAdoption(
+  practiceId: string,
+  projectId: string,
+  adoptionState: AdoptionState,
+  note?: string,
+  fleetKey?: string,
+): Promise<WorkspacePracticeAdoption> {
+  return invoke<WorkspacePracticeAdoption>("dev_tools_workspace_adoption_set", {
+    practiceId,
+    projectId,
+    adoptionState,
+    note,
+    fleetKey,
+  });
+}

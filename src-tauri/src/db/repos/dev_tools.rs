@@ -42,6 +42,7 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         main_branch: row.get("main_branch").unwrap_or(None),
         standards_config: row.get("standards_config").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
+        workspace_id: row.get("workspace_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

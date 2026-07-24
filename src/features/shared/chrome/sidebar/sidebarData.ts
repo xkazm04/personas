@@ -9,7 +9,7 @@ import {
   User, Mic, Volume2, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard, MoonStar,
+  Clapperboard, MoonStar, Landmark,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -138,8 +138,9 @@ export const devToolsItems: SubNavItem[] = [
   // doesn't apply tier/dev filtering today; the underlying Rust module
   // always compiles so showing it is safe across builds.
   { id: 'fleet', label: 'Fleet', icon: Terminal },
-  // TEMPORARY — /prototype R1 lab bench (Project Cockpit, mock data) on the
-  // previously-vestigial `skills` id. Removed at consolidation.
+  // Workspace Knowledge Center — workspace management + cross-project
+  // practice library (docs/plans/workspace-knowledge-center.md).
+  { id: 'workspaces', label: 'Workspaces', icon: Landmark },
 ];
 
 export const twinItems: SubNavItem[] = [

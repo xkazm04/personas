@@ -2,6 +2,7 @@ pub mod communication;
 pub mod core;
 pub mod dev_run_checkpoints;
 pub mod dev_tools;
+pub mod dev_workspaces;
 pub mod execution;
 pub mod fleet_decisions;
 pub mod lab;

@@ -137,8 +137,101 @@ pub struct DevProject {
     /// orphan-bound; UI treats unresolved team_ids as "(team removed)" and
     /// the user can re-bind. Added 2026-05-22.
     pub team_id: Option<String>,
+    /// Workspace this project belongs to (single workspace per project,
+    /// nullable = unassigned). Promotes the sub_workspaces localStorage
+    /// prototype; see docs/plans/workspace-knowledge-center.md. Added 2026-07-24.
+    pub workspace_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+}
+
+// ============================================================================
+// Workspace Knowledge Center (docs/plans/workspace-knowledge-center.md)
+// ============================================================================
+
+/// A workspace: a named group of dev projects (the "org"). Container for the
+/// cross-project knowledge/best-practice library. Grouping is via the nullable
+/// `dev_projects.workspace_id` column (single workspace per project).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevWorkspace {
+    pub id: String,
+    pub name: String,
+    /// Swatch colour — the workspace's identity at a glance in switchers.
+    pub color: Option<String>,
+    pub description: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// A governed knowledge item (practice) in a workspace's library.
+///
+/// Lifecycle: `observed` (machine-harvested) → `proposed` (nominated) →
+/// `adopted` | `rejected`, plus `deprecated` (with optional `superseded_by`).
+/// Rejected rows are KEPT — extraction miners dedup against them (90-day
+/// window on `dedup_key`) so a rejected idea is not re-proposed. Agents only
+/// ever write `observed`/`proposed`; adoption is a human decision.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct WorkspaceKnowledge {
+    pub id: String,
+    pub workspace_id: String,
+    /// 'pattern' | 'pitfall' | 'decision' | 'howto' | 'fact' (DB CHECK).
+    pub kind: String,
+    pub title: String,
+    /// The distilled claim — the display/retrieval surface.
+    pub statement: String,
+    /// Evidence verbatim: code, config, before/after. Markdown.
+    pub detail_md: Option<String>,
+    /// JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
+    /// which member projects this practice can apply to. Opaque to the repo.
+    pub applicability: Option<String>,
+    /// 'observed' | 'proposed' | 'adopted' | 'deprecated' | 'rejected' (DB CHECK).
+    pub status: String,
+    /// Member project the item was harvested from. No FK by design —
+    /// deleting a project leaves provenance readable as "(project removed)".
+    pub origin_project_id: Option<String>,
+    /// JSON `{ actor_kind: 'human'|'agent'|'miner', session_key?, scan_id?, model_ref? }`.
+    pub provenance: Option<String>,
+    /// Extractor confidence 0..1; None for human-authored items.
+    pub confidence: Option<f64>,
+    /// Miner idempotency key; checked against rejected rows within 90 days.
+    pub dedup_key: Option<String>,
+    /// Forward pointer set when this item is deprecated in favour of another.
+    pub superseded_by: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_to: Option<String>,
+    /// When the user adopted/rejected/deprecated the item.
+    pub decided_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Per-project adoption state of an adopted practice — the scaling surface:
+/// a project newly assigned to the workspace inherits every applicable
+/// adopted practice as a `proposed` row (to-adopt queue).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct WorkspacePracticeAdoption {
+    pub practice_id: String,
+    pub project_id: String,
+    /// 'na' | 'proposed' | 'dispatched' | 'adopted' | 'diverged' (DB CHECK).
+    pub state: String,
+    /// Dedup key of the adopt Fleet dispatch (`workspace:<practice>:<slug>`).
+    pub fleet_key: Option<String>,
+    pub note: Option<String>,
+    pub last_verified_at: Option<String>,
+    pub updated_at: String,
+}
+
+/// One workspace from the retired localStorage prototype
+/// (`devtools.workspaces.v1`) — payload of the one-time import command.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct WorkspaceImportItem {
+    pub name: String,
+    pub color: Option<String>,
+    pub project_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

@@ -1,21 +1,25 @@
-// PROTOTYPE-STAGE workspace model — a grouping ABOVE dev projects.
+// Workspace store — SQLite-backed (dev_workspaces + dev_projects.workspace_id)
+// via the dev_tools_workspace_* commands. Promoted from the localStorage
+// prototype per docs/plans/workspace-knowledge-center.md; the prototype's
+// consumer contract is preserved verbatim (useWorkspaces() snapshot shape,
+// fire-and-forget mutations, pure selectors), so every switcher keeps its
+// import. Legacy `devtools.workspaces.v1` data is imported once on first
+// hydrate (idempotent on name), then the key is cleared.
 //
-// Deliberately backed by localStorage, not SQLite: the CRUD in the variants is
-// REAL (create / rename / recolour / delete / re-assign projects, all durable
-// across reloads) so the directions can be judged with live data, but no
-// permanent migration is committed before the UX is settled. The eventual
-// backend swap is confined to this module — the shape below mirrors the
-// planned `dev_workspaces` table + nullable `dev_projects.workspace_id`, so
-// every consumer keeps its import.
-//
-// Why a new table and not `dev_projects.team_id`: that column is a *pipeline
-// binding* (project → the PersonaTeam that executes on it) and the engine
-// assumes it resolves to at most one project (`team_context.rs` does
-// `SELECT id FROM dev_projects WHERE team_id = ?1 LIMIT 1`). A `PersonaGroup`
-// "design-time workspace folder" did exist and was retired into teams in
-// 2026-05; re-overloading teams would re-create exactly that cardinality
-// problem and corrupt persona attribution.
+// The active-workspace SELECTION stays in localStorage — it is a per-device
+// UI preference, not domain data.
 import { useSyncExternalStore } from 'react';
+
+import { listProjects } from '@/api/devTools/devTools';
+import {
+  assignProjectToWorkspace,
+  createWorkspace as apiCreateWorkspace,
+  deleteWorkspace as apiDeleteWorkspace,
+  importLocalWorkspaces,
+  listWorkspaces,
+  updateWorkspace as apiUpdateWorkspace,
+} from '@/api/devTools/workspaces';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export interface Workspace {
   id: string;
@@ -33,7 +37,7 @@ export const WORKSPACE_COLORS = [
   '#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#ec4899', '#64748b',
 ] as const;
 
-const KEY = 'devtools.workspaces.v1';
+const LEGACY_KEY = 'devtools.workspaces.v1';
 const ACTIVE_KEY = 'devtools.activeWorkspace.v1';
 
 interface Snapshot {
@@ -42,38 +46,77 @@ interface Snapshot {
 }
 
 let snapshot: Snapshot = { workspaces: [], activeId: null };
-let hydrated = false;
+let hydrateStarted = false;
 const listeners = new Set<() => void>();
 
-function readStorage(): Snapshot {
+function readActiveId(workspaces: Workspace[]): string | null {
   try {
-    const raw = localStorage.getItem(KEY);
-    const workspaces = raw ? (JSON.parse(raw) as Workspace[]) : [];
     const activeId = localStorage.getItem(ACTIVE_KEY);
-    // A stale active id (workspace deleted in another tab) must not strand the
-    // UI on a workspace that no longer exists.
-    return { workspaces, activeId: workspaces.some((w) => w.id === activeId) ? activeId : null };
+    // A stale active id (workspace deleted elsewhere) must not strand the UI
+    // on a workspace that no longer exists.
+    return workspaces.some((w) => w.id === activeId) ? activeId : null;
   } catch {
-    return { workspaces: [], activeId: null };
+    return null;
   }
-}
-
-function ensureHydrated(): void {
-  if (hydrated) return;
-  hydrated = true;
-  snapshot = readStorage();
 }
 
 function commit(next: Snapshot): void {
   snapshot = next;
   try {
-    localStorage.setItem(KEY, JSON.stringify(next.workspaces));
     if (next.activeId) localStorage.setItem(ACTIVE_KEY, next.activeId);
     else localStorage.removeItem(ACTIVE_KEY);
-  } catch {
+  } catch (err) {
     // best-effort — a blocked storage must never break the switchers
+    silentCatch('workspaceStore:persistActive')(err);
   }
   for (const l of listeners) l();
+}
+
+/** One-time migration of the localStorage prototype into SQLite. */
+async function importLegacyIfPresent(): Promise<void> {
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(LEGACY_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+  try {
+    const legacy = JSON.parse(raw) as Array<{ name?: string; color?: string; projectIds?: string[] }>;
+    const items = legacy
+      .filter((w) => typeof w?.name === 'string' && w.name.trim())
+      .map((w) => ({
+        name: w.name as string,
+        color: w.color ?? null,
+        project_ids: Array.isArray(w.projectIds) ? w.projectIds : [],
+      }));
+    if (items.length > 0) await importLocalWorkspaces(items);
+    localStorage.removeItem(LEGACY_KEY);
+  } catch (err) {
+    // Leave the legacy key in place so a later hydrate can retry the import.
+    toastCatch('workspaceStore:importLegacy')(err);
+  }
+}
+
+/** Re-fetch workspaces + membership from the backend and publish. */
+export async function refreshWorkspaces(): Promise<void> {
+  const [rows, projects] = await Promise.all([listWorkspaces(), listProjects()]);
+  const workspaces: Workspace[] = rows.map((w, i) => ({
+    id: w.id,
+    name: w.name,
+    color: w.color ?? WORKSPACE_COLORS[i % WORKSPACE_COLORS.length]!,
+    projectIds: projects.filter((p) => p.workspace_id === w.id).map((p) => p.id),
+  }));
+  commit({ workspaces, activeId: readActiveId(workspaces) });
+}
+
+function ensureHydrated(): void {
+  if (hydrateStarted) return;
+  hydrateStarted = true;
+  void (async () => {
+    await importLegacyIfPresent();
+    await refreshWorkspaces();
+  })().catch(toastCatch('workspaceStore:hydrate'));
 }
 
 function subscribe(listener: () => void): () => void {
@@ -93,55 +136,64 @@ export function useWorkspaces(): Snapshot {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-// -- mutations ---------------------------------------------------------------
+// -- mutations (fire-and-forget: optimistic publish, then backend + refresh) --
 
-const uid = () => `ws${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-
-export function createWorkspace(name: string, color?: string): Workspace {
-  ensureHydrated();
-  const ws: Workspace = {
-    id: uid(),
-    name: name.trim() || 'New workspace',
-    color: color ?? WORKSPACE_COLORS[snapshot.workspaces.length % WORKSPACE_COLORS.length]!,
-    projectIds: [],
-  };
-  commit({ workspaces: [...snapshot.workspaces, ws], activeId: ws.id });
-  return ws;
+export function createWorkspace(name: string, color?: string): void {
+  const resolved = color ?? WORKSPACE_COLORS[snapshot.workspaces.length % WORKSPACE_COLORS.length]!;
+  void apiCreateWorkspace(name.trim() || 'New workspace', resolved)
+    .then(async (ws) => {
+      await refreshWorkspaces();
+      commit({ ...snapshot, activeId: ws.id });
+    })
+    .catch(toastCatch('workspaceStore:create'));
 }
 
 export function renameWorkspace(id: string, name: string): void {
-  ensureHydrated();
+  const trimmed = name.trim();
+  if (!trimmed) return;
   commit({
     ...snapshot,
-    workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, name: name.trim() || w.name } : w)),
+    workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)),
   });
+  void apiUpdateWorkspace(id, { name: trimmed })
+    .then(refreshWorkspaces)
+    .catch(toastCatch('workspaceStore:rename'));
 }
 
 export function recolorWorkspace(id: string, color: string): void {
-  ensureHydrated();
   commit({ ...snapshot, workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, color } : w)) });
+  void apiUpdateWorkspace(id, { color })
+    .then(refreshWorkspaces)
+    .catch(toastCatch('workspaceStore:recolor'));
 }
 
 /** Delete a workspace. Its projects become unassigned — never deleted. */
 export function deleteWorkspace(id: string): void {
-  ensureHydrated();
-  const workspaces = snapshot.workspaces.filter((w) => w.id !== id);
-  commit({ workspaces, activeId: snapshot.activeId === id ? null : snapshot.activeId });
+  commit({
+    workspaces: snapshot.workspaces.filter((w) => w.id !== id),
+    activeId: snapshot.activeId === id ? null : snapshot.activeId,
+  });
+  void apiDeleteWorkspace(id)
+    .then(refreshWorkspaces)
+    .catch(toastCatch('workspaceStore:delete'));
 }
 
 /** Move a project into a workspace (or out of every one when null). A project
  *  belongs to exactly one workspace, so this removes it from the others. */
 export function assignProject(projectId: string, workspaceId: string | null): void {
-  ensureHydrated();
-  const workspaces = snapshot.workspaces.map((w) => {
-    const without = w.projectIds.filter((id) => id !== projectId);
-    return w.id === workspaceId ? { ...w, projectIds: [...without, projectId] } : { ...w, projectIds: without };
+  commit({
+    ...snapshot,
+    workspaces: snapshot.workspaces.map((w) => {
+      const without = w.projectIds.filter((id) => id !== projectId);
+      return w.id === workspaceId ? { ...w, projectIds: [...without, projectId] } : { ...w, projectIds: without };
+    }),
   });
-  commit({ ...snapshot, workspaces });
+  void assignProjectToWorkspace(projectId, workspaceId)
+    .then(refreshWorkspaces)
+    .catch(toastCatch('workspaceStore:assign'));
 }
 
 export function setActiveWorkspace(id: string | null): void {
-  ensureHydrated();
   commit({ ...snapshot, activeId: id });
 }
 

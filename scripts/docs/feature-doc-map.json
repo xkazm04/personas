@@ -418,6 +418,14 @@
       "marketingModule": "plugins"
     },
     {
+      "doc": "docs/features/plugins/dev tools/workspaces.md",
+      "sourceGlobs": [
+        "src/features/plugins/dev-tools/sub_workspaces/**",
+        "src-tauri/src/commands/infrastructure/dev_workspaces.rs",
+        "src-tauri/src/db/repos/dev_workspaces.rs"
+      ]
+    },
+    {
       "doc": "docs/features/teams/goals.md",
       "sourceGlobs": [
         "src/features/teams/sub_goals/**"
