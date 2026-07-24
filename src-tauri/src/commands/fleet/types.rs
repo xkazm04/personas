@@ -199,6 +199,14 @@ pub struct FleetSession {
     /// was doing. The UI renders a small sleep indicator and wakes the session
     /// (`claude --resume`, same-slot) when the operator selects it.
     pub dozing: bool,
+    /// Wall-clock ms (UNIX epoch) when Claude's stated usage/session limit
+    /// resets, parsed from the limit banner (`resets 7:50pm`). `None` when the
+    /// session is not limit-parked or the banner did not state a parseable
+    /// time — in which case the mechanical retry keeps its blind cadence. The
+    /// UI renders it as a countdown chip ("resumes ~19:50") so the operator can
+    /// see when the fleet comes back instead of watching retries burn cycles.
+    /// Always in the future; a lapsed stamp is not surfaced.
+    pub limit_reset_at_ms: Option<i64>,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

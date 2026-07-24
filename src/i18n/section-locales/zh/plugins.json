@@ -222,7 +222,11 @@
     "debug_log_stop_title": "停止舰队调试录制并保存日志",
     "dismiss_session": "移除会话",
     "doze_tooltip": "休眠中以节省资源 — 选中会话即可唤醒",
-    "tombstone_wake_hint": "点击唤醒"
+    "tombstone_wake_hint": "点击唤醒",
+    "limit_eta_in_hours": "{n} 小时后",
+    "limit_eta_in_minutes": "{n} 分钟后",
+    "limit_eta_resumes": "约 {time} 恢复",
+    "limit_eta_tooltip": "Claude 的用量限制将在 {time} 重置。之后会立即安排一次重试。"
   },
   "title": "插件",
   "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",

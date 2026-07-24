@@ -12318,7 +12318,11 @@
       "debug_log_stop_title": "Stop the fleet debug recording and save the log",
       "doze_tooltip": "Sleeping to save resources — select to wake",
       "dismiss_session": "Dismiss session",
-      "tombstone_wake_hint": "Click to wake"
+      "tombstone_wake_hint": "Click to wake",
+      "limit_eta_resumes": "resumes ~{time}",
+      "limit_eta_in_minutes": "in {n}m",
+      "limit_eta_in_hours": "in {n}h",
+      "limit_eta_tooltip": "Claude's usage limit resets at {time}. One retry is scheduled just after it."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

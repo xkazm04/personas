@@ -12051,7 +12051,11 @@
       "debug_log_stop_title": "플릿 디버그 기록을 중지하고 로그 저장",
       "dismiss_session": "세션 정리",
       "doze_tooltip": "리소스 절약을 위해 잠자는 중 — 선택하면 깨어납니다",
-      "tombstone_wake_hint": "클릭하여 깨우기"
+      "tombstone_wake_hint": "클릭하여 깨우기",
+      "limit_eta_in_hours": "{n}시간 후",
+      "limit_eta_in_minutes": "{n}분 후",
+      "limit_eta_resumes": "재개 ~{time}",
+      "limit_eta_tooltip": "Claude 사용 한도가 {time}에 초기화됩니다. 그 직후 한 번의 재시도가 예약되어 있습니다."
     },
     "title": "플러그인",
     "subtitle": "플러그인으로 작업 공간을 확장하세요. 토글로 사이드바에 표시하거나 숨길 수 있습니다.",

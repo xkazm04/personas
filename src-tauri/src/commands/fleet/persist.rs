@@ -173,6 +173,7 @@ pub fn inner_from_row(row: &FleetSessionRow) -> FleetSessionInner {
         created_at_ms: row.created_at_ms,
         child_pid: None,
         exit_code: None,
+        limit_reset_at_ms: 0,
         state_reason: Some(
             row.state_reason
                 .clone()
@@ -262,6 +263,7 @@ mod tests {
             child_pid: Some(4242),
             exit_code: None,
             state_reason: Some("Notification: permission requested".into()),
+            limit_reset_at_ms: 0,
             run_id: Some("run-a".into()),
             run_label: Some("perfect round 9".into()),
             master: Mutex::new(None),

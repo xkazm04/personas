@@ -461,6 +461,7 @@ pub fn spawn_session(
         child_pid,
         exit_code: None,
         state_reason: Some("PTY spawned".to_string()),
+        limit_reset_at_ms: 0,
         // Run-harvest grouping — stamped from the active dispatch window, if any.
         run_id: None,
         run_label: None,

@@ -222,7 +222,11 @@
     "debug_log_stop_title": "إيقاف تسجيل تصحيح الأسطول وحفظ السجل",
     "dismiss_session": "إزالة الجلسة",
     "doze_tooltip": "في وضع السكون لتوفير الموارد — حدِّد الجلسة لإيقاظها",
-    "tombstone_wake_hint": "انقر للإيقاظ"
+    "tombstone_wake_hint": "انقر للإيقاظ",
+    "limit_eta_in_hours": "خلال {n} س",
+    "limit_eta_in_minutes": "خلال {n} د",
+    "limit_eta_resumes": "يستأنف ~{time}",
+    "limit_eta_tooltip": "يُعاد ضبط حد استخدام Claude في {time}. تمت جدولة محاولة واحدة بعده مباشرة."
   },
   "title": "الإضافات",
   "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",

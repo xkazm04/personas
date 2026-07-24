@@ -222,7 +222,11 @@
     "debug_log_stop_title": "Dừng ghi gỡ lỗi hạm đội và lưu nhật ký",
     "dismiss_session": "Bỏ phiên",
     "doze_tooltip": "Đang ngủ để tiết kiệm tài nguyên — chọn phiên để đánh thức",
-    "tombstone_wake_hint": "Nhấp để đánh thức"
+    "tombstone_wake_hint": "Nhấp để đánh thức",
+    "limit_eta_in_hours": "sau {n} giờ",
+    "limit_eta_in_minutes": "sau {n} phút",
+    "limit_eta_resumes": "tiếp tục ~{time}",
+    "limit_eta_tooltip": "Giới hạn sử dụng Claude đặt lại lúc {time}. Một lần thử lại được lên lịch ngay sau đó."
   },
   "title": "Plugin",
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",

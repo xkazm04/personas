@@ -205,6 +205,7 @@ pub fn spawn_headless_session(
         child_pid: Some(child_pid),
         exit_code: None,
         state_reason: Some("Headless session spawned".to_string()),
+        limit_reset_at_ms: 0,
         run_id: None,
         run_label: None,
         master: Mutex::new(None),

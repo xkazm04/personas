@@ -38,6 +38,14 @@ export default function FleetFooterIcon() {
   // tombstones), so "is the grid worth raising?" is simply "is anything tracked?".
   const gridCount = sessions.length;
   const needsYou = counts.awaiting_input;
+  // Soonest Claude limit reset across the fleet — `null` when nothing is
+  // limit-parked (or no banner stated a parseable time).
+  const soonestLimitReset = useMemo(() => {
+    const stamps = sessions
+      .map((s) => (s.limitResetAtMs == null ? null : Number(s.limitResetAtMs)))
+      .filter((ms): ms is number => ms != null && Number.isFinite(ms));
+    return stamps.length > 0 ? Math.min(...stamps) : null;
+  }, [sessions]);
 
   // Chips skip `exited`: a finished session is history, not a live state worth
   // a footer slot. The popover still tallies it.
@@ -135,6 +143,7 @@ export default function FleetFooterIcon() {
           total={sessions.length}
           hint={hint}
           onOpenPage={openPage}
+          limitResetAtMs={soonestLimitReset}
         />
       )}
     </div>

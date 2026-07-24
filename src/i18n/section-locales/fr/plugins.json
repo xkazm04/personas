@@ -222,7 +222,11 @@
     "debug_log_stop_title": "Arrêter l’enregistrement de débogage de la flotte et enregistrer le journal",
     "dismiss_session": "Retirer la session",
     "doze_tooltip": "En veille pour économiser les ressources — sélectionnez-la pour la réveiller",
-    "tombstone_wake_hint": "Cliquez pour réveiller"
+    "tombstone_wake_hint": "Cliquez pour réveiller",
+    "limit_eta_in_hours": "dans {n} h",
+    "limit_eta_in_minutes": "dans {n} min",
+    "limit_eta_resumes": "reprend ~{time}",
+    "limit_eta_tooltip": "La limite d'utilisation de Claude est réinitialisée à {time}. Une nouvelle tentative est planifiée juste après."
   },
   "title": "Extensions",
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",

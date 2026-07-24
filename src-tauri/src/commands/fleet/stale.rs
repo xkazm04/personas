@@ -492,9 +492,164 @@ fn tick_once(app: &AppHandle) {
 }
 
 /// Per-session mechanical retry state for the Claude server/usage-limit lane.
-fn limit_retry_map() -> &'static Mutex<HashMap<String, (i64, u32)>> {
-    static MAP: OnceLock<Mutex<HashMap<String, (i64, u32)>>> = OnceLock::new();
+#[derive(Clone, Copy, Default)]
+struct LimitRetry {
+    /// Wall-clock ms of the last attempt.
+    last_ms: i64,
+    /// Attempts made so far (capped by [`LIMIT_RETRY_MAX`]).
+    count: u32,
+    /// Reset time parsed from the banner, `0` when unknown/unparseable.
+    reset_at_ms: i64,
+    /// Whether the ONE scheduled post-reset attempt has already fired. After
+    /// it does we fall back to the blind cadence — if the stated time was
+    /// wrong (or the limit outlasted it) the session must still recover.
+    fired_after_reset: bool,
+}
+
+fn limit_retry_map() -> &'static Mutex<HashMap<String, LimitRetry>> {
+    static MAP: OnceLock<Mutex<HashMap<String, LimitRetry>>> = OnceLock::new();
     MAP.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Grace after the stated reset before the single scheduled retry fires —
+/// Claude's clock and ours are not the same clock, and a retry that lands one
+/// second early just burns the attempt.
+const LIMIT_RESET_GRACE_MS: i64 = 2 * 60 * 1000;
+
+/// Extract the reset time Claude states in its limit banner and resolve it to
+/// an absolute wall-clock ms.
+///
+/// The live banner (2026-07-24) reads:
+/// `You've hit your session limit · resets 7:50pm (Europe/Prague) …`
+///
+/// Design decisions, both deliberate:
+/// - **The stated time is treated as LOCAL wall-clock.** The banner shows the
+///   user's own timezone, so the machine's local clock already agrees with it.
+///   The `(Europe/Prague)` parenthetical is display-only; parsing it would mean
+///   shipping a tz database for zero behavioural gain.
+/// - **Ambiguity yields `None`**, which keeps today's blind retry cadence
+///   exactly as-is. A wrong ETA is worse than no ETA: it would silence the
+///   retries until a moment that never comes.
+///
+/// A stated time that has already passed today is read as tomorrow (a limit
+/// hit at 11pm resetting "7:50am" is the next morning).
+pub fn parse_limit_reset(screen: &str, now_ms: i64) -> Option<i64> {
+    use chrono::{Datelike, Duration, Local, NaiveTime, TimeZone};
+
+    let lower = screen.to_lowercase();
+    // Anchor on the word that introduces the time so we never pick up an
+    // unrelated clock elsewhere on the screen (a log timestamp, a diff line).
+    let anchor = ["resets ", "reset at ", "resets at ", "will reset ", "resume at "]
+        .iter()
+        .filter_map(|kw| lower.find(kw).map(|i| i + kw.len()))
+        .min()?;
+    let tail: String = lower[anchor..].chars().take(24).collect();
+    let (hour, minute) = parse_clock(&tail)?;
+
+    let now = Local.timestamp_millis_opt(now_ms).single()?;
+    let time = NaiveTime::from_hms_opt(hour, minute, 0)?;
+    let today = now.date_naive();
+    let candidate = Local
+        .from_local_datetime(&today.and_time(time))
+        .single()
+        .or_else(|| {
+            // DST spring-forward gap / fold: nudge a day rather than guess.
+            Local
+                .from_local_datetime(&today.succ_opt()?.and_time(time))
+                .single()
+        })?;
+    let resolved = if candidate.timestamp_millis() <= now_ms {
+        Local
+            .from_local_datetime(&(today + Duration::days(1)).and_time(time))
+            .single()?
+    } else {
+        candidate
+    };
+    // Sanity floor: a "reset" more than 24h out is a misparse, not a limit.
+    let ms = resolved.timestamp_millis();
+    let _ = now.year();
+    if ms - now_ms > 24 * 60 * 60 * 1000 {
+        return None;
+    }
+    Some(ms)
+}
+
+/// Pull `(hour_24, minute)` off the front of `tail` (already lowercased).
+/// Accepts `7:50pm`, `7:50 pm`, `19:50`, `7pm`. Anything else → `None`.
+fn parse_clock(tail: &str) -> Option<(u32, u32)> {
+    let bytes: Vec<char> = tail.chars().collect();
+    let mut i = 0;
+    while i < bytes.len() && !bytes[i].is_ascii_digit() {
+        // Only skip immediate padding — a digit must start within a few chars,
+        // otherwise the anchor wasn't followed by a time at all.
+        if i >= 3 {
+            return None;
+        }
+        i += 1;
+    }
+    let start = i;
+    while i < bytes.len() && bytes[i].is_ascii_digit() {
+        i += 1;
+    }
+    if i == start || i - start > 2 {
+        return None;
+    }
+    let mut hour: u32 = bytes[start..i].iter().collect::<String>().parse().ok()?;
+    let mut minute: u32 = 0;
+    if i < bytes.len() && bytes[i] == ':' {
+        i += 1;
+        let ms = i;
+        while i < bytes.len() && bytes[i].is_ascii_digit() {
+            i += 1;
+        }
+        if i - ms != 2 {
+            return None;
+        }
+        minute = bytes[ms..i].iter().collect::<String>().parse().ok()?;
+    }
+    // Optional whitespace then an am/pm marker.
+    let rest: String = bytes[i..].iter().collect();
+    let rest = rest.trim_start();
+    let meridiem = if rest.starts_with("pm") {
+        Some(true)
+    } else if rest.starts_with("am") {
+        Some(false)
+    } else {
+        None
+    };
+    match meridiem {
+        Some(true) => {
+            if hour > 12 {
+                return None; // "19:50pm" is not a time
+            }
+            if hour != 12 {
+                hour += 12;
+            }
+        }
+        Some(false) => {
+            if hour > 12 {
+                return None;
+            }
+            if hour == 12 {
+                hour = 0;
+            }
+        }
+        // Bare 24h clock — a bare `7:50` with no meridiem below 13 is
+        // genuinely ambiguous (7:50am or 7:50pm?), so refuse it rather than
+        // schedule a retry against a coin flip. `19:50` is unambiguous.
+        None => {
+            if minute == 0 && !tail.contains(':') {
+                return None; // bare "7" is a token, not a time
+            }
+            if hour < 13 {
+                return None;
+            }
+        }
+    }
+    if hour > 23 || minute > 59 {
+        return None;
+    }
+    Some((hour, minute))
 }
 
 /// Screen signature of a Claude-side limit / transient server error. Kept
@@ -561,19 +716,57 @@ fn limit_retry_pass(app: &AppHandle, now: i64) {
         if !screen_shows_limit_error(&screen) {
             let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
             m.remove(&sid);
+            // The session moved on — drop the countdown so the tile stops
+            // advertising a reset that no longer gates anything.
+            if registry().set_limit_reset(&sid, None) {
+                super::pty::emit_registry_changed(app, "updated", &sid);
+            }
             continue;
         }
-        let (last, count) = {
+        let mut entry = {
             let m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
-            m.get(&sid).copied().unwrap_or((0, 0))
+            m.get(&sid).copied().unwrap_or_default()
         };
+        // Read the ETA off the banner once (it does not change while parked)
+        // and publish it — the operator can now SEE when the fleet comes back
+        // instead of watching blind retries burn cycles.
+        if entry.reset_at_ms == 0 {
+            if let Some(at) = parse_limit_reset(&screen, now) {
+                entry.reset_at_ms = at;
+                if registry().set_limit_reset(&sid, Some(at)) {
+                    super::pty::emit_registry_changed(app, "updated", &sid);
+                }
+                super::debug_log::athena(
+                    &sid,
+                    "limit eta",
+                    &format!(
+                        "banner states a reset — one retry scheduled in {}s",
+                        (at + LIMIT_RESET_GRACE_MS - now) / 1000
+                    ),
+                );
+            }
+        }
         let interval = if asleep { LIMIT_RETRY_DOZED_INTERVAL_MS } else { LIMIT_RETRY_INTERVAL_MS };
-        if count >= LIMIT_RETRY_MAX || now - last < interval {
+        // Known ETA → hold fire until reset + grace, then spend exactly ONE
+        // attempt. Unknown ETA (or that attempt already spent, meaning the
+        // stated time did not hold) → today's blind cadence, unchanged.
+        let scheduled = entry.reset_at_ms > 0 && !entry.fired_after_reset;
+        if scheduled {
+            if now < entry.reset_at_ms + LIMIT_RESET_GRACE_MS {
+                continue;
+            }
+        } else if entry.count >= LIMIT_RETRY_MAX || now - entry.last_ms < interval {
             continue;
         }
+        let count = entry.count;
         {
+            entry.last_ms = now;
+            entry.count += 1;
+            if scheduled {
+                entry.fired_after_reset = true;
+            }
             let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
-            m.insert(sid.clone(), (now, count + 1));
+            m.insert(sid.clone(), entry);
         }
         // Keep the process alive across the retry window (doze guard).
         crate::commands::companion::fleet_bridge::stamp_pending_assessment(&sid);
@@ -1021,5 +1214,90 @@ mod tests {
         ];
         // Only one process-backed live session → within cap 1 → nothing.
         assert!(live_slot_evictions(&snaps, 1).is_empty());
+    }
+
+    // ---- limit-reset ETA parsing ------------------------------------------
+
+    use chrono::{Local, TimeZone, Timelike};
+
+    /// Local wall-clock ms for "today at hh:mm" — the tests express intent in
+    /// local time because that is exactly how the banner is interpreted.
+    fn local_today_at(hour: u32, min: u32) -> i64 {
+        let now = Local::now();
+        Local
+            .from_local_datetime(&now.date_naive().and_hms_opt(hour, min, 0).unwrap())
+            .single()
+            .unwrap()
+            .timestamp_millis()
+    }
+
+    /// A "now" that leaves room for both an earlier and a later time today.
+    fn midday() -> i64 {
+        local_today_at(12, 0)
+    }
+
+    fn hm_of(ms: i64) -> (u32, u32) {
+        let dt = Local.timestamp_millis_opt(ms).single().unwrap();
+        (dt.hour(), dt.minute())
+    }
+
+    #[test]
+    fn parses_the_live_banner_text() {
+        // Verbatim from the 2026-07-24 fleet incident.
+        let screen = "You've hit your session limit · resets 7:50pm (Europe/Prague) \
+                      /usage-credits to finish what you're working on";
+        let at = parse_limit_reset(screen, midday()).expect("banner states a time");
+        assert_eq!(hm_of(at), (19, 50));
+        assert!(at > midday());
+    }
+
+    #[test]
+    fn parses_meridiem_and_24h_forms() {
+        for (text, expect) in [
+            ("resets 7:50pm", (19, 50)),
+            ("resets 7:50 pm", (19, 50)),
+            ("resets 12:05am", (0, 5)),
+            ("resets 12:05pm", (12, 5)),
+            ("resets 19:50", (19, 50)),
+            ("limit resets 23:00 (utc)", (23, 0)),
+        ] {
+            let at = parse_limit_reset(text, local_today_at(0, 1))
+                .unwrap_or_else(|| panic!("should parse: {text}"));
+            assert_eq!(hm_of(at), expect, "{text}");
+        }
+    }
+
+    #[test]
+    fn timezone_parenthetical_is_display_only() {
+        // Both resolve to the SAME local instant — we never shift by the
+        // stated zone, by design (the banner already shows the user's tz).
+        let a = parse_limit_reset("resets 7:50pm (Europe/Prague)", midday()).unwrap();
+        let b = parse_limit_reset("resets 7:50pm", midday()).unwrap();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn ambiguous_or_absent_times_yield_none() {
+        // A bare sub-13 clock with no meridiem could be either half of the day.
+        assert!(parse_limit_reset("resets 7:50", midday()).is_none());
+        // Not a time at all.
+        assert!(parse_limit_reset("resets soon", midday()).is_none());
+        assert!(parse_limit_reset("resets", midday()).is_none());
+        // No anchor word — never scrape an unrelated clock off the screen.
+        assert!(parse_limit_reset("build finished at 19:50", midday()).is_none());
+        // Impossible clocks.
+        assert!(parse_limit_reset("resets 19:50pm", midday()).is_none());
+        assert!(parse_limit_reset("resets 25:00", midday()).is_none());
+        assert!(parse_limit_reset("resets 12:99", midday()).is_none());
+    }
+
+    #[test]
+    fn a_time_already_past_today_rolls_to_tomorrow() {
+        // "now" is 23:00; a stated 07:50 must mean the next morning.
+        let now = local_today_at(23, 0);
+        let at = parse_limit_reset("resets 7:50am", now).expect("parses");
+        assert!(at > now, "reset must be in the future");
+        assert!(at - now < 24 * 60 * 60 * 1000);
+        assert_eq!(hm_of(at), (7, 50));
     }
 }

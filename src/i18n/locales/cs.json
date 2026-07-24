@@ -12051,7 +12051,11 @@
       "debug_log_stop_title": "Zastavit ladicí nahrávání flotily a uložit log",
       "dismiss_session": "Odebrat relaci",
       "doze_tooltip": "Spí kvůli úspoře zdrojů — probuďte ji výběrem",
-      "tombstone_wake_hint": "Kliknutím probudíte"
+      "tombstone_wake_hint": "Kliknutím probudíte",
+      "limit_eta_in_hours": "za {n} h",
+      "limit_eta_in_minutes": "za {n} min",
+      "limit_eta_resumes": "obnoví se ~{time}",
+      "limit_eta_tooltip": "Limit využití Claude se obnoví v {time}. Hned poté je naplánován jeden pokus."
     },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",

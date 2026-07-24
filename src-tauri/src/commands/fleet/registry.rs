@@ -318,6 +318,12 @@ pub struct FleetSessionInner {
     pub child_pid: Option<u32>,
     pub exit_code: Option<i32>,
     pub state_reason: Option<String>,
+    /// Wall-clock ms when Claude says this session's usage/session limit
+    /// resets, parsed from the limit banner on screen (`resets 7:50pm`).
+    /// `0` = no limit parked / unparseable. Drives the countdown chip and the
+    /// scheduled single retry instead of blind cycling. See
+    /// [`super::stale::parse_limit_reset`].
+    pub limit_reset_at_ms: i64,
     /// Run-harvest grouping key — the batch tag stamped when a dispatch spawns
     /// a group of sessions together. `None` for individual/manual spawns
     /// ("ad hoc"). Persisted with the row so a run survives a restart.
@@ -376,6 +382,9 @@ impl FleetSessionInner {
             athena_active: self.athena_active_until_ms > now_ms()
                 && matches!(self.state, FleetSessionState::AwaitingInput),
             dozing: self.dozing,
+            // Only surfaced while the reset is still ahead of us — a lapsed
+            // stamp would render a countdown to a moment that already passed.
+            limit_reset_at_ms: Some(self.limit_reset_at_ms).filter(|&ms| ms > now_ms()),
         }
     }
 }
@@ -1093,6 +1102,18 @@ impl FleetRegistry {
         Some(prev)
     }
 
+    /// Stamp (or clear, with `None`) the parsed limit-reset time. Returns true
+    /// when the value actually changed, so the caller can emit a
+    /// registry-changed only on a real transition rather than every tick.
+    pub fn set_limit_reset(&self, session_id: &str, at_ms: Option<i64>) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false };
+        let next = at_ms.unwrap_or(0);
+        let changed = session.limit_reset_at_ms != next;
+        session.limit_reset_at_ms = next;
+        changed
+    }
+
     /// `(created_at_ms, name)` of a session — read by `fleet_wake_session`
     /// before it replaces the row, so the resumed session can inherit them.
     pub fn lineage_of(&self, session_id: &str) -> Option<(i64, Option<String>)> {
@@ -1306,6 +1327,7 @@ mod tests {
             child_pid: Some(1234),
             exit_code: None,
             state_reason: None,
+            limit_reset_at_ms: 0,
             run_id: None,
             run_label: None,
             master: Mutex::new(None),

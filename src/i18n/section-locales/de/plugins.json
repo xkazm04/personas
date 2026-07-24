@@ -222,7 +222,11 @@
     "debug_log_stop_title": "Fleet-Debug-Aufzeichnung stoppen und Log speichern",
     "dismiss_session": "Sitzung entfernen",
     "doze_tooltip": "Schläft, um Ressourcen zu sparen — zum Aufwecken auswählen",
-    "tombstone_wake_hint": "Zum Aufwecken klicken"
+    "tombstone_wake_hint": "Zum Aufwecken klicken",
+    "limit_eta_in_hours": "in {n} Std.",
+    "limit_eta_in_minutes": "in {n} Min.",
+    "limit_eta_resumes": "fortsetzen ~{time}",
+    "limit_eta_tooltip": "Das Nutzungslimit von Claude wird um {time} zurückgesetzt. Direkt danach ist ein Wiederholungsversuch geplant."
   },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",

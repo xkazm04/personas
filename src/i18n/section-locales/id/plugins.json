@@ -222,7 +222,11 @@
     "debug_log_stop_title": "Hentikan perekaman debug armada dan simpan log",
     "dismiss_session": "Singkirkan sesi",
     "doze_tooltip": "Tidur untuk menghemat sumber daya — pilih sesi untuk membangunkannya",
-    "tombstone_wake_hint": "Klik untuk membangunkan"
+    "tombstone_wake_hint": "Klik untuk membangunkan",
+    "limit_eta_in_hours": "dalam {n} j",
+    "limit_eta_in_minutes": "dalam {n} mnt",
+    "limit_eta_resumes": "lanjut ~{time}",
+    "limit_eta_tooltip": "Batas penggunaan Claude direset pada {time}. Satu percobaan ulang dijadwalkan tepat setelahnya."
   },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",

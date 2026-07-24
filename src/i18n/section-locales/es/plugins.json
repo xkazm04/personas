@@ -222,7 +222,11 @@
     "debug_log_stop_title": "Detener la grabación de depuración de la flota y guardar el registro",
     "dismiss_session": "Descartar sesión",
     "doze_tooltip": "Durmiendo para ahorrar recursos — selecciónala para despertarla",
-    "tombstone_wake_hint": "Haz clic para despertar"
+    "tombstone_wake_hint": "Haz clic para despertar",
+    "limit_eta_in_hours": "en {n} h",
+    "limit_eta_in_minutes": "en {n} min",
+    "limit_eta_resumes": "se reanuda ~{time}",
+    "limit_eta_tooltip": "El límite de uso de Claude se restablece a las {time}. Se ha programado un reintento justo después."
   },
   "title": "Plugins",
   "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",

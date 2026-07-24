@@ -12325,6 +12325,10 @@ export type Translations = {
       doze_tooltip: string;
       dismiss_session: string;
       tombstone_wake_hint: string;
+      limit_eta_resumes: string;
+      limit_eta_in_minutes: string;
+      limit_eta_in_hours: string;
+      limit_eta_tooltip: string;
     };
     title: string;
     subtitle: string;

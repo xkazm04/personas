@@ -12051,7 +12051,11 @@
       "debug_log_stop_title": "フリートのデバッグ記録を停止してログを保存",
       "dismiss_session": "セッションを片付ける",
       "doze_tooltip": "リソース節約のためスリープ中 — 選択すると復帰します",
-      "tombstone_wake_hint": "クリックで復帰"
+      "tombstone_wake_hint": "クリックで復帰",
+      "limit_eta_in_hours": "{n}時間後",
+      "limit_eta_in_minutes": "{n}分後",
+      "limit_eta_resumes": "再開 ~{time}",
+      "limit_eta_tooltip": "Claude の使用制限は {time} にリセットされます。その直後に 1 回の再試行が予定されています。"
     },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
