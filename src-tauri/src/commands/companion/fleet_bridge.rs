@@ -322,6 +322,32 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
         let n = q.len().min(BATCH_MAX);
         q.drain(..n).collect()
     };
+    // A queued session may have resolved itself between enqueue and drain —
+    // Athena's earlier answer put it back to work, or it finished. Assessing a
+    // non-parked session wastes the batch and invites a stale-screen decision
+    // (the throttle-deferral lane makes this window up to ~60s wide).
+    let batch: Vec<QueuedAssessment> = batch
+        .into_iter()
+        .filter(|e| {
+            let parked = matches!(
+                crate::commands::fleet::registry::registry().session_state(&e.session_id),
+                Some(
+                    crate::commands::fleet::types::FleetSessionState::AwaitingInput
+                        | crate::commands::fleet::types::FleetSessionState::Stale
+                        | crate::commands::fleet::types::FleetSessionState::Idle
+                )
+            );
+            if !parked {
+                crate::commands::fleet::debug_log::athena(
+                    &e.session_id,
+                    "batch drop",
+                    "no longer parked at drain time — moved on without needing the assessment",
+                );
+                clear_pending_assessment(&e.session_id);
+            }
+            parked
+        })
+        .collect();
     if batch.is_empty() {
         return;
     }
@@ -536,6 +562,47 @@ fn orchestrate_session(
                             situation.label()
                         ),
                     );
+                }
+                // A throttled wake is a DEFERRAL, not a drop (probe finding,
+                // 2026-07-24): the probe's Phase-2 question landed 24s after
+                // the Phase-1 wake, the skip discarded it, doze reaped the
+                // session at 60s, and the 5-min tick then assessed a corpse —
+                // Athena's answer AUTO_FAILED against a dead PTY. So: join the
+                // batch queue NOW (arming the `has_pending_assessment` doze
+                // guard immediately) and schedule a drain for throttle expiry.
+                // The queue dedupes twin wakes; the drain drops sessions that
+                // resolved themselves meanwhile.
+                {
+                    let mut map =
+                        pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                    map.insert(session_id.to_string(), now);
+                }
+                let queued_new = {
+                    let mut q =
+                        assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+                    if q.iter().any(|e| e.session_id == session_id) {
+                        false
+                    } else {
+                        q.push(QueuedAssessment {
+                            session_id: session_id.to_string(),
+                            situation: situation.label().to_string(),
+                        });
+                        true
+                    }
+                };
+                if queued_new {
+                    let delay_ms =
+                        (ATTENTION_MIN_INTERVAL_MS - (now - last)).max(0) as u64 + 1_500;
+                    let app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                        use tauri::Manager;
+                        if let Some(state) =
+                            app.try_state::<std::sync::Arc<AppState>>()
+                        {
+                            drain_assessment_batch(&app, &state);
+                        }
+                    });
                 }
                 return;
             }
