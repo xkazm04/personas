@@ -1,42 +1,176 @@
-// Library variant B2 — "Atlas of topics": the emergent taxonomy as a
-// navigable tree. The left rail renders whatever slash-path hierarchy the
-// harvest agents actually produced (arbitrary depth, counts bubbled up,
-// nothing hardcoded); the right pane is a virtualized listing of the selected
-// branch. The mental model: a library with self-organizing shelves.
+// Knowledge library — the CONSOLIDATED surface (Topics won round B). The left
+// rail renders whatever slash-path hierarchy the harvest agents actually
+// produced (arbitrary depth, counts bubbled up, nothing hardcoded); the right
+// pane lists the selected branch through the shared DataGrid — paginated,
+// per-column sortable/filterable, so it stays crisp at hundreds of items. We
+// reuse DataGrid rather than reinventing table mechanics.
 import { useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Library, Search } from 'lucide-react';
 
-import { GroupedVirtualList } from '@/features/shared/components/display/GroupedVirtualList';
+import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
-import { ITEM_ROW_SIZE, ItemRow } from './LibraryBits';
+import { KnowledgeStatusChip } from './centerShared';
 import {
   buildTopicTree,
-  facetOf,
   itemsUnderTopic,
-  sortForFacet,
+  searchFilter,
+  STATUS_RANK,
   type KnowledgeItemView,
   type TopicNode,
 } from './libraryModel';
 
+const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
+const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
+
+type SortDir = 'asc' | 'desc';
+
 export default function KnowledgeTree({
   items,
   projectById,
-  workspaceId,
 }: {
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
-  workspaceId: string;
 }) {
   const [selected, setSelected] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']));
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [kindFilter, setKindFilter] = useState('all');
+  const [sortKey, setSortKey] = useState('updated');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const tree = useMemo(() => buildTopicTree(items), [items]);
-  const ctx = useMemo(() => ({ projectById }), [projectById]);
-  const branch = useMemo(
-    () => sortForFacet(itemsUnderTopic(items, selected), 'status', ctx),
-    [items, selected, ctx],
-  );
+  const nameOf = (id: string | null) =>
+    id ? projectById.get(id)?.name ?? '(removed)' : '';
+
+  const rows = useMemo(() => {
+    const branch = itemsUnderTopic(items, selected);
+    const searched = searchFilter(branch, query);
+    const filtered = searched.filter(
+      (i) =>
+        (statusFilter === 'all' || i.status === statusFilter) &&
+        (kindFilter === 'all' || i.kind === kindFilter),
+    );
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const cmp = (a: KnowledgeItemView, b: KnowledgeItemView): number => {
+      switch (sortKey) {
+        case 'status':
+          return (STATUS_RANK[a.status] - STATUS_RANK[b.status]) * dir;
+        case 'kind':
+          return a.kind.localeCompare(b.kind) * dir;
+        case 'title':
+          return a.title.localeCompare(b.title) * dir;
+        case 'topic':
+          return a.topic.localeCompare(b.topic) * dir;
+        case 'origin':
+          return nameOf(a.originProjectId).localeCompare(nameOf(b.originProjectId)) * dir;
+        case 'confidence':
+          return ((a.confidence ?? -1) - (b.confidence ?? -1)) * dir;
+        case 'updated':
+        default:
+          return a.updatedAt.localeCompare(b.updatedAt) * dir;
+      }
+    };
+    return [...filtered].sort(cmp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selected, query, statusFilter, kindFilter, sortKey, sortDir, projectById]);
+
+  const onSort = (key: string) => {
+    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir(key === 'title' || key === 'topic' ? 'asc' : 'desc');
+    }
+  };
+
+  const columns: DataGridColumn<KnowledgeItemView>[] = [
+    {
+      key: 'status',
+      label: 'Status',
+      width: '110px',
+      sortable: true,
+      filterOptions: [
+        { value: 'all', label: 'All statuses' },
+        ...STATUS_VALUES.map((s) => ({ value: s, label: s })),
+      ],
+      filterValue: statusFilter,
+      onFilterChange: setStatusFilter,
+      render: (r) => <KnowledgeStatusChip status={r.status} />,
+    },
+    {
+      key: 'kind',
+      label: 'Kind',
+      width: '100px',
+      sortable: true,
+      filterOptions: [
+        { value: 'all', label: 'All kinds' },
+        ...KIND_VALUES.map((k) => ({ value: k, label: k })),
+      ],
+      filterValue: kindFilter,
+      onFilterChange: setKindFilter,
+      render: (r) => <span className="typo-body text-muted-foreground">{r.kind}</span>,
+    },
+    {
+      key: 'title',
+      label: 'Practice',
+      width: '2.4fr',
+      sortable: true,
+      render: (r) => (
+        <span className="typo-body text-foreground truncate">
+          {r.title}
+          {r.mock && (
+            <span className="typo-label text-muted-foreground ml-1.5 opacity-60">demo</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'topic',
+      label: 'Topic',
+      width: '1.4fr',
+      sortable: true,
+      render: (r) => (
+        <span className="typo-caption text-muted-foreground truncate">{r.topic || '—'}</span>
+      ),
+    },
+    {
+      key: 'origin',
+      label: 'Origin',
+      width: '1fr',
+      sortable: true,
+      render: (r) => (
+        <span className="typo-caption text-foreground truncate">
+          {r.originProjectId ? nameOf(r.originProjectId) : 'workspace'}
+        </span>
+      ),
+    },
+    {
+      key: 'confidence',
+      label: 'Conf.',
+      width: '80px',
+      sortable: true,
+      align: 'right',
+      render: (r) => (
+        <span className="typo-caption text-muted-foreground">
+          {r.confidence == null ? '—' : `${Math.round(r.confidence * 100)}%`}
+        </span>
+      ),
+    },
+    {
+      key: 'updated',
+      label: 'Updated',
+      width: '96px',
+      sortable: true,
+      align: 'right',
+      render: (r) => (
+        <RelativeTime timestamp={r.updatedAt} className="typo-caption text-muted-foreground" />
+      ),
+    },
+  ];
 
   const toggle = (path: string) =>
     setExpanded((prev) => {
@@ -73,17 +207,34 @@ export default function KnowledgeTree({
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
-        <div className="typo-caption text-muted-foreground pb-2">
-          {selected || 'all topics'} · {branch.length} items
+        <div className="flex items-center gap-3 pb-2">
+          <span className="typo-caption text-muted-foreground">
+            {selected || 'all topics'} · {rows.length} items
+          </span>
+          <div className="relative ml-auto">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              className={`${INPUT_FIELD} pl-8 w-56`}
+              placeholder="Search practices…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
         </div>
-        <GroupedVirtualList
-          items={branch}
-          groupOf={(item) => facetOf(item, 'status', ctx)}
-          getItemKey={(item) => item.id}
-          renderItem={(item) => <ItemRow item={item} projectById={projectById} />}
-          estimateItemSize={ITEM_ROW_SIZE}
+
+        <DataGrid
+          columns={columns}
+          data={rows}
+          getRowKey={(r) => r.id}
+          sortKey={sortKey}
+          sortDirection={sortDir}
+          onSort={onSort}
+          pageSize={25}
+          density="compact"
+          emptyIcon={Library}
+          emptyTitle="No practices here"
+          emptyDescription="Nothing matches this topic and filter yet."
           className="flex-1 min-h-0 rounded-card border border-primary/10"
-          scrollRestoreKey={`ws-tree-${workspaceId}-${selected}`}
         />
       </div>
     </div>

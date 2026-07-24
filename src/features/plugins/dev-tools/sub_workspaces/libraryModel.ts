@@ -1,16 +1,15 @@
 // Knowledge-library view model — the SCALE layer of the Workspace Knowledge
 // Center. Self-evolving workspaces will generate dozens-to-hundreds of items
-// per month, in taxonomies we cannot hardcode. So: every hierarchy here is
-// DERIVED from item metadata at render time (topic slash-paths, facet
-// dimensions), never enumerated in code, and every list renders through the
-// shared GroupedVirtualList so 10 or 10,000 items cost the same.
+// per month, in taxonomies we cannot hardcode. So the topic hierarchy is
+// DERIVED from item metadata at render time (slash-path taxonomy), never
+// enumerated in code; the right-pane listing renders through the shared
+// DataGrid (pagination + sortable/filterable columns) so 10 or 10,000 items
+// cost the same.
 //
 // Topic paths: free-form slash-delimited taxonomy ('ui/motion/reveals')
 // authored by harvest agents. Real DB rows don't carry a `topic` column yet
 // (consolidation adds it); until then a coarse path is derived from
 // applicability.layers so real items participate in the same tree.
-import type { GroupSpec } from '@/features/shared/components/display/grouping';
-import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 
@@ -63,89 +62,17 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
   };
 }
 
-// -- facet dimensions --------------------------------------------------------
+// -- ordering ----------------------------------------------------------------
 
-export type FacetDim = 'topic' | 'status' | 'kind' | 'origin' | 'month' | 'framework';
-
-export interface FacetContext {
-  projectById: Map<string, DevProject>;
-}
-
-export const FACET_DIMS: { id: FacetDim; label: string }[] = [
-  { id: 'topic', label: 'Topic' },
-  { id: 'status', label: 'Status' },
-  { id: 'kind', label: 'Kind' },
-  { id: 'origin', label: 'Origin project' },
-  { id: 'month', label: 'Month' },
-  { id: 'framework', label: 'Framework' },
-];
-
-export function monthKey(iso: string): string {
-  return iso.slice(0, 7); // YYYY-MM
-}
-
-export function monthLabel(key: string): string {
-  const [y, m] = key.split('-').map(Number);
-  if (!y || !m) return key;
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, {
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-/** Map an item to its group under a facet dimension. Pure; pairs with
- *  buildGroupRows after sortForFacet. */
-export function facetOf(
-  item: KnowledgeItemView,
-  dim: FacetDim,
-  ctx: FacetContext,
-): GroupSpec {
-  switch (dim) {
-    case 'topic': {
-      const seg = item.topic.split('/')[0] || '';
-      return seg ? { key: seg, label: seg } : { key: '~none', label: 'Uncategorized' };
-    }
-    case 'status':
-      return { key: item.status, label: item.status };
-    case 'kind':
-      return { key: item.kind, label: item.kind };
-    case 'origin': {
-      if (!item.originProjectId) return { key: '~none', label: 'Workspace-level' };
-      const name = ctx.projectById.get(item.originProjectId)?.name ?? '(project removed)';
-      return { key: item.originProjectId, label: name };
-    }
-    case 'month': {
-      const key = monthKey(item.createdAt);
-      return { key, label: monthLabel(key) };
-    }
-    case 'framework': {
-      const fw = item.frameworks[0];
-      return fw ? { key: fw, label: fw } : { key: '~none', label: 'Stack-agnostic' };
-    }
-  }
-}
-
-/** Order items so buildGroupRows' consecutive-run bucketing equals a global
- *  group-by: primary = group key (months newest-first, '~none' last),
- *  secondary = recency. */
-export function sortForFacet(
-  items: KnowledgeItemView[],
-  dim: FacetDim,
-  ctx: FacetContext,
-): KnowledgeItemView[] {
-  const keyed = items.map((item) => ({ item, spec: facetOf(item, dim, ctx) }));
-  keyed.sort((a, b) => {
-    if (a.spec.key !== b.spec.key) {
-      const aNone = a.spec.key.startsWith('~');
-      const bNone = b.spec.key.startsWith('~');
-      if (aNone !== bNone) return aNone ? 1 : -1;
-      if (dim === 'month') return b.spec.key.localeCompare(a.spec.key);
-      return a.spec.label.localeCompare(b.spec.label, undefined, { sensitivity: 'base' });
-    }
-    return b.item.updatedAt.localeCompare(a.item.updatedAt);
-  });
-  return keyed.map((k) => k.item);
-}
+/** Lifecycle order for status sorting — proposal queue first, canon, then
+ *  the retired tail. */
+export const STATUS_RANK: Record<KnowledgeStatus, number> = {
+  proposed: 0,
+  observed: 1,
+  adopted: 2,
+  deprecated: 3,
+  rejected: 4,
+};
 
 // -- topic tree (derived, arbitrary depth) -----------------------------------
 
@@ -213,7 +140,7 @@ export function itemsUnderTopic(
   return items.filter((i) => i.topic === path || i.topic.startsWith(`${path}/`));
 }
 
-// -- misc --------------------------------------------------------------------
+// -- filtering ---------------------------------------------------------------
 
 export function searchFilter(
   items: readonly KnowledgeItemView[],
@@ -227,20 +154,4 @@ export function searchFilter(
       i.statement.toLowerCase().includes(q) ||
       i.topic.toLowerCase().includes(q),
   );
-}
-
-/** Per-month item counts, newest first, capped at `months`. */
-export function monthlyInflux(
-  items: readonly KnowledgeItemView[],
-  months = 6,
-): { key: string; label: string; count: number }[] {
-  const counts = new Map<string, number>();
-  for (const i of items) {
-    const k = monthKey(i.createdAt);
-    counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .slice(0, months)
-    .map(([key, count]) => ({ key, label: monthLabel(key), count }));
 }

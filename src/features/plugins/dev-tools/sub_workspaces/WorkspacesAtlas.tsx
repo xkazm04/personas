@@ -147,7 +147,6 @@ export default function WorkspacesAtlas() {
                 workspace={open}
                 rows={center.knowledge[open.id] ?? []}
                 projectById={center.projectById}
-                onChanged={center.refreshKnowledge}
               />
             </div>
           </motion.div>
