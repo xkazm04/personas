@@ -96,7 +96,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `hosting` | Hosting | `stack.hosting` | `hosting` → Deploy |
 | `auth` | Auth | `stack.auth` | — (inert) |
 | `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
-| `skills` | Skills | `artifacts.skills` | `skills` → Deploy |
+| `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
 | `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
@@ -111,6 +111,8 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 **Brand icons:** `DimGlyph` prefers the identified tool's official mark via the Passport wall's `resolveTechIcon` (simple-icons set — Supabase, Sentry, GitHub, Postgres, …) at every LOD; generic lucide outline otherwise; absent cells always generic + muted.
 
 **Actionability affordance:** a cell whose registry/engine checks yield an action gets `cursor: pointer` + a quiet primary ring on hover; inert cells ignore clicks and show no affordance.
+
+**Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
 
 **Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15 (`goals` plus the 2026-07-23 `datalinks`/`support` additions took the last comfortable slots); we are AT the ~15 ceiling — before injecting more, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
 
