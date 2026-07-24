@@ -75,6 +75,44 @@ pub fn state_to_token(s: FleetSessionState) -> &'static str {
     }
 }
 
+/// Inverse of [`state_to_token`] — parse a persisted/wire token back into the
+/// enum. Unknown tokens yield `None` so a future state written by a newer
+/// build can be skipped rather than silently mislabelled.
+///
+/// Exists because the durable registry (`fleet_sessions`) round-trips states
+/// through their tokens: the token is the stable contract, the discriminant
+/// is not.
+pub fn token_to_state(token: &str) -> Option<FleetSessionState> {
+    Some(match token {
+        "spawning" => FleetSessionState::Spawning,
+        "running" => FleetSessionState::Running,
+        "awaiting_input" => FleetSessionState::AwaitingInput,
+        "idle" => FleetSessionState::Idle,
+        "stale" => FleetSessionState::Stale,
+        "finished" => FleetSessionState::Finished,
+        "hibernated" => FleetSessionState::Hibernated,
+        "exited" => FleetSessionState::Exited,
+        _ => return None,
+    })
+}
+
+/// Wire token for a session mode — the persisted form in `fleet_sessions`.
+pub fn mode_to_token(m: FleetSessionMode) -> &'static str {
+    match m {
+        FleetSessionMode::Interactive => "interactive",
+        FleetSessionMode::Headless => "headless",
+    }
+}
+
+/// Inverse of [`mode_to_token`]; unknown tokens fall back to `Interactive`
+/// (the resumable lane — a rehydrated row is always woken with a PTY).
+pub fn token_to_mode(token: &str) -> FleetSessionMode {
+    match token {
+        "headless" => FleetSessionMode::Headless,
+        _ => FleetSessionMode::Interactive,
+    }
+}
+
 /// How a Fleet session's `claude` process is driven.
 ///
 /// `Interactive` = a PTY child (ConPTY on Windows) rendering the full TUI —

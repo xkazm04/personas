@@ -167,6 +167,11 @@ pub fn spawn_ticker(app: AppHandle) {
         interval.tick().await;
         loop {
             interval.tick().await;
+            // Boot restore rides this loop rather than a second setup hook: the
+            // ticker already starts after the app is up, and `rehydrate` is
+            // idempotent + no-ops until AppState (the DB pool) is managed, so
+            // an early tick simply retries on the next one.
+            super::persist::rehydrate(&app);
             tick_once(&app);
         }
     });
@@ -704,6 +709,12 @@ fn auto_hibernate_pass(app: &AppHandle) {
             .filter(|s| {
                 matches!(s.state, FleetSessionState::Idle | FleetSessionState::Stale)
                     && s.claude_session_id.is_some()
+                    // Already process-free (dozed, or rehydrated after a
+                    // restart) — there is nothing left to free, and flipping
+                    // the row to `Hibernated` would only hide what it was
+                    // doing. Wake is the same gesture either way.
+                    && !s.dozing
+                    && s.child_pid.is_some()
                     && s.last_activity_ms < cutoff
             })
             .map(|s| s.id.clone())

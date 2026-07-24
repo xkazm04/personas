@@ -318,6 +318,12 @@ pub struct FleetSessionInner {
     pub child_pid: Option<u32>,
     pub exit_code: Option<i32>,
     pub state_reason: Option<String>,
+    /// Run-harvest grouping key — the batch tag stamped when a dispatch spawns
+    /// a group of sessions together. `None` for individual/manual spawns
+    /// ("ad hoc"). Persisted with the row so a run survives a restart.
+    pub run_id: Option<String>,
+    /// Human label for the run (e.g. "perfect round 9"). Display only.
+    pub run_label: Option<String>,
     /// PTY master — needed for resize. `None` after exit.
     pub master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     /// PTY writer — for write_input. `None` after exit.
@@ -1300,6 +1306,8 @@ mod tests {
             child_pid: Some(1234),
             exit_code: None,
             state_reason: None,
+            run_id: None,
+            run_label: None,
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),

@@ -5638,6 +5638,57 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            // Fleet registry durability — the fleet's session registry was
+            // in-memory only (`registry::FleetRegistry::sessions`), so every
+            // app restart / update / crash lost the WHOLE fleet (three
+            // total-loss restarts on 2026-07-24; recovering eight stranded
+            // conversations took a hand-written json + a resume script).
+            // Everything needed to resurrect a row is already known, so this
+            // table mirrors the registry: rows are upserted from the existing
+            // emit points and rehydrated as dozing tombstones on boot.
+            //
+            // Only rows with a BOUND `claude_session_id` are ever written —
+            // they are the only ones `claude --resume` can bring back, and it
+            // keeps never-attached spawns out of the rehydration set.
+            // `run_id` / `run_label` are the run-harvest lane's grouping key
+            // (a batch tag stamped at spawn); nullable = "ad hoc".
+            id: "fleet_sessions",
+            description: "Durable fleet session registry (survives app restarts)",
+            already_applied: |conn| has_table(conn, "fleet_sessions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS fleet_sessions (
+                        id                 TEXT PRIMARY KEY,
+                        claude_session_id  TEXT NOT NULL,
+                        cwd                TEXT NOT NULL,
+                        project_label      TEXT NOT NULL,
+                        name               TEXT,
+                        title              TEXT,
+                        args_json          TEXT NOT NULL DEFAULT '[]',
+                        mode               TEXT NOT NULL DEFAULT 'interactive',
+                        state              TEXT NOT NULL,
+                        state_reason       TEXT,
+                        run_id             TEXT,
+                        run_label          TEXT,
+                        created_at_ms      INTEGER NOT NULL,
+                        last_activity_ms   INTEGER NOT NULL,
+                        updated_at_ms      INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_state
+                        ON fleet_sessions(state, updated_at_ms DESC);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_claude
+                        ON fleet_sessions(claude_session_id);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_run
+                        ON fleet_sessions(run_id, created_at_ms);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     // -- External API keys: capability-token columns (Direction 5, P1) --------
     // Upgrade path for EXISTING DBs whose `external_api_keys` predates the

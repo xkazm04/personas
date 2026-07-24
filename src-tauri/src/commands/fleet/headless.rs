@@ -205,6 +205,8 @@ pub fn spawn_headless_session(
         child_pid: Some(child_pid),
         exit_code: None,
         state_reason: Some("Headless session spawned".to_string()),
+        run_id: None,
+        run_label: None,
         master: Mutex::new(None),
         writer: Mutex::new(Some(Box::new(stdin))),
         hibernating: std::sync::atomic::AtomicBool::new(false),
