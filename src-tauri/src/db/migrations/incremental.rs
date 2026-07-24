@@ -5933,6 +5933,11 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                         statement         TEXT NOT NULL,
                         detail_md         TEXT,
                         topic             TEXT,
+                        abstraction       TEXT,
+                        ftype             TEXT,
+                        durability        TEXT,
+                        governing_id      TEXT,
+                        evidence_count    INTEGER,
                         applicability     TEXT,
                         status            TEXT NOT NULL DEFAULT 'observed'
                                           CHECK(status IN ('observed','proposed','adopted','deprecated','rejected')),
@@ -5991,6 +5996,23 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             already_applied: |conn| has_column(conn, "workspace_knowledge", "topic"),
             apply: |conn| {
                 ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN topic TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_knowledge.categorization_axes",
+            description: "Categorization axes orthogonal to the topic tree, for ranking + filtering the library (docs/plans/workspace-knowledge-center.md, divergence-scan synthesis): `abstraction` (macro|meso|micro — the altitude of the practice), `ftype` (finding-type taxonomy: architecture|module-boundary|data-flow|extensibility|api-design|state-mgmt|error-strategy|concurrency-reliability|perf-strategy|testing-strategy|micro-technique), `durability` (durable|situational|mechanical — whether it's worth being knowledge vs a lint rule), `governing_id` (roll a micro-instance up under a macro doctrine), `evidence_count` (prevalence). All nullable; validation lives in Rust, not a DB CHECK.",
+            already_applied: |conn| has_column(conn, "workspace_knowledge", "abstraction"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN abstraction TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN ftype TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN durability TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN governing_id TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN evidence_count INTEGER;")?;
                 Ok(())
             },
         },
@@ -6490,6 +6512,8 @@ mod tests {
             ("dev_kpi_measurements", "env"),
             ("dev_projects", "workspace_id"),
             ("workspace_knowledge", "topic"),
+            ("workspace_knowledge", "abstraction"),
+            ("workspace_knowledge", "durability"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),

@@ -57,6 +57,18 @@ const TOPICS = [
 
 const FRAMEWORKS = ['React', 'Tauri', 'Rust', 'Tailwind', 'Zustand', 'Vite', 'Next.js', 'Axum'] as const;
 
+// Categorization axes for demo realism — skew toward meso/durable like the
+// real scan, with a mechanical/micro tail that the "hide lint layer" filter drops.
+const ABSTRACTIONS: { value: 'macro' | 'meso' | 'micro'; weight: number }[] = [
+  { value: 'macro', weight: 0.2 },
+  { value: 'meso', weight: 0.6 },
+  { value: 'micro', weight: 0.2 },
+];
+const FTYPES = [
+  'architecture', 'module-boundary', 'data-flow', 'extensibility', 'api-design',
+  'state-mgmt', 'error-strategy', 'concurrency-reliability', 'perf-strategy', 'micro-technique',
+] as const;
+
 const KINDS: { value: KnowledgeKind; weight: number }[] = [
   { value: 'pattern', weight: 0.34 },
   { value: 'pitfall', weight: 0.22 },
@@ -136,6 +148,9 @@ export function generateMockLibrary(
     const stem = pick(rnd, TITLE_STEMS[kind]);
     const subject = pick(rnd, SUBJECTS);
     const framework = rnd() < 0.6 ? pick(rnd, FRAMEWORKS) : null;
+    const abstraction = weightedPick(rnd, ABSTRACTIONS);
+    const durability =
+      abstraction === 'micro' ? 'mechanical' : rnd() < 0.85 ? 'durable' : 'situational';
 
     out.push({
       id: `mock-${workspaceId}-${i}`,
@@ -153,6 +168,11 @@ export function generateMockLibrary(
       createdAt: new Date(createdMs).toISOString(),
       updatedAt: new Date(Math.min(updatedMs, now)).toISOString(),
       confidence: status === 'observed' ? Math.round(rnd() * 40 + 55) / 100 : null,
+      abstraction,
+      ftype: pick(rnd, FTYPES),
+      durability,
+      governingId: null,
+      evidenceCount: abstraction === 'micro' ? Math.floor(rnd() * 40 + 5) : null,
       mock: true,
     });
   }

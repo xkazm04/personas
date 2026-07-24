@@ -1189,7 +1189,14 @@
       "harvest_section": "एक प्रोजेक्ट इकट्ठा करें (AI)",
       "mine": "माइनर चलाएँ",
       "mine_hint": "निर्धारक, LLM रहित: वर्कस्पेस भर में साझा निष्कर्ष और स्किल अपनाने की कमियाँ।",
-      "mine_result": "माइनर: {inserted} जोड़े गए, {skipped} छोड़े गए।"
+      "mine_result": "माइनर: {inserted} जोड़े गए, {skipped} छोड़े गए।",
+      "abstraction_macro": "मैक्रो",
+      "abstraction_meso": "मेसो",
+      "abstraction_micro": "माइक्रो",
+      "all_altitudes": "सभी स्तर",
+      "col_altitude": "स्तर",
+      "hide_lint": "lint परत छिपाएं",
+      "hide_lint_hint": "lint से लागू होने वाली यांत्रिक वस्तुओं (माइक्रो / यांत्रिक) को छिपाएं — प्रैक्टिस लाइब्रेरी को सिद्धांत दिखाना चाहिए, lint नियम नहीं।"
     }
   },
   "doc_signing": {

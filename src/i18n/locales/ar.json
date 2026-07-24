@@ -13018,7 +13018,14 @@
         "harvest_section": "جمع مشروع (ذكاء اصطناعي)",
         "mine": "تشغيل أدوات التنقيب",
         "mine_hint": "حتمي، بدون LLM: النتائج المشتركة وفجوات تبنّي المهارات عبر مساحة العمل.",
-        "mine_result": "أدوات التنقيب: تمت إضافة {inserted}، وتخطّي {skipped}."
+        "mine_result": "أدوات التنقيب: تمت إضافة {inserted}، وتخطّي {skipped}.",
+        "abstraction_macro": "ماكرو",
+        "abstraction_meso": "ميزو",
+        "abstraction_micro": "مايكرو",
+        "all_altitudes": "كل المستويات",
+        "col_altitude": "المستوى",
+        "hide_lint": "إخفاء طبقة lint",
+        "hide_lint_hint": "يخفي العناصر الآلية القابلة للفرض عبر lint (مايكرو / آلية) — يجب أن تُبرز مكتبة الممارسات المبادئ لا قواعد lint."
       }
     },
     "doc_signing": {

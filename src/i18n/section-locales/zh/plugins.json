@@ -1189,7 +1189,14 @@
       "harvest_section": "采集项目（AI）",
       "mine": "运行挖掘器",
       "mine_hint": "确定性、无 LLM：工作区内的共享发现与技能采纳缺口。",
-      "mine_result": "挖掘器：已添加 {inserted} 项，跳过 {skipped} 项。"
+      "mine_result": "挖掘器：已添加 {inserted} 项，跳过 {skipped} 项。",
+      "abstraction_macro": "宏观",
+      "abstraction_meso": "中观",
+      "abstraction_micro": "微观",
+      "all_altitudes": "所有层级",
+      "col_altitude": "层级",
+      "hide_lint": "隐藏 lint 层",
+      "hide_lint_hint": "隐藏可由 lint 强制执行的机械性条目（微观 / 机械性）——实践库应呈现方法论，而非 lint 规则。"
     }
   },
   "doc_signing": {

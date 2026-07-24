@@ -13018,7 +13018,14 @@
         "harvest_section": "Recolectar un proyecto (IA)",
         "mine": "Ejecutar extractores",
         "mine_hint": "Determinista, sin LLM: hallazgos compartidos y brechas de adopción de habilidades en el espacio de trabajo.",
-        "mine_result": "Extractores: {inserted} añadidos, {skipped} omitidos."
+        "mine_result": "Extractores: {inserted} añadidos, {skipped} omitidos.",
+        "abstraction_macro": "macro",
+        "abstraction_meso": "meso",
+        "abstraction_micro": "micro",
+        "all_altitudes": "Todas las altitudes",
+        "col_altitude": "Altitud",
+        "hide_lint": "Ocultar capa de lint",
+        "hide_lint_hint": "Oculta los elementos mecánicos aplicables por lint (micro / mecánicos); una biblioteca de prácticas debe mostrar doctrina, no reglas de lint."
       }
     },
     "doc_signing": {

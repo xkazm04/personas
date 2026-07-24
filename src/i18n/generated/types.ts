@@ -13294,6 +13294,13 @@ export type Translations = {
         harvest_dispatched: string;
         harvest_already: string;
         harvest_imported: string;
+        col_altitude: string;
+        all_altitudes: string;
+        abstraction_macro: string;
+        abstraction_meso: string;
+        abstraction_micro: string;
+        hide_lint: string;
+        hide_lint_hint: string;
       };
     };
     doc_signing: {

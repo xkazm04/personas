@@ -61,6 +61,11 @@ struct HarvestItem {
     statement: String,
     detail_md: Option<String>,
     topic: Option<String>,
+    /// Categorization axes (optional; harvest agents may supply them).
+    abstraction: Option<String>,
+    ftype: Option<String>,
+    durability: Option<String>,
+    evidence_count: Option<i64>,
     /// Applicability envelope as a JSON object (re-serialized on the way in).
     applicability: Option<serde_json::Value>,
     dedup_key: Option<String>,
@@ -249,6 +254,11 @@ pub async fn dev_tools_workspace_knowledge_ingest(
                 statement: it.statement,
                 detail_md: it.detail_md,
                 topic: it.topic,
+                abstraction: it.abstraction,
+                ftype: it.ftype,
+                durability: it.durability,
+                governing_id: None,
+                evidence_count: it.evidence_count,
                 applicability: it.applicability.map(|v| v.to_string()),
                 origin_project_id: Some(project_id.clone()),
                 dedup_key,

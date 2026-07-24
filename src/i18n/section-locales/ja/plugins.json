@@ -1189,7 +1189,14 @@
       "harvest_section": "プロジェクトを収集（AI）",
       "mine": "マイナーを実行",
       "mine_hint": "決定論的、LLM 不使用：ワークスペース全体の共有された発見とスキル導入のギャップ。",
-      "mine_result": "マイナー：{inserted} 件追加、{skipped} 件スキップ。"
+      "mine_result": "マイナー：{inserted} 件追加、{skipped} 件スキップ。",
+      "abstraction_macro": "マクロ",
+      "abstraction_meso": "メソ",
+      "abstraction_micro": "ミクロ",
+      "all_altitudes": "すべての高度",
+      "col_altitude": "高度",
+      "hide_lint": "lint レイヤーを非表示",
+      "hide_lint_hint": "lint で強制できる機械的な項目（ミクロ／機械的）を非表示にします。プラクティスライブラリは lint ルールではなく方針を示すべきです。"
     }
   },
   "doc_signing": {

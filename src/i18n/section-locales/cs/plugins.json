@@ -1189,7 +1189,14 @@
       "harvest_section": "Sklidit projekt (AI)",
       "mine": "Spustit těžaře",
       "mine_hint": "Deterministické, bez LLM: sdílená zjištění a mezery v osvojení dovedností napříč pracovním prostorem.",
-      "mine_result": "Těžaři: {inserted} přidáno, {skipped} přeskočeno."
+      "mine_result": "Těžaři: {inserted} přidáno, {skipped} přeskočeno.",
+      "abstraction_macro": "makro",
+      "abstraction_meso": "mezo",
+      "abstraction_micro": "mikro",
+      "all_altitudes": "Všechny úrovně",
+      "col_altitude": "Úroveň",
+      "hide_lint": "Skrýt vrstvu lint",
+      "hide_lint_hint": "Skryje mechanické položky vynutitelné lintem (mikro / mechanické) — knihovna postupů má ukazovat doktrínu, ne pravidla lintu."
     }
   },
   "doc_signing": {

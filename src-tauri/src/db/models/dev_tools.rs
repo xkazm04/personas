@@ -187,6 +187,23 @@ pub struct WorkspaceKnowledge {
     /// harvest agents. The library derives its arbitrary-depth topic tree from
     /// this; None = uncategorized. Added 2026-07-24.
     pub topic: Option<String>,
+    /// Altitude: 'macro' (system/architecture) | 'meso' (module/pattern) |
+    /// 'micro' (lint-enforceable technique). Drives motivate-vs-avoid ranking.
+    /// Added 2026-07-24.
+    pub abstraction: Option<String>,
+    /// Finding-type taxonomy (architecture | module-boundary | data-flow |
+    /// extensibility | api-design | state-mgmt | error-strategy |
+    /// concurrency-reliability | perf-strategy | testing-strategy |
+    /// micro-technique). Orthogonal to `topic`.
+    pub ftype: Option<String>,
+    /// Scale-durability: 'durable' (worth being knowledge) | 'situational' |
+    /// 'mechanical' (belongs in the linter, not the library).
+    pub durability: Option<String>,
+    /// Optional roll-up: id of the governing macro doctrine this is an instance
+    /// of, nesting micro-cases under a doctrine.
+    pub governing_id: Option<String>,
+    /// Prevalence — how many raw sites/instances back this finding.
+    pub evidence_count: Option<i64>,
     /// JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
     /// which member projects this practice can apply to. Opaque to the repo.
     pub applicability: Option<String>,

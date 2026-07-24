@@ -13018,7 +13018,14 @@
         "harvest_section": "একটি প্রকল্প সংগ্রহ করুন (AI)",
         "mine": "মাইনার চালান",
         "mine_hint": "নির্ধারক, LLM ছাড়া: ওয়ার্কস্পেস জুড়ে শেয়ার করা ফলাফল ও স্কিল গ্রহণের ঘাটতি।",
-        "mine_result": "মাইনার: {inserted} যোগ হয়েছে, {skipped} বাদ দেওয়া হয়েছে।"
+        "mine_result": "মাইনার: {inserted} যোগ হয়েছে, {skipped} বাদ দেওয়া হয়েছে।",
+        "abstraction_macro": "ম্যাক্রো",
+        "abstraction_meso": "মেসো",
+        "abstraction_micro": "মাইক্রো",
+        "all_altitudes": "সব স্তর",
+        "col_altitude": "স্তর",
+        "hide_lint": "lint স্তর লুকান",
+        "hide_lint_hint": "lint দিয়ে প্রয়োগযোগ্য যান্ত্রিক আইটেম (মাইক্রো / যান্ত্রিক) লুকান — অনুশীলন লাইব্রেরির উচিত নীতি তুলে ধরা, lint নিয়ম নয়।"
       }
     },
     "doc_signing": {

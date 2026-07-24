@@ -27,9 +27,18 @@ export interface KnowledgeItemView {
   createdAt: string;
   updatedAt: string;
   confidence: number | null;
+  /** Categorization axes (Arc-2 metadata extension). */
+  abstraction: Abstraction | null;
+  ftype: string | null;
+  durability: Durability | null;
+  governingId: string | null;
+  evidenceCount: number | null;
   /** True for generated demo rows (never written to the DB). */
   mock?: boolean;
 }
+
+export type Abstraction = 'macro' | 'meso' | 'micro';
+export type Durability = 'durable' | 'situational' | 'mechanical';
 
 export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
   let layers: string[] = [];
@@ -59,6 +68,11 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     confidence: row.confidence,
+    abstraction: (row.abstraction as Abstraction | null) ?? null,
+    ftype: row.ftype ?? null,
+    durability: (row.durability as Durability | null) ?? null,
+    governingId: row.governing_id ?? null,
+    evidenceCount: row.evidence_count ?? null,
   };
 }
 

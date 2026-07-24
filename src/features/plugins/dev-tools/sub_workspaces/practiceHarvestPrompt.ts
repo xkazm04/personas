@@ -27,6 +27,10 @@ const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY
       "statement": "The distilled practice a session should act on.", // required
       "detail_md": "Evidence: real code/config from THIS repo (markdown). Optional but strongly preferred.",
       "topic": "code-quality/error-handling",     // slash-path taxonomy node; optional
+      "abstraction": "meso",                       // macro | meso | micro — the altitude; prefer meso/macro design patterns over micro lint
+      "ftype": "error-strategy",                   // architecture | module-boundary | data-flow | extensibility | api-design | state-mgmt | error-strategy | concurrency-reliability | perf-strategy | micro-technique
+      "durability": "durable",                     // durable | situational | mechanical (mechanical = belongs in the linter, not here)
+      "evidence_count": 4,                         // optional prevalence (how many sites)
       "applicability": { "layers": ["code-quality"], "languages": ["TypeScript"], "frameworks": ["React"] }, // optional object
       "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
       "confidence": 0.7                            // optional 0..1

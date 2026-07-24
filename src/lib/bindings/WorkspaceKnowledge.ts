@@ -29,6 +29,33 @@ detail_md: string | null,
  */
 topic: string | null, 
 /**
+ * Altitude: 'macro' (system/architecture) | 'meso' (module/pattern) |
+ * 'micro' (lint-enforceable technique). Drives motivate-vs-avoid ranking.
+ * Added 2026-07-24.
+ */
+abstraction: string | null, 
+/**
+ * Finding-type taxonomy (architecture | module-boundary | data-flow |
+ * extensibility | api-design | state-mgmt | error-strategy |
+ * concurrency-reliability | perf-strategy | testing-strategy |
+ * micro-technique). Orthogonal to `topic`.
+ */
+ftype: string | null, 
+/**
+ * Scale-durability: 'durable' (worth being knowledge) | 'situational' |
+ * 'mechanical' (belongs in the linter, not the library).
+ */
+durability: string | null, 
+/**
+ * Optional roll-up: id of the governing macro doctrine this is an instance
+ * of, nesting micro-cases under a doctrine.
+ */
+governing_id: string | null, 
+/**
+ * Prevalence — how many raw sites/instances back this finding.
+ */
+evidence_count: number | null, 
+/**
  * JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
  * which member projects this practice can apply to. Opaque to the repo.
  */

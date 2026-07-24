@@ -20,6 +20,7 @@ import {
   itemsUnderTopic,
   searchFilter,
   STATUS_RANK,
+  type Abstraction,
   type KnowledgeItemView,
   type TopicNode,
 } from './libraryModel';
@@ -27,7 +28,37 @@ import {
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
 
+/** Sort altitude high→low: macro first (the doctrines), micro last. */
+const ABSTRACTION_RANK: Record<string, number> = { macro: 0, meso: 1, micro: 2, z: 3 };
+
 type SortDir = 'asc' | 'desc';
+
+/** Compact altitude cell: an abstraction pill, dimmed when mechanical (lint). */
+function AltitudeChip({
+  item,
+  labels,
+}: {
+  item: KnowledgeItemView;
+  labels: Record<Abstraction, string>;
+}) {
+  if (!item.abstraction) return <span className="typo-caption text-muted-foreground">—</span>;
+  const tone =
+    item.abstraction === 'macro'
+      ? 'bg-primary/10 text-primary border-primary/30'
+      : item.abstraction === 'meso'
+        ? 'bg-secondary/50 text-foreground border-primary/10'
+        : 'bg-secondary/30 text-muted-foreground border-primary/10';
+  return (
+    <span
+      className={`typo-label rounded-interactive border px-1.5 py-0.5 ${tone} ${
+        item.durability === 'mechanical' ? 'opacity-60' : ''
+      }`}
+      title={item.ftype ?? undefined}
+    >
+      {labels[item.abstraction]}
+    </span>
+  );
+}
 
 export default function KnowledgeTree({
   items,
@@ -57,6 +88,13 @@ export default function KnowledgeTree({
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [kindFilter, setKindFilter] = useState('all');
+  const [abstractionFilter, setAbstractionFilter] = useState('all');
+  const [hideLint, setHideLint] = useState(true);
+  const abstractionLabel: Record<Abstraction, string> = {
+    macro: tw.abstraction_macro,
+    meso: tw.abstraction_meso,
+    micro: tw.abstraction_micro,
+  };
   const [sortKey, setSortKey] = useState('updated');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -70,7 +108,11 @@ export default function KnowledgeTree({
     const filtered = searched.filter(
       (i) =>
         (statusFilter === 'all' || i.status === statusFilter) &&
-        (kindFilter === 'all' || i.kind === kindFilter),
+        (kindFilter === 'all' || i.kind === kindFilter) &&
+        (abstractionFilter === 'all' || i.abstraction === abstractionFilter) &&
+        // "Hide lint layer" drops mechanical/micro items (motivate/avoid): a
+        // practice library should surface doctrine, not lint-territory rules.
+        (!hideLint || (i.durability !== 'mechanical' && i.abstraction !== 'micro')),
     );
     const dir = sortDir === 'asc' ? 1 : -1;
     const cmp = (a: KnowledgeItemView, b: KnowledgeItemView): number => {
@@ -87,6 +129,11 @@ export default function KnowledgeTree({
           return nameOf(a.originProjectId).localeCompare(nameOf(b.originProjectId)) * dir;
         case 'confidence':
           return ((a.confidence ?? -1) - (b.confidence ?? -1)) * dir;
+        case 'altitude':
+          return (
+            ((ABSTRACTION_RANK[a.abstraction ?? 'z'] ?? 3) -
+              (ABSTRACTION_RANK[b.abstraction ?? 'z'] ?? 3)) * dir
+          );
         case 'updated':
         default:
           return a.updatedAt.localeCompare(b.updatedAt) * dir;
@@ -94,7 +141,7 @@ export default function KnowledgeTree({
     };
     return [...filtered].sort(cmp);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected, query, statusFilter, kindFilter, sortKey, sortDir, projectById]);
+  }, [items, selected, query, statusFilter, kindFilter, abstractionFilter, hideLint, sortKey, sortDir, projectById]);
 
   const onSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -132,6 +179,21 @@ export default function KnowledgeTree({
       render: (r) => <span className="typo-body text-muted-foreground">{kindLabel[r.kind]}</span>,
     },
     {
+      key: 'altitude',
+      label: tw.col_altitude,
+      width: '96px',
+      sortable: true,
+      filterOptions: [
+        { value: 'all', label: tw.all_altitudes },
+        { value: 'macro', label: tw.abstraction_macro },
+        { value: 'meso', label: tw.abstraction_meso },
+        { value: 'micro', label: tw.abstraction_micro },
+      ],
+      filterValue: abstractionFilter,
+      onFilterChange: setAbstractionFilter,
+      render: (r) => <AltitudeChip item={r} labels={abstractionLabel} />,
+    },
+    {
       key: 'title',
       label: tw.col_practice,
       width: '2.4fr',
@@ -139,6 +201,9 @@ export default function KnowledgeTree({
       render: (r) => (
         <span className="typo-body text-foreground truncate">
           {r.title}
+          {r.evidenceCount != null && r.evidenceCount > 1 && (
+            <span className="typo-label text-muted-foreground ml-1.5">×{r.evidenceCount}</span>
+          )}
           {r.mock && (
             <span className="typo-label text-muted-foreground ml-1.5 opacity-60">{tw.demo_tag}</span>
           )}
@@ -234,7 +299,19 @@ export default function KnowledgeTree({
               ? tx(tw.branch_summary, { topic: selected, count: rows.length })
               : tx(tw.all_topics_summary, { count: rows.length })}
           </span>
-          <div className="relative ml-auto">
+          <button
+            type="button"
+            onClick={() => setHideLint((v) => !v)}
+            className={`ml-auto typo-label rounded-interactive border px-2 py-1 transition-colors ${
+              hideLint
+                ? 'border-primary/30 bg-primary/10 text-foreground'
+                : 'border-primary/10 text-foreground/70 hover:bg-secondary/40'
+            }`}
+            title={tw.hide_lint_hint}
+          >
+            {tw.hide_lint}
+          </button>
+          <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               className={`${INPUT_FIELD} pl-8 w-56`}

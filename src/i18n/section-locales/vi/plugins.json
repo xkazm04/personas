@@ -1189,7 +1189,14 @@
       "harvest_section": "Thu thập một dự án (AI)",
       "mine": "Chạy trình khai thác",
       "mine_hint": "Xác định, không dùng LLM: các phát hiện chung và khoảng trống áp dụng kỹ năng trong không gian làm việc.",
-      "mine_result": "Trình khai thác: đã thêm {inserted}, bỏ qua {skipped}."
+      "mine_result": "Trình khai thác: đã thêm {inserted}, bỏ qua {skipped}.",
+      "abstraction_macro": "vĩ mô",
+      "abstraction_meso": "trung mô",
+      "abstraction_micro": "vi mô",
+      "all_altitudes": "Tất cả cấp độ",
+      "col_altitude": "Cấp độ",
+      "hide_lint": "Ẩn lớp lint",
+      "hide_lint_hint": "Ẩn các mục máy móc có thể áp đặt bằng lint (vi mô / máy móc) — thư viện thực hành nên nêu bật nguyên tắc, không phải quy tắc lint."
     }
   },
   "doc_signing": {

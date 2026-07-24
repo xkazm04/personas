@@ -13287,7 +13287,14 @@
         "harvest_import_action": "Import {project} results",
         "harvest_dispatched": "Harvesting {project} in Fleet — Import when it finishes.",
         "harvest_already": "{project} is already being harvested.",
-        "harvest_imported": "{project}: {inserted} added, {skipped} skipped."
+        "harvest_imported": "{project}: {inserted} added, {skipped} skipped.",
+        "col_altitude": "Altitude",
+        "all_altitudes": "All altitudes",
+        "abstraction_macro": "macro",
+        "abstraction_meso": "meso",
+        "abstraction_micro": "micro",
+        "hide_lint": "Hide lint layer",
+        "hide_lint_hint": "Hide mechanical, lint-enforceable items (micro / mechanical) — a practice library should surface doctrine, not lint rules."
       }
     },
     "doc_signing": {

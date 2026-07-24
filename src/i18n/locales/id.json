@@ -13018,7 +13018,14 @@
         "harvest_section": "Panen sebuah proyek (AI)",
         "mine": "Jalankan miner",
         "mine_hint": "Deterministik, tanpa LLM: temuan bersama + celah adopsi skill di seluruh workspace.",
-        "mine_result": "Miner: {inserted} ditambahkan, {skipped} dilewati."
+        "mine_result": "Miner: {inserted} ditambahkan, {skipped} dilewati.",
+        "abstraction_macro": "makro",
+        "abstraction_meso": "meso",
+        "abstraction_micro": "mikro",
+        "all_altitudes": "Semua tingkat",
+        "col_altitude": "Tingkat",
+        "hide_lint": "Sembunyikan lapisan lint",
+        "hide_lint_hint": "Menyembunyikan item mekanis yang dapat ditegakkan lint (mikro / mekanis) — pustaka praktik harus menampilkan doktrin, bukan aturan lint."
       }
     },
     "doc_signing": {

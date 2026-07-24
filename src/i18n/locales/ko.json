@@ -13018,7 +13018,14 @@
         "harvest_section": "프로젝트 수집 (AI)",
         "mine": "마이너 실행",
         "mine_hint": "결정론적, LLM 미사용: 워크스페이스 전반의 공유된 발견과 스킬 도입 격차.",
-        "mine_result": "마이너: {inserted}개 추가, {skipped}개 건너뜀."
+        "mine_result": "마이너: {inserted}개 추가, {skipped}개 건너뜀.",
+        "abstraction_macro": "매크로",
+        "abstraction_meso": "메소",
+        "abstraction_micro": "마이크로",
+        "all_altitudes": "모든 고도",
+        "col_altitude": "고도",
+        "hide_lint": "lint 레이어 숨기기",
+        "hide_lint_hint": "lint로 강제할 수 있는 기계적 항목(마이크로 / 기계적)을 숨깁니다. 실무 라이브러리는 lint 규칙이 아니라 원칙을 보여줘야 합니다."
       }
     },
     "doc_signing": {
