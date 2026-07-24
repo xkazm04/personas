@@ -2,6 +2,11 @@
 
 ## Active
 
+### fleet-mechanical-lanes — FLEET:DONE/NEXT protocol + finished state — session fable-5 — COMPLETED
+- 2026-07-24 evening. Operator lever decisions: mechanical answering + completion detection BUILT (verdict reuse REJECTED; Athena directive now "approve the MAXIMUM unless architecture/security"). Commits **99afb3626** (Finished state + protocol lanes, 43 files incl. 14 locales), matcher hardening through **29325ccd2** + content-window fix (amended), all pushed master+fleet-scale-30. pof CLAUDE.md teaches the protocol (**bff9c38f**, pushed).
+- VALIDATED by 4 probe cycles (real-terminal parsing is unforgiving): cue must match ANYWHERE in the joined blank-filtered last-18 content rows (vt100 rows are wrap fragments; composer chrome + blank rows eat a raw bottom window), require a dash separator (prose echoes), reject `<` payloads (template echoes). Probe 4: FLEET:NEXT drove forward 0.7s after wake (no turn); FLEET:DONE parked `finished` (teal, operator closes) with zero turns. Forensic trace `fleet_mechanical` logs any on-screen marker the matcher rejects.
+- 19:55 limit-recovery runner still armed (resume8-runner.ps1); app running cycle-4 exe, recorder fleet-2026-07-24_15-45-57.log.
+
 ### fleet-round3-perfect-style — 16 untouched pof contexts, self-healing build live-validated mid-limit — session fable-5 — RECOVERY PENDING (19:55)
 - Started: 2026-07-24 ~16:06. Build under test: 9b5307022 (full self-healing). Commits this round: **perf coalescing+screen-trim** (batch turns: round-2 measured 40/58 turns single-session → 12s coalesce window + 1800-char screen tails), **6873c33ac** (limit lane matches REAL banner text "session limit"/"usage-credits" + dozed sessions retry via 15-min wake+continue cycles, cap 24). All pushed (master + fleet-scale-30).
 - RESULTS: 8/16 sessions fully delivered (10 fleet-memory lines incl. a ~1.9k-LOC dead-tree deletion, chart migrations to shared primitives, honest-state fixes); 32/32 fires submitted, 0 NOT-confirmed, 0 AUTO_FAILED; →+Enter retry rescued 15 first-Enter misses; Athena-side limit churn bounded by the 60s all-unanswered backoff (107 unanswered events, no wedge, no manual recovery). **8/16 sessions hit the account 5-hour SESSION limit ("resets 7:50pm")** — old build's limit signature missed the wording, so they parked dozed.
