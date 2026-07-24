@@ -861,57 +861,62 @@ pub async fn send_turn(
     // onto the orb, and chat is suppressed — so surface it as a proactive orb
     // card. Skip when she produced an approval (the orb already shows that) or
     // said nothing actionable (a "progressing fine" no-op stays quiet).
-    // A fleet_orchestration turn was woken FOR one session (trigger_ref) —
-    // that id is authoritative for every fleet PTY action it proposed. The
-    // model occasionally omits/hallucinates session_id and the executor fails
-    // closed (types nothing, silently), so override before anything reads the
-    // approvals (auto-resolve below, or a manual click later).
-    if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
-        if trigger_kind == "fleet_orchestration" && !dispatched.approvals.is_empty() {
-            crate::commands::companion::fleet_bridge::force_fleet_session_ids(
-                &user_db,
-                &mut dispatched.approvals,
-                fleet_sid,
-            );
-        }
+    // Fleet orchestration turns are BATCHED (trigger_ref = "batch"): each
+    // dispatched fleet action must name one of the batch's sessions. The model
+    // occasionally truncates or hallucinates ids and the executor fails closed
+    // (types nothing, silently) — repair prefix matches against the batch set,
+    // drop the rest, before anything reads the approvals.
+    let is_fleet_turn = matches!(
+        &origin,
+        TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
+    );
+    if is_fleet_turn && !dispatched.approvals.is_empty() {
+        let allowed = crate::commands::companion::fleet_bridge::current_batch_ids();
+        crate::commands::companion::fleet_bridge::validate_fleet_session_ids(
+            &user_db,
+            &mut dispatched.approvals,
+            &allowed,
+        );
     }
 
-    if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
-        // A prose fleet reply must land ON the session it's about, and only
-        // when it MEANS something: `handle_fleet_defer` classifies it by the
-        // directive's OK/NEEDS-YOU protocol — an "all fine" observation stays
-        // entirely silent (debug log only; no card, no state change), while a
-        // genuine "your call" escalates the session to a visible violet
-        // awaiting AND surfaces the note as an orb card. The first live run
-        // showed why both halves matter: "progressing fine" notes escalated
-        // healthy sessions, while real defers were missable orb-only cards.
-        let mut orb_note: Option<String> = Some(reply_text.clone());
-        if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
-            if trigger_kind == "fleet_orchestration" {
-                orb_note = crate::commands::companion::fleet_bridge::handle_fleet_defer(
-                    app,
-                    fleet_sid,
-                    &reply_text,
-                );
-            }
-        }
-        if let Some(note) = orb_note {
-            crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
-                app,
-                &user_db,
-                &turn_id,
-                &note,
-            );
-        }
+    if suppress_chat
+        && !is_fleet_turn
+        && dispatched.approvals.is_empty()
+        && !reply_text.trim().is_empty()
+    {
+        // Non-fleet suppressed turns keep the generic orb-note path. Fleet
+        // turns are handled per-session in `finish_assessment_turn` below —
+        // their reply carries one verdict line per batched session.
+        crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
+            app,
+            &user_db,
+            &turn_id,
+            &reply_text,
+        );
     }
 
-    // Fleet orchestration bookkeeping: this session's assessment is now
-    // resolved (verdict, action, or even an empty reply) — release the doze
-    // guard that kept the target session awake while it waited in the queue.
-    if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
-        if trigger_kind == "fleet_orchestration" {
-            crate::commands::companion::fleet_bridge::clear_pending_assessment(fleet_sid);
-        }
+    // Fleet orchestration completion: route the batch's outcome — per-session
+    // verdict lines, dispatched actions, and the unanswered — through the
+    // single finish hook, which also releases the doze guards and re-drains
+    // the wake queue for the next batch.
+    if is_fleet_turn {
+        let acted: std::collections::HashSet<String> = dispatched
+            .approvals
+            .iter()
+            .filter(|a| matches!(a.action.as_str(), "fleet_send_input" | "fleet_intervene"))
+            .filter_map(|a| {
+                serde_json::from_str::<serde_json::Value>(&a.params_json)
+                    .ok()
+                    .and_then(|v| v.get("session_id").and_then(|x| x.as_str()).map(String::from))
+            })
+            .collect();
+        crate::commands::companion::fleet_bridge::finish_assessment_turn(
+            app,
+            &user_db,
+            &turn_id,
+            &reply_text,
+            &acted,
+        );
     }
 
     // Athena value expansion / A1: record this turn's usage + dispatcher

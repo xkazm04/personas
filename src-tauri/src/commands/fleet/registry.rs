@@ -579,6 +579,18 @@ impl FleetRegistry {
             // Let the composer ingest the paste before the submit keystroke.
             tokio::time::sleep(std::time::Duration::from_millis(350)).await;
             for attempt in 1..=2u32 {
+                if attempt == 2 {
+                    // Tabbed AskUserQuestion recovery: when the "typed" answer
+                    // drove a select TUI, the first Enter marks the question tab
+                    // answered (☒) without submitting — submission is the Submit
+                    // TAB, reached with → and confirmed with Enter (verified live
+                    // 2026-07-24). In a plain composer → merely moves the caret,
+                    // so this retry stays safe for ordinary text.
+                    if registry().write_input(&sid, b"\x1b[C").is_err() {
+                        return;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                }
                 if registry().write_input(&sid, b"\r").is_err() {
                     return; // writer gone (killed / dozed mid-flight) — nothing to confirm
                 }
