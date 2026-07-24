@@ -1,62 +1,52 @@
-// Workspaces module — Workspace Knowledge Center shell
+// Workspaces module — Workspace Knowledge Center
 // (docs/plans/workspace-knowledge-center.md).
 //
-// SKELETON: registers the tab end-to-end (store → backend → UI). The real
-// shell/library/matrix layouts arrive via the /prototype rounds A–C; strings
-// stay hardcoded-EN until consolidation (i18n lands with the winner).
-import { Landmark, Plus } from 'lucide-react';
+// /prototype ROUND A — module shell. Three directional variants behind a
+// throwaway switcher; the winner (or fusion) consolidates and the switcher is
+// removed. Strings hardcoded-EN until consolidation.
+//
+//   Rail    — navigator master-detail: workspace rail left, full record right
+//   Atlas   — portfolio map: card grid of workspace crests, detail unfolds below
+//   Cockpit — single active org: chip strip + identity band, app-wide scope
+import { useState } from 'react';
+import { Landmark } from 'lucide-react';
 
-import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import Button from '@/features/shared/components/buttons/Button';
-import { createWorkspace, setActiveWorkspace, useWorkspaces } from './workspaceStore';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+
+import WorkspacesRail from './WorkspacesRail';
+import WorkspacesAtlas from './WorkspacesAtlas';
+import WorkspacesCockpit from './WorkspacesCockpit';
+
+type ShellVariant = 'rail' | 'atlas' | 'cockpit';
+
+const VARIANT_TABS: { id: ShellVariant; label: string }[] = [
+  { id: 'rail', label: 'Rail' },
+  { id: 'atlas', label: 'Atlas' },
+  { id: 'cockpit', label: 'Cockpit' },
+];
 
 export default function WorkspacesPage() {
-  const { workspaces, activeId } = useWorkspaces();
+  const [variant, setVariant] = useState<ShellVariant>('rail');
 
   return (
-    <div className="h-full w-full flex flex-col p-6 gap-4 overflow-y-auto">
-      <div className="flex items-center justify-between">
+    <div className="h-full w-full flex flex-col min-h-0">
+      <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-primary/10">
         <div className="flex items-center gap-2">
           <Landmark className="w-5 h-5 text-primary" />
           <h1 className="typo-heading text-foreground">Workspaces</h1>
         </div>
-        <Button onClick={() => createWorkspace('New workspace')}>
-          <Plus className="w-4 h-4" />
-          New workspace
-        </Button>
-      </div>
-
-      {workspaces.length === 0 ? (
-        <EmptyState
-          icon={Landmark}
-          title="No workspaces yet"
-          description="Group your dev projects into a workspace to build a shared best-practice library across them."
+        <SegmentedTabs
+          tabs={VARIANT_TABS}
+          activeTab={variant}
+          onTabChange={setVariant}
+          variant="segment"
+          size="sm"
+          ariaLabel="Shell variant"
         />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {workspaces.map((ws) => (
-            <button
-              key={ws.id}
-              type="button"
-              onClick={() => setActiveWorkspace(ws.id === activeId ? null : ws.id)}
-              className={`flex items-center gap-3 rounded-card border px-4 py-3 text-left transition-colors ${
-                ws.id === activeId
-                  ? 'border-primary/40 bg-primary/5'
-                  : 'border-primary/10 hover:bg-secondary/40'
-              }`}
-            >
-              <span
-                className="h-3 w-3 rounded-full shrink-0"
-                style={{ backgroundColor: ws.color }}
-              />
-              <span className="typo-body text-foreground flex-1">{ws.name}</span>
-              <span className="typo-caption text-foreground">
-                {ws.projectIds.length} project{ws.projectIds.length === 1 ? '' : 's'}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+      </div>
+      {variant === 'rail' && <WorkspacesRail />}
+      {variant === 'atlas' && <WorkspacesAtlas />}
+      {variant === 'cockpit' && <WorkspacesCockpit />}
     </div>
   );
 }
