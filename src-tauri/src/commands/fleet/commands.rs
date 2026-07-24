@@ -346,6 +346,87 @@ pub async fn fleet_debug_log_status() -> Result<super::debug_log::FleetDebugLogS
     Ok(super::debug_log::status())
 }
 
+// ---------------------------------------------------------------------------
+// Run harvest — "what did the fleet deliver?"
+// ---------------------------------------------------------------------------
+
+/// Open a NAMED run: every session spawned until `fleet_end_run` joins it.
+/// Without this, spawns auto-group by dispatch window (a burst = one run), so
+/// this is purely about giving a run a human label. Returns the run id.
+#[tauri::command]
+pub async fn fleet_begin_run(label: Option<String>) -> Result<String, String> {
+    Ok(super::run::begin_run(label))
+}
+
+/// Close the active run — the next spawn opens a fresh one.
+#[tauri::command]
+pub async fn fleet_end_run() -> Result<(), String> {
+    super::run::end_run();
+    Ok(())
+}
+
+/// Index of recent runs for the harvest picker, newest first.
+#[tauri::command]
+pub async fn fleet_list_runs(
+    app: AppHandle,
+    limit: Option<u32>,
+) -> Result<Vec<super::run::FleetRunSummary>, String> {
+    let pool = run_pool(&app)?;
+    let rows = crate::db::repos::fleet_sessions::list_runs(&pool, limit.unwrap_or(25).clamp(1, 200))
+        .map_err(|e| e.to_string())?;
+    Ok(rows
+        .into_iter()
+        .map(
+            |(run_id, run_label, started_at_ms, session_count, finished_count)| {
+                super::run::FleetRunSummary {
+                    run_id,
+                    run_label,
+                    started_at_ms,
+                    session_count,
+                    finished_count,
+                }
+            },
+        )
+        .collect())
+}
+
+/// Full report for one run: per-session outcome + rollup stats + run totals.
+///
+/// Rollups reuse the same incremental transcript delta-read the grid's token
+/// bar already performs, so this adds no polling and no second parser — it is
+/// an on-demand fold over data the machine was already producing.
+#[tauri::command]
+pub async fn fleet_run_report(
+    app: AppHandle,
+    run_id: String,
+) -> Result<super::run::FleetRunReport, String> {
+    let pool = run_pool(&app)?;
+    let rows = crate::db::repos::fleet_sessions::list_by_run(&pool, &run_id)
+        .map_err(|e| e.to_string())?;
+    let label = rows.iter().find_map(|r| r.run_label.clone());
+    let ids: Vec<String> = rows.iter().map(|r| r.claude_session_id.clone()).collect();
+    let summaries = tokio::task::spawn_blocking(move || {
+        let mut map = std::collections::HashMap::new();
+        for id in ids {
+            if let Some(s) = super::transcript_read::summary_for_session(&id) {
+                map.insert(id, s);
+            }
+        }
+        map
+    })
+    .await
+    .map_err(|e| format!("run report rollup failed: {e}"))?;
+    Ok(super::run::build_report(&run_id, label, &rows, &summaries))
+}
+
+/// Resolve the app DB pool for the run-harvest commands.
+fn run_pool(app: &AppHandle) -> Result<crate::db::DbPool, String> {
+    use tauri::Manager;
+    app.try_state::<std::sync::Arc<crate::AppState>>()
+        .map(|s| s.db.clone())
+        .ok_or_else(|| "app state not ready".to_string())
+}
+
 // Compile-time sanity: every Tauri command returns a Send + Sync future
 // that yields a Result. If a refactor breaks that, this will fail to build.
 #[cfg(test)]

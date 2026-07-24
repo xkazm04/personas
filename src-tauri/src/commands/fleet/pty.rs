@@ -429,6 +429,9 @@ pub fn spawn_session(
         .map_err(|e| format!("take writer failed: {e}"))?;
 
     let now = now_ms();
+    // Claim the run this spawn belongs to BEFORE building the row — the window
+    // is time-based, so it must be read at spawn time, not at first state emit.
+    let (run_id, run_label) = super::run::claim_run_for_spawn();
     let project_label = cwd
         .file_name()
         .and_then(|s| s.to_str())
@@ -462,9 +465,9 @@ pub fn spawn_session(
         exit_code: None,
         state_reason: Some("PTY spawned".to_string()),
         limit_reset_at_ms: 0,
-        // Run-harvest grouping — stamped from the active dispatch window, if any.
-        run_id: None,
-        run_label: None,
+        // Run-harvest grouping — a burst of spawns shares one dispatch window.
+        run_id,
+        run_label,
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),

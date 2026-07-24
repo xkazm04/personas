@@ -21,6 +21,7 @@ import {
   Sun,
   Keyboard,
   ListTodo,
+  ClipboardList,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -44,6 +45,7 @@ import { useFleetOverlayActions } from '../useFleetOverlayActions';
 import { sessionAttention, attentionClass } from '../fleetAttention';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { FleetHarvestPanel } from '../sub_harvest/FleetHarvestPanel';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { useFleetHotkeys } from '../useFleetHotkeys';
@@ -135,6 +137,7 @@ export default function FleetGridPage() {
   useFleetTerminalConfig();
 
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [harvestOpen, setHarvestOpen] = useState(false);
   // Spawn-with-a-first-task composer (seeds the new session's prompt via argv).
   const [spawnTaskOpen, setSpawnTaskOpen] = useState(false);
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
@@ -527,6 +530,17 @@ export default function FleetGridPage() {
             Broadcast
           </Button>
           <Button
+            data-testid="fleet-harvest-open"
+            variant="secondary"
+            size="sm"
+            icon={<ClipboardList className="w-3.5 h-3.5" />}
+            disabled={sessions.every((s) => s.state !== 'finished')}
+            onClick={() => setHarvestOpen(true)}
+            title={t.plugins.fleet.harvest_title}
+          >
+            {t.plugins.fleet.harvest_open}
+          </Button>
+          <Button
             data-testid="fleet-grid-refresh"
             variant="ghost"
             size="sm"
@@ -757,6 +771,7 @@ export default function FleetGridPage() {
       </ContentBody>
 
       <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
+      <FleetHarvestPanel open={harvestOpen} onClose={() => setHarvestOpen(false)} />
 
       <FleetHotkeysHelp open={hotkeysHelpOpen} onClose={() => setHotkeysHelpOpen(false)} />
 

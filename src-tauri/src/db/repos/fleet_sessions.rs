@@ -143,6 +143,31 @@ pub fn list_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<FleetSessionRow>, 
     })
 }
 
+/// Run index for the harvest picker: one entry per `run_id`, newest run first.
+/// Rows with no `run_id` (spawned before the run lane existed) are skipped —
+/// there is no run to report on.
+pub fn list_runs(pool: &DbPool, limit: u32) -> Result<Vec<(String, Option<String>, i64, i32, i32)>, AppError> {
+    timed_query!("fleet_sessions", "fleet_sessions::list_runs", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT run_id,
+                    MAX(run_label)                                       AS label,
+                    MIN(created_at_ms)                                   AS started,
+                    COUNT(*)                                             AS n,
+                    SUM(CASE WHEN state = 'finished' THEN 1 ELSE 0 END)  AS finished
+             FROM fleet_sessions
+             WHERE run_id IS NOT NULL
+             GROUP BY run_id
+             ORDER BY started DESC
+             LIMIT ?1",
+        )?;
+        let rows = stmt.query_map(params![limit], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+        })?;
+        Ok(rows.filter_map(Result::ok).collect())
+    })
+}
+
 /// Retention: drop terminal rows last touched before `cutoff_ms`. Called once
 /// on boot — a 24h-old exited session has no recovery value.
 pub fn prune_exited_before(pool: &DbPool, cutoff_ms: i64) -> Result<usize, AppError> {

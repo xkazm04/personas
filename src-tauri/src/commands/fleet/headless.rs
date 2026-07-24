@@ -180,6 +180,7 @@ pub fn spawn_headless_session(
         .to_string();
     let output = Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP)));
 
+    let (run_id, run_label) = super::run::claim_run_for_spawn();
     let inner = FleetSessionInner {
         id: id.clone(),
         claude_session_id: Some(claude_session_id),
@@ -206,8 +207,8 @@ pub fn spawn_headless_session(
         exit_code: None,
         state_reason: Some("Headless session spawned".to_string()),
         limit_reset_at_ms: 0,
-        run_id: None,
-        run_label: None,
+        run_id,
+        run_label,
         master: Mutex::new(None),
         writer: Mutex::new(Some(Box::new(stdin))),
         hibernating: std::sync::atomic::AtomicBool::new(false),

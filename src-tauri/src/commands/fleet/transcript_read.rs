@@ -396,6 +396,17 @@ pub async fn fleet_session_metadata(
     .map_err(|e| format!("metadata task failed: {e}"))?
 }
 
+/// Blocking convenience for callers that already run on a blocking thread:
+/// catch up on appended bytes and return the rollup for one session, or `None`
+/// when no transcript exists yet. Same delta path as `fleet_session_metadata`;
+/// extracted so the run-harvest fold can reuse it without duplicating the
+/// find + ingest + read dance.
+pub fn summary_for_session(claude_session_id: &str) -> Option<FleetTranscriptSummary> {
+    let path = find_transcript(claude_session_id)?;
+    ingest_delta(claude_session_id, &path);
+    metadata_for(claude_session_id, &path.to_string_lossy())
+}
+
 /// Collect `(mtime, path)` for every `*.jsonl` directly under `projects` and
 /// one level down (`projects/<encoded-project>/*.jsonl` — the real layout).
 fn collect_transcript_files(projects: &Path) -> Vec<(SystemTime, PathBuf)> {

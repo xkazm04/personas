@@ -12329,6 +12329,18 @@ export type Translations = {
       limit_eta_in_minutes: string;
       limit_eta_in_hours: string;
       limit_eta_tooltip: string;
+      harvest_open: string;
+      harvest_title: string;
+      harvest_copy: string;
+      harvest_copied: string;
+      harvest_empty: string;
+      harvest_no_summary: string;
+      harvest_run_untitled: string;
+      harvest_totals: string;
+      harvest_files: string;
+      harvest_files_tooltip: string;
+      harvest_turns: string;
+      harvest_tokens: string;
     };
     title: string;
     subtitle: string;
