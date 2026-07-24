@@ -535,6 +535,14 @@ fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
     };
 
     for sid in candidates {
+        // Athena still owes this session a verdict (its wake is queued or in
+        // flight) — freeing the process now would strand her eventual answer
+        // (typing fails closed once the writer is gone). Observed in the 30x
+        // burst: queued wakes outlived the 60s doze window. The guard expires
+        // after 6 min so a wedged turn can't pin sessions awake.
+        if crate::commands::companion::fleet_bridge::has_pending_assessment(&sid) {
+            continue;
+        }
         if registry().doze(&sid) {
             tracing::info!(session_id = %sid, "fleet doze: freed a parked session's process (state kept)");
             super::debug_log::sleep_event(

@@ -388,6 +388,12 @@ static TURN_LOCKS: std::sync::LazyLock<
     std::sync::Mutex<std::collections::HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
 > = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
 
+/// Fleet orchestration turns waiting on the turn lock (see the queue branch
+/// in `send_turn`). Bounds the burst backlog so a wedged turn can't pile up
+/// blocked tasks without limit.
+static FLEET_TURN_QUEUE_DEPTH: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+
 /// Get (or lazily create) the turn lock for one conversation.
 fn turn_lock_for(conversation_id: &str) -> Arc<tokio::sync::Mutex<()>> {
     let mut map = TURN_LOCKS
@@ -443,8 +449,51 @@ pub async fn send_turn(
     // `try_lock` and self-skip when busy: a missed autonomous tick self-heals
     // on the next one, and queuing them would let machine work pile up.
     let turn_lock = turn_lock_for(&session_id);
+    // Fleet orchestration turns QUEUE on the lock instead of self-skipping.
+    // The 30-terminal live test (2026-07-24) showed why: a completion burst
+    // parked ~25 sessions near-simultaneously, the try_lock dropped 27 of 57
+    // wakes silently, and the doze pass swept those sessions before the
+    // 2-minute re-check could retry — half the fleet was never assessed. A
+    // parked CLI session is exactly the caller that can afford to wait its
+    // turn; the queue drains at one verdict per ~10s. Bounded: past
+    // MAX_QUEUED_FLEET_TURNS waiters, new wakes still skip (the re-check +
+    // pending-assessment doze guard pick them up later) so a wedged turn
+    // can't accumulate unbounded blocked tasks.
+    let is_fleet_orchestration = matches!(
+        &origin,
+        TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
+    );
     let _turn_guard = match &origin {
         TurnOrigin::User | TurnOrigin::External { .. } => turn_lock.lock().await,
+        _ if is_fleet_orchestration => {
+            const MAX_QUEUED_FLEET_TURNS: usize = 32;
+            match turn_lock.try_lock() {
+                Ok(g) => g,
+                Err(_) => {
+                    let queued = FLEET_TURN_QUEUE_DEPTH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    if queued >= MAX_QUEUED_FLEET_TURNS {
+                        FLEET_TURN_QUEUE_DEPTH.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                        tracing::warn!(
+                            queued,
+                            "companion: fleet turn queue full — skipping wake (re-check will retry)"
+                        );
+                        return Err(AppError::Internal(
+                            "fleet turn queue full; wake skipped".into(),
+                        ));
+                    }
+                    if let TurnOrigin::Proactive { trigger_ref: Some(sid), .. } = &origin {
+                        crate::commands::fleet::debug_log::athena(
+                            sid,
+                            "queued",
+                            &format!("turn in flight — waiting (depth {})", queued + 1),
+                        );
+                    }
+                    let g = turn_lock.lock().await;
+                    FLEET_TURN_QUEUE_DEPTH.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                    g
+                }
+            }
+        }
         _ => match turn_lock.try_lock() {
             Ok(g) => g,
             Err(_) => {
@@ -853,6 +902,15 @@ pub async fn send_turn(
                 &turn_id,
                 &note,
             );
+        }
+    }
+
+    // Fleet orchestration bookkeeping: this session's assessment is now
+    // resolved (verdict, action, or even an empty reply) — release the doze
+    // guard that kept the target session awake while it waited in the queue.
+    if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
+        if trigger_kind == "fleet_orchestration" {
+            crate::commands::companion::fleet_bridge::clear_pending_assessment(fleet_sid);
         }
     }
 

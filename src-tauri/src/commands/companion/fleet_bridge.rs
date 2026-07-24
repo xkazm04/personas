@@ -499,6 +499,10 @@ fn orchestrate_session(
         crate::commands::fleet::pty::emit_registry_changed(app, "updated", session_id);
     }
 
+    {
+        let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+        map.insert(session_id.to_string(), now);
+    }
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
         Arc::new(state.user_db.clone()),
@@ -837,6 +841,34 @@ fn spawn_dev_reflection(
 /// through the same proactive-nudge path the op-wrap-up reconciler uses: a card
 /// the user can engage/dismiss. `turn_ref` is the per-turn id, so the
 /// (kind, ref) dedupe never collides across sequential decisions. Best-effort.
+/// Sessions whose orchestration assessment is queued or in flight, stamped
+/// with the wake time. The doze pass consults this so a parked session is
+/// never put to sleep while Athena still owes it a verdict — in the 30x test
+/// the burst queue meant a wake could wait minutes, and the 60s doze window
+/// swept sessions before their turn came. Entries expire (see
+/// `has_pending_assessment`) so a wedged turn can't pin sessions awake forever.
+fn pending_assessments() -> &'static Mutex<HashMap<String, i64>> {
+    static P: OnceLock<Mutex<HashMap<String, i64>>> = OnceLock::new();
+    P.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// True while `session_id` has an unresolved orchestration wake younger than
+/// 6 minutes (a bound chosen above the worst queue drain seen live, below
+/// "wedged forever").
+pub fn has_pending_assessment(session_id: &str) -> bool {
+    let now = crate::commands::fleet::registry::now_ms();
+    let map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    map.get(session_id).is_some_and(|&t| now - t < 6 * 60 * 1000)
+}
+
+/// Called by `send_turn` when a fleet_orchestration turn completes (any
+/// outcome) — releases the doze guard for the session it assessed.
+pub fn clear_pending_assessment(session_id: &str) {
+    let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    map.remove(session_id);
+    map.retain(|_, &mut t| crate::commands::fleet::registry::now_ms() - t < 30 * 60 * 1000);
+}
+
 /// Force the ORCHESTRATED session's id onto every fleet PTY action this turn
 /// dispatched. The model occasionally omits or hallucinates `session_id`
 /// (it fails closed — types nothing — so the intended write silently

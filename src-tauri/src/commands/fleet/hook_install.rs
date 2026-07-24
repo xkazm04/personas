@@ -85,10 +85,17 @@ fn build_command(port: u16, event_lower: &str) -> String {
     // `curl -s -X POST --data-binary @-` reads stdin verbatim and POSTs it.
     // -m 2 = 2-second timeout (we never want hooks to stall the user's CC).
     // ConnectTimeout 1s — localhost should be sub-ms when up.
+    //
+    // The trailing `|| exit 0` swallows curl's failure when Personas is DOWN
+    // (restart, rebuild): these hooks are machine-wide, so without it every
+    // tool call in EVERY Claude Code session logs a "hook error" pair for as
+    // long as the app is closed — pure noise for an intentionally best-effort
+    // ping. Works in both cmd.exe and sh, which is what Claude Code uses to
+    // run hook commands across platforms.
     format!(
         "curl -s -m 2 --connect-timeout 1 -X POST --data-binary @- \
          -H \"Content-Type: application/json\" \
-         http://127.0.0.1:{port}/fleet/hooks/{event_lower}"
+         http://127.0.0.1:{port}/fleet/hooks/{event_lower} || exit 0"
     )
 }
 
@@ -220,6 +227,7 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
 
     let mut present = Vec::new();
     let mut installed_port: Option<u16> = None;
+    let mut needs_upgrade = false;
 
     for event in FLEET_EVENTS {
         let Some(arr) = hooks_map.get(*event).and_then(|v| v.as_array()) else {
@@ -230,6 +238,25 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
             continue;
         }
         present.push((*event).to_string());
+
+        // Legacy-command detection: a fleet hook without the `|| exit 0`
+        // suffix predates the silent-failure fix — report the port as
+        // mismatched so the startup self-heal reinstalls (same path as a
+        // port drift; reinstall is idempotent).
+        for entry in arr {
+            if !is_fleet_tagged(entry) {
+                continue;
+            }
+            if let Some(inner_hooks) = entry.get("hooks").and_then(|v| v.as_array()) {
+                for h in inner_hooks {
+                    if let Some(cmd) = h.get("command").and_then(|v| v.as_str()) {
+                        if cmd.contains("/fleet/hooks/") && !cmd.contains("|| exit 0") {
+                            needs_upgrade = true;
+                        }
+                    }
+                }
+            }
+        }
 
         // Pull the port out of the curl command so we can detect drift.
         if installed_port.is_none() {
@@ -261,7 +288,10 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
         .collect();
 
     let installed = !present.is_empty();
-    let port_matches = installed_port == Some(current_port);
+    // `needs_upgrade` rides the port_matches signal on purpose: the startup
+    // self-heal reinstalls whenever installed && !port_matches, and a
+    // reinstall is exactly what upgrades a legacy command in place.
+    let port_matches = installed_port == Some(current_port) && !needs_upgrade;
 
     Ok(FleetHookStatus {
         installed,
