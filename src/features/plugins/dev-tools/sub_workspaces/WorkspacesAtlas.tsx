@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Landmark, Plus, Trash2 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import {
   CreateWorkspaceInline,
@@ -19,12 +20,14 @@ import KnowledgeLibrary from './KnowledgeLibrary';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {
+  const { t, tx } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
   const center = useWorkspaceCenter();
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const open = center.workspaces.find((w) => w.id === openId) ?? null;
+  const open = center.workspaces.find((ws) => ws.id === openId) ?? null;
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-6">
@@ -54,9 +57,9 @@ export default function WorkspacesAtlas() {
                 <span className="typo-title text-foreground truncate">{ws.name}</span>
               </div>
               <div className="flex items-baseline gap-4 mb-3">
-                <Tally value={ws.projectIds.length} label="projects" />
-                <Tally value={stats?.adopted ?? 0} label="adopted" />
-                <Tally value={stats?.proposed ?? 0} label="proposed" />
+                <Tally value={ws.projectIds.length} label={tw.tally_projects} />
+                <Tally value={stats?.adopted ?? 0} label={tw.tally_adopted} />
+                <Tally value={stats?.proposed ?? 0} label={tw.tally_proposed} />
               </div>
               <div className="flex flex-wrap gap-1 min-h-5">
                 {members.slice(0, 4).map((name) => (
@@ -71,7 +74,7 @@ export default function WorkspacesAtlas() {
                   <span className="typo-caption text-muted-foreground">+{members.length - 4}</span>
                 )}
                 {members.length === 0 && (
-                  <span className="typo-caption text-muted-foreground">No projects yet</span>
+                  <span className="typo-caption text-muted-foreground">{tw.no_projects_yet}</span>
                 )}
               </div>
             </button>
@@ -89,7 +92,7 @@ export default function WorkspacesAtlas() {
             className="rounded-card border border-dashed border-primary/25 p-4 flex flex-col items-center justify-center gap-2 text-foreground/80 hover:text-foreground hover:bg-secondary/30 transition-colors min-h-32"
           >
             <Plus className="w-5 h-5" />
-            <span className="typo-body">New workspace</span>
+            <span className="typo-body">{tw.new_workspace}</span>
           </button>
         )}
       </div>
@@ -111,14 +114,14 @@ export default function WorkspacesAtlas() {
                   defaultValue={open.name}
                   onBlur={(e) => renameWorkspace(open.id, e.target.value)}
                   className="typo-title-lg text-foreground bg-transparent border-b border-transparent focus:border-primary/30 focus:outline-none w-full"
-                  aria-label="Workspace name"
+                  aria-label={tw.workspace_name_label}
                 />
                 <div className="mt-2 flex items-center gap-1.5">
                   {WORKSPACE_COLORS.map((c) => (
                     <button
                       key={c}
                       type="button"
-                      aria-label={`Set colour ${c}`}
+                      aria-label={tx(tw.set_colour, { color: c })}
                       onClick={() => recolorWorkspace(open.id, c)}
                       className={`h-4 w-4 rounded-full transition-transform ${
                         open.color === c
@@ -133,7 +136,7 @@ export default function WorkspacesAtlas() {
               <button
                 type="button"
                 onClick={() => setConfirmDelete(open.id)}
-                aria-label="Delete workspace"
+                aria-label={tw.delete_workspace}
                 className="shrink-0 rounded-interactive p-2 text-foreground/70 hover:text-status-error hover:bg-status-error/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -147,6 +150,7 @@ export default function WorkspacesAtlas() {
                 workspace={open}
                 rows={center.knowledge[open.id] ?? []}
                 projectById={center.projectById}
+                onChanged={center.refreshKnowledge}
               />
             </div>
           </motion.div>
@@ -155,8 +159,8 @@ export default function WorkspacesAtlas() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Delete this workspace?"
-          body="Projects stay untouched — they just become unassigned. The workspace's knowledge library is removed."
+          title={tw.delete_confirm_title}
+          body={tw.delete_confirm_body}
           danger
           onConfirm={() => {
             deleteWorkspace(confirmDelete);

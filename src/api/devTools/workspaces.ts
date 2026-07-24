@@ -85,6 +85,8 @@ export interface CreateKnowledgeInput {
   title: string;
   statement: string;
   detailMd?: string;
+  /** Slash-path taxonomy node, e.g. 'ui/motion/reveals'. */
+  topic?: string;
   /** JSON-encoded {@link Applicability}. */
   applicability?: string;
   originProjectId?: string;
@@ -105,6 +107,7 @@ export async function updateWorkspaceKnowledge(
     title?: string;
     statement?: string;
     detailMd?: string | null;
+    topic?: string | null;
     applicability?: string | null;
   },
 ): Promise<WorkspaceKnowledge> {

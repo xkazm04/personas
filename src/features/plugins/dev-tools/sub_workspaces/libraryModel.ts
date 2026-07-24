@@ -7,9 +7,9 @@
 // cost the same.
 //
 // Topic paths: free-form slash-delimited taxonomy ('ui/motion/reveals')
-// authored by harvest agents. Real DB rows don't carry a `topic` column yet
-// (consolidation adds it); until then a coarse path is derived from
-// applicability.layers so real items participate in the same tree.
+// authored by harvest agents, stored in workspace_knowledge.topic. Legacy
+// rows written before that column fall back to a coarse path derived from
+// applicability.layers so they still participate in the same tree.
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 
@@ -52,7 +52,7 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     status: row.status as KnowledgeStatus,
     title: row.title,
     statement: row.statement,
-    topic: layers[0] ?? '',
+    topic: row.topic ?? layers[0] ?? '',
     layers,
     frameworks,
     originProjectId: row.origin_project_id,

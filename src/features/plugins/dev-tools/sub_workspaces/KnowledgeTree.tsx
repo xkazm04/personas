@@ -12,6 +12,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { KnowledgeStatusChip } from './centerShared';
 import {
@@ -35,6 +36,22 @@ export default function KnowledgeTree({
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
 }) {
+  const { t, tx } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
+  const statusLabel: Record<KnowledgeStatus, string> = {
+    observed: tw.status_observed,
+    proposed: tw.status_proposed,
+    adopted: tw.status_adopted,
+    deprecated: tw.status_deprecated,
+    rejected: tw.status_rejected,
+  };
+  const kindLabel: Record<KnowledgeKind, string> = {
+    pattern: tw.kind_pattern,
+    pitfall: tw.kind_pitfall,
+    decision: tw.kind_decision,
+    howto: tw.kind_howto,
+    fact: tw.kind_fact,
+  };
   const [selected, setSelected] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']));
   const [query, setQuery] = useState('');
@@ -90,47 +107,47 @@ export default function KnowledgeTree({
   const columns: DataGridColumn<KnowledgeItemView>[] = [
     {
       key: 'status',
-      label: 'Status',
+      label: tw.col_status,
       width: '110px',
       sortable: true,
       filterOptions: [
-        { value: 'all', label: 'All statuses' },
-        ...STATUS_VALUES.map((s) => ({ value: s, label: s })),
+        { value: 'all', label: tw.all_statuses },
+        ...STATUS_VALUES.map((s) => ({ value: s, label: statusLabel[s] })),
       ],
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
-      render: (r) => <KnowledgeStatusChip status={r.status} />,
+      render: (r) => <KnowledgeStatusChip status={r.status} label={statusLabel[r.status]} />,
     },
     {
       key: 'kind',
-      label: 'Kind',
+      label: tw.col_kind,
       width: '100px',
       sortable: true,
       filterOptions: [
-        { value: 'all', label: 'All kinds' },
-        ...KIND_VALUES.map((k) => ({ value: k, label: k })),
+        { value: 'all', label: tw.all_kinds },
+        ...KIND_VALUES.map((k) => ({ value: k, label: kindLabel[k] })),
       ],
       filterValue: kindFilter,
       onFilterChange: setKindFilter,
-      render: (r) => <span className="typo-body text-muted-foreground">{r.kind}</span>,
+      render: (r) => <span className="typo-body text-muted-foreground">{kindLabel[r.kind]}</span>,
     },
     {
       key: 'title',
-      label: 'Practice',
+      label: tw.col_practice,
       width: '2.4fr',
       sortable: true,
       render: (r) => (
         <span className="typo-body text-foreground truncate">
           {r.title}
           {r.mock && (
-            <span className="typo-label text-muted-foreground ml-1.5 opacity-60">demo</span>
+            <span className="typo-label text-muted-foreground ml-1.5 opacity-60">{tw.demo_tag}</span>
           )}
         </span>
       ),
     },
     {
       key: 'topic',
-      label: 'Topic',
+      label: tw.col_topic,
       width: '1.4fr',
       sortable: true,
       render: (r) => (
@@ -139,18 +156,18 @@ export default function KnowledgeTree({
     },
     {
       key: 'origin',
-      label: 'Origin',
+      label: tw.col_origin,
       width: '1fr',
       sortable: true,
       render: (r) => (
         <span className="typo-caption text-foreground truncate">
-          {r.originProjectId ? nameOf(r.originProjectId) : 'workspace'}
+          {r.originProjectId ? nameOf(r.originProjectId) : tw.origin_workspace}
         </span>
       ),
     },
     {
       key: 'confidence',
-      label: 'Conf.',
+      label: tw.col_confidence,
       width: '80px',
       sortable: true,
       align: 'right',
@@ -162,7 +179,7 @@ export default function KnowledgeTree({
     },
     {
       key: 'updated',
-      label: 'Updated',
+      label: tw.col_updated,
       width: '96px',
       sortable: true,
       align: 'right',
@@ -184,12 +201,14 @@ export default function KnowledgeTree({
     <div className="flex min-h-0 h-full gap-4">
       <aside className="w-60 shrink-0 overflow-y-auto rounded-card border border-primary/10 p-2">
         <NodeButton
-          label="All topics"
+          label={tw.all_topics}
           count={tree.total}
           depth={0}
           active={selected === ''}
           hasChildren={false}
           expanded
+          expandLabel={tw.expand}
+          collapseLabel={tw.collapse}
           onSelect={() => setSelected('')}
           onToggle={() => {}}
         />
@@ -200,6 +219,8 @@ export default function KnowledgeTree({
             depth={0}
             selected={selected}
             expanded={expanded}
+            expandLabel={tw.expand}
+            collapseLabel={tw.collapse}
             onSelect={setSelected}
             onToggle={toggle}
           />
@@ -209,13 +230,15 @@ export default function KnowledgeTree({
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
         <div className="flex items-center gap-3 pb-2">
           <span className="typo-caption text-muted-foreground">
-            {selected || 'all topics'} · {rows.length} items
+            {selected
+              ? tx(tw.branch_summary, { topic: selected, count: rows.length })
+              : tx(tw.all_topics_summary, { count: rows.length })}
           </span>
           <div className="relative ml-auto">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
               className={`${INPUT_FIELD} pl-8 w-56`}
-              placeholder="Search practices…"
+              placeholder={tw.search_practices}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -232,8 +255,8 @@ export default function KnowledgeTree({
           pageSize={25}
           density="compact"
           emptyIcon={Library}
-          emptyTitle="No practices here"
-          emptyDescription="Nothing matches this topic and filter yet."
+          emptyTitle={tw.library_empty_title}
+          emptyDescription={tw.library_empty_desc}
           className="flex-1 min-h-0 rounded-card border border-primary/10"
         />
       </div>
@@ -246,6 +269,8 @@ function TreeBranch({
   depth,
   selected,
   expanded,
+  expandLabel,
+  collapseLabel,
   onSelect,
   onToggle,
 }: {
@@ -253,6 +278,8 @@ function TreeBranch({
   depth: number;
   selected: string;
   expanded: Set<string>;
+  expandLabel: string;
+  collapseLabel: string;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
 }) {
@@ -266,6 +293,8 @@ function TreeBranch({
         active={selected === node.path}
         hasChildren={node.children.length > 0}
         expanded={isOpen}
+        expandLabel={expandLabel}
+        collapseLabel={collapseLabel}
         onSelect={() => onSelect(node.path)}
         onToggle={() => onToggle(node.path)}
       />
@@ -277,6 +306,8 @@ function TreeBranch({
             depth={depth + 1}
             selected={selected}
             expanded={expanded}
+            expandLabel={expandLabel}
+            collapseLabel={collapseLabel}
             onSelect={onSelect}
             onToggle={onToggle}
           />
@@ -292,6 +323,8 @@ function NodeButton({
   active,
   hasChildren,
   expanded,
+  expandLabel,
+  collapseLabel,
   onSelect,
   onToggle,
 }: {
@@ -301,6 +334,8 @@ function NodeButton({
   active: boolean;
   hasChildren: boolean;
   expanded: boolean;
+  expandLabel: string;
+  collapseLabel: string;
   onSelect: () => void;
   onToggle: () => void;
 }) {
@@ -314,7 +349,7 @@ function NodeButton({
       {hasChildren ? (
         <button
           type="button"
-          aria-label={expanded ? 'Collapse' : 'Expand'}
+          aria-label={expanded ? collapseLabel : expandLabel}
           onClick={onToggle}
           className="p-0.5 text-foreground/70 hover:text-foreground"
         >

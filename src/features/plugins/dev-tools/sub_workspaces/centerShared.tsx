@@ -12,6 +12,7 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import {
   assignProject,
@@ -107,11 +108,11 @@ const STATUS_INK: Record<KnowledgeStatus, string> = {
   rejected: 'bg-status-error/10 text-status-error border-status-error/30',
 };
 
-export function KnowledgeStatusChip({ status }: { status: string }) {
+export function KnowledgeStatusChip({ status, label }: { status: string; label?: string }) {
   const ink = STATUS_INK[status as KnowledgeStatus] ?? STATUS_INK.observed;
   return (
     <span className={`typo-label rounded-interactive border px-1.5 py-0.5 ${ink}`}>
-      {status}
+      {label ?? status}
     </span>
   );
 }
@@ -169,6 +170,8 @@ export function MembershipPanel({
   workspace: Workspace;
   projects: DevProject[];
 }) {
+  const { t, tx } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
   const memberSet = new Set(workspace.projectIds);
   const members = projects.filter((p) => memberSet.has(p.id));
   const candidates = projects.filter((p) => !memberSet.has(p.id));
@@ -177,18 +180,18 @@ export function MembershipPanel({
     <div className="grid grid-cols-2 gap-3 min-w-0">
       <div className="min-w-0">
         <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
-          Members · {members.length}
+          {tx(tw.members_count, { count: members.length })}
         </div>
         <div className="flex flex-col gap-1">
           {members.length === 0 && (
-            <p className="typo-body text-muted-foreground">No projects yet.</p>
+            <p className="typo-body text-muted-foreground">{tw.no_projects_yet}</p>
           )}
           {members.map((p) => (
             <ProjectRow
               key={p.id}
               project={p}
               actionIcon={<X className="w-3.5 h-3.5" />}
-              actionLabel="Remove from workspace"
+              actionLabel={tw.remove_from_workspace}
               onAction={() => assignProject(p.id, null)}
             />
           ))}
@@ -196,18 +199,18 @@ export function MembershipPanel({
       </div>
       <div className="min-w-0">
         <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
-          Other projects · {candidates.length}
+          {tx(tw.other_projects, { count: candidates.length })}
         </div>
         <div className="flex flex-col gap-1">
           {candidates.length === 0 && (
-            <p className="typo-body text-muted-foreground">Every project is a member.</p>
+            <p className="typo-body text-muted-foreground">{tw.every_project_member}</p>
           )}
           {candidates.map((p) => (
             <ProjectRow
               key={p.id}
               project={p}
               actionIcon={<ArrowRight className="w-3.5 h-3.5" />}
-              actionLabel="Add to workspace"
+              actionLabel={tw.add_to_workspace}
               onAction={() => assignProject(p.id, workspace.id)}
               subdued={Boolean(p.workspace_id)}
             />
@@ -253,6 +256,8 @@ function ProjectRow({
 
 /** Inline "name → create" form shared by the shell's empty/new states. */
 export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
+  const { t } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
   const [name, setName] = useState('');
   const submit = () => {
     if (!name.trim()) return;
@@ -269,7 +274,7 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
     >
       <input
         className={INPUT_FIELD}
-        placeholder="Workspace name…"
+        placeholder={tw.workspace_name_placeholder}
         value={name}
         autoFocus={autoFocus}
         onChange={(e) => setName(e.target.value)}
@@ -279,7 +284,7 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
         disabled={!name.trim()}
         className="typo-body shrink-0 rounded-interactive border border-primary/20 bg-primary/10 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
       >
-        Create
+        {tw.create}
       </button>
     </form>
   );
