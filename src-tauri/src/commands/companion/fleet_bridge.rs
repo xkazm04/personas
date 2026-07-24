@@ -428,6 +428,9 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
          (progressing fine, or simply finished — stays off the operator's screen) or \
          `<id8>: NEEDS-YOU: <one line>` (ONLY for destructive/irreversible operations, spending, \
          credentials, or publishing off-machine).\n\
+         • A Claude usage/rate-limit or server-error notice on a screen is NOT the operator's \
+         problem: reply `<id8>: OK: rate-limited — system retries` (the system retries it \
+         mechanically; never NEEDS-YOU for a limit).\n\
          Do not skip any session. Write everything in English; text typed into a session must match \
          its prompt's language (usually English). No preamble, no fleet-wide recap."
     );
@@ -477,13 +480,16 @@ pub fn finish_assessment_turn(
             verdicts.insert(full.clone(), rest.trim().to_string());
         }
     }
+    let mut unanswered: Vec<String> = Vec::new();
     for sid in &batch {
         if acted.contains(sid) {
             resolve_athena_assessment(app, sid, None);
+            clear_pending_assessment(sid);
         } else if let Some(note) = verdicts.get(sid) {
             if let Some(clean) = handle_fleet_defer(app, sid, note) {
                 surface_fleet_orb_note(app, pool, &format!("{turn_ref}:{}", &sid[..8.min(sid.len())]), &clean);
             }
+            clear_pending_assessment(sid);
         } else {
             crate::commands::fleet::debug_log::athena(
                 sid,
@@ -491,12 +497,50 @@ pub fn finish_assessment_turn(
                 "no action and no verdict line — will be reassessed",
             );
             resolve_athena_assessment(app, sid, None);
+            // ROLL BACK the decision signature the drain recorded optimistically —
+            // without this, the next wake for the (unchanged) screen hits the
+            // "screen unchanged" dedupe and the session goes permanently
+            // invisible. Observed live during the 2026-07-24 limit outage: six
+            // sessions parked on questions decayed to Stale and were never
+            // re-assessed.
+            {
+                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                sigs.remove(sid);
+            }
+            // Keep the doze guard armed and put the session back in line.
+            {
+                let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                map.insert(sid.clone(), crate::commands::fleet::registry::now_ms());
+            }
+            unanswered.push(sid.clone());
         }
-        clear_pending_assessment(sid);
+    }
+    let all_unanswered = !batch.is_empty() && unanswered.len() == batch.len();
+    {
+        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        for sid in unanswered {
+            if !q.iter().any(|e| e.session_id == sid) {
+                q.push(QueuedAssessment {
+                    session_id: sid,
+                    situation: "awaiting_input".to_string(),
+                });
+            }
+        }
     }
     ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
-    // More wakes may have queued while this turn ran — keep draining.
-    if let Some(st) = tauri::Manager::try_state::<std::sync::Arc<AppState>>(app) {
+    // More wakes may have queued while this turn ran — keep draining. A turn
+    // whose ENTIRE batch came back unanswered is the API-failure signature
+    // (limit outage: turns die in ~3s with no output) — re-draining instantly
+    // would hot-loop failed turns, so back off for 60s instead.
+    if all_unanswered {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+            if let Some(st) = tauri::Manager::try_state::<std::sync::Arc<AppState>>(&app) {
+                drain_assessment_batch(&app, &st);
+            }
+        });
+    } else if let Some(st) = tauri::Manager::try_state::<std::sync::Arc<AppState>>(app) {
         drain_assessment_batch(app, &st);
     }
 }
@@ -911,9 +955,16 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
     }
     let now = crate::commands::fleet::registry::now_ms();
     for s in crate::commands::fleet::registry::registry().list_dto() {
+        // Stale is included deliberately (2026-07-24): a session parked on a
+        // question whose wake was lost (limit outage, dropped turn) decays
+        // AwaitingInput → Stale, and an AwaitingInput-only sweep never sees it
+        // again — six sessions sat invisible with questions on screen. A Stale
+        // session with nothing to decide costs one batch slot and gets an OK:
+        // verdict; the screen-hash dedupe suppresses repeats.
         if !matches!(
             s.state,
             crate::commands::fleet::types::FleetSessionState::AwaitingInput
+                | crate::commands::fleet::types::FleetSessionState::Stale
         ) {
             continue;
         }
@@ -1180,6 +1231,17 @@ pub fn has_pending_assessment(session_id: &str) -> bool {
 
 /// Called by `send_turn` when a fleet_orchestration turn completes (any
 /// outcome) — releases the doze guard for the session it assessed.
+/// Arm (or refresh) the doze guard for a session outside the wake path — used
+/// by the mechanical limit-retry lane to keep a parked process alive across
+/// its retry window.
+pub fn stamp_pending_assessment(session_id: &str) {
+    let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    map.insert(
+        session_id.to_string(),
+        crate::commands::fleet::registry::now_ms(),
+    );
+}
+
 pub fn clear_pending_assessment(session_id: &str) {
     let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
     map.remove(session_id);

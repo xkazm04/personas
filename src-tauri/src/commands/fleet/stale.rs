@@ -476,9 +476,91 @@ fn tick_once(app: &AppHandle) {
         super::pty::emit_registry_changed(app, "updated", &sid);
     }
 
+    limit_retry_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
+}
+
+/// Per-session mechanical retry state for the Claude server/usage-limit lane.
+fn limit_retry_map() -> &'static Mutex<HashMap<String, (i64, u32)>> {
+    static MAP: OnceLock<Mutex<HashMap<String, (i64, u32)>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Screen signature of a Claude-side limit / transient server error. Kept
+/// deliberately narrow — sessions legitimately *talk about* rate limits, so
+/// bare "rate limit" does not match.
+fn screen_shows_limit_error(screen: &str) -> bool {
+    let s = screen.to_lowercase();
+    s.contains("usage limit")
+        || s.contains("limit will reset")
+        || s.contains("limit resets")
+        || s.contains("overloaded_error")
+        || s.contains("api error")
+        || (s.contains("rate limit") && (s.contains("retry") || s.contains("try again")))
+}
+
+const LIMIT_RETRY_INTERVAL_MS: i64 = 4 * 60 * 1000;
+const LIMIT_RETRY_MAX: u32 = 8;
+
+/// Athena-autonomy for Claude-side outages (2026-07-24): a session that hit a
+/// usage/rate limit or transient server error used to sit parked until the
+/// operator noticed. In autonomous mode the retry is MECHANICAL — no Athena
+/// turn spent (her turns fail under the same limit): every ~4 min, type a
+/// confirmed-submit "continue" into the parked session; once the limit lifts,
+/// the turn resumes and the state machine takes over. The retry stamp also
+/// arms the doze guard so the process stays alive between attempts; after
+/// [`LIMIT_RETRY_MAX`] attempts the session is left to doze (a multi-hour cap
+/// is the operator's call — the next app-side wake still finds it).
+fn limit_retry_pass(app: &AppHandle, now: i64) {
+    let candidates: Vec<String> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                !s.dozing
+                    && s.child_pid.is_some()
+                    && matches!(
+                        s.state,
+                        FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
+                    )
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+    for sid in candidates {
+        let Some((_, lines)) = registry().render_screen_for(&sid) else { continue };
+        let screen = lines.join("\n");
+        if !screen_shows_limit_error(&screen) {
+            let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.remove(&sid);
+            continue;
+        }
+        let (last, count) = {
+            let m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.get(&sid).copied().unwrap_or((0, 0))
+        };
+        if count >= LIMIT_RETRY_MAX || now - last < LIMIT_RETRY_INTERVAL_MS {
+            continue;
+        }
+        {
+            let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.insert(sid.clone(), (now, count + 1));
+        }
+        // Keep the process alive across the retry window (doze guard).
+        crate::commands::companion::fleet_bridge::stamp_pending_assessment(&sid);
+        super::debug_log::athena(
+            &sid,
+            "limit retry",
+            &format!(
+                "server/usage-limit screen — mechanical retry {}/{} (typing `continue`)",
+                count + 1,
+                LIMIT_RETRY_MAX
+            ),
+        );
+        let _ = registry().write_text_line(&sid, "continue");
+        let _ = app; // emits ride the state hooks once the session resumes
+    }
 }
 
 /// Seconds a session may sit in `Stale` / `AwaitingInput` before its process

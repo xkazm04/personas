@@ -133,7 +133,7 @@ pub async fn companion_approve_action(
         "propose_kpi" => execute_propose_kpi(&state, &app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
-        "fleet_send_input" => execute_fleet_send_input(&params),
+        "fleet_send_input" => execute_fleet_send_input(&app, &params),
         "fleet_broadcast" => execute_fleet_broadcast(&params),
         "fleet_kill" => execute_fleet_kill(&params),
         "fleet_spawn" => execute_fleet_spawn(&app, &params),

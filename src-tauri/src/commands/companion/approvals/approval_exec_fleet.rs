@@ -607,7 +607,10 @@ mod multiselect_tests {
     }
 }
 
-pub(crate) fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+pub(crate) fn execute_fleet_send_input(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     let session_id = params
         .get("session_id")
         .and_then(|v| v.as_str())
@@ -620,6 +623,52 @@ pub(crate) fn execute_fleet_send_input(params: &serde_json::Value) -> Result<Exe
         .get("press_enter")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
+
+    // DOZED target — the answer can't be typed (no PTY writer), and even after
+    // a wake it would be meaningless: `claude --resume` does NOT re-render the
+    // question TUI that was on screen, so the computed answer has nothing to
+    // land on. Convert the fire into the recovery playbook proven live on
+    // 2026-07-24: wake the session (lineage-adopting resume), then after boot
+    // nudge it to RE-ASK its pending question — the re-asked question flows
+    // through the normal hook → batch → driver path against a live PTY.
+    if crate::commands::fleet::registry::registry().is_dozing(session_id) {
+        let app = app.clone();
+        let sid = session_id.to_string();
+        crate::commands::fleet::debug_log::athena(
+            &sid,
+            "dozed target — wake + re-ask",
+            "answer converted to a wake and a re-ask nudge (resume drops the question TUI)",
+        );
+        tauri::async_runtime::spawn(async move {
+            let new_id = match crate::commands::fleet::commands::fleet_wake_session(
+                app.clone(),
+                sid.clone(),
+                None,
+                None,
+            )
+            .await
+            {
+                Ok(id) => id,
+                Err(e) => {
+                    tracing::warn!(session_id = %sid, error = %e, "dozed-target wake failed");
+                    return;
+                }
+            };
+            // Let the resumed CLI boot and answer its continuation prompt.
+            tokio::time::sleep(std::time::Duration::from_secs(25)).await;
+            let _ = crate::commands::fleet::registry::registry().write_text_line(
+                &new_id,
+                "Resume: if you were waiting on my answer to a question, re-ask it now \
+                 using your question tool (same options); otherwise continue with your \
+                 current phase.",
+            );
+        });
+        return Ok(ExecuteResult::message(format!(
+            "Session `{}` was asleep — woke it and asked it to re-surface its question \
+             (the answer will be delivered on the fresh prompt).",
+            &session_id[..session_id.len().min(8)],
+        )));
+    }
 
     // MULTI-SELECT detection. A Claude Code AskUserQuestion multi-select is a
     // checkbox TUI: a typed string like "1,2,3,4" only toggles the first item and
@@ -1226,6 +1275,38 @@ pub(crate) fn execute_fleet_intervene(
     crate::companion::orchestration::operative_memory::memory()
         .record_intervention(session_id)
         .map_err(|e| AppError::Internal(format!("fleet_intervene: {e}")))?;
+
+    // DOZED target: unlike a TUI answer, an intervention is a plain instruction
+    // and stays meaningful after a resume — wake the session and deliver the
+    // message once it boots.
+    if crate::commands::fleet::registry::registry().is_dozing(session_id) {
+        let app = app.clone();
+        let sid = session_id.to_string();
+        let msg = message.to_string();
+        crate::commands::fleet::debug_log::athena(
+            &sid,
+            "dozed target — wake + deliver",
+            "intervention will be typed after the resumed session boots",
+        );
+        tauri::async_runtime::spawn(async move {
+            match crate::commands::fleet::commands::fleet_wake_session(app, sid.clone(), None, None)
+                .await
+            {
+                Ok(new_id) => {
+                    tokio::time::sleep(std::time::Duration::from_secs(25)).await;
+                    let _ = crate::commands::fleet::registry::registry()
+                        .write_text_line(&new_id, &msg);
+                }
+                Err(e) => {
+                    tracing::warn!(session_id = %sid, error = %e, "dozed-target wake failed (intervene)");
+                }
+            }
+        });
+        return Ok(ExecuteResult::message(format!(
+            "Session `{}` was asleep — woke it; the intervention lands after boot.",
+            &session_id[..session_id.len().min(8)],
+        )));
+    }
 
     // Confirmed-submit primitive: text and Enter as separate chunks, submit
     // verified (see `write_text_line` — a trailing newline inside one chunk is

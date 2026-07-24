@@ -210,7 +210,7 @@ pub async fn auto_resolve_if_allowed(
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
-        "fleet_send_input" => execute_fleet_send_input(&params),
+        "fleet_send_input" => execute_fleet_send_input(app, &params),
         "fleet_intervene" => execute_fleet_intervene(app, &params),
         "fleet_wake" => execute_fleet_wake(app, &params).await,
         "fleet_resume" => execute_fleet_resume(app, &params).await,
