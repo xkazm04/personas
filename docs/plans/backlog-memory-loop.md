@@ -1,6 +1,6 @@
 # Backlog Memory Loop — unify ideas, memory, goals, and execution
 
-**Status:** planned (no phase started)
+**Status:** Phase 1 SHIPPED (434871972) · Phase 2 SHIPPED (caa34b6c0) · Phase 3 DROPPED by decision · manual scan parametrization SHIPPED (8cf84b1e5) · Phase 4 to be re-shaped
 **Author session:** 2026-07-24 (Mastermind cross-module analysis)
 **Executes across:** `sub_scanner` / `sub_triage` / `sub_mastermind` (frontend), `idea_scanner.rs` / `memory_reflection.rs` / `task_executor.rs` / `db` (Rust)
 **Companion doc:** `docs/features/plugins/dev tools/mastermind.md` (§10 actionable layer)
@@ -27,7 +27,7 @@ Each phase is independently shippable and gate-verified (`cargo check --features
 
 ---
 
-### Phase 1 — Backlog memory spine (dedup + lifecycle unification)
+### Phase 1 — Backlog memory spine (dedup + lifecycle unification) — SHIPPED `434871972`
 
 **Goal:** every `dev_ideas` writer goes through one idempotent gate; ideas age instead of rotting.
 
@@ -42,11 +42,11 @@ Each phase is independently shippable and gate-verified (`cargo check --features
 
 ---
 
-### Phase 2 — Memory in the loop (project anchor + execution-path memory)
+### Phase 2 — Memory in the loop (project anchor + execution-path memory) — SHIPPED `caa34b6c0`
 
 **Goal:** decisions and outcomes are remembered per **project**, and the executor reads them.
 
-2.1 **Project-scope memory anchor.** *Design decision (recommended: A).* (A) Add nullable `project_id` to `persona_memories` (+ index), written by `record_idea_decision` and the new outcome writer; recall gains an optional project filter. (B) Auto-provision a hidden home team per teamless project and reuse `home_team_id`. A is honest and cheap (one ALTER inside `run_incremental` with `has_table` guard + repo/binding regen); B contorts the team concept and leaks placeholder teams into team UIs.
+2.1 **Project-scope memory anchor.** *Shipped as neither A nor B.* The survey during implementation showed decisions never flow through `persona_memories` at all — `record_idea_decision_by` writes `team_memories` and bails when there is no team. Adding a column to `persona_memories` would have anchored the wrong store. Shipped instead: a dedicated **`dev_memories`** table (project_id NOT NULL, category, title, content, importance, source_kind ∈ {idea_decision, task_outcome, scan_funnel}, source_id, timestamps) — the development loop's own store, mirroring team memory's shape. Team memory keeps its role as the cross-persona workspace ledger; both are written in parallel and neither is authoritative. A partial unique index on `(project_id, source_kind, source_id)` makes every write idempotent per source event.
 2.2 **Decision memories become project-anchored.** `record_idea_decision` (accept → decision memory, reject → constraint memory) stamps `project_id` resolved from the idea. Existing team scoping stays when a team exists — dual-anchored.
 2.3 **Executor reads memory.** `gather_task_context` (`task_executor.rs:56-132`) injects a budgeted selection (reuse `pack_by_budget_relevance`, `memory_recall.rs:290`) of project + team memories — constraints first — into `build_task_prompt`. Cap small (~1.5k chars) so task prompts stay lean.
 2.4 **Executor writes outcome memory.** On terminal task status (where goal signals are written, `task_executor.rs:326-367`): one compact outcome memory (`learned` category) — task title, source idea, result, 1-line takeaway if the run produced one. This is vibeman's `harness-learnings.md` write-back, landing in the DB. Provenance via `derived_from` = task id.
@@ -57,21 +57,51 @@ Each phase is independently shippable and gate-verified (`cargo check --features
 
 ---
 
-### Phase 3 — Idea ↔ Goal bridge
+### Phase 3 — Idea ↔ Goal bridge — DROPPED
 
-**Goal:** the scanner backlog and the teams' goal backlog become one system.
+**Decision (2026-07-24, user):** ideas should NOT become goals. Goals are the
+teams' own cooperation surface, authored deliberately; promoting scanner output
+into them would blur two backlogs that are intentionally separate — the goal
+layer would inherit the idea layer's churn, and a rejected idea's provenance
+would leak into team planning. Ideas stay work-shaped (idea → task → run) and
+reach goals only where they already do: through the task that carries a
+`goal_id`. `dev_ideas` gains no `goal_id`; no promote action is built.
 
-3.1 **`goal_id` on `dev_ideas`** (nullable, migration + binding). Set when an idea is spawned in service of a goal, or linked during triage.
-3.2 **Promote-to-goal triage action.** In the triage deck (and the Strategist's vocabulary): select 1+ accepted ideas → create a `dev_goals` row (title synthesized, `context_id` from the ideas, ideas stamped with the new `goal_id`). The assignment orchestrator (`team_assignment_orchestrator.rs`) then decomposes it exactly like any hand-written goal — no orchestrator changes.
-3.3 **Strategist goal-awareness both ways.** `run_backlog_triage` already relates ideas to open goals (`apply_goal_relation`, `idea_scanner.rs:956-985`); extend its output contract with an optional `promote: [idea_ids…]` suggestion the UI offers as a one-click action (never auto-fires).
-3.4 **Mastermind surface.** The Goals dimension popover (`GoalListPopover`) gains per-goal "n linked ideas"; the Ideas popover shows "linked to goal <title>" on relevant rows. Read-only this phase — the click-through action layer stays deferred as documented.
-
-**Acceptance:** promoting 2 ideas creates a goal visible in Goals hub + Mastermind Goals cell count; the tasks created from those ideas carry both `source_idea_id` and the goal's id; goal completion rolls up progress exactly as hand-written goals do.
-**Scope estimate:** 1 migration, ~3 Rust files, ~4 frontend files.
+The one piece worth salvaging if this is ever revisited: the Strategist already
+relates ideas to open goals (`apply_goal_relation`) for context — that is
+read-only association, not promotion, and it stays.
 
 ---
 
-### Phase 4 — Parametrized scan flow (the Pipeline-C shape), scanner module + Mastermind
+### Interlude (SHIPPED `8cf84b1e5`) — manual scan parametrization in Mastermind
+
+Ordered deliberately BEFORE Phase 4: make the knobs manual so Phases 1–2 can be
+exercised against real variants (agent combinations, scoped vs whole-project,
+different target counts) before anything is automated. The Ideas-cell popover
+became a configurator over the three parameters `run_scan` always accepted —
+agent multi-select, per-context scope chips (empty = whole project), and
+Auto/3/5/8 target findings — dispatching from an explicit footer button. Reused
+the Idea Scanner's existing `scan_config_*` i18n vocabulary, so zero new keys.
+
+**What this surface is FOR right now:** it is the test bench for the memory
+spine. Running two overlapping agents twice over the same scope is the direct
+way to see Phase 1 working (second run: `[Duplicate] … suppressed` lines, no new
+pending ideas), and dispatching an accepted idea to the runner is the way to see
+Phase 2 (constraint text appearing in the task prompt, an outcome memory landing
+after the run).
+
+---
+
+### Phase 4 — Autonomous scan-and-decide (the Pipeline-C shape) — TO BE RE-SHAPED
+
+> The manual interlude above already delivered the parametrization half (4.1's
+> knobs, minus the auto-selection). What remains for Phase 4 is the DECISION
+> half: auto-selecting 1–3 agents for a scope, the run-scoped handshake review,
+> dispatch waves, and the funnel learning write-back (which now has a home —
+> `dev_memories` `scan_funnel`). Re-scope against what the manual surface
+> teaches before building it.
+
+Original sketch (kept for reference):
 
 **Goal:** "point at a scope, decide, run, handshake, dispatch" as a first-class flow — replacing today's manual agent-picking as the *primary* path (manual stays available).
 
@@ -88,7 +118,7 @@ Inventory first: `run_scan` already supports `contextId`/`contextIds`/`targetCou
 
 ## 4. Cross-cutting
 
-- **Order:** 1 → 2 → 3 → 4 strictly (1 unblocks 4's volume; 2 feeds 4's memories; 3 is independent of 4 but its promote action wants 2's decision memories for provenance).
+- **Order:** 1 → 2 → (manual parametrization) → 4. Phase 3 is dropped. The law still holds: 1 gates 4's volume, 2 feeds 4's memories.
 - **Docs:** each phase updates `mastermind.md` §10/§12 and `dev-tools.md` scanner/triage sections in the same change (Stop-hook enforced for sub_mastermind; do it manually for scanner).
 - **Tests:** every Rust behavior change lands with unit tests next to the existing suites (`__tests__/` for frontend derive logic); the dedup gate and aging pass are the critical ones.
 - **Non-goals:** no new memory service (Brainiac stays doctrine), no embedding-based semantic dedup in Phase 1 (revisit only if normalized-key + prompt-injection measurably under-catches), no auto-promotion of ideas to goals without a human/Strategist-suggested + user-confirmed step, no fleet-lane scan execution (unchanged deferral — recording first).
