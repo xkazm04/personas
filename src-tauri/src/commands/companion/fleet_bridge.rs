@@ -271,8 +271,20 @@ pub fn current_batch_ids() -> Vec<String> {
 }
 
 /// Enqueue a gated wake (deduped per session) and try to start the drainer.
+/// Coalescing window between the FIRST queued wake and the drain. Round-2 data
+/// (16x multistep, 2026-07-24): 58 turns served 103 assessments and 40 of the
+/// 58 (69%) carried a single session — wakes mostly arrive alone (session
+/// pacing spreads them), and an instant drain turns each into its own
+/// full-priced Athena turn. Waiting ~12s lets adjacent arrivals share one
+/// turn; a parked CLI doesn't feel 12 seconds, but the subscription feels
+/// every turn (limit waves are partly self-inflicted). The window is skipped
+/// when the queue already holds a full batch.
+const DRAIN_COALESCE_MS: u64 = 12_000;
+static DRAIN_SCHEDULED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 fn enqueue_assessment(app: &tauri::AppHandle, state: &AppState, session_id: &str, situation: &str) {
-    {
+    use std::sync::atomic::Ordering;
+    let qlen = {
         let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
         if q.iter().any(|e| e.session_id == session_id) {
             return;
@@ -281,8 +293,23 @@ fn enqueue_assessment(app: &tauri::AppHandle, state: &AppState, session_id: &str
             session_id: session_id.to_string(),
             situation: situation.to_string(),
         });
+        q.len()
+    };
+    if qlen >= BATCH_MAX {
+        drain_assessment_batch(app, state);
+        return;
     }
-    drain_assessment_batch(app, state);
+    if !DRAIN_SCHEDULED.swap(true, Ordering::SeqCst) {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(DRAIN_COALESCE_MS)).await;
+            DRAIN_SCHEDULED.store(false, Ordering::SeqCst);
+            use tauri::Manager;
+            if let Some(st) = app.try_state::<std::sync::Arc<AppState>>() {
+                drain_assessment_batch(&app, &st);
+            }
+        });
+    }
 }
 
 /// If no fleet turn is in flight, take up to [`BATCH_MAX`] queued wakes and
@@ -396,10 +423,25 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
             .unwrap_or_default();
         let objective = session_objective(sid).unwrap_or_else(|| "user-spawned session".into());
         let short: String = sid.chars().take(8).collect();
+        // Trim to the TAIL of the screen: the question/prompt a parked session
+        // is blocked on is bottom-anchored in the TUI; the scrollback above it
+        // mostly restates what the objective line already says. At batch size 6
+        // this cuts the directive's screen payload roughly in half. (Hashing is
+        // NOT affected — signatures are computed on the full render.)
+        const SCREEN_TAIL_CHARS: usize = 1800;
         let screen_part = if screen_text.trim().is_empty() {
             "(screen empty — the session may be mid-redraw; judge from the objective, or reply NEEDS-YOU if you cannot)".to_string()
         } else {
-            format!("```\n{screen_text}\n```")
+            let total = screen_text.chars().count();
+            if total > SCREEN_TAIL_CHARS {
+                let tail: String = screen_text
+                    .chars()
+                    .skip(total - SCREEN_TAIL_CHARS)
+                    .collect();
+                format!("```\n…(top of screen trimmed)\n{tail}\n```")
+            } else {
+                format!("```\n{screen_text}\n```")
+            }
         };
         blocks.push_str(&format!(
             "\n--- SESSION {short} (full id: {sid}) · project {label} · situation {sit} · objective: {objective}\n{screen_part}\n",
