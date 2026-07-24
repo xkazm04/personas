@@ -560,6 +560,57 @@ pub struct DevContextGroupRelationship {
 }
 
 // ============================================================================
+// Dev Memories — the project-scoped memory of the development loop
+// ============================================================================
+
+/// What produced a `DevMemory`. The loop has exactly three learning moments,
+/// and each one is a source here:
+///   `idea_decision` — a human or the Strategist accepted/rejected a backlog
+///                     idea. Rejections become CONSTRAINTS.
+///   `task_outcome`  — a dev-runner task reached a terminal state. What shipped,
+///                     or what failed and why.
+///   `scan_funnel`   — a scan-and-decide run's funnel summary (reserved for the
+///                     Phase 4 flow; see docs/plans/backlog-memory-loop.md).
+pub const DEV_MEMORY_SOURCES: &[&str] = &["idea_decision", "task_outcome", "scan_funnel"];
+
+/// Project-scoped memory for the development loop (scan → triage → execute).
+///
+/// WHY A SEPARATE STORE: decisions were only ever written to `team_memories`,
+/// which is keyed on a team — so a project without a team learned NOTHING, and
+/// the task executor (which has a project, not a team) had nothing to read.
+/// This is the loop's own canonical store, anchored on the one id every
+/// participant in the loop shares: the project. Team memory stays the
+/// cross-persona workspace ledger; the two are written in parallel, never
+/// instead of each other.
+// NOTE: `#[ts(export)]` is deliberately withheld until a UI actually reads dev
+// memories (Phase 4 at the earliest). Phase 2 is a backend-only loop — exporting
+// a binding no frontend imports would only add drift surface to the
+// binding-drift CI job. Add `#[ts(export)]` and run
+// `cargo test export_bindings` in the same change that first displays these.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+pub struct DevMemory {
+    pub id: String,
+    pub project_id: String,
+    /// Memory kind, mirroring the persona memory vocabulary so both stores read
+    /// the same way: `constraint` (a durable "don't"), `decision` (a settled
+    /// "do"), `learned` (an outcome observation), `context`.
+    pub category: String,
+    pub title: String,
+    pub content: String,
+    /// 1–10. Constraints outrank decisions outrank observations, so the
+    /// injection budget spends itself on the memories that change behaviour.
+    pub importance: i32,
+    /// One of `DEV_MEMORY_SOURCES`.
+    pub source_kind: String,
+    /// Provenance: the idea / task id this memory was derived from. No FK by
+    /// design (mirrors MEMORY CONTRACT (2)) — deleting the source must not
+    /// erase what the loop learned from it.
+    pub source_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
 // Dev Ideas
 // ============================================================================
 

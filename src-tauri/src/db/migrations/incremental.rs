@@ -5908,6 +5908,35 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- dev_memories: the development loop's project-scoped memory ----------
+    // docs/plans/backlog-memory-loop.md Phase 2. Decisions used to land only in
+    // `team_memories` (team-keyed), so teamless projects learned nothing and the
+    // task executor — which knows a project, not a team — had nothing to read.
+    // This is the loop's canonical store; team memory stays the cross-persona
+    // ledger and both are written in parallel.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS dev_memories (
+            id          TEXT PRIMARY KEY,
+            project_id  TEXT NOT NULL,
+            category    TEXT NOT NULL DEFAULT 'learned',
+            title       TEXT NOT NULL,
+            content     TEXT NOT NULL,
+            importance  INTEGER NOT NULL DEFAULT 5,
+            source_kind TEXT NOT NULL DEFAULT 'task_outcome',
+            source_id   TEXT,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_dev_mem_project  ON dev_memories(project_id);
+        CREATE INDEX IF NOT EXISTS idx_dev_mem_recent   ON dev_memories(project_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_dev_mem_category ON dev_memories(project_id, category);
+        -- One memory per source event: re-recording the same decision or the
+        -- same task's outcome updates nothing and inserts nothing.
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_mem_source
+            ON dev_memories(project_id, source_kind, source_id)
+            WHERE source_id IS NOT NULL;",
+    )?;
     Ok(())
 }
 

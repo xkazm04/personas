@@ -50,6 +50,12 @@ struct TaskContext {
     idea: Option<String>,
     goal: Option<String>,
     codebase: Option<String>,
+    /// What this project development loop has already learned: constraints
+    /// from rejected ideas first, then settled decisions, then outcomes of
+    /// earlier tasks. Before Phase 2 the executor was memory-blind, so a
+    /// guardrail recorded at triage time never reached the agent that could
+    /// violate it. (docs/plans/backlog-memory-loop.md Phase 2.)
+    memories: Option<String>,
     warnings: Vec<String>,
 }
 
@@ -123,11 +129,76 @@ fn gather_task_context(
         }
     };
 
+    // Budgeted so a long-lived project cannot crowd out the task itself:
+    // at most 12 memories and ~1.5k characters, constraints ordered first.
+    let memories = match crate::db::repos::dev_memories::get_for_injection(pool, project_id, 12) {
+        Ok(rows) => crate::db::repos::dev_memories::render_for_prompt(&rows, 1_500),
+        Err(e) => {
+            tracing::warn!(project_id, error = %e, "Failed to load project memories");
+            warnings.push(format!("Could not load project memories: {e}"));
+            None
+        }
+    };
+
     TaskContext {
         idea,
         goal,
         codebase,
+        memories,
         warnings,
+    }
+}
+
+// =============================================================================
+// Outcome memory (docs/plans/backlog-memory-loop.md Phase 2)
+// =============================================================================
+
+/// Write what a finished run taught this project into the development loop
+/// memory. Goal signals already recorded that a task ENDED; this records what
+/// was learned, so the next scan and the next task can read it. The project is
+/// re-read from the task row rather than threaded through every spawn closure -
+/// one indexed lookup at a terminal moment, and no capture plumbing to drift.
+///
+/// Idempotent by construction: dev_memories has a unique index on
+/// (project_id, source_kind, source_id), so a retried task cannot inflate the
+/// record with duplicate outcomes.
+fn record_task_outcome(pool: &crate::db::DbPool, task_id: &str, ok: bool, detail: &str) {
+    let task = match repo::get_task_by_id(pool, task_id) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(task_id, error = %e, "outcome memory: task lookup failed");
+            return;
+        }
+    };
+    let project_id = match task.project_id.as_deref() {
+        Some(p) if !p.is_empty() => p,
+        // A task with no project has nowhere to remember anything.
+        _ => return,
+    };
+
+    // Failures carry more forward than successes: the next attempt needs to
+    // know what already did not work.
+    let (importance, verb) = if ok { (5, "completed") } else { (7, "FAILED") };
+    let title = format!("Task {verb}: {}", task.title);
+    let mut content = format!("A dev-runner task {verb}: {}.", task.title);
+    if let Some(idea_id) = task.source_idea_id.as_deref() {
+        content.push_str(&format!(" Promoted from backlog idea {idea_id}."));
+    }
+    if !detail.trim().is_empty() {
+        content.push_str(&format!(" {}", detail.trim()));
+    }
+
+    if let Err(e) = crate::db::repos::dev_memories::record(
+        pool,
+        project_id,
+        "learned",
+        &title,
+        &content,
+        importance,
+        "task_outcome",
+        Some(task_id),
+    ) {
+        tracing::warn!(task_id, error = %e, "outcome memory: write failed");
     }
 }
 
@@ -135,12 +206,14 @@ fn gather_task_context(
 // Prompt construction
 // =============================================================================
 
+#[allow(clippy::too_many_arguments)]
 fn build_task_prompt(
     task_title: &str,
     task_description: Option<&str>,
     idea_context: Option<String>,
     goal_context: Option<String>,
     codebase_context: Option<String>,
+    memory_context: Option<String>,
     depth: &str,
 ) -> String {
     let mut prompt = String::new();
@@ -195,6 +268,16 @@ fn build_task_prompt(
         prompt.push('\n');
     }
 
+    // Placed BEFORE the codebase dump so it survives any downstream
+    // truncation: a constraint the team already settled is the most
+    // expensive thing to relearn by violating it.
+    if let Some(memories) = memory_context {
+        prompt.push_str("## What This Project Has Already Learned\n");
+        prompt.push_str("Settled constraints and decisions from earlier triage and runs. Honour these - do NOT re-litigate or contradict them.\n");
+        prompt.push_str(&memories);
+        prompt.push('\n');
+    }
+
     if let Some(codebase) = codebase_context {
         prompt.push_str("## Codebase Context\n");
         prompt.push_str(&codebase);
@@ -240,6 +323,7 @@ pub async fn dev_tools_execute_task(
         ctx.idea,
         ctx.goal,
         ctx.codebase,
+        ctx.memories,
         &task.depth,
     );
 
@@ -323,6 +407,14 @@ pub async fn dev_tools_execute_task(
                     &format!("{project_name}: task finished with {line_count} output lines."),
                 );
 
+                // Learning loop: record what this run taught the project.
+                record_task_outcome(
+                    &pool,
+                    &task_id_for_spawn,
+                    true,
+                    &format!("Produced {line_count} output lines."),
+                );
+
                 // Record goal signal if task has a goal_id
                 if let Some(ref gid) = goal_id {
                     let _ = repo::create_goal_signal(
@@ -362,6 +454,9 @@ pub async fn dev_tools_execute_task(
                     "Task Failed",
                     &format!("{project_name}: {msg}"),
                 );
+
+                // Learning loop: a failure is the most instructive outcome.
+                record_task_outcome(&pool, &task_id_for_spawn, false, &msg);
 
                 // Record goal signal for failure
                 if let Some(ref gid) = goal_id {
@@ -454,6 +549,7 @@ pub async fn dev_tools_start_batch(
                 ctx.idea,
                 ctx.goal,
                 ctx.codebase,
+                ctx.memories,
                 &task.depth,
             );
 
@@ -529,6 +625,9 @@ pub async fn dev_tools_start_batch(
                         }),
                     );
 
+                    // Learning loop: record what this run taught the project.
+                    record_task_outcome(&pool, &tid, true, "Completed successfully.");
+
                     if let Some(ref gid) = goal_id {
                         let _ = repo::create_goal_signal(
                             &pool,
@@ -557,6 +656,9 @@ pub async fn dev_tools_start_batch(
                     );
                     TASK_EXEC_JOBS.set_status(&app_handle, &tid, "failed", Some(msg.clone()));
                     TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Error] {msg}"));
+
+                    // Learning loop: a failure is the most instructive outcome.
+                    record_task_outcome(&pool, &tid, false, &msg);
 
                     if let Some(ref gid) = goal_id {
                         let _ = repo::create_goal_signal(
@@ -1150,6 +1252,7 @@ async fn run_one_task_for_auto(
         ctx.idea,
         ctx.goal,
         ctx.codebase,
+        ctx.memories,
         &task.depth,
     );
 
@@ -1222,6 +1325,9 @@ async fn run_one_task_for_auto(
                     "context_warnings": context_warnings,
                 }),
             );
+            // Learning loop: record what this run taught the project.
+            record_task_outcome(&pool, &task_id, true, "Completed successfully.");
+
             if let Some(ref gid) = goal_id {
                 let _ = repo::create_goal_signal(
                     &pool,
@@ -1251,6 +1357,9 @@ async fn run_one_task_for_auto(
             );
             TASK_EXEC_JOBS.set_status(&app, &task_id, "failed", Some(msg.clone()));
             TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Error] {msg}"));
+            // Learning loop: a failure is the most instructive outcome.
+            record_task_outcome(&pool, &task_id, false, &msg);
+
             if let Some(ref gid) = goal_id {
                 let _ = repo::create_goal_signal(
                     &pool,

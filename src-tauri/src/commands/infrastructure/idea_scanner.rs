@@ -67,6 +67,7 @@ fn build_idea_scan_prompt(
     context_summary: Option<&str>,
     rejected_titles: Option<&str>,
     live_titles: Option<&str>,
+    outcomes: Option<&str>,
     team_ledger: Option<&str>,
     scoped: bool,
     target_count: Option<i32>,
@@ -118,6 +119,13 @@ fn build_idea_scan_prompt(
     // The owning team's shared ledger — settled decisions + hard constraints
     // from prior increments. Ideas must BUILD ON these, never contradict or
     // re-propose them.
+    // What earlier runs actually produced. Ideas should extend or repair these,
+    // not rediscover them.
+    let outcome_hint = outcomes
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Recent Run Outcomes - what shipped and what failed here lately (build on these; do NOT re-propose completed work)\n{s}\n"))
+        .unwrap_or_default();
+
     let ledger_hint = team_ledger
         .filter(|s| !s.trim().is_empty())
         .map(|s| format!("\n## Team Shared Knowledge — settled decisions & constraints from prior work (build on these; do NOT contradict or re-propose)\n{s}\n"))
@@ -133,7 +141,7 @@ fn build_idea_scan_prompt(
 You are analyzing a codebase to generate actionable improvement ideas. You have been activated with specific scan agent perspectives that determine what to look for.
 
 ## Project ID: {project_id}
-{context_hint}{rejected_hint}{live_hint}{ledger_hint}
+{context_hint}{rejected_hint}{live_hint}{outcome_hint}{ledger_hint}
 ## Active Scan Agents
 {agent_section}
 {granularity_hint}
@@ -510,12 +518,26 @@ pub async fn run_scan_core(
             })
     });
 
+    // Loop closure (docs/plans/backlog-memory-loop.md Phase 2): what recent
+    // runs actually LEARNED. Rejected titles tell the scan what not to propose;
+    // outcomes tell it what already shipped and what already failed, so the next
+    // round of ideas builds on real results instead of re-deriving them.
+    let outcomes: Option<String> = crate::db::repos::dev_memories::list_recent_by_kind(
+        &db,
+        &project_id,
+        "task_outcome",
+        12,
+    )
+    .ok()
+    .and_then(|rows| crate::db::repos::dev_memories::render_for_prompt(&rows, 1_200));
+
     let prompt_text = build_idea_scan_prompt(
         &project_id,
         &selected_agents,
         context_summary.as_deref(),
         rejected_titles.as_deref(),
         live_titles.as_deref(),
+        outcomes.as_deref(),
         team_ledger.as_deref(),
         scoped,
         target_count,
