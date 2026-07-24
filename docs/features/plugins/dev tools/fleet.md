@@ -32,9 +32,11 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 | Terminal settings bridge | `src/features/plugins/fleet/useFleetTerminalConfig.ts` (pushes font/copy/theme into the manager) |
 | Frontend state | `src/stores/slices/system/fleetSlice.ts` |
 | Frontend API | `src/api/fleet/fleet.ts` |
-| Tauri commands | `src-tauri/src/commands/fleet/commands.rs` (`fleet_spawn_session`, `fleet_write_input`, `fleet_resize_session`, `fleet_kill_session`, `fleet_list_sessions`, `fleet_remove_session`, `fleet_install_hooks`, `fleet_uninstall_hooks`, `fleet_check_hooks`) |
+| Tauri commands | `src-tauri/src/commands/fleet/commands.rs` (`fleet_spawn_session`, `fleet_write_input`, `fleet_resize_session`, `fleet_kill_session`, `fleet_list_sessions`, `fleet_remove_session`, `fleet_install_hooks`, `fleet_uninstall_hooks`, `fleet_check_hooks`, `fleet_list_runs`, `fleet_run_report`, `fleet_begin_run`, `fleet_end_run`) |
 | PTY backend | `src-tauri/src/commands/fleet/pty.rs` (uses `portable-pty`) |
 | Registry | `src-tauri/src/commands/fleet/registry.rs` (global `OnceLock<FleetRegistry>`) |
+| Durable registry | `src-tauri/src/commands/fleet/persist.rs` + `src-tauri/src/db/repos/fleet_sessions.rs` (the `fleet_sessions` table — see [Surviving a restart](#surviving-a-restart)) |
+| Run harvest | `src-tauri/src/commands/fleet/run.rs` + `src/features/plugins/fleet/sub_harvest/` (see [Run harvest](#run-harvest--what-the-fleet-delivered)) |
 | Hook receiver | `src-tauri/src/commands/fleet/hooks.rs` (mounted under `/fleet/hooks/*` via `local_http::register_router`) |
 | Hook installer | `src-tauri/src/commands/fleet/hook_install.rs` (patches `~/.claude/settings.json`, `_fleet: true` marker preserves user hooks) |
 | Staleness ticker | `src-tauri/src/commands/fleet/stale.rs` (30s interval; 5min cutoff) |
@@ -72,6 +74,7 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 | `Idle` | `Stop` hook (turn ended cleanly), **or the session just launched / bound** — `SessionStart` and the transcript-bind fallback both land here: Claude is up and ready, not yet working. A bare spawn correctly sits at `Idle` until real work begins. | emerald check |
 | `Stale` | No activity for 6 minutes (ticker) — the cutoff allows for slow console composition before flagging | orange clock |
 | `Finished` | The session declared its assigned task COMPLETE via the machine protocol (`FLEET:DONE — <summary>` in its recap; `registry::mark_finished`, from parked states only). Never decays to Stale; orchestration/limit lanes leave it alone; dozes on the awaiting window; transcript growth (the operator handing it more work) flips it back to `Running`. Operator closes it. | teal check |
+| *restored* | Not a state of its own: after an app restart, persisted rows come back **dozing** in the state they were last seen in, with `state_reason` suffixed "· restored after restart". Select the tile to resume. | as the state it restored into, with the doze indicator |
 | `Hibernated` | Operator clicked **Hibernate** (`fleet_hibernate_session`) — the `claude` process was killed to free it, but `claude_session_id` + `cwd` are kept so it can be resumed. NOT terminal. | indigo moon |
 | `Exited` | PTY child reaped OR SessionEnd hook | grey ban |
 
@@ -186,6 +189,52 @@ The flat-log cutoff is `STALE_AFTER_SECS` = **6 min** — deliberately generous 
 **Frozen-process fast path (`is_frozen_mid_run`).** A hung session used to wear the blue `Running` spinner for the full 6-minute cutoff. The PTY reader now stamps `last_pty_output_ms` (throttled to 1/s) on every chunk — and since claude redraws its status line continuously *even when idle*, **total PTY silence is a high-confidence "the process is frozen" signal** (while output *presence* proves nothing about work, which is why this field never feeds freshness). A `Running` session with zero PTY bytes AND no transcript growth/hook activity for `STALLED_AFTER_SECS` = **2 min** is flagged `Stale` with a distinct verdict ("No console output for 2 min — claude looks frozen mid-run. Safe to kill, or wake it with a prompt."). Sessions that never produced a byte are the never-attached check's case, not this one. Test knob: `PERSONAS_FLEET_STALLED_SECS`; the debug ticker line now includes `outAgo`.
 
 **Never-attached spawns (`is_never_attached`).** A session that *never produces a byte of PTY output* — so it's still `Spawning` (never promoted by `mark_alive`) with no bound `claude_session_id` and no activity for `NEVER_ATTACHED_SECS` (2 min) — is flagged `Stale` with the distinct reason *"Claude never attached — the folder may need trust approval, or claude failed to start. Safe to kill."* This catches the case where `claude` is spawned into a folder it hasn't been trusted in (the first-run trust prompt blocks startup) or otherwise fails to come up — previously these were mislabeled as generic "stale" three minutes later, hiding the real problem. It's safe because the transcript watcher bumps `last_activity_ms` (matched by cwd, even before a cc id binds) for any session that's actually running, so a frozen timestamp here genuinely means nothing started. If the same project keeps producing never-attached sessions, set its folder up for Claude Code (trust it once / add `.claude`) or stop spawning there. `Hibernated` is operator-driven (not a signal-derived state): the reaper records the hibernation-triggered child exit as `Hibernated`, not `Exited`, and the staleness ticker leaves it alone. **Wake** (`fleet_wake_session`) spawns a fresh PTY running `claude --resume <claude_session_id>` in the original cwd and drops the placeholder — the resumed process restores the conversation itself.
+
+## Surviving a restart
+
+The registry used to be in-memory only, so every app restart, update or crash
+lost the **whole** fleet — the conversations were still resumable in principle
+(`claude --resume <id>`), but nothing in the app remembered they existed. Since
+2026-07-24 the registry is mirrored into a `fleet_sessions` table.
+
+- **What is persisted**: only rows with a bound `claude_session_id` — nothing
+  else can be resumed, so nothing else is worth a row. Columns cover exactly the
+  rehydratable identity (claude session id, cwd, project label, name, title,
+  args, mode, state token + reason, run id/label, `created_at_ms`).
+- **When**: writes piggyback the two existing emit points
+  (`pty::emit_session_state` / `emit_registry_changed`), so every lane that
+  already announces a change persists for free. The SQLite write happens on a
+  dedicated `fleet-persist` thread fed by a channel — a slow DB can never wedge
+  a PTY reader.
+- **On boot**: `persist::rehydrate` (driven by the staleness ticker, idempotent)
+  restores non-exited rows as **dozing tombstones** — the displayed state is
+  preserved so you see what each session *was* doing, but there is no process.
+  That is exactly the shape the resource-floor doze produces, so selecting a
+  tile wakes it through the ordinary wake path with no special-casing.
+  `created_at_ms` is preserved, so grid tiles keep their slots.
+- **Not restored**: PTY scrollback. It died with the process; waking re-orients
+  the conversation, exactly as a doze-wake does today.
+- **Retention**: exited rows older than 24h are dropped on boot.
+
+## Run harvest — what the fleet delivered
+
+Every dispatch used to end with the operator hand-compiling the same report:
+each session's `FLEET:DONE` summary, the per-area file counts, the totals. All
+of it already flowed through the machine, so the **Harvest** button on the
+Sessions action row (enabled once any session has finished) aggregates it.
+
+- **Runs** are grouped by a 2-minute dispatch window stamped at spawn
+  (`run::claim_run_for_spawn`) — a fan-out is one run, a session started later
+  by hand is its own. `fleet_begin_run(label)` / `fleet_end_run` open a named
+  run when one deserves a human label; an unlabelled run reads as "ad hoc".
+- **Outcomes** come only from `registry::mark_finished`'s declared
+  `FLEET:DONE — <summary>`. A session that never declared completion gets no
+  invented outcome.
+- **Stats** reuse `transcript_read`'s incremental rollups (the same path the
+  grid's token bar reads) — no new polling and no second parser. Run-level
+  `filesTouched` is deduplicated across sessions rather than summed.
+- **Export**: the panel's copy button emits the whole run as markdown, ready to
+  paste into a ledger.
 
 ## Session overview surfaces
 
