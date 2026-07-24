@@ -25,6 +25,7 @@ import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/Dep
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/SkillsWorkbench';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
@@ -43,7 +44,6 @@ import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
-import { SkillRunModal } from './lib/SkillRunModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { GoalListPopover } from './lib/GoalListPopover';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
@@ -501,13 +501,6 @@ function MastermindInner() {
     }
   }, [projects, fleetRefresh, addToast, tx, t]);
 
-  // "Run a skill" — same background dispatch as above, seeded with `/skill args`
-  // (a leading-slash first prompt is recognized as a slash command by Claude).
-  const dispatchSkill = useCallback(async (slug: string, skill: string, args: string) => {
-    const command = args.trim() ? `/${skill} ${args.trim()}` : `/${skill}`;
-    return dispatchFleet(slug, command);
-  }, [dispatchFleet]);
-
   // Dispatch ONE agent's idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
   const runIdeaScan = async (agentKey: string) => {
@@ -647,17 +640,9 @@ function MastermindInner() {
         );
       })()}
 
-      {skillRunSlug && (() => {
-        const island = positioned.islands.find((i) => i.slug === skillRunSlug);
-        return (
-          <SkillRunModal
-            slug={skillRunSlug}
-            name={island?.name ?? skillRunSlug}
-            onRun={(skill, args) => dispatchSkill(skillRunSlug, skill, args)}
-            onClose={() => setSkillRunSlug(null)}
-          />
-        );
-      })()}
+      {skillRunSlug && (
+        <SkillsWorkbench slug={skillRunSlug} initialMode="dispatch" onClose={() => setSkillRunSlug(null)} />
+      )}
 
       {improvePopup && (improvePopup.standards ? (
         <ImprovePopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />
