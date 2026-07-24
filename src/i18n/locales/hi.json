@@ -18403,6 +18403,14 @@
     "toolbar_label": "कैनवस मोड",
     "variant_inverse": "इनवर्स ग्रिड",
     "variant_mosaic": "हेक्स पहेली",
-    "variant_switcher": "Mastermind कैनवस वेरिएंट"
+    "variant_switcher": "Mastermind कैनवस वेरिएंट",
+    "dispatch_error": "Fleet सत्र शुरू नहीं हो सका",
+    "dispatch_fleet": "Fleet भेजें…",
+    "dispatch_modal_desc": "एक निर्देश लिखें। प्रोजेक्ट रूट में एक बैकग्राउंड Fleet सत्र शुरू होकर उसे चलाता है — आप कैनवास पर बने रहते हैं।",
+    "dispatch_modal_title": "Fleet भेजें",
+    "dispatch_placeholder": "इस प्रोजेक्ट में Claude जो कार्य चलाएगा उसका वर्णन करें…",
+    "dispatch_submit": "भेजें",
+    "dispatch_submitting": "भेजा जा रहा है…",
+    "dispatch_toast": "{name} में Fleet सत्र भेजा गया"
   }
 }

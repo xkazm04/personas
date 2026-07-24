@@ -18403,6 +18403,14 @@
     "toolbar_label": "Mode kanvas",
     "variant_inverse": "Grid Terbalik",
     "variant_mosaic": "Puzzle Heksagon",
-    "variant_switcher": "Varian kanvas Mastermind"
+    "variant_switcher": "Varian kanvas Mastermind",
+    "dispatch_error": "Tidak dapat memulai sesi Fleet",
+    "dispatch_fleet": "Kirim ke Fleet…",
+    "dispatch_modal_desc": "Tulis instruksi. Sesi Fleet di latar belakang dimulai di root proyek dan menjalankannya — Anda tetap di kanvas.",
+    "dispatch_modal_title": "Kirim ke Fleet",
+    "dispatch_placeholder": "Jelaskan tugas yang akan dijalankan Claude di proyek ini…",
+    "dispatch_submit": "Kirim",
+    "dispatch_submitting": "Mengirim…",
+    "dispatch_toast": "Sesi Fleet dikirim di {name}"
   }
 }

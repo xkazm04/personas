@@ -149,7 +149,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 
 **Hover focus:** hovering an island dims everything except it and its integration neighbours.
 
-**Context menu:** right-click a header → the island's dimensions sorted by name with the same glyphs; hovering a row echoes a double ring on the matching cell; row click is currently a no-op (reserved for the per-dimension action layer).
+**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions sorted by name with the same glyphs; hovering a dimension row echoes a double ring on the matching cell; dimension row click is currently a no-op (reserved for the per-dimension action layer). Both Fleet rows are disabled for demo islands / projects with no `root_path`.
 
 **Motion:** sidebars fade+slide, islands fade in/out on hide/show/create (AnimatePresence), all linear.
 
@@ -158,7 +158,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 Below each island, an ops-badge row (`FleetBadges`, counter-scaled):
 
 - **Terminal state badges** — one badge per fleet-session state present (attention-first order; `awaiting_input` dot pulses). Click → `FleetListPopover` listing that state's sessions, each with a deterministic **animal glyph** (hash of session id — Cat/Dog/Bird/Fish/Rabbit/Squirrel/Turtle/Snail) so parallel terminals stay tellable. Picking one opens…
-- **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path).
+- **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path), and a **Dispatch Fleet…** action (`DispatchFleetModal` — a textarea instruction seeds a *background* session via `spawnSession(root, [instruction])`; no preview panel opens, so the canvas stays put and the session docks as an island fleet badge for later).
 - **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover` with the names; rows deliberately inert for now.
 - **Live attention:** any awaiting/stale session raises the island's "needs you" marker; real monitoring errors can drive island colour (§4).
 

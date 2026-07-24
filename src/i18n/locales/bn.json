@@ -18403,6 +18403,14 @@
     "toolbar_label": "ক্যানভাস মোড",
     "variant_inverse": "ইনভার্স গ্রিড",
     "variant_mosaic": "হেক্স পাজল",
-    "variant_switcher": "Mastermind ক্যানভাস ভ্যারিয়েন্ট"
+    "variant_switcher": "Mastermind ক্যানভাস ভ্যারিয়েন্ট",
+    "dispatch_error": "Fleet সেশন শুরু করা যায়নি",
+    "dispatch_fleet": "Fleet পাঠান…",
+    "dispatch_modal_desc": "একটি নির্দেশনা লিখুন। প্রজেক্ট রুটে একটি ব্যাকগ্রাউন্ড Fleet সেশন শুরু হয়ে সেটি চালায় — আপনি ক্যানভাসেই থাকেন।",
+    "dispatch_modal_title": "Fleet পাঠান",
+    "dispatch_placeholder": "এই প্রজেক্টে Claude যে কাজটি চালাবে তা বর্ণনা করুন…",
+    "dispatch_submit": "পাঠান",
+    "dispatch_submitting": "পাঠানো হচ্ছে…",
+    "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে"
   }
 }

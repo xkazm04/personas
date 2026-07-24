@@ -66,5 +66,13 @@
   "toolbar_label": "Režim plátna",
   "variant_inverse": "Inverzní mřížka",
   "variant_mosaic": "Hexagonální puzzle",
-  "variant_switcher": "Varianta plátna Mastermind"
+  "variant_switcher": "Varianta plátna Mastermind",
+  "dispatch_error": "Relace Fleet se nepodařilo spustit",
+  "dispatch_fleet": "Odeslat do Fleet…",
+  "dispatch_modal_desc": "Napište pokyn. Na pozadí se v kořeni projektu spustí relace Fleet, která jej provede — vy zůstáváte na plátně.",
+  "dispatch_modal_title": "Odeslat do Fleet",
+  "dispatch_placeholder": "Popište úkol, který má Claude v tomto projektu provést…",
+  "dispatch_submit": "Odeslat",
+  "dispatch_submitting": "Odesílání…",
+  "dispatch_toast": "Relace Fleet odeslána v {name}"
 }

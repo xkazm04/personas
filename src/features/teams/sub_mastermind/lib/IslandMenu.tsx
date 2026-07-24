@@ -3,7 +3,7 @@
 // tool is identified). Hovering a row highlights the matching hex/grid cell on
 // the canvas so the mapping is unambiguous. Item click is a no-op for now —
 // the per-dimension action layer comes later.
-import { SquareTerminal } from 'lucide-react';
+import { Rocket, SquareTerminal } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -29,15 +29,18 @@ function MenuGlyph({ node }: { node: DimNode }) {
   return <Icon className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} style={{ color: ink }} aria-hidden />;
 }
 
-export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onHoverDim, onClose }: {
+export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDispatchFleet, onHoverDim, onClose }: {
   island: Island;
   /** Screen-space anchor (cursor position, clamped by the caller). */
   x: number;
   y: number;
-  /** Whether an interactive terminal can be spawned for this project. */
+  /** Whether a Fleet session can be spawned for this project (real repo root).
+   *  Gates both the terminal and the dispatch rows. */
   terminalEnabled: boolean;
   /** "Open terminal" action — spawn a Fleet session in the project root. */
   onOpenTerminal: () => void;
+  /** "Dispatch Fleet…" action — open the instruction modal for a background run. */
+  onDispatchFleet: () => void;
   onHoverDim: (key: string | null) => void;
   onClose: () => void;
 }) {
@@ -59,7 +62,8 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onHo
       <div className="px-3 py-2 border-b border-primary/10 bg-primary/5">
         <span className="typo-label text-foreground/90 truncate block">{island.name}</span>
       </div>
-      {/* action row — spawn an interactive terminal in the project root */}
+      {/* action rows — spawn a Fleet session in the project root: an empty
+          interactive terminal, or a background run seeded with an instruction */}
       <div className="py-1 border-b border-primary/10">
         <button
           type="button"
@@ -71,6 +75,17 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onHo
         >
           <SquareTerminal className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} aria-hidden />
           <span>{t.mastermind.open_terminal}</span>
+        </button>
+        <button
+          type="button"
+          disabled={!terminalEnabled}
+          title={terminalTitle}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-foreground/70 enabled:hover:bg-secondary/40 enabled:hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={terminalEnabled ? () => { onDispatchFleet(); onHoverDim(null); } : undefined}
+          data-testid="mm-menu-dispatch-fleet"
+        >
+          <Rocket className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} aria-hidden />
+          <span>{t.mastermind.dispatch_fleet}</span>
         </button>
       </div>
       <ul className="max-h-[260px] overflow-y-auto py-1">

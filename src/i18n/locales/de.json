@@ -18403,6 +18403,14 @@
     "toolbar_label": "Canvas-Modus",
     "variant_inverse": "Umkehrraster",
     "variant_mosaic": "Hexagon-Puzzle",
-    "variant_switcher": "Mastermind-Canvas-Variante"
+    "variant_switcher": "Mastermind-Canvas-Variante",
+    "dispatch_error": "Fleet-Sitzung konnte nicht gestartet werden",
+    "dispatch_fleet": "An Fleet senden…",
+    "dispatch_modal_desc": "Schreiben Sie eine Anweisung. Eine Fleet-Sitzung startet im Hintergrund im Projektstamm und führt sie aus – Sie bleiben auf der Leinwand.",
+    "dispatch_modal_title": "An Fleet senden",
+    "dispatch_placeholder": "Beschreiben Sie die Aufgabe, die Claude in diesem Projekt ausführen soll…",
+    "dispatch_submit": "Senden",
+    "dispatch_submitting": "Wird gesendet…",
+    "dispatch_toast": "Fleet-Sitzung in {name} gesendet"
   }
 }

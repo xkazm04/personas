@@ -150,8 +150,12 @@ export interface VariantProps {
   /** Island context-menu "Open terminal" — spawn an interactive Fleet session
    *  in the project's root and open its preview. */
   onOpenTerminal: (slug: string) => void;
+  /** Island context-menu "Dispatch Fleet…" — open the instruction modal, which
+   *  spawns a background Fleet session running the typed task (stays on canvas). */
+  onDispatchFleet: (slug: string) => void;
   /** Whether a given island can host a terminal (real project + root_path);
-   *  false for demo islands and projects without a folder path. */
+   *  false for demo islands and projects without a folder path. Gates BOTH the
+   *  "Open terminal" and "Dispatch Fleet…" rows (each needs a real repo root). */
   canOpenTerminal: (slug: string) => boolean;
 }
 

@@ -18403,6 +18403,14 @@
     "toolbar_label": "نمط اللوحة",
     "variant_inverse": "الشبكة المعكوسة",
     "variant_mosaic": "لغز الخلايا السداسية",
-    "variant_switcher": "أنماط لوحة Mastermind"
+    "variant_switcher": "أنماط لوحة Mastermind",
+    "dispatch_error": "تعذّر بدء جلسة Fleet",
+    "dispatch_fleet": "إرسال إلى Fleet…",
+    "dispatch_modal_desc": "اكتب تعليمة. تبدأ جلسة Fleet في الخلفية عند جذر المشروع وتنفّذها — وتبقى أنت على اللوحة.",
+    "dispatch_modal_title": "إرسال إلى Fleet",
+    "dispatch_placeholder": "صِف المهمة التي سينفّذها Claude في هذا المشروع…",
+    "dispatch_submit": "إرسال",
+    "dispatch_submitting": "جارٍ الإرسال…",
+    "dispatch_toast": "تم إرسال جلسة Fleet في {name}"
   }
 }

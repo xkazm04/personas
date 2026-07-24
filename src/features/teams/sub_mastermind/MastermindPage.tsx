@@ -42,6 +42,7 @@ import { DataHealthBar } from './lib/DataHealthBar';
 import { DemoNotice } from './lib/DemoNotice';
 import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScene';
 import { dimAction } from './lib/dimActions';
+import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { GoalListPopover } from './lib/GoalListPopover';
 import { IdeaScanPopover } from './lib/IdeaScanPopover';
@@ -78,7 +79,7 @@ export default function MastermindPage() {
 }
 
 function MastermindInner() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { passports, rawByProject, loading, error, reload, rescan, rescanning } = usePassportData();
   const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
@@ -112,6 +113,8 @@ function MastermindInner() {
   const [overrides, setOverrides] = useState(loadPositions);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  // Slug whose "Dispatch Fleet…" instruction modal is open (null = closed).
+  const [dispatchSlug, setDispatchSlug] = useState<string | null>(null);
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; standards: boolean; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   // Projects with an idea scan WE dispatched still in flight. Per-project (a
@@ -472,6 +475,24 @@ function MastermindInner() {
     }
   }, [projects, fleetRefresh]);
 
+  // "Dispatch Fleet…" — seed a BACKGROUND session in the project root with the
+  // user's instruction and stay on the canvas (no preview panel): the session
+  // docks as an island fleet badge, reachable later like any other. Rejects on
+  // failure so the modal stays open and re-enables its button.
+  const dispatchFleet = useCallback(async (slug: string, instruction: string) => {
+    const project = projects.find((p) => p.id === slug);
+    if (!project?.root_path) return;
+    try {
+      await spawnSession(project.root_path, [instruction]);
+      void fleetRefresh();
+      addToast(tx(t.mastermind.dispatch_toast, { name: project.name }), 'success');
+    } catch (err) {
+      addToast(t.mastermind.dispatch_error, 'error');
+      toastCatch('mastermind dispatch fleet')(err);
+      throw err;
+    }
+  }, [projects, fleetRefresh, addToast, tx, t]);
+
   // Dispatch ONE agent's idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
   const runIdeaScan = async (agentKey: string) => {
@@ -541,6 +562,7 @@ function MastermindInner() {
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
           onOpenTerminal={openTerminal}
+          onDispatchFleet={setDispatchSlug}
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
@@ -598,6 +620,17 @@ function MastermindInner() {
           onClose={() => setGoalPopup(null)}
         />
       )}
+
+      {dispatchSlug && (() => {
+        const island = positioned.islands.find((i) => i.slug === dispatchSlug);
+        return (
+          <DispatchFleetModal
+            name={island?.name ?? dispatchSlug}
+            onDispatch={(instruction) => dispatchFleet(dispatchSlug, instruction)}
+            onClose={() => setDispatchSlug(null)}
+          />
+        );
+      })()}
 
       {improvePopup && (improvePopup.standards ? (
         <ImprovePopover slug={improvePopup.slug} rowKey={improvePopup.rowKey} anchor={improvePopup.anchor} onClose={() => setImprovePopup(null)} />

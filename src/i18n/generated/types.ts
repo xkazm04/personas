@@ -18343,8 +18343,16 @@ export type Translations = {
   };
   mastermind: {
     open_terminal: string;
+    dispatch_fleet: string;
     terminal_disabled_demo: string;
     terminal_disabled_no_path: string;
+    dispatch_modal_title: string;
+    dispatch_modal_desc: string;
+    dispatch_placeholder: string;
+    dispatch_submit: string;
+    dispatch_submitting: string;
+    dispatch_toast: string;
+    dispatch_error: string;
     zoom_out: string;
     zoom_in: string;
     fit_all: string;
