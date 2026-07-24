@@ -2,6 +2,9 @@
 
 ## Active
 
+### perfect-round-fleet — /perfect propose on the fleet arc — session fable-5 — COMPLETED
+- 2026-07-24 wrap. Context [[fleet]] opened in the Perfect vault (Director's same-day build knowledge as scout). Slate 5 -> 3 ACCEPTED into the pool (fleet-registry-durability M / fleet-run-harvest M / fleet-limit-eta S), 2 rejected (dispatch-plans: agent scripting suffices, F5-recipes framing later; onboard-repo: protocol proves out in pof first). Pool 3/10; next `/perfect build` ships the 3 as one wave. fleet.md gained the consolidated autonomy-machine code-reference table (same commit range).
+
 ### fleet-mechanical-lanes — FLEET:DONE/NEXT protocol + finished state — session fable-5 — COMPLETED
 - 2026-07-24 evening. Operator lever decisions: mechanical answering + completion detection BUILT (verdict reuse REJECTED; Athena directive now "approve the MAXIMUM unless architecture/security"). Commits **99afb3626** (Finished state + protocol lanes, 43 files incl. 14 locales), matcher hardening through **29325ccd2** + content-window fix (amended), all pushed master+fleet-scale-30. pof CLAUDE.md teaches the protocol (**bff9c38f**, pushed).
 - VALIDATED by 4 probe cycles (real-terminal parsing is unforgiving): cue must match ANYWHERE in the joined blank-filtered last-18 content rows (vt100 rows are wrap fragments; composer chrome + blank rows eat a raw bottom window), require a dash separator (prose echoes), reject `<` payloads (template echoes). Probe 4: FLEET:NEXT drove forward 0.7s after wake (no turn); FLEET:DONE parked `finished` (teal, operator closes) with zero turns. Forensic trace `fleet_mechanical` logs any on-screen marker the matcher rejects.
