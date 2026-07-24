@@ -713,7 +713,7 @@ pub async fn send_turn(
     // persist them as approval rows, and strip them from the displayed
     // text. The episode stores the cleaned text — what the user sees in
     // the chat — so future turns' transcript is clean too.
-    let dispatched =
+    let mut dispatched =
         match crate::companion::dispatcher::dispatch(&user_db, &session_id, &assistant_text) {
             Ok(d) => d,
             Err(e) => {
@@ -812,6 +812,21 @@ pub async fn send_turn(
     // onto the orb, and chat is suppressed — so surface it as a proactive orb
     // card. Skip when she produced an approval (the orb already shows that) or
     // said nothing actionable (a "progressing fine" no-op stays quiet).
+    // A fleet_orchestration turn was woken FOR one session (trigger_ref) —
+    // that id is authoritative for every fleet PTY action it proposed. The
+    // model occasionally omits/hallucinates session_id and the executor fails
+    // closed (types nothing, silently), so override before anything reads the
+    // approvals (auto-resolve below, or a manual click later).
+    if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
+        if trigger_kind == "fleet_orchestration" && !dispatched.approvals.is_empty() {
+            crate::commands::companion::fleet_bridge::force_fleet_session_ids(
+                &user_db,
+                &mut dispatched.approvals,
+                fleet_sid,
+            );
+        }
+    }
+
     if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
         // A prose fleet reply must land ON the session it's about, and only
         // when it MEANS something: `handle_fleet_defer` classifies it by the

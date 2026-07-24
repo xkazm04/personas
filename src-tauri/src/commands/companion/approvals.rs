@@ -471,10 +471,16 @@ pub async fn auto_resolve_if_allowed(
             if crate::commands::companion::fleet_bridge::screen_matches_last_decision(sid)
                 == Some(false)
             {
+                // The prompt she reasoned about is GONE — typing her answer
+                // into whatever replaced it would be wrong, but parking the
+                // proposal as a consult stranded sessions "awaiting input"
+                // under autonomous mode. Supersede the stale proposal and
+                // reassess the FRESH screen instead: reject this approval,
+                // clear the throttle/dedupe, and wake her again right now.
                 tracing::info!(
                     approval_id = %approval.id,
                     session_id = %sid,
-                    "autonomous autoapprove deferred: session screen changed since Athena reasoned — left pending as an orb consult"
+                    "autonomous autoapprove: screen changed since Athena reasoned — superseding the proposal and reassessing the fresh screen"
                 );
                 record_fleet_decision(
                     &state.db,
@@ -483,8 +489,14 @@ pub async fn auto_resolve_if_allowed(
                     "deferred",
                     Some("screen_changed"),
                 );
-                escalate_fleet_consult(app, &approval.params_json);
-                return Ok(false);
+                if let Ok(conn) = state.user_db.get() {
+                    let _ = conn.execute(
+                        "UPDATE companion_approval SET status = ?1 WHERE id = ?2",
+                        rusqlite::params![APPROVAL_STATUS_REJECTED, approval.id],
+                    );
+                }
+                crate::commands::companion::fleet_bridge::force_reassess(app, &state, sid);
+                return Ok(true);
             }
         }
     } else if matches!(approval.action.as_str(), "fleet_wake" | "fleet_resume") {
@@ -3351,6 +3363,17 @@ fn fleet_action_auto_fires(
     let Ok(v) = serde_json::from_str::<serde_json::Value>(params_json) else {
         return false;
     };
+    // Bold (the default) is now FULL-AUTO: in autonomous mode every proposal
+    // fires, low/missing confidence included — the user's explicit call
+    // (2026-07-24): loosen the boundaries even if experimental; she should
+    // react in any terminal requiring her attention. A wrong keystroke into a
+    // CLI is recoverable; a fleet parked on consults is not autonomous. Her
+    // stated confidence still lands in the decision ledger + debug log, so the
+    // policy can be re-tightened from data. Cautious/Balanced keep their
+    // pre-2026-07-24 meaning for users who want the gate back.
+    if matches!(boldness, FleetBoldness::Bold) {
+        return true;
+    }
     // Only "medium" can still qualify; low / missing / unknown → consult.
     let is_medium = v
         .get("confidence")
@@ -3369,7 +3392,7 @@ fn fleet_action_auto_fires(
     match boldness {
         FleetBoldness::Cautious => false,            // high-only
         FleetBoldness::Balanced => is_drive_forward, // medium only for drive_forward
-        FleetBoldness::Bold => true,                 // medium for both classes
+        FleetBoldness::Bold => true,                 // unreachable (early return above)
     }
 }
 

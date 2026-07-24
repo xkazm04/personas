@@ -396,30 +396,27 @@ fn orchestrate_session(
          Fleet (brief background only):\n\n{digest}\n\n\
          Focus on THIS session only and decide its single next step. This is a quick orchestration \
          check, NOT a fleet status report — do NOT summarize, list, or re-flag the other sessions.\n\
-         • (C) If the screen above shows a QUESTION or a SELECT decision, read the options and judge \
-         whether one is clearly best. If so, ANSWER it: propose a fleet_send_input whose `text` is \
-         exactly what to type to choose that option — the option's number, or its text — with \
-         press_enter true.\n\
+         YOU are this fleet's operator. DEFAULT TO ACTING: the human runs many sessions precisely so \
+         they don't have to answer each one — an unanswered prompt stalls real work.\n\
+         • If the screen shows a QUESTION or SELECT decision, ANSWER it: propose a fleet_send_input \
+         whose `text` is exactly what to type — the option's number, or the text — with press_enter \
+         true. A preference between reasonable options is YOURS to make: pick the sensible default \
+         and note why in the rationale. Permission prompts for ordinary work (read/edit/run inside \
+         the project): approve.\n\
          • Every fleet_send_input MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
          verbatim; it's THIS session, and the action can't run without it — plus the exact `text`, a \
-         one-line `rationale`, a `confidence` (\"high\" | \"medium\" | \"low\"), and a `decision_class`.\n\
-         • `decision_class` = \"drive_forward\" when your answer just moves the session along a path \
-         already set — continue, proceed, the obvious or only next step, a reversible tweak. = \
-         \"choice\" when it's irreversible, a real fork between materially different directions, or \
-         genuinely the user's preference to make.\n\
-         • `confidence` is your honest read, independent of class: \"high\" = obvious, you'd stake \
-         your judgment on it with no second opinion; \"medium\" = a sound call but a wrong move would \
-         cost some rework; \"low\" = real doubt. The system — not you — decides whether to apply it \
-         automatically or surface it as an orb consult, from your class + confidence + the user's \
-         autonomy setting (\"low\" is never auto-applied). Rate confidence honestly; don't inflate it \
-         to force an action through.\n\
-         • (D) If it's genuinely the USER's call — a personal preference, a risk you shouldn't take on \
-         their behalf, or the work looks finished — do NOT propose a send-input. Instead surface a \
-         concise decision on the orb telling them you're leaving this one to them; and if you have a \
-         lean, name your recommended option in one line so they can decide at a glance.\n\
-         • If this session is just progressing fine, do nothing at all.\n\
-         Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay; \
-         no preamble, no fleet-wide recap.",
+         one-line `rationale`, a `confidence` (\"high\" | \"medium\" | \"low\"), and a `decision_class` \
+         (\"drive_forward\" = moves work along a set path; \"choice\" = a real fork). Rate confidence \
+         honestly — it's recorded for policy tuning, and in full-auto your action fires either way.\n\
+         • Reserve NEEDS-YOU for the few things you must NOT decide: destructive or irreversible \
+         operations (deleting files/branches/data, force-push, git history rewrites), anything that \
+         spends money or touches credentials/secrets, or publishing outside the machine (pushes to \
+         shared remotes, deploys, posts). Everything else you handle.\n\
+         • If the work looks FINISHED, reply `OK:` with a one-line summary — don't invent new tasks, \
+         don't nudge a done session.\n\
+         • If the session is just progressing fine, reply `OK:` (or nothing).\n\
+         Keep any prose reply to AT MOST two short sentences — it's a brief orb note, not a chat \
+         essay; no preamble, no fleet-wide recap.",
         ),
         FleetSituation::IdleNeedsNext => format!(
         "Fleet orchestration — idle session. Session \"{project_label}\" (project {project_label}) \
@@ -840,6 +837,168 @@ fn spawn_dev_reflection(
 /// through the same proactive-nudge path the op-wrap-up reconciler uses: a card
 /// the user can engage/dismiss. `turn_ref` is the per-turn id, so the
 /// (kind, ref) dedupe never collides across sequential decisions. Best-effort.
+/// Force the ORCHESTRATED session's id onto every fleet PTY action this turn
+/// dispatched. The model occasionally omits or hallucinates `session_id`
+/// (it fails closed — types nothing — so the intended write silently
+/// vanishes; the long-tracked "session_id robustness" gap). The turn was woken
+/// FOR exactly one session (`trigger_ref`), so that id is authoritative:
+/// rewrite both the in-memory approval (what auto-resolve executes) and the
+/// persisted payload (what a later manual click executes).
+pub fn force_fleet_session_ids(
+    pool: &crate::db::UserDbPool,
+    approvals: &mut [crate::companion::dispatcher::CreatedApproval],
+    fleet_sid: &str,
+) {
+    for approval in approvals.iter_mut() {
+        if !matches!(approval.action.as_str(), "fleet_send_input" | "fleet_intervene") {
+            continue;
+        }
+        let Ok(mut params) = serde_json::from_str::<serde_json::Value>(&approval.params_json)
+        else {
+            continue;
+        };
+        let current = params.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
+        if current == fleet_sid {
+            continue;
+        }
+        crate::commands::fleet::debug_log::athena(
+            fleet_sid,
+            "session_id corrected",
+            &format!(
+                "model sent {:?} on {} — overridden with the orchestrated session",
+                current, approval.action
+            ),
+        );
+        params["session_id"] = serde_json::Value::String(fleet_sid.to_string());
+        approval.params_json = params.to_string();
+        // Keep the durable payload consistent so a manual click later types
+        // into the right session too. Best-effort.
+        let payload = serde_json::json!({
+            "action": approval.action,
+            "params": params,
+            "rationale": approval.rationale,
+        })
+        .to_string();
+        if let Ok(conn) = pool.get() {
+            let _ = conn.execute(
+                "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
+                rusqlite::params![payload, approval.id],
+            );
+        }
+    }
+}
+
+/// Re-run orchestration for a session RIGHT NOW, bypassing the per-session
+/// throttle and the screen-hash dedupe. Used when a decision was invalidated
+/// (the screen moved between reasoning and typing): instead of parking the
+/// stale proposal as an orb consult — which stranded sessions "awaiting input"
+/// while autonomous mode was supposed to handle them — reassess the fresh
+/// screen and decide again.
+pub fn force_reassess(app: &tauri::AppHandle, state: &AppState, session_id: &str) {
+    {
+        let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
+        t.remove(session_id);
+    }
+    {
+        let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        sigs.remove(session_id);
+    }
+    let label = crate::commands::fleet::registry::registry()
+        .lookup_meta(session_id)
+        .map(|(l, _)| l)
+        .unwrap_or_default();
+    crate::commands::fleet::debug_log::athena(
+        session_id,
+        "reassessing",
+        "prior decision superseded (screen changed) — waking on the fresh screen",
+    );
+    orchestrate_on_awaiting(app, state, session_id, &label);
+}
+
+/// Expire pending fleet PTY-action approvals that can no longer execute —
+/// the target session left the registry (app restart, kill, wake-with-new-id)
+/// — or that sat unactioned past 30 minutes (their screen is long gone; the
+/// execution-time re-check would refuse them anyway). Without this, consults
+/// from a previous app session lingered in the chat forever, reading as
+/// "Athena is asking me things she should have handled".
+pub fn gc_stale_fleet_approvals(app: &tauri::AppHandle, state: &AppState) {
+    let rows: Vec<(String, String)> = {
+        let Ok(conn) = state.user_db.get() else { return };
+        let Ok(mut stmt) = conn.prepare(
+            "SELECT id, payload FROM companion_approval
+             WHERE status = 'pending'
+               AND created_at < datetime('now', '-2 minutes')",
+        ) else {
+            return;
+        };
+        let Ok(mapped) = stmt.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        }) else {
+            return;
+        };
+        mapped.flatten().collect()
+    };
+    if rows.is_empty() {
+        return;
+    }
+    let mut expired = 0u32;
+    for (id, payload) in rows {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&payload) else { continue };
+        let action = v.get("action").and_then(|a| a.as_str()).unwrap_or("");
+        if !action.starts_with("fleet_") {
+            continue;
+        }
+        let sid = v
+            .get("params")
+            .and_then(|p| p.get("session_id"))
+            .and_then(|x| x.as_str())
+            .unwrap_or("");
+        let target_gone =
+            !sid.is_empty() && crate::commands::fleet::registry::registry().lookup_meta(sid).is_none();
+        // Age-based expiry for the rest is enforced in SQL below (30 min);
+        // dead-target expiry applies immediately (2-min SQL floor avoids
+        // racing an approval created moments ago for a session mid-spawn).
+        let too_old = {
+            let Ok(conn) = state.user_db.get() else { continue };
+            conn.query_row(
+                "SELECT 1 FROM companion_approval
+                 WHERE id = ?1 AND created_at < datetime('now', '-30 minutes')",
+                rusqlite::params![id],
+                |_| Ok(()),
+            )
+            .is_ok()
+        };
+        if !target_gone && !too_old {
+            continue;
+        }
+        let Ok(conn) = state.user_db.get() else { continue };
+        let reason = if target_gone { "target session gone" } else { "older than 30 min" };
+        if conn
+            .execute(
+                "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1 AND status = 'pending'",
+                rusqlite::params![id],
+            )
+            .is_ok()
+        {
+            expired += 1;
+            if !sid.is_empty() {
+                crate::commands::fleet::debug_log::athena(
+                    sid,
+                    "consult expired",
+                    &format!("{action} auto-rejected — {reason}"),
+                );
+            }
+        }
+    }
+    if expired > 0 {
+        tracing::info!(expired, "fleet approval GC: expired stale pending consults");
+        let _ = app.emit(
+            crate::companion::session::APPROVALS_EVENT,
+            Vec::<crate::companion::dispatcher::CreatedApproval>::new(),
+        );
+    }
+}
+
 /// Resolve an orchestration assessment on the session itself — the missing
 /// half of the defer path.
 ///

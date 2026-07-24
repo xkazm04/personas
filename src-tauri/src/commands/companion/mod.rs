@@ -165,6 +165,16 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                         crate::commands::companion::fleet_bridge::reassess_idle_needs_next(
                             &app_handle,
                         );
+                        // Expire pending fleet consults whose target session is
+                        // gone or that sat unactioned >30 min — leftovers from
+                        // prior app runs read as "Athena is asking me things
+                        // she should have handled" in the chat.
+                        if let Some(st) = app_handle.try_state::<std::sync::Arc<crate::AppState>>() {
+                            crate::commands::companion::fleet_bridge::gc_stale_fleet_approvals(
+                                &app_handle,
+                                &st,
+                            );
+                        }
 
                         let review = crate::companion::proactive::execution_review::review_recent_executions(
                             &pool,
