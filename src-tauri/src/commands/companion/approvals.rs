@@ -3570,18 +3570,25 @@ fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult,
         }
     }
 
-    let payload = if press_enter {
-        format!("{text}\r")
+    // Single-select / free-text: deliver via the confirmed-submit primitive —
+    // text and Enter as SEPARATE chunks (a trailing `\r` inside one chunk reads
+    // as a pasted newline and never submits; the composer held Athena's text
+    // while the session dozed, observed live 2026-07-24), with the submit
+    // verified against the session flipping Running and one Enter retry.
+    if press_enter {
+        crate::commands::fleet::registry::registry()
+            .write_text_line(session_id, text)
+            .map_err(AppError::Internal)?;
     } else {
-        text.to_string()
-    };
-    crate::commands::fleet::registry::registry()
-        .write_input(session_id, payload.as_bytes())
-        .map_err(AppError::Internal)?;
+        crate::commands::fleet::registry::registry()
+            .write_input(session_id, text.as_bytes())
+            .map_err(AppError::Internal)?;
+    }
     Ok(ExecuteResult::message(format!(
-        "Sent {} bytes to fleet session `{}`.",
-        payload.len(),
+        "Typed {} chars into fleet session `{}`{}.",
+        text.chars().count(),
         &session_id[..session_id.len().min(8)],
+        if press_enter { " (submit confirmed asynchronously)" } else { "" },
     )))
 }
 
@@ -4234,9 +4241,11 @@ fn execute_fleet_intervene(
         .record_intervention(session_id)
         .map_err(|e| AppError::Internal(format!("fleet_intervene: {e}")))?;
 
-    let bytes = format!("{message}\n");
+    // Confirmed-submit primitive: text and Enter as separate chunks, submit
+    // verified (see `write_text_line` — a trailing newline inside one chunk is
+    // a pasted line-break, not Enter, and never submits).
     crate::commands::fleet::registry::registry()
-        .write_input(session_id, bytes.as_bytes())
+        .write_text_line(session_id, message)
         .map_err(|e| AppError::Internal(format!("fleet_intervene: PTY write failed: {e}")))?;
 
     crate::companion::orchestration::emit_digest_changed(app);
@@ -4301,9 +4310,9 @@ fn execute_fleet_redirect_op(
     for sid in &targets {
         match mem.record_intervention(sid) {
             Ok(()) => {
-                let bytes = format!("{message}\n");
+                // Confirmed-submit primitive (split text/Enter — see write_text_line).
                 if let Err(e) = crate::commands::fleet::registry::registry()
-                    .write_input(sid, bytes.as_bytes())
+                    .write_text_line(sid, &message)
                 {
                     skipped.push(format!("`{}` PTY write failed: {e}", &sid[..sid.len().min(8)]));
                     continue;

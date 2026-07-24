@@ -6,10 +6,11 @@ import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
-import { useCompanionStore } from './companionStore';
+import { useToastStore } from '@/stores/toastStore';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 
-/** How long the notify-only "Athena auto-decided" orb pill stays up. */
-const AUTO_NOTICE_MS = 7000;
+/** How long the notify-only "Athena auto-decided" toast stays up. */
+const AUTO_NOTICE_MS = 10_000;
 
 /**
  * Tier-1 Companion ↔ Fleet bridge.
@@ -148,23 +149,22 @@ export function useFleetCompanionBridge(): void {
       },
     );
 
-    // Notify-only: Athena auto-fired a high-confidence fleet_send_input into
-    // one of her own sessions. Flash a brief orb pill so the hands-off action
-    // is visible without watching the grid. FYI only — no undo (user policy).
-    let noticeTimer: number | undefined;
+    // Notify-only: Athena auto-fired a fleet_send_input into a session. Route
+    // it through the standard toast surface — the old bespoke pill rendered at
+    // a hardcoded fixed position, which read as "a bubble floating outside any
+    // Athena element" (the orb is draggable, so the pill was rarely anywhere
+    // near it). A toast lands where every other transient app message lands.
+    // FYI only — no undo (user policy).
     const unAutoP = listen<{ sessionId: string; projectLabel: string; text: string }>(
       'athena://fleet/auto-decided',
       (event) => {
-        useCompanionStore.getState().setFleetAutoNotice({
-          sessionId: event.payload.sessionId,
-          projectLabel: event.payload.projectLabel,
-          text: event.payload.text,
-          at: Date.now(),
-        });
-        if (noticeTimer) window.clearTimeout(noticeTimer);
-        noticeTimer = window.setTimeout(() => {
-          useCompanionStore.getState().clearFleetAutoNotice();
-        }, AUTO_NOTICE_MS);
+        const t = getActiveTranslations();
+        const heading = event.payload.projectLabel
+          ? interpolate(t.plugins.companion.fleet_auto_decided_to, { project: event.payload.projectLabel })
+          : t.plugins.companion.fleet_auto_decided;
+        useToastStore
+          .getState()
+          .addToast(`${heading}: ${event.payload.text}`, 'success', AUTO_NOTICE_MS);
       },
     );
 
@@ -174,7 +174,6 @@ export function useFleetCompanionBridge(): void {
       unRegistryP.then((fn) => fn());
       unAutoP.then((fn) => fn());
       if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
-      if (noticeTimer) window.clearTimeout(noticeTimer);
     };
   }, []);
 }

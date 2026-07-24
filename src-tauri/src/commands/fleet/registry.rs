@@ -523,6 +523,94 @@ impl FleetRegistry {
             .write_all(wrapped.as_deref().unwrap_or(bytes))
             .map_err(|e| format!("write failed: {e}"))?;
         writer.flush().map_err(|e| format!("flush failed: {e}"))?;
+        drop(writer_guard);
+        drop(map);
+        // Any write is an interaction — stamp activity so the doze pass never
+        // sleeps a session someone (operator or Athena) just typed into.
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            session.last_activity_ms = now_ms();
+        }
+        Ok(())
+    }
+
+    /// Current lifecycle state, or `None` for an unknown session.
+    pub fn session_state(&self, session_id: &str) -> Option<FleetSessionState> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id).map(|s| s.state)
+    }
+
+    /// Deliver one **line of text** to an interactive session and make sure it
+    /// actually SUBMITS — the primitive every programmatic text path must use
+    /// (Athena's `fleet_send_input`/`fleet_intervene`, the Needs-You quick
+    /// reply, broadcast, skill apply).
+    ///
+    /// Why this exists: Claude Code's composer distinguishes a *typed* Enter (a
+    /// lone `\r` chunk) from a *pasted* one (a `\r` arriving inside a larger
+    /// chunk) — a paste with a trailing newline inserts a soft line-break and
+    /// does NOT submit. Every path here used to ship `format!("{text}\r")` as
+    /// one write, so the text sat in the composer unsubmitted; observed live
+    /// 2026-07-24: Athena AUTO_FIRED a fix instruction, no `UserPromptSubmit`
+    /// ever came, and the doze pass reaped the session with her message still
+    /// stranded in the composer.
+    ///
+    /// So: write the text alone, give the TUI a beat to ingest it, then send
+    /// `\r` as its own chunk — and CONFIRM the submit (the session flipping
+    /// `Running` via the `UserPromptSubmit`/tool hooks), retrying Enter once.
+    /// An unconfirmed submit is loudly logged instead of silently lost.
+    /// Headless sessions skip all of this — their lane wraps the text into one
+    /// stream-json user message with no composer in the way.
+    pub fn write_text_line(&self, session_id: &str, text: &str) -> Result<(), String> {
+        let text = text.trim_end_matches(['\r', '\n']);
+        {
+            let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+            let Some(session) = map.get(session_id) else {
+                return Err(format!("session not found: {session_id}"));
+            };
+            if matches!(session.mode, FleetSessionMode::Headless) {
+                drop(map);
+                return self.write_input(session_id, text.as_bytes());
+            }
+        }
+        self.write_input(session_id, text.as_bytes())?;
+
+        let sid = session_id.to_string();
+        tauri::async_runtime::spawn(async move {
+            // Let the composer ingest the paste before the submit keystroke.
+            tokio::time::sleep(std::time::Duration::from_millis(350)).await;
+            for attempt in 1..=2u32 {
+                if registry().write_input(&sid, b"\r").is_err() {
+                    return; // writer gone (killed / dozed mid-flight) — nothing to confirm
+                }
+                // Submission proof: the session flips Running (UserPromptSubmit
+                // hook, or a tool hook reviving it). Poll briefly.
+                for _ in 0..10 {
+                    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+                    if matches!(
+                        registry().session_state(&sid),
+                        Some(FleetSessionState::Running) | None
+                    ) {
+                        super::debug_log::athena(
+                            &sid,
+                            "input submitted",
+                            &format!("confirmed running (enter attempt {attempt})"),
+                        );
+                        return;
+                    }
+                }
+                // An extra lone Enter is a no-op in an empty composer, so one
+                // retry is safe; more would risk driving an unrelated prompt.
+            }
+            super::debug_log::athena(
+                &sid,
+                "input NOT confirmed",
+                "typed text + 2× Enter but the session never flipped Running — the composer may still hold the text",
+            );
+            tracing::warn!(
+                session_id = %sid,
+                "fleet write_text_line: submit unconfirmed after 2 Enter attempts"
+            );
+        });
         Ok(())
     }
 
@@ -945,9 +1033,15 @@ impl FleetRegistry {
     pub fn escalate_to_awaiting(&self, session_id: &str, reason: &str) -> Option<&'static str> {
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let session = map.get_mut(session_id)?;
-        if matches!(
+        // Only park-able states escalate. A session that is Running/Spawning
+        // again MOVED ON while Athena's turn was in flight — stamping it back
+        // to "awaiting" would stomp fresher truth (observed live: a defer
+        // note reading "actively progressing, leaving it to finish" flipped a
+        // Running session to awaiting_input). Terminal states have nothing to
+        // escalate.
+        if !matches!(
             session.state,
-            FleetSessionState::Exited | FleetSessionState::Hibernated
+            FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
         ) {
             return None;
         }

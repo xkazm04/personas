@@ -572,28 +572,6 @@ interface CompanionStore {
   setExplainComposing: (v: boolean) => void;
   setExplainComposeError: (v: string | null) => void;
 
-  /**
-   * Notify-only indicator for an autonomous fleet auto-decision (the "Notify
-   * only" safety net). Set when Athena auto-fires a high-confidence
-   * `fleet_send_input` into one of her own sessions; the orb flashes a brief
-   * "Athena → {project}: {text}" pill that self-clears. Ephemeral / FYI — there
-   * is no undo (the user opted out of an undo window), so this never blocks.
-   */
-  fleetAutoNotice: FleetAutoNotice | null;
-  setFleetAutoNotice: (notice: FleetAutoNotice) => void;
-  clearFleetAutoNotice: () => void;
-}
-
-/** One autonomous fleet auto-decision the orb briefly surfaces (notify-only). */
-export interface FleetAutoNotice {
-  /** Internal fleet session id Athena typed into. */
-  sessionId: string;
-  /** Project label for the session (falls back to empty string). */
-  projectLabel: string;
-  /** The exact text Athena auto-sent. */
-  text: string;
-  /** Monotonic-ish stamp (Date.now) used as a render key so repeats re-animate. */
-  at: number;
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
@@ -1168,9 +1146,6 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setExplainComposing: (explainComposing) => set({ explainComposing }),
   setExplainComposeError: (explainComposeError) => set({ explainComposeError }),
 
-  fleetAutoNotice: null,
-  setFleetAutoNotice: (fleetAutoNotice) => set({ fleetAutoNotice }),
-  clearFleetAutoNotice: () => set({ fleetAutoNotice: null }),
 }));
 
 /**

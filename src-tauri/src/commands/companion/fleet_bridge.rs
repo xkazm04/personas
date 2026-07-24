@@ -264,16 +264,25 @@ fn orchestrate_session(
         let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
         if let Some(&last) = t.get(session_id) {
             if now - last < ATTENTION_MIN_INTERVAL_MS {
-                debug_log::athena(
-                    session_id,
-                    "skipped",
-                    &format!(
-                        "throttled · woken {}s ago (min {}s) · situation={}",
-                        (now - last) / 1000,
-                        ATTENTION_MIN_INTERVAL_MS / 1000,
-                        situation.label()
-                    ),
-                );
+                // Log only MEANINGFUL throttle skips. The hook path and the
+                // frontend bridge both fire on the same transition (by design;
+                // the throttle IS their dedupe), so every wake has a twin
+                // arriving milliseconds later — logging those made each wake
+                // read as "woken, then skipped" (operator confusion on the
+                // first live run's log). A twin is < 5s old; a real throttle
+                // skip (re-check while she's still working) is older.
+                if now - last >= 5_000 {
+                    debug_log::athena(
+                        session_id,
+                        "skipped",
+                        &format!(
+                            "throttled · woken {}s ago (min {}s) · situation={}",
+                            (now - last) / 1000,
+                            ATTENTION_MIN_INTERVAL_MS / 1000,
+                            situation.label()
+                        ),
+                    );
+                }
                 return;
             }
         }
@@ -468,10 +477,20 @@ fn orchestrate_session(
 
     // Every orchestration reply must be readable by THIS operator and typeable
     // into a CLI — the model otherwise sometimes drifts into another language
-    // (a Spanish defer note reached the chat on 2026-07-23's live run).
+    // (a Spanish defer note reached the chat on 2026-07-23's live run). And a
+    // prose reply MUST self-classify: "no action dispatched" conflates
+    // "everything's fine" with "the human must decide", and only the model
+    // knows which it means — the OK/NEEDS-YOU tag is how the session learns
+    // whether to stay quiet or light up violet (`classify_fleet_note`).
     let directive = format!(
         "{directive}\n\nWrite your reply and any rationale in English. Any text you propose to type \
-         into a session must match the language of its on-screen prompt (usually English)."
+         into a session must match the language of its on-screen prompt (usually English).\n\
+         If you dispatch NO action, your reply MUST start with exactly one of:\n\
+         `OK:` — the session is progressing fine or simply finished; nothing needs anyone. \
+         (This stays entirely off the operator's screen.)\n\
+         `NEEDS-YOU:` — a real decision only the operator can make. State the decision and your \
+         recommended option in one line; this flips the session to \"Awaiting your input\" and \
+         surfaces your note, so never use it for a session that's merely progressing."
     );
 
     // P3 — show the operator that Athena has TAKEN this ticket and is reasoning:
@@ -873,17 +892,83 @@ fn defer_reason_line(note: &str) -> String {
     )
 }
 
-/// A fleet_orchestration turn ended in a prose DEFER (no action dispatched).
-/// Surface it on the session (escalate + reason) and in the debug log, then
-/// let the caller route the full note to the orb.
-pub fn note_fleet_defer(app: &tauri::AppHandle, session_id: &str, note: &str) {
-    crate::commands::fleet::debug_log::athena_with(
-        session_id,
-        "decision DEFERRED",
-        "prose note, no action — left to the operator",
-        &[("note", note.to_string())],
-    );
-    resolve_athena_assessment(app, session_id, Some(&defer_reason_line(note)));
+/// How a prose (no-action) orchestration reply should land.
+#[derive(Debug, PartialEq, Eq)]
+pub enum FleetNoteKind {
+    /// "Progressing fine / nothing to do" — a status observation, not a
+    /// decision. Stays entirely off the operator's screen (debug log only).
+    AllFine,
+    /// A genuine human decision — escalate the session + orb card.
+    NeedsYou,
+}
+
+/// Classify a prose reply by the `OK:` / `NEEDS-YOU:` protocol tag the
+/// orchestration directive mandates, returning the kind and the note with the
+/// tag stripped. An untagged reply is treated as `NeedsYou` — the safe side is
+/// visible, never silent.
+///
+/// Why the protocol exists: the first live run had her replying "this session
+/// is actively progressing — nothing to do; leaving it to finish", which the
+/// code could only read as a defer → it escalated a HEALTHY session to
+/// "Awaiting your input" with a reason that literally said nothing was needed.
+/// "No action dispatched" conflates two opposite meanings — *all fine* and
+/// *your call* — so the model has to say which one it means.
+pub fn classify_fleet_note(note: &str) -> (FleetNoteKind, String) {
+    let trimmed = note.trim();
+    let upper = trimmed.to_uppercase();
+    for tag in ["OK:", "OK —", "OK-"] {
+        if upper.starts_with(tag) {
+            return (FleetNoteKind::AllFine, trimmed[tag.len()..].trim().to_string());
+        }
+    }
+    if upper == "OK" {
+        return (FleetNoteKind::AllFine, String::new());
+    }
+    for tag in ["NEEDS-YOU:", "NEEDS YOU:", "NEEDSYOU:"] {
+        if upper.starts_with(tag) {
+            return (FleetNoteKind::NeedsYou, trimmed[tag.len()..].trim().to_string());
+        }
+    }
+    (FleetNoteKind::NeedsYou, trimmed.to_string())
+}
+
+/// A fleet_orchestration turn ended in prose (no action dispatched) — the
+/// single place that decides what that MEANS for the session and the operator.
+///
+/// `AllFine` → debug-log only: no orb card, no state change, and the
+/// "Athena's on it" window is cleared so the tile returns to its real state.
+/// `NeedsYou` → escalate the session (violet awaiting + "Athena left this to
+/// you: …", guarded so a session that moved back to Running is left alone) and
+/// surface the full note as an orb card. Returns the cleaned note when the
+/// caller should still show the orb card, `None` when everything stays silent.
+pub fn handle_fleet_defer(
+    app: &tauri::AppHandle,
+    session_id: &str,
+    note: &str,
+) -> Option<String> {
+    let (kind, cleaned) = classify_fleet_note(note);
+    match kind {
+        FleetNoteKind::AllFine => {
+            crate::commands::fleet::debug_log::athena_with(
+                session_id,
+                "decision ALL-FINE",
+                "no action needed — session progressing; nothing surfaced",
+                &[("note", cleaned)],
+            );
+            resolve_athena_assessment(app, session_id, None);
+            None
+        }
+        FleetNoteKind::NeedsYou => {
+            crate::commands::fleet::debug_log::athena_with(
+                session_id,
+                "decision DEFERRED",
+                "genuinely the operator's call — session escalated",
+                &[("note", cleaned.clone())],
+            );
+            resolve_athena_assessment(app, session_id, Some(&defer_reason_line(&cleaned)));
+            Some(cleaned)
+        }
+    }
 }
 
 pub fn surface_fleet_orb_note(
@@ -1182,4 +1267,45 @@ pub async fn companion_extract_fleet_patterns(
 ) -> Result<Vec<String>, AppError> {
     crate::ipc_auth::require_auth(&state).await?;
     crate::companion::brain::fleet_patterns::extract_patterns(&state.user_db)
+}
+
+#[cfg(test)]
+mod fleet_note_tests {
+    use super::{classify_fleet_note, FleetNoteKind};
+
+    #[test]
+    fn ok_tag_is_all_fine_and_stripped() {
+        let (kind, note) = classify_fleet_note("OK: three scan agents still running, nothing blocked.");
+        assert_eq!(kind, FleetNoteKind::AllFine);
+        assert_eq!(note, "three scan agents still running, nothing blocked.");
+        // Case-insensitive + bare OK.
+        assert_eq!(classify_fleet_note("ok: fine").0, FleetNoteKind::AllFine);
+        assert_eq!(classify_fleet_note("OK").0, FleetNoteKind::AllFine);
+    }
+
+    #[test]
+    fn needs_you_tag_is_stripped_and_escalates() {
+        let (kind, note) =
+            classify_fleet_note("NEEDS-YOU: pick a fix scope — my lean is findings 2 and 8.");
+        assert_eq!(kind, FleetNoteKind::NeedsYou);
+        assert_eq!(note, "pick a fix scope — my lean is findings 2 and 8.");
+    }
+
+    #[test]
+    fn untagged_reply_defaults_to_needs_you_visible_over_silent() {
+        // A model that ignores the protocol must fail VISIBLE, not silent —
+        // the operator can dismiss a spurious escalation; they can't see a
+        // swallowed real one.
+        let (kind, note) = classify_fleet_note("Session finished its scan; your call what's next.");
+        assert_eq!(kind, FleetNoteKind::NeedsYou);
+        assert!(note.starts_with("Session finished"));
+    }
+
+    #[test]
+    fn okay_prose_without_tag_is_not_misread_as_ok() {
+        // "OK" must be the protocol tag, not a word that happens to lead a
+        // sentence about the session being okay to interrupt, etc.
+        let (kind, _) = classify_fleet_note("Okay to interrupt? I'd wait for the user here.");
+        assert_eq!(kind, FleetNoteKind::NeedsYou);
+    }
 }

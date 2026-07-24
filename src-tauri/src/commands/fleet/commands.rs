@@ -70,10 +70,27 @@ pub async fn fleet_spawn_headless_session(
     Ok(id)
 }
 
-/// Write UTF-8 `text` to the session's PTY stdin. Does NOT append a
-/// newline — callers (xterm.js `onData`) ship raw key bytes.
+/// Write UTF-8 `text` to the session's PTY stdin.
+///
+/// Two very different callers share this command, told apart by shape:
+/// - **Raw keystrokes** (xterm.js `onData`): single keys or escape sequences,
+///   forwarded byte-for-byte. A lone `\r` IS the Enter key — pass through.
+/// - **Programmatic lines** (Needs-You quick reply, broadcast, skill apply,
+///   `/compact`): multi-char text with a trailing newline. Shipping those as
+///   one chunk makes Claude Code's composer treat the trailing `\r` as a
+///   *pasted* newline — a soft line-break, not a submit — so the text sat in
+///   the composer unsubmitted (observed live 2026-07-24). Those are routed
+///   through `write_text_line`, which splits text/Enter and confirms the
+///   submit.
+///
+/// An xterm PASTE also arrives as one multi-char chunk, but claude enables
+/// bracketed paste, so it's wrapped `ESC[200~ … ESC[201~` — its last char is
+/// `~`, never a bare newline — and it passes through raw as it must.
 #[tauri::command]
 pub async fn fleet_write_input(session_id: String, text: String) -> Result<(), String> {
+    if text.chars().count() > 1 && text.ends_with(['\r', '\n']) {
+        return registry().write_text_line(&session_id, &text);
+    }
     registry().write_input(&session_id, text.as_bytes())
 }
 
@@ -210,7 +227,7 @@ pub async fn fleet_wake_session(
     super::debug_log::sleep_event(
         &new_id,
         "woken",
-        &format!("resumed from hibernated session {}", &session_id[..session_id.len().min(6)]),
+        &format!("resumed sleeping (dozed/hibernated) session {}", &session_id[..session_id.len().min(6)]),
     );
     if registry().remove(&session_id) {
         pty::emit_registry_changed(&app, "removed", &session_id);

@@ -813,26 +813,32 @@ pub async fn send_turn(
     // card. Skip when she produced an approval (the orb already shows that) or
     // said nothing actionable (a "progressing fine" no-op stays quiet).
     if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
-        // A defer must also land ON the session it's about: escalate it to a
-        // visible "needs you" (violet border, banner, footer, notification)
-        // with her note as the reason, and clear the "Athena's on it" window
-        // that would otherwise mask it. An orb card alone was missable —
-        // observed live: tiles stuck light-blue while her notes sat unread.
+        // A prose fleet reply must land ON the session it's about, and only
+        // when it MEANS something: `handle_fleet_defer` classifies it by the
+        // directive's OK/NEEDS-YOU protocol — an "all fine" observation stays
+        // entirely silent (debug log only; no card, no state change), while a
+        // genuine "your call" escalates the session to a visible violet
+        // awaiting AND surfaces the note as an orb card. The first live run
+        // showed why both halves matter: "progressing fine" notes escalated
+        // healthy sessions, while real defers were missable orb-only cards.
+        let mut orb_note: Option<String> = Some(reply_text.clone());
         if let TurnOrigin::Proactive { trigger_kind, trigger_ref: Some(fleet_sid) } = &origin {
             if trigger_kind == "fleet_orchestration" {
-                crate::commands::companion::fleet_bridge::note_fleet_defer(
+                orb_note = crate::commands::companion::fleet_bridge::handle_fleet_defer(
                     app,
                     fleet_sid,
                     &reply_text,
                 );
             }
         }
-        crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
-            app,
-            &user_db,
-            &turn_id,
-            &reply_text,
-        );
+        if let Some(note) = orb_note {
+            crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
+                app,
+                &user_db,
+                &turn_id,
+                &note,
+            );
+        }
     }
 
     // Athena value expansion / A1: record this turn's usage + dispatcher
