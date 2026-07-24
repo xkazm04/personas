@@ -13007,7 +13007,18 @@
         "tally_proposed": "navrženo",
         "title": "Pracovní prostory",
         "workspace_name_label": "Název pracovního prostoru",
-        "workspace_name_placeholder": "Název pracovního prostoru…"
+        "workspace_name_placeholder": "Název pracovního prostoru…",
+        "extract": "Extrahovat",
+        "harvest_action": "Sklidit {project}",
+        "harvest_already": "{project} se už sklízí.",
+        "harvest_dispatched": "Sklízení {project} ve Fleet — po dokončení importujte.",
+        "harvest_import_action": "Importovat výsledky {project}",
+        "harvest_imported": "{project}: {inserted} přidáno, {skipped} přeskočeno.",
+        "harvest_no_members": "Přidejte projekty do pracovního prostoru, abyste je mohli sklidit.",
+        "harvest_section": "Sklidit projekt (AI)",
+        "mine": "Spustit těžaře",
+        "mine_hint": "Deterministické, bez LLM: sdílená zjištění a mezery v osvojení dovedností napříč pracovním prostorem.",
+        "mine_result": "Těžaři: {inserted} přidáno, {skipped} přeskočeno."
       }
     },
     "doc_signing": {

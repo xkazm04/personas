@@ -13007,7 +13007,18 @@
         "tally_proposed": "предложено",
         "title": "Рабочие пространства",
         "workspace_name_label": "Название рабочего пространства",
-        "workspace_name_placeholder": "Название рабочего пространства…"
+        "workspace_name_placeholder": "Название рабочего пространства…",
+        "extract": "Извлечь",
+        "harvest_action": "Собрать {project}",
+        "harvest_already": "{project} уже собирается.",
+        "harvest_dispatched": "Сбор {project} в Fleet — импортируйте по завершении.",
+        "harvest_import_action": "Импортировать результаты {project}",
+        "harvest_imported": "{project}: добавлено {inserted}, пропущено {skipped}.",
+        "harvest_no_members": "Добавьте проекты в рабочее пространство, чтобы собирать их.",
+        "harvest_section": "Собрать проект (ИИ)",
+        "mine": "Запустить сборщики",
+        "mine_hint": "Детерминированно, без LLM: общие находки и пробелы в освоении навыков в рабочем пространстве.",
+        "mine_result": "Сборщики: добавлено {inserted}, пропущено {skipped}."
       }
     },
     "doc_signing": {

@@ -47,8 +47,32 @@
 `dev_tools_workspace_knowledge_list / create / update / decide / delete`,
 `dev_tools_workspace_adoption_list / set` — wrappers in `src/api/devTools/workspaces.ts`.
 
+## Extraction engine (Arc 2 — shipped)
+
+The library fills itself. From the library header's **Extract** menu:
+
+- **Run miners** — deterministic, no-LLM. Two cross-project miners scoped to
+  workspace members (`dev_projects.workspace_id`): shared **findings** (the same
+  `dev_ideas` finding recurring in ≥2 members → a shared pitfall) and skill
+  **adoption gaps** (a skill heavily used in one member, absent in a sibling →
+  a howto). Candidates land `observed`, dedup-gated. Cheap signal before any LLM
+  spend. Command: `dev_tools_workspace_run_miners`.
+- **Harvest a project (AI)** — per member repo, dispatches a Fleet Dev-runner
+  session (the `practice-harvest` skill / `practiceHarvestPrompt.ts` engine)
+  that reads the repo's real conventions and writes
+  `practice-harvest/runs/<id>/result.json`; **Import** pulls it into the library
+  as `observed` practices. Commands: `dev_tools_workspace_harvest_prepare` →
+  (Fleet) → `dev_tools_workspace_knowledge_ingest`.
+
+All machine-harvested candidates route through one governed door
+(`ingest_candidates`): landed `observed` with machine provenance, dedup-gated on
+`dedup_key` — an existing live practice or a rejection within the last 90 days
+blocks re-proposal ("rejection is knowledge"). Everything still waits for a
+human `adopt`.
+
 ## Later arcs (planned)
 
-Harvest skill + divergence detection + deterministic miners (Arc 2), adopt-dispatch
-via Fleet + managed CLAUDE.md projection into member repos + weekly digest (Arc 3),
-workspace-scoped skills (Arc 4), health pillars + Mastermind alignment (Arc 5).
+Divergence pass — "N projects solve the same problem M ways → one recommended
+practice" (Arc 2 follow-up). Adopt-dispatch via Fleet + managed CLAUDE.md
+projection into member repos + weekly digest (Arc 3), workspace-scoped skills
+(Arc 4), health pillars + Mastermind alignment (Arc 5).

@@ -1178,7 +1178,18 @@
       "tally_proposed": "đề xuất",
       "title": "Không gian làm việc",
       "workspace_name_label": "Tên không gian",
-      "workspace_name_placeholder": "Tên không gian…"
+      "workspace_name_placeholder": "Tên không gian…",
+      "extract": "Trích xuất",
+      "harvest_action": "Thu thập {project}",
+      "harvest_already": "{project} đang được thu thập.",
+      "harvest_dispatched": "Đang thu thập {project} trong Fleet — nhập khi hoàn tất.",
+      "harvest_import_action": "Nhập kết quả {project}",
+      "harvest_imported": "{project}: đã thêm {inserted}, bỏ qua {skipped}.",
+      "harvest_no_members": "Thêm dự án vào không gian làm việc để thu thập.",
+      "harvest_section": "Thu thập một dự án (AI)",
+      "mine": "Chạy trình khai thác",
+      "mine_hint": "Xác định, không dùng LLM: các phát hiện chung và khoảng trống áp dụng kỹ năng trong không gian làm việc.",
+      "mine_result": "Trình khai thác: đã thêm {inserted}, bỏ qua {skipped}."
     }
   },
   "doc_signing": {

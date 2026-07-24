@@ -1178,7 +1178,18 @@
       "tally_proposed": "مقترَح",
       "title": "مساحات العمل",
       "workspace_name_label": "اسم مساحة العمل",
-      "workspace_name_placeholder": "اسم مساحة العمل…"
+      "workspace_name_placeholder": "اسم مساحة العمل…",
+      "extract": "استخراج",
+      "harvest_action": "جمع {project}",
+      "harvest_already": "{project} قيد الجمع بالفعل.",
+      "harvest_dispatched": "يتم جمع {project} في Fleet — استورد عند الانتهاء.",
+      "harvest_import_action": "استيراد نتائج {project}",
+      "harvest_imported": "{project}: تمت إضافة {inserted}، وتخطّي {skipped}.",
+      "harvest_no_members": "أضف مشاريع إلى مساحة العمل لجمعها.",
+      "harvest_section": "جمع مشروع (ذكاء اصطناعي)",
+      "mine": "تشغيل أدوات التنقيب",
+      "mine_hint": "حتمي، بدون LLM: النتائج المشتركة وفجوات تبنّي المهارات عبر مساحة العمل.",
+      "mine_result": "أدوات التنقيب: تمت إضافة {inserted}، وتخطّي {skipped}."
     }
   },
   "doc_signing": {

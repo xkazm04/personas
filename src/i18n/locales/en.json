@@ -13276,7 +13276,18 @@
         "form_detail_ph": "Code, config, before/after in Markdown. Optional.",
         "form_origin": "Origin project",
         "form_origin_none": "Workspace-level (no single origin)",
-        "save_practice": "Add practice"
+        "save_practice": "Add practice",
+        "extract": "Extract",
+        "mine": "Run miners",
+        "mine_hint": "Deterministic, no-LLM: shared findings + skill-adoption gaps across the workspace.",
+        "mine_result": "Miners: {inserted} added, {skipped} skipped.",
+        "harvest_section": "Harvest a project (AI)",
+        "harvest_no_members": "Add projects to the workspace to harvest them.",
+        "harvest_action": "Harvest {project}",
+        "harvest_import_action": "Import {project} results",
+        "harvest_dispatched": "Harvesting {project} in Fleet — Import when it finishes.",
+        "harvest_already": "{project} is already being harvested.",
+        "harvest_imported": "{project}: {inserted} added, {skipped} skipped."
       }
     },
     "doc_signing": {

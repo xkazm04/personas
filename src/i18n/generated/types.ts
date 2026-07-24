@@ -13283,6 +13283,17 @@ export type Translations = {
         form_origin: string;
         form_origin_none: string;
         save_practice: string;
+        extract: string;
+        mine: string;
+        mine_hint: string;
+        mine_result: string;
+        harvest_section: string;
+        harvest_no_members: string;
+        harvest_action: string;
+        harvest_import_action: string;
+        harvest_dispatched: string;
+        harvest_already: string;
+        harvest_imported: string;
       };
     };
     doc_signing: {

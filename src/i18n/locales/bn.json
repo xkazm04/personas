@@ -13007,7 +13007,18 @@
         "tally_proposed": "প্রস্তাবিত",
         "title": "ওয়ার্কস্পেস",
         "workspace_name_label": "ওয়ার্কস্পেসের নাম",
-        "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম…"
+        "workspace_name_placeholder": "ওয়ার্কস্পেসের নাম…",
+        "extract": "নিষ্কাশন",
+        "harvest_action": "{project} সংগ্রহ করুন",
+        "harvest_already": "{project} ইতিমধ্যে সংগ্রহ করা হচ্ছে।",
+        "harvest_dispatched": "Fleet-এ {project} সংগ্রহ করা হচ্ছে — শেষ হলে ইমপোর্ট করুন।",
+        "harvest_import_action": "{project}-এর ফলাফল ইমপোর্ট করুন",
+        "harvest_imported": "{project}: {inserted} যোগ হয়েছে, {skipped} বাদ দেওয়া হয়েছে।",
+        "harvest_no_members": "সংগ্রহ করতে ওয়ার্কস্পেসে প্রকল্প যোগ করুন।",
+        "harvest_section": "একটি প্রকল্প সংগ্রহ করুন (AI)",
+        "mine": "মাইনার চালান",
+        "mine_hint": "নির্ধারক, LLM ছাড়া: ওয়ার্কস্পেস জুড়ে শেয়ার করা ফলাফল ও স্কিল গ্রহণের ঘাটতি।",
+        "mine_result": "মাইনার: {inserted} যোগ হয়েছে, {skipped} বাদ দেওয়া হয়েছে।"
       }
     },
     "doc_signing": {

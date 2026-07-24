@@ -1178,7 +1178,18 @@
       "tally_proposed": "vorgeschlagen",
       "title": "Arbeitsbereiche",
       "workspace_name_label": "Name des Arbeitsbereichs",
-      "workspace_name_placeholder": "Name des Arbeitsbereichs…"
+      "workspace_name_placeholder": "Name des Arbeitsbereichs…",
+      "extract": "Extrahieren",
+      "harvest_action": "{project} auswerten",
+      "harvest_already": "{project} wird bereits ausgewertet.",
+      "harvest_dispatched": "{project} wird in Fleet ausgewertet – nach Abschluss importieren.",
+      "harvest_import_action": "Ergebnisse von {project} importieren",
+      "harvest_imported": "{project}: {inserted} hinzugefügt, {skipped} übersprungen.",
+      "harvest_no_members": "Füge dem Arbeitsbereich Projekte hinzu, um sie auszuwerten.",
+      "harvest_section": "Projekt auswerten (KI)",
+      "mine": "Extraktoren ausführen",
+      "mine_hint": "Deterministisch, ohne LLM: geteilte Erkenntnisse und Lücken bei der Skill-Übernahme im Arbeitsbereich.",
+      "mine_result": "Extraktoren: {inserted} hinzugefügt, {skipped} übersprungen."
     }
   },
   "doc_signing": {

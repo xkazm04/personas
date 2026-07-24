@@ -13007,7 +13007,18 @@
         "tally_proposed": "提案",
         "title": "ワークスペース",
         "workspace_name_label": "ワークスペース名",
-        "workspace_name_placeholder": "ワークスペース名…"
+        "workspace_name_placeholder": "ワークスペース名…",
+        "extract": "抽出",
+        "harvest_action": "{project} を収集",
+        "harvest_already": "{project} はすでに収集中です。",
+        "harvest_dispatched": "Fleet で {project} を収集中 — 完了したらインポートしてください。",
+        "harvest_import_action": "{project} の結果をインポート",
+        "harvest_imported": "{project}：{inserted} 件追加、{skipped} 件スキップ。",
+        "harvest_no_members": "収集するにはワークスペースにプロジェクトを追加してください。",
+        "harvest_section": "プロジェクトを収集（AI）",
+        "mine": "マイナーを実行",
+        "mine_hint": "決定論的、LLM 不使用：ワークスペース全体の共有された発見とスキル導入のギャップ。",
+        "mine_result": "マイナー：{inserted} 件追加、{skipped} 件スキップ。"
       }
     },
     "doc_signing": {

@@ -1178,7 +1178,18 @@
       "tally_proposed": "propuestas",
       "title": "Espacios de trabajo",
       "workspace_name_label": "Nombre del espacio de trabajo",
-      "workspace_name_placeholder": "Nombre del espacio de trabajo…"
+      "workspace_name_placeholder": "Nombre del espacio de trabajo…",
+      "extract": "Extraer",
+      "harvest_action": "Recolectar {project}",
+      "harvest_already": "{project} ya se está recolectando.",
+      "harvest_dispatched": "Recolectando {project} en Fleet: importa cuando termine.",
+      "harvest_import_action": "Importar resultados de {project}",
+      "harvest_imported": "{project}: {inserted} añadidos, {skipped} omitidos.",
+      "harvest_no_members": "Añade proyectos al espacio de trabajo para recolectarlos.",
+      "harvest_section": "Recolectar un proyecto (IA)",
+      "mine": "Ejecutar extractores",
+      "mine_hint": "Determinista, sin LLM: hallazgos compartidos y brechas de adopción de habilidades en el espacio de trabajo.",
+      "mine_result": "Extractores: {inserted} añadidos, {skipped} omitidos."
     }
   },
   "doc_signing": {

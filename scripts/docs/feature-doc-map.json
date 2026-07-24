@@ -422,6 +422,7 @@
       "sourceGlobs": [
         "src/features/plugins/dev-tools/sub_workspaces/**",
         "src-tauri/src/commands/infrastructure/dev_workspaces.rs",
+        "src-tauri/src/commands/infrastructure/workspace_harvest.rs",
         "src-tauri/src/db/repos/dev_workspaces.rs"
       ]
     },

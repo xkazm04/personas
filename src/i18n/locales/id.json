@@ -13007,7 +13007,18 @@
         "tally_proposed": "diusulkan",
         "title": "Workspace",
         "workspace_name_label": "Nama workspace",
-        "workspace_name_placeholder": "Nama workspace…"
+        "workspace_name_placeholder": "Nama workspace…",
+        "extract": "Ekstrak",
+        "harvest_action": "Panen {project}",
+        "harvest_already": "{project} sudah sedang dipanen.",
+        "harvest_dispatched": "Memanen {project} di Fleet — impor setelah selesai.",
+        "harvest_import_action": "Impor hasil {project}",
+        "harvest_imported": "{project}: {inserted} ditambahkan, {skipped} dilewati.",
+        "harvest_no_members": "Tambahkan proyek ke workspace untuk memanennya.",
+        "harvest_section": "Panen sebuah proyek (AI)",
+        "mine": "Jalankan miner",
+        "mine_hint": "Deterministik, tanpa LLM: temuan bersama + celah adopsi skill di seluruh workspace.",
+        "mine_result": "Miner: {inserted} ditambahkan, {skipped} dilewati."
       }
     },
     "doc_signing": {

@@ -1178,7 +1178,18 @@
       "tally_proposed": "प्रस्तावित",
       "title": "वर्कस्पेस",
       "workspace_name_label": "वर्कस्पेस नाम",
-      "workspace_name_placeholder": "वर्कस्पेस नाम…"
+      "workspace_name_placeholder": "वर्कस्पेस नाम…",
+      "extract": "निकालें",
+      "harvest_action": "{project} को इकट्ठा करें",
+      "harvest_already": "{project} पहले से ही इकट्ठा किया जा रहा है।",
+      "harvest_dispatched": "Fleet में {project} को इकट्ठा किया जा रहा है — पूरा होने पर इंपोर्ट करें।",
+      "harvest_import_action": "{project} के परिणाम इंपोर्ट करें",
+      "harvest_imported": "{project}: {inserted} जोड़े गए, {skipped} छोड़े गए।",
+      "harvest_no_members": "इकट्ठा करने के लिए वर्कस्पेस में प्रोजेक्ट जोड़ें।",
+      "harvest_section": "एक प्रोजेक्ट इकट्ठा करें (AI)",
+      "mine": "माइनर चलाएँ",
+      "mine_hint": "निर्धारक, LLM रहित: वर्कस्पेस भर में साझा निष्कर्ष और स्किल अपनाने की कमियाँ।",
+      "mine_result": "माइनर: {inserted} जोड़े गए, {skipped} छोड़े गए।"
     }
   },
   "doc_signing": {

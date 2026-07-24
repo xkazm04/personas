@@ -8,6 +8,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
 import type { DevWorkspace } from "@/lib/bindings/DevWorkspace";
+import type { HarvestPrepared } from "@/lib/bindings/HarvestPrepared";
 import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
@@ -171,4 +172,26 @@ export type { IngestSummary };
  *  before any harvest-skill LLM spend. Idempotent (dedup-gated). */
 export async function runWorkspaceMiners(workspaceId: string): Promise<IngestSummary> {
   return invoke<IngestSummary>("dev_tools_workspace_run_miners", { workspaceId });
+}
+/** Write the grounding snapshot into a member repo before dispatching the
+ *  practice-harvest Fleet session. Returns the snapshot path + repo root. */
+export async function prepareWorkspaceHarvest(
+  workspaceId: string,
+  projectId: string,
+): Promise<HarvestPrepared> {
+  return invoke<HarvestPrepared>("dev_tools_workspace_harvest_prepare", { workspaceId, projectId });
+}
+
+/** Ingest a finished harvest run from a member repo into the workspace library
+ *  (newest un-ingested run by default). Items land `observed`, dedup-gated. */
+export async function ingestWorkspaceHarvest(
+  workspaceId: string,
+  projectId: string,
+  runDir?: string,
+): Promise<IngestSummary> {
+  return invoke<IngestSummary>("dev_tools_workspace_knowledge_ingest", {
+    workspaceId,
+    projectId,
+    runDir,
+  });
 }

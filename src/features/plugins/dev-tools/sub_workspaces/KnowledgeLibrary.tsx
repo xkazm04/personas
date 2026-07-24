@@ -11,6 +11,7 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { CreatePracticeModal } from './CreatePracticeModal';
+import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import { generateMockLibrary } from './libraryMock';
 import { viewFromRow } from './libraryModel';
@@ -66,6 +67,11 @@ export default function KnowledgeLibrary({
           >
             {useDemo ? w.demo_on : w.demo_off}
           </button>
+          <ExtractionMenu
+            workspace={workspace}
+            memberProjects={memberProjects}
+            onChanged={onChanged}
+          />
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus className="w-4 h-4" />
             {w.new_practice}

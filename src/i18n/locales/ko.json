@@ -13007,7 +13007,18 @@
         "tally_proposed": "제안됨",
         "title": "워크스페이스",
         "workspace_name_label": "워크스페이스 이름",
-        "workspace_name_placeholder": "워크스페이스 이름…"
+        "workspace_name_placeholder": "워크스페이스 이름…",
+        "extract": "추출",
+        "harvest_action": "{project} 수집",
+        "harvest_already": "{project}은(는) 이미 수집 중입니다.",
+        "harvest_dispatched": "Fleet에서 {project} 수집 중 — 완료되면 가져오세요.",
+        "harvest_import_action": "{project} 결과 가져오기",
+        "harvest_imported": "{project}: {inserted}개 추가, {skipped}개 건너뜀.",
+        "harvest_no_members": "수집하려면 워크스페이스에 프로젝트를 추가하세요.",
+        "harvest_section": "프로젝트 수집 (AI)",
+        "mine": "마이너 실행",
+        "mine_hint": "결정론적, LLM 미사용: 워크스페이스 전반의 공유된 발견과 스킬 도입 격차.",
+        "mine_result": "마이너: {inserted}개 추가, {skipped}개 건너뜀."
       }
     },
     "doc_signing": {
