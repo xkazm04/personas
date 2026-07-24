@@ -2,18 +2,20 @@
 //  • Mine  — deterministic, no-LLM cross-project miners; instant, dedup-gated.
 //  • Harvest — dispatch a Fleet session per member repo that reads the repo and
 //    proposes practices; Import pulls the finished run into the library.
-import { useState } from 'react';
-import { Sparkles, Pickaxe, Play, DownloadCloud, ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Sparkles, Pickaxe, Play, DownloadCloud, ChevronDown, GitCompare, Loader2 } from 'lucide-react';
 
 import { listSessions, renameSession, spawnSession } from '@/api/fleet/fleet';
 import {
+  getDivergenceStatus,
   ingestWorkspaceHarvest,
   prepareWorkspaceHarvest,
+  runWorkspaceDivergence,
   runWorkspaceMiners,
 } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -34,6 +36,41 @@ export function ExtractionMenu({
   const addToast = useToastStore((s) => s.addToast);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  // Divergence runs as an in-app background job — poll until it settles, then
+  // report and refresh. The job id is the only state worth holding.
+  const [divergenceJob, setDivergenceJob] = useState<string | null>(null);
+  const [divergenceLine, setDivergenceLine] = useState<string | null>(null);
+  const settled = useRef(false);
+
+  useEffect(() => {
+    if (!divergenceJob) return;
+    settled.current = false;
+    const timer = setInterval(() => {
+      void getDivergenceStatus(divergenceJob)
+        .then((s) => {
+          const last = s.lines?.[s.lines.length - 1];
+          if (last) setDivergenceLine(last);
+          if (settled.current) return;
+          if (s.status === 'completed') {
+            settled.current = true;
+            addToast(
+              tx(tw.divergence_result, { proposed: s.proposed ?? 0, inserted: s.inserted ?? 0 }),
+              (s.inserted ?? 0) > 0 ? 'success' : 'warning',
+            );
+            setDivergenceJob(null);
+            setDivergenceLine(null);
+            onChanged();
+          } else if (s.status === 'failed' || s.status === 'not_found') {
+            settled.current = true;
+            addToast(s.error || tw.divergence_failed, 'error');
+            setDivergenceJob(null);
+            setDivergenceLine(null);
+          }
+        })
+        .catch(silentCatch('workspaces:divergencePoll'));
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [divergenceJob, addToast, tx, tw, onChanged]);
 
   const wsShim: DevWorkspace = {
     id: workspace.id,
@@ -55,6 +92,20 @@ export function ExtractionMenu({
       onChanged();
     } catch (err) {
       toastCatch('workspaces:runMiners')(err);
+    } finally {
+      setBusy(null);
+      setOpen(false);
+    }
+  };
+
+  const findDivergences = async () => {
+    setBusy('divergence');
+    try {
+      const jobId = await runWorkspaceDivergence(workspace.id);
+      setDivergenceJob(jobId);
+      addToast(tw.divergence_started, 'success');
+    } catch (err) {
+      toastCatch('workspaces:divergence')(err);
     } finally {
       setBusy(null);
       setOpen(false);
@@ -103,13 +154,25 @@ export function ExtractionMenu({
 
   return (
     <div className="relative">
+      {divergenceLine && (
+        <span
+          className="absolute right-0 -top-5 typo-caption text-muted-foreground truncate max-w-72"
+          title={divergenceLine}
+        >
+          {divergenceLine}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="typo-label flex items-center gap-1.5 rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
       >
-        <Sparkles className="w-3.5 h-3.5" />
-        {tw.extract}
+        {divergenceJob ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Sparkles className="w-3.5 h-3.5" />
+        )}
+        {divergenceJob ? tw.divergence_running : tw.extract}
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -127,6 +190,19 @@ export function ExtractionMenu({
               <span className="min-w-0">
                 <span className="typo-body text-foreground block">{tw.mine}</span>
                 <span className="typo-caption text-muted-foreground block">{tw.mine_hint}</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={findDivergences}
+              disabled={busy === 'divergence' || divergenceJob !== null}
+              className="w-full flex items-start gap-2.5 rounded-interactive px-2.5 py-2 text-left hover:bg-secondary/40 transition-colors disabled:opacity-50"
+            >
+              <GitCompare className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+              <span className="min-w-0">
+                <span className="typo-body text-foreground block">{tw.divergence}</span>
+                <span className="typo-caption text-muted-foreground block">{tw.divergence_hint}</span>
               </span>
             </button>
 

@@ -167,6 +167,9 @@ event_names! {
     IDEA_SCAN_STATUS           => "idea-scan-status",
     IDEA_SCAN_OUTPUT           => "idea-scan-output",
     IDEA_SCAN_COMPLETE         => "idea-scan-complete",
+    // Workspace divergence pass (cross-project practice synthesis)
+    DIVERGENCE_SCAN_STATUS     => "divergence-scan-status",
+    DIVERGENCE_SCAN_OUTPUT     => "divergence-scan-output",
     KPI_SCAN_STATUS            => "kpi-scan-status",
     KPI_SCAN_OUTPUT            => "kpi-scan-output",
     KPI_SCAN_COMPLETE          => "kpi-scan-complete",

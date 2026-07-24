@@ -1196,7 +1196,13 @@
       "all_altitudes": "所有层级",
       "col_altitude": "层级",
       "hide_lint": "隐藏 lint 层",
-      "hide_lint_hint": "隐藏可由 lint 强制执行的机械性条目（微观 / 机械性）——实践库应呈现方法论，而非 lint 规则。"
+      "hide_lint_hint": "隐藏可由 lint 强制执行的机械性条目（微观 / 机械性）——实践库应呈现方法论，而非 lint 规则。",
+      "divergence": "查找差异",
+      "divergence_failed": "差异分析失败。",
+      "divergence_hint": "AI：当各成员项目以不同方式解决同一问题时，提出统一的实践方案。",
+      "divergence_result": "差异分析：提出 {proposed} 项，已添加 {inserted} 项。",
+      "divergence_running": "对比中…",
+      "divergence_started": "差异分析已启动 — 正在对比工作区内各项目的实践。"
     }
   },
   "doc_signing": {

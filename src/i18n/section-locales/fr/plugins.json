@@ -1196,7 +1196,13 @@
       "all_altitudes": "Toutes les altitudes",
       "col_altitude": "Altitude",
       "hide_lint": "Masquer la couche lint",
-      "hide_lint_hint": "Masque les éléments mécaniques applicables par lint (micro / mécaniques) ; une bibliothèque de pratiques doit exposer la doctrine, pas les règles de lint."
+      "hide_lint_hint": "Masque les éléments mécaniques applicables par lint (micro / mécaniques) ; une bibliothèque de pratiques doit exposer la doctrine, pas les règles de lint.",
+      "divergence": "Trouver les divergences",
+      "divergence_failed": "L'analyse des divergences a échoué.",
+      "divergence_hint": "IA : là où les projets membres résolvent le même problème différemment, propose une pratique unique.",
+      "divergence_result": "Divergences : {proposed} proposées, {inserted} ajoutées.",
+      "divergence_running": "Comparaison…",
+      "divergence_started": "Analyse des divergences lancée — comparaison des pratiques dans l'espace de travail."
     }
   },
   "doc_signing": {

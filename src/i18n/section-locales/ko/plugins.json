@@ -1196,7 +1196,13 @@
       "all_altitudes": "모든 고도",
       "col_altitude": "고도",
       "hide_lint": "lint 레이어 숨기기",
-      "hide_lint_hint": "lint로 강제할 수 있는 기계적 항목(마이크로 / 기계적)을 숨깁니다. 실무 라이브러리는 lint 규칙이 아니라 원칙을 보여줘야 합니다."
+      "hide_lint_hint": "lint로 강제할 수 있는 기계적 항목(마이크로 / 기계적)을 숨깁니다. 실무 라이브러리는 lint 규칙이 아니라 원칙을 보여줘야 합니다.",
+      "divergence": "차이점 찾기",
+      "divergence_failed": "차이점 분석에 실패했습니다.",
+      "divergence_hint": "AI: 멤버 프로젝트들이 같은 문제를 서로 다르게 해결하는 부분을 찾아 하나의 방식을 제안합니다.",
+      "divergence_result": "차이점: {proposed}건 제안, {inserted}건 추가.",
+      "divergence_running": "비교 중…",
+      "divergence_started": "차이점 분석을 시작했습니다 — 워크스페이스 전반의 방식을 비교하는 중입니다."
     }
   },
   "doc_signing": {

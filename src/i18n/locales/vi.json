@@ -13025,7 +13025,13 @@
         "all_altitudes": "Tất cả cấp độ",
         "col_altitude": "Cấp độ",
         "hide_lint": "Ẩn lớp lint",
-        "hide_lint_hint": "Ẩn các mục máy móc có thể áp đặt bằng lint (vi mô / máy móc) — thư viện thực hành nên nêu bật nguyên tắc, không phải quy tắc lint."
+        "hide_lint_hint": "Ẩn các mục máy móc có thể áp đặt bằng lint (vi mô / máy móc) — thư viện thực hành nên nêu bật nguyên tắc, không phải quy tắc lint.",
+        "divergence": "Tìm khác biệt",
+        "divergence_failed": "Phân tích khác biệt thất bại.",
+        "divergence_hint": "AI: khi các dự án thành viên giải quyết cùng một vấn đề theo cách khác nhau, đề xuất một thực hành chung.",
+        "divergence_result": "Khác biệt: {proposed} đề xuất, {inserted} đã thêm.",
+        "divergence_running": "Đang so sánh…",
+        "divergence_started": "Đã bắt đầu phân tích khác biệt — đang so sánh các thực hành trong không gian làm việc."
       }
     },
     "doc_signing": {

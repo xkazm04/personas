@@ -1196,7 +1196,13 @@
       "all_altitudes": "Všechny úrovně",
       "col_altitude": "Úroveň",
       "hide_lint": "Skrýt vrstvu lint",
-      "hide_lint_hint": "Skryje mechanické položky vynutitelné lintem (mikro / mechanické) — knihovna postupů má ukazovat doktrínu, ne pravidla lintu."
+      "hide_lint_hint": "Skryje mechanické položky vynutitelné lintem (mikro / mechanické) — knihovna postupů má ukazovat doktrínu, ne pravidla lintu.",
+      "divergence": "Najít rozdíly",
+      "divergence_failed": "Analýza rozdílů selhala.",
+      "divergence_hint": "AI: tam, kde členské projekty řeší stejný problém různě, navrhne jednotný postup.",
+      "divergence_result": "Rozdíly: {proposed} navrženo, {inserted} přidáno.",
+      "divergence_running": "Porovnávání…",
+      "divergence_started": "Analýza rozdílů byla spuštěna — porovnáváme postupy napříč pracovním prostorem."
     }
   },
   "doc_signing": {

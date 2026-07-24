@@ -75,6 +75,17 @@ The library fills itself. From the library header's **Extract** menu:
   `practice-harvest/runs/<id>/result.json`; **Import** pulls it into the library
   as `observed` practices. Commands: `dev_tools_workspace_harvest_prepare` →
   (Fleet) → `dev_tools_workspace_knowledge_ingest`.
+- **Find divergences (AI)** — the question only visible in aggregate: *are
+  several member projects solving the same problem in different, locally
+  reasonable ways?* Runs **in-app** as a headless background job (not a Fleet
+  terminal — the input is the library, not a working tree), reasoning over the
+  workspace's accumulated knowledge and proposing ONE recommended practice per
+  real divergence, carrying each project's current approach as evidence. The
+  bar is deliberately conservative (apps legitimately differ; zero proposals is
+  a valid result) and lint-level mechanics are explicitly out of scope. Needs
+  ≥2 member projects and ≥4 live knowledge items. Commands:
+  `dev_tools_workspace_run_divergence` → `_get_divergence_status` (poll) →
+  `_cancel_divergence`, on the `divergence-scan-*` events.
 
 All machine-harvested candidates route through one governed door
 (`ingest_candidates`): landed `observed` with machine provenance, dedup-gated on

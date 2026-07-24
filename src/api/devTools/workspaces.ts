@@ -195,3 +195,29 @@ export async function ingestWorkspaceHarvest(
     runDir,
   });
 }
+
+// -- divergence pass (Arc 2) -------------------------------------------------
+
+export interface DivergenceStatus {
+  job_id: string;
+  status: 'running' | 'completed' | 'failed' | 'not_found' | string;
+  error?: string | null;
+  lines?: string[];
+  proposed?: number;
+  inserted?: number;
+}
+
+/** Start a cross-project divergence pass. Returns the job id; poll with
+ *  {@link getDivergenceStatus}. Needs ≥2 member projects and some harvested
+ *  knowledge to compare. */
+export async function runWorkspaceDivergence(workspaceId: string): Promise<string> {
+  return invoke<string>('dev_tools_workspace_run_divergence', { workspaceId });
+}
+
+export async function getDivergenceStatus(jobId: string): Promise<DivergenceStatus> {
+  return invoke<DivergenceStatus>('dev_tools_workspace_get_divergence_status', { jobId });
+}
+
+export async function cancelWorkspaceDivergence(jobId: string): Promise<void> {
+  return invoke<void>('dev_tools_workspace_cancel_divergence', { jobId });
+}

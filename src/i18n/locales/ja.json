@@ -13025,7 +13025,13 @@
         "all_altitudes": "すべての高度",
         "col_altitude": "高度",
         "hide_lint": "lint レイヤーを非表示",
-        "hide_lint_hint": "lint で強制できる機械的な項目（ミクロ／機械的）を非表示にします。プラクティスライブラリは lint ルールではなく方針を示すべきです。"
+        "hide_lint_hint": "lint で強制できる機械的な項目（ミクロ／機械的）を非表示にします。プラクティスライブラリは lint ルールではなく方針を示すべきです。",
+        "divergence": "相違点を検出",
+        "divergence_failed": "相違点の分析に失敗しました。",
+        "divergence_hint": "AI: メンバープロジェクトが同じ課題を異なる方法で解決している箇所を見つけ、統一されたプラクティスを提案します。",
+        "divergence_result": "相違点: {proposed} 件を提案、{inserted} 件を追加。",
+        "divergence_running": "比較中…",
+        "divergence_started": "相違点の分析を開始しました — ワークスペース全体のプラクティスを比較しています。"
       }
     },
     "doc_signing": {

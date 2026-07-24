@@ -3048,6 +3048,9 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_harvest_prepare,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_knowledge_ingest,
+            commands::infrastructure::workspace_divergence::dev_tools_workspace_run_divergence,
+            commands::infrastructure::workspace_divergence::dev_tools_workspace_get_divergence_status,
+            commands::infrastructure::workspace_divergence::dev_tools_workspace_cancel_divergence,
             // Dev Tools -- Goals
             commands::infrastructure::dev_tools::dev_tools_list_goals,
             commands::infrastructure::dev_tools::dev_tools_get_goal,

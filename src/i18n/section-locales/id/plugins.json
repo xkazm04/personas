@@ -1196,7 +1196,13 @@
       "all_altitudes": "Semua tingkat",
       "col_altitude": "Tingkat",
       "hide_lint": "Sembunyikan lapisan lint",
-      "hide_lint_hint": "Menyembunyikan item mekanis yang dapat ditegakkan lint (mikro / mekanis) — pustaka praktik harus menampilkan doktrin, bukan aturan lint."
+      "hide_lint_hint": "Menyembunyikan item mekanis yang dapat ditegakkan lint (mikro / mekanis) — pustaka praktik harus menampilkan doktrin, bukan aturan lint.",
+      "divergence": "Cari perbedaan",
+      "divergence_failed": "Analisis perbedaan gagal.",
+      "divergence_hint": "AI: bila proyek anggota menyelesaikan masalah yang sama dengan cara berbeda, usulkan satu praktik.",
+      "divergence_result": "Perbedaan: {proposed} diusulkan, {inserted} ditambahkan.",
+      "divergence_running": "Membandingkan…",
+      "divergence_started": "Analisis perbedaan dimulai — membandingkan praktik di seluruh ruang kerja."
     }
   },
   "doc_signing": {

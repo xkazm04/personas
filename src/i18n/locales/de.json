@@ -13025,7 +13025,13 @@
         "all_altitudes": "Alle Höhen",
         "col_altitude": "Höhe",
         "hide_lint": "Lint-Ebene ausblenden",
-        "hide_lint_hint": "Blendet mechanische, per Lint erzwingbare Einträge (Mikro / mechanisch) aus – eine Praxisbibliothek soll Doktrin zeigen, keine Lint-Regeln."
+        "hide_lint_hint": "Blendet mechanische, per Lint erzwingbare Einträge (Mikro / mechanisch) aus – eine Praxisbibliothek soll Doktrin zeigen, keine Lint-Regeln.",
+        "divergence": "Abweichungen finden",
+        "divergence_failed": "Die Abweichungsanalyse ist fehlgeschlagen.",
+        "divergence_hint": "KI: Wo Mitgliedsprojekte dasselbe Problem unterschiedlich lösen, wird eine einheitliche Praxis vorgeschlagen.",
+        "divergence_result": "Abweichungen: {proposed} vorgeschlagen, {inserted} hinzugefügt.",
+        "divergence_running": "Vergleiche…",
+        "divergence_started": "Abweichungsanalyse gestartet – Praktiken im Workspace werden verglichen."
       }
     },
     "doc_signing": {

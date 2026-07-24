@@ -13301,6 +13301,12 @@ export type Translations = {
         abstraction_micro: string;
         hide_lint: string;
         hide_lint_hint: string;
+        divergence: string;
+        divergence_hint: string;
+        divergence_started: string;
+        divergence_running: string;
+        divergence_result: string;
+        divergence_failed: string;
       };
     };
     doc_signing: {
