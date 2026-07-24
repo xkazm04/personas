@@ -1182,7 +1182,6 @@
       "extract": "Extrahovat",
       "harvest_action": "Sklidit {project}",
       "harvest_already": "{project} se už sklízí.",
-      "harvest_dispatched": "Sklízení {project} ve Fleet — po dokončení importujte.",
       "harvest_import_action": "Importovat výsledky {project}",
       "harvest_imported": "{project}: {inserted} přidáno, {skipped} přeskočeno.",
       "harvest_no_members": "Přidejte projekty do pracovního prostoru, abyste je mohli sklidit.",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "AI: tam, kde členské projekty řeší stejný problém různě, navrhne jednotný postup.",
       "divergence_result": "Rozdíly: {proposed} navrženo, {inserted} přidáno.",
       "divergence_running": "Porovnávání…",
-      "divergence_started": "Analýza rozdílů byla spuštěna — porovnáváme postupy napříč pracovním prostorem."
+      "divergence_started": "Analýza rozdílů byla spuštěna — porovnáváme postupy napříč pracovním prostorem.",
+      "harvest_auto_imported": "Sběr dokončen — {project}: {inserted} přidáno, {skipped} přeskočeno.",
+      "harvest_dispatched": "Sbírám postupy z {project} ve Fleet — výsledky se po dokončení naimportují automaticky."
     }
   },
   "doc_signing": {

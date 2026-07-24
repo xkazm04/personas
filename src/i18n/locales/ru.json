@@ -13011,7 +13011,6 @@
         "extract": "Извлечь",
         "harvest_action": "Собрать {project}",
         "harvest_already": "{project} уже собирается.",
-        "harvest_dispatched": "Сбор {project} в Fleet — импортируйте по завершении.",
         "harvest_import_action": "Импортировать результаты {project}",
         "harvest_imported": "{project}: добавлено {inserted}, пропущено {skipped}.",
         "harvest_no_members": "Добавьте проекты в рабочее пространство, чтобы собирать их.",
@@ -13031,7 +13030,9 @@
         "divergence_hint": "ИИ: там, где проекты решают одну задачу по-разному, предлагает единую практику.",
         "divergence_result": "Расхождения: предложено {proposed}, добавлено {inserted}.",
         "divergence_running": "Сравнение…",
-        "divergence_started": "Анализ расхождений запущен — сравниваем практики в рабочей области."
+        "divergence_started": "Анализ расхождений запущен — сравниваем практики в рабочей области.",
+        "harvest_auto_imported": "Сбор завершён — {project}: добавлено {inserted}, пропущено {skipped}.",
+        "harvest_dispatched": "Сбор практик из {project} в Fleet — результаты импортируются автоматически по завершении."
       }
     },
     "doc_signing": {

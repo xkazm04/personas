@@ -13307,6 +13307,7 @@ export type Translations = {
         divergence_running: string;
         divergence_result: string;
         divergence_failed: string;
+        harvest_auto_imported: string;
       };
     };
     doc_signing: {

@@ -1182,7 +1182,6 @@
       "extract": "निकालें",
       "harvest_action": "{project} को इकट्ठा करें",
       "harvest_already": "{project} पहले से ही इकट्ठा किया जा रहा है।",
-      "harvest_dispatched": "Fleet में {project} को इकट्ठा किया जा रहा है — पूरा होने पर इंपोर्ट करें।",
       "harvest_import_action": "{project} के परिणाम इंपोर्ट करें",
       "harvest_imported": "{project}: {inserted} जोड़े गए, {skipped} छोड़े गए।",
       "harvest_no_members": "इकट्ठा करने के लिए वर्कस्पेस में प्रोजेक्ट जोड़ें।",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "AI: जहाँ सदस्य प्रोजेक्ट एक ही समस्या को अलग-अलग तरीकों से हल करते हैं, वहाँ एक साझा प्रथा सुझाता है।",
       "divergence_result": "भिन्नताएँ: {proposed} सुझाई गईं, {inserted} जोड़ी गईं।",
       "divergence_running": "तुलना हो रही है…",
-      "divergence_started": "भिन्नता विश्लेषण शुरू हुआ — वर्कस्पेस की प्रथाओं की तुलना की जा रही है।"
+      "divergence_started": "भिन्नता विश्लेषण शुरू हुआ — वर्कस्पेस की प्रथाओं की तुलना की जा रही है।",
+      "harvest_auto_imported": "संग्रह पूरा हुआ — {project}: {inserted} जोड़े गए, {skipped} छोड़े गए।",
+      "harvest_dispatched": "Fleet में {project} का संग्रह चल रहा है — पूरा होते ही परिणाम अपने आप आयात हो जाएंगे।"
     }
   },
   "doc_signing": {

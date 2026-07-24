@@ -1182,7 +1182,6 @@
       "extract": "استخراج",
       "harvest_action": "جمع {project}",
       "harvest_already": "{project} قيد الجمع بالفعل.",
-      "harvest_dispatched": "يتم جمع {project} في Fleet — استورد عند الانتهاء.",
       "harvest_import_action": "استيراد نتائج {project}",
       "harvest_imported": "{project}: تمت إضافة {inserted}، وتخطّي {skipped}.",
       "harvest_no_members": "أضف مشاريع إلى مساحة العمل لجمعها.",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "الذكاء الاصطناعي: حيث تحل المشاريع الأعضاء المشكلة نفسها بطرق مختلفة، يقترح ممارسة موحدة.",
       "divergence_result": "الاختلافات: {proposed} مقترحة، {inserted} مضافة.",
       "divergence_running": "جارٍ المقارنة…",
-      "divergence_started": "بدأ تحليل الاختلافات — تجري مقارنة الممارسات عبر مساحة العمل."
+      "divergence_started": "بدأ تحليل الاختلافات — تجري مقارنة الممارسات عبر مساحة العمل.",
+      "harvest_auto_imported": "اكتمل الحصاد — {project}: تمت إضافة {inserted}، وتم تخطي {skipped}.",
+      "harvest_dispatched": "جارٍ حصاد {project} في Fleet — سيتم استيراد النتائج تلقائيًا عند الانتهاء."
     }
   },
   "doc_signing": {

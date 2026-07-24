@@ -1182,7 +1182,6 @@
       "extract": "Trích xuất",
       "harvest_action": "Thu thập {project}",
       "harvest_already": "{project} đang được thu thập.",
-      "harvest_dispatched": "Đang thu thập {project} trong Fleet — nhập khi hoàn tất.",
       "harvest_import_action": "Nhập kết quả {project}",
       "harvest_imported": "{project}: đã thêm {inserted}, bỏ qua {skipped}.",
       "harvest_no_members": "Thêm dự án vào không gian làm việc để thu thập.",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "AI: khi các dự án thành viên giải quyết cùng một vấn đề theo cách khác nhau, đề xuất một thực hành chung.",
       "divergence_result": "Khác biệt: {proposed} đề xuất, {inserted} đã thêm.",
       "divergence_running": "Đang so sánh…",
-      "divergence_started": "Đã bắt đầu phân tích khác biệt — đang so sánh các thực hành trong không gian làm việc."
+      "divergence_started": "Đã bắt đầu phân tích khác biệt — đang so sánh các thực hành trong không gian làm việc.",
+      "harvest_auto_imported": "Đã thu thập xong — {project}: thêm {inserted}, bỏ qua {skipped}.",
+      "harvest_dispatched": "Đang thu thập {project} trong Fleet — kết quả sẽ được nhập tự động khi hoàn tất."
     }
   },
   "doc_signing": {

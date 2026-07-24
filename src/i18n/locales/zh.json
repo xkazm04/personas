@@ -13011,7 +13011,6 @@
         "extract": "提取",
         "harvest_action": "采集 {project}",
         "harvest_already": "{project} 已在采集中。",
-        "harvest_dispatched": "正在 Fleet 中采集 {project}——完成后导入。",
         "harvest_import_action": "导入 {project} 结果",
         "harvest_imported": "{project}：已添加 {inserted} 项，跳过 {skipped} 项。",
         "harvest_no_members": "向工作区添加项目以进行采集。",
@@ -13031,7 +13030,9 @@
         "divergence_hint": "AI：当各成员项目以不同方式解决同一问题时，提出统一的实践方案。",
         "divergence_result": "差异分析：提出 {proposed} 项，已添加 {inserted} 项。",
         "divergence_running": "对比中…",
-        "divergence_started": "差异分析已启动 — 正在对比工作区内各项目的实践。"
+        "divergence_started": "差异分析已启动 — 正在对比工作区内各项目的实践。",
+        "harvest_auto_imported": "采集完成 — {project}：新增 {inserted} 条，跳过 {skipped} 条。",
+        "harvest_dispatched": "正在 Fleet 中采集 {project} — 完成后将自动导入结果。"
       }
     },
     "doc_signing": {

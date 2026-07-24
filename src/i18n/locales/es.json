@@ -13011,7 +13011,6 @@
         "extract": "Extraer",
         "harvest_action": "Recolectar {project}",
         "harvest_already": "{project} ya se está recolectando.",
-        "harvest_dispatched": "Recolectando {project} en Fleet: importa cuando termine.",
         "harvest_import_action": "Importar resultados de {project}",
         "harvest_imported": "{project}: {inserted} añadidos, {skipped} omitidos.",
         "harvest_no_members": "Añade proyectos al espacio de trabajo para recolectarlos.",
@@ -13031,7 +13030,9 @@
         "divergence_hint": "IA: cuando los proyectos miembros resuelven el mismo problema de formas distintas, propone una única práctica.",
         "divergence_result": "Divergencias: {proposed} propuestas, {inserted} añadidas.",
         "divergence_running": "Comparando…",
-        "divergence_started": "Análisis de divergencias iniciado: comparando prácticas en el espacio de trabajo."
+        "divergence_started": "Análisis de divergencias iniciado: comparando prácticas en el espacio de trabajo.",
+        "harvest_auto_imported": "Recolección finalizada — {project}: {inserted} añadidas, {skipped} omitidas.",
+        "harvest_dispatched": "Recolectando {project} en Fleet: los resultados se importarán automáticamente al terminar."
       }
     },
     "doc_signing": {

@@ -1182,7 +1182,6 @@
       "extract": "Ekstrak",
       "harvest_action": "Panen {project}",
       "harvest_already": "{project} sudah sedang dipanen.",
-      "harvest_dispatched": "Memanen {project} di Fleet — impor setelah selesai.",
       "harvest_import_action": "Impor hasil {project}",
       "harvest_imported": "{project}: {inserted} ditambahkan, {skipped} dilewati.",
       "harvest_no_members": "Tambahkan proyek ke workspace untuk memanennya.",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "AI: bila proyek anggota menyelesaikan masalah yang sama dengan cara berbeda, usulkan satu praktik.",
       "divergence_result": "Perbedaan: {proposed} diusulkan, {inserted} ditambahkan.",
       "divergence_running": "Membandingkan…",
-      "divergence_started": "Analisis perbedaan dimulai — membandingkan praktik di seluruh ruang kerja."
+      "divergence_started": "Analisis perbedaan dimulai — membandingkan praktik di seluruh ruang kerja.",
+      "harvest_auto_imported": "Pemanenan selesai — {project}: {inserted} ditambahkan, {skipped} dilewati.",
+      "harvest_dispatched": "Memanen {project} di Fleet — hasil akan diimpor otomatis setelah selesai."
     }
   },
   "doc_signing": {

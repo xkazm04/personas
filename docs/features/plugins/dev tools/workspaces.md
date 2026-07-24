@@ -72,9 +72,14 @@ The library fills itself. From the library header's **Extract** menu:
 - **Harvest a project (AI)** — per member repo, dispatches a Fleet Dev-runner
   session (the `practice-harvest` skill / `practiceHarvestPrompt.ts` engine)
   that reads the repo's real conventions and writes
-  `practice-harvest/runs/<id>/result.json`; **Import** pulls it into the library
-  as `observed` practices. Commands: `dev_tools_workspace_harvest_prepare` →
-  (Fleet) → `dev_tools_workspace_knowledge_ingest`.
+  `practice-harvest/runs/<id>/result.json`. **Results import themselves** — while
+  the Workspaces surface is open, a poll watches each dispatched session and
+  ingests its run once the work settles (an interactive CLI session parks at
+  `idle`, not `exited`); ingest is idempotent via the run-dir `ingested.json`
+  marker, so firing on idle/exit/vanish is safe. **Import** stays as the manual
+  fallback for runs that finished while the surface was closed. Commands:
+  `dev_tools_workspace_harvest_prepare` → (Fleet) →
+  `dev_tools_workspace_knowledge_ingest`.
 - **Find divergences (AI)** — the question only visible in aggregate: *are
   several member projects solving the same problem in different, locally
   reasonable ways?* Runs **in-app** as a headless background job (not a Fleet

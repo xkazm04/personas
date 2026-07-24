@@ -1182,7 +1182,6 @@
       "extract": "Extrahieren",
       "harvest_action": "{project} auswerten",
       "harvest_already": "{project} wird bereits ausgewertet.",
-      "harvest_dispatched": "{project} wird in Fleet ausgewertet – nach Abschluss importieren.",
       "harvest_import_action": "Ergebnisse von {project} importieren",
       "harvest_imported": "{project}: {inserted} hinzugefügt, {skipped} übersprungen.",
       "harvest_no_members": "Füge dem Arbeitsbereich Projekte hinzu, um sie auszuwerten.",
@@ -1202,7 +1201,9 @@
       "divergence_hint": "KI: Wo Mitgliedsprojekte dasselbe Problem unterschiedlich lösen, wird eine einheitliche Praxis vorgeschlagen.",
       "divergence_result": "Abweichungen: {proposed} vorgeschlagen, {inserted} hinzugefügt.",
       "divergence_running": "Vergleiche…",
-      "divergence_started": "Abweichungsanalyse gestartet – Praktiken im Workspace werden verglichen."
+      "divergence_started": "Abweichungsanalyse gestartet – Praktiken im Workspace werden verglichen.",
+      "harvest_auto_imported": "Auswertung abgeschlossen — {project}: {inserted} hinzugefügt, {skipped} übersprungen.",
+      "harvest_dispatched": "{project} wird in Fleet ausgewertet — die Ergebnisse werden nach Abschluss automatisch importiert."
     }
   },
   "doc_signing": {

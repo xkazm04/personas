@@ -20,6 +20,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { buildHarvestPrompt, harvestDispatchKey } from './practiceHarvestPrompt';
+import { useHarvestAutoIngest } from './useHarvestAutoIngest';
 import type { Workspace } from './workspaceStore';
 
 export function ExtractionMenu({
@@ -41,6 +42,15 @@ export function ExtractionMenu({
   const [divergenceJob, setDivergenceJob] = useState<string | null>(null);
   const [divergenceLine, setDivergenceLine] = useState<string | null>(null);
   const settled = useRef(false);
+
+  // Close the agent loop: a harvest that finishes in Fleet ingests itself.
+  // Manual Import stays as the fallback for runs finished while this surface
+  // was closed (the poll only runs while mounted).
+  const { markLive } = useHarvestAutoIngest({
+    workspaceId: workspace.id,
+    memberProjects,
+    onIngested: onChanged,
+  });
 
   useEffect(() => {
     if (!divergenceJob) return;
@@ -124,6 +134,9 @@ export function ExtractionMenu({
       const prep = await prepareWorkspaceHarvest(workspace.id, project.id);
       const sessionId = await spawnSession(prep.root_path, [buildHarvestPrompt(wsShim, project)]);
       await renameSession(sessionId, key);
+      // Arm the auto-ingest watcher immediately, so a session that finishes
+      // between polls still produces an active→settled transition.
+      markLive(project.id);
       addToast(tx(tw.harvest_dispatched, { project: project.name }), 'success');
     } catch (err) {
       toastCatch('workspaces:harvest')(err);

@@ -13011,7 +13011,6 @@
         "extract": "নিষ্কাশন",
         "harvest_action": "{project} সংগ্রহ করুন",
         "harvest_already": "{project} ইতিমধ্যে সংগ্রহ করা হচ্ছে।",
-        "harvest_dispatched": "Fleet-এ {project} সংগ্রহ করা হচ্ছে — শেষ হলে ইমপোর্ট করুন।",
         "harvest_import_action": "{project}-এর ফলাফল ইমপোর্ট করুন",
         "harvest_imported": "{project}: {inserted} যোগ হয়েছে, {skipped} বাদ দেওয়া হয়েছে।",
         "harvest_no_members": "সংগ্রহ করতে ওয়ার্কস্পেসে প্রকল্প যোগ করুন।",
@@ -13031,7 +13030,9 @@
         "divergence_hint": "AI: যেখানে সদস্য প্রকল্পগুলো একই সমস্যা ভিন্ন উপায়ে সমাধান করে, সেখানে একটি অভিন্ন চর্চার প্রস্তাব দেয়।",
         "divergence_result": "পার্থক্য: {proposed}টি প্রস্তাবিত, {inserted}টি যোগ হয়েছে।",
         "divergence_running": "তুলনা করা হচ্ছে…",
-        "divergence_started": "পার্থক্য বিশ্লেষণ শুরু হয়েছে — ওয়ার্কস্পেসজুড়ে চর্চাগুলো তুলনা করা হচ্ছে।"
+        "divergence_started": "পার্থক্য বিশ্লেষণ শুরু হয়েছে — ওয়ার্কস্পেসজুড়ে চর্চাগুলো তুলনা করা হচ্ছে।",
+        "harvest_auto_imported": "সংগ্রহ সম্পন্ন — {project}: {inserted}টি যোগ হয়েছে, {skipped}টি বাদ পড়েছে।",
+        "harvest_dispatched": "Fleet-এ {project} সংগ্রহ করা হচ্ছে — শেষ হলে ফলাফল স্বয়ংক্রিয়ভাবে আমদানি হবে।"
       }
     },
     "doc_signing": {

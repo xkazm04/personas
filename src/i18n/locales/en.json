@@ -13285,7 +13285,7 @@
         "harvest_no_members": "Add projects to the workspace to harvest them.",
         "harvest_action": "Harvest {project}",
         "harvest_import_action": "Import {project} results",
-        "harvest_dispatched": "Harvesting {project} in Fleet — Import when it finishes.",
+        "harvest_dispatched": "Harvesting {project} in Fleet — results import automatically when it finishes.",
         "harvest_already": "{project} is already being harvested.",
         "harvest_imported": "{project}: {inserted} added, {skipped} skipped.",
         "col_altitude": "Altitude",
@@ -13300,7 +13300,8 @@
         "divergence_started": "Divergence pass started — comparing practices across the workspace.",
         "divergence_running": "Comparing…",
         "divergence_result": "Divergence: {proposed} proposed, {inserted} added.",
-        "divergence_failed": "The divergence pass failed."
+        "divergence_failed": "The divergence pass failed.",
+        "harvest_auto_imported": "Harvest finished — {project}: {inserted} added, {skipped} skipped."
       }
     },
     "doc_signing": {
