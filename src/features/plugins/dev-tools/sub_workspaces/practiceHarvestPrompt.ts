@@ -18,6 +18,17 @@ const WHAT_TO_MINE = `WHAT TO HARVEST — durable, reusable engineering practice
 
 const KINDS = `kind ∈ pattern | pitfall | decision | howto | fact.`;
 
+// The topic vocabulary itself lives in Rust (db/repos/workspace_taxonomy.rs)
+// and ships inside snapshot.json, so there is exactly one copy of it and this
+// prompt cannot drift from what the ingest door enforces. Free-form topics are
+// what fragmented the library: 13 parallel agents once produced 154 topics for
+// 177 items.
+const TOPIC = `TOPIC — the library uses a CLOSED, precedence-ordered vocabulary, shipped to you as \`taxonomy\` in snapshot.json. Read it before you write any item.
+- A topic is EXACTLY two segments: \`area/cluster\`. Never one, never three.
+- \`topic\` answers WHERE the practice lives (which concern or subsystem it governs). \`ftype\` separately answers what SHAPE it is — do not encode shape in the topic. A repository-behind-one-interface practice is \`data/store-boundary\`, not \`architecture/boundaries\`, even though it is boundary-shaped.
+- Areas are PRECEDENCE-ORDERED. Most practices touch several at once. Walk the area list in the order given and take the FIRST that genuinely governs: if the practice would be meaningless without that concern, it governs. \`architecture\` is near the end on purpose — it means the codebase's own skeleton, so use it only when no subsystem area applies.
+- Prefer a listed cluster. If none genuinely fits you MAY name a new one, but only under a listed area — never invent an area. An unrecognized area is quarantined on an \`unsorted/\` shelf for a human to file.`;
+
 const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY-MM-DD-HHmm>/result.json\` (and a short \`report.md\`). The app ingests result.json; you NEVER write any database. Exact shape:
 {
   "items": [
@@ -26,7 +37,7 @@ const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY
       "title": "Short imperative claim",          // required
       "statement": "The distilled practice a session should act on.", // required
       "detail_md": "Evidence: real code/config from THIS repo (markdown). Optional but strongly preferred.",
-      "topic": "code-quality/error-handling",     // slash-path taxonomy node; optional
+      "topic": "errors/degradation",               // REQUIRED: area/cluster from snapshot.json's taxonomy — see TOPIC above
       "abstraction": "meso",                       // macro | meso | micro — the altitude; prefer meso/macro design patterns over micro lint
       "ftype": "error-strategy",                   // architecture | module-boundary | data-flow | extensibility | api-design | state-mgmt | error-strategy | concurrency-reliability | perf-strategy | micro-technique
       "durability": "durable",                     // durable | situational | mechanical (mechanical = belongs in the linter, not here)
@@ -52,6 +63,8 @@ export function buildHarvestPrompt(workspace: DevWorkspace, project: DevProject)
     '',
     WHAT_TO_MINE,
     KINDS,
+    '',
+    TOPIC,
     '',
     OUTPUT_CONTRACT,
     '',

@@ -142,6 +142,8 @@ fn build_divergence_prompt(
         .collect::<Vec<_>>()
         .join("\n");
 
+    let taxonomy_block = crate::db::repos::workspace_taxonomy::prompt_block();
+
     format!(
         r#"You are adjudicating PRACTICE DIVERGENCE across the projects in the "{workspace_name}" workspace.
 
@@ -162,8 +164,12 @@ If a difference is justified, say nothing about it. Proposing nothing is a valid
 
 ALTITUDE: propose durable DESIGN doctrine (architecture, module boundaries, data flow, extensibility, error/state strategy). Do NOT propose lint-level mechanics (formatting, import order, a raw class name, a hardcoded string) — those belong in a linter, not a practice library.
 
+TOPIC — the library uses a CLOSED, precedence-ordered vocabulary. `topic` is exactly two segments, `area/cluster`, and answers WHERE the practice lives; `ftype` separately answers what shape it is, so do not encode shape in the topic. Walk these areas IN ORDER and take the FIRST that genuinely governs your proposal — if the practice would be meaningless without that concern, it governs. `architecture` sits near the end deliberately: it is the codebase's own skeleton, so reach for it only when no subsystem area applies.
+{taxonomy_block}
+Use a listed cluster whenever one fits. If none fits you may name a new cluster, but ONLY under one of the areas above — never invent an area.
+
 OUTPUT CONTRACT — emit one line per proposal, nothing else on that line:
-DIVERGENCE: {{"title":"short imperative","statement":"the recommended practice, 1-2 sentences","rationale":"why this is one shared problem rather than legitimate difference","approaches":[{{"project":"<member name>","approach":"what it does today"}}],"topic":"slash/path","ftype":"architecture|module-boundary|data-flow|extensibility|api-design|state-mgmt|error-strategy|concurrency-reliability|perf-strategy","abstraction":"macro|meso","kind":"pattern|decision|pitfall","confidence":0.0-1.0}}
+DIVERGENCE: {{"title":"short imperative","statement":"the recommended practice, 1-2 sentences","rationale":"why this is one shared problem rather than legitimate difference","approaches":[{{"project":"<member name>","approach":"what it does today"}}],"topic":"area/cluster","ftype":"architecture|module-boundary|data-flow|extensibility|api-design|state-mgmt|error-strategy|concurrency-reliability|perf-strategy","abstraction":"macro|meso","kind":"pattern|decision|pitfall","confidence":0.0-1.0}}
 
 At most {MAX_PROPOSALS_PER_RUN} proposals. When finished emit:
 SUMMARY: <n> divergences proposed

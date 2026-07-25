@@ -36,9 +36,31 @@ small number of high-signal practices over volume (≤ ~15).
 Write `practice-harvest/runs/<YYYY-MM-DD-HHmm>/result.json` plus a short
 `report.md`. You NEVER write any database — the app ingests result.json through
 its one governed door. The exact `items[]` schema (kind ∈
-pattern|pitfall|decision|howto|fact; required title + statement; optional
-detail_md / topic / applicability object / dedup_key / confidence) is defined
+pattern|pitfall|decision|howto|fact; required title + statement + topic;
+optional detail_md / applicability object / dedup_key / confidence) is defined
 canonically in `practiceHarvestPrompt.ts` (OUTPUT_CONTRACT) — follow it exactly.
+
+### Topic — a closed vocabulary
+
+`topic` is **exactly two segments, `area/cluster`**, drawn from the `taxonomy`
+block in `snapshot.json`. Read it before writing any item.
+
+- `topic` answers **where** the practice lives (which concern or subsystem it
+  governs); `ftype` separately answers what **shape** it is. Don't encode shape
+  in the topic — a repository-behind-one-interface practice is
+  `data/store-boundary`, not `architecture/boundaries`.
+- Areas are **precedence-ordered**. Walk them in the order given and take the
+  first that genuinely governs: if the practice would be meaningless without
+  that concern, it governs. `architecture` sits near the end deliberately — it
+  means the codebase's own skeleton, so reach for it only when no subsystem
+  area applies.
+- Prefer a listed cluster; you may name a new cluster under a listed area if
+  none fits, but **never invent an area** (those are quarantined on an
+  `unsorted/` shelf for a human).
+
+Free-form topics are what broke this library once already: 13 parallel harvest
+agents produced 154 distinct topics for 177 items — a flat list wearing a
+tree's clothes.
 
 ## Hard rules
 

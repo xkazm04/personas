@@ -36,11 +36,34 @@
   allows: **Adopt / Reject** while `observed`/`proposed`, **Roll out /
   Deprecate** once `adopted`. Rejection is retained, not deleted, so the miners
   dedup against it for 90 days.
-- **Topic hygiene** — topics are a free-form slash taxonomy, which means
-  parallel harvest runs will invent competing paths for one concept (13 agents
-  once produced 154 topics for 177 items). Periodically normalize onto a small
-  closed set of areas; a tree whose leaves are nearly all singletons is a flat
-  list wearing a tree's clothes.
+- **Topic taxonomy** — `topic` is **exactly two segments, `area/cluster`**,
+  drawn from a closed vocabulary in
+  [`db/repos/workspace_taxonomy.rs`](../../../../src-tauri/src/db/repos/workspace_taxonomy.rs).
+  Two rules make it hold:
+  1. **`topic` answers WHERE a practice lives** (which concern or subsystem it
+     governs); the separate `ftype` column answers what *shape* it is. A
+     repository-behind-one-interface practice is `data/store-boundary`, not
+     `architecture/boundaries`, even though it is boundary-shaped. When both
+     columns encoded shape, `architecture` swallowed a third of the library.
+  2. **The 15 areas are precedence-ordered** — security · auth · billing · llm ·
+     testing · observability · performance · errors · concurrency · data · api ·
+     frontend · integration · architecture · process. Most practices touch
+     several at once, so writers take the *first* area that genuinely governs.
+     `architecture` sits near the end deliberately: it means the codebase's own
+     skeleton. Without a stated tiebreak, every writer picks differently — which
+     is exactly how the library fragmented (13 parallel agents once produced 154
+     topics for 177 items, and a first regex normalization left a dozen
+     `general` catch-alls plus the same leaf name meaning different things under
+     three areas).
+
+  **Growth is designed in.** Areas are closed; clusters are a *starter
+  vocabulary*. `normalize_topic()` keeps an unrecognized cluster under a
+  recognized area verbatim — that is how the taxonomy grows with the workspace.
+  Only an unrecognized *area* is quarantined onto a visible `unsorted/` shelf,
+  because a new top level is the decision that actually re-fragments the tree
+  and it should be a human's. The vocabulary ships to harvest agents inside
+  `snapshot.json` and to the divergence pass inside its prompt, so there is one
+  copy and it cannot drift from what the ingest door enforces.
 - **Categorization axes** (orthogonal to the topic tree) let the library rank
   and filter by *quality*, not just subject: `abstraction`
   (macro / meso / micro — the altitude), `ftype` (finding-type taxonomy:

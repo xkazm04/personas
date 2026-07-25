@@ -31,6 +31,7 @@ use ts_rs::TS;
 use crate::db::repos::dev_tools as dev_repo;
 use crate::db::repos::dev_workspaces as repo;
 use crate::db::repos::dev_workspaces::KnowledgeCandidate;
+use crate::db::repos::workspace_taxonomy as taxonomy;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -136,6 +137,28 @@ pub async fn dev_tools_workspace_harvest_prepare(
         "existing_practice_titles": existing_titles,
         "rejected_dedup_keys": rejected_keys,
         "kinds": repo::KNOWLEDGE_KINDS,
+        // The closed topic vocabulary travels with the snapshot the agent is
+        // already reading, so there is no second copy of it to drift. Areas
+        // are precedence-ordered and closed; clusters are a starter set the
+        // agent may extend (see `db::repos::workspace_taxonomy`).
+        "taxonomy": {
+            "rule": "topic = exactly two segments, area/cluster. `topic` answers WHERE the practice lives (which concern or subsystem it governs); `ftype` answers what shape it is. Walk the areas in the order listed and take the FIRST that genuinely governs — if the practice would be meaningless without that concern, it governs. `architecture` is the codebase's own skeleton and is near-last on purpose: use it only when no subsystem area applies.",
+            "growth": "You may use a cluster that is not listed IF none of the listed ones fit, but only under one of the listed areas. Never invent an area.",
+            "areas": taxonomy::TAXONOMY
+                .iter()
+                .map(|(area, clusters)| {
+                    json!({
+                        "area": area,
+                        "covers": taxonomy::AREA_HINTS
+                            .iter()
+                            .find(|(a, _)| a == area)
+                            .map(|(_, h)| *h)
+                            .unwrap_or(""),
+                        "clusters": clusters,
+                    })
+                })
+                .collect::<Vec<_>>(),
+        },
     });
 
     let dir = root.join("practice-harvest");

@@ -514,7 +514,14 @@ pub fn create_knowledge(
                 title.trim(),
                 statement.trim(),
                 detail_md,
-                topic.map(|t| t.trim()).filter(|t| !t.is_empty()),
+                // A hand-authored topic is normalized onto the taxonomy too, so
+                // a stray `ui/…` cannot reopen an area the library already
+                // merged away. Blank stays blank: the human path may leave a
+                // practice untopiced, unlike the machine door.
+                topic
+                    .map(|t| t.trim())
+                    .filter(|t| !t.is_empty())
+                    .map(|t| super::workspace_taxonomy::normalize_topic(Some(t))),
                 applicability,
                 origin_project_id,
                 provenance,
@@ -577,7 +584,9 @@ pub fn update_knowledge(
             clone
         );
         push_field_param!(
-            topic.map(|o| o.map(|s| s.to_string())),
+            // Same normalization as the create path — an edit is another way
+            // to reopen a merged-away area. Explicit clear (None) survives.
+            topic.map(|o| o.map(|s| super::workspace_taxonomy::normalize_topic(Some(s)))),
             "topic",
             sets,
             param_idx,
@@ -892,7 +901,12 @@ pub fn ingest_candidates(
                     c.title.trim(),
                     c.statement.trim(),
                     c.detail_md,
-                    c.topic.as_deref().map(|t| t.trim()).filter(|t| !t.is_empty()),
+                    // Every machine writer passes through here, so this is the
+                    // one place that can hold the taxonomy. An unknown cluster
+                    // under a known area survives (that is how the vocabulary
+                    // grows); an unknown *area* is quarantined on a visible
+                    // shelf rather than silently inventing a new top level.
+                    crate::db::repos::workspace_taxonomy::normalize_topic(c.topic.as_deref()),
                     c.abstraction,
                     c.ftype,
                     c.durability,
@@ -1058,17 +1072,22 @@ fn is_project_agnostic_key(key: &str) -> bool {
 
 /// Coarse topic path for a finding origin, so shared findings slot into the
 /// library tree instead of landing uncategorized.
+///
+/// These are the miners' contribution to the taxonomy in
+/// [`workspace_taxonomy`](super::workspace_taxonomy) and must stay inside it —
+/// the miners used to emit a third private vocabulary (`code-quality/…`,
+/// `cost/…`, `reliability/…`, `product/…`) that overlapped neither the agents'
+/// paths nor each other. An unrecognized origin quarantines rather than guesses.
 fn finding_topic(origin: &str) -> String {
     match origin {
-        "standards_finding" => "code-quality/standards",
-        "llm_cost" => "cost/llm",
-        "sentry_spike" => "reliability/errors",
-        "kpi_offtrack" | "kpi_sim" => "product/kpis",
-        "doc_rot" => "process/docs",
-        "skill_dormant" => "process/skills",
+        "standards_finding" => "process/enforcement",
+        "llm_cost" => "billing/limits",
+        "sentry_spike" => "observability/diagnostics",
+        "kpi_offtrack" | "kpi_sim" => "process/outcomes",
+        "doc_rot" => "process/documentation",
+        "skill_dormant" | "memory_disputed" => "process/knowledge",
         "passport_gap" => "process/readiness",
-        "memory_disputed" => "process/memory",
-        _ => "process/findings",
+        _ => super::workspace_taxonomy::UNSORTED,
     }
     .to_string()
 }
@@ -1167,7 +1186,7 @@ fn cluster_skill_adoption(
                 missing.len()
             ),
             detail_md: None,
-            topic: Some("process/skills".into()),
+            topic: Some("process/knowledge".into()),
             abstraction: Some("meso".into()),
             ftype: Some("extensibility".into()),
             durability: Some("situational".into()),
@@ -1246,7 +1265,7 @@ mod tests {
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].kind, "pitfall");
         assert_eq!(out[0].dedup_key.as_deref(), Some("miner:findings:standards_finding|standards:no-unwrap"));
-        assert_eq!(out[0].topic.as_deref(), Some("code-quality/standards"));
+        assert_eq!(out[0].topic.as_deref(), Some("process/enforcement"));
     }
 
     #[test]
@@ -1267,7 +1286,7 @@ mod tests {
         ];
         let out = cluster_shared_findings(&findings);
         assert_eq!(out.len(), 1, "repo-local keys should fall back to title matching");
-        assert_eq!(out[0].topic.as_deref(), Some("reliability/errors"));
+        assert_eq!(out[0].topic.as_deref(), Some("observability/diagnostics"));
     }
 
     #[test]
