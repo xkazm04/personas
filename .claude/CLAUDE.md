@@ -540,3 +540,21 @@ The codex-gf project is local-only and stored in `data/memory.json`. Treat the l
 
 This project has a Vibeman-generated context map at `context-map.json` (repo root). It maps every file to a feature ("context"), grouped by business domain. **Before editing code, read `context-map.json` to find the relevant context and scope your changes to its `filePaths`.** The `index` field is a quick one-line-per-context overview. If you change which files a context owns, update `context-map.json` to match (or run Vibeman's refresh) so it stays accurate.
 <!-- vibeman:context-map:end -->
+
+## Decision Mirror (operator decision capture)
+
+This repo captures the operator's decisions to build a behavioral profile for
+Athena (design + schema: [`docs/concepts/decision-mirror.md`](../docs/concepts/decision-mirror.md)).
+Selects/multiselects are captured automatically by a PostToolUse hook — no
+session action needed. **Your one duty:** when the user CORRECTS your course
+mid-session (overrides an approach, reverses a decision, redirects scope),
+record it in the same turn:
+
+```bash
+node scripts/decision-ledger/capture-decision.mjs --correction "<what the user directed, near-verbatim>" --was "<what you were doing>" --context "<one-line situation>"
+```
+
+Corrections are the highest-value signal in the ledger — never skip one, never
+paraphrase away the user's reasoning. The ledger (`.claude/decision-ledger/`)
+is personal data: gitignored, never committed, never quoted into committed
+files. Distillation runs via the `/reflect-me` skill.

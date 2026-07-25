@@ -36,13 +36,14 @@ export const FLEET_STATE_META: ReadonlyArray<FleetStateMeta> = [
   { id: 'spawning',       dot: 'bg-cyan-400',    text: 'text-cyan-300',    chip: 'bg-cyan-500/15',    labelKey: 'state_spawning' },
   { id: 'idle',           dot: 'bg-emerald-400', text: 'text-emerald-300', chip: 'bg-emerald-500/15', labelKey: 'state_idle' },
   { id: 'stale',          dot: 'bg-orange-400',  text: 'text-orange-300',  chip: 'bg-orange-500/15',  labelKey: 'state_stale' },
+  { id: 'finished',       dot: 'bg-teal-400',    text: 'text-teal-300',    chip: 'bg-teal-500/15',    labelKey: 'state_finished' },
   { id: 'hibernated',     dot: 'bg-indigo-400',  text: 'text-indigo-300',  chip: 'bg-indigo-500/15',  labelKey: 'state_hibernated' },
   { id: 'exited',         dot: 'bg-zinc-500',    text: 'text-foreground',  chip: 'bg-secondary/60',   labelKey: 'state_exited' },
 ];
 
 /** Zero-filled tally — every state present, so consumers never guard on undefined. */
 export function emptyFleetStateCounts(): Record<FleetSessionState, number> {
-  return { spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, hibernated: 0, exited: 0 };
+  return { spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, finished: 0, hibernated: 0, exited: 0 };
 }
 
 /** Count sessions per lifecycle state. */

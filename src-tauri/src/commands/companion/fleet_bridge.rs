@@ -221,6 +221,380 @@ impl FleetSituation {
 /// next step. She either proposes a `fleet_send_input` (auto-applied via the
 /// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
 /// wrapper over [`orchestrate_session`]; see there for the shared machinery.
+// ---------------------------------------------------------------------------
+// Batched assessment (2026-07-24, the 30x throughput fix).
+//
+// The 30-terminal test showed the ceiling is TURN ADMISSION: verdicts are
+// ~10s each and the companion runs one turn at a time, so a completion burst
+// of 25 parked sessions took minutes serially (and, before the queue, dropped
+// wakes outright). The fix is structural: wakes ENQUEUE, and a single active
+// fleet turn assesses up to [`BATCH_MAX`] sessions at once — their fresh
+// screens side by side, one verdict line or action per session. A 25-session
+// burst becomes ~4-5 turns instead of 25.
+// ---------------------------------------------------------------------------
+
+/// Max sessions per batched assessment turn. Bounds the prompt (each screen
+/// is up to a few KB) and keeps per-session attention high enough for
+/// reliable verdicts.
+const BATCH_MAX: usize = 6;
+
+/// A wake that passed every gate and awaits its batch slot.
+struct QueuedAssessment {
+    session_id: String,
+    situation: String,
+}
+
+fn assessment_pending() -> &'static Mutex<Vec<QueuedAssessment>> {
+    static Q: OnceLock<Mutex<Vec<QueuedAssessment>>> = OnceLock::new();
+    Q.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+/// True while a batched fleet turn is in flight. Serializes fleet turns
+/// without blocking tasks (contrast the turn-lock queue, which parked one
+/// blocked task per wake).
+static ASSESSMENT_TURN_ACTIVE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+static ASSESSMENT_TURN_STARTED_MS: std::sync::atomic::AtomicI64 =
+    std::sync::atomic::AtomicI64::new(0);
+
+/// Sessions covered by the in-flight batch turn — consumed by
+/// [`finish_assessment_turn`] to route per-session verdicts and flag the
+/// unanswered.
+fn current_batch() -> &'static Mutex<Vec<String>> {
+    static B: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
+    B.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+/// Snapshot of the in-flight batch's session ids (for approval validation).
+pub fn current_batch_ids() -> Vec<String> {
+    current_batch().lock().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
+/// Enqueue a gated wake (deduped per session) and try to start the drainer.
+/// Coalescing window between the FIRST queued wake and the drain. Round-2 data
+/// (16x multistep, 2026-07-24): 58 turns served 103 assessments and 40 of the
+/// 58 (69%) carried a single session — wakes mostly arrive alone (session
+/// pacing spreads them), and an instant drain turns each into its own
+/// full-priced Athena turn. Waiting ~12s lets adjacent arrivals share one
+/// turn; a parked CLI doesn't feel 12 seconds, but the subscription feels
+/// every turn (limit waves are partly self-inflicted). The window is skipped
+/// when the queue already holds a full batch.
+const DRAIN_COALESCE_MS: u64 = 12_000;
+static DRAIN_SCHEDULED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn enqueue_assessment(app: &tauri::AppHandle, state: &AppState, session_id: &str, situation: &str) {
+    use std::sync::atomic::Ordering;
+    let qlen = {
+        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        if q.iter().any(|e| e.session_id == session_id) {
+            return;
+        }
+        q.push(QueuedAssessment {
+            session_id: session_id.to_string(),
+            situation: situation.to_string(),
+        });
+        q.len()
+    };
+    if qlen >= BATCH_MAX {
+        drain_assessment_batch(app, state);
+        return;
+    }
+    if !DRAIN_SCHEDULED.swap(true, Ordering::SeqCst) {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(DRAIN_COALESCE_MS)).await;
+            DRAIN_SCHEDULED.store(false, Ordering::SeqCst);
+            use tauri::Manager;
+            if let Some(st) = app.try_state::<std::sync::Arc<AppState>>() {
+                drain_assessment_batch(&app, &st);
+            }
+        });
+    }
+}
+
+/// If no fleet turn is in flight, take up to [`BATCH_MAX`] queued wakes and
+/// spawn ONE turn assessing them together. Re-invoked from
+/// [`finish_assessment_turn`], so a burst drains batch after batch.
+///
+/// Wedge recovery: a turn that dies before reaching its finish hook (model
+/// error inside `send_turn`) would leave the active flag set forever — after
+/// 4 minutes the flag is forcibly released, the stranded batch's sessions are
+/// marked unanswered, and draining resumes.
+pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
+    use std::sync::atomic::Ordering;
+    let now = crate::commands::fleet::registry::now_ms();
+    if ASSESSMENT_TURN_ACTIVE.load(Ordering::SeqCst) {
+        let started = ASSESSMENT_TURN_STARTED_MS.load(Ordering::SeqCst);
+        if started != 0 && now - started > 4 * 60 * 1000 {
+            tracing::warn!("fleet batch turn wedged >4min — force-releasing");
+            let stranded: Vec<String> = {
+                let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
+                std::mem::take(&mut *b)
+            };
+            for sid in stranded {
+                crate::commands::fleet::debug_log::athena(
+                    &sid,
+                    "batch wedged",
+                    "assessment turn never completed — released for reassessment",
+                );
+                clear_pending_assessment(&sid);
+            }
+            ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
+        } else {
+            return;
+        }
+    }
+    let batch: Vec<QueuedAssessment> = {
+        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        let n = q.len().min(BATCH_MAX);
+        q.drain(..n).collect()
+    };
+    // A queued session may have resolved itself between enqueue and drain —
+    // Athena's earlier answer put it back to work, or it finished. Assessing a
+    // non-parked session wastes the batch and invites a stale-screen decision
+    // (the throttle-deferral lane makes this window up to ~60s wide).
+    let batch: Vec<QueuedAssessment> = batch
+        .into_iter()
+        .filter(|e| {
+            let parked = matches!(
+                crate::commands::fleet::registry::registry().session_state(&e.session_id),
+                Some(
+                    crate::commands::fleet::types::FleetSessionState::AwaitingInput
+                        | crate::commands::fleet::types::FleetSessionState::Stale
+                        | crate::commands::fleet::types::FleetSessionState::Idle
+                )
+            );
+            if !parked {
+                crate::commands::fleet::debug_log::athena(
+                    &e.session_id,
+                    "batch drop",
+                    "no longer parked at drain time — moved on without needing the assessment",
+                );
+                clear_pending_assessment(&e.session_id);
+                // Roll back the signature the WAKE recorded — no assessment
+                // actually happened, and if the session re-parks on this same
+                // screen the dedupe would wrongly suppress the next wake
+                // (observed on the smoke probe: a dropped wake cost the
+                // follow-up question ~6 min of sweep latency).
+                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                sigs.remove(&e.session_id);
+            }
+            parked
+        })
+        .collect();
+    if batch.is_empty() {
+        return;
+    }
+    if ASSESSMENT_TURN_ACTIVE.swap(true, Ordering::SeqCst) {
+        // Lost the race to another drainer — requeue and let it handle them.
+        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        for e in batch {
+            if !q.iter().any(|x| x.session_id == e.session_id) {
+                q.push(e);
+            }
+        }
+        return;
+    }
+    ASSESSMENT_TURN_STARTED_MS.store(now, Ordering::SeqCst);
+
+    // Build the combined directive from FRESH screens (a queued session's
+    // prompt may have changed since its wake) and record each screen's hash as
+    // the decision signature the execution-time re-check compares against.
+    let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
+    let mut blocks = String::new();
+    let mut ids: Vec<String> = Vec::new();
+    for entry in &batch {
+        let sid = &entry.session_id;
+        let screen_text = crate::commands::fleet::registry::registry()
+            .render_screen_for(sid)
+            .map(|(_, lines)| lines.join("\n"))
+            .unwrap_or_default();
+        {
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::{Hash, Hasher};
+            let mut h = DefaultHasher::new();
+            screen_text.hash(&mut h);
+            let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+            sigs.insert(sid.clone(), h.finish());
+        }
+        let label = crate::commands::fleet::registry::registry()
+            .lookup_meta(sid)
+            .map(|(l, _)| l)
+            .unwrap_or_default();
+        let objective = session_objective(sid).unwrap_or_else(|| "user-spawned session".into());
+        let short: String = sid.chars().take(8).collect();
+        // Trim to the TAIL of the screen: the question/prompt a parked session
+        // is blocked on is bottom-anchored in the TUI; the scrollback above it
+        // mostly restates what the objective line already says. At batch size 6
+        // this cuts the directive's screen payload roughly in half. (Hashing is
+        // NOT affected — signatures are computed on the full render.)
+        const SCREEN_TAIL_CHARS: usize = 1800;
+        let screen_part = if screen_text.trim().is_empty() {
+            "(screen empty — the session may be mid-redraw; judge from the objective, or reply NEEDS-YOU if you cannot)".to_string()
+        } else {
+            let total = screen_text.chars().count();
+            if total > SCREEN_TAIL_CHARS {
+                let tail: String = screen_text
+                    .chars()
+                    .skip(total - SCREEN_TAIL_CHARS)
+                    .collect();
+                format!("```\n…(top of screen trimmed)\n{tail}\n```")
+            } else {
+                format!("```\n{screen_text}\n```")
+            }
+        };
+        blocks.push_str(&format!(
+            "\n--- SESSION {short} (full id: {sid}) · project {label} · situation {sit} · objective: {objective}\n{screen_part}\n",
+            sit = entry.situation,
+        ));
+        ids.push(sid.clone());
+        crate::commands::fleet::debug_log::athena(
+            sid,
+            "batched",
+            &format!("assessing in a batch of {}", batch.len()),
+        );
+    }
+    {
+        let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
+        *b = ids;
+    }
+
+    let n = batch.len();
+    let directive = format!(
+        "Fleet orchestration batch — {n} parked session(s) need a decision EACH. You are this \
+         fleet's operator: DEFAULT TO ACTING; an unanswered prompt stalls real work.\n\
+         Fleet background (context only):\n{digest}\n\
+         {blocks}\n\
+         For EVERY session above, produce exactly one outcome:\n\
+         • A QUESTION / SELECT / permission prompt on its screen → ANSWER it: a fleet_send_input \
+         action whose `session_id` is that session's FULL id copied verbatim, `text` = exactly what \
+         to type (an option number, or the text), press_enter true, plus a one-line `rationale`, a \
+         `confidence` (high|medium|low) and a `decision_class` (drive_forward|choice). Preferences \
+         between reasonable options are YOURS — approve the MAXIMUM the session recommends unless a \
+         choice would harm the project's architecture or security (those two are the only brakes). \
+         Ordinary in-project permission prompts: approve. Multi-select questions: give the option \
+         numbers like \"1,3\" — the system drives the menu keys itself.\n\
+         • Otherwise reply ONE line for it, prefixed with its 8-char id: `<id8>: OK: <one line>` \
+         (progressing fine, or simply finished — stays off the operator's screen) or \
+         `<id8>: NEEDS-YOU: <one line>` (ONLY for destructive/irreversible operations, spending, \
+         credentials, or publishing off-machine).\n\
+         • A Claude usage/rate-limit or server-error notice on a screen is NOT the operator's \
+         problem: reply `<id8>: OK: rate-limited — system retries` (the system retries it \
+         mechanically; never NEEDS-YOU for a limit).\n\
+         Do not skip any session. Write everything in English; text typed into a session must match \
+         its prompt's language (usually English). No preamble, no fleet-wide recap."
+    );
+
+    tracing::info!(batch = n, "fleet orchestration: spawning batched assessment turn");
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        Arc::new(state.user_db.clone()),
+        Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_orchestration".to_string(),
+        Some("batch".to_string()),
+        directive,
+    );
+}
+
+/// Turn-completion hook for batched fleet turns — the single place verdicts
+/// land. `acted` = session ids that got a dispatched fleet action this turn
+/// (their outcome is the action; the decision ledger records it). Prose
+/// verdicts are parsed per line (`<id8>: OK|NEEDS-YOU: …`); batch members
+/// with neither an action nor a line are flagged unanswered (the reassess
+/// tick + doze guard expiry handle them). Finally the active flag is released
+/// and the queue re-drained.
+pub fn finish_assessment_turn(
+    app: &tauri::AppHandle,
+    pool: &crate::db::UserDbPool,
+    turn_ref: &str,
+    reply_text: &str,
+    acted: &std::collections::HashSet<String>,
+) {
+    use std::sync::atomic::Ordering;
+    let batch: Vec<String> = {
+        let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
+        std::mem::take(&mut *b)
+    };
+    // Map id prefixes → full ids for line parsing.
+    let mut verdicts: HashMap<String, String> = HashMap::new();
+    for line in reply_text.lines() {
+        let t = line.trim();
+        let Some((prefix, rest)) = t.split_once(':') else { continue };
+        let prefix = prefix.trim().trim_start_matches('`').trim_end_matches('`');
+        if prefix.len() < 6 || !prefix.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+            continue;
+        }
+        if let Some(full) = batch.iter().find(|id| id.starts_with(prefix)) {
+            verdicts.insert(full.clone(), rest.trim().to_string());
+        }
+    }
+    let mut unanswered: Vec<String> = Vec::new();
+    for sid in &batch {
+        if acted.contains(sid) {
+            resolve_athena_assessment(app, sid, None);
+            clear_pending_assessment(sid);
+        } else if let Some(note) = verdicts.get(sid) {
+            if let Some(clean) = handle_fleet_defer(app, sid, note) {
+                surface_fleet_orb_note(app, pool, &format!("{turn_ref}:{}", &sid[..8.min(sid.len())]), &clean);
+            }
+            clear_pending_assessment(sid);
+        } else {
+            crate::commands::fleet::debug_log::athena(
+                sid,
+                "unanswered in batch",
+                "no action and no verdict line — will be reassessed",
+            );
+            resolve_athena_assessment(app, sid, None);
+            // ROLL BACK the decision signature the drain recorded optimistically —
+            // without this, the next wake for the (unchanged) screen hits the
+            // "screen unchanged" dedupe and the session goes permanently
+            // invisible. Observed live during the 2026-07-24 limit outage: six
+            // sessions parked on questions decayed to Stale and were never
+            // re-assessed.
+            {
+                let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                sigs.remove(sid);
+            }
+            // Keep the doze guard armed and put the session back in line.
+            {
+                let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                map.insert(sid.clone(), crate::commands::fleet::registry::now_ms());
+            }
+            unanswered.push(sid.clone());
+        }
+    }
+    let all_unanswered = !batch.is_empty() && unanswered.len() == batch.len();
+    {
+        let mut q = assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+        for sid in unanswered {
+            if !q.iter().any(|e| e.session_id == sid) {
+                q.push(QueuedAssessment {
+                    session_id: sid,
+                    situation: "awaiting_input".to_string(),
+                });
+            }
+        }
+    }
+    ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
+    // More wakes may have queued while this turn ran — keep draining. A turn
+    // whose ENTIRE batch came back unanswered is the API-failure signature
+    // (limit outage: turns die in ~3s with no output) — re-draining instantly
+    // would hot-loop failed turns, so back off for 60s instead.
+    if all_unanswered {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+            if let Some(st) = tauri::Manager::try_state::<std::sync::Arc<AppState>>(&app) {
+                drain_assessment_batch(&app, &st);
+            }
+        });
+    } else if let Some(st) = tauri::Manager::try_state::<std::sync::Arc<AppState>>(app) {
+        drain_assessment_batch(app, &st);
+    }
+}
+
 pub fn orchestrate_on_awaiting(
     app: &tauri::AppHandle,
     state: &AppState,
@@ -234,6 +608,154 @@ pub fn orchestrate_on_awaiting(
         project_label,
         FleetSituation::AwaitingInput,
     );
+}
+
+/// A machine-readable cue the SESSION left in its end-of-turn recap — the
+/// mechanical fleet protocol taught by the target repo's CLAUDE.md:
+///   `FLEET:DONE — <one-line summary>`  → task complete, park as Finished
+///   `FLEET:NEXT — <one concrete step>` → obvious continuation, drive forward
+/// Both are handled WITHOUT an Athena turn (the whole point — round-2 spent
+/// 27 turns on pure completion confirmations).
+enum MechanicalCue {
+    Done(String),
+    Next(String),
+}
+
+/// Scan the BOTTOM of a parked screen for the newest protocol marker. Only the
+/// last ~15 rows count — the marker is specified as the recap's final line,
+/// keeping echoes of the protocol *documentation* higher in scrollback out.
+///
+/// The rows are vt100 WRAP FRAGMENTS, not logical lines — a marker lands at
+/// row start only when the wrap happens to break there (probe 2: FLEET:DONE
+/// did, FLEET:NEXT didn't and fell through to a full Athena turn). So: match
+/// the LAST marker occurrence anywhere in the joined tail, and require an
+/// explicit dash/colon separator before the payload — prose mentions of the
+/// protocol ("FLEET:DONE marks a fully-complete task…") have none, and
+/// template echoes (`FLEET:DONE — <one-line summary>`) are rejected by the
+/// leading `<`.
+fn mechanical_cue(lines: &[String]) -> Option<MechanicalCue> {
+    // Blank vt100 rows and the composer chrome eat most of the raw bottom-15
+    // window (probe 3: the recap sat just above it and fell through to a full
+    // Athena turn) — window over CONTENT rows instead.
+    let content: Vec<&String> = lines.iter().filter(|l| !l.trim().is_empty()).collect();
+    let start = content.len().saturating_sub(18);
+    let tail = content[start..]
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut best: Option<(usize, bool)> = None; // (byte offset, is_done)
+    for (needle, is_done) in [("FLEET:DONE", true), ("FLEET:NEXT", false)] {
+        if let Some(i) = tail.rfind(needle) {
+            if best.is_none_or(|(bi, _)| i > bi) {
+                best = Some((i, is_done));
+            }
+        }
+    }
+    let (i, is_done) = best?;
+    let after = tail[i + "FLEET:DONE".len()..].trim_start();
+    let payload = after
+        .strip_prefix('—')
+        .or_else(|| after.strip_prefix('–'))
+        .or_else(|| after.strip_prefix('-'))
+        .or_else(|| after.strip_prefix(':'))?;
+    // The payload runs to the end of the visual row; a wrapped continuation on
+    // the next row is fine to lose — this is a cue, not a transcript.
+    let text: String = payload.trim_start().lines().next()?.trim().chars().take(200).collect();
+    if text.is_empty() || text.starts_with('<') {
+        return None;
+    }
+    Some(if is_done {
+        MechanicalCue::Done(text)
+    } else {
+        MechanicalCue::Next(text)
+    })
+}
+
+/// Per-session hash of the screen a FLEET:NEXT drive last fired on — one
+/// mechanical drive per distinct screen; if the same screen comes back the
+/// mechanical lane stands aside and the normal Athena path takes over.
+fn mechanical_next_signatures() -> &'static Mutex<HashMap<String, u64>> {
+    static SIGS: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+    SIGS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Mechanical protocol check — runs BEFORE the throttle/dedupe gates (it is
+/// free: no Athena turn). Returns `true` when the cue was consumed and normal
+/// orchestration should not run for this wake.
+fn handle_mechanical_cue(app: &tauri::AppHandle, session_id: &str) -> bool {
+    let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id)
+    else {
+        return false;
+    };
+    let cue = mechanical_cue(&lines);
+    if cue.is_none() {
+        // Forensics: a marker is visible SOMEWHERE on screen but the matcher
+        // rejected it — log the content tail so the next miss diagnoses from
+        // the log instead of another probe cycle.
+        let joined = lines.join("\n");
+        if joined.contains("FLEET:") {
+            let content: Vec<&str> = lines
+                .iter()
+                .filter(|l| !l.trim().is_empty())
+                .map(|s| s.as_str())
+                .collect();
+            let content_tail = content[content.len().saturating_sub(18)..].join("\n");
+            tracing::info!(
+                target: "fleet_mechanical",
+                session_id = %session_id,
+                tail = %content_tail.chars().take(1600).collect::<String>(),
+                "FLEET: marker on screen but no cue matched"
+            );
+        }
+    }
+    match cue {
+        Some(MechanicalCue::Done(summary)) => {
+            let reg = crate::commands::fleet::registry::registry();
+            if let Some(prev) = reg.mark_finished(session_id, &summary) {
+                crate::commands::fleet::pty::emit_session_state(
+                    app,
+                    session_id,
+                    Some(prev),
+                    "finished",
+                    Some(format!("Task complete: {summary}")),
+                );
+                crate::commands::fleet::debug_log::athena(
+                    session_id,
+                    "finished (mechanical)",
+                    &format!("FLEET:DONE — {summary}"),
+                );
+                clear_pending_assessment(session_id);
+            }
+            true
+        }
+        Some(MechanicalCue::Next(step)) => {
+            use std::collections::hash_map::DefaultHasher;
+            use std::hash::{Hash, Hasher};
+            let mut h = DefaultHasher::new();
+            lines.join("\n").hash(&mut h);
+            let sig = h.finish();
+            {
+                let mut m = mechanical_next_signatures().lock().unwrap_or_else(|e| e.into_inner());
+                if m.insert(session_id.to_string(), sig) == Some(sig) {
+                    // Same screen as the last mechanical drive — it didn't
+                    // move the session; let Athena reason about it instead.
+                    return false;
+                }
+            }
+            crate::commands::fleet::debug_log::athena(
+                session_id,
+                "MECHANICAL next-step",
+                &format!("FLEET:NEXT — driving: {step}"),
+            );
+            let _ = crate::commands::fleet::registry::registry().write_text_line(
+                session_id,
+                "Proceed with your recommended next step.",
+            );
+            true
+        }
+        None => false,
+    }
 }
 
 /// Shared per-session orchestration wake used by every fleet trigger — the
@@ -259,6 +781,11 @@ fn orchestrate_session(
         );
         return;
     }
+    // Mechanical protocol first — a FLEET:DONE / FLEET:NEXT recap cue resolves
+    // this wake without an Athena turn (and without consuming the throttle).
+    if matches!(situation, FleetSituation::AwaitingInput) && handle_mechanical_cue(app, session_id) {
+        return;
+    }
     let now = crate::commands::fleet::registry::now_ms();
     {
         let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
@@ -282,6 +809,47 @@ fn orchestrate_session(
                             situation.label()
                         ),
                     );
+                }
+                // A throttled wake is a DEFERRAL, not a drop (probe finding,
+                // 2026-07-24): the probe's Phase-2 question landed 24s after
+                // the Phase-1 wake, the skip discarded it, doze reaped the
+                // session at 60s, and the 5-min tick then assessed a corpse —
+                // Athena's answer AUTO_FAILED against a dead PTY. So: join the
+                // batch queue NOW (arming the `has_pending_assessment` doze
+                // guard immediately) and schedule a drain for throttle expiry.
+                // The queue dedupes twin wakes; the drain drops sessions that
+                // resolved themselves meanwhile.
+                {
+                    let mut map =
+                        pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+                    map.insert(session_id.to_string(), now);
+                }
+                let queued_new = {
+                    let mut q =
+                        assessment_pending().lock().unwrap_or_else(|e| e.into_inner());
+                    if q.iter().any(|e| e.session_id == session_id) {
+                        false
+                    } else {
+                        q.push(QueuedAssessment {
+                            session_id: session_id.to_string(),
+                            situation: situation.label().to_string(),
+                        });
+                        true
+                    }
+                };
+                if queued_new {
+                    let delay_ms =
+                        (ATTENTION_MIN_INTERVAL_MS - (now - last)).max(0) as u64 + 1_500;
+                    let app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                        use tauri::Manager;
+                        if let Some(state) =
+                            app.try_state::<std::sync::Arc<AppState>>()
+                        {
+                            drain_assessment_batch(&app, &state);
+                        }
+                    });
                 }
                 return;
             }
@@ -503,16 +1071,12 @@ fn orchestrate_session(
         let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
         map.insert(session_id.to_string(), now);
     }
-    crate::companion::session::spawn_proactive_turn(
-        app.clone(),
-        Arc::new(state.user_db.clone()),
-        Arc::new(state.db.clone()),
-        #[cfg(feature = "ml")]
-        state.embedding_manager.clone(),
-        "fleet_orchestration".to_string(),
-        Some(session_id.to_string()),
-        directive,
-    );
+    // Batched lane: the wake joins the queue and the drainer decides when it
+    // is assessed (immediately when idle; with peers under burst). The
+    // per-session directive built above is superseded by the batch builder —
+    // keep the gates/logging here, drop the solo spawn.
+    let _ = directive;
+    enqueue_assessment(app, state, session_id, situation.label());
 }
 
 /// Phase 2.4 execution-time re-check. `confidence` is uncalibrated self-report
@@ -594,9 +1158,16 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
     }
     let now = crate::commands::fleet::registry::now_ms();
     for s in crate::commands::fleet::registry::registry().list_dto() {
+        // Stale is included deliberately (2026-07-24): a session parked on a
+        // question whose wake was lost (limit outage, dropped turn) decays
+        // AwaitingInput → Stale, and an AwaitingInput-only sweep never sees it
+        // again — six sessions sat invisible with questions on screen. A Stale
+        // session with nothing to decide costs one batch slot and gets an OK:
+        // verdict; the screen-hash dedupe suppresses repeats.
         if !matches!(
             s.state,
             crate::commands::fleet::types::FleetSessionState::AwaitingInput
+                | crate::commands::fleet::types::FleetSessionState::Stale
         ) {
             continue;
         }
@@ -863,61 +1434,98 @@ pub fn has_pending_assessment(session_id: &str) -> bool {
 
 /// Called by `send_turn` when a fleet_orchestration turn completes (any
 /// outcome) — releases the doze guard for the session it assessed.
+/// Arm (or refresh) the doze guard for a session outside the wake path — used
+/// by the mechanical limit-retry lane to keep a parked process alive across
+/// its retry window.
+pub fn stamp_pending_assessment(session_id: &str) {
+    let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
+    map.insert(
+        session_id.to_string(),
+        crate::commands::fleet::registry::now_ms(),
+    );
+}
+
 pub fn clear_pending_assessment(session_id: &str) {
     let mut map = pending_assessments().lock().unwrap_or_else(|e| e.into_inner());
     map.remove(session_id);
     map.retain(|_, &mut t| crate::commands::fleet::registry::now_ms() - t < 30 * 60 * 1000);
 }
 
-/// Force the ORCHESTRATED session's id onto every fleet PTY action this turn
-/// dispatched. The model occasionally omits or hallucinates `session_id`
-/// (it fails closed — types nothing — so the intended write silently
-/// vanishes; the long-tracked "session_id robustness" gap). The turn was woken
-/// FOR exactly one session (`trigger_ref`), so that id is authoritative:
-/// rewrite both the in-memory approval (what auto-resolve executes) and the
-/// persisted payload (what a later manual click executes).
-pub fn force_fleet_session_ids(
+/// Validate (and repair) the `session_id` on every fleet PTY action a batched
+/// turn dispatched. Exact ids pass; a prefix of a batch member is repaired to
+/// the full id (the model often echoes the 8-char display id); anything else
+/// is rejected in the DB and dropped from the in-memory list so auto-resolve
+/// can't type into a hallucinated target.
+pub fn validate_fleet_session_ids(
     pool: &crate::db::UserDbPool,
-    approvals: &mut [crate::companion::dispatcher::CreatedApproval],
-    fleet_sid: &str,
+    approvals: &mut Vec<crate::companion::dispatcher::CreatedApproval>,
+    allowed: &[String],
 ) {
-    for approval in approvals.iter_mut() {
+    approvals.retain_mut(|approval| {
         if !matches!(approval.action.as_str(), "fleet_send_input" | "fleet_intervene") {
-            continue;
+            return true;
         }
         let Ok(mut params) = serde_json::from_str::<serde_json::Value>(&approval.params_json)
         else {
-            continue;
+            return true;
         };
-        let current = params.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
-        if current == fleet_sid {
-            continue;
+        let given = params
+            .get("session_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let resolved = if allowed.iter().any(|id| *id == given) {
+            Some(given.clone())
+        } else if given.len() >= 6 {
+            allowed.iter().find(|id| id.starts_with(&given)).cloned()
+        } else if allowed.len() == 1 {
+            // Batch of one: the target is unambiguous whatever the model wrote.
+            Some(allowed[0].clone())
+        } else {
+            None
+        };
+        match resolved {
+            Some(full) => {
+                if full != given {
+                    crate::commands::fleet::debug_log::athena(
+                        &full,
+                        "session_id repaired",
+                        &format!("model wrote {given:?} — matched to the batch member"),
+                    );
+                    params["session_id"] = serde_json::Value::String(full.clone());
+                    approval.params_json = params.to_string();
+                    let payload = serde_json::json!({
+                        "action": approval.action,
+                        "params": params,
+                        "rationale": approval.rationale,
+                    })
+                    .to_string();
+                    if let Ok(conn) = pool.get() {
+                        let _ = conn.execute(
+                            "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
+                            rusqlite::params![payload, approval.id],
+                        );
+                    }
+                }
+                true
+            }
+            None => {
+                tracing::warn!(
+                    approval_id = %approval.id,
+                    given = %given,
+                    "fleet batch: action targets a session outside the batch — rejected"
+                );
+                if let Ok(conn) = pool.get() {
+                    let _ = conn.execute(
+                        "UPDATE companion_approval SET status = 'rejected' WHERE id = ?1",
+                        rusqlite::params![approval.id],
+                    );
+                }
+                false
+            }
         }
-        crate::commands::fleet::debug_log::athena(
-            fleet_sid,
-            "session_id corrected",
-            &format!(
-                "model sent {:?} on {} — overridden with the orchestrated session",
-                current, approval.action
-            ),
-        );
-        params["session_id"] = serde_json::Value::String(fleet_sid.to_string());
-        approval.params_json = params.to_string();
-        // Keep the durable payload consistent so a manual click later types
-        // into the right session too. Best-effort.
-        let payload = serde_json::json!({
-            "action": approval.action,
-            "params": params,
-            "rationale": approval.rationale,
-        })
-        .to_string();
-        if let Ok(conn) = pool.get() {
-            let _ = conn.execute(
-                "UPDATE companion_approval SET payload = ?1 WHERE id = ?2",
-                rusqlite::params![payload, approval.id],
-            );
-        }
-    }
+    });
 }
 
 /// Re-run orchestration for a session RIGHT NOW, bypassing the per-session

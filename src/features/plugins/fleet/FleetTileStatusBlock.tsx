@@ -33,6 +33,7 @@ const STATE_VIS: Partial<
   spawning: { Icon: Sparkle, labelKey: 'state_spawning', accent: 'text-cyan-400' },
   idle: { Icon: CheckCircle2, labelKey: 'state_idle', accent: 'text-emerald-400' },
   stale: { Icon: Clock, labelKey: 'state_stale', accent: 'text-orange-400' },
+  finished: { Icon: CheckCircle2, labelKey: 'state_finished', accent: 'text-teal-400' },
   hibernated: { Icon: Moon, labelKey: 'state_hibernated', accent: 'text-indigo-400' },
   exited: { Icon: Ban, labelKey: 'state_exited', accent: 'text-foreground' },
 };

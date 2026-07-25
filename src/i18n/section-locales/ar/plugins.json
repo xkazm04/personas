@@ -178,6 +178,7 @@
     "compact_hint": "تلخيص هذه المحادثة لتقليل تكلفة كل دور — يستبدل السجل الطويل بملخص قصير.",
     "compact_unavailable_hint": "متاح عندما تكون الجلسة خاملة بين الأدوار.",
     "compact_toast": "جارٍ ضغط {name}…",
+    "state_finished": "مكتمل",
     "state_hibernated": "مُعلَّق",
     "dot_console_hibernated": "العملية في وضع السبات — قابلة للاستئناف",
     "sleep_session": "إسبات",

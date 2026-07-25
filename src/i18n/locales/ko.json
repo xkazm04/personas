@@ -12007,6 +12007,7 @@
       "compact_hint": "대화를 요약하여 각 턴의 비용을 크게 줄입니다 — 긴 기록을 짧은 요약으로 대체합니다.",
       "compact_unavailable_hint": "세션이 턴 사이에 유휴 상태일 때 사용 가능합니다.",
       "compact_toast": "{name} 압축 중…",
+      "state_finished": "완료",
       "state_hibernated": "절전 모드",
       "dot_console_hibernated": "프로세스 최대 절전 — 재개 가능",
       "sleep_session": "최대 절전",

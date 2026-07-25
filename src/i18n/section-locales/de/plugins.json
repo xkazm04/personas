@@ -178,6 +178,7 @@
     "compact_hint": "Dieses Gespräch zusammenfassen, damit jeder Schritt deutlich weniger kostet — ersetzt die lange Verlaufsliste durch eine kurze Zusammenfassung.",
     "compact_unavailable_hint": "Verfügbar, sobald diese Sitzung zwischen zwei Schritten im Leerlauf ist.",
     "compact_toast": "{name} wird komprimiert…",
+    "state_finished": "Abgeschlossen",
     "state_hibernated": "Hiberniert",
     "dot_console_hibernated": "Prozess hiberniert — wiederherstellbar",
     "sleep_session": "Hibernieren",

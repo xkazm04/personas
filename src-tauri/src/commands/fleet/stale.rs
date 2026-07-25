@@ -192,12 +192,16 @@ fn staleness_transition(
     use FleetSessionState::*;
     if grew {
         return match state {
-            Stale | Idle => Some(Running),
+            // Finished included: the operator handed it more work — it's a
+            // live session again.
+            Stale | Idle | Finished => Some(Running),
             _ => None,
         };
     }
     match state {
-        Stale | AwaitingInput | Exited | Hibernated => None,
+        // Finished is a declared-complete park — silence is its normal
+        // condition, never staleness.
+        Stale | AwaitingInput | Exited | Hibernated | Finished => None,
         Running | Idle | Spawning if now - idle_since_ms >= cutoff_ms => Some(Stale),
         _ => None,
     }
@@ -476,9 +480,130 @@ fn tick_once(app: &AppHandle) {
         super::pty::emit_registry_changed(app, "updated", &sid);
     }
 
+    limit_retry_pass(app, now);
     doze_pass(app, now, cutoff_ms);
     auto_hibernate_pass(app);
     live_slot_pass(app);
+}
+
+/// Per-session mechanical retry state for the Claude server/usage-limit lane.
+fn limit_retry_map() -> &'static Mutex<HashMap<String, (i64, u32)>> {
+    static MAP: OnceLock<Mutex<HashMap<String, (i64, u32)>>> = OnceLock::new();
+    MAP.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Screen signature of a Claude-side limit / transient server error. Kept
+/// deliberately narrow — sessions legitimately *talk about* rate limits, so
+/// bare "rate limit" does not match. "session limit" / "usage-credits" are the
+/// REAL banner text observed live 2026-07-24 ("You've hit your session limit ·
+/// resets 7:50pm … /usage-credits to finish what you're working on") — the
+/// first signature guess missed it and 8 of 16 sessions sat invisible.
+fn screen_shows_limit_error(screen: &str) -> bool {
+    let s = screen.to_lowercase();
+    s.contains("usage limit")
+        || s.contains("session limit")
+        || s.contains("usage-credits")
+        || s.contains("limit will reset")
+        || s.contains("limit resets")
+        || s.contains("overloaded_error")
+        || s.contains("api error")
+        || (s.contains("rate limit") && (s.contains("retry") || s.contains("try again")))
+}
+
+const LIMIT_RETRY_INTERVAL_MS: i64 = 4 * 60 * 1000;
+/// A dozed limited session retries on a slower cadence — each attempt is a
+/// wake (process spawn) + typed `continue`, and a session limit can be hours
+/// from reset. 15-minute wake cycles keep the cost at ~4 spawns/hour while
+/// still converging within minutes of the limit lifting.
+const LIMIT_RETRY_DOZED_INTERVAL_MS: i64 = 15 * 60 * 1000;
+/// High cap: a 5-hour session-limit window at mixed cadence needs ~20+
+/// attempts to ride out. Attempts are cheap (a typed word / a wake).
+const LIMIT_RETRY_MAX: u32 = 24;
+
+/// Athena-autonomy for Claude-side outages (2026-07-24): a session that hit a
+/// usage/rate limit or transient server error used to sit parked until the
+/// operator noticed. In autonomous mode the retry is MECHANICAL — no Athena
+/// turn spent (her turns fail under the same limit): every ~4 min, type a
+/// confirmed-submit "continue" into the parked session; once the limit lifts,
+/// the turn resumes and the state machine takes over. The retry stamp also
+/// arms the doze guard so the process stays alive between attempts; after
+/// [`LIMIT_RETRY_MAX`] attempts the session is left to doze (a multi-hour cap
+/// is the operator's call — the next app-side wake still finds it).
+fn limit_retry_pass(app: &AppHandle, now: i64) {
+    let candidates: Vec<(String, bool)> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(
+                    s.state,
+                    FleetSessionState::AwaitingInput | FleetSessionState::Stale | FleetSessionState::Idle
+                )
+            })
+            .map(|s| (s.id.clone(), s.dozing || s.child_pid.is_none()))
+            .collect()
+    };
+    // Entries for sessions the registry no longer knows (wake replaced the id
+    // via lineage, or the row was removed) just age out here.
+    {
+        let ids: std::collections::HashSet<String> =
+            candidates.iter().map(|(id, _)| id.clone()).collect();
+        let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+        m.retain(|id, _| ids.contains(id));
+    }
+    for (sid, asleep) in candidates {
+        let Some((_, lines)) = registry().render_screen_for(&sid) else { continue };
+        let screen = lines.join("\n");
+        if !screen_shows_limit_error(&screen) {
+            let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.remove(&sid);
+            continue;
+        }
+        let (last, count) = {
+            let m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.get(&sid).copied().unwrap_or((0, 0))
+        };
+        let interval = if asleep { LIMIT_RETRY_DOZED_INTERVAL_MS } else { LIMIT_RETRY_INTERVAL_MS };
+        if count >= LIMIT_RETRY_MAX || now - last < interval {
+            continue;
+        }
+        {
+            let mut m = limit_retry_map().lock().unwrap_or_else(|e| e.into_inner());
+            m.insert(sid.clone(), (now, count + 1));
+        }
+        // Keep the process alive across the retry window (doze guard).
+        crate::commands::companion::fleet_bridge::stamp_pending_assessment(&sid);
+        super::debug_log::athena(
+            &sid,
+            "limit retry",
+            &format!(
+                "limit screen — mechanical retry {}/{} ({})",
+                count + 1,
+                LIMIT_RETRY_MAX,
+                if asleep { "wake + `continue`" } else { "typing `continue`" }
+            ),
+        );
+        if asleep {
+            // The dozed process is gone — resume it (lineage-adopting wake),
+            // then type `continue` once it boots. Under a still-active limit
+            // the turn fails again and the session re-dozes in ~60s; the next
+            // cycle fires in 15 min. Converges shortly after the limit lifts.
+            let app = app.clone();
+            let old = sid.clone();
+            tauri::async_runtime::spawn(async move {
+                match crate::commands::fleet::commands::fleet_wake_session(app, old.clone(), None, None).await {
+                    Ok(new_id) => {
+                        tokio::time::sleep(std::time::Duration::from_secs(25)).await;
+                        let _ = registry().write_text_line(&new_id, "continue");
+                    }
+                    Err(e) => {
+                        tracing::warn!(session_id = %old, error = %e, "limit retry: wake failed");
+                    }
+                }
+            });
+        } else {
+            let _ = registry().write_text_line(&sid, "continue");
+        }
+    }
 }
 
 /// Seconds a session may sit in `Stale` / `AwaitingInput` before its process
@@ -527,6 +652,9 @@ fn doze_pass(app: &AppHandle, now: i64, stale_cutoff_ms: i64) {
                 match s.state {
                     FleetSessionState::AwaitingInput => now - idle_since >= doze_ms,
                     FleetSessionState::Stale => now - idle_since >= stale_cutoff_ms + doze_ms,
+                    // Declared complete — nothing left to type; free the
+                    // process on the same window as awaiting.
+                    FleetSessionState::Finished => now - idle_since >= doze_ms,
                     _ => false,
                 }
             })

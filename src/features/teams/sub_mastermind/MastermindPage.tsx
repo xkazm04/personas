@@ -46,7 +46,7 @@ import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { GoalListPopover } from './lib/GoalListPopover';
-import { IdeaScanPopover } from './lib/IdeaScanPopover';
+import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
@@ -501,24 +501,31 @@ function MastermindInner() {
     }
   }, [projects, fleetRefresh, addToast, tx, t]);
 
-  // Dispatch ONE agent's idea scan for the popup's project through the
+  // Dispatch a PARAMETRIZED idea scan for the popup's project through the
   // canonical recorded pipeline (writes the DevScan row the freshness reads).
-  const runIdeaScan = async (agentKey: string) => {
-    if (!scanPopup || busySlugs.has(scanPopup.slug)) return;
+  // The popover shapes the run — agent combination, context scope, target
+  // findings — and every knob maps 1:1 onto run_scan's own parameters.
+  const runIdeaScan = async ({ agentKeys, contextIds, targetCount }: ScanParams) => {
+    if (!scanPopup || busySlugs.has(scanPopup.slug) || agentKeys.length === 0) return;
     const slug = scanPopup.slug;
     setBusySlugs((prev) => new Set(prev).add(slug));
     // Safety net: if the terminal IDEA_SCAN_STATUS event never reaches us,
     // release the project after 3 minutes instead of wedging its Ideas cell.
     scanTimers.current.set(slug, window.setTimeout(() => clearScanBusy(slug), 180_000));
+    const label = agentKeys.length === 1 ? agentKeys[0] : `${agentKeys.length} agents`;
     useOverviewStore.getState().processStarted(
       'idea_scan',
       undefined,
-      `Idea Scan (${agentKey})`,
+      `Idea Scan (${label})`,
       { section: 'plugins', tab: 'idea-scanner' },
     );
     try {
-      await runScan(slug, [agentKey]);
-      addToast(`Idea scan dispatched (${agentKey})`, 'success');
+      await runScan(slug, agentKeys, {
+        // Empty scope = whole project, which is exactly what run_scan expects.
+        contextIds: contextIds.length > 0 ? contextIds : undefined,
+        targetCount: targetCount ?? undefined,
+      });
+      addToast(`Idea scan dispatched (${label})`, 'success');
       void invalidateScans(slug);
       setScanPopup(null);
     } catch (err) {
@@ -652,11 +659,12 @@ function MastermindInner() {
 
       {scanPopup && (
         <IdeaScanPopover
+          projectId={scanPopup.slug}
           name={positioned.islands.find((i) => i.slug === scanPopup.slug)?.name ?? scanPopup.slug}
           scans={scans.get(scanPopup.slug) ?? []}
           anchor={{ x: scanPopup.x, y: scanPopup.y }}
           busy={busySlugs.has(scanPopup.slug)}
-          onRun={(agentKey) => void runIdeaScan(agentKey)}
+          onRun={(params) => void runIdeaScan(params)}
           onClose={() => setScanPopup(null)}
         />
       )}

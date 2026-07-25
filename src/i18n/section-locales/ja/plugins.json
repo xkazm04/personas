@@ -178,6 +178,7 @@
     "compact_hint": "この会話を要約して各ターンのコストを大幅に削減します — 長い履歴を短い要約に置き換えます。",
     "compact_unavailable_hint": "セッションがターン間でアイドル状態のときに利用可能になります。",
     "compact_toast": "{name} をコンパクト化中…",
+    "state_finished": "完了",
     "state_hibernated": "休止中",
     "dot_console_hibernated": "プロセス休止中 — 再開可能",
     "sleep_session": "休止",

@@ -1262,6 +1262,43 @@ pub(crate) fn record_idea_decision_by(
         Some(p) if !p.is_empty() => p,
         _ => return,
     };
+
+    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
+    let (category, importance) = if verdict == "rejected" {
+        ("constraint", 8)
+    } else {
+        ("decision", 7)
+    };
+    let title = format!("{actor} {verdict}: {}", idea.title);
+    let content = format!(
+        "{actor} {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
+        idea.title,
+        idea.description
+            .as_deref()
+            .map(|d| format!(": {d}"))
+            .unwrap_or_default(),
+    );
+
+    // (1) PROJECT memory — the development loop's own store. Written FIRST and
+    // unconditionally, because it is the only anchor every participant in the
+    // loop shares: a project without a team used to learn nothing at all, and
+    // the task executor reads by project, not by team.
+    // (docs/plans/backlog-memory-loop.md Phase 2.)
+    if let Err(e) = crate::db::repos::dev_memories::record(
+        pool,
+        project_id,
+        category,
+        &title,
+        &content,
+        importance,
+        "idea_decision",
+        Some(&idea.id),
+    ) {
+        tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write project memory");
+    }
+
+    // (2) TEAM memory — the cross-persona workspace ledger. Unchanged behaviour:
+    // only written when the project actually belongs to a team.
     let team_id: Option<String> = pool.get().ok().and_then(|conn| {
         conn.query_row(
             "SELECT team_id FROM dev_projects WHERE id = ?1",
@@ -1275,8 +1312,6 @@ pub(crate) fn record_idea_decision_by(
         Some(t) => t,
         None => return,
     };
-
-    let title = format!("{actor} {verdict}: {}", idea.title);
     if let Ok(conn) = pool.get() {
         let exists: bool = conn
             .query_row(
@@ -1290,20 +1325,6 @@ pub(crate) fn record_idea_decision_by(
         }
     }
 
-    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
-    let (category, importance) = if verdict == "rejected" {
-        ("constraint", 8)
-    } else {
-        ("decision", 7)
-    };
-    let content = format!(
-        "{actor} {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
-        idea.title,
-        idea.description
-            .as_deref()
-            .map(|d| format!(": {d}"))
-            .unwrap_or_default(),
-    );
     let tm = crate::db::models::CreateTeamMemoryInput {
         team_id,
         run_id: None,

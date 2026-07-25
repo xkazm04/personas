@@ -27,7 +27,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 export type FleetLabelKey = keyof Translations['plugins']['fleet'];
 
 export type ConsoleAxis = 'spawning' | 'alive' | 'hibernated' | 'exited';
-export type BusinessAxis = 'idle' | 'working' | 'awaiting_input' | 'stale' | 'none';
+export type BusinessAxis = 'idle' | 'working' | 'awaiting_input' | 'stale' | 'finished' | 'none';
 
 export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; business: BusinessAxis } {
   switch (state) {
@@ -36,6 +36,7 @@ export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; bu
     case 'awaiting_input': return { console: 'alive',      business: 'awaiting_input' };
     case 'idle':           return { console: 'alive',      business: 'idle' };
     case 'stale':          return { console: 'alive',      business: 'stale' };
+    case 'finished':       return { console: 'alive',      business: 'finished' };
     case 'hibernated':     return { console: 'hibernated', business: 'none' };
     case 'exited':         return { console: 'exited',     business: 'none' };
   }
@@ -73,6 +74,7 @@ export const BUSINESS_DOT: Record<BusinessAxis, { bg: string; labelKey: FleetLab
   working:        { bg: 'bg-blue-400',       labelKey: 'dot_biz_working', pulse: true },
   awaiting_input: { bg: 'bg-violet-400',     labelKey: 'dot_biz_awaiting', pulse: true },
   stale:          { bg: 'bg-orange-400',     labelKey: 'dot_biz_stale' },
+  finished:       { bg: 'bg-teal-400',       labelKey: 'state_finished' },
   none:           null,
 };
 

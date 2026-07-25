@@ -90,6 +90,7 @@ pub fn fleet_attention() -> Vec<Nudge> {
             | FleetSessionState::Running
             | FleetSessionState::Idle
             | FleetSessionState::AwaitingInput
+            | FleetSessionState::Finished
             | FleetSessionState::Hibernated => {}
         }
     }

@@ -178,6 +178,7 @@
     "compact_hint": "Tóm tắt hội thoại này để mỗi lượt tốn ít hơn — thay thế lịch sử dài bằng một bản tóm tắt ngắn.",
     "compact_unavailable_hint": "Khả dụng khi phiên này nghỉ giữa các lượt.",
     "compact_toast": "Đang thu gọn {name}…",
+    "state_finished": "Hoàn thành",
     "state_hibernated": "Đang ngủ đông",
     "dot_console_hibernated": "Tiến trình đã ngủ đông — có thể tiếp tục",
     "sleep_session": "Ngủ đông",

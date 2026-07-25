@@ -178,6 +178,7 @@
     "compact_hint": "Shrňte tuto konverzaci, aby každé otočení stálo mnohem méně — nahradí dlouhou historii krátkým shrnutím.",
     "compact_unavailable_hint": "Dostupné, jakmile bude tato relace nečinná mezi otočeními.",
     "compact_toast": "Kompaktuji {name}…",
+    "state_finished": "Dokončeno",
     "state_hibernated": "Hibernováno",
     "dot_console_hibernated": "Proces hibernován — lze obnovit",
     "sleep_session": "Hibernovat",

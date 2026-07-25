@@ -12007,6 +12007,7 @@
       "compact_hint": "对此对话进行摘要，大幅降低每轮成本——用简短回顾替换冗长历史记录。",
       "compact_unavailable_hint": "在此会话轮次间空闲时可用。",
       "compact_toast": "正在压缩 {name}…",
+      "state_finished": "已完成",
       "state_hibernated": "已休眠",
       "dot_console_hibernated": "进程已休眠 — 可恢复",
       "sleep_session": "休眠",
