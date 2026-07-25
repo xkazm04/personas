@@ -36,7 +36,7 @@ export default function KnowledgeTree({
 }: {
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
-  /** Open the rollout surface for an adopted practice. */
+  /** Open the practice's detail/review surface. */
   onRowClick?: (item: KnowledgeItemView) => void;
 }) {
   const { t, tx } = useTranslation();
@@ -236,8 +236,8 @@ export default function KnowledgeTree({
           columns={columns}
           data={rows}
           getRowKey={(r) => r.id}
-          // Only adopted, non-demo practices have somewhere to go — a rollout
-          // needs real canon and a real row id.
+          // Demo rows have no database row behind them, so there is no detail
+          // to open — everything real is clickable.
           onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r); } : undefined}
           sortKey={sortKey}
           sortDirection={sortDir}

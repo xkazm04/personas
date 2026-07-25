@@ -125,9 +125,14 @@ export default function KnowledgeLibrary({
         <KnowledgeTree
           items={items}
           projectById={projectById}
+          // Review before distribute: a row opens its DETAIL, and rollout is
+          // reached from inside that modal (adopted practices only). Wiring
+          // this straight to the rollout surface skipped the review step
+          // entirely and offered to distribute practices still sitting at
+          // `observed`.
           onRowClick={(item) => {
             const row = rows.find((r) => r.id === item.id);
-            if (row) setRollout(row);
+            if (row) setDetail(row);
           }}
         />
       </div>
