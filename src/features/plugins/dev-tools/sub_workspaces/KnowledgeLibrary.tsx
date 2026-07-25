@@ -14,6 +14,7 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { CreatePracticeModal } from './CreatePracticeModal';
+import { PracticeDetailModal } from './PracticeDetailModal';
 import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
@@ -41,6 +42,7 @@ export default function KnowledgeLibrary({
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
+  const [detail, setDetail] = useState<WorkspaceKnowledge | null>(null);
   const addToast = useToastStore((s) => s.addToast);
   const useDemo = demo ?? rows.length < 12;
 
@@ -129,6 +131,16 @@ export default function KnowledgeLibrary({
           }}
         />
       </div>
+
+      {detail && (
+        <PracticeDetailModal
+          practice={detail}
+          projectById={projectById}
+          onClose={() => setDetail(null)}
+          onChanged={onChanged}
+          onRollout={(p) => setRollout(p)}
+        />
+      )}
 
       {rollout && (
         <PracticeRolloutModal

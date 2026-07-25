@@ -13051,7 +13051,20 @@
         "state_proposed": "Pas encore adopté",
         "verify_action": "Vérifier les adoptions de {project}",
         "verify_result": "{project} : {checked} vérifiées, {diverged} divergentes.",
-        "verify_started": "Vérification des pratiques adoptées de {project}."
+        "verify_started": "Vérification des pratiques adoptées de {project}.",
+        "decide_adopt": "Adopter",
+        "decide_adopted": "Adoptée — « {title} » fait désormais référence dans l'espace de travail.",
+        "decide_deprecate": "Retirer",
+        "decide_deprecated": "Retirée — « {title} » ne fait plus référence.",
+        "decide_reject": "Rejeter",
+        "decide_reject_hint": "Les pratiques rejetées sont mémorisées : la collecte ne les proposera plus.",
+        "decide_rejected": "Rejetée — « {title} » ne sera plus proposée.",
+        "detail_decided": "Décidée",
+        "detail_durability": "Durabilité",
+        "detail_evidence": "Preuves",
+        "detail_evidence_count": "{count} projets",
+        "detail_source": "Source",
+        "origin_removed": "(projet supprimé)"
       }
     },
     "doc_signing": {

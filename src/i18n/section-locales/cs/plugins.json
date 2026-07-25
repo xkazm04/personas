@@ -1222,7 +1222,20 @@
       "state_proposed": "Zatím nepřijato",
       "verify_action": "Ověřit převzaté postupy projektu {project}",
       "verify_result": "{project}: ověřeno {checked}, odchýleno {diverged}.",
-      "verify_started": "Ověřují se převzaté postupy projektu {project}."
+      "verify_started": "Ověřují se převzaté postupy projektu {project}.",
+      "decide_adopt": "Přijmout",
+      "decide_adopted": "Přijato – „{title}“ je nyní standardem pracovního prostoru.",
+      "decide_deprecate": "Vyřadit",
+      "decide_deprecated": "Vyřazeno – „{title}“ už není standardem.",
+      "decide_reject": "Odmítnout",
+      "decide_reject_hint": "Odmítnuté postupy si systém pamatuje, takže je sběr znovu nenavrhne.",
+      "decide_rejected": "Odmítnuto – „{title}“ už nebude navrženo.",
+      "detail_decided": "Rozhodnuto",
+      "detail_durability": "Životnost",
+      "detail_evidence": "Důkazy",
+      "detail_evidence_count": "{count} projektů",
+      "detail_source": "Zdroj",
+      "origin_removed": "(projekt odstraněn)"
     }
   },
   "doc_signing": {

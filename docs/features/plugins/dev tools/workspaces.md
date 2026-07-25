@@ -30,7 +30,17 @@
   envelope (layers, languages, frameworks) so a practice only targets the
   projects it can apply to. Author one by hand via **New practice** in the
   library header (lands as `proposed`); the harvest engine (Arc 2) fills the
-  rest automatically.
+  rest automatically. **Click any practice** to open its detail modal — the
+  full claim, its evidence, the metadata the table doesn't carry (origin,
+  topic, altitude, confidence, provenance), and the governance action its state
+  allows: **Adopt / Reject** while `observed`/`proposed`, **Roll out /
+  Deprecate** once `adopted`. Rejection is retained, not deleted, so the miners
+  dedup against it for 90 days.
+- **Topic hygiene** — topics are a free-form slash taxonomy, which means
+  parallel harvest runs will invent competing paths for one concept (13 agents
+  once produced 154 topics for 177 items). Periodically normalize onto a small
+  closed set of areas; a tree whose leaves are nearly all singletons is a flat
+  list wearing a tree's clothes.
 - **Categorization axes** (orthogonal to the topic tree) let the library rank
   and filter by *quality*, not just subject: `abstraction`
   (macro / meso / micro — the altitude), `ftype` (finding-type taxonomy:

@@ -1222,7 +1222,20 @@
       "state_proposed": "尚未采纳",
       "verify_action": "验证 {project} 的采用情况",
       "verify_result": "{project}：已验证 {checked} 项，{diverged} 项已偏离。",
-      "verify_started": "正在验证 {project} 已采用的实践。"
+      "verify_started": "正在验证 {project} 已采用的实践。",
+      "decide_adopt": "采纳",
+      "decide_adopted": "已采纳 —— “{title}” 现已成为工作区规范。",
+      "decide_deprecate": "弃用",
+      "decide_deprecated": "已弃用 —— “{title}” 不再是规范。",
+      "decide_reject": "拒绝",
+      "decide_reject_hint": "系统会记住被拒绝的实践，采集时不会再次提议。",
+      "decide_rejected": "已拒绝 —— “{title}” 不会再被提议。",
+      "detail_decided": "决定时间",
+      "detail_durability": "持久性",
+      "detail_evidence": "证据",
+      "detail_evidence_count": "{count} 个项目",
+      "detail_source": "来源",
+      "origin_removed": "（项目已删除）"
     }
   },
   "doc_signing": {

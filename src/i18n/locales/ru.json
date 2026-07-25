@@ -13051,7 +13051,20 @@
         "state_proposed": "Ещё не принято",
         "verify_action": "Проверить внедрения в {project}",
         "verify_result": "{project}: проверено — {checked}, отклонений — {diverged}.",
-        "verify_started": "Проверка практик, внедрённых в {project}."
+        "verify_started": "Проверка практик, внедрённых в {project}.",
+        "decide_adopt": "Принять",
+        "decide_adopted": "Принято — «{title}» теперь стандарт рабочей области.",
+        "decide_deprecate": "Отозвать",
+        "decide_deprecated": "Отозвано — «{title}» больше не является стандартом.",
+        "decide_reject": "Отклонить",
+        "decide_reject_hint": "Отклонённые практики запоминаются, поэтому сбор не предложит их снова.",
+        "decide_rejected": "Отклонено — «{title}» больше не будет предлагаться.",
+        "detail_decided": "Решение",
+        "detail_durability": "Долговечность",
+        "detail_evidence": "Обоснование",
+        "detail_evidence_count": "{count} проектов",
+        "detail_source": "Источник",
+        "origin_removed": "(проект удалён)"
       }
     },
     "doc_signing": {

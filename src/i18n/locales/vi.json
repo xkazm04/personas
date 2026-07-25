@@ -13051,7 +13051,20 @@
         "state_proposed": "Chưa áp dụng",
         "verify_action": "Xác minh các thực hành đã áp dụng của {project}",
         "verify_result": "{project}: đã xác minh {checked}, {diverged} sai lệch.",
-        "verify_started": "Đang xác minh các thực hành đã áp dụng của {project}."
+        "verify_started": "Đang xác minh các thực hành đã áp dụng của {project}.",
+        "decide_adopt": "Áp dụng",
+        "decide_adopted": "Đã áp dụng — \"{title}\" nay là chuẩn của không gian làm việc.",
+        "decide_deprecate": "Ngừng dùng",
+        "decide_deprecated": "Đã ngừng dùng — \"{title}\" không còn là chuẩn.",
+        "decide_reject": "Từ chối",
+        "decide_reject_hint": "Các thực hành bị từ chối đều được ghi nhớ, nên quá trình thu thập sẽ không đề xuất lại.",
+        "decide_rejected": "Đã từ chối — \"{title}\" sẽ không được đề xuất lại.",
+        "detail_decided": "Quyết định",
+        "detail_durability": "Độ bền",
+        "detail_evidence": "Bằng chứng",
+        "detail_evidence_count": "{count} dự án",
+        "detail_source": "Nguồn",
+        "origin_removed": "(dự án đã bị xóa)"
       }
     },
     "doc_signing": {

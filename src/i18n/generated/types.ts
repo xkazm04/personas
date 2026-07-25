@@ -13327,6 +13327,19 @@ export type Translations = {
         verify_action: string;
         verify_started: string;
         verify_result: string;
+        decide_adopt: string;
+        decide_reject: string;
+        decide_deprecate: string;
+        decide_reject_hint: string;
+        decide_adopted: string;
+        decide_rejected: string;
+        decide_deprecated: string;
+        detail_evidence: string;
+        detail_evidence_count: string;
+        detail_source: string;
+        detail_durability: string;
+        detail_decided: string;
+        origin_removed: string;
       };
     };
     doc_signing: {

@@ -1222,7 +1222,20 @@
       "state_proposed": "এখনও গৃহীত নয়",
       "verify_action": "{project}-এর গৃহীত অনুশীলন যাচাই করুন",
       "verify_result": "{project}: {checked}টি যাচাই হয়েছে, {diverged}টি বিচ্যুত।",
-      "verify_started": "{project}-এর গৃহীত অনুশীলনগুলি যাচাই করা হচ্ছে।"
+      "verify_started": "{project}-এর গৃহীত অনুশীলনগুলি যাচাই করা হচ্ছে।",
+      "decide_adopt": "গ্রহণ",
+      "decide_adopted": "গৃহীত — \"{title}\" এখন ওয়ার্কস্পেসের মান।",
+      "decide_deprecate": "অবচিত",
+      "decide_deprecated": "অবচিত করা হয়েছে — \"{title}\" আর মান নয়।",
+      "decide_reject": "প্রত্যাখ্যান",
+      "decide_reject_hint": "প্রত্যাখ্যাত অনুশীলনগুলি মনে রাখা হয়, তাই সংগ্রহ সেগুলি আবার প্রস্তাব করবে না।",
+      "decide_rejected": "প্রত্যাখ্যাত — \"{title}\" আর প্রস্তাব করা হবে না।",
+      "detail_decided": "সিদ্ধান্ত",
+      "detail_durability": "স্থায়িত্ব",
+      "detail_evidence": "প্রমাণ",
+      "detail_evidence_count": "{count}টি প্রকল্প",
+      "detail_source": "উৎস",
+      "origin_removed": "(প্রকল্প সরানো হয়েছে)"
     }
   },
   "doc_signing": {

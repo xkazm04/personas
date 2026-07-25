@@ -13051,7 +13051,20 @@
         "state_proposed": "अभी अपनाया नहीं",
         "verify_action": "{project} की अपनाई गई प्रथाएँ सत्यापित करें",
         "verify_result": "{project}: {checked} सत्यापित, {diverged} विचलित।",
-        "verify_started": "{project} की अपनाई गई प्रथाओं का सत्यापन हो रहा है।"
+        "verify_started": "{project} की अपनाई गई प्रथाओं का सत्यापन हो रहा है।",
+        "decide_adopt": "अपनाएँ",
+        "decide_adopted": "अपनाया गया — \"{title}\" अब वर्कस्पेस का मानक है।",
+        "decide_deprecate": "अप्रचलित",
+        "decide_deprecated": "अप्रचलित किया गया — \"{title}\" अब मानक नहीं है।",
+        "decide_reject": "अस्वीकारें",
+        "decide_reject_hint": "अस्वीकृत प्रथाएँ याद रखी जाती हैं, इसलिए संग्रहण उन्हें दोबारा प्रस्तावित नहीं करेगा।",
+        "decide_rejected": "अस्वीकृत — \"{title}\" दोबारा प्रस्तावित नहीं किया जाएगा।",
+        "detail_decided": "निर्णय",
+        "detail_durability": "टिकाऊपन",
+        "detail_evidence": "प्रमाण",
+        "detail_evidence_count": "{count} प्रोजेक्ट",
+        "detail_source": "स्रोत",
+        "origin_removed": "(प्रोजेक्ट हटाया गया)"
       }
     },
     "doc_signing": {

@@ -13320,7 +13320,20 @@
         "state_na": "Not applicable",
         "verify_action": "Verify {project} adoptions",
         "verify_started": "Verifying {project}'s adopted practices.",
-        "verify_result": "{project}: {checked} verified, {diverged} diverged."
+        "verify_result": "{project}: {checked} verified, {diverged} diverged.",
+        "decide_adopt": "Adopt",
+        "decide_reject": "Reject",
+        "decide_deprecate": "Deprecate",
+        "decide_reject_hint": "Rejected practices are remembered, so harvesting won't re-propose them.",
+        "decide_adopted": "Adopted — \"{title}\" is now workspace canon.",
+        "decide_rejected": "Rejected — \"{title}\" won't be proposed again.",
+        "decide_deprecated": "Deprecated — \"{title}\" is no longer canon.",
+        "detail_evidence": "Evidence",
+        "detail_evidence_count": "{count} projects",
+        "detail_source": "Source",
+        "detail_durability": "Durability",
+        "detail_decided": "Decided",
+        "origin_removed": "(project removed)"
       }
     },
     "doc_signing": {

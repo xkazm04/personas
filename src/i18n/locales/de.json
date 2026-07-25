@@ -13051,7 +13051,20 @@
         "state_proposed": "Noch nicht übernommen",
         "verify_action": "Übernahmen von {project} prüfen",
         "verify_result": "{project}: {checked} geprüft, {diverged} abgewichen.",
-        "verify_started": "Übernommene Praktiken von {project} werden geprüft."
+        "verify_started": "Übernommene Praktiken von {project} werden geprüft.",
+        "decide_adopt": "Übernehmen",
+        "decide_adopted": "Übernommen – „{title}“ ist jetzt Standard im Workspace.",
+        "decide_deprecate": "Ausmustern",
+        "decide_deprecated": "Ausgemustert – „{title}“ ist kein Standard mehr.",
+        "decide_reject": "Ablehnen",
+        "decide_reject_hint": "Abgelehnte Praktiken werden gemerkt, damit die Erfassung sie nicht erneut vorschlägt.",
+        "decide_rejected": "Abgelehnt – „{title}“ wird nicht erneut vorgeschlagen.",
+        "detail_decided": "Entschieden",
+        "detail_durability": "Beständigkeit",
+        "detail_evidence": "Belege",
+        "detail_evidence_count": "{count} Projekte",
+        "detail_source": "Quelle",
+        "origin_removed": "(Projekt entfernt)"
       }
     },
     "doc_signing": {

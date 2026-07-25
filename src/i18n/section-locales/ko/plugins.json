@@ -1222,7 +1222,20 @@
       "state_proposed": "아직 채택 안 됨",
       "verify_action": "{project} 도입 항목 검증",
       "verify_result": "{project}: {checked}건 검증, {diverged}건 이탈.",
-      "verify_started": "{project}에 도입된 관행을 검증하는 중입니다."
+      "verify_started": "{project}에 도입된 관행을 검증하는 중입니다.",
+      "decide_adopt": "채택",
+      "decide_adopted": "채택됨 — '{title}'이(가) 이제 워크스페이스 표준입니다.",
+      "decide_deprecate": "폐기",
+      "decide_deprecated": "폐기됨 — '{title}'은(는) 더 이상 표준이 아닙니다.",
+      "decide_reject": "거부",
+      "decide_reject_hint": "거부한 관행은 기억되므로 수집 시 다시 제안되지 않습니다.",
+      "decide_rejected": "거부됨 — '{title}'은(는) 다시 제안되지 않습니다.",
+      "detail_decided": "결정일",
+      "detail_durability": "지속성",
+      "detail_evidence": "근거",
+      "detail_evidence_count": "프로젝트 {count}개",
+      "detail_source": "출처",
+      "origin_removed": "(삭제된 프로젝트)"
     }
   },
   "doc_signing": {

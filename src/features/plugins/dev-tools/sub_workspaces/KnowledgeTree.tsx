@@ -20,7 +20,6 @@ import {
   itemsUnderTopic,
   searchFilter,
   STATUS_RANK,
-  type Abstraction,
   type KnowledgeItemView,
   type TopicNode,
 } from './libraryModel';
@@ -28,37 +27,7 @@ import {
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
 
-/** Sort altitude high→low: macro first (the doctrines), micro last. */
-const ABSTRACTION_RANK: Record<string, number> = { macro: 0, meso: 1, micro: 2, z: 3 };
-
 type SortDir = 'asc' | 'desc';
-
-/** Compact altitude cell: an abstraction pill, dimmed when mechanical (lint). */
-function AltitudeChip({
-  item,
-  labels,
-}: {
-  item: KnowledgeItemView;
-  labels: Record<Abstraction, string>;
-}) {
-  if (!item.abstraction) return <span className="typo-caption text-muted-foreground">—</span>;
-  const tone =
-    item.abstraction === 'macro'
-      ? 'bg-primary/10 text-primary border-primary/30'
-      : item.abstraction === 'meso'
-        ? 'bg-secondary/50 text-foreground border-primary/10'
-        : 'bg-secondary/30 text-muted-foreground border-primary/10';
-  return (
-    <span
-      className={`typo-label rounded-interactive border px-1.5 py-0.5 ${tone} ${
-        item.durability === 'mechanical' ? 'opacity-60' : ''
-      }`}
-      title={item.ftype ?? undefined}
-    >
-      {labels[item.abstraction]}
-    </span>
-  );
-}
 
 export default function KnowledgeTree({
   items,
@@ -91,19 +60,12 @@ export default function KnowledgeTree({
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [kindFilter, setKindFilter] = useState('all');
-  const [abstractionFilter, setAbstractionFilter] = useState('all');
+  const [abstractionFilter] = useState('all');
   const [hideLint, setHideLint] = useState(true);
-  const abstractionLabel: Record<Abstraction, string> = {
-    macro: tw.abstraction_macro,
-    meso: tw.abstraction_meso,
-    micro: tw.abstraction_micro,
-  };
   const [sortKey, setSortKey] = useState('updated');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const tree = useMemo(() => buildTopicTree(items), [items]);
-  const nameOf = (id: string | null) =>
-    id ? projectById.get(id)?.name ?? '(removed)' : '';
 
   const rows = useMemo(() => {
     const branch = itemsUnderTopic(items, selected);
@@ -126,17 +88,6 @@ export default function KnowledgeTree({
           return a.kind.localeCompare(b.kind) * dir;
         case 'title':
           return a.title.localeCompare(b.title) * dir;
-        case 'topic':
-          return a.topic.localeCompare(b.topic) * dir;
-        case 'origin':
-          return nameOf(a.originProjectId).localeCompare(nameOf(b.originProjectId)) * dir;
-        case 'confidence':
-          return ((a.confidence ?? -1) - (b.confidence ?? -1)) * dir;
-        case 'altitude':
-          return (
-            ((ABSTRACTION_RANK[a.abstraction ?? 'z'] ?? 3) -
-              (ABSTRACTION_RANK[b.abstraction ?? 'z'] ?? 3)) * dir
-          );
         case 'updated':
         default:
           return a.updatedAt.localeCompare(b.updatedAt) * dir;
@@ -150,15 +101,18 @@ export default function KnowledgeTree({
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else {
       setSortKey(key);
-      setSortDir(key === 'title' || key === 'topic' ? 'asc' : 'desc');
+      setSortDir(key === 'title' ? 'asc' : 'desc');
     }
   };
 
+  // Four columns only. Topic lives in the left tree, and origin / altitude /
+  // confidence are review detail — carrying them here starved the Practice
+  // column until titles were unreadable. They all surface in the detail modal.
   const columns: DataGridColumn<KnowledgeItemView>[] = [
     {
       key: 'status',
       label: tw.col_status,
-      width: '110px',
+      width: '120px',
       sortable: true,
       filterOptions: [
         { value: 'all', label: tw.all_statuses },
@@ -171,7 +125,7 @@ export default function KnowledgeTree({
     {
       key: 'kind',
       label: tw.col_kind,
-      width: '100px',
+      width: '110px',
       sortable: true,
       filterOptions: [
         { value: 'all', label: tw.all_kinds },
@@ -182,27 +136,12 @@ export default function KnowledgeTree({
       render: (r) => <span className="typo-body text-muted-foreground">{kindLabel[r.kind]}</span>,
     },
     {
-      key: 'altitude',
-      label: tw.col_altitude,
-      width: '96px',
-      sortable: true,
-      filterOptions: [
-        { value: 'all', label: tw.all_altitudes },
-        { value: 'macro', label: tw.abstraction_macro },
-        { value: 'meso', label: tw.abstraction_meso },
-        { value: 'micro', label: tw.abstraction_micro },
-      ],
-      filterValue: abstractionFilter,
-      onFilterChange: setAbstractionFilter,
-      render: (r) => <AltitudeChip item={r} labels={abstractionLabel} />,
-    },
-    {
       key: 'title',
       label: tw.col_practice,
-      width: '2.4fr',
+      width: 'minmax(0, 1fr)',
       sortable: true,
       render: (r) => (
-        <span className="typo-body text-foreground truncate">
+        <span className="typo-body text-foreground" title={r.statement}>
           {r.title}
           {r.evidenceCount != null && r.evidenceCount > 1 && (
             <span className="typo-label text-muted-foreground ml-1.5">×{r.evidenceCount}</span>
@@ -210,38 +149,6 @@ export default function KnowledgeTree({
           {r.mock && (
             <span className="typo-label text-muted-foreground ml-1.5 opacity-60">{tw.demo_tag}</span>
           )}
-        </span>
-      ),
-    },
-    {
-      key: 'topic',
-      label: tw.col_topic,
-      width: '1.4fr',
-      sortable: true,
-      render: (r) => (
-        <span className="typo-caption text-muted-foreground truncate">{r.topic || '—'}</span>
-      ),
-    },
-    {
-      key: 'origin',
-      label: tw.col_origin,
-      width: '1fr',
-      sortable: true,
-      render: (r) => (
-        <span className="typo-caption text-foreground truncate">
-          {r.originProjectId ? nameOf(r.originProjectId) : tw.origin_workspace}
-        </span>
-      ),
-    },
-    {
-      key: 'confidence',
-      label: tw.col_confidence,
-      width: '80px',
-      sortable: true,
-      align: 'right',
-      render: (r) => (
-        <span className="typo-caption text-muted-foreground">
-          {r.confidence == null ? '—' : `${Math.round(r.confidence * 100)}%`}
         </span>
       ),
     },
@@ -331,11 +238,7 @@ export default function KnowledgeTree({
           getRowKey={(r) => r.id}
           // Only adopted, non-demo practices have somewhere to go — a rollout
           // needs real canon and a real row id.
-          onRowClick={
-            onRowClick
-              ? (r) => { if (r.status === 'adopted' && !r.mock) onRowClick(r); }
-              : undefined
-          }
+          onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r); } : undefined}
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}

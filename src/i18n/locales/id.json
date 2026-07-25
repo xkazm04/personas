@@ -13051,7 +13051,20 @@
         "state_proposed": "Belum diadopsi",
         "verify_action": "Verifikasi adopsi {project}",
         "verify_result": "{project}: {checked} terverifikasi, {diverged} menyimpang.",
-        "verify_started": "Memverifikasi praktik yang diadopsi {project}."
+        "verify_started": "Memverifikasi praktik yang diadopsi {project}.",
+        "decide_adopt": "Adopsi",
+        "decide_adopted": "Diadopsi — \"{title}\" kini menjadi standar ruang kerja.",
+        "decide_deprecate": "Usangkan",
+        "decide_deprecated": "Diusangkan — \"{title}\" bukan lagi standar.",
+        "decide_reject": "Tolak",
+        "decide_reject_hint": "Praktik yang ditolak akan diingat, sehingga pemanenan tidak akan mengusulkannya lagi.",
+        "decide_rejected": "Ditolak — \"{title}\" tidak akan diusulkan lagi.",
+        "detail_decided": "Diputuskan",
+        "detail_durability": "Ketahanan",
+        "detail_evidence": "Bukti",
+        "detail_evidence_count": "{count} proyek",
+        "detail_source": "Sumber",
+        "origin_removed": "(proyek dihapus)"
       }
     },
     "doc_signing": {
