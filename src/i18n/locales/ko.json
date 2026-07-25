@@ -13065,7 +13065,24 @@
         "detail_evidence": "근거",
         "detail_evidence_count": "프로젝트 {count}개",
         "detail_source": "출처",
-        "origin_removed": "(삭제된 프로젝트)"
+        "origin_removed": "(삭제된 프로젝트)",
+        "pulse_adopted": "채택",
+        "pulse_and_more": "+{count}개 더보기",
+        "pulse_consistency": "일관성",
+        "pulse_consistency_hint": "적절하게 구성된 영역/클러스터 주제와 분류 축이 설정된 활성 사례의 비율입니다.",
+        "pulse_currency": "최신성",
+        "pulse_currency_hint": "최근 90일 이내에 검토된 채택 사례의 비율입니다. 사례는 시간이 지나면 낡아지며, 검증 과정이 이를 새로 고칩니다.",
+        "pulse_deprecated": "사용 중단",
+        "pulse_governance": "거버넌스",
+        "pulse_governance_hint": "수집된 사례 중 실제로 사람이 판단을 내린 비율입니다. \"관찰됨\" 상태에 머물러 있는 라이브러리는 규범이 아니라 그저 대기열일 뿐입니다.",
+        "pulse_harvested": "수집",
+        "pulse_liquidity": "유동성",
+        "pulse_liquidity_hint": "채택된 사례가 실제로 적용된, 해당되는 프로젝트 슬롯의 비율입니다. 배포되지 않은 규범은 이름뿐인 규범입니다.",
+        "pulse_pending": "{count}건이 검토 대기 중입니다",
+        "pulse_quiet": "아직 결정된 사항이 없습니다",
+        "pulse_rejected": "반려",
+        "pulse_title": "펄스",
+        "pulse_window": "최근 {days}일"
       }
     },
     "doc_signing": {

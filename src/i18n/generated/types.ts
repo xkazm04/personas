@@ -13341,6 +13341,23 @@ export type Translations = {
         detail_durability: string;
         detail_decided: string;
         origin_removed: string;
+        pulse_title: string;
+        pulse_governance: string;
+        pulse_governance_hint: string;
+        pulse_currency: string;
+        pulse_currency_hint: string;
+        pulse_consistency: string;
+        pulse_consistency_hint: string;
+        pulse_liquidity: string;
+        pulse_liquidity_hint: string;
+        pulse_window: string;
+        pulse_adopted: string;
+        pulse_rejected: string;
+        pulse_deprecated: string;
+        pulse_harvested: string;
+        pulse_quiet: string;
+        pulse_pending: string;
+        pulse_and_more: string;
       };
     };
     doc_signing: {

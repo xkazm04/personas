@@ -1236,7 +1236,24 @@
       "detail_evidence": "Preuves",
       "detail_evidence_count": "{count} projets",
       "detail_source": "Source",
-      "origin_removed": "(projet supprimé)"
+      "origin_removed": "(projet supprimé)",
+      "pulse_adopted": "adopté",
+      "pulse_and_more": "+{count} de plus",
+      "pulse_consistency": "Cohérence",
+      "pulse_consistency_hint": "Part des pratiques actives dotées d'un thème de zone/cluster bien formé et de leurs axes de catégorisation définis.",
+      "pulse_currency": "Fraîcheur",
+      "pulse_currency_hint": "Part des pratiques adoptées revues au cours des 90 derniers jours. Les pratiques se périment ; la vérification permet de les actualiser.",
+      "pulse_deprecated": "obsolète",
+      "pulse_governance": "Gouvernance",
+      "pulse_governance_hint": "Part des pratiques collectées sur lesquelles une personne s'est réellement prononcée. Une bibliothèque bloquée à l'état \"observé\" est une file d'attente, pas un canon.",
+      "pulse_harvested": "collecté",
+      "pulse_liquidity": "Liquidité",
+      "pulse_liquidity_hint": "Part des emplacements de projet applicables où une pratique adoptée a réellement été mise en œuvre. Un canon que personne n'a déployé n'est un canon que de nom.",
+      "pulse_pending": "{count} en attente de votre revue",
+      "pulse_quiet": "Aucune décision pour l'instant",
+      "pulse_rejected": "rejeté",
+      "pulse_title": "Pouls",
+      "pulse_window": "{days} derniers jours"
     }
   },
   "doc_signing": {

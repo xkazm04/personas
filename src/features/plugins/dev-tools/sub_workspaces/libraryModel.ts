@@ -26,6 +26,11 @@ export interface KnowledgeItemView {
   originProjectId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** When a human adjudicated it (adopt/reject/deprecate); null while pending.
+   *  The digest windows on this, not `updatedAt` — a re-verification or a
+   *  topic renormalization touches `updatedAt` and would otherwise resurface
+   *  months-old decisions as "this week". */
+  decidedAt: string | null;
   confidence: number | null;
   /** Categorization axes (Arc-2 metadata extension). */
   abstraction: Abstraction | null;
@@ -67,6 +72,7 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     originProjectId: row.origin_project_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    decidedAt: row.decided_at ?? null,
     confidence: row.confidence,
     abstraction: (row.abstraction as Abstraction | null) ?? null,
     ftype: row.ftype ?? null,

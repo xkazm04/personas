@@ -27,32 +27,38 @@ function hashString(s: string): number {
   return h >>> 0;
 }
 
-// Emergent taxonomy sample — depths 1..3, exactly the shape harvest agents
-// produce. The RENDERER never enumerates these; the tree is derived from data.
+// Taxonomy sample drawn from the CLOSED vocabulary in
+// `db/repos/workspace_taxonomy.rs` — always `area/cluster`, never deeper. The
+// demo corpus is a teaching artifact: when it showed three-level invented
+// paths it modelled exactly the fragmentation the ingest door now prevents.
+// The RENDERER still enumerates nothing; the tree is derived from the data.
 const TOPICS = [
-  'ui/motion/reveals',
-  'ui/motion',
-  'ui/typography',
-  'ui/empty-states',
-  'ui/theming/dark-light',
-  'design/tokens',
-  'design/layout/panels',
-  'design/iconography',
-  'code-quality/error-handling',
-  'code-quality/error-handling/sentry',
-  'code-quality/typing',
-  'code-quality/testing/vitest',
-  'code-quality/testing/fixtures',
-  'performance/rendering/virtualization',
-  'performance/rendering',
-  'performance/bundling/code-split',
-  'performance/db/sqlite',
-  'process/reviews',
-  'process/releases/changelog',
-  'process/ci/gates',
-  'backend/ipc/commands',
-  'backend/migrations',
-  'backend/telemetry',
+  'architecture/boundaries',
+  'architecture/chokepoints',
+  'architecture/extensibility',
+  'architecture/contract-artifacts',
+  'data/store-boundary',
+  'data/migrations',
+  'data/modeling',
+  'errors/result-contracts',
+  'errors/degradation',
+  'errors/surfacing',
+  'llm/chokepoint',
+  'llm/providers',
+  'llm/quality-gates',
+  'frontend/components',
+  'frontend/state',
+  'frontend/forms',
+  'testing/strategy',
+  'testing/harnesses',
+  'performance/hot-paths',
+  'performance/caching',
+  'concurrency/pipelines',
+  'concurrency/retry-idempotency',
+  'auth/tenancy',
+  'billing/metering',
+  'observability/logging',
+  'process/adr-discipline',
 ] as const;
 
 const FRAMEWORKS = ['React', 'Tauri', 'Rust', 'Tailwind', 'Zustand', 'Vite', 'Next.js', 'Axum'] as const;
@@ -167,6 +173,13 @@ export function generateMockLibrary(
           : null,
       createdAt: new Date(createdMs).toISOString(),
       updatedAt: new Date(Math.min(updatedMs, now)).toISOString(),
+      // Only adjudicated rows carry a decision timestamp — the same invariant
+      // the real ladder holds, so the digest treats demo rows correctly if
+      // they ever reach it (they are filtered out, but the shape stays honest).
+      decidedAt:
+        status === 'observed' || status === 'proposed'
+          ? null
+          : new Date(Math.min(updatedMs, now)).toISOString(),
       confidence: status === 'observed' ? Math.round(rnd() * 40 + 55) / 100 : null,
       abstraction,
       ftype: pick(rnd, FTYPES),

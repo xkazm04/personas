@@ -13065,7 +13065,24 @@
         "detail_evidence": "根拠",
         "detail_evidence_count": "{count} 件のプロジェクト",
         "detail_source": "出所",
-        "origin_removed": "（プロジェクトは削除されました）"
+        "origin_removed": "（プロジェクトは削除されました）",
+        "pulse_adopted": "採用",
+        "pulse_and_more": "+{count}件",
+        "pulse_consistency": "整合性",
+        "pulse_consistency_hint": "有効な運用実績のうち、適切に構成されたエリア/クラスタのトピックと分類軸が設定されている割合。",
+        "pulse_currency": "鮮度",
+        "pulse_currency_hint": "採用された運用実績のうち、過去90日以内にレビューされたものの割合。運用実績は陳腐化するため、検証パスがこれを更新します。",
+        "pulse_deprecated": "非推奨",
+        "pulse_governance": "ガバナンス",
+        "pulse_governance_hint": "収集された運用実績のうち、人が実際に判断を下したものの割合。「観察済み」のまま止まっているライブラリは、正典ではなくただの待ち行列です。",
+        "pulse_harvested": "収集",
+        "pulse_liquidity": "流動性",
+        "pulse_liquidity_hint": "採用された運用実績が実際に展開された、対象プロジェクトのスロットの割合。展開されていない正典は、名ばかりの正典です。",
+        "pulse_pending": "{count}件がレビュー待ちです",
+        "pulse_quiet": "まだ決定はありません",
+        "pulse_rejected": "却下",
+        "pulse_title": "パルス",
+        "pulse_window": "過去{days}日間"
       }
     },
     "doc_signing": {

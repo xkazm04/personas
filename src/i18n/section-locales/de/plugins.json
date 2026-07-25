@@ -1236,7 +1236,24 @@
       "detail_evidence": "Belege",
       "detail_evidence_count": "{count} Projekte",
       "detail_source": "Quelle",
-      "origin_removed": "(Projekt entfernt)"
+      "origin_removed": "(Projekt entfernt)",
+      "pulse_adopted": "übernommen",
+      "pulse_and_more": "+{count} weitere",
+      "pulse_consistency": "Konsistenz",
+      "pulse_consistency_hint": "Anteil aktiver Praktiken mit einem gut geformten Bereichs-/Cluster-Thema und gesetzten Kategorisierungsachsen.",
+      "pulse_currency": "Aktualität",
+      "pulse_currency_hint": "Anteil übernommener Praktiken, die in den letzten 90 Tagen überprüft wurden. Praktiken veralten; der Verifizierungsdurchlauf aktualisiert dies.",
+      "pulse_deprecated": "veraltet",
+      "pulse_governance": "Steuerung",
+      "pulse_governance_hint": "Anteil der gesammelten Praktiken, über die tatsächlich ein Mensch entschieden hat. Eine Bibliothek, die bei \"beobachtet\" feststeckt, ist eine Warteschlange, kein Kanon.",
+      "pulse_harvested": "gesammelt",
+      "pulse_liquidity": "Liquidität",
+      "pulse_liquidity_hint": "Anteil der zutreffenden Projektplätze, in denen eine übernommene Praktik tatsächlich angekommen ist. Ein Kanon, den niemand ausgerollt hat, ist nur dem Namen nach ein Kanon.",
+      "pulse_pending": "{count} wartet auf Ihre Prüfung",
+      "pulse_quiet": "Noch keine Entscheidungen",
+      "pulse_rejected": "abgelehnt",
+      "pulse_title": "Puls",
+      "pulse_window": "Letzte {days} Tage"
     }
   },
   "doc_signing": {

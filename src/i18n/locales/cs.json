@@ -13065,7 +13065,24 @@
         "detail_evidence": "Důkazy",
         "detail_evidence_count": "{count} projektů",
         "detail_source": "Zdroj",
-        "origin_removed": "(projekt odstraněn)"
+        "origin_removed": "(projekt odstraněn)",
+        "pulse_adopted": "přijato",
+        "pulse_and_more": "+{count} další",
+        "pulse_consistency": "Konzistence",
+        "pulse_consistency_hint": "Podíl aktivních postupů se správně vytvořeným tématem oblasti/klastru a nastavenými klasifikačními osami.",
+        "pulse_currency": "Aktuálnost",
+        "pulse_currency_hint": "Podíl přijatých postupů zkontrolovaných za posledních 90 dní. Postupy zastarávají; obnovuje je právě ověřovací kontrola.",
+        "pulse_deprecated": "zastaralé",
+        "pulse_governance": "Správa",
+        "pulse_governance_hint": "Podíl získaných postupů, o kterých člověk skutečně rozhodl. Knihovna uvízlá ve stavu \"pozorováno\" je fronta, ne kánon.",
+        "pulse_harvested": "získáno",
+        "pulse_liquidity": "Likvidita",
+        "pulse_liquidity_hint": "Podíl vhodných projektových míst, kde se přijatý postup skutečně uplatnil. Kánon, který nikdo nenasadil, je kánon jen podle jména.",
+        "pulse_pending": "{count} čeká na vaše posouzení",
+        "pulse_quiet": "Zatím žádná rozhodnutí",
+        "pulse_rejected": "zamítnuto",
+        "pulse_title": "Pulz",
+        "pulse_window": "Posledních {days} dní"
       }
     },
     "doc_signing": {

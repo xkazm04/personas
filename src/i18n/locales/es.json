@@ -13065,7 +13065,24 @@
         "detail_evidence": "Evidencia",
         "detail_evidence_count": "{count} proyectos",
         "detail_source": "Fuente",
-        "origin_removed": "(proyecto eliminado)"
+        "origin_removed": "(proyecto eliminado)",
+        "pulse_adopted": "adoptado",
+        "pulse_and_more": "+{count} más",
+        "pulse_consistency": "Consistencia",
+        "pulse_consistency_hint": "Proporción de prácticas activas con un tema de área/clúster bien definido y sus ejes de categorización establecidos.",
+        "pulse_currency": "Vigencia",
+        "pulse_currency_hint": "Proporción de prácticas adoptadas revisadas en los últimos 90 días. Las prácticas se vuelven obsoletas; la verificación es lo que las actualiza.",
+        "pulse_deprecated": "obsoleto",
+        "pulse_governance": "Gobernanza",
+        "pulse_governance_hint": "Proporción de prácticas recopiladas sobre las que una persona realmente se ha pronunciado. Una biblioteca estancada en \"observado\" es una cola, no un canon.",
+        "pulse_harvested": "recopilado",
+        "pulse_liquidity": "Liquidez",
+        "pulse_liquidity_hint": "Proporción de espacios de proyecto aplicables donde una práctica adoptada realmente se implementó. Un canon que nadie ha desplegado es un canon solo de nombre.",
+        "pulse_pending": "{count} en espera de tu revisión",
+        "pulse_quiet": "Aún no hay decisiones",
+        "pulse_rejected": "rechazado",
+        "pulse_title": "Pulso",
+        "pulse_window": "Últimos {days} días"
       }
     },
     "doc_signing": {

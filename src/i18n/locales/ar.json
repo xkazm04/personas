@@ -13065,7 +13065,24 @@
         "detail_evidence": "الأدلة",
         "detail_evidence_count": "{count} مشاريع",
         "detail_source": "المصدر",
-        "origin_removed": "(تم حذف المشروع)"
+        "origin_removed": "(تم حذف المشروع)",
+        "pulse_adopted": "معتمد",
+        "pulse_and_more": "+{count} أخرى",
+        "pulse_consistency": "الاتساق",
+        "pulse_consistency_hint": "نسبة الممارسات النشطة التي لديها موضوع مجال/مجموعة جيد التكوين ومحاور تصنيف محددة.",
+        "pulse_currency": "الحداثة",
+        "pulse_currency_hint": "نسبة الممارسات المعتمدة التي تمت مراجعتها خلال آخر 90 يومًا. الممارسات تتقادم؛ وعملية التحقق هي ما يجدد ذلك.",
+        "pulse_deprecated": "مُهمل",
+        "pulse_governance": "الحوكمة",
+        "pulse_governance_hint": "نسبة الممارسات المُجمَّعة التي بتّ فيها إنسان فعليًا. المكتبة العالقة في حالة \"تمت ملاحظتها\" هي قائمة انتظار، وليست مرجعًا معتمدًا.",
+        "pulse_harvested": "مُجمَّع",
+        "pulse_liquidity": "السيولة",
+        "pulse_liquidity_hint": "نسبة أماكن المشاريع القابلة للتطبيق التي وصلت إليها ممارسة معتمدة فعليًا. المرجع الذي لم ينشره أحد هو مرجع بالاسم فقط.",
+        "pulse_pending": "{count} بانتظار مراجعتك",
+        "pulse_quiet": "لا توجد قرارات بعد",
+        "pulse_rejected": "مرفوض",
+        "pulse_title": "النبض",
+        "pulse_window": "آخر {days} يومًا"
       }
     },
     "doc_signing": {

@@ -1236,7 +1236,24 @@
       "detail_evidence": "Bằng chứng",
       "detail_evidence_count": "{count} dự án",
       "detail_source": "Nguồn",
-      "origin_removed": "(dự án đã bị xóa)"
+      "origin_removed": "(dự án đã bị xóa)",
+      "pulse_adopted": "đã áp dụng",
+      "pulse_and_more": "+{count} nữa",
+      "pulse_consistency": "Tính nhất quán",
+      "pulse_consistency_hint": "Tỷ lệ các thực hành đang áp dụng có chủ đề khu vực/cụm được xây dựng tốt và đã thiết lập các trục phân loại.",
+      "pulse_currency": "Độ mới",
+      "pulse_currency_hint": "Tỷ lệ các thực hành đã áp dụng được xem xét trong 90 ngày qua. Thực hành sẽ lỗi thời theo thời gian; việc xác minh lại là thứ giúp làm mới điều này.",
+      "pulse_deprecated": "đã lỗi thời",
+      "pulse_governance": "Quản trị",
+      "pulse_governance_hint": "Tỷ lệ các thực hành đã thu thập mà con người thực sự đã đưa ra quyết định. Một thư viện bị mắc kẹt ở trạng thái \"đã quan sát\" chỉ là hàng chờ, không phải chuẩn mực.",
+      "pulse_harvested": "đã thu thập",
+      "pulse_liquidity": "Tính thanh khoản",
+      "pulse_liquidity_hint": "Tỷ lệ các vị trí dự án phù hợp mà một thực hành đã áp dụng thực sự được triển khai. Chuẩn mực không được triển khai chỉ là chuẩn mực trên danh nghĩa.",
+      "pulse_pending": "{count} đang chờ bạn xem xét",
+      "pulse_quiet": "Chưa có quyết định nào",
+      "pulse_rejected": "đã từ chối",
+      "pulse_title": "Nhịp",
+      "pulse_window": "{days} ngày qua"
     }
   },
   "doc_signing": {

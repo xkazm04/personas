@@ -1236,7 +1236,24 @@
       "detail_evidence": "证据",
       "detail_evidence_count": "{count} 个项目",
       "detail_source": "来源",
-      "origin_removed": "（项目已删除）"
+      "origin_removed": "（项目已删除）",
+      "pulse_adopted": "已采纳",
+      "pulse_and_more": "还有 {count} 项",
+      "pulse_consistency": "一致性",
+      "pulse_consistency_hint": "结构良好的领域/集群主题及其分类维度已设置的活跃实践所占比例。",
+      "pulse_currency": "时效性",
+      "pulse_currency_hint": "过去90天内被复核过的已采纳实践所占比例。实践会随时间过时；复核正是刷新这一指标的方式。",
+      "pulse_deprecated": "已弃用",
+      "pulse_governance": "治理",
+      "pulse_governance_hint": "已采集的实践中，人工实际做出裁定的比例。停留在“已观察”状态的库只是一个队列，而不是准则。",
+      "pulse_harvested": "已采集",
+      "pulse_liquidity": "流动性",
+      "pulse_liquidity_hint": "在适用的项目位置中，已采纳的实践真正落地的比例。没有推广的准则只是名义上的准则。",
+      "pulse_pending": "{count} 项待您审核",
+      "pulse_quiet": "尚无决定",
+      "pulse_rejected": "已拒绝",
+      "pulse_title": "脉动",
+      "pulse_window": "最近 {days} 天"
     }
   },
   "doc_signing": {

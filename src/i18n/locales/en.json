@@ -13334,7 +13334,24 @@
         "detail_source": "Source",
         "detail_durability": "Durability",
         "detail_decided": "Decided",
-        "origin_removed": "(project removed)"
+        "origin_removed": "(project removed)",
+        "pulse_title": "Pulse",
+        "pulse_governance": "Governance",
+        "pulse_governance_hint": "Share of harvested practices a human has actually ruled on. A library stuck at \"observed\" is a queue, not a canon.",
+        "pulse_currency": "Currency",
+        "pulse_currency_hint": "Share of adopted practices reviewed in the last 90 days. Practices rot; the verification pass is what refreshes this.",
+        "pulse_consistency": "Consistency",
+        "pulse_consistency_hint": "Share of live practices with a well-formed area/cluster topic and their categorization axes set.",
+        "pulse_liquidity": "Liquidity",
+        "pulse_liquidity_hint": "Share of applicable project slots where an adopted practice actually landed. Canon nobody rolled out is canon in name only.",
+        "pulse_window": "Last {days} days",
+        "pulse_adopted": "adopted",
+        "pulse_rejected": "rejected",
+        "pulse_deprecated": "deprecated",
+        "pulse_harvested": "harvested",
+        "pulse_quiet": "No decisions yet",
+        "pulse_pending": "{count} awaiting your review",
+        "pulse_and_more": "+{count} more"
       }
     },
     "doc_signing": {

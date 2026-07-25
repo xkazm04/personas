@@ -1236,7 +1236,24 @@
       "detail_evidence": "Bukti",
       "detail_evidence_count": "{count} proyek",
       "detail_source": "Sumber",
-      "origin_removed": "(proyek dihapus)"
+      "origin_removed": "(proyek dihapus)",
+      "pulse_adopted": "diadopsi",
+      "pulse_and_more": "+{count} lainnya",
+      "pulse_consistency": "Konsistensi",
+      "pulse_consistency_hint": "Proporsi praktik aktif yang memiliki topik area/cluster yang terstruktur dengan baik serta sumbu kategorisasinya sudah diatur.",
+      "pulse_currency": "Kesegaran",
+      "pulse_currency_hint": "Proporsi praktik yang diadopsi dan ditinjau dalam 90 hari terakhir. Praktik bisa menjadi usang; peninjauan verifikasi inilah yang menyegarkannya.",
+      "pulse_deprecated": "usang",
+      "pulse_governance": "Tata Kelola",
+      "pulse_governance_hint": "Proporsi praktik yang dipanen yang benar-benar telah diputuskan oleh manusia. Pustaka yang macet di status \"diamati\" hanyalah antrean, bukan kanon.",
+      "pulse_harvested": "dipanen",
+      "pulse_liquidity": "Likuiditas",
+      "pulse_liquidity_hint": "Proporsi slot proyek yang berlaku, tempat praktik yang diadopsi benar-benar diterapkan. Kanon yang tidak digulirkan hanyalah kanon di atas kertas.",
+      "pulse_pending": "{count} menunggu tinjauan Anda",
+      "pulse_quiet": "Belum ada keputusan",
+      "pulse_rejected": "ditolak",
+      "pulse_title": "Denyut",
+      "pulse_window": "{days} hari terakhir"
     }
   },
   "doc_signing": {

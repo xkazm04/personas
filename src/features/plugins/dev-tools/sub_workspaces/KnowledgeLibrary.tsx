@@ -2,12 +2,13 @@
 // (real rows blended with an optional deterministic demo corpus so scale
 // behavior is visible before the harvest engine exists) and renders the
 // consolidated tree + paginated DataGrid. Demo rows never touch the DB.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Share2 } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
-import { projectWorkspacePractices } from '@/api/devTools/workspaces';
-import { toastCatch } from '@/lib/silentCatch';
+import { listWorkspaceAdoption, projectWorkspacePractices } from '@/api/devTools/workspaces';
+import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
@@ -20,6 +21,7 @@ import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import { generateMockLibrary } from './libraryMock';
 import { viewFromRow } from './libraryModel';
+import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from './workspaceStore';
 
 export default function KnowledgeLibrary({
@@ -75,6 +77,20 @@ export default function KnowledgeLibrary({
     return [...real, ...generateMockLibrary(workspace.id, workspace.projectIds)];
   }, [rows, useDemo, workspace.id, workspace.projectIds]);
 
+  // The adoption matrix is what makes the liquidity pillar measurable (is
+  // adopted canon actually reaching the repos?). Re-read whenever the rows
+  // change, so adopting a practice updates the pillar in the same beat.
+  const [adoptions, setAdoptions] = useState<WorkspacePracticeAdoption[]>([]);
+  useEffect(() => {
+    let live = true;
+    listWorkspaceAdoption(workspace.id)
+      .then((a) => { if (live) setAdoptions(a); })
+      // Pulse is ambient: a failed matrix read degrades liquidity to "—",
+      // it never interrupts the review the user came here to do.
+      .catch(silentCatch('workspaces:adoption-list'));
+    return () => { live = false; };
+  }, [workspace.id, rows]);
+
   const memberProjects = useMemo(
     () =>
       workspace.projectIds
@@ -120,6 +136,15 @@ export default function KnowledgeLibrary({
           </Button>
         </div>
       </div>
+
+      <WorkspacePulse
+        items={items}
+        adoptions={adoptions}
+        onOpenPractice={(item) => {
+          const row = rows.find((r) => r.id === item.id);
+          if (row) setDetail(row);
+        }}
+      />
 
       <div className="flex-1 min-h-0">
         <KnowledgeTree

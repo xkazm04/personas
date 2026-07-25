@@ -86,6 +86,43 @@
   workspace automatically inherits every applicable adopted practice as its
   to-adopt queue — the library scales with the workspace.
 
+## Pulse — the library's own dashboard
+
+Above the library sits a **Pulse** band answering the questions you have
+*before* opening any row. Everything in it is computed on read and **never
+stored** — a stored weekly rollup would be a second source of truth that goes
+wrong the moment a decision is reversed (the plan's *projection principle*).
+
+**Four health pillars**, each 0–1 over the real rows (the demo corpus is
+excluded — a dashboard that counts the sample reports activity that never
+happened):
+
+| Pillar | Asks | Denominator |
+| --- | --- | --- |
+| **Governance** | Of everything harvested, how much has a human actually ruled on? | all practices |
+| **Currency** | Of the adopted canon, how much was touched in the last 90 days? | adopted only |
+| **Consistency** | How much of the corpus obeys its own structure — well-formed `area/cluster` topic plus categorization axes? | live (non-rejected) |
+| **Liquidity** | Of the project slots that could carry an adopted practice, how many actually reached `adopted` in the repo? | applicable cells (`na` excluded) |
+
+A pillar with nothing to measure shows **`—`, not a score** — and is dropped
+from the overall average rather than dragged to zero. The library's own
+`data/modeling` canon says *"never fabricate — unknown values stay null, gaps
+are reported not filled"*; a health surface that invents a number for an empty
+workspace breaks the doctrine it is reporting on. Each pillar also carries its
+denominator (`92% /13`), because 100% over 3 items should not read like 100%
+over 300.
+
+Rejected practices are deliberately **excluded from Consistency**: they are
+retained as dedup memory ("rejection is knowledge"), and holding them to the
+current structure would penalize the library for remembering.
+
+**The week's activity** — adopted / rejected / deprecated / harvested counts for
+the last 7 days, expandable to the actual items (click one to open its detail).
+The digest windows on `decided_at`, not `updated_at`: a verification pass or a
+topic renormalization touches `updated_at` on months-old rows and would
+otherwise resurface them as "decided this week". A quiet week says so plainly
+rather than padding itself.
+
 ## Commands
 
 `dev_tools_workspace_list / create / update / delete / assign_project / import_local`,
