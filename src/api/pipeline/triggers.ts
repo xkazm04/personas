@@ -285,3 +285,20 @@ export const getCompositePartialMatches = () =>
 
 export const getCompositePartialMatch = (triggerId: string) =>
   invoke<PartialMatchResult | null>("get_composite_partial_match", { triggerId });
+
+// ============================================================================
+// Persona Config Warnings
+// ============================================================================
+
+import type { ConfigWarning } from "@/lib/bindings/ConfigWarning";
+
+/**
+ * Validate a persona's chain-trigger configs and tool kinds, returning any
+ * warnings. Lives here (not with the health API) because every sub-check reads
+ * trigger rows — `commands::tools::triggers::get_persona_config_warnings`.
+ *
+ * Best-effort by contract: a caller that only needs a coverage signal should
+ * treat a rejection as "warnings unavailable", not as a failed health check.
+ */
+export const getPersonaConfigWarnings = (personaId: string) =>
+  invoke<ConfigWarning[]>("get_persona_config_warnings", { personaId });

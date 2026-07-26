@@ -13,9 +13,8 @@
  * accept-rate / sample-size thresholds in Rust automatically propagates.
  */
 import { useEffect, useState } from "react";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { getRecipeSuggestionStats } from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
-import type { RecipeSuggestionStats } from "@/lib/bindings/RecipeSuggestionStats";
 
 type Eligibility = "unknown" | "eligible" | "ineligible";
 
@@ -25,9 +24,7 @@ export function useRecipeSuggestionEligibility(enabled: boolean): Eligibility {
   useEffect(() => {
     if (!enabled || eligibility !== "unknown") return;
     let cancelled = false;
-    invokeWithTimeout<RecipeSuggestionStats>("get_recipe_suggestion_stats", {
-      window: null,
-    })
+    getRecipeSuggestionStats()
       .then((stats) => {
         if (cancelled) return;
         setEligibility(stats.mode_2_eligible ? "eligible" : "ineligible");

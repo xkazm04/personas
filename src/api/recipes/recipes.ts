@@ -8,6 +8,9 @@ import type { CreatePersonaRecipeLinkInput } from "@/lib/bindings/CreatePersonaR
 import type { RecipeExecutionInput } from "@/lib/bindings/RecipeExecutionInput";
 import type { RecipeExecutionResult } from "@/lib/bindings/RecipeExecutionResult";
 import type { RecipeVersion } from "@/lib/bindings/RecipeVersion";
+import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
+import type { RecipeSuggestionEventType } from "@/lib/bindings/RecipeSuggestionEventType";
+import type { RecipeSuggestionStats } from "@/lib/bindings/RecipeSuggestionStats";
 
 export interface CancelResult {
   was_running: boolean;
@@ -119,6 +122,42 @@ export const acceptRecipeVersion = ({
 
 export const revertRecipeVersion = (recipeId: string, versionId: string) =>
   invoke<RecipeDefinition>("revert_recipe_version", { recipeId, versionId });
+
+// ============================================================================
+// Intent matching + suggestion telemetry
+// ============================================================================
+
+/**
+ * Rank the recipe catalog against a free-text intent. Returns at most `topK`
+ * matches (backend default when omitted), already filtered by the matcher's
+ * zero-overlap rule. An empty/whitespace intent resolves to `[]` rather than
+ * erroring — callers don't need to pre-guard.
+ *
+ * Consumers must still check `above_threshold` before surfacing a match; the
+ * command returns below-threshold rows so callers can log/inspect them.
+ */
+export const matchRecipesToIntent = (intent: string, topK?: number) =>
+  invoke<RecipeMatch[]>("match_recipes_to_intent", { intent, topK });
+
+/**
+ * Record one user action on a suggestion chip. `eventType` is the ts-rs
+ * binding for the Rust enum, which is itself locked by a CHECK constraint on
+ * `recipe_suggestion_events.event_type` — passing anything else is rejected at
+ * deserialization. `score` must be finite and within [0.0, 1.0].
+ */
+export const logRecipeSuggestionEvent = (
+  recipeId: string,
+  eventType: RecipeSuggestionEventType,
+  score: number,
+) => invoke<void>("log_recipe_suggestion_event", { recipeId, eventType, score });
+
+/**
+ * Aggregated suggestion stats over the most recent `window` events (backend
+ * default 50 when null/omitted; non-positive values are ignored). Read
+ * `mode_2_eligible` rather than re-deriving the threshold on the frontend.
+ */
+export const getRecipeSuggestionStats = (window: number | null = null) =>
+  invoke<RecipeSuggestionStats>("get_recipe_suggestion_stats", { window });
 
 // ============================================================================
 // Use Case <-> Recipe Connection

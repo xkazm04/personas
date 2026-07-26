@@ -25,7 +25,10 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, X, Zap } from "lucide-react";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import {
+  logRecipeSuggestionEvent,
+  matchRecipesToIntent,
+} from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
@@ -40,11 +43,9 @@ function logSuggestionEvent(
   eventType: RecipeSuggestionEventType,
   score: number,
 ): void {
-  invokeWithTimeout("log_recipe_suggestion_event", {
-    recipeId,
-    eventType,
-    score,
-  }).catch(silentCatch(`ComposerRecipeSuggestion.log.${eventType}`));
+  logRecipeSuggestionEvent(recipeId, eventType, score).catch(
+    silentCatch(`ComposerRecipeSuggestion.log.${eventType}`),
+  );
 }
 
 interface Props {
@@ -78,10 +79,7 @@ export function ComposerRecipeSuggestion({ task, onApply, onRunDirect }: Props) 
     }
     let cancelled = false;
     const handle = setTimeout(() => {
-      invokeWithTimeout<RecipeMatch[]>("match_recipes_to_intent", {
-        intent: trimmed,
-        topK: 1,
-      })
+      matchRecipesToIntent(trimmed, 1)
         .then((results) => {
           if (cancelled) return;
           const top = results[0];

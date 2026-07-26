@@ -3,9 +3,8 @@ import { Network } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { probeCliCapabilities } from '@/api/agents/evolution';
 import { toastCatch } from '@/lib/silentCatch';
-import type { CliCapabilities } from '@/lib/bindings/CliCapabilities';
 
 type Param = { key?: string; value?: unknown; type?: string };
 
@@ -56,7 +55,7 @@ export function DeepFanoutToggle({
 
   useEffect(() => {
     let cancelled = false;
-    invokeWithTimeout<CliCapabilities>('probe_cli_capabilities', {})
+    probeCliCapabilities()
       .then((c) => {
         if (!cancelled) setAvailable(c.deepFanoutAvailable);
       })
