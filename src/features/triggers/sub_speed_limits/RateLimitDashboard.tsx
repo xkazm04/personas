@@ -10,13 +10,17 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface RateLimitDashboardProps {
   triggers: PersonaTrigger[];
+  /** True while the parent's listAllTriggers() fetch is still in flight —
+   * distinguishes "genuinely no rate limits configured" from "haven't heard
+   * back yet" so the empty state never flashes ahead of real data. */
+  triggersLoading?: boolean;
 }
 
 function parseConfig(config: string | null): Record<string, unknown> {
   return parseJsonOrDefault<Record<string, unknown>>(config, {});
 }
 
-export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
+export function RateLimitDashboard({ triggers, triggersLoading = false }: RateLimitDashboardProps) {
   const { t } = useTranslation();
   const rateLimits = usePipelineStore((s) => s.triggerRateLimits);
 
@@ -45,8 +49,18 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
     return { totalQueued, throttledCount, rateLimitedCount, totalConcurrent, throttledNames };
   }, [triggers, rateLimits]);
 
-  // Show empty state when no rate limits configured
-  if (stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0 && stats.totalConcurrent === 0) {
+  const isEmpty = stats.rateLimitedCount === 0 && stats.throttledCount === 0 && stats.totalQueued === 0 && stats.totalConcurrent === 0;
+
+  // Nothing to show yet + the parent's trigger fetch is still in flight:
+  // a calm, delayed ghost of the throttle bar under the same geometry the
+  // real bar uses. Never shown once any stat is non-zero (law 1) and never
+  // shown once the fetch has settled (law 2) — only this exact overlap.
+  if (isEmpty && triggersLoading) {
+    return <RateLimitGhost />;
+  }
+
+  // Show empty state only once the fetch has settled and nothing was found.
+  if (isEmpty) {
     return (
       <div className="mx-6 mt-4 rounded-modal border border-dashed border-primary/15 bg-secondary/10 p-6 flex flex-col items-center gap-3 text-center">
         <MotionizedGlyph data={RATELIMIT_GLYPH.data} viewBox={RATELIMIT_GLYPH.viewBox} spread={1} className="w-28 h-28 -mb-1" />
@@ -119,6 +133,44 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
             />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RateLimitGhost — calm, delayed ghost of the throttle summary bar, shown ONLY
+// while triggers are still loading and no stats exist yet (docs/design/
+// overview-loading.md §C). Mirrors the real bar's geometry (rounded-modal
+// border, same padding, icon + label + tile slots) so the ghost→content swap
+// moves nothing. Enters via animate-fade-in behind a >=120ms animation-delay
+// (fill-mode both) so a fast fetch never paints it at all. No animate-pulse.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function RateLimitGhost() {
+  return (
+    <div className="mx-6 mt-4 rounded-modal border border-primary/10 bg-secondary/30 backdrop-blur-sm p-3" aria-hidden="true">
+      <div className="flex items-center gap-4 typo-body">
+        <div
+          className="flex items-center gap-1.5 animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        >
+          <span className={`h-3.5 w-3.5 rounded-full ${GHOST_BAR}`} />
+          <span className={`h-3 w-24 ${GHOST_BAR}`} />
+        </div>
+
+        <div className="flex items-center gap-3 flex-1">
+          <span className={`h-3 w-16 ${GHOST_BAR} animate-fade-in`} style={{ animationDelay: '155ms' }} />
+          <span className={`h-3 w-14 ${GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
+          <span className={`h-3 w-14 ${GHOST_BAR} animate-fade-in`} style={{ animationDelay: '225ms' }} />
+        </div>
+
+        <span
+          className="w-24 h-1.5 rounded-full bg-primary/[0.06] animate-fade-in"
+          style={{ animationDelay: '260ms' }}
+        />
       </div>
     </div>
   );

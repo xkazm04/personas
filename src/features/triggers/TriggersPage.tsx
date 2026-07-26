@@ -36,10 +36,12 @@ interface TabHeaderConfig {
   renderActions?: () => ReactNode;
 }
 
+// Chunk-load fallback for lazy tabs (docs/design/overview-loading.md §D):
+// invisible for the first 150ms so a fast chunk load never paints anything,
+// and neutral (no text, no fake body geometry the incoming tab won't share).
 function LazyWrap({ children }: { children: ReactNode }) {
-  const { t } = useTranslation();
   return (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-foreground typo-body">{t.triggers.tab_loading}</div>}>
+    <Suspense fallback={<div className="flex-1 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true" />}>
       {children}
     </Suspense>
   );
@@ -84,6 +86,11 @@ export function TriggersPage() {
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
   const [_busHealth, setBusHealth] = useState<BusHealth>(null);
   const [tabHeaderExtra, setTabHeaderExtra] = useState<ReactNode>(null);
+  // True while the initial/refresh listAllTriggers() fetch is in flight.
+  // RateLimitDashboard has no data of its own — it derives everything from
+  // `allTriggers` — so it needs this flag to tell "genuinely no rate limits
+  // configured" apart from "haven't heard back yet" (docs/design/overview-loading.md law 5).
+  const [triggersLoading, setTriggersLoading] = useState(true);
 
   // Reset the header slot whenever the active tab changes — each tab owns
   // its own decorations, and stale content from the previous tab would leak.
@@ -104,6 +111,7 @@ export function TriggersPage() {
         else if (healthValues.includes('degraded')) setBusHealth('degraded');
         else if (healthValues.length > 0) setBusHealth('healthy');
       } catch (err) { silentCatch("features/triggers/TriggersPage:catch1")(err); }
+      finally { if (!stale) setTriggersLoading(false); }
     }
     load();
     return () => { stale = true; };
@@ -128,7 +136,7 @@ export function TriggersPage() {
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}
-        {eventBusTab === "rate-limits" && <RateLimitDashboard triggers={allTriggers} />}
+        {eventBusTab === "rate-limits" && <RateLimitDashboard triggers={allTriggers} triggersLoading={triggersLoading} />}
         {eventBusTab === "test" && <TestTab />}
         {eventBusTab === "smee-relay" && <SmeeRelayTab onSwitchToLiveStream={() => useSystemStore.getState().setEventBusTab("live-stream")} />}
         {eventBusTab === "cloud-webhooks" && <CloudWebhooksTab />}
