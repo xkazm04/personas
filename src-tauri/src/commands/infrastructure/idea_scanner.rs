@@ -5,7 +5,10 @@
 //! "code-optimizer") and outputs structured idea protocol messages. Ideas are
 //! persisted as DevIdea records. Progress streams via Tauri events.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex, OnceLock};
+
+use futures_util::FutureExt;
 
 use serde::Deserialize;
 use serde_json::json;
@@ -24,6 +27,19 @@ use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Same shape as `commands/execution/lab.rs` — the canonical job-registry
+/// panic-capture pattern.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // =============================================================================
 // Job state
@@ -564,19 +580,34 @@ pub async fn run_scan_core(
     let agent_count = selected_agents.len();
 
     tokio::spawn(async move {
-        let result = tokio::select! {
-            _ = token_for_task.cancelled() => {
-                Err(AppError::Internal("Idea scan cancelled by user".into()))
+        // Panic capture: without it, a panic in run_idea_scan unwinds past the
+        // status match below and IDEA_SCAN_JOBS pins the scan at "running"
+        // forever (UI spins with no way to clear it).
+        let work = AssertUnwindSafe(async {
+            tokio::select! {
+                _ = token_for_task.cancelled() => {
+                    Err(AppError::Internal("Idea scan cancelled by user".into()))
+                }
+                res = run_idea_scan(
+                    &app_handle,
+                    &scan_id_for_task,
+                    &pool,
+                    &project_id,
+                    &root_path,
+                    prompt_text,
+                    &scope_token,
+                ) => res
             }
-            res = run_idea_scan(
-                &app_handle,
-                &scan_id_for_task,
-                &pool,
-                &project_id,
-                &root_path,
-                prompt_text,
-                &scope_token,
-            ) => res
+        })
+        .catch_unwind()
+        .await;
+        let result = match work {
+            Ok(r) => r,
+            Err(panic) => {
+                let msg = extract_panic_message(panic);
+                tracing::error!(scan_id = %scan_id_for_task, panic = %msg, "idea scan panicked");
+                Err(AppError::Internal(format!("Idea scan panicked: {msg}")))
+            }
         };
 
         match result {
@@ -1272,20 +1303,34 @@ pub async fn run_backlog_triage(
     let scan_id_for_task = scan_id.clone();
     let root_path = project.root_path.clone();
     tokio::spawn(async move {
-        let result = tokio::select! {
-            _ = cancel_token.cancelled() => {
-                Err(AppError::Internal("Backlog triage cancelled".into()))
+        // Same panic capture as the idea-scan spawn above — a panic must land
+        // the job in "failed", never leave it pinned at "running".
+        let work = AssertUnwindSafe(async {
+            tokio::select! {
+                _ = cancel_token.cancelled() => {
+                    Err(AppError::Internal("Backlog triage cancelled".into()))
+                }
+                res = run_idea_scan(
+                    &app_handle,
+                    &scan_id_for_task,
+                    &pool,
+                    &project_id,
+                    &root_path,
+                    prompt_text,
+                    // Backlog triage is a project-wide pass, not a scoped scan.
+                    "all",
+                ) => res
             }
-            res = run_idea_scan(
-                &app_handle,
-                &scan_id_for_task,
-                &pool,
-                &project_id,
-                &root_path,
-                prompt_text,
-                // Backlog triage is a project-wide pass, not a scoped scan.
-                "all",
-            ) => res
+        })
+        .catch_unwind()
+        .await;
+        let result = match work {
+            Ok(r) => r,
+            Err(panic) => {
+                let msg = extract_panic_message(panic);
+                tracing::error!(scan_id = %scan_id_for_task, panic = %msg, "backlog triage panicked");
+                Err(AppError::Internal(format!("Backlog triage panicked: {msg}")))
+            }
         };
         match result {
             Ok(counts) => {
