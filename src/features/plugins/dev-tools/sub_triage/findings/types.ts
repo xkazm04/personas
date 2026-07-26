@@ -63,6 +63,14 @@ export interface SweepResult {
    *  never report itself as a clean run. */
   errors: string[];
   /** Verdicts taken on shipped findings this pass (Phase 3A). `unchanged` and
-   *  `regressed` are reported alongside `cleared` — merged is not fixed. */
-  verified: { cleared: number; moved: number; unchanged: number; regressed: number };
+   *  `regressed` are reported alongside `cleared` — merged is not fixed.
+   *  `unverifiable` = findings whose sensor did not probe this sweep (skipped,
+   *  input-starved, or Rust-side origin) — they stay pending, never fake-clear. */
+  verified: {
+    cleared: number;
+    moved: number;
+    unchanged: number;
+    regressed: number;
+    unverifiable: number;
+  };
 }

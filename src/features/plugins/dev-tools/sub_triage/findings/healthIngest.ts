@@ -36,6 +36,7 @@ export function describeSweep(res: SweepResult): string {
   if (v.moved) verdicts.push(`${v.moved} moved`);
   if (v.unchanged) verdicts.push(`${v.unchanged} unchanged`);
   if (v.regressed) verdicts.push(`${v.regressed} REGRESSED`);
+  if (v.unverifiable) verdicts.push(`${v.unverifiable} unverifiable (sensor didn't run)`);
   if (verdicts.length > 0) parts.push(`verified: ${verdicts.join(', ')}`);
 
   // Never let a thin sweep read as a clean bill of health.

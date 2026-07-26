@@ -85,15 +85,29 @@ export interface Verdict {
  *
  * `fresh` is the draft carrying the SAME dedup_key, or `undefined` when the sensor
  * no longer emits it at all.
+ *
+ * `probedOrigins` is the set of origins whose sensor ACTUALLY RAN this sweep.
+ * Absence-from-drafts is only meaningful when the sensor was probed — a skipped
+ * sensor (network blip, missing inputs, or a Rust-side origin like `kpi_sim`
+ * with no TS emitter) produces absence too, and calling that `cleared` would be
+ * the loop fabricating its own wins. Required, so no call site can forget it.
  */
 export function verdictFor(
   finding: Pick<DevIdea, 'origin' | 'evidence' | 'dedup_key'>,
   fresh: FindingDraft | undefined,
+  probedOrigins: ReadonlySet<string>,
 ): Verdict {
   const origin = finding.origin ?? '';
 
-  // The signal is gone. This is the one unambiguous win.
   if (!fresh) {
+    // HONESTY RULE 0: absence is only a win when the sensor actually looked.
+    if (!probedOrigins.has(origin)) {
+      return {
+        state: 'pending',
+        evidence: { signal: 'unknown', reason: 'sensor_not_probed', checkedAgainst: finding.dedup_key },
+      };
+    }
+    // The sensor probed and the signal is gone. This is the one unambiguous win.
     return { state: 'cleared', evidence: { signal: 'absent', checkedAgainst: finding.dedup_key } };
   }
 
