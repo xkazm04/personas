@@ -615,6 +615,14 @@ The codebase enforces a layered error-handling discipline. Established as a stro
 
 **Risk to losing:** if helper adoption drifts below ~80% or Rust commands start returning `Result<T, String>` again, Sentry breadcrumb coverage gets patchy and operators lose the ability to correlate user reports with backend logs. The CI gate from invariant 3 + the queued `[lints.clippy]` + the queued lint-rule for invariant 2 are the planned mechanical defenses; until those ship, the discipline is held by social convention + this docs-stack section + per-PR review.
 
+#### Sentry tag vocabulary (established 2026-05-10, wired 2026-07-26)
+
+Two scope tags make executions queryable in Discover, not just greppable in a log-message string. Established by [[Architect/decisions/2026-05-10-sentry-execution-scope-tags]].
+
+- **`execution_id`** — the execution UUID. **`persona_id`** — the persona the execution ran under.
+- **Rust side:** set per-event, not via `sentry::configure_scope`. Fields named `tags.execution_id` / `tags.persona_id` on a `tracing::error!()` call are lifted straight onto that Sentry `Event`'s `tags` map by sentry_tracing's `tags_from_event()` (`sentry-tracing-0.34.0/src/converters.rs`) — no Hub/scope mutation involved. This was a deliberate choice over `configure_scope`: sentry-rust's Hub is thread-local, and tokio's work-stealing multi-threaded runtime can migrate an async task across OS threads at any `.await`, so a tag set globally at `run_execution` entry could bleed onto a *different* concurrent execution's event on the same thread, or never get popped. Wired at `engine/runner/mod.rs` (BYOM policy corruption, all-providers-failed, session_id persist failure) and `engine/ai_healing.rs` (`process_healing_result`'s structured-prompt-patch failures). WARN-level breadcrumbs are unaffected — `TraceCollector::start_span` (`engine/trace.rs`) already attaches `execution_id`/`persona_id` as breadcrumb `data` on every `PipelineStage` boundary via `sentry::add_breadcrumb`, which is additive/non-authoritative so cross-thread mixing there is cosmetic, not a correctness bug.
+- **Frontend side:** `useExecutionScope(executionId, personaId)` (`src/hooks/execution/useExecutionScope.ts`) calls `@sentry/react`'s `setTag` on mount, clears (`setTag(key, undefined)`) on unmount. Safe as a plain mount/unmount pattern here — unlike Rust, the browser tab has one Sentry client and no task migration. Mounted at `ExecutionDetail.tsx` (the execution inspector, covering trace/chain/pipeline sub-tabs), `ExecutionMiniPlayer.tsx` (the always-mounted live player), and `MonitorDrawer.tsx`'s per-row activity expansion (fleet monitor's live trace view).
+
 ### Plugins
 - The app has a plugin architecture under `src/features/plugins/` (dev-tools, gitlab, etc.).
 - Plugins surface via the sidebar; each owns its own routes, store slice, and IPC commands.
