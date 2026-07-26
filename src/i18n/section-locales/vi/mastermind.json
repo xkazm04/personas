@@ -74,5 +74,7 @@
   "dispatch_placeholder": "Mô tả tác vụ để Claude chạy trong dự án này…",
   "dispatch_submit": "Gửi",
   "dispatch_submitting": "Đang gửi…",
-  "dispatch_toast": "Đã gửi phiên Fleet trong {name}"
+  "dispatch_toast": "Đã gửi phiên Fleet trong {name}",
+  "kpis_title": "KPI",
+  "kpi_unmeasured": "chưa đo"
 }

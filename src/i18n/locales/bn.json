@@ -18570,6 +18570,8 @@
     "dispatch_placeholder": "এই প্রজেক্টে Claude যে কাজটি চালাবে তা বর্ণনা করুন…",
     "dispatch_submit": "পাঠান",
     "dispatch_submitting": "পাঠানো হচ্ছে…",
-    "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে"
+    "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে",
+    "kpis_title": "KPI",
+    "kpi_unmeasured": "পরিমাপ করা হয়নি"
   }
 }

@@ -18577,5 +18577,7 @@ export type Translations = {
     fleet_headless: string;
     fleet_close_preview: string;
     score_legend: string;
+    kpis_title: string;
+    kpi_unmeasured: string;
   };
 };

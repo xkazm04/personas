@@ -18570,6 +18570,8 @@
     "fleet_gone": "Session is no longer running.",
     "fleet_headless": "Headless session — no terminal window. State and insights live in the Fleet grid.",
     "fleet_close_preview": "Hide preview",
-    "score_legend": "auto · prod"
+    "score_legend": "auto · prod",
+    "kpis_title": "KPIs",
+    "kpi_unmeasured": "not measured"
   }
 }

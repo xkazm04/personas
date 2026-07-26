@@ -19,7 +19,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
-import { collectKpiAttention, groupKpis } from '@/features/teams/sub_factory/factoryModel';
+import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
@@ -46,6 +46,7 @@ import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
 import { GoalListPopover } from './lib/GoalListPopover';
+import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { computeAttention } from './lib/liveState';
@@ -146,6 +147,7 @@ function MastermindInner() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -246,6 +248,21 @@ function MastermindInner() {
     const m = new Map<string, KpiRollup>();
     for (const p of factoryProjects) {
       m.set(p.id, { total: p.groups.reduce((s, g) => s + groupKpis(g).length, 0), off: collectKpiAttention(p).length });
+    }
+    return m;
+  }, [factoryProjects]);
+
+  // The KPI cell's colour says "something is off"; the popover has to say WHICH.
+  // The rollup above keeps only counts (that's all the cell's derive needs), so
+  // the list is projected separately from the same Factory projects — every KPI
+  // reduced to the row shape KpiListPopover renders, worst-status first.
+  const kpiListByProject = useMemo(() => {
+    const m = new Map<string, KpiListItem[]>();
+    for (const p of factoryProjects) {
+      m.set(p.id, p.groups.flatMap(groupKpis).map((k) => ({
+        id: k.id, name: k.name, status: kpiStatus(k),
+        current: k.current, target: k.target, unit: k.unit,
+      })));
     }
     return m;
   }, [factoryProjects]);
@@ -398,6 +415,8 @@ function MastermindInner() {
         };
         // A zero-count Goals cell has nothing to list — inert, no affordance.
         if (n.key === 'goals' && !(n.days && n.days > 0)) decorated.action = null;
+        // Same for a project with no KPIs defined at all.
+        if (n.key === 'kpi' && (kpiListByProject.get(i.slug)?.length ?? 0) === 0) decorated.action = null;
         return decorated;
       });
       // Attention derives from the RESOLVED fleet (live for real projects, the
@@ -411,7 +430,7 @@ function MastermindInner() {
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs]);
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject]);
 
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {
@@ -451,6 +470,10 @@ function MastermindInner() {
     }
     if (node.action === 'goals') {
       setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
+      return;
+    }
+    if (node.action === 'kpi') {
+      setKpiPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 284), y: Math.min(e.clientY + 10, window.innerHeight - 320) });
       return;
     }
     // Green Skills cell — run an installed skill via a background Fleet session.
@@ -633,6 +656,15 @@ function MastermindInner() {
           x={goalPopup.x}
           y={goalPopup.y}
           onClose={() => setGoalPopup(null)}
+        />
+      )}
+
+      {kpiPopup && (
+        <KpiListPopover
+          items={kpiListByProject.get(kpiPopup.slug) ?? []}
+          x={kpiPopup.x}
+          y={kpiPopup.y}
+          onClose={() => setKpiPopup(null)}
         />
       )}
 

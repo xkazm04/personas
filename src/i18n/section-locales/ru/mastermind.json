@@ -74,5 +74,7 @@
   "dispatch_placeholder": "Опишите задачу, которую Claude выполнит в этом проекте…",
   "dispatch_submit": "Отправить",
   "dispatch_submitting": "Отправка…",
-  "dispatch_toast": "Сеанс Fleet отправлен в {name}"
+  "dispatch_toast": "Сеанс Fleet отправлен в {name}",
+  "kpis_title": "KPI",
+  "kpi_unmeasured": "не измерено"
 }

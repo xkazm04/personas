@@ -44,7 +44,7 @@ export interface DimNode {
    *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
    *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
    *  list popover, null = inert (no click, no hover affordance). */
-  action?: 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
+  action?: 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'skills-run' | null;
   /** Ideas dimension only: whole days since the last idea scan (null = never). */
   days?: number | null;
   /** An action we dispatched for this cell is still in flight (Ideas scan) —

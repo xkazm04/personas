@@ -26,6 +26,9 @@ export function dimAction(
   // Goals: actionable on real projects; the page decoration downgrades a
   // zero-count cell to inert (an empty list is nothing to show).
   if (entry.action === 'goals') return { rowKey: null, action: passport ? 'goals' : null };
+  // KPIs: same shape — actionable on real projects, and the page downgrades a
+  // project with no KPIs at all to inert.
+  if (entry.action === 'kpi') return { rowKey: null, action: passport ? 'kpi' : null };
   const rowKey = entry.rowKey;
   if (!rowKey || !passport) return { rowKey: rowKey ?? null, action: null };
   if (entry.action === 'standards') {

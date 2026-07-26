@@ -18570,6 +18570,8 @@
     "dispatch_placeholder": "Popište úkol, který má Claude v tomto projektu provést…",
     "dispatch_submit": "Odeslat",
     "dispatch_submitting": "Odesílání…",
-    "dispatch_toast": "Relace Fleet odeslána v {name}"
+    "dispatch_toast": "Relace Fleet odeslána v {name}",
+    "kpis_title": "KPI",
+    "kpi_unmeasured": "neměřeno"
   }
 }

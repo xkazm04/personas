@@ -18570,6 +18570,8 @@
     "dispatch_placeholder": "صِف المهمة التي سينفّذها Claude في هذا المشروع…",
     "dispatch_submit": "إرسال",
     "dispatch_submitting": "جارٍ الإرسال…",
-    "dispatch_toast": "تم إرسال جلسة Fleet في {name}"
+    "dispatch_toast": "تم إرسال جلسة Fleet في {name}",
+    "kpis_title": "مؤشرات الأداء",
+    "kpi_unmeasured": "غير مُقاس"
   }
 }

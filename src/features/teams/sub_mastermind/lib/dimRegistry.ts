@@ -68,9 +68,10 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
  *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
- *  list popover, skills-run = the "run an installed skill via Fleet" modal
- *  (green Skills cell only), null = never actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
+ *  list popover, kpi = the project-KPI list popover, skills-run = the "run an
+ *  installed skill via Fleet" modal (green Skills cell only), null = never
+ *  actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'skills-run' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
  *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
@@ -220,8 +221,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     derive: (p) => ({ status: p.stack.llmTracking ? 'solid' : 'absent', detail: p.stack.llmTracking ?? null, reached: 0, steps: 0 }),
   },
   kpi: {
+    // Click lists the project's KPIs worst-first (KpiListPopover). The cell has
+    // no Passport-wall counterpart — KPIs live in the Factory, not the wall —
+    // so the action is its own kind rather than a rowKey mapping. The page
+    // downgrades a cell with zero KPIs to inert (nothing to list).
     label: 'KPIs', category: 'product', icon: Gauge,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'kpi', payloadKind: 'icon',
     derive: (_p, { kpi, kpiUnknown }) => {
       if (kpiUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0 };
       return {

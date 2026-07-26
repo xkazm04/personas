@@ -74,5 +74,7 @@
   "dispatch_placeholder": "이 프로젝트에서 Claude가 실행할 작업을 설명하세요…",
   "dispatch_submit": "전송",
   "dispatch_submitting": "전송 중…",
-  "dispatch_toast": "{name}에서 Fleet 세션을 전송했습니다"
+  "dispatch_toast": "{name}에서 Fleet 세션을 전송했습니다",
+  "kpis_title": "KPI",
+  "kpi_unmeasured": "측정되지 않음"
 }

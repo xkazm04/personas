@@ -98,11 +98,13 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
 | `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
-| `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
+| `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | any KPI defined → **KpiListPopover** |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
 | `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
 | `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | — (inert for now) |
 | `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | — (inert for now) |
+
+**KPI rule:** the cell's colour comes from the Factory rollup (`off > 0` ⇒ `alert`, else `solid`, none defined ⇒ `absent`). Clicking it answers *which* — `KpiListPopover` lists every KPI on the project sorted worst-status first (`crit` → `warn` → `ok` → `met` → unmeasured), each with its `current / target unit` reading. The rollup keeps only counts, so the page projects the list separately from the same Factory projects (`kpiListByProject`). A project with zero KPIs is downgraded to inert.
 
 **Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the far/mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
 
@@ -185,7 +187,8 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
 - **Persona list row click** is still a reserved no-op (the per-persona action layer is to come). Context-menu dimension rows are wired (§8).
-- `auth` and `kpi` dimensions have no Improve counterpart yet (inert).
+- `auth` has no Improve counterpart yet (inert). `datalinks` / `support` are inert by design (§5).
+- **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
 - **Dimension categories** for ≥15 dimensions (see §5). Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
 - Demo islands cannot exercise Improve actions, terminals, or real scan freshness.

@@ -65,9 +65,15 @@ describe('dimActions — dimAction applicability', () => {
     expect(dimAction('ideas', undefined, undefined)).toEqual({ rowKey: null, action: null });
   });
 
-  it('null-row dims (auth, kpi) are always inert', () => {
+  it('auth has no wall row and no own action — always inert', () => {
     expect(dimAction('auth', passport, raw())).toEqual({ rowKey: null, action: null });
-    expect(dimAction('kpi', passport, raw())).toEqual({ rowKey: null, action: null });
+  });
+
+  // kpi has no wall row either (KPIs live in the Factory, not the passport
+  // wall) but owns its own action kind — the click lists the project's KPIs.
+  it('kpi is actionable with a passport, inert without', () => {
+    expect(dimAction('kpi', passport, raw())).toEqual({ rowKey: null, action: 'kpi' });
+    expect(dimAction('kpi', undefined, raw())).toEqual({ rowKey: null, action: null });
   });
 
   it('a real row without a passport is inert but still reports its rowKey', () => {

@@ -18570,6 +18570,8 @@
     "dispatch_placeholder": "इस प्रोजेक्ट में Claude जो कार्य चलाएगा उसका वर्णन करें…",
     "dispatch_submit": "भेजें",
     "dispatch_submitting": "भेजा जा रहा है…",
-    "dispatch_toast": "{name} में Fleet सत्र भेजा गया"
+    "dispatch_toast": "{name} में Fleet सत्र भेजा गया",
+    "kpis_title": "KPI",
+    "kpi_unmeasured": "मापा नहीं गया"
   }
 }

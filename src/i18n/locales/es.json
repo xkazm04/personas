@@ -18570,6 +18570,8 @@
     "dispatch_placeholder": "Describe la tarea que Claude ejecutará en este proyecto…",
     "dispatch_submit": "Enviar",
     "dispatch_submitting": "Enviando…",
-    "dispatch_toast": "Sesión de Fleet enviada en {name}"
+    "dispatch_toast": "Sesión de Fleet enviada en {name}",
+    "kpis_title": "KPI",
+    "kpi_unmeasured": "sin medir"
   }
 }
