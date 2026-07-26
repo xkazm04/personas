@@ -53,6 +53,37 @@ export function buildFlowSteps(
   ];
 }
 
+// ---------------------------------------------------------------------------
+// FlowStepsGhost — calm, geometry-matched ghost for the ONLY moment the flow
+// column has nothing to show yet (cold first-ever load — see
+// docs/design/overview-loading.md). Mirrors FlowStepsList's row shape (icon
+// tile · label · dot separator · description bar) so the ghost→content swap
+// moves nothing. Each row is invisible for its first ~120ms
+// (`animate-fade-in` + staggered `animationDelay`, fill-mode both) so a fast
+// fetch never paints a single ghost. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_LABEL_WIDTHS = ['w-24', 'w-20', 'w-28', 'w-16'];
+
+export function FlowStepsGhost() {
+  return (
+    <div className="rounded-card border border-primary/15 overflow-hidden divide-y divide-primary/10" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-4 py-2.5 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-8 h-8 rounded-interactive bg-primary/[0.06] flex-shrink-0" />
+          <span className={`h-3.5 ${GHOST_LABEL_WIDTHS[i % GHOST_LABEL_WIDTHS.length]} rounded bg-primary/[0.06] shrink-0`} />
+          <span className="h-3.5 w-2 rounded bg-primary/[0.06] shrink-0" />
+          <span className="h-3.5 flex-1 max-w-[220px] rounded bg-primary/[0.06]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function FlowStepsList({ steps }: { steps: FlowStep[] }) {
   return (
     <div className="rounded-card border border-primary/15 overflow-hidden divide-y divide-primary/10">

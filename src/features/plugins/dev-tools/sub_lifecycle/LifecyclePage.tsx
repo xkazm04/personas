@@ -14,6 +14,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import { LifecycleProjectPicker } from './LifecycleProjectPicker';
 import { SetupTab } from './tabs/SetupTab';
+import { FlowStepsGhost } from './setup/FlowSteps';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -23,6 +24,16 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const REVIEW_APPROVED_EVENT = 'review_decision.approved';
 const REVIEW_REJECTED_EVENT = 'review_decision.rejected';
+
+// Module-scoped cache (docs/design/overview-loading.md, law 1: "data on
+// screen is sacred"). devClone/triggers are local useState, not store-backed,
+// so every fresh mount used to start genuinely cold. Stashing the last fetch
+// here lets a RETURN visit within the same session paint real content on
+// frame 1 and refresh silently behind it; only a truly first-ever visit (or
+// a fresh reload) sees the cold-load ghost.
+let cachedDevClone: Persona | null = null;
+let cachedTriggers: PersonaTrigger[] = [];
+let hasCachedData = false;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,23 +60,35 @@ export default function LifecyclePage() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const addToast = useToastStore((s) => s.addToast);
 
-  const [devClone, setDevClone] = useState<Persona | null>(null);
-  const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [devClone, setDevClone] = useState<Persona | null>(cachedDevClone);
+  const [triggers, setTriggers] = useState<PersonaTrigger[]>(cachedTriggers);
+  // True while a (re)fetch is in flight — nothing more. It NEVER hides data
+  // already on screen; it only decides whether the cold-empty flow column
+  // shows a ghost (fetch running, no cached data yet) or real content.
+  const [isFetching, setIsFetching] = useState(true);
+  // Whether we've ever completed a fetch (this mount, or a cached one from an
+  // earlier visit this session). Gates the one-time cold-load ghost so a
+  // background refresh/poll never re-shows it.
+  const [everLoaded, setEverLoaded] = useState(hasCachedData);
   const [configuring, setConfiguring] = useState(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    setIsFetching(true);
     try {
       const personas = await listPersonas();
       const clone = personas.find((p) => {
         const n = p.name.toLowerCase();
         return n.includes('dev clone') || n.includes('dev-clone');
       }) ?? null;
+      const trigs = clone ? await listTriggers(clone.id) : [];
       setDevClone(clone);
-      setTriggers(clone ? await listTriggers(clone.id) : []);
+      setTriggers(trigs);
+      cachedDevClone = clone;
+      cachedTriggers = trigs;
+      hasCachedData = true;
+      setEverLoaded(true);
     } catch (err) { silentCatch("features/plugins/dev-tools/sub_lifecycle/LifecyclePage:catch1")(err); }
-    finally { setLoading(false); }
+    finally { setIsFetching(false); }
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -113,7 +136,7 @@ export default function LifecyclePage() {
 
       <ContentBody centered>
         <ActionRow>
-          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={loading}>{t.common.refresh}</Button>
+          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={isFetching}>{t.common.refresh}</Button>
           {allConfigured ? (
             <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>{t.plugins.dev_tools.teardown}</Button>
           ) : (
@@ -123,18 +146,20 @@ export default function LifecyclePage() {
           )}
         </ActionRow>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20 text-foreground">
-            <RefreshCw className="w-5 h-5 animate-spin mr-2" />
-            <span className="typo-body">{t.plugins.dev_tools.loading_lifecycle}</span>
-          </div>
+        {/* Loading choreography (docs/design/overview-loading.md): the ghost
+            only ever covers a truly cold first-ever load (no cached data,
+            fetch in flight). A background refresh/poll re-delivering the
+            same devClone/triggers never re-shows it — SetupTab's own
+            settled-only states (missing persona, etc.) take over from here. */}
+        {isFetching && !everLoaded ? (
+          <FlowStepsGhost />
         ) : (
           <SetupTab
             devClone={devClone} triggers={triggers}
             activeProject={activeProject ? { name: activeProject.name, root_path: activeProject.root_path, github_url: activeProject.github_url } : null}
             goalCount={goals.length}
             hasApprovedListener={hasApproved} hasRejectedListener={hasRejected}
-            hasScheduleTrigger={hasSchedule} loading={loading} onRefresh={refresh}
+            hasScheduleTrigger={hasSchedule} loading={isFetching} onRefresh={refresh}
           />
         )}
       </ContentBody>
