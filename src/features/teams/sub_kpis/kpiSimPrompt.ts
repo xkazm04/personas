@@ -76,12 +76,17 @@ export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string
     '== HARD RULES ==',
     '- NEVER invent a number. Every measurement carries evidence tracing it to a command output, a per-Character walk journal, or (proposals) citations. The ingester REFUSES evidence-free measurements.',
     '- Simulated measurements use env "local" (repo commands) or "test" (journey walks / live driving) ONLY. Production is reserved for real telemetry and the ingester rejects it.',
-    '- Do not modify the application code, its config, or its KPIs. Your ONLY writes: `kpi-sim/runs/<run-id>/` artifacts, and appending `kpi-sim/` to .gitignore if it is not ignored yet (operational data stays out of version control).',
+    '- Do not modify the application code, its config, or its KPIs. Your ONLY writes: `kpi-sim/runs/<run-id>/` artifacts, the memory outbox below, and appending `kpi-sim/` to .gitignore if it is not ignored yet (operational data stays out of version control).',
     '- At most 8 new-KPI proposals; prefer adjusting/adopting over inventing.',
     '- Run repo commands with sensible timeouts; a command that fails is evidence of a class-1 gap (finding), not a reason to fabricate.',
     '',
     OUTPUT_CONTRACT,
     '2. `report.md` — the human story: per-KPI class + what you did + the value with its provenance + what you propose. Findings-first, honest about what you could NOT simulate.',
+    '',
+    // Project Memory Ledger (docs/plans/skill-memory-unification.md P1): the
+    // sim leaves durable notes for the next terminal — the app sweeps the
+    // outbox into memory_nodes when this session exits.
+    'MEMORY: before finishing, append 3-6 JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) recording what the NEXT run needs: measurement gotchas, which commands/harness actually worked, decisions taken. Line shape: {"type":"node","kind":"progress|gotcha|decision|fact","title":"≤200 chars","body":"optional detail"}. The app ingests and deletes the file after your session ends.',
     '',
     'Before finishing: adversarially re-check your own result.json — delete any value you cannot trace to evidence, then validate it is parseable JSON. Print a final summary line: measurements / proposals / findings counts.',
   ].join('\n');

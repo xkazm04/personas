@@ -1214,6 +1214,9 @@ export interface SkillEntry {
   /** Canonical category from SKILL.md frontmatter (`category:` — one of
    *  Development/Testing/Maintenance/Data/Other), or null → grouped as Other. */
   category: string | null;
+  /** Memory binding from SKILL.md frontmatter (`memory:` — 'project' | 'vault'
+   *  | 'none'), or null = undeclared → dispatches carry no MEMORY BLOCK. */
+  memory: string | null;
 }
 
 export interface SkillFileContent {

@@ -64,6 +64,11 @@ pub struct SkillEntry {
     /// frontmatter has no recognizable category; the UI groups those under
     /// "Other".
     pub category: Option<String>,
+    /// Memory binding from the frontmatter `memory:` field — `"project"`
+    /// (ledger via outbox), `"vault"` (Obsidian-first, still mirrors through
+    /// the outbox) or `"none"`. `None` = undeclared → dispatches carry no
+    /// MEMORY BLOCK (opt-in; docs/plans/skill-memory-unification.md §3.4).
+    pub memory: Option<String>,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -378,6 +383,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                 let content = std::fs::read_to_string(&path).ok();
                 let desc = content.as_deref().and_then(extract_skill_description);
                 let category = content.as_deref().and_then(extract_skill_category);
+                let memory = content.as_deref().and_then(extract_skill_memory);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -389,6 +395,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     sync_state: SYNC_LOCAL_ONLY.to_string(),
                     source_kind: None,
                     category,
+                    memory,
                 });
             }
             continue;
@@ -410,7 +417,10 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
-        let category = skill_md_path.as_ref().and_then(|p| read_skill_category(p));
+        let (category, memory) = skill_md_path
+            .as_ref()
+            .map(|p| read_skill_meta(p))
+            .unwrap_or((None, None));
 
         // Count reference files (everything except SKILL.md and the internal
         // provenance sidecar, which is engine-managed, not user content).
@@ -435,6 +445,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             sync_state,
             source_kind,
             category,
+            memory,
         });
     }
 
@@ -452,34 +463,57 @@ fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
 /// the frontmatter normalizes to `None` (grouped as "Other" in the UI).
 const SKILL_CATEGORIES: [&str; 5] = ["Development", "Testing", "Maintenance", "Data", "Other"];
 
-/// Read the frontmatter `category:` field and normalize it (case-insensitive)
-/// to the canonical set above. Absent frontmatter / key / unknown value → None.
-fn extract_skill_category(content: &str) -> Option<String> {
+/// Memory bindings a skill may declare (`memory:` frontmatter — see
+/// docs/plans/skill-memory-unification.md §3.4).
+const SKILL_MEMORY_BINDINGS: [&str; 3] = ["project", "vault", "none"];
+
+/// Raw value of a `key:` line inside the YAML frontmatter block, trimmed and
+/// unquoted. Absent frontmatter or key → None.
+fn extract_frontmatter_value(content: &str, key: &str) -> Option<String> {
     let mut lines = content.lines();
     if lines.next().map(str::trim) != Some("---") {
         return None;
     }
+    let prefix = format!("{key}:");
     for line in lines {
         let t = line.trim();
         if t == "---" {
             break;
         }
-        if let Some(rest) = t.strip_prefix("category:") {
+        if let Some(rest) = t.strip_prefix(&prefix) {
             let v = rest.trim().trim_matches(['"', '\'']).trim();
-            return SKILL_CATEGORIES
-                .iter()
-                .find(|c| c.eq_ignore_ascii_case(v))
-                .map(|c| (*c).to_string());
+            return Some(v.to_string());
         }
     }
     None
 }
 
-/// [`extract_skill_category`] over a SKILL.md path (mirror of
-/// `read_first_line_description`).
-fn read_skill_category(skill_md_path: &Path) -> Option<String> {
-    let content = std::fs::read_to_string(skill_md_path).ok()?;
-    extract_skill_category(&content)
+/// Read the frontmatter `category:` field and normalize it (case-insensitive)
+/// to the canonical set above. Absent frontmatter / key / unknown value → None.
+fn extract_skill_category(content: &str) -> Option<String> {
+    let v = extract_frontmatter_value(content, "category")?;
+    SKILL_CATEGORIES
+        .iter()
+        .find(|c| c.eq_ignore_ascii_case(&v))
+        .map(|c| (*c).to_string())
+}
+
+/// Read the frontmatter `memory:` binding, normalized lowercase to the known
+/// set. Absent / unknown → None (undeclared — no MEMORY BLOCK on dispatch).
+fn extract_skill_memory(content: &str) -> Option<String> {
+    let v = extract_frontmatter_value(content, "memory")?;
+    SKILL_MEMORY_BINDINGS
+        .iter()
+        .find(|m| m.eq_ignore_ascii_case(&v))
+        .map(|m| (*m).to_string())
+}
+
+/// Category + memory binding over a SKILL.md path (one read, both fields).
+fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>) {
+    match std::fs::read_to_string(skill_md_path) {
+        Ok(content) => (extract_skill_category(&content), extract_skill_memory(&content)),
+        Err(_) => (None, None),
+    }
 }
 
 /// Short description for a skill's SKILL.md. Prefers the YAML frontmatter
@@ -852,6 +886,15 @@ mod tests {
         assert_eq!(extract_skill_category("---\ncategory: Gardening\n---\n"), None);
         assert_eq!(extract_skill_category("---\nname: x\n---\n"), None);
         assert_eq!(extract_skill_category("# Just a heading\ncategory: Data"), None);
+    }
+
+    #[test]
+    fn extract_skill_memory_normalizes_and_rejects() {
+        let md = "---\nname: x\nmemory: Project\n---\nBody";
+        assert_eq!(extract_skill_memory(md).as_deref(), Some("project"));
+        assert_eq!(extract_skill_memory("---\nmemory: vault\n---\n").as_deref(), Some("vault"));
+        assert_eq!(extract_skill_memory("---\nmemory: cloud\n---\n"), None);
+        assert_eq!(extract_skill_memory("---\nname: x\n---\n"), None);
     }
 
     #[test]

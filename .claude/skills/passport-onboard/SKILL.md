@@ -1,5 +1,7 @@
 ---
 name: passport-onboard
+category: Maintenance
+memory: project
 description: Guided, select-driven onboarding of a repository against the Personas App Readiness Passport — assess every dimension, offer batched skip/path-A/path-B choices in the terminal, then execute accepted work with parallel subagents. Works for brand-new projects and as a completion checklist for developed ones. Invoked standalone in a repo, or dispatched by the Personas passport wall via Fleet.
 ---
 
@@ -197,3 +199,9 @@ skipped, <n> blocked`.
 - **Honest levels only.** The passport's whole point is that every value is
   observed. Never claim a dimension improved without the Phase-4 re-check
   showing it.
+
+## Memory outbox (Personas-managed repos)
+
+If this repo is managed by the Personas app (dispatched runs say so; standalone: a `.personas/` dir or the operator confirms), leave durable notes for the next terminal before finishing: append 3–8 JSON lines to `.personas/memory-outbox.jsonl` (append, never rewrite) —
+`{"type":"node","kind":"progress|decision|gotcha|fact","title":"≤200 chars","body":"optional detail","context":"optional context-map context name"}`
+Record: dimensions assessed + outcomes, choices the operator made, gotchas hit. The app ingests and deletes the file when the session ends. Skip silently when the repo is not Personas-managed.

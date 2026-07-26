@@ -9,8 +9,10 @@
 // (workspace rollouts, per-dimension guided runs, …). The copy is deterministic
 // (`skill_files_install`: SKILL.md + reference files, provenance-stamped) — no
 // LLM, no token cost, and the workbench later reads it as installed.
-import { installSkill } from '@/api/devTools/devTools';
+import { installSkill, listSkills } from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
 
+import { composeMemoryBlock } from './memoryBlock';
 import { dispatchRowToFleet } from './passportFleet';
 
 export interface DispatchSkillToRepoOpts {
@@ -35,8 +37,24 @@ export interface DispatchSkillToRepoOpts {
 
 /** Ensure `skillName` is present in the target repo, then dispatch a Fleet
  *  session there that invokes it. Rejects (propagating) if the install or the
- *  spawn fails, so callers can surface the error and re-enable their trigger. */
+ *  spawn fails, so callers can surface the error and re-enable their trigger.
+ *
+ *  Memory: when the installed skill's frontmatter declares `memory: project`
+ *  or `memory: vault`, a MEMORY BLOCK (ledger write contract + context names
+ *  + fresh recall) is appended to the prompt — the §3.4 chokepoint. Undeclared
+ *  or `none` skills dispatch unchanged. Block composition is best-effort: a
+ *  memory failure never blocks the dispatch itself. */
 export async function dispatchSkillToRepo(opts: DispatchSkillToRepoOpts): Promise<string> {
   await installSkill(opts.skillName, opts.sourceProjectId ?? null, opts.targetProjectId, opts.overwrite ?? true);
-  return dispatchRowToFleet(opts.dispatchKey, opts.targetRoot, opts.prompt);
+  let prompt = opts.prompt;
+  try {
+    const binding = (await listSkills(opts.targetProjectId))
+      .find((s) => s.name === opts.skillName)?.memory;
+    if (binding === 'project' || binding === 'vault') {
+      prompt = `${prompt}\n\n${await composeMemoryBlock(opts.targetProjectId, binding)}`;
+    }
+  } catch (e) {
+    silentCatch('dispatchSkillToRepo memory block')(e);
+  }
+  return dispatchRowToFleet(opts.dispatchKey, opts.targetRoot, prompt);
 }
