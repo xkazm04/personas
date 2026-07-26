@@ -13086,7 +13086,8 @@
         "detail_prev": "الممارسة السابقة",
         "decide_adopted": "تم قبول القرار",
         "decide_deprecated": "تم إهمال القرار",
-        "decide_rejected": "تم رفض القرار"
+        "decide_rejected": "تم رفض القرار",
+        "detail_details": "تفاصيل"
       }
     },
     "doc_signing": {

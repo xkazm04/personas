@@ -7,6 +7,12 @@
 // `adopted` items get Roll out and Deprecate. Rejection is retained rather
 // than deleted — the miners dedup against it for 90 days, so a rejected
 // practice stops coming back.
+//
+// PROTOTYPING (temporary): this wrapper owns the state machine — decide(),
+// busy, keyboard stepping — and delegates PRESENTATION to one of three views
+// behind a throwaway tab strip. Every view gets identical props, so switching
+// can never change governance behaviour. The strip and the losing variants get
+// deleted at consolidation.
 import { useEffect, useState } from 'react';
 import { Check, X, Ban, Share2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -21,10 +27,16 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { KnowledgeStatusChip } from './centerShared';
+import { PracticeDetailDossier } from './PracticeDetailDossier';
+import { PracticeDetailLedger } from './PracticeDetailLedger';
+import type { PracticeNav, PracticeViewProps } from './practiceViewTypes';
+
+export type { PracticeNav } from './practiceViewTypes';
 
 /** Minimal markdown rendering: the evidence is authored by agents as markdown,
  *  but a full renderer is overkill here — headings, bullets, bold and inline
- *  code carry essentially all of it. */
+ *  code carry essentially all of it.
+ *  (Baseline only; both variants use the shared MarkdownRenderer instead.) */
 function Evidence({ md }: { md: string }) {
   const lines = md.split('\n');
   return (
@@ -79,16 +91,152 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** Position within the queue the modal was opened from, plus the stepper. The
- *  queue is the library's CURRENT visible ordering, snapshotted when the modal
- *  opens — see KnowledgeLibrary for why it is not recomputed on every change. */
-export interface PracticeNav {
-  /** 0-based index in the queue. */
-  index: number;
-  total: number;
-  /** Move by ±1; the parent clamps and closes past the end. */
-  onStep: (delta: -1 | 1) => void;
+/** The shipped layout, kept for A/B against the variants. */
+function PracticeDetailBaseline({
+  practice,
+  originLabel,
+  actorLabel,
+  busy,
+  pending,
+  adopted,
+  onDecide,
+  onRollout,
+  onClose,
+  nav,
+}: PracticeViewProps) {
+  const { t, tx } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
+
+  return (
+    <div className="flex flex-col max-h-[80vh]">
+      <div className="flex items-start gap-3 p-5 pb-3 border-b border-primary/10">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <KnowledgeStatusChip status={practice.status} />
+            <span className="typo-label text-muted-foreground">{practice.kind}</span>
+            {practice.evidence_count != null && practice.evidence_count > 1 && (
+              <span className="typo-label text-muted-foreground">
+                {tx(tw.detail_evidence_count, { count: practice.evidence_count })}
+              </span>
+            )}
+          </div>
+          <h2 id="practice-detail" className="typo-title text-foreground">
+            {practice.title}
+          </h2>
+        </div>
+
+        {nav && nav.total > 1 && (
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => nav.onStep(-1)}
+              disabled={busy || nav.index === 0}
+              aria-label={tw.detail_prev}
+              title={tw.detail_prev}
+              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="typo-caption text-muted-foreground tabular-nums whitespace-nowrap">
+              {tx(tw.detail_position, { index: nav.index + 1, total: nav.total })}
+            </span>
+            <button
+              type="button"
+              onClick={() => nav.onStep(1)}
+              disabled={busy || nav.index >= nav.total - 1}
+              aria-label={tw.detail_next}
+              title={tw.detail_next}
+              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+        <p className="typo-body-lg text-foreground">{practice.statement}</p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-card border border-primary/10 p-3">
+          <Meta label={tw.col_topic}>{practice.topic || '—'}</Meta>
+          <Meta label={tw.col_origin}>{originLabel}</Meta>
+          <Meta label={tw.col_altitude}>
+            {practice.abstraction ?? '—'}
+            {practice.ftype ? ` · ${practice.ftype}` : ''}
+          </Meta>
+          <Meta label={tw.col_confidence}>
+            {practice.confidence == null ? '—' : `${Math.round(practice.confidence * 100)}%`}
+          </Meta>
+          <Meta label={tw.detail_source}>{actorLabel ?? '—'}</Meta>
+          <Meta label={tw.detail_durability}>{practice.durability ?? '—'}</Meta>
+          <Meta label={tw.col_updated}>
+            <RelativeTime timestamp={practice.updated_at} />
+          </Meta>
+          {practice.decided_at && (
+            <Meta label={tw.detail_decided}>
+              <RelativeTime timestamp={practice.decided_at} />
+            </Meta>
+          )}
+        </div>
+
+        {practice.detail_md?.trim() && (
+          <div>
+            <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
+              {tw.detail_evidence}
+            </div>
+            <Evidence md={practice.detail_md} />
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 p-4 border-t border-primary/10">
+        {pending && (
+          <>
+            <Button onClick={() => onDecide('adopt')} disabled={busy} icon={<Check className="w-4 h-4" />} className="whitespace-nowrap">
+              {tw.decide_adopt}
+            </Button>
+            <Button variant="ghost" onClick={() => onDecide('reject')} disabled={busy} icon={<X className="w-4 h-4" />} className="whitespace-nowrap">
+              {tw.decide_reject}
+            </Button>
+            <span className="typo-caption text-muted-foreground ml-1 hidden lg:inline">
+              {tw.decide_reject_hint}
+            </span>
+          </>
+        )}
+        {adopted && (
+          <>
+            {onRollout && (
+              <Button onClick={onRollout} disabled={busy} icon={<Share2 className="w-4 h-4" />} iconRight={<ExternalLink className="w-3 h-3 opacity-60" />} className="whitespace-nowrap">
+                {tw.rollout_dispatch}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => onDecide('deprecate')} disabled={busy} icon={<Ban className="w-4 h-4" />} className="whitespace-nowrap">
+              {tw.decide_deprecate}
+            </Button>
+          </>
+        )}
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          {nav && nav.total > 1 && (
+            <span className="typo-caption text-muted-foreground hidden md:inline whitespace-nowrap">
+              {tw.detail_nav_hint}
+            </span>
+          )}
+          <Button variant="ghost" onClick={onClose} className="whitespace-nowrap">
+            {t.common.close}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+// -- throwaway prototyping scaffold ------------------------------------------
+
+const VARIANTS = [
+  { id: 'baseline', label: 'Baseline', hint: 'shipped layout', View: PracticeDetailBaseline },
+  { id: 'dossier', label: 'Dossier', hint: 'one column · type + rules carry hierarchy', View: PracticeDetailDossier },
+  { id: 'ledger', label: 'Ledger', hint: 'prose left · facts + actions in the margin', View: PracticeDetailLedger },
+] as const;
 
 export function PracticeDetailModal({
   practice,
@@ -107,22 +255,20 @@ export function PracticeDetailModal({
   /** Absent when the practice was opened outside a list (no queue to walk). */
   nav?: PracticeNav;
 }) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
   const addToast = useToastStore((s) => s.addToast);
   const [busy, setBusy] = useState(false);
+  const [variant, setVariant] = useState<(typeof VARIANTS)[number]['id']>('dossier');
 
   const decide = async (decision: 'adopt' | 'reject' | 'deprecate') => {
     setBusy(true);
     try {
       await decideWorkspaceKnowledge(practice.id, decision);
       addToast(
-        tx(
-          decision === 'adopt' ? tw.decide_adopted
-            : decision === 'reject' ? tw.decide_rejected
-              : tw.decide_deprecated,
-          { title: practice.title },
-        ),
+        decision === 'adopt' ? tw.decide_adopted
+          : decision === 'reject' ? tw.decide_rejected
+            : tw.decide_deprecated,
         decision === 'adopt' ? 'success' : 'warning',
       );
       onChanged();
@@ -156,10 +302,10 @@ export function PracticeDetailModal({
     return () => window.removeEventListener('keydown', onKey);
   }, [nav, busy]);
 
-  const origin = practice.origin_project_id
+  const originLabel = practice.origin_project_id
     ? projectById.get(practice.origin_project_id)?.name ?? tw.origin_removed
     : tw.origin_workspace;
-  const actor = (() => {
+  const actorLabel = (() => {
     try {
       return practice.provenance
         ? (JSON.parse(practice.provenance) as { actor_kind?: string }).actor_kind ?? null
@@ -169,159 +315,46 @@ export function PracticeDetailModal({
     }
   })();
 
-  const pending = practice.status === 'observed' || practice.status === 'proposed';
-  const adopted = practice.status === 'adopted';
+  const viewProps: PracticeViewProps = {
+    practice,
+    projectById,
+    originLabel,
+    actorLabel,
+    busy,
+    pending: practice.status === 'observed' || practice.status === 'proposed',
+    adopted: practice.status === 'adopted',
+    onDecide: decide,
+    onRollout: onRollout ? () => { onRollout(practice); onClose(); } : undefined,
+    onClose,
+    nav,
+  };
+
+  const Active = VARIANTS.find((v) => v.id === variant)?.View ?? PracticeDetailBaseline;
 
   // size="xl", not "lg": at max-w-3xl the governance buttons wrapped onto a
   // second row and split their own icon from their label.
   return (
     <BaseModal isOpen onClose={onClose} titleId="practice-detail" size="xl" staggerChildren={false}>
-      <div className="flex flex-col max-h-[80vh]">
-        <div className="flex items-start gap-3 p-5 pb-3 border-b border-primary/10">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <KnowledgeStatusChip status={practice.status} />
-              <span className="typo-label text-muted-foreground">{practice.kind}</span>
-              {practice.evidence_count != null && practice.evidence_count > 1 && (
-                <span className="typo-label text-muted-foreground">
-                  {tx(tw.detail_evidence_count, { count: practice.evidence_count })}
-                </span>
-              )}
-            </div>
-            <h2 id="practice-detail" className="typo-title text-foreground">
-              {practice.title}
-            </h2>
-          </div>
-
-          {nav && nav.total > 1 && (
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => nav.onStep(-1)}
-                disabled={busy || nav.index === 0}
-                aria-label={tw.detail_prev}
-                title={tw.detail_prev}
-                className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="typo-caption text-muted-foreground tabular-nums whitespace-nowrap">
-                {tx(tw.detail_position, { index: nav.index + 1, total: nav.total })}
-              </span>
-              <button
-                type="button"
-                onClick={() => nav.onStep(1)}
-                disabled={busy || nav.index >= nav.total - 1}
-                aria-label={tw.detail_next}
-                title={tw.detail_next}
-                className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
-          <p className="typo-body-lg text-foreground">{practice.statement}</p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-card border border-primary/10 p-3">
-            <Meta label={tw.col_topic}>{practice.topic || '—'}</Meta>
-            <Meta label={tw.col_origin}>{origin}</Meta>
-            <Meta label={tw.col_altitude}>
-              {practice.abstraction ?? '—'}
-              {practice.ftype ? ` · ${practice.ftype}` : ''}
-            </Meta>
-            <Meta label={tw.col_confidence}>
-              {practice.confidence == null ? '—' : `${Math.round(practice.confidence * 100)}%`}
-            </Meta>
-            <Meta label={tw.detail_source}>{actor ?? '—'}</Meta>
-            <Meta label={tw.detail_durability}>{practice.durability ?? '—'}</Meta>
-            <Meta label={tw.col_updated}>
-              <RelativeTime timestamp={practice.updated_at} />
-            </Meta>
-            {practice.decided_at && (
-              <Meta label={tw.detail_decided}>
-                <RelativeTime timestamp={practice.decided_at} />
-              </Meta>
-            )}
-          </div>
-
-          {practice.detail_md?.trim() && (
-            <div>
-              <div className="typo-label text-muted-foreground uppercase tracking-wide mb-2">
-                {tw.detail_evidence}
-              </div>
-              <Evidence md={practice.detail_md} />
-            </div>
-          )}
-        </div>
-
-        {/* Icons go through Button's `icon` prop, NOT children. Passing both as
-            children puts them inside one <span>, where they reflow as inline
-            content — that is what split each button across two rows. The prop
-            renders them as separate flex items with the size's own gap. */}
-        <div className="flex items-center gap-2 p-4 border-t border-primary/10">
-          {pending && (
-            <>
-              <Button
-                onClick={() => decide('adopt')}
-                disabled={busy}
-                icon={<Check className="w-4 h-4" />}
-                className="whitespace-nowrap"
-              >
-                {tw.decide_adopt}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => decide('reject')}
-                disabled={busy}
-                icon={<X className="w-4 h-4" />}
-                className="whitespace-nowrap"
-              >
-                {tw.decide_reject}
-              </Button>
-              <span className="typo-caption text-muted-foreground ml-1 hidden lg:inline">
-                {tw.decide_reject_hint}
-              </span>
-            </>
-          )}
-          {adopted && (
-            <>
-              {onRollout && (
-                <Button
-                  onClick={() => { onRollout(practice); onClose(); }}
-                  disabled={busy}
-                  icon={<Share2 className="w-4 h-4" />}
-                  iconRight={<ExternalLink className="w-3 h-3 opacity-60" />}
-                  className="whitespace-nowrap"
-                >
-                  {tw.rollout_dispatch}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                onClick={() => decide('deprecate')}
-                disabled={busy}
-                icon={<Ban className="w-4 h-4" />}
-                className="whitespace-nowrap"
-              >
-                {tw.decide_deprecate}
-              </Button>
-            </>
-          )}
-          <div className="ml-auto flex items-center gap-2 shrink-0">
-            {nav && nav.total > 1 && (
-              <span className="typo-caption text-muted-foreground hidden md:inline whitespace-nowrap">
-                {tw.detail_nav_hint}
-              </span>
-            )}
-            <Button variant="ghost" onClick={onClose} className="whitespace-nowrap">
-              {t.common.close}
-            </Button>
-          </div>
-        </div>
+      {/* Throwaway A/B strip — dashed border marks it as scaffolding, not
+          product chrome. Deleted at consolidation, so it stays un-i18n'd. */}
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-dashed border-primary/20 bg-secondary/20">
+        {VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVariant(v.id)}
+            title={v.hint}
+            className={`typo-caption px-2 py-0.5 rounded-interactive transition-colors ${
+              variant === v.id
+                ? 'bg-primary/15 text-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
       </div>
+      <Active {...viewProps} />
     </BaseModal>
   );
 }

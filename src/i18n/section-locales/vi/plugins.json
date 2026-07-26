@@ -1257,7 +1257,8 @@
       "detail_prev": "Thực hành trước",
       "decide_adopted": "Đã chấp nhận",
       "decide_deprecated": "Đã ngừng dùng",
-      "decide_rejected": "Đã từ chối"
+      "decide_rejected": "Đã từ chối",
+      "detail_details": "Chi tiết"
     }
   },
   "doc_signing": {

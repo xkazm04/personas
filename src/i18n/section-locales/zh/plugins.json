@@ -1257,7 +1257,8 @@
       "detail_prev": "上一项实践",
       "decide_adopted": "决定已采纳",
       "decide_deprecated": "决定已废弃",
-      "decide_rejected": "决定已拒绝"
+      "decide_rejected": "决定已拒绝",
+      "detail_details": "详情"
     }
   },
   "doc_signing": {

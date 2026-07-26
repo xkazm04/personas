@@ -13086,7 +13086,8 @@
         "detail_prev": "पिछली प्रथा",
         "decide_adopted": "निर्णय स्वीकृत",
         "decide_deprecated": "निर्णय वापस लिया",
-        "decide_rejected": "निर्णय अस्वीकृत"
+        "decide_rejected": "निर्णय अस्वीकृत",
+        "detail_details": "विवरण"
       }
     },
     "doc_signing": {

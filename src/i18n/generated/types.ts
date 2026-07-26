@@ -13362,6 +13362,7 @@ export type Translations = {
         detail_next: string;
         detail_position: string;
         detail_nav_hint: string;
+        detail_details: string;
       };
     };
     doc_signing: {

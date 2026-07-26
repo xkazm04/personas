@@ -13086,7 +13086,8 @@
         "detail_prev": "Předchozí postup",
         "decide_adopted": "Rozhodnutí přijato",
         "decide_deprecated": "Rozhodnutí zrušeno",
-        "decide_rejected": "Rozhodnutí zamítnuto"
+        "decide_rejected": "Rozhodnutí zamítnuto",
+        "detail_details": "Podrobnosti"
       }
     },
     "doc_signing": {

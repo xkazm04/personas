@@ -13086,7 +13086,8 @@
         "detail_prev": "Pratique précédente",
         "decide_adopted": "Décision acceptée",
         "decide_deprecated": "Décision retirée",
-        "decide_rejected": "Décision rejetée"
+        "decide_rejected": "Décision rejetée",
+        "detail_details": "Détails"
       }
     },
     "doc_signing": {

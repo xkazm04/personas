@@ -13086,7 +13086,8 @@
         "detail_prev": "Предыдущая практика",
         "decide_adopted": "Решение принято",
         "decide_deprecated": "Решение отозвано",
-        "decide_rejected": "Решение отклонено"
+        "decide_rejected": "Решение отклонено",
+        "detail_details": "Детали"
       }
     },
     "doc_signing": {
