@@ -1,15 +1,16 @@
-// Skills Manager board — the FUSED design (prototype round 2): Exchange's
-// panel containers wrap Registry's space-efficient rows.
-//   · panels: rounded-card border, title band with count, footer 30d note
-//   · rows: thin divider-separated, hover-revealed Adopt/Share actions
+// Skills Manager board — the consolidated design (prototype fusion): panel
+// containers (title band + count + footer note) wrapping space-efficient
+// divider rows.
 //   · grouping: visual divider rows with the group name (left: category;
 //     right: context-tracked vs standard) — never stated per row
 //   · sortable column headers (Skill / Usage) per panel, sorting WITHIN groups
 //     so the functional grouping survives a usage sort
-//   · installed = icon (CheckCircle2), usage terse (`12×`), "/30d" lives once
-//     in the footer
+//   · installed = icon, usage terse (`12×`), the 30-day window lives once in
+//     each panel footer
 import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpFromLine, CheckCircle2 } from 'lucide-react';
+
+import { useTranslation } from '@/i18n/useTranslation';
 
 import type { SkillsManagerVariantProps, ProjRow, WsRow } from './SkillsManagerPage';
 import { CoverageBar, MemoryBindingButton, UsageLine } from './skillsManagerBits';
@@ -52,7 +53,7 @@ function Panel({ title, count, header, footer, children }: {
   );
 }
 
-function SortHeaders({ sort }: { sort: ReturnType<typeof useSort> }) {
+function SortHeaders({ sort, skillLabel, usageLabel }: { sort: ReturnType<typeof useSort>; skillLabel: string; usageLabel: string }) {
   const Head = ({ k, label, alignEnd }: { k: SortKey; label: string; alignEnd?: boolean }) => {
     const on = sort.key === k;
     const Icon = sort.dir === 'asc' ? ArrowUp : ArrowDown;
@@ -70,8 +71,8 @@ function SortHeaders({ sort }: { sort: ReturnType<typeof useSort> }) {
   };
   return (
     <div className="flex items-center px-3 py-1.5 border-b border-primary/10 flex-shrink-0">
-      <Head k="name" label="Skill" />
-      <Head k="usage" label="Usage" alignEnd />
+      <Head k="name" label={skillLabel} />
+      <Head k="usage" label={usageLabel} alignEnd />
     </div>
   );
 }
@@ -87,6 +88,7 @@ function GroupDivider({ children }: { children: React.ReactNode }) {
 }
 
 export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, onAdopt, onShare, onSwitchMemory, onOpenContexts }: SkillsManagerVariantProps) {
+  const { t, tx } = useTranslation();
   const wsSort = useSort();
   const projSort = useSort();
 
@@ -113,9 +115,16 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     [proj, projSort.key, projSort.dir],
   );
 
+  const d = t.plugins.dev_tools;
+
   return (
     <div className="grid grid-cols-2 gap-4 h-full min-h-0">
-      <Panel title="Workspace library" count={ws.length} header={<SortHeaders sort={wsSort} />} footer="Usage: last 30 days">
+      <Panel
+        title={d.skills_workspace_library}
+        count={ws.length}
+        header={<SortHeaders sort={wsSort} skillLabel={d.skills_sort_skill} usageLabel={d.skills_sort_usage} />}
+        footer={d.skills_footer_usage}
+      >
         {wsGroups.map(([cat, rows]) => (
           <div key={cat}>
             <GroupDivider>{cat}</GroupDivider>
@@ -124,8 +133,8 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
                 <li key={entry.name} className="group flex items-center gap-2 py-2 border-b border-foreground/[0.08] last:border-b-0">
                   <span className={`typo-caption font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
                   {installed && (
-                    <span title={`Installed in ${projectName}`} className="flex-shrink-0 inline-flex">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={`Installed in ${projectName}`} />
+                    <span title={tx(d.skills_installed_in, { name: projectName })} className="flex-shrink-0 inline-flex">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
                     </span>
                   )}
                   <span className="ml-auto flex items-center gap-2 flex-shrink-0">
@@ -135,12 +144,12 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
                         type="button"
                         onClick={() => onAdopt(entry.name)}
                         disabled={busy}
-                        title={`Adopt into ${projectName} — Claude customizes it for the repo`}
+                        title={tx(d.skills_adopt_hint, { name: projectName })}
                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-label text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/10 border border-primary/25 transition-all disabled:opacity-30"
                         data-testid={`skills-manager-adopt-${entry.name}`}
                       >
                         <ArrowDownToLine className="w-3 h-3" aria-hidden />
-                        Adopt
+                        {d.skills_adopt}
                       </button>
                     )}
                   </span>
@@ -149,13 +158,18 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
             </ul>
           </div>
         ))}
-        {ws.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">The workspace library is empty — share a project skill to seed it.</p>}
+        {ws.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_ws_empty}</p>}
       </Panel>
 
-      <Panel title={projectName || 'Project'} count={proj.length} header={<SortHeaders sort={projSort} />} footer="Usage · coverage: last 30 days">
+      <Panel
+        title={projectName || d.skills_project_fallback}
+        count={proj.length}
+        header={<SortHeaders sort={projSort} skillLabel={d.skills_sort_skill} usageLabel={d.skills_sort_usage} />}
+        footer={d.skills_footer_usage_coverage}
+      >
         {tracked.length > 0 && (
           <>
-            <GroupDivider>Context-tracked</GroupDivider>
+            <GroupDivider>{d.skills_group_tracked}</GroupDivider>
             <ul>
               {tracked.map((r) => (
                 <li key={r.entry.name}>
@@ -177,7 +191,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         )}
         {plain.length > 0 && (
           <>
-            <GroupDivider>Standard</GroupDivider>
+            <GroupDivider>{d.skills_group_standard}</GroupDivider>
             <ul>
               {plain.map((r) => (
                 <li key={r.entry.name} className="group flex items-center gap-2 py-2 border-b border-foreground/[0.08] last:border-b-0 px-1 -mx-1">
@@ -189,13 +203,14 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
             </ul>
           </>
         )}
-        {proj.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">No skills installed — adopt one from the library.</p>}
+        {proj.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_proj_empty}</p>}
       </Panel>
     </div>
   );
 }
 
 function RowTail({ row, busy, onShare }: { row: ProjRow; busy: boolean; onShare: (n: string) => void }) {
+  const { t } = useTranslation();
   return (
     <span className="ml-auto flex items-center gap-2 flex-shrink-0">
       {row.usage && <UsageLine invokes30d={row.usage.invokes_30d} lastInvokedAt={row.usage.last_invoked_at} />}
@@ -204,12 +219,12 @@ function RowTail({ row, busy, onShare }: { row: ProjRow; busy: boolean; onShare:
           type="button"
           onClick={(e) => { e.stopPropagation(); onShare(row.entry.name); }}
           disabled={busy}
-          title="Share to the workspace library — Claude generalizes it"
+          title={t.plugins.dev_tools.skills_share_hint}
           className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-label text-primary opacity-0 group-hover:opacity-100 hover:bg-primary/10 border border-primary/25 transition-all disabled:opacity-30"
           data-testid={`skills-manager-share-${row.entry.name}`}
         >
           <ArrowUpFromLine className="w-3 h-3" aria-hidden />
-          Share
+          {t.plugins.dev_tools.skills_share}
         </button>
       )}
     </span>

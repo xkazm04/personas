@@ -15,6 +15,7 @@ import {
 import { useSkillsWorkbench, type SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type MemoryBinding = 'project' | 'vault' | 'none';
 
@@ -76,6 +77,7 @@ async function patchMemoryFrontmatter(skillName: string, projectId: string | nul
 }
 
 export function useSkillsManagerData(activeProjectId: string | null): SkillsManagerData {
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const wb = useSkillsWorkbench(activeProjectId ?? '');
   const [workspaceSkills, setWorkspaceSkills] = useState<SkillEntry[]>([]);
@@ -138,15 +140,18 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
   );
 
   const switchMemory = useCallback(async (skillName: string, projectId: string | null, next: MemoryBinding) => {
+    const target = next === 'project'
+      ? t.plugins.dev_tools.skills_memory_internal
+      : next === 'vault' ? t.plugins.dev_tools.skills_memory_vault : t.plugins.dev_tools.skills_memory_none;
     try {
       await patchMemoryFrontmatter(skillName, projectId, next);
-      addToast(`“${skillName}” memory → ${next === 'project' ? 'internal' : next === 'vault' ? 'Obsidian' : 'none'}`, 'success');
-      setRefreshTick((t) => t + 1);
+      addToast(tx(t.plugins.dev_tools.skills_memory_toast, { name: skillName, target }), 'success');
+      setRefreshTick((n) => n + 1);
     } catch (e) {
-      addToast('Couldn’t update the skill’s memory binding', 'error');
+      addToast(t.plugins.dev_tools.skills_memory_error, 'error');
       silentCatch('skillsManager memory switch')(e);
     }
-  }, [addToast]);
+  }, [addToast, t, tx]);
 
   return { wb, workspaceSkills, projectSkills, installedNames, coverageBySkill, usageGlobal, usageProject, totalContexts, switchMemory, refreshTick };
 }

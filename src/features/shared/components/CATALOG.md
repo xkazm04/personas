@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**121 reusable components** live under `src/features/shared/components/`.
+**120 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -92,7 +92,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
 | `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
-| `LoadingReveal` | LoadingReveal — flash-free loading gate: renders content, cross-fading a calm placeholder in only for slow loads (never for fast/c |
 | `LoadingSpinner` | Canonical loading spinner with size + a11y label. Use for any full-element loading state. |
 | `Reveal` | Reveal — fade (+ subtle slide-up) a block of content in on mount; the canonical "content arrived" reveal for the golden loading pa |
 | `ScenarioEmptyState` | _(add a `@catalog` tag)_ |
@@ -195,4 +194,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_121 components, 43 without a `@catalog` description._
+_120 components, 43 without a `@catalog` description._

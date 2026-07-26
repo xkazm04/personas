@@ -3,18 +3,21 @@
 // machinery, transcript-mined usage, memory bindings and the Memory Ledger's
 // per-skill context coverage (docs/plans/skill-memory-unification.md).
 //
-// Layout (prototype round 2 fusion): Exchange's panel containers wrapping
-// Registry's space-efficient rows — see SkillsManagerBoard.
+// Project selection = the app-wide ACTIVE PROJECT via the shared
+// LifecycleProjectPicker (the same picker every dev-tools/teams page header
+// uses), so switching here switches everywhere. Layout: SkillsManagerBoard
+// (prototype fusion — Exchange panels × Registry rows).
 import { useMemo, useState } from 'react';
 
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools/devTools';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
+import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
@@ -52,40 +55,31 @@ export interface SkillsManagerVariantProps {
 }
 
 export default function SkillsManagerPage() {
+  const { t } = useTranslation();
   // Same provider composition as Mastermind: passports feed the improve
   // engine, which owns the adopt/share Dev-runner ops the workbench reuses.
   const { rawByProject, loading, reload } = usePassportData();
   const improve = useImproveEngine(rawByProject, reload);
-  const storeActiveId = useSystemStore((s) => s.activeProjectId);
-  const projectIds = useMemo(() => [...rawByProject.keys()], [rawByProject]);
-  const [pickedId, setPickedId] = useState<string | null>(null);
-  const activeId = pickedId ?? (storeActiveId && projectIds.includes(storeActiveId) ? storeActiveId : projectIds[0] ?? null);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
   return (
     <ImproveProvider value={improve}>
-      {loading && projectIds.length === 0 ? (
-        <div className="py-16"><LoadingSpinner label="Loading projects…" /></div>
+      {loading && rawByProject.size === 0 ? (
+        <div className="py-16"><LoadingSpinner label={t.plugins.dev_tools.skills_loading} /></div>
       ) : (
-        <SkillsManagerInner
-          key={activeId ?? 'none'}
-          activeId={activeId}
-          projectOptions={projectIds.map((id) => ({ value: id, label: rawByProject.get(id)?.project.name ?? id }))}
-          onPickProject={setPickedId}
-        />
+        <SkillsManagerInner key={activeProjectId ?? 'none'} activeId={activeProjectId} />
       )}
     </ImproveProvider>
   );
 }
 
-function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
-  activeId: string | null;
-  projectOptions: Array<{ value: string; label: string }>;
-  onPickProject: (id: string) => void;
-}) {
+function SkillsManagerInner({ activeId }: { activeId: string | null }) {
+  const { t } = useTranslation();
+  const projects = useSystemStore((s) => s.projects);
   const data = useSkillsManagerData(activeId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
 
-  const projectName = projectOptions.find((o) => o.value === activeId)?.label ?? '';
+  const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
 
   const ws: WsRow[] = useMemo(
     () => data.workspaceSkills.map((entry) => ({
@@ -115,19 +109,10 @@ function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
-      {/* toolbar — project switcher */}
+      {/* toolbar — the shared active-project picker */}
       <div className="flex items-center gap-3 py-3 flex-shrink-0">
-        <span className="typo-title">Skills</span>
-        <div className="w-56">
-          <ThemedSelect
-            value={activeId ?? ''}
-            options={projectOptions}
-            onValueChange={onPickProject}
-            filterable
-            hideSearch
-            aria-label="Active project"
-          />
-        </div>
+        <span className="typo-title">{t.plugins.dev_tools.skills_title}</span>
+        <LifecycleProjectPicker />
       </div>
 
       <div className="flex-1 min-h-0">
@@ -139,7 +124,7 @@ function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
           projectName={projectName}
           onAdopt={(name) => { void data.wb?.runAdopt(name); }}
           onShare={(name) => { void data.wb?.runShare(name); }}
-          onSwitchMemory={(skillName, next) => { void data.switchMemory(skillName, activeId, next); }}
+          onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
           onOpenContexts={setContextsSkill}
         />
       </div>

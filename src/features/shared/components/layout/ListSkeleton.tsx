@@ -8,8 +8,9 @@
  * Placeholder bars use the same `bg-primary/10 animate-pulse` treatment as
  * `ContentHeaderSkeleton` so the two read as one loading surface. Pass `calm`
  * for the golden loading pattern (`docs/design/overview-loading.md`): a static,
- * lower-contrast placeholder with NO pulse, so it can cross-fade to content
- * (via `LoadingReveal`) without the pulse animation drawing the eye / blinking.
+ * lower-contrast placeholder with NO pulse. Per pattern v2 this belongs ONLY
+ * inside delay-hidden Suspense fallbacks (§D) — never as a data-fetch gate
+ * around primary content (build a module-local delayed ghost instead).
  */
 interface ListSkeletonProps {
   /** Number of placeholder rows. Default 8. */
