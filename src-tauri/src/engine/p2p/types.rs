@@ -6,6 +6,7 @@ use ts_rs::TS;
 /// Network configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkConfig {
     pub port: u16,
     pub auto_connect: bool,

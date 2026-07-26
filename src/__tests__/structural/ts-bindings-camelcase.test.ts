@@ -4,11 +4,11 @@
  * binding it generates presents camelCase to the frontend like the rest of the
  * codebase. A struct without it leaks Rust's snake_case across the IPC boundary.
  *
- * 312 structs (of 804 exported) predate the rule and are baselined below,
+ * 304 structs (of 804 exported) predate the rule and are baselined below,
  * grouped by file so each shrink is reviewable in a diff. **The baseline may only
  * SHRINK.** Two assertions enforce that:
  *   1. a NEW exported struct without the rename fails the day it is written —
- *      that is the drift mechanism which produced the 312;
+ *      that is the drift mechanism which produced the 304;
  *   2. a baseline entry that gained the rename (or was deleted) must be removed
  *      from the list, so the ratchet cannot silently go slack.
  *
@@ -283,8 +283,8 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'ApiProxyResponse',
   ],
   'src-tauri/src/engine/bundle.rs': [
-    'BundleExportResult', 'BundleImportOptions', 'BundleImportPreview', 'BundleImportResult',
-    'BundleResourcePreview', 'BundleVerification', 'NetworkAccessScope',
+    'BundleExportResult', 'BundleImportOptions', 'BundleImportPreview', 'BundleResourcePreview',
+    'BundleVerification', 'NetworkAccessScope',
   ],
   'src-tauri/src/engine/byom.rs': [
     'ByomPolicy', 'ComplianceRule', 'ProviderAuditEntry', 'RoutingRule',
@@ -299,7 +299,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'FeasibilityResult',
   ],
   'src-tauri/src/engine/desktop_discovery.rs': [
-    'DiscoveredApp', 'ImportedMcpServer',
+    'DiscoveredApp',
   ],
   'src-tauri/src/engine/desktop_security.rs': [
     'DesktopConnectorManifest',
@@ -308,7 +308,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'DryRunReport', 'DryRunTool',
   ],
   'src-tauri/src/engine/mcp_tools.rs': [
-    'McpTool', 'McpToolContent', 'McpToolResult', 'PingResult',
+    'McpTool', 'McpToolContent', 'McpToolResult',
   ],
   'src-tauri/src/engine/optimizer.rs': [
     'NodeAnalytics', 'PipelineAnalytics', 'TopologySuggestion',
@@ -317,7 +317,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'AgentEnvelope',
   ],
   'src-tauri/src/engine/p2p/types.rs': [
-    'DiscoveredPeer', 'NetworkConfig', 'NetworkStatusInfo', 'PeerManifestEntry',
+    'DiscoveredPeer', 'NetworkStatusInfo', 'PeerManifestEntry',
   ],
   'src-tauri/src/engine/pairing.rs': [
     'PendingPairingView',
@@ -328,9 +328,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/engine/recipe_matcher.rs': [
     'RecipeMatch',
   ],
-  'src-tauri/src/engine/resource_listing.rs': [
-    'ResourceItem',
-  ],
   'src-tauri/src/engine/rotation.rs': [
     'AnomalyScore', 'RotationStatus',
   ],
@@ -340,14 +337,11 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/engine/test_runner.rs': [
     'MockToolResponse', 'TestRunStatusEvent', 'TestScenario', 'TestScores',
   ],
-  'src-tauri/src/engine/tier.rs': [
-    'TierConfig',
-  ],
   'src-tauri/src/engine/tool_runner.rs': [
     'ToolInvocationResult', 'ToolTestResult',
   ],
   'src-tauri/src/engine/topology_types.rs': [
-    'BlueprintConnection', 'BlueprintMember', 'TopologyBlueprint',
+    'BlueprintConnection', 'BlueprintMember',
   ],
   'src-tauri/src/engine/trace.rs': [
     'ExecutionTrace', 'TraceSpan',
@@ -359,7 +353,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'ProjectionResult',
   ],
   'src-tauri/src/logging.rs': [
-    'CrashLogEntry', 'LogDirectoryStats',
+    'LogDirectoryStats',
   ],
 };
 
