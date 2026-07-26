@@ -1,7 +1,8 @@
 ---
 name: kpi-sim
+contexts: tracked
 category: Data
-memory: none
+memory: project
 description: KPI Simulation — measure a project's KPIs locally, simulate user behavior with UAT-style Characters, and predict real-world targets from web benchmarks, writing a result.json the Personas app ingests into its KPI module (env-tagged simulated series + proposal-gated adjustments). Engine doctrine mirrors src/features/teams/sub_kpis/kpiSimPrompt.ts — the app dispatches the same contract into managed repos as a Fleet Dev-runner session, so most target repos never need this skill installed. Invoke with `/kpi-sim run [--l2] [--kpi <id>] [--project-root <path>]` or `/kpi-sim predict`.
 ---
 
@@ -89,3 +90,13 @@ Task/Agent tool (sonnet-class; keep synthesis in this session), run class-1
 commands and class-2 walks. Before finishing: adversarially re-check
 result.json — delete any value you cannot trace to evidence, validate it
 parses, print measurements/proposals/findings counts.
+
+## App context coverage (Personas-managed repos)
+
+This skill declares `contexts: tracked` — the Personas app measures per-context memory coverage for it. When run inside a Personas-managed repo (a `.personas/` dir exists, or the app dispatched this run), before finishing append JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) — one node per context you meaningfully worked on:
+
+```json
+{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from context-map.json>","skill":"kpi-sim"}
+```
+
+Always set both `"skill":"kpi-sim"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). The app ingests and deletes the file when the session ends. Skip silently when not Personas-managed.

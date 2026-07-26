@@ -1,5 +1,7 @@
 ---
 name: tiger
+memory: vault
+category: Testing
 description: Hunts the highest-value surface of an LLM-powered app — the LLM call sites themselves — and drives them to their potential across three lenses. (1) Code quality of the AI plumbing (wrapping/chokepoint, logging/telemetry, caching/dedupe, schema+validation+self-repair). (2) Business value, by reusing the UAT Character method (representative users with jobs-to-be-done + a senior-quality bar + time-saved) but TESTING ONLY THE LLM PIECES — does each prompt's grounding and output clear the bar. (3) Model optimization as an alternative scenario — benchmark the same character inputs across models × thinking levels to find quality degradation/upgrade vs cost/latency. Everything is memorized in a linked **Obsidian vault** (one note per call site / character / model / session) so each scan builds on the last. Stack-agnostic engine; per-app specifics live in the repo's `tiger/` overlay (which IS the vault). Invoke with `/tiger init|scan|run|benchmark|recall|backlog [args]`.
 ---
 

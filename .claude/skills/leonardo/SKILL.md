@@ -1,5 +1,7 @@
 ---
 name: leonardo
+memory: none
+category: Development
 description: Generate images with OpenAI gpt-image-2 (primary) or Leonardo AI (fallback), remove backgrounds, analyze with Gemini vision, and write SVG. For brand assets, UI illustrations, backgrounds, and icons.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(node *), Bash(npx *)
 argument-hint: <description of visual asset to create>

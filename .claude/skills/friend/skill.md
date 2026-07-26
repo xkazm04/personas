@@ -1,3 +1,10 @@
+---
+name: friend
+description: Endless single-area companion loop: scan → propose 5 development directions → user picks a number → execute with repo conventions → repeat. Momentum-first, parallel-session UX/product building, scoped to one context.
+category: Development
+memory: vault
+contexts: tracked
+---
 # Friend
 
 Endless companion loop scoped to one area of the personas codebase. Each cycle: scan → propose **5 development directions** → user picks a number → execute with repo conventions → report → propose 5 new directions. Designed for **parallel CLI sessions** where the user wants to keep adding UX / product value to a corner of the codebase with the least typing possible.
@@ -702,3 +709,13 @@ EXIT (stop word / interrupt / context wrap):
               → pattern-promotion check → ledger → exit summary
               (worktree + branch left intact for user merge)
 ```
+
+## App context coverage (Personas-managed repos)
+
+This skill declares `contexts: tracked` — the Personas app measures per-context memory coverage for it. When run inside a Personas-managed repo (a `.personas/` dir exists, or the app dispatched this run), before finishing append JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) — one node per context you meaningfully worked on:
+
+```json
+{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from context-map.json>","skill":"friend"}
+```
+
+Always set both `"skill":"friend"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). The app ingests and deletes the file when the session ends. Skip silently when not Personas-managed.

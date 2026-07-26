@@ -1,5 +1,7 @@
 ---
 name: motionize
+memory: none
+category: Development
 description: Upgrade a generic UI icon or loading/empty state into a traced, motion-animated SVG. Generates flat trace-friendly art (via /leonardo tools), validates with Qwen vision, vectorizes to a clean multi-path SVG, and emits a motion reveal component driven by the shared motion-preset library (draw, staggered-draw, fade-pop, float, pulse, hover-response, success-settle). For icon + loading-state visual upgrades — NOT raw image generation (use /leonardo for that).
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(node *), Bash(npx *), Bash(cd *)
 argument-hint: <UI surface to upgrade, e.g. "teams empty state icon">

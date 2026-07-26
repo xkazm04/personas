@@ -1,5 +1,7 @@
 ---
 name: uat
+memory: none
+category: Testing
 description: Simulated User Acceptance Testing for the Personas desktop app, driven by Characters (representative users with jobs-to-be-done) rather than feature/code coverage. A capable LLM verifies each user journey in two chronological certification levels — L1 theoretical (over a code-derived surface model, cheap + mass-parallel) then L2 empirical (the LIVE app driven through the test-automation harness, serial) — judging through each Character's own consistent lens (time saved vs the manual way, and senior-in-role quality). Personas-specific: L1 reads context-map.json + the React/Rust source; L2 drives the running app via the test-automation server on :17320 (NOT a browser). Per-run specifics live in the repo's uat/ overlay. Invoke with `/uat init|update|run|promote [args]`.
 ---
 
