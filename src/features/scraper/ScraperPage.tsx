@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import type { ScraperConfig } from '@/api/scraper';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 import { ScrapeEditorModal } from './ScrapeEditorModal';
 import { ScraperControlRoom } from './ScraperControlRoom';
@@ -22,17 +21,15 @@ export default function ScraperPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl px-8 py-6">
-        {data.loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <LoadingSpinner label="Loading scrapes" />
-          </div>
-        ) : (
-          <ScraperControlRoom
-            data={data}
-            onNew={() => setEditing('new')}
-            onEdit={(config) => setEditing(config)}
-          />
-        )}
+        {/* Chrome (stat bar, column headers) always renders — ScraperControlRoom
+            owns the three-state body (ghost / settled-empty / rows) internally,
+            per docs/design/overview-loading.md. A full-page loading gate here
+            used to blank the whole Control Room on every mount. */}
+        <ScraperControlRoom
+          data={data}
+          onNew={() => setEditing('new')}
+          onEdit={(config) => setEditing(config)}
+        />
       </div>
 
       <ScrapeEditorModal

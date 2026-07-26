@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, type AnimationEventHandler } from 'react';
 import { AlertTriangle, Database, FlaskConical, Globe, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 
 import { previewScraperExtract, type PreviewRow, type ScraperConfig } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
 import { PreviewResults } from './PreviewResults';
 import {
@@ -13,6 +15,13 @@ import {
   ruleFields,
   type ScraperVariantProps,
 } from './useScraperData';
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh result set lands. Beyond this rows render plainly (see
+ * docs/design/overview-loading.md, law 4).
+ */
+const CASCADE_ROWS = 14;
 
 /**
  * Variant 1 — "Control Room". Mental model: a mission-control monitoring board.
@@ -27,9 +36,18 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
   const scheduled = data.configs.filter((c) => c.cron && c.enabled).length;
   const totalRecords = data.datasets.reduce((n, d) => n + d.count, 0);
 
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // No filter context on this table, so the cascade is one-shot per session:
+  // a poll/refresh re-delivering the same config ids never replays it.
+  const enter = useRevealTracker('scraper-configs');
+  // Ghost rows only when the table region would otherwise be empty while a
+  // fetch runs. Configs already on screen (incl. from the module cache) are
+  // never hidden by a fetch — see useScraperData's cache comment.
+  const showGhost = data.loading && data.configs.length === 0;
+
   return (
     <div className="space-y-5">
-      {/* Stat bar */}
+      {/* Stat bar — static chrome, always renders. */}
       <div className="flex items-center justify-between rounded-card border border-primary/10 bg-secondary/30 px-5 py-4">
         <div className="flex items-center gap-8">
           <StatChip label="Scrapes" value={data.configs.length} />
@@ -42,27 +60,22 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
         </Button>
       </div>
 
-      {data.configs.length === 0 ? (
+      {showGhost ? (
+        <ScraperGhostTable />
+      ) : data.configs.length === 0 ? (
         <EmptyRow onNew={onNew} />
       ) : (
         <div className="overflow-hidden rounded-card border border-primary/10">
           <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-primary/10 bg-secondary/20 typo-label text-muted-foreground">
-                <th className="px-4 py-2.5 font-medium">Scrape</th>
-                <th className="px-4 py-2.5 font-medium">Sources</th>
-                <th className="px-4 py-2.5 font-medium">Fields</th>
-                <th className="px-4 py-2.5 font-medium">Schedule</th>
-                <th className="px-4 py-2.5 font-medium">Last run</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5" />
-              </tr>
-            </thead>
+            <TableHead />
             <tbody className="divide-y divide-primary/8">
-              {data.configs.map((c) => (
+              {data.configs.map((c, index) => (
                 <Row
                   key={c.id}
                   config={c}
+                  order={index}
+                  hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                  markEntered={enter.markEntered}
                   running={data.runningId === c.id}
                   onRun={() => data.run(c.id)}
                   onEdit={() => onEdit(c)}
@@ -95,14 +108,24 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
   );
 }
 
+/** Per-row stagger step (ms) and the cap on how many rows stagger within one wave — mirrors RevealItem. */
+const REVEAL_STEP_MS = 35;
+const REVEAL_MAX_STAGGER = 8;
+
 function Row({
   config,
+  order,
+  hasEntered,
+  markEntered,
   running,
   onRun,
   onEdit,
   onDelete,
 }: {
   config: ScraperConfig;
+  order: number;
+  hasEntered: (id: string) => boolean;
+  markEntered: (id: string) => void;
   running: boolean;
   onRun: () => void;
   onEdit: () => void;
@@ -115,6 +138,19 @@ function Row({
   const [testRows, setTestRows] = useState<PreviewRow[] | null>(null);
   const [testing, setTesting] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
+
+  // One-shot entrance cascade for a fresh result set (docs/design/overview-loading.md
+  // law 4). The table is custom (not UnifiedTable), and RevealItem renders a
+  // `<div>` which can't wrap a `<tr>`, so its stagger/guard logic is replicated
+  // directly on the row element here. Entered ids never replay on poll/refresh.
+  const reducedMotion = useReducedMotion();
+  const animateReveal = !reducedMotion && !hasEntered(config.id);
+  const revealDelay = animateReveal
+    ? Math.min(Math.max(0, order), REVEAL_MAX_STAGGER) * REVEAL_STEP_MS
+    : 0;
+  const handleRevealEnd: AnimationEventHandler<HTMLTableRowElement> = (e) => {
+    if (e.target === e.currentTarget) markEntered(config.id);
+  };
 
   const runTest = async () => {
     const next = !testOpen;
@@ -134,7 +170,11 @@ function Row({
 
   return (
     <>
-    <tr className="group hover:bg-secondary/20 transition-colors">
+    <tr
+      className={`group hover:bg-secondary/20 transition-colors${animateReveal ? ' animate-fade-in' : ''}`}
+      style={animateReveal ? { animationDelay: `${revealDelay}ms` } : undefined}
+      onAnimationEnd={handleRevealEnd}
+    >
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {!config.enabled && (
@@ -271,6 +311,66 @@ function EmptyRow({ onNew }: { onNew: () => void }) {
       <Button variant="primary" onClick={onNew}>
         <Plus className="size-4" /> New scrape
       </Button>
+    </div>
+  );
+}
+
+/** Column header row — shared by the real table and the ghost table so the swap moves nothing. */
+function TableHead() {
+  return (
+    <thead>
+      <tr className="border-b border-primary/10 bg-secondary/20 typo-label text-muted-foreground">
+        <th className="px-4 py-2.5 font-medium">Scrape</th>
+        <th className="px-4 py-2.5 font-medium">Sources</th>
+        <th className="px-4 py-2.5 font-medium">Fields</th>
+        <th className="px-4 py-2.5 font-medium">Schedule</th>
+        <th className="px-4 py-2.5 font-medium">Last run</th>
+        <th className="px-4 py-2.5 font-medium">Status</th>
+        <th className="px-4 py-2.5" />
+      </tr>
+    </thead>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ScraperGhostTable — calm ghost rows for the ONLY moment the table region has
+// nothing to show (a fetch with a cold module cache, e.g. a true first visit).
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function ScraperGhostTable() {
+  return (
+    <div className="overflow-hidden rounded-card border border-primary/10" aria-hidden="true">
+      <table className="w-full text-left">
+        <TableHead />
+        <tbody className="divide-y divide-primary/8">
+          {Array.from({ length: 5 }).map((_, i) => {
+            const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+            const delay = `${120 + i * 35}ms`;
+            return (
+              <tr key={i} className="animate-fade-in" style={{ animationDelay: delay }}>
+                <td className="px-4 py-3">
+                  <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+                </td>
+                <td className="px-4 py-3"><span className={`inline-block h-3.5 w-8 ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3"><span className={`inline-block h-5 w-24 rounded ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3"><span className={`inline-block h-5 w-20 rounded-interactive ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3"><span className={`inline-block h-3.5 w-16 ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3"><span className={`inline-block h-3.5 w-20 ${GHOST_BAR}`} /></td>
+                <td className="px-4 py-3" />
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

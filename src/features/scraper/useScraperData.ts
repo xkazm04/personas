@@ -19,6 +19,15 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
  * Shared data + actions for the Scraper surface. All prototype variants consume
  * this so they render identical data and mutate through one place (Phase 1b-2).
  */
+
+// Module-scoped cache (docs/design/overview-loading.md, law 1: "data on
+// screen is sacred"). configs/datasets are local useState, not store-backed,
+// so every fresh mount used to start genuinely cold. Stashing the last fetch
+// here lets a RETURN visit within the same session paint real rows on frame 1
+// and refresh silently behind it; only a truly first-ever visit (or a fresh
+// reload) sees the cold-load ghost.
+let cachedConfigs: ScraperConfig[] = [];
+let cachedDatasets: DatasetSummary[] = [];
 /** Props every prototype variant receives — shared data + edit affordances. */
 export interface ScraperVariantProps {
   data: ScraperData;
@@ -40,13 +49,18 @@ export interface ScraperData {
 }
 
 export function useScraperData(): ScraperData {
-  const [configs, setConfigs] = useState<ScraperConfig[]>([]);
-  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
+  const [configs, setConfigs] = useState<ScraperConfig[]>(cachedConfigs);
+  const [datasets, setDatasets] = useState<DatasetSummary[]>(cachedDatasets);
+  // True while a (re)fetch is in flight — nothing more. It NEVER hides rows
+  // already on screen (cached or freshly loaded); it only decides whether an
+  // empty row region shows a ghost (fetch running) or the settled-empty state
+  // (fetch finished, genuinely nothing). See docs/design/overview-loading.md.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
+    setLoading(true);
     try {
       const [cfgs, dsets] = await Promise.all([
         listScraperConfigs(),
@@ -54,6 +68,8 @@ export function useScraperData(): ScraperData {
       ]);
       setConfigs(cfgs);
       setDatasets(dsets);
+      cachedConfigs = cfgs;
+      cachedDatasets = dsets;
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
