@@ -222,9 +222,12 @@ export function CloudWebhooksTab() {
           </div>
         )}
 
-        {/* Loading state — shape-matched skeleton rows so chrome lands before data */}
+        {/* Loading state — calm, delay-hidden ghost rows (docs/design/overview-loading.md
+            §C): invisible for the first 150ms so a fast fetch never paints one. */}
         {isLoading && (
-          <ListSkeleton rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
+          <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <ListSkeleton calm rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
+          </div>
         )}
 
         {/* Empty state */}
@@ -310,7 +313,9 @@ export function CloudWebhooksTab() {
               {t.triggers.recent_firings}
             </h4>
             {firingsLoading ? (
-              <ListSkeleton rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
+              <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+                <ListSkeleton calm rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
+              </div>
             ) : firings.length === 0 ? (
               <p className="typo-body text-foreground py-4">{t.triggers.no_firings}</p>
             ) : (

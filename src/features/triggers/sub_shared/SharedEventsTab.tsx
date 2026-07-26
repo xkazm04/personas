@@ -153,12 +153,13 @@ export function SharedEventsTab() {
           tableId="shared-events-marketplace"
           ariaLabel={m.view_watchtower}
           isLoading={loading}
-          emptyTitle={loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
+          emptyTitle={t.triggers.no_feeds}
           emptyDescription={t.triggers.no_feeds_hint}
-          emptyGlyph={loading ? undefined : FEEDS_GLYPH}
+          emptyGlyph={FEEDS_GLYPH}
           defaultSortKey="last_change"
           defaultSortDir="desc"
           rowAccent={(e) => (subByEntryId.has(e.id) ? 'border-l-emerald-400' : undefined)}
+          rowReveal={{ resetKey: 'shared-events-marketplace' }}
         />
       </div>
       {historyEntry && (

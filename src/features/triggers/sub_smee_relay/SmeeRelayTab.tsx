@@ -319,9 +319,12 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         )}
 
-        {/* Loading — shape-matched skeleton rows so chrome lands before data */}
+        {/* Loading — calm, delay-hidden ghost rows (docs/design/overview-loading.md
+            §C): invisible for the first 150ms so a fast fetch never paints one. */}
         {isLoading && (
-          <ListSkeleton rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
+          <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <ListSkeleton calm rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
+          </div>
         )}
 
         {/* Empty state */}

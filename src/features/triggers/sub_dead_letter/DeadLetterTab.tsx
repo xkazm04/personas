@@ -574,7 +574,9 @@ export function DeadLetterTab() {
         )}
 
         {loading && events.length === 0 && (
-          <ListSkeleton rows={4} rowHeight={64} className="rounded-card overflow-hidden" />
+          <div className="animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <ListSkeleton calm rows={4} rowHeight={64} className="rounded-card overflow-hidden" />
+          </div>
         )}
 
         {!loading && totalEvents === 0 && (
