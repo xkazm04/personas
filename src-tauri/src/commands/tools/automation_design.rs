@@ -13,7 +13,7 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::commands::credentials::ai_artifact_flow::{
-    run_ai_artifact_task, AiArtifactMessages, AiArtifactParams,
+    spawn_ai_artifact_task, AiArtifactMessages, AiArtifactParams,
 };
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 
@@ -322,20 +322,21 @@ pub async fn start_automation_design(
 
     let design_id_clone = design_id.clone();
 
-    tokio::spawn(async move {
-        run_ai_artifact_task(AiArtifactParams {
-            app,
-            task_id: design_id_clone,
-            prompt_text,
-            cli_args,
-            registry,
-            domain: "automation_design".into(),
-            track_pid: true,
-            messages: AUTOMATION_DESIGN_MESSAGES,
-            extractor: extract_automation_design_result,
-            spend: None,
-        })
-        .await;
+    // spawn_ai_artifact_task (ai_artifact_flow.rs) is the panic-safe wrapper
+    // around run_ai_artifact_task — a panic mid-run now cleans up the process
+    // registry and emits a "failed" status instead of wedging the UI on
+    // "analyzing" forever.
+    spawn_ai_artifact_task(AiArtifactParams {
+        app,
+        task_id: design_id_clone,
+        prompt_text,
+        cli_args,
+        registry,
+        domain: "automation_design".into(),
+        track_pid: true,
+        messages: AUTOMATION_DESIGN_MESSAGES,
+        extractor: extract_automation_design_result,
+        spend: None,
     });
 
     Ok(json!({ "design_id": design_id }))
