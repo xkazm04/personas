@@ -5,8 +5,8 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { storeBus } from '@/lib/storeBus';
 import { silentCatch } from '@/lib/silentCatch';
 import { getAuditIncident } from '@/api/overview/incidents';
@@ -33,6 +33,13 @@ const FILTERS_KEY = 'incidents:filters';
 const SORT_KEY = 'incidents:oldest-first';
 const LAST_SEEN_KEY = 'incidents:last-seen';
 const GROUP_MODES: IncidentGroupMode[] = ['agent', 'severity', 'source', 'none'];
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh result set lands (35ms stagger via RevealItem, id-guarded so polling,
+ * refresh, and scrolling never replay it). Rows beyond this render plainly.
+ */
+const CASCADE_ROWS = 14;
 
 /** Whether a persisted value is a valid group mode (guards against stale storage). */
 function isGroupMode(value: string): value is IncidentGroupMode {
@@ -370,21 +377,48 @@ export default function IncidentsInbox() {
   const handleReopen = useCallback((id: string) => void reopen(id), [reopen]);
   const openDetail = useCallback((incident: AuditIncident) => setDetailIncident(incident), []);
 
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // A new filter/group/sort context replays the first-viewport cascade for the
+  // rows it produces; a refresh/poll re-delivering the same ids does not (their
+  // ids are already marked entered). Client-side grouping means a group-mode
+  // or sort switch shows its rows on the SAME frame — the cascade IS the response.
+  const revealResetKey = `${JSON.stringify(filters)}|${groupMode}|${oldestFirst}`;
+  const enter = useRevealTracker(revealResetKey);
+  const { hasEntered: trackerHasEntered, markEntered: trackerMarkEntered } = enter;
+
+  // Position of each visible incident within the flattened (post-collapse)
+  // list — drives the cascade's per-row stagger order and the CASCADE_ROWS cap.
+  const incidentIndexById = useMemo(() => {
+    const m = new Map<string, number>();
+    visibleIncidents.forEach((inc, i) => m.set(inc.id, i));
+    return m;
+  }, [visibleIncidents]);
+
   const renderRow = useCallback(
-    (incident: AuditIncident, focused: boolean) => (
-      <IncidentRow
-        key={incident.id}
-        incident={incident}
-        gridTemplate={gridTemplate}
-        focused={focused}
-        onAcknowledge={handleAcknowledge}
-        onResolve={handleResolve}
-        onDismiss={handleDismiss}
-        onReopen={handleReopen}
-        onOpenDetail={openDetail}
-      />
-    ),
-    [gridTemplate, handleAcknowledge, handleResolve, handleDismiss, handleReopen, openDetail],
+    (incident: AuditIncident, focused: boolean) => {
+      const index = incidentIndexById.get(incident.id) ?? 0;
+      return (
+        <RevealItem
+          key={incident.id}
+          revealId={incident.id}
+          order={index}
+          hasEntered={(id) => index >= CASCADE_ROWS || trackerHasEntered(id)}
+          markEntered={trackerMarkEntered}
+        >
+          <IncidentRow
+            incident={incident}
+            gridTemplate={gridTemplate}
+            focused={focused}
+            onAcknowledge={handleAcknowledge}
+            onResolve={handleResolve}
+            onDismiss={handleDismiss}
+            onReopen={handleReopen}
+            onOpenDetail={openDetail}
+          />
+        </RevealItem>
+      );
+    },
+    [gridTemplate, handleAcknowledge, handleResolve, handleDismiss, handleReopen, openDetail, incidentIndexById, trackerHasEntered, trackerMarkEntered],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
@@ -449,28 +483,45 @@ export default function IncidentsInbox() {
           </div>
         )}
 
-        {!loading && incidents.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
-            {isNarrowed ? (
-              <EmptyState
-                icon={Inbox}
-                title={t.overview.incidents.empty_filtered_title}
-                subtitle={t.overview.incidents.empty_state_filtered}
-              />
-            ) : (
-              <InboxZero
-                title={t.overview.incidents.empty_open_title}
-                subtitle={t.overview.incidents.empty_state_open}
-                celebrate={justCleared}
-              />
-            )}
-          </div>
-        ) : (
-          <LoadingReveal
-            loading={isInitialLoading}
-            placeholder={<ListSkeleton calm rows={6} rowHeight={44} />}
-          >
-            <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
+        {/* Table header is permanent chrome (docs/design/overview-loading.md
+            law 5) — it never depends on load state, so it renders identically
+            above ghosts, the empty state, and real rows. */}
+        <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
+          <IncidentTableHeader
+            filters={filters}
+            onChange={setFilters}
+            personas={personas}
+            oldestFirst={oldestFirst}
+            onToggleSort={() => setOldestFirst((v) => !v)}
+            gridTemplate={gridTemplate}
+            colWidths={colWidths}
+          />
+
+          {isInitialLoading ? (
+            /* Nothing to show yet + fetch in flight: ghost rows under the REAL
+               table header. Ghosts are invisible for their first ~120ms
+               (animation-delay + fill-mode both) so a fast fetch skips them
+               entirely; real rows replace them the frame they arrive and play
+               the same cascade — no gate, no held content. */
+            <IncidentGhostRows gridTemplate={gridTemplate} />
+          ) : !loading && incidents.length === 0 ? (
+            <div className="flex items-center justify-center py-16">
+              {isNarrowed ? (
+                <EmptyState
+                  icon={Inbox}
+                  title={t.overview.incidents.empty_filtered_title}
+                  subtitle={t.overview.incidents.empty_state_filtered}
+                />
+              ) : (
+                <InboxZero
+                  title={t.overview.incidents.empty_open_title}
+                  subtitle={t.overview.incidents.empty_state_open}
+                  celebrate={justCleared}
+                />
+              )}
+            </div>
+          ) : (
+            <>
               {truncated && (
                 <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
                   <span className="typo-caption text-foreground">
@@ -526,15 +577,6 @@ export default function IncidentsInbox() {
                   </button>
                 )}
               </div>
-              <IncidentTableHeader
-                filters={filters}
-                onChange={setFilters}
-                personas={personas}
-                oldestFirst={oldestFirst}
-                onToggleSort={() => setOldestFirst((v) => !v)}
-                gridTemplate={gridTemplate}
-                colWidths={colWidths}
-              />
               {groups.map((group) => (
                 <IncidentAgentGroup
                   key={group.key}
@@ -545,9 +587,9 @@ export default function IncidentsInbox() {
                   renderRow={renderRow}
                 />
               ))}
-            </div>
-          </LoadingReveal>
-        )}
+            </>
+          )}
+        </div>
       </ContentBody>
 
       {detailIncident && (
@@ -568,5 +610,68 @@ export default function IncidentsInbox() {
         />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// IncidentGhostRows — calm ghost rows for the ONLY moment the row region has
+// nothing to show (a fetch with a cold store / empty filter context).
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// The delay IS the anti-flash: no timers, no minimum display, and real rows
+// replace ghosts on the very frame data arrives, playing the same cascade in
+// the same geometry (identical grid template under the same header).
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_ROW_COUNT = 6;
+const GHOST_ROW_HEIGHT = 44;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function IncidentGhostRows({ gridTemplate }: { gridTemplate: string }) {
+  return (
+    <div aria-hidden="true">
+      {/* group-header ghost — mirrors the sticky agent-group header's
+          silhouette (the default group-by lens is "agent"). */}
+      <div
+        className="flex items-center gap-2 border-b border-primary/10 bg-secondary px-4 py-2 animate-fade-in"
+        style={{ animationDelay: '120ms' }}
+      >
+        <span className="h-4 w-4 shrink-0 rounded bg-primary/[0.08]" />
+        <span className="h-4 w-4 shrink-0 rounded-full bg-primary/[0.08]" />
+        <span className="h-2.5 w-28 rounded bg-primary/[0.08]" />
+      </div>
+      {Array.from({ length: GHOST_ROW_COUNT }).map((_, i) => {
+        const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
+        const delay = `${140 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            role="row"
+            className="grid items-center border-b border-primary/[0.06] border-l-2 border-l-transparent animate-fade-in"
+            style={{ gridTemplateColumns: gridTemplate, minHeight: GHOST_ROW_HEIGHT, animationDelay: delay }}
+          >
+            {/* Incident — severity shape + source glyph + title */}
+            <div className="flex items-center gap-2 px-4 py-2.5 min-w-0">
+              <span className="h-3.5 w-3.5 shrink-0 rounded-full bg-primary/[0.08]" />
+              <span className="h-6 w-6 shrink-0 rounded-card bg-primary/[0.06]" />
+              <span className={`h-3.5 ${titleW} max-w-full ${GHOST_BAR}`} />
+            </div>
+            {/* Persona */}
+            <div className="px-4"><span className={`inline-block h-3.5 w-20 ${GHOST_BAR}`} /></div>
+            {/* State */}
+            <div className="px-4"><span className={`inline-block h-3 w-16 ${GHOST_BAR}`} /></div>
+            {/* Days open */}
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-8 ${GHOST_BAR}`} /></div>
+            {/* Actions */}
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-16 ${GHOST_BAR}`} /></div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
