@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { companionGetOperativeMemoryDigest } from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
 import { useOperativeMemoryStore } from './operativeMemoryStore';
 
@@ -44,7 +44,7 @@ export function useOperativeMemoryBridge(): void {
       inFlightRef.current = true;
       setFetching(true);
       try {
-        const digest = await invoke<string>('companion_get_operative_memory_digest', {});
+        const digest = await companionGetOperativeMemoryDigest();
         if (!cancelled) setDigest(digest ?? '');
       } catch (e) {
         silentCatch('useOperativeMemoryBridge:fetch')(e);
