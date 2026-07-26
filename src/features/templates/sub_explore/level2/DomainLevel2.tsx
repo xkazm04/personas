@@ -41,13 +41,17 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
         </button>
         <div className="relative">
           <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
-          <div className="typo-caption text-foreground opacity-80">
-            {loading ? 'Loading…' : `${templates.length} templates · ${recipes.length} recipes`}
+          <div className="typo-caption text-foreground opacity-80 h-4 flex items-center">
+            {loading ? (
+              <span className="inline-block h-2.5 w-32 rounded bg-primary/[0.08] animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true" />
+            ) : (
+              `${templates.length} templates · ${recipes.length} recipes`
+            )}
           </div>
         </div>
       </div>
 
-      <DomainTable templates={templates} recipes={recipes} accent={d.color} onSelect={onSelect} onSelectRecipe={onSelectRecipe} />
+      <DomainTable templates={templates} recipes={recipes} loading={loading} accent={d.color} onSelect={onSelect} onSelectRecipe={onSelectRecipe} />
     </div>
   );
 }

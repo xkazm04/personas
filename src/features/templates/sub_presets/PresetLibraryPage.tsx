@@ -6,6 +6,8 @@ import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import { listTeamPresets } from '@/api/templates/teamPresets';
 import { silentCatch } from '@/lib/silentCatch';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { PresetPreviewModal } from './PresetPreviewModal';
 
 /** Preset ids that ship a symbolic Leonardo illustration (dark + light). Other
@@ -21,6 +23,8 @@ function presetArt(id: string, isDark: boolean): string | null {
 
 /** Data-weighted bento spans by rank (largest team = hero tile). */
 const SPANS = ['sm:col-span-2 sm:row-span-2', 'sm:col-span-2', 'sm:row-span-2'];
+/** Ghost tile spans — same rhythm as SPANS, cycled across a calm 7-tile mosaic. */
+const GHOST_SPANS = ['sm:col-span-2 sm:row-span-2', 'sm:col-span-2', '', 'sm:row-span-2', '', 'sm:col-span-2', ''];
 
 /**
  * Top-level page for the Templates → Presets tab. Renders every
@@ -49,35 +53,45 @@ export default function PresetLibraryPage() {
     [presets],
   );
 
+  // ── Loading choreography (docs/design/overview-loading.md) ──
+  // A single cold read on mount (no filter context), so one static reveal key
+  // is enough — entered ids latch so a remount that finds the store already
+  // warm never replays the cascade. Ghosts paint only while the read is still
+  // in flight AND there is nothing on screen yet; the header renders on every
+  // frame regardless.
+  const enter = useRevealTracker('presets');
+  const showGhost = presets === null;
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-6" data-testid="preset-library-page">
       <div className="max-w-5xl mx-auto">
-        {presets === null && (
-          <p className="typo-body text-foreground text-center py-8">{t.templates.presets.loading}</p>
-        )}
+        <header className="mb-5">
+          <h1 className="typo-heading-lg text-foreground/90">{t.templates.presets.page_title}</h1>
+          <p className="typo-body text-foreground mt-1">{t.templates.presets.page_subtitle}</p>
+        </header>
 
-        {presets && presets.length === 0 && (
+        {showGhost ? (
+          <PresetGhostTiles />
+        ) : ranked.length === 0 ? (
           <div className="text-center py-12">
             <Layers className="w-10 h-10 mx-auto text-foreground mb-3" />
             <h2 className="typo-heading-lg text-foreground/90 mb-1">{t.templates.presets.empty_title}</h2>
             <p className="typo-body text-foreground max-w-md mx-auto">{t.templates.presets.empty_hint}</p>
           </div>
-        )}
-
-        {presets && presets.length > 0 && (
-          <>
-            <header className="mb-5">
-              <h1 className="typo-heading-lg text-foreground/90">{t.templates.presets.page_title}</h1>
-              <p className="typo-body text-foreground mt-1">{t.templates.presets.page_subtitle}</p>
-            </header>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 auto-rows-[130px] gap-3">
-              {ranked.map((p, idx) => (
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 auto-rows-[130px] gap-3">
+            {ranked.map((p, idx) => (
+              <RevealItem
+                key={p.id}
+                revealId={p.id}
+                order={idx}
+                hasEntered={enter.hasEntered}
+                markEntered={enter.markEntered}
+                className={SPANS[idx] ?? ''}
+              >
                 <PresetTile
-                  key={p.id}
                   preset={p}
                   art={presetArt(p.id, isDark)}
-                  span={SPANS[idx] ?? ''}
                   big={idx === 0}
                   memberLabel={tx(
                     p.members.length === 1
@@ -87,9 +101,9 @@ export default function PresetLibraryPage() {
                   )}
                   onOpen={() => setOpenPreset(p)}
                 />
-              ))}
-            </div>
-          </>
+              </RevealItem>
+            ))}
+          </div>
         )}
       </div>
 
@@ -100,8 +114,8 @@ export default function PresetLibraryPage() {
   );
 }
 
-function PresetTile({ preset, art, span, big, memberLabel, onOpen }: {
-  preset: TeamPreset; art: string | null; span: string; big: boolean; memberLabel: string; onOpen: () => void;
+function PresetTile({ preset, art, big, memberLabel, onOpen }: {
+  preset: TeamPreset; art: string | null; big: boolean; memberLabel: string; onOpen: () => void;
 }) {
   const color = preset.color || '#6366f1';
   return (
@@ -109,7 +123,7 @@ function PresetTile({ preset, art, span, big, memberLabel, onOpen }: {
       type="button"
       onClick={onOpen}
       data-testid={`preset-card-${preset.id}`}
-      className={`group relative overflow-hidden rounded-2xl border border-primary/10 hover:border-primary/30 text-left transition-all ${span}`}
+      className="group relative w-full h-full overflow-hidden rounded-2xl border border-primary/10 hover:border-primary/30 text-left transition-all"
     >
       {art ? (
         <img src={art} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-70 group-hover:scale-105 transition-all duration-500" />
@@ -125,5 +139,32 @@ function PresetTile({ preset, art, span, big, memberLabel, onOpen }: {
         </span>
       </div>
     </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PresetGhostTiles — calm delayed ghost of the bento mosaic, shown only while
+// the cold filesystem read is in flight and nothing is on screen yet. Each
+// tile fades in (`animate-fade-in`, fill-mode both) behind a ≥120ms staggered
+// delay so a fast read never paints a single one; real tiles replace them the
+// frame data lands and play their own one-shot cascade in the same geometry.
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+function PresetGhostTiles() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 auto-rows-[130px] gap-3" aria-hidden="true">
+      {GHOST_SPANS.map((span, i) => (
+        <div
+          key={i}
+          className={`rounded-2xl border border-primary/10 bg-primary/[0.04] animate-fade-in ${span}`}
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="h-full flex flex-col justify-end p-3.5 gap-1.5">
+            <span className="block h-3.5 w-2/3 max-w-[9rem] rounded bg-primary/[0.08]" />
+            <span className="block h-2.5 w-1/3 max-w-[5rem] rounded bg-primary/[0.08]" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

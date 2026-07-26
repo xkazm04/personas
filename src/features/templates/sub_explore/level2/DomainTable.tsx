@@ -21,12 +21,15 @@ type TypeFilter = 'all' | 'template' | 'recipe';
 interface Props {
   templates: ExploreItem[];
   recipes: ExploreRecipe[];
+  /** True while the catalog is still loading — gates the empty state (law 5:
+   *  "No matches" only renders once the fetch has settled). */
+  loading?: boolean;
   accent: string;
   onSelect?: (i: ExploreItem) => void;
   onSelectRecipe?: (r: ExploreRecipe) => void;
 }
 
-export function DomainTable({ templates, recipes, accent, onSelect, onSelectRecipe }: Props) {
+export function DomainTable({ templates, recipes, loading, accent, onSelect, onSelectRecipe }: Props) {
   const [cat, setCat] = useState<string | null>(null);
   const [type, setType] = useState<TypeFilter>('all');
   const [query, setQuery] = useState('');
@@ -120,7 +123,10 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
                 <td className="px-3 py-2 typo-data text-foreground opacity-80">{r.kind === 'template' ? (r.recipes || '–') : '–'}</td>
               </tr>
             ))}
-            {rows.length === 0 && (
+            {rows.length === 0 && loading && (
+              <DomainTableGhostRows />
+            )}
+            {rows.length === 0 && !loading && (
               <tr><td colSpan={5} className="px-3 py-8 text-center typo-body text-foreground opacity-60">No matches.</td></tr>
             )}
           </tbody>
@@ -140,6 +146,30 @@ function FilterChip({ label, count, active, accent, onClick }: {
       style={active ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
       {label}<span className="opacity-60">{count}</span>
     </button>
+  );
+}
+
+/**
+ * Calm delayed ghost rows shown only while the catalog is still loading and
+ * this domain has no rows to show yet (docs/design/overview-loading.md §C).
+ * Each row fades in behind a ≥120ms staggered delay so a fast load never
+ * paints one; the real table body replaces them the frame data lands.
+ */
+function DomainTableGhostRows() {
+  const widths = ['w-40', 'w-24', 'w-32', 'w-28', 'w-36'];
+  return (
+    <>
+      {widths.map((w, i) => (
+        <tr key={i} aria-hidden="true">
+          <td className="px-3 py-2.5" colSpan={5}>
+            <span
+              className={`inline-block h-3 ${w} rounded bg-primary/[0.06] animate-fade-in`}
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          </td>
+        </tr>
+      ))}
+    </>
   );
 }
 
