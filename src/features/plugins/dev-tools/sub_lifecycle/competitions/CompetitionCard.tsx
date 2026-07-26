@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff, Trophy } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -162,6 +164,11 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
   const badge = statusBadge(effectiveStatus);
   const isFinished = effectiveStatus === 'resolved' || effectiveStatus === 'cancelled';
 
+  // Loading choreography (docs/design/overview-loading.md): slot rows ripple
+  // in once per competition — id-guarded so the 8s auto-poll (loadDetail
+  // above) never replays the cascade on rows already on screen.
+  const revealEnter = useRevealTracker(competition.id);
+
   // For a resolved competition, recover the winning slot + the genes embedded
   // in its strategy prompt so we can spotlight it and seed a rematch.
   const winnerSlot = detail?.slots.find((s) => s.slot.task_id === detail.competition.winner_task_id)?.slot ?? null;
@@ -192,11 +199,12 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
 
       {expanded && (
         <div className="border-t border-primary/10 p-4 space-y-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-6 text-foreground">
-              <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-              <span className="typo-body">{t.plugins.dev_tools.loading_competitors}</span>
-            </div>
+          {/* Loading choreography (docs/design/overview-loading.md): `loading`
+              is only ever "empty" cover — the 8s auto-poll re-sets it while
+              `detail` is already on screen, and that data is sacred (law 1).
+              A ghost only renders on the very first load of this card. */}
+          {loading && !detail ? (
+            <CompetitionSlotGhostRows />
           ) : !detail ? (
             <p className="typo-body text-foreground">{t.plugins.dev_tools.failed_to_load_detail}</p>
           ) : (
@@ -280,19 +288,26 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
                 </div>
               )}
               <div className="space-y-2">
-                {detail.slots.map(({ slot, task }) => (
-                  <CompetitionSlotRow
+                {detail.slots.map(({ slot, task }, index) => (
+                  <RevealItem
                     key={slot.id}
-                    slot={slot}
-                    task={task}
-                    isWinner={detail.competition.winner_task_id === slot.task_id}
-                    isFinished={isFinished}
-                    onPickWinner={handleOpenPickWinner}
-                    picking={picking}
-                    compareChecked={compareSelected.has(slot.id)}
-                    compareDisabled={compareSelected.size >= 2 && !compareSelected.has(slot.id)}
-                    onToggleCompare={detail.slots.length >= 2 ? toggleCompare : undefined}
-                  />
+                    revealId={slot.id}
+                    order={index}
+                    hasEntered={revealEnter.hasEntered}
+                    markEntered={revealEnter.markEntered}
+                  >
+                    <CompetitionSlotRow
+                      slot={slot}
+                      task={task}
+                      isWinner={detail.competition.winner_task_id === slot.task_id}
+                      isFinished={isFinished}
+                      onPickWinner={handleOpenPickWinner}
+                      picking={picking}
+                      compareChecked={compareSelected.has(slot.id)}
+                      compareDisabled={compareSelected.size >= 2 && !compareSelected.has(slot.id)}
+                      onToggleCompare={detail.slots.length >= 2 ? toggleCompare : undefined}
+                    />
+                  </RevealItem>
                 ))}
               </div>
               {showDiffModal && compareSelected.size === 2 && (() => {
@@ -349,6 +364,40 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CompetitionSlotGhostRows — calm ghost for the ONLY moment the card's detail
+// region has nothing to show (the card's very first expand; the 8s auto-poll
+// re-fetch never gets here because `detail` is already on screen by then).
+// `animate-fade-in` behind a staggered `animationDelay` starting at 120ms —
+// invisible until then, so a fast fetch never paints it. No `animate-pulse`.
+// Geometry mirrors CompetitionSlotRow: rank icon + name bar + score badge.
+// ---------------------------------------------------------------------------
+const SLOT_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const SLOT_GHOST_NAME_WIDTHS = ['w-28', 'w-36', 'w-24'];
+
+function CompetitionSlotGhostRows() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {SLOT_GHOST_NAME_WIDTHS.map((nameW, i) => (
+        <div
+          key={i}
+          className="rounded-interactive border border-primary/15 bg-background/30 overflow-hidden animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <span className="w-4 h-4 rounded-full bg-primary/[0.06] shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <span className={`block h-3.5 ${nameW} max-w-full ${SLOT_GHOST_BAR}`} />
+              <span className="block h-2.5 w-20 rounded bg-primary/[0.04]" />
+            </div>
+            <span className="h-5 w-16 rounded-full bg-primary/[0.06] shrink-0" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

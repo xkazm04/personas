@@ -121,9 +121,13 @@ export function RacingProgress({ slots }: RacingProgressProps) {
                   }`}
                   style={{ width: `${progressPct}%` }}
                 />
+                {/* Calm leading-edge highlight — the fill's width transition
+                    (duration-700 above) IS the motion; this static strip just
+                    marks the current position without pulsing (loading-pattern
+                    v2 §1: no animate-pulse on loading-adjacent chrome). */}
                 {isRunning && (
                   <div
-                    className="absolute top-0 h-full w-4 bg-secondary/20 rounded-full animate-pulse"
+                    className="absolute top-0 h-full w-4 bg-secondary/20 rounded-full"
                     style={{ left: `${Math.max(0, progressPct - 3)}%` }}
                   />
                 )}

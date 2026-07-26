@@ -23,7 +23,13 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading && stats.length === 0) return null;
+  // Loading choreography (docs/design/overview-loading.md): the panel has a
+  // fixed placement in CompetitionList, so collapsing to `null` while
+  // fetching used to jump the layout as the panel popped in/out. A calm,
+  // delayed ghost (invisible for the first 120ms — a fast fetch never paints
+  // it) holds the panel's geometry instead. Settled + genuinely empty stays
+  // `null` — there's nothing to show a shell for.
+  if (loading && stats.length === 0) return <StrategyLeaderboardGhost />;
   if (stats.length === 0) return null;
 
   const maxWins = Math.max(1, ...stats.map((s) => s.wins));
@@ -72,6 +78,40 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
       <p className="typo-caption text-foreground mt-3">
         {t.plugins.dev_lifecycle.leaderboard_subtitle}
       </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// StrategyLeaderboardGhost — geometry-matched placeholder for the ONLY moment
+// the panel would otherwise be absent (cold fetch, nothing loaded yet).
+// `animate-fade-in` behind a staggered `animationDelay` starting at 120ms —
+// invisible until then, so a fast fetch never paints it. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_LABEL_WIDTHS = ['w-32', 'w-24', 'w-28'];
+
+function StrategyLeaderboardGhost() {
+  return (
+    <div className="rounded-card border border-primary/15 bg-card/40 p-4" aria-hidden="true">
+      <div className="flex items-center gap-2 mb-3 animate-fade-in" style={{ animationDelay: '120ms' }}>
+        <span className="w-4 h-4 rounded bg-primary/[0.08]" />
+        <span className={`h-3.5 w-36 ${GHOST_BAR}`} />
+      </div>
+      <div className="space-y-2">
+        {GHOST_LABEL_WIDTHS.map((w, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 animate-fade-in"
+            style={{ animationDelay: `${140 + i * 35}ms` }}
+          >
+            <span className={`h-3 ${w} shrink-0 ${GHOST_BAR}`} />
+            <span className="flex-1 h-2 rounded-full bg-primary/[0.06]" />
+            <span className={`h-2.5 w-12 shrink-0 ${GHOST_BAR}`} />
+            <span className={`h-2.5 w-12 shrink-0 ${GHOST_BAR}`} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
