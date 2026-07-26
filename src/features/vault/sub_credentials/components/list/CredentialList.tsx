@@ -16,6 +16,7 @@ export function CredentialList({
   credentials,
   connectorDefinitions,
   searchTerm,
+  isFetching = false,
   onDelete,
   onQuickStart,
   onGoToCatalog,
@@ -118,7 +119,12 @@ export function CredentialList({
     onDelete,
   });
 
-  if (credentials.length === 0) {
+  // Settled-only empty state (law: empty state renders only once !isFetching
+  // — the docs' rich pathway cards belong to a genuinely-empty vault, not to
+  // "haven't heard back from the initial fetch yet"). While isFetching is
+  // true the DataGrid below renders its own delayed calm ghost rows under
+  // the real column chrome instead (see `isLoading` passed to DataGrid).
+  if (credentials.length === 0 && !isFetching) {
     return (
       <EmptyStateView
         connectorDefinitions={connectorDefinitions}
@@ -145,6 +151,7 @@ export function CredentialList({
         sortDirection={sortDirection}
         onSort={handleSort}
         pageSize={25}
+        isLoading={isFetching && displayRows.length === 0}
         emptyTitle={t.vault.credential_list.no_match}
         emptyDescription={t.vault.credential_list.no_match_hint}
         className="flex-1"

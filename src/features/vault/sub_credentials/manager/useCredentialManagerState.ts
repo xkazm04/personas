@@ -20,7 +20,13 @@ export function useCredentialManagerState() {
   const globalError = useSystemStore((s) => s.error);
   const setGlobalError = useSystemStore((s) => s.setError);
 
-  const [loading, setLoading] = useState(true);
+  // True while the initial (or a manual re-)fetch of credentials/connector
+  // definitions is in flight. NEVER a whole-page gate — both stores are
+  // usually pre-warmed at app boot (see PersonasPage.tsx's early
+  // fetchCredentials() prefetch), so credentials frequently paint on the
+  // first frame despite this starting true. Consumers use it only to decide
+  // what an *empty* region shows (ghost vs. settled empty state).
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const bannerError = error ?? globalError;
 
@@ -88,7 +94,7 @@ export function useCredentialManagerState() {
   useEffect(() => {
     const init = async () => {
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
-      setLoading(false);
+      setIsFetching(false);
     };
     init();
   }, [fetchCredentials, fetchConnectorDefinitions]);
@@ -97,7 +103,7 @@ export function useCredentialManagerState() {
     // Data
     credentials,
     connectorDefinitions,
-    loading,
+    isFetching,
     bannerError,
     setError,
     setGlobalError,

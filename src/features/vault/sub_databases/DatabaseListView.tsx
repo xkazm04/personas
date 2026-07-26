@@ -10,11 +10,20 @@ import type { CredentialMetadata } from '@/lib/types/types';
 
 interface DatabaseListViewProps {
   onBack: () => void;
+  /**
+   * True while the manager's initial (or a manual re-)fetch of credentials /
+   * connector definitions is in flight — this view doesn't fetch its own
+   * rows, it filters the manager's already-loaded `credentials` down to the
+   * database category. Gates ONLY the empty-region decision (settled-only
+   * empty illustration vs. delayed ghost rows); rows already on screen are
+   * never hidden. See docs/design/overview-loading.md.
+   */
+  isFetching?: boolean;
 }
 
 type SortDir = 'asc' | 'desc';
 
-export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
+export function DatabaseListView({ onBack: _onBack, isFetching = false }: DatabaseListViewProps) {
   const { t, tx } = useTranslation();
   const db = t.vault.databases;
   const credentials = useVaultStore((s) => s.credentials);
@@ -84,7 +93,11 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
 
   const columns = useDbGridColumns(typeOptions, typeFilter, setTypeFilter);
 
-  if (allRows.length === 0) {
+  // Settled-only: the "no databases" illustration only makes sense once the
+  // manager's fetch has actually settled. While isFetching is true, fall
+  // through to the DataGrid below with isLoading set, which paints its own
+  // delayed calm ghost rows under the real column chrome instead.
+  if (allRows.length === 0 && !isFetching) {
     return (
       <div className="animate-fade-slide-in">
         <EmptyIllustration
@@ -108,6 +121,7 @@ export function DatabaseListView({ onBack: _onBack }: DatabaseListViewProps) {
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={handleSort}
+          isLoading={isFetching && displayRows.length === 0}
           emptyIcon={Database}
           emptyTitle={db.no_matching}
           emptyDescription={db.no_matching_hint}

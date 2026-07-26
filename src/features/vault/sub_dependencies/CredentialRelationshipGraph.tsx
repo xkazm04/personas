@@ -100,15 +100,11 @@ export function CredentialRelationshipGraph() {
     setSimulationMode((prev) => !prev);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-      </div>
-    );
-  }
-
-  if (credentials.length === 0) {
+  // Settled-only: the "no credentials" illustration belongs to a genuinely
+  // empty vault, not to "still fetching dependents". While loading, fall
+  // through to render permanent chrome (GraphControls) + a reserved-size
+  // ghost box below instead of a raw spinner replacing everything.
+  if (credentials.length === 0 && !loading) {
     return (
       <EmptyIllustration
         icon={Network}
@@ -150,17 +146,41 @@ export function CredentialRelationshipGraph() {
   return (
     <div className="space-y-4">
       <GraphControls stats={stats} filterKind={filterKind} onFilterChange={setFilterKind} />
-      <GraphCanvas
-        nodes={graph.nodes}
-        edges={graph.edges}
-        filteredNodes={filteredNodes}
-        filteredEdges={filteredEdges}
-        filterKind={filterKind}
-        selectedNodeId={selectedNodeId}
-        credentials={credentials}
-        onNodeClick={handleNodeClick}
-        detailPanel={detailPanel}
-      />
+      {loading ? (
+        <GraphCanvasGhost />
+      ) : (
+        <GraphCanvas
+          nodes={graph.nodes}
+          edges={graph.edges}
+          filteredNodes={filteredNodes}
+          filteredEdges={filteredEdges}
+          filterKind={filterKind}
+          selectedNodeId={selectedNodeId}
+          credentials={credentials}
+          onNodeClick={handleNodeClick}
+          detailPanel={detailPanel}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GraphCanvasGhost — reserves the canvas's exact box (same size/border/bg as
+// GraphCanvas's outer div) so GraphControls above never shifts when the real
+// canvas mounts. Calm, no `animate-pulse`; enters via `animate-fade-in`
+// behind a ≥120ms animation-delay (fill-mode: both) so a fast dependents
+// fetch never paints it — the delay IS the anti-flash, matching the ghost
+// convention in docs/design/overview-loading.md §C.
+// ---------------------------------------------------------------------------
+function GraphCanvasGhost() {
+  return (
+    <div
+      className="relative w-full h-[600px] rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden flex items-center justify-center animate-fade-in"
+      style={{ animationDelay: '120ms' }}
+      aria-hidden="true"
+    >
+      <Network className="w-10 h-10 text-primary/[0.08]" />
     </div>
   );
 }

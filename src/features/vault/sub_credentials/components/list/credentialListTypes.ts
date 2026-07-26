@@ -63,6 +63,13 @@ export interface CredentialListProps {
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
   searchTerm?: string;
+  /**
+   * True while the manager's initial (or a manual re-)fetch is in flight.
+   * Gates ONLY the empty-region decision (ghost vs. settled empty state) —
+   * never hides credentials already on screen (pre-warmed store data paints
+   * on the first frame regardless). See docs/design/overview-loading.md.
+   */
+  isFetching?: boolean;
   onDelete: (id: string) => void;
   onQuickStart?: (connector: ConnectorDefinition) => void;
   onGoToCatalog?: () => void;

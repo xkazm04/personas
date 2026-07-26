@@ -38,6 +38,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
     fetchCredentials,
     fetchConnectorDefinitions,
     IS_DESKTOP,
+    isFetching,
   } = state;
 
   return (
@@ -121,6 +122,7 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
             credentials={credentials}
             connectorDefinitions={connectorDefinitions}
             searchTerm={credentialSearch}
+            isFetching={isFetching}
             onDelete={handleDeleteRequest}
             onGoToCatalog={() => dispatch({ type: 'GO_CATALOG' })}
             onGoToAddNew={() => dispatch({ type: 'GO_ADD_NEW' })}

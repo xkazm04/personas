@@ -1,4 +1,3 @@
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 import { ReauthBanner } from '@/features/vault/sub_credentials/components/card/banners/ReauthBanner';
@@ -8,15 +7,12 @@ import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerH
 import { CredentialManagerViews } from './CredentialManagerViews';
 import { VaultBreadcrumb } from './VaultBreadcrumb';
 import { VaultTrustBadge } from './VaultTrustBadge';
-import { useTranslation } from '@/i18n/useTranslation';
 
 export function CredentialManager() {
-  const { t } = useTranslation();
   const state = useCredentialManagerState();
 
   const {
     credentials,
-    loading,
     bannerError,
     setError,
     setGlobalError,
@@ -44,14 +40,13 @@ export function CredentialManager() {
     setFocusCredentialId(credentialId);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-foreground">
-        <LoadingSpinner size="lg" label={t.vault.manager.loading_credentials} />
-      </div>
-    );
-  }
-
+  // Loading choreography (docs/design/overview-loading.md): the whole-page
+  // gate this used to have (`if (loading) return <spinner/>`) hid ALL chrome
+  // — header, toolbar, trust badge, breadcrumb — AND any pre-warmed
+  // credentials already sitting in the store (fetchCredentials runs at app
+  // boot) behind a spinner on every single visit. Chrome now always renders;
+  // `state.isFetching` only decides what the (empty) list body shows —
+  // handled per-view in CredentialManagerViews / CredentialList.
   return (
     <ContentBox data-testid="credential-manager">
       <CredentialManagerHeader credentialCount={credentials.length} view={viewState.view} />

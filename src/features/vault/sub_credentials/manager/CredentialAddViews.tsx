@@ -23,6 +23,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
     fetchCredentials,
     fetchConnectorDefinitions,
     IS_DESKTOP,
+    isFetching,
   } = state;
   const { t } = useTranslation();
   const mcpSchema = useMemo(() => getMcpSchema(t), [t]);
@@ -120,7 +121,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
 
 
       {viewState.view === 'databases' && (
-        <DatabaseListView onBack={() => dispatch({ type: 'GO_LIST' })} />
+        <DatabaseListView onBack={() => dispatch({ type: 'GO_LIST' })} isFetching={isFetching} />
       )}
     </div>
   );
