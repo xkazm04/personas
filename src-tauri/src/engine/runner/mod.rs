@@ -1350,7 +1350,16 @@ pub async fn run_execution(
     let byom_policy = match super::byom::ByomPolicy::load(&pool) {
         Ok(p) => p,
         Err(e) => {
-            tracing::error!(error = %e, "BYOM policy is corrupt — blocking execution");
+            // `tags.*`-prefixed fields are lifted into real Sentry event tags by
+            // sentry_tracing's `tags_from_event` (src-tauri/src/logging.rs wires
+            // the layer) -- see ADR 2026-05-10-sentry-execution-scope-tags for
+            // why this per-event mechanism was chosen over `configure_scope`.
+            tracing::error!(
+                tags.execution_id = %execution_id,
+                tags.persona_id = %persona.id,
+                error = %e,
+                "BYOM policy is corrupt — blocking execution"
+            );
             logger.log(&format!("BYOM policy is corrupt — execution blocked: {e}"));
             let err_msg = "BYOM policy is corrupt and cannot be loaded. \
                      Please reset or fix the policy in Settings → BYOM before running executions."
@@ -1716,9 +1725,12 @@ pub async fn run_execution(
         // log. Both wanted: Sentry for production diagnostics, disk log for
         // local trace browsing. Architect ADR:
         // 2026-05-10-resolveerror-breadcrumb-spawn-tracing.
+        // `tags.*` fields become queryable Sentry event tags (see the ADR at
+        // 2026-05-10-sentry-execution-scope-tags) rather than plain `extra`
+        // data -- Discover can filter directly by execution_id/persona_id.
         tracing::error!(
-            execution_id = %execution_id,
-            persona_id = %persona.id,
+            tags.execution_id = %execution_id,
+            tags.persona_id = %persona.id,
             "All CLI providers failed to spawn: {}",
             error_msg
         );
@@ -2200,6 +2212,7 @@ pub async fn run_execution(
                                     }
                                     let pool_ref = pool_for_stream.clone();
                                     let exec_id_ref = exec_id_for_stream.clone();
+                                    let persona_id_ref = persona_id_for_stream.clone();
                                     let sid_clone = sid.clone();
                                     // Persist session_id with retry — losing this silently
                                     // breaks warm session reuse (cost optimization).
@@ -2220,8 +2233,11 @@ pub async fn run_execution(
                                                 "session_id DB persist failed, retrying once: {e}"
                                             );
                                             if let Err(e2) = update() {
+                                                // tags.* fields become real Sentry event tags
+                                                // (see 2026-05-10-sentry-execution-scope-tags ADR).
                                                 tracing::error!(
-                                                    execution_id = %exec_id_ref,
+                                                    tags.execution_id = %exec_id_ref,
+                                                    tags.persona_id = %persona_id_ref,
                                                     "session_id DB persist failed after retry — \
                                                      warm session reuse will be unavailable: {e2}"
                                                 );

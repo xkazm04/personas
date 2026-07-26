@@ -9,6 +9,7 @@ import { X, Check, MessageSquare, Clock, Mail, AlertCircle, Zap } from 'lucide-r
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
+import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { stripPersonaPrefix } from '@/features/overview/sub_manual-review/libs/reviewHelpers';
@@ -358,6 +359,7 @@ function MonitorActivityRow({ entry, now, onNavigate }: { entry: ProcessEntry; n
   const [expanded, setExpanded] = useState(false);
   const isExecution = proc.domain === 'execution';
   const executionId = isExecution && expanded ? (proc.runId ?? null) : null;
+  useExecutionScope(executionId, executionId ? proc.personaId ?? null : null);
   const { entries, isLive } = useReasoningTrace(executionId);
   const hasNav = !!proc.navigateTo;
   const M = processStatusMeta(proc.status);
