@@ -1,117 +1,139 @@
-# Overview Loading Choreography — the Golden Pattern
+# Loading Choreography — the Golden Pattern (v2)
 
-> Single source of truth for how every Overview module (and, over time, any
-> data-heavy surface) presents loading. The goal: **the layout is always there;
-> rich backend content flows in calmly on top of it.** No pulsing skeletons, no
-> blank flashes, no blinks.
+> Single source of truth for how data-heavy surfaces present loading.
+> **Reference implementation: `src/features/overview/sub_activity/components/GlobalExecutionList.tsx`**
+> — study it before migrating any surface. v1 of this doc prescribed a
+> whole-region cross-fade gate (`LoadingReveal`); live use proved that pattern
+> WRONG (skeleton on every visit, content held after data arrived, one big-bang
+> reveal). v2 replaces it with row/tile-level choreography.
 
-## Why
+## The five laws
 
-The Overview loaders were an inconsistent mix of three anti-patterns:
+1. **Data on screen is sacred.** A fetch never hides, dims, or replaces rows
+   that are already rendered. Stores are usually pre-warmed (dashboard
+   pipeline, previous visits) — that data paints on the **first frame**, and
+   refreshes settle silently behind it. A loading flag decides only what an
+   *empty* region shows.
+2. **Content is never held.** The moment data exists it renders. No minimum
+   placeholder duration, no grace gate on content, no `AnimatePresence
+   mode="wait"` swap (placeholder-exit-then-content-enter is a forced delay).
+   Placeholder → content is a plain conditional in identical geometry.
+3. **The delay lives on the placeholder, not the content.** Ghosts enter via
+   `animate-fade-in` (150ms, `fill-mode: both`) behind a staggered
+   `animation-delay` starting at **≥120ms** — they are literally invisible
+   until then, so a fast fetch never paints one. That CSS delay *is* the
+   anti-flash: zero timers, zero JS, nothing ever waits on it.
+4. **Life comes from item-level cascade, not block fades.** New content ripples
+   in per row/tile (35ms stagger, first-viewport only), one-shot and
+   id-guarded: polling, refreshing, and scrolling **never** replay it. A
+   single realtime arrival fades in alone. Big-bang block reveals are banned.
+5. **Static chrome always renders.** Headers, column headers, filter bars,
+   tab strips, pane shells, KPI tile frames — never inside a loading branch.
+   Ghosts render *under the real chrome*, in the real geometry.
 
-1. **Pulsing skeletons** (`ListSkeleton` / `TableSkeleton` / `ContentHeaderSkeleton`, `animate-pulse`) — the pulse draws the eye, and the skeleton→content geometry swap *blinks*.
-2. **Blank / empty-flash bodies** — several tabs render `null` (or a now-disabled spinner) while loading, so the body pops from empty → full.
-3. **No shared rhythm** — each tab reinvents its loading state.
+**Deprecated:** `LoadingReveal` + `useStableLoading` as a gate around primary
+content (the v1 pattern). Do not add new usages; migrations remove existing
+ones. (`Reveal` — the plain one-shot fade-in block — remains fine for panels
+that mount after `DeferUntilIdle` or Suspense.)
 
-Every tab already keeps its `ContentHeader` frame stable. We build on that: keep
-the frame, and replace the data-region treatment with a calm, staggered,
-motion-faded reveal that is *deliberately paced* so heavy backend content never
-janks in all at once.
+## The mechanics (from the reference implementation)
 
-## The four layers of a loading surface
+### A. Semantics of the loading flag
 
-| Layer | When | How |
-|---|---|---|
-| **1. Frame** | first commit, always | `ContentBox` + `ContentHeader` (title/subtitle/actions — all i18n/client-static) + section containers **at their final geometry**. Never gated on data. |
-| **2. Primary content** | as data arrives | Cross-fade in with `<LoadingReveal>` / `<Reveal>`. Fast/cached → straight to content; slow → calm placeholder first. |
-| **3. Rows / lists** | spread over time | Render the real (virtualized) list and stagger rows in with `useProgressiveReveal` + `RevealItem`. **Never** a pulse skeleton for the rows themselves. |
-| **4. Below-fold / heavy** | deferred | `DeferUntilIdle` (`next-frame` for near-fold, `idle` for far) + a `<Reveal>` on mount. Keeps the first commit light (WebView2 hitch guard). |
+```tsx
+const [isFetching, setIsFetching] = useState(true);   // in-flight, nothing more
+const showGhost = isFetching && rows.length === 0;    // ghosts ONLY into emptiness
+// empty state ONLY when settled:
+{showGhost ? <Ghosts/> : rows.length === 0 ? <EmptyState/> : <Rows/>}
+```
 
-## Rules (non-negotiable)
+### B. Row cascade — `RevealItem` + `useRevealTracker`
 
-1. **Never `animate-pulse` for primary content.** Use a calm placeholder
-   (`<ListSkeleton calm />` / `<TableSkeleton calm />`) or no placeholder at all.
-2. **Never a blank/`null` body during load.** The frame is layer 1; the data
-   region uses `<LoadingReveal>`. A blank body reads as broken.
-3. **Fast loads show no placeholder.** `useStableLoading`'s grace window
-   (140ms) means cached data fades straight to content — no flash.
-4. **Shown placeholders honor a minimum duration.** `useStableLoading`'s
-   min-visible (420ms) means a placeholder can't appear-and-vanish in a blink.
-5. **Deliberately spread heavy content.** Above-the-fold first; below-the-fold
-   via `DeferUntilIdle`; long lists via `useProgressiveReveal` (≈2s, size-invariant).
-6. **Content-shaped placeholders only.** Match the final silhouette (row-height
-   slots, sized chart box, KPI tiles) so the reveal is a *fade*, not a *resize*.
-7. **All motion via the shared primitives**, which are reduced-motion aware —
-   under `prefers-reduced-motion` everything collapses to an instant, movement-free swap.
-8. **i18n + tokens.** Any loading label goes through `t.*`; use semantic design
-   tokens (`bg-primary/*`, `typo-*`, `rounded-*`), never raw colors.
+```tsx
+const CASCADE_ROWS = 14; // ~first viewport; beyond it rows render plainly
+const revealResetKey = `${filter}|${personaId}|${sort}`;  // replay on context switch
+const enter = useRevealTracker(revealResetKey);
+// in the (virtualized) row render, wrapping the row content:
+<RevealItem
+  revealId={item.id}
+  order={index}
+  hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+  markEntered={enter.markEntered}
+  className="h-full"
+>
+  {row}
+</RevealItem>
+```
+- Entered ids are remembered per `resetKey` → poll/refresh re-delivering the
+  same ids animates nothing; a filter switch (client-side, same-frame) replays
+  a quick ripple on its new result set — the cascade *is* the response.
+- `RevealItem` caps stagger at 8×35ms and honors reduced motion.
 
-## The primitive toolbox
+### C. Ghost rows/blocks — module-local, geometry-matched
 
-| Primitive | Path | Use |
-|---|---|---|
-| `useStableLoading(loading, { graceMs, minVisibleMs })` | `hooks/utility/interaction/useStableLoading.ts` | Anti-flash + anti-blink timing gate → `showLoading: boolean`. |
-| `<Reveal delay? y?>` | `shared/components/feedback/Reveal.tsx` | Fade (+ slide-up) a single block in on mount. Replaces ad-hoc `motion.div variants={fadeUp}`. |
-| `<LoadingReveal loading placeholder>` | `shared/components/feedback/LoadingReveal.tsx` | The workhorse: cross-fades a calm placeholder ↔ content, gated by `useStableLoading`. |
-| `<ListSkeleton calm />` / `<TableSkeleton calm />` | `shared/components/layout/` | Content-shaped, **non-pulsing** placeholder for the loading branch. |
-| `useProgressiveReveal(total, { resetKey })` + `RevealItem` / `useRevealTracker` | `hooks/utility/interaction/useProgressiveReveal.ts` | Spread the *mounting* of an already-fetched list over ~2s (size-invariant), staggered per row. |
-| `DeferUntilIdle priority="next-frame"\|"idle"` | `shared/components/layout/DeferUntilIdle.tsx` | Hold heavy/below-fold subtrees out of the first commit. |
-| `staggerContainer` / `fadeUp` / `revealFromBelow` | `overview/libs/animations.ts` | Variants for grouped staggered reveals (Overview-local). |
-| `useMotion()` / `useReducedMotion()` | `hooks/utility/interaction/useMotion.ts` | Reduced-motion gate (the primitives already consult this). |
+Build a small local `<XyzGhostRows>` for the surface (see `ActivityGhostRows`):
+same row height / grid template / tile layout as the real content, calm bars
+(`bg-primary/[0.06]`, **no `animate-pulse`**, ever), each element:
+
+```tsx
+className="… animate-fade-in"
+style={{ height: ROW_H, animationDelay: `${120 + i * 35}ms` }}
+```
+
+Include a ghost of any group-header band the real list shows. `aria-hidden`.
+Vary bar widths deterministically (`['w-40','w-28','w-36','w-32'][i % 4]`) so
+it reads as rows, not a barcode.
+
+### D. Chunk (Suspense) fallbacks
+
+Route/subtab fallbacks follow the same law: **invisible for 150ms**
+(`animate-fade-in` + `animationDelay: '150ms'` on the fallback root) and ghost
+**only chrome every variant shares at the same position** (usually just the
+header band — see `OverviewRouteSkeleton` in `OverviewPage.tsx`). Never fake
+body geometry the incoming surface won't have. `fallback={null}` is acceptable
+for small widgets; a *sized* delayed ghost is better when the widget's absence
+would shift layout.
 
 ## Per-surface recipes
 
-### A. Table / list module (events, activity, messages, knowledge-patterns, …)
+### Lists & tables (activity, events, messages, reviews, memories, incidents, ledgers)
+Copy the reference implementation: three-state body under permanent column
+chrome (`ghost / empty / rows`), `RevealItem` cascade on the first viewport,
+ghosts per §C. If the table primitive owns row rendering (`UnifiedTable`) and
+can't cascade without shared edits: skip the cascade (rows paint instantly —
+that's law 2), keep ghosts + settled-only empty state, and **report** the
+cascade gap instead of hacking it.
 
-```tsx
-// Frame is always present (ContentHeader + toolbar). Gate ONLY the body.
-<ContentBody flex>
-  <LoadingReveal loading={q.loading} placeholder={<ListSkeleton calm rows={8} rowHeight={ROW_H} />}>
-    <UnifiedTable data={rows} ... />   {/* rows staggered via useProgressiveReveal inside */}
-  </LoadingReveal>
-</ContentBody>
-```
-- Prefer feeding `UnifiedTable`/virtualized list through `useProgressiveReveal` so rows cascade in; the calm placeholder only covers the pre-first-page window.
+### Panels & metric grids (sla, director, certification, leaderboard, health)
+- Panel shells/section chrome render instantly.
+- Cold + fetching → a geometry-matched ghost of the grid (delayed entrance,
+  §C). The swap to real content is a plain conditional the frame data lands.
+- Real content entering may stagger per **tile/section** (existing
+  `animate-fade-slide-in` + per-tile `animationDelay`, or `Reveal` with
+  `delay={i * 0.045}`) — tiles ripple, the page never block-fades.
+- Numbers: `AnimatedCounter` / `SpringCount` counting up **is** the reveal —
+  never ghost a number you could animate.
+- Data retained across a parameter change (e.g. SLA day-range) stays on
+  screen while the refetch runs (law 1).
 
-### B. Dashboard of panels (home / mission-control) — already close
-
-- Keep the instant frame. Wrap each pane in `<Reveal delay={i * 0.045}>` (or a
-  `staggerContainer` parent) so panes cascade. Below-fold sections stay under
-  `DeferUntilIdle priority="next-frame"` with a `<Reveal>` inside. Replace any
-  `<Suspense fallback={null}>` on a *visible* widget with a calm sized box.
-
-### C. Single-panel / metrics grid (sla, director, certification, leaderboard, incidents)
-
-- Replace the full-body blank/spinner with:
-```tsx
-<LoadingReveal loading={loading} placeholder={<MetricsGridPlaceholder /* calm, sized */ />}>
-  <MetricsGrid ... />
-</LoadingReveal>
-```
-- Where a bespoke placeholder is overkill, omit `placeholder` — the frame shows,
-  then content `<Reveal>`s in. Deliberately avoids the empty→full pop.
-
-### D. Chart / KPI tiles
-
-- Reserve the chart's final box (fixed height); `<LoadingReveal>` with a calm
-  sized rectangle, or fade the chart in with `<Reveal>` once its series lands.
-- KPI counters keep animating up (`AnimatedCounter`/`SpringCount`) from 0 — that
-  *is* the reveal; don't skeleton them.
+### Charts
+Reserve the chart's final box height in the frame. Empty + fetching → calm
+delayed ghost rectangle in that exact box; series fades/draws in when data
+lands. Never let a chart's absence collapse layout.
 
 ## Reduced motion
-
-All primitives consult `useMotion()`/`useReducedMotion()`. Under
-`prefers-reduced-motion: reduce` (and when the window is hidden — the app wraps
-everything in `<MotionConfig reducedMotion="user">`), reveals collapse to an
-instant, transform-free opacity settle and `useProgressiveReveal` shows
-everything at once. Never add motion that bypasses these gates.
+`RevealItem` short-circuits (marked entered, no animation); the CSS
+`animate-fade-*` utilities are neutralized by the global reduced-motion block;
+counters snap. Never add motion outside these gates.
 
 ## Definition of done (per module)
 
-- [ ] Frame renders on first commit; no data-gated header.
-- [ ] No `animate-pulse` on primary content; no blank/`null` body.
-- [ ] Data region wrapped in `<LoadingReveal>` (or rows via `useProgressiveReveal`).
-- [ ] Fast/cached load shows no placeholder flash; slow load shows a calm, min-duration placeholder.
-- [ ] Below-fold/heavy widgets deferred.
-- [ ] Reduced-motion verified (instant, no movement).
-- [ ] `npx tsc --noEmit` clean, `eslint` clean on touched files, any new strings in `en.json` + `check:i18n:strict` clean.
+- [ ] Zero `LoadingReveal` / `useStableLoading` usages remain in the module.
+- [ ] Pre-warmed store data paints on the first frame — verified by reading the
+      store/hook: what exactly is in state when the component mounts warm?
+- [ ] No `animate-pulse` anywhere; ghosts are calm, delayed ≥120ms, geometry-matched.
+- [ ] Rows/tiles cascade (or the gap is reported, not hacked); nothing replays
+      on poll/refresh/scroll.
+- [ ] Empty state renders only when `!isFetching`.
+- [ ] Static chrome (headers/filters/tabs/shells) outside every loading branch.
+- [ ] `eslint` clean on touched files; TS types reasoned through.
