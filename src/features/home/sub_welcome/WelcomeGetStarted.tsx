@@ -18,6 +18,14 @@ import { useTranslation } from '@/i18n/useTranslation';
  * never while the initial persona fetch is in flight, so a returning user with
  * personas never sees it. The primary CTA launches the (now-mounted) overlay;
  * the secondary opens the companion chat.
+ *
+ * Loading choreography (docs/design/overview-loading.md): while `isLoading`
+ * we render nothing rather than a ghost — personas are usually pre-warmed
+ * before Home mounts, so this is a rare, near-instant window for a genuinely
+ * fresh profile, not a real loading state to ghost. Once resolved, the entry
+ * is held invisible for the same 150ms window as a Suspense fallback
+ * (`animate-fade-in`, `fill-mode: both`) before its existing fade/slide plays,
+ * so a decision that lands within a frame never visibly "pops".
  */
 export default function WelcomeGetStarted() {
   const { t } = useTranslation();
@@ -36,6 +44,7 @@ export default function WelcomeGetStarted() {
     <div
       data-testid="welcome-get-started"
       className="animate-fade-slide-in motion-reduce:animate-none rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/10 to-cyan-500/5 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+      style={{ animationDelay: '150ms' }}
     >
       <div className="w-11 h-11 shrink-0 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
         <Sparkles className="w-5 h-5 text-violet-400" />

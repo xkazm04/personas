@@ -13,20 +13,26 @@ import type { SidebarSection } from '@/lib/types/types';
 const FLEET_METRICS_REFRESH_MS = 30_000;
 
 /** Shaped placeholder while the first metrics snapshot loads — four pill-sized
- *  shimmer blocks matching the real strip's layout, so chrome lands without a
- *  jump when data arrives (replaces the old render-nothing behavior). */
+ *  calm ghost blocks matching the real strip's geometry (docs/design/overview-loading.md
+ *  §C), so chrome lands without a jump when data arrives. Metrics are usually
+ *  pre-warmed (overviewStore.fleetMetrics from the dashboard pipeline), so a
+ *  warm entry skips this entirely and paints real pills on frame 1 — these
+ *  ghosts are invisible for their first ~120ms (`animate-fade-in` +
+ *  `fill-mode: both`, staggered) so a fast/cold-but-quick fetch never shows
+ *  them either. No `animate-pulse` — the entrance stagger is the only motion. */
 function FleetHealthStripSkeleton() {
   return (
     <div className="flex items-center gap-2 flex-wrap" aria-hidden="true">
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
-          className={`animate-pulse rounded-interactive bg-primary/5 border border-primary/10 ${CARD_PADDING.compact} flex items-center gap-2`}
+          className={`rounded-interactive bg-primary/5 border border-primary/10 ${CARD_PADDING.compact} flex items-center gap-2 animate-fade-in`}
+          style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <div className="w-6 h-6 rounded-interactive bg-primary/10 flex-shrink-0" />
+          <div className="w-6 h-6 rounded-interactive bg-primary/[0.06] flex-shrink-0" />
           <div className="flex flex-col gap-1">
-            <div className="h-3 w-8 rounded bg-primary/10" />
-            <div className="h-2.5 w-14 rounded bg-primary/8" />
+            <div className="h-3 w-8 rounded bg-primary/[0.06]" />
+            <div className="h-2.5 w-14 rounded bg-primary/[0.06]" />
           </div>
         </div>
       ))}

@@ -44,10 +44,18 @@ export default function HomePage() {
   visitedRef.current.add(activeTab);
   const visited = visitedRef.current;
 
+  // Suspense fallback for a lazy Home tab chunk (docs/design/overview-loading.md §D).
+  // Invisible for the first 150ms (`animate-fade-in` + `fill-mode: both`) so a
+  // warm/cached chunk resolves before a single pixel of it paints — no spinner
+  // flash on tab switches. The tabs (Cockpit/Roadmap/Learning) don't share any
+  // body geometry, so the fallback ghosts nothing beyond the pane's own flex
+  // shell — faking body content here would just produce a different blink.
   const fallback = (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-    </div>
+    <div
+      aria-hidden="true"
+      className="flex-1 min-h-0 flex flex-col w-full animate-fade-in"
+      style={{ animationDelay: '150ms' }}
+    />
   );
 
   return (
