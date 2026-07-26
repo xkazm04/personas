@@ -117,3 +117,6 @@ scripts/test/.soak/
 
 # Personal app-cost passport file (never in VCS)
 app-cost.json
+
+# Working plan documents (session-local, not shared)
+docs/plans/

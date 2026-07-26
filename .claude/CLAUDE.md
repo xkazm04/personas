@@ -477,6 +477,50 @@ There is no scheduled `/guide-sync` cron — the per-session model is the entire
 This project has a Vibeman-generated context map at `context-map.json` (repo root). It maps every file to a feature ("context"), grouped by business domain. **Before editing code, read `context-map.json` to find the relevant context and scope your changes to its `filePaths`.** The `index` field is a quick one-line-per-context overview. If you change which files a context owns, update `context-map.json` to match (or run Vibeman's refresh) so it stays accurate.
 <!-- vibeman:context-map:end -->
 
+## Model & reasoning effort — when to tell the user to change them
+
+Measured on this operator's own repos (2026-07-24/25). Evidence and caveats:
+[`docs/development/model-effort-guide.md`](../docs/development/model-effort-guide.md).
+**Scope: ONE problem shape — long-form design — with one sample per cell. The
+build-and-verify arm was run and then DESCOPED as invalid (see the guide). Treat
+everything below as a weak prior, not a rule.**
+
+**You cannot introspect this.** Thinking content is redacted to empty in the
+transcript and the stream, so a session has no signal for how hard it is
+reasoning. Never trigger on "this feels hard" — trigger only on observable
+properties of the task, checked once when scope becomes clear.
+
+**More effort is not automatically better.** On long-form design work, quality
+*inverted* above medium: the priciest run wrote 1,327 lines, drifted its own
+cross-references, and was the only one to violate its brief. Length is not
+insight. Do not recommend raising effort for prose or design deliverables.
+
+**Do not recommend raising effort when output is tightly capped.** With a hard
+length cap, Opus showed *no* effort response at all (104→112 output tokens from
+low to max). You would be spending on reasoning you do not get.
+
+**Do not assume the bigger model is the safer default.** The model axis did not
+survive its own cross-check — two judges disagreed (ρ = 0.50) and each ranked its
+own model family first. Choose on cost.
+
+**Suspect framing before capacity.** The most replicated finding: on the design
+task all eight runs, at every model and effort, missed the *same* thing. No
+escalation would have found it; a sharper problem statement would have. When
+output disappoints, re-read the request before reaching for a bigger model.
+
+**How to raise it** — one sentence, once per session, naming the property that
+triggered it and the command (`/model`, `/effort`). Never repeat, never block,
+and drop it for the session if the user declines.
+
+**The hard-won corollary — about your own verification, not the models'.** This
+benchmark's own fixture corpus passed a green verification gate and was still
+garbage: the check confirmed numbers round-tripped into the asset, never that the
+result was anatomically meaningful, and the artifacts turned out to be visibly
+broken the moment a human opened them. **A gate that asserts data is not a gate
+on behavior.** Two judge models had meanwhile scored the work at 4/4 while
+logging unsubstantiated claims against it. Confidence — theirs or yours — is weak
+evidence. Observe the actual output.
+
 ## Decision Mirror (operator decision capture)
 
 This repo captures the operator's decisions to build a behavioral profile for
