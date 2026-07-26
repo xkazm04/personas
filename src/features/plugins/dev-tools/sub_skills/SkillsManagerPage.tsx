@@ -3,14 +3,10 @@
 // machinery, transcript-mined usage, memory bindings and the Memory Ledger's
 // per-skill context coverage (docs/plans/skill-memory-unification.md).
 //
-// ── PROTOTYPE SCAFFOLD (/prototype, throwaway) ──────────────────────────────
-// Two directional variants behind a tab switcher — pick a winner, then this
-// host renders it directly (switcher + loser deleted).
-//   · Registry — editorial ledger: symmetric dense columns, quiet row actions
-//   · Exchange — trading floor: card rows + an adopt/share gutter between
+// Layout (prototype round 2 fusion): Exchange's panel containers wrapping
+// Registry's space-efficient rows — see SkillsManagerBoard.
 import { useMemo, useState } from 'react';
 
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
@@ -20,11 +16,8 @@ import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools
 import { useSystemStore } from '@/stores/systemStore';
 
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
-import { SkillsManagerRegistry } from './SkillsManagerRegistry';
-import { SkillsManagerExchange } from './SkillsManagerExchange';
+import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
-
-type VariantId = 'registry' | 'exchange';
 
 /** Workspace-side row model. */
 export interface WsRow {
@@ -90,7 +83,6 @@ function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
   onPickProject: (id: string) => void;
 }) {
   const data = useSkillsManagerData(activeId);
-  const [variant, setVariant] = useState<VariantId>('registry');
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
 
   const projectName = projectOptions.find((o) => o.value === activeId)?.label ?? '';
@@ -120,11 +112,10 @@ function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
   );
 
   const busy = Boolean(data.wb?.managing);
-  const Body = variant === 'registry' ? SkillsManagerRegistry : SkillsManagerExchange;
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
-      {/* toolbar — project switcher + throwaway A/B */}
+      {/* toolbar — project switcher */}
       <div className="flex items-center gap-3 py-3 flex-shrink-0">
         <span className="typo-title">Skills</span>
         <div className="w-56">
@@ -137,21 +128,10 @@ function SkillsManagerInner({ activeId, projectOptions, onPickProject }: {
             aria-label="Active project"
           />
         </div>
-        <span className="ml-auto">
-          <SegmentedTabs
-            tabs={[{ id: 'registry', label: 'Registry' }, { id: 'exchange', label: 'Exchange' }]}
-            activeTab={variant}
-            onTabChange={setVariant}
-            variant="segment"
-            size="sm"
-            fullWidth={false}
-            ariaLabel="Skills manager variant"
-          />
-        </span>
       </div>
 
       <div className="flex-1 min-h-0">
-        <Body
+        <SkillsManagerBoard
           ws={ws}
           proj={proj}
           totalContexts={data.totalContexts}

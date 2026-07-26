@@ -510,11 +510,10 @@ src/features/plugins/dev-tools/
 │   ├── GoalConstellation.tsx · GoalKanban.tsx
 │   └── i18n/                     # 14 language stubs (deprecated — use root i18n)
 └── sub_skills/                   # Skills Manager (2nd-level "Skills" item)
-    ├── SkillsManagerPage.tsx     # host: project switcher toolbar + variants
+    ├── SkillsManagerPage.tsx     # host: project switcher toolbar
     ├── skillsManagerData.ts      # data spine (workbench reuse + coverage + usage + memory switch)
     ├── skillsManagerBits.tsx     # MemoryBindingButton · UsageLine · CoverageBar
-    ├── SkillsManagerRegistry.tsx # prototype variant A (editorial ledger)
-    ├── SkillsManagerExchange.tsx # prototype variant B (trading floor)
+    ├── SkillsManagerBoard.tsx    # fused board: panel containers + dense rows, sortable headers
     └── SkillContextsModal.tsx    # per-context progress modal (Bars/Grid)
 ```
 
@@ -522,6 +521,10 @@ src/features/plugins/dev-tools/
 
 The workspace skill library (`~/.claude/skills`) on the left, the **active
 project's** installed skills on the right, a project switcher in the toolbar.
+Both panels have sortable Skill/Usage column headers (sorting applies WITHIN
+groups); grouping renders as divider rows only (left: category; right:
+context-tracked vs standard, no category), installed state is an icon, and the
+30-day window is stated once per panel footer, never per row.
 Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
 LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
 skill instrumentation needed), a **memory-binding icon** (internal ledger /

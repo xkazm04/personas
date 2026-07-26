@@ -36,12 +36,13 @@ export function MemoryBindingButton({ binding, onSwitch }: {
   );
 }
 
-/** Terse transcript-mined usage: `12×/30d · 2d ago`. Null usage renders
- *  nothing — no telemetry ≠ unused. */
+/** Terse transcript-mined usage: `12× · 2d ago`. The 30-day window is stated
+ *  ONCE in the panel footer, never per row. Null usage renders nothing — no
+ *  telemetry ≠ unused. */
 export function UsageLine({ invokes30d, lastInvokedAt }: { invokes30d: number; lastInvokedAt: string | null }) {
   return (
     <span className="inline-flex items-center gap-1 typo-label text-foreground/40 whitespace-nowrap tabular-nums">
-      {invokes30d}×/30d
+      {invokes30d}×
       {lastInvokedAt && <>· <RelativeTime timestamp={lastInvokedAt} className="tabular-nums" /></>}
     </span>
   );
