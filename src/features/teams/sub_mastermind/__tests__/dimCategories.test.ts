@@ -77,6 +77,24 @@ describe('dimCategories — categoryNodes', () => {
     expect(categoryNodes(runtimeOnly).map((c) => c.key)).toEqual(['runtime']);
   });
 
+  // `attention` is what the far-zoom badge counts — problems, not gaps.
+  it('counts alert+risk as attention, and never counts absent as a problem', () => {
+    const runtime = DIM_ORDER.filter((k) => DIM_REGISTRY[k].category === 'runtime');
+    const statuses: DimStatus[] = ['alert', 'risk', 'absent', 'solid', 'partial'];
+    const nodes = runtime.map((k, i) => node(k, statuses[i % statuses.length]!));
+    const cat = categoryNodes(nodes).find((c) => c.key === 'runtime')!;
+    const expected = nodes.filter((n) => n.status === 'alert' || n.status === 'risk').length;
+    expect(cat.attention).toBe(expected);
+    expect(cat.attention).toBeGreaterThan(0);
+  });
+
+  it('an all-absent category raises no attention — a gap is not a problem', () => {
+    const runtime = DIM_ORDER.filter((k) => DIM_REGISTRY[k].category === 'runtime').map((k) => node(k, 'absent'));
+    const cat = categoryNodes(runtime).find((c) => c.key === 'runtime')!;
+    expect(cat.attention).toBe(0);
+    expect(cat.status).toBe('absent');
+  });
+
   it('counts solids per category and rolls the status up', () => {
     const nodes = DIM_ORDER.map((k) => node(k, DIM_REGISTRY[k].category === 'product' ? 'alert' : 'solid'));
     const cats = categoryNodes(nodes);

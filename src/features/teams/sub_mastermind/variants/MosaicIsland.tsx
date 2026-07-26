@@ -218,6 +218,15 @@ function CategoryCell({ category, x, y, highlighted, onOpen, onDrillIn }: {
       <text y={44} textAnchor="middle" fontSize={17} fontWeight={700} fill={absent ? 'var(--muted-foreground)' : mix(ink, 90)} style={{ fontVariantNumeric: 'tabular-nums' }}>
         {category.solid}/{category.total}
       </text>
+      {/* how MANY things are wrong in here — the count the colour can't carry */}
+      {category.attention > 0 && (
+        <g transform={`translate(${CAT_RADIUS * 0.62} ${-CAT_RADIUS * 0.66})`}>
+          <circle r={15} fill={mix(ink, 22, 'var(--background)')} stroke={mix(ink, 80)} strokeWidth={2} />
+          <text y={5.5} textAnchor="middle" fontSize={17} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {category.attention}
+          </text>
+        </g>
+      )}
     </g>
   );
 }

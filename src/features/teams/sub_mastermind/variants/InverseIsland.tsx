@@ -234,6 +234,15 @@ function CategoryPlate({ category, x, y, w, h, highlighted, onOpen, onDrillIn }:
       <text y={42} textAnchor="middle" fontSize={18} fontWeight={700} fill={absent ? 'var(--muted-foreground)' : mix(ink, 90)} style={{ fontVariantNumeric: 'tabular-nums' }}>
         {category.solid}/{category.total}
       </text>
+      {/* how MANY things are wrong in here — the count the colour can't carry */}
+      {category.attention > 0 && (
+        <g transform={`translate(${w / 2 - 15} ${-h / 2 + 15})`}>
+          <circle r={15} fill={mix(ink, 22, 'var(--background)')} stroke={mix(ink, 80)} strokeWidth={2} />
+          <text y={5.5} textAnchor="middle" fontSize={17} fontWeight={700} fill={ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {category.attention}
+          </text>
+        </g>
+      )}
     </g>
   );
 }

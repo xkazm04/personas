@@ -32,6 +32,10 @@ export interface CategoryNode {
   total: number;
   /** How many of them are `solid` — the "x of y wired" reading at mid zoom. */
   solid: number;
+  /** How many are actually WRONG — `alert` or `risk`. Distinct from "not
+   *  solid": an `absent` dimension is a gap you may have chosen, a `risk` one
+   *  is a problem. This is what the far-zoom attention badge counts. */
+  attention: number;
   /** The member dimensions, registry order — feeds the tooltip. */
   nodes: DimNode[];
 }
@@ -81,6 +85,7 @@ export function categoryNodes(nodes: DimNode[]): CategoryNode[] {
       status: rollupStatus(members.map((n) => n.status)),
       total: members.length,
       solid: members.filter((n) => n.status === 'solid').length,
+      attention: members.filter((n) => n.status === 'alert' || n.status === 'risk').length,
       nodes: members,
     }];
   });
