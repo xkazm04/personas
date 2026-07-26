@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "Wird gesendet…",
     "dispatch_toast": "Fleet-Sitzung in {name} gesendet",
     "kpis_title": "Kennzahlen",
-    "kpi_unmeasured": "nicht gemessen"
+    "kpi_unmeasured": "nicht gemessen",
+    "dim_cat_runtime": "Laufzeit",
+    "dim_cat_delivery": "Auslieferung",
+    "dim_cat_agentic": "Agenten",
+    "dim_cat_product": "Produkt",
+    "dim_cat_summary": "{solid} von {total} angebunden"
   }
 }

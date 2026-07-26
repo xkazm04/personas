@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "পাঠানো হচ্ছে…",
     "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "পরিমাপ করা হয়নি"
+    "kpi_unmeasured": "পরিমাপ করা হয়নি",
+    "dim_cat_runtime": "রানটাইম",
+    "dim_cat_delivery": "ডেলিভারি",
+    "dim_cat_agentic": "এজেন্টিক",
+    "dim_cat_product": "পণ্য",
+    "dim_cat_summary": "{total}-এর মধ্যে {solid}টি যুক্ত"
   }
 }

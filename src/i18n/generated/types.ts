@@ -18579,5 +18579,10 @@ export type Translations = {
     score_legend: string;
     kpis_title: string;
     kpi_unmeasured: string;
+    dim_cat_runtime: string;
+    dim_cat_delivery: string;
+    dim_cat_agentic: string;
+    dim_cat_product: string;
+    dim_cat_summary: string;
   };
 };

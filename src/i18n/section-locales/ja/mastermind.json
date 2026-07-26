@@ -76,5 +76,10 @@
   "dispatch_submitting": "送信中…",
   "dispatch_toast": "{name} で Fleet セッションを送信しました",
   "kpis_title": "KPI",
-  "kpi_unmeasured": "未計測"
+  "kpi_unmeasured": "未計測",
+  "dim_cat_runtime": "実行環境",
+  "dim_cat_delivery": "デリバリー",
+  "dim_cat_agentic": "エージェント",
+  "dim_cat_product": "プロダクト",
+  "dim_cat_summary": "{total} 件中 {solid} 件が接続済み"
 }

@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "Mengirim…",
     "dispatch_toast": "Sesi Fleet dikirim di {name}",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "belum diukur"
+    "kpi_unmeasured": "belum diukur",
+    "dim_cat_runtime": "Eksekusi",
+    "dim_cat_delivery": "Pengiriman",
+    "dim_cat_agentic": "Agentik",
+    "dim_cat_product": "Produk",
+    "dim_cat_summary": "{solid} dari {total} terhubung"
   }
 }

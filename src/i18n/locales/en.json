@@ -18572,6 +18572,11 @@
     "fleet_close_preview": "Hide preview",
     "score_legend": "auto · prod",
     "kpis_title": "KPIs",
-    "kpi_unmeasured": "not measured"
+    "kpi_unmeasured": "not measured",
+    "dim_cat_runtime": "Runtime",
+    "dim_cat_delivery": "Delivery",
+    "dim_cat_agentic": "Agentic",
+    "dim_cat_product": "Product",
+    "dim_cat_summary": "{solid} of {total} wired"
   }
 }

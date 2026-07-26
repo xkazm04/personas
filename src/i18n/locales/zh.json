@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "正在派发…",
     "dispatch_toast": "已在 {name} 中派发 Fleet 会话",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "未测量"
+    "kpi_unmeasured": "未测量",
+    "dim_cat_runtime": "运行时",
+    "dim_cat_delivery": "交付",
+    "dim_cat_agentic": "智能体",
+    "dim_cat_product": "产品",
+    "dim_cat_summary": "{total} 项中已接入 {solid} 项"
   }
 }

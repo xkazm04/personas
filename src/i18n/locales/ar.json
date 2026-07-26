@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "جارٍ الإرسال…",
     "dispatch_toast": "تم إرسال جلسة Fleet في {name}",
     "kpis_title": "مؤشرات الأداء",
-    "kpi_unmeasured": "غير مُقاس"
+    "kpi_unmeasured": "غير مُقاس",
+    "dim_cat_runtime": "وقت التشغيل",
+    "dim_cat_delivery": "التسليم",
+    "dim_cat_agentic": "الوكلاء",
+    "dim_cat_product": "المنتج",
+    "dim_cat_summary": "{solid} من {total} مُفعّل"
   }
 }

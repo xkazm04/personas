@@ -1,14 +1,19 @@
-// One project as a honeycomb puzzle: core cell + 8 dimension cells snapped
+// One project as a honeycomb puzzle: core cell + dimension cells snapped
 // edge-to-edge on the axial hex lattice. Round-3 LOD (band-driven):
-//   far/mid  → FULLSCALE state-coloured icon per cell (dimension states
-//              readable from orbit), title large on the banner
-//   near     → icon + uppercase label
+//   far/mid  → FOUR category hexes (runtime/delivery/agentic/product), each a
+//              fullscale icon in its rolled-up status colour — 15 same-sized
+//              dots is not a shape you can read from orbit
+//   near     → the full lattice explodes back: icon + uppercase label per dim
 //   close    → + tool detail + progress
+// The cluster's extents are always measured from the FULL lattice, so the
+// halo, banner, stat columns and fleet badges never move across a band change —
+// only the cells inside swap.
 import { memo, useRef, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DimGlyph } from '../lib/DimGlyph';
+import { CATEGORY_ICON, categoryNodes, type CategoryNode } from '../lib/dimCategories';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
@@ -33,6 +38,17 @@ const AXIAL: Array<[number, number]> = [
 ];
 const cellXY = (q: number, r: number) => ({ x: CELL * Math.sqrt(3) * (q + r / 2), y: CELL * 1.5 * r });
 
+// Zoomed-out lattice: four oversized hexes in a symmetric quad around the core
+// (NW, NE, SE, SW), pushed out and grown so the collapsed body still fills a
+// comparable footprint. Index maps onto CATEGORY_ORDER.
+const CAT_RADIUS = CELL * 1.28;
+const CAT_SPREAD = 1.62;
+const CAT_AXIAL: Array<[number, number]> = [[0, -1], [1, -1], [0, 1], [-1, 1]];
+const catXY = (q: number, r: number) => {
+  const p = cellXY(q, r);
+  return { x: p.x * CAT_SPREAD, y: p.y * CAT_SPREAD };
+};
+
 // React.memo'd: the shell hands it referentially-stable callbacks + primitive
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
@@ -52,6 +68,11 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
   const leftX = Math.min(0, ...xs) - CELL;
   const rightX = Math.max(0, ...xs) + CELL;
   const haloR = Math.max(CELL * 3.1, (botY - topY) / 2 + CELL * 0.8);
+  // Zoomed-out bands collapse the body to its four category cells; the context
+  // menu's hover echo follows onto the category that owns the hovered dimension.
+  const collapsed = band === 'far' || band === 'mid';
+  const categories = collapsed ? categoryNodes(island.nodes) : [];
+  const categoryOfHighlight = highlightKey ? DIM_REGISTRY[highlightKey as keyof typeof DIM_REGISTRY]?.category : undefined;
 
   return (
     <g
@@ -71,22 +92,40 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
           rasterization cost during zoom. */}
       <circle r={haloR * 1.18} fill={`url(#mm-halo-${island.state})`} opacity={0.5} />
 
-      {island.nodes.map((n, k) => {
-        const ax = AXIAL[k];
-        if (!ax) return null;
-        const p = cellXY(ax[0], ax[1]);
-        return (
-          <MosaicCell
-            key={n.key}
-            node={n}
-            x={p.x}
-            y={p.y}
-            band={band}
-            highlighted={highlightKey === n.key}
-            onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
-          />
-        );
-      })}
+      {collapsed
+        ? categories.map((c, k) => {
+          const ax = CAT_AXIAL[k];
+          if (!ax) return null;
+          const p = catXY(ax[0], ax[1]);
+          // Clicking a category frames the island — the drill-in gesture that
+          // explodes it back into its real dimension cells.
+          return (
+            <CategoryCell
+              key={c.key}
+              category={c}
+              x={p.x}
+              y={p.y}
+              highlighted={categoryOfHighlight === c.key}
+              onDrillIn={mode === 'edit' ? () => onIslandFocus(island.slug) : undefined}
+            />
+          );
+        })
+        : island.nodes.map((n, k) => {
+          const ax = AXIAL[k];
+          if (!ax) return null;
+          const p = cellXY(ax[0], ax[1]);
+          return (
+            <MosaicCell
+              key={n.key}
+              node={n}
+              x={p.x}
+              y={p.y}
+              band={band}
+              highlighted={highlightKey === n.key}
+              onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
+            />
+          );
+        })}
 
       {/* core cell */}
       <polygon points={hexPoints(0, 0, CELL - 1.5)} fill={mix(ink, 26, 'var(--secondary)')} stroke={mix(ink, 70)} strokeWidth={2} strokeLinejoin="round" />
@@ -124,6 +163,56 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
     </g>
   );
 });
+
+/** One collapsed category as an oversized hex — the far/mid body. Fullscale
+ *  icon in the rolled-up status colour with the wired ratio underneath.
+ *  In edit mode clicking drills into the island (the gesture that explodes it
+ *  back into real cells); in connect/group/note mode the cell stays inert so
+ *  it never swallows the mode's own drag.  */
+function CategoryCell({ category, x, y, highlighted, onDrillIn }: {
+  category: CategoryNode;
+  x: number;
+  y: number;
+  highlighted: boolean;
+  /** Undefined outside edit mode — no cursor, no click, no pointer capture. */
+  onDrillIn?: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const ink = DIM_INK[category.status];
+  const absent = category.status === 'absent';
+  const Icon = CATEGORY_ICON[category.key];
+  const [hovered, setHovered] = useState(false);
+  const label = t.mastermind[`dim_cat_${category.key}` as const];
+
+  return (
+    <g
+      transform={`translate(${x} ${y})`}
+      opacity={absent && !highlighted ? 0.6 : 1}
+      style={onDrillIn ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onDrillIn ? () => setHovered(true) : undefined}
+      onPointerLeave={onDrillIn ? () => setHovered(false) : undefined}
+      onPointerDown={onDrillIn ? (e) => e.stopPropagation() : undefined}
+      onClick={onDrillIn ? (e) => { e.stopPropagation(); onDrillIn(); } : undefined}
+      data-testid={`mm-category-${category.key}`}
+    >
+      {/* the cell can't show 15 labels, so the tooltip carries the reading */}
+      <title>{`${label} — ${tx(t.mastermind.dim_cat_summary, { solid: category.solid, total: category.total })}`}</title>
+      <polygon
+        points={hexPoints(0, 0, CAT_RADIUS - 1.5)}
+        fill={absent ? mix('var(--secondary)', 45, 'var(--background)') : mix(ink, 20, 'var(--secondary)')}
+        stroke={absent ? mix('var(--muted-foreground)', 40) : mix(ink, 55)}
+        strokeWidth={1.5} strokeDasharray={absent ? '5 5' : undefined} strokeLinejoin="round"
+      />
+      {(highlighted || hovered) && (
+        <polygon points={hexPoints(0, 0, CAT_RADIUS + 2)} fill="none" stroke={mix('var(--primary)', highlighted ? 95 : 70)} strokeWidth={highlighted ? 3.5 : 2} strokeLinejoin="round" />
+      )}
+      <Icon x={-34} y={-40} width={68} height={68} strokeWidth={1.4} style={{ color: absent ? 'var(--muted-foreground)' : ink }} />
+      <text y={44} textAnchor="middle" fontSize={17} fontWeight={700} fill={absent ? 'var(--muted-foreground)' : mix(ink, 90)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {category.solid}/{category.total}
+      </text>
+    </g>
+  );
+}
 
 function MosaicCell({ node, x, y, band, highlighted, onAction }: {
   node: DimNode;

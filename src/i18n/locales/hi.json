@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "भेजा जा रहा है…",
     "dispatch_toast": "{name} में Fleet सत्र भेजा गया",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "मापा नहीं गया"
+    "kpi_unmeasured": "मापा नहीं गया",
+    "dim_cat_runtime": "रनटाइम",
+    "dim_cat_delivery": "डिलीवरी",
+    "dim_cat_agentic": "एजेंटिक",
+    "dim_cat_product": "उत्पाद",
+    "dim_cat_summary": "{total} में से {solid} जुड़े"
   }
 }

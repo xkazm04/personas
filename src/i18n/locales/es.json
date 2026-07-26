@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "Enviando…",
     "dispatch_toast": "Sesión de Fleet enviada en {name}",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "sin medir"
+    "kpi_unmeasured": "sin medir",
+    "dim_cat_runtime": "Ejecución",
+    "dim_cat_delivery": "Entrega",
+    "dim_cat_agentic": "Agentes",
+    "dim_cat_product": "Producto",
+    "dim_cat_summary": "{solid} de {total} conectados"
   }
 }

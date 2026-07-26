@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "Đang gửi…",
     "dispatch_toast": "Đã gửi phiên Fleet trong {name}",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "chưa đo"
+    "kpi_unmeasured": "chưa đo",
+    "dim_cat_runtime": "Môi trường chạy",
+    "dim_cat_delivery": "Bàn giao",
+    "dim_cat_agentic": "Tác tử",
+    "dim_cat_product": "Sản phẩm",
+    "dim_cat_summary": "đã nối {solid} trên {total}"
   }
 }

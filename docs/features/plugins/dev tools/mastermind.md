@@ -116,7 +116,15 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 **Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15 (`goals` plus the 2026-07-23 `datalinks`/`support` additions took the last comfortable slots); we are AT the ~15 ceiling — before injecting more, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
+**Dimension categories (far/mid LOD).** Fifteen same-sized dots is not a shape you can read from orbit, so the zoomed-out bands collapse the body into the four registry `category` groups — **Runtime · Delivery · Agentic · Product** — and near/close explodes it back to the full lattice. `lib/dimCategories.ts` owns the pure rollup (unit-tested in `__tests__/dimCategories.test.ts`); the registry's `category` field, reserved since it was written, is what it reads.
+
+Rollup rule, pessimistic about problems and strict about green: any `alert` → `alert`; else any `risk` → `risk`; else any `unknown` → `unknown` (a failed data family must never read as healthy); else all-`absent` → `absent`; else all-`solid` → `solid`; else `partial`. Each cell renders the category icon (`Cpu` / `PackageCheck` / `Sparkles` / `Compass`) in that colour plus a `solid/total` ratio, with a native `<title>` carrying "*{solid} of {total} wired*".
+
+Geometry: four oversized cells in a symmetric quad around the core (`CAT_AXIAL` in `MosaicIsland`, `CAT_RING` in `InverseIsland`). Cluster extents are **always measured from the full lattice**, so the halo/plate, banner, stat columns and fleet badges hold still across the band change — only the cells inside swap. In **edit** mode clicking a category cell frames the island (the drill-in gesture that explodes it); in connect/group/note mode the cell is inert so it never swallows the mode's own drag.
+
+This is what lifts the ~15-cell ceiling: a 16th dimension needs a registry entry and a lattice slot as before, but the far-zoom read no longer degrades with the count.
+
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15. The far/mid **dimension-categories** collapse (below) has since landed, so the zoomed-out read no longer degrades with the count — a 16th dimension needs a registry entry plus one lattice coord in each variant.
 
 ## 6. Zoom bands and level-of-detail
 
@@ -124,9 +132,9 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 | Band | Cells render | Identity |
 | --- | --- | --- |
-| far | fullscale state-coloured icon (or day-count payload) per cell | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
-| mid | same fullscale icons | banner 18 px |
-| near | icon + uppercase label | banner 17 px; stat columns visible |
+| far | **4 category cells** (see §5 Dimension categories) — fullscale icon in the rolled-up status colour + `solid/total` ratio | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
+| mid | same 4 category cells | banner 18 px |
+| near | the full lattice **explodes back** — icon + uppercase label per dimension | banner 17 px; stat columns visible |
 | close | + tool detail + ordinal progress bar | banner 16 px |
 
 The banner is rendered in world space but **counter-scaled by 1/z** (the Civilization city-label trick), so identity holds at any distance. Native `<title>` tooltips on every cell name the dimension + tool regardless of LOD. Stat columns hide at far. The dev-only `ZoomBadge` (top-right, `import.meta.env.DEV`) shows exact z / % / band for tuning.
@@ -190,6 +198,6 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 - `auth` has no Improve counterpart yet (inert). `datalinks` / `support` are inert by design (§5).
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
-- **Dimension categories** for ≥15 dimensions (see §5). Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
+- **Dimension categories** shipped (see §5) — the ceiling is lifted. Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
 - Demo islands cannot exercise Improve actions, terminals, or real scan freshness.
 - Persona attribution requires the project to have a `team_id`.

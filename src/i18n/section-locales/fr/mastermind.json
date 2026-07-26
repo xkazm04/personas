@@ -76,5 +76,10 @@
   "dispatch_submitting": "Envoi…",
   "dispatch_toast": "Session Fleet envoyée dans {name}",
   "kpis_title": "KPI",
-  "kpi_unmeasured": "non mesuré"
+  "kpi_unmeasured": "non mesuré",
+  "dim_cat_runtime": "Exécution",
+  "dim_cat_delivery": "Livraison",
+  "dim_cat_agentic": "Agents",
+  "dim_cat_product": "Produit",
+  "dim_cat_summary": "{solid} sur {total} raccordés"
 }

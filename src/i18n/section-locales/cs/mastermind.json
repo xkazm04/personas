@@ -76,5 +76,10 @@
   "dispatch_submitting": "Odesílání…",
   "dispatch_toast": "Relace Fleet odeslána v {name}",
   "kpis_title": "KPI",
-  "kpi_unmeasured": "neměřeno"
+  "kpi_unmeasured": "neměřeno",
+  "dim_cat_runtime": "Běhové prostředí",
+  "dim_cat_delivery": "Dodávka",
+  "dim_cat_agentic": "Agenti",
+  "dim_cat_product": "Produkt",
+  "dim_cat_summary": "zapojeno {solid} z {total}"
 }

@@ -18572,6 +18572,11 @@
     "dispatch_submitting": "Отправка…",
     "dispatch_toast": "Сеанс Fleet отправлен в {name}",
     "kpis_title": "KPI",
-    "kpi_unmeasured": "не измерено"
+    "kpi_unmeasured": "не измерено",
+    "dim_cat_runtime": "Среда",
+    "dim_cat_delivery": "Поставка",
+    "dim_cat_agentic": "Агенты",
+    "dim_cat_product": "Продукт",
+    "dim_cat_summary": "подключено {solid} из {total}"
   }
 }

@@ -76,5 +76,10 @@
   "dispatch_submitting": "전송 중…",
   "dispatch_toast": "{name}에서 Fleet 세션을 전송했습니다",
   "kpis_title": "KPI",
-  "kpi_unmeasured": "측정되지 않음"
+  "kpi_unmeasured": "측정되지 않음",
+  "dim_cat_runtime": "런타임",
+  "dim_cat_delivery": "배포",
+  "dim_cat_agentic": "에이전트",
+  "dim_cat_product": "제품",
+  "dim_cat_summary": "{total}개 중 {solid}개 연결됨"
 }
