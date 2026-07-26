@@ -1,7 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import GlobalExecutionList from '@/features/overview/sub_activity/components/GlobalExecutionList';
 
 // The per-call LLM usage table is only reached via the "Calls" subtab, so keep
@@ -50,16 +49,15 @@ export default function ExecutionsWithSubtabs() {
         {subtab === 'activity' ? (
           <GlobalExecutionList headerActions={switcher} />
         ) : (
-          // Calm placeholder for the code-split chunk fetch (not the data
-          // fetch — LlmCallsTable gates that itself). `fallback={null}` would
-          // blank the visible pane while the chunk downloads/parses; per the
-          // golden loading pattern a body should never render empty.
+          // Placeholder for the code-split chunk fetch (not the data fetch —
+          // LlmCallsTable gates that itself). Per docs/design/overview-loading.md
+          // §D: invisible for 150ms (so a fast chunk load never paints
+          // anything) and reserves the pane's height so the page doesn't
+          // shift; it must NOT fake LlmCallsTable's body geometry (toolbar +
+          // table), since that's a different shape than GlobalExecutionList's
+          // and this position has no chrome shared between the two subtabs.
           <Suspense
-            fallback={
-              <div className="flex-1 min-h-0 flex flex-col p-4 md:p-6">
-                <ListSkeleton calm rows={10} />
-              </div>
-            }
+            fallback={<div className="flex-1 min-h-0 animate-fade-in" style={{ animationDelay: '150ms' }} />}
           >
             <LlmCallsTable headerSwitch={switcher} />
           </Suspense>
