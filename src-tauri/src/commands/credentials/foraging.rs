@@ -13,6 +13,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::error::AppError;
 use crate::AppState;
 
 // -- Types --------------------------------------------------------------
@@ -631,14 +632,11 @@ fn deduplicate(results: Vec<ForagedCredential>) -> Vec<ForagedCredential> {
 // -- Tauri Commands -----------------------------------------------------
 
 /// Scan the local filesystem for discoverable credentials.
-/// `Result<_, String>` keeps the macro out — its expansion uses bare `?`
-/// which requires `From<AppError>` for the error type.
 #[tauri::command]
 pub fn scan_credential_sources(
     state: State<'_, Arc<AppState>>,
-) -> Result<ForagingScanResult, String> {
-    crate::ipc_auth::require_privileged_sync(&state, "scan_credential_sources")
-        .map_err(|e| e.to_string())?;
+) -> Result<ForagingScanResult, AppError> {
+    crate::ipc_auth::require_privileged_sync(&state, "scan_credential_sources")?;
     let start = std::time::Instant::now();
 
     // Get existing credential service types to mark duplicates
@@ -714,26 +712,24 @@ pub fn scan_credential_sources(
 ///
 /// The credential row, encrypted fields, and audit log entry are written in a
 /// single SQLite transaction so either all writes succeed or none do.
-/// `Result<_, String>` keeps the macro out — see scan_credential_sources.
 #[tauri::command]
 pub fn import_foraged_credential(
     state: State<'_, Arc<AppState>>,
     foraged_id: String,
     credential_name: String,
     service_type: String,
-) -> Result<serde_json::Value, String> {
-    crate::ipc_auth::require_privileged_sync(&state, "import_foraged_credential")
-        .map_err(|e| e.to_string())?;
+) -> Result<serde_json::Value, AppError> {
+    crate::ipc_auth::require_privileged_sync(&state, "import_foraged_credential")?;
     // Re-read the actual values from the source.
     // The fields HashMap contains raw secret material -- never log or emit it.
     let fields = resolve_real_values(&foraged_id, &service_type)
-        .map_err(|e| format!("Failed to read credential values: {e}"))?;
+        .map_err(|e| AppError::External(format!("Failed to read credential values: {e}")))?;
 
     if fields.is_empty() {
-        return Err(
+        return Err(AppError::External(
             "No credential values found at source. The credential may have been removed."
                 .to_string(),
-        );
+        ));
     }
 
     let input = crate::db::models::CreateCredentialInput {
@@ -747,18 +743,14 @@ pub fn import_foraged_credential(
         oauth_session_ref: None,
     };
 
-    let mut conn = state
-        .db
-        .get()
-        .map_err(|e| format!("Failed to get DB connection: {e}"))?;
+    let mut conn = state.db.get()?;
     let tx = conn
         .transaction()
-        .map_err(|e| format!("Failed to start transaction: {e}"))?;
+        .map_err(|e| AppError::External(format!("Failed to start transaction: {e}")))?;
 
     let cred_id = crate::db::repos::resources::credentials::insert_credential_and_fields_tx(
         &state.db, &tx, &input, &fields,
-    )
-    .map_err(|e| format!("Failed to create credential: {e}"))?;
+    )?;
 
     // Audit log in the same transaction
     let audit_id = uuid::Uuid::new_v4().to_string();
@@ -767,13 +759,12 @@ pub fn import_foraged_credential(
         "INSERT INTO credential_audit_log (id, credential_id, credential_name, operation, persona_id, persona_name, detail, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![audit_id, cred_id, credential_name, "create", Option::<&str>::None, Option::<&str>::None, "Imported via credential foraging", now],
-    ).map_err(|e| format!("Failed to insert audit log: {e}"))?;
+    )?;
 
     tx.commit()
-        .map_err(|e| format!("Failed to commit transaction: {e}"))?;
+        .map_err(|e| AppError::External(format!("Failed to commit transaction: {e}")))?;
 
-    let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &cred_id)
-        .map_err(|e| format!("Failed to read created credential: {e}"))?;
+    let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &cred_id)?;
 
     Ok(serde_json::json!({
         "id": cred.id,
