@@ -45,13 +45,9 @@ const ALLOWLIST: Record<string, string> = {
   "commands/fleet/process_scan.rs": "documented deliberate String fork (fleet)",
   "commands/fleet/transcript_read.rs": "documented deliberate String fork (fleet)",
 
-  // Frontend-coupled credential flows: the React layer parses these error
-  // strings to drive multi-step browser/OAuth automation, so the migration has
-  // to move Rust and TS together. Tracked as blocked-residual.
-  "commands/credentials/auto_cred_browser.rs":
-    "frontend parses error strings to drive Playwright automation steps",
-  "commands/credentials/foraging.rs":
-    "frontend parses error strings in the credential-foraging import flow",
+  // (auto_cred_browser.rs and foraging.rs were migrated with their paired
+  // frontend changes on 2026-07-26 — removed from this list per the
+  // stale-entry rule: the list only shrinks.)
 
   // Owned by a separate branch at the time of the 2026-07-26 sweep.
   "commands/infrastructure/dev_tools.rs": "dev-tools migration lives on another branch",
