@@ -11,6 +11,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
@@ -24,6 +26,14 @@ import {
   type ConsolidationItem,
   type ConsolidationRun,
 } from '@/api/companion';
+
+/**
+ * Rows/cards in the first viewport that play the one-shot entrance cascade
+ * when a run/item list lands (35ms stagger via RevealItem, id-guarded so a
+ * poll/refresh re-delivering the same ids never replays it).
+ */
+const RUN_CASCADE_ROWS = 20;
+const ITEM_CASCADE_ROWS = 20;
 
 /**
  * Diff-review surface for memory consolidation. Two modes:
@@ -47,6 +57,8 @@ export function ConsolidationReview({
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const enterRuns = useRevealTracker();
 
   const loadRuns = useCallback(() => {
     setRuns(null);
@@ -143,46 +155,104 @@ export function ConsolidationReview({
 
       <div className="flex-1 overflow-y-auto">
         {runs === null ? (
-          <div className="flex items-center gap-3 p-5 typo-body text-foreground">
-            <LoadingSpinner size="sm" />
-            <span>{t.plugins.companion.brain_loading}</span>
-          </div>
+          <ConsolidationRunGhostRows />
         ) : runs.length === 0 ? (
           <p className="p-5 typo-body text-foreground">
             {t.plugins.companion.brain_empty}
           </p>
         ) : (
           <ul className="divide-y divide-foreground/5">
-            {runs.map((run) => (
+            {runs.map((run, index) => (
               <li key={run.id}>
-                <button
-                  onClick={() => setActiveRunId(run.id)}
-                  className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
+                <RevealItem
+                  revealId={run.id}
+                  order={index}
+                  hasEntered={(id) => index >= RUN_CASCADE_ROWS || enterRuns.hasEntered(id)}
+                  markEntered={enterRuns.markEntered}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="typo-caption font-medium text-foreground">
-                      {run.summary
-                        ? run.summary
-                        : `${run.episodesCount} episodes reviewed`}
-                    </span>
-                    <RunStatusBadge run={run} />
-                  </div>
-                  <div className="typo-caption text-foreground">
-                    {run.itemsTotal} <DebtText k="auto_proposals_52cac85b" /> {run.itemsPending} <DebtText k="auto_pending_5829114a" />{' '}
-                    {run.itemsApplied} <DebtText k="auto_applied_8858b48c" /> {run.itemsRejected} <DebtText k="auto_rejected_bb194a7a" />{' '}
-                    <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
-                  </div>
-                  {run.errorText && (
-                    <div className="typo-caption text-rose-400 mt-1 truncate">
-                      {run.errorText}
+                  <button
+                    onClick={() => setActiveRunId(run.id)}
+                    className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="typo-caption font-medium text-foreground">
+                        {run.summary
+                          ? run.summary
+                          : `${run.episodesCount} episodes reviewed`}
+                      </span>
+                      <RunStatusBadge run={run} />
                     </div>
-                  )}
-                </button>
+                    <div className="typo-caption text-foreground">
+                      {run.itemsTotal} <DebtText k="auto_proposals_52cac85b" /> {run.itemsPending} <DebtText k="auto_pending_5829114a" />{' '}
+                      {run.itemsApplied} <DebtText k="auto_applied_8858b48c" /> {run.itemsRejected} <DebtText k="auto_rejected_bb194a7a" />{' '}
+                      <RelativeTime timestamp={run.triggeredAt} showTooltip={false} />
+                    </div>
+                    {run.errorText && (
+                      <div className="typo-caption text-rose-400 mt-1 truncate">
+                        {run.errorText}
+                      </div>
+                    )}
+                  </button>
+                </RevealItem>
               </li>
             ))}
           </ul>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ghost blocks — the ONLY moment either list (runs / consolidation items) has
+// nothing to show while its fetch is in flight. `animate-fade-in` behind a
+// staggered animation-delay starting at 120ms keeps them invisible until
+// then, so a fast fetch never paints one. No `animate-pulse`, ever.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_RUN_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
+
+function ConsolidationRunGhostRows() {
+  return (
+    <div className="divide-y divide-foreground/5" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const titleW = GHOST_RUN_TITLE_WIDTHS[i % GHOST_RUN_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div key={i} className="px-5 py-3 animate-fade-in" style={{ animationDelay: delay }}>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className={`h-3 ${titleW} max-w-full ${GHOST_BAR}`} />
+              <span className={`h-4 w-16 shrink-0 ${GHOST_BAR}`} />
+            </div>
+            <span className={`block h-2.5 w-3/4 ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ConsolidationItemGhostCards() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => {
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="rounded-card border border-foreground/10 bg-foreground/[0.03] p-3.5 space-y-2 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2">
+              <span className={`h-4 w-16 ${GHOST_BAR}`} />
+              <span className={`h-4 w-28 ${GHOST_BAR}`} />
+            </div>
+            <span className={`block h-3 w-full ${GHOST_BAR}`} />
+            <span className={`block h-3 w-2/3 ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -232,8 +302,13 @@ function RunDetail({
   const { t } = useTranslation();
   const [items, setItems] = useState<ConsolidationItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const enterItems = useRevealTracker(runId);
 
   const refresh = useCallback(() => {
+    // Reset to the fetching signal (mirrors `loadRuns` above) — a different
+    // run is genuinely different data, not a same-context refresh, so the
+    // stale run's cards shouldn't linger under the new run's header.
+    setItems(null);
     setError(null);
     companionGetConsolidationItems(runId)
       .then(setItems)
@@ -286,17 +361,22 @@ function RunDetail({
 
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
         {items === null ? (
-          <div className="flex items-center gap-3 p-2 typo-body text-foreground">
-            <LoadingSpinner size="sm" />
-            <span>{t.plugins.companion.brain_loading}</span>
-          </div>
+          <ConsolidationItemGhostCards />
         ) : items.length === 0 ? (
           <p className="p-2 typo-body text-foreground">
             {t.plugins.companion.consolidation_no_proposals}
           </p>
         ) : (
-          items.map((item) => (
-            <ItemCard key={item.id} item={item} onResolved={refresh} />
+          items.map((item, index) => (
+            <RevealItem
+              key={item.id}
+              revealId={item.id}
+              order={index}
+              hasEntered={(id) => index >= ITEM_CASCADE_ROWS || enterItems.hasEntered(id)}
+              markEntered={enterItems.markEntered}
+            >
+              <ItemCard item={item} onResolved={refresh} />
+            </RevealItem>
           ))
         )}
       </div>

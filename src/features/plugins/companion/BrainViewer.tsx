@@ -27,6 +27,8 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
@@ -307,10 +309,23 @@ function TypesView() {
   );
 }
 
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * kind's item list lands (35ms stagger via RevealItem, id-guarded so a
+ * refetch of the same kind never replays it).
+ */
+const LIST_CASCADE_ROWS = 20;
+
 function ListView({ kind }: { kind: BrainKind }) {
   const { t } = useTranslation();
   const setBrainView = useCompanionStore((s) => s.setBrainView);
   const [items, setItems] = useState<BrainListItem[] | null>(null);
+  // `items === null` doubles as the in-flight signal: it never hides rows
+  // that are already on screen (this view only ever has one fetch per
+  // mount), and it gates the ghost/empty choice below — ghosts only into
+  // emptiness, the empty state only once the fetch has settled.
+  const isFetching = items === null;
+  const enter = useRevealTracker(kind);
 
   useEffect(() => {
     let cancelled = false;
@@ -324,13 +339,8 @@ function ListView({ kind }: { kind: BrainKind }) {
     };
   }, [kind]);
 
-  if (items === null) {
-    return (
-      <div className="flex items-center gap-3 p-5 typo-body text-foreground">
-        <LoadingSpinner size="sm" />
-        <span>{t.plugins.companion.brain_loading}</span>
-      </div>
-    );
+  if (isFetching) {
+    return <BrainListGhostRows />;
   }
   if (items.length === 0) {
     return <ListEmpty kind={kind} />;
@@ -338,40 +348,86 @@ function ListView({ kind }: { kind: BrainKind }) {
 
   return (
     <ul className="divide-y divide-foreground/5">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <li key={item.id}>
-          <button
-            onClick={() => setBrainView({ open: true, kind, id: item.id })}
-            className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
+          <RevealItem
+            revealId={item.id}
+            order={index}
+            hasEntered={(id) => index >= LIST_CASCADE_ROWS || enter.hasEntered(id)}
+            markEntered={enter.markEntered}
           >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="typo-caption font-medium text-foreground truncate">
-                  {item.title}
-                </span>
-                <span className="typo-caption text-foreground shrink-0">
-                  ·{' '}
-                  {Number.isNaN(Date.parse(item.meta)) ? (
-                    // `meta` is overloaded: a bare timestamp for some kinds
-                    // (episodes, reflections, …) but a composite status line
-                    // for others (goals, backlog, …). Only render the live
-                    // relative-time label when it actually parses as a date;
-                    // otherwise show the composite string verbatim.
-                    item.meta
-                  ) : (
-                    <RelativeTime timestamp={item.meta} className="text-foreground" />
-                  )}
-                </span>
+            <button
+              onClick={() => setBrainView({ open: true, kind, id: item.id })}
+              className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="typo-caption font-medium text-foreground truncate">
+                    {item.title}
+                  </span>
+                  <span className="typo-caption text-foreground shrink-0">
+                    ·{' '}
+                    {Number.isNaN(Date.parse(item.meta)) ? (
+                      // `meta` is overloaded: a bare timestamp for some kinds
+                      // (episodes, reflections, …) but a composite status line
+                      // for others (goals, backlog, …). Only render the live
+                      // relative-time label when it actually parses as a date;
+                      // otherwise show the composite string verbatim.
+                      item.meta
+                    ) : (
+                      <RelativeTime timestamp={item.meta} className="text-foreground" />
+                    )}
+                  </span>
+                </div>
+                <div className="typo-caption text-foreground line-clamp-2">
+                  {item.preview || t.plugins.companion.brain_empty_placeholder}
+                </div>
               </div>
-              <div className="typo-caption text-foreground line-clamp-2">
-                {item.preview || t.plugins.companion.brain_empty_placeholder}
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
-          </button>
+              <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
+            </button>
+          </RevealItem>
         </li>
       ))}
     </ul>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BrainListGhostRows — calm ghost rows for the ONLY moment a kind's item list
+// has nothing to show (a fetch on a fresh mount). Each ghost enters via
+// `animate-fade-in` (150ms, fill-mode: both) behind a staggered
+// animation-delay starting at 120ms — invisible until then, so a fast fetch
+// never paints one. Geometry matches the real row (px-5 py-3, title + meta
+// line, two-line preview, trailing chevron slot). No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-32', 'w-48', 'w-36'];
+
+function BrainListGhostRows() {
+  return (
+    <div className="divide-y divide-foreground/5" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="px-5 py-3 flex items-start gap-3 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`h-3 ${titleW} max-w-full ${GHOST_BAR}`} />
+                <span className={`h-2.5 w-14 ${GHOST_BAR}`} />
+              </div>
+              <span className={`block h-2.5 w-full max-w-[80%] ${GHOST_BAR}`} />
+            </div>
+            <span className={`w-4 h-4 mt-1 shrink-0 ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
