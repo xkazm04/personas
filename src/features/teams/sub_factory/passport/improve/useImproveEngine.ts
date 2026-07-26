@@ -47,7 +47,7 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
       reload();
     },
     queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },
-    deployNow: async (slug, title, prompt) => {
+    deployNow: async (slug, title, prompt, model) => {
       const raw = rawByProject.get(slug);
       const task = await createTask(title, slug, prompt);
       // Surface the Claude-Code run in the global activity dock keyed by task id,
@@ -65,7 +65,7 @@ export function useImproveEngine(rawByProject: Map<string, ImproveRaw>, reload: 
         { section: 'plugins', tab: 'task-runner' },
       );
       try {
-        await executeTask(task.id);
+        await executeTask(task.id, model);
       } catch (e) {
         // executeTask only rejects on dispatch failure (before any event), so
         // settle the dock entry + un-busy the cell here; in-run terminal states

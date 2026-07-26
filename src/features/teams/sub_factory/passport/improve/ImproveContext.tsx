@@ -48,8 +48,10 @@ export interface ImproveEngine {
   setDataLinks: (slug: string, projectIds: string[]) => Promise<void>;
   /** Queue a Claude-Code upgrade task (Tier-3) without running it yet. */
   queueTask: (slug: string, title: string, prompt: string) => Promise<void>;
-  /** Queue AND dispatch a Claude-Code upgrade task — runs the CLI, auto-PRs on green. Returns the task id. */
-  deployNow: (slug: string, title: string, prompt: string) => Promise<string>;
+  /** Queue AND dispatch a Claude-Code upgrade task — runs the CLI, auto-PRs on
+   *  green. `model` optionally pins the run's model (e.g. skill adopt/share →
+   *  "claude-sonnet-5"); omit for the dev-runner default. Returns the task id. */
+  deployNow: (slug: string, title: string, prompt: string, model?: string) => Promise<string>;
 }
 
 const ImproveContext = createContext<ImproveEngine | null>(null);
