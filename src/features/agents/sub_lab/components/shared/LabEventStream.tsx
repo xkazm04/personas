@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { labGetResultEvents } from '@/api/agents/lab';
 import type { LabResultEvent } from '@/lib/bindings/LabResultEvent';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface LabEventStreamProps {
   resultId: string;
@@ -41,7 +42,7 @@ export function LabEventStream({ resultId, resultKind }: LabEventStreamProps) {
     setError(null);
     labGetResultEvents(resultId, resultKind)
       .then((rows) => setEvents(rows))
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+      .catch((err) => { silentCatch('LabEventStream:labGetResultEvents')(err); setError(err instanceof Error ? err.message : String(err)); })
       .finally(() => setLoading(false));
   }, [open, events, loading, resultId, resultKind]);
 

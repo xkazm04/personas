@@ -13,6 +13,7 @@ import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModa
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
 import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';
 import type { ActivityItem } from './activityTypes';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ActivityModalsProps {
   personaName: string;
@@ -79,7 +80,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
           message={selectedMessage}
           onClose={() => setSelectedMessage(null)}
           onDelete={async () => {
-            await deleteMessage(selectedMessage.id).catch(() => {});
+            await deleteMessage(selectedMessage.id).catch(silentCatch('ActivityModals:deleteMessage'));
             setSelectedMessage(null);
             onDataChanged();
           }}

@@ -53,7 +53,7 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
 
   // initial fetch
   useEffect(() => {
-    listStandards(slug).then(setFindings).catch(() => setFindings([]));
+    listStandards(slug).then(setFindings).catch((err) => { silentCatch('StandardsScan:listStandards')(err); setFindings([]); });
   }, [slug]);
 
   // scan lifecycle: listen for completion → refetch
@@ -63,7 +63,7 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
       if (e.payload?.project_id !== slug) return;
       if (e.payload.status === 'complete' || e.payload.status === 'error') {
         setScanning(false);
-        listStandards(slug).then(setFindings).catch(() => {});
+        listStandards(slug).then(setFindings).catch(silentCatch('StandardsScan:rescanListStandards'));
       }
     }).then((f) => { unlisten = f; }).catch(silentCatch('StandardsScan:listen'));
     return () => { unlisten?.(); };

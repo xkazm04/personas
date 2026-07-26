@@ -107,7 +107,7 @@ export async function loadMonitoringSummaries(
     if (!projectSlug) return; // no project configured → honestly unknown
     let org = orgSlug;
     if (!org) {
-      const orgs = await fetchSentryOrgs(credId).catch(() => []);
+      const orgs = await fetchSentryOrgs(credId).catch((err) => { silentCatch('mastermind liveState.loadMonitoringSummaries.fetchSentryOrgs')(err); return []; });
       org = orgs[0]?.slug ?? null;
     }
     if (!org) return;

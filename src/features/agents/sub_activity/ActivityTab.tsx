@@ -17,6 +17,7 @@ import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Tolerate bindings that haven't been regenerated yet — use_case_id is
 // optional on every row that carries it after Phase C5.
@@ -44,11 +45,11 @@ export function ActivityTab() {
     setIsLoading(true);
     try {
       const [executions, events, memories, reviews, messages] = await Promise.all([
-        listExecutions(personaId, 50).catch(() => [] as PersonaExecution[]),
-        listEvents(100).catch(() => [] as PersonaEvent[]),
-        listMemories(personaId, undefined, undefined, 50).catch(() => [] as PersonaMemory[]),
-        listManualReviews(personaId).catch(() => [] as PersonaManualReview[]),
-        listMessages(50).catch(() => [] as PersonaMessage[]),
+        listExecutions(personaId, 50).catch((err) => { silentCatch('ActivityTab:listExecutions')(err); return [] as PersonaExecution[]; }),
+        listEvents(100).catch((err) => { silentCatch('ActivityTab:listEvents')(err); return [] as PersonaEvent[]; }),
+        listMemories(personaId, undefined, undefined, 50).catch((err) => { silentCatch('ActivityTab:listMemories')(err); return [] as PersonaMemory[]; }),
+        listManualReviews(personaId).catch((err) => { silentCatch('ActivityTab:listManualReviews')(err); return [] as PersonaManualReview[]; }),
+        listMessages(50).catch((err) => { silentCatch('ActivityTab:listMessages')(err); return [] as PersonaMessage[]; }),
       ]);
 
       const personaEvents = events.filter(

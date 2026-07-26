@@ -26,6 +26,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 
 import { GoalStatusBadge } from '../sub_goals/GoalStatusBadge';
 import { kpiTrack } from './kpiMath';
+import { silentCatch } from '@/lib/silentCatch';
 
 const ts = (s: string) => new Date(s.replace(' ', 'T')).getTime();
 const round = (v: number) => Math.round(v * 100) / 100;
@@ -72,7 +73,7 @@ export function KpiSteeringPanel({
     let cancelled = false;
     goalAdvancingTeams()
       .then((rows) => { if (!cancelled) setTeams(new Map(rows)); })
-      .catch(() => {});
+      .catch(silentCatch('KpiSteeringPanel:goalAdvancingTeams'));
     return () => { cancelled = true; };
   }, []);
 

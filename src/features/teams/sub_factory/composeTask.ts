@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getKpiComposeStatus, type KpiComposeStatus } from '@/api/devTools/kpis';
+import { silentCatch } from '@/lib/silentCatch';
 
 import type { KpiCategory, MeasureKind } from './factoryModel';
 
@@ -85,9 +86,7 @@ export function useComposeTask() {
               setPhase('error');
             }
           })
-          .catch(() => {
-            /* transient poll error — keep polling */
-          });
+          .catch(silentCatch('useComposeTask:getKpiComposeStatus'));
       }, 1500);
     },
     [stop],

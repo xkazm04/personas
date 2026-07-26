@@ -4,7 +4,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { useTranslation } from '@/i18n/useTranslation';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
 import { probeCliCapabilities } from '@/api/agents/evolution';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 type Param = { key?: string; value?: unknown; type?: string };
 
@@ -59,7 +59,8 @@ export function DeepFanoutToggle({
       .then((c) => {
         if (!cancelled) setAvailable(c.deepFanoutAvailable);
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch('DeepFanoutToggle:probeCliCapabilities')(err);
         if (!cancelled) setAvailable(false);
       });
     return () => {

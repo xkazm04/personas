@@ -9,6 +9,7 @@ import { getExecutionTrace } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildSpanTree, flattenTree } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
+import { silentCatch } from '@/lib/silentCatch';
 
 /** Convert backend ExecutionTrace spans into UnifiedSpan format. */
 function convertBackendSpans(spans: TraceSpan[]): UnifiedSpan[] {
@@ -49,6 +50,7 @@ export function useTraceData(executionId: string, personaId: string) {
         }
       })
       .catch((err) => {
+        silentCatch('useTraceData:getExecutionTrace')(err);
         if (!cancelled) {
           setError(err instanceof Error ? err.message : String(err));
           setLoading(false);

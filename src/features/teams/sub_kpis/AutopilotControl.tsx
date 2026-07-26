@@ -20,7 +20,7 @@ import { Power, Activity, Lightbulb, Rocket, type LucideIcon } from 'lucide-reac
 import { getAutopilotMode, setAutopilotMode, type AutopilotMode } from '@/api/devTools/autopilot';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 interface ModeMeta {
   mode: AutopilotMode;
@@ -47,7 +47,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
     setBusy(true);
     getAutopilotMode(projectId)
       .then((m) => { if (!cancelled) setMode(m ?? 'off'); })
-      .catch(() => {})
+      .catch(silentCatch('AutopilotControl:getAutopilotMode'))
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
   }, [projectId]);

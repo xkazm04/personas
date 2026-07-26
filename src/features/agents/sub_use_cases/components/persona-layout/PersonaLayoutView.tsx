@@ -87,8 +87,8 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     if (!personaId) return;
     let cancelled = false;
     Promise.all([
-      getMemoryCount(personaId).catch(() => 0),
-      listManualReviews(personaId).then((rs) => rs.length).catch(() => 0),
+      getMemoryCount(personaId).catch((err) => { silentCatch('PersonaLayoutView:getMemoryCount')(err); return 0; }),
+      listManualReviews(personaId).then((rs) => rs.length).catch((err) => { silentCatch('PersonaLayoutView:listManualReviews')(err); return 0; }),
     ]).then(([memCount, revCount]) => {
       if (cancelled) return;
       setMemoriesDefault(memCount > 0);

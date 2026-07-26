@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import { resolveEffectiveConfig } from '@/api/agents/personas';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Fetches the effective (cascaded) model config for a persona.
@@ -23,7 +24,8 @@ export function useEffectiveConfig(personaId: string | null | undefined, refresh
       .then((result) => {
         if (!cancelled) setConfig(result);
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch('useEffectiveConfig:resolveEffectiveConfig')(err);
         if (!cancelled) setConfig(null);
       })
       .finally(() => {

@@ -82,7 +82,7 @@ export function ProjectsLayer({
       if (!root) return [slug, null] as const;
       let url = FAVICON_CACHE.get(root);
       if (url === undefined) {
-        url = await getProjectFavicon(root).catch(() => null);
+        url = await getProjectFavicon(root).catch((err) => { silentCatch('ProjectsLayer:getProjectFavicon')(err); return null; });
         FAVICON_CACHE.set(root, url);
       }
       return [slug, url] as const;

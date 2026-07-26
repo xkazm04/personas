@@ -5,6 +5,7 @@ import { CopyButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLog } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ExecutionLogViewerProps {
   executionId: string;
@@ -28,7 +29,8 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
         setCopied(true);
         setLogError(null);
         setTimeout(() => setCopied(false), 2000);
-      }).catch(() => {
+      }).catch((err) => {
+        silentCatch('ExecutionLogViewer:copyText')(err);
         setLogError(t.agents.executions.copy_log_failed);
       });
     };
@@ -38,7 +40,8 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
       getExecutionLog(executionId, personaId ?? '').then((content) => {
         setLogContent(content ?? '');
         doCopy(content ?? '');
-      }).catch(() => {
+      }).catch((err) => {
+        silentCatch('ExecutionLogViewer:getExecutionLog')(err);
         setLogError(t.agents.executions.copy_log_failed);
       });
     }

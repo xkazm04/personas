@@ -152,15 +152,15 @@ export function usePassportData(): PassportData {
     // Reusable skills: each project's .claude/skills + the global library. Build a
     // catalog (name → first source) so a project can adopt skills its siblings have.
     const [globalSkills, projectSkillLists, usageRows, docRotRows, memHealthRows, credentials] = await Promise.all([
-      listSkillsGlobal().catch(() => []),
+      listSkillsGlobal().catch((err) => { silentCatch('usePassportData:listSkillsGlobal')(err); return []; }),
       mapWithConcurrency(map.projects, PROBE_CONCURRENCY, (m) =>
-        listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch(() => [m.project_id, []] as const)),
-      getSkillUsageOverview().catch(() => [] as SkillUsageRow[]),
-      getDocRotOverview().catch(() => [] as DocRotRow[]),
-      getMemoryHealthOverview().catch(() => [] as MemoryHealthRow[]),
+        listSkills(m.project_id).then((s) => [m.project_id, s] as const).catch((err) => { silentCatch('usePassportData:listSkills')(err); return [m.project_id, []] as const; })),
+      getSkillUsageOverview().catch((err) => { silentCatch('usePassportData:getSkillUsageOverview')(err); return [] as SkillUsageRow[]; }),
+      getDocRotOverview().catch((err) => { silentCatch('usePassportData:getDocRotOverview')(err); return [] as DocRotRow[]; }),
+      getMemoryHealthOverview().catch((err) => { silentCatch('usePassportData:getMemoryHealthOverview')(err); return [] as MemoryHealthRow[]; }),
       // Vault credentials — resolve each project's bound support connector to
       // its channel type (Support dimension). Tolerant: no vault, no channels.
-      listCredentials().catch(() => []),
+      listCredentials().catch((err) => { silentCatch('usePassportData:listCredentials')(err); return []; }),
     ]);
     const credServiceById = new Map(credentials.map((c) => [c.id, c.serviceType.toLowerCase()]));
     // Doc-rot rollup per project (P2): dirty docs + tracked docs that no
@@ -288,7 +288,7 @@ export function usePassportData(): PassportData {
     const evidenceById = new Map<string, RepoEvidence | null>();
     await mapWithConcurrency(map.projects, PROBE_FS_CONCURRENCY, async (m) => {
       const proj = byId.get(m.project_id);
-      const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch(() => null) : null;
+      const ev = proj?.root_path ? await probeRepoEvidence(proj.root_path).catch((err) => { silentCatch('usePassportData:probeRepoEvidence')(err); return null; }) : null;
       evidenceById.set(m.project_id, ev);
     });
     const phase2 = assemble(evidenceById);
@@ -306,6 +306,7 @@ export function usePassportData(): PassportData {
     if (cachedSnapshot && Date.now() - cachedSnapshot.at < CACHE_FRESH_MS) return;
     let cancelled = false;
     build(false).catch((e) => {
+      silentCatch('usePassportData:initialBuild')(e);
       if (!cancelled) setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));
     });
     return () => { cancelled = true; };
@@ -355,7 +356,7 @@ export function usePassportData(): PassportData {
   const rescan = useCallback(() => {
     setRescanning(true);
     build(true)
-      .catch((e) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })))
+      .catch((e) => { silentCatch('usePassportData:rescan')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); })
       .finally(() => setRescanning(false));
   }, [build]);
 
@@ -364,12 +365,12 @@ export function usePassportData(): PassportData {
   const rescanProject = useCallback((projectId: string) => {
     setRescanningProject(projectId);
     return build(true, projectId)
-      .catch((e) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })))
+      .catch((e) => { silentCatch('usePassportData:rescanProject')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); })
       .finally(() => setRescanningProject(null));
   }, [build]);
 
   const reload = useCallback(() => {
-    build(false).catch((e) => setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })));
+    build(false).catch((e) => { silentCatch('usePassportData:reload')(e); setState((s) => ({ ...s, error: e instanceof Error ? e.message : String(e) })); });
   }, [build]);
 
   // Refresh the Wall when a Factory-initiated deploy/scan finishes while the user
@@ -387,9 +388,10 @@ export function usePassportData(): PassportData {
       const kind = (e as CustomEvent<{ kind?: string }>).detail?.kind;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        build(kind === 'scan').catch((err) =>
-          setState((s) => ({ ...s, error: err instanceof Error ? err.message : String(err) })),
-        );
+        build(kind === 'scan').catch((err) => {
+          silentCatch('usePassportData:onFactoryProcessComplete')(err);
+          setState((s) => ({ ...s, error: err instanceof Error ? err.message : String(err) }));
+        });
       }, 1200);
     };
     window.addEventListener('personas:factory-process-complete', onComplete);

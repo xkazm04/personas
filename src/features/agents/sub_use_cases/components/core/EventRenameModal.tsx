@@ -9,7 +9,7 @@ import {
 } from '@/api/agents/useCases';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -99,7 +99,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
             return next;
           });
         })
-        .catch(() => { /* silent — counts are advisory */ });
+        .catch(silentCatch('EventRenameModal:countEventListeners'));
     }, 300);
     return () => { cancelled = true; clearTimeout(handle); };
     // eslint-disable-next-line react-hooks/exhaustive-deps

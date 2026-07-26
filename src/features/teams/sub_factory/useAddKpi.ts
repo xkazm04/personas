@@ -16,6 +16,7 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import { type KpiCategory, type KpiTier, type MeasureKind } from './factoryModel';
 import { useFactoryData } from './factoryData';
 import { CATEGORY_DEFAULT_KIND, DERIVED_METRICS, errMsg } from './composeTask';
+import { silentCatch } from '@/lib/silentCatch';
 import { num, type Measured } from './addKpiPrimitives';
 
 export function useAddKpi({
@@ -50,7 +51,7 @@ export function useAddKpi({
   const [creds, setCreds] = useState<PersonaCredential[]>([]);
   useEffect(() => {
     let alive = true;
-    void listCredentials().then((c) => { if (alive) setCreds(c); }).catch(() => {});
+    void listCredentials().then((c) => { if (alive) setCreds(c); }).catch(silentCatch('useAddKpi:listCredentials'));
     return () => { alive = false; };
   }, []);
   const connectorOpts: ThemedSelectOption[] = useMemo(
