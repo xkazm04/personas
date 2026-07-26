@@ -52,11 +52,28 @@ export function UnifiedDeploymentDashboard() {
   const { t, tx } = useTranslation();
   const dt = t.deployment.dashboard;
 
+  // True while the initial/connection-driven fetch is in flight. It NEVER
+  // hides rows already on screen — it only decides whether an empty row
+  // region shows ghost rows (fetch running) or the empty state (fetch
+  // settled, genuinely nothing). docs/design/overview-loading.md law 1/2.
+  const [isFetching, setIsFetching] = useState(true);
+
   useEffect(() => {
-    if (cloudConfig?.is_connected) cloudFetchDeployments().catch(toastCatch("DeploymentDashboard:fetchCloudDeployments", "Failed to fetch cloud deployments"));
-    if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
-      gitlabFetchAgents(gitlabSelectedProjectId).catch(toastCatch("DeploymentDashboard:fetchGitlabAgents", "Failed to fetch GitLab agents"));
+    let active = true;
+    const promises: Promise<void>[] = [];
+    if (cloudConfig?.is_connected) {
+      promises.push(cloudFetchDeployments().catch(toastCatch("DeploymentDashboard:fetchCloudDeployments", "Failed to fetch cloud deployments")));
     }
+    if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
+      promises.push(gitlabFetchAgents(gitlabSelectedProjectId).catch(toastCatch("DeploymentDashboard:fetchGitlabAgents", "Failed to fetch GitLab agents")));
+    }
+    if (promises.length === 0) {
+      setIsFetching(false);
+      return;
+    }
+    setIsFetching(true);
+    Promise.all(promises).finally(() => { if (active) setIsFetching(false); });
+    return () => { active = false; };
   }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
 
   const unified = useMemo<UnifiedDeployment[]>(() => {
@@ -176,6 +193,26 @@ export function UnifiedDeploymentDashboard() {
   const cloudConnected = !!cloudConfig?.is_connected;
   const gitlabConnected = !!gitlabConfig?.isConnected;
 
+  // Ghost rows only when the row region would otherwise be empty while a
+  // fetch runs. Rows already on screen (pre-warmed store) are never hidden.
+  const showGhost = isFetching && displayRows.length === 0 && (cloudConnected || gitlabConnected);
+  // A filter/search/sort context switch replays the first-viewport cascade
+  // for the rows it produces; a refresh/poll re-delivering the same ids
+  // does not (they're already marked entered).
+  const revealResetKey = `${search}|${targetFilter}|${statusFilter}|${sortKey}|${sortDir}`;
+
+  const tableProps = {
+    busyId, sortKey, sortDir, toggleSort,
+    handleAction,
+    cloudPauseDeploy, cloudResumeDeploy,
+    cloudRemoveDeploy, gitlabUndeployAgent,
+    healthMap,
+    testStates: tests, onTest: runTest, onDismissTest: dismissResult,
+    selectedIds,
+    onToggleSelect: handleToggleSelect,
+    onToggleSelectAll: handleToggleSelectAll,
+  };
+
   return (
     <div className="h-full w-full flex flex-col overflow-hidden">
       {/* Header */}
@@ -220,7 +257,19 @@ export function UnifiedDeploymentDashboard() {
               secondaryAction={{ label: dt.connect_gitlab_cta, onClick: () => setCloudTab('gitlab'), icon: GitBranch }}
             />
           </div>
+        ) : showGhost ? (
+          // Nothing to show yet + fetch in flight: ghost rows under the REAL
+          // table chrome (thead + column headers). Ghosts are invisible for
+          // their first ~120ms so a fast fetch skips them entirely; real
+          // rows replace them the frame they arrive and play the same
+          // cascade — no gate, no held content.
+          <DeploymentTable
+            displayRows={[]} showGhost revealResetKey={revealResetKey}
+            {...tableProps}
+          />
         ) : displayRows.length === 0 ? (
+          // Fetch settled and there is genuinely nothing — empty state only
+          // renders once isFetching is false (never flashes during a fetch).
           <div className="flex items-center justify-center h-full px-6">
             {search || targetFilter !== 'all' || statusFilter !== 'all' ? (
               <NoResults
@@ -238,16 +287,8 @@ export function UnifiedDeploymentDashboard() {
           </div>
         ) : (
           <DeploymentTable
-            displayRows={displayRows} busyId={busyId}
-            sortKey={sortKey} sortDir={sortDir} toggleSort={toggleSort}
-            handleAction={handleAction}
-            cloudPauseDeploy={cloudPauseDeploy} cloudResumeDeploy={cloudResumeDeploy}
-            cloudRemoveDeploy={cloudRemoveDeploy} gitlabUndeployAgent={gitlabUndeployAgent}
-            healthMap={healthMap}
-            testStates={tests} onTest={runTest} onDismissTest={dismissResult}
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            onToggleSelectAll={handleToggleSelectAll}
+            displayRows={displayRows} revealResetKey={revealResetKey}
+            {...tableProps}
           />
         )}
       </div>

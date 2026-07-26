@@ -12,13 +12,29 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 interface TestStateMap {
   [deploymentId: string]: { running: boolean; result: TestResult | null };
 }
 
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh result set lands (35ms stagger, id-guarded so polling/refresh never
+ * replay it). Mirrors GlobalExecutionList's CASCADE_ROWS
+ * (docs/design/overview-loading.md).
+ */
+const CASCADE_ROWS = 14;
+const CASCADE_STEP_MS = 35;
+const CASCADE_MAX_STAGGER = 8;
+
 interface DeploymentTableProps {
   displayRows: UnifiedDeployment[];
+  /** Ghost placeholder rows for the cold-empty + fetching moment (§C). */
+  showGhost?: boolean;
+  /** Reset key for the row entrance cascade — a filter/search/sort switch replays it. */
+  revealResetKey?: string;
   busyId: string | null;
   sortKey: SortKey;
   sortDir: SortDir;
@@ -39,6 +55,8 @@ interface DeploymentTableProps {
 
 export function DeploymentTable({
   displayRows,
+  showGhost,
+  revealResetKey,
   busyId,
   sortKey,
   sortDir,
@@ -60,6 +78,8 @@ export function DeploymentTable({
   const dt = t.deployment.dashboard;
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
+  const enter = useRevealTracker(revealResetKey);
+  const reducedMotion = useReducedMotion();
   return (
     <table className="w-full typo-body">
       <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
@@ -84,15 +104,30 @@ export function DeploymentTable({
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
-        {displayRows.map((row) => {
+        {showGhost && <DeploymentGhostRows />}
+        {!showGhost && displayRows.map((row, index) => {
           const tb = targetBadge(row.target);
           const TargetIcon = row.target === 'cloud' ? Cloud : GitBranch;
           const isBusy = busyId === row.id;
           const testState = testStates?.[row.id];
           const testResult = testState?.result;
 
+          // One-shot entrance cascade for a fresh result set (RevealItem
+          // semantics, inlined here because RevealItem renders a <div> and
+          // can't wrap a <tr>). Rows past the first viewport render plainly;
+          // entered ids never replay on poll/refresh (docs/design/overview-loading.md).
+          const animate = !reducedMotion && index < CASCADE_ROWS && !enter.hasEntered(row.id);
+          const delay = animate ? Math.min(Math.max(0, index), CASCADE_MAX_STAGGER) * CASCADE_STEP_MS : 0;
+
           return (
-            <tr key={row.id} className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}>
+            <tr
+              key={row.id}
+              className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''} ${animate ? 'animate-fade-in' : ''}`}
+              style={animate ? { animationDelay: `${delay}ms` } : undefined}
+              onAnimationEnd={(e) => {
+                if (e.target === e.currentTarget) enter.markEntered(row.id);
+              }}
+            >
               <td className="px-4 py-3">
                 <input
                   type="checkbox"
@@ -231,5 +266,63 @@ export function DeploymentTable({
         })}
       </tbody>
     </table>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DeploymentGhostRows — calm ghost rows for the ONLY moment the table body
+// has nothing to show (a fetch with a cold store / empty filter context).
+// Same column geometry as the real rows so the ghost -> content swap moves
+// nothing. Each ghost enters via `animate-fade-in` behind a staggered
+// animation-delay starting at 120ms (fill-mode: both holds opacity 0 through
+// the delay), so a fetch that resolves quickly never paints a single ghost.
+// No `animate-pulse` — the entrance stagger is the only motion.
+// (docs/design/overview-loading.md §C)
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ['w-36', 'w-24', 'w-32', 'w-28'];
+const GHOST_ROW_COUNT = 8;
+
+function DeploymentGhostRows() {
+  return (
+    <>
+      {Array.from({ length: GHOST_ROW_COUNT }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <tr key={i} aria-hidden="true" className="animate-fade-in" style={{ animationDelay: delay }}>
+            <td className="px-4 py-3">
+              <span className="block w-3.5 h-3.5 rounded bg-primary/[0.06]" />
+            </td>
+            <td className="px-4 py-3">
+              <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+            </td>
+            <td className="px-4 py-3">
+              <span className="inline-block h-5 w-16 rounded-card bg-primary/[0.06]" />
+            </td>
+            <td className="px-4 py-3">
+              <span className="inline-block h-5 w-20 rounded-card bg-primary/[0.06]" />
+            </td>
+            <td className="px-4 py-3 text-right">
+              <span className={`inline-block h-3.5 w-10 ${GHOST_BAR}`} />
+            </td>
+            <td className="px-4 py-3">
+              <span className={`block h-3.5 w-20 ${GHOST_BAR}`} />
+            </td>
+            <td className="px-4 py-3">
+              <span className={`block h-3.5 w-16 ${GHOST_BAR}`} />
+            </td>
+            <td className="px-4 py-3">
+              <span className={`block h-3.5 w-16 ${GHOST_BAR}`} />
+            </td>
+            <td className="px-4 py-3">
+              <span className="block h-5 w-14 rounded-card bg-primary/[0.06]" />
+            </td>
+          </tr>
+        );
+      })}
+    </>
   );
 }

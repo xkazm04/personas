@@ -15,6 +15,12 @@ import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
 import { silentCatch } from '@/lib/silentCatch';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+
+const EXEC_CASCADE_ROWS = 14;
+const EXEC_CASCADE_STEP_MS = 35;
+const EXEC_CASCADE_MAX_STAGGER = 8;
 
 
 // ---------------------------------------------------------------------------
@@ -119,6 +125,13 @@ export function CloudHistoryPanel() {
     enabled: true,
   });
 
+  // Ghost rows only into cold emptiness while a fetch runs; settled-only
+  // empty state. Row entrance cascades once per fresh result set — a poll
+  // re-delivering the same ids never replays it (docs/design/overview-loading.md).
+  const showGhost = isLoading && executions.length === 0;
+  const enter = useRevealTracker(`${filterPersona}|${filterStatus}|${period}`);
+  const reducedMotion = useReducedMotion();
+
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Stats cards */}
@@ -209,13 +222,18 @@ export function CloudHistoryPanel() {
         </div>
       )}
 
-      {/* Execution table */}
-      {executions.length === 0 ? (
+      {/* Execution table — ghost rows only into cold emptiness while a fetch
+          runs; settled-only empty state (docs/design/overview-loading.md). */}
+      {showGhost ? (
+        <div className="space-y-1">
+          <CloudExecutionRowGhosts />
+        </div>
+      ) : executions.length === 0 ? (
         <div className="py-8 text-center">
           <p className="typo-body text-foreground">
-            {isLoading ? 'Loading execution history...' : 'No executions found for the selected filters.'}
+            {'No executions found for the selected filters.'}
           </p>
-          {!isLoading && (filterPersona || filterStatus) && (
+          {(filterPersona || filterStatus) && (
             <button
               type="button"
               onClick={() => { setFilterPersona(''); setFilterStatus(''); }}
@@ -228,19 +246,60 @@ export function CloudHistoryPanel() {
       ) : (
         <div className="space-y-1">
           <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({executions.length})</SectionHeading>
-          {executions.map((exec) => (
-            <CloudExecutionRow
-              key={exec.id}
-              exec={exec}
-              personaName={personaName(exec.personaId)}
-              isExpanded={expandedId === exec.id}
-              onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
-              output={outputMap[exec.id]}
-              onFetchOutput={() => fetchOutput(exec.id)}
-            />
-          ))}
+          {executions.map((exec, index) => {
+            // One-shot entrance cascade (RevealItem semantics inlined —
+            // CloudExecutionRow's own div already carries the card styling).
+            const animate = !reducedMotion && index < EXEC_CASCADE_ROWS && !enter.hasEntered(exec.id);
+            const delay = animate ? Math.min(Math.max(0, index), EXEC_CASCADE_MAX_STAGGER) * EXEC_CASCADE_STEP_MS : 0;
+            return (
+              <div
+                key={exec.id}
+                className={animate ? 'animate-fade-in' : undefined}
+                style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                onAnimationEnd={(e) => {
+                  if (e.target === e.currentTarget) enter.markEntered(exec.id);
+                }}
+              >
+                <CloudExecutionRow
+                  exec={exec}
+                  personaName={personaName(exec.personaId)}
+                  isExpanded={expandedId === exec.id}
+                  onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
+                  output={outputMap[exec.id]}
+                  onFetchOutput={() => fetchOutput(exec.id)}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CloudExecutionRowGhosts — calm placeholder rows for the ONLY moment the
+// execution list has nothing to show (a fetch with a cold/filtered list).
+// Same row shape as `CloudExecutionRow`'s collapsed row. Delayed entrance
+// (§C, docs/design/overview-loading.md); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+function CloudExecutionRowGhosts() {
+  return (
+    <div aria-hidden="true" className="space-y-1">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-3.5 h-3.5 rounded-full bg-primary/[0.06]" />
+          <span className="h-3.5 flex-1 max-w-[10rem] rounded bg-primary/[0.06]" />
+          <span className="h-3 w-12 rounded bg-primary/[0.06]" />
+          <span className="h-3 w-10 rounded bg-primary/[0.06]" />
+          <span className="h-3 w-14 rounded bg-primary/[0.06]" />
+        </div>
+      ))}
     </div>
   );
 }

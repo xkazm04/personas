@@ -5,6 +5,7 @@ import {
 import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 
 // ---------------------------------------------------------------------------
 // Status icon
@@ -43,7 +44,11 @@ export function SummaryCard({
         <Icon className={`w-4 h-4 ${color}`} />
       </div>
       <div className="min-w-0">
-        <div className={`typo-data-lg ${color}`}>{value}</div>
+        {/* Count-up IS the reveal (docs/design/overview-loading.md) — never
+            gate this behind a loading flag or ghost it; it animates from
+            whatever the previous value was (0 on first mount) to the new
+            one every time `value` changes, including the settle after fetch. */}
+        <AnimatedCounter value={value} className={`typo-data-lg ${color}`} />
         <div className="typo-caption text-foreground flex items-center gap-1">
           {label}
           {connected !== undefined && (

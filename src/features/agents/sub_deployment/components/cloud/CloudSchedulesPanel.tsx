@@ -15,13 +15,22 @@ import type { CloudTrigger, CloudTriggerFiring, CloudDeployment } from '@/api/sy
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 interface Props {
   deployments: CloudDeployment[];
+  /** True while the parent's deployments list is still being fetched — used
+   * only to avoid flashing "deploy first" before we actually know. */
+  isFetchingDeployments?: boolean;
   onRefresh: () => void;
 }
 
-export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
+const TRIGGER_CASCADE_ROWS = 14;
+const TRIGGER_CASCADE_STEP_MS = 35;
+const TRIGGER_CASCADE_MAX_STAGGER = 8;
+
+export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false, onRefresh }: Props) {
   const { t } = useTranslation();
   const ds = t.deployment.schedules;
   const personas = useAgentStore((s) => s.personas);
@@ -92,6 +101,14 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     await fetchTriggers();
   };
 
+  // Ghosts only into cold emptiness while EITHER the parent deployments list
+  // or our own trigger fetch is running; settled-only empty/notice states
+  // (docs/design/overview-loading.md).
+  const triggersFetching = isFetchingDeployments || isLoading;
+  const showGhost = triggersFetching && triggers.length === 0;
+  const enter = useRevealTracker('cloud-schedules');
+  const reducedMotion = useReducedMotion();
+
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
       {/* Header row */}
@@ -128,35 +145,77 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
         />
       )}
 
-      {/* No deployments notice */}
-      {deployments.filter((d) => d.status === 'active').length === 0 && (
+      {/* No deployments notice — settled-only, never flashes while the
+          parent deployments list is still fetching. */}
+      {!isFetchingDeployments && deployments.filter((d) => d.status === 'active').length === 0 && (
         <p className="typo-body text-foreground py-6 text-center">
           {ds.deploy_first}
         </p>
       )}
 
       {/* Trigger list */}
-      {triggers.length === 0 && deployedPersonaIds.size > 0 ? (
+      {showGhost ? (
+        <TriggerListGhosts />
+      ) : triggers.length === 0 && deployedPersonaIds.size > 0 ? (
         <p className="typo-body text-foreground py-6 text-center">
           {ds.empty}
         </p>
       ) : (
         <div className="space-y-1">
-          {triggers.map((trigger) => (
-            <TriggerListItem
-              key={trigger.id}
-              trigger={trigger}
-              isExpanded={expandedId === trigger.id}
-              firings={expandedId === trigger.id ? firings : []}
-              isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
-              personaName={personaName(trigger.personaId)}
-              onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
-              onToggleEnabled={() => handleToggle(trigger)}
-              onDelete={() => handleDelete(trigger.id)}
-            />
-          ))}
+          {triggers.map((trigger, index) => {
+            // One-shot entrance cascade (RevealItem semantics inlined —
+            // TriggerListItem's own div already carries the card styling).
+            const animate = !reducedMotion && index < TRIGGER_CASCADE_ROWS && !enter.hasEntered(trigger.id);
+            const delay = animate ? Math.min(Math.max(0, index), TRIGGER_CASCADE_MAX_STAGGER) * TRIGGER_CASCADE_STEP_MS : 0;
+            return (
+              <div
+                key={trigger.id}
+                className={animate ? 'animate-fade-in' : undefined}
+                style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                onAnimationEnd={(e) => {
+                  if (e.target === e.currentTarget) enter.markEntered(trigger.id);
+                }}
+              >
+                <TriggerListItem
+                  trigger={trigger}
+                  isExpanded={expandedId === trigger.id}
+                  firings={expandedId === trigger.id ? firings : []}
+                  isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
+                  personaName={personaName(trigger.personaId)}
+                  onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
+                  onToggleEnabled={() => handleToggle(trigger)}
+                  onDelete={() => handleDelete(trigger.id)}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TriggerListGhosts — calm placeholder rows for the ONLY moment the trigger
+// list has nothing to show (deployments or triggers still fetching). Same
+// row shape as `TriggerListItem`'s collapsed row. Delayed entrance (§C,
+// docs/design/overview-loading.md); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+function TriggerListGhosts() {
+  return (
+    <div aria-hidden="true" className="space-y-1">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-3.5 h-3.5 rounded bg-primary/[0.06]" />
+          <span className="h-3.5 flex-1 max-w-[10rem] rounded bg-primary/[0.06]" />
+          <span className="h-5 w-14 rounded-card bg-primary/[0.06]" />
+        </div>
+      ))}
     </div>
   );
 }

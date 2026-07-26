@@ -6,8 +6,15 @@ import { toastCatch } from '@/lib/silentCatch';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { targetBadge, type DeployTarget } from './deploymentTypes';
+
+const HISTORY_ROW_HEIGHT = 30; // matches the li's py-1.5 + typo-caption line box
+const HISTORY_CASCADE_ROWS = 14;
+const HISTORY_CASCADE_STEP_MS = 35;
+const HISTORY_CASCADE_MAX_STAGGER = 8;
+const HISTORY_GHOST_WIDTHS = ['w-32', 'w-24', 'w-40', 'w-28'];
 
 /**
  * Unified deployment audit trail — one collapsible section that lists BOTH
@@ -33,6 +40,13 @@ export function UnifiedDeploymentHistory() {
     }
   }, [open, fetchHistory]);
 
+  // Ghost rows only into cold emptiness while the (re)fetch is running;
+  // settled-only empty state. Row entrance cascades once per open (a
+  // realtime/poll re-delivery of the same ids never replays it).
+  const showGhost = loading && history.length === 0;
+  const enter = useRevealTracker('unified-deployment-history');
+  const reducedMotion = useReducedMotion();
+
   return (
     <div className="border-t border-primary/10 flex-shrink-0" data-testid="unified-deploy-history">
       <button
@@ -53,26 +67,32 @@ export function UnifiedDeploymentHistory() {
 
       {open && (
         <div className="max-h-64 overflow-auto px-6 pb-3">
-          {loading && history.length === 0 ? (
-            <div className="flex items-center gap-2 py-4 typo-caption text-foreground">
-              <LoadingSpinner size="xs" />
-              {t.common.loading}
-            </div>
+          {showGhost ? (
+            <HistoryGhostRows />
           ) : history.length === 0 ? (
             <p className="py-4 typo-caption text-foreground">{dt.history_empty}</p>
           ) : (
             <ul className="space-y-1">
-              {history.map((r) => {
+              {history.map((r, index) => {
                 const target: DeployTarget = r.target === 'cloud' ? 'cloud' : 'gitlab';
                 const tb = targetBadge(target);
                 const TargetIcon = target === 'cloud' ? Cloud : GitBranch;
                 const isRollback = !!r.rolledBackFrom;
+                // One-shot entrance cascade (RevealItem semantics, inlined —
+                // RevealItem renders a <div> which can't wrap an <li> inside
+                // a <ul>). Entered ids never replay on poll/refresh.
+                const animate = !reducedMotion && index < HISTORY_CASCADE_ROWS && !enter.hasEntered(r.id);
+                const delay = animate ? Math.min(Math.max(0, index), HISTORY_CASCADE_MAX_STAGGER) * HISTORY_CASCADE_STEP_MS : 0;
                 return (
                   <li
                     key={r.id}
                     data-testid={`history-row-${r.id}`}
                     data-target={r.target}
-                    className="flex items-center gap-2.5 py-1.5 typo-caption"
+                    className={`flex items-center gap-2.5 py-1.5 typo-caption ${animate ? 'animate-fade-in' : ''}`}
+                    style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                    onAnimationEnd={(e) => {
+                      if (e.target === e.currentTarget) enter.markEntered(r.id);
+                    }}
                   >
                     <span
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border ${tb.cls}`}
@@ -104,6 +124,37 @@ export function UnifiedDeploymentHistory() {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HistoryGhostRows — calm ghost rows for the ONLY moment the history list has
+// nothing to show (fetch in flight, cold list). Same row height/geometry as
+// the real `<li>` rows so the ghost -> content swap moves nothing. Entrance
+// is delayed via `animate-fade-in` + staggered animation-delay starting at
+// 120ms — a fast fetch never paints a single ghost. No `animate-pulse`.
+// (docs/design/overview-loading.md §C)
+// ---------------------------------------------------------------------------
+
+function HistoryGhostRows() {
+  return (
+    <ul className="space-y-1" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const nameW = HISTORY_GHOST_WIDTHS[i % HISTORY_GHOST_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <li
+            key={i}
+            className="flex items-center gap-2.5 py-1.5 animate-fade-in"
+            style={{ height: HISTORY_ROW_HEIGHT, animationDelay: delay }}
+          >
+            <span className="inline-block h-5 w-16 rounded-card bg-primary/[0.06]" />
+            <span className={`h-3 ${nameW} max-w-full rounded bg-primary/[0.06]`} />
+            <span className="ml-auto h-3 w-12 rounded bg-primary/[0.06]" />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

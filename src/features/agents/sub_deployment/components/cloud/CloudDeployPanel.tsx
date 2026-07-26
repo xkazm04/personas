@@ -106,13 +106,22 @@ export default function CloudDeployPanel() {
     initialize();
   }, [initialize]);
 
+  // True while the deployments list is being (re)fetched for the Deployments
+  // or Schedules tab. Never hides deployments already on screen — it only
+  // decides whether an empty deployments/schedules region shows ghosts or
+  // the settled empty state (docs/design/overview-loading.md).
+  const [isFetchingDeployments, setIsFetchingDeployments] = useState(true);
+
   // Auto-refresh when Status, OAuth, Deployments, or Schedules tabs become active
   useEffect(() => {
     if (!isConnected) return;
     if (activeTab === 'oauth') {
       fetchOAuthStatus();
     } else if (activeTab === 'deployments' || activeTab === 'schedules') {
-      fetchDeployments();
+      let active = true;
+      setIsFetchingDeployments(true);
+      fetchDeployments().finally(() => { if (active) setIsFetchingDeployments(false); });
+      return () => { active = false; };
     }
     // Status tab is now handled by usePolling below
   }, [activeTab, isConnected, fetchOAuthStatus, fetchDeployments]);
@@ -252,6 +261,7 @@ export default function CloudDeployPanel() {
             deployments={deployments}
             baseUrl={baseUrl}
             isDeploying={isDeploying}
+            isFetching={isFetchingDeployments}
             onDeploy={deploy}
             onPause={pauseDeploy}
             onResume={resumeDeploy}
@@ -260,6 +270,7 @@ export default function CloudDeployPanel() {
           />}
           {activeTab === 'schedules' && isConnected && <CloudSchedulesPanel
             deployments={deployments}
+            isFetchingDeployments={isFetchingDeployments}
             onRefresh={fetchDeployments}
           />}
           {activeTab === 'history' && isConnected && <CloudHistoryPanel />}

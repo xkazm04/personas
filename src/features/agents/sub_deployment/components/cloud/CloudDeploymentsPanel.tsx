@@ -11,6 +11,8 @@ import { BUDGET_PRESETS } from './cloudDeploymentHelpers';
 import { DeploymentCard } from './DeploymentCard';
 import { useDeploymentTest } from '../../hooks/useDeploymentTest';
 import { silentCatch } from '@/lib/silentCatch';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 
 // ---------------------------------------------------------------------------
@@ -21,12 +23,19 @@ interface Props {
   deployments: CloudDeployment[];
   baseUrl: string | null;
   isDeploying: boolean;
+  /** True while the deployments list is being (re)fetched. Never hides rows
+   * already on screen — only gates the empty state vs. ghost placeholders. */
+  isFetching?: boolean;
   onDeploy: (personaId: string, maxMonthlyBudgetUsd?: number) => Promise<CloudDeployment>;
   onPause: (id: string) => Promise<void>;
   onResume: (id: string) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
   onRefresh: () => Promise<void>;
 }
+
+const DEPLOYMENT_CASCADE_ROWS = 14;
+const DEPLOYMENT_CASCADE_STEP_MS = 35;
+const DEPLOYMENT_CASCADE_MAX_STAGGER = 8;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -36,6 +45,7 @@ export function CloudDeploymentsPanel({
   deployments,
   baseUrl,
   isDeploying,
+  isFetching = false,
   onDeploy,
   onPause,
   onResume,
@@ -50,6 +60,9 @@ export function CloudDeploymentsPanel({
   const [selectedBudget, setSelectedBudget] = useState<number | undefined>(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { tests, runTest, dismissResult } = useDeploymentTest();
+  const enter = useRevealTracker('cloud-deployments');
+  const reducedMotion = useReducedMotion();
+  const showGhost = isFetching && deployments.length === 0;
 
   // Which personas are not yet deployed?
   const deployedPersonaIds = new Set(deployments.map((d) => d.personaId));
@@ -147,8 +160,13 @@ export function CloudDeploymentsPanel({
         </div>
       </div>
 
-      {/* Deployment list */}
-      {deployments.length === 0 ? (
+      {/* Deployment list — ghost cards only into cold emptiness while a
+          fetch runs; settled-only empty state (docs/design/overview-loading.md). */}
+      {showGhost ? (
+        <div className="space-y-3">
+          <DeploymentCardGhosts />
+        </div>
+      ) : deployments.length === 0 ? (
         <p className="typo-body text-foreground py-8 text-center">
           {t.deployment.deployments_panel.no_deployments_yet}
         </p>
@@ -156,23 +174,68 @@ export function CloudDeploymentsPanel({
         <div className="space-y-3">
           <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{t.deployment.deployments_panel.active_deployments} ({deployments.length})</SectionHeading>
 
-          {deployments.map((d) => (
-            <DeploymentCard
-              key={d.id}
-              deployment={d}
-              baseUrl={baseUrl}
-              personaName={personaName(d.personaId)}
-              onPause={onPause}
-              onResume={onResume}
-              onRemove={onRemove}
-              testRunning={tests[d.id]?.running}
-              testResult={tests[d.id]?.result}
-              onTest={runTest}
-              onDismissTest={dismissResult}
-            />
-          ))}
+          {deployments.map((d, index) => {
+            // One-shot entrance cascade (RevealItem semantics inlined — the
+            // card's own div already carries all visual classes, so we wrap
+            // it in a plain animated div rather than reusing RevealItem's
+            // hardcoded className merge, keeping the card's own styling untouched).
+            const animate = !reducedMotion && index < DEPLOYMENT_CASCADE_ROWS && !enter.hasEntered(d.id);
+            const delay = animate ? Math.min(Math.max(0, index), DEPLOYMENT_CASCADE_MAX_STAGGER) * DEPLOYMENT_CASCADE_STEP_MS : 0;
+            return (
+              <div
+                key={d.id}
+                className={animate ? 'animate-fade-in' : undefined}
+                style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                onAnimationEnd={(e) => {
+                  if (e.target === e.currentTarget) enter.markEntered(d.id);
+                }}
+              >
+                <DeploymentCard
+                  deployment={d}
+                  baseUrl={baseUrl}
+                  personaName={personaName(d.personaId)}
+                  onPause={onPause}
+                  onResume={onResume}
+                  onRemove={onRemove}
+                  testRunning={tests[d.id]?.running}
+                  testResult={tests[d.id]?.result}
+                  onTest={runTest}
+                  onDismissTest={dismissResult}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DeploymentCardGhosts — calm placeholder cards for the ONLY moment the
+// deployments list has nothing to show (a fetch with a cold list). Same
+// card radius/padding as `DeploymentCard` so the swap to real cards moves
+// nothing. Delayed entrance (§C, docs/design/overview-loading.md) — a fetch
+// that resolves quickly never paints a single ghost. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+function DeploymentCardGhosts() {
+  return (
+    <div aria-hidden="true" className="space-y-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className={`p-3 ${DEPLOYMENT_TOKENS.cardRadius} bg-secondary/30 border border-primary/10 space-y-2 animate-fade-in`}
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="h-3.5 w-32 rounded bg-primary/[0.06]" />
+            <span className="h-5 w-16 rounded-card bg-primary/[0.06]" />
+          </div>
+          <span className="block h-6 w-full rounded-card bg-primary/[0.06]" />
+          <span className="block h-3 w-48 rounded bg-primary/[0.06]" />
+        </div>
+      ))}
     </div>
   );
 }
