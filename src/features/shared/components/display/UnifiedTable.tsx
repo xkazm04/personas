@@ -184,8 +184,9 @@ interface RowEntrance {
  * entered), else the className/style/animationend hookup for the one-shot
  * fade. Mirrors RevealItem's id-guard semantics without its wrapper div —
  * the table applies the animation directly on its own row element.
+ * Exported for sibling table primitives (DataGrid) — not a public API.
  */
-function useRowRevealEntrance(rowReveal?: { resetKey?: string | number }) {
+export function useRowRevealEntrance(rowReveal?: { resetKey?: string | number }) {
   const reduced = useReducedMotion();
   const { hasEntered, markEntered } = useRevealTracker(rowReveal?.resetKey);
   const enabled = !!rowReveal && !reduced;

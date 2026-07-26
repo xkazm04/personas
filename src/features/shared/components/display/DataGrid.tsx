@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Inbox, X } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useRowRevealEntrance } from './UnifiedTable';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DEFAULT_DENSITY, DENSITY_TOKENS, type Density } from '@/lib/density';
 
@@ -103,25 +104,8 @@ export interface DataGridBulkAction {
   disabled?: boolean;
 }
 
-/* -- Stagger animation variants --------------------------------------- */
-
+/** Shared ease for the bulk-toolbar slide (rows use the CSS entrance now). */
 const EASE_CURVE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-const STAGGER_CAP = 10;
-
-const gridContainerVariants: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
-};
-
-const gridRowVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.15, ease: EASE_CURVE } },
-};
-
-const gridRowReduced: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.01 } },
-};
 
 /* -- Component ------------------------------------------------------- */
 
@@ -207,8 +191,14 @@ export function DataGrid<T>({
     return data.slice(start, start + effectivePageSize);
   }, [data, page, effectivePageSize]);
 
+  // One-shot id-guarded row entrance (shared with UnifiedTable): a new page's
+  // rows ripple on their FIRST appearance; returning to a page, polling, or a
+  // background refetch re-delivering the same keys renders plainly. Replaces
+  // the old framer per-page stagger, which replayed the entrance for every row
+  // on every pagination click (banned by loading pattern v2, law 4).
+  const rowEntrance = useRowRevealEntrance({});
+  // Still drives the bulk-toolbar slide-up (reduced-motion aware).
   const { shouldAnimate } = useMotion();
-  const rowVariants = shouldAnimate ? gridRowVariants : gridRowReduced;
 
   const Icon = EmptyIcon || Inbox;
 
@@ -333,11 +323,10 @@ export function DataGrid<T>({
           )}
         </div>
       ) : (
-      <motion.div
+      <div
         className="flex-1 overflow-y-auto"
-        variants={gridContainerVariants}
-        initial="hidden"
-        animate="show"
+        // Remount per page so the scroll offset resets to the top; the row
+        // entrance stays id-guarded, so this never replays seen rows' fades.
         key={`page-${page}`}
       >
         {pageData.map((row, idx) => {
@@ -358,11 +347,10 @@ export function DataGrid<T>({
             : isDragSibling
               ? 'opacity-70'
               : '';
+          const entrance = rowEntrance(getRowKey(row), idx);
           return (
             <motion.div
               key={getRowKey(row)}
-              variants={rowVariants}
-              {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
               // Cast: motion.div's own onDragStart (for framer pan drags) shadows
               // the React HTML5 DragEvent signature in TypeScript, but at runtime
               // React forwards the HTML5 drag handlers to the underlying DOM div
@@ -370,11 +358,12 @@ export function DataGrid<T>({
               // (the default), so the two don't fight.
               {...(extraRowProps as React.ComponentProps<typeof motion.div>)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
+              onAnimationEnd={entrance?.onAnimationEnd}
               data-selected={selected || undefined}
               className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] transition-[transform,opacity,box-shadow] duration-150 ${accent} ${rowCls} ${dragCls} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 && !selected ? 'bg-primary/[0.03]' : ''}`}
-              style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
+              } ${idx % 2 === 0 && !selected ? 'bg-primary/[0.03]' : ''} ${entrance?.className ?? ''}`}
+              style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style', ...entrance?.style }}
             >
               {columns.map((col) => (
                 <div
@@ -389,7 +378,7 @@ export function DataGrid<T>({
             </motion.div>
           );
         })}
-      </motion.div>
+      </div>
       )}
 
       {/* Bulk-action toolbar — slides up when rows are selected */}
