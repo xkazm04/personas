@@ -3,6 +3,8 @@ import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type L
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { MotionizedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { NETWORK_GLYPH, NETWORK_GLYPH_VIEWBOX } from './networkGlyphData';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -19,6 +21,12 @@ import { usePersonaIndex } from './teamStudio/boardShared';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade
+ * (docs/design/overview-loading.md). Beyond this cap rows render plainly.
+ */
+const CASCADE_ROWS = 14;
 
 /**
  * Teams management table — the landing view of the "Teams" sidebar
@@ -55,13 +63,32 @@ export default function TeamList() {
   const [showAutoTeam, setShowAutoTeam] = useState(false);
   const personaIndex = usePersonaIndex();
 
+  // pipelineStore's teamSlice has no in-flight flag for fetchTeams (see
+  // teamSlice.ts) — derived locally rather than editing the store, mirroring
+  // GlobalExecutionList's `isFetching`. Only governs whether an EMPTY row
+  // region shows ghost rows while the initial fetch is running; teams already
+  // on screen (the pre-warmed case — PersonasPage.runStartup fetches teams on
+  // boot) are never hidden.
+  const [isFetching, setIsFetching] = useState(true);
+
   useEffect(() => {
     if (!confirmDisbandId) return;
     const timer = setTimeout(() => setConfirmDisbandId(null), 3500);
     return () => clearTimeout(timer);
   }, [confirmDisbandId]);
 
-  useEffect(() => { fetchTeams(); }, [fetchTeams]);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setIsFetching(true);
+      try {
+        await fetchTeams();
+      } finally {
+        if (active) setIsFetching(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [fetchTeams]);
 
   // Load GitHub PAT credentials when the create form opens so the repo picker
   // can authenticate and list repositories.
@@ -143,6 +170,24 @@ export default function TeamList() {
     { count: teams.length },
   );
 
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // TeamList has no filter/sort context, so the reveal tracker uses a fixed
+  // key — entries are one-shot for the component's lifetime; create/disband
+  // never replays already-entered rows, only the id(s) that changed.
+  const enter = useRevealTracker('teams');
+  // Ghost rows only when the row region would otherwise be empty while the
+  // initial fetch runs. Rows already on screen are never hidden by a fetch.
+  const showGhost = isFetching && teams.length === 0;
+
+  const tableHeaderRow = (
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
+      <span>{t.pipeline.agent_teams}</span>
+      <span className="text-right w-20">{ts.col_members}</span>
+      <span className="text-right w-20">{ts.col_status}</span>
+      <span className="w-[150px]" />
+    </div>
+  );
+
   return (
     <ContentBox minWidth={0} data-testid="teams-table">
       <ContentHeader
@@ -185,7 +230,15 @@ export default function TeamList() {
           </div>
         )}
 
-        {sortedTeams.length === 0 && !showCreate ? (
+        {showGhost ? (
+          /* Nothing to show yet + fetch in flight: ghost rows under the REAL
+             header (same law as GlobalExecutionList). Ghosts are invisible
+             for their first ~120ms so a fast fetch skips them entirely. */
+          <div className="rounded-card border border-primary/12 overflow-hidden">
+            {tableHeaderRow}
+            <TeamGhostRows />
+          </div>
+        ) : sortedTeams.length === 0 && !showCreate ? (
           <EmptyState
             onCreate={() => setShowCreate(true)}
             onAuto={() => setShowAutoTeam(true)}
@@ -194,26 +247,28 @@ export default function TeamList() {
           />
         ) : (
           <div className="rounded-card border border-primary/12 overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
-              <span>{t.pipeline.agent_teams}</span>
-              <span className="text-right w-20">{ts.col_members}</span>
-              <span className="text-right w-20">{ts.col_status}</span>
-              <span className="w-[150px]" />
-            </div>
-            {sortedTeams.map((team) => (
-              <TeamRow
+            {tableHeaderRow}
+            {sortedTeams.map((team, index) => (
+              <RevealItem
                 key={team.id}
-                team={team}
-                counts={teamCounts[team.id]}
-                hasDraft={draftTeamIds.has(team.id)}
-                personaIndex={personaIndex}
-                confirmingDisband={confirmDisbandId === team.id}
-                onOpen={() => selectTeam(team.id)}
-                onRequestDisband={() => setConfirmDisbandId(team.id)}
-                onCancelDisband={() => setConfirmDisbandId(null)}
-                onConfirmDisband={() => void handleDisband(team.id)}
-                ts={ts}
-              />
+                revealId={team.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
+              >
+                <TeamRow
+                  team={team}
+                  counts={teamCounts[team.id]}
+                  hasDraft={draftTeamIds.has(team.id)}
+                  personaIndex={personaIndex}
+                  confirmingDisband={confirmDisbandId === team.id}
+                  onOpen={() => selectTeam(team.id)}
+                  onRequestDisband={() => setConfirmDisbandId(team.id)}
+                  onCancelDisband={() => setConfirmDisbandId(null)}
+                  onConfirmDisband={() => void handleDisband(team.id)}
+                  ts={ts}
+                />
+              </RevealItem>
             ))}
           </div>
         )}
@@ -439,6 +494,48 @@ function EmptyState({
           {t.pipeline.create_blank_team}
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TeamGhostRows — calm ghost rows for the ONLY moment the row region has
+// nothing to show (a fetch with a cold store, e.g. fresh boot straight into
+// Teams before PersonasPage.runStartup's teams fetch settles).
+//
+// Each ghost enters via `animate-fade-in` behind a staggered animation-delay
+// starting at 120ms so a fast fetch never paints a single ghost — real rows
+// replace them the frame data arrives and play the same entrance cascade in
+// the same geometry (identical grid columns under the same header). No
+// `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function TeamGhostRows() {
+  return (
+    <div aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2.5 border-b border-primary/8 last:border-b-0 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex-shrink-0 w-7 h-7 rounded-interactive bg-primary/[0.06]" />
+              <span className={`h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+            </div>
+            <span className={`w-10 h-3.5 justify-self-end block ${GHOST_BAR}`} />
+            <span className="w-14 h-5 justify-self-end block rounded-full bg-primary/[0.06]" />
+            <span className={`w-24 h-6 justify-self-end block ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
     </div>
   );
 }

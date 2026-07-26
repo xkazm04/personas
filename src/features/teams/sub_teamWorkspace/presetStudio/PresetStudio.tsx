@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Layers } from 'lucide-react';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { listTeamPresets } from '@/api/templates/teamPresets';
 import { silentCatch } from '@/lib/silentCatch';
@@ -105,12 +104,10 @@ export function PresetStudio() {
         }
       />
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5" data-testid="preset-studio-grid">
-        {presets === null && (
-          <div className="flex items-center justify-center gap-2 py-12 text-foreground typo-body">
-            <LoadingSpinner size="sm" />
-            <span>{t.templates.presets.loading}</span>
-          </div>
-        )}
+        {/* Cold + fetching: geometry-matched ghost of the gallery grid,
+            invisible for ~120ms so a fast fetch never paints one
+            (docs/design/overview-loading.md). */}
+        {presets === null && <PresetGalleryGhost />}
         {presets && presets.length === 0 && (
           <EmptyState icon={Layers} title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
         )}
@@ -119,5 +116,42 @@ export function PresetStudio() {
         )}
       </div>
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PresetGalleryGhost — calm, geometry-matched ghost of PresetGalleryShowcase's
+// poster-card grid, shown only while `presets` is still `null` (cold fetch).
+// Enters via `animate-fade-in` behind a staggered animation-delay starting at
+// 120ms so a fast fetch never paints one; real cards replace it the frame
+// data arrives. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+function PresetGalleryGhost() {
+  return (
+    <div
+      className="grid gap-5 max-w-5xl mx-auto"
+      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden flex flex-col animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="h-40 flex-shrink-0 bg-primary/[0.06]" />
+          <div className="flex-1 p-4 flex flex-col gap-2">
+            <span className="h-4 w-2/3 rounded bg-primary/[0.06]" />
+            <span className="h-3 w-full rounded bg-primary/[0.06]" />
+            <span className="h-3 w-4/5 rounded bg-primary/[0.06]" />
+            <div className="mt-auto pt-2 flex items-center justify-between">
+              <span className="h-3 w-20 rounded bg-primary/[0.06]" />
+              <span className="h-3 w-16 rounded bg-primary/[0.06]" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
