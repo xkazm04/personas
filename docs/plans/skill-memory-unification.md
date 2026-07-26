@@ -150,4 +150,7 @@ keep only personal/cross-project notes in `MEMORY.md`. (Optionally later: a
 4. **Promotion UX:** **reuse the existing practice review queue** — ledger →
    workspace-knowledge proposals enter the same lane as harvested practices.
 
-**Status:** P0 in progress (schema + ingest + coverage + exited-session hook).
+**Status:** P0 SHIPPED `d89b5e960` (schema + outbox ingest + coverage +
+exited-session hook) · P1 SHIPPED `09574254d` (`memory:` binding + MEMORY BLOCK
+in dispatchSkillToRepo + writers: passport-onboard, kpi-sim). Next: P2
+(coverage surfacing + stale-context reconciler), P3 (Obsidian projection).
