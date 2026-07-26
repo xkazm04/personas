@@ -3,7 +3,15 @@
 # helper crate (cannot be a sub-module — Rust requires proc-macros live in
 # their own crate with `proc-macro = true`). Adding more workspace members
 # in the future just appends to this list.
-members = [".", "macros"]
+#
+# `core/` is the first step of the app_lib crate split (2026-07-26). The single
+# 431k-LOC crate meant one rustc process and an 8.9 GB peak on test builds;
+# splitting is the only way to parallelize codegen. Target shape:
+#   core   — dependency-free foundation (no other Personas crate)
+#   db     — data layer
+#   engine — business logic
+#   .      — Tauri commands + companion (what's left)
+members = [".", "macros", "core"]
 
 [package]
 name = "personas-desktop"
@@ -43,7 +51,7 @@ desktop = [
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
-ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract"]
+ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
 p2p = ["dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
@@ -79,6 +87,9 @@ daemon = ["desktop-full"]
 [dependencies]
 # Internal proc-macro crate (see src-tauri/macros/).
 personas-macros = { path = "macros" }
+# Dependency-free foundation crate (see src-tauri/core/). Re-exported from
+# lib.rs so existing `crate::utils::…` paths keep resolving unchanged.
+personas-core = { path = "core" }
 
 # Embedded local scraper (Pumper) — Phase 0. `default-features = false` drops
 # pumper-core's sqlx/storage tier, so this pulls only the engine traits +

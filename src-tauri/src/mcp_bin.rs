@@ -18,18 +18,18 @@
 
 use app_lib::mcp_server;
 
-// The standalone `personas-mcp` binary is a separate crate root from the
-// main `app_lib` (see src/lib.rs) and does not pull in the full `utils`
-// module tree (some of it, e.g. `sanitization`, has extra deps this sidecar
-// doesn't otherwise need). `mcp_server::vault` is compiled under both crate
-// roots though, and reaches for the shared, dependency-free char-boundary
-// helpers via `crate::utils::text::*` — so mirror just that leaf module here
-// under the same path so it resolves identically in both roots.
-#[allow(dead_code)] // only floor/ceil_char_boundary are exercised by this sidecar binary
-mod utils {
-    #[path = "text.rs"]
-    pub mod text;
-}
+// The standalone `personas-mcp` binary is a separate crate root from the main
+// `app_lib` (see src/lib.rs), but `mcp_server::vault` is compiled under BOTH
+// roots and reaches for the shared char-boundary helpers via
+// `crate::utils::text::*` — so `crate::utils` has to resolve here too.
+//
+// This used to mirror the leaf module with `#[path = "text.rs"] mod text;`
+// because there was no crate the two roots could share. `personas-core` is now
+// exactly that crate (2026-07-26 crate split), so the mirror is gone: both
+// roots re-export the same real module. `personas-core` depends only on
+// `regex`, so the sidecar stays light — the original reason for not pulling in
+// the whole `utils` tree no longer applies.
+pub use personas_core::utils;
 
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;

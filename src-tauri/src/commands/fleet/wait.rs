@@ -44,6 +44,12 @@ const RAW_TAIL_CAP: usize = 2048;
 const STATE_BACKSTOP: Duration = Duration::from_millis(500);
 
 /// A condition a wait blocks on.
+///
+/// `StableMs` is the one the confirmed-submit path uses today. `Text`/`Gone`/
+/// `Regex` are the general screen predicates the keystroke driver will use when
+/// `multiselect_keystrokes` is converted off its fixed sleeps — kept here so the
+/// primitive is complete rather than shaped around a single caller.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum WaitCondition {
     /// Text appears in the rendered screen.

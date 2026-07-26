@@ -1,0 +1,22 @@
+[package]
+name = "personas-core"
+version = "1.1.0"
+description = "Dependency-free foundation shared by the Personas desktop crates"
+authors = ["Personas"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.80.0"
+
+[lib]
+name = "personas_core"
+path = "src/lib.rs"
+
+[features]
+# Mirrors the desktop crate's `ml` feature so `#[cfg(feature = "ml")]` gates
+# inside moved modules keep their meaning. Carries no deps of its own — it only
+# needs to EXIST here so the cfg resolves; the desktop crate's `ml` feature
+# forwards to it.
+ml = []
+
+[dependencies]
+regex = "1"

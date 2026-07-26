@@ -28,14 +28,18 @@ mod radio;
 /// the companion brain. `pub` so the primitives are part of the lib surface
 /// (companion consumes them today; persona-memory injection is the documented
 /// next consumer — see the module docs).
-pub mod retrieval;
+/// Re-exported from `personas-core` (see `src-tauri/core/`). Physically moved
+/// there as step 1 of the crate split; re-exporting keeps every existing
+/// `crate::retrieval::…` path resolving, so the move touched 3 files instead
+/// of the ~849 that reference these modules.
+pub use personas_core::retrieval;
 pub mod startup_timing;
 #[cfg(debug_assertions)]
 mod stream_harness;
 pub mod test_automation;
 #[cfg(feature = "desktop")]
 mod tray;
-mod utils;
+pub use personas_core::utils;
 mod validation;
 mod webbuild;
 
