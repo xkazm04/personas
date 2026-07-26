@@ -33,6 +33,9 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > event-fired ops now receive their trigger under a reserved `_event` param. Dispatch acts
 > on production signal, so it inherits the existing gate: an `approval`-mode trigger holds
 > its fire in `pending_trigger_fires` for a human, and `dry_run` makes it observable-but-inert.
+> (System-op automations are a separate gate: `SystemOpAutomation.unattended_mode`
+> — `auto` | `approval` — enforced in `engine/system_ops.rs` for the signal-dispatch
+> ops; an approval-mode run records `held` and the human acts from Idea Triage.)
 
 > **Findings-loop signals (`signal.raised` / `signal.verified`).** The findings loop
 > (`docs/plans/dev-findings-loop.md`) publishes onto the bus like any other source, so

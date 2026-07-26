@@ -192,10 +192,15 @@ Mechanics worth knowing:
   fix has to move them, not merely look plausible."*
 - Dispatching a `pending` finding moves it to `accepted` — dispatch *is* a triage
   decision.
-- **Safety is inherited, not invented**: dispatch acts on production signal, so the
-  trigger's `unattended_mode` (`auto` / `dry_run` / `approval`) +
-  `pending_trigger_fires` is the gate. An approval-mode automation holds its fire
-  for a human.
+- **Safety lives on the automation row** (corrected 2026-07-26 — an earlier
+  version of this doc claimed the persona-trigger `unattended_mode` +
+  `pending_trigger_fires` machinery gated dispatch; it never did, and system-op
+  dispatch ran unconditionally auto). `SystemOpAutomation.unattended_mode`
+  (`auto` | `approval`) is enforced in `engine/system_ops.rs`: an
+  `approval`-mode dispatch automation records `last_status = "held"` instead of
+  acting — the finding stays in Idea Triage for the human. Manual "run now"
+  bypasses the gate (running it by hand IS the approval). Configured in the
+  Studio commit modal per dispatch route.
 
 ## Verified end-to-end (live, seeded LightTrack)
 

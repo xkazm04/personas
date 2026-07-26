@@ -74,6 +74,10 @@ export interface CreateAutomationInput {
   listenEventType?: string;
   sourceFilter?: string;
   label?: string;
+  /** Safety gate for ops that act on production signal (the dispatch ops).
+   *  `approval` holds automation-fired runs (`last_status = "held"`); the human
+   *  dispatches from Triage. Manual "run now" bypasses the gate. Default `auto`. */
+  unattendedMode?: 'auto' | 'approval';
 }
 
 export const createSystemOpAutomation = (input: CreateAutomationInput) =>
@@ -86,6 +90,7 @@ export const createSystemOpAutomation = (input: CreateAutomationInput) =>
     listenEventType: input.listenEventType,
     sourceFilter: input.sourceFilter,
     label: input.label,
+    unattendedMode: input.unattendedMode,
   });
 
 export const setSystemOpAutomationEnabled = (id: string, enabled: boolean) =>

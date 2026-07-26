@@ -47,12 +47,19 @@ pub fn system_ops_create_automation(
     listen_event_type: Option<String>,
     source_filter: Option<String>,
     label: Option<String>,
+    unattended_mode: Option<String>,
 ) -> Result<SystemOpAutomation, AppError> {
     require_auth_sync(&state)?;
 
     if !ops::is_known_kind(&op_kind) {
         return Err(AppError::Validation(format!(
             "Unknown system op kind: {op_kind}"
+        )));
+    }
+    let unattended_mode = unattended_mode.unwrap_or_else(|| "auto".to_string());
+    if !matches!(unattended_mode.as_str(), "auto" | "approval") {
+        return Err(AppError::Validation(format!(
+            "Unknown unattended_mode: {unattended_mode} (expected auto | approval)"
         )));
     }
     // Validate params parse to JSON (the runner reads typed fields out of it).
@@ -107,6 +114,7 @@ pub fn system_ops_create_automation(
             source_filter: source_filter.as_deref(),
             next_run_at: next_run_at.as_deref(),
             label: label.as_deref(),
+            unattended_mode: &unattended_mode,
         },
     )
 }

@@ -25,6 +25,10 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<SystemOpAutomation> {
         last_status: row.get("last_status").unwrap_or(None),
         last_detail: row.get("last_detail").unwrap_or(None),
         label: row.get("label").unwrap_or(None),
+        unattended_mode: row
+            .get::<_, Option<String>>("unattended_mode")
+            .unwrap_or(None)
+            .unwrap_or_else(|| "auto".to_string()),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -42,6 +46,8 @@ pub struct NewAutomation<'a> {
     pub source_filter: Option<&'a str>,
     pub next_run_at: Option<&'a str>,
     pub label: Option<&'a str>,
+    /// `"auto"` | `"approval"` — see `SystemOpAutomation::unattended_mode`.
+    pub unattended_mode: &'a str,
 }
 
 pub fn list(pool: &DbPool) -> Result<Vec<SystemOpAutomation>, AppError> {
@@ -72,8 +78,8 @@ pub fn create(pool: &DbPool, a: NewAutomation<'_>) -> Result<SystemOpAutomation,
     conn.execute(
         "INSERT INTO system_op_automations
             (id, op_kind, params_json, trigger_kind, cron, timezone, listen_event_type,
-             source_filter, enabled, next_run_at, label, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, ?9, ?10, ?11, ?11)",
+             source_filter, enabled, next_run_at, label, unattended_mode, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 1, ?9, ?10, ?11, ?12, ?12)",
         params![
             a.id,
             a.op_kind,
@@ -85,6 +91,7 @@ pub fn create(pool: &DbPool, a: NewAutomation<'_>) -> Result<SystemOpAutomation,
             a.source_filter,
             a.next_run_at,
             a.label,
+            a.unattended_mode,
             now,
         ],
     )?;

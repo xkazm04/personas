@@ -124,6 +124,22 @@ pub fn initial_status(op_kind: &str) -> &'static str {
     }
 }
 
+/// Whether `kind` is one of the two dispatch ops — the ops that act on
+/// production signal and therefore honor `unattended_mode`.
+pub fn is_dispatch_kind(kind: &str) -> bool {
+    matches!(kind, OP_SIGNAL_DISPATCH_RUNNER | OP_SIGNAL_DISPATCH_FLEET)
+}
+
+/// The approval gate: an `approval`-mode automation on a dispatch op holds its
+/// fire — the finding stays in Triage for a human to dispatch. Automation-fired
+/// paths call this; manual `run_now` deliberately does NOT (running an
+/// automation by hand IS the approval).
+fn is_held(a: &crate::db::models::SystemOpAutomation) -> bool {
+    is_dispatch_kind(&a.op_kind) && a.unattended_mode == "approval"
+}
+
+const HELD_DETAIL: &str = "approval mode — dispatch held; act on the finding from Idea Triage";
+
 /// Thread the automation's id into the op params under a reserved key, so a
 /// delegated op can carry it in its emitted payload and the frontend can report
 /// the run's real outcome back to this automation row.
@@ -347,9 +363,13 @@ pub fn run_due_schedule_automations(app: &AppHandle, pool: &DbPool) {
             .and_then(|c| compute_next_run_at(c, &a.id, a.timezone.as_deref()));
         let mut params: Value = serde_json::from_str(&a.params_json).unwrap_or_else(|_| json!({}));
         inject_automation_id(&mut params, &a.id);
-        let (status, detail) = match run_op(app, pool, &a.op_kind, &params, "schedule") {
-            Ok(d) => (initial_status(&a.op_kind), d),
-            Err(e) => ("failed", e.to_string()),
+        let (status, detail) = if is_held(&a) {
+            ("held", HELD_DETAIL.to_string())
+        } else {
+            match run_op(app, pool, &a.op_kind, &params, "schedule") {
+                Ok(d) => (initial_status(&a.op_kind), d),
+                Err(e) => ("failed", e.to_string()),
+            }
         };
         let _ = repo::mark_run(pool, &a.id, status, Some(&detail), next.as_deref());
         tracing::info!(automation = %a.id, op = %a.op_kind, status, "system-op schedule fired");
@@ -406,9 +426,13 @@ pub fn dispatch_event_automations(app: &AppHandle, pool: &DbPool, events: &[Pers
                 );
             }
             inject_automation_id(&mut params, &a.id);
-            let (status, detail) = match run_op(app, pool, &a.op_kind, &params, "event") {
-                Ok(d) => (initial_status(&a.op_kind), d),
-                Err(e) => ("failed", e.to_string()),
+            let (status, detail) = if is_held(a) {
+                ("held", HELD_DETAIL.to_string())
+            } else {
+                match run_op(app, pool, &a.op_kind, &params, "event") {
+                    Ok(d) => (initial_status(&a.op_kind), d),
+                    Err(e) => ("failed", e.to_string()),
+                }
             };
             let _ = repo::mark_run(pool, &a.id, status, Some(&detail), None);
             tracing::info!(automation = %a.id, op = %a.op_kind, event = %ev.event_type, status, "system-op event fired");

@@ -4917,6 +4917,18 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON system_op_automations(trigger_kind, enabled, listen_event_type);",
     )?;
 
+    // `unattended_mode` (`auto` | `approval`): the safety gate for system-op
+    // automations that act on production signal (the signal-dispatch ops).
+    // `approval` holds the run (`last_status = "held"`) instead of dispatching;
+    // the human dispatches from Triage. Default `auto` preserves the behavior
+    // existing rows already had.
+    if !has_column(conn, "system_op_automations", "unattended_mode")? {
+        ddl_step(
+            conn,
+            "ALTER TABLE system_op_automations ADD COLUMN unattended_mode TEXT NOT NULL DEFAULT 'auto';",
+        )?;
+    }
+
     // -- Research Lab plugin: defensive column ALTERs ---------------------------
     // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
     // initial.rs. If a legacy DB has any of these tables with a drifted column

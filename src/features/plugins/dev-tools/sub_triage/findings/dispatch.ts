@@ -13,11 +13,12 @@
 // by rewiring `signal.raised` to one op or the other in Chain Studio. Neither the engine
 // nor this module has an opinion about which is right.
 //
-// SAFETY: dispatch acts on production signal, potentially unattended. It does NOT invent
-// its own guard rails — the trigger's `unattended_mode` (auto / dry_run / approval) is
-// the gate, and an `approval`-mode automation holds its fire in `pending_trigger_fires`
-// for a human. That machinery predates this feature; re-implementing it here would be
-// both duplicated and less trustworthy.
+// SAFETY: dispatch acts on production signal, potentially unattended. The gate lives on
+// the SystemOpAutomation row's `unattended_mode` (`auto` | `approval`), enforced in
+// `engine/system_ops.rs`: an `approval`-mode automation never reaches this module — the
+// run is held (`last_status = "held"`) and the human dispatches from Idea Triage.
+// (The persona-trigger `pending_trigger_fires` machinery is a DIFFERENT system and does
+// not apply here — an earlier version of this comment wrongly claimed it did.)
 import { getIdea, listProjects, createTask, executeTask, updateIdea } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
