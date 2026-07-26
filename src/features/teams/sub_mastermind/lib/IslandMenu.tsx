@@ -1,8 +1,15 @@
 // Context menu for a project header (right-click): the island's dimensions
 // sorted by name, with the same glyphs the cells render (brand mark when the
 // tool is identified). Hovering a row highlights the matching hex/grid cell on
-// the canvas so the mapping is unambiguous. Item click is a no-op for now —
-// the per-dimension action layer comes later.
+// the canvas so the mapping is unambiguous.
+//
+// Row click mirrors the canvas cell exactly: the island's nodes arrive already
+// decorated with `action`/`rowKey` (MastermindPage's dimAction pass), so an
+// actionable row routes through the SAME onDimOpen the cell click uses —
+// Improve/Deploy popover, idea-scan popover, goal list, skills run. Inert
+// dimensions render as plain rows with no affordance (the canvas convention:
+// a cell that can't act shows no pointer and no hover ring).
+import type { MouseEvent } from 'react';
 import { Rocket, SquareTerminal } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -29,7 +36,7 @@ function MenuGlyph({ node }: { node: DimNode }) {
   return <Icon className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} style={{ color: ink }} aria-hidden />;
 }
 
-export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDispatchFleet, onHoverDim, onClose }: {
+export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDispatchFleet, onDimOpen, onHoverDim, onClose }: {
   island: Island;
   /** Screen-space anchor (cursor position, clamped by the caller). */
   x: number;
@@ -41,6 +48,9 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
   onOpenTerminal: () => void;
   /** "Dispatch Fleet…" action — open the instruction modal for a background run. */
   onDispatchFleet: () => void;
+  /** Actionable dimension row clicked — routed to the page's cell handler, so
+   *  the row opens exactly what clicking the cell on the canvas would. */
+  onDimOpen: (node: DimNode, e: MouseEvent) => void;
   onHoverDim: (key: string | null) => void;
   onClose: () => void;
 }) {
@@ -91,22 +101,41 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
       <ul className="max-h-[260px] overflow-y-auto py-1">
         {items.map((n) => {
           const absent = n.status === 'absent';
+          // Same gate the canvas cell uses — the node arrives pre-decorated.
+          const actionable = Boolean(n.action);
+          const body = (
+            <>
+              <MenuGlyph node={n} />
+              <span className={absent ? 'text-foreground/50' : undefined}>{n.label}</span>
+              <span className="ml-auto typo-caption text-foreground/50 truncate max-w-[150px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
+                {n.detail ?? (absent ? t.mastermind.cell_empty : '')}
+              </span>
+            </>
+          );
+          const layout = 'w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md typo-body';
           return (
             <li key={n.key}>
-              <button
-                type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-md typo-body transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground"
-                onMouseEnter={() => onHoverDim(n.key)}
-                onMouseLeave={() => onHoverDim(null)}
-                onClick={onClose}
-                data-testid={`mm-menu-dim-${n.key}`}
-              >
-                <MenuGlyph node={n} />
-                <span className={absent ? 'text-foreground/50' : undefined}>{n.label}</span>
-                <span className="ml-auto typo-caption text-foreground/50 truncate max-w-[150px]" style={absent ? { color: mix('var(--muted-foreground)', 80) } : undefined}>
-                  {n.detail ?? (absent ? t.mastermind.cell_empty : '')}
-                </span>
-              </button>
+              {actionable ? (
+                <button
+                  type="button"
+                  className={`${layout} transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground focus-ring`}
+                  onMouseEnter={() => onHoverDim(n.key)}
+                  onMouseLeave={() => onHoverDim(null)}
+                  onClick={(e) => { onDimOpen(n, e); onClose(); }}
+                  data-testid={`mm-menu-dim-${n.key}`}
+                >
+                  {body}
+                </button>
+              ) : (
+                <div
+                  className={`${layout} text-foreground/70 cursor-default`}
+                  onMouseEnter={() => onHoverDim(n.key)}
+                  onMouseLeave={() => onHoverDim(null)}
+                  data-testid={`mm-menu-dim-${n.key}`}
+                >
+                  {body}
+                </div>
+              )}
             </li>
           );
         })}

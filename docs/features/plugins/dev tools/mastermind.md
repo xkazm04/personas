@@ -151,7 +151,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 
 **Hover focus:** hovering an island dims everything except it and its integration neighbours.
 
-**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions sorted by name with the same glyphs; hovering a dimension row echoes a double ring on the matching cell; dimension row click is currently a no-op (reserved for the per-dimension action layer). Both Fleet rows are disabled for demo islands / projects with no `root_path`.
+**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions sorted by name with the same glyphs; hovering a dimension row echoes a double ring on the matching cell. **Clicking an actionable dimension row does exactly what clicking its cell does** — the island's nodes reach the menu already decorated by `MastermindPage`'s `dimAction` pass, so the row routes through the same `onDimOpen` (Improve / Deploy popover, `IdeaScanPopover`, `GoalListPopover`, Skills Workbench), anchored at the row. Inert dimensions render as plain non-focusable rows with no pointer and no hover affordance — the same "no action, no affordance" convention §5 defines for cells. Both Fleet rows are disabled for demo islands / projects with no `root_path`.
 
 **Motion:** sidebars fade+slide, islands fade in/out on hide/show/create (AnimatePresence), all linear.
 
@@ -184,7 +184,7 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 ## 12. Known gaps / deferred
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
-- **Context-menu row click** and **persona list row click** are reserved no-ops (per-item action layers to come).
+- **Persona list row click** is still a reserved no-op (the per-persona action layer is to come). Context-menu dimension rows are wired (§8).
 - `auth` and `kpi` dimensions have no Improve counterpart yet (inert).
 - **Fleet-lane scan dispatch** (see §10 deviation).
 - **Dimension categories** for ≥15 dimensions (see §5). Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.

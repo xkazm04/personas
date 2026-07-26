@@ -605,6 +605,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             terminalEnabled={canOpenTerminal(menu.slug)}
             onOpenTerminal={() => { onOpenTerminal(menu.slug); setMenu(null); setHighlight(null); }}
             onDispatchFleet={() => { onDispatchFleet(menu.slug); setMenu(null); setHighlight(null); }}
+            onDimOpen={(node, e) => { onDimOpen(menu.slug, node, e); setHighlight(null); }}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}
           />
