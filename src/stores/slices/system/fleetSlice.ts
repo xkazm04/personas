@@ -7,7 +7,7 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import { EventName } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
-import { ingestMemoryOutbox, listProjects } from '@/api/devTools/devTools';
+import { ingestMemoryOutbox, listProjects, projectMemoryToVault, scanCodebase } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
@@ -16,13 +16,23 @@ const normPath = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+
 /** Memory-ledger ingest on session exit: if the exited session ran inside a
  *  registered project's root, sweep its `.personas/memory-outbox.jsonl` into
  *  the ledger (docs/plans/skill-memory-unification.md §3.2). Best-effort and
- *  silent — most sessions have no outbox and the ingest is a cheap no-op. */
+ *  silent — most sessions have no outbox and the ingest is a cheap no-op.
+ *  Follow-ups on real changes: `map`-kind nodes signal structure drift → the
+ *  existing DELTA context scan refreshes the context map (P2 reconciler); any
+ *  change re-projects the ledger into the Obsidian vault when one is
+ *  configured (P3 — no-op otherwise). */
 async function ingestOutboxForCwd(cwd: string | null | undefined): Promise<void> {
   if (!cwd) return;
   const projects = await listProjects();
   const project = projects.find((p) => p.root_path && normPath(p.root_path) === normPath(cwd));
   if (!project) return;
-  await ingestMemoryOutbox(project.id);
+  const r = await ingestMemoryOutbox(project.id);
+  if (r.mapNodes > 0) {
+    scanCodebase(project.id, project.root_path, true).catch(silentCatch('fleet memory delta scan'));
+  }
+  if (r.nodesInserted + r.nodesRefreshed > 0) {
+    projectMemoryToVault(project.id).catch(silentCatch('fleet memory vault projection'));
+  }
 }
 
 // Module-level guard so the three Tauri session listeners attach exactly once

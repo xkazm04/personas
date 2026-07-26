@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "এই প্রজেক্টে Claude যে কাজটি চালাবে তা বর্ণনা করুন…",
     "dispatch_submit": "পাঠান",
     "dispatch_submitting": "পাঠানো হচ্ছে…",
-    "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে"
+    "dispatch_toast": "{name}-এ Fleet সেশন পাঠানো হয়েছে",
+    "memory_coverage": "{covered}/{contexts} কনটেক্সট সতেজ · {days} দিনের উইন্ডো",
+    "memory_empty": "এখনও কোনো মেমরি নেই — পাঠানো স্কিলগুলো কাজ করার সময় এটি লেখে।",
+    "memory_import_vault": "ভল্ট থেকে ইমপোর্ট করুন",
+    "memory_sync_vault": "ভল্টে সিঙ্ক করুন",
+    "memory_title": "মেমরি",
+    "memory_unanchored": "{n}টি আনঅ্যাংকরড নোট",
+    "memory_vault_imported": "{imported}টি ইমপোর্ট · {updated}টি আপডেট",
+    "memory_vault_synced": "ভল্ট আপডেট হয়েছে ({n}টি নোট)"
   }
 }

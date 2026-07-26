@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "صِف المهمة التي سينفّذها Claude في هذا المشروع…",
     "dispatch_submit": "إرسال",
     "dispatch_submitting": "جارٍ الإرسال…",
-    "dispatch_toast": "تم إرسال جلسة Fleet في {name}"
+    "dispatch_toast": "تم إرسال جلسة Fleet في {name}",
+    "memory_coverage": "{covered}/{contexts} سياقات محدّثة · نافذة {days} يوم",
+    "memory_empty": "لا توجد ذاكرة بعد — المهارات المُرسلة تكتبها أثناء عملها.",
+    "memory_import_vault": "استيراد من الـ Vault",
+    "memory_sync_vault": "مزامنة إلى الـ Vault",
+    "memory_title": "الذاكرة",
+    "memory_unanchored": "{n} ملاحظات غير مرتبطة",
+    "memory_vault_imported": "تم استيراد {imported} · تم تحديث {updated}",
+    "memory_vault_synced": "تم تحديث الـ Vault ({n} ملاحظات)"
   }
 }

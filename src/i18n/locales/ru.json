@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "Опишите задачу, которую Claude выполнит в этом проекте…",
     "dispatch_submit": "Отправить",
     "dispatch_submitting": "Отправка…",
-    "dispatch_toast": "Сеанс Fleet отправлен в {name}"
+    "dispatch_toast": "Сеанс Fleet отправлен в {name}",
+    "memory_coverage": "{covered}/{contexts} контекстов актуальны · окно {days} дн.",
+    "memory_empty": "Памяти пока нет — отправленные навыки записывают её по ходу работы.",
+    "memory_import_vault": "Импорт из хранилища",
+    "memory_sync_vault": "Синхронизировать в хранилище",
+    "memory_title": "Память",
+    "memory_unanchored": "{n} непривязанных заметок",
+    "memory_vault_imported": "Импортировано {imported} · обновлено {updated}",
+    "memory_vault_synced": "Хранилище обновлено ({n} заметок)"
   }
 }

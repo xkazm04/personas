@@ -949,6 +949,20 @@ export interface MemoryIngestResult {
   edgesInserted: number;
   skipped: number;
   outboxFound: boolean;
+  /** `map`-kind nodes seen — the structure-drift signal (triggers a delta context scan). */
+  mapNodes: number;
+}
+
+export interface MemoryVaultProjectResult {
+  vaultConfigured: boolean;
+  written: number;
+  removed: number;
+}
+
+export interface MemoryVaultImportResult {
+  vaultConfigured: boolean;
+  imported: number;
+  updated: number;
 }
 
 export interface MemoryNodeRow {
@@ -985,6 +999,15 @@ export const listMemoryNodes = (projectId: string, contextId?: string | null, li
 /** Context coverage: contexts with fresh (≤30d) memory / all contexts. */
 export const memoryCoverage = (projectId: string) =>
   invoke<MemoryCoverage>("dev_tools_memory_coverage", { projectId });
+
+/** Project the ledger into the Obsidian vault (Brain plugin's vault; no-op
+ *  with vaultConfigured=false when none is set up). */
+export const projectMemoryToVault = (projectId: string) =>
+  invoke<MemoryVaultProjectResult>("dev_tools_memory_project_vault", { projectId });
+
+/** Explicit vault → ledger import scan for the project's subtree. */
+export const importMemoryFromVault = (projectId: string) =>
+  invoke<MemoryVaultImportResult>("dev_tools_memory_import_vault", { projectId });
 
 /**
  * Execute a queued Dev-runner task. `model` optionally overrides the model for

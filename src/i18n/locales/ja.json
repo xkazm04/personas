@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "このプロジェクトで Claude に実行させるタスクを記述してください…",
     "dispatch_submit": "送信",
     "dispatch_submitting": "送信中…",
-    "dispatch_toast": "{name} で Fleet セッションを送信しました"
+    "dispatch_toast": "{name} で Fleet セッションを送信しました",
+    "memory_coverage": "{covered}/{contexts} コンテキストが最新 · {days}日間ウィンドウ",
+    "memory_empty": "メモリはまだありません — 派遣されたスキルが作業中に書き込みます。",
+    "memory_import_vault": "保管庫からインポート",
+    "memory_sync_vault": "保管庫へ同期",
+    "memory_title": "メモリ",
+    "memory_unanchored": "未アンカーのノート {n} 件",
+    "memory_vault_imported": "{imported} 件インポート · {updated} 件更新",
+    "memory_vault_synced": "保管庫を更新しました（{n} 件のノート）"
   }
 }

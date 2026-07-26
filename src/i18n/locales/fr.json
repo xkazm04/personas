@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "Décrivez la tâche que Claude doit exécuter dans ce projet…",
     "dispatch_submit": "Envoyer",
     "dispatch_submitting": "Envoi…",
-    "dispatch_toast": "Session Fleet envoyée dans {name}"
+    "dispatch_toast": "Session Fleet envoyée dans {name}",
+    "memory_coverage": "{covered}/{contexts} contextes à jour · fenêtre de {days} j",
+    "memory_empty": "Pas encore de mémoire — les skills envoyées l'écrivent en travaillant.",
+    "memory_import_vault": "Importer depuis le coffre",
+    "memory_sync_vault": "Synchroniser vers le coffre",
+    "memory_title": "Mémoire",
+    "memory_unanchored": "{n} notes non ancrées",
+    "memory_vault_imported": "{imported} importées · {updated} mises à jour",
+    "memory_vault_synced": "Coffre mis à jour ({n} notes)"
   }
 }

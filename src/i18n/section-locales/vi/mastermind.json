@@ -74,5 +74,13 @@
   "dispatch_placeholder": "Mô tả tác vụ để Claude chạy trong dự án này…",
   "dispatch_submit": "Gửi",
   "dispatch_submitting": "Đang gửi…",
-  "dispatch_toast": "Đã gửi phiên Fleet trong {name}"
+  "dispatch_toast": "Đã gửi phiên Fleet trong {name}",
+  "memory_coverage": "{covered}/{contexts} ngữ cảnh mới cập nhật · cửa sổ {days} ngày",
+  "memory_empty": "Chưa có bộ nhớ — các skill được điều phối sẽ ghi lại trong lúc làm việc.",
+  "memory_import_vault": "Nhập từ vault",
+  "memory_sync_vault": "Đồng bộ vào vault",
+  "memory_title": "Bộ nhớ",
+  "memory_unanchored": "{n} ghi chú chưa neo",
+  "memory_vault_imported": "Đã nhập {imported} · đã cập nhật {updated}",
+  "memory_vault_synced": "Đã cập nhật vault ({n} ghi chú)"
 }

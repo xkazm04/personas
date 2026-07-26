@@ -74,5 +74,13 @@
   "dispatch_placeholder": "Popište úkol, který má Claude v tomto projektu provést…",
   "dispatch_submit": "Odeslat",
   "dispatch_submitting": "Odesílání…",
-  "dispatch_toast": "Relace Fleet odeslána v {name}"
+  "dispatch_toast": "Relace Fleet odeslána v {name}",
+  "memory_coverage": "{covered}/{contexts} kontextů aktuálních · okno {days} d",
+  "memory_empty": "Zatím žádná paměť — vyslané skilly ji zapisují během práce.",
+  "memory_import_vault": "Importovat z trezoru",
+  "memory_sync_vault": "Synchronizovat do trezoru",
+  "memory_title": "Paměť",
+  "memory_unanchored": "{n} neukotvených poznámek",
+  "memory_vault_imported": "Importováno {imported} · aktualizováno {updated}",
+  "memory_vault_synced": "Trezor aktualizován ({n} poznámek)"
 }

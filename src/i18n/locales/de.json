@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "Beschreiben Sie die Aufgabe, die Claude in diesem Projekt ausführen soll…",
     "dispatch_submit": "Senden",
     "dispatch_submitting": "Wird gesendet…",
-    "dispatch_toast": "Fleet-Sitzung in {name} gesendet"
+    "dispatch_toast": "Fleet-Sitzung in {name} gesendet",
+    "memory_coverage": "{covered}/{contexts} Kontexte aktuell · {days}-Tage-Fenster",
+    "memory_empty": "Noch kein Gedächtnis — entsandte Skills schreiben es während der Arbeit.",
+    "memory_import_vault": "Aus Vault importieren",
+    "memory_sync_vault": "In Vault synchronisieren",
+    "memory_title": "Gedächtnis",
+    "memory_unanchored": "{n} unverankerte Notizen",
+    "memory_vault_imported": "{imported} importiert · {updated} aktualisiert",
+    "memory_vault_synced": "Vault aktualisiert ({n} Notizen)"
   }
 }

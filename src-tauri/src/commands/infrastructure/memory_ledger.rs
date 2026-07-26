@@ -16,7 +16,7 @@
 //!
 //! Dedupe is content-hash based: re-ingesting an identical note refreshes its
 //! `updated_at` (keeps coverage honest) instead of duplicating it.
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -76,6 +76,10 @@ pub struct MemoryIngestResult {
     pub skipped: i32,
     /// False when no outbox file existed (nothing to do).
     pub outbox_found: bool,
+    /// `map`-kind nodes seen this pass (inserted or refreshed) — the signal a
+    /// skill observed structure drift; the frontend reacts with a delta
+    /// context scan (P2 reconciler).
+    pub map_nodes: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -136,6 +140,7 @@ pub fn dev_tools_memory_ingest(
         edges_inserted: 0,
         skipped: 0,
         outbox_found: false,
+        map_nodes: 0,
     };
     let Ok(meta) = std::fs::metadata(&path) else {
         return Ok(out);
@@ -230,6 +235,9 @@ pub fn dev_tools_memory_ingest(
                         local_ids.insert(local, existing_id);
                     }
                     out.nodes_refreshed += 1;
+                    if kind == "map" {
+                        out.map_nodes += 1;
+                    }
                     continue;
                 }
                 let node_id = uuid::Uuid::new_v4().to_string();
@@ -252,6 +260,9 @@ pub fn dev_tools_memory_ingest(
                     local_ids.insert(local, node_id);
                 }
                 out.nodes_inserted += 1;
+                if kind == "map" {
+                    out.map_nodes += 1;
+                }
             }
             "edge" => {
                 let (Some(from), Some(to)) = (parsed.from.as_deref(), parsed.to.as_deref()) else {
@@ -342,6 +353,348 @@ pub fn dev_tools_memory_list(
             .collect(),
     };
     Ok(rows)
+}
+
+// ── Obsidian projection (P3 — optional, reuses the Brain plugin's vault) ────
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryVaultProjectResult {
+    /// False = no Obsidian vault configured (Brain plugin) — nothing happened.
+    pub vault_configured: bool,
+    pub written: i32,
+    /// Stale projection files removed (their node is no longer active).
+    pub removed: i32,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MemoryVaultImportResult {
+    pub vault_configured: bool,
+    /// Hand-authored notes turned into new ledger nodes (file gets stamped).
+    pub imported: i32,
+    /// Projected notes whose vault edits flowed back into their node.
+    pub updated: i32,
+}
+
+/// Vault root from the Obsidian Brain plugin's config — the memory ledger
+/// deliberately has NO vault setting of its own (§2.3: optional component;
+/// users who configured the Brain plugin get projection, others lose nothing).
+fn vault_root(state: &AppState) -> Option<PathBuf> {
+    let json = crate::db::repos::core::settings::get(
+        &state.db,
+        crate::db::settings_keys::OBSIDIAN_BRAIN_CONFIG,
+    )
+    .ok()??;
+    let cfg: crate::db::models::ObsidianVaultConfig = serde_json::from_str(&json).ok()?;
+    let p = cfg.vault_path.trim();
+    if p.is_empty() {
+        return None;
+    }
+    let root = PathBuf::from(p);
+    root.is_dir().then_some(root)
+}
+
+/// Per-project projection subtree (operator decision: per project).
+fn vault_project_dir(root: &Path, project_name: &str) -> PathBuf {
+    root.join("personas").join(slug(project_name))
+}
+
+/// Filesystem-safe slug: alnum kept, runs of everything else collapse to '-'.
+fn slug(s: &str) -> String {
+    let mut out = String::new();
+    let mut dash = false;
+    for c in s.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+            dash = false;
+        } else if !dash && !out.is_empty() {
+            out.push('-');
+            dash = true;
+        }
+    }
+    let trimmed = out.trim_end_matches('-');
+    trimmed.chars().take(60).collect::<String>()
+}
+
+/// Frontmatter `key:` value of a note (mirror of skill_files' scanner).
+fn note_frontmatter(content: &str, key: &str) -> Option<String> {
+    let mut lines = content.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return None;
+    }
+    let prefix = format!("{key}:");
+    for line in lines {
+        let t = line.trim();
+        if t == "---" {
+            break;
+        }
+        if let Some(rest) = t.strip_prefix(&prefix) {
+            return Some(rest.trim().trim_matches(['"', '\'']).trim().to_string());
+        }
+    }
+    None
+}
+
+/// Note body: content after the closing frontmatter delimiter, with the
+/// projection-owned trailing "## Links" section stripped (it round-trips from
+/// edges, not from text).
+fn note_body(content: &str) -> String {
+    let after = if content.trim_start().starts_with("---") {
+        let mut seen = 0usize;
+        let mut idx = 0usize;
+        for (i, line) in content.lines().enumerate() {
+            if line.trim() == "---" {
+                seen += 1;
+                if seen == 2 {
+                    idx = i + 1;
+                    break;
+                }
+            }
+        }
+        content.lines().skip(idx).collect::<Vec<_>>().join("\n")
+    } else {
+        content.to_string()
+    };
+    match after.find("\n## Links") {
+        Some(pos) => after[..pos].trim().to_string(),
+        None => after.trim().to_string(),
+    }
+}
+
+/// Project the ledger into the vault: one note per active node
+/// (`<vault>/personas/<project>/<title-slug>--<id8>.md`, frontmatter carries
+/// identity), one wikilink per edge. Idempotent full rewrite of the subtree;
+/// projection files whose node is gone are removed (hand-authored notes —
+/// no `personas_id` — are never touched).
+#[tauri::command]
+pub fn dev_tools_memory_project_vault(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<MemoryVaultProjectResult, AppError> {
+    require_auth_sync(&state)?;
+    let Some(root) = vault_root(&state) else {
+        return Ok(MemoryVaultProjectResult { vault_configured: false, written: 0, removed: 0 });
+    };
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    let dir = vault_project_dir(&root, &project.name);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| AppError::Internal(format!("create vault dir failed: {e}")))?;
+
+    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    // Context id → name for readable frontmatter.
+    let mut ctx_name = std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        for row in stmt
+            .query_map([&project_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .flatten()
+        {
+            ctx_name.insert(row.0, row.1);
+        }
+    }
+
+    struct N { id: String, context_id: Option<String>, kind: String, title: String, body: Option<String>, updated_at: String }
+    let nodes: Vec<N> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, context_id, kind, title, body, updated_at FROM memory_nodes
+                 WHERE project_id = ?1 AND status = 'active'
+                 ORDER BY updated_at DESC LIMIT 500",
+            )
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        let rows = stmt
+            .query_map([&project_id], |r| {
+                Ok(N {
+                    id: r.get(0)?,
+                    context_id: r.get(1)?,
+                    kind: r.get(2)?,
+                    title: r.get(3)?,
+                    body: r.get(4)?,
+                    updated_at: r.get(5)?,
+                })
+            })
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        rows.flatten().collect()
+    };
+
+    // Edges grouped by from-node; wikilinks target the other note's file stem.
+    let stem_of = |n: &N| format!("{}--{}", slug(&n.title), &n.id[..n.id.len().min(8)]);
+    let stems: std::collections::HashMap<String, String> =
+        nodes.iter().map(|n| (n.id.clone(), stem_of(n))).collect();
+    let mut links: std::collections::HashMap<String, Vec<(String, String)>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare(
+                "SELECT e.from_id, e.to_id, e.rel FROM memory_edges e
+                 JOIN memory_nodes f ON f.id = e.from_id WHERE f.project_id = ?1",
+            )
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        for row in stmt
+            .query_map([&project_id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+            })
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .flatten()
+        {
+            links.entry(row.0).or_default().push((row.2, row.1));
+        }
+    }
+
+    let mut out = MemoryVaultProjectResult { vault_configured: true, written: 0, removed: 0 };
+    let active_ids: std::collections::HashSet<&str> = nodes.iter().map(|n| n.id.as_str()).collect();
+
+    for n in &nodes {
+        let mut md = String::new();
+        md.push_str("---\n");
+        md.push_str(&format!("personas_id: {}\n", n.id));
+        md.push_str(&format!("kind: {}\n", n.kind));
+        md.push_str(&format!("title: \"{}\"\n", n.title.replace('"', "'")));
+        if let Some(cn) = n.context_id.as_ref().and_then(|c| ctx_name.get(c)) {
+            md.push_str(&format!("context: \"{}\"\n", cn.replace('"', "'")));
+        }
+        md.push_str(&format!("updated: {}\n", n.updated_at));
+        md.push_str("---\n\n");
+        if let Some(b) = &n.body {
+            md.push_str(b);
+            md.push('\n');
+        }
+        if let Some(ls) = links.get(&n.id) {
+            let lines: Vec<String> = ls
+                .iter()
+                .filter_map(|(rel, to)| stems.get(to).map(|s| format!("- {rel} [[{s}]]")))
+                .collect();
+            if !lines.is_empty() {
+                md.push_str("\n## Links\n");
+                md.push_str(&lines.join("\n"));
+                md.push('\n');
+            }
+        }
+        std::fs::write(dir.join(format!("{}.md", stem_of(n))), md)
+            .map_err(|e| AppError::Internal(format!("write vault note failed: {e}")))?;
+        out.written += 1;
+    }
+
+    // Remove projections of no-longer-active nodes; never touch hand-authored
+    // notes (no personas_id frontmatter).
+    if let Ok(read) = std::fs::read_dir(&dir) {
+        for entry in read.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let Ok(content) = std::fs::read_to_string(&path) else { continue };
+            if let Some(pid) = note_frontmatter(&content, "personas_id") {
+                if !active_ids.contains(pid.as_str()) {
+                    let _ = std::fs::remove_file(&path);
+                    out.removed += 1;
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Explicit vault → ledger import (a scan, not a watcher — §3.5): projected
+/// notes edited in Obsidian update their node; hand-authored notes in the
+/// project subtree become new nodes and the file is stamped with its
+/// `personas_id` so the next import is idempotent.
+#[tauri::command]
+pub fn dev_tools_memory_import_vault(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<MemoryVaultImportResult, AppError> {
+    require_auth_sync(&state)?;
+    let Some(root) = vault_root(&state) else {
+        return Ok(MemoryVaultImportResult { vault_configured: false, imported: 0, updated: 0 });
+    };
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    let dir = vault_project_dir(&root, &project.name);
+    let mut out = MemoryVaultImportResult { vault_configured: true, imported: 0, updated: 0 };
+    let Ok(read) = std::fs::read_dir(&dir) else {
+        return Ok(out); // no subtree yet — nothing to import
+    };
+
+    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut ctx_by_name = std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM dev_contexts WHERE project_id = ?1")
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        for row in stmt
+            .query_map([&project_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .flatten()
+        {
+            ctx_by_name.insert(row.1.to_lowercase(), row.0);
+        }
+    }
+
+    for entry in read.flatten().take(200) {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("md") {
+            continue;
+        }
+        let Ok(content) = std::fs::read_to_string(&path) else { continue };
+        let body = note_body(&content);
+        let body_capped: String = body.chars().take(MAX_BODY_CHARS).collect();
+
+        if let Some(pid) = note_frontmatter(&content, "personas_id") {
+            // Projected note — flow vault edits back into the node.
+            let title = note_frontmatter(&content, "title").unwrap_or_default();
+            let title: String = title.chars().take(MAX_TITLE_CHARS).collect();
+            if title.is_empty() {
+                continue;
+            }
+            let changed = conn
+                .execute(
+                    "UPDATE memory_nodes SET title = ?1, body = ?2, updated_at = datetime('now')
+                     WHERE id = ?3 AND project_id = ?4 AND status = 'active'
+                       AND (title != ?1 OR COALESCE(body, '') != ?2)",
+                    rusqlite::params![title, body_capped, pid, project_id],
+                )
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            out.updated += changed as i32;
+        } else {
+            // Hand-authored note — new node, then stamp the file.
+            let title = note_frontmatter(&content, "title")
+                .filter(|t| !t.is_empty())
+                .unwrap_or_else(|| {
+                    path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()
+                });
+            let title: String = title.chars().take(MAX_TITLE_CHARS).collect();
+            if title.is_empty() {
+                continue;
+            }
+            let kind = note_frontmatter(&content, "kind")
+                .filter(|k| NODE_KINDS.contains(&k.as_str()))
+                .unwrap_or_else(|| "fact".to_string());
+            let context_id = note_frontmatter(&content, "context")
+                .and_then(|n| ctx_by_name.get(&n.to_lowercase()).cloned());
+            let hash = content_hash(&kind, &title, &body_capped, context_id.as_deref().unwrap_or(""));
+            let node_id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO memory_nodes (id, project_id, context_id, kind, title, body, source, content_hash)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'import:obsidian', ?7)",
+                rusqlite::params![node_id, project_id, context_id, kind, title, body_capped, hash],
+            )
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+            // Stamp so the next import updates instead of re-importing.
+            let stamped = if content.trim_start().starts_with("---") {
+                content.replacen("---", &format!("---\npersonas_id: {node_id}"), 1)
+            } else {
+                format!("---\npersonas_id: {node_id}\ntitle: \"{}\"\n---\n\n{content}", title.replace('"', "'"))
+            };
+            let _ = std::fs::write(&path, stamped);
+            out.imported += 1;
+        }
+    }
+    Ok(out)
 }
 
 /// Coverage: contexts with ≥1 fresh (≤30d) active node / all contexts.

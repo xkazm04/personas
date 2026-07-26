@@ -74,5 +74,13 @@
   "dispatch_placeholder": "इस प्रोजेक्ट में Claude जो कार्य चलाएगा उसका वर्णन करें…",
   "dispatch_submit": "भेजें",
   "dispatch_submitting": "भेजा जा रहा है…",
-  "dispatch_toast": "{name} में Fleet सत्र भेजा गया"
+  "dispatch_toast": "{name} में Fleet सत्र भेजा गया",
+  "memory_coverage": "{covered}/{contexts} कॉन्टेक्स्ट ताज़ा · {days} दिन की विंडो",
+  "memory_empty": "अभी कोई मेमोरी नहीं — भेजी गई स्किल्स काम करते हुए इसे लिखती हैं।",
+  "memory_import_vault": "वॉल्ट से इंपोर्ट करें",
+  "memory_sync_vault": "वॉल्ट में सिंक करें",
+  "memory_title": "मेमोरी",
+  "memory_unanchored": "{n} बिना एंकर वाले नोट्स",
+  "memory_vault_imported": "{imported} इंपोर्ट किए · {updated} अपडेट किए",
+  "memory_vault_synced": "वॉल्ट अपडेट हुआ ({n} नोट्स)"
 }

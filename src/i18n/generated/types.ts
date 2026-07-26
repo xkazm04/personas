@@ -18579,5 +18579,13 @@ export type Translations = {
     fleet_headless: string;
     fleet_close_preview: string;
     score_legend: string;
+    memory_title: string;
+    memory_coverage: string;
+    memory_unanchored: string;
+    memory_empty: string;
+    memory_sync_vault: string;
+    memory_import_vault: string;
+    memory_vault_synced: string;
+    memory_vault_imported: string;
   };
 };

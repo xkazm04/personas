@@ -150,7 +150,12 @@ keep only personal/cross-project notes in `MEMORY.md`. (Optionally later: a
 4. **Promotion UX:** **reuse the existing practice review queue** — ledger →
    workspace-knowledge proposals enter the same lane as harvested practices.
 
-**Status:** P0 SHIPPED `d89b5e960` (schema + outbox ingest + coverage +
-exited-session hook) · P1 SHIPPED `09574254d` (`memory:` binding + MEMORY BLOCK
-in dispatchSkillToRepo + writers: passport-onboard, kpi-sim). Next: P2
-(coverage surfacing + stale-context reconciler), P3 (Obsidian projection).
+**Status:** ALL PHASES SHIPPED. P0 `d89b5e960` (schema + outbox ingest +
+coverage + exited-session hook) · P1 `09574254d` (`memory:` binding + MEMORY
+BLOCK in dispatchSkillToRepo + writers: passport-onboard, kpi-sim) · P2+P3
+(Mastermind sidebar Memory section with coverage; `map`-node → delta-context-
+scan reconciler; Obsidian projection/import reusing the Brain plugin's vault —
+`dev_tools_memory_project_vault` / `_import_vault`, auto-projection after
+ingest). Note: vault projection is one-way-per-direction on explicit triggers —
+edges project as wikilinks but vault-side wikilink edits do not import as edges
+(nodes only).

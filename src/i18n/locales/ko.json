@@ -18572,6 +18572,14 @@
     "dispatch_placeholder": "이 프로젝트에서 Claude가 실행할 작업을 설명하세요…",
     "dispatch_submit": "전송",
     "dispatch_submitting": "전송 중…",
-    "dispatch_toast": "{name}에서 Fleet 세션을 전송했습니다"
+    "dispatch_toast": "{name}에서 Fleet 세션을 전송했습니다",
+    "memory_coverage": "{covered}/{contexts} 컨텍스트 최신 · {days}일 기간",
+    "memory_empty": "아직 메모리가 없습니다 — 파견된 스킬이 작업하면서 기록합니다.",
+    "memory_import_vault": "보관함에서 가져오기",
+    "memory_sync_vault": "보관함으로 동기화",
+    "memory_title": "메모리",
+    "memory_unanchored": "앵커되지 않은 노트 {n}개",
+    "memory_vault_imported": "{imported}개 가져옴 · {updated}개 업데이트됨",
+    "memory_vault_synced": "보관함 업데이트됨 (노트 {n}개)"
   }
 }

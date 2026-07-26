@@ -13,6 +13,8 @@ import { SECTIONS } from '@/features/teams/sub_factory/passport/passportRows';
 import { SectionIcon } from '@/features/teams/sub_factory/passport/passportWidgets';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 
+import { MemorySection } from './MemorySection';
+
 export function ProjectSidebar({ passport, name, onClose }: {
   passport: AppPassport | null;
   /** Island name — fallback header for demo islands without a passport. */
@@ -84,6 +86,10 @@ export function ProjectSidebar({ passport, name, onClose }: {
           </>
         )}
       </div>
+
+      {/* Project Memory Ledger — coverage + optional vault actions (P2/P3).
+          Real projects only; demo islands have no ledger. */}
+      {passport && <MemorySection projectId={passport.identity.slug} />}
     </motion.aside>
   );
 }
