@@ -1,12 +1,11 @@
 import { toastCatch } from "@/lib/silentCatch";
 import { useTranslation } from '@/i18n/useTranslation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { Shield, AlertTriangle, Clock, Wrench, TrendingUp, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
@@ -29,6 +28,12 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
   const [days, setDays] = useState<number>(30);
   const debouncedDays = useDebounce(days, 300);
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
+  // One-shot entrance guard (docs/design/overview-loading.md, §"Panels &
+  // metric grids"): the per-section stagger below plays only the first time
+  // real content paints. A day-range change re-enters this effect with
+  // `data` already non-null, so the ref is already true and the ripple does
+  // NOT replay — the existing content just refreshes silently in place.
+  const enteredRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +44,10 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [debouncedDays]);
+
+  useEffect(() => {
+    if (data) enteredRef.current = true;
+  }, [data]);
 
   const togglePersona = (id: string) => setExpandedPersona((prev) => (prev === id ? null : id));
 
@@ -58,9 +67,15 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
   // blanks or swaps to a placeholder mid-view.
   const initialLoading = loading && !data;
 
-  const body = (
-    <LoadingReveal loading={initialLoading} placeholder={<SLAMetricsPlaceholder embedded={embedded} />}>
-      {!data ? <InlineErrorBanner severity="info" message={t.overview.sla.no_data} /> : (() => {
+  // v2 loading choreography (docs/design/overview-loading.md, "Panels &
+  // metric grids" recipe): a plain conditional in identical geometry — no
+  // held content, no cross-fade gate. The placeholder itself carries the
+  // anti-flash delay (§C), so a fast fetch never paints it.
+  const body = initialLoading ? (
+    <SLAMetricsPlaceholder embedded={embedded} />
+  ) : !data ? (
+    <InlineErrorBanner severity="info" message={t.overview.sla.no_data} />
+  ) : (() => {
       // Distinguish a genuine 0% success rate (real failures) from an empty /
       // low-activity window with no decided runs. When nothing has completed
       // or failed in the window, the backend returns its divide-by-zero
@@ -76,11 +91,19 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
       const successSub = hasActivity
         ? tx(t.overview.sla.executions_summary, { successful: Number(data.global.successful), total: decidedRuns })
         : t.overview.sla.no_agent_data;
+      // One-shot per-section entrance ripple (0/35/70ms) — only on the very
+      // first frame real content paints. `enteredRef` flips true right after
+      // that render commits (see effect above), so a day-range refetch
+      // (data stays on screen, this whole function just re-runs) renders
+      // with no entrance classes at all — nothing replays.
+      const playEntrance = !enteredRef.current;
+      const entranceClass = playEntrance ? 'animate-fade-in' : '';
+      const entranceStyle = (ms: number) => (playEntrance ? { animationDelay: `${ms}ms` } : undefined);
       return (
       <div className="space-y-6">
         {embedded ? (
           // Compact row: day filter + 2 primary metrics (success rate, avg latency)
-          <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3">
+          <div className={`flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3 ${entranceClass}`} style={entranceStyle(0)}>
             {dayPicker}
             <div className="h-8 w-px bg-primary/10 mx-1" />
             <CompactMetric
@@ -115,7 +138,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 ${entranceClass}`} style={entranceStyle(0)}>
             <SlaCard label={t.overview.sla.success_rate} value={successValue} sub={successSub} color={successColor} icon={<Shield className="w-4 h-4" />} tooltip={t.overview.sla.success_rate_tooltip} />
             <SlaCard label={t.overview.sla.avg_latency} value={formatDuration(data.global.avg_duration_ms)} sub={tx(t.overview.sla.active_agents, { count: Number(data.global.active_persona_count) })} color="blue" icon={<Clock className="w-4 h-4" />} tooltip={tx(t.overview.sla.windowed_tooltip, { days })} />
             <SlaCard label={t.overview.sla.open_issues} value={String(data.healing_summary.open_issues)} sub={tx(t.overview.sla.circuit_breakers, { count: Number(data.healing_summary.circuit_breaker_count) })} color={Number(data.healing_summary.open_issues) > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} scope={t.overview.sla.all_time_badge} tooltip={t.overview.sla.open_issues_tooltip} />
@@ -124,7 +147,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         )}
 
         {data.daily_trend.length > 0 && (
-          <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden">
+          <div className={`rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden ${entranceClass}`} style={entranceStyle(35)}>
             <SectionHeader icon={TrendingUp} title={tx(t.overview.sla.daily_success_rate, { days })} accent="text-status-info" />
             <div className="p-5">
               <DailyTrendChart points={data.daily_trend.map((p) => ({ date: p.date, success_rate: p.success_rate, total: Number(p.total) }))} />
@@ -132,7 +155,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
           </div>
         )}
 
-        <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden">
+        <div className={`rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden ${entranceClass}`} style={entranceStyle(70)}>
           <div className={`h-0.5 ${HEALTH_STATUS_TOKEN[hasActivity ? rateToHealth(data.global.success_rate) : 'neutral'].icon} opacity-60`} />
           <SectionHeader icon={Users} title={t.overview.sla.per_agent} accent="text-primary" />
           {data.persona_stats.length === 0 ? (
@@ -147,9 +170,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         </div>
       </div>
       );
-      })()}
-    </LoadingReveal>
-  );
+    })();
 
   if (embedded) {
     return body;
@@ -206,15 +227,19 @@ function CompactMetric({ icon, label, value, sub, color }: {
 /**
  * Calm, content-shaped placeholder for the SLA dashboard's initial load —
  * mirrors the real geometry (metric cards or compact row, trend chart box,
- * per-agent list rows) so `LoadingReveal` cross-fades rather than resizes.
- * No pulse; static low-contrast bars per the golden loading pattern.
+ * per-agent list rows). No pulse; static low-contrast bars per the golden
+ * loading pattern (docs/design/overview-loading.md §C). The root is invisible
+ * for its first 150ms (`animate-fade-in` + `fill-mode: both`) so a fast
+ * fetch never paints a single ghost pixel; the inner sections stagger a
+ * touch further out (150/185/220ms) so the placeholder itself has a faint
+ * cascade rather than block-appearing as one flat unit.
  */
 function SLAMetricsPlaceholder({ embedded }: { embedded: boolean }) {
   const bar = 'bg-primary/[0.06]';
   return (
-    <div className="space-y-6" aria-hidden="true">
+    <div className="space-y-6 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
       {embedded ? (
-        <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3">
+        <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3 animate-fade-in" style={{ animationDelay: '150ms' }}>
           <div className="flex items-center gap-1.5">
             {DAY_OPTIONS.map((d) => (
               <span key={d} className={`h-6 w-9 rounded-modal ${bar}`} />
@@ -232,7 +257,7 @@ function SLAMetricsPlaceholder({ embedded }: { embedded: boolean }) {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '150ms' }}>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-modal border border-primary/10 bg-secondary/5 p-4 shadow-elevation-1">
               <div className="flex items-center gap-2 mb-2">
@@ -246,7 +271,7 @@ function SLAMetricsPlaceholder({ embedded }: { embedded: boolean }) {
         </div>
       )}
 
-      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden animate-fade-in" style={{ animationDelay: '185ms' }}>
         <div className="flex items-center gap-2.5 px-5 py-3 border-b border-primary/10">
           <span className={`w-8 h-8 rounded-card ${bar}`} />
           <span className={`h-4 w-40 rounded ${bar}`} />
@@ -256,7 +281,7 @@ function SLAMetricsPlaceholder({ embedded }: { embedded: boolean }) {
         </div>
       </div>
 
-      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden">
+      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden animate-fade-in" style={{ animationDelay: '220ms' }}>
         <div className="flex items-center gap-2.5 px-5 py-3 border-b border-primary/10">
           <span className={`w-8 h-8 rounded-card ${bar}`} />
           <span className={`h-4 w-32 rounded ${bar}`} />
