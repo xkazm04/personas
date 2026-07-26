@@ -48,6 +48,8 @@ import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScen
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { CategoryPopover } from './lib/CategoryPopover';
+import type { CategoryNode } from './lib/dimCategories';
 import { DimListPopover } from './lib/DimListPopover';
 import { DIM_INK } from './lib/ink';
 import { GoalListPopover } from './lib/GoalListPopover';
@@ -169,6 +171,7 @@ function MastermindInner() {
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
+  const [categoryPopup, setCategoryPopup] = useState<{ slug: string; category: CategoryNode; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -673,6 +676,7 @@ function MastermindInner() {
           onProjectOpen={setOpenSlug}
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+          onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
           onOpenTerminal={openTerminal}
           onDispatchFleet={setDispatchSlug}
           canOpenTerminal={canOpenTerminal}
@@ -731,6 +735,16 @@ function MastermindInner() {
           x={goalPopup.x}
           y={goalPopup.y}
           onClose={() => setGoalPopup(null)}
+        />
+      )}
+
+      {categoryPopup && (
+        <CategoryPopover
+          category={categoryPopup.category}
+          x={categoryPopup.x}
+          y={categoryPopup.y}
+          onDimOpen={(node, e) => onDimOpen(categoryPopup.slug, node, e)}
+          onClose={() => setCategoryPopup(null)}
         />
       )}
 

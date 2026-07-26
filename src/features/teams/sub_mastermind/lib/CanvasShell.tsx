@@ -33,6 +33,7 @@ import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
 import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
+import type { CategoryNode } from './dimCategories';
 
 
 const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
@@ -68,9 +69,11 @@ export interface IslandCtx {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — page opens the persona list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Collapsed category cell clicked — page opens its dimension list. */
+  onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, onDispatchFleet, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -302,6 +305,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   const onFleetOpenStable = useEventCallback(onFleetOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
   const onPersonasOpenStable = useEventCallback(onPersonasOpen);
+  const onCategoryOpenStable = useEventCallback(onCategoryOpen);
 
   // --- Tidy map: one-shot relation-aware arrangement + single-level undo. -------
   // Islands are moved through the existing per-island commit (updates the page's
@@ -458,6 +462,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     onFleetList,
     onDimOpen: onDimOpenStable,
     onPersonasOpen: onPersonasOpenStable,
+    onCategoryOpen: onCategoryOpenStable,
   });
 
   return (

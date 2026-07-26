@@ -15,6 +15,7 @@ export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unk
 // the dimension system) so a new registry entry extends the key space with no
 // edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
 // from this file, also type-only). Imported for local use AND re-exported.
+import type { CategoryNode } from './dimCategories';
 import type { DimKey } from './dimRegistry';
 import type { IslandStat } from './islandStats';
 
@@ -147,6 +148,9 @@ export interface VariantProps {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — open the persona name list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Collapsed category cell clicked at far/mid zoom — open the list of the
+   *  dimensions it rolled up, each still routable to its own action. */
+  onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
   /** Island context-menu "Open terminal" — spawn an interactive Fleet session
    *  in the project's root and open its preview. */
   onOpenTerminal: (slug: string) => void;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { categoryNodes, CATEGORY_ORDER, rollupStatus } from '../lib/dimCategories';
+import { categoryNodes, CATEGORY_ORDER, rollupStatus, STATUS_RANK } from '../lib/dimCategories';
 import { DIM_ORDER, DIM_REGISTRY } from '../lib/dimRegistry';
 import type { DimNode, DimStatus } from '../lib/types';
 
@@ -34,6 +34,21 @@ describe('dimCategories — rollupStatus', () => {
     expect(rollupStatus(['solid', 'solid'])).toBe('solid');
     expect(rollupStatus(['solid', 'absent'])).toBe('partial');
     expect(rollupStatus(['solid', 'partial'])).toBe('partial');
+  });
+});
+
+describe('dimCategories — STATUS_RANK', () => {
+  it('sorts a mixed list worst-first, green last', () => {
+    const mixed: DimStatus[] = ['solid', 'absent', 'alert', 'partial', 'unknown', 'risk'];
+    expect([...mixed].sort((a, b) => STATUS_RANK[a] - STATUS_RANK[b]))
+      .toEqual(['alert', 'risk', 'unknown', 'partial', 'absent', 'solid']);
+  });
+
+  it('agrees with the rollup: whatever ranks first in a group is what it paints', () => {
+    for (const pair of [['solid', 'alert'], ['absent', 'risk'], ['partial', 'unknown']] as DimStatus[][]) {
+      const worst = [...pair!].sort((a, b) => STATUS_RANK[a!] - STATUS_RANK[b!])[0];
+      expect(rollupStatus(pair!)).toBe(worst);
+    }
   });
 });
 

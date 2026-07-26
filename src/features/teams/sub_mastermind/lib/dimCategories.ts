@@ -36,6 +36,12 @@ export interface CategoryNode {
   nodes: DimNode[];
 }
 
+/** Worst-first ordering for a status list — the sort the category popover uses
+ *  so a red cell opens with its red dimensions at the top. */
+export const STATUS_RANK: Record<DimStatus, number> = {
+  alert: 0, risk: 1, unknown: 2, partial: 3, absent: 4, solid: 5,
+};
+
 /** Roll a category's member statuses into the one status its cell paints.
  *
  *  The rule is deliberately pessimistic about problems and strict about green:

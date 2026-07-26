@@ -19,7 +19,10 @@ import { DIM_REGISTRY } from './dimRegistry';
 import { DIM_INK, mix } from './ink';
 import type { DimNode, Island } from './types';
 
-function MenuGlyph({ node }: { node: DimNode }) {
+/** A dimension's glyph for DOM menus (brand mark when the tool is identified,
+ *  otherwise the registry's lucide outline). Shared with CategoryPopover so the
+ *  two dimension lists can't drift. */
+export function MenuGlyph({ node }: { node: DimNode }) {
   const entry = DIM_REGISTRY[node.key];
   const absent = node.status === 'absent';
   const brand = !absent ? dimBrand(node) : null;

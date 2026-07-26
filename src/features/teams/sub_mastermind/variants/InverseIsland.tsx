@@ -45,7 +45,7 @@ const CAT_H = CH * 1.35;
 const CAT_RING: Array<[number, number]> = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 // React.memo'd — see MosaicIsland for the render-free-navigation rationale.
-export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+export const InverseIsland = memo(function InverseIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const rootRef = useRef<SVGGElement>(null);
@@ -104,6 +104,7 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
               w={CAT_W}
               h={CAT_H}
               highlighted={categoryOfHighlight === c.key}
+              onOpen={mode === 'edit' ? (e) => onCategoryOpen(island.slug, c, e) : undefined}
               onDrillIn={mode === 'edit' ? () => onIslandFocus(island.slug) : undefined}
             />
           );
@@ -180,11 +181,12 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
 });
 
 /** One collapsed category as an oversized plate — the far/mid body. Fullscale
- *  icon in the rolled-up status colour plus the wired ratio. In edit mode
- *  clicking drills into the island, which explodes it back into the real
- *  dimension tiles; in connect/group/note mode the plate stays inert so it
- *  never swallows the mode's own drag. */
-function CategoryPlate({ category, x, y, w, h, highlighted, onDrillIn }: {
+ *  icon in the rolled-up status colour plus the wired ratio. In edit mode a
+ *  click opens the category popover (which dimension is red, and act on it
+ *  without zooming in) and a double-click drills into the island, exploding it
+ *  back into the real dimension tiles; in connect/group/note mode the plate
+ *  stays inert so it never swallows the mode's own drag. */
+function CategoryPlate({ category, x, y, w, h, highlighted, onOpen, onDrillIn }: {
   category: CategoryNode;
   x: number;
   y: number;
@@ -192,6 +194,7 @@ function CategoryPlate({ category, x, y, w, h, highlighted, onDrillIn }: {
   h: number;
   highlighted: boolean;
   /** Undefined outside edit mode — no cursor, no click, no pointer capture. */
+  onOpen?: (e: React.MouseEvent) => void;
   onDrillIn?: () => void;
 }) {
   const { t, tx } = useTranslation();
@@ -205,11 +208,12 @@ function CategoryPlate({ category, x, y, w, h, highlighted, onDrillIn }: {
     <g
       transform={`translate(${x + w / 2} ${y + h / 2})`}
       opacity={absent && !highlighted ? 0.6 : 1}
-      style={onDrillIn ? { cursor: 'pointer' } : undefined}
-      onPointerEnter={onDrillIn ? () => setHovered(true) : undefined}
-      onPointerLeave={onDrillIn ? () => setHovered(false) : undefined}
-      onPointerDown={onDrillIn ? (e) => e.stopPropagation() : undefined}
-      onClick={onDrillIn ? (e) => { e.stopPropagation(); onDrillIn(); } : undefined}
+      style={onOpen ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onOpen ? () => setHovered(true) : undefined}
+      onPointerLeave={onOpen ? () => setHovered(false) : undefined}
+      onPointerDown={onOpen ? (e) => e.stopPropagation() : undefined}
+      onClick={onOpen ? (e) => { e.stopPropagation(); onOpen(e); } : undefined}
+      onDoubleClick={onDrillIn ? (e) => { e.stopPropagation(); onDrillIn(); } : undefined}
       data-testid={`mm-category-${category.key}`}
     >
       <title>{`${label} — ${tx(t.mastermind.dim_cat_summary, { solid: category.solid, total: category.total })}`}</title>

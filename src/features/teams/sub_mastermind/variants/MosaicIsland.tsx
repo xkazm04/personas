@@ -53,7 +53,7 @@ const catXY = (q: number, r: number) => {
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
 // mode switch, or its own dim/highlight state.
-export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen }: { island: Island } & IslandCtx) {
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const rootRef = useRef<SVGGElement>(null);
@@ -97,8 +97,8 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
           const ax = CAT_AXIAL[k];
           if (!ax) return null;
           const p = catXY(ax[0], ax[1]);
-          // Clicking a category frames the island — the drill-in gesture that
-          // explodes it back into its real dimension cells.
+          // Click opens the category's dimension list; double-click frames the
+          // island — the drill-in gesture that explodes it back into real cells.
           return (
             <CategoryCell
               key={c.key}
@@ -106,6 +106,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
               x={p.x}
               y={p.y}
               highlighted={categoryOfHighlight === c.key}
+              onOpen={mode === 'edit' ? (e) => onCategoryOpen(island.slug, c, e) : undefined}
               onDrillIn={mode === 'edit' ? () => onIslandFocus(island.slug) : undefined}
             />
           );
@@ -166,15 +167,17 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
 
 /** One collapsed category as an oversized hex — the far/mid body. Fullscale
  *  icon in the rolled-up status colour with the wired ratio underneath.
- *  In edit mode clicking drills into the island (the gesture that explodes it
- *  back into real cells); in connect/group/note mode the cell stays inert so
- *  it never swallows the mode's own drag.  */
-function CategoryCell({ category, x, y, highlighted, onDrillIn }: {
+ *  In edit mode a click opens the category popover (which dimension is red, and
+ *  act on it without zooming in) and a double-click drills into the island,
+ *  exploding it back into real cells; in connect/group/note mode the cell stays
+ *  inert so it never swallows the mode's own drag. */
+function CategoryCell({ category, x, y, highlighted, onOpen, onDrillIn }: {
   category: CategoryNode;
   x: number;
   y: number;
   highlighted: boolean;
   /** Undefined outside edit mode — no cursor, no click, no pointer capture. */
+  onOpen?: (e: React.MouseEvent) => void;
   onDrillIn?: () => void;
 }) {
   const { t, tx } = useTranslation();
@@ -188,11 +191,12 @@ function CategoryCell({ category, x, y, highlighted, onDrillIn }: {
     <g
       transform={`translate(${x} ${y})`}
       opacity={absent && !highlighted ? 0.6 : 1}
-      style={onDrillIn ? { cursor: 'pointer' } : undefined}
-      onPointerEnter={onDrillIn ? () => setHovered(true) : undefined}
-      onPointerLeave={onDrillIn ? () => setHovered(false) : undefined}
-      onPointerDown={onDrillIn ? (e) => e.stopPropagation() : undefined}
-      onClick={onDrillIn ? (e) => { e.stopPropagation(); onDrillIn(); } : undefined}
+      style={onOpen ? { cursor: 'pointer' } : undefined}
+      onPointerEnter={onOpen ? () => setHovered(true) : undefined}
+      onPointerLeave={onOpen ? () => setHovered(false) : undefined}
+      onPointerDown={onOpen ? (e) => e.stopPropagation() : undefined}
+      onClick={onOpen ? (e) => { e.stopPropagation(); onOpen(e); } : undefined}
+      onDoubleClick={onDrillIn ? (e) => { e.stopPropagation(); onDrillIn(); } : undefined}
       data-testid={`mm-category-${category.key}`}
     >
       {/* the cell can't show 15 labels, so the tooltip carries the reading */}
