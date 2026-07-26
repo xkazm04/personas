@@ -4467,11 +4467,8 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN use_case_id TEXT;").ok();
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN evidence TEXT;").ok();
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN dedup_key TEXT;").ok();
-    ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_dev_ideas_dedup ON dev_ideas(project_id, dedup_key);",
-    )
-    .ok();
+    // (The non-unique idx_dev_ideas_dedup this step used to create was replaced
+    // by the partial UNIQUE index below — see the dedup-TOCTOU block.)
 
     // -- dev_ideas: VERIFICATION (docs/plans/dev-findings-loop.md §7, Phase 3A).
     // Nothing in the app checked whether shipped work moved the number that raised
@@ -4500,6 +4497,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_assignment_per_goal
          ON team_assignments(goal_id)
          WHERE goal_id IS NOT NULL AND status IN ('queued','running','awaiting_review');",
+    )
+    .ok();
+
+    // -- dedup_key TOCTOU (same class as GAP-W2 above): create_idea_deduped /
+    // create_finding used a COUNT-then-INSERT guard with no transaction — two
+    // concurrent sweeps both passed and both inserted. DB-enforce it, the way
+    // audit_incidents.dedup_key already is. Hand-written ideas carry NULL
+    // dedup_key (SQLite treats NULLs as distinct), so the partial index is
+    // safe. First null-out any later duplicates a past race already produced
+    // (keep the oldest row), or the index creation would fail.
+    conn.execute(
+        "UPDATE dev_ideas SET dedup_key = NULL
+          WHERE dedup_key IS NOT NULL
+            AND rowid NOT IN (
+              SELECT MIN(rowid) FROM dev_ideas
+               WHERE dedup_key IS NOT NULL
+               GROUP BY project_id, dedup_key)",
+        [],
+    )
+    .ok();
+    ddl_step(
+        conn,
+        "DROP INDEX IF EXISTS idx_dev_ideas_dedup;
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_ideas_dedup_unique
+             ON dev_ideas(project_id, dedup_key)
+             WHERE dedup_key IS NOT NULL;",
     )
     .ok();
 
