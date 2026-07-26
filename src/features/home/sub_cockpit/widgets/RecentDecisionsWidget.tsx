@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight, Loader2, ScrollText } from 'lucide-react';
+import { ChevronRight, ScrollText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -56,6 +58,10 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
     };
   }, [personaContext, limit]);
 
+  // One-shot chip cascade, latched for the widget's lifetime (no resetKey) —
+  // chips already on screen never replay their entrance.
+  const enter = useRevealTracker();
+
   if (!loading && rows.length === 0) {
     return null;
   }
@@ -77,20 +83,30 @@ export function RecentDecisionsWidget({ config, title }: CockpitWidgetProps) {
         )}
       </header>
       {loading ? (
-        <div className="flex items-center gap-1.5 typo-caption text-foreground pl-4">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          <span>{t.plugins.companion.recent_decisions_loading}</span>
+        <div className="flex flex-wrap gap-1.5 pl-4" aria-hidden="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span
+              key={i}
+              className="inline-block h-5 w-20 rounded-interactive bg-foreground/[0.04] animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
         </div>
       ) : (
         <ul className="flex flex-wrap gap-1.5 pl-4">
-          {rows.map((d) => (
-            <li
-              key={d.id}
-              className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/10 bg-foreground/[0.04] px-2 py-0.5 typo-caption"
-            >
-              <span className="text-foreground">{d.label}</span>
-              <ChevronRight className="w-2.5 h-2.5 text-foreground shrink-0" />
-              <span className="text-foreground/85">{d.choice}</span>
+          {rows.map((d, index) => (
+            <li key={d.id}>
+              <RevealItem
+                revealId={d.id}
+                order={index}
+                hasEntered={enter.hasEntered}
+                markEntered={enter.markEntered}
+                className="inline-flex items-baseline gap-1 rounded-interactive border border-foreground/10 bg-foreground/[0.04] px-2 py-0.5 typo-caption"
+              >
+                <span className="text-foreground">{d.label}</span>
+                <ChevronRight className="w-2.5 h-2.5 text-foreground shrink-0" />
+                <span className="text-foreground/85">{d.choice}</span>
+              </RevealItem>
             </li>
           ))}
         </ul>

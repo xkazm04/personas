@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
@@ -7,6 +7,8 @@ import {
   companionMatchTemplates,
   type CompanionTemplateMatch,
 } from '@/api/companion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
 /**
@@ -59,6 +61,10 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
     useSystemStore.getState().setSidebarSection('design-reviews');
   };
 
+  // One-shot row cascade, latched for the widget's lifetime (no resetKey) —
+  // matches already on screen never replay their entrance.
+  const enter = useRevealTracker();
+
   return (
     <div
       className="rounded-card border border-sky-500/30 bg-sky-500/[0.04] p-4 space-y-3"
@@ -76,10 +82,19 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
         )}
       </header>
       {loading && (
-        <div className="flex items-center gap-2 typo-caption text-foreground">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          <span>{t.plugins.companion.template_suggestions_loading}</span>
-        </div>
+        <ul className="space-y-2" aria-hidden="true">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <li
+              key={i}
+              className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1.5 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            >
+              <span className="block h-3.5 w-32 rounded bg-foreground/[0.06]" />
+              <span className="block h-3 w-full rounded bg-foreground/[0.05]" />
+              <span className="block h-3 w-3/4 rounded bg-foreground/[0.05]" />
+            </li>
+          ))}
+        </ul>
       )}
       {!loading && error && (
         <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-2.5 py-1.5 typo-caption text-rose-400">
@@ -93,37 +108,42 @@ export function TemplateSuggestionsWidget({ config, title }: CockpitWidgetProps)
       )}
       {!loading && matches.length > 0 && (
         <ul className="space-y-2">
-          {matches.map((m) => (
-            <li
-              key={m.id}
-              className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1"
-              data-template-id={m.id}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="typo-body font-medium text-foreground/95">
-                  {m.name}
-                </span>
-                {m.category && (
-                  <span className="typo-caption text-foreground shrink-0">
-                    {m.category}
+          {matches.map((m, index) => (
+            <li key={m.id}>
+              <RevealItem
+                revealId={m.id}
+                order={index}
+                hasEntered={enter.hasEntered}
+                markEntered={enter.markEntered}
+                className="rounded-card border border-foreground/10 bg-secondary/40 p-3 space-y-1"
+                data-template-id={m.id}
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="typo-body font-medium text-foreground/95">
+                    {m.name}
                   </span>
-                )}
-              </div>
-              <p className="typo-caption text-foreground line-clamp-3">
-                {m.snippet}
-              </p>
-              {m.connectors.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {m.connectors.map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 typo-caption text-foreground"
-                    >
-                      {c}
+                  {m.category && (
+                    <span className="typo-caption text-foreground shrink-0">
+                      {m.category}
                     </span>
-                  ))}
+                  )}
                 </div>
-              )}
+                <p className="typo-caption text-foreground line-clamp-3">
+                  {m.snippet}
+                </p>
+                {m.connectors.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {m.connectors.map((c) => (
+                      <span
+                        key={c}
+                        className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 typo-caption text-foreground"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </RevealItem>
             </li>
           ))}
         </ul>

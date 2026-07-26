@@ -52,9 +52,13 @@ export function ExecutionFactsWidget({ config, title }: CockpitWidgetProps) {
           {error}
         </div>
       ) : !exec ? (
-        <div className="flex-1 grid grid-cols-2 gap-2 animate-pulse">
+        <div className="flex-1 grid grid-cols-2 gap-2" aria-hidden="true">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-input bg-foreground/[0.04] h-14" />
+            <div
+              key={i}
+              className="rounded-input bg-foreground/[0.04] h-14 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
           ))}
         </div>
       ) : (

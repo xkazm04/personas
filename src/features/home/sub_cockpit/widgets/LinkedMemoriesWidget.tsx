@@ -4,6 +4,8 @@ import { Brain, Star } from 'lucide-react';
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -40,6 +42,10 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
     return () => { cancelled = true; };
   }, [executionId]);
 
+  // One-shot row cascade, latched for the widget's lifetime (no resetKey) —
+  // memories already on screen never replay their entrance.
+  const enter = useRevealTracker();
+
   return (
     <div
       data-testid="cockpit-widget-linked_memories"
@@ -56,9 +62,13 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
       </div>
 
       {loading ? (
-        <div className="flex-1 grid grid-cols-1 gap-2 animate-pulse">
+        <div className="flex-1 grid grid-cols-1 gap-2" aria-hidden="true">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-input bg-foreground/[0.04] h-12" />
+            <div
+              key={i}
+              className="rounded-input bg-foreground/[0.04] h-12 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
           ))}
         </div>
       ) : memories.length === 0 ? (
@@ -67,9 +77,13 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
         </div>
       ) : (
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 overflow-y-auto min-h-0 auto-rows-min">
-          {memories.map((m) => (
-            <div
+          {memories.map((m, index) => (
+            <RevealItem
               key={m.id}
+              revealId={m.id}
+              order={index}
+              hasEntered={enter.hasEntered}
+              markEntered={enter.markEntered}
               className="rounded-input border border-foreground/10 bg-background/40 px-3 py-2 min-w-0"
             >
               <div className="flex items-center gap-2 mb-1">
@@ -81,7 +95,7 @@ export function LinkedMemoriesWidget({ config, title }: CockpitWidgetProps) {
               </div>
               <p className="typo-body font-medium text-foreground/90 truncate">{m.title}</p>
               <p className="typo-caption text-foreground line-clamp-2">{m.content}</p>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}

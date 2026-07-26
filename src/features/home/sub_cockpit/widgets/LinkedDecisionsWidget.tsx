@@ -8,6 +8,8 @@ import {
   ContextDataPreview,
   SeverityIndicator,
 } from '@/features/overview/sub_manual-review/components/ReviewListItem';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -47,6 +49,11 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
 
   useEffect(() => { reload(); }, [reload]);
 
+  // One-shot row cascade: entries are latched for the widget's lifetime (no
+  // resetKey), so a reload triggered by resolving one review never replays
+  // the entrance for reviews already on screen.
+  const enter = useRevealTracker();
+
   const resolve = useCallback(async (review: PersonaManualReview, status: 'approved' | 'rejected') => {
     if (resolvingId) return;
     setResolvingId(review.id);
@@ -76,9 +83,13 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
       </div>
 
       {loading ? (
-        <div className="flex-1 grid grid-cols-1 gap-2 animate-pulse">
+        <div className="flex-1 grid grid-cols-1 gap-2" aria-hidden="true">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="rounded-input bg-foreground/[0.04] h-16" />
+            <div
+              key={i}
+              className="rounded-input bg-foreground/[0.04] h-16 animate-fade-in"
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
           ))}
         </div>
       ) : reviews.length === 0 ? (
@@ -87,9 +98,13 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
         </div>
       ) : (
         <div className="flex-1 space-y-2 overflow-y-auto min-h-0">
-          {reviews.map((r) => (
-            <div
+          {reviews.map((r, index) => (
+            <RevealItem
               key={r.id}
+              revealId={r.id}
+              order={index}
+              hasEntered={enter.hasEntered}
+              markEntered={enter.markEntered}
               data-testid={`cockpit-pending-review-row-${r.id}`}
               className="rounded-input border border-foreground/10 bg-background/40 px-3 py-2.5"
             >
@@ -129,7 +144,7 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
                   {t.overview.cockpit.linked_decisions_reject}
                 </button>
               </div>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}

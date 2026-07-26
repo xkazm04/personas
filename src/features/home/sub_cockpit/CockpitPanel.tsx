@@ -21,8 +21,9 @@ import {
   ContentBox,
   ContentHeader,
 } from '@/features/shared/components/layout/ContentLayout';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
@@ -200,6 +201,12 @@ export default function CockpitPanel() {
         ? cockpit.default_subtitle
         : cockpit.subtitle_default;
 
+  // Loading choreography (docs/design/overview-loading.md): grid tiles ripple
+  // in once when the real spec lands (id-guarded — a compose_cockpit event or
+  // a window-focus refetch that re-delivers the same widget ids never replays
+  // the entrance). No resetKey: entries are latched for the panel's lifetime.
+  const widgetEnter = useRevealTracker();
+
   const talkToAthena = (
     <button
       type="button"
@@ -253,9 +260,7 @@ export default function CockpitPanel() {
         )}
 
         {!contextualCockpit && loading && !spec ? (
-          <div className="flex items-center justify-center py-20">
-            <LoadingSpinner size="lg" />
-          </div>
+          <CockpitGhostGrid />
         ) : !contextualCockpit && error && !spec ? (
           <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
             <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>
@@ -271,13 +276,58 @@ export default function CockpitPanel() {
           <CockpitEmptyState onTalk={composePersonaCockpit} />
         ) : (
           <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
-            {widgets.map((w) => (
-              <CockpitWidgetCell key={w.id} widget={w} />
+            {widgets.map((w, i) => (
+              <CockpitWidgetCell key={w.id} widget={w} order={i} enter={widgetEnter} />
             ))}
           </div>
         )}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CockpitGhostGrid — calm, delayed ghost of the widget grid for the ONLY
+// moment the panel has nothing to show yet (cold `companionGetCockpit` fetch,
+// no persisted/default spec on hand). Geometry approximates
+// `composeDefaultCockpit`'s 4-widget starter layout (orientation callout ·
+// fleet vitals · persona roster · needs-attention triage) — same span-12
+// tiles at the same row spans (2/2/3/3) real content will occupy, so the
+// ghost→content swap moves nothing. Each tile is invisible for its first
+// ~150ms (`animate-fade-in` + `fill-mode: both`), so a fast fetch never
+// paints a single one. Header chrome (ContentHeader above) always renders.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TILES: { rowSpan: number; bars: number }[] = [
+  { rowSpan: 2, bars: 1 },
+  { rowSpan: 2, bars: 4 },
+  { rowSpan: 3, bars: 3 },
+  { rowSpan: 3, bars: 3 },
+];
+
+function CockpitGhostGrid() {
+  return (
+    <div className="grid grid-cols-12 gap-3 auto-rows-[180px]" aria-hidden="true">
+      {GHOST_TILES.map((tile, i) => (
+        <div
+          key={i}
+          style={{
+            gridColumn: 'span 12 / span 12',
+            gridRow: `span ${tile.rowSpan} / span ${tile.rowSpan}`,
+            animationDelay: `${150 + i * 35}ms`,
+          }}
+          className="min-h-0 rounded-modal border border-primary/10 bg-secondary/[0.03] p-4 flex flex-col gap-2 animate-fade-in"
+        >
+          <span className={`h-3 w-32 ${GHOST_BAR}`} />
+          <div className="flex-1 grid grid-cols-4 gap-2">
+            {Array.from({ length: tile.bars }).map((_, j) => (
+              <span key={j} className={`h-full ${GHOST_BAR}`} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -324,13 +374,25 @@ function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
   );
 }
 
-function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
+interface CockpitWidgetCellProps {
+  widget: CompanionCockpitWidget;
+  /** Position in the current grid — drives the entrance stagger order. */
+  order: number;
+  /** Id-guarded reveal tracker shared across the grid (latched for the panel's lifetime). */
+  enter: { hasEntered: (id: string) => boolean; markEntered: (id: string) => void };
+}
+
+function CockpitWidgetCell({ widget, order, enter }: CockpitWidgetCellProps) {
   const { t, tx } = useTranslation();
   const span = Math.max(1, Math.min(12, widget.span ?? 6));
   const rowSpan = cockpitRowSpan(widget.kind);
   const Component = cockpitWidgetRegistry[widget.kind];
   return (
-    <div
+    <RevealItem
+      revealId={widget.id}
+      order={order}
+      hasEntered={enter.hasEntered}
+      markEntered={enter.markEntered}
       style={{
         gridColumn: `span ${span} / span ${span}`,
         gridRow: `span ${rowSpan} / span ${rowSpan}`,
@@ -344,6 +406,6 @@ function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
           {tx(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
         </div>
       )}
-    </div>
+    </RevealItem>
   );
 }
