@@ -40,6 +40,9 @@ export interface WorkbenchSkill {
   sourceLabel: string | null;
   /** Usage telemetry, when known. */
   usage: SkillUsage | null;
+  /** Canonical category (Development/Testing/Maintenance/Data/Other); null
+   *  renders under "Other". Assigned by the share LLM in SKILL.md frontmatter. */
+  category: string | null;
 }
 
 export interface SkillsWorkbench {
@@ -147,7 +150,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     const list = raw?.skillsToAdd ?? [];
     return [...list].sort((a, b) => a.name.localeCompare(b.name)).map((s) => {
       const u = raw?.catalogUsage?.[s.name];
-      return { name: s.name, description: s.description, sourceLabel: sourceLabel(s.source), usage: u ? { invokes30d: u.invokes30d, lastInvokedAt: u.lastInvokedAt } : null };
+      return { name: s.name, description: s.description, sourceLabel: sourceLabel(s.source), usage: u ? { invokes30d: u.invokes30d, lastInvokedAt: u.lastInvokedAt } : null, category: s.category };
     });
   }, [raw, sourceLabel]);
 
@@ -155,14 +158,14 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     const list = raw?.skillsToShare ?? [];
     return [...list].sort((a, b) => a.name.localeCompare(b.name)).map((s) => {
       const u = raw?.skillUsage?.[s.name];
-      return { name: s.name, description: s.description, sourceLabel: null, usage: u ?? null };
+      return { name: s.name, description: s.description, sourceLabel: null, usage: u ?? null, category: s.category };
     });
   }, [raw]);
 
   const dispatchItems = useMemo<WorkbenchSkill[]>(() =>
     installed.map((s) => {
       const u = raw?.skillUsage?.[s.name];
-      return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null };
+      return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null, category: s.category };
     }), [installed, raw]);
 
   const runAdopt = useCallback(async (name: string) => {

@@ -1166,6 +1166,9 @@ export interface SkillEntry {
   syncState: string;
   /** Where the skill was installed from ('global' | 'project'), or null. */
   sourceKind: string | null;
+  /** Canonical category from SKILL.md frontmatter (`category:` — one of
+   *  Development/Testing/Maintenance/Data/Other), or null → grouped as Other. */
+  category: string | null;
 }
 
 export interface SkillFileContent {

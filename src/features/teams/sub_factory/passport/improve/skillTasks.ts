@@ -38,7 +38,7 @@ export function adoptTaskPrompt(items: AdoptItem[], sourceRootOf: (projectId: st
     '',
     'For EACH skill listed:',
     '1. Read the source skill fully (SKILL.md plus any reference files). Do NOT modify the source.',
-    '2. Write it to .claude/skills/<name>/ in THIS repo, preserving the file structure.',
+    '2. Write it to .claude/skills/<name>/ in THIS repo, preserving the file structure AND the frontmatter `category:` field verbatim (it drives the app’s grouped skill lists).',
     "3. CUSTOMIZE the copy — this is an LLM personalization pass, not a file copy. Read this repo first (its stack, build/test/lint commands, directory layout, language + framework idioms, AND its business/product domain from README/docs/package metadata), then rewrite the source's generic assumptions into THIS repo's real ones: concrete commands, real paths, this project's terminology, and examples drawn from what this product actually does. Keep the skill's intent, steps and quality bar intact — personalize the frame to this stack and business, never the method.",
     '4. If a step cannot apply to this codebase, adapt it to the nearest real equivalent and note the change in a short "Adapted for this repo" line at the bottom of that SKILL.md.',
     '',
@@ -59,7 +59,8 @@ export function shareTaskPrompt(name: string, project: DevProject): string {
     '1. Read the skill fully (SKILL.md plus any reference files). Do NOT modify it inside this repo.',
     `2. Write a generalized copy to ~/.claude/skills/${name}/ (~ is the user home directory; create directories as needed), preserving the file structure.`,
     '3. GENERALIZE the copy — this is an LLM abstraction pass. Strip or parameterize every codebase-specific AND business-specific detail — hard-coded paths, project/product names, repo-specific commands/URLs/tool versions, domain jargon — replacing them with clearly marked placeholders (e.g. <project-root>, <test-command>) or stack- and business-neutral wording. The library copy is the shared workspace version: it must read as reusable doctrine that ANY project (any stack, any business) can adopt, never as this repo’s notes. Preserve the method, the step order and the quality bar exactly.',
-    '4. If a reference file is 100% specific to this repo, omit it from the library copy and note the omission at the bottom of the library SKILL.md.',
+    "4. CATEGORIZE it: set a `category:` field in the library copy's SKILL.md YAML frontmatter, choosing EXACTLY ONE of: Development, Testing, Maintenance, Data, Other. Pick by the skill's primary job (building features = Development; test/QA/verification = Testing; upkeep/quality/docs/i18n/refactor = Maintenance; data pipelines/analysis/measurement = Data; anything else = Other).",
+    '5. If a reference file is 100% specific to this repo, omit it from the library copy and note the omission at the bottom of the library SKILL.md.',
     '',
     'Only write inside ~/.claude/skills/ — do not touch this repo or its application code.',
   ].join('\n');

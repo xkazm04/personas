@@ -58,6 +58,12 @@ pub struct SkillEntry {
     /// `"global"` (the user-global library) or `"project"`. `None` for
     /// local-only skills.
     pub source_kind: Option<String>,
+    /// Canonical category from the frontmatter `category:` field — one of
+    /// "Development" / "Testing" / "Maintenance" / "Data" / "Other" (the share
+    /// LLM assigns it when generalizing into the library). `None` when the
+    /// frontmatter has no recognizable category; the UI groups those under
+    /// "Other".
+    pub category: Option<String>,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -371,6 +377,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     .to_string();
                 let content = std::fs::read_to_string(&path).ok();
                 let desc = content.as_deref().and_then(extract_skill_description);
+                let category = content.as_deref().and_then(extract_skill_category);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -381,6 +388,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     // (nowhere to put one without a dir); always local-only.
                     sync_state: SYNC_LOCAL_ONLY.to_string(),
                     source_kind: None,
+                    category,
                 });
             }
             continue;
@@ -402,6 +410,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
+        let category = skill_md_path.as_ref().and_then(|p| read_skill_category(p));
 
         // Count reference files (everything except SKILL.md and the internal
         // provenance sidecar, which is engine-managed, not user content).
@@ -425,6 +434,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             reference_files: ref_files,
             sync_state,
             source_kind,
+            category,
         });
     }
 
@@ -435,6 +445,41 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
 fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
     let content = std::fs::read_to_string(skill_md_path).ok()?;
     extract_skill_description(&content)
+}
+
+/// The closed category set skills sort into (workbench grouping). The share
+/// LLM picks one when generalizing a skill into the library; anything else in
+/// the frontmatter normalizes to `None` (grouped as "Other" in the UI).
+const SKILL_CATEGORIES: [&str; 5] = ["Development", "Testing", "Maintenance", "Data", "Other"];
+
+/// Read the frontmatter `category:` field and normalize it (case-insensitive)
+/// to the canonical set above. Absent frontmatter / key / unknown value → None.
+fn extract_skill_category(content: &str) -> Option<String> {
+    let mut lines = content.lines();
+    if lines.next().map(str::trim) != Some("---") {
+        return None;
+    }
+    for line in lines {
+        let t = line.trim();
+        if t == "---" {
+            break;
+        }
+        if let Some(rest) = t.strip_prefix("category:") {
+            let v = rest.trim().trim_matches(['"', '\'']).trim();
+            return SKILL_CATEGORIES
+                .iter()
+                .find(|c| c.eq_ignore_ascii_case(v))
+                .map(|c| (*c).to_string());
+        }
+    }
+    None
+}
+
+/// [`extract_skill_category`] over a SKILL.md path (mirror of
+/// `read_first_line_description`).
+fn read_skill_category(skill_md_path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(skill_md_path).ok()?;
+    extract_skill_category(&content)
 }
 
 /// Short description for a skill's SKILL.md. Prefers the YAML frontmatter
@@ -796,6 +841,18 @@ pub fn skill_files_write(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extract_skill_category_normalizes_and_rejects() {
+        let md = "---\nname: x\ncategory: development\ndescription: d\n---\nBody";
+        assert_eq!(extract_skill_category(md).as_deref(), Some("Development"));
+        let quoted = "---\ncategory: \"Testing\"\n---\nBody";
+        assert_eq!(extract_skill_category(quoted).as_deref(), Some("Testing"));
+        // Unknown value, missing key, and no frontmatter all → None.
+        assert_eq!(extract_skill_category("---\ncategory: Gardening\n---\n"), None);
+        assert_eq!(extract_skill_category("---\nname: x\n---\n"), None);
+        assert_eq!(extract_skill_category("# Just a heading\ncategory: Data"), None);
+    }
 
     #[test]
     fn validate_skill_name_accepts_simple_segments() {

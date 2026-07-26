@@ -197,9 +197,9 @@ export function usePassportData(): PassportData {
     for (const r of usageRows) {
       if (r.scope === 'global' && r.content_hash && !r.missing_since) globalByHash.set(r.content_hash, r.name);
     }
-    const skillCatalog = new Map<string, { source: string | null; description: string | null }>();
-    for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description });
-    for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description });
+    const skillCatalog = new Map<string, { source: string | null; description: string | null; category: string | null }>();
+    for (const g of globalSkills) if (!skillCatalog.has(g.name)) skillCatalog.set(g.name, { source: null, description: g.description, category: g.category });
+    for (const [pid, list] of projectSkillLists) for (const s of list) if (!skillCatalog.has(s.name)) skillCatalog.set(s.name, { source: pid, description: s.description, category: s.category });
     const installedByProject = new Map(projectSkillLists.map(([pid, list]) => [pid, new Set(list.map((s) => s.name))]));
     // Shared-vs-specific split: a skill counts as SHARED (reused) when its name
     // also exists in the global library or in a sibling project; the rest are
@@ -237,7 +237,7 @@ export function usePassportData(): PassportData {
       const evidence = evidenceById.get(meta.project_id) ?? null;
       const skillsToAdd = [...skillCatalog.entries()]
         .filter(([name, info]) => !installed.has(name) && info.source !== meta.project_id)
-        .map(([name, info]) => ({ name, source: info.source, description: info.description }));
+        .map(([name, info]) => ({ name, source: info.source, description: info.description, category: info.category }));
       // Liveliness of adopt candidates at their SOURCE — a skill used 12× in 30d
       // elsewhere is a better adoption bet than one nobody invokes.
       const catalogUsage: Record<string, { invokes30d: number; lastInvokedAt: string | null }> = {};
@@ -254,7 +254,7 @@ export function usePassportData(): PassportData {
           const hash = projUsage?.get(s.name)?.content_hash;
           return !(hash && globalByHash.has(hash));
         })
-        .map((s) => ({ name: s.name, description: s.description }));
+        .map((s) => ({ name: s.name, description: s.description, category: s.category }));
       const docRot = docRotByProject.get(meta.project_id);
       const mh = memHealthByProject.get(meta.project_id);
       const memHealth = mh ? { score: mh.score, prevScore: mh.prev_score, disputed: mh.disputed, capturedAt: mh.captured_at } : undefined;

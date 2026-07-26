@@ -25,9 +25,9 @@ export interface ImproveRaw {
   /** Deterministic repo file-evidence (D1) — real test/CI/CLAUDE.md/migration signals. */
   evidence?: RepoEvidence | null;
   /** Skills installed elsewhere (other projects / global) but missing here. */
-  skillsToAdd?: { name: string; source: string | null; description: string | null }[];
+  skillsToAdd?: { name: string; source: string | null; description: string | null; category: string | null }[];
   /** This project's skills the global library doesn't have yet — shareable. */
-  skillsToShare?: { name: string; description: string | null }[];
+  skillsToShare?: { name: string; description: string | null; category: string | null }[];
 }
 
 export interface ImproveEngine {
