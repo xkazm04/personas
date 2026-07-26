@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { probeCliCapabilities } from '@/api/agents/evolution';
 import { silentCatch } from '@/lib/silentCatch';
-import type { CliCapabilities } from '@/lib/bindings/CliCapabilities';
 
 export type CliReadinessStatus = 'checking' | 'ready' | 'not_ready';
 
@@ -24,7 +23,7 @@ export function useCliReadiness() {
   const check = useCallback(async () => {
     setStatus('checking');
     try {
-      await invokeWithTimeout<CliCapabilities>('probe_cli_capabilities', {});
+      await probeCliCapabilities();
       setStatus('ready');
     } catch (err) {
       // A failed probe is the whole signal — surface the gate. Breadcrumb only.

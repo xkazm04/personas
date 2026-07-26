@@ -9,7 +9,7 @@
  *  (Dialogue). Returns [] until the intent clears MIN_LEN.
  */
 import { useEffect, useRef, useState } from "react";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { matchRecipesToIntent } from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 
@@ -28,7 +28,7 @@ export function useRecipeStarters(intent: string, topK = 6): RecipeMatch[] {
     }
     const mine = ++reqId.current;
     const handle = setTimeout(() => {
-      invokeWithTimeout<RecipeMatch[]>("match_recipes_to_intent", { intent: trimmed, topK })
+      matchRecipesToIntent(trimmed, topK)
         .then((results) => {
           // Ignore stale responses if the intent changed while in flight.
           if (mine !== reqId.current) return;

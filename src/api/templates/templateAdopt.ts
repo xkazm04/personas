@@ -85,3 +85,70 @@ export const saveCustomTemplate = (
     instruction,
     designResultJson,
   });
+
+/** Outcome of the always-on adoption adjustment pass. */
+export interface AdoptionAdjustResult {
+  /** `false` means the deterministic base IR was kept (fallback or no-op). */
+  adjusted: boolean;
+  divergence: string;
+  model: string | null;
+  /** Human-readable note, e.g. the fallback reason. */
+  note: string | null;
+  elapsedMs: number;
+}
+
+/**
+ * Run the always-on adjustment pass on a draft build session, specializing its
+ * `agent_ir` in place. Safe to call before `promoteBuildDraft`, and non-fatal
+ * by contract: on any internal failure it RESOLVES with `adjusted: false` and
+ * the base IR intact rather than rejecting.
+ *
+ * The 660s timeout sits above the backend's own 600s LLM margin so the
+ * frontend never gives up before the backend resolves. Do not lower it here —
+ * the whole point is that the wrapper owns the correct bound, so no call site
+ * has to remember it.
+ */
+export const adjustAdoptionDraft = (sessionId: string) =>
+  invoke<AdoptionAdjustResult>(
+    "adjust_adoption_draft",
+    { sessionId },
+    { timeoutMs: 660_000 },
+  );
+
+// ============================================================================
+// Template integrity (Layer 2 — backend-authoritative checksum verification)
+// ============================================================================
+
+export interface TemplateIntegrityResult {
+  path: string;
+  expectedHash: string | null;
+  actualHash: string;
+  valid: boolean;
+  /** `false` when the path isn't in the embedded manifest at all. */
+  isKnownTemplate: boolean;
+}
+
+/** Mirrors `engine::template_checksums::BatchIntegrityResult`. */
+export interface BatchIntegrityResult {
+  results: TemplateIntegrityResult[];
+  allValid: boolean;
+  total: number;
+  validCount: number;
+  invalidCount: number;
+  unknownCount: number;
+}
+
+/**
+ * Verify client-side template JSON against the checksum manifest embedded in
+ * the Rust binary — the authoritative integrity layer, run at catalog init.
+ *
+ * Never rejects on a mismatch: a tampered template comes back with
+ * `valid: false` / `allValid: false`, so callers must inspect the result rather
+ * than relying on the promise settling successfully.
+ */
+export const verifyTemplateIntegrityBatch = (
+  templates: readonly { path: string; content: string }[],
+) =>
+  invoke<BatchIntegrityResult>("verify_template_integrity_batch", {
+    templates: [...templates],
+  });

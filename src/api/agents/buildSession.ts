@@ -11,7 +11,6 @@ import type {
   BuildReference,
   BuildWebhookSource,
   PersistedBuildSession,
-  BuildSessionSummary,
   PromoteBuildResult,
   TestReport,
 } from "@/lib/types/buildTypes";
@@ -118,12 +117,75 @@ export async function getActiveBuildSession(
   );
 }
 
-/** List build session summaries, optionally filtered by persona. */
+/**
+ * List NON-TERMINAL build sessions, optionally filtered by persona.
+ *
+ * Returns the full `PersistedBuildSession` shape, not a summary — Rust maps
+ * every row through `PersistedBuildSession::from_session`
+ * (`commands/design/build_sessions.rs:594`). This wrapper was previously
+ * annotated `BuildSessionSummary[]`, which is why `buildSessionBootstrap`
+ * bypassed it and re-declared the invoke inline. Corrected in the 2026-05-10
+ * orphan-commands wrap-up; the summary shape is a strict subset, so any
+ * summary-shaped consumer still type-checks.
+ */
 export async function listBuildSessions(
   personaId?: string,
-): Promise<BuildSessionSummary[]> {
-  return invokeWithTimeout<BuildSessionSummary[]>("list_build_sessions", {
+): Promise<PersistedBuildSession[]> {
+  return invokeWithTimeout<PersistedBuildSession[]>("list_build_sessions", {
     personaId: personaId ?? null,
+  });
+}
+
+/**
+ * Most recent build session for a persona regardless of phase — including
+ * terminal ones, unlike {@link getActiveBuildSession} and
+ * {@link listBuildSessions}. Resolves `null` when the persona has never been
+ * built.
+ */
+export async function getLatestBuildSession(
+  personaId: string,
+): Promise<PersistedBuildSession | null> {
+  return invokeWithTimeout<PersistedBuildSession | null>(
+    "get_latest_build_session",
+    { personaId },
+  );
+}
+
+/**
+ * Create a build session for a template adoption, so `testBuildDraft` /
+ * `promoteBuildDraft` can run against it. Returns the new session id.
+ *
+ * `agentIrJson` and `resolvedCellsJson` are validated at the Rust trust
+ * boundary (well-formed JSON, size-capped) — a truncated payload is rejected
+ * rather than persisted as the session's `agent_ir`.
+ */
+export async function createAdoptionSession(
+  personaId: string,
+  intent: string,
+  agentIrJson: string,
+  resolvedCellsJson?: string | null,
+): Promise<string> {
+  return invokeWithTimeout<string>("create_adoption_session", {
+    personaId,
+    intent,
+    agentIrJson,
+    resolvedCellsJson: resolvedCellsJson ?? null,
+  });
+}
+
+/**
+ * Persist the adoption questionnaire answers onto a build session. Same
+ * trust-boundary validation as {@link createAdoptionSession}: malformed or
+ * oversized JSON is rejected here rather than detonating later at
+ * test/promote time.
+ */
+export async function saveAdoptionAnswers(
+  sessionId: string,
+  adoptionAnswersJson: string,
+): Promise<void> {
+  return invokeWithTimeout<void>("save_adoption_answers", {
+    sessionId,
+    adoptionAnswersJson,
   });
 }
 

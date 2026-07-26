@@ -1,4 +1,12 @@
-// eslint-disable-next-line no-restricted-imports -- the radio widget's API layer is intrinsically an IPC client; lifting it would require relocating the entire radio feature out of shared/layout, which is out of scope for this lint pass.
+/**
+ * Radio (SomaFM / stream player) IPC wrappers.
+ *
+ * Relocated here from `src/features/plugins/radio/api/radioApi.ts` by the
+ * 2026-05-10 orphan-commands wrap-up. The module was always a proper typed
+ * wrapper layer, but living under `src/features/**` it needed a standing
+ * `no-restricted-imports` eslint-disable to call `invokeWithTimeout`. Moving it
+ * to `src/api/` retires the exemption instead of documenting it.
+ */
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';

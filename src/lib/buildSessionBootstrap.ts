@@ -42,7 +42,7 @@
  * doesn't render automatically on every boot just because a stale draft
  * exists.
  */
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { listBuildSessions } from "@/api/agents/buildSession";
 import { useAgentStore } from "@/stores/agentStore";
 import type { PersistedBuildSession } from "@/lib/types/buildTypes";
 import { createLogger } from "@/lib/log";
@@ -57,13 +57,7 @@ const log = createLogger("buildSessionBootstrap");
 export async function bootstrapActiveBuildSessions(): Promise<void> {
   let sessions: PersistedBuildSession[];
   try {
-    // Rust returns Vec<PersistedBuildSession> here despite the TS API's
-    // BuildSessionSummary annotation — the runtime payload IS the full
-    // shape (verified by `PersistedBuildSession::from_session` in Rust).
-    sessions = await invokeWithTimeout<PersistedBuildSession[]>(
-      "list_build_sessions",
-      { personaId: null },
-    );
+    sessions = await listBuildSessions();
   } catch (err) {
     log.warn("bootstrapActiveBuildSessions: list_build_sessions failed", {
       error: err instanceof Error ? err.message : String(err),

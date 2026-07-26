@@ -5,23 +5,14 @@
 // messages) bypass the window — the timer never delays an unblock.
 import { useCallback, useEffect, useState } from 'react';
 import { Timer } from 'lucide-react';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import {
+  companionWakeStats,
+  type CompanionWakeStats as WakeStats,
+} from '@/api/companion/bridges';
+import { setAppSetting } from '@/api/system/settings';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { silentCatch } from '@/lib/silentCatch';
-
-interface SurfaceStats {
-  surface: string;
-  wakes: number;
-  signals: number;
-  cli_calls: number;
-  actions: number;
-}
-
-interface WakeStats {
-  window_minutes: number;
-  surfaces: SurfaceStats[];
-}
 
 const WINDOW_CHOICES = [0, 30, 60, 120] as const;
 
@@ -31,7 +22,7 @@ export function WakeCadence() {
   const [stats, setStats] = useState<WakeStats | null>(null);
 
   const refresh = useCallback(() => {
-    invokeWithTimeout<WakeStats>('companion_wake_stats', {})
+    companionWakeStats()
       .then(setStats)
       .catch(silentCatch('companion_wake_stats'));
   }, []);
@@ -41,10 +32,7 @@ export function WakeCadence() {
   }, [refresh]);
 
   const setWindow = (minutes: number) => {
-    invokeWithTimeout('set_app_setting', {
-      key: 'athena_wake_window_minutes',
-      value: String(minutes),
-    })
+    setAppSetting('athena_wake_window_minutes', String(minutes))
       .then(refresh)
       .catch(silentCatch('set_wake_window'));
   };

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { testNotificationChannel } from "@/api/agents/channelDelivery";
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -50,8 +50,7 @@ export function NotificationChannelCard({
     setTestStatus('sending');
     setTestError('');
     try {
-      const channelPayload = JSON.stringify({ type, enabled: true, config, credential_id: credentialId });
-      await invoke<string>('test_notification_channel', { channelJson: channelPayload });
+      await testNotificationChannel({ type, enabled: true, config, credential_id: credentialId });
       setTestStatus('success');
       setTimeout(() => setTestStatus('idle'), 3000);
     } catch (err) {
