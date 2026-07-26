@@ -4,11 +4,19 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kanban/KanbanBoard';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, type GoalLane, type GoalStatus } from './goalStatus';
 import GoalCard from './GoalCard';
+
+/** Cards in the first viewport of a lane that play the one-shot entrance
+ *  cascade when a fresh result set lands (35ms stagger via RevealItem,
+ *  id-guarded so polling/refresh/scroll never replay it). Mirrors
+ *  GlobalExecutionList's CASCADE_ROWS (docs/design/overview-loading.md). */
+const CASCADE_CARDS = 8;
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -52,6 +60,7 @@ export default function GoalKanban({
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
   const goals = useSystemStore((s) => s.goals);
+  const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
 
@@ -127,6 +136,32 @@ export default function GoalKanban({
     [dt, lanes],
   );
 
+  // ── Card cascade (docs/design/overview-loading.md, law 4) ──
+  // A scope switch (all-projects vs. this-project) or a project change is a
+  // new context and replays the ripple; a poll/refresh delivering the same
+  // goal ids does not (they're already marked entered). showDone is
+  // deliberately excluded from the key: toggling it only reveals additional
+  // (previously-unrendered) Done cards, which cascade on their own as new ids.
+  const revealResetKey = showProject ? 'all-projects' : (projectIds[0] ?? 'no-project');
+  const enter = useRevealTracker(revealResetKey);
+
+  // Per-lane display order for each visible goal, mirroring KanbanBoard's own
+  // status→column bucketing, so a card's stagger order matches its actual
+  // position within its lane. RevealItem caps the stagger at 8 per wave.
+  const orderByGoalId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const col of columns) {
+      let i = 0;
+      for (const g of visibleGoals) {
+        if (col.statuses.includes(normalizeGoalStatus(g.status))) {
+          map.set(g.id, i);
+          i++;
+        }
+      }
+    }
+    return map;
+  }, [columns, visibleGoals]);
+
   const handleMove = useCallback(
     async (goalId: string, status: string) => {
       try {
@@ -138,7 +173,13 @@ export default function GoalKanban({
     [updateGoal],
   );
 
+  // ── Loading choreography (docs/design/overview-loading.md) ──
+  // In practice GoalsPage only mounts this board once goals.length > 0 (its
+  // own ghost/hero branches cover the cold-fetch and settled-empty cases), so
+  // this is a defensive settled-only fallback: never show "no goals" while a
+  // fetch could still be in flight.
   if (goals.length === 0) {
+    if (goalsLoading) return null;
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <AlertCircle className="w-8 h-8 text-foreground mb-3" />
@@ -157,14 +198,24 @@ export default function GoalKanban({
       dragMimeType={DRAG_MIME}
       columnsClassName={showDone ? undefined : 'grid grid-cols-2 gap-4'}
       fallbackColumnId="your_turn"
-      renderCard={(g) => (
-        <GoalCard
-          goal={g}
-          items={itemsByGoal.get(g.id) ?? []}
-          projectName={showProject ? projectNameById.get(g.project_id) : undefined}
-          onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
-        />
-      )}
+      renderCard={(g) => {
+        const order = orderByGoalId.get(g.id) ?? 0;
+        return (
+          <RevealItem
+            revealId={g.id}
+            order={order}
+            hasEntered={(id) => order >= CASCADE_CARDS || enter.hasEntered(id)}
+            markEntered={enter.markEntered}
+          >
+            <GoalCard
+              goal={g}
+              items={itemsByGoal.get(g.id) ?? []}
+              projectName={showProject ? projectNameById.get(g.project_id) : undefined}
+              onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
+            />
+          </RevealItem>
+        );
+      }}
       renderEmptyColumn={(_columnId, isDropTarget) => (
         <p className="text-[11px] text-foreground text-center py-6">
           {isDropTarget ? t.plugins.dev_lifecycle.kanban_drop_here : dt.no_goals_here}

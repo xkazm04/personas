@@ -62,6 +62,7 @@ export default function GoalsPage() {
   const dl = t.plugins.dev_lifecycle;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
+  const goalsLoading = useSystemStore((s) => s.goalsLoading);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchAllGoals = useSystemStore((s) => s.fetchAllGoals);
@@ -212,6 +213,12 @@ export default function GoalsPage() {
             <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
             <GoalsTimeline showProject={crossProject} />
           </div>
+        ) : goalsLoading && goals.length === 0 ? (
+          /* Cold first visit: goals fetch in flight, store still empty. A
+             delayed ghost (docs/design/overview-loading.md, law 5) — not the
+             empty-state hero, which is reserved for the settled-empty case
+             below. Warm visits skip this entirely (goals.length > 0). */
+          <GoalsBoardGhost />
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
@@ -318,5 +325,42 @@ export default function GoalsPage() {
         />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GoalsBoardGhost — calm ghost for the ONLY moment the board region has
+// nothing to show yet (cold first visit, goals fetch in flight). Mirrors the
+// board's own geometry: two lanes ("Your turn" / "Agent's turn"), each with a
+// handful of goal-card-shaped bars. Each element enters via `animate-fade-in`
+// behind a staggered animation-delay starting at 120ms (fill-mode: both holds
+// opacity 0 through the delay), so a fast fetch never paints a single ghost —
+// real content replaces it the frame data arrives (docs/design/overview-loading.md).
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GOAL_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function GoalsBoardGhost() {
+  return (
+    <div className="grid grid-cols-2 gap-4" aria-hidden="true">
+      {[0, 1].map((lane) => (
+        <div key={lane} className="rounded-card border border-primary/15 bg-secondary/10 p-3">
+          <div className="flex items-center gap-2 mb-3 animate-fade-in" style={{ animationDelay: '120ms' }}>
+            <span className={`h-4 w-4 ${GOAL_GHOST_BAR}`} />
+            <span className={`h-3 w-20 ${GOAL_GHOST_BAR}`} />
+          </div>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <span
+                key={i}
+                className={`block h-9 rounded-modal ${GOAL_GHOST_BAR} animate-fade-in`}
+                style={{ animationDelay: `${140 + (lane * 3 + i) * 35}ms` }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
