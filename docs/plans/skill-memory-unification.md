@@ -140,11 +140,14 @@ keep only personal/cross-project notes in `MEMORY.md`. (Optionally later: a
 | **P2** | Coverage surfacing (Mastermind cell detail / Knowledge Center pillar) + stale-context reconciler → delta rescan | context-map auto-update lands here |
 | **P3** | Obsidian adapter (settings + projection + import) + `/tiger`-class migration | optional component last, by design |
 
-## 5. Open questions (for the operator)
+## 5. Decisions (operator, 2026-07-26)
 
-1. **Recall size:** how many ledger nodes should a dispatch's MEMORY BLOCK carry —
-   fixed K (e.g. 8) or context-filtered only?
-2. **Coverage freshness window:** 7 days (matches Ideas' green band) or 30?
-3. **Vault layout:** one vault subtree per project (proposed) vs per workspace?
-4. **Promotion UX:** should ledger→workspace-knowledge proposals reuse the existing
-   practice review queue verbatim, or get their own lane?
+1. **Recall size:** context-filtered, capped at 8 nodes per MEMORY BLOCK
+   (fresh-first; falls back to project-wide fresh nodes when the dispatch has no
+   context focus). *(Operator left this one open — capped context-filtering chosen.)*
+2. **Coverage freshness window:** **30 days.**
+3. **Vault layout:** **per project** (`personas/<project>/…` subtree).
+4. **Promotion UX:** **reuse the existing practice review queue** — ledger →
+   workspace-knowledge proposals enter the same lane as harvested practices.
+
+**Status:** P0 in progress (schema + ingest + coverage + exited-session hook).

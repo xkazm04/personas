@@ -22,6 +22,7 @@ pub mod idea_scanner;
 pub mod kpi_compose;
 pub mod kpi_scan;
 pub mod kpi_sim;
+pub mod memory_ledger;
 pub mod use_case_scan;
 pub mod llm_spend;
 pub mod incremental_scan;

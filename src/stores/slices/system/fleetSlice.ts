@@ -7,6 +7,23 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import { EventName } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
+import { ingestMemoryOutbox, listProjects } from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
+
+/** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
+const normPath = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+
+/** Memory-ledger ingest on session exit: if the exited session ran inside a
+ *  registered project's root, sweep its `.personas/memory-outbox.jsonl` into
+ *  the ledger (docs/plans/skill-memory-unification.md §3.2). Best-effort and
+ *  silent — most sessions have no outbox and the ingest is a cheap no-op. */
+async function ingestOutboxForCwd(cwd: string | null | undefined): Promise<void> {
+  if (!cwd) return;
+  const projects = await listProjects();
+  const project = projects.find((p) => p.root_path && normPath(p.root_path) === normPath(cwd));
+  if (!project) return;
+  await ingestMemoryOutbox(project.id);
+}
 
 // Module-level guard so the three Tauri session listeners attach exactly once
 // per app process, no matter how many surfaces (Fleet grid, Mastermind canvas,
@@ -208,12 +225,16 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     void listen<{ session_id: string; exit_code: number | null }>(
       EventName.FLEET_SESSION_EXITED,
       (event) => {
+        // Read the cwd BEFORE the patch (the row survives, but don't depend on
+        // ordering) — the exited session may have left a memory outbox behind.
+        const cwd = get().fleetSessions.find((s) => s.id === event.payload.session_id)?.cwd;
         get().fleetPatchSession(event.payload.session_id, {
           state: 'exited' as FleetSessionState,
           exitCode: event.payload.exit_code,
           lastActivityMs: BigInt(Date.now()),
         });
         get().fleetRecordTransition(event.payload.session_id, 'exited' as FleetSessionState);
+        ingestOutboxForCwd(cwd).catch(silentCatch('fleet memory ingest'));
       },
     ).then((un) => flag.unlisten.push(un));
 

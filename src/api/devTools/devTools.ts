@@ -941,6 +941,51 @@ export const getBatchStatus = (batchId: string) =>
 
 // -- Task Execution (CLI-powered) -------------------------------------------
 
+// ── Project Memory Ledger (docs/plans/skill-memory-unification.md) ─────────
+
+export interface MemoryIngestResult {
+  nodesInserted: number;
+  nodesRefreshed: number;
+  edgesInserted: number;
+  skipped: number;
+  outboxFound: boolean;
+}
+
+export interface MemoryNodeRow {
+  id: string;
+  projectId: string;
+  contextId: string | null;
+  kind: string;
+  title: string;
+  body: string | null;
+  source: string;
+  updatedAt: string;
+}
+
+export interface MemoryCoverage {
+  contexts: number;
+  covered: number;
+  windowDays: number;
+  unanchored: number;
+}
+
+/** Ingest `<root>/.personas/memory-outbox.jsonl` into the project's ledger.
+ *  Missing outbox = zero-work success (`outboxFound: false`). */
+export const ingestMemoryOutbox = (projectId: string) =>
+  invoke<MemoryIngestResult>("dev_tools_memory_ingest", { projectId });
+
+/** Fresh-first active ledger nodes; `contextId` narrows to one context. */
+export const listMemoryNodes = (projectId: string, contextId?: string | null, limit?: number) =>
+  invoke<MemoryNodeRow[]>("dev_tools_memory_list", {
+    projectId,
+    contextId: contextId ?? null,
+    limit: limit ?? null,
+  });
+
+/** Context coverage: contexts with fresh (≤30d) memory / all contexts. */
+export const memoryCoverage = (projectId: string) =>
+  invoke<MemoryCoverage>("dev_tools_memory_coverage", { projectId });
+
 /**
  * Execute a queued Dev-runner task. `model` optionally overrides the model for
  * THIS run (e.g. skill adopt/share pins "claude-sonnet-5"); omit to keep the

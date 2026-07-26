@@ -6417,6 +6417,56 @@ fn research_lab_align_columns(conn: &Connection) {
             ),
         );
     }
+
+    // -- Project Memory Ledger (docs/plans/skill-memory-unification.md P0) ----
+    // Graph-shaped project working memory: nodes anchored to dev_contexts,
+    // typed edges. Canonical store for skill/terminal memory; the Obsidian
+    // vault (P3) is only a projection of these tables.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS memory_nodes (
+            id            TEXT PRIMARY KEY,
+            project_id    TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            context_id    TEXT,
+            kind          TEXT NOT NULL DEFAULT 'fact',
+            title         TEXT NOT NULL,
+            body          TEXT,
+            source        TEXT NOT NULL DEFAULT 'app',
+            status        TEXT NOT NULL DEFAULT 'active',
+            content_hash  TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_memory_nodes_project
+            ON memory_nodes(project_id, status, updated_at);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_memory_nodes_context
+            ON memory_nodes(project_id, context_id);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_memory_nodes_hash
+            ON memory_nodes(project_id, content_hash);",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS memory_edges (
+            from_id     TEXT NOT NULL REFERENCES memory_nodes(id) ON DELETE CASCADE,
+            to_id       TEXT NOT NULL REFERENCES memory_nodes(id) ON DELETE CASCADE,
+            rel         TEXT NOT NULL DEFAULT 'relates',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (from_id, to_id, rel)
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_memory_edges_to ON memory_edges(to_id);",
+    );
 }
 
 #[cfg(test)]
