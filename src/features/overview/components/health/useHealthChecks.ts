@@ -57,7 +57,11 @@ export function useHealthChecks() {
     const gen = ++generationRef.current;
     setLoading(true);
     setIpcError(false);
-    setSections([]);
+    // Data on screen is sacred (docs/design/overview-loading.md, law 1): a
+    // re-run (auth change, install completion, manual refresh) never clears
+    // sections that already loaded — the previous check results stay visible
+    // until the new ones resolve. Ghosts only ever appear on the first,
+    // cold-store load, when `sections` is still its initial `[]`.
 
     Promise.allSettled(CHECKS.map((check) => check.fn()))
       .then((results) => {

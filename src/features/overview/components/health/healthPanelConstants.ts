@@ -21,6 +21,12 @@ export const DEFAULT_SECTION_STYLE = { badge: 'bg-violet-500/10', icon: 'text-vi
  *  fetched and thrown away every refresh — 3 wasted IPC round-trips, warning
  *  banners for issues the user couldn't see, and the Ollama/LiteLLM
  *  configure buttons (which live in the agents section) were unreachable. */
+/** Calm ghost-bar styling shared by every loading placeholder in this module
+ *  (docs/design/overview-loading.md §C) — no `animate-pulse`, ever. */
+export const HEALTH_GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so stacked ghost bars read as text, not a barcode. */
+export const HEALTH_GHOST_WIDTHS = ['w-36', 'w-28', 'w-40'];
+
 export const SKELETON_SECTIONS = [
   { id: 'local', label: 'Local Environment' },
   { id: 'environment', label: 'Environment' },

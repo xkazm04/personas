@@ -96,6 +96,7 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
                   stubIdx={stubIdx}
                   SectionIcon={SectionIcon}
                   sectionStyle={sectionStyle}
+                  loading={loading}
                   ipcError={ipcError}
                   nodeState={nodeState}
                   claudeState={claudeState}

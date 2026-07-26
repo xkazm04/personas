@@ -13,6 +13,29 @@ import { readCrashLogs, CRASH_STORAGE_KEY } from '@/lib/utils/crashPersistence';
 import type { CrashLogEntry, FrontendCrashRow } from "@/api/system/system";
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
+import { HEALTH_GHOST_BAR, HEALTH_GHOST_WIDTHS } from './healthPanelConstants';
+
+// ---------------------------------------------------------------------------
+// CrashLogGhosts — calm placeholder while the expand-triggered log fetch is
+// in flight (docs/design/overview-loading.md §C). Delayed ≥120ms entrance so
+// a fast fetch never paints one; no `animate-pulse`.
+// ---------------------------------------------------------------------------
+function CrashLogGhosts() {
+  return (
+    <div aria-hidden="true" className="space-y-2 py-1">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/10 bg-background/40 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-3.5 h-3.5 rounded-full bg-primary/[0.06] flex-shrink-0" />
+          <span className={`h-3 ${HEALTH_GHOST_WIDTHS[i % HEALTH_GHOST_WIDTHS.length]} ${HEALTH_GHOST_BAR}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 
 
@@ -23,19 +46,24 @@ export function CrashLogsSection() {
   const [frontendLsLogs, setFrontendLsLogs] = useState<Array<{ timestamp: string; component: string; message: string; stack?: string }>>([]);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  // True only while the expand-triggered fetch is in flight — gates the
+  // ghost placeholder so "no crash logs" never renders before the fetch
+  // has actually settled (docs/design/overview-loading.md law: empty state
+  // only when settled).
+  const [loadingLogs, setLoadingLogs] = useState(false);
 
   useEffect(() => {
-    if (expanded) {
-      let cancelled = false;
-      getCrashLogs()
-        .then((data) => { if (!cancelled) setBackendLogs(data); })
-        .catch(() => { if (!cancelled) setBackendLogs([]); });
-      getFrontendCrashes(50)
-        .then((data) => { if (!cancelled) setFrontendDbLogs(data); })
-        .catch(() => { if (!cancelled) setFrontendDbLogs([]); });
-      if (!cancelled) setFrontendLsLogs(readCrashLogs());
-      return () => { cancelled = true; };
-    }
+    if (!expanded) return;
+    let cancelled = false;
+    setLoadingLogs(true);
+    setFrontendLsLogs(readCrashLogs());
+    Promise.allSettled([getCrashLogs(), getFrontendCrashes(50)]).then(([backendResult, frontendResult]) => {
+      if (cancelled) return;
+      setBackendLogs(backendResult.status === 'fulfilled' ? backendResult.value : []);
+      setFrontendDbLogs(frontendResult.status === 'fulfilled' ? frontendResult.value : []);
+      setLoadingLogs(false);
+    });
+    return () => { cancelled = true; };
   }, [expanded]);
 
   // Deduplicate: if a crash exists in both SQLite and localStorage, prefer SQLite.
@@ -102,12 +130,14 @@ export function CrashLogsSection() {
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="border-t border-primary/5 px-4 py-3 space-y-2 max-h-80 overflow-y-auto">
-              {totalCount === 0 && (
+              {loadingLogs && <CrashLogGhosts />}
+
+              {!loadingLogs && totalCount === 0 && (
                 <p className="typo-body text-foreground py-2"><DebtText k="auto_no_crash_logs_recorded_e8d3237c" /></p>
               )}
 
               {/* Rust backend crash logs (panics, auto-cred) */}
-              {backendLogs.map((log) => {
+              {!loadingLogs && backendLogs.map((log) => {
                 const isAutoCred = log.filename.startsWith('autocred_');
                 const crashLabel = isAutoCred ? 'Auto-cred session' : 'Rust panic';
                 const crashColor = isAutoCred ? 'text-amber-400/60' : 'text-red-400/60';
@@ -134,7 +164,7 @@ export function CrashLogsSection() {
               })}
 
               {/* Frontend crashes persisted to SQLite */}
-              {frontendDbLogs.map((log) => (
+              {!loadingLogs && frontendDbLogs.map((log) => (
                 <div key={log.id} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
@@ -165,7 +195,7 @@ export function CrashLogsSection() {
               ))}
 
               {/* Fallback: localStorage-only crashes not yet in SQLite */}
-              {uniqueLsLogs.map((log, i) => (
+              {!loadingLogs && uniqueLsLogs.map((log, i) => (
                 <div key={`fe-${i}`} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
                     onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}

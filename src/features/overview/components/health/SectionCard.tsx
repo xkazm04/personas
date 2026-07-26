@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { errMsg } from '@/stores/storeTypes';
-import { Globe, Key, Loader2, Unplug, Wrench, type LucideIcon } from 'lucide-react';
+import { Globe, Key, Unplug, Wrench, type LucideIcon } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
 import { Button } from '@/features/shared/components/buttons';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { getStatusIcon, SectionStatusDot } from './StatusIndicators';
 import { InstallButton } from './InstallButton';
+import { HEALTH_GHOST_BAR, HEALTH_GHOST_WIDTHS } from './healthPanelConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function SectionCard({
@@ -14,6 +17,7 @@ export function SectionCard({
   stubIdx: _stubIdx,
   SectionIcon,
   sectionStyle,
+  loading,
   ipcError,
   nodeState,
   claudeState,
@@ -29,6 +33,10 @@ export function SectionCard({
   stubIdx: number;
   SectionIcon: LucideIcon;
   sectionStyle: { badge: string; icon: string };
+  /** True while a health-check run is in flight. Only gates the item ghost —
+   *  once a section has real items they stay on screen for the rest of the
+   *  panel's life (docs/design/overview-loading.md law 1). */
+  loading: boolean;
   ipcError: boolean;
   nodeState: InstallState;
   claudeState: InstallState;
@@ -42,6 +50,11 @@ export function SectionCard({
 }) {
   const { t } = useTranslation();
   const [_mcpBusy, _setMcpBusy] = useState(false);
+  // No resetKey: this card never remounts (stable `key={section.id}` in the
+  // parent grid), so the tracker latches for the panel's lifetime — a re-run
+  // (auth change, install completion, manual refresh) never replays the
+  // entrance cascade for items already on screen.
+  const enter = useRevealTracker();
 
   const isAccount = section.id === 'account';
   const authItem = isAccount ? section.items.find((i) => i.id === 'google_auth') : null;
@@ -65,14 +78,17 @@ export function SectionCard({
 
       <div className="divide-y divide-primary/5 flex-1 bg-gradient-to-b from-transparent to-black/[0.02]">
         {section.items.length === 0 ? (
-          /* Loading indicator — shown while this section's health check is in-flight */
-          <div className="flex-1 flex flex-col items-center justify-center gap-2.5 py-6 px-4">
-            <Loader2 className={`w-5 h-5 animate-spin ${sectionStyle.icon} opacity-60`} />
-            <span className="typo-caption text-foreground">{t.overview.section_card.checking.replace('{section}', section.label.toLowerCase())}</span>
-          </div>
+          loading && <SectionItemGhosts />
         ) : (
-          section.items.map((check) => (
-            <div key={check.id} className="flex items-start gap-3 px-4 py-3 hover:bg-primary/[0.04] transition-colors">
+          section.items.map((check, index) => (
+            <RevealItem
+              key={check.id}
+              revealId={check.id}
+              order={index}
+              hasEntered={enter.hasEntered}
+              markEntered={enter.markEntered}
+              className="flex items-start gap-3 px-4 py-3 hover:bg-primary/[0.04] transition-colors"
+            >
               {getStatusIcon(check.status)}
               <div className="flex-1 min-w-0">
                 <p className="typo-body text-foreground">{check.label}</p>
@@ -133,7 +149,7 @@ export function SectionCard({
                   />
                 )}
               </div>
-            </div>
+            </RevealItem>
           ))
         )}
 
@@ -156,6 +172,34 @@ export function SectionCard({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SectionItemGhosts — calm placeholder for a section's item region while its
+// health check is in flight and nothing real has resolved yet
+// (docs/design/overview-loading.md §C). Entrance is delayed ≥120ms via
+// `animate-fade-in`'s `fill-mode: both`, so a fast check never paints one.
+// Real items replace ghosts the frame data lands (plain conditional, no
+// gate) and then latch via `useRevealTracker` — a later re-run never
+// re-shows this ghost because sections keep their prior items on screen.
+// ---------------------------------------------------------------------------
+function SectionItemGhosts() {
+  return (
+    <div className="py-1" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex items-start gap-3 px-4 py-3">
+          <span
+            className="w-4 h-4 rounded-full bg-primary/[0.06] mt-0.5 flex-shrink-0 animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          />
+          <span
+            className={`block h-3 mt-0.5 ${HEALTH_GHOST_WIDTHS[i % HEALTH_GHOST_WIDTHS.length]} ${HEALTH_GHOST_BAR} animate-fade-in`}
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          />
+        </div>
+      ))}
     </div>
   );
 }

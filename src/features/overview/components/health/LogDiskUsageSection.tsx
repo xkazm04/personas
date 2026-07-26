@@ -3,6 +3,7 @@ import { HardDrive } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getLogDirectoryStats, type LogDirectoryStats } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
+import { HEALTH_GHOST_BAR, HEALTH_GHOST_WIDTHS } from './healthPanelConstants';
 
 function formatBytes(bytes: number | bigint): string {
   const n = typeof bytes === 'bigint' ? Number(bytes) : bytes;
@@ -43,6 +44,7 @@ export function LogDiskUsageSection() {
         {unavailable && (
           <p className="typo-body text-foreground">{t.system_health.log_disk_unavailable}</p>
         )}
+        {!unavailable && stats === null && <LogDiskGhost />}
         {!unavailable && stats && (
           <>
             <div className="flex items-baseline justify-between gap-2">
@@ -73,6 +75,32 @@ export function LogDiskUsageSection() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LogDiskGhost — calm placeholder matching the two-row (bytes + retention
+// hint) x two-block (log / crash) geometry of the real content, shown only
+// while the stats fetch is in flight (docs/design/overview-loading.md §C).
+// ---------------------------------------------------------------------------
+function LogDiskGhost() {
+  return (
+    <div aria-hidden="true">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`h-3 ${HEALTH_GHOST_WIDTHS[0]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
+        <span className={`h-3 w-16 ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
+      </div>
+      <p className="mt-1.5">
+        <span className={`block h-2.5 ${HEALTH_GHOST_WIDTHS[1]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '155ms' }} />
+      </p>
+      <div className="flex items-baseline justify-between gap-2 pt-2 mt-2 border-t border-primary/5">
+        <span className={`h-3 ${HEALTH_GHOST_WIDTHS[2]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
+        <span className={`h-3 w-16 ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
+      </div>
+      <p className="mt-1.5">
+        <span className={`block h-2.5 ${HEALTH_GHOST_WIDTHS[0]} ${HEALTH_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '225ms' }} />
+      </p>
     </div>
   );
 }
