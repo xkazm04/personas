@@ -8,8 +8,14 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import { Slider } from '@/features/shared/components/forms/Slider';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { TwinDistilledFact } from '@/lib/bindings/TwinDistilledFact';
 import type { TwinCommunication } from '@/lib/bindings/TwinCommunication';
+
+/** Rows in the first viewport that play the one-shot entrance cascade (docs/design/overview-loading.md). */
+const CASCADE_ROWS = 10;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
 
 /**
  * Distilled-facts panel. Cycle 12 Stage 1 of the Athena-style memory pipeline
@@ -39,19 +45,27 @@ export function DistilledFactsPanel({ twinId }: Props) {
   const communications = useSystemStore((s) => s.twinCommunications);
   const fetchComms = useSystemStore((s) => s.fetchTwinCommunications);
 
-  const [facts, setFacts] = useState<TwinDistilledFact[] | null>(null);
+  const [facts, setFacts] = useState<TwinDistilledFact[]>([]);
+  // True while a (re)fetch for the current twin is in flight — never hides
+  // facts already on screen, only gates the ghost/empty choice for an
+  // otherwise-empty list (docs/design/overview-loading.md).
+  const [isFetching, setIsFetching] = useState(true);
   const [adding, setAdding] = useState(false);
   const [draftContent, setDraftContent] = useState('');
   const [draftContact, setDraftContact] = useState('');
   const [draftImportance, setDraftImportance] = useState(3);
   const [draftSources, setDraftSources] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const enter = useRevealTracker(twinId);
 
   useEffect(() => {
     if (!twinId) return;
-    twinApi.listDistilledFacts(twinId).then(setFacts).catch(() => setFacts([]));
+    setIsFetching(true);
+    twinApi.listDistilledFacts(twinId).then(setFacts).catch(() => setFacts([])).finally(() => setIsFetching(false));
     void fetchComms(twinId, undefined, 50);
   }, [twinId, fetchComms]);
+
+  const showGhost = isFetching && facts.length === 0;
 
   const scopedComms = useMemo(
     () => communications.filter((c) => c.twin_id === twinId).slice(0, 30),
@@ -114,7 +128,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-violet-400" />
           <span className="typo-section-title">{t.distilled.title}</span>
-          {facts && <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">{facts.length}</span>}
+          {facts.length > 0 && <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">{facts.length}</span>}
         </div>
         {!adding && (
           <Button onClick={() => setAdding(true)} size="sm" variant="ghost">
@@ -215,8 +229,8 @@ export function DistilledFactsPanel({ twinId }: Props) {
         </div>
       )}
 
-      {facts === null ? (
-        <p className="typo-caption text-foreground py-2">{t.distilled.loading}</p>
+      {showGhost ? (
+        <DistilledFactsGhostRows />
       ) : facts.length === 0 ? (
         <div className="py-6 text-center">
           <FileText className="w-7 h-7 text-foreground mx-auto mb-2" />
@@ -225,14 +239,21 @@ export function DistilledFactsPanel({ twinId }: Props) {
         </div>
       ) : (
         <ul className="space-y-2">
-          {facts.map((fact) => {
+          {facts.map((fact, index) => {
             let sourceCount = 0;
             try {
               const arr = JSON.parse(fact.sources_json) as string[];
               if (Array.isArray(arr)) sourceCount = arr.length;
             } catch (err) { silentCatch("features/plugins/twin/sub_brain/DistilledFactsPanel:catch1")(err); }
             return (
-              <li key={fact.id} className="p-3 rounded-card border border-primary/10 bg-background/40 flex items-start gap-3">
+              <li key={fact.id}>
+              <RevealItem
+                revealId={fact.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
+                className="flex items-start gap-3 p-3 rounded-card border border-primary/10 bg-background/40"
+              >
                 <span className={`px-1.5 py-0.5 text-[9px] font-medium rounded-full border flex-shrink-0 ${importanceTint(fact.importance)}`}>
                   {fact.importance}
                 </span>
@@ -257,11 +278,42 @@ export function DistilledFactsPanel({ twinId }: Props) {
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
+              </RevealItem>
               </li>
             );
           })}
         </ul>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DistilledFactsGhostRows — calm, geometry-matched ghost for the only moment
+// the fact list has nothing to show while a fetch is in flight. Each ghost
+// is invisible for its first 120ms (animate-fade-in + fill-mode both) so a
+// fast fetch never paints one; no animate-pulse.
+// ---------------------------------------------------------------------------
+
+function DistilledFactsGhostRows() {
+  return (
+    <ul className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <li
+          key={i}
+          className="flex items-start gap-3 p-3 rounded-card border border-primary/10 bg-background/40 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`w-5 h-4 flex-shrink-0 ${GHOST_BAR}`} />
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <span className={`block h-3.5 w-3/4 ${GHOST_BAR}`} />
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`h-2.5 w-16 inline-block ${GHOST_BAR}`} />
+              <span className={`h-2.5 w-20 inline-block ${GHOST_BAR}`} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

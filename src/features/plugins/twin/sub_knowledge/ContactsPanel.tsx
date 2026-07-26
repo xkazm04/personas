@@ -6,9 +6,16 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
 
 const SPARKLINE_DAYS = 7;
+/** Rows in the first viewport that play the one-shot entrance cascade (docs/design/overview-loading.md). */
+const CASCADE_ROWS = 12;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 
 /**
  * Buckets the active twin's communications into `SPARKLINE_DAYS` daily bins
@@ -109,25 +116,34 @@ function relativeAge(t: ReturnType<typeof useTranslation>['t'], iso: string | nu
 export function ContactsPanel({ twinId }: Props) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin;
-  const [contacts, setContacts] = useState<TwinContact[] | null>(null);
+  const [contacts, setContacts] = useState<TwinContact[]>([]);
+  // True while a (re)fetch for the current twin is in flight. It NEVER hides
+  // rows already on screen — it only decides whether an empty row-region
+  // shows ghost rows (fetch running) or the empty state (fetch settled).
+  const [isFetching, setIsFetching] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftAlias, setDraftAlias] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const fetchTwinCommunications = useSystemStore((s) => s.fetchTwinCommunications);
   const sparklines = useContactSparklines(twinId);
+  const enter = useRevealTracker(twinId);
 
   useEffect(() => {
     if (!twinId) return;
+    setIsFetching(true);
     twinApi
       .listTwinContacts(twinId)
       .then(setContacts)
-      .catch(() => setContacts([]));
+      .catch(() => setContacts([]))
+      .finally(() => setIsFetching(false));
     // Pull a recent slice of communications to feed the per-contact 7d
     // sparkline. Idempotent against the slice — other Brain panels load
     // this too.
     void fetchTwinCommunications(twinId, undefined, 200);
   }, [twinId, fetchTwinCommunications]);
+
+  const showGhost = isFetching && contacts.length === 0;
 
   const startEdit = (c: TwinContact) => {
     setEditingId(c.id);
@@ -166,7 +182,7 @@ export function ContactsPanel({ twinId }: Props) {
       <div className="flex items-center gap-2 mb-2">
         <Users className="w-4 h-4 text-violet-400" />
         <h2 className="typo-section-title">{t.contacts.title}</h2>
-        {contacts && (
+        {contacts.length > 0 && (
           <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">
             {contacts.length}
           </span>
@@ -174,8 +190,8 @@ export function ContactsPanel({ twinId }: Props) {
       </div>
       <p className="typo-caption text-foreground mb-3">{t.contacts.subtitle}</p>
 
-      {contacts === null ? (
-        <p className="typo-caption text-foreground py-2">{t.contacts.loading}</p>
+      {showGhost ? (
+        <ContactsGhostRows />
       ) : contacts.length === 0 ? (
         <div className="py-6 text-center">
           <Users className="w-7 h-7 text-foreground mx-auto mb-2" />
@@ -184,11 +200,18 @@ export function ContactsPanel({ twinId }: Props) {
         </div>
       ) : (
         <ul className="space-y-2">
-          {contacts.map((c) => {
+          {contacts.map((c, index) => {
             const editing = editingId === c.id;
             const display = c.alias?.trim() ? c.alias : c.handle;
             return (
-              <li key={c.id} className="p-3 rounded-card border border-primary/10 bg-background/40">
+              <li key={c.id}>
+              <RevealItem
+                revealId={c.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
+                className="block p-3 rounded-card border border-primary/10 bg-background/40"
+              >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     {editing ? (
@@ -268,11 +291,42 @@ export function ContactsPanel({ twinId }: Props) {
                     )}
                   </div>
                 </div>
+              </RevealItem>
               </li>
             );
           })}
         </ul>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ContactsGhostRows — calm, geometry-matched ghost rows for the only moment
+// the contact list has nothing to show while a fetch is in flight. Each
+// ghost is invisible for its first 120ms (animate-fade-in + fill-mode both)
+// so a fast fetch never paints one; no animate-pulse.
+// ---------------------------------------------------------------------------
+
+function ContactsGhostRows() {
+  return (
+    <ul className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <li
+          key={i}
+          className="p-3 rounded-card border border-primary/10 bg-background/40 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <span className={`block h-3.5 ${GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length]} ${GHOST_BAR}`} />
+            <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
+            <div className="flex items-center gap-3 mt-1.5">
+              <span className={`h-2.5 w-16 inline-block ${GHOST_BAR}`} />
+              <span className={`h-2.5 w-20 inline-block ${GHOST_BAR}`} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

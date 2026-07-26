@@ -8,7 +8,13 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { TwinReflection } from '@/lib/bindings/TwinReflection';
+
+/** Rows in the first viewport that play the one-shot entrance cascade (docs/design/overview-loading.md). */
+const CASCADE_ROWS = 10;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
 
 /**
  * Cycle 15 Stage 1 — operator-audit journal. The user types a seed question
@@ -38,18 +44,27 @@ export function ReflectionsPanel({ twinId }: Props) {
   const setPendingTrainingQuestions = useSystemStore((s) => s.setPendingTrainingQuestions);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === twinId);
   const addToast = useToastStore((s) => s.addToast);
-  const [reflections, setReflections] = useState<TwinReflection[] | null>(null);
+  const [reflections, setReflections] = useState<TwinReflection[]>([]);
+  // True while a (re)fetch for the current twin is in flight — never hides
+  // reflections already on screen, only gates the ghost/empty choice for an
+  // otherwise-empty list (docs/design/overview-loading.md).
+  const [isFetching, setIsFetching] = useState(true);
   const [seed, setSeed] = useState('');
   const [generating, setGenerating] = useState(false);
   const [digDeeperId, setDigDeeperId] = useState<string | null>(null);
+  const enter = useRevealTracker(twinId);
 
   useEffect(() => {
     if (!twinId) return;
+    setIsFetching(true);
     twinApi
       .listTwinReflections(twinId)
       .then(setReflections)
-      .catch(() => setReflections([]));
+      .catch(() => setReflections([]))
+      .finally(() => setIsFetching(false));
   }, [twinId]);
+
+  const showGhost = isFetching && reflections.length === 0;
 
   const handleGenerate = async () => {
     if (!seed.trim() || generating) return;
@@ -113,7 +128,7 @@ Reflection: ${reflection.content}`;
       <div className="flex items-center gap-2 mb-1">
         <BookHeart className="w-4 h-4 text-violet-400" />
         <span className="typo-section-title">{t.reflections.title}</span>
-        {reflections && (
+        {reflections.length > 0 && (
           <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground">
             {reflections.length}
           </span>
@@ -161,8 +176,8 @@ Reflection: ${reflection.content}`;
         </div>
       </div>
 
-      {reflections === null ? (
-        <p className="typo-caption text-foreground py-2">{t.reflections.loading}</p>
+      {showGhost ? (
+        <ReflectionsGhostRows />
       ) : reflections.length === 0 ? (
         <div className="py-6 text-center">
           <BookHeart className="w-7 h-7 text-foreground mx-auto mb-2" />
@@ -171,10 +186,17 @@ Reflection: ${reflection.content}`;
         </div>
       ) : (
         <ul className="space-y-2">
-          {reflections.map((r) => {
+          {reflections.map((r, index) => {
             const isDigging = digDeeperId === r.id;
             return (
-              <li key={r.id} className="p-3 rounded-card border border-primary/10 bg-background/40">
+              <li key={r.id}>
+              <RevealItem
+                revealId={r.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
+                className="block p-3 rounded-card border border-primary/10 bg-background/40"
+              >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1">
@@ -205,11 +227,38 @@ Reflection: ${reflection.content}`;
                     {isDigging ? t.reflections.digDeeperGenerating : t.reflections.digDeeperCta}
                   </button>
                 </div>
+              </RevealItem>
               </li>
             );
           })}
         </ul>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReflectionsGhostRows — calm, geometry-matched ghost for the only moment
+// the reflection journal has nothing to show while a fetch is in flight.
+// Each ghost is invisible for its first 120ms (animate-fade-in + fill-mode
+// both) so a fast fetch never paints one; no animate-pulse.
+// ---------------------------------------------------------------------------
+
+function ReflectionsGhostRows() {
+  return (
+    <ul className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <li
+          key={i}
+          className="p-3 rounded-card border border-primary/10 bg-background/40 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`block h-2.5 w-20 mb-2 ${GHOST_BAR}`} />
+          <span className={`block h-3 w-1/2 mb-2 ${GHOST_BAR}`} />
+          <span className={`block h-3.5 w-full mb-1.5 ${GHOST_BAR}`} />
+          <span className={`block h-3.5 w-4/5 ${GHOST_BAR}`} />
+        </li>
+      ))}
+    </ul>
   );
 }

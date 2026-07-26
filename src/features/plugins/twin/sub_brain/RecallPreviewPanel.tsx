@@ -7,7 +7,13 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { TwinRecallBundle } from '@/lib/bindings/TwinRecallBundle';
+
+/** Rows in the first viewport that play the one-shot entrance cascade (docs/design/overview-loading.md). */
+const CASCADE_ROWS = 10;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
 
 /**
  * Cycle 16 Stage 1 — read-only recall preview. Calls the new `twin_recall`
@@ -37,6 +43,14 @@ export function RecallPreviewPanel({ twinId }: Props) {
   // source of truth on next reload — this set is just for in-session feedback.
   const [savedCommIds, setSavedCommIds] = useState<Set<string>>(new Set());
   const [savingCommId, setSavingCommId] = useState<string | null>(null);
+
+  // A contact-filter scope change is a new context — its lists replay the
+  // one-shot cascade. A plain refresh of the SAME scope re-delivers the same
+  // ids and does not (docs/design/overview-loading.md).
+  const revealResetKey = `${twinId}|${bundle?.contact_filter ?? 'all'}`;
+  const enterFacts = useRevealTracker(`${revealResetKey}|facts`);
+  const enterComms = useRevealTracker(`${revealResetKey}|comms`);
+  const enterContacts = useRevealTracker(`${revealResetKey}|contacts`);
 
   const handleSaveAsFact = async (commId: string, content: string, contactHandle: string | null) => {
     if (savedCommIds.has(commId) || savingCommId) return;
@@ -101,7 +115,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
       </div>
 
       {bundle === null ? (
-        <p className="typo-caption text-foreground py-2">{t.recall.loading}</p>
+        <RecallGhostSections />
       ) : (
         <div className="space-y-3">
           {bundle.contact_filter && (
@@ -153,8 +167,15 @@ export function RecallPreviewPanel({ twinId }: Props) {
               <p className="typo-caption text-foreground italic">{t.recall.factsEmpty}</p>
             ) : (
               <ul className="space-y-1.5">
-                {bundle.top_facts.map((fact) => (
-                  <li key={fact.id} className="flex items-start gap-2 typo-caption text-foreground">
+                {bundle.top_facts.map((fact, index) => (
+                  <li key={fact.id}>
+                  <RevealItem
+                    revealId={fact.id}
+                    order={index}
+                    hasEntered={(id) => index >= CASCADE_ROWS || enterFacts.hasEntered(id)}
+                    markEntered={enterFacts.markEntered}
+                    className="flex items-start gap-2 typo-caption text-foreground"
+                  >
                     <span className="px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25 flex-shrink-0">
                       {fact.importance}
                     </span>
@@ -164,6 +185,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         <span className="ml-1.5 text-[10px] text-foreground">({fact.contact_handle})</span>
                       )}
                     </span>
+                  </RevealItem>
                   </li>
                 ))}
               </ul>
@@ -179,12 +201,19 @@ export function RecallPreviewPanel({ twinId }: Props) {
               <p className="typo-caption text-foreground italic">{t.recall.commsEmpty}</p>
             ) : (
               <ul className="space-y-1.5">
-                {bundle.recent_communications.map((c) => {
+                {bundle.recent_communications.map((c, index) => {
                   const isOut = c.direction === 'out';
                   const isSaved = savedCommIds.has(c.id);
                   const isSaving = savingCommId === c.id;
                   return (
-                    <li key={c.id} className="group flex items-start gap-2 typo-caption text-foreground">
+                    <li key={c.id}>
+                    <RevealItem
+                      revealId={c.id}
+                      order={index}
+                      hasEntered={(id) => index >= CASCADE_ROWS || enterComms.hasEntered(id)}
+                      markEntered={enterComms.markEntered}
+                      className="group flex items-start gap-2 typo-caption text-foreground"
+                    >
                       {isOut
                         ? <ArrowUpRight className="w-3 h-3 text-violet-400 mt-0.5 flex-shrink-0" />
                         : <ArrowDownLeft className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />}
@@ -210,6 +239,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                           : isSaved ? <Check className="w-3 h-3" />
                           : <BookmarkPlus className="w-3 h-3" />}
                       </button>
+                    </RevealItem>
                     </li>
                   );
                 })}
@@ -228,8 +258,15 @@ export function RecallPreviewPanel({ twinId }: Props) {
                 <p className="typo-caption text-foreground italic">{t.recall.contactsEmpty}</p>
               ) : (
                 <ul className="flex flex-wrap gap-1.5">
-                  {bundle.top_contacts.map((c) => (
+                  {bundle.top_contacts.map((c, index) => (
                     <li key={c.id}>
+                    <RevealItem
+                      revealId={c.id}
+                      order={index}
+                      hasEntered={(id) => index >= CASCADE_ROWS || enterContacts.hasEntered(id)}
+                      markEntered={enterContacts.markEntered}
+                      className="inline-block"
+                    >
                       <button
                         type="button"
                         onClick={() => {
@@ -242,6 +279,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         {c.alias?.trim() || c.handle}
                         <span className="ml-1 text-foreground">· {Number(c.message_count)}</span>
                       </button>
+                    </RevealItem>
                     </li>
                   ))}
                 </ul>
@@ -250,6 +288,33 @@ export function RecallPreviewPanel({ twinId }: Props) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RecallGhostSections — calm, geometry-matched ghost for the cold-load
+// moment before the first recall bundle arrives (identity / tone / facts /
+// comms section frames). Each ghost is invisible for its first 120ms
+// (animate-fade-in + fill-mode both) so a fast fetch never paints one; no
+// animate-pulse. The refresh spinner on the filter button is action-scoped
+// and unaffected — the bundle stays on screen across a re-scope/refresh.
+// ---------------------------------------------------------------------------
+
+function RecallGhostSections() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="p-3 rounded-card border border-primary/10 bg-background/40 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`block h-2.5 w-24 mb-2 ${GHOST_BAR}`} />
+          <span className={`block h-3.5 w-2/3 mb-1.5 ${GHOST_BAR}`} />
+          <span className={`block h-3 w-full ${GHOST_BAR}`} />
+        </div>
+      ))}
     </div>
   );
 }
