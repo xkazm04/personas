@@ -3,9 +3,8 @@ import { Brain, Network, GitFork } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import MemoriesPage from '@/features/overview/sub_memories/components/MemoriesPage';
 
 // The Patterns view (execution-extracted knowledge graph) and the Graph cluster
@@ -16,20 +15,27 @@ const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memori
 
 type KnowledgeSubtab = 'memories' | 'patterns' | 'graph';
 
-// Calm, content-shaped Suspense fallback for the lazy Patterns/Graph chunks —
-// mirrors the ContentBox/ContentHeader/ContentBody frame those views render
-// once loaded, so switching subtabs never blanks the body (golden loading
-// pattern, docs/design/overview-loading.md). No pulse: this is a chunk-load
-// gate, not a data-fetch gate, so it should read as calm structure, not a
-// busy spinner.
-const lazyFallback = (
-  <ContentBox>
-    <ContentHeaderSkeleton showIcon showSubtitle calm />
-    <ContentBody flex>
-      <ListSkeleton calm rows={6} rowHeight={64} />
-    </ContentBody>
-  </ContentBox>
-);
+// Suspense fallback for the lazy Patterns/Graph chunks (docs/design/overview-loading.md
+// §D). The whole fallback sits behind a 150ms `animation-delay` with
+// `fill-mode: both`, so a warm chunk resolves before a single pixel of it
+// paints — no flash on subtab switches. Only the header band ghosts in: it's
+// the one region every subtab shares at the same position (ContentHeader).
+// Body geometry differs across Memories/Patterns/Graph (dense table vs SVG
+// canvas vs virtualized list) — faking any one of them would produce exactly
+// the skeleton-mismatch blink this pattern forbids, so the body stays empty.
+function KnowledgeLazyFallback() {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex-1 min-h-0 flex flex-col animate-fade-in"
+      style={{ animationDelay: '150ms' }}
+    >
+      <ContentBox>
+        <ContentHeaderSkeleton showIcon showSubtitle calm />
+      </ContentBox>
+    </div>
+  );
+}
 
 export default function KnowledgeHub() {
   const { t } = useTranslation();
@@ -54,11 +60,11 @@ export default function KnowledgeHub() {
       {subtab === 'memories' ? (
         <MemoriesPage />
       ) : subtab === 'graph' ? (
-        <Suspense fallback={lazyFallback}>
+        <Suspense fallback={<KnowledgeLazyFallback />}>
           <MemoriesPageGraph />
         </Suspense>
       ) : (
-        <Suspense fallback={lazyFallback}>
+        <Suspense fallback={<KnowledgeLazyFallback />}>
           <KnowledgeGraphDashboard />
         </Suspense>
       )}

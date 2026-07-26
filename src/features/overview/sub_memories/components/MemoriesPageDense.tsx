@@ -16,9 +16,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { deleteAllMemories } from '@/api/overview/memories';
 import { toastCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
@@ -88,6 +86,12 @@ export default function MemoriesPageDense() {
   // fetch even fires. True on mount and on every search change; cleared the
   // instant the debounced fetch is dispatched (fetchMemories then takes over
   // via `memoriesLoading`).
+  //
+  // NOTE this is fetch-in-flight state, not a content gate (docs/design/
+  // overview-loading.md law 1-2): `memories` is usually pre-warmed and paints
+  // on the first frame regardless. `isFetching` only decides what an EMPTY
+  // row region shows (ghost vs settled "no match"); it never hides rows
+  // already on screen.
   const [debouncePending, setDebouncePending] = useState(true);
 
   useEffect(() => {
@@ -101,7 +105,7 @@ export default function MemoriesPageDense() {
     return () => clearTimeout(timer);
   }, [fetchMemories, search]);
 
-  const isLoadingMemories = debouncePending || memoriesLoading;
+  const isFetching = debouncePending || memoriesLoading;
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -332,30 +336,31 @@ export default function MemoriesPageDense() {
             <SortHeader field="created" label="Created" width={COL_WIDTHS.created} sortField={sortField} sortDir={sortDir} onSort={handleSort} align="right" />
           </div>
 
-          {/* Body */}
+          {/* Body — three-state row region (docs/design/overview-loading.md):
+              `memories` is usually pre-warmed and paints instantly; `isFetching`
+              only ever governs what an EMPTY region shows (ghost while a fetch
+              is in flight, "no match" only once settled). Rows already on
+              screen are never re-gated by a refetch. */}
           <div className="flex-1 overflow-y-auto relative z-10">
-            <LoadingReveal
-              loading={isLoadingMemories}
-              placeholder={<ListSkeleton calm rows={8} rowHeight={40} leading />}
-            >
-              {sortedMemories.length === 0 ? (
-                <div className="flex items-center justify-center py-12 typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></div>
-              ) : (
-                <AnimatePresence mode="popLayout">
-                  {sortedMemories.map((memory, i) => (
-                    <DenseRow
-                      key={memory.id}
-                      memory={memory}
-                      index={i}
-                      personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
-                      personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
-                      isSelected={selected?.id === memory.id}
-                      onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
-                    />
-                  ))}
-                </AnimatePresence>
-              )}
-            </LoadingReveal>
+            {isFetching && sortedMemories.length === 0 ? (
+              <DenseGhostRows />
+            ) : sortedMemories.length === 0 ? (
+              <div className="flex items-center justify-center py-12 typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {sortedMemories.map((memory, i) => (
+                  <DenseRow
+                    key={memory.id}
+                    memory={memory}
+                    index={i}
+                    personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
+                    personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
+                    isSelected={selected?.id === memory.id}
+                    onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </ContentBody>
@@ -397,6 +402,59 @@ export default function MemoriesPageDense() {
 }
 
 // -- Cells & helpers -------------------------------------------------------
+
+const DENSE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const DENSE_GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+const DENSE_ROW_HEIGHT = 40;
+
+// Calm, delay-gated ghost rows for the ONLY moment the row region has nothing
+// to show (a fetch/debounce with no matching rows yet). Mirrors the column
+// geometry of DenseRow exactly. Each bar enters via `animate-fade-in`
+// (150ms, fill-mode: both) behind a staggered animation-delay starting at
+// 120ms, so a fast fetch never paints a single ghost — no `animate-pulse`.
+function DenseGhostRows() {
+  return (
+    <div aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => {
+        const titleW = DENSE_GHOST_TITLE_WIDTHS[i % DENSE_GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center border-b border-primary/5 animate-fade-in"
+            style={{ height: DENSE_ROW_HEIGHT, animationDelay: delay }}
+          >
+            <div className={`${COL_WIDTHS.type} flex justify-center px-2`}>
+              <span className={`h-4 w-4 rounded-full ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.title} px-2 min-w-0`}>
+              <span className={`block h-3 ${titleW} max-w-full ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.persona} px-2`}>
+              <span className={`block h-3 w-20 ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.importance} px-2`}>
+              <span className={`block h-1.5 w-full rounded-full ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.tier} px-2`}>
+              <span className={`inline-block h-4 w-12 rounded-input ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.access} px-2 flex justify-end`}>
+              <span className={`h-3 w-6 ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.lastSeen} px-2 flex justify-end`}>
+              <span className={`h-3 w-10 ${DENSE_GHOST_BAR}`} />
+            </div>
+            <div className={`${COL_WIDTHS.created} px-2 flex justify-end`}>
+              <span className={`h-3 w-10 ${DENSE_GHOST_BAR}`} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function DenseRow({
   memory, index, personaName, personaColor, isSelected, onSelect,

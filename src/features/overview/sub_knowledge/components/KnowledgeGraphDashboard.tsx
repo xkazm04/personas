@@ -19,8 +19,6 @@ import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -32,6 +30,8 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 
 const logger = createLogger("knowledge-graph");
 
+const ENTRY_ROW_ESTIMATE = 64;
+
 export default function KnowledgeGraphDashboard() {
   const { t, language } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
@@ -40,7 +40,11 @@ export default function KnowledgeGraphDashboard() {
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedScope, setSelectedScope] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // In-flight state only (docs/design/overview-loading.md law 1-2) — it never
+  // hides entries already on screen. It decides only what an EMPTY entry
+  // region shows: ghost rows while fetching, the settled empty state once
+  // the fetch resolves with nothing.
+  const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [showAnnotateModal, setShowAnnotateModal] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
@@ -63,7 +67,7 @@ export default function KnowledgeGraphDashboard() {
 
   const fetchData = useCallback(async (isActive: () => boolean = () => true) => {
     if (!isActive()) return;
-    setLoading(true);
+    setIsFetching(true);
     setFetchError(null);
     try {
       const [s, e] = await Promise.all([
@@ -81,7 +85,7 @@ export default function KnowledgeGraphDashboard() {
       setSummary(null);
       setEntries([]);
     } finally {
-      if (isActive()) setLoading(false);
+      if (isActive()) setIsFetching(false);
     }
   }, [selectedPersonaId, selectedType]);
 
@@ -133,7 +137,6 @@ export default function KnowledgeGraphDashboard() {
     ],
   });
 
-  const ENTRY_ROW_ESTIMATE = 64;
   // Progressive reveal — KnowledgeRow is heavy (framer-motion + JSON parse +
   // sparkline), so spread mounting across ~2s after the frame lands rather
   // than dumping up to 100 rows on one frame. Resets when the filter changes.
@@ -218,7 +221,7 @@ export default function KnowledgeGraphDashboard() {
             <Button
               variant="secondary"
               size="sm"
-              icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />}
               onClick={() => { void fetchData(); }}
             >
               Refresh
@@ -345,7 +348,7 @@ export default function KnowledgeGraphDashboard() {
                   </p>
                   <p className="typo-body text-red-400/70 mt-0.5">
                     <DebtText k="auto_showing_failure_patterns_active_on_or_afte_4e0b968a" />
-                    {allEntries.length === 0 && !loading && ' No matching patterns found -- try selecting a specific persona above.'}
+                    {allEntries.length === 0 && !isFetching && ' No matching patterns found -- try selecting a specific persona above.'}
                   </p>
                 </div>
                 <Button
@@ -361,7 +364,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           )}
 
-          {fetchError && !loading ? (
+          {fetchError && !isFetching ? (
             <div className="rounded-modal border border-red-500/20 bg-red-500/10 px-4 py-3">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
@@ -380,64 +383,62 @@ export default function KnowledgeGraphDashboard() {
                 </Button>
               </div>
             </div>
+          ) : isFetching && allEntries.length === 0 ? (
+            /* Nothing to show yet + fetch in flight: calm delayed ghost rows.
+               Entries already on screen (allEntries.length > 0) are never
+               hidden by a refetch — law 1. */
+            <KnowledgeGhostRows />
+          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+              <MotionEmptyState
+                motif="knowledge"
+                content={{
+                  icon: Brain,
+                  title: debtText("auto_no_knowledge_patterns_yet_fab2639a"),
+                  subtitle: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
+                  action: { label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                  secondaryAction: { label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                  // Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article).
+                  // Curated docs belong in the Obsidian vault — cheaper + better for <1000 notes.
+                  children: (
+                    <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
+                      <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
+                    </div>
+                  ),
+                }}
+              />
+            </div>
+          ) : allEntries.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="typo-body text-foreground"><DebtText k="auto_no_patterns_match_current_filters_99a6d5f1" /></p>
+            </div>
           ) : (
-            <LoadingReveal
-              loading={loading}
-              placeholder={<ListSkeleton calm rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />}
+            <ScrollShadowContainer
+              scrollRef={entryListRef}
+              className="overflow-y-auto max-h-[600px] rounded-modal"
+              wrapperClassName="relative"
             >
-              {allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-                  <MotionEmptyState
-                    motif="knowledge"
-                    content={{
-                      icon: Brain,
-                      title: debtText("auto_no_knowledge_patterns_yet_fab2639a"),
-                      subtitle: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
-                      action: { label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                      secondaryAction: { label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                      // Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article).
-                      // Curated docs belong in the Obsidian vault — cheaper + better for <1000 notes.
-                      children: (
-                        <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
-                          <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
-                        </div>
-                      ),
-                    }}
-                  />
-                </div>
-              ) : allEntries.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="typo-body text-foreground"><DebtText k="auto_no_patterns_match_current_filters_99a6d5f1" /></p>
-                </div>
-              ) : (
-                <ScrollShadowContainer
-                  scrollRef={entryListRef}
-                  className="overflow-y-auto max-h-[600px] rounded-modal"
-                  wrapperClassName="relative"
-                >
-                  <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-                    {entryVirtualizer.getVirtualItems().map((virtualRow) => {
-                      const entry = revealedEntries[virtualRow.index]!;
-                      return (
-                        <RevealItem
-                          key={entry.id}
-                          revealId={entry.id}
-                          order={virtualRow.index - entryReveal.newSince}
-                          hasEntered={entryEnter.hasEntered}
-                          markEntered={entryEnter.markEntered}
-                          data-index={virtualRow.index}
-                          ref={entryVirtualizer.measureElement}
-                          style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
-                          className="pb-2"
-                        >
-                          <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
-                        </RevealItem>
-                      );
-                    })}
-                  </div>
-                </ScrollShadowContainer>
-              )}
-            </LoadingReveal>
+              <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {entryVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const entry = revealedEntries[virtualRow.index]!;
+                  return (
+                    <RevealItem
+                      key={entry.id}
+                      revealId={entry.id}
+                      order={virtualRow.index - entryReveal.newSince}
+                      hasEntered={entryEnter.hasEntered}
+                      markEntered={entryEnter.markEntered}
+                      data-index={virtualRow.index}
+                      ref={entryVirtualizer.measureElement}
+                      style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
+                      className="pb-2"
+                    >
+                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
+                    </RevealItem>
+                  );
+                })}
+              </div>
+            </ScrollShadowContainer>
           )}
 
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (
@@ -480,5 +481,41 @@ export default function KnowledgeGraphDashboard() {
         />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KnowledgeGhostRows — calm ghost rows for the ONLY moment the entry region
+// has nothing to show (a fetch with no matching entries yet). Mirrors
+// KnowledgeRow's card-row silhouette. Each enters via `animate-fade-in`
+// (150ms, fill-mode: both) behind a staggered animation-delay starting at
+// 120ms, so a fast fetch never paints a single ghost. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const KNOWLEDGE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const KNOWLEDGE_GHOST_TITLE_WIDTHS = ['w-52', 'w-40', 'w-64', 'w-44'];
+
+function KnowledgeGhostRows() {
+  return (
+    <div className="rounded-modal overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const titleW = KNOWLEDGE_GHOST_TITLE_WIDTHS[i % KNOWLEDGE_GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+            style={{ height: ENTRY_ROW_ESTIMATE, animationDelay: delay }}
+          >
+            <span className="w-8 h-8 rounded-card bg-primary/[0.06] flex-shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <span className={`block h-3.5 ${titleW} max-w-full ${KNOWLEDGE_GHOST_BAR}`} />
+              <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
+            </div>
+            <span className="h-5 w-14 rounded-input bg-primary/[0.06] flex-shrink-0" />
+          </div>
+        );
+      })}
+    </div>
   );
 }

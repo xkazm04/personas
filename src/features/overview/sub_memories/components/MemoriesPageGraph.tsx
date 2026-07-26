@@ -13,9 +13,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
 import { categoryColor } from '../libs/memoryVisualTokens';
@@ -51,6 +49,12 @@ export default function MemoriesPageGraph() {
   // store's `memoriesLoading` — without it the first commit can paint with
   // `memories === []` and `memoriesLoading === false`, flashing the "no
   // memories in this cluster" overlay before the fetch even starts.
+  //
+  // NOTE this is fetch-in-flight state, not a content gate (docs/design/
+  // overview-loading.md law 1-2): `memories` is usually pre-warmed, so the
+  // graph paints on the first frame regardless. `isFetching` only decides
+  // what an EMPTY canvas shows (ghost vs the settled "no memories in this
+  // cluster" text) — it never hides nodes already on screen.
   const [initialFetchPending, setInitialFetchPending] = useState(true);
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function MemoriesPageGraph() {
     fetchMemories({ sort_column: 'created_at', sort_direction: 'desc' });
   }, [fetchMemories]);
 
-  const isLoadingGraph = initialFetchPending || memoriesLoading;
+  const isFetching = initialFetchPending || memoriesLoading;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -171,87 +175,90 @@ export default function MemoriesPageGraph() {
             <ClusterLabels width={dimensions.width} height={dimensions.height} />
           )}
 
-          <LoadingReveal
-            loading={isLoadingGraph}
-            placeholder={(
-              <div className="absolute inset-0 p-4">
-                <ListSkeleton calm rows={6} rowHeight={48} leading={false} />
-              </div>
-            )}
-            className="absolute inset-0"
-          >
-            <svg width={dimensions.width} height={dimensions.height} className="absolute inset-0">
-              {/* Edges */}
-              {edges.map((edge) => {
-                const from = nodePositions.get(edge.from);
-                const to = nodePositions.get(edge.to);
-                if (!from || !to) return null;
-                const personaColor = personaMap.get(edge.persona_id)?.color ?? '#64748b';
-                const isHovered = hovered != null && (hovered.id === edge.from || hovered.id === edge.to || hovered.persona_id === edge.persona_id);
-                return (
-                  <motion.line
-                    key={`${edge.from}-${edge.to}`}
-                    x1={from.x}
-                    y1={from.y}
-                    x2={to.x}
-                    y2={to.y}
-                    stroke={personaColor}
-                    strokeWidth={isHovered ? 1.5 : 0.5}
-                    opacity={hovered ? (isHovered ? 0.6 : 0.04) : 0.14}
-                    strokeDasharray={isHovered ? 'none' : '4 4'}
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 0.6 }}
+          {/* Three-state canvas region (docs/design/overview-loading.md):
+              `memories` is usually pre-warmed and the graph paints on the
+              first frame. `isFetching` only ever governs an EMPTY canvas —
+              ghost while a fetch is in flight, "no memories" text only once
+              settled. Nodes already on screen are never hidden by a refetch. */}
+          {isFetching && filtered.length === 0 ? (
+            <GraphGhost />
+          ) : (
+            <div className="absolute inset-0">
+              <svg width={dimensions.width} height={dimensions.height} className="absolute inset-0">
+                {/* Edges */}
+                {edges.map((edge) => {
+                  const from = nodePositions.get(edge.from);
+                  const to = nodePositions.get(edge.to);
+                  if (!from || !to) return null;
+                  const personaColor = personaMap.get(edge.persona_id)?.color ?? '#64748b';
+                  const isHovered = hovered != null && (hovered.id === edge.from || hovered.id === edge.to || hovered.persona_id === edge.persona_id);
+                  return (
+                    <motion.line
+                      key={`${edge.from}-${edge.to}`}
+                      x1={from.x}
+                      y1={from.y}
+                      x2={to.x}
+                      y2={to.y}
+                      stroke={personaColor}
+                      strokeWidth={isHovered ? 1.5 : 0.5}
+                      opacity={hovered ? (isHovered ? 0.6 : 0.04) : 0.14}
+                      strokeDasharray={isHovered ? 'none' : '4 4'}
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.6 }}
+                    />
+                  );
+                })}
+
+                {/* Nodes */}
+                {filtered.map((memory) => {
+                  const pos = nodePositions.get(memory.id);
+                  if (!pos) return null;
+                  const isDimmed = hovered != null && !highlightedIds.has(memory.id);
+                  return (
+                    <GraphNode
+                      key={memory.id}
+                      memory={memory}
+                      position={pos}
+                      isSelected={selected?.id === memory.id}
+                      isHighlighted={highlightedIds.has(memory.id)}
+                      isDimmed={isDimmed}
+                      onSelect={(m) => setSelected((prev) => (prev?.id === m.id ? null : m))}
+                      onHover={setHovered}
+                    />
+                  );
+                })}
+              </svg>
+
+              {/* Legends */}
+              <PersonaLegend personas={personas} memories={memories} />
+              <SizeLegend />
+
+              {/* Detail panel (in-page, not modal) */}
+              <AnimatePresence>
+                {selected && (
+                  <DetailPanel
+                    key={selected.id}
+                    memory={selected}
+                    personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
+                    onClose={() => setSelected(null)}
+                    onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
                   />
-                );
-              })}
+                )}
+              </AnimatePresence>
 
-              {/* Nodes */}
-              {filtered.map((memory) => {
-                const pos = nodePositions.get(memory.id);
-                if (!pos) return null;
-                const isDimmed = hovered != null && !highlightedIds.has(memory.id);
-                return (
-                  <GraphNode
-                    key={memory.id}
-                    memory={memory}
-                    position={pos}
-                    isSelected={selected?.id === memory.id}
-                    isHighlighted={highlightedIds.has(memory.id)}
-                    isDimmed={isDimmed}
-                    onSelect={(m) => setSelected((prev) => (prev?.id === m.id ? null : m))}
-                    onHover={setHovered}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Legends */}
-            <PersonaLegend personas={personas} memories={memories} />
-            <SizeLegend />
-
-            {/* Detail panel (in-page, not modal) */}
-            <AnimatePresence>
-              {selected && (
-                <DetailPanel
-                  key={selected.id}
-                  memory={selected}
-                  personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
-                  onClose={() => setSelected(null)}
-                  onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
-                />
-              )}
-            </AnimatePresence>
-
-            {filtered.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="flex flex-col items-center gap-3">
-                  <GitFork className="w-8 h-8 text-foreground" />
-                  <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
+              {/* Settled-only empty state — never paints while a fetch is
+                  still in flight (that's the ghost's job above). */}
+              {filtered.length === 0 && !isFetching && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="flex flex-col items-center gap-3">
+                    <GitFork className="w-8 h-8 text-foreground" />
+                    <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </LoadingReveal>
+              )}
+            </div>
+          )}
         </div>
       </ContentBody>
     </ContentBox>
@@ -315,6 +322,38 @@ function computePersonaEdges(memories: PersonaMemory[]): { from: string; to: str
 }
 
 // -- Components ------------------------------------------------------------
+
+/** A handful of calm, deterministically-placed ghost nodes standing in for
+ * the constellation while a fetch with no memories yet is in flight. Each
+ * enters via `animate-fade-in` behind a staggered animation-delay starting
+ * at 120ms — invisible until then, so a fast fetch never paints one. */
+const GHOST_NODE_POSITIONS = [
+  { cx: '30%', cy: '35%', r: 10 },
+  { cx: '62%', cy: '28%', r: 14 },
+  { cx: '48%', cy: '58%', r: 18 },
+  { cx: '75%', cy: '62%', r: 9 },
+  { cx: '22%', cy: '68%', r: 12 },
+];
+
+function GraphGhost() {
+  return (
+    <div className="absolute inset-0" aria-hidden="true">
+      {GHOST_NODE_POSITIONS.map((n, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full bg-primary/[0.06] animate-fade-in -translate-x-1/2 -translate-y-1/2"
+          style={{
+            left: n.cx,
+            top: n.cy,
+            width: n.r * 2,
+            height: n.r * 2,
+            animationDelay: `${120 + i * 35}ms`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function GraphNode({
   memory, position, isSelected, isHighlighted, isDimmed, onSelect, onHover,
