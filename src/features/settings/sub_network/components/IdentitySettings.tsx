@@ -150,7 +150,23 @@ export default function IdentitySettings() {
               </div>
             </>
           ) : (
-            <div className="typo-body text-foreground">{st.loading_identity}</div>
+            /* Cold load: small delayed ghost bars, geometry-matched to the
+               identity block above. Invisible for the first 120ms so a fast
+               fetch never paints one. */
+            <div className="space-y-3" aria-hidden="true">
+              <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '120ms' }}>
+                <div className="space-y-1.5">
+                  <span className="block h-2.5 w-20 rounded bg-primary/[0.06]" />
+                  <span className="block h-3.5 w-32 rounded bg-primary/[0.06]" />
+                </div>
+                <span className="h-7 w-28 rounded-card bg-primary/[0.06]" />
+              </div>
+              <div className="space-y-1.5 animate-fade-in" style={{ animationDelay: '155ms' }}>
+                <span className="block h-2.5 w-24 rounded bg-primary/[0.06]" />
+                <span className="block h-3.5 w-28 rounded bg-primary/[0.06]" />
+              </div>
+              <span className="block h-2.5 w-32 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '190ms' }} />
+            </div>
           )}
         </div>
       </section>

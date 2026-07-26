@@ -120,7 +120,11 @@ export default function CloudSyncCard() {
   const hasError = !!status?.lastError;
 
   const statusBadge = loading ? (
-    <span className="h-[26px] w-24 rounded-full bg-secondary/30 animate-pulse" aria-hidden />
+    <span
+      className="h-[26px] w-24 rounded-full bg-primary/[0.06] animate-fade-in"
+      style={{ animationDelay: '120ms' }}
+      aria-hidden
+    />
   ) : (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground">
       <LiveStatusDot tone={state} />
@@ -145,10 +149,10 @@ export default function CloudSyncCard() {
           aria-hidden
         >
           <div className="min-w-0 space-y-2">
-            <span className="block h-3.5 w-32 rounded-card bg-secondary/30 animate-pulse" />
-            <span className="block h-3 w-20 rounded-card bg-secondary/30 animate-pulse" />
+            <span className="block h-3.5 w-32 rounded-card bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
+            <span className="block h-3 w-20 rounded-card bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '155ms' }} />
           </div>
-          <span className="h-6 w-10 flex-shrink-0 rounded-full bg-secondary/30 animate-pulse" />
+          <span className="h-6 w-10 flex-shrink-0 rounded-full bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
         </div>
       ) : (
         <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">

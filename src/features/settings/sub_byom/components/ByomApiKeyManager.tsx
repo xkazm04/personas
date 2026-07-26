@@ -211,14 +211,6 @@ export function ByomApiKeyManager() {
     timers.set(index, timerId);
   }, [entries, updateEntry]);
 
-  if (loading) {
-    return (
-      <div className="rounded-modal border border-primary/10 bg-card-bg p-8 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 text-foreground animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
@@ -228,7 +220,12 @@ export function ByomApiKeyManager() {
         </p>
 
         <div className="space-y-3">
-          {entries.map((entry, index) => (
+          {loading ? (
+            /* Cold load: chrome above (heading + hint) renders unconditionally;
+               only the row region ghosts, delayed so a fast fetch never paints
+               one. Geometry-matched to KeyEntryRow below. */
+            <ByomKeyGhostRows />
+          ) : entries.map((entry, index) => (
             <KeyEntryRow
               key={entry.def.settingsKey}
               entry={entry}
@@ -569,5 +566,30 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     >
       {s.error}
     </StatusBadge>
+  );
+}
+
+// =============================================================================
+// Ghost rows — calm, geometry-matched placeholder for the cold-load state
+// (KeyEntryRow's shape: header row + description line + value pill). Enters
+// via `animate-fade-in` behind a staggered animation-delay starting at
+// 120ms so a fast fetch never paints a single ghost.
+// =============================================================================
+
+function ByomKeyGhostRows() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="block h-3.5 w-40 rounded bg-primary/[0.06]" />
+          <span className="block h-2.5 w-56 rounded bg-primary/[0.06]" />
+          <span className="block h-8 w-full rounded-card bg-primary/[0.06]" />
+        </div>
+      ))}
+    </div>
   );
 }

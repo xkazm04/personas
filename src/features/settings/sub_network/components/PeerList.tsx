@@ -230,44 +230,39 @@ function RadarEmptyState() {
   );
 }
 
-/** Skeleton loader that simulates a network scan with radar-sweep animation. */
+/**
+ * Placeholder shown while the initial peer fetch is in flight (not tied to
+ * any user-initiated "scan" action — that's `RadarEmptyState`'s continuous
+ * canvas sweep below, left untouched as a deliberate ambient-discovery
+ * indicator). This one is a cold-load skeleton: calm bars, delayed entrance,
+ * geometry-matched to `PeerCard`. No continuous/looping motion.
+ */
 function PeerScanSkeleton() {
   const { t: _t } = useTranslation();
   const _st = _t.sharing;
   return (
-    <div className="relative flex flex-col items-center gap-3 py-6">
-      {/* Central Wi-Fi icon with ping ring */}
-      <div className="relative mb-2">
-        <Wifi className="w-6 h-6 text-emerald-400/60" />
-        <span className="absolute inset-0 rounded-full animate-ping bg-emerald-400/20" />
+    <div className="flex flex-col items-center gap-3 py-6">
+      <div className="flex items-center gap-2 typo-caption text-foreground mb-2">
+        <Wifi className="w-4 h-4 text-emerald-400/60" />
+        {_st.scanning_network}
       </div>
-      <span className="typo-caption text-foreground mb-2">{_st.scanning_network}</span>
 
       {/* Skeleton PeerCard placeholders */}
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-2" aria-hidden="true">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="relative overflow-hidden rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3"
+            className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center gap-3 animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
           >
-            {/* Avatar circle */}
-            <div className="w-8 h-8 rounded-full bg-secondary/50 flex-shrink-0" />
-            {/* Text lines */}
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-2/5 rounded bg-secondary/50" />
-              <div className="h-2.5 w-3/5 rounded bg-secondary/40" />
+            <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <span className="block h-3 w-2/5 rounded bg-primary/[0.06]" />
+              <span className="block h-2.5 w-3/5 rounded bg-primary/[0.06]" />
             </div>
-            {/* Radar sweep overlay */}
-            <div
-              className="pointer-events-none absolute inset-0 -translate-x-full animate-[skeleton-sweep_2s_ease-in-out_infinite]"
-              style={{ animationDelay: `${i * 0.3}s`, background: 'linear-gradient(90deg, transparent 0%, rgba(52,211,153,0.08) 50%, transparent 100%)' }}
-            />
           </div>
         ))}
       </div>
-
-      {/* keyframes injected via style tag (scoped, only mounts once) */}
-      <style>{`@keyframes skeleton-sweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}`}</style>
     </div>
   );
 }

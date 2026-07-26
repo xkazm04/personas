@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Share2, Plus, Package, Eye, GitFork, Trash2, WifiOff } from 'lucide-react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
@@ -332,11 +331,11 @@ export default function ExposureManager() {
               </div>
             </div>
 
-            {loading ? (
-              <div className="flex items-center gap-2 typo-body text-foreground py-4 justify-center">
-                <LoadingSpinner />
-                {st.loading_exposed}
-              </div>
+            {loading && exposedResources.length === 0 ? (
+              /* Nothing on screen yet + fetch in flight: delayed calm ghost
+                 rows under the (already rendered) section chrome. Rows that
+                 are already on screen are never hidden by a fetch. */
+              <ExposedResourceGhostRows />
             ) : exposedResources.length === 0 ? (
               <div className="rounded-modal border border-dashed border-border p-6 text-center typo-body text-foreground">
                 {st.no_resources_hint}
@@ -361,5 +360,36 @@ export default function ExposureManager() {
 
       <BundleExportDialog isOpen={showExport} onClose={() => setShowExport(false)} />
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExposedResourceGhostRows — calm, geometry-matched placeholder for the
+// exposed-resources list. Enters via `animate-fade-in` behind a staggered
+// animation-delay starting at 120ms so a fast fetch never paints a ghost.
+// ---------------------------------------------------------------------------
+
+const RESOURCE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ExposedResourceGhostRows() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {[0, 1].map((i) => (
+        <div
+          key={i}
+          className="rounded-modal border border-border bg-secondary/20 p-3 flex items-center justify-between gap-3 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className={`h-3.5 w-32 ${RESOURCE_GHOST_BAR}`} />
+              <span className="h-4 w-16 rounded-full bg-primary/[0.06]" />
+            </div>
+            <span className="block h-4 w-20 rounded-full bg-primary/[0.06]" />
+          </div>
+          <span className="h-6 w-6 rounded-card bg-primary/[0.06] flex-shrink-0" />
+        </div>
+      ))}
+    </div>
   );
 }
