@@ -212,16 +212,6 @@ export function DataGrid<T>({
 
   const Icon = EmptyIcon || Inbox;
 
-  /* -- Loading ----------------------------------------------------- */
-  if (isLoading) {
-    return (
-      <div className={`flex flex-col items-center justify-center py-12 ${className ?? ''}`}>
-        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
-        <span className="typo-body text-foreground">{loadingLabel}</span>
-      </div>
-    );
-  }
-
   /* -- Grid --------------------------------------------------------- */
   return (
     <div className={`relative flex flex-col min-h-0 ${className ?? ''}`}>
@@ -308,8 +298,31 @@ export function DataGrid<T>({
         })}
       </div>
 
-      {/* Rows (or empty state) */}
-      {data.length === 0 ? (
+      {/* Rows (ghost while loading-into-emptiness / settled empty / data) */}
+      {isLoading && data.length === 0 ? (
+        /* Loading pattern v2: calm delayed ghost rows under the permanent
+           column header — the ≥120ms animation-delay (fill-mode: both) keeps
+           them invisible for fast fetches, and a refetch with rows on screen
+           never reaches this branch (data stays visible). */
+        <div role="status" aria-live="polite">
+          <span className="sr-only">{loadingLabel}</span>
+          <div aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, r) => (
+              <div
+                key={r}
+                className={`grid gap-0 border-b border-primary/5 animate-fade-in ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                style={{ gridTemplateColumns: gridTemplate, animationDelay: `${120 + r * 35}ms` }}
+              >
+                {columns.map((col, ci) => (
+                  <div key={col.key} className={`${rowPadCls} flex items-center min-w-0 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''}`}>
+                    <span className={`inline-block h-3.5 rounded bg-primary/[0.06] ${['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'][(r + ci) % 4]}`} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
             <Icon className="w-5 h-5 text-foreground/90" />

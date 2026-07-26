@@ -205,6 +205,45 @@ function useRowRevealEntrance(rowReveal?: { resetKey?: string | number }) {
   );
 }
 
+/** Deterministic ghost-bar width variety so ghosts read as rows, not a barcode. */
+const GHOST_BAR_WIDTHS = ['w-3/5', 'w-2/5', 'w-1/2', 'w-1/3'];
+
+/**
+ * Calm delayed ghost rows rendered by the `isLoading && empty` branch —
+ * geometry-matched to the real rows (same grid template, height/padding,
+ * per-column alignment), entering via `animate-fade-in` behind a staggered
+ * ≥120ms `animation-delay` (fill-mode: both keeps them invisible until then,
+ * so a fast fetch never paints one). No `animate-pulse`, ever.
+ */
+function TableGhostRows<T>({ columns, gridTemplate, rowHeight, rowPadY, loadingLabel }: {
+  columns: TableColumn<T>[];
+  gridTemplate: string;
+  rowHeight: number;
+  rowPadY: string;
+  loadingLabel: string;
+}) {
+  return (
+    <div aria-hidden={false} role="status" aria-live="polite">
+      <span className="sr-only">{loadingLabel}</span>
+      <div aria-hidden="true">
+        {Array.from({ length: 8 }).map((_, r) => (
+          <div
+            key={r}
+            className={`grid items-center animate-fade-in ${rowHeight > 0 ? '' : rowPadY} ${r > 0 ? 'border-t border-t-primary/10' : ''} ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+            style={{ gridTemplateColumns: gridTemplate, height: rowHeight > 0 ? rowHeight : undefined, animationDelay: `${120 + r * 35}ms` }}
+          >
+            {columns.map((col, ci) => (
+              <div key={col.key} className={`px-4 min-w-0 flex ${col.align === 'right' ? 'justify-end' : ''}`}>
+                <span className={`inline-block h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[(r + ci) % GHOST_BAR_WIDTHS.length]}`} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Column header with action icons
 // ---------------------------------------------------------------------------
@@ -461,10 +500,6 @@ export function UnifiedTable<T>({
 
   const { t } = useTranslation();
 
-  if (isLoading) {
-    return <div className="py-8 text-center text-foreground typo-body">{t.common.loading}</div>;
-  }
-
   return (
     <div
       role={ariaLabel ? 'table' : undefined}
@@ -495,7 +530,13 @@ export function UnifiedTable<T>({
         ))}
       </div>
 
-      {sortedData.length === 0 ? (
+      {isLoading && sortedData.length === 0 ? (
+        /* Loading into emptiness — calm delayed ghost rows under the real
+           column header (loading pattern v2: the delay is the anti-flash; a
+           fetch that resolves fast never paints a ghost). A refetch with rows
+           already on screen never reaches this branch — data stays visible. */
+        <TableGhostRows columns={columns} gridTemplate={gridTemplate} rowHeight={rowHeight} rowPadY={rowPadY} loadingLabel={t.common.loading} />
+      ) : sortedData.length === 0 ? (
         <div className="py-8 text-center">
           {emptyGlyph && (
             <MotionizedGlyph
