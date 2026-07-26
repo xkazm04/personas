@@ -3,13 +3,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useCertificationData } from './useCertificationData';
 import { CertOverview } from './components/CertOverview';
 import { RunHistoryView } from './components/RunHistoryView';
 import { RunDetailView } from './components/RunDetailView';
+import { CertOverviewPlaceholder, RunHistoryPlaceholder, RunDetailPlaceholder } from './components/CertPlaceholders';
 
 type CertTab = 'overview' | 'history';
 
@@ -87,13 +88,12 @@ export default function CertificationCommandCenter() {
         {showEmptyError ? (
           <InlineErrorBanner severity="error" title={c.error_title} message={certError} onRetry={handleRefresh} />
         ) : detailMode ? (
-          certDetailLoading || !evalRunDetail ? (
-            <div className="flex items-center justify-center py-16">
-              <LoadingSpinner label={c.loading_detail} />
-            </div>
-          ) : (
-            <RunDetailView detail={evalRunDetail} onBack={handleBack} />
-          )
+          <LoadingReveal
+            loading={certDetailLoading || !evalRunDetail}
+            placeholder={<RunDetailPlaceholder />}
+          >
+            {evalRunDetail && <RunDetailView detail={evalRunDetail} onBack={handleBack} />}
+          </LoadingReveal>
         ) : (
           <div className="space-y-4">
             <SegmentedTabs<CertTab>
@@ -106,15 +106,16 @@ export default function CertificationCommandCenter() {
               ariaLabel={c.title}
             />
 
-            {certLoading && certStatus.length === 0 && evalRuns.length === 0 ? (
-              <div className="flex items-center justify-center py-16">
-                <LoadingSpinner label={c.loading} />
-              </div>
-            ) : tab === 'overview' ? (
-              <CertOverview certStatus={certStatus} onSelectRun={handleSelectRun} />
-            ) : (
-              <RunHistoryView runs={evalRuns} onSelectRun={handleSelectRun} />
-            )}
+            <LoadingReveal
+              loading={certLoading && certStatus.length === 0 && evalRuns.length === 0}
+              placeholder={tab === 'overview' ? <CertOverviewPlaceholder /> : <RunHistoryPlaceholder />}
+            >
+              {tab === 'overview' ? (
+                <CertOverview certStatus={certStatus} onSelectRun={handleSelectRun} />
+              ) : (
+                <RunHistoryView runs={evalRuns} onSelectRun={handleSelectRun} />
+              )}
+            </LoadingReveal>
           </div>
         )}
       </ContentBody>

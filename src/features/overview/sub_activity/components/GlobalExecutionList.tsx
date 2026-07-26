@@ -10,6 +10,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
 import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
@@ -314,23 +316,32 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
           )}
 
           <ContentBody flex>
-            {isLoading ? (
-              null
-            ) : filteredExecutions.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                <MotionEmptyState
-                  motif="activity"
-                  content={{
-                    icon: Bot,
-                    title: personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions,
-                    subtitle: personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint,
-                    action: { label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                    secondaryAction: { label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                  }}
-                />
-              </div>
-            ) : (
-              <div className={`flex-1 flex flex-col min-h-0 ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+            {/* `grid` (not `flex`) so the cross-faded loading/content panes get
+                a definite stretched height from a single implicit cell — an
+                AnimatePresence `motion.div` has no flex-grow of its own, so a
+                plain flex wrapper here would collapse the virtualized list to
+                its content size instead of filling the remaining ContentBody
+                height. See docs/design/overview-loading.md recipe A. */}
+            <LoadingReveal
+              loading={isLoading}
+              placeholder={<ListSkeleton calm rows={10} rowHeight={EXEC_ROW_HEIGHT} />}
+              className="flex-1 min-h-0 grid"
+            >
+              {filteredExecutions.length === 0 ? (
+                <div className="h-full flex items-center justify-center p-4 md:p-6">
+                  <MotionEmptyState
+                    motif="activity"
+                    content={{
+                      icon: Bot,
+                      title: personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions,
+                      subtitle: personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint,
+                      action: { label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                      secondaryAction: { label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className={`h-full flex flex-col min-h-0 ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
                 {!IS_MOBILE && (
                   <div role="row" className="flex-shrink-0 bg-background border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
                     <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
@@ -476,8 +487,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     </button>
                   </div>
                 )}
-              </div>
-            )}
+                </div>
+              )}
+            </LoadingReveal>
           </ContentBody>
         </>
       )}

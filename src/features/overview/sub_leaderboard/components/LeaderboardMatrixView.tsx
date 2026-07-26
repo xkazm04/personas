@@ -3,10 +3,53 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink, Info, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
 import { rankBy, RANK_OPTIONS, type RankKey } from '../libs/leaderboardRanking';
 import type { LeaderboardEntry, PerformanceTier } from '../libs/leaderboardScoring';
 import { metricValue, fleetValue, scoreTint } from './leaderboardViewHelpers';
 import type { LeaderboardViewProps } from './leaderboardViewTypes';
+
+// Mirrors the real matrix's columns (rank + agent + 6 metrics) so the
+// placeholder's grid lands at the same geometry the content swaps into —
+// no resize on reveal. Spans sum to 12.
+const PLACEHOLDER_COLUMNS: TableSkeletonColumn[] = [
+  { span: 'col-span-1' }, // rank
+  { span: 'col-span-3', width: 'w-24' }, // agent
+  { span: 'col-span-2' }, // overall
+  { span: 'col-span-2' }, // success
+  { span: 'col-span-1' }, // health
+  { span: 'col-span-1' }, // speed
+  { span: 'col-span-1' }, // cost
+  { span: 'col-span-1' }, // activity
+];
+
+/**
+ * Calm, content-shaped placeholder for {@link LeaderboardMatrixView} — the
+ * legend strip + sortable table geometry, statically sized (no pulse) so
+ * `LoadingReveal` can cross-fade it straight into the real matrix.
+ */
+export function LeaderboardMatrixPlaceholder() {
+  return (
+    <div className="max-w-5xl mx-auto w-full" aria-hidden="true">
+      {/* Legend + sort-hint strip */}
+      <div className="flex items-center justify-between gap-3 mb-2.5 px-1">
+        <div className="flex items-center gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span key={i} className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-primary/[0.08]" />
+              <span className="h-2.5 w-6 rounded bg-primary/[0.06]" />
+            </span>
+          ))}
+        </div>
+        <span className="h-2.5 w-24 rounded bg-primary/[0.06]" />
+      </div>
+
+      <div className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
+        <TableSkeleton columns={PLACEHOLDER_COLUMNS} rows={6} calm rowPaddingY="py-2.5" headerPaddingY="py-3" />
+      </div>
+    </div>
+  );
+}
 
 // Prototype-local copy — extracted to en.json at consolidation.
 const COPY = {

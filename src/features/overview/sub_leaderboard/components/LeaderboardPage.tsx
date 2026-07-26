@@ -2,13 +2,13 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useLeaderboardData } from '../libs/useLeaderboardData';
-import { LeaderboardMatrixView } from './LeaderboardMatrixView';
+import { LeaderboardMatrixView, LeaderboardMatrixPlaceholder } from './LeaderboardMatrixView';
 import { EmptyState, SingleAgentView } from './EmptyStates';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -71,23 +71,20 @@ export default function LeaderboardPage() {
       />
 
       <ContentBody centered>
-        {loading && leaderboard.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <LoadingSpinner size="lg" />
-            <p className="typo-body text-foreground"><DebtText k="auto_computing_agent_scores_b273d5b0" /></p>
-          </div>
-        ) : leaderboard.length === 0 ? (
-          <EmptyState />
-        ) : leaderboard.length === 1 ? (
-          <SingleAgentView entry={leaderboard[0]!} />
-        ) : (
-          <LeaderboardMatrixView
-            leaderboard={leaderboard}
-            fleetBenchmark={fleetBenchmark}
-            fleetAvgScore={fleetAvgScore}
-            onNavigateToAgent={handleNavigateToAgent}
-          />
-        )}
+        <LoadingReveal loading={loading && leaderboard.length === 0} placeholder={<LeaderboardMatrixPlaceholder />}>
+          {leaderboard.length === 0 ? (
+            <EmptyState />
+          ) : leaderboard.length === 1 ? (
+            <SingleAgentView entry={leaderboard[0]!} />
+          ) : (
+            <LeaderboardMatrixView
+              leaderboard={leaderboard}
+              fleetBenchmark={fleetBenchmark}
+              fleetAvgScore={fleetAvgScore}
+              onNavigateToAgent={handleNavigateToAgent}
+            />
+          )}
+        </LoadingReveal>
       </ContentBody>
     </ContentBox>
   );

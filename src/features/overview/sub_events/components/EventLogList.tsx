@@ -6,6 +6,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -418,27 +420,40 @@ export default function EventLogList() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
-            <UnifiedTable<PersonaEvent>
-              columns={columns}
-              data={displayedEvents}
-              getRowKey={(e) => e.id}
-              onRowClick={setSelectedEvent}
-              isLoading={isLoading}
-              emptyTitle={t.overview.events.no_filter_match}
-              rowHeight={44}
-              rowAccent={(e) =>
-                e.status === 'failed'
-                  ? 'border-l-red-400/70'
-                  : e.status === 'pending' || e.status === 'processing'
-                    ? 'border-l-amber-400/70'
-                    : undefined
-              }
-              className="flex-1"
-              tableId="overview-events"
-              scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
-              groupBy={groupOf}
-              onEndReached={hasMoreOlder && !isLoadingOlder ? loadOlder : undefined}
-            />
+            {/* LoadingReveal owns the loading window (golden loading pattern,
+                docs/design/overview-loading.md recipe A) — UnifiedTable's own
+                pulsing skeleton is disabled via isLoading={false} below. The
+                wrapper is a CSS grid (not flex) so its single child stretches
+                to fill the available height by default, letting UnifiedTable's
+                `h-full` pick up a real height without UnifiedTable needing to
+                be a direct flex child. */}
+            <LoadingReveal
+              className="flex-1 min-h-0 grid"
+              loading={isLoading}
+              placeholder={<ListSkeleton calm rows={8} rowHeight={44} />}
+            >
+              <UnifiedTable<PersonaEvent>
+                columns={columns}
+                data={displayedEvents}
+                getRowKey={(e) => e.id}
+                onRowClick={setSelectedEvent}
+                isLoading={false}
+                emptyTitle={t.overview.events.no_filter_match}
+                rowHeight={44}
+                rowAccent={(e) =>
+                  e.status === 'failed'
+                    ? 'border-l-red-400/70'
+                    : e.status === 'pending' || e.status === 'processing'
+                      ? 'border-l-amber-400/70'
+                      : undefined
+                }
+                className="h-full"
+                tableId="overview-events"
+                scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
+                groupBy={groupOf}
+                onEndReached={hasMoreOlder && !isLoadingOlder ? loadOlder : undefined}
+              />
+            </LoadingReveal>
             {/* Infinite scroll drives loadOlder from the table's own scroll
                 container; this strip just reflects the in-flight fetch. */}
             {isLoadingOlder && displayedEvents.length > 0 && (

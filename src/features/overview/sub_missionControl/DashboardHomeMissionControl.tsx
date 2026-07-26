@@ -32,6 +32,8 @@ import { IllustratedEmptyState as EmptyState } from '@/features/shared/component
 import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
+import { Reveal } from '@/features/shared/components/feedback/Reveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import { computeSeriesTrendPct } from '@/features/overview/libs/computeTrends';
 import FleetOptimizationCard from './cards/FleetOptimizationCard';
@@ -51,6 +53,23 @@ import { HomeCustomizePopover } from '@/features/overview/components/dashboard/H
 const AnalyticsInserts = lazyRetry(() => import('@/features/overview/components/dashboard/widgets/AnalyticsInserts'));
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
+
+// Calm, content-shaped placeholder for lazy-loaded visible widgets (routines,
+// vault changes, rotation overview) — approximates the final card's silhouette
+// (header bar + row slots) so the Suspense fallback -> resolved content swap
+// reads as a fade, not a pop-in-blank. See docs/design/overview-loading.md
+// recipe B.
+function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHeight?: number }) {
+  return (
+    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden" aria-hidden="true">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
+        <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+        <span className="h-3 w-3 rounded-full bg-primary/[0.06]" />
+      </div>
+      <ListSkeleton calm rows={rows} rowHeight={rowHeight} leading={false} />
+    </div>
+  );
+}
 
 type TriageKind = 'alert' | 'pipeline' | 'review' | 'message';
 interface TriageItem {
@@ -357,11 +376,15 @@ export default function DashboardHomeMissionControl() {
 
               {!isEmpty && !hiddenSections.includes('routines') && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <Suspense fallback={null}>
-                    <UpcomingRoutinesCard />
+                  <Suspense fallback={<CardFrameSkeleton rows={3} rowHeight={44} />}>
+                    <Reveal>
+                      <UpcomingRoutinesCard />
+                    </Reveal>
                   </Suspense>
-                  <Suspense fallback={null}>
-                    <VaultRecentChangesCard />
+                  <Suspense fallback={<CardFrameSkeleton rows={4} rowHeight={32} />}>
+                    <Reveal>
+                      <VaultRecentChangesCard />
+                    </Reveal>
                   </Suspense>
                 </motion.div>
               )}
@@ -420,8 +443,10 @@ export const InstrumentsBay = memo(function InstrumentsBay({
 
         {/* Right — rotation overview */}
         <div className="space-y-4">
-          <Suspense fallback={null}>
-            <AnalyticsInserts />
+          <Suspense fallback={<CardFrameSkeleton rows={3} rowHeight={48} />}>
+            <Reveal>
+              <AnalyticsInserts />
+            </Reveal>
           </Suspense>
         </div>
       </div>

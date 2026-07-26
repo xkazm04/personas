@@ -9,6 +9,8 @@ import {
 import { silentCatch } from '@/lib/silentCatch';
 import { formatRelativeShort } from '@/features/overview/libs/formatRelativeShort';
 import { PaneHeader } from '../PaneHeader';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 
 const MAX_ROWS = 8;
 
@@ -56,7 +58,11 @@ export default function VaultRecentChangesCard() {
     return () => { cancelled = true; };
   }, []);
 
-  if (!loaded || configured === false) return null;
+  // Once loaded, "not configured" is a permanent, intentional absence (the
+  // Obsidian Brain plugin isn't wired up) — not a loading state, so it's fine
+  // to render nothing here. While still loading, though, the frame stays up
+  // and only the row region shows a calm placeholder (never a blank body).
+  if (loaded && configured === false) return null;
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
@@ -66,28 +72,33 @@ export default function VaultRecentChangesCard() {
       >
         <ArrowRight className="w-3 h-3 text-foreground" />
       </PaneHeader>
-      {entries.length === 0 ? (
-        <div className="px-4 py-6 typo-body text-foreground text-center">
-          {t.overview.vault_recent_changes.empty}
-        </div>
-      ) : (
-        <div className="divide-y divide-primary/5 max-h-64 overflow-y-auto">
-          {entries.map((entry) => (
-            <div key={entry.id} className="flex items-center gap-3 px-3 py-1.5">
-              <FileText className="w-3 h-3 text-indigo-400 flex-shrink-0" />
-              <span className="typo-caption font-mono uppercase tracking-wider text-foreground flex-shrink-0">
-                {entry.action.slice(0, 4)}
-              </span>
-              <span className="typo-body text-foreground truncate flex-1 min-w-0">
-                {shortPath(entry.vaultFilePath) || entry.entityType}
-              </span>
-              <span className="typo-caption font-mono tabular-nums text-foreground flex-shrink-0">
-                {formatTime(entry.createdAt)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      <LoadingReveal
+        loading={!loaded}
+        placeholder={<ListSkeleton calm rows={4} rowHeight={32} leading={false} />}
+      >
+        {entries.length === 0 ? (
+          <div className="px-4 py-6 typo-body text-foreground text-center">
+            {t.overview.vault_recent_changes.empty}
+          </div>
+        ) : (
+          <div className="divide-y divide-primary/5 max-h-64 overflow-y-auto">
+            {entries.map((entry) => (
+              <div key={entry.id} className="flex items-center gap-3 px-3 py-1.5">
+                <FileText className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+                <span className="typo-caption font-mono uppercase tracking-wider text-foreground flex-shrink-0">
+                  {entry.action.slice(0, 4)}
+                </span>
+                <span className="typo-body text-foreground truncate flex-1 min-w-0">
+                  {shortPath(entry.vaultFilePath) || entry.entityType}
+                </span>
+                <span className="typo-caption font-mono tabular-nums text-foreground flex-shrink-0">
+                  {formatTime(entry.createdAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </LoadingReveal>
     </div>
   );
 }

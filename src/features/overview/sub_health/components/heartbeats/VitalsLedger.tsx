@@ -5,6 +5,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { HeartbeatIndicator } from '../HeartbeatIndicator';
 import { InsightBand } from './insights';
 import { CompositeHealthBar, GradeDot, TrendBadge, MiniStat } from './primitives';
@@ -94,19 +96,21 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
           <span className="w-4 shrink-0" />
         </div>
 
-        {model.counts.all === 0 ? (
-          <div className="flex items-center justify-center py-12 text-foreground typo-body">
-            {loading ? t.overview.health_dashboard.computing : t.overview.health_dashboard.no_match}
-          </div>
-        ) : rows.length === 0 ? (
-          <AllClear onShowAll={() => setShowHealthy(true)} />
-        ) : (
-          <div className="divide-y divide-primary/5">
-            {rows.map(s => (
-              <LedgerRow key={s.personaId} signal={s} expanded={expanded.has(s.personaId)} onToggle={() => toggle(s.personaId)} />
-            ))}
-          </div>
-        )}
+        <LoadingReveal loading={loading} placeholder={<ListSkeleton calm rows={6} rowHeight={56} />}>
+          {model.counts.all === 0 ? (
+            <div className="flex items-center justify-center py-12 text-foreground typo-body">
+              {t.overview.health_dashboard.no_match}
+            </div>
+          ) : rows.length === 0 ? (
+            <AllClear onShowAll={() => setShowHealthy(true)} />
+          ) : (
+            <div className="divide-y divide-primary/5">
+              {rows.map(s => (
+                <LedgerRow key={s.personaId} signal={s} expanded={expanded.has(s.personaId)} onToggle={() => toggle(s.personaId)} />
+              ))}
+            </div>
+          )}
+        </LoadingReveal>
 
         {model.healthy.length > 0 && rows.length > 0 && (
           <button

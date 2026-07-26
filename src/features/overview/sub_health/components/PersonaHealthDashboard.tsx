@@ -2,6 +2,7 @@ import { useEffect, useCallback, useMemo, useState, lazy, Suspense } from 'react
 import { useTranslation } from '@/i18n/useTranslation';
 import { Activity, RefreshCw, Shield, LayoutGrid, Rows3 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,6 +14,20 @@ const StatusPageView = lazy(() => import('./StatusPageView').then(m => ({ defaul
 type HealthView = 'heartbeats' | 'status-page' | 'reliability';
 
 const SLADashboard = lazy(() => import('@/features/overview/sub_sla'));
+
+// Calm, content-shaped stand-in for StatusPageView's own layout (global status
+// header + uptime-history rows) while its chunk loads. Golden loading pattern
+// (docs/design/overview-loading.md) — no pulse, sized to avoid a resize on swap.
+function StatusPagePlaceholder() {
+  return (
+    <div className="space-y-5" aria-hidden="true">
+      <div className="h-[68px] rounded-modal border border-primary/10 bg-primary/[0.04]" />
+      <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden">
+        <ListSkeleton calm rows={6} rowHeight={52} />
+      </div>
+    </div>
+  );
+}
 
 export default function PersonaHealthDashboard() {
   const { t } = useTranslation();
@@ -121,7 +136,7 @@ export default function PersonaHealthDashboard() {
 
       <ContentBody>
         {healthView === 'status-page' ? (
-          <Suspense fallback={<div className="flex items-center justify-center py-16 text-foreground typo-body">{t.overview.health_dashboard.loading_status_page}</div>}>
+          <Suspense fallback={<StatusPagePlaceholder />}>
             <StatusPageView />
           </Suspense>
         ) : healthView === 'reliability' ? (

@@ -35,11 +35,10 @@ interface TableSkeletonProps {
   rowPaddingY?: string;
   /** Vertical padding utility for the header band — match the real header. Default `'py-2.5'`. */
   headerPaddingY?: string;
+  /** Static, non-pulsing, lower-contrast bars — the golden-pattern default (see `docs/design/overview-loading.md`), so the placeholder can cross-fade to content without a pulse blink. */
+  calm?: boolean;
   className?: string;
 }
-
-// Shared placeholder treatment — matches ListSkeleton / ContentHeaderSkeleton.
-const PULSE = 'bg-primary/10 animate-pulse';
 
 export function TableSkeleton({
   columns,
@@ -47,8 +46,11 @@ export function TableSkeleton({
   header = true,
   rowPaddingY = 'py-3',
   headerPaddingY = 'py-2.5',
+  calm = false,
   className,
 }: TableSkeletonProps) {
+  // Shared placeholder treatment — matches ListSkeleton / ContentHeaderSkeleton.
+  const PULSE = calm ? 'bg-primary/[0.06]' : 'bg-primary/10 animate-pulse';
   return (
     <div className={className} aria-hidden="true" data-testid="table-skeleton">
       {/* Desktop grid (md+) — mirrors the real 12-col table */}

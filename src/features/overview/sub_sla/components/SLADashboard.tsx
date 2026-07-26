@@ -6,6 +6,8 @@ import { Shield, AlertTriangle, Clock, Wrench, TrendingUp, Users } from 'lucide-
 import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
 import { DAY_OPTIONS, formatPercent, formatDuration, slaColor, SLA_METRIC_TEXT_CLASSES, type SlaMetricColor } from '../libs/slaHelpers';
@@ -50,9 +52,15 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
     </div>
   );
 
-  const body = (loading && !data) ? null
-    : !data ? <InlineErrorBanner severity="info" message={t.overview.sla.no_data} />
-    : (() => {
+  // Only the *initial* load (no prior data yet) gates the body behind the
+  // placeholder — a range change (`loading` true again with `data` already
+  // populated) keeps rendering the existing content directly so it never
+  // blanks or swaps to a placeholder mid-view.
+  const initialLoading = loading && !data;
+
+  const body = (
+    <LoadingReveal loading={initialLoading} placeholder={<SLAMetricsPlaceholder embedded={embedded} />}>
+      {!data ? <InlineErrorBanner severity="info" message={t.overview.sla.no_data} /> : (() => {
       // Distinguish a genuine 0% success rate (real failures) from an empty /
       // low-activity window with no decided runs. When nothing has completed
       // or failed in the window, the backend returns its divide-by-zero
@@ -139,7 +147,9 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         </div>
       </div>
       );
-    })();
+      })()}
+    </LoadingReveal>
+  );
 
   if (embedded) {
     return body;
@@ -188,6 +198,70 @@ function CompactMetric({ icon, label, value, sub, color }: {
           <span className="typo-caption uppercase tracking-wider text-foreground font-mono">{label}</span>
         </div>
         <div className="typo-caption text-foreground truncate">{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Calm, content-shaped placeholder for the SLA dashboard's initial load —
+ * mirrors the real geometry (metric cards or compact row, trend chart box,
+ * per-agent list rows) so `LoadingReveal` cross-fades rather than resizes.
+ * No pulse; static low-contrast bars per the golden loading pattern.
+ */
+function SLAMetricsPlaceholder({ embedded }: { embedded: boolean }) {
+  const bar = 'bg-primary/[0.06]';
+  return (
+    <div className="space-y-6" aria-hidden="true">
+      {embedded ? (
+        <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3">
+          <div className="flex items-center gap-1.5">
+            {DAY_OPTIONS.map((d) => (
+              <span key={d} className={`h-6 w-9 rounded-modal ${bar}`} />
+            ))}
+          </div>
+          <div className="h-8 w-px bg-primary/10 mx-1" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2.5 min-w-0">
+              <span className={`w-7 h-7 rounded-card ${bar}`} />
+              <div className="space-y-1.5">
+                <span className={`block h-3.5 w-14 rounded ${bar}`} />
+                <span className={`block h-2.5 w-20 rounded ${bar}`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-modal border border-primary/10 bg-secondary/5 p-4 shadow-elevation-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-4 h-4 rounded ${bar}`} />
+                <span className={`h-2.5 w-16 rounded ${bar}`} />
+              </div>
+              <div className={`h-6 w-20 rounded mb-2 ${bar}`} />
+              <div className={`h-2.5 w-24 rounded ${bar}`} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3 border-b border-primary/10">
+          <span className={`w-8 h-8 rounded-card ${bar}`} />
+          <span className={`h-4 w-40 rounded ${bar}`} />
+        </div>
+        <div className="p-5">
+          <div className={`h-24 rounded ${bar}`} />
+        </div>
+      </div>
+
+      <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden">
+        <div className="flex items-center gap-2.5 px-5 py-3 border-b border-primary/10">
+          <span className={`w-8 h-8 rounded-card ${bar}`} />
+          <span className={`h-4 w-32 rounded ${bar}`} />
+        </div>
+        <ListSkeleton calm rows={4} rowHeight={56} leading={false} />
       </div>
     </div>
   );

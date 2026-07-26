@@ -7,6 +7,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -40,6 +42,17 @@ const WINDOW_MS: Record<TimeWindow, number> = {
 
 const ROW_HEIGHT = 52;
 
+// Mirrors the real 6-column grid (time/persona/model/input/output/cost) so the
+// calm skeleton cross-fades without a layout jump. Spans sum to 12.
+const CALLS_SKELETON_COLUMNS: TableSkeletonColumn[] = [
+  { span: 'col-span-2' },
+  { span: 'col-span-3' },
+  { span: 'col-span-3' },
+  { span: 'col-span-1', alignRight: true },
+  { span: 'col-span-1', alignRight: true },
+  { span: 'col-span-2', alignRight: true },
+];
+
 /** Resolved epoch-ms timestamp for a row (started, falling back to created). */
 function rowTime(e: GlobalExecution): number {
   return new Date(e.started_at || e.created_at).getTime();
@@ -72,6 +85,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('7d');
   const [modelFilter, setModelFilter] = useState<string>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
   const loadingMoreRef = useRef(false);
 
@@ -89,9 +103,20 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
   );
 
   // First mount / subtab entry: load the newest page (all statuses) + counts.
+  // Tracked locally (the store itself has no request-level loading flag) so
+  // the table body can gate on `isLoading` instead of flashing an empty state
+  // before the first page lands (docs/design/overview-loading.md recipe A).
   useEffect(() => {
-    void fetchGlobalExecutions(true);
-    void fetchGlobalExecutionCounts();
+    let active = true;
+    (async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([fetchGlobalExecutions(true), fetchGlobalExecutionCounts()]);
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+    return () => { active = false; };
   }, [fetchGlobalExecutions, fetchGlobalExecutionCounts]);
 
   const handleRefresh = useCallback(async () => {
@@ -279,20 +304,29 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col mx-4 md:mx-6 mb-3">
-        <UnifiedTable<GlobalExecution>
-          columns={columns}
-          data={rows}
-          getRowKey={(e) => e.id}
-          onRowClick={setSelectedExec}
-          rowHeight={ROW_HEIGHT}
-          density="compact"
-          defaultSortKey="time"
-          defaultSortDir="desc"
-          tableId="overview-llm-calls"
-          ariaLabel={t.overview.activity.title}
-          emptyTitle={t.overview.activity.no_executions}
-          onEndReached={globalExecutionsHasMore ? handleLoadMore : undefined}
-        />
+        {/* `grid` (not `flex`) so the cross-faded pane gets a definite
+            stretched height from a single implicit cell — see the matching
+            note in GlobalExecutionList.tsx / docs/design/overview-loading.md. */}
+        <LoadingReveal
+          loading={isLoading}
+          placeholder={<TableSkeleton calm columns={CALLS_SKELETON_COLUMNS} rows={10} rowPaddingY="py-3.5" />}
+          className="flex-1 min-h-0 grid"
+        >
+          <UnifiedTable<GlobalExecution>
+            columns={columns}
+            data={rows}
+            getRowKey={(e) => e.id}
+            onRowClick={setSelectedExec}
+            rowHeight={ROW_HEIGHT}
+            density="compact"
+            defaultSortKey="time"
+            defaultSortDir="desc"
+            tableId="overview-llm-calls"
+            ariaLabel={t.overview.activity.title}
+            emptyTitle={t.overview.activity.no_executions}
+            onEndReached={globalExecutionsHasMore ? handleLoadMore : undefined}
+          />
+        </LoadingReveal>
       </div>
 
       {selectedExec && <ExecutionDetailModal execution={selectedExec} onClose={() => setSelectedExec(null)} />}

@@ -20,6 +20,7 @@ import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollectio
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -379,59 +380,64 @@ export default function KnowledgeGraphDashboard() {
                 </Button>
               </div>
             </div>
-          ) : loading ? (
-            <ListSkeleton rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />
-          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-              <MotionEmptyState
-                motif="knowledge"
-                content={{
-                  icon: Brain,
-                  title: debtText("auto_no_knowledge_patterns_yet_fab2639a"),
-                  subtitle: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
-                  action: { label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                  secondaryAction: { label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                  // Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article).
-                  // Curated docs belong in the Obsidian vault — cheaper + better for <1000 notes.
-                  children: (
-                    <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
-                      <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
-                    </div>
-                  ),
-                }}
-              />
-            </div>
-          ) : allEntries.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="typo-body text-foreground"><DebtText k="auto_no_patterns_match_current_filters_99a6d5f1" /></p>
-            </div>
           ) : (
-            <ScrollShadowContainer
-              scrollRef={entryListRef}
-              className="overflow-y-auto max-h-[600px] rounded-modal"
-              wrapperClassName="relative"
+            <LoadingReveal
+              loading={loading}
+              placeholder={<ListSkeleton calm rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />}
             >
-              <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {entryVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const entry = revealedEntries[virtualRow.index]!;
-                  return (
-                    <RevealItem
-                      key={entry.id}
-                      revealId={entry.id}
-                      order={virtualRow.index - entryReveal.newSince}
-                      hasEntered={entryEnter.hasEntered}
-                      markEntered={entryEnter.markEntered}
-                      data-index={virtualRow.index}
-                      ref={entryVirtualizer.measureElement}
-                      style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
-                      className="pb-2"
-                    >
-                      <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
-                    </RevealItem>
-                  );
-                })}
-              </div>
-            </ScrollShadowContainer>
+              {allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+                  <MotionEmptyState
+                    motif="knowledge"
+                    content={{
+                      icon: Brain,
+                      title: debtText("auto_no_knowledge_patterns_yet_fab2639a"),
+                      subtitle: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
+                      action: { label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                      secondaryAction: { label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                      // Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article).
+                      // Curated docs belong in the Obsidian vault — cheaper + better for <1000 notes.
+                      children: (
+                        <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
+                          <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
+                        </div>
+                      ),
+                    }}
+                  />
+                </div>
+              ) : allEntries.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="typo-body text-foreground"><DebtText k="auto_no_patterns_match_current_filters_99a6d5f1" /></p>
+                </div>
+              ) : (
+                <ScrollShadowContainer
+                  scrollRef={entryListRef}
+                  className="overflow-y-auto max-h-[600px] rounded-modal"
+                  wrapperClassName="relative"
+                >
+                  <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                    {entryVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const entry = revealedEntries[virtualRow.index]!;
+                      return (
+                        <RevealItem
+                          key={entry.id}
+                          revealId={entry.id}
+                          order={virtualRow.index - entryReveal.newSince}
+                          hasEntered={entryEnter.hasEntered}
+                          markEntered={entryEnter.markEntered}
+                          data-index={virtualRow.index}
+                          ref={entryVirtualizer.measureElement}
+                          style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
+                          className="pb-2"
+                        >
+                          <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
+                        </RevealItem>
+                      );
+                    })}
+                  </div>
+                </ScrollShadowContainer>
+              )}
+            </LoadingReveal>
           )}
 
           {!selectedPersonaId && summary && summary.recent_learnings.length > 0 && (

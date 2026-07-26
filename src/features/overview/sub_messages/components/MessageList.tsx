@@ -44,6 +44,7 @@ import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -247,12 +248,15 @@ export default function MessageList() {
       />
 
       <ContentBody flex>
-        {isLoading ? (
-          <ListSkeleton rows={8} rowHeight={MESSAGE_ROW_HEIGHT} />
-        ) : (
-          /* ==================== FLAT VIEW ==================== */
-          filteredMessages.length === 0 && !hasActiveFilters ? (
-            <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+        <div className="relative flex-1 min-h-0">
+          <LoadingReveal
+            loading={isLoading}
+            placeholder={<ListSkeleton calm rows={8} rowHeight={MESSAGE_ROW_HEIGHT} />}
+            className="relative h-full"
+          >
+          {/* ==================== FLAT VIEW ==================== */}
+          {filteredMessages.length === 0 && !hasActiveFilters ? (
+            <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
               <IllustrationEmptyState
                 motif="messages"
                 content={{
@@ -265,7 +269,7 @@ export default function MessageList() {
               />
             </div>
           ) : (
-            <div ref={parentRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+            <div ref={parentRef} className={`absolute inset-0 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
               <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
                 <div role="row" className="sticky top-0 z-10 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: msgGridTemplate }}>
                   <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
@@ -355,8 +359,9 @@ export default function MessageList() {
               </div>
               {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
             </div>
-          )
-        )}
+          )}
+          </LoadingReveal>
+        </div>
       </ContentBody>
 
       <AnimatePresence>
