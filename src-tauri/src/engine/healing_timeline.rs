@@ -84,8 +84,18 @@ fn resolve_hint_from_cache(
 ) -> Option<KnowledgeHint> {
     for tool in tools {
         for connector in connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(
+                        connector = %connector.name,
+                        error = %e,
+                        "unparseable connector.services — treating as no services for this hint lookup"
+                    );
+                    continue;
+                }
+            };
             let tool_listed = services.iter().any(|s| {
                 s.get("toolName")
                     .and_then(|v| v.as_str())
