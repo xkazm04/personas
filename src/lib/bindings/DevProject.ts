@@ -68,4 +68,10 @@ standards_config: string | null,
  * orphan-bound; UI treats unresolved team_ids as "(team removed)" and
  * the user can re-bind. Added 2026-05-22.
  */
-team_id: string | null, created_at: string, updated_at: string, };
+team_id: string | null, 
+/**
+ * Workspace this project belongs to (single workspace per project,
+ * nullable = unassigned). Promotes the sub_workspaces localStorage
+ * prototype; see docs/plans/workspace-knowledge-center.md. Added 2026-07-24.
+ */
+workspace_id: string | null, created_at: string, updated_at: string, };

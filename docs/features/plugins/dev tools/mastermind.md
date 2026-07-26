@@ -84,7 +84,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 ## 5. Dimensions (the island body)
 
-13 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
+15 dimensions per island, declared in `dimRegistry.ts`. Status vocabulary (`DimStatus` → `DIM_INK`): `absent` (grey, dashed — "null is a first-class answer"), `solid` (success), `partial` (info), `risk` (warning), `alert` (error).
 
 | Key | Label | Derived from | Improve rowKey → popover |
 | --- | --- | --- | --- |
@@ -96,11 +96,13 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `hosting` | Hosting | `stack.hosting` | `hosting` → Deploy |
 | `auth` | Auth | `stack.auth` | — (inert) |
 | `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
-| `skills` | Skills | `artifacts.skills` | `skills` → Deploy |
+| `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
 | `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
 | `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
+| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | — (inert for now) |
+| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | — (inert for now) |
 
 **Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the far/mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
 
@@ -110,7 +112,9 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 **Actionability affordance:** a cell whose registry/engine checks yield an action gets `cursor: pointer` + a quiet primary ring on hover; inert cells ignore clicks and show no affordance.
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up. Lattice capacity: Hex ring-2 and Inverse layer-2 currently hold 12; beyond ~14–15, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
+**Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
+
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15 (`goals` plus the 2026-07-23 `datalinks`/`support` additions took the last comfortable slots); we are AT the ~15 ceiling — before injecting more, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
 
 ## 6. Zoom bands and level-of-detail
 
@@ -147,7 +151,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 
 **Hover focus:** hovering an island dims everything except it and its integration neighbours.
 
-**Context menu:** right-click a header → the island's dimensions sorted by name with the same glyphs; hovering a row echoes a double ring on the matching cell; row click is currently a no-op (reserved for the per-dimension action layer).
+**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions sorted by name with the same glyphs; hovering a dimension row echoes a double ring on the matching cell; dimension row click is currently a no-op (reserved for the per-dimension action layer). Both Fleet rows are disabled for demo islands / projects with no `root_path`.
 
 **Motion:** sidebars fade+slide, islands fade in/out on hide/show/create (AnimatePresence), all linear.
 
@@ -156,7 +160,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 Below each island, an ops-badge row (`FleetBadges`, counter-scaled):
 
 - **Terminal state badges** — one badge per fleet-session state present (attention-first order; `awaiting_input` dot pulses). Click → `FleetListPopover` listing that state's sessions, each with a deterministic **animal glyph** (hash of session id — Cat/Dog/Bird/Fish/Rabbit/Squirrel/Turtle/Snail) so parallel terminals stay tellable. Picking one opens…
-- **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path).
+- **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path), and a **Dispatch Fleet…** action (`DispatchFleetModal` — a textarea instruction seeds a *background* session via `spawnSession(root, [instruction])`; no preview panel opens, so the canvas stays put and the session docks as an island fleet badge for later).
 - **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover` with the names; rows deliberately inert for now.
 - **Live attention:** any awaiting/stale session raises the island's "needs you" marker; real monitoring errors can drive island colour (§4).
 

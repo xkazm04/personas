@@ -14,8 +14,8 @@
 //
 // This module owns no JSX literals, so it stays a plain `.ts`.
 import {
-  Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, KeyRound,
-  Lightbulb, Server, ShieldCheck, Target, Wand2, Workflow, type LucideIcon,
+  Activity, Bot, BrainCircuit, Database, FlaskConical, Gauge, GitFork, KeyRound,
+  LifeBuoy, Lightbulb, Server, ShieldCheck, Target, Wand2, Workflow, type LucideIcon,
 } from 'lucide-react';
 
 import {
@@ -68,8 +68,9 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
  *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
- *  list popover, null = never actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | null;
+ *  list popover, skills-run = the "run an installed skill via Fleet" modal
+ *  (green Skills cell only), null = never actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
  *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
@@ -103,7 +104,7 @@ const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'ab
 // and free of circular type references. DO NOT reorder without updating those lattices.
 export const DIM_ORDER = [
   'db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents',
-  'skills', 'llm', 'kpi', 'ideas', 'goals',
+  'skills', 'llm', 'kpi', 'ideas', 'goals', 'datalinks', 'support',
 ] as const;
 
 /** The dimension key space. A new dimension = add its key here AND its entry to
@@ -261,6 +262,25 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
       };
     },
   },
+  // The two prototype passport dimensions (2026-07-23) — deliberately binary
+  // (grey absent / green solid) and INERT (rowKey/action null: no hover ring,
+  // no click) until their deeper functionality is wired.
+  datalinks: {
+    label: 'Data analysis', category: 'product', icon: GitFork,
+    rowKey: null, action: null, payloadKind: 'icon',
+    derive: (p) => {
+      const links = p.stack.dataLinks ?? [];
+      return { status: links.length > 0 ? 'solid' : 'absent', detail: links.join(' · ') || null, reached: 0, steps: 0 };
+    },
+  },
+  support: {
+    label: 'Support', category: 'product', icon: LifeBuoy,
+    rowKey: null, action: null, payloadKind: 'icon',
+    derive: (p) => {
+      const channels = p.stack.supportChannels ?? [];
+      return { status: channels.length > 0 ? 'solid' : 'absent', detail: channels.join(' · ') || null, reached: 0, steps: 0 };
+    },
+  },
 };
 
 // addingADimension:
@@ -269,5 +289,6 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
 //      deriveScene/dimMeta/dimActions/DimGlyph and both cell renderers pick it
 //      up with no further edits.
 //   2. Open a lattice slot for it: add a [q,r] coord to MosaicIsland.AXIAL AND a
-//      [col,row] coord to InverseIsland.RING (both currently hold 12 — the 13th+
-//      slots are the only render-side change a new dimension needs).
+//      [col,row] coord to InverseIsland.RING (both currently hold 15 — the 16th+
+//      slots are the only render-side change a new dimension needs; at ~15 we're
+//      at the comfortable ceiling, see mastermind.md §5 dimension-categories).

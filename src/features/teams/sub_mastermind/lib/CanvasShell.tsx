@@ -70,7 +70,7 @@ export interface IslandCtx {
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, onDispatchFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -604,6 +604,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             y={menu.y}
             terminalEnabled={canOpenTerminal(menu.slug)}
             onOpenTerminal={() => { onOpenTerminal(menu.slug); setMenu(null); setHighlight(null); }}
+            onDispatchFleet={() => { onDispatchFleet(menu.slug); setMenu(null); setHighlight(null); }}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}
           />

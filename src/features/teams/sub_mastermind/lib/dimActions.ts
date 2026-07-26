@@ -32,6 +32,15 @@ export function dimAction(
     const has = raw ? applicableStandardsActions(raw.project.standards_config).length > 0 : false;
     return { rowKey, action: has ? 'standards' : null };
   }
+  // Skills is the one deploy dimension with a SECOND click surface: when the
+  // project already has installed skills (green), clicking RUNS one via Fleet
+  // (skills-run modal) instead of the adopt/deploy popover. Only when nothing
+  // is installed do we fall back to the adopt path (skillsToAdd → deploy).
+  if (dimKey === 'skills') {
+    if (raw?.hasSkills) return { rowKey, action: 'skills-run' };
+    const canAdopt = (raw?.skillsToAdd?.length ?? 0) > 0;
+    return { rowKey, action: canAdopt ? 'deploy' : null };
+  }
   const hasDeploy = applicableDeployActions(rowKey, passport).length > 0;
   const hasConnector = Boolean(connectorSpecFor(rowKey)?.applicable(passport));
   const hasSkills = rowKey === 'skills' && (raw?.skillsToAdd?.length ?? 0) > 0;

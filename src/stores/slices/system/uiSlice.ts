@@ -370,7 +370,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   connectorTestActive: false,
   templateGalleryTotal: 0,
   pluginTab: "browse" as PluginTab,
-  devToolsTab: "projects" as DevToolsTab,
+  // "projects" was retired from DevToolsTab when project management moved to
+  // Teams; the cast hid the stale default (no branch matched → blank page).
+  devToolsTab: "overview" as DevToolsTab,
   eventBusTab: "studio" as EventBusTab,
   researchLabTab: "dashboard" as ResearchLabTab,
   adoptionDraft: null,

@@ -30,42 +30,40 @@ function importWithRetry<T>(importFn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Drop-in replacement for `React.lazy` that recovers from permanent failure.
+ * Drop-in replacement for `React.lazy` with one automatic import retry, whose
+ * *permanent* failures surface to the nearest ErrorBoundary instead of hanging.
  *
  * **Problem**: `React.lazy` calls its factory once and caches the resulting
- * promise.  If both import attempts fail (e.g. network down > 2 s), the
- * rejected promise is cached forever — every future render of that component
- * throws without recovery, requiring a hard reload.
+ * promise. A transient blip (network hiccup, dev server mid-restart) that
+ * happens to fail both `importWithRetry` attempts would otherwise cache the
+ * rejection forever. And a chunk that can NEVER load — a dead dev server on
+ * :1420, a stale post-deploy hash — leaves the Suspense boundary showing its
+ * fallback with no recovery.
  *
- * **Fix**: On rejection the closure swaps to a *new* `React.lazy` instance.
- * A thin wrapper component always renders the current instance, so the next
- * error-boundary reset triggers a brand-new import attempt instead of
- * replaying the cached error.
+ * **Fix**: keep ONE stable `React.lazy`. `importWithRetry` covers the transient
+ * case; a permanent rejection is rethrown to the nearest ErrorBoundary, whose
+ * chunk-error UI (`isChunkLoadError` → "Reload app", see `ErrorBoundary.tsx`)
+ * is the reliable recovery — a full reload re-fetches the (now-available)
+ * chunk. "Try Again" simply re-shows the error; it does not loop.
+ *
+ * **Why not swap to a fresh `React.lazy` on rejection?** An earlier version did
+ * exactly that inside the failing promise's `.catch`, to retry without a full
+ * reload. But the swap raced React's error propagation: React remounts the
+ * suspended child when its promise settles, so it rendered the fresh *pending*
+ * lazy and **re-suspended** instead of throwing the rejection to the boundary.
+ * Against a permanently-unreachable chunk this looped forever — the user saw an
+ * **infinite loading skeleton** and never the recoverable error UI. A single
+ * stable instance is what guarantees the failure actually reaches the boundary.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyRetry<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
 ): React.FC<React.ComponentProps<T>> {
-  type Module = { default: T };
-  let LazyImpl: React.LazyExoticComponent<T>;
+  const LazyImpl = lazy<T>(() => importWithRetry<{ default: T }>(importFn));
 
-  function build() {
-    LazyImpl = lazy<T>(() => {
-      const p = importWithRetry<Module>(importFn);
-      // On permanent failure, swap to a fresh React.lazy so the next
-      // error-boundary reset gets a clean slate.
-      p.catch(() => {
-        build();
-      });
-      return p;
-    });
-  }
-
-  build();
-
-  // Stable wrapper — always delegates to the current LazyImpl.
-  // Suspense still works: the inner lazy throws its thenable and the
-  // nearest <Suspense> boundary catches it as usual.
+  // Thin, stable wrapper — Suspense still works: the inner lazy throws its
+  // thenable and the nearest <Suspense> catches it; on a permanent rejection it
+  // throws the (cached) error, which the nearest ErrorBoundary catches.
   function RetryableLazy(props: React.ComponentProps<T>) {
     return createElement(LazyImpl, props);
   }

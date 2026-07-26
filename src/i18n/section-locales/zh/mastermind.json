@@ -66,5 +66,13 @@
   "toolbar_label": "画布模式",
   "variant_inverse": "反转网格",
   "variant_mosaic": "六边拼图",
-  "variant_switcher": "Mastermind 画布变体"
+  "variant_switcher": "Mastermind 画布变体",
+  "dispatch_error": "无法启动 Fleet 会话",
+  "dispatch_fleet": "派发到 Fleet…",
+  "dispatch_modal_desc": "写下一条指令。后台 Fleet 会话会在项目根目录启动并执行它——你可以继续留在画布上。",
+  "dispatch_modal_title": "派发到 Fleet",
+  "dispatch_placeholder": "描述要让 Claude 在此项目中执行的任务…",
+  "dispatch_submit": "派发",
+  "dispatch_submitting": "正在派发…",
+  "dispatch_toast": "已在 {name} 中派发 Fleet 会话"
 }

@@ -66,5 +66,13 @@
   "toolbar_label": "キャンバスモード",
   "variant_inverse": "インバースグリッド",
   "variant_mosaic": "ヘックスパズル",
-  "variant_switcher": "Mastermindキャンバスバリアント"
+  "variant_switcher": "Mastermindキャンバスバリアント",
+  "dispatch_error": "Fleet セッションを開始できませんでした",
+  "dispatch_fleet": "Fleet に送信…",
+  "dispatch_modal_desc": "指示を入力してください。バックグラウンドの Fleet セッションがプロジェクトルートで起動して実行します — あなたはキャンバスに留まれます。",
+  "dispatch_modal_title": "Fleet に送信",
+  "dispatch_placeholder": "このプロジェクトで Claude に実行させるタスクを記述してください…",
+  "dispatch_submit": "送信",
+  "dispatch_submitting": "送信中…",
+  "dispatch_toast": "{name} で Fleet セッションを送信しました"
 }

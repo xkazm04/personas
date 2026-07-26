@@ -15,7 +15,7 @@ import { applicableDeployActions } from './deployActions';
 import { connectorSpecFor } from './connectors';
 import { ImprovePopover } from './ImprovePopover';
 import { DeployPopover } from './DeployPopover';
-import { SkillsModal } from './SkillsModal';
+import { SkillsWorkbench } from './SkillsWorkbench';
 import { DataLinksPopover } from './DataLinksPopover';
 
 // Rows whose improve action is a pure Tier-0 config toggle (ImprovePopover).
@@ -93,7 +93,7 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
         </button>
       )}
       {open && (isSkills
-        ? <SkillsModal slug={slug} onClose={() => setOpen(false)} />
+        ? <SkillsWorkbench slug={slug} initialMode="manage" onClose={() => setOpen(false)} />
         : isDataLinks
           ? <DataLinksPopover slug={slug} anchor={anchor} onClose={() => setOpen(false)} />
           : isStandards

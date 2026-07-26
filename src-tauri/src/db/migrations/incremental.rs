@@ -5959,6 +5959,116 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_center_tables",
+            description: "Workspace Knowledge Center (docs/plans/workspace-knowledge-center.md): dev_workspaces promotes the sub_workspaces localStorage prototype to SQLite; workspace_knowledge is the governed cross-project practice store (observed→proposed→adopted ladder, provenance, applicability, rejection kept for miner dedup); workspace_practice_adoption tracks per-project adoption state (the scaling surface).",
+            already_applied: |conn| has_table(conn, "dev_workspaces"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_workspaces (
+                        id          TEXT PRIMARY KEY,
+                        name        TEXT NOT NULL,
+                        color       TEXT,
+                        description TEXT,
+                        created_at  TEXT NOT NULL,
+                        updated_at  TEXT NOT NULL
+                    );
+                    CREATE TABLE IF NOT EXISTS workspace_knowledge (
+                        id                TEXT PRIMARY KEY,
+                        workspace_id      TEXT NOT NULL REFERENCES dev_workspaces(id) ON DELETE CASCADE,
+                        kind              TEXT NOT NULL CHECK(kind IN ('pattern','pitfall','decision','howto','fact')),
+                        title             TEXT NOT NULL,
+                        statement         TEXT NOT NULL,
+                        detail_md         TEXT,
+                        topic             TEXT,
+                        abstraction       TEXT,
+                        ftype             TEXT,
+                        durability        TEXT,
+                        governing_id      TEXT,
+                        evidence_count    INTEGER,
+                        applicability     TEXT,
+                        status            TEXT NOT NULL DEFAULT 'observed'
+                                          CHECK(status IN ('observed','proposed','adopted','deprecated','rejected')),
+                        origin_project_id TEXT,
+                        provenance        TEXT,
+                        confidence        REAL,
+                        dedup_key         TEXT,
+                        superseded_by     TEXT,
+                        valid_from        TEXT,
+                        valid_to          TEXT,
+                        decided_at        TEXT,
+                        created_at        TEXT NOT NULL,
+                        updated_at        TEXT NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_workspace_knowledge_ws_status
+                        ON workspace_knowledge(workspace_id, status);
+                    CREATE INDEX IF NOT EXISTS idx_workspace_knowledge_dedup
+                        ON workspace_knowledge(workspace_id, dedup_key);
+                    CREATE TABLE IF NOT EXISTS workspace_practice_adoption (
+                        practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','dispatched','adopted','diverged')),
+                        fleet_key        TEXT,
+                        note             TEXT,
+                        last_verified_at TEXT,
+                        updated_at       TEXT NOT NULL,
+                        PRIMARY KEY (practice_id, project_id)
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_projects.workspace_id",
+            description: "Single-workspace-per-project binding (nullable). Replaces the retired dev_projects.group_id design-time folder; NULL = unassigned. No cascade — deleting a workspace nulls the column via the delete repo fn, never touching projects.",
+            already_applied: |conn| has_column(conn, "dev_projects", "workspace_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_projects ADD COLUMN workspace_id TEXT REFERENCES dev_workspaces(id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_knowledge.topic",
+            description: "Free-form slash-path taxonomy node for a practice (e.g. 'ui/motion/reveals'), authored by harvest agents. The library derives its arbitrary-depth topic tree from this column; nullable = uncategorized. Added as a separate ALTER so DBs that created workspace_knowledge before this column pick it up.",
+            already_applied: |conn| has_column(conn, "workspace_knowledge", "topic"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN topic TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_knowledge.categorization_axes",
+            description: "Categorization axes orthogonal to the topic tree, for ranking + filtering the library (docs/plans/workspace-knowledge-center.md, divergence-scan synthesis): `abstraction` (macro|meso|micro — the altitude of the practice), `ftype` (finding-type taxonomy: architecture|module-boundary|data-flow|extensibility|api-design|state-mgmt|error-strategy|concurrency-reliability|perf-strategy|testing-strategy|micro-technique), `durability` (durable|situational|mechanical — whether it's worth being knowledge vs a lint rule), `governing_id` (roll a micro-instance up under a macro doctrine), `evidence_count` (prevalence). All nullable; validation lives in Rust, not a DB CHECK.",
+            already_applied: |conn| has_column(conn, "workspace_knowledge", "abstraction"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN abstraction TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN ftype TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN durability TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN governing_id TEXT;")?;
+                ddl_step(conn, "ALTER TABLE workspace_knowledge ADD COLUMN evidence_count INTEGER;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     // -- dev_memories: the development loop's project-scoped memory ----------
     // docs/plans/backlog-memory-loop.md Phase 2. Decisions used to land only in
     // `team_memories` (team-keyed), so teamless projects learned nothing and the
@@ -6448,6 +6558,9 @@ mod tests {
             "dev_llm_spend",
             "dev_use_cases",
             "dev_use_case_contexts",
+            "dev_workspaces",
+            "workspace_knowledge",
+            "workspace_practice_adoption",
         ] {
             assert!(
                 has_table(&conn, table).unwrap(),
@@ -6477,6 +6590,10 @@ mod tests {
             ("persona_memories", "derived_from"),
             ("persona_memory_review_proposal", "team_id"),
             ("dev_kpi_measurements", "env"),
+            ("dev_projects", "workspace_id"),
+            ("workspace_knowledge", "topic"),
+            ("workspace_knowledge", "abstraction"),
+            ("workspace_knowledge", "durability"),
         ] {
             assert!(
                 has_column(&conn, table, column).unwrap(),
@@ -6494,6 +6611,8 @@ mod tests {
             "idx_dev_kpis_context",
             "idx_dev_kpis_use_case",
             "idx_dev_use_cases_project",
+            "idx_workspace_knowledge_ws_status",
+            "idx_workspace_knowledge_dedup",
         ] {
             assert!(
                 has_index(&conn, index).unwrap(),

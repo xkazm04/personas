@@ -9,6 +9,7 @@ const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
 const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
 const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
+const WorkspacesPage = lazy(() => import('./sub_workspaces/WorkspacesPage'));
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -35,6 +36,7 @@ export default function DevToolsPage() {
           {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
           {devToolsTab === 'task-runner' && <TaskRunnerPage />}
           {devToolsTab === 'fleet' && <FleetPage />}
+          {devToolsTab === 'workspaces' && <WorkspacesPage />}
         </Suspense>
       </div>
     </div>
