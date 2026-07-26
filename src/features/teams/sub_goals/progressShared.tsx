@@ -204,7 +204,16 @@ export const GoalSquare = memo(function GoalSquare({
 }: {
   goal: DevGoal;
   overdue: boolean;
-  delay: number;
+  /**
+   * Entrance stagger (ms), or `null` to render plainly with no entrance
+   * animation. GoalsProgress bakes a real delay only on the first render that
+   * has data — every later recompute (refresh, drawer close, poll) passes
+   * `null` so the node's `animation-delay` never gets rewritten. Some
+   * browsers replay a finished CSS animation when its `animation-delay`
+   * value changes on a props update, even though the element never unmounts
+   * — that's the "id-guarded" one-shot cascade for this surface.
+   */
+  delay: number | null;
   dl: DevLifecycleT;
   onOpen: (id: string) => void;
 }) {
@@ -220,6 +229,7 @@ export const GoalSquare = memo(function GoalSquare({
         isRecentlyDone(goal) ? '' : 'group-data-[done-filter=recent]/strip:hidden'
       }`
     : '';
+  const animate = delay !== null;
   return (
     <Tooltip content={nodeTooltip(dl, goal)}>
       <button
@@ -231,9 +241,9 @@ export const GoalSquare = memo(function GoalSquare({
           height: NODE_PX,
           backgroundColor: meta.map.fill,
           boxShadow: `${ring}0 0 8px -1px ${meta.map.glow}`,
-          animationDelay: `${delay}ms`,
+          ...(animate ? { animationDelay: `${delay}ms` } : {}),
         }}
-        className={`animate-fade-slide-in relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''} ${filterCls}`}
+        className={`${animate ? 'animate-fade-slide-in' : ''} relative block overflow-hidden rounded-[5px] border border-background/80 transition-transform duration-150 hover:scale-125 hover:z-20 motion-reduce:transform-none focus-ring ${done ? 'opacity-60 hover:opacity-100' : ''} ${filterCls}`}
       >
         {!done && (
           <span className="absolute inset-x-[3px] bottom-[3px] h-[3px] rounded-full bg-background/35 overflow-hidden">
@@ -297,6 +307,66 @@ export function ProgressLegend({ dl }: { dl: DevLifecycleT }) {
         />
         <span className="typo-caption text-foreground">{dl.timeline_overdue_group}</span>
       </span>
+    </div>
+  );
+}
+
+/**
+ * Delayed ghost of the portfolio filmstrip — the ONLY moment this paints is
+ * GoalsProgress's cold-fetch branch (`allGoals === null`, before the first
+ * portfolio load resolves). Mirrors the real strip's outer geometry (rounded
+ * card, 200px label gutter) so the swap to real rows never shifts layout.
+ * Each bar/square is invisible for its first 120ms+ (`animate-fade-in`,
+ * fill-mode both) so a fast fetch never paints a single one — see
+ * docs/design/overview-loading.md §C. No `animate-pulse`, ever.
+ */
+const GHOST_ROWS = 3;
+const GHOST_SQUARES_PER_ROW = 15;
+/** Must match GoalsProgress's `LEFT_W` — the label gutter width. */
+const GHOST_LEFT_W = 200;
+
+export function ProgressGhost() {
+  return (
+    <div
+      aria-hidden="true"
+      className="rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 overflow-hidden"
+    >
+      {Array.from({ length: GHOST_ROWS }).map((_, r) => (
+        <div key={r} className="flex items-stretch border-b border-primary/5 last:border-b-0">
+          <div
+            className="shrink-0 px-3 py-2.5 flex flex-col justify-center gap-1.5 min-w-0 border-r border-primary/5"
+            style={{ width: GHOST_LEFT_W }}
+          >
+            <span
+              className="h-3 w-28 rounded bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + r * 35}ms` }}
+            />
+            <span
+              className="h-2.5 w-16 rounded bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: `${120 + r * 35}ms` }}
+            />
+          </div>
+          <div
+            className="flex-1 flex flex-wrap items-center content-center gap-1.5 px-3 py-2.5"
+            style={{ minHeight: NODE_PX + 20 }}
+          >
+            {Array.from({ length: GHOST_SQUARES_PER_ROW }).map((_, i) => {
+              const idx = r * GHOST_SQUARES_PER_ROW + i;
+              return (
+                <span
+                  key={i}
+                  className="block rounded-[5px] bg-primary/[0.06] animate-fade-in"
+                  style={{
+                    width: NODE_PX,
+                    height: NODE_PX,
+                    animationDelay: `${120 + Math.min(idx, 24) * 35}ms`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

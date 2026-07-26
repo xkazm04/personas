@@ -15,7 +15,7 @@
  * Always cross-project — the view exists to compare projects, so it ignores the
  * Board/Timeline scope switch. Internals live in progressShared.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -29,6 +29,7 @@ import {
   AddGoalButton,
   ProgressLegend,
   ProgressEmpty,
+  ProgressGhost,
   useGoalsPortfolio,
   useGoalDrawer,
   groupByProject,
@@ -43,8 +44,12 @@ const LEFT_W = 200;
 interface StripNode {
   goal: DevGoal;
   overdue: boolean;
-  /** Entry-animation stagger (ms). Baked in so memoized nodes get stable props. */
-  delay: number;
+  /**
+   * Entry-animation stagger (ms), or `null` once the one-shot cascade has
+   * already played (see `hasEnteredOnceRef` below). Baked in so memoized
+   * nodes get stable props.
+   */
+  delay: number | null;
 }
 
 /**
@@ -94,6 +99,19 @@ export function GoalsProgress() {
   };
 
   /**
+   * One-shot guard for the node entrance cascade: latches true the first time
+   * `rows` is built from real (non-null) data. Every later rebuild — a drawer
+   * close/edit calling `refresh()`, a poll, a projects refetch — bakes `null`
+   * delays instead, so nodes render plainly. Ungated, this replayed the
+   * cascade on every refresh: the nodes never unmount (stable `goal.id` keys),
+   * but rebaking a fresh `animationDelay` on an already-finished CSS animation
+   * is enough for some browsers to run it again. A genuine reload of the
+   * portfolio (this view has none today — it's always cross-project) would
+   * reset this ref; nothing here currently does.
+   */
+  const hasEnteredOnceRef = useRef(false);
+
+  /**
    * The strip layout — ordered ONCE per data change and deliberately independent
    * of the done-filter. Every goal keeps a mounted node; the filter only decides
    * which ones are visible (see `hiddenIds` below). Rebuilding this list per
@@ -104,14 +122,15 @@ export function GoalsProgress() {
   const rows = useMemo(() => {
     const goals = allGoals ?? [];
     const now = Date.now();
+    const playEntrance = allGoals !== null && !hasEnteredOnceRef.current;
     let nodeIndex = 0;
     const toNode = (g: DevGoal): StripNode => ({
       goal: g,
       overdue: isOverdue(g, now),
-      delay: Math.min(nodeIndex++, 24) * 14,
+      delay: playEntrance ? Math.min(nodeIndex++, 24) * 14 : null,
     });
 
-    return groupByProject(projects, goals).map((row) => {
+    const built = groupByProject(projects, goals).map((row) => {
       const dated = row.goals
         .map((g) => ({ g, at: anchorDate(g) }))
         .filter((x): x is { g: DevGoal; at: number } => x.at !== null)
@@ -123,6 +142,8 @@ export function GoalsProgress() {
         undated: row.goals.filter((g) => anchorDate(g) === null).map(toNode),
       };
     });
+    if (playEntrance) hasEnteredOnceRef.current = true;
+    return built;
   }, [allGoals, projects]);
 
   /**
@@ -139,8 +160,9 @@ export function GoalsProgress() {
     return hidden;
   }, [allGoals, doneFilter]);
 
-  // Still fetching — render nothing rather than flashing the empty state.
-  if (allGoals === null) return null;
+  // Still fetching — a calm delayed ghost of the filmstrip rather than a
+  // blank region or the (settled-only) empty state. See ProgressGhost.
+  if (allGoals === null) return <ProgressGhost />;
   if (rows.length === 0) return <ProgressEmpty dl={dl} />;
 
   const hiddenGoals = hiddenIds.size;
