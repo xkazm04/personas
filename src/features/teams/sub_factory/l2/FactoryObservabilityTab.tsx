@@ -107,7 +107,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
         {!data.llmWired || !llmServiceType ? (
           <WireAsk what="LLM tracking" />
         ) : pinpoints === null ? (
-          <p className="typo-caption text-foreground/40 py-3 text-center">loading…</p>
+          <ObservabilityGhostRows />
         ) : byFeature.length === 0 ? (
           <p className="typo-caption text-foreground/45 py-3 text-center">No traced LLM calls in the last 30 days.</p>
         ) : (
@@ -143,7 +143,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
         {!data.monitoringWired ? (
           <WireAsk what="Monitoring" />
         ) : issues === null ? (
-          <p className="typo-caption text-foreground/40 py-3 text-center">loading…</p>
+          <ObservabilityGhostRows />
         ) : issues.length === 0 ? (
           <p className="typo-caption py-3 text-center" style={{ color: INK.emerald }}>No unresolved issues — clear.</p>
         ) : (
@@ -171,6 +171,42 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
           </>
         )}
       </Panel>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ObservabilityGhostRows — calm delayed ghost for a panel's list body while
+// its fetch is in flight (loading choreography v2). Mirrors the real list's
+// geometry: a summary line + a handful of name/stat rows each with a thin
+// proportion bar underneath. `animate-fade-in` + a ≥120ms staggered delay so
+// a fast-resolving fetch never paints it; no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const OBS_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const OBS_GHOST_NAME_WIDTHS = ['w-32', 'w-24', 'w-28', 'w-20'];
+
+function ObservabilityGhostRows() {
+  return (
+    <div aria-hidden="true">
+      <span className={`block h-2.5 w-40 mb-2 ${OBS_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
+      <ul className="space-y-1.5">
+        {OBS_GHOST_NAME_WIDTHS.map((w, i) => (
+          <li key={i} className="min-w-0">
+            <span
+              className="flex items-baseline gap-2 min-w-0 animate-fade-in"
+              style={{ animationDelay: `${140 + i * 35}ms` }}
+            >
+              <span className={`h-3 ${w} ${OBS_GHOST_BAR}`} />
+              <span className="h-2.5 w-10 rounded bg-primary/[0.04] ml-auto shrink-0" />
+            </span>
+            <span
+              className="block h-[2px] rounded-full mt-1 animate-fade-in"
+              style={{ background: 'rgba(148,163,184,.10)', animationDelay: `${140 + i * 35}ms` }}
+            />
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

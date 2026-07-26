@@ -13,7 +13,6 @@ import { listKpis } from '@/api/devTools/kpis';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ProjectsPassportWall } from './passport';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
@@ -125,9 +124,7 @@ export function ProjectsLayer({
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <LoadingSpinner label="Deriving project passports…" />
-        </div>
+        <PassportWallGhost />
       ) : error ? (
         <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
           <p className="typo-title mb-1">Couldn't build project passports</p>
@@ -153,6 +150,65 @@ export function ProjectsLayer({
           />
         </ImproveProvider>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PassportWallGhost — calm delayed ghost of the passport WALL (loading
+// choreography v2, docs/design/overview-loading.md). Cold loads (no cached
+// snapshot yet — see usePassportData's module-scope cachedSnapshot) show this
+// instead of a whole-region spinner; warm remounts skip it entirely since
+// `loading` is already false. Geometry mirrors WallOverviewGrid's default
+// view: a 2/3-column grid of cover tiles, each with an identity-row
+// silhouette, a 5-cell statband silhouette, and a blockers-footer bar.
+// `animate-fade-in` + a ≥120ms staggered delay keeps it invisible on a fast
+// load (law 3); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TILE_COUNT = 4;
+
+function PassportWallGhost() {
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-3 gap-3" aria-hidden="true">
+      {Array.from({ length: GHOST_TILE_COUNT }).map((_, i) => {
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="rounded-modal p-4 min-w-0 bg-secondary/[0.03] shadow-elevation-1 animate-fade-in"
+            style={{ border: '1px solid rgba(148,163,184,.14)', animationDelay: delay }}
+          >
+            {/* identity row: status dot + name + stack strip */}
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-primary/[0.10] shrink-0" />
+              <span className={`h-3.5 w-24 ${GHOST_BAR}`} />
+              <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                {Array.from({ length: 5 }).map((__, j) => (
+                  <span key={j} className="w-3.5 h-3.5 rounded-[3px] bg-primary/[0.05]" />
+                ))}
+              </span>
+            </div>
+            {/* statband: 5 labeled cells */}
+            <div
+              className="mt-2.5 flex items-center justify-between rounded-card px-2.5 py-1.5"
+              style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.10)' }}
+            >
+              {Array.from({ length: 5 }).map((__, j) => (
+                <span key={j} className="flex flex-col items-center gap-1 min-w-0">
+                  <span className={`h-2.5 w-6 ${GHOST_BAR}`} />
+                  <span className="h-1.5 w-5 rounded bg-primary/[0.04]" />
+                </span>
+              ))}
+            </div>
+            {/* blockers footer row */}
+            <div className="mt-3 pt-2.5 border-t border-dashed border-foreground/10">
+              <span className={`block h-2.5 w-32 ${GHOST_BAR}`} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
