@@ -23,6 +23,7 @@ const preferNumeric = require("./eslint-rules/prefer-numeric.cjs");
 const preferStatusBadge = require("./eslint-rules/prefer-status-badge.cjs");
 const preferSectionCard = require("./eslint-rules/prefer-section-card.cjs");
 const noUnprefixedWideMinWidth = require("./eslint-rules/no-unprefixed-wide-min-width.cjs");
+const asyncCatchRequiresHelper = require("./eslint-rules/async-catch-requires-helper.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -56,6 +57,7 @@ export default tseslint.config(
           "prefer-status-badge": preferStatusBadge,
           "prefer-section-card": preferSectionCard,
           "no-unprefixed-wide-min-width": noUnprefixedWideMinWidth,
+          "async-catch-requires-helper": asyncCatchRequiresHelper,
         },
       },
     },
@@ -107,6 +109,7 @@ export default tseslint.config(
       "custom/prefer-status-badge": "warn",
       "custom/prefer-section-card": "warn",
       "custom/no-unprefixed-wide-min-width": "warn",
+      "custom/async-catch-requires-helper": "warn",
     },
   },
   // Shared design-system primitives may import Tauri IPC for nothing —
