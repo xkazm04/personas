@@ -7,6 +7,7 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import { EventName } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Module-level guard so the three Tauri session listeners attach exactly once
 // per app process, no matter how many surfaces (Fleet grid, Mastermind canvas,
@@ -163,9 +164,9 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     // Sync the persisted auto-hibernate policy to the always-on Rust ticker.
     // (Opening Fleet at least once per app session activates an enabled policy;
     // a startup-side push is a tracked follow-up.)
-    fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(() => {});
-    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(() => {});
-    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? get().fleetMaxLiveSessions : 0).catch(() => {});
+    fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetAutoHibernate"));
+    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetStateCutoffs"));
+    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? get().fleetMaxLiveSessions : 0).catch(silentCatch("stores/slices/system/fleetSlice:refreshSetLiveSlots"));
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -236,33 +237,33 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
 
   fleetSetAutoHibernate: (on) => {
     set({ fleetAutoHibernate: on });
-    fleetApi.setAutoHibernate(on, get().fleetAutoHibernateMinutes).catch(() => {});
+    fleetApi.setAutoHibernate(on, get().fleetAutoHibernateMinutes).catch(silentCatch("stores/slices/system/fleetSlice:setAutoHibernate"));
   },
   fleetSetAutoHibernateMinutes: (minutes) => {
     const m = Math.max(1, Math.round(minutes) || 1);
     set({ fleetAutoHibernateMinutes: m });
-    fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(() => {});
+    fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(silentCatch("stores/slices/system/fleetSlice:setAutoHibernateMinutes"));
   },
 
   fleetSetLiveSlotsEnabled: (on) => {
     set({ fleetLiveSlotsEnabled: on });
-    fleetApi.setLiveSlots(on ? get().fleetMaxLiveSessions : 0).catch(() => {});
+    fleetApi.setLiveSlots(on ? get().fleetMaxLiveSessions : 0).catch(silentCatch("stores/slices/system/fleetSlice:setLiveSlotsEnabled"));
   },
   fleetSetMaxLiveSessions: (max) => {
     const m = Math.min(64, Math.max(1, Math.round(max) || 1));
     set({ fleetMaxLiveSessions: m });
-    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? m : 0).catch(() => {});
+    fleetApi.setLiveSlots(get().fleetLiveSlotsEnabled ? m : 0).catch(silentCatch("stores/slices/system/fleetSlice:setMaxLiveSessions"));
   },
 
   fleetSetStaleMinutes: (minutes) => {
     const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
     set({ fleetStaleMinutes: m });
-    fleetApi.setStateCutoffs(m * 60, get().fleetFrozenMinutes * 60).catch(() => {});
+    fleetApi.setStateCutoffs(m * 60, get().fleetFrozenMinutes * 60).catch(silentCatch("stores/slices/system/fleetSlice:setStaleMinutes"));
   },
   fleetSetFrozenMinutes: (minutes) => {
     const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
     set({ fleetFrozenMinutes: m });
-    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, m * 60).catch(() => {});
+    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, m * 60).catch(silentCatch("stores/slices/system/fleetSlice:setFrozenMinutes"));
   },
 
   fleetSetTerminalFontSize: (px) => set({ fleetTerminalFontSize: clampFont(px) }),

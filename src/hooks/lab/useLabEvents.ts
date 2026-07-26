@@ -4,9 +4,7 @@ import { sendAppNotification } from "@/api/system/system";
 import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { LabMode, LabRunProgress } from "@/stores/slices/agents/labSlice";
 import { useRunEventListener, mapRunStatusPayload, type RunStatusPayload, type RunEventBinding } from "@/hooks/realtime/useRunEventListener";
-import { createLogger } from "@/lib/log";
-
-const logger = createLogger("lab-events");
+import { silentCatch } from "@/lib/silentCatch";
 
 function mapPayload(p: RunStatusPayload, mode: LabMode): LabRunProgress {
   return {
@@ -30,9 +28,9 @@ const MODE_LABELS: Record<LabMode, string> = {
 function notifyTerminal(mode: LabMode, phase: string) {
   const label = MODE_LABELS[mode] ?? mode;
   if (phase === "completed") {
-    sendAppNotification(`Lab ${label} Complete`, `${label} test finished successfully.`).catch((err) => { logger.warn('Notification failed', { err: err instanceof Error ? err.message : String(err) }); });
+    sendAppNotification(`Lab ${label} Complete`, `${label} test finished successfully.`).catch(silentCatch('hooks/lab/useLabEvents:notifyCompleted'));
   } else if (phase === "failed") {
-    sendAppNotification(`Lab ${label} Failed`, `${label} test encountered an error.`).catch((err) => { logger.warn('Notification failed', { err: err instanceof Error ? err.message : String(err) }); });
+    sendAppNotification(`Lab ${label} Failed`, `${label} test encountered an error.`).catch(silentCatch('hooks/lab/useLabEvents:notifyFailed'));
   }
 }
 
