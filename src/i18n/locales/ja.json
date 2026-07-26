@@ -13097,8 +13097,7 @@
         "detail_prev": "前のプラクティス",
         "decide_adopted": "決定を承認",
         "decide_deprecated": "決定を廃止",
-        "decide_rejected": "決定を却下",
-        "detail_details": "詳細"
+        "decide_rejected": "決定を却下"
       }
     },
     "doc_signing": {

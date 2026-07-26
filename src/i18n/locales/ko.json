@@ -13097,8 +13097,7 @@
         "detail_prev": "이전 사례",
         "decide_adopted": "결정 승인됨",
         "decide_deprecated": "결정 폐기됨",
-        "decide_rejected": "결정 거부됨",
-        "detail_details": "상세"
+        "decide_rejected": "결정 거부됨"
       }
     },
     "doc_signing": {

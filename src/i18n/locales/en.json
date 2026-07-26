@@ -13366,8 +13366,7 @@
         "detail_prev": "Previous practice",
         "detail_next": "Next practice",
         "detail_position": "{index} of {total}",
-        "detail_nav_hint": "← → to move",
-        "detail_details": "Details"
+        "detail_nav_hint": "← → to move"
       }
     },
     "doc_signing": {

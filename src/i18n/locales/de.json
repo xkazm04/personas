@@ -13097,8 +13097,7 @@
         "detail_prev": "Vorherige Praktik",
         "decide_adopted": "Entscheidung angenommen",
         "decide_deprecated": "Entscheidung zurückgezogen",
-        "decide_rejected": "Entscheidung abgelehnt",
-        "detail_details": "Details"
+        "decide_rejected": "Entscheidung abgelehnt"
       }
     },
     "doc_signing": {
