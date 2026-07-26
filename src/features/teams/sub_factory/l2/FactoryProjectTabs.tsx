@@ -15,11 +15,13 @@ import { InkTabs } from '../passport/passportInk';
 import { useFactoryL2Data } from './factoryL2Data';
 import { FactoryOverviewTab } from './FactoryOverviewTab';
 import { FactoryObservabilityTab } from './FactoryObservabilityTab';
+import { FactoryShipTab } from './ship/FactoryShipTab';
 
-type L2Tab = 'overview' | 'matrix' | 'observability';
+type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
 
 const TABS: Array<{ id: L2Tab; label: string }> = [
   { id: 'overview', label: 'Overview' },
+  { id: 'ship', label: 'Ship' },
   { id: 'matrix', label: 'KPI matrix' },
   { id: 'observability', label: 'Observability' },
 ];
@@ -43,6 +45,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
         <InkTabs tabs={TABS} active={tab} onChange={setTab} label="Module" />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
+      {tab === 'ship' && <FactoryShipTab />}
       {tab === 'matrix' && matrix}
       {tab === 'observability' && <FactoryObservabilityTab data={data} />}
     </div>
