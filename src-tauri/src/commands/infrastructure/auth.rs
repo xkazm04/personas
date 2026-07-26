@@ -35,6 +35,7 @@ pub struct AuthUser {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct AuthSubscription {
     pub plan: String,
     pub status: String,

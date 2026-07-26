@@ -93,6 +93,7 @@ fn capture_project_baseline(root_path: &str) -> serde_json::Value {
 /// Strategy slot config for a single competitor in a competition.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct CompetitionSlotInput {
     pub label: String,
     pub prompt: Option<String>,

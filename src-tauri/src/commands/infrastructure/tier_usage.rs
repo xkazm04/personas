@@ -17,6 +17,7 @@ const TIER_USAGE_CACHE_TTL: Duration = Duration::from_secs(3);
 /// A single rate-limit bucket's current usage.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct RateBucketUsage {
     /// Bucket key, e.g. "event:webhook" or "webhook:trigger-123"
     pub key: String,
@@ -31,6 +32,7 @@ pub struct RateBucketUsage {
 /// Full tier usage snapshot returned to the frontend.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TierUsageSnapshot {
     /// Current tier config.
     pub tier: TierConfig,

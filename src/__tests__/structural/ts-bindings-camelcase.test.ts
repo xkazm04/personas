@@ -4,11 +4,11 @@
  * binding it generates presents camelCase to the frontend like the rest of the
  * codebase. A struct without it leaks Rust's snake_case across the IPC boundary.
  *
- * 336 structs (of 804 exported) predate the rule and are baselined below,
+ * 319 structs (of 804 exported) predate the rule and are baselined below,
  * grouped by file so each shrink is reviewable in a diff. **The baseline may only
  * SHRINK.** Two assertions enforce that:
  *   1. a NEW exported struct without the rename fails the day it is written —
- *      that is the drift mechanism which produced the 336;
+ *      that is the drift mechanism which produced the 319;
  *   2. a baseline entry that gained the rename (or was deleted) must be removed
  *      from the list, so the ratchet cannot silently go slack.
  *
@@ -48,7 +48,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'PersonaMonthlySpend',
   ],
   'src-tauri/src/commands/communication/observability/prompt_lab.rs': [
-    'PromptAbExecResult', 'PromptAbTestResult',
+    'PromptAbExecResult',
   ],
   'src-tauri/src/commands/core/data_portability.rs': [
     'CompetitiveImportPreview', 'CredentialConflict', 'CredentialImportResult', 'ExportStats',
@@ -60,15 +60,14 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'MemoryReviewResult',
   ],
   'src-tauri/src/commands/core/use_cases.rs': [
-    'EventListenerCounts', 'RenameEventListenersResult', 'UseCaseGenerationSettings',
-    'UseCaseToggleResult',
+    'RenameEventListenersResult', 'UseCaseGenerationSettings', 'UseCaseToggleResult',
   ],
   'src-tauri/src/commands/credentials/auto_cred_browser.rs': [
     'AutoCredBrowserRequest', 'AutoCredBrowserResult', 'AutoCredField',
   ],
   // held — PersonaSetup is serialized into the personas.setup_detail JSON column — a rename changes an on-disk format, not just the wire
   'src-tauri/src/commands/design/connector_readiness.rs': [
-    'PersonaSetup', 'SetupBlocker',
+    'PersonaSetup',
   ],
   'src-tauri/src/commands/design/reviews.rs': [
     'SeededLinkedArtifacts',
@@ -83,7 +82,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'FleetHookEvent',
   ],
   'src-tauri/src/commands/infrastructure/auth.rs': [
-    'AuthStateResponse', 'AuthSubscription', 'AuthUser',
+    'AuthStateResponse', 'AuthUser',
   ],
   'src-tauri/src/commands/infrastructure/byom.rs': [
     'ProviderConnectionResult',
@@ -91,23 +90,11 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/commands/infrastructure/cloud.rs': [
     'CloudConfig',
   ],
-  'src-tauri/src/commands/infrastructure/dev_tools/competitions.rs': [
-    'CompetitionSlotInput',
-  ],
-  'src-tauri/src/commands/infrastructure/incremental_scan.rs': [
-    'ScanDelta', 'ScanFileEntry',
-  ],
   'src-tauri/src/commands/infrastructure/kpi_sim.rs': [
     'KpiSimIngestSummary', 'KpiSimPrepared',
   ],
   'src-tauri/src/commands/infrastructure/static_scan.rs': [
-    'StaticScanConfig', 'StaticScanResult',
-  ],
-  'src-tauri/src/commands/infrastructure/system/health.rs': [
-    'HealthCheckItem', 'HealthCheckSection', 'SystemHealthReport',
-  ],
-  'src-tauri/src/commands/infrastructure/tier_usage.rs': [
-    'RateBucketUsage', 'TierUsageSnapshot',
+    'StaticScanResult',
   ],
   // not touched this pass: file had uncommitted work in another session
   'src-tauri/src/commands/infrastructure/twin.rs': [
@@ -119,14 +106,10 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/commands/network/bundle.rs': [
     'ClipboardExportResult',
   ],
-  'src-tauri/src/commands/recipes/recipe_adoption.rs': [
-    'AdoptionResult',
-  ],
   'src-tauri/src/commands/tools/triggers.rs': [
-    'ConfigWarning', 'CronAgent', 'CronPreview', 'DryRunChainTarget',
-    'DryRunMatchedSubscription', 'DryRunResult', 'DryRunSimulatedEvent', 'RecentScheduleRun',
-    'TriggerChainLink', 'TriggerCleanupResult', 'TriggerValidationCheck',
-    'TriggerValidationResult', 'WebhookStatus',
+    'CronAgent', 'CronPreview', 'DryRunChainTarget', 'DryRunMatchedSubscription',
+    'DryRunResult', 'DryRunSimulatedEvent', 'RecentScheduleRun', 'TriggerChainLink',
+    'TriggerCleanupResult', 'WebhookStatus',
   ],
   'src-tauri/src/db/models/audit_incident.rs': [
     'CreateAuditIncidentInput', 'IncidentFilters',
