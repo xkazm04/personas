@@ -43,8 +43,6 @@ type ReadFilter = 'all' | 'unread' | 'read';
 import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -88,6 +86,11 @@ export default function MessageList() {
   const [readFilter, setReadFilter] = useState<ReadFilter>('unread');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('');
   const [selectedMsg, setSelectedMsg] = useState<PersonaMessage | null>(null);
+  // True while a (re)fetch is in flight. It NEVER hides rows already on
+  // screen — it only decides whether an empty row-region shows ghost rows
+  // (fetch running) or the empty state (fetch settled, genuinely nothing).
+  // Pre-warmed store data still paints on the first frame because `showGhost`
+  // below also requires the filtered list to be empty.
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
@@ -199,6 +202,64 @@ export default function MessageList() {
   // the non-optional PriorityChip prop under noUncheckedIndexedAccess.
   const defaultPriority: PriorityStyle = { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' };
 
+  // Ghost rows only when the row region would otherwise be empty while a
+  // fetch runs. Rows already on screen (pre-warmed store) are never hidden.
+  const showGhost = isLoading && filteredMessages.length === 0;
+
+  // Column header — static chrome, rendered identically above ghost rows and
+  // real rows so the ghost→content swap moves nothing.
+  const columnHeaderRow = (
+    <div role="row" className="flex-shrink-0 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: msgGridTemplate }}>
+      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+        <PersonaColumnFilter
+          value={selectedPersonaId}
+          onChange={setSelectedPersonaId}
+          personas={personas}
+        />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
+          onReset={() => colWidths.clearColumn('persona')}
+        />
+      </div>
+      <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+        {t.overview.messages_view.col_title}
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('title', w, x)}
+          onReset={() => colWidths.clearColumn('title')}
+        />
+      </div>
+      <div role="columnheader" className="relative px-2 py-1.5 flex items-center">
+        <ColumnDropdownFilter
+          label="Priority"
+          value={priorityFilter}
+          options={PRIORITY_FILTER_OPTIONS}
+          onChange={(v) => setPriorityFilter(v as PriorityFilter)}
+        />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('priority', w, x)}
+          onReset={() => colWidths.clearColumn('priority')}
+        />
+      </div>
+      <div role="columnheader" className="relative px-4 py-1.5 flex items-center justify-center">
+        <ColumnDropdownFilter
+          label="Status"
+          value={readFilter}
+          options={READ_FILTER_OPTIONS}
+          onChange={(v) => setReadFilter(v as ReadFilter)}
+        />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
+          onReset={() => colWidths.clearColumn('status')}
+        />
+      </div>
+      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_created}</div>
+    </div>
+  );
+
   return (
     <ContentBox>
       <ContentHeader
@@ -248,120 +309,74 @@ export default function MessageList() {
       />
 
       <ContentBody flex>
-        <div className="relative flex-1 min-h-0">
-          <LoadingReveal
-            loading={isLoading}
-            placeholder={<ListSkeleton calm rows={8} rowHeight={MESSAGE_ROW_HEIGHT} />}
-            className="relative h-full"
-          >
-          {/* ==================== FLAT VIEW ==================== */}
-          {filteredMessages.length === 0 && !hasActiveFilters ? (
-            <div className="absolute inset-0 flex items-center justify-center p-4 md:p-6">
-              <IllustrationEmptyState
-                motif="messages"
-                content={{
-                  icon: MessageSquare,
-                  title: t.overview.messages_view.no_messages,
-                  subtitle: t.overview.messages_view.no_messages_hint,
-                  action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                  secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                }}
-              />
-            </div>
-          ) : (
-            <div ref={parentRef} className={`absolute inset-0 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
-              <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full">
-                <div role="row" className="sticky top-0 z-10 bg-primary/5 border-b border-primary/10 grid" style={{ gridTemplateColumns: msgGridTemplate }}>
-                  <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-                    <PersonaColumnFilter
-                      value={selectedPersonaId}
-                      onChange={setSelectedPersonaId}
-                      personas={personas}
-                    />
-                    <ColumnResizeHandle
-                      label={t.shared.resize_column}
-                      onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
-                      onReset={() => colWidths.clearColumn('persona')}
-                    />
-                  </div>
-                  <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
-                    {t.overview.messages_view.col_title}
-                    <ColumnResizeHandle
-                      label={t.shared.resize_column}
-                      onBeginResize={(w, x) => colWidths.beginResize('title', w, x)}
-                      onReset={() => colWidths.clearColumn('title')}
-                    />
-                  </div>
-                  <div role="columnheader" className="relative px-2 py-1.5 flex items-center">
-                    <ColumnDropdownFilter
-                      label="Priority"
-                      value={priorityFilter}
-                      options={PRIORITY_FILTER_OPTIONS}
-                      onChange={(v) => setPriorityFilter(v as PriorityFilter)}
-                    />
-                    <ColumnResizeHandle
-                      label={t.shared.resize_column}
-                      onBeginResize={(w, x) => colWidths.beginResize('priority', w, x)}
-                      onReset={() => colWidths.clearColumn('priority')}
-                    />
-                  </div>
-                  <div role="columnheader" className="relative px-4 py-1.5 flex items-center justify-center">
-                    <ColumnDropdownFilter
-                      label="Status"
-                      value={readFilter}
-                      options={READ_FILTER_OPTIONS}
-                      onChange={(v) => setReadFilter(v as ReadFilter)}
-                    />
-                    <ColumnResizeHandle
-                      label={t.shared.resize_column}
-                      onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
-                      onReset={() => colWidths.clearColumn('status')}
-                    />
-                  </div>
-                  <div role="columnheader" className="flex items-center justify-end px-4 py-1.5 typo-label text-foreground">{t.overview.messages_view.col_created}</div>
-                </div>
-                {filteredMessages.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="typo-body text-foreground">{t.overview.messages_view.no_filter_match}</p>
-                  </div>
-                ) : (
-                  <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                    {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const message = revealedMessages[virtualRow.index]!;
-                      const priority = priorityConfig[message.priority] ?? defaultPriority;
-                      // Status-accent left border (matches the Activity table):
-                      // high-priority rows read red, other unread rows read blue,
-                      // already-read rows stay neutral.
-                      const rowAccent = message.priority === 'high'
-                        ? 'border-l-red-400/70'
-                        : !message.is_read
-                          ? 'border-l-blue-400/70'
-                          : 'border-l-transparent';
-                      return (
-                        <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
-                          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
-                          style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
-                          className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
-                        >
-                          <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                            <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
-                            <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
-                          </div>
-                          <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
-                          <div role="gridcell" className="px-4"><PriorityChip priority={priority} /></div>
-                          <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
-                          <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
-                        </RevealItem>
-                      );
-                    })}
-                  </div>
-                )}
+        {/* ==================== FLAT VIEW ==================== */}
+        {showGhost ? (
+          /* Nothing to show yet + fetch in flight: ghost rows under the REAL
+             column header. Ghosts are invisible for their first ~120ms
+             (animation-delay + fill-mode both) so a fast fetch skips them
+             entirely; real rows replace them the frame they arrive and play
+             the same cascade — no gate, no held content. */
+          <div className="flex-1 min-h-0 flex flex-col">
+            {columnHeaderRow}
+            <MessageGhostRows gridTemplate={msgGridTemplate} />
+          </div>
+        ) : filteredMessages.length === 0 && !hasActiveFilters ? (
+          <div className="flex-1 flex items-center justify-center p-4 md:p-6">
+            <IllustrationEmptyState
+              motif="messages"
+              content={{
+                icon: MessageSquare,
+                title: t.overview.messages_view.no_messages,
+                subtitle: t.overview.messages_view.no_messages_hint,
+                action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+              }}
+            />
+          </div>
+        ) : (
+          <div className={`flex-1 min-h-0 flex flex-col ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+            {columnHeaderRow}
+            {filteredMessages.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="typo-body text-foreground">{t.overview.messages_view.no_filter_match}</p>
               </div>
-              {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
-            </div>
-          )}
-          </LoadingReveal>
-        </div>
+            ) : (
+              <div ref={parentRef} className="flex-1 overflow-y-auto">
+                <div role="grid" aria-rowcount={filteredMessages.length} aria-colcount={6} className="w-full" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+                  {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const message = revealedMessages[virtualRow.index]!;
+                    const priority = priorityConfig[message.priority] ?? defaultPriority;
+                    // Status-accent left border (matches the Activity table):
+                    // high-priority rows read red, other unread rows read blue,
+                    // already-read rows stay neutral.
+                    const rowAccent = message.priority === 'high'
+                      ? 'border-l-red-400/70'
+                      : !message.is_read
+                        ? 'border-l-blue-400/70'
+                        : 'border-l-transparent';
+                    return (
+                      <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
+                        onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
+                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
+                        className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                      >
+                        <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
+                          <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
+                          <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
+                        </div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4"><PriorityChip priority={priority} /></div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
+                        <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
+                      </RevealItem>
+                    );
+                  })}
+                </div>
+                {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
+              </div>
+            )}
+          </div>
+        )}
       </ContentBody>
 
       <AnimatePresence>
@@ -401,5 +416,49 @@ export default function MessageList() {
         />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MessageGhostRows — calm ghost rows for the ONLY moment the row region has
+// nothing to show (a fetch with a cold store / empty filter context).
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// The delay IS the anti-flash: no timers, no minimum display, and real rows
+// replace ghosts on the very frame data arrives, playing the same cascade in
+// the same geometry (identical row height + grid under the same header).
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function MessageGhostRows({ gridTemplate }: { gridTemplate: string }) {
+  return (
+    <div className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => {
+        const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="grid items-center border-l-2 border-l-transparent border-b border-primary/[0.06] animate-fade-in"
+            style={{ gridTemplateColumns: gridTemplate, height: MESSAGE_ROW_HEIGHT, animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2 px-4 min-w-0">
+              <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+              <span className={`h-3.5 w-24 ${GHOST_BAR}`} />
+            </div>
+            <div className="px-4"><span className={`h-3.5 ${titleW} max-w-full block ${GHOST_BAR}`} /></div>
+            <div className="px-4"><span className="inline-block h-5 w-16 rounded-card bg-primary/[0.06]" /></div>
+            <div className="px-4 flex justify-center"><span className="h-2.5 w-2.5 rounded-full bg-primary/[0.06]" /></div>
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-14 ${GHOST_BAR}`} /></div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
