@@ -263,7 +263,10 @@ pub fn obsidian_brain_set_saved_vaults(
 /// fresh install (or a parse failure) never surprises the caller.
 pub(crate) fn mirror_config(pool: &crate::db::DbPool) -> ObsidianMirrorConfig {
     match settings_repo::get(pool, MIRROR_SETTINGS_KEY) {
-        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_default(),
+        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "unparseable knowledge-mirror config; using all-off defaults");
+            ObsidianMirrorConfig::default()
+        }),
         _ => ObsidianMirrorConfig::default(),
     }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { silentCatch } from '@/lib/silentCatch';
 import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
-import { radioFetchSomafmMetadata } from '../api/radioApi';
+import { radioFetchSomafmMetadata } from '@/api/radio';
 
 /** Poll cadence for SomaFM metadata. SomaFM updates their JSON every
  *  ~30s so anything faster wastes IPC + network without finer track

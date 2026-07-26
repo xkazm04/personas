@@ -11,11 +11,16 @@ import { useDirector } from '@/features/overview/sub_director/useDirector';
  * surface lives in the dedicated Director command center; this strip is just a
  * status glance (scope + avg score + last review) and a deep-link in. All data
  * comes from the shared `useDirector` hook — no duplicated fetch, no drift.
- * Hidden until the Director persona has been seeded.
+ * Hidden until the Director persona has been seeded. Mounted unconditionally
+ * on the (default) personas tab, so it fetches lazily — the portfolio /
+ * verdicts / brain / vault reads wait for the Director persona to actually
+ * show up in the agent store, instead of firing blind on every landing here
+ * (measured 2026-05-30 as a ~349ms IPC cluster, most of it wasted whenever
+ * Director isn't seeded for this install/tier).
  */
 export function DirectorPanel() {
   const { t, tx } = useTranslation();
-  const d = useDirector();
+  const d = useDirector({ lazy: true });
 
   if (!d.ready || !d.director) return null;
 

@@ -121,8 +121,18 @@ pub(crate) async fn resolve_credential_env_vars(
         // -- Primary: match tool name in connector services --
         let mut matched_connector = false;
         for connector in &connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(
+                        connector = %connector.name,
+                        error = %e,
+                        "unparseable connector.services — this connector's credentials will not be injected for this tool"
+                    );
+                    continue;
+                }
+            };
             let tool_listed = services.iter().any(|s| {
                 s.get("toolName")
                     .and_then(|v| v.as_str())
@@ -246,8 +256,17 @@ pub(crate) async fn force_refresh_credentials_for_tool(
     let mut credentials = Vec::new();
 
     for connector in &connectors {
-        let services: Vec<serde_json::Value> =
-            serde_json::from_str(&connector.services).unwrap_or_default();
+        let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!(
+                    connector = %connector.name,
+                    error = %e,
+                    "unparseable connector.services — skipping this connector for forced OAuth refresh"
+                );
+                continue;
+            }
+        };
         let tool_listed = services.iter().any(|s| {
             s.get("toolName")
                 .and_then(|v| v.as_str())

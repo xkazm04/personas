@@ -6,6 +6,14 @@ const logger = createLogger('auto-cred-review');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { savePlaywrightProcedure } from '@/api/vault/autoCredBrowser';
 import { useTranslation } from '@/i18n/useTranslation';
+import { isTauriError } from '@/lib/types/tauriError';
+
+/** `save_playwright_procedure` returns `Result<_, AppError>` -- the rejection
+ * is the structured envelope, not a plain `Error`. Used only for a log
+ * breadcrumb here (failure is silent to the user by design). */
+function describeError(err: unknown): string {
+  return isTauriError(err) ? err.error : String(err);
+}
 
 interface ReviewHealthcheckProps {
   onHealthcheck: () => void;
@@ -82,7 +90,7 @@ export function ReviewActionButtons({
       await savePlaywrightProcedure(connectorName, procedureLog, fieldKeys);
       setProcedureSaved(true);
     } catch (err) {
-      logger.error('Failed to save procedure', { error: String(err) });
+      logger.error('Failed to save procedure', { error: describeError(err) });
     } finally {
       setSavingProcedure(false);
     }

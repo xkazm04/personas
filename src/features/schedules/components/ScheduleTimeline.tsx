@@ -15,13 +15,13 @@ import {
   sortByNextRun,
   groupByTimeWindow,
   type ScheduleEntry,
-  type TimeGroup,
 } from '../libs/scheduleHelpers';
 import { useScheduleActions } from '../libs/useScheduleActions';
 import { getSchedulerStatus, startScheduler, stopScheduler, listScheduleMissedRuns, clearScheduleMissedRuns } from '@/api/pipeline/scheduler';
 import type { SchedulerStats, ScheduleMissedRuns } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
 import ScheduleRecentRuns from './ScheduleRecentRuns';
+import ScheduleGroupedList from './ScheduleGroupedList';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
@@ -213,8 +213,10 @@ export default function ScheduleTimeline() {
     return fn;
   };
 
-  const renderEntries = (items: ScheduleEntry[]) =>
-    items.map((entry) => (
+  // One row renderer, handed to the (windowed) grouped list. Kept as a plain
+  // function of the entry so the list owns iteration/containment and this file
+  // owns only the prop wiring.
+  const renderEntry = (entry: ScheduleEntry) => (
       <ScheduleRow
         key={entry.agent.trigger_id}
         entry={entry}
@@ -233,7 +235,7 @@ export default function ScheduleTimeline() {
         onSkipNextFire={skipNextFire}
         onRunIn={runIn}
       />
-    ));
+  );
 
   return (
     <div ref={containerRef} className="flex-1 min-h-0 flex flex-col w-full">
@@ -357,7 +359,7 @@ export default function ScheduleTimeline() {
                  *  calendar view already marks past fires; this is the grouped
                  *  view's equivalent. */}
                 <ScheduleRecentRuns filterIds={filter?.ids ?? null} />
-                <GroupedView groups={grouped} renderEntries={renderEntries} />
+                <ScheduleGroupedList groups={grouped} renderEntry={renderEntry} />
               </div>
             )}
           </div>
@@ -423,46 +425,6 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
           </button>
         );
       })}
-    </div>
-  );
-}
-
-// -- Grouped View --------------------------------------------------------------
-
-function GroupedView({
-  groups,
-  renderEntries,
-}: {
-  groups: TimeGroup[];
-  renderEntries: (entries: ScheduleEntry[]) => React.ReactNode;
-}) {
-  const GROUP_COLORS: Record<string, string> = {
-    'Overdue': 'text-red-400 border-red-500/20',
-    'Next 15 minutes': 'text-emerald-400 border-emerald-500/20',
-    'Next hour': 'text-blue-400 border-blue-500/20',
-    'Next 6 hours': 'text-violet-400 border-violet-500/20',
-    'Next 24 hours': 'text-amber-400 border-amber-500/20',
-    'Later': 'text-foreground border-primary/10',
-    'Paused / Unscheduled': 'text-foreground border-primary/10',
-  };
-
-  return (
-    <div className="space-y-5">
-      {groups.map((group) => (
-        <div key={group.label}>
-          <div className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[group.label] || 'text-foreground border-primary/10'}`}>
-            <span className="typo-caption uppercase tracking-wider">
-              {group.label}
-            </span>
-            <span className="text-[10px] font-mono opacity-60">
-              ({group.entries.length})
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {renderEntries(group.entries)}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }

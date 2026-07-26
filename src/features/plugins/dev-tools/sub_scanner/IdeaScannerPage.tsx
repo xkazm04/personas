@@ -238,18 +238,19 @@ export default function IdeaScannerPage() {
     let cancelled = false;
     (async () => {
       try {
-        const { invokeWithTimeout } = await import('@/lib/tauriInvoke');
-        const result = await invokeWithTimeout<{ scan_id: string; status: string; error?: string }>(
-          'dev_tools_get_idea_scan_status',
-          { scanId: id },
-        );
+        const { getIdeaScanStatus } = await import('@/api/devTools/devTools');
+        const result = await getIdeaScanStatus(id);
         if (cancelled) return;
+        // `job.error` is Option<String> on the Rust side, so it arrives as null
+        // (not absent) whenever the job carries no message; finalizeScan takes
+        // `errorMessage?: string`.
+        const errorMessage = result.error ?? undefined;
         if (result.status === 'completed') {
           finalizeScanRef.current('success');
         } else if (result.status === 'completed_with_warning') {
-          finalizeScanRef.current('warning', result.error);
+          finalizeScanRef.current('warning', errorMessage);
         } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
-          finalizeScanRef.current('failed', result.error);
+          finalizeScanRef.current('failed', errorMessage);
         }
       } catch (err) { silentCatch("features/plugins/dev-tools/sub_scanner/IdeaScannerPage:catch1")(err); }
     })();

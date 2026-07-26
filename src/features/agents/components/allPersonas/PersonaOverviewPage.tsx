@@ -82,12 +82,19 @@ export default function PersonaOverviewPage() {
   // Batched fetch of Director score trends keyed by persona id. Sample is
   // every visible persona — one round-trip, refreshes when the id set
   // changes (persona created/deleted). Empty arrays for unscored personas
-  // mean the cell collapses cleanly to a "—".
+  // mean the cell collapses cleanly to a "—". The verdict-trend sparkline
+  // this powers only ever renders as a DataGrid column in the baseline
+  // desktop table (see the layout branch below) — the card-list (mobile),
+  // constellation, and config-table views never read `scoreTrendsMap` — so
+  // gate the fetch on that same condition instead of firing it on every
+  // personas-page mount regardless of which layout/tab is actually showing.
+  const scoreTrendsVisible = pageTab === 'personas' && !isMobile && layout === 'baseline';
   const personaIdsKey = useMemo(
     () => personas.map((p) => p.id).sort().join(','),
     [personas],
   );
   useEffect(() => {
+    if (!scoreTrendsVisible) return;
     const ids = personaIdsKey ? personaIdsKey.split(',') : [];
     if (ids.length === 0) {
       setScoreTrendsMap({});
@@ -102,7 +109,7 @@ export default function PersonaOverviewPage() {
     return () => {
       active = false;
     };
-  }, [personaIdsKey]);
+  }, [personaIdsKey, scoreTrendsVisible]);
 
   useEffect(() => {
     try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch2")(err); }

@@ -4,15 +4,29 @@ pub mod schema_policy;
 pub mod transcribe;
 pub mod voiceover;
 
+use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::process::Command as TokioCommand;
 
 use chrono::Utc;
+use futures_util::FutureExt;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio_util::sync::CancellationToken;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
@@ -480,8 +494,11 @@ pub async fn artist_run_creative_session(
     let app_handle = app.clone();
     let sid = session_id.clone();
     let token = cancel_token;
+    let app_handle_for_panic = app_handle.clone();
+    let sid_for_panic = sid.clone();
 
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = tokio::select! {
             _ = token.cancelled() => {
                 Err(AppError::Internal("Creative session cancelled by user".into()))
@@ -506,6 +523,15 @@ pub async fn artist_run_creative_session(
                 let msg = e.to_string();
                 CREATIVE_JOBS.set_status(&app_handle, &sid, "failed", Some(msg));
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(session_id = %sid_for_panic, panic = %msg, "creative session task panicked — marking session as failed");
+            CREATIVE_JOBS.set_status(&app_handle_for_panic, &sid_for_panic, "failed", Some(msg));
         }
     });
 

@@ -18,6 +18,7 @@ import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
 import { tauriPlaywrightAdapter, tauriGuidedAdapter } from '../helpers/TauriPlaywrightAdapter';
 import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
+import { isTauriError } from '@/lib/types/tauriError';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredModeBanner } from './AutoCredModeBanner';
 import { AutoCredBrowser } from './AutoCredBrowser';
@@ -46,7 +47,11 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     checkPlaywrightAvailable()
       .then((available) => setMode(available ? 'playwright' : 'guided'))
       .catch((err) => {
-        logger.warn('Playwright availability check failed, falling back to guided mode', { error: String(err) });
+        // `check_auto_cred_playwright_available` returns `Result<_, AppError>` --
+        // the rejection is the structured envelope, not a plain `Error`.
+        logger.warn('Playwright availability check failed, falling back to guided mode', {
+          error: isTauriError(err) ? err.error : String(err),
+        });
         setMode('guided');
       });
   }, []);

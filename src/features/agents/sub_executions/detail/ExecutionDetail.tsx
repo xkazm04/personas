@@ -20,6 +20,7 @@ import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations'
 import { useDryRun } from '../libs/useDryRun';
 import { DryRunModal } from '../components/runner/DryRunModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 
 interface ExecutionDetailProps {
   execution: PersonaExecution;
@@ -35,6 +36,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
   const annotation = byExecution.get(execution.id) ?? null;
   const { t } = useTranslation();
   const chain = useChainTrace(execution.id, execution.persona_id, nested);
+  useExecutionScope(execution.id, execution.persona_id);
 
   const openChainExecution = (executionId: string) => {
     getExecution(executionId, execution.persona_id)

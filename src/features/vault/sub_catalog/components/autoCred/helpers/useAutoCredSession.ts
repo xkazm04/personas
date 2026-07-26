@@ -151,12 +151,14 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         setPhase('consent');
         return;
       }
-      const raw = err instanceof Error ? err.message : ace.err_browser_session_failed;
-      setError(parseAutoCredError(raw, t));
+      // `err` may be the structured AppError envelope (auto_cred_browser
+      // commands migrated to `Result<_, AppError>`), a plain `Error`, or a
+      // raw string -- `parseAutoCredError` handles all three via `isTauriError`.
+      setError(parseAutoCredError(err, t));
       // Stay in browser-error so the terminal log remains visible
       setPhase('browser-error');
     }
-  }, [designResult, adapter, ace.err_no_adapter, ace.err_no_adapter_hint, ace.err_browser_session_failed, t]);
+  }, [designResult, adapter, ace.err_no_adapter, ace.err_no_adapter_hint, t]);
 
   /** Cancel a running browser session */
   const cancelBrowser = useCallback(() => {
@@ -211,7 +213,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       setPhase('done');
       return { id, serviceType: designResult.connector.name, healthcheckPassed };
     } catch (err) {
-      setError(parseAutoCredError(err instanceof Error ? err.message : ace.err_save_failed, t));
+      setError(parseAutoCredError(err, t, ace.err_save_failed));
       setPhase('error');
       return null;
     } finally {

@@ -14,7 +14,10 @@
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { computeContentHashSync, registerBuiltinTemplates } from '@/lib/templates/templateVerification';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import {
+  verifyTemplateIntegrityBatch,
+  type BatchIntegrityResult,
+} from '@/api/templates/templateAdopt';
 import { TEMPLATE_CHECKSUMS } from './templateChecksums';
 import { validateTemplateCatalogEntry } from './validateTemplate';
 import {
@@ -321,26 +324,11 @@ export async function getLocalizedTemplateCatalogStatus(
 
 // -- Layer 2: Backend verification (async, authoritative) ----------------
 
-interface BackendIntegrityResult {
-  results: Array<{
-    path: string;
-    expectedHash: string | null;
-    actualHash: string;
-    valid: boolean;
-    isKnownTemplate: boolean;
-  }>;
-  allValid: boolean;
-  total: number;
-  validCount: number;
-  invalidCount: number;
-  unknownCount: number;
-}
-
 /**
  * Asynchronously verify all client-side-passed templates against the
  * Rust backend's embedded checksum manifest.
  */
-export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResult | null> {
+export async function verifyTemplatesWithBackend(): Promise<BatchIntegrityResult | null> {
   try {
     await getTemplateCatalog();
     const verified = _cached!;
@@ -352,10 +340,7 @@ export async function verifyTemplatesWithBackend(): Promise<BackendIntegrityResu
 
     if (entries.length === 0) return null;
 
-    const result = await invokeWithTimeout<BackendIntegrityResult>(
-      'verify_template_integrity_batch',
-      { templates: entries },
-    );
+    const result = await verifyTemplateIntegrityBatch(entries);
 
     if (!result.allValid) {
       const invalid = result.results.filter((r) => r.isKnownTemplate && !r.valid);

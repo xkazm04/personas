@@ -145,12 +145,20 @@ pub fn upsert_today(
 fn parse_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PulseRow> {
     let directions_json: String = row.get(3)?;
     let tensions_json: String = row.get(4)?;
+    let directions = serde_json::from_str(&directions_json).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "unparseable pulse directions; defaulting to empty");
+        Default::default()
+    });
+    let tensions = serde_json::from_str(&tensions_json).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "unparseable pulse tensions; defaulting to empty");
+        Default::default()
+    });
     Ok(PulseRow {
         project_id: row.get(0)?,
         day: row.get(1)?,
         narrative_md: row.get(2)?,
-        directions: serde_json::from_str(&directions_json).unwrap_or_default(),
-        tensions: serde_json::from_str(&tensions_json).unwrap_or_default(),
+        directions,
+        tensions,
         commit_count: row.get(5)?,
         run_count: row.get(6)?,
         note_count: row.get(7)?,

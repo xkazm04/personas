@@ -98,7 +98,15 @@ pub fn register_claude_desktop_mcp(
         let content = std::fs::read_to_string(&config_path).map_err(|e| {
             AppError::Internal(format!("Failed to read Claude Desktop config: {e}"))
         })?;
-        serde_json::from_str(&content).unwrap_or(serde_json::json!({}))
+        // Never silently discard an unparseable existing config here — doing so
+        // and then writing back "{}" plus our entry would destroy every other
+        // MCP server the user already had registered in Claude Desktop.
+        serde_json::from_str(&content).map_err(|e| {
+            AppError::Internal(format!(
+                "Existing Claude Desktop config at {} is not valid JSON — refusing to overwrite it: {e}",
+                config_path.display()
+            ))
+        })?
     } else {
         serde_json::json!({})
     };
@@ -148,7 +156,15 @@ pub fn unregister_claude_desktop_mcp(
 
     let content = std::fs::read_to_string(&config_path)
         .map_err(|e| AppError::Internal(format!("Failed to read config: {e}")))?;
-    let mut config: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
+    // Never silently default to `Value::Null` here — serializing that back out
+    // would overwrite the user's entire Claude Desktop config file with the
+    // literal text "null".
+    let mut config: serde_json::Value = serde_json::from_str(&content).map_err(|e| {
+        AppError::Internal(format!(
+            "Existing Claude Desktop config at {} is not valid JSON — refusing to overwrite it: {e}",
+            config_path.display()
+        ))
+    })?;
 
     if let Some(servers) = config.get_mut("mcpServers").and_then(|s| s.as_object_mut()) {
         servers.remove("personas");

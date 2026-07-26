@@ -1,14 +1,29 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use tauri::State;
 
 use crate::db::models::*;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::engine::evolution;
+use crate::engine::evolution::EvolutionCycleStatus;
 use crate::engine::genome::FitnessObjective;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // ============================================================================
 // Policy management
@@ -191,8 +206,23 @@ pub async fn evolution_trigger_cycle(
     let cycle_id = cycle.id.clone();
 
     let pool = state.db.clone();
+    let pool_for_panic = pool.clone();
+    let cycle_id_for_panic = cycle_id.clone();
     tokio::spawn(async move {
-        evolution::run_evolution_cycle(pool, policy, cycle_id).await;
+        let work = AssertUnwindSafe(evolution::run_evolution_cycle(pool, policy, cycle_id))
+            .catch_unwind()
+            .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(cycle_id = %cycle_id_for_panic, panic = %msg, "evolution cycle task panicked — marking cycle as failed");
+            let _ = evolution_repo::update_cycle_status(
+                &pool_for_panic,
+                &cycle_id_for_panic,
+                EvolutionCycleStatus::Failed,
+                Some(&msg),
+            );
+        }
     });
 
     Ok(cycle)

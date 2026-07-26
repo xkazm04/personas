@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::panic::AssertUnwindSafe;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine as _;
+use futures_util::FutureExt;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -24,6 +26,18 @@ use crate::utils::sanitization::sanitize_secrets;
 use crate::AppState;
 use personas_macros::requires;
 use std::sync::Arc;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);
@@ -629,42 +643,72 @@ pub async fn start_google_credential_oauth(
     let db_pool = state.db.clone();
     let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_connector = connector_name.clone();
+    // Separate clones for the panic-recovery arm below -- the ones above are
+    // moved into the AssertUnwindSafe future.
+    let session_id_for_panic = session_id.clone();
+    let db_pool_for_panic = state.db.clone();
+    let audit_connector_for_panic = connector_name.clone();
 
     tokio::spawn(async move {
-        let outcome = run_oauth_callback_server(
-            listener,
-            OAUTH_SESSION_TTL_SECS,
-            oauth_state,
-            |code_value, redir_uri| async move {
-                let tokens = exchange_google_oauth_code_for_tokens(
-                    &client_id_clone,
-                    client_secret_clone.expose_secret(),
-                    &code_value,
-                    &redir_uri,
-                    Some(code_verifier_task.expose_secret()),
-                )
-                .await?;
-                if tokens.refresh_token.is_none() {
-                    return Err("No refresh token returned by Google. Re-authorize with prompt=consent or revoke prior app access and retry.".into());
-                }
-                Ok(OAuthCallbackTokens {
-                    access_token: tokens.access_token,
-                    refresh_token: tokens.refresh_token,
-                    scope: tokens.scope,
-                    token_type: tokens.token_type,
-                    expires_in: tokens.expires_in,
-                    extra: tokens.extra,
-                })
-            },
-        )
+        // Without panic-capture, a panic anywhere in `run_oauth_callback_server`
+        // or the token-exchange closure would unwind the whole task before
+        // `apply_oauth_outcome` runs, leaving the session status stuck at
+        // "pending" forever -- the OAuth callback UI polls this status and
+        // would wedge indefinitely. Mirrors the pattern in
+        // `commands/execution/tests.rs::start_test_run`.
+        let work = AssertUnwindSafe(async move {
+            let outcome = run_oauth_callback_server(
+                listener,
+                OAUTH_SESSION_TTL_SECS,
+                oauth_state,
+                |code_value, redir_uri| async move {
+                    let tokens = exchange_google_oauth_code_for_tokens(
+                        &client_id_clone,
+                        client_secret_clone.expose_secret(),
+                        &code_value,
+                        &redir_uri,
+                        Some(code_verifier_task.expose_secret()),
+                    )
+                    .await?;
+                    if tokens.refresh_token.is_none() {
+                        return Err("No refresh token returned by Google. Re-authorize with prompt=consent or revoke prior app access and retry.".into());
+                    }
+                    Ok(OAuthCallbackTokens {
+                        access_token: tokens.access_token,
+                        refresh_token: tokens.refresh_token,
+                        scope: tokens.scope,
+                        token_type: tokens.token_type,
+                        expires_in: tokens.expires_in,
+                        extra: tokens.extra,
+                    })
+                },
+            )
+            .await;
+
+            let is_success =
+                apply_oauth_outcome(&session_id_clone, outcome, &db_pool, &audit_connector);
+
+            // Invalidate auth detection cache so the negotiator sees fresh results immediately
+            if is_success {
+                *auth_detect_cache.lock().await = None;
+            }
+        })
+        .catch_unwind()
         .await;
 
-        let is_success =
-            apply_oauth_outcome(&session_id_clone, outcome, &db_pool, &audit_connector);
-
-        // Invalidate auth detection cache so the negotiator sees fresh results immediately
-        if is_success {
-            *auth_detect_cache.lock().await = None;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                session_id = %session_id_for_panic,
+                panic = %msg,
+                "Google OAuth callback task panicked -- marking session as failed"
+            );
+            apply_oauth_outcome(
+                &session_id_for_panic,
+                OAuthCallbackOutcome::Error(format!("Internal error: {msg}")),
+                &db_pool_for_panic,
+                &audit_connector_for_panic,
+            );
         }
     });
 
@@ -1804,39 +1848,66 @@ pub async fn start_oauth(
     let db_pool = state.db.clone();
     let auth_detect_cache = state.auth_detect_cache.clone();
     let audit_provider = provider_id.clone();
+    // Separate clones for the panic-recovery arm below -- the ones above are
+    // moved into the AssertUnwindSafe future.
+    let sid_for_panic = session_id.clone();
+    let db_pool_for_panic = state.db.clone();
+    let audit_provider_for_panic = provider_id.clone();
 
     tokio::spawn(async move {
-        let outcome = run_oauth_callback_server(
-            listener,
-            OAUTH_SESSION_TTL_SECS,
-            oauth_state,
-            |code_value, redir_uri| async move {
-                let tokens = exchange_oauth_code(
-                    &tok_url,
-                    &cid,
-                    csec.as_ref().map(|s| s.expose_secret()),
-                    &code_value,
-                    &redir_uri,
-                    cv.as_ref().map(|s| s.expose_secret()),
-                )
-                .await?;
-                Ok(OAuthCallbackTokens {
-                    access_token: tokens.access_token,
-                    refresh_token: tokens.refresh_token,
-                    scope: tokens.scope,
-                    token_type: tokens.token_type,
-                    expires_in: tokens.expires_in,
-                    extra: tokens.extra,
-                })
-            },
-        )
+        // See the matching comment in `start_google_credential_oauth` -- without
+        // panic-capture a panic here leaves the session status stuck at
+        // "pending" forever, wedging the callback UI.
+        let work = AssertUnwindSafe(async move {
+            let outcome = run_oauth_callback_server(
+                listener,
+                OAUTH_SESSION_TTL_SECS,
+                oauth_state,
+                |code_value, redir_uri| async move {
+                    let tokens = exchange_oauth_code(
+                        &tok_url,
+                        &cid,
+                        csec.as_ref().map(|s| s.expose_secret()),
+                        &code_value,
+                        &redir_uri,
+                        cv.as_ref().map(|s| s.expose_secret()),
+                    )
+                    .await?;
+                    Ok(OAuthCallbackTokens {
+                        access_token: tokens.access_token,
+                        refresh_token: tokens.refresh_token,
+                        scope: tokens.scope,
+                        token_type: tokens.token_type,
+                        expires_in: tokens.expires_in,
+                        extra: tokens.extra,
+                    })
+                },
+            )
+            .await;
+
+            let is_success = apply_oauth_outcome(&sid, outcome, &db_pool, &audit_provider);
+
+            // Invalidate auth detection cache so the negotiator sees fresh results immediately
+            if is_success {
+                *auth_detect_cache.lock().await = None;
+            }
+        })
+        .catch_unwind()
         .await;
 
-        let is_success = apply_oauth_outcome(&sid, outcome, &db_pool, &audit_provider);
-
-        // Invalidate auth detection cache so the negotiator sees fresh results immediately
-        if is_success {
-            *auth_detect_cache.lock().await = None;
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                session_id = %sid_for_panic,
+                panic = %msg,
+                "Universal OAuth callback task panicked -- marking session as failed"
+            );
+            apply_oauth_outcome(
+                &sid_for_panic,
+                OAuthCallbackOutcome::Error(format!("Internal error: {msg}")),
+                &db_pool_for_panic,
+                &audit_provider_for_panic,
+            );
         }
     });
 

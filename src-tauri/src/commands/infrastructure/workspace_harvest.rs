@@ -165,7 +165,9 @@ pub async fn dev_tools_workspace_harvest_prepare(
     std::fs::create_dir_all(&dir)
         .map_err(|e| AppError::Validation(format!("Could not create practice-harvest dir: {e}")))?;
     let snapshot_path = dir.join("snapshot.json");
-    std::fs::write(&snapshot_path, serde_json::to_string_pretty(&snapshot).unwrap_or_default())
+    let snapshot_str = serde_json::to_string_pretty(&snapshot)
+        .map_err(|e| AppError::Internal(format!("Could not serialize harvest snapshot: {e}")))?;
+    std::fs::write(&snapshot_path, snapshot_str)
         .map_err(|e| AppError::Validation(format!("Could not write snapshot: {e}")))?;
 
     Ok(HarvestPrepared {

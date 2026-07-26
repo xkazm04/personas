@@ -1,10 +1,24 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateChannelMessageInput, CreateDesignReviewInput,
@@ -189,8 +203,12 @@ pub async fn start_design_review_run(
         .register_run_guarded("review", &run_id);
     let registry = state.process_registry.clone();
 
+    let app_for_panic = app.clone();
+    let run_id_for_panic = run_id_clone.clone();
+
     tokio::spawn(async move {
         let _guard = run_guard;
+        let work = AssertUnwindSafe(async move {
         // Track per-item failures (CLI error, JSON-extraction miss, or DB-write
         // failure) so the run-completion event reflects reality. Without this
         // the run always emitted "completed" with no error even when every
@@ -519,6 +537,26 @@ pub async fn start_design_review_run(
                 elapsed_ms: None,
             },
         );
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_for_panic, panic = %msg, "design review run task panicked — marking run as failed");
+            let _ = app_for_panic.emit(
+                event_name::DESIGN_REVIEW_STATUS,
+                DesignReviewStatusEvent {
+                    run_id: run_id_for_panic,
+                    test_case_index: total,
+                    total,
+                    status: "error".to_string(),
+                    test_case_name: String::new(),
+                    error_message: Some(format!("Internal error: review run panicked: {msg}")),
+                    elapsed_ms: None,
+                },
+            );
+        }
     });
 
     Ok(json!({ "run_id": run_id, "total": total }))
@@ -711,11 +749,14 @@ pub async fn rebuild_design_review(
     n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "running", None);
 
     let rebuild_id_ret = rebuild_id.clone();
+    let app_for_panic = app.clone();
+    let rebuild_id_for_panic = rebuild_id.clone();
 
     tokio::spawn(async move {
         // Hold the single-flight lock for the lifetime of the rebuild; dropping
         // it here (task completion) frees the review for a subsequent rebuild.
         let _rebuild_guard = rebuild_guard;
+        let work = AssertUnwindSafe(async move {
         n8n_job_state::emit_n8n_transform_line(
             &app,
             &rebuild_id,
@@ -877,6 +918,15 @@ pub async fn rebuild_design_review(
                     Some(error_msg),
                 );
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(rebuild_id = %rebuild_id_for_panic, panic = %msg, "design review rebuild task panicked — marking job as failed");
+            n8n_job_state::set_n8n_transform_status(&app_for_panic, &rebuild_id_for_panic, "failed", Some(msg));
         }
     });
 

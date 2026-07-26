@@ -10,7 +10,7 @@ use crate::error::AppError;
 use crate::AppState;
 
 use super::ai_artifact_flow::{
-    run_ai_artifact_task, run_claude_prompt, AiArtifactMessages, AiArtifactParams,
+    run_claude_prompt, spawn_ai_artifact_task, AiArtifactMessages, AiArtifactParams,
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
@@ -85,20 +85,21 @@ pub async fn start_credential_negotiation(
 
     let neg_id = negotiation_id.clone();
 
-    tokio::spawn(async move {
-        run_ai_artifact_task(AiArtifactParams {
-            app,
-            task_id: neg_id,
-            prompt_text: negotiation_prompt,
-            cli_args,
-            registry,
-            domain: "negotiation".into(),
-            track_pid: true,
-            messages: NEGOTIATION_MESSAGES,
-            extractor: credential_negotiator::extract_negotiation_result,
-            spend: None,
-        })
-        .await;
+    // spawn_ai_artifact_task (ai_artifact_flow.rs) is the panic-safe wrapper
+    // around run_ai_artifact_task — a panic mid-run now cleans up the process
+    // registry and emits a "failed" status instead of wedging the UI on
+    // "planning" forever.
+    spawn_ai_artifact_task(AiArtifactParams {
+        app,
+        task_id: neg_id,
+        prompt_text: negotiation_prompt,
+        cli_args,
+        registry,
+        domain: "negotiation".into(),
+        track_pid: true,
+        messages: NEGOTIATION_MESSAGES,
+        extractor: credential_negotiator::extract_negotiation_result,
+        spend: None,
     });
 
     Ok(json!({ "negotiation_id": negotiation_id }))

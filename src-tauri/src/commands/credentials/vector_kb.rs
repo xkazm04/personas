@@ -1,7 +1,9 @@
 //! Tauri commands for vector knowledge base CRUD, ingestion, and search.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use rusqlite::params;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
@@ -18,6 +20,18 @@ use crate::engine::vector_store::SqliteVectorStore;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 /// Maximum recursion depth when scanning directories.
 const MAX_DIR_DEPTH: usize = 10;
@@ -435,7 +449,16 @@ async fn spawn_ingest_job(
         Some(&format!("{file_count} file(s)")),
     );
 
+    let app_for_panic = app.clone();
+    let ingest_jobs_for_panic = ingest_jobs.clone();
+    let kb_id_for_panic = kb_id.clone();
+    let audit_pool_for_panic = audit_pool.clone();
+    let kb_cred_id_for_panic = kb_cred_id.clone();
+    let kb_name_for_panic = kb_name.clone();
+    let job_id_for_panic = job_id_clone.clone();
+
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = kb_ingest::ingest_files(
             app.clone(),
             user_db,
@@ -483,6 +506,38 @@ async fn spawn_ingest_job(
                     }),
                 );
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                job_id = %job_id_for_panic,
+                panic = %msg,
+                "KB ingest task panicked — cleaning up job and marking as failed"
+            );
+            {
+                let mut jobs = ingest_jobs_for_panic.lock().await;
+                jobs.remove(&kb_id_for_panic);
+            }
+            let _ = audit_log::insert(
+                &audit_pool_for_panic,
+                &kb_cred_id_for_panic,
+                &kb_name_for_panic,
+                "kb_ingest_failed",
+                None,
+                None,
+                Some(&msg),
+            );
+            let _ = app_for_panic.emit(
+                event_name::KB_INGEST_ERROR,
+                serde_json::json!({
+                    "jobId": job_id_for_panic,
+                    "error": msg
+                }),
+            );
         }
     });
 
@@ -689,7 +744,16 @@ pub async fn kb_reindex(
 
     audit_log::insert_warn(&audit_pool, &kb_cred_id, &kb_name, "kb_reindex", None);
 
+    let app_for_panic = app_task.clone();
+    let ingest_jobs_for_panic = ingest_jobs.clone();
+    let kb_id_for_panic = kb_id_task.clone();
+    let audit_pool_for_panic = audit_pool.clone();
+    let kb_cred_id_for_panic = kb_cred_id.clone();
+    let kb_name_for_panic = kb_name.clone();
+    let job_id_for_panic = job_id_clone.clone();
+
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = kb_ingest::reindex_kb(
             app_task.clone(),
             user_db,
@@ -736,6 +800,38 @@ pub async fn kb_reindex(
                     }),
                 );
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                job_id = %job_id_for_panic,
+                panic = %msg,
+                "KB reindex task panicked — cleaning up job and marking as failed"
+            );
+            {
+                let mut jobs = ingest_jobs_for_panic.lock().await;
+                jobs.remove(&kb_id_for_panic);
+            }
+            let _ = audit_log::insert(
+                &audit_pool_for_panic,
+                &kb_cred_id_for_panic,
+                &kb_name_for_panic,
+                "kb_reindex_failed",
+                None,
+                None,
+                Some(&msg),
+            );
+            let _ = app_for_panic.emit(
+                event_name::KB_INGEST_ERROR,
+                serde_json::json!({
+                    "jobId": job_id_for_panic,
+                    "error": msg
+                }),
+            );
         }
     });
 

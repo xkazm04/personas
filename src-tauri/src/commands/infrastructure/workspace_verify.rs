@@ -18,8 +18,10 @@
 //! reproduce identifiers verbatim is a well-known failure mode, and a mismatched
 //! id would silently mark the wrong practice.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
@@ -34,6 +36,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 const VERIFY_MODEL: &str = "claude-sonnet-4-6";
 const VERIFY_TIMEOUT_SECS: u64 = 900;
@@ -167,20 +181,37 @@ pub async fn dev_tools_workspace_verify_adoptions(
     let db = state.db.clone();
     let jid = job_id.clone();
     let pid = project_id.clone();
+    let app_for_panic = app.clone();
+    let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
-        match run_verify(&app, &jid, &db, &pid, &ids, &titles, prompt, root, token).await {
-            Ok((checked, diverged)) => {
-                VERIFY_JOBS.emit_line(
-                    &app,
-                    &jid,
-                    format!("[Complete] {checked} verified · {diverged} diverged"),
-                );
-                VERIFY_JOBS.set_status(&app, &jid, "completed", None);
+        let work = AssertUnwindSafe(async move {
+            match run_verify(&app, &jid, &db, &pid, &ids, &titles, prompt, root, token).await {
+                Ok((checked, diverged)) => {
+                    VERIFY_JOBS.emit_line(
+                        &app,
+                        &jid,
+                        format!("[Complete] {checked} verified · {diverged} diverged"),
+                    );
+                    VERIFY_JOBS.set_status(&app, &jid, "completed", None);
+                }
+                Err(e) => {
+                    VERIFY_JOBS.emit_line(&app, &jid, format!("[Failed] {e}"));
+                    VERIFY_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
+                }
             }
-            Err(e) => {
-                VERIFY_JOBS.emit_line(&app, &jid, format!("[Failed] {e}"));
-                VERIFY_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
-            }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                job_id = %jid_for_panic,
+                panic = %msg,
+                "workspace adoption-verify task panicked — marking job as failed"
+            );
+            VERIFY_JOBS.emit_line(&app_for_panic, &jid_for_panic, format!("[Failed] {msg}"));
+            VERIFY_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
         }
     });
 

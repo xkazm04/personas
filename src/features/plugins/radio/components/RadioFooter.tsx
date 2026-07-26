@@ -17,7 +17,7 @@ import {
   radioSetStation,
   radioSetVolume,
   radioTrackEnded,
-} from '../api/radioApi';
+} from '@/api/radio';
 import NowPlayingCard from './NowPlayingCard';
 import StationPicker from './StationPicker';
 import TitleCrossfade from './TitleCrossfade';

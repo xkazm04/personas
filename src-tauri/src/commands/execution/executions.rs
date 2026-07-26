@@ -274,12 +274,25 @@ pub(crate) async fn execute_persona_inner(
 
         // Merge capability metadata into input_data._use_case and _time_filter.
         // Caller-provided _use_case takes precedence — this is only a default.
-        let mut merged: serde_json::Map<String, serde_json::Value> = input_data
+        // A malformed (non-empty) caller input_data must be rejected, not
+        // silently dropped — swallowing it here would execute the persona
+        // with none of the caller's actual input and no indication anything
+        // was lost.
+        let mut merged: serde_json::Map<String, serde_json::Value> = match input_data
             .as_deref()
-            .filter(|s| !s.trim().is_empty())
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .and_then(|v| v.as_object().cloned())
-            .unwrap_or_default();
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+        {
+            Some(s) => {
+                let v: serde_json::Value = serde_json::from_str(s).map_err(|e| {
+                    AppError::Validation(format!("input_data is not valid JSON: {e}"))
+                })?;
+                v.as_object().cloned().ok_or_else(|| {
+                    AppError::Validation("input_data must be a JSON object".to_string())
+                })?
+            }
+            None => serde_json::Map::new(),
+        };
 
         merged
             .entry("_use_case".to_string())
@@ -287,7 +300,10 @@ pub(crate) async fn execute_persona_inner(
         if let Some(tf) = use_case.get("time_filter").cloned() {
             merged.entry("_time_filter".to_string()).or_insert(tf);
         }
-        input_data = Some(serde_json::to_string(&merged).unwrap_or_default());
+        input_data = Some(
+            serde_json::to_string(&merged)
+                .map_err(|e| AppError::Internal(format!("Failed to serialize merged input_data: {e}")))?,
+        );
 
         // Apply model_override (if any) by mutating the persona's model_profile
         // for this execution. Engine reads persona.model_profile at spawn time.

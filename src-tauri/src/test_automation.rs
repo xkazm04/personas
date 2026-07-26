@@ -41,7 +41,7 @@ pub async fn __test_respond(
     id: String,
     result: String,
     pending: tauri::State<'_, PendingResponses>,
-) -> Result<(), String> {
+) -> Result<(), crate::error::AppError> {
     let mut map = pending.lock().await;
     if let Some(sender) = map.remove(&id) {
         let _ = sender.send(result);

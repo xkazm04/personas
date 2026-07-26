@@ -1,5 +1,7 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
@@ -13,6 +15,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -78,8 +92,11 @@ pub async fn start_schema_proposal(
     let pool = state.db.clone();
     let user_db = state.user_db.clone();
 
+    let app_for_panic = app.clone();
+    let proposal_id_for_panic = proposal_id.clone();
+
     tokio::spawn(async move {
-        run_schema_proposal(RunParams {
+        let work = AssertUnwindSafe(run_schema_proposal(RunParams {
             app,
             pool,
             user_db,
@@ -90,8 +107,19 @@ pub async fn start_schema_proposal(
             existing_tables,
             database_type,
             cancel_token,
-        })
+        }))
+        .catch_unwind()
         .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                proposal_id = %proposal_id_for_panic,
+                panic = %msg,
+                "schema proposal task panicked — marking job as failed"
+            );
+            SCHEMA_PROPOSAL_JOBS.set_status(&app_for_panic, &proposal_id_for_panic, "failed", Some(msg));
+        }
     });
 
     Ok(())
