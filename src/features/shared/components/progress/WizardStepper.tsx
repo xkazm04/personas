@@ -26,10 +26,12 @@ export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
               {/* Rail connecting to previous node */}
               {i > 0 && (
                 <div className="w-8 h-0.5 bg-primary/10 relative overflow-hidden">
+                  {/* scaleX, not width: a transform animates on the compositor,
+                      where animating width forces a layout pass every frame. */}
                   <motion.div
-                    className="absolute inset-y-0 left-0 bg-emerald-500/50"
-                    initial={{ width: '0%' }}
-                    animate={{ width: i < currentIndex ? '100%' : '0%' }}
+                    className="absolute inset-y-0 left-0 w-full origin-left bg-emerald-500/50"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: i < currentIndex ? 1 : 0 }}
                     transition={RAIL_SPRING}
                   />
                 </div>
