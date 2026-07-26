@@ -11,10 +11,10 @@ import { TrendingUp, type LucideIcon } from 'lucide-react';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KPIS_GLYPH } from '@/features/shared/glyph/glyphs/kpisGlyph';
 import { StatCard } from '@/features/shared/components/display/StatCard';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiOffTrackReason, type PaceDescriptor } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
@@ -158,14 +158,16 @@ export function KPIDashboard({
     return { series, rows };
   }, [filtered, kpiTrends, envFilter]);
 
-  if (loading && kpis.length === 0) {
-    return (
-      <div className="flex justify-center py-16">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-  if (active.length === 0) {
+  // ── Loading choreography (docs/design/overview-loading.md, v2) ──
+  // `loading` mirrors kpisLoading from the store; kpis are COLD on first
+  // visit (runStartup doesn't fetch them), so the region needs its own
+  // geometry-matched ghost rather than the deprecated whole-region spinner
+  // gate. Ghosts paint ONLY into emptiness — data already on screen (e.g. a
+  // project-filter change while KPIs are already loaded) is never hidden by
+  // a refetch. The empty state stays settled-only.
+  const showGhost = loading && active.length === 0;
+
+  if (!loading && active.length === 0) {
     return (
       <EmptyState
         glyph={KPIS_GLYPH}
@@ -178,6 +180,10 @@ export function KPIDashboard({
         }
       />
     );
+  }
+
+  if (showGhost) {
+    return <KpiDashboardGhost />;
   }
 
   return (
@@ -232,23 +238,30 @@ export function KPIDashboard({
         )}
       </div>
 
-      {/* Summary strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label={t.kpis.stat_active} value={filtered.length} />
-        <StatCard label={t.kpis.stat_on_track} value={onTrack} tone="success" />
+      {/* Summary strip — numbers count up via AnimatedCounter rather than
+          being ghost-gated; a refetch of the same values re-renders plainly
+          (AnimatedCounter is a no-op when the target hasn't changed). The
+          section itself ripples in once, on first data (mount of this
+          branch) — a poll/refresh never replays it. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
+        <StatCard label={t.kpis.stat_active} value={<AnimatedCounter value={filtered.length} />} />
+        <StatCard label={t.kpis.stat_on_track} value={<AnimatedCounter value={onTrack} />} tone="success" />
         <StatCard
           label={t.kpis.stat_off_track}
-          value={offTrack.length}
+          value={<AnimatedCounter value={offTrack.length} />}
           tone={offTrack.length ? 'danger' : 'neutral'}
         />
-        <StatCard label={t.kpis.stat_met} value={met} tone={met ? 'success' : 'neutral'} />
+        <StatCard label={t.kpis.stat_met} value={<AnimatedCounter value={met} />} tone={met ? 'success' : 'neutral'} />
       </div>
 
       {/* Distance to target, grouped by project, with each project's off-track
           alerts injected at the head of its card. */}
-      <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
+      <div className="animate-fade-in" style={{ animationDelay: '35ms' }}>
+        <KpiSignalBoard projectGroups={projectGroups} onOpen={onOpen} />
+      </div>
 
       {/* Trend — progress vs target over time */}
+      <div className="animate-fade-in" style={{ animationDelay: '70ms' }}>
       {!trendModel && envFilter !== 'production' && (
         <p className="typo-caption text-foreground/60 rounded-card border border-primary/15 bg-secondary/10 px-4 py-3">
           {t.kpis.env_no_sim_series}
@@ -257,7 +270,7 @@ export function KPIDashboard({
       {trendModel && (
         <ChartPanel title={t.kpis.chart_trend_title} icon={TrendingUp}>
           <LazyChart
-            fallback={<div className="h-48" />}
+            fallback={<div className="h-48 rounded-card bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true" />}
             render={(R) => (
               <R.ResponsiveContainer width="100%" height={220}>
                 <R.LineChart accessibilityLayer={false} data={trendModel.rows} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
@@ -315,6 +328,51 @@ export function KPIDashboard({
           />
         </ChartPanel>
       )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KpiDashboardGhost — calm, geometry-matched ghost for the ONLY moment the
+// dashboard has nothing to show yet (cold store + fetch in flight). Mirrors
+// the real frame's three sections (summary strip, signal board, trend chart
+// box) so the ghost→content swap is a plain conditional, not a layout jump.
+// No `animate-pulse` — each section is invisible for its first ~120-220ms
+// (animation-delay + fill-mode both), so a fast fetch never paints one.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function KpiDashboardGhost() {
+  return (
+    <div className="space-y-4" data-testid="kpi-dashboard-ghost" aria-hidden="true">
+      {/* Summary strip ghost — matches the StatCard grid geometry. */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '150ms' }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-card border border-primary/10 bg-gradient-to-b from-secondary/45 to-secondary/15 p-3.5 flex flex-col gap-2"
+          >
+            <span className={`h-2.5 w-16 ${GHOST_BAR}`} />
+            <span className={`h-6 w-10 ${GHOST_BAR}`} />
+          </div>
+        ))}
+      </div>
+
+      {/* Signal board ghost — one project-card silhouette. */}
+      <div
+        className="rounded-card border border-primary/15 bg-secondary/10 p-4 space-y-2.5 animate-fade-in"
+        style={{ animationDelay: '185ms' }}
+      >
+        <span className={`block h-3 w-32 ${GHOST_BAR}`} />
+        <span className={`block h-2.5 w-full ${GHOST_BAR}`} />
+        <span className={`block h-2.5 w-4/5 ${GHOST_BAR}`} />
+        <span className={`block h-2.5 w-2/3 ${GHOST_BAR}`} />
+      </div>
+
+      {/* Trend chart ghost — reserves the chart's final box height. */}
+      <div className="h-48 rounded-card bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '220ms' }} />
     </div>
   );
 }
