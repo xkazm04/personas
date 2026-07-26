@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -16,6 +17,13 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { parseNote } from './parseNote';
+
+/**
+ * Rows in the first viewport that play the one-shot entrance ripple when the
+ * vault tree first loads (35ms stagger via RevealItem, id-guarded per vault
+ * so re-filtering or expanding folders never replays it).
+ */
+const TREE_CASCADE_ROWS = 12;
 
 function matchesFilter(node: VaultTreeNode, filter: string): boolean {
   const lower = filter.toLowerCase();
@@ -119,6 +127,10 @@ export default function BrowsePanel() {
 
   const selectNote = useCallback(async (path: string) => {
     setSelectedPath(path);
+    // Clear the previous note immediately — this is a context switch to a
+    // different resource, not a refresh of the same one, so the stale body
+    // must not linger under the new title while the fetch is in flight.
+    setNoteContent(null);
     setLoadingNote(true);
     try {
       const content = await obsidianBrainReadVaultNote(path);
@@ -144,6 +156,16 @@ export default function BrowsePanel() {
     () => (noteContent ? parseNote(noteContent) : null),
     [noteContent],
   );
+
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // Ghosts only enter emptiness: a cold fetch (no tree yet) or a cold note
+  // fetch (content just cleared). An already-loaded tree stays on screen
+  // while a reload runs (law 1) — vaultPath changing is what resets the
+  // ripple below, not `loading` toggling on its own.
+  const showTreeGhost = loading && !tree;
+  const showNoteGhost = loadingNote && !noteContent;
+  const treeRevealKey = vaultPath ?? 'root';
+  const treeEnter = useRevealTracker(treeRevealKey);
 
   if (!connected) {
     return (
@@ -185,14 +207,24 @@ export default function BrowsePanel() {
 
         {/* Tree */}
         <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="md" label="Loading vault..." />
-            </div>
+          {showTreeGhost ? (
+            /* Cold fetch, nothing on screen yet: a delayed ghost tree under
+               the real search box / vault header above. Invisible for its
+               first ~120ms so a fast local read never paints it — see
+               VaultGhostTree below. */
+            <VaultGhostTree />
           ) : tree ? (
             <div className="space-y-0.5">
-              {tree.children.map((child) => (
-                <TreeItem key={child.path} node={child} depth={0} onSelect={selectNote} selectedPath={selectedPath} filter={filter} />
+              {tree.children.map((child, index) => (
+                <RevealItem
+                  key={child.path}
+                  revealId={child.path}
+                  order={index}
+                  hasEntered={(id) => index >= TREE_CASCADE_ROWS || treeEnter.hasEntered(id)}
+                  markEntered={treeEnter.markEntered}
+                >
+                  <TreeItem node={child} depth={0} onSelect={selectNote} selectedPath={selectedPath} filter={filter} />
+                </RevealItem>
               ))}
               {tree.children.length === 0 && (
                 <p className="typo-caption text-foreground p-4">{t.plugins.obsidian_brain.vault_empty}</p>
@@ -231,10 +263,12 @@ export default function BrowsePanel() {
                 {t.plugins.obsidian_brain.open_in_obsidian}
               </button>
             </div>
-            {loadingNote ? (
-              <div className="flex items-center justify-center py-12">
-                <LoadingSpinner size="md" label="Loading note..." />
-              </div>
+            {showNoteGhost ? (
+              /* The note pane is a content region, not a spinner target: a
+                 small delayed ghost (title bar + text bars) in the same
+                 geometry as the real note. Delayed entrance means opening a
+                 cached/fast note never flashes it — see NoteGhostBlock. */
+              <NoteGhostBlock />
             ) : noteContent ? (
               <>
                 {parsed && parsed.properties.length > 0 && (
@@ -272,6 +306,66 @@ export default function BrowsePanel() {
       <SavedConfigsSidebar
         emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_other}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ghosts — calm, delayed, geometry-matched placeholders for the ONLY two
+// moments each region has nothing to show (docs/design/overview-loading.md).
+// `animate-fade-in` (150ms, fill-mode: both) behind a ≥120ms animation-delay
+// means a fast local read never paints a single bar — the delay IS the
+// anti-flash. No `animate-pulse`, ever. `aria-hidden` — nothing here is
+// content.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+/** Deterministic depth/width mix so the tree ghost reads as folder/file
+ * nesting rather than a flat barcode of rows. */
+const TREE_GHOST_ROWS: { depth: number; width: string }[] = [
+  { depth: 0, width: 'w-28' },
+  { depth: 1, width: 'w-36' },
+  { depth: 1, width: 'w-20' },
+  { depth: 2, width: 'w-32' },
+  { depth: 0, width: 'w-40' },
+  { depth: 1, width: 'w-24' },
+  { depth: 1, width: 'w-16' },
+];
+
+function VaultGhostTree() {
+  return (
+    <div className="space-y-0.5" aria-hidden="true">
+      {TREE_GHOST_ROWS.map((row, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 px-2 py-1.5 animate-fade-in"
+          style={{ paddingLeft: `${row.depth * 16 + 8}px`, animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`w-3.5 h-3.5 flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`h-3 ${row.width} max-w-full ${GHOST_BAR}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Single delayed block (title bar + body bars) matching the real note
+ * pane's geometry — not a per-row list, so one entrance delay is enough. */
+function NoteGhostBlock() {
+  return (
+    <div className="space-y-3 animate-fade-in" style={{ animationDelay: '120ms' }} aria-hidden="true">
+      <div className="space-y-2">
+        <span className={`block h-4 w-48 ${GHOST_BAR}`} />
+        <span className={`block h-3 w-32 ${GHOST_BAR}`} />
+      </div>
+      <div className="rounded-modal bg-secondary/20 border border-primary/5 p-5 space-y-2.5">
+        <span className={`block h-3 w-full ${GHOST_BAR}`} />
+        <span className={`block h-3 w-11/12 ${GHOST_BAR}`} />
+        <span className={`block h-3 w-4/5 ${GHOST_BAR}`} />
+        <span className={`block h-3 w-full ${GHOST_BAR}`} />
+        <span className={`block h-3 w-2/3 ${GHOST_BAR}`} />
+      </div>
     </div>
   );
 }
