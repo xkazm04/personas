@@ -25,13 +25,18 @@ interface ContentHeaderSkeletonProps {
   showActions?: boolean;
   /** Render the large subtitle bar. Most headers carry a subtitle. */
   showSubtitle?: boolean;
+  /** Static, non-pulsing bars — the golden-pattern default (`docs/design/overview-loading.md`), so the header frame doesn't blink while a route chunk loads. */
+  calm?: boolean;
 }
 
 export function ContentHeaderSkeleton({
   showIcon = false,
   showActions = false,
   showSubtitle = true,
+  calm = false,
 }: ContentHeaderSkeletonProps) {
+  const bar = calm ? 'bg-primary/[0.06]' : 'bg-primary/10 animate-pulse';
+  const barStrong = calm ? 'bg-primary/[0.06]' : 'bg-primary/15 animate-pulse';
   return (
     <div
       aria-hidden="true"
@@ -47,23 +52,23 @@ export function ContentHeaderSkeleton({
       <div className="flex items-center gap-3 pr-20">
         {showIcon && (
           <div
-            className={`${IS_MOBILE ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg bg-primary/10 flex-shrink-0 animate-pulse`}
+            className={`${IS_MOBILE ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg flex-shrink-0 ${bar}`}
           />
         )}
         <div className="flex-1 min-w-0">
           {/* Title placeholder — sits inside the real typo-caption line box. */}
           <div className="typo-caption">
-            <span className="inline-block h-[0.7em] w-24 rounded bg-primary/10 align-middle animate-pulse" />
+            <span className={`inline-block h-[0.7em] w-24 rounded align-middle ${bar}`} />
           </div>
           {/* Subtitle placeholder — inside the dominant typo-heading-lg box. */}
           {showSubtitle && (
             <div className="typo-heading-lg mt-0.5">
-              <span className="inline-block h-[0.6em] w-52 rounded bg-primary/15 align-middle animate-pulse" />
+              <span className={`inline-block h-[0.6em] w-52 rounded align-middle ${barStrong}`} />
             </div>
           )}
         </div>
         {showActions && (
-          <div className="h-9 w-40 rounded-input bg-primary/10 flex-shrink-0 animate-pulse" />
+          <div className={`h-9 w-40 rounded-input flex-shrink-0 ${bar}`} />
         )}
       </div>
     </div>

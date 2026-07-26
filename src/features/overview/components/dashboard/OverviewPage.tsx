@@ -6,6 +6,7 @@ import { useExecutionDashboardPipeline } from '@/hooks/overview/useExecutionDash
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
+import { Reveal } from '@/features/shared/components/feedback/Reveal';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { pageTransition } from '@/features/overview/libs/animations';
 
@@ -26,28 +27,32 @@ const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderbo
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 const DirectorCoachingTab = lazyRetry(() => import('@/features/overview/sub_director'));
 
-/** Pulsing panel placeholder matching the dashboard's card geometry. */
+/**
+ * Calm (non-pulsing) panel placeholder matching the dashboard's card geometry.
+ * Per the golden loading pattern (`docs/design/overview-loading.md`) the fallback
+ * is a static sized frame that fades in — no `animate-pulse` blink.
+ */
 function SkeletonPanel({ className }: { className: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`rounded-modal border border-primary/10 bg-secondary/[0.03] animate-pulse ${className}`}
+      className={`rounded-modal border border-primary/10 bg-secondary/[0.03] ${className}`}
     />
   );
 }
 
 /**
  * Suspense fallback for the overview routes. Paints the real header
- * chrome (via `ContentHeaderSkeleton`) plus a card-shaped body skeleton
- * in the first frame, so switching tabs no longer flashes a bare spinner
- * — the page frame is present immediately while the lazy chunk loads.
+ * chrome (via a calm `ContentHeaderSkeleton`) plus calm, card-shaped body
+ * placeholders that fade in gently — so switching tabs shows the page frame
+ * immediately while the lazy chunk loads, with no pulsing-skeleton blink.
  */
 function OverviewRouteSkeleton() {
   return (
     <ContentBox>
-      <ContentHeaderSkeleton showActions />
+      <ContentHeaderSkeleton showActions calm />
       <ContentBody centered>
-        <div className="space-y-4 pb-6 pt-2">
+        <Reveal className="space-y-4 pb-6 pt-2" y={0}>
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
             <SkeletonPanel className="h-72" />
             <SkeletonPanel className="h-72" />
@@ -55,7 +60,7 @@ function OverviewRouteSkeleton() {
           </div>
           <SkeletonPanel className="h-11" />
           <SkeletonPanel className="h-44" />
-        </div>
+        </Reveal>
       </ContentBody>
     </ContentBox>
   );
