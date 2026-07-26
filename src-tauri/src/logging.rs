@@ -437,6 +437,7 @@ pub fn log_directory_stats(app_data_dir: &std::path::Path) -> LogDirectoryStats 
 
 #[derive(serde::Serialize, Clone, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct CrashLogEntry {
     pub filename: String,
     pub content: String,

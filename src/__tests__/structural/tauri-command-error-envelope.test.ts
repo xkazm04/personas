@@ -49,8 +49,8 @@ const ALLOWLIST: Record<string, string> = {
   // frontend changes on 2026-07-26 — removed from this list per the
   // stale-entry rule: the list only shrinks.)
 
-  // Owned by a separate branch at the time of the 2026-07-26 sweep.
-  "commands/infrastructure/dev_tools.rs": "dev-tools migration lives on another branch",
+  // (dev_tools.rs's lone String command — the favicon probe — was migrated on
+  // the architect-devtools branch; entry removed at merge per the shrink rule.)
 };
 
 function walk(dir: string, out: string[] = []): string[] {

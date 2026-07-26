@@ -194,6 +194,7 @@ pub struct TrustedPeer {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportTrustedPeerInput {
     pub identity_card: String,
     pub notes: Option<String>,

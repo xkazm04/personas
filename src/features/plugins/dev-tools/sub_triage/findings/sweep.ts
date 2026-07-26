@@ -85,6 +85,16 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   const { project, credentials, passport, plan, kpiAttention, contextIdForCulprit } = inputs;
   const drafts: FindingDraft[] = [];
   const skippedSensors: string[] = [];
+  const errors: string[] = [];
+  const recordError = (stage: string, e: unknown) => {
+    errors.push(`${stage}: ${e instanceof Error ? e.message : String(e)}`);
+  };
+  // Origins whose sensor ACTUALLY RAN this sweep. Verification treats absence
+  // from the drafts as `cleared` ONLY for probed origins — a skipped sensor's
+  // findings must never fake-clear (verify.ts HONESTY RULE 0). Note `kpi_sim`
+  // findings are written by Rust and have no TS emitter, so they are never in
+  // this set and always judge `pending` here.
+  const probedOrigins = new Set<string>();
 
   // -- E1/E2: the passport sensors (need a scan to have run) ------------------
   if (passport) {
@@ -93,7 +103,11 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       return [];
     });
     drafts.push(...emitStandardsFindings(standards, passport));
-    if (plan) drafts.push(...emitPassportGaps(plan, project.id));
+    probedOrigins.add('standards_finding');
+    if (plan) {
+      drafts.push(...emitPassportGaps(plan, project.id));
+      probedOrigins.add('passport_gap');
+    }
   } else {
     skippedSensors.push('passport');
   }
@@ -107,6 +121,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       const useCases = await listUseCases(project.id, 'active').catch(() => []);
       const idBySlug = new Map(useCases.map((u) => [u.slug, u.id]));
       drafts.push(...emitLlmCostFindings(pinpoints, '30d', idBySlug));
+      probedOrigins.add('llm_cost');
     } catch (e) {
       silentCatch('findings/sweep:llm')(e);
       skippedSensors.push('llm');
@@ -123,6 +138,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     try {
       const issues = await fetchSentryUnresolvedIssues(monCred.id, orgSlug, projSlug);
       drafts.push(...emitSentryFindings(issues, contextIdForCulprit ?? (() => undefined)));
+      probedOrigins.add('sentry_spike');
     } catch (e) {
       silentCatch('findings/sweep:sentry')(e);
       skippedSensors.push('sentry');
@@ -132,8 +148,11 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   }
 
   // -- E5: KPIs ---------------------------------------------------------------
-  if (kpiAttention && kpiAttention.length > 0) {
-    drafts.push(...emitKpiFindings(kpiAttention));
+  // A SUPPLIED-but-empty attention list means the KPIs were read and are all on
+  // track — that is a probe (an existing kpi_offtrack finding may clear on it).
+  if (kpiAttention) {
+    probedOrigins.add('kpi_offtrack');
+    if (kpiAttention.length > 0) drafts.push(...emitKpiFindings(kpiAttention));
   }
 
   // -- E6: dormant skills (P1 transcript telemetry) ----------------------------
@@ -162,6 +181,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
           dormant: r.dormant,
         }));
       drafts.push(...emitSkillDormantFindings(rows));
+      probedOrigins.add('skill_dormant');
     }
   } catch (e) {
     silentCatch('findings/sweep:skills')(e);
@@ -177,6 +197,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       skippedSensors.push('docs');
     } else {
       drafts.push(...emitDocRotFindings(rot));
+      probedOrigins.add('doc_rot');
     }
   } catch (e) {
     silentCatch('findings/sweep:docs')(e);
@@ -190,6 +211,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   try {
     const disputed = (await getMemoryDisputedOverview()).filter((m) => m.project_id === project.id);
     drafts.push(...emitMemoryDisputedFindings(disputed));
+    probedOrigins.add('memory_disputed');
   } catch (e) {
     silentCatch('findings/sweep:memory')(e);
     skippedSensors.push('memory');
@@ -201,16 +223,18 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   // has had its signal go away. Judge before dedup filtering — we need every fresh
   // draft here, including the ones dedup is about to drop as "already known"
   // (a still-known finding is exactly the `unchanged`/`regressed` case).
-  const verified = { cleared: 0, moved: 0, unchanged: 0, regressed: 0 };
+  const verified = { cleared: 0, moved: 0, unchanged: 0, regressed: 0, unverifiable: 0 };
   if (inputs.ideas && inputs.tasks) {
     const freshByKey = new Map(drafts.map((d) => [d.dedupKey, d]));
     for (const f of verifiableFindings(inputs.ideas, inputs.tasks)) {
-      const verdict = verdictFor(f, freshByKey.get(f.dedup_key ?? ''));
+      const verdict = verdictFor(f, freshByKey.get(f.dedup_key ?? ''), probedOrigins);
       try {
         await setFindingVerifyState(f.id, verdict.state, JSON.stringify(verdict.evidence));
-        if (verdict.state !== 'pending') verified[verdict.state] += 1;
+        if (verdict.state === 'pending') verified.unverifiable += 1;
+        else verified[verdict.state] += 1;
       } catch (e) {
         silentCatch('findings/sweep:setVerifyState')(e);
+        recordError('verify', e);
       }
     }
   }
@@ -249,6 +273,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       if (idea) created += 1;
     } catch (e) {
       silentCatch('findings/sweep:createFinding')(e);
+      recordError('persist', e);
     }
   }
 
@@ -257,6 +282,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     duplicates: drafts.length - fresh.length,
     dropped,
     skippedSensors,
+    errors,
     verified,
   };
 }

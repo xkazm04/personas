@@ -27,52 +27,83 @@ function draft(evidence: Record<string, unknown>, origin = 'llm_cost'): FindingD
   };
 }
 
+/** Every origin's sensor ran — the default assumption of the pre-existing tests. */
+const ALL_PROBED = new Set([
+  'standards_finding',
+  'passport_gap',
+  'llm_cost',
+  'sentry_spike',
+  'kpi_offtrack',
+  'skill_dormant',
+  'doc_rot',
+  'memory_disputed',
+]);
+
 describe('verdictFor — the signal is gone', () => {
-  it('CLEARED when the sensor no longer emits the finding at all', () => {
-    const v = verdictFor(finding({}), undefined);
+  it('CLEARED when the sensor probed and no longer emits the finding', () => {
+    const v = verdictFor(finding({}), undefined, ALL_PROBED);
     expect(v.state).toBe('cleared');
     expect(v.evidence).toMatchObject({ signal: 'absent' });
   });
 });
 
+describe('verdictFor — HONESTY RULE 0: absence without a probe is not a win', () => {
+  it('PENDING (never cleared) when the origin sensor did not run this sweep', () => {
+    const v = verdictFor(finding({}), undefined, new Set(['sentry_spike']));
+    expect(v.state).toBe('pending');
+    expect(v.evidence).toMatchObject({ signal: 'unknown', reason: 'sensor_not_probed' });
+  });
+
+  it('PENDING for a Rust-side origin (kpi_sim) that has no TS emitter', () => {
+    const f = finding({ origin: 'kpi_sim', dedup_key: 'kpi_sim:degrade:k1', evidence: '{}' });
+    expect(verdictFor(f, undefined, ALL_PROBED).state).toBe('pending');
+  });
+
+  it('still judges the compare path even when unprobed (the fresh draft IS evidence)', () => {
+    // If a fresh draft exists the sensor obviously ran; probedOrigins only gates absence.
+    const v = verdictFor(finding({}), draft({ costUsd: 40 }), new Set());
+    expect(v.state).toBe('moved');
+  });
+});
+
 describe('verdictFor — the signal is still there', () => {
   it('MOVED when the metric improved materially', () => {
-    const v = verdictFor(finding({}), draft({ costUsd: 40 })); // 100 → 40
+    const v = verdictFor(finding({}), draft({ costUsd: 40 }), ALL_PROBED); // 100 → 40
     expect(v.state).toBe('moved');
     expect(v.evidence).toMatchObject({ costUsd: 40 });
   });
 
   it('REGRESSED when it got materially worse', () => {
-    expect(verdictFor(finding({}), draft({ costUsd: 180 })).state).toBe('regressed');
+    expect(verdictFor(finding({}), draft({ costUsd: 180 }), ALL_PROBED).state).toBe('regressed');
   });
 
   it('UNCHANGED when the change is below the material threshold (no win on noise)', () => {
     const noise = 100 * (1 + MATERIAL_IMPROVEMENT / 2); // under the bar
-    expect(verdictFor(finding({}), draft({ costUsd: noise })).state).toBe('unchanged');
+    expect(verdictFor(finding({}), draft({ costUsd: noise }), ALL_PROBED).state).toBe('unchanged');
   });
 });
 
 describe('verdictFor — HONESTY: never invent a cleared', () => {
   it('UNCHANGED (not cleared) when the original evidence is missing', () => {
-    expect(verdictFor(finding({ evidence: null }), draft({ costUsd: 10 })).state).toBe('unchanged');
+    expect(verdictFor(finding({ evidence: null }), draft({ costUsd: 10 }), ALL_PROBED).state).toBe('unchanged');
   });
 
   it('UNCHANGED (not cleared) when the evidence is unparseable', () => {
-    expect(verdictFor(finding({ evidence: '{not json' }), draft({ costUsd: 10 })).state).toBe('unchanged');
+    expect(verdictFor(finding({ evidence: '{not json' }), draft({ costUsd: 10 }), ALL_PROBED).state).toBe('unchanged');
   });
 
   it('UNCHANGED (not cleared) when the fresh reading has no comparable metric', () => {
-    expect(verdictFor(finding({}), draft({ somethingElse: 1 })).state).toBe('unchanged');
+    expect(verdictFor(finding({}), draft({ somethingElse: 1 }), ALL_PROBED).state).toBe('unchanged');
   });
 
   it('UNCHANGED for a presence-shaped origin that is still emitting', () => {
     const f = finding({ origin: 'standards_finding', dedup_key: 'standards:lint.config', evidence: '{}' });
-    expect(verdictFor(f, draft({}, 'standards_finding')).state).toBe('unchanged');
+    expect(verdictFor(f, draft({}, 'standards_finding'), ALL_PROBED).state).toBe('unchanged');
   });
 
   it('CLEARED for a presence-shaped origin once it stops emitting', () => {
     const f = finding({ origin: 'standards_finding', dedup_key: 'standards:lint.config', evidence: '{}' });
-    expect(verdictFor(f, undefined).state).toBe('cleared');
+    expect(verdictFor(f, undefined, ALL_PROBED).state).toBe('cleared');
   });
 });
 
@@ -88,18 +119,18 @@ describe('verdictFor — KPI direction', () => {
 
   it('MOVED when the reading gets closer to target (upward KPI)', () => {
     // conversion 2% → 4%, target 5%: closer to target = better
-    const v = verdictFor(kpi(2, 5), draft({ current: 4, target: 5 }, 'kpi_offtrack'));
+    const v = verdictFor(kpi(2, 5), draft({ current: 4, target: 5 }, 'kpi_offtrack'), ALL_PROBED);
     expect(v.state).toBe('moved');
   });
 
   it('MOVED when a downward KPI falls toward its target', () => {
     // p95 latency 900ms → 400ms, target 300ms
-    const v = verdictFor(kpi(900, 300), draft({ current: 400, target: 300 }, 'kpi_offtrack'));
+    const v = verdictFor(kpi(900, 300), draft({ current: 400, target: 300 }, 'kpi_offtrack'), ALL_PROBED);
     expect(v.state).toBe('moved');
   });
 
   it('REGRESSED when it moves away from target', () => {
-    const v = verdictFor(kpi(900, 300), draft({ current: 1400, target: 300 }, 'kpi_offtrack'));
+    const v = verdictFor(kpi(900, 300), draft({ current: 1400, target: 300 }, 'kpi_offtrack'), ALL_PROBED);
     expect(v.state).toBe('regressed');
   });
 });

@@ -37,9 +37,10 @@ sourceFilter: string | null, enabled: boolean,
  */
 nextRunAt: string | null, lastRunAt: string | null, 
 /**
- * `"ok"` | `"failed"` | `"running"`.
+ * `"ok"` | `"failed"` | `"requested"` (delegated op emitted, frontend not
+ * yet reported back) | `"partial"` | `"held"` (approval mode).
  */
-lastStatus: string | null, 
+lastStatus: string | null,
 /**
  * Short human detail of the last run (e.g. a scan id or error).
  */
@@ -47,4 +48,11 @@ lastDetail: string | null,
 /**
  * Optional user-facing label.
  */
-label: string | null, createdAt: string, updatedAt: string, };
+label: string | null,
+/**
+ * `"auto"` | `"approval"` — the safety gate for ops that act on production
+ * signal (the signal-dispatch ops). `approval` holds the run instead of
+ * dispatching (`last_status = "held"`); the human acts from Triage.
+ * Manual `run_now` bypasses the gate — running by hand IS the approval.
+ */
+unattendedMode: string, createdAt: string, updatedAt: string, };

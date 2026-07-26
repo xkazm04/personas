@@ -346,6 +346,7 @@ pub struct PersonaTopErrorCategory {
 /// One day in the 365-day execution heatmap. `date` is YYYY-MM-DD (UTC).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct HeatmapDay {
     pub date: String,
     #[ts(type = "number")]

@@ -582,12 +582,6 @@
     "browse": "استعراض",
     "dev_tools": "أدوات المطور",
     "active_project": "المشروع النشط",
-    "projects": "المشاريع",
-    "context_map": "خريطة السياق",
-    "idea_scanner": "فاحص الأفكار",
-    "idea_triage": "تصنيف الأفكار",
-    "task_runner": "منفذ المهام",
-    "skills": "المهارات",
     "network": "الشبكة",
     "coming_soon": "قريبًا",
     "sign_in_to_unlock": "سجّل الدخول لفتح ميزات السحابة",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "التطوير",
     "lifecycle": "دورة الحياة",
-    "manage": "إدارة"
+    "manage": "إدارة",
+    "context_map": "خريطة السياق",
+    "idea_scanner": "فاحص الأفكار",
+    "idea_triage": "تصنيف الأفكار",
+    "task_runner": "منفذ المهام",
+    "projects": "المشاريع"
   },
   "home": {
     "setup": {

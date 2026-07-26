@@ -97,6 +97,7 @@ impl Readiness {
 /// into `personas.setup_detail`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct SetupBlocker {
     /// The connector name as the persona declares it.
     pub connector: String,

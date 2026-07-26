@@ -36,10 +36,12 @@ export function describeSweep(res: SweepResult): string {
   if (v.moved) verdicts.push(`${v.moved} moved`);
   if (v.unchanged) verdicts.push(`${v.unchanged} unchanged`);
   if (v.regressed) verdicts.push(`${v.regressed} REGRESSED`);
+  if (v.unverifiable) verdicts.push(`${v.unverifiable} unverifiable (sensor didn't run)`);
   if (verdicts.length > 0) parts.push(`verified: ${verdicts.join(', ')}`);
 
   // Never let a thin sweep read as a clean bill of health.
   if (res.skippedSensors.length > 0) parts.push(`skipped: ${res.skippedSensors.join(', ')}`);
+  if (res.errors.length > 0) parts.push(`${res.errors.length} write error(s)`);
   return parts.join(' · ');
 }
 
@@ -89,13 +91,29 @@ export async function runHealthIngest(projectId: string): Promise<SweepResult | 
 
 /**
  * The event handler: a scheduled (or manually run) `health_ingest` op fired.
- * Toasts the outcome — a regression never wears a success colour.
+ * Toasts the outcome — a regression never wears a success colour — and, when an
+ * automation fired it, reports the run's REAL outcome back to the automation
+ * row (the Rust dispatcher only recorded `requested` at emit time).
  */
-export async function handleHealthIngestRequested(projectId: string): Promise<void> {
+export async function handleHealthIngestRequested(
+  projectId: string,
+  automationId?: string,
+): Promise<void> {
   const addToast = useToastStore.getState().addToast;
+  const report = (status: 'ok' | 'partial' | 'failed', detail: string) => {
+    if (!automationId) return;
+    void import('@/api/systemOps').then((api) =>
+      api
+        .reportSystemOpOutcome(automationId, status, detail)
+        .catch(silentCatch('healthIngest:reportOutcome')),
+    );
+  };
   try {
     const res = await runHealthIngest(projectId);
-    if (!res) return; // project no longer exists — nothing to say
+    if (!res) {
+      report('failed', 'project no longer exists');
+      return;
+    }
     const tone =
       res.verified.regressed > 0
         ? 'error'
@@ -103,7 +121,9 @@ export async function handleHealthIngestRequested(projectId: string): Promise<vo
           ? 'success'
           : 'warning';
     addToast(`Health ingest — ${describeSweep(res)}`, tone);
+    report(res.errors.length > 0 ? 'partial' : 'ok', describeSweep(res));
   } catch (e) {
     silentCatch('healthIngest:run')(e);
+    report('failed', e instanceof Error ? e.message : String(e));
   }
 }

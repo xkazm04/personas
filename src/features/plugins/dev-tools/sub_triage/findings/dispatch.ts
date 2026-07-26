@@ -13,11 +13,12 @@
 // by rewiring `signal.raised` to one op or the other in Chain Studio. Neither the engine
 // nor this module has an opinion about which is right.
 //
-// SAFETY: dispatch acts on production signal, potentially unattended. It does NOT invent
-// its own guard rails — the trigger's `unattended_mode` (auto / dry_run / approval) is
-// the gate, and an `approval`-mode automation holds its fire in `pending_trigger_fires`
-// for a human. That machinery predates this feature; re-implementing it here would be
-// both duplicated and less trustworthy.
+// SAFETY: dispatch acts on production signal, potentially unattended. The gate lives on
+// the SystemOpAutomation row's `unattended_mode` (`auto` | `approval`), enforced in
+// `engine/system_ops.rs`: an `approval`-mode automation never reaches this module — the
+// run is held (`last_status = "held"`) and the human dispatches from Idea Triage.
+// (The persona-trigger `pending_trigger_fires` machinery is a DIFFERENT system and does
+// not apply here — an earlier version of this comment wrongly claimed it did.)
 import { getIdea, listProjects, createTask, executeTask, updateIdea } from '@/api/devTools/devTools';
 import { spawnSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
@@ -85,15 +86,26 @@ export async function dispatchFinding(
   return task ? 'opened a Fleet session (task linked)' : 'opened a Fleet session';
 }
 
-/** Event handler: a `signal_dispatch_*` op fired. */
+/** Event handler: a `signal_dispatch_*` op fired. Reports the real outcome back
+ *  to the automation row when one fired it (the dispatcher recorded `requested`). */
 export async function handleSignalDispatchRequested(
   ideaId: string,
   target: DispatchTarget,
+  automationId?: string,
 ): Promise<void> {
   const addToast = useToastStore.getState().addToast;
+  const report = (status: 'ok' | 'failed', detail: string) => {
+    if (!automationId) return;
+    void import('@/api/systemOps').then((api) =>
+      api
+        .reportSystemOpOutcome(automationId, status, detail)
+        .catch(silentCatch('dispatch:reportOutcome')),
+    );
+  };
   try {
     const detail = await dispatchFinding(ideaId, target);
     addToast(`Finding dispatched — ${detail}`, 'success');
+    report('ok', detail);
 
     // Refresh so an open Triage/Runner tab reflects it immediately.
     const sys = useSystemStore.getState();
@@ -104,5 +116,6 @@ export async function handleSignalDispatchRequested(
   } catch (e) {
     silentCatch('dispatch:run')(e);
     addToast(`Finding dispatch to ${target} failed`, 'error');
+    report('failed', e instanceof Error ? e.message : String(e));
   }
 }

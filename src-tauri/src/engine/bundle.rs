@@ -170,6 +170,7 @@ pub struct BundleImportOptions {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct BundleImportResult {
     pub imported: u32,
     pub skipped: u32,

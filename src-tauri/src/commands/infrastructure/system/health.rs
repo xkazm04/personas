@@ -29,6 +29,7 @@ pub enum HealthCheckStatus {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct HealthCheckItem {
     pub id: String,
     pub label: String,
@@ -44,6 +45,7 @@ pub struct HealthCheckItem {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct HealthCheckSection {
     pub id: String,
     pub label: String,
@@ -52,6 +54,7 @@ pub struct HealthCheckSection {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemHealthReport {
     pub sections: Vec<HealthCheckSection>,
     pub all_ok: bool,

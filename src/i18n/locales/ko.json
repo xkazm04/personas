@@ -582,12 +582,6 @@
     "browse": "찾아보기",
     "dev_tools": "개발 도구",
     "active_project": "활성 프로젝트",
-    "projects": "프로젝트",
-    "context_map": "컨텍스트 맵",
-    "idea_scanner": "아이디어 스캐너",
-    "idea_triage": "아이디어 분류",
-    "task_runner": "작업 실행기",
-    "skills": "스킬",
     "network": "네트워크",
     "coming_soon": "곧 제공 예정",
     "sign_in_to_unlock": "클라우드 기능을 사용하려면 로그인하세요",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "개발",
     "lifecycle": "라이프사이클",
-    "manage": "관리"
+    "manage": "관리",
+    "context_map": "컨텍스트 맵",
+    "idea_scanner": "아이디어 스캐너",
+    "idea_triage": "아이디어 분류",
+    "task_runner": "작업 실행기",
+    "projects": "프로젝트"
   },
   "home": {
     "setup": {

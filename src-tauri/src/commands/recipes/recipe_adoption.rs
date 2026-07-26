@@ -49,10 +49,11 @@ use crate::AppState;
 
 /// Result of a single adoption call. The frontend uses `eligibility` to
 /// render the "wire X first" path on `AdoptableWithSetup`-without-auto-
-/// setup, and `auto_wired_tools` to flash a "we wired Gmail for you"
+/// setup, and `autoWiredTools` to flash a "we wired Gmail for you"
 /// confirmation when `auto_setup: true` was passed.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct AdoptionResult {
     pub link: PersonaRecipeLink,
     pub eligibility: RecipeEligibility,

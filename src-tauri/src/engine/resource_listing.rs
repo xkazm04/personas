@@ -117,6 +117,7 @@ struct ResponseMapping {
 /// One item surfaced to the picker.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ResourceItem {
     pub id: String,
     pub label: String,

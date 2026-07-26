@@ -52,12 +52,6 @@
   "browse": "ब्राउज़ करें",
   "dev_tools": "डेव टूल्स",
   "active_project": "सक्रिय प्रोजेक्ट",
-  "projects": "प्रोजेक्ट",
-  "context_map": "संदर्भ मानचित्र",
-  "idea_scanner": "आइडिया स्कैनर",
-  "idea_triage": "आइडिया ट्रायज",
-  "task_runner": "टास्क रनर",
-  "skills": "कौशल",
   "network": "नेटवर्क",
   "coming_soon": "जल्द आ रहा है",
   "sign_in_to_unlock": "क्लाउड सुविधाएँ अनलॉक करने के लिए साइन इन करें",
@@ -80,5 +74,10 @@
   "mastermind": "Mastermind",
   "development": "डेवलपमेंट",
   "lifecycle": "लाइफसाइकल",
-  "manage": "प्रबंधन"
+  "manage": "प्रबंधन",
+  "context_map": "संदर्भ मानचित्र",
+  "idea_scanner": "आइडिया स्कैनर",
+  "idea_triage": "आइडिया ट्रायज",
+  "task_runner": "टास्क रनर",
+  "projects": "प्रोजेक्ट"
 }

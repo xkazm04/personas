@@ -13,6 +13,7 @@ use ts_rs::TS;
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TopologyBlueprint {
     pub members: Vec<BlueprintMember>,
     pub connections: Vec<BlueprintConnection>,

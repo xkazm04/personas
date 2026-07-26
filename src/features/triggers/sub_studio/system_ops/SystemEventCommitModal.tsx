@@ -12,6 +12,7 @@ import { Button, AsyncButton } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
+import { getEventTypeOptions } from '@/lib/eventTypeTaxonomy';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -69,6 +70,9 @@ export function SystemEventCommitModal({
   const [customCron, setCustomCron] = useState('0 3 * * 1');
   const [eventType, setEventType] = useState('');
   const [delta, setDelta] = useState(true);
+  // Safety gate for the dispatch ops: `approval` holds automation-fired runs so
+  // nothing acts on production signal unattended without an explicit opt-in.
+  const [unattendedMode, setUnattendedMode] = useState<'auto' | 'approval'>('auto');
   // Reflection scope: which pool of memories to consolidate.
   const [reflectScope, setReflectScope] = useState<'agent' | 'team'>('agent');
   const [reflectPersonaId, setReflectPersonaId] = useState('');
@@ -104,6 +108,7 @@ export function SystemEventCommitModal({
         triggerKind: isSchedule ? 'schedule' : 'event',
         cron: isSchedule ? cron : undefined,
         listenEventType: isSchedule ? undefined : eventType.trim(),
+        unattendedMode: isDispatch ? unattendedMode : undefined,
         label: isReflection
           ? (reflectTargetName ? `${st.reflection_label} — ${reflectTargetName}` : st.reflection_label)
           : project ? `${st.system_event_label} — ${project.name}` : undefined,
@@ -188,12 +193,32 @@ export function SystemEventCommitModal({
           ) : (
             <div className="space-y-1.5">
               <label className="typo-caption font-medium text-foreground">{st.commit_event_label}</label>
-              <input
-                value={eventType}
-                onChange={(e) => setEventType(e.target.value)}
-                placeholder={st.commit_event_placeholder}
-                className="w-full px-3 py-2 typo-body font-mono bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring"
-              />
+              {/* Typed picker over the event registry — free text here produced
+                  permanently-silent automations on the first typo. */}
+              <ThemedSelect value={eventType} onValueChange={setEventType}>
+                <option value="">{st.commit_event_placeholder}</option>
+                {getEventTypeOptions(t).map((o) => (
+                  <option key={o.value} value={o.value}>{o.label} ({o.value})</option>
+                ))}
+              </ThemedSelect>
+            </div>
+          )}
+
+          {isDispatch && (
+            <div className="space-y-1.5">
+              <label className="typo-caption font-medium text-foreground">{t.triggers.unattended.title}</label>
+              <ThemedSelect
+                value={unattendedMode}
+                onValueChange={(v) => setUnattendedMode(v === 'approval' ? 'approval' : 'auto')}
+              >
+                <option value="auto">{t.triggers.unattended.auto}</option>
+                <option value="approval">{t.triggers.unattended.approval}</option>
+              </ThemedSelect>
+              <p className="typo-caption text-foreground opacity-70">
+                {unattendedMode === 'approval'
+                  ? t.triggers.unattended.approval_desc
+                  : t.triggers.unattended.auto_desc}
+              </p>
             </div>
           )}
 

@@ -254,6 +254,7 @@ pub fn get_trigger_health_map(
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TriggerValidationResult {
     pub valid: bool,
     pub checks: Vec<TriggerValidationCheck>,
@@ -261,6 +262,7 @@ pub struct TriggerValidationResult {
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TriggerValidationCheck {
     pub label: String,
     pub passed: bool,
@@ -1874,6 +1876,7 @@ pub fn webhook_request_to_curl(
 /// A config-level warning surfaced to the frontend health check system.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ConfigWarning {
     pub id: String,
     pub severity: String,

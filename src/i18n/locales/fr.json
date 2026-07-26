@@ -582,12 +582,6 @@
     "browse": "Parcourir",
     "dev_tools": "Outils dev",
     "active_project": "Projet actif",
-    "projects": "Projets",
-    "context_map": "Carte contextuelle",
-    "idea_scanner": "Analyseur d'idées",
-    "idea_triage": "Tri des idées",
-    "task_runner": "Exécuteur de tâches",
-    "skills": "Compétences",
     "network": "Réseau",
     "coming_soon": "Bientôt disponible",
     "sign_in_to_unlock": "Connectez-vous pour débloquer les fonctionnalités cloud",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "Développement",
     "lifecycle": "Cycle de vie",
-    "manage": "Gérer"
+    "manage": "Gérer",
+    "context_map": "Carte contextuelle",
+    "idea_scanner": "Analyseur d'idées",
+    "idea_triage": "Tri des idées",
+    "task_runner": "Exécuteur de tâches",
+    "projects": "Projets"
   },
   "home": {
     "setup": {

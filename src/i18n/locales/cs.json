@@ -582,12 +582,6 @@
     "browse": "Procházet",
     "dev_tools": "Vývojářské nástroje",
     "active_project": "Aktivní projekt",
-    "projects": "Projekty",
-    "context_map": "Kontextová mapa",
-    "idea_scanner": "Scanner nápadů",
-    "idea_triage": "Třídění nápadů",
-    "task_runner": "Spouštěč úloh",
-    "skills": "Dovednosti",
     "network": "Síť",
     "coming_soon": "Již brzy",
     "sign_in_to_unlock": "Přihlaste se pro cloud funkce",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "Vývoj",
     "lifecycle": "Životní cyklus",
-    "manage": "Správa"
+    "manage": "Správa",
+    "context_map": "Kontextová mapa",
+    "idea_scanner": "Scanner nápadů",
+    "idea_triage": "Třídění nápadů",
+    "task_runner": "Spouštěč úloh",
+    "projects": "Projekty"
   },
   "home": {
     "setup": {
