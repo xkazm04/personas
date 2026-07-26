@@ -173,6 +173,28 @@ Register the command in `src-tauri/src/lib.rs` `invoke_handler` per the project'
 
 A small status pill in the roadmap view shows "Last updated 4m ago" / "Offline — showing cached" / "Refresh" so the user understands what they're looking at.
 
+### Roadmap surface visuals (traced glyphs)
+
+Two `/motionize` traced SVG glyphs carry the roadmap view's non-text visuals. Both live in
+`src/features/shared/glyph/glyphs/` and render through the shared `MotionizedGlyph`
+primitive, whose timings come from `src/features/shared/components/display/motionPresets.ts`
+— never inlined at the call site.
+
+- **`roadmapRouteGlyph`** → `RoadmapRouteRail.tsx`, a narrow vertical rail beside the hero
+  card. Reads bottom-to-top in the same order as the lanes below it: amber node = NOW,
+  teal = NEXT, hollow ring = LATER, dashes trailing off past the last one. It runs the
+  `pulse` ambient loop, which is legitimate *only* here — the hero is by definition the
+  `in_progress` item, so breathing accents describe work that is actually happening.
+- **`roadmapWaypointGlyph`** → `RoadmapLaneEmptyGlyph.tsx`, shown in a NOW/NEXT/LATER
+  column that has no items (replaces a bare em-dash), captioned
+  `releases.whats_new.lane_empty`. Deliberately `fade-pop` with **no** ambient loop: an
+  empty lane is idle, and a drifting or breathing accent there would imply pending work
+  that doesn't exist.
+
+Both degrade to an opacity-only cross-fade under `prefers-reduced-motion`, and both get
+their light-theme fills from `MotionizedGlyph`'s automatic `[data-theme^="light"]`
+recolor — the glyph modules themselves are theme-agnostic.
+
 ### i18n boundary
 
 The fetched payload owns the **content** strings (item titles + descriptions, optional release label + summary). It does NOT own the **chrome** strings (status names like "In Progress", priority names like "Now", summary pill formatters like "{count} In Progress"). Those keep living in `src/i18n/locales/en.json` because they're tied to the UI shipped with the binary, not to roadmap content.

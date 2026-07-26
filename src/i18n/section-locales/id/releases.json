@@ -85,6 +85,7 @@
     "release_0_0_2_item_21_title": "Refleksi yang membaca masa lalu Anda",
     "release_0_0_2_item_21_description": "Tambahkan pelatih jurnal ke vault Obsidian Anda yang membaca setiap entri harian, menampilkan catatan lama yang menjadi dasarnya, dan menyadari tema berulang sebelum Anda menyadarinya. Nada bicaranya bisa Anda pilih sendiri — lembut, langsung, atau sokratik. Refleksi ini ditulis kembali ke catatan harian yang sama, sehingga jurnal Anda tetap menjadi satu-satunya sumber kebenaran.",
     "live_source_stale": "Gagal mengambil langsung · menampilkan dari cache",
-    "nav_rail_label": "Rilis"
+    "nav_rail_label": "Rilis",
+    "lane_empty": "Belum ada rencana di sini"
   }
 }

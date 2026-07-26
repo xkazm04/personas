@@ -2,6 +2,11 @@
 
 ## Active
 
+### architect-dev-tools-area — /architect area scan (dev-tools domain) — session fable-5
+- Started 2026-07-26. Status: started (Phase 3 parallel scan running).
+- Declared paths: Obsidian Architect/{scans,decisions,backlog.md,weak-patterns.md,strong-patterns.md,coverage.md}, Lessons/2026-07-26-architect.md; working tree TBD by triage (likely src/features/plugins/dev-tools/**, src/features/teams/**, src-tauri/src/commands/infrastructure/dev_tools*, docs/features/plugins/dev tools/**); always .claude/active-runs.md.
+
+
 ### workspace-knowledge-center-arc2 — extraction engine — session fable-5/opus-5 — COMPLETE
 - Started+core-complete 2026-07-24. Commits: `7c75e032b` (ingest_candidates + dedup incl. 90-day rejected window + both deterministic miners [mine_shared_findings by (origin,dedup_key)/normalized-title; mine_shared_skills registry×usage] + run_miners command + 8 unit tests), `a19158e26` (practice-harvest skill contract: prepare/ingest commands mirroring kpi-sim, practiceHarvestPrompt.ts engine, skill.md, list_workspace_projects), `c2f238f4a` (ExtractionMenu UI: Mine + per-member Harvest/Import; 22 i18n keys ×13 locales strict-clean; docs). Gates ALL green: cargo check+clippy clean, tsc clean, eslint 0-err, i18n strict 0/0 + 0 untranslated, workspace vitest 15/15. Rust tests compile (CI runs; local exe 0xc0000139). UNPUSHED.
 - 3 exploration digests captured (kpi-sim prepare/ingest, dev_ideas findings spine — dedup_key does NOT embed project_id so same-key cross-repo match works for standards:/kpi_sim:/scan:*:all:, else normalized-title; skill-usage registry×events). Correction: dev_projects.workspace_id (Arc 1) IS the sibling-scoping column.
@@ -287,6 +292,9 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### motionize-live-roadmap — /motionize on docs/features/live-roadmap — session opus-5 — COMPLETE
+- Started + complete 2026-07-26. Commit: `73b95d4f2` (motionPresets.ts preset library + MotionizedGlyph entrance/ambient/hover composition; roadmapRouteGlyph -> RoadmapRouteRail hero rail w/ pulse; roadmapWaypointGlyph -> RoadmapLaneEmptyGlyph replacing the empty-lane em-dash; releases.whats_new.lane_empty x14 locales; emit-glyph.mjs TracedGlyph shape fix + SKILL.md trace gotchas). Gates: tsc clean, eslint clean, vitest 2606/2606 (270 files), i18n strict 0/0 + 0 untranslated, check:themes AA, vite build clean, glyph lazy chunks confirmed. NOT live-verified in the app (Chrome extension not connected). UNPUSHED.
 
 ### skill-review-2026-07-26 — full .claude/skills review — session fable-5 — COMPLETED
 - 2026-07-26. Commits: `b89742d47` (6 stale skills deleted: ascent-onboard, cli-quality-check, npm-updates, brain-training.md, context-map-generator.md, mem.md), `1b8caac1c` (ship-loop promoted to .claude/skills/ship-loop/ with authored SKILL.md + state/ now git-tracked; old .claude/ship-loop/ gone), `381e8d80c` (16 skills improved via parallel subagents; net -319 lines; stale mkdol paths / dead Design.md + cli-coordination links / retired en.ts refs fixed throughout). Kept as-is: add-credential, add-template, guide-sync, i18n-translate, leonardo, passport-onboard, practice-harvest, reflect, refresh-context, sentry. NOTE: .claude/Design.md does NOT exist though CLAUDE.md § Styling cites it — CLAUDE.md itself not fixed (out of scope, was already dirty from another session).

@@ -16616,7 +16616,8 @@
       "release_0_0_2_item_21_title": "Reflexionen, die Ihre Vergangenheit lesen",
       "release_0_0_2_item_21_description": "Fügen Sie Ihrem Obsidian-Vault einen Journal-Coach hinzu, der jeden Tageseintrag liest, die dazu passenden früheren Notizen aufzeigt und wiederkehrende Themen erkennt, bevor Sie es selbst tun. Den Ton bestimmen Sie — sanft, direkt oder sokratisch. Die Reflexion wird in dieselbe Tagesnotiz zurückgeschrieben, sodass Ihr Journal die einzige verlässliche Quelle bleibt.",
       "live_source_stale": "Live-Abruf fehlgeschlagen · zeigt zwischengespeicherte Daten",
-      "nav_rail_label": "Releases"
+      "nav_rail_label": "Releases",
+      "lane_empty": "Hier ist noch nichts geplant"
     }
   },
   "twin": {

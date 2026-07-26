@@ -9,7 +9,7 @@
  * (clears the sidebar "What's New" dot).
  */
 import { Rocket } from 'lucide-react';
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import {
@@ -24,6 +24,12 @@ import { useReleasesTranslation, type ReleasesTranslation } from './i18n/useRele
 import { useLiveRoadmap } from './useLiveRoadmap';
 import { LiveRoadmapStatusPill } from './LiveRoadmapStatusPill';
 import { buildDisplayItems, ROADMAP_PRIORITIES, type DisplayItem } from './roadmapItems';
+
+// Traced glyphs carry ~10KB gzipped of path data each; lazy so they land with the
+// roadmap tab instead of the eager entry chunk. They animate themselves in on mount,
+// so the one-frame Suspense gap is invisible.
+const RoadmapRouteRail = lazy(() => import('./RoadmapRouteRail'));
+const RoadmapLaneEmptyGlyph = lazy(() => import('./RoadmapLaneEmptyGlyph'));
 
 const statusDot: Record<ReleaseItemStatus, string> = {
   in_progress: 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.6)]',
@@ -51,13 +57,18 @@ function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation })
         </span>
         <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
       </div>
-      <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
-        <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
-          {item.title}
-        </h2>
-        {item.description && (
-          <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
-        )}
+      <div className="flex items-stretch gap-5 rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
+        <Suspense fallback={<div className="w-9 shrink-0" />}>
+          <RoadmapRouteRail />
+        </Suspense>
+        <div className="min-w-0">
+          <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
+            {item.title}
+          </h2>
+          {item.description && (
+            <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -74,7 +85,12 @@ function LaneColumn({ priority, items, t }: { priority: ReleaseItemPriority; ite
         </span>
       </header>
       {items.length === 0 ? (
-        <div className="flex h-24 items-center justify-center rounded-modal border border-dashed border-primary/8 typo-caption text-foreground">—</div>
+        <div className="flex h-24 flex-col items-center justify-center gap-1 rounded-modal border border-dashed border-primary/8">
+          <Suspense fallback={<div className="h-12 w-12" />}>
+            <RoadmapLaneEmptyGlyph />
+          </Suspense>
+          <span className="typo-caption text-foreground">{t.laneEmpty}</span>
+        </div>
       ) : (
         <div className="space-y-3">
           {items.map((item) => (

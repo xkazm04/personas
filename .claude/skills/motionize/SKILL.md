@@ -91,11 +91,16 @@ from the **preset library** (next section):
 
 All motion comes from **one shared module**:
 `src/features/shared/components/display/motionPresets.ts` (next to
-`MotionizedGlyph.tsx`). **If it doesn't exist yet, create it on first use and wire
-`MotionizedGlyph` to read from it** (add `entrance` / `ambient` / `hover` props,
-defaulting to today's behavior: `entrance="staggered-draw"`). If it exists, **extend
-it — never inline variants/keyframes in an emitted component**. Adding or tuning a
-preset = editing that one file; every motionized surface picks it up.
+`MotionizedGlyph.tsx`). It **exists** — `MotionizedGlyph` reads from it via
+`entrance` / `ambient` / `hover` props (default `entrance="staggered-draw"`).
+**Extend it — never inline variants/keyframes in an emitted component.** Adding or
+tuning a preset = editing that one file; every motionized surface picks it up.
+
+Two composition details the renderer already handles, worth knowing before you add a
+preset: ambient loops are emitted with `fill-mode: forwards`, **not** `both` (under
+`both` the loop's backwards fill applies its dimmed from-state during the start delay
+and fights the entrance), and the loop's start delay is the second value in the
+path's inline `animation-delay` (the entrance stagger is the first).
 
 Each preset is data the renderer turns into scoped `@keyframes` + `animation`:
 
@@ -200,3 +205,24 @@ Shipped empty-state glyphs: `goalsGlyph` / `kpisGlyph` / `feedsGlyph` /
 `src/features/shared/glyph/glyphs/`, rendered via `ScenarioEmptyState`'s `glyph`
 prop and directly in e.g. `src/features/teams/sub_goals/GoalsEmptyGlyph.tsx` and
 `src/features/teams/sub_teamWorkspace/TeamList.tsx`.
+
+The **live-roadmap** pair is the reference for the ambient/entrance split and for
+cropping a traced canvas — `roadmapRouteGlyph` → `RoadmapRouteRail.tsx` (a narrow
+vertical rail; renders a *windowed* viewBox because the traced 1024² canvas has wide
+empty margins, and runs `pulse` because the hero really is the in-progress item) and
+`roadmapWaypointGlyph` → `RoadmapLaneEmptyGlyph.tsx` (`fade-pop`, no ambient — an
+empty lane is idle). Both in `src/features/home/sub_releases/`.
+
+Two things learned tracing that pair, already fixed in the tools:
+- `trace.mjs --emit` (via `emit-glyph.mjs`) now writes the same `TracedGlyph` shape
+  `trace-set.mjs` does. It used to emit a bare array plus a separate `_VIEWBOX`
+  const, so a single-glyph trace produced a module that couldn't be fed straight into
+  `<MotionizedGlyph data viewBox>` like every committed set-traced glyph.
+- **A hollow ring traces as an opaque white blob** unless you lower `--white-keep`
+  (default 0.1 keeps small white interiors as literal white). `--white-keep 0.002`
+  demoted the ring's interior to `var(--background)`. Conversely `--filter-speckle 30`
+  on hairline art collapsed the whole glyph to **one** path — 12–14 was the usable
+  band. Always render-verify on the target surface before wiring.
+- Don't `tight-crop` a tall composition into a square box — it squashes the aspect and
+  bakes ellipses into the geometry. Trace the undistorted original and window the
+  viewBox at the call site instead.

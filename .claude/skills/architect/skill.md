@@ -79,7 +79,7 @@ If the user's first message is ambiguous about mode (e.g. just `/architect`), pr
   - `.claude/codebase-stack.md` — hand-curated architecture, conventions, engine internals. Heavily consulted in scan mode.
   - `context-map.json` (repo root) — machine-readable file→context map; the authority when codebase-context.md and reality disagree.
   - `.claude/CLAUDE.md` — project rules (especially "Concurrent CLI sessions" + "Parallel-safety primitives").
-  - design tokens — `src/styles/typography.css` + `src/lib/utils/designTokens.ts` (CLAUDE.md § Styling; `.claude/Design.md` does not exist despite being cited there).
+  - `.claude/Design.md` — design system canonical reference (rebuilt 2026-07-26, grounded in typography.css + designTokens.ts + globals.css).
 - **Vault root** (resolved at Phase 0): `C:/Users/kazda/Documents/Obsidian/personas`
   - `Architect/scans/` — one note per scan run, the synthesis output
   - `Architect/decisions/` — one ADR per accepted decision (Markdown, ADR-style)
@@ -204,7 +204,7 @@ For each of `codebase-context.md`, `codebase-stack.md`, `CLAUDE.md` under `.clau
 
 1. `.claude/codebase-stack.md` — **most important** for architect. The Engine section, the conventions, the framework-vs-plugin boundary. Read in full.
 2. `.claude/codebase-context.md` — area taxonomy, file paths.
-3. `.claude/CLAUDE.md` (incl. § Styling) — project rules and design system.
+3. `.claude/CLAUDE.md` + `.claude/Design.md` — project rules and design system.
 4. `$VAULT/Architect/strong-patterns.md` — to know what's already considered load-bearing (avoid re-flagging strengths as "discoveries").
 5. `$VAULT/Architect/weak-patterns.md` — to know what's already on the radar.
 6. `$VAULT/Architect/backlog.md` — to know what's pending or in-progress.
@@ -384,7 +384,7 @@ For strong-pattern:
     Type:           strong-pattern
     Reach:          {concrete count}
     Why it works:   {2-3 sentences}
-    Codification:   {how to promote — lint rule? CLAUDE.md Styling section? CLAUDE.md note?}
+    Codification:   {how to promote — lint rule? Design.md section? CLAUDE.md note?}
     Risk to losing: {what would happen if it drifts — concrete bug shape}
 ```
 
@@ -609,7 +609,7 @@ If any commit touches `src/**/*.tsx`:
 - Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/locales/en.json`, translated into all 14 locales in the same change (`translate-extract` → per-locale subagents → `translate-merge`; the `i18n-no-gaps` pre-commit hook blocks gaps). No hardcoded English in JSX, placeholder, title, aria-label.
 - Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`.
 - Error messages via `resolveErrorTranslated()`.
-- Use semantic design tokens (CLAUDE.md § Styling).
+- Use semantic design tokens (Design.md §8).
 
 ### 7h. Visual verification
 

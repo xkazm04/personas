@@ -447,7 +447,7 @@ If any accepted item touches `src/**/*.tsx`:
 - Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/locales/en.json`. No hardcoded English in JSX, placeholder, title, aria-label.
 - **New en.json keys must be translated into all 13 other locales in the same commit** (the `i18n-no-gaps` pre-commit hook blocks gaps). For 1–3 keys use the translate pipeline (`translate-extract.mjs` → per-locale fill → `translate-merge.mjs`). If an item would add many keys, defer it — that's a session of its own, not a paper cut.
 - Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`; error messages via `resolveErrorTranslated()`.
-- Use semantic design tokens (CLAUDE.md § Styling) and shared components from the catalog — no raw white/black/shadow utilities, no hand-rolled primitives.
+- Use semantic design tokens (Design.md §8) and shared components from the catalog — no raw white/black/shadow utilities, no hand-rolled primitives.
 
 If you can't honor these in the change, defer the item — don't ship it half-converted.
 

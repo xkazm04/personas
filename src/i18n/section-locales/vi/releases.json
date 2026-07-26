@@ -85,6 +85,7 @@
     "release_0_0_2_item_21_title": "Suy ngẫm thấu hiểu quá khứ của bạn",
     "release_0_0_2_item_21_description": "Thêm một huấn luyện viên nhật ký vào kho Obsidian của bạn — nó đọc từng mục nhật ký hằng ngày, gợi lại những ghi chú cũ làm nền tảng cho mục đó, và nhận ra các chủ đề lặp lại trước cả khi bạn nhận ra. Bạn chọn giọng điệu — nhẹ nhàng, thẳng thắn, hay kiểu Socrates. Suy ngẫm được ghi lại ngay trong cùng ghi chú hằng ngày đó, để nhật ký của bạn luôn là nguồn thông tin duy nhất đáng tin cậy.",
     "live_source_stale": "Tải trực tiếp thất bại · hiển thị bản đã lưu đệm",
-    "nav_rail_label": "Phiên bản"
+    "nav_rail_label": "Phiên bản",
+    "lane_empty": "Chưa có kế hoạch nào ở đây"
   }
 }
