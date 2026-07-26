@@ -10,6 +10,7 @@ Use these docs for day-to-day engineering work.
 | [android-build.md](android-build.md) | Android build notes |
 | [test-automation.md](test-automation.md) | Test automation harness |
 | [adoption-test-framework.md](adoption-test-framework.md) | Template adoption test framework |
+| [ipc-orphans.md](ipc-orphans.md) | Census of registered IPC commands with no caller, classified with per-command dispositions (report only — nothing deleted) |
 
 Primary commands are defined in `package.json`. The most common checks are `npm run check`, `npm run test`, and `npm run build`.
 
