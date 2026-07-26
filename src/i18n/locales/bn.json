@@ -582,12 +582,6 @@
     "browse": "ব্রাউজ করুন",
     "dev_tools": "ডেভ টুলস",
     "active_project": "সক্রিয় প্রজেক্ট",
-    "projects": "প্রজেক্ট",
-    "context_map": "কনটেক্সট ম্যাপ",
-    "idea_scanner": "আইডিয়া স্ক্যানার",
-    "idea_triage": "আইডিয়া ট্রিয়াজ",
-    "task_runner": "টাস্ক রানার",
-    "skills": "স্কিল",
     "network": "নেটওয়ার্ক",
     "coming_soon": "শীঘ্রই আসছে",
     "sign_in_to_unlock": "ক্লাউড ফিচার আনলক করতে সাইন ইন করুন",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "ডেভেলপমেন্ট",
     "lifecycle": "লাইফসাইকেল",
-    "manage": "পরিচালনা"
+    "manage": "পরিচালনা",
+    "context_map": "কনটেক্সট ম্যাপ",
+    "idea_scanner": "আইডিয়া স্ক্যানার",
+    "idea_triage": "আইডিয়া ট্রিয়াজ",
+    "task_runner": "টাস্ক রানার",
+    "projects": "প্রজেক্ট"
   },
   "home": {
     "setup": {

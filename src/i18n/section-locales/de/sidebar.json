@@ -52,12 +52,6 @@
   "browse": "Durchsuchen",
   "dev_tools": "Entwicklertools",
   "active_project": "Aktives Projekt",
-  "projects": "Projekte",
-  "context_map": "Kontextkarte",
-  "idea_scanner": "Ideen-Scanner",
-  "idea_triage": "Ideen-Triage",
-  "task_runner": "Aufgaben-Runner",
-  "skills": "Fähigkeiten",
   "network": "Netzwerk",
   "coming_soon": "Demnächst verfügbar",
   "sign_in_to_unlock": "Anmelden, um Cloud-Funktionen freizuschalten",
@@ -80,5 +74,10 @@
   "mastermind": "Mastermind",
   "development": "Entwicklung",
   "lifecycle": "Lebenszyklus",
-  "manage": "Verwalten"
+  "manage": "Verwalten",
+  "context_map": "Kontextkarte",
+  "idea_scanner": "Ideen-Scanner",
+  "idea_triage": "Ideen-Triage",
+  "task_runner": "Aufgaben-Runner",
+  "projects": "Projekte"
 }

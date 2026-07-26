@@ -586,12 +586,6 @@
     "browse": "Browse",
     "dev_tools": "Dev Tools",
     "active_project": "Active Project",
-    "projects": "Projects",
-    "context_map": "Context Map",
-    "idea_scanner": "Idea Scanner",
-    "idea_triage": "Idea Triage",
-    "task_runner": "Task Runner",
-    "skills": "Skills",
     "network": "Network",
     "coming_soon": "Coming soon",
     "sign_in_to_unlock": "Sign in to unlock cloud features",
@@ -610,7 +604,12 @@
     "manage": "Manage",
     "lifecycle": "Lifecycle",
     "competition": "Competition",
-    "mastermind": "Mastermind"
+    "mastermind": "Mastermind",
+    "context_map": "Context Map",
+    "idea_scanner": "Idea Scanner",
+    "idea_triage": "Idea Triage",
+    "task_runner": "Task Runner",
+    "projects": "Projects"
   },
   "home": {
     "get_started": {

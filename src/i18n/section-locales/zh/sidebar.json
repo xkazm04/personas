@@ -52,12 +52,6 @@
   "browse": "浏览",
   "dev_tools": "开发工具",
   "active_project": "活跃项目",
-  "projects": "项目",
-  "context_map": "上下文映射",
-  "idea_scanner": "想法扫描器",
-  "idea_triage": "想法分类",
-  "task_runner": "任务运行器",
-  "skills": "技能",
   "network": "网络",
   "coming_soon": "即将推出",
   "sign_in_to_unlock": "登录以解锁云端功能",
@@ -80,5 +74,10 @@
   "mastermind": "Mastermind",
   "development": "开发",
   "lifecycle": "生命周期",
-  "manage": "管理"
+  "manage": "管理",
+  "context_map": "上下文映射",
+  "idea_scanner": "想法扫描器",
+  "idea_triage": "想法分类",
+  "task_runner": "任务运行器",
+  "projects": "项目"
 }

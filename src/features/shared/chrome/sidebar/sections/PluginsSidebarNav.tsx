@@ -25,7 +25,8 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import type { ArtistTab, DevToolsTab, TwinTab, PluginTab, ResearchLabTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
-import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researchLabItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { artistItems, companionItems, devToolsItems, filterByTier, obsidianBrainItems, researchLabItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
 import SidebarLevel3, { type SidebarLevel3Item } from '@/features/shared/chrome/sidebar/SidebarLevel3';
 import { debtText } from '@/i18n/DebtText';
@@ -294,16 +295,25 @@ function PluginL3(props: PluginL3Props) {
   const { plugin, onBack, backLabel } = props;
   const { t } = useTranslation();
 
+  const tier = useTier();
+
   const items: SidebarLevel3Item[] = useMemo(() => {
+    // Honor the declared gating fields the same way SidebarLevel2 does — before
+    // this, `minTier`/`devOnly` on plugin sub-items were silently dropped by
+    // the mapping below, so a declared gate was a dead field.
+    const gate = <T extends { minTier?: import('@/lib/constants/uiModes').Tier; devOnly?: boolean }>(
+      list: readonly T[],
+    ): T[] => filterByTier([...list], tier.current).filter((i) => !i.devOnly || import.meta.env.DEV);
+
     switch (plugin) {
       case 'artist':
-        return artistItems.map((item) => ({
+        return gate(artistItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
         }));
       case 'dev-tools':
-        return devToolsItems.map((item) => ({
+        return gate(devToolsItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
@@ -318,7 +328,7 @@ function PluginL3(props: PluginL3Props) {
           ) : null,
         }));
       case 'obsidian-brain':
-        return obsidianBrainItems.map((item) => ({
+        return gate(obsidianBrainItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
@@ -335,7 +345,7 @@ function PluginL3(props: PluginL3Props) {
             ) : null,
         }));
       case 'twin':
-        return twinItems.map((item) => ({
+        return gate(twinItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
@@ -347,13 +357,13 @@ function PluginL3(props: PluginL3Props) {
           ) : null,
         }));
       case 'companion':
-        return companionItems.map((item) => ({
+        return gate(companionItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
         }));
       case 'research-lab':
-        return researchLabItems.map((item) => ({
+        return gate(researchLabItems).map((item) => ({
           id: item.id,
           label: item.label,
           icon: item.icon,
@@ -361,7 +371,7 @@ function PluginL3(props: PluginL3Props) {
       default:
         return [];
     }
-  }, [plugin, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, props.revitalizeRunning, t.twin.studioInProgress, t.plugins.obsidian_brain.revitalize_badge_running]);
+  }, [plugin, tier.current, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, props.revitalizeRunning, t.twin.studioInProgress, t.plugins.obsidian_brain.revitalize_badge_running]);
 
   const activeId = pickActiveId(plugin, props);
   const onSelect = pickSelectHandler(plugin, props);

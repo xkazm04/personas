@@ -582,12 +582,6 @@
     "browse": "Обзор",
     "dev_tools": "Инструменты разработчика",
     "active_project": "Активный проект",
-    "projects": "Проекты",
-    "context_map": "Карта контекста",
-    "idea_scanner": "Сканер идей",
-    "idea_triage": "Сортировка идей",
-    "task_runner": "Задачи",
-    "skills": "Навыки",
     "network": "Сеть",
     "coming_soon": "Скоро",
     "sign_in_to_unlock": "Войдите, чтобы разблокировать облачные функции",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "Разработка",
     "lifecycle": "Жизненный цикл",
-    "manage": "Управление"
+    "manage": "Управление",
+    "context_map": "Карта контекста",
+    "idea_scanner": "Сканер идей",
+    "idea_triage": "Сортировка идей",
+    "task_runner": "Задачи",
+    "projects": "Проекты"
   },
   "home": {
     "setup": {

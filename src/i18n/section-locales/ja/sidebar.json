@@ -52,12 +52,6 @@
   "browse": "ブラウズ",
   "dev_tools": "開発ツール",
   "active_project": "アクティブプロジェクト",
-  "projects": "プロジェクト",
-  "context_map": "コンテキストマップ",
-  "idea_scanner": "アイデアスキャナー",
-  "idea_triage": "アイデアトリアージ",
-  "task_runner": "タスクランナー",
-  "skills": "スキル",
   "network": "ネットワーク",
   "coming_soon": "近日公開",
   "sign_in_to_unlock": "サインインしてクラウド機能を有効にする",
@@ -80,5 +74,10 @@
   "mastermind": "Mastermind",
   "development": "開発",
   "lifecycle": "ライフサイクル",
-  "manage": "管理"
+  "manage": "管理",
+  "context_map": "コンテキストマップ",
+  "idea_scanner": "アイデアスキャナー",
+  "idea_triage": "アイデアトリアージ",
+  "task_runner": "タスクランナー",
+  "projects": "プロジェクト"
 }

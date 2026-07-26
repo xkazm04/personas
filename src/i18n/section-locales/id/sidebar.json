@@ -52,12 +52,6 @@
   "browse": "Jelajahi",
   "dev_tools": "Alat Pengembang",
   "active_project": "Proyek Aktif",
-  "projects": "Proyek",
-  "context_map": "Peta Konteks",
-  "idea_scanner": "Pemindai Ide",
-  "idea_triage": "Triase Ide",
-  "task_runner": "Pemroses Tugas",
-  "skills": "Keahlian",
   "network": "Jaringan",
   "coming_soon": "Segera hadir",
   "sign_in_to_unlock": "Masuk untuk membuka fitur cloud",
@@ -80,5 +74,10 @@
   "mastermind": "Mastermind",
   "development": "Pengembangan",
   "lifecycle": "Siklus Hidup",
-  "manage": "Kelola"
+  "manage": "Kelola",
+  "context_map": "Peta Konteks",
+  "idea_scanner": "Pemindai Ide",
+  "idea_triage": "Triase Ide",
+  "task_runner": "Pemroses Tugas",
+  "projects": "Proyek"
 }

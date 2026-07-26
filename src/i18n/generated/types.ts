@@ -592,12 +592,6 @@ export type Translations = {
     browse: string;
     dev_tools: string;
     active_project: string;
-    projects: string;
-    context_map: string;
-    idea_scanner: string;
-    idea_triage: string;
-    task_runner: string;
-    skills: string;
     network: string;
     coming_soon: string;
     sign_in_to_unlock: string;
@@ -617,6 +611,11 @@ export type Translations = {
     lifecycle: string;
     competition: string;
     mastermind: string;
+    context_map: string;
+    idea_scanner: string;
+    idea_triage: string;
+    task_runner: string;
+    projects: string;
   };
   home: {
     get_started: {

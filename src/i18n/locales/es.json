@@ -582,12 +582,6 @@
     "browse": "Explorar",
     "dev_tools": "Herramientas de desarrollo",
     "active_project": "Proyecto activo",
-    "projects": "Proyectos",
-    "context_map": "Mapa de contexto",
-    "idea_scanner": "Escáner de ideas",
-    "idea_triage": "Clasificación de ideas",
-    "task_runner": "Ejecutor de tareas",
-    "skills": "Habilidades",
     "network": "Red",
     "coming_soon": "Próximamente",
     "sign_in_to_unlock": "Inicia sesión para desbloquear funciones en la nube",
@@ -610,7 +604,12 @@
     "mastermind": "Mastermind",
     "development": "Desarrollo",
     "lifecycle": "Ciclo de vida",
-    "manage": "Gestionar"
+    "manage": "Gestionar",
+    "context_map": "Mapa de contexto",
+    "idea_scanner": "Escáner de ideas",
+    "idea_triage": "Clasificación de ideas",
+    "task_runner": "Ejecutor de tareas",
+    "projects": "Proyectos"
   },
   "home": {
     "setup": {
