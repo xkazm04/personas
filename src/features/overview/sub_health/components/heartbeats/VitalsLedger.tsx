@@ -5,8 +5,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { HeartbeatIndicator } from '../HeartbeatIndicator';
 import { InsightBand } from './insights';
 import { CompositeHealthBar, GradeDot, TrendBadge, MiniStat } from './primitives';
@@ -30,6 +30,13 @@ const DIST_ORDER: HealthGrade[] = ['critical', 'degraded', 'unknown', 'healthy']
 const gradeTone = (g: HealthGrade) =>
   g === 'healthy' ? 'text-status-success' : g === 'degraded' ? 'text-status-warning' : g === 'critical' ? 'text-status-error' : 'text-zinc-400';
 
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh row set lands (35ms stagger via RevealItem, id-guarded so polling and
+ * refresh never replay it). Rows beyond this render plainly.
+ */
+const CASCADE_ROWS = 14;
+
 export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendations }: HeartbeatsVariantProps) {
   const { t } = useTranslation();
   const h = t.overview.heartbeats;
@@ -42,6 +49,15 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // Ghosts only fill genuine emptiness while a fetch runs; data already on
+  // screen (pre-warmed store, a poll/refresh re-delivering the same rows) is
+  // never hidden. Toggling "show healthy" is a context switch — it replays
+  // the first-viewport cascade on the rows it reveals.
+  const revealResetKey = showHealthy ? 'all' : 'unhealthy';
+  const enter = useRevealTracker(revealResetKey);
+  const showGhost = loading && rows.length === 0;
 
   return (
     <div className="space-y-5">
@@ -96,21 +112,34 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
           <span className="w-4 shrink-0" />
         </div>
 
-        <LoadingReveal loading={loading} placeholder={<ListSkeleton calm rows={6} rowHeight={56} />}>
-          {model.counts.all === 0 ? (
-            <div className="flex items-center justify-center py-12 text-foreground typo-body">
-              {t.overview.health_dashboard.no_match}
-            </div>
-          ) : rows.length === 0 ? (
-            <AllClear onShowAll={() => setShowHealthy(true)} />
-          ) : (
-            <div className="divide-y divide-primary/5">
-              {rows.map(s => (
-                <LedgerRow key={s.personaId} signal={s} expanded={expanded.has(s.personaId)} onToggle={() => toggle(s.personaId)} />
-              ))}
-            </div>
-          )}
-        </LoadingReveal>
+        {showGhost ? (
+          /* Nothing to show yet + fetch in flight: ghost rows under the REAL
+             command bar / column header. Ghosts are invisible for their first
+             ~120ms (animation-delay + fill-mode both) so a fast fetch skips
+             them entirely; real rows replace them the frame they arrive and
+             play the same cascade — no gate, no held content. */
+          <VitalsGhostRows />
+        ) : model.counts.all === 0 ? (
+          <div className="flex items-center justify-center py-12 text-foreground typo-body">
+            {t.overview.health_dashboard.no_match}
+          </div>
+        ) : rows.length === 0 ? (
+          <AllClear onShowAll={() => setShowHealthy(true)} />
+        ) : (
+          <div className="divide-y divide-primary/5">
+            {rows.map((s, index) => (
+              <LedgerRow
+                key={s.personaId}
+                signal={s}
+                index={index}
+                expanded={expanded.has(s.personaId)}
+                onToggle={() => toggle(s.personaId)}
+                hasEntered={enter.hasEntered}
+                markEntered={enter.markEntered}
+              />
+            ))}
+          </div>
+        )}
 
         {model.healthy.length > 0 && rows.length > 0 && (
           <button
@@ -130,7 +159,16 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
   );
 }
 
-function LedgerRow({ signal, expanded, onToggle }: { signal: PersonaHealthSignal; expanded: boolean; onToggle: () => void }) {
+function LedgerRow({
+  signal, index, expanded, onToggle, hasEntered, markEntered,
+}: {
+  signal: PersonaHealthSignal;
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+  hasEntered: (id: string) => boolean;
+  markEntered: (id: string) => void;
+}) {
   const { t } = useTranslation();
   const h = t.overview.heartbeats;
   const th = GRADE_THEME[signal.grade];
@@ -138,7 +176,15 @@ function LedgerRow({ signal, expanded, onToggle }: { signal: PersonaHealthSignal
   const burnTone = signal.budgetRatio > 0.8 ? 'text-status-error' : signal.budgetRatio > 0.5 ? 'text-status-warning' : 'text-foreground';
 
   return (
-    <div className={`relative ${expanded ? th.soft : ''}`}>
+    // One-shot entrance cascade for a fresh row set. Rows past the first
+    // viewport render plainly, and entered ids never replay on poll/refresh.
+    <RevealItem
+      revealId={signal.personaId}
+      order={index}
+      hasEntered={(id) => index >= CASCADE_ROWS || hasEntered(id)}
+      markEntered={markEntered}
+      className={`relative ${expanded ? th.soft : ''}`}
+    >
       <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${signal.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
       <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary/20 transition-colors">
         <div className="flex items-center gap-2 w-44 sm:w-52 shrink-0 min-w-0">
@@ -169,6 +215,62 @@ function LedgerRow({ signal, expanded, onToggle }: { signal: PersonaHealthSignal
         {expanded ? <ChevronDown className="w-4 h-4 text-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-foreground shrink-0" />}
       </button>
       {expanded && <RowDetail signal={signal} />}
+    </RevealItem>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// VitalsGhostRows — calm ghost rows for the ONLY moment the ledger body has
+// nothing to show (a fetch with a cold store / empty filter context). Mirrors
+// the real row silhouette (grade dot + persona icon + name/caption, composite
+// bar, mini-stat cluster, score) under the REAL command bar + column header.
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_ROW_H = 56;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_NAME_WIDTHS = ['w-28', 'w-36', 'w-24', 'w-32', 'w-40', 'w-20'];
+
+function VitalsGhostRows() {
+  return (
+    <div aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+            style={{ height: GHOST_ROW_H, animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2 w-44 sm:w-52 shrink-0 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-primary/[0.06] shrink-0" />
+              <span className="w-6 h-6 rounded-full bg-primary/[0.06] shrink-0" />
+              <div className="min-w-0 space-y-1.5">
+                <span className={`block h-3 ${nameW} max-w-full ${GHOST_BAR}`} />
+                <span className="block h-2.5 w-14 rounded bg-primary/[0.06]" />
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 hidden sm:block">
+              <span className="block h-1.5 rounded-full bg-primary/[0.06]" />
+            </div>
+
+            <div className="hidden md:flex items-center justify-end gap-3 shrink-0 w-[200px]">
+              <span className="h-3.5 w-10 rounded bg-primary/[0.06]" />
+              <span className="h-3.5 w-14 rounded bg-primary/[0.06]" />
+              <span className="h-3.5 w-12 rounded bg-primary/[0.06]" />
+            </div>
+
+            <span className="shrink-0 w-12 h-3.5 rounded bg-primary/[0.06]" />
+            <span className="w-4 shrink-0" />
+          </div>
+        );
+      })}
     </div>
   );
 }

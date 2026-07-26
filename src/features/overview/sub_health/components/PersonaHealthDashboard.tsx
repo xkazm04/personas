@@ -17,10 +17,12 @@ const SLADashboard = lazy(() => import('@/features/overview/sub_sla'));
 
 // Calm, content-shaped stand-in for StatusPageView's own layout (global status
 // header + uptime-history rows) while its chunk loads. Golden loading pattern
-// (docs/design/overview-loading.md) — no pulse, sized to avoid a resize on swap.
+// §D (docs/design/overview-loading.md): the fallback root is invisible for its
+// first 150ms — a subtab switch whose chunk is already warm from a previous
+// visit never flashes this. No pulse; sized to avoid a resize on swap.
 function StatusPagePlaceholder() {
   return (
-    <div className="space-y-5" aria-hidden="true">
+    <div className="space-y-5 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
       <div className="h-[68px] rounded-modal border border-primary/10 bg-primary/[0.04]" />
       <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden">
         <ListSkeleton calm rows={6} rowHeight={52} />
