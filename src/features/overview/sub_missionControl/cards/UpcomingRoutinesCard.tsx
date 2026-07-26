@@ -7,12 +7,15 @@ import { silentCatch } from '@/lib/silentCatch';
 import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { formatRelativeShort, type RelativeShortResult } from '@/features/overview/libs/formatRelativeShort';
 import { PaneHeader } from '../PaneHeader';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 const MAX_ROWS = 5;
 const SCHEDULE_TRIGGER_TYPES = new Set(['schedule', 'cron', 'polling']);
+const ROW_HEIGHT = 44;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_NAME_WIDTHS = ['w-32', 'w-24', 'w-28'];
 
 interface UpcomingRow {
   trigger: PersonaTrigger;
@@ -100,10 +103,20 @@ export default function UpcomingRoutinesCard() {
     return scheduled.slice(0, MAX_ROWS);
   }, [triggers, personas, nowTick]);
 
+  // No filter/context switch exists for this card — the reveal tracker never
+  // resets, so a row's one-shot cascade never replays across the 30s/
+  // visibility refetch loop above (same ids keep coming back).
+  const enter = useRevealTracker();
+  // Ghosts ONLY into genuine emptiness while the first fetch is in flight;
+  // once `loaded` is true (even with zero rows) the settled empty state
+  // takes over. Data already on screen from a warm store paints instantly —
+  // `loaded` never hides it.
+  const showGhost = !loaded && rows.length === 0;
+
   // Frame (header) renders immediately — the title/subtitle are static i18n
-  // strings, never gated on data. Only the row region waits on `loaded`, via
-  // a calm placeholder that cross-fades to the real rows/empty-state (golden
-  // loading pattern — no blank `null` body while the trigger list loads).
+  // strings, never gated on data. Only the row region has three states:
+  // ghost (fetch in flight, nothing yet) / empty (settled, none scheduled) /
+  // rows (real data, instant paint + one-shot cascade).
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
       <PaneHeader
@@ -112,40 +125,71 @@ export default function UpcomingRoutinesCard() {
       >
         <ArrowRight className="w-3 h-3 text-foreground" />
       </PaneHeader>
-      <LoadingReveal
-        loading={!loaded}
-        placeholder={<ListSkeleton calm rows={3} rowHeight={44} leading={false} />}
-      >
-        {rows.length === 0 ? (
-          <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
-        ) : (
-          <div className="divide-y divide-primary/5">
-            {rows.map((row) => (
-              <div
-                key={row.trigger.id}
-                className="flex items-center gap-3 px-3 py-2"
-              >
-                <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="typo-body text-foreground truncate">{row.personaName}</div>
-                  <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
-                    {row.trigger.trigger_type}
-                  </div>
-                </div>
-                <div className="typo-caption font-mono tabular-nums flex-shrink-0">
-                  {row.rel ? (
-                    <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
-                      {row.rel.label}
-                    </span>
-                  ) : (
-                    <span className="text-foreground">{t.overview.upcoming_routines.never_fired}</span>
-                  )}
+      {showGhost ? (
+        <RoutinesGhostRows />
+      ) : rows.length === 0 ? (
+        <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
+      ) : (
+        <div className="divide-y divide-primary/5">
+          {rows.map((row, index) => (
+            <RevealItem
+              key={row.trigger.id}
+              revealId={row.trigger.id}
+              order={index}
+              hasEntered={enter.hasEntered}
+              markEntered={enter.markEntered}
+              className="flex items-center gap-3 px-3 py-2"
+            >
+              <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="typo-body text-foreground truncate">{row.personaName}</div>
+                <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
+                  {row.trigger.trigger_type}
                 </div>
               </div>
-            ))}
+              <div className="typo-caption font-mono tabular-nums flex-shrink-0">
+                {row.rel ? (
+                  <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
+                    {row.rel.label}
+                  </span>
+                ) : (
+                  <span className="text-foreground">{t.overview.upcoming_routines.never_fired}</span>
+                )}
+              </div>
+            </RevealItem>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RoutinesGhostRows — calm, geometry-matched ghost for the only moment the
+// row region has nothing yet (first fetch in flight, cold store). Each bar
+// enters via `animate-fade-in` behind a ≥120ms staggered delay (fill-mode
+// both) so a fast fetch skips them entirely — no timers, no held content.
+// ---------------------------------------------------------------------------
+function RoutinesGhostRows() {
+  return (
+    <div className="divide-y divide-primary/5" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-3 py-2 animate-fade-in"
+            style={{ height: ROW_HEIGHT, animationDelay: `${120 + i * 35}ms` }}
+          >
+            <span className="w-3.5 h-3.5 rounded-full bg-primary/[0.06] flex-shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <span className={`block h-3 ${nameW} max-w-full ${GHOST_BAR}`} />
+              <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
+            </div>
+            <span className="h-2.5 w-10 flex-shrink-0 rounded bg-primary/[0.06]" />
           </div>
-        )}
-      </LoadingReveal>
+        );
+      })}
     </div>
   );
 }

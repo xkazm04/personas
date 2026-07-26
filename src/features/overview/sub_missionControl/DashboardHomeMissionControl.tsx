@@ -54,14 +54,22 @@ const AnalyticsInserts = lazyRetry(() => import('@/features/overview/components/
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 
-// Calm, content-shaped placeholder for lazy-loaded visible widgets (routines,
-// vault changes, rotation overview) — approximates the final card's silhouette
-// (header bar + row slots) so the Suspense fallback -> resolved content swap
-// reads as a fade, not a pop-in-blank. See docs/design/overview-loading.md
-// recipe B.
+// Suspense chunk fallback for lazy-loaded visible widgets (routines, vault
+// changes, rotation overview) — approximates the final card's silhouette
+// (header bar + row slots). Per docs/design/overview-loading.md §D, the
+// fallback ROOT is delayed-invisible (`animate-fade-in` + 150ms delay,
+// fill-mode both) so a warm chunk (already cached from a prior visit) never
+// paints it — only a genuinely cold import shows it. The resolved widget does
+// its own internal row-level reveal (RevealItem cascade / ghost rows), so
+// this fallback is the only motion layer before the chunk resolves — no
+// wrapping `<Reveal>` on the resolved widget, which would double-fade it.
 function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHeight?: number }) {
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden" aria-hidden="true">
+    <div
+      className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden animate-fade-in"
+      style={{ animationDelay: '150ms' }}
+      aria-hidden="true"
+    >
       <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
         <span className="h-3 w-24 rounded bg-primary/[0.06]" />
         <span className="h-3 w-3 rounded-full bg-primary/[0.06]" />
@@ -376,15 +384,15 @@ export default function DashboardHomeMissionControl() {
 
               {!isEmpty && !hiddenSections.includes('routines') && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* No <Reveal> here — each card now does its own row-level
+                      reveal (ghost rows / RevealItem cascade), so wrapping
+                      the resolved widget in a block fade would double the
+                      motion. Only the Suspense fallback (delayed, §D) fades. */}
                   <Suspense fallback={<CardFrameSkeleton rows={3} rowHeight={44} />}>
-                    <Reveal>
-                      <UpcomingRoutinesCard />
-                    </Reveal>
+                    <UpcomingRoutinesCard />
                   </Suspense>
                   <Suspense fallback={<CardFrameSkeleton rows={4} rowHeight={32} />}>
-                    <Reveal>
-                      <VaultRecentChangesCard />
-                    </Reveal>
+                    <VaultRecentChangesCard />
                   </Suspense>
                 </motion.div>
               )}
