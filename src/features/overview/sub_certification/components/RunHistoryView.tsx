@@ -119,6 +119,7 @@ export function RunHistoryView({ runs, onSelectRun }: RunHistoryViewProps) {
       columns={columns}
       data={runs}
       getRowKey={(row) => row.runId}
+      rowReveal={{}}
       onRowClick={(row) => onSelectRun(row.runId)}
       density="compact"
       defaultSortKey="startedAt"

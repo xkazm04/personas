@@ -467,6 +467,7 @@ export default function EventLogList() {
               className="h-full"
               tableId="overview-events"
               scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
+              rowReveal={{ resetKey: `${statusFilter}|${typeFilter}|${selectedPersonaId ?? 'all'}|${triggerFilter}` }}
               groupBy={groupOf}
               onEndReached={hasMoreOlder && !isLoadingOlder ? loadOlder : undefined}
             />

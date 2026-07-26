@@ -516,6 +516,7 @@ export default function ProjectManagerPage() {
               columns={columns}
               data={projects}
               getRowKey={(p) => p.id}
+              rowReveal={{ resetKey: activeWorkspaceId ?? 'all' }}
               onRowClick={(p) => handleSetActive(p.id)}
               rowAccent={rowAccent}
               stickyHeader={false}

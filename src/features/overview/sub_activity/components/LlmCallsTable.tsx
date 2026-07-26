@@ -340,6 +340,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
             columns={columns}
             data={rows}
             getRowKey={(e) => e.id}
+            rowReveal={{ resetKey: `${timeWindow}|${modelFilter}` }}
             onRowClick={setSelectedExec}
             rowHeight={ROW_HEIGHT}
             density="compact"
