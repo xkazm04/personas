@@ -5,12 +5,30 @@
 // the label to rename, × to delete. Pointer logic is self-contained via
 // pointer capture on the rects, so the canvas shell stays thin.
 import { useRef } from 'react';
-import { X } from 'lucide-react';
+import { Rocket, X } from 'lucide-react';
 
-import { mix } from './ink';
-import type { CanvasMode, GroupRect } from './types';
+import { mix, STATE_INK } from './ink';
+import type { CanvasMode, GroupRect, IslandState } from './types';
 
 const MIN_SIZE = 90;
+
+/** One island as the group layer sees it — centre for containment, plus the
+ *  few fields the group's rollup summarizes. */
+export interface GroupMember {
+  slug: string;
+  x: number;
+  y: number;
+  state: IslandState;
+  blockers: number;
+  /** Can host a Fleet session (real project with a root path). */
+  dispatchable: boolean;
+}
+
+/** Worst-first island states — a group reports the worst thing inside it. */
+const STATE_RANK: Record<IslandState, number> = { critical: 0, warning: 1, building: 2, healthy: 3 };
+
+const inside = (i: { x: number; y: number }, g: GroupRect) =>
+  i.x >= g.x && i.x <= g.x + g.w && i.y >= g.y && i.y <= g.y + g.h;
 
 type BodyDrag = {
   id: number; sx: number; sy: number; z: number; g0: GroupRect;
@@ -18,18 +36,22 @@ type BodyDrag = {
   resizing: boolean;
 };
 
-export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, onIslandCommit, onRename, onDelete }: {
+export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, onIslandCommit, onRename, onDelete, onDispatchGroup }: {
   groups: GroupRect[];
   /** Live drag rectangle while drawing, world coords (normalized). */
   draft: { x: number; y: number; w: number; h: number } | null;
   z: number;
   mode: CanvasMode;
-  /** Island centres — a group carries the islands inside it when moved. */
-  islands: Array<{ slug: string; x: number; y: number }>;
+  /** Island centres + rollup inputs — a group carries the islands inside it
+   *  when moved, and summarizes them on its label plate. */
+  islands: GroupMember[];
   onGroupsChange: (next: GroupRect[], persist: boolean) => void;
   onIslandCommit: (slug: string, x: number, y: number) => void;
   onRename: (id: string) => void;
   onDelete: (id: string) => void;
+  /** Rocket on the label plate — dispatch one instruction to every dispatchable
+   *  project inside the group. */
+  onDispatchGroup: (groupId: string, slugs: string[]) => void;
 }) {
   const k = 1 / z;
   const drag = useRef<BodyDrag | null>(null);
@@ -45,7 +67,7 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
       // Member islands move imperatively during the drag (their <g> transform
       // is written directly — no per-move React state), then commit on release.
       contained: resizing ? [] : islands
-        .filter((i) => i.x >= g.x && i.x <= g.x + g.w && i.y >= g.y && i.y <= g.y + g.h)
+        .filter((i) => inside(i, g))
         .map((i) => ({
           slug: i.slug, x0: i.x, y0: i.y,
           el: (e.currentTarget as SVGElement).ownerSVGElement?.querySelector<SVGGElement>(`[data-mm-island="${CSS.escape(i.slug)}"]`) ?? null,
@@ -71,7 +93,24 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
 
   return (
     <g>
-      {groups.map((g) => (
+      {groups.map((g) => {
+        // Rollup: what's inside this box, worst-first. A group is the only
+        // portfolio-level grouping the canvas has, so its plate is where the
+        // "how are these N projects doing" question gets answered.
+        const members = islands.filter((i) => inside(i, g));
+        const worst = members.reduce<IslandState | null>(
+          (acc, m) => (acc === null || STATE_RANK[m.state] < STATE_RANK[acc] ? m.state : acc), null,
+        );
+        const blockers = members.reduce((s, m) => s + m.blockers, 0);
+        const dispatchable = members.filter((m) => m.dispatchable).map((m) => m.slug);
+        // Plate width tracks whatever segments actually render.
+        const labelW = g.label.length * 7.2;
+        const summaryW = members.length > 0 ? 30 + String(members.length).length * 7 : 0;
+        const blockerW = blockers > 0 ? 12 + String(blockers).length * 7 : 0;
+        const dispatchW = editable && dispatchable.length > 0 ? 24 : 0;
+        const plateW = labelW + summaryW + blockerW + dispatchW + (labelable ? 44 : 18);
+        let cursorX = labelW + 10;
+        return (
         <g key={g.id} data-testid={`mm-group-${g.id}`}>
           <rect
             x={g.x} y={g.y} width={g.w} height={g.h} rx={12}
@@ -104,7 +143,7 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
           <g transform={`translate(${g.x + 10} ${g.y}) scale(${k})`}>
             <g transform="translate(0 -8)">
               <rect
-                x={-6} y={-20} width={g.label.length * 7.2 + (labelable ? 44 : 18)} height={26} rx={13}
+                x={-6} y={-20} width={plateW} height={26} rx={13}
                 fill={mix('var(--background)', 85)}
                 stroke={mix('var(--primary)', 40)} strokeWidth={1}
                 style={labelable ? { cursor: 'text' } : undefined}
@@ -113,9 +152,45 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
               <text x={4} y={-2} fontSize={12.5} fontWeight={600} fill={mix('var(--primary)', 80, 'var(--foreground)')} letterSpacing="0.03em" pointerEvents="none">
                 {g.label}
               </text>
+              {/* rollup: worst state inside · how many projects */}
+              {members.length > 0 && (() => {
+                const x = cursorX; cursorX += summaryW;
+                return (
+                  <g transform={`translate(${x} 0)`} pointerEvents="none">
+                    <circle cx={4} cy={-6} r={4} fill={STATE_INK[worst ?? 'healthy']} />
+                    <text x={13} y={-2} fontSize={12} fontWeight={600} fill={mix('var(--foreground)', 70)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {members.length}
+                    </text>
+                  </g>
+                );
+              })()}
+              {/* total blockers across the group — only when there are any */}
+              {blockers > 0 && (() => {
+                const x = cursorX; cursorX += blockerW;
+                return (
+                  <text x={x} y={-2} fontSize={12} fontWeight={700} fill="var(--status-error)" style={{ fontVariantNumeric: 'tabular-nums' }} pointerEvents="none">
+                    {blockers}
+                  </text>
+                );
+              })()}
+              {/* one instruction to every dispatchable project in the box */}
+              {editable && dispatchable.length > 0 && (() => {
+                const x = cursorX; cursorX += dispatchW;
+                return (
+                  <g
+                    transform={`translate(${x + 8} -7)`}
+                    style={{ cursor: 'pointer' }}
+                    onPointerDown={(e) => { e.stopPropagation(); onDispatchGroup(g.id, dispatchable); }}
+                    data-testid={`mm-group-dispatch-${g.id}`}
+                  >
+                    <circle r={8} fill={mix('var(--primary)', 12, 'var(--background)')} stroke={mix('var(--primary)', 50)} strokeWidth={1} />
+                    <Rocket x={-5} y={-5} width={10} height={10} style={{ color: 'var(--primary)' }} strokeWidth={2} />
+                  </g>
+                );
+              })()}
               {labelable && (
                 <g
-                  transform={`translate(${g.label.length * 7.2 + 22} -7)`}
+                  transform={`translate(${plateW - 28} -7)`}
                   style={{ cursor: 'pointer' }}
                   onPointerDown={(e) => { e.stopPropagation(); onDelete(g.id); }}
                   data-testid={`mm-group-delete-${g.id}`}
@@ -127,7 +202,8 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
             </g>
           </g>
         </g>
-      ))}
+        );
+      })}
       {draft && (
         <rect
           x={draft.x} y={draft.y} width={draft.w} height={draft.h} rx={12}

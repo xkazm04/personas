@@ -18583,6 +18583,8 @@
     "persona_open": "このペルソナの作業中の画面を開く",
     "demo_cell_hint": "サンプルプロジェクト — 操作は無効です",
     "demo_badge_reopen": "自分のプロジェクトを読み込む方法を表示",
-    "dim_view_only": "閲覧のみ — 検出結果であり、ここでは設定できません"
+    "dim_view_only": "閲覧のみ — 検出結果であり、ここでは設定できません",
+    "dispatch_target_count": "{count} 件のプロジェクト",
+    "group_untitled": "名称未設定のグループ"
   }
 }

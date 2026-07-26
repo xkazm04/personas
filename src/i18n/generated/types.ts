@@ -18590,5 +18590,7 @@ export type Translations = {
     demo_cell_hint: string;
     demo_badge_reopen: string;
     dim_view_only: string;
+    dispatch_target_count: string;
+    group_untitled: string;
   };
 };

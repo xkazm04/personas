@@ -18583,6 +18583,8 @@
     "persona_open": "이 페르소나가 작업 중인 화면 열기",
     "demo_cell_hint": "샘플 프로젝트 — 작업이 비활성화됨",
     "demo_badge_reopen": "내 프로젝트를 불러오는 방법 보기",
-    "dim_view_only": "보기 전용 — 감지된 값이며 여기서 설정할 수 없음"
+    "dim_view_only": "보기 전용 — 감지된 값이며 여기서 설정할 수 없음",
+    "dispatch_target_count": "프로젝트 {count}개",
+    "group_untitled": "이름 없는 그룹"
   }
 }

@@ -87,5 +87,7 @@
   "persona_open": "Abrir donde trabaja esta persona",
   "demo_cell_hint": "proyecto de ejemplo — acciones desactivadas",
   "demo_badge_reopen": "Ver cómo cargar tus propios proyectos",
-  "dim_view_only": "solo lectura — detectado, no se configura aquí"
+  "dim_view_only": "solo lectura — detectado, no se configura aquí",
+  "dispatch_target_count": "{count} proyectos",
+  "group_untitled": "Grupo sin título"
 }

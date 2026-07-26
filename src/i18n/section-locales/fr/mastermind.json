@@ -87,5 +87,7 @@
   "persona_open": "Ouvrir là où ce persona travaille",
   "demo_cell_hint": "projet d’exemple — actions désactivées",
   "demo_badge_reopen": "Voir comment charger vos propres projets",
-  "dim_view_only": "lecture seule — détecté, non configurable ici"
+  "dim_view_only": "lecture seule — détecté, non configurable ici",
+  "dispatch_target_count": "{count} projets",
+  "group_untitled": "Groupe sans titre"
 }

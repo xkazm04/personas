@@ -87,5 +87,7 @@
   "persona_open": "Buka tempat persona ini bekerja",
   "demo_cell_hint": "proyek contoh — aksi dinonaktifkan",
   "demo_badge_reopen": "Lihat cara memuat proyek Anda sendiri",
-  "dim_view_only": "hanya lihat — terdeteksi, tidak diatur di sini"
+  "dim_view_only": "hanya lihat — terdeteksi, tidak diatur di sini",
+  "dispatch_target_count": "{count} proyek",
+  "group_untitled": "Grup tanpa nama"
 }

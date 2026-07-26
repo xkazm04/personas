@@ -87,5 +87,7 @@
   "persona_open": "Otevřít, kde tato persona pracuje",
   "demo_cell_hint": "ukázkový projekt — akce jsou vypnuté",
   "demo_badge_reopen": "Zobrazit, jak načíst vlastní projekty",
-  "dim_view_only": "jen ke čtení — zjištěno, zde se nenastavuje"
+  "dim_view_only": "jen ke čtení — zjištěno, zde se nenastavuje",
+  "dispatch_target_count": "{count} projektů",
+  "group_untitled": "Skupina bez názvu"
 }

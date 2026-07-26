@@ -18583,6 +18583,8 @@
     "persona_open": "打开该角色正在工作的位置",
     "demo_cell_hint": "示例项目 — 操作已禁用",
     "demo_badge_reopen": "了解如何加载你自己的项目",
-    "dim_view_only": "仅查看 — 系统检测所得，无法在此配置"
+    "dim_view_only": "仅查看 — 系统检测所得，无法在此配置",
+    "dispatch_target_count": "{count} 个项目",
+    "group_untitled": "未命名分组"
   }
 }

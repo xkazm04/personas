@@ -18583,6 +18583,8 @@
     "persona_open": "Mở nơi persona này đang làm việc",
     "demo_cell_hint": "dự án mẫu — thao tác bị tắt",
     "demo_badge_reopen": "Xem cách nạp dự án của bạn",
-    "dim_view_only": "chỉ xem — được phát hiện, không cấu hình ở đây"
+    "dim_view_only": "chỉ xem — được phát hiện, không cấu hình ở đây",
+    "dispatch_target_count": "{count} dự án",
+    "group_untitled": "Nhóm chưa đặt tên"
   }
 }

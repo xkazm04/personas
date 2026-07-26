@@ -171,6 +171,7 @@ function MastermindInner() {
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
+  const [dispatchGroup, setDispatchGroup] = useState<{ slugs: string[]; label: string } | null>(null);
   const [categoryPopup, setCategoryPopup] = useState<{ slug: string; category: CategoryNode; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
@@ -679,6 +680,7 @@ function MastermindInner() {
           onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
           onOpenTerminal={openTerminal}
           onDispatchFleet={setDispatchSlug}
+          onDispatchGroupFleet={(slugs, label) => setDispatchGroup({ slugs, label })}
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
@@ -784,6 +786,20 @@ function MastermindInner() {
           />
         );
       })()}
+
+      {dispatchGroup && (
+        <DispatchFleetModal
+          name={dispatchGroup.label || t.mastermind.group_untitled}
+          targetCount={dispatchGroup.slugs.length}
+          onDispatch={async (instruction) => {
+            // Sequential on purpose: each spawn is a PTY + a Claude process, and
+            // firing six at once is how a portfolio-wide dispatch becomes a
+            // machine-wide stall. A failure surfaces and stops the rest.
+            for (const slug of dispatchGroup.slugs) await dispatchFleet(slug, instruction);
+          }}
+          onClose={() => setDispatchGroup(null)}
+        />
+      )}
 
       {skillRunSlug && (
         <SkillsWorkbench slug={skillRunSlug} initialMode="dispatch" onClose={() => setSkillRunSlug(null)} />

@@ -87,5 +87,7 @@
   "persona_open": "Öffnen, wo dieses Persona arbeitet",
   "demo_cell_hint": "Beispielprojekt — Aktionen deaktiviert",
   "demo_badge_reopen": "Zeigen, wie eigene Projekte geladen werden",
-  "dim_view_only": "nur Ansicht — erkannt, hier nicht konfigurierbar"
+  "dim_view_only": "nur Ansicht — erkannt, hier nicht konfigurierbar",
+  "dispatch_target_count": "{count} Projekte",
+  "group_untitled": "Unbenannte Gruppe"
 }

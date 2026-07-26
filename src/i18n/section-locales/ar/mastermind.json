@@ -87,5 +87,7 @@
   "persona_open": "افتح المكان الذي تعمل فيه هذه الشخصية",
   "demo_cell_hint": "مشروع تجريبي — الإجراءات معطّلة",
   "demo_badge_reopen": "اعرض كيفية تحميل مشاريعك",
-  "dim_view_only": "للعرض فقط — مكتشَف ولا يُضبط هنا"
+  "dim_view_only": "للعرض فقط — مكتشَف ولا يُضبط هنا",
+  "dispatch_target_count": "{count} مشاريع",
+  "group_untitled": "مجموعة بلا اسم"
 }
