@@ -64,6 +64,9 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
   const collapsed = !zoomedIn;
   const categories = collapsed ? categoryNodes(island.nodes) : [];
   const categoryOfHighlight = highlightKey ? DIM_REGISTRY[highlightKey as keyof typeof DIM_REGISTRY]?.category : undefined;
+  // Demo islands carry no passport, so every tile resolves to no action and
+  // refuses clicks in silence. The tooltip says why rather than reading broken.
+  const isDemo = island.slug.startsWith('demo-');
 
   return (
     <g
@@ -124,6 +127,7 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
               h={CH}
               band={band}
               highlighted={highlightKey === n.key}
+              hint={isDemo ? t.mastermind.demo_cell_hint : undefined}
               onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
             />
           );

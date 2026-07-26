@@ -84,5 +84,7 @@
   "dim_cat_summary": "{total} 件中 {solid} 件が接続済み",
   "datalinks_title": "連携データプロジェクト",
   "support_title": "サポートチャネル",
-  "persona_open": "このペルソナの作業中の画面を開く"
+  "persona_open": "このペルソナの作業中の画面を開く",
+  "demo_cell_hint": "サンプルプロジェクト — 操作は無効です",
+  "demo_badge_reopen": "自分のプロジェクトを読み込む方法を表示"
 }

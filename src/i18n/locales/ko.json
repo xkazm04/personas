@@ -18580,6 +18580,8 @@
     "dim_cat_summary": "{total}개 중 {solid}개 연결됨",
     "datalinks_title": "연결된 데이터 프로젝트",
     "support_title": "지원 채널",
-    "persona_open": "이 페르소나가 작업 중인 화면 열기"
+    "persona_open": "이 페르소나가 작업 중인 화면 열기",
+    "demo_cell_hint": "샘플 프로젝트 — 작업이 비활성화됨",
+    "demo_badge_reopen": "내 프로젝트를 불러오는 방법 보기"
   }
 }

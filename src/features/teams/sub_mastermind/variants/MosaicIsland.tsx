@@ -73,6 +73,9 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
   const collapsed = band === 'far' || band === 'mid';
   const categories = collapsed ? categoryNodes(island.nodes) : [];
   const categoryOfHighlight = highlightKey ? DIM_REGISTRY[highlightKey as keyof typeof DIM_REGISTRY]?.category : undefined;
+  // Demo islands carry no passport, so every cell resolves to no action and
+  // refuses clicks in silence. The tooltip says why rather than reading broken.
+  const isDemo = island.slug.startsWith('demo-');
 
   return (
     <g
@@ -123,6 +126,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
               y={p.y}
               band={band}
               highlighted={highlightKey === n.key}
+              hint={isDemo ? t.mastermind.demo_cell_hint : undefined}
               onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
             />
           );
@@ -218,12 +222,15 @@ function CategoryCell({ category, x, y, highlighted, onOpen, onDrillIn }: {
   );
 }
 
-function MosaicCell({ node, x, y, band, highlighted, onAction }: {
+function MosaicCell({ node, x, y, band, highlighted, hint, onAction }: {
   node: DimNode;
   x: number;
   y: number;
   band: ZoomBand;
   highlighted: boolean;
+  /** Appended to the native tooltip — used to explain a whole island's
+   *  inertness (demo islands) rather than leaving a silent refusal. */
+  hint?: string;
   /** Set only when the cell has an Improve action — enables click + hover affordance. */
   onAction?: (e: React.MouseEvent) => void;
 }) {
@@ -246,7 +253,7 @@ function MosaicCell({ node, x, y, band, highlighted, onAction }: {
       onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
     >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
-      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}`}</title>
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}${hint ? ` · ${hint}` : ''}`}</title>
       <polygon
         points={hexPoints(0, 0, CELL - 1.5)}
         fill={absent ? mix('var(--secondary)', 45, 'var(--background)') : mix(ink, 20, 'var(--secondary)')}

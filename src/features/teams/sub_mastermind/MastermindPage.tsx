@@ -825,9 +825,19 @@ function MastermindInner() {
         />
       )}
       {scene.demo && demoDismissed && (
-        <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
+        // The badge is the way BACK to the notice: once dismissed, the canvas
+        // is a wall of cells that quietly refuse every click (demo islands have
+        // no passport, so nothing resolves an action). Clicking it re-opens the
+        // two exits — scan the workspace, or add a project.
+        <button
+          type="button"
+          onClick={() => setDemoDismissed(false)}
+          title={t.mastermind.demo_badge_reopen}
+          className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10 hover:text-foreground hover:border-primary/25 transition-colors focus-ring"
+          data-testid="mm-demo-badge"
+        >
           {t.mastermind.demo_badge}
-        </div>
+        </button>
       )}
 
       <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />

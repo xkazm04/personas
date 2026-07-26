@@ -18580,6 +18580,8 @@
     "dim_cat_summary": "{total} 项中已接入 {solid} 项",
     "datalinks_title": "关联数据项目",
     "support_title": "支持渠道",
-    "persona_open": "打开该角色正在工作的位置"
+    "persona_open": "打开该角色正在工作的位置",
+    "demo_cell_hint": "示例项目 — 操作已禁用",
+    "demo_badge_reopen": "了解如何加载你自己的项目"
   }
 }

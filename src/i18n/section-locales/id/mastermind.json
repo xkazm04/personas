@@ -84,5 +84,7 @@
   "dim_cat_summary": "{solid} dari {total} terhubung",
   "datalinks_title": "Proyek data terkait",
   "support_title": "Kanal dukungan",
-  "persona_open": "Buka tempat persona ini bekerja"
+  "persona_open": "Buka tempat persona ini bekerja",
+  "demo_cell_hint": "proyek contoh — aksi dinonaktifkan",
+  "demo_badge_reopen": "Lihat cara memuat proyek Anda sendiri"
 }

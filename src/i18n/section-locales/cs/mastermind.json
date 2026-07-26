@@ -84,5 +84,7 @@
   "dim_cat_summary": "zapojeno {solid} z {total}",
   "datalinks_title": "Propojené datové projekty",
   "support_title": "Kanály podpory",
-  "persona_open": "Otevřít, kde tato persona pracuje"
+  "persona_open": "Otevřít, kde tato persona pracuje",
+  "demo_cell_hint": "ukázkový projekt — akce jsou vypnuté",
+  "demo_badge_reopen": "Zobrazit, jak načíst vlastní projekty"
 }

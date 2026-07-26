@@ -84,5 +84,7 @@
   "dim_cat_summary": "{solid} von {total} angebunden",
   "datalinks_title": "Verknüpfte Datenprojekte",
   "support_title": "Supportkanäle",
-  "persona_open": "Öffnen, wo dieses Persona arbeitet"
+  "persona_open": "Öffnen, wo dieses Persona arbeitet",
+  "demo_cell_hint": "Beispielprojekt — Aktionen deaktiviert",
+  "demo_badge_reopen": "Zeigen, wie eigene Projekte geladen werden"
 }

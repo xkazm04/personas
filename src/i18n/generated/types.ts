@@ -18587,5 +18587,7 @@ export type Translations = {
     datalinks_title: string;
     support_title: string;
     persona_open: string;
+    demo_cell_hint: string;
+    demo_badge_reopen: string;
   };
 };

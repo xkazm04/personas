@@ -18580,6 +18580,8 @@
     "dim_cat_summary": "{solid} of {total} wired",
     "datalinks_title": "Linked data projects",
     "support_title": "Support channels",
-    "persona_open": "Open where this persona is working"
+    "persona_open": "Open where this persona is working",
+    "demo_cell_hint": "sample project — actions are disabled",
+    "demo_badge_reopen": "Show how to load your own projects"
   }
 }

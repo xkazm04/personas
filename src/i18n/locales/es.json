@@ -18580,6 +18580,8 @@
     "dim_cat_summary": "{solid} de {total} conectados",
     "datalinks_title": "Proyectos de datos vinculados",
     "support_title": "Canales de soporte",
-    "persona_open": "Abrir donde trabaja esta persona"
+    "persona_open": "Abrir donde trabaja esta persona",
+    "demo_cell_hint": "proyecto de ejemplo — acciones desactivadas",
+    "demo_badge_reopen": "Ver cómo cargar tus propios proyectos"
   }
 }
