@@ -19,6 +19,7 @@ use crate::commands::credentials::ai_artifact_flow::spawn_claude_and_collect;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt::build_cli_args;
 use crate::engine::types::StreamLineType;
+use crate::error::AppError;
 use crate::AppState;
 
 /// Event names for auto-cred browser progress.
@@ -739,19 +740,21 @@ pub enum AutoCredMode {
 
 /// Start a browser automation session to create credentials.
 ///
-/// Note: this fn returns `Result<_, String>` not `Result<_, AppError>`, so the
-/// `#[requires(privileged)]` macro can't be used here — its expansion uses
-/// bare `?` which requires `From<AppError>` for the error type. The explicit
-/// `.map_err(|e| e.to_string())?` bridge stays.
+/// Returns `Result<_, AppError>`. The structured `AutoCredErrorInfo` payload
+/// (kind/message/guidance/retryable/context) is preserved byte-for-byte: it is
+/// still JSON-serialized via `structured_error()` and carried as the message of
+/// `AppError::External`, whose `Display` is a pure passthrough (`"{0}"`) — so
+/// the `error` field of the IPC envelope the frontend receives is identical to
+/// the old `Result<_, String>` payload. `parseAutoCredError` on the frontend
+/// reads `err.error` (via `isTauriError`) instead of `err.message` now, but the
+/// JSON body itself is unchanged.
 #[tauri::command]
 pub async fn start_auto_cred_browser(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
     request: AutoCredBrowserRequest,
-) -> Result<AutoCredBrowserResult, String> {
-    crate::ipc_auth::require_privileged(&state, "start_auto_cred_browser")
-        .await
-        .map_err(|e| e.to_string())?;
+) -> Result<AutoCredBrowserResult, AppError> {
+    crate::ipc_auth::require_privileged(&state, "start_auto_cred_browser").await?;
     let registry = Arc::clone(&state.process_registry);
     let session_id = request.session_id.clone();
     let force_guided = request.force_guided.unwrap_or(false);
@@ -790,7 +793,10 @@ pub async fn start_auto_cred_browser(
     let (prompt, timeout) = match mode {
         AutoCredMode::Playwright => {
             // Add Playwright MCP server configuration via secure temp file.
-            let mcp_file = build_playwright_mcp_config()?;
+            // `build_playwright_mcp_config` stays `Result<_, String>` -- it's
+            // also called from companion/session.rs (out of scope here) --
+            // so bridge its error into the AppError this command now returns.
+            let mcp_file = build_playwright_mcp_config().map_err(AppError::External)?;
             cli_args.args.push("--mcp-config".to_string());
             cli_args
                 .args
@@ -1155,7 +1161,7 @@ pub async fn start_auto_cred_browser(
                 "error": &err,
             }),
         );
-        return Err(err);
+        return Err(AppError::External(err));
     }
 
     match result {
@@ -1202,7 +1208,7 @@ pub async fn start_auto_cred_browser(
                     "error": &err,
                 }),
             );
-            Err(err)
+            Err(AppError::External(err))
         }
         Ok(spawn_result) => {
             // Try to extract JSON from the output
@@ -1329,7 +1335,7 @@ pub async fn start_auto_cred_browser(
                             output_len = spawn_result.text_output.len(),
                             "Failed to extract auto-cred browser result"
                         );
-                        Err(err)
+                        Err(AppError::External(err))
                     }
                 }
             }
@@ -1338,17 +1344,14 @@ pub async fn start_auto_cred_browser(
 }
 
 /// Save a playwright procedure for a connector type.
-/// `Result<_, String>` keeps the macro out — see start_auto_cred_browser.
 #[tauri::command]
 pub async fn save_playwright_procedure(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
     procedure_json: String,
     field_keys: String,
-) -> Result<serde_json::Value, String> {
-    crate::ipc_auth::require_privileged(&state, "save_playwright_procedure")
-        .await
-        .map_err(|e| e.to_string())?;
+) -> Result<serde_json::Value, AppError> {
+    crate::ipc_auth::require_privileged(&state, "save_playwright_procedure").await?;
     // Defense-in-depth: the procedure body is meant to be replay STEPS, not
     // values, but it is persisted UNENCRYPTED — pattern-scrub it before write so
     // a stray token that leaked into the step text never lands in the table.
@@ -1358,8 +1361,7 @@ pub async fn save_playwright_procedure(
         &connector_name,
         &procedure_json,
         &field_keys,
-    )
-    .map_err(|e| e.to_string())?;
+    )?;
 
     Ok(json!({
         "id": proc.id,
@@ -1369,18 +1371,14 @@ pub async fn save_playwright_procedure(
 }
 
 /// Get the active playwright procedure for a connector.
-/// `Result<_, String>` keeps the macro out — see start_auto_cred_browser.
 #[tauri::command]
 pub async fn get_playwright_procedure(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
-) -> Result<Option<serde_json::Value>, String> {
-    crate::ipc_auth::require_privileged(&state, "get_playwright_procedure")
-        .await
-        .map_err(|e| e.to_string())?;
+) -> Result<Option<serde_json::Value>, AppError> {
+    crate::ipc_auth::require_privileged(&state, "get_playwright_procedure").await?;
     let proc =
-        crate::db::repos::resources::playwright_procedures::get_active(&state.db, &connector_name)
-            .map_err(|e| e.to_string())?;
+        crate::db::repos::resources::playwright_procedures::get_active(&state.db, &connector_name)?;
 
     Ok(proc.map(|p| {
         json!({
@@ -1606,7 +1604,7 @@ fn kill_pid(pid: u32) {
 
 /// Cancel a running auto-cred browser session by killing the CLI subprocess.
 #[tauri::command]
-pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result<(), String> {
+pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     let pid = state.process_registry.take_pid("auto_cred");
     if let Some(pid) = pid {
         kill_pid(pid);
@@ -1617,7 +1615,7 @@ pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result
 /// Check if Playwright MCP is available -- exposed as a Tauri command
 /// so the frontend can decide the UI mode upfront.
 #[tauri::command]
-pub async fn check_auto_cred_playwright_available() -> Result<bool, String> {
+pub async fn check_auto_cred_playwright_available() -> Result<bool, AppError> {
     Ok(check_playwright_available_async().await)
 }
 
