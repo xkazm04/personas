@@ -14,13 +14,23 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import Button from '@/features/shared/components/buttons/Button';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { categoryMeta } from './kpiMeta';
 import { KPIProposalModal } from './KPIProposalModal';
 import { KPIConnectWizard } from './KPIConnectWizard';
 
+// ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+// Rows in the first viewport that play the one-shot entrance cascade
+// (35ms stagger, id-guarded so polling/refetch never replay it). This queue
+// has no filter/persona dimension, so a single static reset key is enough —
+// a genuinely new proposal (an id never seen before) still ripples in.
+const CASCADE_ROWS = 14;
+const REVEAL_RESET_KEY = 'kpi-proposals-queue';
+
 export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
   const { t, tx } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
+  const kpisLoading = useSystemStore((s) => s.kpisLoading);
   const projects = useSystemStore((s) => s.projects);
   const updateKpi = useSystemStore((s) => s.updateKpi);
 
@@ -38,8 +48,15 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
     () => proposals.find((k) => k.id === connectId) ?? null,
     [proposals, connectId],
   );
+  const enter = useRevealTracker(REVEAL_RESET_KEY);
 
-  if (proposals.length === 0) {
+  // Data on screen is sacred: a fetch never hides rows already rendered.
+  // Ghosts paint ONLY into genuine emptiness while a fetch is in flight;
+  // the settled-empty state (fetch done, truly zero proposals) is separate
+  // so an empty queue never flashes on a cold first visit.
+  const showGhost = kpisLoading && proposals.length === 0;
+
+  if (!showGhost && proposals.length === 0) {
     return (
       <EmptyState
         title={t.kpis.queue_empty_title}
@@ -69,14 +86,27 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
           </tr>
         </thead>
         <tbody>
-          {proposals.map((kpi) => {
+          {showGhost ? (
+            <KPIProposalGhostRows />
+          ) : (
+          proposals.map((kpi, index) => {
             const cat = categoryMeta(kpi.category);
             const CatIcon = cat.icon;
+            // One-shot entrance cascade for a fresh result set. Rows past the
+            // first viewport render plainly, and entered ids never replay on
+            // poll/refresh (RevealItem's guard semantics, applied directly to
+            // <tr> since RevealItem's own div wrapper is invalid inside <tbody>).
+            const animate = index < CASCADE_ROWS && !enter.hasEntered(kpi.id);
+            const delay = animate ? Math.min(index, 8) * 35 : 0;
             return (
               <tr
                 key={kpi.id}
                 onClick={() => setOpenId(kpi.id)}
-                className="border-b border-primary/10 hover:bg-secondary/30 cursor-pointer transition-colors"
+                className={`border-b border-primary/10 hover:bg-secondary/30 cursor-pointer transition-colors${animate ? ' animate-fade-in' : ''}`}
+                style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                onAnimationEnd={(e) => {
+                  if (e.target === e.currentTarget) enter.markEntered(kpi.id);
+                }}
                 data-testid={`kpi-proposal-${kpi.id}`}
               >
                 <td className="py-2 pr-3">
@@ -155,7 +185,8 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
                 </td>
               </tr>
             );
-          })}
+          })
+          )}
         </tbody>
       </table>
       {openKpi && <KPIProposalModal kpi={openKpi} onClose={() => setOpenId(null)} />}
@@ -163,5 +194,75 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
         <KPIConnectWizard kpi={connectKpi} onClose={() => setConnectId(null)} />
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KPIProposalGhostRows — calm ghost rows for the ONLY moment the queue has
+// nothing to show (kpis still fetching, cold store). Same row height /
+// column layout as the real rows, under the real permanent <thead>. Each
+// bar enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms, so a fast fetch never paints
+// a single ghost. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_ROW_COUNT = 6;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function KPIProposalGhostRows() {
+  return (
+    <>
+      {Array.from({ length: GHOST_ROW_COUNT }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <tr key={i} className="border-b border-primary/10" aria-hidden="true">
+            <td className="py-2 pr-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-4 h-4 rounded-full bg-primary/[0.06] flex-shrink-0 animate-fade-in"
+                  style={{ animationDelay: delay }}
+                />
+                <span
+                  className={`h-3.5 ${nameW} max-w-full ${GHOST_BAR} animate-fade-in`}
+                  style={{ animationDelay: delay }}
+                />
+              </div>
+            </td>
+            <td className="py-2 pr-3 hidden md:table-cell">
+              <span
+                className={`inline-block h-3 w-20 ${GHOST_BAR} animate-fade-in`}
+                style={{ animationDelay: delay }}
+              />
+            </td>
+            <td className="py-2 pr-3 text-right">
+              <span
+                className={`inline-block h-3.5 w-12 ${GHOST_BAR} animate-fade-in`}
+                style={{ animationDelay: delay }}
+              />
+            </td>
+            <td className="py-2 pr-3 text-right">
+              <span
+                className={`inline-block h-3.5 w-12 ${GHOST_BAR} animate-fade-in`}
+                style={{ animationDelay: delay }}
+              />
+            </td>
+            <td className="py-2 whitespace-nowrap">
+              <div className="flex items-center gap-1 justify-end">
+                <span
+                  className="w-6 h-6 rounded-modal bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: delay }}
+                />
+                <span
+                  className="w-6 h-6 rounded-modal bg-primary/[0.06] animate-fade-in"
+                  style={{ animationDelay: delay }}
+                />
+              </div>
+            </td>
+          </tr>
+        );
+      })}
+    </>
   );
 }
