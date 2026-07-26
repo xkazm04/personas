@@ -16616,7 +16616,8 @@
       "release_0_0_2_item_21_title": "Des réflexions qui relisent votre passé",
       "release_0_0_2_item_21_description": "Ajoutez à votre coffre Obsidian un coach de journal qui lit chaque entrée quotidienne, fait remonter les notes passées qui l'éclairent et repère les thèmes récurrents avant vous. Le ton est à votre choix — doux, direct ou socratique. La réflexion s'écrit dans la même note quotidienne, pour que votre journal reste l'unique source de vérité.",
       "live_source_stale": "Échec de la récupération en direct · affichage en cache",
-      "nav_rail_label": "Versions"
+      "nav_rail_label": "Versions",
+      "lane_empty": "Rien de prévu ici pour l’instant"
     }
   },
   "twin": {

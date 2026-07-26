@@ -16810,6 +16810,7 @@ export type Translations = {
       nav_bar_roadmap_label: string;
       nav_rail_label: string;
       empty: string;
+      lane_empty: string;
       status_released: string;
       status_active: string;
       status_planned: string;

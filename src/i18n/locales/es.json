@@ -16616,7 +16616,8 @@
       "release_0_0_2_item_21_title": "Reflexiones que leen su pasado",
       "release_0_0_2_item_21_description": "Añada un coach de diario a su bóveda de Obsidian que lea cada entrada diaria, saque a la luz las notas pasadas que le dan contexto y detecte patrones recurrentes antes que usted. El tono es a su elección — suave, directo o socrático. La reflexión se escribe de vuelta en la misma nota diaria, así que su diario sigue siendo la única fuente de verdad.",
       "live_source_stale": "No se pudo obtener en vivo · mostrando caché",
-      "nav_rail_label": "Versiones"
+      "nav_rail_label": "Versiones",
+      "lane_empty": "Aún no hay nada planificado aquí"
     }
   },
   "twin": {

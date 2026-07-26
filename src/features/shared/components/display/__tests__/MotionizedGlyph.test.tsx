@@ -56,4 +56,74 @@ describe('MotionizedGlyph', () => {
     expect(filtered.filter(Boolean)).toHaveLength(2); // the two violet paths, not the navy ink
     expect(container.querySelector('filter feGaussianBlur')).toBeTruthy();
   });
+
+  describe('motion presets', () => {
+    it('defaults to the staggered-draw entrance', () => {
+      const { container } = render(<MotionizedGlyph data={DATA} viewBox="0 0 10 10" />);
+      // The preset's scale-from value, sourced from motionPresets.ts.
+      expect(styleOf(container)).toContain('transform: scale(0.35)');
+    });
+
+    it('fade-pop drops the per-path stagger so the glyph reads as one object', () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" entrance="fade-pop" spread={2} />,
+      );
+      const delays = [...container.querySelectorAll('path')].map((p) => (p as SVGElement).style.animationDelay);
+      expect(new Set(delays)).toEqual(new Set(['0.05s']));
+      expect(styleOf(container)).toContain('transform: scale(0.92)');
+    });
+
+    it('runs an ambient loop on accent paths only, leaving line-work still', () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" ambient="pulse" />,
+      );
+      const looping = [...container.querySelectorAll('path')].filter((p) =>
+        /-amb\b/.test(p.getAttribute('class') ?? ''),
+      );
+      // The two violet accents loop; navy ink and negative space do not.
+      expect(looping.map((p) => p.getAttribute('fill'))).toEqual(['#7C3AED', '#7C3AED']);
+    });
+
+    it('sequences the loop after the entrance instead of overlapping it', () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" ambient="pulse" spread={1} />,
+      );
+      const accent = [...container.querySelectorAll('path')].find((p) =>
+        /-amb\b/.test(p.getAttribute('class') ?? ''),
+      )!;
+      // Entrance stagger first, then the loop's start: last delay (0.08+1) + 0.5s + 0.2s gap.
+      expect((accent as SVGElement).style.animationDelay).toBe('0.08s, 1.78s');
+    });
+
+    it("fills the loop 'forwards' so its from-state cannot dim the entrance during the delay", () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" ambient="pulse" />,
+      );
+      const rule = /-amb \{ animation:[^}]+\}/.exec(styleOf(container))![0];
+      expect(rule).toContain('forwards');
+      expect(rule).not.toContain('both;');
+    });
+
+    it('drops ambient loops entirely under reduced motion', () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" ambient="float" />,
+      );
+      const css = styleOf(container);
+      const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+      // Both the plain and the looping paths fall back to the shared cross-fade.
+      expect(reduced).toContain('-fade 0.45s');
+      expect(reduced).not.toContain('translateY');
+    });
+
+    it('layers hover as a transition on the wrapper group, not a keyframe animation', () => {
+      const { container } = render(
+        <MotionizedGlyph data={DATA} viewBox="0 0 10 10" hover="hover-response" />,
+      );
+      const css = styleOf(container);
+      expect(css).toContain('transition: transform 0.18s');
+      expect(css).toContain('scale(1.03)');
+      // The hover group wraps the replayable run group rather than replacing it.
+      expect(container.querySelector('svg > g > g')).toBeTruthy();
+    });
+  });
 });

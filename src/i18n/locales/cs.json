@@ -16616,7 +16616,8 @@
       "release_0_0_2_item_21_title": "Reflexe, které čtou vaši minulost",
       "release_0_0_2_item_21_description": "Přidejte si do svého Obsidian vaultu deníkového kouče, který čte každý denní záznam, vynáší na světlo starší poznámky, jež ho ukotvují, a všimne si opakujících se témat dřív než vy sami. Tón volíte sami — jemný, přímý nebo sokratovský. Reflexe se zapisuje zpět do stejné denní poznámky, takže váš deník zůstává jediným zdrojem pravdy.",
       "live_source_stale": "Načtení selhalo · zobrazuje se mezipaměť",
-      "nav_rail_label": "Vydání"
+      "nav_rail_label": "Vydání",
+      "lane_empty": "Zde ještě nic naplánováno"
     }
   },
   "twin": {

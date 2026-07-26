@@ -16804,6 +16804,7 @@
       "nav_bar_roadmap_label": "Roadmap",
       "nav_rail_label": "Releases",
       "empty": "Nothing to share for this release yet — check back soon.",
+      "lane_empty": "Nothing planned here yet",
       "status_released": "Released",
       "status_active": "Current",
       "status_planned": "Planned",

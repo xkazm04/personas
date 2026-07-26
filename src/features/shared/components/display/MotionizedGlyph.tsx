@@ -13,6 +13,12 @@
  * opacity fade, drops the scale (via a media query). Optional emissive `glow` blurs
  * the bright accent paths (cinematic/cyberpunk "light from objects" — see ART_STYLE.md).
  *
+ * All timing/easing lives in `./motionPresets.ts`, never inline here or in a
+ * consumer — one file to tune, every motionized surface follows. Three orthogonal
+ * layers compose: a one-shot `entrance`, an optional ambient `ambient` loop that
+ * starts only *after* the entrance finishes, and an optional `hover` transition on
+ * the wrapper group. Ambient loops are accent-only, so traced line-work stays still.
+ *
  * Light theme is handled entirely in CSS. Geometry is identical across themes; only
  * fills change, so we emit a `[data-theme^="light"]` override per path rather than
  * reading the theme store — which keeps this a dependency-free catalog primitive and
@@ -20,6 +26,17 @@
  * negative space) flip for free.
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  AMBIENT_PRESETS,
+  ENTRANCE_PRESETS,
+  HOVER_PRESETS,
+  REDUCED_FADE_DURATION_S,
+  REDUCED_FADE_KEYFRAMES,
+  ambientStartDelayS,
+  type AmbientPresetName,
+  type EntrancePresetName,
+  type HoverPresetName,
+} from './motionPresets';
 
 export interface GlyphElement { d: string; fill: string; delay: number }
 /** A traced glyph module's shape (see src/features/shared/glyph/glyphs/). */
@@ -59,9 +76,27 @@ interface Props {
   glow?: boolean;
   /** Total reveal spread in seconds (delay 0..1 maps into this). */
   spread?: number;
+  /** One-shot reveal. See motionPresets.ts. */
+  entrance?: EntrancePresetName;
+  /**
+   * Barely-there loop on the accent paths, starting after the entrance settles.
+   * `pulse` implies activity — only use it where work is actually happening.
+   */
+  ambient?: AmbientPresetName;
+  /** Layers a transition on the wrapper group; pair with an interactive parent. */
+  hover?: HoverPresetName;
 }
 
-export function MotionizedGlyph({ data, viewBox, className = 'w-40 h-40', glow, spread = 1.1 }: Props) {
+export function MotionizedGlyph({
+  data,
+  viewBox,
+  className = 'w-40 h-40',
+  glow,
+  spread = 1.1,
+  entrance = 'staggered-draw',
+  ambient,
+  hover,
+}: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const gid = useId().replace(/:/g, '');
   // First reveal plays on mount; the observer bumps this to replay on re-entry.
@@ -102,14 +137,34 @@ export function MotionizedGlyph({ data, viewBox, className = 'w-40 h-40', glow, 
     return { lightRules: rules.join('\n'), colorIndex: idx };
   }, [data, cls]);
 
+  const enter = ENTRANCE_PRESETS[entrance];
+  const amb = ambient ? AMBIENT_PRESETS[ambient] : null;
+  const hov = hover ? HOVER_PRESETS[hover] : null;
+  const enterDelay = (delay: number) => (enter.stagger ? enter.stagger(delay, spread) : 0);
+  const reducedFade = `${cls}-fade ${REDUCED_FADE_DURATION_S}s ${enter.ease} both`;
+  // The ambient loop waits for the entrance to finish — sequenced, not overlapped.
+  const ambDelay = amb ? ambientStartDelayS(enter, spread) : 0;
+
   return (
     <svg ref={svgRef} viewBox={viewBox} className={className} aria-hidden role="img">
       <style>{`
-        @keyframes ${cls}-reveal { from { opacity: 0; transform: scale(0.35); } to { opacity: 1; transform: scale(1); } }
-        @keyframes ${cls}-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes ${cls}-in { ${enter.keyframes} }
+        @keyframes ${cls}-fade { ${REDUCED_FADE_KEYFRAMES} }
         .${cls}-el { opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; }
-        .${cls}-run .${cls}-el { animation: ${cls}-reveal 0.5s both cubic-bezier(0.16, 1, 0.3, 1); }
-        @media (prefers-reduced-motion: reduce) { .${cls}-run .${cls}-el { animation-name: ${cls}-fade; animation-duration: 0.45s; } }
+        ${entrance === 'draw' ? `.${cls}-el { stroke-dasharray: 1; }` : ''}
+        .${cls}-run .${cls}-el { animation: ${cls}-in ${enter.durationS}s ${enter.ease} both; }
+${amb ? `        @keyframes ${cls}-amb { ${amb.keyframes} }
+        /* The loop is 'forwards', NOT 'both': under 'both' its backwards fill would apply
+           the from-state (a dimmed accent) during the start delay and fight the entrance. */
+        .${cls}-run .${cls}-amb { animation: ${cls}-in ${enter.durationS}s ${enter.ease} both, ${cls}-amb ${amb.durationS}s ${amb.ease} ${amb.iteration ?? 'infinite'} ${amb.direction ?? 'alternate'} forwards; }` : ''}
+${hov ? `        .${cls}-hover { transform-box: fill-box; transform-origin: 50% 50%; transition: transform ${hov.durationS}s ${hov.ease}, opacity ${hov.durationS}s ${hov.ease}; }
+        svg:hover > .${cls}-hover { transform: scale(1.03); }` : ''}
+        @media (prefers-reduced-motion: reduce) {
+          .${cls}-run .${cls}-el { animation: ${reducedFade}; }
+${amb ? `          /* ambient loops declare reduced: 'none' — drop the loop entirely */
+          .${cls}-run .${cls}-amb { animation: ${reducedFade}; }` : ''}
+${hov ? `          svg:hover > .${cls}-hover { transform: none; }` : ''}
+        }
 ${lightRules}
       `}</style>
       {glow && (
@@ -120,20 +175,32 @@ ${lightRules}
           </filter>
         </defs>
       )}
-      <g key={runKey} className={`${cls}-run`}>
-        {data.map((p, i) => {
-          const ci = colorIndex.get(p.fill);
-          return (
-            <path
-              key={i}
-              className={ci === undefined ? `${cls}-el` : `${cls}-el ${cls}-c${ci}`}
-              style={{ animationDelay: `${0.08 + p.delay * spread}s` }}
-              d={p.d}
-              fill={p.fill}
-              filter={glow && isAccent(p.fill) ? `url(#${cls}-glow)` : undefined}
-            />
-          );
-        })}
+      {/* Outer group carries the hover transition so it composes over the reveal. */}
+      <g className={hov ? `${cls}-hover` : undefined}>
+        <g key={runKey} className={`${cls}-run`}>
+          {data.map((p, i) => {
+            const ci = colorIndex.get(p.fill);
+            const accent = isAccent(p.fill);
+            // Ambient loops ride the accent paths only — traced line-work stays still.
+            const loops = !!amb && (amb.accentOnly ? accent : true);
+            const classes = [`${cls}-el`, loops ? `${cls}-amb` : '', ci === undefined ? '' : `${cls}-c${ci}`]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <path
+                key={i}
+                className={classes}
+                // Two comma-separated values when a loop rides along: the entrance's
+                // per-path stagger, then the loop's post-entrance start.
+                style={{ animationDelay: loops ? `${enterDelay(p.delay)}s, ${ambDelay}s` : `${enterDelay(p.delay)}s` }}
+                pathLength={entrance === 'draw' ? 1 : undefined}
+                d={p.d}
+                fill={p.fill}
+                filter={glow && accent ? `url(#${cls}-glow)` : undefined}
+              />
+            );
+          })}
+        </g>
       </g>
     </svg>
   );
