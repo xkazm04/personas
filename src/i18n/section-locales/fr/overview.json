@@ -417,7 +417,18 @@
       "reasoning_label": "Raisonnement auto-triage",
       "tip_auto_triage": "Décidé par un évaluateur automatique en second passage (politique de révision auto_triage) — il a contourné votre file de révision sans décision humaine.",
       "tip_trust_llm": "Approuvé automatiquement par la politique de révision trust_llm de cette capacité — il a contourné votre file de révision sans décision humaine."
-    }
+    },
+    "backlog_effort": "E",
+    "backlog_empty_subtitle": "Les idées analysées en attente de tri apparaîtront ici.",
+    "backlog_empty_title": "Aucun candidat au backlog",
+    "backlog_impact": "I",
+    "backlog_risk": "R",
+    "knowledge_empty_subtitle": "Regroupez vos projets dans un espace de travail pour commencer à créer une bibliothèque de pratiques partagée.",
+    "knowledge_empty_title": "Aucun espace de travail pour le moment",
+    "mode_backlog": "Backlog",
+    "mode_knowledge": "Connaissances de l'espace",
+    "mode_reviews": "Révision manuelle",
+    "mode_switch_label": "Type de décision"
   },
   "messages_view": {
     "title": "Messages",

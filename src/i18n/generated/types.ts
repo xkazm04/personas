@@ -6385,6 +6385,17 @@ export type Translations = {
       delete_all_confirm_title: string;
       delete_all_confirm_body: string;
       delete_all_confirm_cta: string;
+      mode_reviews: string;
+      mode_backlog: string;
+      mode_knowledge: string;
+      mode_switch_label: string;
+      backlog_empty_title: string;
+      backlog_empty_subtitle: string;
+      backlog_effort: string;
+      backlog_impact: string;
+      backlog_risk: string;
+      knowledge_empty_title: string;
+      knowledge_empty_subtitle: string;
     };
     messages_view: {
       title: string;

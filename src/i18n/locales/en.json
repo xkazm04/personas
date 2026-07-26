@@ -6378,7 +6378,18 @@
       "delete_all": "Delete all",
       "delete_all_confirm_title": "Delete all reviews?",
       "delete_all_confirm_body": "This permanently deletes all {count} reviews. This cannot be undone.",
-      "delete_all_confirm_cta": "Delete all"
+      "delete_all_confirm_cta": "Delete all",
+      "mode_reviews": "Manual Review",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Workspace Knowledge",
+      "mode_switch_label": "Decision type",
+      "backlog_empty_title": "No backlog candidates",
+      "backlog_empty_subtitle": "Scanned ideas awaiting triage will appear here.",
+      "backlog_effort": "E",
+      "backlog_impact": "I",
+      "backlog_risk": "R",
+      "knowledge_empty_title": "No workspace yet",
+      "knowledge_empty_subtitle": "Group your projects into a workspace to start building a shared practice library."
     },
     "messages_view": {
       "title": "Messages",

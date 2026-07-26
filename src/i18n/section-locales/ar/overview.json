@@ -417,7 +417,18 @@
       "reasoning_label": "تفكير التصنيف التلقائي",
       "tip_auto_triage": "قرّره مقيّم ثانٍ تلقائي (سياسة مراجعة auto_triage) — تجاوز قائمة انتظار مراجعتك دون قرار بشري.",
       "tip_trust_llm": "اعتُمد تلقائياً بموجب سياسة trust_llm لهذه القدرة — تجاوز قائمة انتظار مراجعتك دون قرار بشري."
-    }
+    },
+    "backlog_effort": "جهد",
+    "backlog_empty_subtitle": "ستظهر هنا الأفكار الممسوحة التي تنتظر الفرز.",
+    "backlog_empty_title": "لا توجد عناصر متراكمة",
+    "backlog_impact": "أثر",
+    "backlog_risk": "خطر",
+    "knowledge_empty_subtitle": "اجمع مشاريعك في مساحة عمل لبدء إنشاء مكتبة ممارسات مشتركة.",
+    "knowledge_empty_title": "لا توجد مساحة عمل بعد",
+    "mode_backlog": "المتراكم",
+    "mode_knowledge": "معرفة المساحة",
+    "mode_reviews": "المراجعة اليدوية",
+    "mode_switch_label": "نوع القرار"
   },
   "messages_view": {
     "title": "الرسائل",

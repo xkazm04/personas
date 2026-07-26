@@ -6181,7 +6181,18 @@
         "reasoning_label": "Auto-Triage-Begründung",
         "tip_auto_triage": "Entschieden durch einen automatischen Evaluator im zweiten Durchlauf (auto_triage-Überprüfungsrichtlinie) — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen.",
         "tip_trust_llm": "Automatisch genehmigt durch die trust_llm-Überprüfungsrichtlinie dieser Funktion — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen."
-      }
+      },
+      "backlog_effort": "A",
+      "backlog_empty_subtitle": "Gescannte Ideen, die auf die Triage warten, erscheinen hier.",
+      "backlog_empty_title": "Keine Backlog-Kandidaten",
+      "backlog_impact": "I",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Gruppieren Sie Ihre Projekte in einem Arbeitsbereich, um eine gemeinsame Praxisbibliothek aufzubauen.",
+      "knowledge_empty_title": "Noch kein Arbeitsbereich",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Arbeitsbereich-Wissen",
+      "mode_reviews": "Manuelle Überprüfung",
+      "mode_switch_label": "Entscheidungstyp"
     },
     "messages_view": {
       "title": "Nachrichten",

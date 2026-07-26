@@ -29,7 +29,11 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
-import { BacklogInboxGroup } from './BacklogInboxGroup';
+import { DecisionModeTabs, type DecisionMode } from './DecisionModeTabs';
+import { BacklogApprovalsPanel } from './BacklogApprovalsPanel';
+import { KnowledgeApprovalsPanel } from './KnowledgeApprovalsPanel';
+import { useBacklogIdeas } from '../hooks/useBacklogIdeas';
+import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import type { TriageReview } from './reviewFocusHelpers';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
@@ -61,6 +65,12 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
 
 export default function ManualReviewList() {
   const { t, tx } = useTranslation();
+  // Approvals is a decision CENTER: three kinds of "should this be accepted?"
+  // — persona reviews, Dev Tools backlog, Workspace Knowledge — behind one
+  // shell instead of three surfaces in three idioms.
+  const [mode, setMode] = useState<DecisionMode>('reviews');
+  const backlog = useBacklogIdeas();
+  const center = useWorkspaceCenter();
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const {
@@ -335,6 +345,34 @@ export default function ManualReviewList() {
         )}
       />
 
+      <DecisionModeTabs
+        mode={mode}
+        onModeChange={setMode}
+        counts={{
+          reviews: statusCounts.pending ?? 0,
+          backlog: backlog.ideas.length,
+          knowledge: Object.values(center.knowledge)
+            .flat()
+            .filter((k) => k.status === 'observed' || k.status === 'proposed').length,
+        }}
+      />
+
+      {mode === 'backlog' ? (
+        <ContentBody flex>
+          <BacklogApprovalsPanel
+            ideas={backlog.ideas}
+            loading={backlog.loading}
+            acting={backlog.acting}
+            projectName={backlog.projectName}
+            onAct={backlog.act}
+          />
+        </ContentBody>
+      ) : mode === 'knowledge' ? (
+        <ContentBody flex>
+          <KnowledgeApprovalsPanel center={center} />
+        </ContentBody>
+      ) : (
+      <>
       <FilterBar<FilterStatus>
         options={(['all', 'pending', 'approved', 'rejected'] as FilterStatus[]).map((id) => ({
           id, label: FILTER_LABELS[id], badge: statusCounts[id] ?? 0,
@@ -356,9 +394,6 @@ export default function ManualReviewList() {
       />
 
       <ContentBody flex>
-        {/* #1 — Dev Tools backlog (pending scanned ideas) triaged inline here,
-            so reviews + backlog candidates live in one inbox. */}
-        <BacklogInboxGroup />
         <AnimatePresence mode="wait">
         {reviewQueue.loading && filteredReviews.length === 0 ? (
           <div key="loading" className="flex-1 min-h-0 overflow-hidden">
@@ -429,6 +464,8 @@ export default function ManualReviewList() {
         </AnimatePresence>
       </ContentBody>
 
+      {/* Bulk selection belongs to the reviews queue only — the backlog and the
+          knowledge library have their own act-one-at-a-time models. */}
       <BulkActionBar
         activeSelectionCount={activeSelectionCount}
         confirmAction={confirmAction}
@@ -437,6 +474,8 @@ export default function ManualReviewList() {
         onBulkAction={handleBulkAction}
         onDeselect={() => setSelectedIds(new Set())}
       />
+      </>
+      )}
 
       {confirmingDeleteAll && (
         <ConfirmDialog

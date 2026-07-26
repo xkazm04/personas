@@ -417,7 +417,18 @@
       "reasoning_label": "Odůvodnění auto-triage",
       "tip_auto_triage": "Rozhodnuto automatickým hodnotitelem druhého průchodu (zásada revize auto_triage) — přeskočilo vaši frontu revizí bez lidského rozhodnutí.",
       "tip_trust_llm": "Automaticky schváleno zásadou revize trust_llm této schopnosti — přeskočilo vaši frontu revizí bez lidského rozhodnutí."
-    }
+    },
+    "backlog_effort": "Ú",
+    "backlog_empty_subtitle": "Naskenované nápady čekající na roztřídění se zde zobrazí.",
+    "backlog_empty_title": "Žádné položky v backlogu",
+    "backlog_impact": "D",
+    "backlog_risk": "R",
+    "knowledge_empty_subtitle": "Seskupte své projekty do pracovního prostoru a začněte budovat sdílenou knihovnu postupů.",
+    "knowledge_empty_title": "Zatím žádný pracovní prostor",
+    "mode_backlog": "Backlog",
+    "mode_knowledge": "Znalosti prostoru",
+    "mode_reviews": "Ruční kontrola",
+    "mode_switch_label": "Typ rozhodnutí"
   },
   "messages_view": {
     "title": "Zprávy",

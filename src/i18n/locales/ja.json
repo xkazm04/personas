@@ -6181,7 +6181,18 @@
         "reasoning_label": "自動トリアージの理由",
         "tip_auto_triage": "自動二次パスエバリュエーター（auto_triageレビューポリシー）によって判断され、人間の決定なしにレビューキューをスキップしました。",
         "tip_trust_llm": "この機能のtrust_llmレビューポリシーによって自動承認され、人間の決定なしにレビューキューをスキップしました。"
-      }
+      },
+      "backlog_effort": "工",
+      "backlog_empty_subtitle": "トリアージ待ちのスキャン済みアイデアがここに表示されます。",
+      "backlog_empty_title": "バックログ候補なし",
+      "backlog_impact": "影",
+      "backlog_risk": "危",
+      "knowledge_empty_subtitle": "プロジェクトをワークスペースにまとめて、共有プラクティスライブラリの構築を始めましょう。",
+      "knowledge_empty_title": "ワークスペースがまだありません",
+      "mode_backlog": "バックログ",
+      "mode_knowledge": "共有知識",
+      "mode_reviews": "手動レビュー",
+      "mode_switch_label": "決定の種類"
     },
     "messages_view": {
       "title": "メッセージ",

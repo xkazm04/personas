@@ -6181,7 +6181,18 @@
         "reasoning_label": "자동 트리아지 근거",
         "tip_auto_triage": "자동 2차 평가자(auto_triage 검토 정책)가 결정했습니다 — 사람의 판단 없이 검토 대기열을 건너뛰었습니다.",
         "tip_trust_llm": "이 기능의 trust_llm 검토 정책에 의해 자동 승인되었습니다 — 사람의 판단 없이 검토 대기열을 건너뛰었습니다."
-      }
+      },
+      "backlog_effort": "노력",
+      "backlog_empty_subtitle": "분류를 기다리는 스캔된 아이디어가 여기에 표시됩니다.",
+      "backlog_empty_title": "백로그 후보 없음",
+      "backlog_impact": "영향",
+      "backlog_risk": "위험",
+      "knowledge_empty_subtitle": "프로젝트를 워크스페이스로 그룹화하여 공유 실천 라이브러리 구축을 시작하세요.",
+      "knowledge_empty_title": "아직 워크스페이스가 없습니다",
+      "mode_backlog": "백로그",
+      "mode_knowledge": "공유 지식",
+      "mode_reviews": "수동 검토",
+      "mode_switch_label": "결정 유형"
     },
     "messages_view": {
       "title": "메시지",
