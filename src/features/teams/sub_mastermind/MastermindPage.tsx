@@ -8,6 +8,7 @@
 // switcher stays until the module is complete and a final view mode is chosen.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
@@ -25,6 +26,7 @@ import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/Dep
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/SkillsWorkbench';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
@@ -45,6 +47,8 @@ import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScen
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { DimListPopover } from './lib/DimListPopover';
+import { DIM_INK } from './lib/ink';
 import { GoalListPopover } from './lib/GoalListPopover';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
@@ -69,6 +73,21 @@ const EMPTY_NAMES: string[] = [];
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+
+/** The declared names behind a `stack-list` dimension. Read from the passport
+ *  rather than split back out of the cell's joined `detail` string. */
+function stackItems(passport: AppPassport | undefined, key: string): string[] {
+  if (!passport) return EMPTY_NAMES;
+  if (key === 'datalinks') return passport.stack.dataLinks ?? EMPTY_NAMES;
+  if (key === 'support') return passport.stack.supportChannels ?? EMPTY_NAMES;
+  return EMPTY_NAMES;
+}
+
+/** Header icon + ink per stack-list dimension — the same glyph its cell paints. */
+const STACK_META = {
+  datalinks: { icon: GitFork, titleKey: 'datalinks_title' },
+  support: { icon: LifeBuoy, titleKey: 'support_title' },
+} as const;
 
 export default function MastermindPage() {
   // Factory data context feeds the KPI dimension (same rollup the Passport
@@ -148,6 +167,7 @@ function MastermindInner() {
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -417,6 +437,8 @@ function MastermindInner() {
         if (n.key === 'goals' && !(n.days && n.days > 0)) decorated.action = null;
         // Same for a project with no KPIs defined at all.
         if (n.key === 'kpi' && (kpiListByProject.get(i.slug)?.length ?? 0) === 0) decorated.action = null;
+        // Declaration-only cells: nothing declared, nothing to list.
+        if (decorated.action === 'stack-list' && stackItems(passport, n.key).length === 0) decorated.action = null;
         return decorated;
       });
       // Attention derives from the RESOLVED fleet (live for real projects, the
@@ -470,6 +492,10 @@ function MastermindInner() {
     }
     if (node.action === 'goals') {
       setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
+      return;
+    }
+    if (node.action === 'stack-list' && (node.key === 'datalinks' || node.key === 'support')) {
+      setStackPopup({ slug, key: node.key, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
       return;
     }
     if (node.action === 'kpi') {
@@ -658,6 +684,23 @@ function MastermindInner() {
           onClose={() => setGoalPopup(null)}
         />
       )}
+
+      {stackPopup && (() => {
+        const meta = STACK_META[stackPopup.key];
+        const node = positioned.islands.find((i) => i.slug === stackPopup.slug)?.nodes.find((n) => n.key === stackPopup.key);
+        return (
+          <DimListPopover
+            title={t.mastermind[meta.titleKey]}
+            icon={meta.icon}
+            ink={DIM_INK[node?.status ?? 'solid']}
+            items={stackItems(passportBySlug.get(stackPopup.slug), stackPopup.key)}
+            x={stackPopup.x}
+            y={stackPopup.y}
+            testId={`mm-stack-list-${stackPopup.key}`}
+            onClose={() => setStackPopup(null)}
+          />
+        );
+      })()}
 
       {kpiPopup && (
         <KpiListPopover

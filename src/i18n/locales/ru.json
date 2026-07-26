@@ -18577,6 +18577,8 @@
     "dim_cat_delivery": "Поставка",
     "dim_cat_agentic": "Агенты",
     "dim_cat_product": "Продукт",
-    "dim_cat_summary": "подключено {solid} из {total}"
+    "dim_cat_summary": "подключено {solid} из {total}",
+    "datalinks_title": "Связанные проекты данных",
+    "support_title": "Каналы поддержки"
   }
 }

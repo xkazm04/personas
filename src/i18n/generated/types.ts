@@ -18584,5 +18584,7 @@ export type Translations = {
     dim_cat_agentic: string;
     dim_cat_product: string;
     dim_cat_summary: string;
+    datalinks_title: string;
+    support_title: string;
   };
 };

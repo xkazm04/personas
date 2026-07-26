@@ -81,5 +81,7 @@
   "dim_cat_delivery": "Dodávka",
   "dim_cat_agentic": "Agenti",
   "dim_cat_product": "Produkt",
-  "dim_cat_summary": "zapojeno {solid} z {total}"
+  "dim_cat_summary": "zapojeno {solid} z {total}",
+  "datalinks_title": "Propojené datové projekty",
+  "support_title": "Kanály podpory"
 }

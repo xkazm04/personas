@@ -81,5 +81,7 @@
   "dim_cat_delivery": "Bàn giao",
   "dim_cat_agentic": "Tác tử",
   "dim_cat_product": "Sản phẩm",
-  "dim_cat_summary": "đã nối {solid} trên {total}"
+  "dim_cat_summary": "đã nối {solid} trên {total}",
+  "datalinks_title": "Dự án dữ liệu liên kết",
+  "support_title": "Kênh hỗ trợ"
 }

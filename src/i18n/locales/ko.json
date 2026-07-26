@@ -18577,6 +18577,8 @@
     "dim_cat_delivery": "배포",
     "dim_cat_agentic": "에이전트",
     "dim_cat_product": "제품",
-    "dim_cat_summary": "{total}개 중 {solid}개 연결됨"
+    "dim_cat_summary": "{total}개 중 {solid}개 연결됨",
+    "datalinks_title": "연결된 데이터 프로젝트",
+    "support_title": "지원 채널"
   }
 }

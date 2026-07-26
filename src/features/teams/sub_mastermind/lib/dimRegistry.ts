@@ -68,10 +68,11 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
  *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
- *  list popover, kpi = the project-KPI list popover, skills-run = the "run an
- *  installed skill via Fleet" modal (green Skills cell only), null = never
- *  actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'skills-run' | null;
+ *  list popover, kpi = the project-KPI list popover, stack-list = the generic
+ *  name-list popover for declaration-only dimensions (data links, support
+ *  channels), skills-run = the "run an installed skill via Fleet" modal (green
+ *  Skills cell only), null = never actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'stack-list' | 'skills-run' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
  *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
@@ -268,11 +269,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   // The two prototype passport dimensions (2026-07-23) — deliberately binary
-  // (grey absent / green solid) and INERT (rowKey/action null: no hover ring,
-  // no click) until their deeper functionality is wired.
+  // (grey absent / green solid). They have no wall counterpart and nothing to
+  // deploy; what they DO have is a declared list, so the click just names it
+  // (stack-list). The page downgrades an empty list to inert.
   datalinks: {
     label: 'Data analysis', category: 'product', icon: GitFork,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'stack-list', payloadKind: 'icon',
     derive: (p) => {
       const links = p.stack.dataLinks ?? [];
       return { status: links.length > 0 ? 'solid' : 'absent', detail: links.join(' · ') || null, reached: 0, steps: 0 };
@@ -280,7 +282,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   },
   support: {
     label: 'Support', category: 'product', icon: LifeBuoy,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'stack-list', payloadKind: 'icon',
     derive: (p) => {
       const channels = p.stack.supportChannels ?? [];
       return { status: channels.length > 0 ? 'solid' : 'absent', detail: channels.join(' · ') || null, reached: 0, steps: 0 };

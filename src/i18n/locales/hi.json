@@ -18577,6 +18577,8 @@
     "dim_cat_delivery": "डिलीवरी",
     "dim_cat_agentic": "एजेंटिक",
     "dim_cat_product": "उत्पाद",
-    "dim_cat_summary": "{total} में से {solid} जुड़े"
+    "dim_cat_summary": "{total} में से {solid} जुड़े",
+    "datalinks_title": "जुड़ी डेटा परियोजनाएँ",
+    "support_title": "सहायता चैनल"
   }
 }

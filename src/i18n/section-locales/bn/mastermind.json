@@ -81,5 +81,7 @@
   "dim_cat_delivery": "ডেলিভারি",
   "dim_cat_agentic": "এজেন্টিক",
   "dim_cat_product": "পণ্য",
-  "dim_cat_summary": "{total}-এর মধ্যে {solid}টি যুক্ত"
+  "dim_cat_summary": "{total}-এর মধ্যে {solid}টি যুক্ত",
+  "datalinks_title": "সংযুক্ত ডেটা প্রকল্প",
+  "support_title": "সহায়তা চ্যানেল"
 }

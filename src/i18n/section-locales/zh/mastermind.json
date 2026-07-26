@@ -81,5 +81,7 @@
   "dim_cat_delivery": "交付",
   "dim_cat_agentic": "智能体",
   "dim_cat_product": "产品",
-  "dim_cat_summary": "{total} 项中已接入 {solid} 项"
+  "dim_cat_summary": "{total} 项中已接入 {solid} 项",
+  "datalinks_title": "关联数据项目",
+  "support_title": "支持渠道"
 }

@@ -81,5 +81,7 @@
   "dim_cat_delivery": "التسليم",
   "dim_cat_agentic": "الوكلاء",
   "dim_cat_product": "المنتج",
-  "dim_cat_summary": "{solid} من {total} مُفعّل"
+  "dim_cat_summary": "{solid} من {total} مُفعّل",
+  "datalinks_title": "مشاريع البيانات المرتبطة",
+  "support_title": "قنوات الدعم"
 }

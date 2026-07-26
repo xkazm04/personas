@@ -81,5 +81,7 @@
   "dim_cat_delivery": "Pengiriman",
   "dim_cat_agentic": "Agentik",
   "dim_cat_product": "Produk",
-  "dim_cat_summary": "{solid} dari {total} terhubung"
+  "dim_cat_summary": "{solid} dari {total} terhubung",
+  "datalinks_title": "Proyek data terkait",
+  "support_title": "Kanal dukungan"
 }

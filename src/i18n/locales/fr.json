@@ -18577,6 +18577,8 @@
     "dim_cat_delivery": "Livraison",
     "dim_cat_agentic": "Agents",
     "dim_cat_product": "Produit",
-    "dim_cat_summary": "{solid} sur {total} raccordés"
+    "dim_cat_summary": "{solid} sur {total} raccordés",
+    "datalinks_title": "Projets de données liés",
+    "support_title": "Canaux de support"
   }
 }

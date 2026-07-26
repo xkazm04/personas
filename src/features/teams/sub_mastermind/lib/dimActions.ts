@@ -29,6 +29,9 @@ export function dimAction(
   // KPIs: same shape — actionable on real projects, and the page downgrades a
   // project with no KPIs at all to inert.
   if (entry.action === 'kpi') return { rowKey: null, action: passport ? 'kpi' : null };
+  // Declaration-only dimensions (data links, support channels): the click just
+  // names what the passport declared. The page downgrades an empty list.
+  if (entry.action === 'stack-list') return { rowKey: null, action: passport ? 'stack-list' : null };
   const rowKey = entry.rowKey;
   if (!rowKey || !passport) return { rowKey: rowKey ?? null, action: null };
   if (entry.action === 'standards') {

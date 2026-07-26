@@ -101,8 +101,8 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | any KPI defined → **KpiListPopover** |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
 | `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
-| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | — (inert for now) |
-| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | — (inert for now) |
+| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | anything declared → **DimListPopover** |
+| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | anything declared → **DimListPopover** |
 
 **KPI rule:** the cell's colour comes from the Factory rollup (`off > 0` ⇒ `alert`, else `solid`, none defined ⇒ `absent`). Clicking it answers *which* — `KpiListPopover` lists every KPI on the project sorted worst-status first (`crit` → `warn` → `ok` → `met` → unmeasured), each with its `current / target unit` reading. The rollup keeps only counts, so the page projects the list separately from the same Factory projects (`kpiListByProject`). A project with zero KPIs is downgraded to inert.
 
@@ -195,7 +195,7 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
 - **Persona list row click** is still a reserved no-op (the per-persona action layer is to come). Context-menu dimension rows are wired (§8).
-- `auth` has no Improve counterpart yet (inert). `datalinks` / `support` are inert by design (§5).
+- `auth` has no Improve counterpart yet (inert).
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
 - **Dimension categories** shipped (see §5) — the ceiling is lifted. Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.

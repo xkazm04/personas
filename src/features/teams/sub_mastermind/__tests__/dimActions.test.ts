@@ -76,6 +76,14 @@ describe('dimActions — dimAction applicability', () => {
     expect(dimAction('kpi', undefined, raw())).toEqual({ rowKey: null, action: null });
   });
 
+  // Declaration-only dims — no wall row, no deploy; the click just names what
+  // the passport declared. The page downgrades an empty list to inert.
+  it('datalinks/support are stack-list with a passport, inert without', () => {
+    expect(dimAction('datalinks', passport, raw())).toEqual({ rowKey: null, action: 'stack-list' });
+    expect(dimAction('support', passport, raw())).toEqual({ rowKey: null, action: 'stack-list' });
+    expect(dimAction('datalinks', undefined, raw())).toEqual({ rowKey: null, action: null });
+  });
+
   it('a real row without a passport is inert but still reports its rowKey', () => {
     expect(dimAction('db', undefined, undefined)).toEqual({ rowKey: 'migrations', action: null });
   });
