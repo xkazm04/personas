@@ -20,7 +20,7 @@ import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import { generateMockLibrary } from './libraryMock';
-import { viewFromRow } from './libraryModel';
+import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from './workspaceStore';
 
@@ -44,7 +44,13 @@ export default function KnowledgeLibrary({
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
-  const [detail, setDetail] = useState<WorkspaceKnowledge | null>(null);
+  // Review queue, not a single row: adjudicating a library is a sequential
+  // pass, so the modal walks the ordering the user is actually looking at.
+  // The ids are SNAPSHOTTED on open — recomputing from the live table would
+  // re-sort the queue under the cursor the moment a decision changes a row's
+  // status, and "next" would stop meaning next.
+  const [queue, setQueue] = useState<string[]>([]);
+  const [queueIdx, setQueueIdx] = useState(0);
   const addToast = useToastStore((s) => s.addToast);
   const useDemo = demo ?? rows.length < 12;
 
@@ -90,6 +96,25 @@ export default function KnowledgeLibrary({
       .catch(silentCatch('workspaces:adoption-list'));
     return () => { live = false; };
   }, [workspace.id, rows]);
+
+  const closeDetail = () => { setQueue([]); setQueueIdx(0); };
+
+  const openDetail = (item: KnowledgeItemView, ordered: readonly KnowledgeItemView[]) => {
+    const ids = ordered.filter((i) => !i.mock).map((i) => i.id);
+    const at = ids.indexOf(item.id);
+    setQueue(ids.length > 0 ? ids : [item.id]);
+    setQueueIdx(Math.max(0, at));
+  };
+
+  const stepDetail = (delta: -1 | 1) => {
+    const next = nextQueueIndex(queue, queueIdx, delta, (id) => rows.some((r) => r.id === id));
+    if (next === null) closeDetail();
+    else setQueueIdx(next);
+  };
+
+  const detailRow = queue.length > 0
+    ? rows.find((r) => r.id === queue[queueIdx]) ?? null
+    : null;
 
   const memberProjects = useMemo(
     () =>
@@ -140,10 +165,8 @@ export default function KnowledgeLibrary({
       <WorkspacePulse
         items={items}
         adoptions={adoptions}
-        onOpenPractice={(item) => {
-          const row = rows.find((r) => r.id === item.id);
-          if (row) setDetail(row);
-        }}
+        // A digest entry is a single jump, not a review pass — open it alone.
+        onOpenPractice={(item) => openDetail(item, [item])}
       />
 
       <div className="flex-1 min-h-0">
@@ -155,20 +178,22 @@ export default function KnowledgeLibrary({
           // this straight to the rollout surface skipped the review step
           // entirely and offered to distribute practices still sitting at
           // `observed`.
-          onRowClick={(item) => {
-            const row = rows.find((r) => r.id === item.id);
-            if (row) setDetail(row);
-          }}
+          onRowClick={openDetail}
         />
       </div>
 
-      {detail && (
+      {detailRow && (
         <PracticeDetailModal
-          practice={detail}
+          practice={detailRow}
           projectById={projectById}
-          onClose={() => setDetail(null)}
+          onClose={closeDetail}
           onChanged={onChanged}
           onRollout={(p) => setRollout(p)}
+          nav={
+            queue.length > 1
+              ? { index: queueIdx, total: queue.length, onStep: stepDetail }
+              : undefined
+          }
         />
       )}
 

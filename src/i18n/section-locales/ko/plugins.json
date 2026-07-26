@@ -1253,7 +1253,11 @@
       "pulse_quiet": "아직 결정된 사항이 없습니다",
       "pulse_rejected": "반려",
       "pulse_title": "펄스",
-      "pulse_window": "최근 {days}일"
+      "pulse_window": "최근 {days}일",
+      "detail_nav_hint": "← → 로 이동",
+      "detail_next": "다음 사례",
+      "detail_position": "{total} 중 {index}",
+      "detail_prev": "이전 사례"
     }
   },
   "doc_signing": {

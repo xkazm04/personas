@@ -1253,7 +1253,11 @@
       "pulse_quiet": "Aún no hay decisiones",
       "pulse_rejected": "rechazado",
       "pulse_title": "Pulso",
-      "pulse_window": "Últimos {days} días"
+      "pulse_window": "Últimos {days} días",
+      "detail_nav_hint": "← → para mover",
+      "detail_next": "Práctica siguiente",
+      "detail_position": "{index} de {total}",
+      "detail_prev": "Práctica anterior"
     }
   },
   "doc_signing": {

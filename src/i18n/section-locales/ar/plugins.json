@@ -1253,7 +1253,11 @@
       "pulse_quiet": "لا توجد قرارات بعد",
       "pulse_rejected": "مرفوض",
       "pulse_title": "النبض",
-      "pulse_window": "آخر {days} يومًا"
+      "pulse_window": "آخر {days} يومًا",
+      "detail_nav_hint": "← → للتنقل",
+      "detail_next": "الممارسة التالية",
+      "detail_position": "{index} من {total}",
+      "detail_prev": "الممارسة السابقة"
     }
   },
   "doc_signing": {

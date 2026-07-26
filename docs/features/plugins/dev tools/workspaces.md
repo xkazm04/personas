@@ -36,6 +36,14 @@
   allows: **Adopt / Reject** while `observed`/`proposed`, **Roll out /
   Deprecate** once `adopted`. Rejection is retained, not deleted, so the miners
   dedup against it for 90 days.
+  Adjudicating a library is a sequential pass, so the modal is a **review
+  queue**, not a single row: **← / →** (or the header's ‹ › stepper) walk the
+  library's *current visible ordering* — filters, sort and search included —
+  and a decision **advances to the next item automatically**, closing when the
+  queue runs out. The queue is snapshotted when the modal opens; recomputing it
+  from the live table would re-sort under the cursor the moment a decision
+  changed a row's status, and "next" would stop meaning next. Items deleted
+  from elsewhere mid-pass are skipped rather than shown blank.
 - **Topic taxonomy** — `topic` is **exactly two segments, `area/cluster`**,
   drawn from a closed vocabulary in
   [`db/repos/workspace_taxonomy.rs`](../../../../src-tauri/src/db/repos/workspace_taxonomy.rs).

@@ -1253,7 +1253,11 @@
       "pulse_quiet": "Пока нет решений",
       "pulse_rejected": "отклонено",
       "pulse_title": "Пульс",
-      "pulse_window": "За последние {days} дн."
+      "pulse_window": "За последние {days} дн.",
+      "detail_nav_hint": "← → для перехода",
+      "detail_next": "Следующая практика",
+      "detail_position": "{index} из {total}",
+      "detail_prev": "Предыдущая практика"
     }
   },
   "doc_signing": {

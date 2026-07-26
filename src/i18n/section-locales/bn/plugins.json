@@ -1253,7 +1253,11 @@
       "pulse_quiet": "এখনও কোনো সিদ্ধান্ত নেই",
       "pulse_rejected": "প্রত্যাখ্যাত",
       "pulse_title": "পালস",
-      "pulse_window": "গত {days} দিন"
+      "pulse_window": "গত {days} দিন",
+      "detail_nav_hint": "← → দিয়ে সরান",
+      "detail_next": "পরবর্তী চর্চা",
+      "detail_position": "{total} এর মধ্যে {index}",
+      "detail_prev": "পূর্ববর্তী চর্চা"
     }
   },
   "doc_signing": {

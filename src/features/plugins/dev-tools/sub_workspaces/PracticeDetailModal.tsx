@@ -7,8 +7,8 @@
 // `adopted` items get Roll out and Deprecate. Rejection is retained rather
 // than deleted — the miners dedup against it for 90 days, so a rejected
 // practice stops coming back.
-import { useState } from 'react';
-import { Check, X, Ban, Share2, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, X, Ban, Share2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
@@ -71,9 +71,23 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
       <span className="typo-label text-muted-foreground uppercase tracking-wide">{label}</span>
-      <span className="typo-caption text-foreground truncate">{children}</span>
+      {/* typo-body (400), not typo-caption (500) — the label is already 700, so
+          a mid-weight value made the pair read as one blob instead of a
+          label/value tier. */}
+      <span className="typo-body text-foreground truncate">{children}</span>
     </div>
   );
+}
+
+/** Position within the queue the modal was opened from, plus the stepper. The
+ *  queue is the library's CURRENT visible ordering, snapshotted when the modal
+ *  opens — see KnowledgeLibrary for why it is not recomputed on every change. */
+export interface PracticeNav {
+  /** 0-based index in the queue. */
+  index: number;
+  total: number;
+  /** Move by ±1; the parent clamps and closes past the end. */
+  onStep: (delta: -1 | 1) => void;
 }
 
 export function PracticeDetailModal({
@@ -82,6 +96,7 @@ export function PracticeDetailModal({
   onClose,
   onChanged,
   onRollout,
+  nav,
 }: {
   practice: WorkspaceKnowledge;
   projectById: Map<string, DevProject>;
@@ -89,6 +104,8 @@ export function PracticeDetailModal({
   onChanged: () => void;
   /** Open the rollout surface for an adopted practice. */
   onRollout?: (practice: WorkspaceKnowledge) => void;
+  /** Absent when the practice was opened outside a list (no queue to walk). */
+  nav?: PracticeNav;
 }) {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
@@ -109,13 +126,35 @@ export function PracticeDetailModal({
         decision === 'adopt' ? 'success' : 'warning',
       );
       onChanged();
-      onClose();
+      // Reviewing a queue is the common case, so a decision advances instead of
+      // dumping you back to the table and making you find your place again.
+      // The parent closes when the queue runs out.
+      if (nav) nav.onStep(1);
+      else onClose();
     } catch (err) {
       toastCatch('workspaces:decide')(err);
     } finally {
       setBusy(false);
     }
   };
+
+  // ←/→ walk the queue. Ignored while a decision is in flight (so a double-tap
+  // can't skip an item mid-write) and while focus sits in a text field.
+  useEffect(() => {
+    if (!nav) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      if (busy) return;
+      e.preventDefault();
+      nav.onStep(e.key === 'ArrowRight' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [nav, busy]);
 
   const origin = practice.origin_project_id
     ? projectById.get(practice.origin_project_id)?.name ?? tw.origin_removed
@@ -133,8 +172,10 @@ export function PracticeDetailModal({
   const pending = practice.status === 'observed' || practice.status === 'proposed';
   const adopted = practice.status === 'adopted';
 
+  // size="xl", not "lg": at max-w-3xl the governance buttons wrapped onto a
+  // second row and split their own icon from their label.
   return (
-    <BaseModal isOpen onClose={onClose} titleId="practice-detail" size="lg" staggerChildren={false}>
+    <BaseModal isOpen onClose={onClose} titleId="practice-detail" size="xl" staggerChildren={false}>
       <div className="flex flex-col max-h-[80vh]">
         <div className="flex items-start gap-3 p-5 pb-3 border-b border-primary/10">
           <div className="min-w-0 flex-1">
@@ -151,6 +192,34 @@ export function PracticeDetailModal({
               {practice.title}
             </h2>
           </div>
+
+          {nav && nav.total > 1 && (
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => nav.onStep(-1)}
+                disabled={busy || nav.index === 0}
+                aria-label={tw.detail_prev}
+                title={tw.detail_prev}
+                className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="typo-caption text-muted-foreground tabular-nums whitespace-nowrap">
+                {tx(tw.detail_position, { index: nav.index + 1, total: nav.total })}
+              </span>
+              <button
+                type="button"
+                onClick={() => nav.onStep(1)}
+                disabled={busy || nav.index >= nav.total - 1}
+                aria-label={tw.detail_next}
+                title={tw.detail_next}
+                className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
@@ -188,18 +257,26 @@ export function PracticeDetailModal({
           )}
         </div>
 
+        {/* `whitespace-nowrap` on every action keeps the icon and its label on
+            one line — without it a narrow viewport breaks the label under the
+            icon and the button reads as two rows. */}
         <div className="flex items-center gap-2 p-4 border-t border-primary/10">
           {pending && (
             <>
-              <Button onClick={() => decide('adopt')} disabled={busy}>
-                <Check className="w-4 h-4" />
+              <Button onClick={() => decide('adopt')} disabled={busy} className="whitespace-nowrap">
+                <Check className="w-4 h-4 shrink-0" />
                 {tw.decide_adopt}
               </Button>
-              <Button variant="ghost" onClick={() => decide('reject')} disabled={busy}>
-                <X className="w-4 h-4" />
+              <Button
+                variant="ghost"
+                onClick={() => decide('reject')}
+                disabled={busy}
+                className="whitespace-nowrap"
+              >
+                <X className="w-4 h-4 shrink-0" />
                 {tw.decide_reject}
               </Button>
-              <span className="typo-caption text-muted-foreground ml-1 hidden sm:inline">
+              <span className="typo-caption text-muted-foreground ml-1 hidden lg:inline">
                 {tw.decide_reject_hint}
               </span>
             </>
@@ -207,21 +284,37 @@ export function PracticeDetailModal({
           {adopted && (
             <>
               {onRollout && (
-                <Button onClick={() => { onRollout(practice); onClose(); }} disabled={busy}>
-                  <Share2 className="w-4 h-4" />
+                <Button
+                  onClick={() => { onRollout(practice); onClose(); }}
+                  disabled={busy}
+                  className="whitespace-nowrap"
+                >
+                  <Share2 className="w-4 h-4 shrink-0" />
                   {tw.rollout_dispatch}
-                  <ExternalLink className="w-3 h-3 opacity-60" />
+                  <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                 </Button>
               )}
-              <Button variant="ghost" onClick={() => decide('deprecate')} disabled={busy}>
-                <Ban className="w-4 h-4" />
+              <Button
+                variant="ghost"
+                onClick={() => decide('deprecate')}
+                disabled={busy}
+                className="whitespace-nowrap"
+              >
+                <Ban className="w-4 h-4 shrink-0" />
                 {tw.decide_deprecate}
               </Button>
             </>
           )}
-          <Button variant="ghost" onClick={onClose} className="ml-auto">
-            {t.common.close}
-          </Button>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            {nav && nav.total > 1 && (
+              <span className="typo-caption text-muted-foreground hidden md:inline whitespace-nowrap">
+                {tw.detail_nav_hint}
+              </span>
+            )}
+            <Button variant="ghost" onClick={onClose} className="whitespace-nowrap">
+              {t.common.close}
+            </Button>
+          </div>
         </div>
       </div>
     </BaseModal>

@@ -1253,7 +1253,11 @@
       "pulse_quiet": "अभी तक कोई निर्णय नहीं",
       "pulse_rejected": "अस्वीकृत",
       "pulse_title": "पल्स",
-      "pulse_window": "पिछले {days} दिन"
+      "pulse_window": "पिछले {days} दिन",
+      "detail_nav_hint": "← → ले जाने हेतु",
+      "detail_next": "अगली प्रथा",
+      "detail_position": "{total} में से {index}",
+      "detail_prev": "पिछली प्रथा"
     }
   },
   "doc_signing": {

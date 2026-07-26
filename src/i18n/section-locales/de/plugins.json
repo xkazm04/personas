@@ -1253,7 +1253,11 @@
       "pulse_quiet": "Noch keine Entscheidungen",
       "pulse_rejected": "abgelehnt",
       "pulse_title": "Puls",
-      "pulse_window": "Letzte {days} Tage"
+      "pulse_window": "Letzte {days} Tage",
+      "detail_nav_hint": "← → zum Wechseln",
+      "detail_next": "Nächste Praktik",
+      "detail_position": "{index} von {total}",
+      "detail_prev": "Vorherige Praktik"
     }
   },
   "doc_signing": {

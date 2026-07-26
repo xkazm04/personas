@@ -13082,7 +13082,11 @@
         "pulse_quiet": "Belum ada keputusan",
         "pulse_rejected": "ditolak",
         "pulse_title": "Denyut",
-        "pulse_window": "{days} hari terakhir"
+        "pulse_window": "{days} hari terakhir",
+        "detail_nav_hint": "← → untuk pindah",
+        "detail_next": "Praktik berikutnya",
+        "detail_position": "{index} dari {total}",
+        "detail_prev": "Praktik sebelumnya"
       }
     },
     "doc_signing": {

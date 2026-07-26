@@ -1253,7 +1253,11 @@
       "pulse_quiet": "まだ決定はありません",
       "pulse_rejected": "却下",
       "pulse_title": "パルス",
-      "pulse_window": "過去{days}日間"
+      "pulse_window": "過去{days}日間",
+      "detail_nav_hint": "← → で移動",
+      "detail_next": "次のプラクティス",
+      "detail_position": "{index} / {total}",
+      "detail_prev": "前のプラクティス"
     }
   },
   "doc_signing": {

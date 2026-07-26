@@ -13358,6 +13358,10 @@ export type Translations = {
         pulse_quiet: string;
         pulse_pending: string;
         pulse_and_more: string;
+        detail_prev: string;
+        detail_next: string;
+        detail_position: string;
+        detail_nav_hint: string;
       };
     };
     doc_signing: {

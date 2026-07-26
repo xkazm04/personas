@@ -5,6 +5,7 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import {
   buildTopicTree,
   itemsUnderTopic,
+  nextQueueIndex,
   searchFilter,
   STATUS_RANK,
   viewFromRow,
@@ -150,5 +151,33 @@ describe('STATUS_RANK', () => {
       .slice()
       .sort((a, b) => STATUS_RANK[a] - STATUS_RANK[b]);
     expect(order).toEqual(['proposed', 'observed', 'adopted', 'deprecated', 'rejected']);
+  });
+});
+
+describe('nextQueueIndex', () => {
+  const all = () => true;
+
+  it('steps forward and back', () => {
+    expect(nextQueueIndex(['a', 'b', 'c'], 0, 1, all)).toBe(1);
+    expect(nextQueueIndex(['a', 'b', 'c'], 2, -1, all)).toBe(1);
+  });
+
+  it('returns null past either end so the caller closes instead of clamping', () => {
+    expect(nextQueueIndex(['a', 'b'], 1, 1, all)).toBeNull();
+    expect(nextQueueIndex(['a', 'b'], 0, -1, all)).toBeNull();
+  });
+
+  it('skips ids whose row has disappeared', () => {
+    const alive = (id: string) => id !== 'b' && id !== 'c';
+    expect(nextQueueIndex(['a', 'b', 'c', 'd'], 0, 1, alive)).toBe(3);
+  });
+
+  it('returns null when every remaining id is gone', () => {
+    expect(nextQueueIndex(['a', 'b', 'c'], 0, 1, (id) => id === 'a')).toBeNull();
+  });
+
+  it('handles a single-item queue', () => {
+    expect(nextQueueIndex(['a'], 0, 1, all)).toBeNull();
+    expect(nextQueueIndex(['a'], 0, -1, all)).toBeNull();
   });
 });

@@ -1253,7 +1253,11 @@
       "pulse_quiet": "Chưa có quyết định nào",
       "pulse_rejected": "đã từ chối",
       "pulse_title": "Nhịp",
-      "pulse_window": "{days} ngày qua"
+      "pulse_window": "{days} ngày qua",
+      "detail_nav_hint": "← → để di chuyển",
+      "detail_next": "Thực hành tiếp theo",
+      "detail_position": "{index} trên {total}",
+      "detail_prev": "Thực hành trước"
     }
   },
   "doc_signing": {

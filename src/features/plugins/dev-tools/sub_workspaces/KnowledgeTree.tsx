@@ -36,8 +36,10 @@ export default function KnowledgeTree({
 }: {
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
-  /** Open the practice's detail/review surface. */
-  onRowClick?: (item: KnowledgeItemView) => void;
+  /** Open the practice's detail/review surface. Receives the CURRENT visible
+   *  ordering alongside the clicked row so the modal can walk the same queue
+   *  the user is looking at — filters, sort and search included. */
+  onRowClick?: (item: KnowledgeItemView, ordered: KnowledgeItemView[]) => void;
 }) {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
@@ -238,7 +240,7 @@ export default function KnowledgeTree({
           getRowKey={(r) => r.id}
           // Demo rows have no database row behind them, so there is no detail
           // to open — everything real is clickable.
-          onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r); } : undefined}
+          onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r, rows); } : undefined}
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}

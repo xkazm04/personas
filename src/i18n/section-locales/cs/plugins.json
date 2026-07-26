@@ -1253,7 +1253,11 @@
       "pulse_quiet": "Zatím žádná rozhodnutí",
       "pulse_rejected": "zamítnuto",
       "pulse_title": "Pulz",
-      "pulse_window": "Posledních {days} dní"
+      "pulse_window": "Posledních {days} dní",
+      "detail_nav_hint": "← → pro pohyb",
+      "detail_next": "Další postup",
+      "detail_position": "{index} z {total}",
+      "detail_prev": "Předchozí postup"
     }
   },
   "doc_signing": {

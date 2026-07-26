@@ -1253,7 +1253,11 @@
       "pulse_quiet": "尚无决定",
       "pulse_rejected": "已拒绝",
       "pulse_title": "脉动",
-      "pulse_window": "最近 {days} 天"
+      "pulse_window": "最近 {days} 天",
+      "detail_nav_hint": "← → 移动",
+      "detail_next": "下一项实践",
+      "detail_position": "{index} / {total}",
+      "detail_prev": "上一项实践"
     }
   },
   "doc_signing": {

@@ -13351,7 +13351,11 @@
         "pulse_harvested": "harvested",
         "pulse_quiet": "No decisions yet",
         "pulse_pending": "{count} awaiting your review",
-        "pulse_and_more": "+{count} more"
+        "pulse_and_more": "+{count} more",
+        "detail_prev": "Previous practice",
+        "detail_next": "Next practice",
+        "detail_position": "{index} of {total}",
+        "detail_nav_hint": "← → to move"
       }
     },
     "doc_signing": {
