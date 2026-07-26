@@ -12,6 +12,8 @@ import { Rocket } from 'lucide-react';
 import { useEffect } from 'react';
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import {
   getNavReleases,
   RELEASE_STATUS_META,
@@ -25,6 +27,11 @@ import { useLiveRoadmap } from './useLiveRoadmap';
 import { LiveRoadmapStatusPill } from './LiveRoadmapStatusPill';
 import { buildDisplayItems, ROADMAP_PRIORITIES, type DisplayItem } from './roadmapItems';
 
+/** Guard against `useRevealTracker`'s per-id "already entered" tracking so the
+ * one-shot entrance cascade never replays on live-refresh or unrelated
+ * re-renders (law 4) — only a genuinely new item id fades in on its own. */
+type RevealTracker = ReturnType<typeof useRevealTracker>;
+
 const statusDot: Record<ReleaseItemStatus, string> = {
   in_progress: 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.6)]',
   planned: 'bg-foreground/30',
@@ -37,33 +44,35 @@ const laneAccent: Record<ReleaseItemPriority, { label: string; bg: string; borde
   later: { label: 'text-foreground', bg: 'bg-secondary/40', border: 'border-primary/12', chip: 'text-foreground' },
 };
 
-function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {
+function RoadmapHero({ item, enter, t }: { item: DisplayItem; enter: RevealTracker; t: ReleasesTranslation }) {
   return (
-    <article className="animate-fade-slide-in">
-      <div className="mb-3 flex flex-wrap items-center gap-3">
-        <span className="relative flex items-center gap-2">
-          <span className={`relative h-2 w-2 rounded-full ${statusDot[item.status]}`}>
-            {item.status === 'in_progress' && (
-              <span className="absolute inset-0 -m-0.5 rounded-full bg-cyan-400/30 animate-ping" />
-            )}
+    <RevealItem revealId={item.id} order={0} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
+      <article>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <span className="relative flex items-center gap-2">
+            <span className={`relative h-2 w-2 rounded-full ${statusDot[item.status]}`}>
+              {item.status === 'in_progress' && (
+                <span className="absolute inset-0 -m-0.5 rounded-full bg-cyan-400/30 animate-ping" />
+              )}
+            </span>
+            <span className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-400">{t.itemStatus[item.status]}</span>
           </span>
-          <span className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-400">{t.itemStatus[item.status]}</span>
-        </span>
-        <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
-      </div>
-      <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
-        <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
-          {item.title}
-        </h2>
-        {item.description && (
-          <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
-        )}
-      </div>
-    </article>
+          <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
+        </div>
+        <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
+          <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
+            {item.title}
+          </h2>
+          {item.description && (
+            <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
+          )}
+        </div>
+      </article>
+    </RevealItem>
   );
 }
 
-function LaneColumn({ priority, items, t }: { priority: ReleaseItemPriority; items: DisplayItem[]; t: ReleasesTranslation }) {
+function LaneColumn({ priority, items, enter, t }: { priority: ReleaseItemPriority; items: DisplayItem[]; enter: RevealTracker; t: ReleasesTranslation }) {
   const accent = laneAccent[priority];
   return (
     <div className="flex flex-col gap-3">
@@ -77,13 +86,15 @@ function LaneColumn({ priority, items, t }: { priority: ReleaseItemPriority; ite
         <div className="flex h-24 items-center justify-center rounded-modal border border-dashed border-primary/8 typo-caption text-foreground">—</div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
-            <div key={item.id} className="animate-fade-slide-in relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-4 pl-5">
-              <div className={`absolute inset-y-3 left-1.5 w-[3px] rounded-full ${statusDot[item.status]}`} />
-              <h3 className="typo-heading text-base font-semibold leading-tight text-primary">{item.title}</h3>
-              <div className="mt-1.5 font-mono text-xs uppercase tracking-wider text-foreground">{t.itemStatus[item.status]}</div>
-              {item.description && <p className="typo-body mt-2 text-sm leading-relaxed text-foreground">{item.description}</p>}
-            </div>
+          {items.map((item, index) => (
+            <RevealItem key={item.id} revealId={item.id} order={index} hasEntered={enter.hasEntered} markEntered={enter.markEntered}>
+              <div className="relative overflow-hidden rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-4 pl-5">
+                <div className={`absolute inset-y-3 left-1.5 w-[3px] rounded-full ${statusDot[item.status]}`} />
+                <h3 className="typo-heading text-base font-semibold leading-tight text-primary">{item.title}</h3>
+                <div className="mt-1.5 font-mono text-xs uppercase tracking-wider text-foreground">{t.itemStatus[item.status]}</div>
+                {item.description && <p className="typo-body mt-2 text-sm leading-relaxed text-foreground">{item.description}</p>}
+              </div>
+            </RevealItem>
           ))}
         </div>
       )}
@@ -131,6 +142,10 @@ export default function HomeReleases() {
   const { t, language } = useReleasesTranslation();
   const live = useLiveRoadmap();
   const { dismiss: dismissWhatsNew } = useWhatsNewIndicator();
+  // One-shot, id-guarded cascade (law 4): no resetKey — this surface has no
+  // filter/sort to replay against, so ids stay marked "entered" for the life
+  // of the mount and only a genuinely new item id fades in on its own.
+  const enter = useRevealTracker();
 
   useEffect(() => {
     dismissWhatsNew();
@@ -170,14 +185,14 @@ export default function HomeReleases() {
                   language={language}
                 />
               </div>
-              <RoadmapHero item={hero} t={t} />
+              <RoadmapHero item={hero} enter={enter} t={t} />
             </div>
           )}
 
           {remaining.length > 0 && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
               {ROADMAP_PRIORITIES.map((p) => (
-                <LaneColumn key={p} priority={p} items={remaining.filter((i) => i.priority === p)} t={t} />
+                <LaneColumn key={p} priority={p} items={remaining.filter((i) => i.priority === p)} enter={enter} t={t} />
               ))}
             </div>
           )}
