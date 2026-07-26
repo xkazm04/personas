@@ -2,6 +2,7 @@ import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { extractFirstUrl } from './autoCredHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import { isTauriError } from '@/lib/types/tauriError';
 import type { Translations } from '@/i18n/en';
 
 /** Phases the auto-credential session moves through */
@@ -109,20 +110,47 @@ export interface SessionContext {
   last_assistant_text: string | null;
 }
 
-/** Parse backend error string -- returns structured info or wraps raw string.
+/** Parse a Tauri IPC rejection -- returns structured info or wraps raw string.
+ *
+ * The auto-cred-browser commands (`start_auto_cred_browser`,
+ * `save_playwright_procedure`) migrated from `Result<_, String>` to
+ * `Result<_, AppError>`. The frontend rejection is therefore no longer a
+ * plain string/`Error` -- it's the structured `{ error, kind, category, ... }`
+ * envelope described in `@/lib/types/tauriError`. The Rust side still embeds
+ * the same `AutoCredErrorInfo` JSON blob it always did (as `AppError::External`'s
+ * message, which serializes verbatim into the envelope's `error` field), so
+ * this function reads `err.error` FIRST via `isTauriError`, then falls back
+ * (in order) to `Error#message`, a raw string, and finally a safe default --
+ * preserving support for any caller still passing a plain string/Error.
  *
  * Accepts `t` so the substring-matched guidance strings come from i18n
  * rather than being hardcoded English. The substring-matching logic stays
  * local — these are auto-setup-specific patterns (Anthropic API/CLI/timeout)
- * that don't belong in the generic `useTranslatedError` registry. */
-export function parseAutoCredError(raw: string, t: Translations): AutoCredErrorInfo {
+ * that don't belong in the generic `useTranslatedError` registry.
+ *
+ * `fallbackMessage` is used only when `err` is neither a structured Tauri
+ * envelope, an `Error`, nor a raw string — callers pick a context-appropriate
+ * default (e.g. a "browser session failed" vs "save failed" message). */
+export function parseAutoCredError(
+  err: unknown,
+  t: Translations,
+  fallbackMessage: string = t.vault.auto_cred_extra.err_browser_session_failed,
+): AutoCredErrorInfo {
+  const raw = isTauriError(err)
+    ? err.error
+    : err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : fallbackMessage;
+
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
-  } catch (err) {
+  } catch (parseErr) {
     // Raw error is plain prose, not JSON — fall through to substring
     // matching below. Breadcrumb keeps shape-mismatches visible.
-    silentCatch('parseAutoCredError:jsonParse')(err);
+    silentCatch('parseAutoCredError:jsonParse')(parseErr);
   }
 
   const ace = t.vault.auto_cred_extra;

@@ -7,6 +7,14 @@ import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues, Discov
 import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { openExternalUrl } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
+import { isTauriError } from '@/lib/types/tauriError';
+
+/** `cancel_auto_cred_browser` returns `Result<_, AppError>` -- the rejection is
+ * the structured envelope, not a plain `Error`. Used only for log breadcrumbs
+ * here, so a lightweight extractor is enough (no i18n/guidance needed). */
+function describeError(err: unknown): string {
+  return isTauriError(err) ? err.error : String(err);
+}
 
 type AutoCredProgressFrame = {
   session_id: string;
@@ -104,7 +112,7 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
 
     // Handle abort -- kill the subprocess and clean up listeners
     const abortHandler = () => {
-      cancelAutoCredBrowser().catch((err) => { logger.error('Failed to cancel auto cred browser', { error: String(err) }); });
+      cancelAutoCredBrowser().catch((err) => { logger.error('Failed to cancel auto cred browser', { error: describeError(err) }); });
       unlisten();
       unlistenUrl();
     };
