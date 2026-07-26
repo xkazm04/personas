@@ -403,7 +403,10 @@ fn apply_db_fixes(
                                     );
                                 }
                             } else {
+                                // tags.persona_id is lifted into a real Sentry event tag by
+                                // sentry_tracing (see ADR 2026-05-10-sentry-execution-scope-tags).
                                 tracing::error!(
+                                    tags.persona_id = %persona_id,
                                     "AI healing: structured_prompt is valid JSON but not an object, cannot patch section '{}'",
                                     other
                                 );
@@ -416,6 +419,7 @@ fn apply_db_fixes(
                             }
                         } else {
                             tracing::error!(
+                                tags.persona_id = %persona_id,
                                 "AI healing: structured_prompt is not valid JSON, cannot patch section '{}'",
                                 other
                             );
