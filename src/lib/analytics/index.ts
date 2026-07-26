@@ -16,6 +16,7 @@
  * which defaults to Sentry's PII-scrubbed pipeline.
  */
 import { getAnalyticsSink } from './sink';
+import { silentCatch } from '@/lib/silentCatch';
 import {
   SYSTEM_TAB_DIMENSIONS,
   OVERVIEW_TAB_DIMENSIONS,
@@ -119,9 +120,7 @@ export function initAnalytics(subscribeSystem: StoreSubscribe): Unsub {
       .then((unsub) => {
         if (unsub) lazyUnsubs.push(unsub);
       })
-      .catch(() => {
-        /* store failed to load — skip its tab tracking */
-      });
+      .catch(silentCatch('analytics:maybeAttachLazyStore'));
   }
 
   function handleSection(section: string): void {

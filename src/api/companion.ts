@@ -35,6 +35,7 @@ export async function companionInit(): Promise<string> {
   const slot = initSlot();
   if (slot.promise) return slot.promise;
   slot.promise = invoke<string>('companion_init').catch((err) => {
+    silentCatch('companion:companionInit')(err);
     // Allow retry on failure so the user can recover by closing/reopening
     // the panel after fixing the underlying issue. Successful inits stay
     // cached for the lifetime of the page.

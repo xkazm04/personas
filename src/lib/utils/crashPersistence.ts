@@ -124,7 +124,7 @@ export function persistCrash(
   } catch (err) { silentCatch("lib/utils/crashPersistence:catch3")(err); }
 
   // 2. Backend persistence (async, fire-and-forget)
-  reportFrontendCrash(label, message, stack, compStack).catch(() => {
-    // intentional: non-critical -- backend may not be ready during early startup
-  });
+  reportFrontendCrash(label, message, stack, compStack).catch(
+    silentCatch("crashPersistence:reportFrontendCrash"),
+  );
 }

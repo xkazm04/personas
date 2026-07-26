@@ -9,6 +9,7 @@
  */
 
 import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline';
+import { silentCatch } from '@/lib/silentCatch';
 
 const analyticsMiddleware: PipelineMiddleware<'finalize_status'> = (
   _stage,
@@ -33,9 +34,7 @@ const analyticsMiddleware: PipelineMiddleware<'finalize_status'> = (
         'info',
       );
     });
-  }).catch(() => {
-    // Sentry not initialized -- ignore
-  });
+  }).catch(silentCatch('analyticsMiddleware:captureExecutionTelemetry'));
 
   return payload;
 };

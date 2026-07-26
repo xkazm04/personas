@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { silentCatch } from "@/lib/silentCatch";
 
 import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { AlertMetric } from "@/lib/bindings/AlertMetric";
@@ -96,6 +97,7 @@ export const getOverviewBundle = (days?: number, personaId?: string) => {
     personaId,
     utcOffsetMinutes,
   }).catch((error) => {
+    silentCatch("observability:getOverviewBundle")(error);
     overviewBundleCache.delete(key);
     throw error;
   });
