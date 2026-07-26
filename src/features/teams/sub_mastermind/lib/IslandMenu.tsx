@@ -14,6 +14,7 @@ import { Rocket, SquareTerminal } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { categoryNodes, STATUS_RANK } from './dimCategories';
 import { dimBrand } from './dimMeta';
 import { DIM_REGISTRY } from './dimRegistry';
 import { DIM_INK, mix } from './ink';
@@ -58,7 +59,13 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const items = [...island.nodes].sort((a, b) => a.label.localeCompare(b.label));
+  // Grouped by category, worst status first inside each — the same shape the
+  // collapsed island shows at far zoom, so right-clicking a four-cell island
+  // doesn't hand back a flat alphabetical list of fifteen unrelated names.
+  const groups = categoryNodes(island.nodes).map((c) => ({
+    key: c.key,
+    nodes: [...c.nodes].sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status] || a.label.localeCompare(b.label)),
+  }));
   const isDemo = island.slug.startsWith('demo-');
   const terminalTitle = terminalEnabled
     ? undefined
@@ -101,8 +108,14 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
           <span>{t.mastermind.dispatch_fleet}</span>
         </button>
       </div>
-      <ul className="max-h-[260px] overflow-y-auto py-1">
-        {items.map((n) => {
+      <div className="max-h-[300px] overflow-y-auto py-1">
+        {groups.map((group) => (
+          <div key={group.key}>
+            <div className="px-3 pt-1.5 pb-1 typo-caption text-foreground/45 uppercase tracking-wider">
+              {t.mastermind[`dim_cat_${group.key}` as const]}
+            </div>
+            <ul>
+        {group.nodes.map((n) => {
           const absent = n.status === 'absent';
           // Same gate the canvas cell uses — the node arrives pre-decorated.
           const actionable = Boolean(n.action);
@@ -142,7 +155,10 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
             </li>
           );
         })}
-      </ul>
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
