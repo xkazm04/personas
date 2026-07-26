@@ -7,6 +7,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { CredentialPicker, channelIcon } from '../connectors/CredentialPicker';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { TOOLS_BORDER, TOOLS_BTN_STANDARD, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
+import { errMsg } from '@/stores/storeTypes';
 
 interface ConfigField {
   key: string;
@@ -55,7 +56,8 @@ export function NotificationChannelCard({
       setTimeout(() => setTestStatus('idle'), 3000);
     } catch (err) {
       setTestStatus('error');
-      setTestError(err instanceof Error ? err.message : String(err));
+      // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
+      setTestError(errMsg(err, String(err)));
       setTimeout(() => setTestStatus('idle'), 5000);
     }
   };

@@ -14,6 +14,7 @@ import {
   type ScraperConfigInput,
 } from '@/api/scraper';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { errMsg } from '@/stores/storeTypes';
 
 /**
  * Shared data + actions for the Scraper surface. All prototype variants consume
@@ -56,7 +57,9 @@ export function useScraperData(): ScraperData {
       setDatasets(dsets);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // The backend returns a structured AppError envelope (`{ error, kind, … }`),
+      // not an Error instance — errMsg unwraps both shapes.
+      setError(errMsg(e, String(e)));
       silentCatch('scraper: load configs/datasets')(e);
     } finally {
       setLoading(false);
