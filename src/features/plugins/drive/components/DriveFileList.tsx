@@ -19,6 +19,8 @@ import { parseDriveMovePayload } from "../hooks/useDrive";
 import { useLazyImageThumb } from "../hooks/useLazyImageThumb";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
+import { RevealItem } from "@/features/shared/components/display/RevealItem";
+import { useRevealTracker } from "@/hooks/utility/interaction/useProgressiveReveal";
 import {
   visualForEntry,
   formatRelativeTime,
@@ -28,6 +30,15 @@ import {
 } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 import { DropCountChip } from "./DropCountChip";
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade the
+ * moment a folder's rows land for the very first time (35ms stagger via
+ * RevealItem). Rows beyond this render plainly — scrolling must always feel
+ * instant. See `enter` in ListView for why "first time" is per-file, not
+ * per-navigation.
+ */
+const CASCADE_ROWS = 12;
 
 interface Props {
   drive: UseDriveResult;
@@ -294,6 +305,15 @@ function ListView({
     bottomShadow,
   } = useScrollShadows<HTMLDivElement>();
 
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // No resetKey: the entered-id set is keyed by `entry.path`, which is
+  // unique across the whole managed drive, and persists for the component's
+  // lifetime. A brand-new folder's rows have ids the tracker has never seen,
+  // so they ripple in; navigating back to an already-visited folder replays
+  // nothing because those same paths were already marked entered — "cap to
+  // first visit per folder" falls out of id uniqueness, no extra bookkeeping.
+  const enter = useRevealTracker();
+
   // Restore the folder's remembered scroll offset once its entries are in.
   // Refreshes within the same folder restore the live position (a no-op);
   // Back/Up navigation restores where the user left that folder.
@@ -379,8 +399,31 @@ function ListView({
     [drive],
   );
 
+  // Column header — static chrome, part of the page frame. Rendered
+  // identically above ghost rows and real rows so the ghost→content swap
+  // moves nothing (law 5).
+  const columnHeaderRow = (
+    <div className="sticky top-0 z-10 grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 border-b border-primary/10 bg-background/95 backdrop-blur">
+      <SortHeader column="name" label={t.plugins.drive.col_name} />
+      <SortHeader column="size" label={t.plugins.drive.col_size} />
+      <SortHeader column="kind" label={t.plugins.drive.col_kind} />
+      <SortHeader column="modified" label={t.plugins.drive.col_modified} />
+    </div>
+  );
+
   if (drive.loading && drive.entries.length === 0) {
-    return <LoadingState />;
+    // Nothing to show yet + fetch in flight: ghost rows under the REAL
+    // column header. Ghosts are invisible for their first ~120ms
+    // (animation-delay + fill-mode both) so a fast fetch skips them
+    // entirely; real rows replace them the frame they arrive.
+    return (
+      <div className="flex-1 overflow-auto">
+        <div className="min-w-[720px]">
+          {columnHeaderRow}
+          <DriveGhostRows />
+        </div>
+      </div>
+    );
   }
   if (drive.error) {
     return (
@@ -432,12 +475,7 @@ function ListView({
     >
       <div className="min-w-[720px]">
         {/* Header */}
-        <div className="sticky top-0 z-10 grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 border-b border-primary/10 bg-background/95 backdrop-blur">
-          <SortHeader column="name" label={t.plugins.drive.col_name} />
-          <SortHeader column="size" label={t.plugins.drive.col_size} />
-          <SortHeader column="kind" label={t.plugins.drive.col_kind} />
-          <SortHeader column="modified" label={t.plugins.drive.col_modified} />
-        </div>
+        {columnHeaderRow}
         {/* Top scroll-shadow — sticky just below the column header so it
             sits exactly at the top of the row area, signalling content
             scrolls up under the header. Hidden when scrollTop === 0. */}
@@ -505,6 +543,16 @@ function ListView({
                   </span>
                 </div>
               )}
+              {/* One-shot entrance cascade for a folder's first-ever paint
+                  (see `enter` above); rows past the first viewport render
+                  plainly, and a folder the user already visited paints
+                  instantly since its ids are already marked entered. */}
+              <RevealItem
+                revealId={entry.path}
+                order={idx}
+                hasEntered={(id) => idx >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
+              >
               <div
                 draggable
                 onDragStart={(e) => handleDragStart(e, entry)}
@@ -601,6 +649,7 @@ function ListView({
                   {formatRelativeTime(entry.modified, t, tx)}
                 </div>
               </div>
+              </RevealItem>
             </Fragment>
           );
         })}
@@ -690,7 +739,16 @@ function IconsView({
   }, [currentPath, loading, recallScroll]);
 
   if (drive.loading && drive.entries.length === 0) {
-    return <LoadingState />;
+    // Nothing to show yet + fetch in flight: delayed ghost tiles in the same
+    // grid geometry as real tiles (no permanent chrome to preserve here —
+    // the grid itself IS the region).
+    return (
+      <div className="flex-1 overflow-auto p-5">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+          <DriveIconGhostTiles />
+        </div>
+      </div>
+    );
   }
   if (drive.visibleEntries.length === 0 && !pendingCreate) {
     return <DriveEmptyState drive={drive} onNewFolder={onNewFolder} />;
@@ -1063,7 +1121,10 @@ function AsyncColumnEntries(props: {
     // an uncached path that spun up a runaway `drive_list` IPC loop.
   }, [props.path, props.cachedEntriesFor]);
   if (!loaded) {
-    return <ColumnLoadingLabel />;
+    // Delayed ghost entries in the same row geometry as real column rows —
+    // replaces the old italic "Loading…" label that swapped out the whole
+    // pane with plain text (law 3/5 violation).
+    return <ColumnGhostEntries />;
   }
   return (
     <ColumnEntries
@@ -1210,6 +1271,76 @@ function RecursiveResultRow({
 // Empty + loading states
 // ============================================================================
 
+// ----------------------------------------------------------------------------
+// Ghost placeholders — the ONLY moment a region has nothing to show (a fetch
+// against a cold store / uncached path). Calm bars (`bg-primary/[0.06]`, no
+// `animate-pulse`/`animate-ping`), each entering via `animate-fade-in`
+// behind a staggered `animation-delay` starting at 120ms — `fill-mode: both`
+// holds them invisible through the delay, so a fetch that resolves quickly
+// never paints a single ghost. That delay IS the anti-flash: no timers, no
+// minimum display duration. See docs/design/overview-loading.md §C.
+// ----------------------------------------------------------------------------
+
+const GHOST_BAR = "rounded bg-primary/[0.06]";
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ["w-40", "w-28", "w-36", "w-32"];
+
+/** Geometry-matched ghost rows for the list view — same grid template, row
+ * padding, and name-bar position as a real row (kind icon circle + name bar
+ * + size/kind/modified bars). */
+function DriveGhostRows() {
+  const { t } = useTranslation();
+  return (
+    <div aria-hidden="true">
+      <span className="sr-only">{t.plugins.drive.loading}</span>
+      {Array.from({ length: 8 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="grid grid-cols-[1fr_110px_120px_160px] gap-3 px-4 py-2 border-b border-primary/5 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+              <span className={`h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+            </div>
+            <div className="flex items-center"><span className={`h-3 w-12 ${GHOST_BAR}`} /></div>
+            <div className="flex items-center"><span className={`h-3 w-16 ${GHOST_BAR}`} /></div>
+            <div className="flex items-center"><span className={`h-3 w-14 ${GHOST_BAR}`} /></div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Geometry-matched ghost tiles for the icons-view grid — same tile size +
+ * label position as `IconTileVisual`. */
+function DriveIconGhostTiles() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <span className="sr-only">{t.plugins.drive.loading}</span>
+      {Array.from({ length: 8 }).map((_, i) => {
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            aria-hidden="true"
+            className="flex flex-col items-center gap-2.5 p-3 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <span className="w-16 h-16 rounded-modal bg-primary/[0.06]" />
+            <span className="h-3 w-16 rounded bg-primary/[0.06]" />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function ColumnEmptyLabel() {
   const { t } = useTranslation();
   return (
@@ -1223,23 +1354,28 @@ function ColumnEmptyLabel() {
   );
 }
 
-function ColumnLoadingLabel() {
+/** Small delayed ghost entries for a Miller-column pane still loading — same
+ * row geometry as `ColumnEntries` (kind chip + name bar), replaces the old
+ * italic "Loading…" label that swapped the whole pane out for plain text. */
+function ColumnGhostEntries() {
   const { t } = useTranslation();
   return (
-    <div className="px-3 py-6 typo-body text-foreground italic text-center">
-      {t.plugins.drive.loading_column}
-    </div>
-  );
-}
-
-function LoadingState() {
-  const { t } = useTranslation();
-  return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="flex items-center gap-2 typo-body text-foreground">
-        <span className="w-3 h-3 rounded-full bg-cyan-400 animate-ping" />
-        {t.plugins.drive.loading}
-      </div>
+    <div aria-hidden="true">
+      <span className="sr-only">{t.plugins.drive.loading_column}</span>
+      {Array.from({ length: 4 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-2.5 px-3 py-2 animate-fade-in"
+            style={{ animationDelay: delay }}
+          >
+            <span className="w-[22px] h-[22px] rounded-card bg-primary/[0.06] flex-shrink-0" />
+            <span className={`h-3 ${nameW} max-w-full ${GHOST_BAR}`} />
+          </div>
+        );
+      })}
     </div>
   );
 }
