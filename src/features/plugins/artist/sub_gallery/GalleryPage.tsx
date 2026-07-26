@@ -48,6 +48,13 @@ export default function GalleryPage() {
     [grouped, filteredAssets],
   );
 
+  // ── Loading choreography (docs/design/overview-loading.md, tile-level) ──
+  // Ghosts fill the tile grid ONLY while the region would otherwise be
+  // empty during a fetch. Assets already on screen are never hidden by a
+  // background reload (e.g. the error-state Retry button re-running
+  // loadAssets()) — that's the same law GlobalExecutionList follows.
+  const showGhost = loading && filteredAssets.length === 0;
+
   const groupLabel = (key: AssetGroupKey): string => {
     switch (key) {
       case 'group_today':
@@ -173,10 +180,14 @@ export default function GalleryPage() {
       )}
 
       {/* Gallery content */}
-      {loading ? (
-        <div className="flex items-center justify-center py-16 text-foreground typo-body">
-          {t.plugins.artist.loading_assets}
-        </div>
+      {showGhost ? (
+        /* Nothing to show yet + fetch in flight: ghost tiles in the real
+           grid geometry, under the permanent toolbar above. Each ghost is
+           invisible for its first ~120ms (animation-delay + fill-mode both)
+           so a fast fetch skips them entirely; real tiles replace them the
+           frame data arrives and ripple in via AnimatedList's own one-shot,
+           key-guarded entrance (existing tiles never replay it). */
+        <GalleryGhostGrid mode={galleryMode} />
       ) : error && filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-red-500/5 border border-red-500/15 flex items-center justify-center">
@@ -251,6 +262,51 @@ export default function GalleryPage() {
           onRename={renameAsset}
         />
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GalleryGhostGrid — calm ghost tiles for the ONLY moment the gallery has
+// nothing to show (a fetch with a cold store / empty filter context). Mirrors
+// AssetCard's geometry (aspect-square thumbnail + rounded-modal border + two
+// label bars) inside the SAME grid template Gallery2D/Gallery3D render into,
+// so the ghost→content swap moves nothing.
+//
+// Each tile enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_TILE_COUNT = 12;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as tiles, not a grid of clones. */
+const GHOST_LABEL_WIDTHS = ['w-20', 'w-14', 'w-24', 'w-16'];
+
+function GalleryGhostGrid({ mode }: { mode: GalleryMode }) {
+  const gridCols =
+    mode === '2d'
+      ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+      : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+  return (
+    <div className={`grid ${gridCols} gap-3`} aria-hidden="true">
+      {Array.from({ length: GHOST_TILE_COUNT }).map((_, i) => {
+        const labelW = GHOST_LABEL_WIDTHS[i % GHOST_LABEL_WIDTHS.length];
+        return (
+          <div
+            key={i}
+            className="rounded-modal border border-primary/8 bg-card/40 overflow-hidden animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          >
+            <div className="aspect-square bg-primary/[0.06]" />
+            <div className="px-3 py-2 space-y-1.5">
+              <span className={`block h-3 ${labelW} max-w-full ${GHOST_BAR}`} />
+              <span className="block h-2.5 w-12 rounded bg-primary/[0.06]" />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

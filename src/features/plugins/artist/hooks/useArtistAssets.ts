@@ -19,7 +19,12 @@ import { invalidateLocalImage } from './useLocalImage';
 export function useArtistAssets() {
   const { t, tx } = useTranslation();
   const [assets, setAssets] = useState<ArtistAsset[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Starts true (in-flight, nothing more) so the very first render — before
+  // the mount effect's loadAssets() call lands its synchronous setLoading(true)
+  // — doesn't briefly read as "settled + empty" and flash the empty state.
+  // GalleryPage only uses this to gate ghost tiles into emptiness; it never
+  // hides assets already on screen (docs/design/overview-loading.md).
+  const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const artistFolder = useSystemStore((s) => s.artistFolder);
