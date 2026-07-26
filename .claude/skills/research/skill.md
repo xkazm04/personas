@@ -2,7 +2,7 @@
 
 Extract actionable improvements for the personas project from any external source (YouTube video, blog post, article, raw text). Score ideas against the codebase, bucket into Code / Template / Credential, and either auto-invoke `/add-template`, `/add-credential`, or persist code-improvement findings to the Obsidian memory vault.
 
-This skill is **personas-specific.** It uses `.claude/codebase-context.md` (refreshed by `/refresh-context`) for fast relevance scoring and the Obsidian vault at `C:/Users/mkdol/Documents/Obsidian/personas` for long-term memory and self-improvement.
+This skill is **personas-specific.** It uses `.claude/codebase-context.md` (refreshed by `/refresh-context`) for fast relevance scoring and the Obsidian vault at `C:/Users/kazda/Documents/Obsidian/personas` for long-term memory and self-improvement.
 
 ## Input
 
@@ -25,7 +25,7 @@ Wait for both answers before proceeding. Do NOT ask anything else upfront — fu
   - Core areas: `home.md`, `onboarding.md`, `overview/`, `personas/`, `templates/`, `execution/`, `connections/`, `events/`, `recipes/`, `settings/`
   - Plugins: `artist.md` + `artist/`, `companion/`, `dev-tools.md`, `drive/`, `brain/`, `research-lab.md`, `twin.md`
   - Read the relevant feature doc before deep-greping when a finding lands inside one of those areas — the doc's "primary user flows / backend command surface / data model / known gaps" sections often surface the exact attachment point and pre-existing infrastructure faster than a wide grep.
-- **Obsidian vault:** `C:/Users/mkdol/Documents/Obsidian/personas`
+- **Obsidian vault:** `C:/Users/kazda/Documents/Obsidian/personas`
   - `Research/` — one note per run
   - `Lessons/` — self-reflection notes
   - `Patterns/user-preferences.md` — distilled rules across runs
@@ -37,10 +37,10 @@ Wait for both answers before proceeding. Do NOT ask anything else upfront — fu
 
 ## Phase 0: Bootstrap Vault (one-time)
 
-Check if `C:/Users/mkdol/Documents/Obsidian/personas/00 - Index.md` exists. If not, create the structure:
+Check if `C:/Users/kazda/Documents/Obsidian/personas/00 - Index.md` exists. If not, create the structure:
 
 ```
-C:/Users/mkdol/Documents/Obsidian/personas/
+C:/Users/kazda/Documents/Obsidian/personas/
   00 - Index.md
   Research/
   Lessons/
@@ -124,9 +124,9 @@ Also check `codebase-catalogs.md` `Generated:` line if loaded; warn similarly if
 ### 1e. Load memory
 
 Read in order:
-1. `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/user-preferences.md`
-2. `C:/Users/mkdol/Documents/Obsidian/personas/Architect/strong-patterns.md` (if present) — these are the canonical shapes the codebase already does well. When a code-bucket finding's attachment point matches a strong pattern, prefer "extend the existing strong pattern" over "build something new" in Phase 6/7. Cite the strong pattern in the per-idea detail under an `Aligns with:` line.
-3. The 3 most recent files in `C:/Users/mkdol/Documents/Obsidian/personas/Lessons/` (sorted by filename, descending)
+1. `C:/Users/kazda/Documents/Obsidian/personas/Patterns/user-preferences.md`
+2. `C:/Users/kazda/Documents/Obsidian/personas/Architect/strong-patterns.md` (if present) — these are the canonical shapes the codebase already does well. When a code-bucket finding's attachment point matches a strong pattern, prefer "extend the existing strong pattern" over "build something new" in Phase 6/7. Cite the strong pattern in the per-idea detail under an `Aligns with:` line.
+3. The 3 most recent files in `C:/Users/kazda/Documents/Obsidian/personas/Lessons/` (sorted by filename, descending)
 
 These inform extraction priorities and what to deprioritize.
 
@@ -136,7 +136,7 @@ These inform extraction priorities and what to deprioritize.
 
 Multiple CLI sessions often work in parallel on this checkout, on the same branch, without branching. The `.claude/active-runs.md` ledger is the coordination surface for them. Touch it twice: once here at session start, once in Phase 13.
 
-Full design and rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md). Format conventions live at the top of the ledger file itself.
+Full design and rationale: [`docs/architecture/cli-coordination.md`](../../../docs/architecture/cli-coordination.md). Format conventions live at the top of the ledger file itself (see also `.claude/CLAUDE.md` → "Concurrent CLI sessions").
 
 ### 1.5a. Read the ledger and check for conflicts
 
@@ -366,6 +366,8 @@ For each idea, score relevance against `.claude/codebase-context.md`:
 
 **Drop all `Low` ideas.** Don't waste user attention on out-of-scope material.
 
+**Scoring honesty — evidence caps the score.** Phase 4 scores are provisional keyword matches; they become final only after Phase 6. A finding may carry `Relevance: High` into Phase 7 **only if** Phase 6 actually read or grepped the anchor file(s) in this session and the finding cites the resulting `file_path:line` evidence. "Sounds applicable to personas" without a code read caps the score at `Medium` and the Evidence line must say `unverified — keyword match only`. Never present an unverified finding as High just because the source is compelling — the 2026-04-08 catalog-vs-runtime misframe came exactly from scoring on vibes instead of code.
+
 If the focus hint was `code` / `templates` / `credentials`, drop ideas that don't match the chosen bucket (after Phase 5 reclassification).
 
 ---
@@ -435,9 +437,11 @@ When the finding spans multiple feature areas (e.g. an execution-runtime change 
 
 **Step 4 — Drop if redundant.** If the gap doesn't actually exist (the codebase already does this), drop the idea.
 
+**Step 5 — Grounding check (per finding, before Phase 7).** Every code finding that will be presented as `High` must carry at least one `file_path:line` citation produced by a Read or Grep **in this session** — the line that proves the gap exists (or the host surface the change attaches to). If you can't produce that citation within budget, downgrade to `Medium` + `unverified` per the Phase 4 scoring-honesty rule; don't fabricate an anchor from the context map's file list.
+
 **Security escalation rule:** When a grep against a file that exposes an HTTP, IPC, webhook, or external surface — **OR** that spawns a privileged subprocess (e.g. with `--dangerously-skip-permissions`) — returns **zero hits for auth/sandbox patterns** (`api_key|Authorization|Bearer|require_auth|middleware|sandbox|seatbelt|seccomp|landlock`), do NOT drop the finding as "no existing pattern". Instead, **escalate it to severity `CRITICAL` and re-label it as a security gap, not a feature add.** Open HTTP/IPC surfaces and unsandboxed privileged spawn sites are findings even when the user didn't ask about security — the source may not even mention security, but the codebase reality does.
 
-**i18n impact check:** When a code finding touches frontend files (`src/**/*.tsx`), note whether it introduces new user-facing strings. If yes, mark it with `i18n: required` in the finding output and add an effort note: "New UI strings must go through `src/i18n/en.ts` + `useTranslation()` — see CLAUDE.md → Internationalization." This ensures the implementing CLI knows about the i18n cost upfront, not as a surprise during Phase 8 handoff execution. For findings that add backend status tokens displayed in the UI, note that `tokenLabel()` from `src/i18n/tokenMaps.ts` must be used instead of raw token strings.
+**i18n impact check:** When a code finding touches frontend files (`src/**/*.tsx`), note whether it introduces new user-facing strings. If yes, mark it with `i18n: required` in the finding output and add an effort note: "New UI strings must go through `src/i18n/locales/en.json` + `useTranslation()`, translated into all 14 locales in the same change — see CLAUDE.md → Internationalization." This ensures the implementing CLI knows about the i18n cost upfront, not as a surprise during Phase 8 handoff execution. For findings that add backend status tokens displayed in the UI, note that `tokenLabel()` from `src/i18n/tokenMaps.ts` must be used instead of raw token strings.
 
 ### Template bucket
 - **First** scan `codebase-catalogs.md` Template Catalog section for duplicates (faster than filesystem)
@@ -489,7 +493,7 @@ For each row:
     Bucket(s):    {bucket(s)}
     Source:       "{quote}" or [HH:MM:SS]
     Summary:      {2-3 sentences}
-    Evidence:     {file_path:line for code, similar templates for templates, etc.}
+    Evidence:     {file_path:line actually read/grepped this session for code; similar templates for templates; or "unverified — keyword match only" (caps relevance at Medium)}
     Recommended:  {/add-template "..." | /add-credential "..." | edit {file}}
     Why it fits:  {which context group from snapshot it maps to}
     Aligns with:  {strong-pattern wikilink + canonical example, if any — else omit line}
@@ -531,7 +535,7 @@ For 2+ clustered code findings:
 3. **After each task, run the relevant validation**:
    - Rust changes → `cargo check` in `src-tauri/`
    - TypeScript changes → `npx tsc --noEmit`
-   - i18n changes → `node scripts/check-locale-parity.mjs`
+   - i18n changes → `npm run check:i18n:strict` (no-gap gate; use the translate-extract/merge pipeline from CLAUDE.md to close gaps)
    - Any frontend task → `npm run lint` (eslint)
 4. **Commit atomically per task** with `research: <short task title>` prefix, Co-Authored-By footer, and a body that explains the why.
 5. **If validation fails for a task**, fix the issue inline before moving to the next task. Do NOT stack failing commits. Do NOT use `--no-verify` or `--amend`.
@@ -546,7 +550,7 @@ The inline task plan should include:
 - **Per-task spec** — for each task: file path & line anchor, schema/migration SQL, struct definitions, function signatures, acceptance criteria
 - **Cross-cutting concerns** — convention compliance (point at `.claude/CLAUDE.md`), security defaults, backward compat constraints, tests to add. **If any task touches frontend code (`src/**/*.tsx`), honor BOTH:**
   - Typography contrast / muted-text antipattern rule from CLAUDE.md UI Conventions.
-  - i18n contract: all user-facing strings through `useTranslation()` + keys in `src/i18n/en.ts`. No hardcoded English in JSX, placeholder, title, or aria-label. Backend status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`. Error messages via `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`.
+  - i18n contract: all user-facing strings through `useTranslation()` + keys in `src/i18n/locales/en.json`, translated into every locale in the same change. No hardcoded English in JSX, placeholder, title, or aria-label. Backend status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`. Error messages via `resolveErrorTranslated()` from `src/i18n/useTranslatedError.ts`.
 
 Record the commit SHAs in the Research note frontmatter (`commits: [<sha1>, <sha2>, ...]`) and in the Phase 11 final summary. The Research note replaces the handoff file as the canonical per-run artifact.
 
@@ -617,9 +621,19 @@ For each declined finding (in the user's reply or by omission), record the numbe
 
 ## Phase 9: Persist to Obsidian Research Note
 
-Write `C:/Users/mkdol/Documents/Obsidian/personas/Research/{YYYY-MM-DD}-{slug}.md`.
+Write `C:/Users/kazda/Documents/Obsidian/personas/Research/{YYYY-MM-DD}-{slug}.md`.
 
 Where `{slug}` is derived from the source: video title, article title, or first 4 words of raw text. kebab-case, max 40 chars.
+
+### 9a. Duplicate defense (before writing)
+
+The vault has dozens of prior Research notes; the same idea often arrives via multiple sources (e.g. two videos covering the same Claude Code release). Before writing, **Grep the vault's `Research/` and `Lessons/` folders for each surviving idea's key terms** (tool name, technique name, distinctive phrase — 1 grep with alternation is enough). For each hit, skim the matching note's frontmatter/headings:
+
+- **Same idea, previously accepted/actioned** → do NOT re-present it as new. Record it in this run's note as a one-liner under `## Prior art` with a wikilink (`covered in [[2026-04-15-claude-code-routines]] — accepted, no delta`) and count it with the `already_existed` catches in Phase 11.
+- **Same idea, previously declined/descoped** → surface the prior decision in Phase 7 ("previously declined in [[note]] because X — reconsider?") instead of presenting it fresh. (Phase 3's `descoped-reopenable.md` check covers the tracked subset; this grep catches the untracked rest.)
+- **Related but with a real delta** → keep the finding, and add the wikilink under `## Cross-references` naming the delta.
+
+Ideally run this check before Phase 7 (so the presentation is already deduplicated); at the latest, run it here before the note is written. Never write two vault notes that restate the same idea without linking each other.
 
 Frontmatter + body:
 ```markdown
@@ -692,7 +706,7 @@ If the user types `skip`, jump to 10c.
 
 ### 10b. Append to Lessons
 
-Write/append to `C:/Users/mkdol/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md`:
+Write/append to `C:/Users/kazda/Documents/Obsidian/personas/Lessons/{YYYY-MM-DD}-research.md` (Edit-append, never Write-replace — shared-by-date file, see the 2026-04-14 iteration-log entry):
 ```markdown
 ## Run: {timestamp} — {source title}
 
@@ -741,7 +755,7 @@ This step exists because runs 2 and 3 both discovered structural facts the skill
 
 ### 10f. Descoped-but-reopenable tracking
 
-For each finding that was descoped (not declined, not accepted — descoped because of an external blocker like a hard technical problem, a missing dependency, or an unavailable product), record it in `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/descoped-reopenable.md`. This is a separate file from `Patterns/user-preferences.md` — user preferences are permanent rules; descoped-reopenable entries are conditional waits.
+For each finding that was descoped (not declined, not accepted — descoped because of an external blocker like a hard technical problem, a missing dependency, or an unavailable product), record it in `C:/Users/kazda/Documents/Obsidian/personas/Patterns/descoped-reopenable.md`. This is a separate file from `Patterns/user-preferences.md` — user preferences are permanent rules; descoped-reopenable entries are conditional waits.
 
 File format (create if missing):
 
@@ -1068,7 +1082,7 @@ Catalog: /add-template {names} | /add-credential {names}
 {if Phase 12 ran:}
 Release log: {N} item(s) added to {version}
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 EOF
 )"
 ```

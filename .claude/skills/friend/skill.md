@@ -2,9 +2,10 @@
 
 Endless companion loop scoped to one area of the personas codebase. Each cycle: scan → propose **5 development directions** → user picks a number → execute with repo conventions → report → propose 5 new directions. Designed for **parallel CLI sessions** where the user wants to keep adding UX / product value to a corner of the codebase with the least typing possible.
 
-This skill is **personas-specific** and **development-flavored**. It does not do stabilization — that is `/explorer`'s job. It does not do heavy structural rewrites — that is `/architect`'s job. It does not look outside the repo — that is `/research`'s job. `/friend` exists for the long stretches where the user wants to keep evolving a feature area's product surface without composing prompts.
+`/friend` is the **light, in-session, single-area companion**: one session, one worktree, one picked direction executed *immediately* per cycle. No builder fleet, no acceptance pool, no review gates — momentum, not orchestration. This skill is **personas-specific** and **development-flavored**. It does not do stabilization — that is `/explorer`'s job. It does not do heavy structural rewrites — that is `/architect`'s job. It does not look outside the repo — that is `/research`'s job.
 
 Companion to:
+- `/perfect` — the heavy sibling: Director/Builder loop, 10-accepted-directions gate, per-context worktree builders, vault-resident queue. When a `/friend` idea outgrows one area (multi-context scope, schema breaks, needs review gates or a human checkpoint mid-arc), **graduate it to `/perfect`** instead of stretching the cycle — see "Graduation lane" in Phase 2.
 - `/explorer` — 10 paper cuts in an area, one-shot (quality / dx / perf / bug / a11y / i18n / sec)
 - `/architect` — heavy structural cross-area sweeps, one-shot
 - `/research` — external sources
@@ -72,10 +73,9 @@ Verify each cycle against the running app? (Enter = no)
 ## Constants
 
 - **Codebase reference files** (always loaded):
-  - `.claude/codebase-context.md` — DB-derived feature map (8 groups, ~32 contexts). The natural area taxonomy.
+  - `.claude/codebase-context.md` — DB-derived feature map (8 groups, 49 contexts). The natural area taxonomy.
   - `.claude/codebase-stack.md` — hand-curated architecture, conventions, engine internals.
-  - `.claude/CLAUDE.md` — project rules (i18n, design tokens, error handling, lint baseline, parallel-safety primitives).
-  - `.claude/Design.md` — design system canonical reference.
+  - `.claude/CLAUDE.md` — project rules (i18n, design tokens + styling conventions, error handling, lint baseline, parallel-safety primitives).
 - **Active-runs ledger**: `.claude/active-runs.md` — register at Phase 0, deregister at Phase 6.
 - **Vault root** (resolved at Phase 0): one of two paths, whichever exists. The vault is where `/friend` accumulates cross-session learning so feature selection improves over time. Mirror of the `/explorer` pattern, scoped to development-flavored directions instead of paper cuts.
   - `Friend/sessions/` — one note per session, the canonical artifact (mirrors `Explorer/sweeps/`)
@@ -86,6 +86,8 @@ Verify each cycle against the running app? (Enter = no)
   - `Architect/strong-patterns.md` (if present) — canonical shapes the codebase already does well. Phase 2 should **prefer the shape of an existing strong pattern** when proposing directions; reference it in the direction body.
 - **Direction shape** — every proposed direction must:
   - Add or polish **user-visible product surface** (a new control, a clearer flow, a missing affordance, a new capability, an interaction that makes an existing feature feel more finished).
+  - **Name the concrete files it would touch and the user-visible outcome.** "Polish X", "improve the Y experience", "make Z nicer" without named files and a stated outcome are banned menu items — if you can't name the files, you haven't scanned enough to propose it.
+  - **Match learned taste** (from `/perfect` and `/friend` vault memory): outcome-value directions — a user can do or see something they couldn't before — yes; cosmetic churn with no new capability (dark-mode remount tweaks, restyling that changes nothing behavioral) — no.
   - Ship as **one or more atomic commits** — each individually compiling and lint-clean. A small self-contained polish is one commit; a complete vertical slice (schema → IPC → UI → polish) is a short ordered sequence of atomic commits delivered in the **same cycle** (see Phase 2 "two shapes for ambitious work" and Phase 4). The invariant is per-commit atomicity and never carrying a >30-min uncommitted blob (CLAUDE.md parallel-safety §3) — NOT one-commit-per-cycle.
   - NOT be pure cleanup, dead-code removal, test-only changes, dependency bumps, or refactors without user-visible payoff. Those belong to `/explorer` / `/architect`.
 
@@ -96,9 +98,7 @@ Verify each cycle against the running app? (Enter = no)
 ### 0a — Resolve vault path
 
 ```bash
-if [ -d "C:/Users/mkdol/Documents/Obsidian/personas" ]; then
-  VAULT="C:/Users/mkdol/Documents/Obsidian/personas"
-elif [ -d "C:/Users/kazda/Documents/Obsidian/personas" ]; then
+if [ -d "C:/Users/kazda/Documents/Obsidian/personas" ]; then
   VAULT="C:/Users/kazda/Documents/Obsidian/personas"
 else
   VAULT=""   # vault is optional for /friend; we degrade gracefully
@@ -264,18 +264,20 @@ Produce **exactly 5** development directions. Each direction is:
 ```
 N. <short title — verb-led, 3–6 words>
    What:  <one line, ≤90 chars — concrete UX/product change>
-   Why:   <one line, ≤90 chars — user-visible payoff>
-   Touch: <est files, e.g. "~3 files">
+   Why:   <one line, ≤90 chars — the user-visible outcome once it lands>
+   Files: <the actual files to touch, e.g. "AgentChatPanel.tsx, agents.rs, en.json (+12 locales)">
 ```
+
+A direction with no named files or no stated outcome is malformed — rework it or drop it before presenting.
 
 Constraints on the 5:
 
-- **Always development.** UX polish, missing affordances, small new capabilities, clearer flows, finished-feeling interactions, new product surfaces. If a candidate is "remove dead code", "extract a hook", "add tests", "bump a dep", drop it.
-- **Default mix leans large (Opus 4.8 calibration):** `1 small polish (<1h) / 1 medium feature add (1–3h) / 2 stretch (a complete vertical slice, ~2–5 atomic commits in one cycle) / 1 campaign (a 3–5 cycle themed arc — see "Campaign lane")`. `surprise me` mode drops the small and adds a second stretch. If a session signals "dial down to polish" (user picks the small repeatedly, or says "smaller next time"), shift to `2 small / 2 medium / 1 stretch` for the rest of that session. The default is biased large because the model now holds long, multi-commit stretches reliably — small-only menus produce churny sessions that feel like cleanup, not building. **Do not hand back a half-feature to keep a cycle short:** if the honest unit of value is a vertical slice, propose the whole slice and deliver it as a commit sequence.
+- **Always development, always outcome-value.** UX polish with behavioral payoff, missing affordances, small new capabilities, clearer flows, new product surfaces. If a candidate is "remove dead code", "extract a hook", "add tests", "bump a dep", or cosmetic-only restyling, drop it.
+- **Default mix:** `1 small polish (<1h) / 2 medium feature adds (1–3h) / 2 stretch (a complete vertical slice, ~2–5 atomic commits in one cycle)`. One of the five slots may instead be a **graduation candidate** (see "Graduation lane"). `surprise me` mode drops the small and adds a second stretch. If a session signals "dial down to polish" (user picks the small repeatedly, or says "smaller next time"), shift to `2 small / 2 medium / 1 stretch` for the rest of that session. **Do not hand back a half-feature to keep a cycle short:** if the honest unit of value is a vertical slice, propose the whole slice and deliver it as a commit sequence — but if the honest unit is bigger than one cycle in one area, that's a graduation candidate, not a stretch.
 - **Prefer deepening existing surfaces over net-new surfaces** in an established feature area. If the area already has obvious adjacent polish (a control that needs a sibling, a flow that needs a recap card, a panel that needs a sub-view of its own data), build on what exists. Net-new surfaces (a new tab, a new sidebar rail, a new page-level panel) should be at most **1 of the 5**. The remaining 4 slots are for direct extensions of code already in the area. Reason: net-new surface ideas read well as menu items but rarely match the user's actual want when they're already iterating on a feature.
 - **Two shapes for ambitious work — pick the honest one:**
   - **Vertical slice (default for self-contained features):** the whole feature lands *this cycle* as a sequence of atomic commits (e.g. `feat(db): add view` → `feat(ipc): expose command` → `feat(ui): tab + chart` → `polish: empty/loading states`). Each commit compiles and lints clean; the cycle is "done" only when the slice is whole and — in verified mode — observed working. This is the primary way `/friend` now tackles real product work; reach for it freely.
-  - **Stages-of-N (only when a gate between stages helps the user):** reserve this for work that is genuinely sequential *and* worth a human checkpoint mid-way — a risky schema migration the user wants to eyeball before the UI builds on it, or an arc spanning days. Mark it `Stage 1 of N — ships <X>; next stage wires <Y>.` Do NOT use stages-of-N merely to keep a cycle small; that was the old constraint and it no longer applies.
+  - **Stages-of-N (only when a gate between stages helps the user):** reserve this for work that is genuinely sequential *and* worth a human checkpoint mid-way — e.g. a risky schema migration the user wants to eyeball before the UI builds on it. Mark it `Stage 1 of N — ships <X>; next stage wires <Y>.` If the arc would span days or multiple contexts, don't stage it — graduate it to `/perfect`.
 - **Each commit is atomic; a cycle may be several.** Every commit individually compiles and lints clean and represents one logical step. A polish cycle is one commit; a vertical-slice cycle is a short ordered sequence. Never carry more than ~30 minutes of uncommitted work between commits (CLAUDE.md parallel-safety §3). The old "one commit per cycle" rule is retired — it was a proxy for "don't bite off more than you can finish," which the model now handles directly.
 - **Honor CLAUDE.md.** Every direction must be implementable without violating i18n / design-token / IPC / error-handling / max-lines / parallel-safety rules.
 - **No repeats.** Track proposed-and-completed direction titles within the session; do not re-propose. Track proposed-and-rejected titles within the session too — only re-propose if the user explicitly says "you can re-propose."
@@ -284,23 +286,17 @@ Constraints on the 5:
 - **Honor `Patterns/friend-preferences.md`.** Distilled rules (e.g. "prefer inline editing over modal overlays in this codebase") are hard constraints, not suggestions. If a candidate violates a preference, drop it.
 - **Honor `Architect/strong-patterns.md`.** When the area has a canonical shape (e.g. "execution panels use the SidePanel primitive, not Dialog"), propose directions that reuse the canonical shape; reference the pattern by name in the direction body.
 
-### Campaign lane
+### Graduation lane (handoff to /perfect)
 
-One of the five menu slots may be a **campaign** — a 3–5 cycle themed arc the user opts into *once*, after which the loop drives the whole arc autonomously. Present it like a direction but mark it `Campaign — N cycles` and list the planned cycle titles in the body:
+Multi-cycle themed arcs, multi-context builds, and anything wanting review gates belong to `/perfect` — its Director/Builder loop, acceptance pool, and per-context worktrees exist exactly for that. `/friend` does not run campaigns. Instead, when the scan surfaces a genuinely valuable idea that is **too big for one cycle in one area** (multi-context scope, schema break rippling across features, days-long arc, needs a human review gate), one menu slot may present it as a graduation candidate:
 
 ```
-N. <campaign title>
-   Arc:   cycle 1 <title> → cycle 2 <title> → cycle 3 <title>
-   Why:   <the compounded user-visible payoff once the arc lands>
-   Touch: <area-wide estimate>
+N. <idea title> — graduate to /perfect
+   What:  <one line — the compounded payoff if the full build lands>
+   Why big: <one line — multi-context / schema break / needs review gates>
 ```
 
-When the user picks a campaign:
-
-- Run each arc cycle back-to-back through Phase 3 → 4 (→ 4.5 if verified) **without re-prompting between cycles** — report each cycle's commits, then continue to the next planned cycle.
-- Re-prompt the user only when: the risk gate trips, a cycle fails validation in a way you can't fix inline, the arc completes, or the user interrupts. On completion, return to a normal `Next?` menu.
-- A campaign is still a sequence of atomic commits — the same per-commit discipline applies; the only difference is the loop doesn't stop for a menu between the planned cycles.
-- Propose a campaign **only** when the area genuinely has a coherent multi-step build available. If nothing rises to that bar this cycle, fill the slot with a stretch instead — never pad with a contrived arc.
+If the user picks it: do **not** execute. Record the idea (title, what, why-big, files/contexts it spans) in this session's vault note under `## Graduated to /perfect`, tell the user to run `/perfect propose` to feed it into the acceptance pool, then return to the `Next?` menu for a normal direction. Propose a graduation candidate **only** when something real rises to that bar — never pad the slot; fill it with a medium/stretch otherwise.
 
 Present:
 
@@ -360,9 +356,9 @@ If the gate does **not** trip, execute immediately without asking. Do not ask fo
 Implement the chosen direction inside the worktree. Treat CLAUDE.md as binding. The non-negotiables most likely to apply on a `/friend` cycle:
 
 ### Frontend
-- **Reuse before building (CLAUDE.md's #1 UI-drift source)** — before writing any UI, check `src/features/shared/components/CATALOG.md` (173 components). Import the existing spinner / empty-state / modal / button / tooltip / copy-button / relative-time / toggle / listbox rather than hand-rolling it: `feedback/LoadingSpinner`, `feedback/EmptyState`, `buttons/Button` + `buttons/AsyncButton`, `buttons/CopyButton`, `display/Tooltip`, `display/RelativeTime`, `display/Numeric`, `forms/AccessibleToggle` / `forms/Listbox` / `forms/FormField`. `BaseModal` for any backdrop (enforced by `custom/enforce-base-modal`). Add a genuinely new reusable pattern to `shared/components/` (with a `@catalog` tag + `npm run gen:catalog`), never to a feature folder.
-- **i18n (no localization gaps)** — every new user-visible string goes to `src/i18n/locales/en.json` under the right section; access via `useTranslation()` / `t.section.key`. Never hardcode JSX text, placeholder, title, or aria-label. **`/friend` overrides CLAUDE.md's "translation teams catch up asynchronously" default**: every cycle that adds new English keys MUST also add translations for those keys to all 13 non-English locale files (`src/i18n/locales/{zh,ar,hi,ru,id,es,fr,bn,ja,vi,de,ko,cs}.json`) in the **same commit**. Rationale: small UX-polish cycles ship faster than translation teams react; if `/friend` only writes English, a non-English user sees an immediate regression (mixed-locale UI) on every cycle. Practical workflow: write English first; then either (a) Edit each non-English file inline if the key count is ≤ ~5, or (b) for larger key batches, spawn 13 parallel general-purpose subagents — one per language — each given the English block + their target file path + an instruction to add the keys preserving the existing JSON structure. Verify with `node scripts/i18n/check-coverage.mjs` — it should report no missing keys before commit.
-- **Design tokens** — `typo-*` for text, `rounded-{interactive,input,card,modal}`, `shadow-elevation-1..4`, `bg-secondary/*` / `text-foreground/*` instead of `bg-white/*` / `text-white/*`. Refer to `.claude/Design.md`.
+- **Reuse before building (CLAUDE.md's #1 UI-drift source)** — before writing any UI, check `src/features/shared/components/CATALOG.md` (~115 components). Import the existing spinner / empty-state / modal / button / tooltip / copy-button / relative-time / toggle / listbox rather than hand-rolling it: `feedback/LoadingSpinner`, `feedback/EmptyState`, `buttons/Button` + `buttons/AsyncButton`, `buttons/CopyButton`, `display/Tooltip`, `display/RelativeTime`, `display/Numeric`, `forms/AccessibleToggle` / `forms/Listbox` / `forms/FormField`. `BaseModal` for any backdrop (enforced by `custom/enforce-base-modal`). Add a genuinely new reusable pattern to `shared/components/` (with a `@catalog` tag + `npm run gen:catalog`), never to a feature folder.
+- **i18n (no localization gaps — pre-commit ENFORCED)** — every new user-visible string goes to `src/i18n/locales/en.json` under the right section; access via `useTranslation()` / `t.section.key`. Never hardcode JSX text, placeholder, title, or aria-label. Every cycle that adds English keys MUST translate them into all 13 non-English locales in the **same commit** — the `i18n-no-gaps` pre-commit hook blocks the commit otherwise. Don't hand-edit 13 files; use the repo pipeline: `node scripts/i18n/translate-extract.mjs` → spawn one Sonnet subagent per locale to fill `.i18n-work/missing-<code>.json` (preserve `{placeholders}`, keep brand/technical terms) → `node scripts/i18n/translate-merge.mjs`. For a ≤5-key polish cycle, inline Edits per locale file are fine. Gate: `npm run check:i18n:strict` clean before commit.
+- **Design tokens** — `typo-*` for text, `rounded-{interactive,input,card,modal}`, `shadow-elevation-1..4`, `bg-secondary/*` / `text-foreground/*` instead of `bg-white/*` / `text-white/*` (CLAUDE.md Styling section).
 - **Tauri IPC** — always `invokeWithTimeout` from `@/lib/tauriInvoke`.
 - **Errors** — `toastCatch()` for user-facing, `silentCatch()` for background. No empty `catch {}`.
 - **Status tokens** — Rust ships machine tokens (e.g. `"queued"`); use `tokenLabel(t, 'execution', row.status)` to display.
@@ -372,7 +368,7 @@ Implement the chosen direction inside the worktree. Treat CLAUDE.md as binding. 
   ```bash
   cargo test --manifest-path src-tauri/Cargo.toml export_bindings
   ```
-  Commit the resulting changes in `src/lib/bindings/`. (Note the dual-tree drift caveat in [user memory](../../../../.claude/projects/C--Users-kazda-kiro-personas/memory/feedback_ts_rs_bindings_dual_tree.md) — verify `src/lib/bindings/` actually updated; copy from `src-tauri/bindings/` if not.)
+  Commit the resulting changes in `src/lib/bindings/` — it is the single source of truth (ts-rs writes there directly; the old `src-tauri/bindings/` dual tree is retired and gitignored).
 - **New Tauri commands** — also run `node scripts/generate-command-names.mjs` (or any `npm run dev` / `npm run build` will trigger it).
 - **AppError** — new error variants need both the enum addition and the `Serialize` match arm.
 - **Migrations** — additive only on `/friend` cycles. Anything destructive trips the Phase 3 gate.
@@ -389,7 +385,7 @@ Now that cycles run longer, spend one deliberate adversarial pass on the diff be
 - **i18n:** any hardcoded JSX text / placeholder / title / aria-label that escaped extraction?
 - **Scope:** does the diff touch only files this direction needed? Anything accidental swept in?
 
-For a small polish cycle, do this inline. For a vertical-slice or campaign cycle (multi-file, multi-commit), spawn a `general-purpose` review subagent on the staged diff (or run `/code-review`) and fix what it surfaces before committing — cheap insurance against a plausible-but-wrong change shipping. Fix findings in the worktree, then validate.
+For a small polish cycle, do this inline. For a vertical-slice cycle (multi-file, multi-commit), spawn a `general-purpose` review subagent on the staged diff (or run `/code-review`) and fix what it surfaces before committing — cheap insurance against a plausible-but-wrong change shipping. Fix findings in the worktree, then validate.
 
 ### Validation (before the commit)
 
@@ -404,14 +400,14 @@ If a check fails: fix inline in the worktree, re-validate, then commit. Do **not
 
 ### Commit
 
-**One commit per logical step.** A polish cycle is a single commit; a vertical-slice or campaign cycle is an ordered sequence — commit each step as soon as it compiles and lints clean, never batch the whole slice into one mega-commit. Message shape per commit:
+**One commit per logical step.** A polish cycle is a single commit; a vertical-slice cycle is an ordered sequence — commit each step as soon as it compiles and lints clean, never batch the whole slice into one mega-commit. Message shape per commit:
 
 ```
 <type>(<scope>): <imperative title for this step>
 
 <2–4 sentences: what changed, why user-visible. No bullet lists.>
 
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 ```
 
 `<type>` from {`feat`, `feat(ux)`, `feat(ui)`, `polish`}. `/friend` rarely produces `fix` / `refactor` / `chore` — if you find yourself reaching for those types, the direction was probably stabilization and should have been rejected at Phase 2.
@@ -468,11 +464,11 @@ Next? (Enter = 2)
 
 The 5 new directions follow the same constraints as Phase 2:
 - Always development; no stabilization.
-- Spread across the calibrated mix (small / medium / stretch / campaign — see Phase 2).
+- Spread across the calibrated mix (small / medium / stretch, optional graduation slot — see Phase 2). Every direction names its files and outcome.
 - Do not re-propose anything already executed or rejected this session.
 - May build on the just-completed cycle (e.g. if cycle N landed a new control, cycle N+1 could propose a polish on it) but should not require it — the user should be able to pick any of the 5 independently.
 
-Loop back to **Phase 3** with the chosen direction (or, for a campaign, run its planned cycles back-to-back per the Campaign lane rules). The loop has no built-in stopping condition.
+Loop back to **Phase 3** with the chosen direction (a picked graduation candidate is recorded, not executed — see Graduation lane). The loop has no built-in stopping condition.
 
 ---
 
@@ -532,6 +528,11 @@ Commits: {first-sha}..{last-sha}
 ## Hard rejects this session
 
 - [{area}] {title} — {reason} (→ added to passes.md)
+
+## Graduated to /perfect
+
+- {title} — {what} — why big: {multi-context / schema / review-gate reason} — spans: {files/contexts}
+  (user directed to `/perfect propose`; omit section if nothing graduated)
 
 ## Cross-references
 
@@ -669,7 +670,8 @@ If the user expects "/friend will adapt to my taste by cycle 2," they'll be disa
 
 - **No stabilization.** If a direction reduces to lint cleanup, dead-code removal, type tightening, or test addition without behavior change, drop it from the Phase 2 menu. Suggest the user run `/explorer` for that area.
 - **No non-atomic commits.** A cycle may now span several commits (a vertical slice), but every *individual* commit must compile and lint clean and represent one logical step — never commit broken intermediate state, and never let an uncommitted slice grow past ~30 minutes. If a step can't be made atomic, it isn't ready to commit.
-- **No cross-area scope creep.** If executing a chosen direction reveals it needs to touch files outside the area, Phase 3's risk gate should trip and ask the user.
+- **No cross-area scope creep.** If executing a chosen direction reveals it needs to touch files outside the area, Phase 3's risk gate should trip and ask the user — often the right answer is graduating it to `/perfect`.
+- **No orchestration.** No builder subagent fleets, no multi-cycle autonomous arcs, no acceptance pools — that machinery is `/perfect`'s. `/friend` executes exactly one picked direction per cycle, in-session.
 - **No auto-merge.** The worktree and branch are left for the user to inspect and merge on their own time.
 - **No silent stash.** Per CLAUDE.md parallel-safety §1: never `git stash` to clean the tree. Use `git add <path>` per file in Phase 4 and verify the staged count.
 - **No `--no-verify` / `--no-gpg-sign`.** If a hook fails on commit, fix the underlying issue.
@@ -686,14 +688,15 @@ If the user expects "/friend will adapt to my taste by cycle 2," they'll be disa
   Q2b: Verified loop? (2=no, 3=yes)                       ← Enter = 2 (no)
   →  Phase 0  vault + learning files + ledger + worktree (+ boot :17320 if verified)
   →  Phase 1  load passes + preferences + recent lessons, then scan area
-  →  Phase 2  propose 5 dev directions — mix: 1 small / 1 medium / 2 stretch / 1 campaign
+  →  Phase 2  propose 5 dev directions (each names files + outcome)
+              mix: 1 small / 2 medium / 2 stretch  (one slot may be a /perfect graduation)
 LOOP:
   →  Phase 3   silent risk gate; ask only if risky
   →  Phase 4   execute slice → self-review → validate → atomic commit(s)
   →  Phase 4.5 verified mode: drive :17320, observe DOM (else manual-verify checklist)
   →  Phase 5   report + propose 5 new directions  ─┐
                                                    │ user picks number → Phase 3
-                                       (campaign → run planned cycles back-to-back)
+                            (graduation pick → record in vault, point at /perfect)
 EXIT (stop word / interrupt / context wrap):
   →  Phase 6  capture rejections → session note → Lessons → passes → coverage
               → pattern-promotion check → ledger → exit summary

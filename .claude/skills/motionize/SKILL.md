@@ -1,6 +1,6 @@
 ---
 name: motionize
-description: Upgrade a generic UI icon or loading/empty state into a traced, motion-animated SVG. Generates flat trace-friendly art (via /leonardo tools), validates with Qwen vision, vectorizes to a clean multi-path SVG, and emits a Motion (framer-motion) reveal component. For icon + loading-state visual upgrades — NOT raw image generation (use /leonardo for that).
+description: Upgrade a generic UI icon or loading/empty state into a traced, motion-animated SVG. Generates flat trace-friendly art (via /leonardo tools), validates with Qwen vision, vectorizes to a clean multi-path SVG, and emits a motion reveal component driven by the shared motion-preset library (draw, staggered-draw, fade-pop, float, pulse, hover-response, success-settle). For icon + loading-state visual upgrades — NOT raw image generation (use /leonardo for that).
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(node *), Bash(npx *), Bash(cd *)
 argument-hint: <UI surface to upgrade, e.g. "teams empty state icon">
 ---
@@ -18,10 +18,9 @@ glow back as an SVG/CSS filter — that separation is what puts traces "under co
 
 **Read [`ART_STYLE.md`](./ART_STYLE.md) first** — the shared visual language (concept-
 art / cinematic feel via a dark surface + tight neon accent set + emissive SVG-filter
-glow) so every glyph is consistent. **Always produce a dark AND a light variant** —
-we own the coloring, so no asset should be one bitmap stretched across themes
-(recolor the same traced SVG per role, selected via `useIsDarkTheme()`; the tracer's
-negative-space `var(--background)` flips with the theme for free).
+glow). Every glyph ships **dark AND light**: geometry is identical, only fills change,
+and the shared renderer emits `[data-theme^="light"]` per-color overrides automatically
+(the tracer's negative-space `var(--background)` flips with the theme for free).
 
 ## Pipeline (four steps)
 
@@ -57,60 +56,147 @@ node .claude/skills/motionize/tools/trace.mjs \
   --input .claude/skills/motionize/out/<name>-flat.png \
   --output .claude/skills/motionize/out/<name>.svg \
   --mode spline --color-precision 4 --filter-speckle 6 \
-  --emit src/features/<area>/<name>GlyphData.ts --name <NAME>_GLYPH   # folds in the data step
+  --emit src/features/shared/glyph/glyphs/<name>Glyph.ts --name <NAME>_GLYPH
 ```
 `@neplex/vectorizer` (VTracer) → one `<path>` per color region + SVGO cleanup.
-`--emit`/`--name` bakes the paths into a `{ d, fill, delay }[]` TS module in the
-same pass (radial `delay` = distance to centre, so a many-path trace becomes an
-orchestrated center-out reveal; `--order angular` for a clockwise sweep). Handles
-the trace gotchas (drops full-canvas bg, recolors large negative-space to
-`var(--background)`, preserves paint order). Tune `--filter-speckle` (10–40) + lower
-`--color-precision` (3–4) until the path count matches the *real* regions.
-(`emit-glyph.mjs` is the same core as a standalone CLI.)
+`--emit`/`--name` bakes the paths into a `TracedGlyph` module (`{ viewBox, data:
+{d, fill, delay}[] }`) in the same pass — radial `delay` = distance to centre for a
+center-out reveal; `--order angular` for a clockwise sweep. Committed glyph modules
+live in **`src/features/shared/glyph/glyphs/`** (~10–16KB gzipped each — consumers
+import the one they render, never a shared registry). Handles the trace gotchas
+(drops full-canvas bg, recolors large negative-space to `var(--background)`,
+preserves paint order). For an icon SET, use `trace-set.mjs --split` (one module per
+glyph); `emit-glyph.mjs` is the shared core.
 
-### 4. Motionize → React component
-A tiny data-driven component maps the emitted array to **Motion (framer-motion)**:
-- `NETWORK_GLYPH.map(p => <motion.path d={p.d} fill={p.fill} … delay={p.delay*SPREAD} />)`.
-- **Opacity always, transform when allowed** — opacity cross-fade plays even under
-  reduced motion (`useMotion().shouldAnimate` gates the scale/pop, NOT the fade), so
-  the reveal is never a hard snap. Scale from each path's own centre with
-  `style={{ transformOrigin: 'center', transformBox: 'fill-box' }}`.
-- Add glow via an SVG `<filter>` (feGaussianBlur+feMerge) on accent paths for the
-  cinematic emissive look; a faint `<radialGradient>` behind = "fog".
-- For a frame-exact rendered asset, drive the same paths with Remotion `interpolate`.
-- Ship a **dark + light** variant (recolor the array by role, pick via `useIsDarkTheme`).
-  Self-contained component, SVG baked at authoring time (no runtime tracing).
+### 4. Motionize → React component (shared renderer + preset library)
+**Do not emit a bespoke animated component.** Render the emitted glyph through the
+shared catalog primitive
+**`src/features/shared/components/display/MotionizedGlyph.tsx`** and pick motion
+from the **preset library** (next section):
+```tsx
+<MotionizedGlyph data={GOALS_GLYPH.data} viewBox={GOALS_GLYPH.viewBox} spread={1} glow />
+```
+- **CSS keyframes, NOT framer-motion** — learned the hard way: the app wraps
+  everything in `<MotionConfig reducedMotion={visible ? 'user' : 'always'}>`, and
+  under `always` framer snaps EVERY animation (opacity included), which silently
+  killed reveals. CSS animations aren't governed by MotionConfig; an
+  IntersectionObserver replays the entrance on viewport re-entry. Use framer only
+  for surfaces outside that trap, and still source timings from the presets.
+- Light theme, reduced motion, and the emissive `glow` filter (feGaussianBlur+feMerge
+  on accent paths) are built into the renderer. A faint `<radialGradient>` behind =
+  "fog". For frame-exact rendered assets, drive the same paths with Remotion
+  `interpolate`.
+
+## Motion system — the preset library
+
+All motion comes from **one shared module**:
+`src/features/shared/components/display/motionPresets.ts` (next to
+`MotionizedGlyph.tsx`). **If it doesn't exist yet, create it on first use and wire
+`MotionizedGlyph` to read from it** (add `entrance` / `ambient` / `hover` props,
+defaulting to today's behavior: `entrance="staggered-draw"`). If it exists, **extend
+it — never inline variants/keyframes in an emitted component**. Adding or tuning a
+preset = editing that one file; every motionized surface picks it up.
+
+Each preset is data the renderer turns into scoped `@keyframes` + `animation`:
+
+```ts
+export type MotionPresetName =
+  | 'draw' | 'staggered-draw' | 'fade-pop'            // entrances (one-shot)
+  | 'float' | 'pulse'                                 // ambient loops
+  | 'hover-response'                                  // interaction layer
+  | 'success-settle';                                 // one-shot completion
+
+export interface MotionPreset {
+  kind: 'entrance' | 'loop' | 'hover' | 'oneshot';
+  /** @keyframes body (from/to or % steps), scoped per instance by the renderer. */
+  keyframes: string;
+  durationS: number;                    // loops: the period
+  ease: string;                         // e.g. 'cubic-bezier(0.16, 1, 0.3, 1)'
+  /** Entrances: map a path's 0..1 delay into seconds (default: d => 0.08 + d * spread). */
+  stagger?: (delay: number, spread: number) => number;
+  iteration?: 'infinite' | 1;           // loops: infinite + alternate
+  /** prefers-reduced-motion fallback: cross-fade only, or don't run at all. */
+  reduced: 'opacity-only' | 'none';
+  /** Loops/hover: apply only to accent paths (max channel > 0x80), not line-work. */
+  accentOnly?: boolean;
+}
+```
+
+Vocabulary (defaults; tune in the module, not per component):
+
+| Preset | Kind | Default | Reduced |
+|---|---|---|---|
+| `draw` | entrance | `pathLength`-style stroke trace, 0.9s, ease-out — **stroke/`--mono` traces ONLY** (on fills it traces the boundary, messy) | opacity-only |
+| `staggered-draw` | entrance | per-path opacity 0→1 + scale 0.35→1, 0.5s each, `cubic-bezier(0.16,1,0.3,1)`, staggered by emitted `delay` × `spread` | opacity-only |
+| `fade-pop` | entrance | whole-glyph opacity 0→1 + scale 0.92→1, 0.35s — for small icons where a stagger is noise | opacity-only |
+| `float` | loop | translateY ±2px + opacity ±0.06, 5s, alternate, infinite — ambient idle | none |
+| `pulse` | loop | accent opacity 0.75→1 (+ glow stdDeviation swell), 3.5s, alternate — attention/activity | none |
+| `hover-response` | hover | scale 1→1.03 + glow/accent intensify, 0.18s — a `transition` on the group, not an animation | opacity accent only |
+| `success-settle` | oneshot | scale 1→1.12→1 overshoot, 0.42s, `cubic-bezier(0.34,1.56,0.64,1)` (matches `animate-inbox-zero-pop`) — fires once on completion, never loops | opacity-only |
+
+### Composition rules
+
+- **Sequence, don't overlap:** entrance finishes before any ambient loop starts.
+  In CSS, comma-chain the two animations and give the loop
+  `animation-delay: <entrance total + 0.2s>`; in framer contexts use
+  `onAnimationComplete`. The IntersectionObserver replay restarts the **entrance
+  only** — loops keep their own clock.
+- **One ambient loop per glyph.** `float` OR `pulse`, never both on the same paths.
+  Ambient loops are `accentOnly` — line-work stays still.
+- **`hover-response` layers on anything** (it's a transition on the wrapper `<g>`,
+  orthogonal to entrance/loop).
+- Per surface:
+  - **Empty states** → `staggered-draw` entrance (+ optional `float` on accents).
+    First-run "nothing here yet" only — a self-drawing 128px illustration is wrong
+    for a filtered-to-zero list (see `ScenarioEmptyState`'s `glyph` prop docs).
+  - **Loading states** → `pulse` (motion may imply activity ONLY where work is
+    actually happening; never on a static/idle state).
+  - **Icons / interactive chrome** → static render + `hover-response`.
+  - **Completion moments** → `success-settle`, one-shot, gated on the actual event
+    (the `InboxZero celebrate` pattern).
+
+### Taste guardrails
+
+- **Entrance total ≤ ~1.2s** (last stagger delay + duration). Quiet and deliberate.
+- **Ambient loops are barely-there:** translate ≤ 2–3px, opacity delta ≤ 0.08,
+  periods 3–6s. If a screenshot 3s apart looks obviously different, it's too much.
+- **Never loop transforms that imply progress on a static state** — a spinning or
+  sweeping motion on an empty state reads as "loading" and is a lie.
+- **Every preset degrades under `prefers-reduced-motion`** per its `reduced` field —
+  opacity-only cross-fade for entrances/one-shots, loops off entirely. No preset may
+  hard-snap.
+- **Colors/glow come from the app's tokens** — `var(--background)` negative space,
+  ART_STYLE accent hexes, light-theme overrides via the renderer's
+  `[data-theme^="light"]` rules. Never hardcode theme-specific colors in a preset.
 
 ## Gotchas (learned)
 
-- **VTracer traces FILLED regions, and the background is one of them.** The white
-  canvas becomes its own path, and interior negative space (holes, the gaps that
-  make links read as *thin lines*) becomes separate white paths too. For a
-  background-less icon: **drop the full-canvas bg path, but RECOLOR interior white
-  paths to the surface colour** (`fill="var(--background)"`) — don't drop them, or
-  connective lines/holes fill solid. Verify by rendering the composed SVG on the
-  target surface (`sharp(Buffer.from(svg)).png()`) *before* wiring the component.
-- **Filled paths don't "stroke-draw."** `pathLength` reveals a *stroke*; on a
-  filled region it traces the boundary (messy). Reveal filled art with staggered
-  opacity/scale/clip per element instead. Use `pathLength` only on genuinely
-  line-based traces (`--mono` outlines).
+- **VTracer traces FILLED regions, and the background is one of them.** Drop the
+  full-canvas bg path, but **RECOLOR interior white paths to `var(--background)`**
+  — don't drop them, or connective lines/holes fill solid. Verify by rendering the
+  composed SVG on the target surface (`sharp(Buffer.from(svg)).png()`) *before*
+  wiring the component.
 - **Noise → path explosion.** Anti-aliased edges yield hundreds of micro-paths.
   Push `--filter-speckle` (10–40) and lower `--color-precision` (3–4) until the
-  path count matches the number of *real* regions; sweep a couple values and check.
-- **More content = more control.** A richer flat scene (a network, a small cast,
-  accent nodes) traces into many addressable paths — group them by role and
-  orchestrate the reveal (hub → links → figures → accents) for creative results.
+  path count matches the number of *real* regions.
+- **More content = more control.** A richer flat scene traces into many addressable
+  paths — group by role and orchestrate (hub → links → figures → accents).
 
 ## Conventions
-- Scratch art + SVGs live in `.claude/skills/motionize/out/` (git-ignored working
-  area). The FINAL committed artifact is the React component (inline SVG) in the
-  feature, not the PNG.
-- Respect the app's motion norms: honor `useMotion()`/reduced-motion; keep reveals
-  short (< 1s) and non-blocking.
+
+- Scratch art + SVGs live in `.claude/skills/motionize/out/` (git-ignored). The
+  FINAL committed artifacts: the glyph data module in
+  `src/features/shared/glyph/glyphs/` + the consuming surface's `MotionizedGlyph`
+  usage (+ `motionPresets.ts` if a preset was added/changed). No runtime tracing.
+- Reduced motion: CSS media query in the renderer; for React logic use
+  `useReducedMotion` from `@/hooks/utility/interaction/useMotion`.
 - Env: `QWEN_API_KEY` (recognition) + `OPENAI_API_KEY`/`LEONARDO_API_KEY`
   (generation). Load from `.env` before running.
 
-## First POC
-`src/features/teams/sub_teamWorkspace/TeamList.tsx` → `EmptyState`: a generic
-`<Users>` icon + `animate-fade-slide-in`. Replace the icon with a traced,
-self-drawing teams glyph as the reference implementation.
+## Reference implementations
+
+Shipped empty-state glyphs: `goalsGlyph` / `kpisGlyph` / `feedsGlyph` /
+`coachingGlyph` / `relayGlyph` / `ratelimitGlyph` in
+`src/features/shared/glyph/glyphs/`, rendered via `ScenarioEmptyState`'s `glyph`
+prop and directly in e.g. `src/features/teams/sub_goals/GoalsEmptyGlyph.tsx` and
+`src/features/teams/sub_teamWorkspace/TeamList.tsx`.

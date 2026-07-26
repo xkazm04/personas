@@ -6,11 +6,11 @@ allowed-tools: Read, Grep, Glob, Bash, Agent
 
 # Code Review — Production Readiness
 
-You are a senior code reviewer for the **personas-desktop** Tauri app (Rust + React/TypeScript). Your job is to review changed files and produce an actionable verdict with specific line references.
+You are a senior code reviewer for the **personas-desktop** Tauri app (Rust + React/TypeScript). Review changed files and produce a severity-ranked, verified verdict with `file:line` references.
 
 ## Trigger
 
-`/code-review` — reviews all unstaged/staged changes against master.
+`/code-review` — reviews all unstaged/staged changes against HEAD.
 `/code-review <file-or-glob>` — reviews only matching files.
 `/code-review --commit <ref>` — reviews files changed in a specific commit or range.
 
@@ -18,237 +18,156 @@ You are a senior code reviewer for the **personas-desktop** Tauri app (Rust + Re
 
 ## Coordination — Active-Runs Ledger
 
-`/code-review` is **mostly read-only** but does write a review report (and may suggest fixes the user later applies). Register before writing the report; if you also apply fixes inline, register before the first fix. Per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md): read the file's `## Active` section first; if any `started`-status entry overlaps the files you're about to review/fix and is <2h old, surface the conflict to the user (the other session may be actively editing the very files you're reviewing — your verdict could be stale by commit time).
+`/code-review` is **mostly read-only**. If the run is purely read-only with a chat-rendered verdict, ledger registration is optional. Register in [`.claude/active-runs.md`](../../active-runs.md) before writing any report file or applying any fix; check `## Active` first and surface conflicts on overlapping `started` entries <2h old (the other session may be editing the very files you're grading). At session end, move your entry to `## Recently completed` with `completed (commit: <sha>)` / `completed (review-only, no commit)` / `aborted (<reason>)`. Full rationale: [`docs/architecture/cli-coordination.md`](../../../docs/architecture/cli-coordination.md).
 
-**Declared paths for `/code-review`:**
-- The files in the review scope (resolved in Step 1 from `git diff --name-only HEAD` or the commit range)
-- `.claude/code-review/REVIEW-<YYYYMMDD-HHMM>.md` (or wherever the report writes)
-- Always: `.claude/active-runs.md`
+**If applying fixes**, the parallel-safety primitives from [`CLAUDE.md`](../../CLAUDE.md) are mandatory:
 
-If review is purely read-only and produces no file outputs (just a chat-rendered verdict), you MAY skip ledger registration — but a review on a hot codebase area still benefits from a registered "I'm reading this for review" entry so concurrent editors know their work is being graded.
-
-**At session end** (after the report is written or the verdict is delivered): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha-if-fixes-applied>)` or `completed (review-only, no commit)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
-
-Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
-
-### Parallel-safety primitives (mandatory)
-
-Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI session must:
-
-1. **Never `git stash`** other sessions' work — not even with `--keep-index`. If you DO apply fixes during review and your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
-2. **Use a worktree only if applying multi-file fixes.** Pure read-only review can stay on the main checkout. If the user asks you to apply suggested fixes (typically multi-file), default to:
-   ```bash
-   git worktree add .claude/worktrees/code-review-fix-<short-slug> -b worktree-code-review-fix-<short-slug>
-   cd .claude/worktrees/code-review-fix-<short-slug>
-   ```
-3. **Atomic commits per fix.** One commit per Severity-1 / -2 fix; bundle Severity-3 (style/nit) fixes into one polish commit. Never bundle a critical fix with a polish fix.
-4. **Verify the staged index before commit.** After `git add` and before `git commit`, run `git diff --cached --stat`. If the staged file count is greater than the number you explicitly added, another session pre-staged work in the index — `git restore --staged <path>` per unrelated file, or use `git commit --only <files>` to bypass the shared index entirely.
-5. **Clean up the worktree after merge.** Once the fix commit(s) are in `git log master`, from the main checkout: `git worktree remove .claude/worktrees/code-review-fix-<short-slug>` and `git branch -D worktree-code-review-fix-<short-slug>`. Treat as part of the session-end ledger ritual.
+1. **Never `git stash`** other sessions' work. Stage per file (`git add <path>`, never `-A`/`.`/`-u`).
+2. **Multi-file fixes go in a worktree**: `git worktree add .claude/worktrees/code-review-fix-<slug> -b worktree-code-review-fix-<slug>`. Single-file fixes may stay on the main checkout.
+3. **Atomic commits**: one commit per Critical/Warning fix; bundle nits into one polish commit. Never mix a critical fix with polish.
+4. **Verify the staged index**: after `git add`, `git diff --cached --stat` — if the staged count exceeds what you added, `git restore --staged <path>` the foreign files (or use `git commit --only <files>`).
+5. **Remove the worktree + branch** once fixes are merged to master.
 
 ---
 
+## Step 0: Scope Depth to Diff Size
+
+Run `git diff --stat HEAD` (or the commit range) first and pick a depth. Do not run a full-depth review on a 5-line diff.
+
+| Diff size | Depth |
+|---|---|
+| ≤ ~50 changed lines, no high-risk zone | **Quick**: read the diff + surrounding context of each hunk; check gate triggers (Step 5) and the bug/security items only. Skip the full checklists; output findings without the scorecard table. |
+| ≤ ~500 lines or any high-risk zone touched | **Standard**: full workflow below. |
+| > ~500 lines / >15 files | **Deep**: full workflow; consider parallel Agent subagents per bucket (Rust / React / stores), then merge and verify findings yourself. |
+
+**High-risk zones — always Standard+ and reviewed first, most scrutiny:**
+
+1. **Crypto / vault / credentials** — `src-tauri/src/engine/*crypto*`, `src-tauri/src/commands/credentials/**`, `src/features/vault/**`. Nonce reuse, key derivation, secrets in logs/errors/frontend payloads.
+2. **IPC command surface** — `src-tauri/src/commands/**`. Missing `require_auth()`/`require_auth_sync()`, unvalidated args, error leakage.
+3. **DB migrations** — `src-tauri/src/db/**` migration code. Incremental `ALTER`s need a has-table/has-column guard (see memory: the test binary drops tables); destructive changes (DROP, column removal) are HIGH RISK; new columns must be nullable or defaulted.
+4. **Zustand slices with derived state** — `src/stores/slices/**`. Derived values recomputed vs cached-and-stale; cross-slice duplication; stale-response races (sequence-counter pattern like `fetchDetailSeq`).
+5. **i18n key changes** — `src/i18n/locales/*.json`. Renames leave EXTRAS (gate fails); new `en.json` keys untranslated in the other 13 locales block commit.
+6. **shared/components boundary** — `src/features/shared/components/**` must stay primitives-only: no imports from `@/stores`, `@/api`, `@/lib/bindings`, or `@/features/<feature>`.
+
 ## Step 1: Identify Changed Files
 
-Determine the review scope:
-
 ```bash
-# Default: all working-tree changes vs HEAD
-git diff --name-only HEAD
-
-# If user gave a commit ref:
-git diff --name-only <ref>^..<ref>
+git diff --name-only HEAD           # default: working tree vs HEAD
+git diff --name-only <ref>^..<ref>  # commit mode
 ```
 
-Separate files into two buckets:
-- **Rust files**: `src-tauri/**/*.rs`
-- **React files**: `src/**/*.{ts,tsx}`
-
-If no changed files match, tell the user and stop.
+Bucket into **Rust** (`src-tauri/**/*.rs`), **React/TS** (`src/**/*.{ts,tsx}`), **locales** (`src/i18n/locales/*.json`), **config/other**. If nothing matches the requested scope, say so and stop.
 
 ## Step 2: Read Every Changed File
 
-Read each file in full. You MUST read the actual file contents — never review from memory or diff snippets alone. For large files, read in sections.
-
-Also read the diff to understand what specifically changed:
-```bash
-git diff HEAD -- <file>
-```
+Read the diff (`git diff HEAD -- <file>`) AND the actual file contents around each hunk — never review from the diff alone; the bug is often in the unchanged line the diff now interacts with. High-risk-zone files first. For large files, read the touched regions plus their enclosing function/component in full.
 
 ## Step 3: Rust Backend Review
 
-For every changed `.rs` file, evaluate against ALL of the following. Flag any violation with the file path, line number, and a one-line explanation.
+Flag violations with `file:line` + one-line explanation.
 
 ### 3A. Security
+- **No unwrap/expect on external data** (IPC args, DB reads, HTTP, file I/O) — use `?`, `.ok_or()`, `.unwrap_or()`. `unwrap()` acceptable only on compile-time constants/infallible conversions.
+- **SQL** — parameterized `?` placeholders only; no string interpolation into SQL.
+- **Path traversal** — user-derived paths canonicalized + validated against a base dir.
+- **Secrets** — never logged, never in error messages, never serialized to frontend. AES-GCM with unique nonces; PBKDF2 with sufficient iterations.
+- **Command injection** — no `std::process::Command` with unsanitized input.
+- **Auth** — every `#[tauri::command]` touching user data calls `require_auth()` / `require_auth_sync()` (see `src-tauri/src/ipc_auth.rs`) before any logic.
+- **Error leakage** — new `AppError` variants follow the existing sanitization pattern (no internal paths/details to frontend).
 
-- [ ] **No unwrap/expect on user input** — All external data (IPC args, DB reads, HTTP responses, file I/O) must use `?`, `.ok()`, `.unwrap_or()`, or explicit match. `unwrap()` / `expect()` are only acceptable on compile-time constants or infallible conversions.
-- [ ] **SQL injection** — All queries use parameterized `?` placeholders via rusqlite. No string interpolation in SQL.
-- [ ] **Path traversal** — Any path constructed from user input must be canonicalized and validated against a base directory. No raw `format!` into paths.
-- [ ] **Secret handling** — Credentials, tokens, keys never logged, never in error messages, never serialized to frontend. Encryption uses AES-GCM with unique nonces. Keys derived via PBKDF2 with sufficient iterations.
-- [ ] **Command injection** — No `std::process::Command` with unsanitized user input.
-- [ ] **Auth checks** — Every `#[tauri::command]` that accesses user data calls `require_auth()` or `require_auth_sync()` before any logic.
-- [ ] **Error leakage** — `AppError` serialization strips file paths and internal details. New error variants must follow the existing sanitization pattern in `error.rs`.
-
-### 3B. Error Handling
-
-- [ ] **Result propagation** — Functions return `Result<T, AppError>`. No silent error swallowing (empty `if let Err(_)` or `let _ = fallible()`). If intentional, require a `// deliberate: <reason>` comment.
-- [ ] **Error context** — Errors include enough context to diagnose (which persona, which operation). Use `.map_err()` to add context when propagating.
-- [ ] **Mutex poisoning** — `Mutex::lock()` results are handled, not unwrapped. Pattern: `.lock().map_err(|_| AppError::Internal("lock poisoned".into()))?`
-- [ ] **Resource cleanup** — DB connections, file handles, temp files cleaned up on both success and error paths. Prefer RAII (Drop) over manual cleanup.
+### 3B. Error Handling & Correctness
+- `Result<T, AppError>` propagation; no silent swallowing (`let _ = fallible()`, empty `if let Err(_)`) without a `// deliberate: <reason>` comment.
+- `.map_err()` adds context (which persona, which operation) when propagating.
+- `Mutex::lock()` handled, not unwrapped; no `.await` while holding a sync `Mutex` (use `tokio::sync::Mutex` if needed).
+- Resource cleanup on both success and error paths; prefer RAII.
+- Shared state: `Arc<tokio::sync::Mutex<T>>`; no `Rc`/`RefCell` in async.
+- Structured `tracing` on new commands/operations.
 
 ### 3C. Performance
-
-- [ ] **No N+1 queries** — Batch DB reads instead of looping single reads. Prefer `SELECT ... WHERE id IN (...)` over N individual selects.
-- [ ] **Mutex hold duration** — Lock is held only for the minimum critical section. No async `.await` while holding a sync `Mutex`. Use `tokio::sync::Mutex` if await is needed inside the lock.
-- [ ] **Clone cost** — No unnecessary `.clone()` on large structs. Prefer references or `Arc` for shared data.
-- [ ] **Unbounded collections** — Any `Vec::new()` populated from external input must have a capacity limit or pagination.
-
-### 3D. Correctness & Best Practices
-
-- [ ] **Type safety** — New structs exposed to frontend derive `TS, Serialize, Deserialize` with `#[ts(export)]` and `#[serde(rename_all = "camelCase")]`. Verify the ts-rs binding will match frontend expectations.
-- [ ] **Idiomatic Rust** — Prefer `if let` over `match` with one arm + wildcard. Use `?` over explicit match-return-err. Avoid `return` at end of blocks.
-- [ ] **Tracing** — New commands/operations include `#[tracing::instrument]` or manual `tracing::info!`/`error!` spans with structured fields.
-- [ ] **Dead code** — No unused imports, functions, or struct fields. `#[allow(dead_code)]` requires justification.
-- [ ] **Concurrency** — Shared state behind `Arc<tokio::sync::Mutex<T>>`. No `Rc` or `RefCell` in async contexts. Background tasks spawned with proper handle tracking.
+- No N+1 DB loops — batch with `WHERE id IN (...)`.
+- Minimal mutex critical sections; no unnecessary `.clone()` on large structs (prefer refs/`Arc`); collections fed from external input bounded or paginated.
 
 ## Step 4: React Frontend Review
 
-For every changed `.ts`/`.tsx` file, evaluate against ALL of the following.
-
-### 4A. Component Size & Modularity (HARD LIMIT: 200 lines)
-
-- [ ] **Max 200 lines per component file** — Count total lines (including imports and types). If over 200, flag as MUST-FIX and suggest specific extraction points:
-  - Extract sub-components for repeated JSX blocks
-  - Extract custom hooks for stateful logic (>15 lines of hooks/effects)
-  - Extract helper functions to a sibling `libs/` or `helpers.ts` file
-  - Extract types/interfaces to a sibling `types.ts` file
-- [ ] **Single responsibility** — Each component does one thing. A component that fetches, transforms, and renders should be split: container (fetch) + presenter (render).
-- [ ] **Flat JSX** — Max 5 levels of nesting in returned JSX. Extract nested blocks into named components.
+### 4A. Size & Modularity (HARD LIMIT: 200 lines)
+- **Max 200 lines per component file.** Over → MUST-FIX with concrete extraction points (sub-components, custom hooks for >15 lines of stateful logic, sibling `types.ts`/helpers).
+- Single responsibility; max ~5 levels of JSX nesting.
 
 ### 4B. Bug Prevention
+- Correct `useEffect`/`useMemo`/`useCallback` deps — no stale closures, no infinite loops.
+- Null safety on API responses / store state; stable unique `key` in `.map()` (not index for reorderable lists).
+- Async effects handle unmount (abort/stale flag); store actions use sequence counters (`fetchDetailSeq` pattern) against stale responses.
+- No `any`, no runtime-unsafe `as` casts.
 
-- [ ] **Dependency arrays** — Every `useEffect`, `useMemo`, `useCallback` has correct deps. No missing deps that cause stale closures. No unnecessary deps that cause infinite loops.
-- [ ] **Null safety** — Optional chaining (`?.`) on all potentially undefined chains. No bare property access on API responses or store state without null check.
-- [ ] **Key props** — Every `.map()` rendering JSX uses a stable, unique `key` (not array index unless list is static and never reordered).
-- [ ] **Event handler closures** — No inline `() => setState(...)` in `.map()` loops that create N closures per render. Use `useCallback` or extract handler with item ID.
-- [ ] **Race conditions** — Async effects must handle component unmount (abort controller or stale flag). Store actions use sequence counters like the existing `fetchDetailSeq` pattern to discard stale responses.
-- [ ] **Type safety** — No `any` type. No `as` casts that could fail at runtime. Prefer type guards or discriminated unions.
+### 4C. Repo Conventions (these are enforced or catalogued — cite the rule)
+- **IPC**: all Tauri calls via `@/api/` wrappers using `invokeWithTimeout` from `@/lib/tauriInvoke` — never raw `invoke` (`no-restricted-imports` enforces).
+- **Errors**: user-facing → `toastCatch()` from `src/lib/silentCatch.ts`; background → `silentCatch()`; friendly messages via `resolveError()` / `resolveErrorTranslated()`. Empty `catch {}` blocks flagged (`custom/no-silent-catch`). Store actions: try/catch with `errMsg()` and loading/error state.
+- **i18n**: no hardcoded English in JSX/placeholder/title/aria-label — `t.section.key` via `useTranslation()` (`custom/no-hardcoded-jsx-text`). Backend status tokens rendered via `tokenLabel()`, never raw. Label constants use `labelKey`, not inline strings.
+- **Design tokens**: `typo-*`, `rounded-{interactive,input,card,modal}`, `shadow-elevation-*`; never `text-white/*` / `bg-white/*` (use `text-foreground/*` / `bg-secondary/*`). No inline `style={{}}` where a token class exists.
+- **Shared components**: hand-rolled spinner/empty-state/modal/tooltip/toggle/etc. that duplicates a catalog primitive (`src/features/shared/components/CATALOG.md`) is a finding — name the primitive to import. Modals must use `BaseModal`/`ConfirmDialog` (`custom/enforce-base-modal`).
+- **Stores**: correct slice boundary, immutable `set()` updates, narrow selectors (`useShallow` / `s => s.field`, never whole-store subscribe).
+- Lazy-load new top-level tabs/pages (`React.lazy` + `Suspense`); no heavyweight deps without justification.
 
-### 4C. Performance
+## Step 5: Gate-Trigger Check (the repo's REAL gates)
 
-- [ ] **Unnecessary re-renders** — Components receiving objects/arrays as props should use `useMemo` for computed values. Store selectors should select the minimum needed slice, not the entire store.
-- [ ] **Expensive computations** — `useMemo` for any filtering, sorting, or transformation of lists > 20 items.
-- [ ] **Bundle size** — No new large dependency imports without justification. Prefer tree-shakeable imports (`import { X } from 'lib'` not `import lib from 'lib'`).
-- [ ] **Lazy loading** — New top-level tabs/pages use `React.lazy()` + `Suspense`.
+Don't re-derive lint advice — determine **which CI/hook gates this diff will trip** and verify the diff satisfies them. For each triggered gate, either confirm it's handled or file a finding naming the exact command that will fail:
 
-### 4D. Code Quality
+| Diff contains… | Gate it trips | What to verify |
+|---|---|---|
+| Any `.ts`/`.tsx` | `npm run check` (tsc + ESLint incl. 18 custom rules) | New code introduces no TS errors (master is clean — errors are regressions) and no new custom-rule violations |
+| `src/i18n/locales/en.json` keys added/renamed | `npm run check:i18n:strict` + `i18n-no-gaps` pre-commit hook | All 13 other locales updated in the same change; renames leave no EXTRAS (extras always fail) |
+| `error_registry` keys or `ERROR_KEY_MAP` edits | `npm run check:error-registry` | `<key>_message`/`<key>_suggestion` parity with `src/i18n/useTranslatedError.ts` |
+| Theme/token CSS changes | `npm run check:themes` | Both structural families still pass |
+| `src-tauri/tauri*.conf.json` | `npm run check:tauri-configs` | Config variants stay consistent |
+| Rust struct with `#[derive(TS)]` added/changed | CI binding-drift job (`git diff --quiet src/lib/bindings/`) | `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` was run and `src/lib/bindings/` changes are in the diff; `#[serde(rename_all = "camelCase")]` present; frontend usages match |
+| New `#[tauri::command]` | codegen + registration | Registered in `invoke_handler`; `node scripts/generate-command-names.mjs` output regenerated |
+| Any `.rs` | clippy `-D warnings` + `cargo test` | No obvious clippy-fatal patterns introduced |
+| Logic changes with existing test coverage | `npm run test -- --run` / `cargo test` | Tests updated alongside behavior; flag changed behavior with untouched tests |
 
-- [ ] **Import conventions** — Use `@/` path alias. Group: (1) react/external libs, (2) `@/api`, (3) `@/lib`, (4) `@/stores`, (5) `@/features`, (6) relative imports. No circular imports.
-- [ ] **Naming** — Components: PascalCase. Hooks: `use<Name>`. Handlers: `handle<Event>` or `on<Event>`. Constants: UPPER_SNAKE_CASE. Files: PascalCase for components, camelCase for utilities.
-- [ ] **API calls** — All Tauri IPC goes through `@/api/` wrappers using `invokeWithTimeout`. No direct `invoke()` calls in components.
-- [ ] **Error handling** — API calls in store actions use try/catch with `errMsg()` helper. Components show error state, not silent failure.
-- [ ] **No hardcoded strings** — UI text uses i18n (`useTranslation`). No raw English strings in JSX unless it's a code identifier or brand name.
-- [ ] **Tailwind** — No inline `style={{}}` when Tailwind classes exist. No conflicting utility classes. Responsive breakpoints where layout requires it.
+Also flag: security-sensitive edits (crypto/vault/connectors/IPC) that should be called out for human review, and user-visible changes missing a `CHANGELOG.md` `[Unreleased]` entry.
 
-### 4E. Store Patterns (Zustand)
+## Step 6: Adversarial Verification (before reporting)
 
-- [ ] **Slice boundary** — New state belongs in the correct slice. No cross-slice state duplication.
-- [ ] **Immutable updates** — State updates via `set()` never mutate existing state. Always spread or create new objects/arrays.
-- [ ] **Async actions** — Follow existing pattern: try/catch, `set({ loading: true })`, API call, `set({ data, loading: false })`, catch with `set({ error, loading: false })`.
-- [ ] **Selector granularity** — Components use `usePersonaStore(s => s.specificField)` not `usePersonaStore()`.
+Every candidate finding must survive this pass — **unverified findings are dropped or downgraded, never reported as fact**:
 
-## Step 5: Cross-Cutting Concerns
-
-- [ ] **Rust ↔ TS type sync** — If a Rust struct changed, verify the corresponding `src/lib/bindings/<Type>.ts` matches (or will after ts-rs regeneration). Flag mismatches.
-- [ ] **Command registration** — New `#[tauri::command]` functions are registered in `lib.rs` `invoke_handler`.
-- [ ] **Migration safety** — New DB columns have defaults or are nullable to not break existing data. Destructive migrations (DROP, column removal) flagged as HIGH RISK.
-
-## Step 6: 5-Axis Review
-
-Score the changes across **five independent axes**. Each axis gets a verdict
-(`PASS` / `FLAG` / `FAIL`) and its own findings list. This structure ensures
-no category is skipped even when one axis dominates.
-
-### Axis 1: Correctness
-*Does the code do what it claims to do?*
-- Logic errors, off-by-one, wrong condition branches
-- Missing edge cases (null, empty, boundary values)
-- Incorrect types or serialization mismatches (Rust ↔ TS)
-- Race conditions, stale closures, missing abort controllers
-
-### Axis 2: Readability & Simplicity
-*Would another developer understand this quickly?*
-- Component/function size (200-line hard limit for React)
-- Naming clarity (handlers, hooks, constants)
-- Unnecessary complexity (nested ternaries, deep callbacks)
-- Import organization and module boundary clarity
-
-### Axis 3: Architecture Conformance
-*Do the changes fit the existing system design?*
-- Correct store slice boundary (Zustand)
-- Correct IPC/command pattern (invoke → api wrapper → store action)
-- Correct layer separation (engine vs plugin, core vs dev-tools)
-- No cross-slice state duplication, no bypassed abstractions
-- Migration safety (new columns nullable/defaulted)
-
-### Axis 4: Security
-*Are there new attack surfaces or weakened defenses?*
-- unwrap/expect on user input (Rust)
-- SQL injection, path traversal, command injection
-- Secret leakage in logs or error messages
-- Missing auth checks on new commands
-- XSS vectors in rendered content (React)
-
-### Axis 5: Performance
-*Will this degrade speed, memory, or bundle size?*
-- N+1 queries, unbounded collections
-- Mutex hold duration, unnecessary clones
-- Missing useMemo/useCallback on expensive paths
-- Bundle impact of new dependencies
-- Unnecessary re-renders from overly broad selectors
+1. **Re-read the exact lines.** Open the file at the cited location and confirm the code says what the finding claims. Line numbers must be from the actual file, not estimated from the diff.
+2. **Construct the failure scenario.** State concretely how it breaks: what input, what sequence, what state. "unwrap() on line 42 panics when the frontend sends a null credentialId" — not "might panic". If you cannot construct a plausible path to the failure (e.g. the value is validated two calls up — go check), drop the finding.
+3. **Check for existing mitigation.** Grep for guards, callers, and tests that already handle the case before claiming it's unhandled.
+4. **Residual uncertainty → mark `PLAUSIBLE`.** If the failure depends on runtime state you can't confirm from code, keep the finding but tag it `[PLAUSIBLE]` with what would confirm it. Never present a PLAUSIBLE as Critical.
+5. **No invented problems.** Zero findings on an axis is a PASS. Don't pad. Don't suggest comments/docstrings/annotations on unchanged code, or refactors beyond the 200-line rule.
 
 ## Step 7: Produce the Review
 
-Output a structured review with this exact format:
+Severity-ranked, most severe first. Every finding: `file:line`, axis tag, concrete fix (not "fix this"), and `[PLAUSIBLE]` where applicable.
 
 ```
 ## Code Review: <scope description>
 
 ### Verdict: APPROVE | APPROVE WITH NOTES | REQUEST CHANGES
 
-### 5-Axis Scorecard
-| Axis                    | Verdict | Findings |
-|-------------------------|---------|----------|
-| 1. Correctness          | PASS    | 0        |
-| 2. Readability          | FLAG    | 2        |
-| 3. Architecture         | PASS    | 0        |
-| 4. Security             | FAIL    | 1        |
-| 5. Performance          | FLAG    | 1        |
+### 5-Axis Scorecard        (omit for Quick-depth reviews)
+| Axis            | Verdict | Findings |
+|-----------------|---------|----------|
+| 1. Correctness  | PASS    | 0        |
+| 2. Security     | FAIL    | 1        |
+| 3. Architecture | PASS    | 0        |
+| 4. Performance  | FLAG    | 1        |
+| 5. Readability  | FLAG    | 2        |
 
 ### Critical (must fix before merge)
-- [Security] `src-tauri/src/commands/foo.rs:42` — unwrap() on user-provided input; use `?` or `.ok_or(AppError::...)?`
-- [Readability] `src/features/agents/components/BigComponent.tsx` — 347 lines; extract <SubSection> (lines 180-260) and useFilterLogic hook (lines 45-95)
+- [Security] `src-tauri/src/commands/foo.rs:42` — unwrap() on user-provided credentialId; panics when frontend sends null. Fix: `.ok_or(AppError::InvalidInput("credentialId".into()))?`
+
+### Gate failures (will block CI/commit)
+- [Gate:i18n] `src/i18n/locales/en.json` — 3 new keys under `vault.*` untranslated in 13 locales; `i18n-no-gaps` pre-commit will block. Run the translate-extract/merge pipeline.
 
 ### Warnings (should fix)
-- [Performance] `src-tauri/src/db/repos/core/bar.rs:15` — N+1: loop calls get_persona inside get_all_groups
-- [Readability] `src/stores/slices/agents/fooSlice.ts:78` — missing error state reset on retry
+- [Performance] `src-tauri/src/db/repos/core/bar.rs:15` — N+1: loop calls get_persona per group; batch with `WHERE id IN`
+- [PLAUSIBLE][Correctness] `src/stores/slices/fooSlice.ts:78` — retry path may keep stale `error`; confirm whether retry clears it before the second fetch
 
-### Nits (optional improvements)
-- [Correctness] `src/features/agents/components/Foo.tsx:12` — unused import `useState`
-- [Performance] `src-tauri/src/engine/baz.rs:99` — `clone()` avoidable with reference
+### Nits (optional)
+- [Readability] `src/features/agents/components/Foo.tsx:12` — unused import `useState`
 
 ### Summary
-- Files reviewed: N
-- Issues: X critical, Y warnings, Z nits
-- Worst axis: Security (FAIL)
-- Lines added/removed: +A/-B
+- Files reviewed: N (depth: Quick|Standard|Deep) · Issues: X critical, Y gate, Z warnings, W nits
+- High-risk zones touched: <list or none> · Worst axis: <axis>
 ```
-
-Rules:
-- Every finding MUST include a file path and line number
-- Every finding MUST be tagged with its axis `[Security]`, `[Correctness]`, etc.
-- Every finding MUST include a concrete fix suggestion, not just "fix this"
-- Group findings by severity, then by file
-- If you find zero issues on an axis, mark it PASS — don't invent problems
-- Do NOT suggest adding comments, docstrings, or type annotations to unchanged code
-- Do NOT suggest refactors beyond the 200-line enforcement
-- Be direct and specific, not vague

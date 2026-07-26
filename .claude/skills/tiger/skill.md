@@ -5,7 +5,7 @@ description: Hunts the highest-value surface of an LLM-powered app — the LLM c
 
 # Tiger — hunt the LLM value
 
-> In an LLM-powered app the model calls are the apex surface: they cost the most, vary the most, and carry the most business value. Tiger stalks exactly those — ignores the CRUD around them — and never lets a high-value call site sit under-wrapped, under-grounded, or running an over-priced model. It is the LLM-focused sibling of `/uat` (`.claude/skills/uat.md`): it reuses UAT's Character/JTBD/senior-bar/time-saved/impact-scoring method, but scoped to the prompts and their outputs, and it adds two lenses UAT doesn't have (AI code-quality and model benchmarking).
+> In an LLM-powered app the model calls are the apex surface: they cost the most, vary the most, and carry the most business value. Tiger stalks exactly those — ignores the CRUD around them — and never lets a high-value call site sit under-wrapped, under-grounded, or running an over-priced model. It is the LLM-focused sibling of `/uat` (`.claude/skills/uat/skill.md`): it reuses UAT's Character/JTBD/senior-bar/time-saved/impact-scoring method, but scoped to the prompts and their outputs, and it adds two lenses UAT doesn't have (AI code-quality and model benchmarking).
 
 ## What Tiger is (and isn't)
 
@@ -97,17 +97,23 @@ For each call site, follow the import chain to the actual call and score, citing
 Reuse `/uat`'s engine but point it only at the prompts/outputs:
 1. **Characters** (durable in the vault) — a variety of representative users, each `maps_to` the call sites their JTBD hits. Ground them in the app's real target group (don't reuse a generic roster; see UAT init).
 2. **L1 (theoretical, mass-parallel):** per `character × call-site`, read the prompt + grounding and judge the *designed* output against the Character's senior-bar + scored criteria + time-saved. Score **grounding n/m** (how much of the user's real world reaches the prompt) — this is Tiger's highest-yield finding type, fully visible in code.
+   **Grounding bar (hard rule):** every verdict must **quote the actual prompt text** (the real template string at `file:line`, not a paraphrase) **and at least one real sampled output** (from logs, fixtures, cached vault captures, or an L2 live call). Never judge from the call-site *name* or wrapper signature — "campaign-eval sounds well-grounded" is not a finding. If no output sample exists anywhere, say so explicitly and mark the verdict `ungrounded — needs L2 sample` instead of guessing.
 3. **L2 (empirical, optional but ideal):** actually **run the call** with character-shaped inputs and judge the live output (grounded path: assert the output names the supplied real entity / reflects the brand/data, not placeholders). One confirmed live finding beats ten theoretical ones.
 - Emit business-value findings (grounding gaps, senior-bar misses, "slower than doing it by hand") + suggested fixes.
 
 ### Lens 3 — Model optimization (the alternative scenario)
 The characters are the **consistent judgment harness** that makes cross-model comparison fair. For the selected call sites:
-1. Hold the prompt + character input fixed; **run it across a model matrix** — models × thinking/effort levels (per `config.md`'s invocation recipe).
-2. Have the **same Character criteria** judge each output (blind to which model) → a quality score per cell; record **cost + latency** per cell.
+1. Hold the prompt + character input fixed; **run it across a model matrix** — models × thinking/effort levels (per `config.md`'s invocation recipe). Shape the matrix by what's measurable (see the measured priors below): test effort levels **only where the output is uncapped and the task is verification-heavy** (structured extraction, schema-checkable, factual); for long-form prose/design outputs, test at most low vs medium.
+2. Have the **same Character criteria** judge each output (blind to which model). Use **forced ranking with a named separator per adjacent pair** — absolute 0–5 scoring saturates (judges hand out straight top marks and carry near-zero signal). Record **cost + latency** per cell.
 3. Find the frontier: the cheapest/fastest cell that still clears the senior-bar (a **downgrade** opportunity — money saved at equal quality) and any call site where a **stronger** model/thinking meaningfully lifts business quality (an **upgrade** worth the spend). Watch for **degradation** (a model that silently drops grounding or hallucinates).
 - Emit a per-call-site model recommendation: `keep | downgrade to X | upgrade to Y` with the quality/cost/latency evidence, written to `models/*` and the call-site note's `recommended_model`.
 
-> Quality is judged by Characters, never by the model under test grading itself. Use a separate judge (a third model or the orchestrator) and prefer adversarial/majority judging for close calls, exactly as UAT does.
+> **Judging rules (measured, 2026-07 — see `docs/development/model-effort-guide.md`):**
+> Quality is judged by Characters, never by the model under test grading itself.
+> - **Cross-family comparisons need ≥2 judge families or a human spot-check.** Judges rank their own model family first (two judges disagreed at ρ = 0.50 and each favored its own family). A single-judge verdict comparing, say, a Claude cell to a non-Claude cell is inadmissible; within-family (effort) comparisons from one judge are fine.
+> - **More effort is not better.** On long-form output, quality *inverted* above medium effort — the priciest run drifted its own cross-references and violated its brief. Length is not insight; never recommend an effort upgrade on prose evidence alone.
+> - **A hard output cap collapses the effort axis** (no effort response at all was observed under a strict length cap). Don't benchmark effort on capped call sites — you'd pay for reasoning you don't get.
+> - **When every cell disappoints, suspect the prompt framing before the model.** The most replicated finding: all cells at every model and effort missed the same thing — a sharper problem statement would have caught it, no escalation would. Emit a *value* (Lens 2) finding, not an *upgrade* recommendation.
 
 ---
 
@@ -131,11 +137,11 @@ Plus a **value ledger** (grounding & time-saved rolled up; promised vs delivered
 ## Concurrency & trust
 - **Mass-parallel** Lens 1 + Lens 2-L1 (no I/O to serialize — one subagent per unit). Lens 2-L2 and Lens 3 make real calls → serial-ish and **cost-bounded** (sample call sites; cache every result in `models/*` keyed by (call-site, model, thinking, input-hash) so re-runs are free).
 - **Evidence or it didn't happen:** every finding cites `file:line` (static) or a captured output/metric (live).
-- **Adversarial judging** for value + model verdicts; default to "not better" unless the output earns it.
+- **Adversarial judging** for value + model verdicts; default to "not better" unless the output earns it. Forced ranking over absolute scores; cross-family verdicts need ≥2 judge families or a human spot-check (Lens 3 judging rules).
 - **Honest ceilings:** name what still isn't grounded/optimized after a fix (e.g. "cheaper model holds for the generic path; the grounded path still needs Sonnet").
 - **Vault hygiene:** call-site `id`s are stable across runs; never duplicate a note — update it. Record the model/prompt **fingerprint** so `scan` can detect drift.
 - **Vault-write verification (learned 2026-06-20):** a discovery/scan subagent may be unable to write files in some harnesses and will return the note bodies inline instead. After any parallel scan, the orchestrator MUST `ls` the target dir, diff against the expected `id` set, and **backfill** any missing notes from the agents' returned content — don't trust "wrote N notes" without checking.
-- **Lens-3 recipe that works:** dispatching one subagent per matrix cell with the Agent tool's `model`/`effort` params, fed the tool's *real* system prompt + a fixed character input, returns clean schema JSON and a usable latency proxy (subagent wall-clock) — no external API keys needed. Judge the cells with a separate model, never the one under test.
+- **Lens-3 recipe that works:** dispatching one subagent per matrix cell with the Agent tool's `model`/`effort` params, fed the tool's *real* system prompt + a fixed character input, returns clean schema JSON and a usable latency proxy (subagent wall-clock) — no external API keys needed. Note: reasoning/thinking content is redacted in transcripts, so effort can only be measured by output tokens + outcome, never by inspecting the reasoning. Judge the cells with a separate model, never the one under test.
 
 ## Using Tiger on a new app
-1. Drop `/tiger` into the repo (`.claude/skills/tiger.md`). 2. `/tiger init` → discovers call sites, writes `config.md` (discovery globs + how to invoke each model tier + fixtures), asks Character count, scaffolds the vault. 3. Resolve `config.md` open questions (esp. the model-invocation recipe for Lens 3). 4. `/tiger run` for a cheap broad pass; `/tiger run --live` for real generation + benchmark. 5. Work the backlog; re-`scan`/`run` to measure the delta in the vault.
+1. Drop `/tiger` into the repo (`.claude/skills/tiger/skill.md`). 2. `/tiger init` → discovers call sites, writes `config.md` (discovery globs + how to invoke each model tier + fixtures), asks Character count, scaffolds the vault. 3. Resolve `config.md` open questions (esp. the model-invocation recipe for Lens 3). 4. `/tiger run` for a cheap broad pass; `/tiger run --live` for real generation + benchmark. 5. Work the backlog; re-`scan`/`run` to measure the delta in the vault.
