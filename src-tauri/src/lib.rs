@@ -11,7 +11,7 @@ pub use commands::artist::persistence as artist_persistence;
 pub use commands::eval_runs;
 pub use engine::provider::EngineKind;
 pub use engine::render_plan;
-mod error;
+pub use personas_core::error;
 pub mod freeze_monitor;
 mod gitlab;
 pub mod ipc_auth;

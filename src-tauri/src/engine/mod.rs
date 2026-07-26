@@ -85,7 +85,10 @@ pub mod dry_run;
 pub mod embedder;
 #[cfg(feature = "p2p")]
 pub mod enclave;
-pub mod error_taxonomy;
+/// Moved to `personas-core` (crate-split step 2) — `error.rs` depends on it, so
+/// it had to sit below both. Re-exported so the 6 existing
+/// `crate::engine::error_taxonomy::…` call sites resolve unchanged.
+pub use personas_core::error_taxonomy;
 pub mod eval;
 pub mod event_registry;
 pub mod event_vocabulary;

@@ -20,3 +20,15 @@ ml = []
 
 [dependencies]
 regex = "1"
+# AppError's #[from] conversions pull these in. Note what is NOT here: no other
+# Personas crate. "Core" means no INTERNAL dependencies — external leaf crates
+# are fine and are shared with the desktop crate anyway (same versions/features,
+# so cargo unifies them and nothing is compiled twice).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
+r2d2 = "0.8"
+# error_taxonomy's UsageLimit carries a reset timestamp.
+chrono = { version = "0.4", features = ["serde"] }
+ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }

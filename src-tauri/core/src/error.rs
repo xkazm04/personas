@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::engine::error_taxonomy::{
+use crate::error_taxonomy::{
     classify_error, is_auto_fixable, is_failover_eligible, ErrorCategory,
 };
 

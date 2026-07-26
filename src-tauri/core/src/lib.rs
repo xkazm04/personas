@@ -22,5 +22,7 @@
 //! is core → db → engine, because the back-edges (db→engine, db→commands) are
 //! only 3-8% of the forward edges and are mostly pure types.
 
+pub mod error;
+pub mod error_taxonomy;
 pub mod retrieval;
 pub mod utils;
