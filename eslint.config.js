@@ -99,7 +99,7 @@ export default tseslint.config(
       "custom/no-low-contrast-text-classes": "warn",
       "custom/no-hardcoded-jsx-text": "warn",
       "custom/no-unmanaged-effect-resources": "warn",
-      "custom/no-silent-catch": "warn",
+      "custom/no-silent-catch": "error",
       "custom/no-direct-white-colors": "warn",
       "custom/role-button-requires-keydown": "error",
       "custom/no-whole-store-subscription": "warn",
