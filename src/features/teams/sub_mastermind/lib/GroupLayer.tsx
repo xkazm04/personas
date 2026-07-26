@@ -24,8 +24,17 @@ export interface GroupMember {
   dispatchable: boolean;
 }
 
-/** Worst-first island states — a group reports the worst thing inside it. */
-const STATE_RANK: Record<IslandState, number> = { critical: 0, warning: 1, building: 2, healthy: 3 };
+/** Worst-first island states — a group's histogram reads worst-to-best. */
+const STATE_ORDER: IslandState[] = ['critical', 'warning', 'building', 'healthy'];
+
+/** How many members sit in each state, worst first, empty states dropped. A
+ *  single worst-state dot summarizes a group of ten by its unluckiest member;
+ *  the spread is what tells you whether that's a fire or an outlier. */
+function stateHistogram(members: GroupMember[]): Array<{ state: IslandState; count: number }> {
+  return STATE_ORDER
+    .map((state) => ({ state, count: members.filter((m) => m.state === state).length }))
+    .filter((b) => b.count > 0);
+}
 
 const inside = (i: { x: number; y: number }, g: GroupRect) =>
   i.x >= g.x && i.x <= g.x + g.w && i.y >= g.y && i.y <= g.y + g.h;
@@ -98,14 +107,14 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
         // portfolio-level grouping the canvas has, so its plate is where the
         // "how are these N projects doing" question gets answered.
         const members = islands.filter((i) => inside(i, g));
-        const worst = members.reduce<IslandState | null>(
-          (acc, m) => (acc === null || STATE_RANK[m.state] < STATE_RANK[acc] ? m.state : acc), null,
-        );
+        const histogram = stateHistogram(members);
         const blockers = members.reduce((s, m) => s + m.blockers, 0);
         const dispatchable = members.filter((m) => m.dispatchable).map((m) => m.slug);
         // Plate width tracks whatever segments actually render.
         const labelW = g.label.length * 7.2;
-        const summaryW = members.length > 0 ? 30 + String(members.length).length * 7 : 0;
+        const BUCKET_GAP = 6;
+        const bucketW = (count: number) => 17 + String(count).length * 7 + BUCKET_GAP;
+        const summaryW = histogram.reduce((w, b) => w + bucketW(b.count), 0) + (histogram.length ? 4 : 0);
         const blockerW = blockers > 0 ? 12 + String(blockers).length * 7 : 0;
         const dispatchW = editable && dispatchable.length > 0 ? 24 : 0;
         const plateW = labelW + summaryW + blockerW + dispatchW + (labelable ? 44 : 18);
@@ -152,15 +161,23 @@ export function GroupLayer({ groups, draft, z, mode, islands, onGroupsChange, on
               <text x={4} y={-2} fontSize={12.5} fontWeight={600} fill={mix('var(--primary)', 80, 'var(--foreground)')} letterSpacing="0.03em" pointerEvents="none">
                 {g.label}
               </text>
-              {/* rollup: worst state inside · how many projects */}
-              {members.length > 0 && (() => {
+              {/* rollup: how the members are spread across states, worst first */}
+              {histogram.length > 0 && (() => {
                 const x = cursorX; cursorX += summaryW;
+                let bx = 0;
                 return (
                   <g transform={`translate(${x} 0)`} pointerEvents="none">
-                    <circle cx={4} cy={-6} r={4} fill={STATE_INK[worst ?? 'healthy']} />
-                    <text x={13} y={-2} fontSize={12} fontWeight={600} fill={mix('var(--foreground)', 70)} style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {members.length}
-                    </text>
+                    {histogram.map((b) => {
+                      const at = bx; bx += bucketW(b.count);
+                      return (
+                        <g key={b.state} transform={`translate(${at} 0)`}>
+                          <circle cx={4} cy={-6} r={4} fill={STATE_INK[b.state]} />
+                          <text x={12} y={-2} fontSize={12} fontWeight={600} fill={mix(STATE_INK[b.state], 85, 'var(--foreground)')} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {b.count}
+                          </text>
+                        </g>
+                      );
+                    })}
                   </g>
                 );
               })()}
