@@ -223,8 +223,20 @@ async fn run_breeding_pipeline(
         // Persist every offspring with its predicted fitness so results can be
         // ranked (get_results_by_run sorts by fitness_overall).
         for (offspring, score) in &scored_offspring {
-            let genome_json = serde_json::to_string(&offspring.genome).unwrap_or_default();
-            let parent_json = serde_json::to_string(&offspring.parent_ids).unwrap_or_default();
+            let genome_json = match serde_json::to_string(&offspring.genome) {
+                Ok(j) => j,
+                Err(e) => {
+                    tracing::error!(error = %e, "failed to serialize offspring genome — skipping persist (would otherwise store an empty genome)");
+                    continue;
+                }
+            };
+            let parent_json = match serde_json::to_string(&offspring.parent_ids) {
+                Ok(j) => j,
+                Err(e) => {
+                    tracing::error!(error = %e, "failed to serialize offspring parent_ids — skipping persist");
+                    continue;
+                }
+            };
             let fitness_json = serde_json::to_string(score).ok();
 
             let input = CreateBreedingResultInput {
