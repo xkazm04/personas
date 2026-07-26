@@ -13054,12 +13054,9 @@
         "verify_result": "{project}: تم التحقق من {checked}، وانحرفت {diverged}.",
         "verify_started": "جارٍ التحقق من الممارسات المعتمدة في {project}.",
         "decide_adopt": "اعتماد",
-        "decide_adopted": "تم الاعتماد — أصبح «{title}» معيارًا في مساحة العمل.",
         "decide_deprecate": "إيقاف",
-        "decide_deprecated": "تم الإيقاف — لم يعد «{title}» معيارًا.",
         "decide_reject": "رفض",
         "decide_reject_hint": "يتم تذكّر الممارسات المرفوضة، لذا لن يقترحها الحصاد مرة أخرى.",
-        "decide_rejected": "تم الرفض — لن يُقترح «{title}» مرة أخرى.",
         "detail_decided": "تاريخ القرار",
         "detail_durability": "المتانة",
         "detail_evidence": "الأدلة",
@@ -13086,7 +13083,10 @@
         "detail_nav_hint": "← → للتنقل",
         "detail_next": "الممارسة التالية",
         "detail_position": "{index} من {total}",
-        "detail_prev": "الممارسة السابقة"
+        "detail_prev": "الممارسة السابقة",
+        "decide_adopted": "تم قبول القرار",
+        "decide_deprecated": "تم إهمال القرار",
+        "decide_rejected": "تم رفض القرار"
       }
     },
     "doc_signing": {

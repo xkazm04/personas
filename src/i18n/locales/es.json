@@ -13054,12 +13054,9 @@
         "verify_result": "{project}: {checked} verificadas, {diverged} divergentes.",
         "verify_started": "Verificando las prácticas adoptadas de {project}.",
         "decide_adopt": "Adoptar",
-        "decide_adopted": "Adoptada: «{title}» ya es norma del espacio de trabajo.",
         "decide_deprecate": "Retirar",
-        "decide_deprecated": "Retirada: «{title}» ya no es norma.",
         "decide_reject": "Rechazar",
         "decide_reject_hint": "Las prácticas rechazadas se recuerdan, así que la recolección no volverá a proponerlas.",
-        "decide_rejected": "Rechazada: «{title}» no se volverá a proponer.",
         "detail_decided": "Decidido",
         "detail_durability": "Durabilidad",
         "detail_evidence": "Evidencia",
@@ -13086,7 +13083,10 @@
         "detail_nav_hint": "← → para mover",
         "detail_next": "Práctica siguiente",
         "detail_position": "{index} de {total}",
-        "detail_prev": "Práctica anterior"
+        "detail_prev": "Práctica anterior",
+        "decide_adopted": "Decisión aceptada",
+        "decide_deprecated": "Decisión retirada",
+        "decide_rejected": "Decisión rechazada"
       }
     },
     "doc_signing": {

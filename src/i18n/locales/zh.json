@@ -13054,12 +13054,9 @@
         "verify_result": "{project}：已验证 {checked} 项，{diverged} 项已偏离。",
         "verify_started": "正在验证 {project} 已采用的实践。",
         "decide_adopt": "采纳",
-        "decide_adopted": "已采纳 —— “{title}” 现已成为工作区规范。",
         "decide_deprecate": "弃用",
-        "decide_deprecated": "已弃用 —— “{title}” 不再是规范。",
         "decide_reject": "拒绝",
         "decide_reject_hint": "系统会记住被拒绝的实践，采集时不会再次提议。",
-        "decide_rejected": "已拒绝 —— “{title}” 不会再被提议。",
         "detail_decided": "决定时间",
         "detail_durability": "持久性",
         "detail_evidence": "证据",
@@ -13086,7 +13083,10 @@
         "detail_nav_hint": "← → 移动",
         "detail_next": "下一项实践",
         "detail_position": "{index} / {total}",
-        "detail_prev": "上一项实践"
+        "detail_prev": "上一项实践",
+        "decide_adopted": "决定已采纳",
+        "decide_deprecated": "决定已废弃",
+        "decide_rejected": "决定已拒绝"
       }
     },
     "doc_signing": {

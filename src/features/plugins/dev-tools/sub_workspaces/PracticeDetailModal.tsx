@@ -257,23 +257,28 @@ export function PracticeDetailModal({
           )}
         </div>
 
-        {/* `whitespace-nowrap` on every action keeps the icon and its label on
-            one line — without it a narrow viewport breaks the label under the
-            icon and the button reads as two rows. */}
+        {/* Icons go through Button's `icon` prop, NOT children. Passing both as
+            children puts them inside one <span>, where they reflow as inline
+            content — that is what split each button across two rows. The prop
+            renders them as separate flex items with the size's own gap. */}
         <div className="flex items-center gap-2 p-4 border-t border-primary/10">
           {pending && (
             <>
-              <Button onClick={() => decide('adopt')} disabled={busy} className="whitespace-nowrap">
-                <Check className="w-4 h-4 shrink-0" />
+              <Button
+                onClick={() => decide('adopt')}
+                disabled={busy}
+                icon={<Check className="w-4 h-4" />}
+                className="whitespace-nowrap"
+              >
                 {tw.decide_adopt}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => decide('reject')}
                 disabled={busy}
+                icon={<X className="w-4 h-4" />}
                 className="whitespace-nowrap"
               >
-                <X className="w-4 h-4 shrink-0" />
                 {tw.decide_reject}
               </Button>
               <span className="typo-caption text-muted-foreground ml-1 hidden lg:inline">
@@ -287,20 +292,20 @@ export function PracticeDetailModal({
                 <Button
                   onClick={() => { onRollout(practice); onClose(); }}
                   disabled={busy}
+                  icon={<Share2 className="w-4 h-4" />}
+                  iconRight={<ExternalLink className="w-3 h-3 opacity-60" />}
                   className="whitespace-nowrap"
                 >
-                  <Share2 className="w-4 h-4 shrink-0" />
                   {tw.rollout_dispatch}
-                  <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                 </Button>
               )}
               <Button
                 variant="ghost"
                 onClick={() => decide('deprecate')}
                 disabled={busy}
+                icon={<Ban className="w-4 h-4" />}
                 className="whitespace-nowrap"
               >
-                <Ban className="w-4 h-4 shrink-0" />
                 {tw.decide_deprecate}
               </Button>
             </>
