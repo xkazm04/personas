@@ -350,6 +350,15 @@ somePromise.catch(onFail);`,
   });
 }`,
     },
+    {
+      // inline handler that still delegates to the sanctioned helper for
+      // the breadcrumb, alongside other necessary recovery logic
+      code: `import { silentCatch } from "@/lib/silentCatch";
+somePromise.catch((err) => {
+  silentCatch("feature:context")(err);
+  cachedValue = null;
+});`,
+    },
   ],
   invalid: [
     {
