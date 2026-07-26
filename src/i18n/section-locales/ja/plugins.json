@@ -1241,12 +1241,9 @@
       "verify_result": "{project}: {checked} 件を検証、{diverged} 件が逸脱。",
       "verify_started": "{project} が導入したプラクティスを検証しています。",
       "decide_adopt": "採用",
-      "decide_adopted": "採用しました — 「{title}」はワークスペースの標準になりました。",
       "decide_deprecate": "非推奨",
-      "decide_deprecated": "非推奨にしました — 「{title}」は標準ではなくなりました。",
       "decide_reject": "却下",
       "decide_reject_hint": "却下した慣行は記録されるため、収集時に再び提案されることはありません。",
-      "decide_rejected": "却下しました — 「{title}」は再提案されません。",
       "detail_decided": "決定日",
       "detail_durability": "持続性",
       "detail_evidence": "根拠",
@@ -1269,7 +1266,14 @@
       "pulse_quiet": "まだ決定はありません",
       "pulse_rejected": "却下",
       "pulse_title": "パルス",
-      "pulse_window": "過去{days}日間"
+      "pulse_window": "過去{days}日間",
+      "detail_nav_hint": "← → で移動",
+      "detail_next": "次のプラクティス",
+      "detail_position": "{index} / {total}",
+      "detail_prev": "前のプラクティス",
+      "decide_adopted": "決定を承認",
+      "decide_deprecated": "決定を廃止",
+      "decide_rejected": "決定を却下"
     }
   },
   "doc_signing": {

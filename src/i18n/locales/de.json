@@ -6180,7 +6180,21 @@
         "reasoning_label": "Auto-Triage-Begründung",
         "tip_auto_triage": "Entschieden durch einen automatischen Evaluator im zweiten Durchlauf (auto_triage-Überprüfungsrichtlinie) — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen.",
         "tip_trust_llm": "Automatisch genehmigt durch die trust_llm-Überprüfungsrichtlinie dieser Funktion — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen."
-      }
+      },
+      "backlog_effort": "A",
+      "backlog_empty_subtitle": "Gescannte Ideen, die auf die Triage warten, erscheinen hier.",
+      "backlog_empty_title": "Keine Backlog-Kandidaten",
+      "backlog_impact": "I",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Gruppieren Sie Ihre Projekte in einem Arbeitsbereich, um eine gemeinsame Praxisbibliothek aufzubauen.",
+      "knowledge_empty_title": "Noch kein Arbeitsbereich",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Arbeitsbereich-Wissen",
+      "mode_reviews": "Manuelle Überprüfung",
+      "mode_switch_label": "Entscheidungstyp",
+      "backlog_effort_title": "Aufwand",
+      "backlog_impact_title": "Auswirkung",
+      "backlog_risk_title": "Risiko"
     },
     "messages_view": {
       "title": "Nachrichten",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: {checked} geprüft, {diverged} abgewichen.",
         "verify_started": "Übernommene Praktiken von {project} werden geprüft.",
         "decide_adopt": "Übernehmen",
-        "decide_adopted": "Übernommen – „{title}“ ist jetzt Standard im Workspace.",
         "decide_deprecate": "Ausmustern",
-        "decide_deprecated": "Ausgemustert – „{title}“ ist kein Standard mehr.",
         "decide_reject": "Ablehnen",
         "decide_reject_hint": "Abgelehnte Praktiken werden gemerkt, damit die Erfassung sie nicht erneut vorschlägt.",
-        "decide_rejected": "Abgelehnt – „{title}“ wird nicht erneut vorgeschlagen.",
         "detail_decided": "Entschieden",
         "detail_durability": "Beständigkeit",
         "detail_evidence": "Belege",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Noch keine Entscheidungen",
         "pulse_rejected": "abgelehnt",
         "pulse_title": "Puls",
-        "pulse_window": "Letzte {days} Tage"
+        "pulse_window": "Letzte {days} Tage",
+        "detail_nav_hint": "← → zum Wechseln",
+        "detail_next": "Nächste Praktik",
+        "detail_position": "{index} von {total}",
+        "detail_prev": "Vorherige Praktik",
+        "decide_adopted": "Entscheidung angenommen",
+        "decide_deprecated": "Entscheidung zurückgezogen",
+        "decide_rejected": "Entscheidung abgelehnt"
       }
     },
     "doc_signing": {

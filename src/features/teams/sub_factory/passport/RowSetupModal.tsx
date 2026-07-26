@@ -21,6 +21,7 @@ import { applicableDeployActions } from './improve/deployActions';
 import { useImprove } from './improve/ImproveContext';
 import { buildDimensionOnboardPrompt } from './onboardDispatch';
 import { dispatchRowToFleet, passportDispatchKey } from './passportFleet';
+import { dispatchSkillToRepo } from './skillPlacement';
 import { ROW_DIRECTIONS, buildDirectionPrompt } from './rowDirections';
 
 interface Direction {
@@ -100,12 +101,21 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
     // the terminal runs the skill's select rounds and WAITS for the operator.
     if (selected === GUIDED_ID) {
       setBusy(true);
+      // Guided run invokes /passport-onboard — place it into the target repo
+      // first (from the global library) so the slash command resolves there.
       listCredentials()
-        .then((creds) => dispatch(buildDimensionOnboardPrompt(
-          passport, raw, creds,
-          { key: rowKey, label: ROW_DIMENSION[rowKey] ?? rowLabel },
-          instruction,
-        )))
+        .then((creds) => dispatchSkillToRepo({
+          skillName: 'passport-onboard',
+          targetProjectId: raw.project.id,
+          targetRoot: raw.project.root_path,
+          dispatchKey: passportDispatchKey(rowKey, slug),
+          prompt: buildDimensionOnboardPrompt(
+            passport, raw, creds,
+            { key: rowKey, label: ROW_DIMENSION[rowKey] ?? rowLabel },
+            instruction,
+          ),
+        }))
+        .then(() => { setBusy(false); onDispatched(); onClose(); })
         .catch((e) => { setBusy(false); toastCatch('passport fleet deploy')(e); });
       return;
     }

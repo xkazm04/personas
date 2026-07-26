@@ -1241,12 +1241,9 @@
       "verify_result": "{project}: {checked} geprüft, {diverged} abgewichen.",
       "verify_started": "Übernommene Praktiken von {project} werden geprüft.",
       "decide_adopt": "Übernehmen",
-      "decide_adopted": "Übernommen – „{title}“ ist jetzt Standard im Workspace.",
       "decide_deprecate": "Ausmustern",
-      "decide_deprecated": "Ausgemustert – „{title}“ ist kein Standard mehr.",
       "decide_reject": "Ablehnen",
       "decide_reject_hint": "Abgelehnte Praktiken werden gemerkt, damit die Erfassung sie nicht erneut vorschlägt.",
-      "decide_rejected": "Abgelehnt – „{title}“ wird nicht erneut vorgeschlagen.",
       "detail_decided": "Entschieden",
       "detail_durability": "Beständigkeit",
       "detail_evidence": "Belege",
@@ -1269,7 +1266,14 @@
       "pulse_quiet": "Noch keine Entscheidungen",
       "pulse_rejected": "abgelehnt",
       "pulse_title": "Puls",
-      "pulse_window": "Letzte {days} Tage"
+      "pulse_window": "Letzte {days} Tage",
+      "detail_nav_hint": "← → zum Wechseln",
+      "detail_next": "Nächste Praktik",
+      "detail_position": "{index} von {total}",
+      "detail_prev": "Vorherige Praktik",
+      "decide_adopted": "Entscheidung angenommen",
+      "decide_deprecated": "Entscheidung zurückgezogen",
+      "decide_rejected": "Entscheidung abgelehnt"
     }
   },
   "doc_signing": {

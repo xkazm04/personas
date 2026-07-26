@@ -1241,12 +1241,9 @@
       "verify_result": "{project} : {checked} vérifiées, {diverged} divergentes.",
       "verify_started": "Vérification des pratiques adoptées de {project}.",
       "decide_adopt": "Adopter",
-      "decide_adopted": "Adoptée — « {title} » fait désormais référence dans l'espace de travail.",
       "decide_deprecate": "Retirer",
-      "decide_deprecated": "Retirée — « {title} » ne fait plus référence.",
       "decide_reject": "Rejeter",
       "decide_reject_hint": "Les pratiques rejetées sont mémorisées : la collecte ne les proposera plus.",
-      "decide_rejected": "Rejetée — « {title} » ne sera plus proposée.",
       "detail_decided": "Décidée",
       "detail_durability": "Durabilité",
       "detail_evidence": "Preuves",
@@ -1269,7 +1266,14 @@
       "pulse_quiet": "Aucune décision pour l'instant",
       "pulse_rejected": "rejeté",
       "pulse_title": "Pouls",
-      "pulse_window": "{days} derniers jours"
+      "pulse_window": "{days} derniers jours",
+      "detail_nav_hint": "← → pour déplacer",
+      "detail_next": "Pratique suivante",
+      "detail_position": "{index} sur {total}",
+      "detail_prev": "Pratique précédente",
+      "decide_adopted": "Décision acceptée",
+      "decide_deprecated": "Décision retirée",
+      "decide_rejected": "Décision rejetée"
     }
   },
   "doc_signing": {

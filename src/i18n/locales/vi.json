@@ -6180,7 +6180,21 @@
         "reasoning_label": "Lý luận tự động phân loại",
         "tip_auto_triage": "Được quyết định bởi bộ đánh giá tự động lần hai (chính sách đánh giá auto_triage) — đã bỏ qua hàng đợi đánh giá của bạn mà không có quyết định của con người.",
         "tip_trust_llm": "Được phê duyệt tự động bởi chính sách đánh giá trust_llm của khả năng này — đã bỏ qua hàng đợi đánh giá của bạn mà không có quyết định của con người."
-      }
+      },
+      "backlog_effort": "N",
+      "backlog_empty_subtitle": "Các ý tưởng đã quét đang chờ phân loại sẽ hiện ở đây.",
+      "backlog_empty_title": "Không có mục tồn đọng nào",
+      "backlog_impact": "T",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Nhóm các dự án của bạn vào một không gian làm việc để bắt đầu xây dựng thư viện thực hành dùng chung.",
+      "knowledge_empty_title": "Chưa có không gian làm việc",
+      "mode_backlog": "Tồn đọng",
+      "mode_knowledge": "Tri thức chung",
+      "mode_reviews": "Đánh giá thủ công",
+      "mode_switch_label": "Loại quyết định",
+      "backlog_effort_title": "Nỗ lực",
+      "backlog_impact_title": "Tác động",
+      "backlog_risk_title": "Rủi ro"
     },
     "messages_view": {
       "title": "Tin nhắn",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: đã xác minh {checked}, {diverged} sai lệch.",
         "verify_started": "Đang xác minh các thực hành đã áp dụng của {project}.",
         "decide_adopt": "Áp dụng",
-        "decide_adopted": "Đã áp dụng — \"{title}\" nay là chuẩn của không gian làm việc.",
         "decide_deprecate": "Ngừng dùng",
-        "decide_deprecated": "Đã ngừng dùng — \"{title}\" không còn là chuẩn.",
         "decide_reject": "Từ chối",
         "decide_reject_hint": "Các thực hành bị từ chối đều được ghi nhớ, nên quá trình thu thập sẽ không đề xuất lại.",
-        "decide_rejected": "Đã từ chối — \"{title}\" sẽ không được đề xuất lại.",
         "detail_decided": "Quyết định",
         "detail_durability": "Độ bền",
         "detail_evidence": "Bằng chứng",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Chưa có quyết định nào",
         "pulse_rejected": "đã từ chối",
         "pulse_title": "Nhịp",
-        "pulse_window": "{days} ngày qua"
+        "pulse_window": "{days} ngày qua",
+        "detail_nav_hint": "← → để di chuyển",
+        "detail_next": "Thực hành tiếp theo",
+        "detail_position": "{index} trên {total}",
+        "detail_prev": "Thực hành trước",
+        "decide_adopted": "Đã chấp nhận",
+        "decide_deprecated": "Đã ngừng dùng",
+        "decide_rejected": "Đã từ chối"
       }
     },
     "doc_signing": {

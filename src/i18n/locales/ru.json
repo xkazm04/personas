@@ -6180,7 +6180,21 @@
         "reasoning_label": "Обоснование авто-триажа",
         "tip_auto_triage": "Решение принято автоматическим вторичным оценщиком (политика проверки auto_triage) — ваша очередь проверки была пропущена без участия человека.",
         "tip_trust_llm": "Одобрено автоматически политикой trust_llm этой возможности — ваша очередь проверки была пропущена без участия человека."
-      }
+      },
+      "backlog_effort": "У",
+      "backlog_empty_subtitle": "Просканированные идеи, ожидающие сортировки, появятся здесь.",
+      "backlog_empty_title": "Нет кандидатов в бэклог",
+      "backlog_impact": "В",
+      "backlog_risk": "Р",
+      "knowledge_empty_subtitle": "Сгруппируйте свои проекты в рабочую область, чтобы начать создавать общую библиотеку практик.",
+      "knowledge_empty_title": "Пока нет рабочей области",
+      "mode_backlog": "Бэклог",
+      "mode_knowledge": "Знания области",
+      "mode_reviews": "Ручная проверка",
+      "mode_switch_label": "Тип решения",
+      "backlog_effort_title": "Усилие",
+      "backlog_impact_title": "Влияние",
+      "backlog_risk_title": "Риск"
     },
     "messages_view": {
       "title": "Сообщения",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: проверено — {checked}, отклонений — {diverged}.",
         "verify_started": "Проверка практик, внедрённых в {project}.",
         "decide_adopt": "Принять",
-        "decide_adopted": "Принято — «{title}» теперь стандарт рабочей области.",
         "decide_deprecate": "Отозвать",
-        "decide_deprecated": "Отозвано — «{title}» больше не является стандартом.",
         "decide_reject": "Отклонить",
         "decide_reject_hint": "Отклонённые практики запоминаются, поэтому сбор не предложит их снова.",
-        "decide_rejected": "Отклонено — «{title}» больше не будет предлагаться.",
         "detail_decided": "Решение",
         "detail_durability": "Долговечность",
         "detail_evidence": "Обоснование",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Пока нет решений",
         "pulse_rejected": "отклонено",
         "pulse_title": "Пульс",
-        "pulse_window": "За последние {days} дн."
+        "pulse_window": "За последние {days} дн.",
+        "detail_nav_hint": "← → для перехода",
+        "detail_next": "Следующая практика",
+        "detail_position": "{index} из {total}",
+        "detail_prev": "Предыдущая практика",
+        "decide_adopted": "Решение принято",
+        "decide_deprecated": "Решение отозвано",
+        "decide_rejected": "Решение отклонено"
       }
     },
     "doc_signing": {

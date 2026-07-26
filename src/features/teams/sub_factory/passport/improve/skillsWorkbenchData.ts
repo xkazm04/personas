@@ -19,6 +19,11 @@ import { useImproveActivityStore } from '@/stores/improveActivityStore';
 import { useImprove } from './ImproveContext';
 import { adoptTaskPrompt, adoptTaskTitle, shareTaskPrompt, shareTaskTitle, type AdoptItem } from './skillTasks';
 
+/** Skill adopt/share is always resolved by Sonnet (medium thinking is the
+ *  dev-runner default effort). Pinned here so the personalization/generalization
+ *  quality is consistent regardless of the app's default task model. */
+const SKILL_TASK_MODEL = 'claude-sonnet-5';
+
 export type WorkbenchMode = 'manage' | 'dispatch';
 export type ManageDirection = 'adopt' | 'share';
 /** Which single operation a lane offers — also the detail pane's action kind. */
@@ -166,7 +171,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     if (!src) return;
     const items: AdoptItem[] = [{ name: src.name, source: src.source }];
     try {
-      const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf));
+      const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
       addToast(`Claude is adopting “${name}” into ${raw.project.name} — customized for its codebase`, 'success');
     } catch (e) {
@@ -178,7 +183,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
   const runShare = useCallback(async (name: string) => {
     if (!engine || !raw) return;
     try {
-      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project));
+      const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
       addToast(`Claude is generalizing “${name}” into your library`, 'success');
     } catch (e) {

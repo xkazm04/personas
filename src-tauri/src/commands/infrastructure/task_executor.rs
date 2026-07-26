@@ -313,6 +313,10 @@ pub async fn dev_tools_execute_task(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     task_id: String,
+    // Optional model override for THIS run (e.g. skill adopt/share pins
+    // "claude-sonnet-5"). None keeps the dev-runner default (Sonnet). Effort
+    // stays the app-wide default (medium — see prompt::cli_args::DEFAULT_EFFORT).
+    model: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
@@ -369,6 +373,7 @@ pub async fn dev_tools_execute_task(
     let project_name = project.name.clone();
     let goal_id = task.goal_id.clone();
     let worktree_name = extract_worktree_name(task.session_id.as_deref());
+    let exec_model = model.unwrap_or_else(|| DEFAULT_DEV_TASK_MODEL.to_string());
 
     let app_handle_for_panic = app_handle.clone();
     let pool_for_panic = pool.clone();
@@ -391,6 +396,7 @@ pub async fn dev_tools_execute_task(
                 &root_path,
                 prompt_text,
                 worktree_name,
+                &exec_model,
             ) => res
         };
 
@@ -645,6 +651,7 @@ pub async fn dev_tools_start_batch(
                     &project.root_path,
                     prompt_text,
                     batch_worktree_name,
+                    DEFAULT_DEV_TASK_MODEL,
                 ) => res
             };
 
@@ -832,6 +839,11 @@ fn extract_worktree_name(session_id: Option<&str>) -> Option<String> {
         .map(|s| s.to_string())
 }
 
+/// Dev-runner default model — the app-wide headless Sonnet. A per-run override
+/// (e.g. skill adopt/share → "claude-sonnet-5") is threaded from
+/// `dev_tools_execute_task`; every other caller uses this.
+const DEFAULT_DEV_TASK_MODEL: &str = "claude-sonnet-4-6";
+
 async fn run_task_execution(
     app: &tauri::AppHandle,
     task_id: &str,
@@ -839,6 +851,7 @@ async fn run_task_execution(
     root_path: &str,
     prompt_text: String,
     worktree_name: Option<String>,
+    model: &str,
 ) -> Result<i32, AppError> {
     TASK_EXEC_JOBS.emit_line(app, task_id, "[Milestone] Starting task execution...");
 
@@ -859,7 +872,7 @@ async fn run_task_execution(
     let exec_dir = std::path::PathBuf::from(root_path);
     let mut child = crate::engine::cli_process::spawn_headless_claude(
         prompt_text,
-        "claude-sonnet-4-6",
+        model,
         &extra_args,
         Some(&exec_dir),
         true,
@@ -903,7 +916,7 @@ async fn run_task_execution(
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
         trigger_kind: "task_exec",
-        model: Some("claude-sonnet-4-6"),
+        model: Some(model),
         project_id: None,
         persona_id: None,
     };
@@ -1375,6 +1388,7 @@ async fn run_one_task_for_auto(
             &project.root_path,
             prompt_text,
             worktree_name,
+            DEFAULT_DEV_TASK_MODEL,
         ) => res
     };
 

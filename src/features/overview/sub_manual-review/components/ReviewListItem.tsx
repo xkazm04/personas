@@ -1,7 +1,7 @@
-import { ChevronRight, Cloud } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
@@ -107,42 +107,52 @@ interface InboxItemProps {
   onClick: () => void;
 }
 
+/**
+ * Renders through the SHARED `DecisionRow` — the same component the Dev Tools
+ * backlog and the Workspace Knowledge library use. This row's hierarchy
+ * (persona icon, heading-weight name, muted content line, subordinate meta) was
+ * the reference the shared component was generalized FROM, so adopting it
+ * changes nothing visually; it just means the three decision streams can no
+ * longer drift apart. The review-specific signals — severity glyph, status
+ * pill, cloud badge, auto-resolved badge — ride in the `meta` slot.
+ */
 export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
   const status = STATUS_COLORS[review.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending;
   const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
 
   return (
-    <button
-      onClick={onClick}
-      data-testid={`review-row-${review.id}`}
-      className={`w-full text-left px-3 py-2.5 border-b border-primary/[0.06] transition-colors group ${isActive ? 'bg-primary/[0.08] border-l-2 border-l-primary' : 'border-l-2 border-l-transparent hover:bg-white/[0.04]'
-        }`}
-    >
-      <div className="flex items-start gap-2.5">
-        <div className="flex-shrink-0 mt-0.5">
-          <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize={"lg"} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
-            <RelativeTime timestamp={review.created_at} className="typo-body text-foreground flex-shrink-0" />
-          </div>
-          <p className="typo-body text-foreground truncate mt-0.5">{review.content.slice(0, 80)}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <SeverityIndicator severity={review.severity} />
-            <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bg} ${status.text} ${status.border}`}>
-              {statusLabel}
-            </span>
-            {review.source === 'cloud' && (
-              <StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>
-                Cloud
-              </StatusBadge>
-            )}
-            <AutoResolvedBadge review={review} />
-          </div>
-        </div>
-        <ChevronRight className={`w-3.5 h-3.5 mt-1 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-foreground group-hover:text-muted-foreground/50'}`} />
-      </div>
-    </button>
+    <DecisionRow
+      record={{
+        id: review.id,
+        title: review.persona_name || 'Unknown',
+        summary: review.content.slice(0, 80),
+        timestamp: review.created_at,
+      }}
+      testId={`review-row-${review.id}`}
+      active={isActive}
+      onOpen={onClick}
+      leading={
+        <PersonaIcon
+          icon={review.persona_icon ?? null}
+          color={review.persona_color ?? null}
+          display="framed"
+          frameSize="lg"
+        />
+      }
+      meta={
+        <>
+          <SeverityIndicator severity={review.severity} />
+          <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bg} ${status.text} ${status.border}`}>
+            {statusLabel}
+          </span>
+          {review.source === 'cloud' && (
+            <StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>
+              Cloud
+            </StatusBadge>
+          )}
+          <AutoResolvedBadge review={review} />
+        </>
+      }
+    />
   );
 }

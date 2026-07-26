@@ -967,8 +967,13 @@ export const getBatchStatus = (batchId: string) =>
 
 // -- Task Execution (CLI-powered) -------------------------------------------
 
-export const executeTask = (taskId: string) =>
-  invoke<{ task_id: string }>("dev_tools_execute_task", { taskId });
+/**
+ * Execute a queued Dev-runner task. `model` optionally overrides the model for
+ * THIS run (e.g. skill adopt/share pins "claude-sonnet-5"); omit to keep the
+ * dev-runner default Sonnet. Effort stays the app-wide default (medium).
+ */
+export const executeTask = (taskId: string, model?: string) =>
+  invoke<{ task_id: string }>("dev_tools_execute_task", { taskId, model: model ?? null });
 
 export const startBatchExecution = (taskIds: string[], maxParallel?: number) =>
   invoke<{ batch_id: string; started: number }>("dev_tools_start_batch", { taskIds, maxParallel });

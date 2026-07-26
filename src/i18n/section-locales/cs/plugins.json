@@ -1241,12 +1241,9 @@
       "verify_result": "{project}: ověřeno {checked}, odchýleno {diverged}.",
       "verify_started": "Ověřují se převzaté postupy projektu {project}.",
       "decide_adopt": "Přijmout",
-      "decide_adopted": "Přijato – „{title}“ je nyní standardem pracovního prostoru.",
       "decide_deprecate": "Vyřadit",
-      "decide_deprecated": "Vyřazeno – „{title}“ už není standardem.",
       "decide_reject": "Odmítnout",
       "decide_reject_hint": "Odmítnuté postupy si systém pamatuje, takže je sběr znovu nenavrhne.",
-      "decide_rejected": "Odmítnuto – „{title}“ už nebude navrženo.",
       "detail_decided": "Rozhodnuto",
       "detail_durability": "Životnost",
       "detail_evidence": "Důkazy",
@@ -1269,7 +1266,14 @@
       "pulse_quiet": "Zatím žádná rozhodnutí",
       "pulse_rejected": "zamítnuto",
       "pulse_title": "Pulz",
-      "pulse_window": "Posledních {days} dní"
+      "pulse_window": "Posledních {days} dní",
+      "detail_nav_hint": "← → pro pohyb",
+      "detail_next": "Další postup",
+      "detail_position": "{index} z {total}",
+      "detail_prev": "Předchozí postup",
+      "decide_adopted": "Rozhodnutí přijato",
+      "decide_deprecated": "Rozhodnutí zrušeno",
+      "decide_rejected": "Rozhodnutí zamítnuto"
     }
   },
   "doc_signing": {

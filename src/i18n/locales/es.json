@@ -6180,7 +6180,21 @@
         "reasoning_label": "Razonamiento del auto-triaje",
         "tip_auto_triage": "Decidido por un evaluador automático de segunda pasada (política de revisión auto_triage) — omitió tu cola de revisión sin una decisión humana.",
         "tip_trust_llm": "Aprobado automáticamente por la política de revisión trust_llm de esta capacidad — omitió tu cola de revisión sin una decisión humana."
-      }
+      },
+      "backlog_effort": "E",
+      "backlog_empty_subtitle": "Las ideas escaneadas que esperan clasificación aparecerán aquí.",
+      "backlog_empty_title": "Sin candidatos en el backlog",
+      "backlog_impact": "I",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Agrupa tus proyectos en un espacio de trabajo para empezar a crear una biblioteca de prácticas compartida.",
+      "knowledge_empty_title": "Aún no hay espacio de trabajo",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Conocimiento del espacio",
+      "mode_reviews": "Revisión Manual",
+      "mode_switch_label": "Tipo de decisión",
+      "backlog_effort_title": "Esfuerzo",
+      "backlog_impact_title": "Impacto",
+      "backlog_risk_title": "Riesgo"
     },
     "messages_view": {
       "title": "Mensajes",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: {checked} verificadas, {diverged} divergentes.",
         "verify_started": "Verificando las prácticas adoptadas de {project}.",
         "decide_adopt": "Adoptar",
-        "decide_adopted": "Adoptada: «{title}» ya es norma del espacio de trabajo.",
         "decide_deprecate": "Retirar",
-        "decide_deprecated": "Retirada: «{title}» ya no es norma.",
         "decide_reject": "Rechazar",
         "decide_reject_hint": "Las prácticas rechazadas se recuerdan, así que la recolección no volverá a proponerlas.",
-        "decide_rejected": "Rechazada: «{title}» no se volverá a proponer.",
         "detail_decided": "Decidido",
         "detail_durability": "Durabilidad",
         "detail_evidence": "Evidencia",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Aún no hay decisiones",
         "pulse_rejected": "rechazado",
         "pulse_title": "Pulso",
-        "pulse_window": "Últimos {days} días"
+        "pulse_window": "Últimos {days} días",
+        "detail_nav_hint": "← → para mover",
+        "detail_next": "Práctica siguiente",
+        "detail_position": "{index} de {total}",
+        "detail_prev": "Práctica anterior",
+        "decide_adopted": "Decisión aceptada",
+        "decide_deprecated": "Decisión retirada",
+        "decide_rejected": "Decisión rechazada"
       }
     },
     "doc_signing": {

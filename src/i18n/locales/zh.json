@@ -6180,7 +6180,21 @@
         "reasoning_label": "自动分诊推理",
         "tip_auto_triage": "由自动第二轮评估器决定（auto_triage 审核策略）——已跳过你的审核队列，无需人工决策。",
         "tip_trust_llm": "由该能力的 trust_llm 审核策略自动批准——已跳过你的审核队列，无需人工决策。"
-      }
+      },
+      "backlog_effort": "投入",
+      "backlog_empty_subtitle": "已扫描、待分诊的想法将显示在这里。",
+      "backlog_empty_title": "暂无待办候选项",
+      "backlog_impact": "影响",
+      "backlog_risk": "风险",
+      "knowledge_empty_subtitle": "将您的项目分组到一个工作区，开始构建共享实践库。",
+      "knowledge_empty_title": "尚无工作区",
+      "mode_backlog": "待办事项",
+      "mode_knowledge": "共享知识",
+      "mode_reviews": "人工审核",
+      "mode_switch_label": "决策类型",
+      "backlog_effort_title": "工作量",
+      "backlog_impact_title": "影响",
+      "backlog_risk_title": "风险"
     },
     "messages_view": {
       "title": "消息",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}：已验证 {checked} 项，{diverged} 项已偏离。",
         "verify_started": "正在验证 {project} 已采用的实践。",
         "decide_adopt": "采纳",
-        "decide_adopted": "已采纳 —— “{title}” 现已成为工作区规范。",
         "decide_deprecate": "弃用",
-        "decide_deprecated": "已弃用 —— “{title}” 不再是规范。",
         "decide_reject": "拒绝",
         "decide_reject_hint": "系统会记住被拒绝的实践，采集时不会再次提议。",
-        "decide_rejected": "已拒绝 —— “{title}” 不会再被提议。",
         "detail_decided": "决定时间",
         "detail_durability": "持久性",
         "detail_evidence": "证据",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "尚无决定",
         "pulse_rejected": "已拒绝",
         "pulse_title": "脉动",
-        "pulse_window": "最近 {days} 天"
+        "pulse_window": "最近 {days} 天",
+        "detail_nav_hint": "← → 移动",
+        "detail_next": "下一项实践",
+        "detail_position": "{index} / {total}",
+        "detail_prev": "上一项实践",
+        "decide_adopted": "决定已采纳",
+        "decide_deprecated": "决定已废弃",
+        "decide_rejected": "决定已拒绝"
       }
     },
     "doc_signing": {

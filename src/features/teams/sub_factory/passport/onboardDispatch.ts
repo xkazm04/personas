@@ -95,7 +95,7 @@ const SHARED_TAIL = [
 
 export function buildOnboardPrompt(p: AppPassport, raw: ImproveRaw, creds: PersonaCredential[]): string {
   return [
-    'Invoke the passport-onboard skill (/passport-onboard) and run it in DISPATCHED mode with the context block below. If the skill is not available in this environment, say so and stop — do not improvise the flow.',
+    'The passport-onboard skill has just been installed into this repo (.claude/skills/passport-onboard). Invoke it (/passport-onboard) and run it in DISPATCHED mode with the context block below.',
     '',
     composeContextBlock(p, raw, creds),
     '',
@@ -114,7 +114,7 @@ export function buildDimensionOnboardPrompt(
   instruction?: string,
 ): string {
   return [
-    `Invoke the passport-onboard skill (/passport-onboard) and run it in DISPATCHED mode SCOPED to a single dimension: **${dimension.label}**. If the skill is not available in this environment, say so and stop — do not improvise the flow.`,
+    `The passport-onboard skill has just been installed into this repo (.claude/skills/passport-onboard). Invoke it (/passport-onboard) and run it in DISPATCHED mode SCOPED to a single dimension: **${dimension.label}**.`,
     '',
     'Scoped-mode rules: assess ONLY this dimension (inline — no group assessors); present ONE decision round of selects (Skip · path A · path B with exactly one Recommended, Other stays first-class) and WAIT for the operator — they are watching this terminal; execute exactly what they accept; re-assess; refresh ONLY this dimension in app-passport.json.',
     instruction?.trim() ? `Operator instructions for this run: ${instruction.trim()}` : '',

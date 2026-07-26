@@ -6180,7 +6180,21 @@
         "reasoning_label": "자동 트리아지 근거",
         "tip_auto_triage": "자동 2차 평가자(auto_triage 검토 정책)가 결정했습니다 — 사람의 판단 없이 검토 대기열을 건너뛰었습니다.",
         "tip_trust_llm": "이 기능의 trust_llm 검토 정책에 의해 자동 승인되었습니다 — 사람의 판단 없이 검토 대기열을 건너뛰었습니다."
-      }
+      },
+      "backlog_effort": "노력",
+      "backlog_empty_subtitle": "분류를 기다리는 스캔된 아이디어가 여기에 표시됩니다.",
+      "backlog_empty_title": "백로그 후보 없음",
+      "backlog_impact": "영향",
+      "backlog_risk": "위험",
+      "knowledge_empty_subtitle": "프로젝트를 워크스페이스로 그룹화하여 공유 실천 라이브러리 구축을 시작하세요.",
+      "knowledge_empty_title": "아직 워크스페이스가 없습니다",
+      "mode_backlog": "백로그",
+      "mode_knowledge": "공유 지식",
+      "mode_reviews": "수동 검토",
+      "mode_switch_label": "결정 유형",
+      "backlog_effort_title": "노력",
+      "backlog_impact_title": "영향",
+      "backlog_risk_title": "위험"
     },
     "messages_view": {
       "title": "메시지",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: {checked}건 검증, {diverged}건 이탈.",
         "verify_started": "{project}에 도입된 관행을 검증하는 중입니다.",
         "decide_adopt": "채택",
-        "decide_adopted": "채택됨 — '{title}'이(가) 이제 워크스페이스 표준입니다.",
         "decide_deprecate": "폐기",
-        "decide_deprecated": "폐기됨 — '{title}'은(는) 더 이상 표준이 아닙니다.",
         "decide_reject": "거부",
         "decide_reject_hint": "거부한 관행은 기억되므로 수집 시 다시 제안되지 않습니다.",
-        "decide_rejected": "거부됨 — '{title}'은(는) 다시 제안되지 않습니다.",
         "detail_decided": "결정일",
         "detail_durability": "지속성",
         "detail_evidence": "근거",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "아직 결정된 사항이 없습니다",
         "pulse_rejected": "반려",
         "pulse_title": "펄스",
-        "pulse_window": "최근 {days}일"
+        "pulse_window": "최근 {days}일",
+        "detail_nav_hint": "← → 로 이동",
+        "detail_next": "다음 사례",
+        "detail_position": "{total} 중 {index}",
+        "detail_prev": "이전 사례",
+        "decide_adopted": "결정 승인됨",
+        "decide_deprecated": "결정 폐기됨",
+        "decide_rejected": "결정 거부됨"
       }
     },
     "doc_signing": {

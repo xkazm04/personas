@@ -6180,7 +6180,21 @@
         "reasoning_label": "Alasan auto-triage",
         "tip_auto_triage": "Diputuskan oleh evaluator pass kedua otomatis (kebijakan ulasan auto_triage) — melewati antrean ulasan Anda tanpa keputusan manusia.",
         "tip_trust_llm": "Disetujui otomatis oleh kebijakan ulasan trust_llm kapabilitas ini — melewati antrean ulasan Anda tanpa keputusan manusia."
-      }
+      },
+      "backlog_effort": "U",
+      "backlog_empty_subtitle": "Ide yang dipindai dan menunggu triase akan muncul di sini.",
+      "backlog_empty_title": "Tidak ada kandidat backlog",
+      "backlog_impact": "D",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Kelompokkan proyek Anda ke dalam ruang kerja untuk mulai membangun pustaka praktik bersama.",
+      "knowledge_empty_title": "Belum ada ruang kerja",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Pengetahuan Ruang Kerja",
+      "mode_reviews": "Ulasan Manual",
+      "mode_switch_label": "Jenis keputusan",
+      "backlog_effort_title": "Upaya",
+      "backlog_impact_title": "Dampak",
+      "backlog_risk_title": "Risiko"
     },
     "messages_view": {
       "title": "Pesan",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: {checked} terverifikasi, {diverged} menyimpang.",
         "verify_started": "Memverifikasi praktik yang diadopsi {project}.",
         "decide_adopt": "Adopsi",
-        "decide_adopted": "Diadopsi — \"{title}\" kini menjadi standar ruang kerja.",
         "decide_deprecate": "Usangkan",
-        "decide_deprecated": "Diusangkan — \"{title}\" bukan lagi standar.",
         "decide_reject": "Tolak",
         "decide_reject_hint": "Praktik yang ditolak akan diingat, sehingga pemanenan tidak akan mengusulkannya lagi.",
-        "decide_rejected": "Ditolak — \"{title}\" tidak akan diusulkan lagi.",
         "detail_decided": "Diputuskan",
         "detail_durability": "Ketahanan",
         "detail_evidence": "Bukti",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Belum ada keputusan",
         "pulse_rejected": "ditolak",
         "pulse_title": "Denyut",
-        "pulse_window": "{days} hari terakhir"
+        "pulse_window": "{days} hari terakhir",
+        "detail_nav_hint": "← → untuk pindah",
+        "detail_next": "Praktik berikutnya",
+        "detail_position": "{index} dari {total}",
+        "detail_prev": "Praktik sebelumnya",
+        "decide_adopted": "Keputusan diterima",
+        "decide_deprecated": "Keputusan dihentikan",
+        "decide_rejected": "Keputusan ditolak"
       }
     },
     "doc_signing": {

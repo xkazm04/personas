@@ -6377,7 +6377,21 @@
       "delete_all": "Delete all",
       "delete_all_confirm_title": "Delete all reviews?",
       "delete_all_confirm_body": "This permanently deletes all {count} reviews. This cannot be undone.",
-      "delete_all_confirm_cta": "Delete all"
+      "delete_all_confirm_cta": "Delete all",
+      "mode_reviews": "Manual Review",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Workspace Knowledge",
+      "mode_switch_label": "Decision type",
+      "backlog_empty_title": "No backlog candidates",
+      "backlog_empty_subtitle": "Scanned ideas awaiting triage will appear here.",
+      "backlog_effort": "E",
+      "backlog_impact": "I",
+      "backlog_risk": "R",
+      "knowledge_empty_title": "No workspace yet",
+      "knowledge_empty_subtitle": "Group your projects into a workspace to start building a shared practice library.",
+      "backlog_effort_title": "Effort",
+      "backlog_impact_title": "Impact",
+      "backlog_risk_title": "Risk"
     },
     "messages_view": {
       "title": "Messages",
@@ -13341,9 +13355,9 @@
         "decide_reject": "Reject",
         "decide_deprecate": "Deprecate",
         "decide_reject_hint": "Rejected practices are remembered, so harvesting won't re-propose them.",
-        "decide_adopted": "Adopted — \"{title}\" is now workspace canon.",
-        "decide_rejected": "Rejected — \"{title}\" won't be proposed again.",
-        "decide_deprecated": "Deprecated — \"{title}\" is no longer canon.",
+        "decide_adopted": "Decision accepted",
+        "decide_rejected": "Decision rejected",
+        "decide_deprecated": "Decision deprecated",
         "detail_evidence": "Evidence",
         "detail_evidence_count": "{count} projects",
         "detail_source": "Source",
@@ -13366,7 +13380,11 @@
         "pulse_harvested": "harvested",
         "pulse_quiet": "No decisions yet",
         "pulse_pending": "{count} awaiting your review",
-        "pulse_and_more": "+{count} more"
+        "pulse_and_more": "+{count} more",
+        "detail_prev": "Previous practice",
+        "detail_next": "Next practice",
+        "detail_position": "{index} of {total}",
+        "detail_nav_hint": "← → to move"
       }
     },
     "doc_signing": {

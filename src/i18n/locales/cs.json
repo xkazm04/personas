@@ -6180,7 +6180,21 @@
         "reasoning_label": "Odůvodnění auto-triage",
         "tip_auto_triage": "Rozhodnuto automatickým hodnotitelem druhého průchodu (zásada revize auto_triage) — přeskočilo vaši frontu revizí bez lidského rozhodnutí.",
         "tip_trust_llm": "Automaticky schváleno zásadou revize trust_llm této schopnosti — přeskočilo vaši frontu revizí bez lidského rozhodnutí."
-      }
+      },
+      "backlog_effort": "Ú",
+      "backlog_empty_subtitle": "Naskenované nápady čekající na roztřídění se zde zobrazí.",
+      "backlog_empty_title": "Žádné položky v backlogu",
+      "backlog_impact": "D",
+      "backlog_risk": "R",
+      "knowledge_empty_subtitle": "Seskupte své projekty do pracovního prostoru a začněte budovat sdílenou knihovnu postupů.",
+      "knowledge_empty_title": "Zatím žádný pracovní prostor",
+      "mode_backlog": "Backlog",
+      "mode_knowledge": "Znalosti prostoru",
+      "mode_reviews": "Ruční kontrola",
+      "mode_switch_label": "Typ rozhodnutí",
+      "backlog_effort_title": "Úsilí",
+      "backlog_impact_title": "Dopad",
+      "backlog_risk_title": "Riziko"
     },
     "messages_view": {
       "title": "Zprávy",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: ověřeno {checked}, odchýleno {diverged}.",
         "verify_started": "Ověřují se převzaté postupy projektu {project}.",
         "decide_adopt": "Přijmout",
-        "decide_adopted": "Přijato – „{title}“ je nyní standardem pracovního prostoru.",
         "decide_deprecate": "Vyřadit",
-        "decide_deprecated": "Vyřazeno – „{title}“ už není standardem.",
         "decide_reject": "Odmítnout",
         "decide_reject_hint": "Odmítnuté postupy si systém pamatuje, takže je sběr znovu nenavrhne.",
-        "decide_rejected": "Odmítnuto – „{title}“ už nebude navrženo.",
         "detail_decided": "Rozhodnuto",
         "detail_durability": "Životnost",
         "detail_evidence": "Důkazy",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "Zatím žádná rozhodnutí",
         "pulse_rejected": "zamítnuto",
         "pulse_title": "Pulz",
-        "pulse_window": "Posledních {days} dní"
+        "pulse_window": "Posledních {days} dní",
+        "detail_nav_hint": "← → pro pohyb",
+        "detail_next": "Další postup",
+        "detail_position": "{index} z {total}",
+        "detail_prev": "Předchozí postup",
+        "decide_adopted": "Rozhodnutí přijato",
+        "decide_deprecated": "Rozhodnutí zrušeno",
+        "decide_rejected": "Rozhodnutí zamítnuto"
       }
     },
     "doc_signing": {

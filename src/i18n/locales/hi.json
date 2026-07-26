@@ -6180,7 +6180,21 @@
         "reasoning_label": "स्वतः-ट्रायज तर्क",
         "tip_auto_triage": "एक स्वचालित दूसरे-पास मूल्यांकनकर्ता (auto_triage समीक्षा नीति) द्वारा तय किया गया — इसने मानव निर्णय के बिना आपकी समीक्षा कतार को छोड़ दिया।",
         "tip_trust_llm": "इस क्षमता की trust_llm समीक्षा नीति द्वारा स्वचालित रूप से अनुमोदित — इसने मानव निर्णय के बिना आपकी समीक्षा कतार को छोड़ दिया।"
-      }
+      },
+      "backlog_effort": "प्रयास",
+      "backlog_empty_subtitle": "ट्राइएज की प्रतीक्षा कर रहे स्कैन किए गए विचार यहां दिखाई देंगे।",
+      "backlog_empty_title": "कोई बैकलॉग उम्मीदवार नहीं",
+      "backlog_impact": "प्रभाव",
+      "backlog_risk": "जोखिम",
+      "knowledge_empty_subtitle": "साझा अभ्यास लाइब्रेरी बनाना शुरू करने के लिए अपनी परियोजनाओं को एक वर्कस्पेस में समूहित करें।",
+      "knowledge_empty_title": "अभी तक कोई वर्कस्पेस नहीं",
+      "mode_backlog": "बैकलॉग",
+      "mode_knowledge": "वर्कस्पेस ज्ञान",
+      "mode_reviews": "मैन्युअल समीक्षा",
+      "mode_switch_label": "निर्णय प्रकार",
+      "backlog_effort_title": "प्रयास",
+      "backlog_impact_title": "प्रभाव",
+      "backlog_risk_title": "जोखिम"
     },
     "messages_view": {
       "title": "संदेश",
@@ -13069,12 +13083,9 @@
         "verify_result": "{project}: {checked} सत्यापित, {diverged} विचलित।",
         "verify_started": "{project} की अपनाई गई प्रथाओं का सत्यापन हो रहा है।",
         "decide_adopt": "अपनाएँ",
-        "decide_adopted": "अपनाया गया — \"{title}\" अब वर्कस्पेस का मानक है।",
         "decide_deprecate": "अप्रचलित",
-        "decide_deprecated": "अप्रचलित किया गया — \"{title}\" अब मानक नहीं है।",
         "decide_reject": "अस्वीकारें",
         "decide_reject_hint": "अस्वीकृत प्रथाएँ याद रखी जाती हैं, इसलिए संग्रहण उन्हें दोबारा प्रस्तावित नहीं करेगा।",
-        "decide_rejected": "अस्वीकृत — \"{title}\" दोबारा प्रस्तावित नहीं किया जाएगा।",
         "detail_decided": "निर्णय",
         "detail_durability": "टिकाऊपन",
         "detail_evidence": "प्रमाण",
@@ -13097,7 +13108,14 @@
         "pulse_quiet": "अभी तक कोई निर्णय नहीं",
         "pulse_rejected": "अस्वीकृत",
         "pulse_title": "पल्स",
-        "pulse_window": "पिछले {days} दिन"
+        "pulse_window": "पिछले {days} दिन",
+        "detail_nav_hint": "← → ले जाने हेतु",
+        "detail_next": "अगली प्रथा",
+        "detail_position": "{total} में से {index}",
+        "detail_prev": "पिछली प्रथा",
+        "decide_adopted": "निर्णय स्वीकृत",
+        "decide_deprecated": "निर्णय वापस लिया",
+        "decide_rejected": "निर्णय अस्वीकृत"
       }
     },
     "doc_signing": {

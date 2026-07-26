@@ -95,6 +95,27 @@ export const STATUS_RANK: Record<KnowledgeStatus, number> = {
   rejected: 4,
 };
 
+// -- review queue ------------------------------------------------------------
+
+/**
+ * Step a review queue by ±1, skipping ids whose row has since disappeared
+ * (deleted from another surface) instead of landing on an empty modal.
+ *
+ * Returns `null` when the step falls off either end — the caller closes rather
+ * than clamping, because a reviewer who adjudicates the last item wants the
+ * queue to end, not to sit on a row they just decided.
+ */
+export function nextQueueIndex(
+  queue: readonly string[],
+  index: number,
+  delta: -1 | 1,
+  exists: (id: string) => boolean,
+): number | null {
+  let next = index + delta;
+  while (next >= 0 && next < queue.length && !exists(queue[next]!)) next += delta;
+  return next >= 0 && next < queue.length ? next : null;
+}
+
 // -- topic tree (derived, arbitrary depth) -----------------------------------
 
 export interface TopicNode {

@@ -417,7 +417,21 @@
       "reasoning_label": "Lý luận tự động phân loại",
       "tip_auto_triage": "Được quyết định bởi bộ đánh giá tự động lần hai (chính sách đánh giá auto_triage) — đã bỏ qua hàng đợi đánh giá của bạn mà không có quyết định của con người.",
       "tip_trust_llm": "Được phê duyệt tự động bởi chính sách đánh giá trust_llm của khả năng này — đã bỏ qua hàng đợi đánh giá của bạn mà không có quyết định của con người."
-    }
+    },
+    "backlog_effort": "N",
+    "backlog_empty_subtitle": "Các ý tưởng đã quét đang chờ phân loại sẽ hiện ở đây.",
+    "backlog_empty_title": "Không có mục tồn đọng nào",
+    "backlog_impact": "T",
+    "backlog_risk": "R",
+    "knowledge_empty_subtitle": "Nhóm các dự án của bạn vào một không gian làm việc để bắt đầu xây dựng thư viện thực hành dùng chung.",
+    "knowledge_empty_title": "Chưa có không gian làm việc",
+    "mode_backlog": "Tồn đọng",
+    "mode_knowledge": "Tri thức chung",
+    "mode_reviews": "Đánh giá thủ công",
+    "mode_switch_label": "Loại quyết định",
+    "backlog_effort_title": "Nỗ lực",
+    "backlog_impact_title": "Tác động",
+    "backlog_risk_title": "Rủi ro"
   },
   "messages_view": {
     "title": "Tin nhắn",
