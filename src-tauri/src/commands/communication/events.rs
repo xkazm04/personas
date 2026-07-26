@@ -166,7 +166,7 @@ pub fn create_subscription(
     let trigger_input = CreateTriggerInput {
         persona_id: input.persona_id.clone(),
         trigger_type: "event_listener".into(),
-        config: Some(serde_json::to_string(&config).unwrap_or_default()),
+        config: Some(serde_json::to_string(&config)?),
         enabled: input.enabled,
         use_case_id: input.use_case_id.clone(),
     };

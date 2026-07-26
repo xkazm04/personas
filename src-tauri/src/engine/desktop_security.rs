@@ -596,8 +596,7 @@ pub fn check_permission(
 
     if !manifest.capabilities.contains(capability) {
         return Err(AppError::Validation(format!(
-            "Desktop connector '{connector_name}' does not declare capability '{}'",
-            serde_json::to_string(capability).unwrap_or_default()
+            "Desktop connector '{connector_name}' does not declare capability '{capability:?}'"
         )));
     }
 
