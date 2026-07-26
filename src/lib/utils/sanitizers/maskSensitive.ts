@@ -5,6 +5,8 @@
  * - sanitizeErrorMessage(): strips file paths, IPs, and internal hostnames from errors
  */
 
+import { silentCatch } from '@/lib/silentCatch';
+
 const SENSITIVE_KEY_RE =
   /^(password|passwd|secret|token|api_key|apikey|api[-_]?secret|access[-_]?key|auth|authorization|credential|private[-_]?key|client[-_]?secret|refresh[-_]?token|access[-_]?token|bearer|session[-_]?id|cookie|x[-_]?api[-_]?key|connection[-_]?string|dsn)$/i;
 
@@ -100,7 +102,8 @@ export function sanitizeErrorMessage(msg: string): string {
     try {
       const u = new URL(match);
       safe = `${u.protocol}//${u.host}${u.pathname}`;
-    } catch {
+    } catch (err) {
+      silentCatch('maskSensitive:sanitizeErrorMessage')(err);
       // Not a parseable URL despite matching the loose regex; leave as-is
       // and let the remaining passes handle it.
     }

@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { compileReport, type ReportSynthesis } from './compileReport';
 import { buildSynthesisPrompt } from './buildSynthesisPrompt';
@@ -189,8 +189,8 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
       // silently lost the moment the drawer unmounts.
       try {
         localStorage.setItem(`research-lab:synthesis:${report.id}`, JSON.stringify(parsed));
-      } catch {
-        /* storage unavailable/full — synthesis still lives in state this session */
+      } catch (err) {
+        silentCatch('ReportPreviewDrawer:persistSynthesis')(err);
       }
       addToast('Abstract & Discussion synthesized', 'success');
     } catch (err) {

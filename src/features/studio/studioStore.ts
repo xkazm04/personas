@@ -246,7 +246,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         beginLivenessWatch(id);
         return;
       }
-    } catch {
+    } catch (err) {
+      silentCatch('studioStore:attachOrStart')(err);
       /* not running / transient — fall through to a cold start */
     }
     await start(id);
@@ -485,7 +486,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             set({ activeId: activeTabId });
             persistTabs();
           }
-        } catch {
+        } catch (err) {
+          silentCatch('studioStore:rehydrate')(err);
           /* projects list unavailable — leave Studio blank rather than crash */
         }
       })();

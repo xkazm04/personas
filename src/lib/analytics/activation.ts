@@ -14,6 +14,7 @@
  * content, prompts, or credentials are ever attached.
  */
 import { getAnalyticsSink } from './sink';
+import { silentCatch } from '@/lib/silentCatch';
 
 const INSTALL_ID_KEY = 'personas.install_id';
 const REACHED_KEY = 'personas.activation_reached';
@@ -51,8 +52,8 @@ function ls(): Storage | null {
 function randomId(): string {
   try {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-  } catch {
-    /* fall through */
+  } catch (err) {
+    silentCatch('activation:randomId')(err);
   }
   // Fallback: time-free random (Date.now is unavailable in some sandboxes).
   return 'inst-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
@@ -71,8 +72,8 @@ export function getInstallId(): string {
     id = randomId();
     try {
       store.setItem(INSTALL_ID_KEY, id);
-    } catch {
-      /* best-effort */
+    } catch (err) {
+      silentCatch('activation:getInstallId')(err);
     }
   }
   return id;
@@ -96,8 +97,8 @@ function writeReached(reached: Set<string>): void {
   if (!store) return;
   try {
     store.setItem(REACHED_KEY, JSON.stringify([...reached]));
-  } catch {
-    /* best-effort */
+  } catch (err) {
+    silentCatch('activation:writeReached')(err);
   }
 }
 
@@ -124,8 +125,8 @@ export function markActivation(step: ActivationStep): boolean {
   writeReached(reached);
   try {
     getAnalyticsSink().conversion({ step, ordinal: ordinalOf(step), installId: getInstallId() });
-  } catch {
-    /* sink failures must never break the calling flow */
+  } catch (err) {
+    silentCatch('activation:markActivation')(err);
   }
   // A referred install is only credited once it reaches a real milestone.
   recordReferralOnce();
@@ -150,8 +151,8 @@ export function recordReferralOnce(): void {
       const { recordReferral } = await import('@/api/agents/personas');
       await recordReferral(referrer, getInstallId());
       referralRecorded = true;
-    } catch {
-      /* best-effort — retried on the next activation */
+    } catch (err) {
+      silentCatch('activation:recordReferralOnce')(err);
     }
   })();
 }
@@ -168,8 +169,8 @@ export function captureReferrerOnce(code: string): void {
   if (!store) return;
   try {
     if (!store.getItem(REFERRER_KEY)) store.setItem(REFERRER_KEY, code);
-  } catch {
-    /* best-effort */
+  } catch (err) {
+    silentCatch('activation:captureReferrerOnce')(err);
   }
 }
 
