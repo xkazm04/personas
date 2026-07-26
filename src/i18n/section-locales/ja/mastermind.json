@@ -83,5 +83,6 @@
   "dim_cat_product": "プロダクト",
   "dim_cat_summary": "{total} 件中 {solid} 件が接続済み",
   "datalinks_title": "連携データプロジェクト",
-  "support_title": "サポートチャネル"
+  "support_title": "サポートチャネル",
+  "persona_open": "このペルソナの作業中の画面を開く"
 }

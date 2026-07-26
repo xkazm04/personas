@@ -18586,5 +18586,6 @@ export type Translations = {
     dim_cat_summary: string;
     datalinks_title: string;
     support_title: string;
+    persona_open: string;
   };
 };

@@ -83,5 +83,6 @@
   "dim_cat_product": "Produkt",
   "dim_cat_summary": "zapojeno {solid} z {total}",
   "datalinks_title": "Propojené datové projekty",
-  "support_title": "Kanály podpory"
+  "support_title": "Kanály podpory",
+  "persona_open": "Otevřít, kde tato persona pracuje"
 }

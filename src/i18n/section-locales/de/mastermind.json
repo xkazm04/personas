@@ -83,5 +83,6 @@
   "dim_cat_product": "Produkt",
   "dim_cat_summary": "{solid} von {total} angebunden",
   "datalinks_title": "Verknüpfte Datenprojekte",
-  "support_title": "Supportkanäle"
+  "support_title": "Supportkanäle",
+  "persona_open": "Öffnen, wo dieses Persona arbeitet"
 }

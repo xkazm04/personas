@@ -83,5 +83,6 @@
   "dim_cat_product": "Produk",
   "dim_cat_summary": "{solid} dari {total} terhubung",
   "datalinks_title": "Proyek data terkait",
-  "support_title": "Kanal dukungan"
+  "support_title": "Kanal dukungan",
+  "persona_open": "Buka tempat persona ini bekerja"
 }

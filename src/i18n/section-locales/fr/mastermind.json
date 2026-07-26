@@ -83,5 +83,6 @@
   "dim_cat_product": "Produit",
   "dim_cat_summary": "{solid} sur {total} raccordés",
   "datalinks_title": "Projets de données liés",
-  "support_title": "Canaux de support"
+  "support_title": "Canaux de support",
+  "persona_open": "Ouvrir là où ce persona travaille"
 }

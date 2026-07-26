@@ -18579,6 +18579,7 @@
     "dim_cat_product": "المنتج",
     "dim_cat_summary": "{solid} من {total} مُفعّل",
     "datalinks_title": "مشاريع البيانات المرتبطة",
-    "support_title": "قنوات الدعم"
+    "support_title": "قنوات الدعم",
+    "persona_open": "افتح المكان الذي تعمل فيه هذه الشخصية"
   }
 }

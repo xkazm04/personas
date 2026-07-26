@@ -16,11 +16,9 @@ import { ContextDataPreview } from '@/features/overview/sub_manual-review/compon
 import { getUseCases } from '@/features/agents/sub_use_cases/libs/useCaseHelpers';
 import { toDisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 import { MonitorCapabilities } from './MonitorCapabilities';
-import { useSystemStore } from '@/stores/systemStore';
-import { useAgentStore } from '@/stores/agentStore';
-import type { ManualReviewItem, SidebarSection, DevToolsTab, PluginTab, TeamsTab } from '@/lib/types/types';
+import { navigateToProcess } from './navigateToProcess';
+import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
 import {
   SEVERITY_META, severityBucket, severityLabel, processStatusMeta, processStatusLabel, elapsedStr,
@@ -37,33 +35,6 @@ interface MonitorDrawerProps {
   onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void;
   onMarkRead: (id: string) => void;
   onClose: () => void;
-}
-
-/** Navigate to the surface a process points at, then dismiss the Monitor. */
-function navigateToProcess(proc: ActiveProcess, dismiss: () => void) {
-  if (!proc.navigateTo) return;
-  const { section, tab, personaId, chatSessionId } = proc.navigateTo;
-  const system = useSystemStore.getState();
-  system.setSidebarSection(section as SidebarSection);
-  if (tab) {
-    if (section === 'personas') {
-      system.setEditorTab(tab as Parameters<typeof system.setEditorTab>[0]);
-    } else if (section === 'plugins') {
-      system.setPluginTab('dev-tools' as PluginTab);
-      system.setDevToolsTab(tab as DevToolsTab);
-    } else if (section === 'teams') {
-      system.setTeamsTab(tab as TeamsTab);
-    } else {
-      system.setTemplateTab(tab as 'n8n' | 'generated');
-    }
-  }
-  if (personaId) {
-    useAgentStore.getState().selectPersona(personaId);
-    if (chatSessionId && tab === 'chat') {
-      void useAgentStore.getState().restoreChatSession(personaId, chatSessionId);
-    }
-  }
-  dismiss();
 }
 
 export function MonitorDrawer({

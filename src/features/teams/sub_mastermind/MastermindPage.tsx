@@ -17,6 +17,7 @@ import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
@@ -56,7 +57,7 @@ import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/l
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
-import { PersonaListPopover } from './lib/PersonaListPopover';
+import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode } from './lib/types';
@@ -333,6 +334,38 @@ function MastermindInner() {
     return m;
   }, [agentPersonas, activeProcesses, projects]);
 
+  // The popover needs more than the names the badge counts: live status,
+  // elapsed time, and whether the process declares somewhere to navigate. Kept
+  // as a separate map (like kpiListByProject) so `Island.personasRunning` stays
+  // the plain name list the scene model and the render cache are built on.
+  const personaRowsByProject = useMemo(() => {
+    const byId = new Map(agentPersonas.map((p) => [p.id, p]));
+    const rowsByTeam = new Map<string, PersonaRow[]>();
+    const seen = new Set<string>();
+    for (const proc of Object.values(activeProcesses)) {
+      if (proc.status !== 'running' || !proc.personaId || seen.has(proc.personaId)) continue;
+      seen.add(proc.personaId);
+      const persona = byId.get(proc.personaId);
+      const team = persona?.home_team_id;
+      if (!persona || !team) continue;
+      const row: PersonaRow = {
+        personaId: proc.personaId,
+        name: persona.name,
+        status: proc.status,
+        startedAt: proc.startedAt,
+        navigable: Boolean(proc.navigateTo),
+      };
+      const list = rowsByTeam.get(team);
+      if (list) list.push(row);
+      else rowsByTeam.set(team, [row]);
+    }
+    const m = new Map<string, PersonaRow[]>();
+    for (const proj of projects) {
+      if (proj.team_id && rowsByTeam.has(proj.team_id)) m.set(proj.id, rowsByTeam.get(proj.team_id)!);
+    }
+    return m;
+  }, [agentPersonas, activeProcesses, projects]);
+
   const ideaScanAt = useMemo(() => {
     const m = new Map<string, string | null>();
     for (const [slug, rows] of scans) m.set(slug, rows[0]?.created_at ?? null);
@@ -511,6 +544,21 @@ function MastermindInner() {
     setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
   };
 
+  // Persona rows for one island. Demo islands have names but no processes
+  // behind them, so they degrade to inert name-only rows.
+  const personaRows = (slug: string): PersonaRow[] => {
+    const live = personaRowsByProject.get(slug);
+    if (live) return live;
+    const names = positioned.islands.find((i) => i.slug === slug)?.personasRunning ?? EMPTY_NAMES;
+    return names.map((name) => ({ personaId: name, name, status: 'running', startedAt: null, navigable: false }));
+  };
+
+  // Row click → the process's own destination, through the Monitor's switch.
+  const openPersona = (personaId: string) => {
+    const proc = Object.values(activeProcesses).find((p) => p.personaId === personaId && p.navigateTo);
+    if (proc) navigateToProcess(proc, () => setPersonaMenu(null));
+  };
+
   // Island context-menu "Open terminal": a project can host one when it's a real
   // (non-demo) project with a folder path. slug === dev-tools project id.
   const canOpenTerminal = useCallback(
@@ -669,9 +717,10 @@ function MastermindInner() {
 
       {personaMenu && (
         <PersonaListPopover
-          names={positioned.islands.find((i) => i.slug === personaMenu.slug)?.personasRunning ?? []}
+          rows={personaRows(personaMenu.slug)}
           x={personaMenu.x}
           y={personaMenu.y}
+          onOpen={openPersona}
           onClose={() => setPersonaMenu(null)}
         />
       )}

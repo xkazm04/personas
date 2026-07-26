@@ -83,5 +83,6 @@
   "dim_cat_product": "제품",
   "dim_cat_summary": "{total}개 중 {solid}개 연결됨",
   "datalinks_title": "연결된 데이터 프로젝트",
-  "support_title": "지원 채널"
+  "support_title": "지원 채널",
+  "persona_open": "이 페르소나가 작업 중인 화면 열기"
 }

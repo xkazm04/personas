@@ -18579,6 +18579,7 @@
     "dim_cat_product": "Sản phẩm",
     "dim_cat_summary": "đã nối {solid} trên {total}",
     "datalinks_title": "Dự án dữ liệu liên kết",
-    "support_title": "Kênh hỗ trợ"
+    "support_title": "Kênh hỗ trợ",
+    "persona_open": "Mở nơi persona này đang làm việc"
   }
 }

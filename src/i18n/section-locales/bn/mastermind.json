@@ -83,5 +83,6 @@
   "dim_cat_product": "পণ্য",
   "dim_cat_summary": "{total}-এর মধ্যে {solid}টি যুক্ত",
   "datalinks_title": "সংযুক্ত ডেটা প্রকল্প",
-  "support_title": "সহায়তা চ্যানেল"
+  "support_title": "সহায়তা চ্যানেল",
+  "persona_open": "এই পার্সোনা যেখানে কাজ করছে সেখানে খুলুন"
 }

@@ -18579,6 +18579,7 @@
     "dim_cat_product": "Product",
     "dim_cat_summary": "{solid} of {total} wired",
     "datalinks_title": "Linked data projects",
-    "support_title": "Support channels"
+    "support_title": "Support channels",
+    "persona_open": "Open where this persona is working"
   }
 }

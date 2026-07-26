@@ -171,7 +171,7 @@ Below each island, an ops-badge row (`FleetBadges`, counter-scaled):
 
 - **Terminal state badges** — one badge per fleet-session state present (attention-first order; `awaiting_input` dot pulses). Click → `FleetListPopover` listing that state's sessions, each with a deterministic **animal glyph** (hash of session id — Cat/Dog/Bird/Fish/Rabbit/Squirrel/Turtle/Snail) so parallel terminals stay tellable. Picking one opens…
 - **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path), and a **Dispatch Fleet…** action (`DispatchFleetModal` — a textarea instruction seeds a *background* session via `spawnSession(root, [instruction])`; no preview panel opens, so the canvas stays put and the session docks as an island fleet badge for later).
-- **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover` with the names; rows deliberately inert for now.
+- **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover`: one row per persona with the Monitor's own status dot, a live elapsed-time column (ticking while open), and a click that navigates to whatever surface the process declared. That routing goes through `navigateToProcess` (`features/fleet/monitor/`, extracted from `MonitorDrawer` for this) so a persona click lands identically from the canvas and from the Monitor. Rows whose process declares no destination — and demo islands, which have names but no processes — stay inert.
 - **Live attention:** any awaiting/stale session raises the island's "needs you" marker; real monitoring errors can drive island colour (§4).
 
 ## 10. Actionable layer (Improve + scans)
@@ -194,7 +194,6 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 ## 12. Known gaps / deferred
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
-- **Persona list row click** is still a reserved no-op (the per-persona action layer is to come). Context-menu dimension rows are wired (§8).
 - `auth` has no Improve counterpart yet (inert).
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
