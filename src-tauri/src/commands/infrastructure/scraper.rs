@@ -10,22 +10,32 @@ use std::sync::Arc;
 use serde_json::Value;
 use tauri::State;
 
+use crate::error::AppError;
 use crate::AppState;
 
+#[cfg(not(feature = "scraper"))]
 const NOT_ENABLED: &str = "The local scraper is not enabled in this build.";
+
+/// The `scraper` cargo feature is off in this build — a capability gap, not a
+/// user input problem, so it maps to `Internal` rather than `Validation`.
+#[cfg(not(feature = "scraper"))]
+fn not_enabled() -> AppError {
+    AppError::Internal(NOT_ENABLED.to_string())
+}
 
 /// List saved scrape configs (with schedule + last-run status).
 #[tauri::command]
-pub fn scraper_list_configs(state: State<'_, Arc<AppState>>) -> Result<Value, String> {
+pub fn scraper_list_configs(state: State<'_, Arc<AppState>>) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
-        let configs = crate::engine::scraper::config_list(&state.db)?;
-        serde_json::to_value(configs).map_err(|e| e.to_string())
+        let configs =
+            crate::engine::scraper::config_list(&state.db).map_err(AppError::Execution)?;
+        Ok(serde_json::to_value(configs)?)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = state;
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
@@ -35,16 +45,17 @@ pub fn scraper_list_configs(state: State<'_, Arc<AppState>>) -> Result<Value, St
 pub fn scraper_save_config(
     state: State<'_, Arc<AppState>>,
     config: Value,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
-        let saved = crate::engine::scraper::config_save(&state.db, &config)?;
-        serde_json::to_value(saved).map_err(|e| e.to_string())
+        let saved =
+            crate::engine::scraper::config_save(&state.db, &config).map_err(AppError::Execution)?;
+        Ok(serde_json::to_value(saved)?)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (state, config);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
@@ -53,30 +64,32 @@ pub fn scraper_save_config(
 pub async fn scraper_run_config(
     state: State<'_, Arc<AppState>>,
     id: String,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
-        let summary = crate::engine::scraper::config_run(&state.db, &id).await?;
-        serde_json::to_value(summary).map_err(|e| e.to_string())
+        let summary = crate::engine::scraper::config_run(&state.db, &id)
+            .await
+            .map_err(AppError::Execution)?;
+        Ok(serde_json::to_value(summary)?)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (state, id);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
 /// Delete a saved scrape config.
 #[tauri::command]
-pub fn scraper_delete_config(state: State<'_, Arc<AppState>>, id: String) -> Result<(), String> {
+pub fn scraper_delete_config(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     #[cfg(feature = "scraper")]
     {
-        crate::engine::scraper::config_delete(&state.db, &id)
+        crate::engine::scraper::config_delete(&state.db, &id).map_err(AppError::Execution)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (state, id);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
@@ -85,18 +98,20 @@ pub fn scraper_delete_config(state: State<'_, Arc<AppState>>, id: String) -> Res
 pub async fn scraper_run_extract(
     state: State<'_, Arc<AppState>>,
     config: Value,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
-        let cfg: crate::engine::scraper::ExtractConfig =
-            serde_json::from_value(config).map_err(|e| format!("invalid extract config: {e}"))?;
-        let summary = crate::engine::scraper::run_extract(&state.db, cfg).await?;
-        serde_json::to_value(summary).map_err(|e| e.to_string())
+        let cfg: crate::engine::scraper::ExtractConfig = serde_json::from_value(config)
+            .map_err(|e| AppError::Validation(format!("invalid extract config: {e}")))?;
+        let summary = crate::engine::scraper::run_extract(&state.db, cfg)
+            .await
+            .map_err(AppError::Execution)?;
+        Ok(serde_json::to_value(summary)?)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (state, config);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
@@ -108,7 +123,7 @@ pub async fn scraper_preview_extract(
     _state: State<'_, Arc<AppState>>,
     config: Value,
     max_urls: Option<usize>,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
         let urls: Vec<String> = config
@@ -117,33 +132,38 @@ pub async fn scraper_preview_extract(
             .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
             .unwrap_or_default();
         if urls.is_empty() {
-            return Err("Add at least one URL to preview.".into());
+            return Err(AppError::Validation(
+                "Add at least one URL to preview.".into(),
+            ));
         }
         let rules: pumper_core::extract::RuleSet =
             serde_json::from_value(config.get("rules").cloned().unwrap_or(Value::Null))
-                .map_err(|e| format!("invalid rules: {e}"))?;
-        let rows = crate::engine::scraper::preview_extract(urls, rules, max_urls.unwrap_or(1)).await?;
-        serde_json::to_value(rows).map_err(|e| e.to_string())
+                .map_err(|e| AppError::Validation(format!("invalid rules: {e}")))?;
+        let rows = crate::engine::scraper::preview_extract(urls, rules, max_urls.unwrap_or(1))
+            .await
+            .map_err(AppError::Execution)?;
+        Ok(serde_json::to_value(rows)?)
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (config, max_urls);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
 /// Per-dataset rollup (name, record count, last updated).
 #[tauri::command]
-pub fn scraper_list_datasets(state: State<'_, Arc<AppState>>) -> Result<Value, String> {
+pub fn scraper_list_datasets(state: State<'_, Arc<AppState>>) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
-        let summaries = crate::engine::scraper::dataset_summaries(&state.db)?;
+        let summaries =
+            crate::engine::scraper::dataset_summaries(&state.db).map_err(AppError::Execution)?;
         Ok(Value::Array(summaries))
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = state;
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }
 
@@ -159,7 +179,7 @@ pub async fn scraper_generate_rules(
     description: String,
     url: Option<String>,
     sample_html: Option<String>,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     // Ground the model in real page HTML when we can.
     let sample: Option<String> = match sample_html {
         Some(h) if !h.trim().is_empty() => Some(h.chars().take(8000).collect()),
@@ -208,15 +228,18 @@ pub async fn scraper_generate_rules(
         |_, _| {},
         None,
     )
-    .await?;
+    .await
+    .map_err(AppError::ProcessSpawn)?;
 
     let json_str = crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching(
         &res.text_output,
         |v| v.is_object(),
     )
-    .ok_or_else(|| "Claude did not return a JSON ruleset — try a more specific description.".to_string())?;
+    .ok_or_else(|| AppError::Execution(
+        "Claude did not return a JSON ruleset — try a more specific description.".to_string(),
+    ))?;
 
-    serde_json::from_str::<Value>(&json_str).map_err(|e| e.to_string())
+    Ok(serde_json::from_str::<Value>(&json_str)?)
 }
 
 /// Read change-detected records back from a dataset (newest first).
@@ -226,7 +249,7 @@ pub fn scraper_query_dataset(
     dataset: String,
     limit: Option<i64>,
     changed_only: Option<bool>,
-) -> Result<Value, String> {
+) -> Result<Value, AppError> {
     #[cfg(feature = "scraper")]
     {
         let records = crate::engine::scraper::query_dataset(
@@ -234,12 +257,13 @@ pub fn scraper_query_dataset(
             &dataset,
             limit.unwrap_or(100),
             changed_only.unwrap_or(false),
-        )?;
+        )
+        .map_err(AppError::Execution)?;
         Ok(Value::Array(records))
     }
     #[cfg(not(feature = "scraper"))]
     {
         let _ = (state, dataset, limit, changed_only);
-        Err(NOT_ENABLED.to_string())
+        Err(not_enabled())
     }
 }

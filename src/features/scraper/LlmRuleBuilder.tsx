@@ -4,6 +4,7 @@ import { Sparkles, Wand2 } from 'lucide-react';
 import { generateScraperRules, type ScrapeRuleSet } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { errMsg } from '@/stores/storeTypes';
 
 /**
  * The LLM pipeline builder (Phase 1b-2). Describe what to extract in plain
@@ -38,7 +39,8 @@ export function LlmRuleBuilder({ urls, hasFields, onRules, compact }: LlmRuleBui
       onRules(rules, hasFields ? 'merge' : 'replace');
       setLastCount(count);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
+      setError(errMsg(e, String(e)));
     }
   };
 

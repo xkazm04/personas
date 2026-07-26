@@ -6,6 +6,7 @@ import { previewScraperExtract, type PreviewRow } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { errMsg } from '@/stores/storeTypes';
 
 import { FieldRuleRows } from './FieldRuleRows';
 import { LlmRuleBuilder } from './LlmRuleBuilder';
@@ -125,7 +126,8 @@ export function PreviewStep({ form }: { form: ScrapeForm }) {
     try {
       setRows(await previewScraperExtract(form.urlList, fieldsToRuleSet(form.fields), 1));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
+      setError(errMsg(e, String(e)));
     }
   };
 
