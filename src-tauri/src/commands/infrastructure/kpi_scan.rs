@@ -18,8 +18,10 @@
 //! pattern): dev_scans record + BackgroundJobManager (cancel/status/lines) +
 //! line-streamed protocol parse.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::{Emitter, State};
@@ -28,6 +30,18 @@ use tokio_util::sync::CancellationToken;
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
 use crate::error::AppError;
@@ -340,7 +354,11 @@ pub(crate) fn launch_kpi_scan(
     let pool_task = pool.clone();
     let root_path = project.root_path.clone();
     let project_name = project.name.clone();
+    let app_handle_for_panic = app_handle.clone();
+    let pool_for_panic = pool_task.clone();
+    let scan_id_for_panic = scan_id_for_task.clone();
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = tokio::select! {
             _ = cancel_token.cancelled() => {
                 Err(AppError::Internal("KPI scan cancelled".into()))
@@ -380,6 +398,24 @@ pub(crate) fn launch_kpi_scan(
                 KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg.clone()));
                 KPI_SCAN_JOBS.emit_line(&app_handle, &scan_id_for_task, format!("[Error] {msg}"));
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                scan_id = %scan_id_for_panic,
+                panic = %msg,
+                "KPI scan task panicked — marking scan as failed"
+            );
+            let _ = repo::update_scan(
+                &pool_for_panic, &scan_id_for_panic, Some("error"), None,
+                None, None, None, Some(Some(&msg)),
+            );
+            KPI_SCAN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
+            KPI_SCAN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
         }
     });
 

@@ -1,7 +1,8 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use futures_util::StreamExt;
+use futures_util::{FutureExt, StreamExt};
 use serde::Serialize;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -10,6 +11,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // Re-use the PATH probe helpers from system.rs
 use super::system::{command_exists_in_path, command_version};
@@ -956,15 +969,45 @@ pub async fn start_setup_install(
         .register_run_guarded("setup", "current");
 
     let id_clone = install_id.clone();
+    let app_for_panic = app.clone();
+    let install_id_for_panic = install_id.clone();
     tokio::spawn(async move {
         let _guard = run_guard;
-        run_setup_install(SetupRunParams {
+        let work = AssertUnwindSafe(run_setup_install(SetupRunParams {
             app,
             install_id: id_clone,
             scope,
             cancelled,
-        })
+        }))
+        .catch_unwind()
         .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                install_id = %install_id_for_panic,
+                panic = %msg,
+                "setup install task panicked — marking install as failed"
+            );
+            emit_status(
+                &app_for_panic,
+                &install_id_for_panic,
+                &SetupTarget::Node,
+                "failed",
+                None,
+                Some(msg.clone()),
+                None,
+            );
+            emit_status(
+                &app_for_panic,
+                &install_id_for_panic,
+                &SetupTarget::ClaudeCli,
+                "failed",
+                None,
+                Some(msg),
+                None,
+            );
+        }
     });
 
     Ok(serde_json::json!({ "install_id": install_id }))
