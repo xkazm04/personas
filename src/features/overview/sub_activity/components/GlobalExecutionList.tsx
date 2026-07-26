@@ -2,16 +2,16 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
-import { GroupedVirtualList } from '@/features/shared/components/display/GroupedVirtualList';
+import { GroupedVirtualList, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
 import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
@@ -48,6 +48,14 @@ const EXEC_COLUMNS: { key: string; width: string }[] = [
   { key: 'started', width: '150px' },
 ];
 const EXEC_ROW_HEIGHT = 56;
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh result set lands (35ms stagger via RevealItem, id-guarded so polling,
+ * refresh, and scrolling never replay it). Rows beyond this render plainly —
+ * scrolling must always feel instant.
+ */
+const CASCADE_ROWS = 14;
 
 const STATUS_FILTER_OPTIONS = [
   { value: 'all', label: 'All statuses' },
@@ -94,7 +102,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // True while a (re)fetch for the current filter context is in flight. It
+  // NEVER hides rows that are already on screen — it only decides whether an
+  // empty row-region shows ghost rows (fetch running) or the empty state
+  // (fetch settled, genuinely nothing). Store data paints on the first frame.
+  const [isFetching, setIsFetching] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
@@ -161,7 +173,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   useEffect(() => {
     let active = true;
     const load = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       const statusParam = filter === 'all' ? undefined : filter;
       try {
         await Promise.all([
@@ -169,7 +181,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
           fetchGlobalExecutionCounts(selectedPersonaId || undefined),
         ]);
       }
-      finally { if (active) setIsLoading(false); }
+      finally { if (active) setIsFetching(false); }
     };
     load();
     return () => { active = false; };
@@ -255,6 +267,77 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   );
   const scrollRestoreKey = `overview/activity|status=${filter}|model=${modelFilter}|persona=${selectedPersonaId ?? 'all'}`;
 
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // A new filter/persona/sort context replays the first-viewport cascade for
+  // the rows it produces; a refresh/poll re-delivering the same ids does not
+  // (they're already marked entered). Client-side filtering means a filter
+  // switch shows its rows on the SAME frame — the cascade is the response.
+  const revealResetKey = `${filter}|${modelFilter}|${selectedPersonaId ?? 'all'}|${startedSort ?? 'none'}`;
+  const enter = useRevealTracker(revealResetKey);
+  // Ghost rows only when the row region would otherwise be empty while a
+  // fetch runs. Rows already on screen are never hidden by a fetch.
+  const showGhost = isFetching && filteredExecutions.length === 0;
+
+  // Column header — static chrome, part of the page frame. Renders identically
+  // above ghost rows and real rows so the ghost→content swap moves nothing.
+  const columnHeaderRow = (
+    <div role="row" className="flex-shrink-0 bg-background border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
+      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+        <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
+          onReset={() => colWidths.clearColumn('persona')}
+        />
+      </div>
+      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+        <ColumnDropdownFilter
+          label="Status"
+          value={filter}
+          options={STATUS_FILTER_OPTIONS}
+          onChange={(v) => setFilter(v as FilterStatus)}
+        />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
+          onReset={() => colWidths.clearColumn('status')}
+        />
+      </div>
+      <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+        <ColumnDropdownFilter
+          label={t.overview.activity.col_model}
+          value={modelFilter}
+          options={modelOptions}
+          onChange={setModelFilter}
+        />
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
+          onReset={() => colWidths.clearColumn('model')}
+        />
+      </div>
+      <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
+        {t.overview.activity.col_cost}
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('cost', w, x)}
+          onReset={() => colWidths.clearColumn('cost')}
+        />
+      </div>
+      <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
+        {t.overview.activity.col_duration}
+        <ColumnResizeHandle
+          label={t.shared.resize_column}
+          onBeginResize={(w, x) => colWidths.beginResize('duration', w, x)}
+          onReset={() => colWidths.clearColumn('duration')}
+        />
+      </div>
+      <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
+        <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
+      </div>
+    </div>
+  );
+
   return (
     <ContentBox>
       <ContentHeader
@@ -316,19 +399,18 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
           )}
 
           <ContentBody flex>
-            {/* `grid` (not `flex`) so the cross-faded loading/content panes get
-                a definite stretched height from a single implicit cell — an
-                AnimatePresence `motion.div` has no flex-grow of its own, so a
-                plain flex wrapper here would collapse the virtualized list to
-                its content size instead of filling the remaining ContentBody
-                height. See docs/design/overview-loading.md recipe A. */}
-            <LoadingReveal
-              loading={isLoading}
-              placeholder={<ListSkeleton calm rows={10} rowHeight={EXEC_ROW_HEIGHT} />}
-              className="flex-1 min-h-0 grid"
-            >
-              {filteredExecutions.length === 0 ? (
-                <div className="h-full flex items-center justify-center p-4 md:p-6">
+            {showGhost ? (
+              /* Nothing to show yet + fetch in flight: ghost rows under the
+                 REAL column header. Ghosts are invisible for their first
+                 ~120ms (animation-delay + fill-mode both) so a fast fetch
+                 skips them entirely; real rows replace them the frame they
+                 arrive and play the same cascade — no gate, no held content. */
+              <div className="flex-1 min-h-0 flex flex-col">
+                {!IS_MOBILE && columnHeaderRow}
+                <ActivityGhostRows gridTemplate={execGridTemplate} />
+              </div>
+            ) : filteredExecutions.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center p-4 md:p-6">
                   <MotionEmptyState
                     motif="activity"
                     content={{
@@ -340,65 +422,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     }}
                   />
                 </div>
-              ) : (
-                <div className={`h-full flex flex-col min-h-0 ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
-                {!IS_MOBILE && (
-                  <div role="row" className="flex-shrink-0 bg-background border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
-                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-                      <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-                      <ColumnResizeHandle
-                        label={t.shared.resize_column}
-                        onBeginResize={(w, x) => colWidths.beginResize('persona', w, x)}
-                        onReset={() => colWidths.clearColumn('persona')}
-                      />
-                    </div>
-                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-                      <ColumnDropdownFilter
-                        label="Status"
-                        value={filter}
-                        options={STATUS_FILTER_OPTIONS}
-                        onChange={(v) => setFilter(v as FilterStatus)}
-                      />
-                      <ColumnResizeHandle
-                        label={t.shared.resize_column}
-                        onBeginResize={(w, x) => colWidths.beginResize('status', w, x)}
-                        onReset={() => colWidths.clearColumn('status')}
-                      />
-                    </div>
-                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
-                      <ColumnDropdownFilter
-                        label={t.overview.activity.col_model}
-                        value={modelFilter}
-                        options={modelOptions}
-                        onChange={setModelFilter}
-                      />
-                      <ColumnResizeHandle
-                        label={t.shared.resize_column}
-                        onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
-                        onReset={() => colWidths.clearColumn('model')}
-                      />
-                    </div>
-                    <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
-                      {t.overview.activity.col_cost}
-                      <ColumnResizeHandle
-                        label={t.shared.resize_column}
-                        onBeginResize={(w, x) => colWidths.beginResize('cost', w, x)}
-                        onReset={() => colWidths.clearColumn('cost')}
-                      />
-                    </div>
-                    <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
-                      {t.overview.activity.col_duration}
-                      <ColumnResizeHandle
-                        label={t.shared.resize_column}
-                        onBeginResize={(w, x) => colWidths.beginResize('duration', w, x)}
-                        onReset={() => colWidths.clearColumn('duration')}
-                      />
-                    </div>
-                    <div role="columnheader" className="flex items-center justify-end px-4 py-1.5">
-                      <SortableColumnHeader label={t.overview.activity.col_started} direction={startedSort} onToggle={toggleStartedSort} />
-                    </div>
-                  </div>
-                )}
+            ) : (
+              <div className={`flex-1 min-h-0 flex flex-col ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+                {!IS_MOBILE && columnHeaderRow}
 
                 <GroupedVirtualList<GlobalExecution>
                   items={filteredExecutions}
@@ -416,7 +442,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         : exec.status === 'completed' ? 'border-l-emerald-400'
                           : exec.status === 'failed' ? 'border-l-red-400'
                             : 'border-l-amber-400';
-                    return IS_MOBILE ? (
+                    const row = IS_MOBILE ? (
                       <div
                         role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
@@ -477,6 +503,20 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
                       </div>
                     );
+                    // One-shot entrance cascade for a fresh result set. Rows
+                    // past the first viewport render plainly (scrolling must
+                    // never lag), and entered ids never replay on poll/refresh.
+                    return (
+                      <RevealItem
+                        revealId={exec.id}
+                        order={index}
+                        hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                        markEntered={enter.markEntered}
+                        className="h-full"
+                      >
+                        {row}
+                      </RevealItem>
+                    );
                   }}
                 />
 
@@ -487,9 +527,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                     </button>
                   </div>
                 )}
-                </div>
-              )}
-            </LoadingReveal>
+              </div>
+            )}
           </ContentBody>
         </>
       )}
@@ -498,5 +537,69 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
         <ExecutionDetailModal execution={selectedExec} onClose={() => setSelectedExec(null)} />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ActivityGhostRows — calm ghost rows for the ONLY moment the row region has
+// nothing to show (a fetch with a cold store / empty filter context).
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// The delay IS the anti-flash: no timers, no minimum display, and real rows
+// replace ghosts on the very frame data arrives, playing the same cascade in
+// the same geometry (identical row height + grid under the same header).
+// No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as rows, not a barcode. */
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function ActivityGhostRows({ gridTemplate }: { gridTemplate: string }) {
+  return (
+    <div className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
+      {/* group-header ghost — mirrors the sticky "Today" bar's silhouette */}
+      <div
+        className="flex items-center px-4 border-b border-primary/5 animate-fade-in"
+        style={{ height: GROUP_HEADER_SIZE, animationDelay: '120ms' }}
+      >
+        <span className={`h-2.5 w-16 ${GHOST_BAR}`} />
+      </div>
+      {Array.from({ length: 10 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${140 + i * 35}ms`;
+        return IS_MOBILE ? (
+          <div
+            key={i}
+            className="flex items-center gap-2 px-3 border-b border-primary/[0.06] animate-fade-in"
+            style={{ height: EXEC_ROW_HEIGHT, animationDelay: delay }}
+          >
+            <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+              <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
+            </div>
+          </div>
+        ) : (
+          <div
+            key={i}
+            className="grid items-center border-b border-primary/[0.06] border-l-2 border-l-transparent animate-fade-in"
+            style={{ gridTemplateColumns: gridTemplate, height: EXEC_ROW_HEIGHT, animationDelay: delay }}
+          >
+            <div className="flex items-center gap-2 px-4 min-w-0">
+              <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+              <span className={`h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+            </div>
+            <div className="px-4"><span className="inline-block h-5 w-20 rounded-card bg-primary/[0.06]" /></div>
+            <div className="px-4"><span className={`inline-block h-3.5 w-16 ${GHOST_BAR}`} /></div>
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-10 ${GHOST_BAR}`} /></div>
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-12 ${GHOST_BAR}`} /></div>
+            <div className="px-4 flex justify-end"><span className={`h-3.5 w-16 ${GHOST_BAR}`} /></div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
