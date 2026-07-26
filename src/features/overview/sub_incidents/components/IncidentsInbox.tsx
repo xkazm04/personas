@@ -4,8 +4,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import EmptyState, { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { storeBus } from '@/lib/storeBus';
 import { silentCatch } from '@/lib/silentCatch';
 import { getAuditIncident } from '@/api/overview/incidents';
@@ -392,6 +393,10 @@ export default function IncidentsInbox() {
   // and only that path earns the inbox-zero celebration.
   const isNarrowed = isNarrowedFilters(filters);
 
+  // Only the very first load (nothing on screen yet) earns a placeholder — a
+  // background refresh with rows already visible must never blank the body.
+  const isInitialLoading = loading && incidents.length === 0;
+
   // Detect an action-driven drain to zero. Evaluated once the refresh settles;
   // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
   useEffect(() => {
@@ -444,11 +449,7 @@ export default function IncidentsInbox() {
           </div>
         )}
 
-        {loading && incidents.length === 0 ? (
-          <div className="flex items-center justify-center py-16">
-            <LoadingSpinner size="lg" label={t.overview.incidents.loading} />
-          </div>
-        ) : incidents.length === 0 ? (
+        {!loading && incidents.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             {isNarrowed ? (
               <EmptyState
@@ -465,82 +466,87 @@ export default function IncidentsInbox() {
             )}
           </div>
         ) : (
-          <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
-            {truncated && (
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
-                <span className="typo-caption text-foreground">
-                  {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
-                </span>
-              </div>
-            )}
-            {newCount > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
-                <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                <span className="typo-caption text-primary">
-                  {t.overview.incidents.new_since_last_visit.replace('{count}', String(newCount))}
-                </span>
-                <button
-                  type="button"
-                  onClick={markSeen}
-                  className="ml-auto px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
-                >
-                  {t.overview.incidents.mark_seen}
-                </button>
-              </div>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
-              <div className="flex flex-wrap items-center gap-1">
-                <span className="typo-caption text-foreground mr-1">
-                  {t.overview.incidents.group_by_label}:
-                </span>
-                {GROUP_MODES.map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setGroupMode(mode)}
-                    aria-pressed={groupMode === mode}
-                    className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
-                      groupMode === mode
-                        ? 'bg-primary/15 text-primary border-primary/25'
-                        : 'text-foreground border-transparent hover:bg-secondary/40'
-                    }`}
-                  >
-                    {groupModeLabel(t, mode)}
-                  </button>
-                ))}
-              </div>
-              {groups.length > 1 && (
-                <button
-                  type="button"
-                  onClick={toggleAllGroups}
-                  className="typo-caption text-foreground rounded-card px-2 py-0.5 hover:bg-secondary/40 transition-colors focus-ring"
-                >
-                  {allCollapsed
-                    ? t.overview.incidents.groups_expand_all
-                    : t.overview.incidents.groups_collapse_all}
-                </button>
+          <LoadingReveal
+            loading={isInitialLoading}
+            placeholder={<ListSkeleton calm rows={6} rowHeight={44} />}
+          >
+            <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
+              {truncated && (
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/20">
+                  <span className="typo-caption text-foreground">
+                    {t.overview.incidents.list_truncated.replace('{limit}', String(DEFAULT_LIMIT))}
+                  </span>
+                </div>
               )}
-            </div>
-            <IncidentTableHeader
-              filters={filters}
-              onChange={setFilters}
-              personas={personas}
-              oldestFirst={oldestFirst}
-              onToggleSort={() => setOldestFirst((v) => !v)}
-              gridTemplate={gridTemplate}
-              colWidths={colWidths}
-            />
-            {groups.map((group) => (
-              <IncidentAgentGroup
-                key={group.key}
-                group={group}
-                collapsed={collapsedGroups.has(group.key)}
-                onToggle={() => toggleGroup(group.key)}
-                focusedId={focusedId}
-                renderRow={renderRow}
+              {newCount > 0 && (
+                <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
+                  <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="typo-caption text-primary">
+                    {t.overview.incidents.new_since_last_visit.replace('{count}', String(newCount))}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={markSeen}
+                    className="ml-auto px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+                  >
+                    {t.overview.incidents.mark_seen}
+                  </button>
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="typo-caption text-foreground mr-1">
+                    {t.overview.incidents.group_by_label}:
+                  </span>
+                  {GROUP_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setGroupMode(mode)}
+                      aria-pressed={groupMode === mode}
+                      className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                        groupMode === mode
+                          ? 'bg-primary/15 text-primary border-primary/25'
+                          : 'text-foreground border-transparent hover:bg-secondary/40'
+                      }`}
+                    >
+                      {groupModeLabel(t, mode)}
+                    </button>
+                  ))}
+                </div>
+                {groups.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={toggleAllGroups}
+                    className="typo-caption text-foreground rounded-card px-2 py-0.5 hover:bg-secondary/40 transition-colors focus-ring"
+                  >
+                    {allCollapsed
+                      ? t.overview.incidents.groups_expand_all
+                      : t.overview.incidents.groups_collapse_all}
+                  </button>
+                )}
+              </div>
+              <IncidentTableHeader
+                filters={filters}
+                onChange={setFilters}
+                personas={personas}
+                oldestFirst={oldestFirst}
+                onToggleSort={() => setOldestFirst((v) => !v)}
+                gridTemplate={gridTemplate}
+                colWidths={colWidths}
               />
-            ))}
-          </div>
+              {groups.map((group) => (
+                <IncidentAgentGroup
+                  key={group.key}
+                  group={group}
+                  collapsed={collapsedGroups.has(group.key)}
+                  onToggle={() => toggleGroup(group.key)}
+                  focusedId={focusedId}
+                  renderRow={renderRow}
+                />
+              ))}
+            </div>
+          </LoadingReveal>
         )}
       </ContentBody>
 

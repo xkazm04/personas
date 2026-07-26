@@ -3,7 +3,9 @@ import { Brain, Network, GitFork } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import MemoriesPage from '@/features/overview/sub_memories/components/MemoriesPage';
 
 // The Patterns view (execution-extracted knowledge graph) and the Graph cluster
@@ -14,8 +16,19 @@ const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memori
 
 type KnowledgeSubtab = 'memories' | 'patterns' | 'graph';
 
+// Calm, content-shaped Suspense fallback for the lazy Patterns/Graph chunks —
+// mirrors the ContentBox/ContentHeader/ContentBody frame those views render
+// once loaded, so switching subtabs never blanks the body (golden loading
+// pattern, docs/design/overview-loading.md). No pulse: this is a chunk-load
+// gate, not a data-fetch gate, so it should read as calm structure, not a
+// busy spinner.
 const lazyFallback = (
-  <div className="flex items-center justify-center py-16"><LoadingSpinner /></div>
+  <ContentBox>
+    <ContentHeaderSkeleton showIcon showSubtitle calm />
+    <ContentBody flex>
+      <ListSkeleton calm rows={6} rowHeight={64} />
+    </ContentBody>
+  </ContentBox>
 );
 
 export default function KnowledgeHub() {

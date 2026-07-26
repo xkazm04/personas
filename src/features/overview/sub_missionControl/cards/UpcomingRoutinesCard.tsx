@@ -7,6 +7,8 @@ import { silentCatch } from '@/lib/silentCatch';
 import { IllustratedEmptyState as EmptyState } from '@/features/shared/components/display/IllustratedEmptyState';
 import { formatRelativeShort, type RelativeShortResult } from '@/features/overview/libs/formatRelativeShort';
 import { PaneHeader } from '../PaneHeader';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 const MAX_ROWS = 5;
@@ -98,21 +100,10 @@ export default function UpcomingRoutinesCard() {
     return scheduled.slice(0, MAX_ROWS);
   }, [triggers, personas, nowTick]);
 
-  if (!loaded) return null;
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
-        <PaneHeader
-          label={t.overview.upcoming_routines.title}
-          subtitle={t.overview.upcoming_routines.subtitle}
-        >
-          <ArrowRight className="w-3 h-3 text-foreground" />
-        </PaneHeader>
-        <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
-      </div>
-    );
-  }
-
+  // Frame (header) renders immediately — the title/subtitle are static i18n
+  // strings, never gated on data. Only the row region waits on `loaded`, via
+  // a calm placeholder that cross-fades to the real rows/empty-state (golden
+  // loading pattern — no blank `null` body while the trigger list loads).
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
       <PaneHeader
@@ -121,31 +112,40 @@ export default function UpcomingRoutinesCard() {
       >
         <ArrowRight className="w-3 h-3 text-foreground" />
       </PaneHeader>
-      <div className="divide-y divide-primary/5">
-        {rows.map((row) => (
-          <div
-            key={row.trigger.id}
-            className="flex items-center gap-3 px-3 py-2"
-          >
-            <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="typo-body text-foreground truncate">{row.personaName}</div>
-              <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
-                {row.trigger.trigger_type}
+      <LoadingReveal
+        loading={!loaded}
+        placeholder={<ListSkeleton calm rows={3} rowHeight={44} leading={false} />}
+      >
+        {rows.length === 0 ? (
+          <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
+        ) : (
+          <div className="divide-y divide-primary/5">
+            {rows.map((row) => (
+              <div
+                key={row.trigger.id}
+                className="flex items-center gap-3 px-3 py-2"
+              >
+                <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="typo-body text-foreground truncate">{row.personaName}</div>
+                  <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
+                    {row.trigger.trigger_type}
+                  </div>
+                </div>
+                <div className="typo-caption font-mono tabular-nums flex-shrink-0">
+                  {row.rel ? (
+                    <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
+                      {row.rel.label}
+                    </span>
+                  ) : (
+                    <span className="text-foreground">{t.overview.upcoming_routines.never_fired}</span>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="typo-caption font-mono tabular-nums flex-shrink-0">
-              {row.rel ? (
-                <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
-                  {row.rel.label}
-                </span>
-              ) : (
-                <span className="text-foreground">{t.overview.upcoming_routines.never_fired}</span>
-              )}
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </LoadingReveal>
     </div>
   );
 }

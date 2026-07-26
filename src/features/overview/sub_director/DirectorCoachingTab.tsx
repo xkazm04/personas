@@ -8,7 +8,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
 import { useSystemStore } from '@/stores/systemStore';
@@ -142,9 +143,8 @@ export default function DirectorCoachingTab() {
           className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
         />
         <div className="relative z-10">
-        {!d.ready ? (
-          <div className="flex items-center justify-center py-16"><LoadingSpinner /></div>
-        ) : !p || inScope === 0 ? (
+        <LoadingReveal loading={!d.ready} placeholder={<DirectorScorecardPlaceholder />}>
+        {!p || inScope === 0 ? (
           <EmptyState
             glyph={COACHING_GLYPH}
             title={t.director.empty_title}
@@ -233,6 +233,7 @@ export default function DirectorCoachingTab() {
             </DirectorSection>
           </div>
         )}
+        </LoadingReveal>
         </div>
        </div>
       </ContentBody>
@@ -341,5 +342,66 @@ function Scorecard({
         </DirectorSection>
       )}
     </>
+  );
+}
+
+/**
+ * Calm, sized placeholder mirroring the Scorecard + coaching-table silhouette
+ * (subheader bar, 4 KPI tiles, momentum row, value-leak card, a two-up grid,
+ * table rows) — shown only while `!d.ready` via `<LoadingReveal>`, so the
+ * eventual swap to real content is a fade rather than a resize. No pulse, per
+ * the golden loading pattern (`docs/design/overview-loading.md`).
+ */
+function DirectorScorecardPlaceholder() {
+  const bar = 'bg-primary/[0.06] rounded';
+  return (
+    <div className="space-y-4 pb-6" aria-hidden="true">
+      {/* Thin subheader */}
+      <div className="h-9 rounded-card border border-primary/10 bg-secondary/10" />
+
+      {/* KPI tiles */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-card border border-primary/10 bg-secondary/10 p-3.5 flex flex-col gap-2"
+            style={{ height: 96 }}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`h-2.5 w-16 ${bar}`} />
+              <span className={`w-6 h-6 rounded-input ${bar}`} />
+            </div>
+            <span className={`h-5 w-14 ${bar}`} />
+          </div>
+        ))}
+      </div>
+
+      {/* Momentum row */}
+      <div className={`h-6 w-64 ${bar}`} />
+
+      {/* Value-leak card */}
+      <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 72 }}>
+        <span className={`h-2.5 w-24 block mb-3 ${bar}`} />
+        <span className={`h-3 w-full block ${bar}`} />
+      </div>
+
+      {/* Score distribution + model efficiency */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 160 }}>
+          <span className={`h-2.5 w-32 block mb-3 ${bar}`} />
+          <span className={`h-24 w-full block ${bar}`} />
+        </div>
+        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 160 }}>
+          <span className={`h-2.5 w-32 block mb-3 ${bar}`} />
+          <span className={`h-24 w-full block ${bar}`} />
+        </div>
+      </div>
+
+      {/* Coaching table */}
+      <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
+        <span className={`h-2.5 w-28 block mb-3 ${bar}`} />
+        <ListSkeleton calm rows={5} rowHeight={44} />
+      </div>
+    </div>
   );
 }

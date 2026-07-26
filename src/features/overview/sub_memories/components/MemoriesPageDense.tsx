@@ -16,7 +16,9 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { deleteAllMemories } from '@/api/overview/memories';
 import { toastCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
@@ -54,11 +56,12 @@ export default function MemoriesPageDense() {
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
+    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
+    memoriesLoading: s.memoriesLoading,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -78,15 +81,27 @@ export default function MemoriesPageDense() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
   const latestRef = useRef(0);
+  // Covers the 300ms debounce window itself, which `memoriesLoading` (only
+  // flipped by the store once the fetch actually starts) doesn't see — without
+  // this, the pre-debounce window renders with stale/empty `memories` and
+  // `memoriesLoading === false`, flashing "no memories match" before the
+  // fetch even fires. True on mount and on every search change; cleared the
+  // instant the debounced fetch is dispatched (fetchMemories then takes over
+  // via `memoriesLoading`).
+  const [debouncePending, setDebouncePending] = useState(true);
 
   useEffect(() => {
     const requestId = ++latestRef.current;
+    setDebouncePending(true);
     const timer = setTimeout(() => {
       if (requestId !== latestRef.current) return;
+      setDebouncePending(false);
       fetchMemories({ search: search || undefined, sort_column: 'created_at', sort_direction: 'desc' });
     }, 300);
     return () => clearTimeout(timer);
   }, [fetchMemories, search]);
+
+  const isLoadingMemories = debouncePending || memoriesLoading;
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -319,23 +334,28 @@ export default function MemoriesPageDense() {
 
           {/* Body */}
           <div className="flex-1 overflow-y-auto relative z-10">
-            {sortedMemories.length === 0 ? (
-              <div className="flex items-center justify-center py-12 typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></div>
-            ) : (
-              <AnimatePresence mode="popLayout">
-                {sortedMemories.map((memory, i) => (
-                  <DenseRow
-                    key={memory.id}
-                    memory={memory}
-                    index={i}
-                    personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
-                    personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
-                    isSelected={selected?.id === memory.id}
-                    onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
-                  />
-                ))}
-              </AnimatePresence>
-            )}
+            <LoadingReveal
+              loading={isLoadingMemories}
+              placeholder={<ListSkeleton calm rows={8} rowHeight={40} leading />}
+            >
+              {sortedMemories.length === 0 ? (
+                <div className="flex items-center justify-center py-12 typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></div>
+              ) : (
+                <AnimatePresence mode="popLayout">
+                  {sortedMemories.map((memory, i) => (
+                    <DenseRow
+                      key={memory.id}
+                      memory={memory}
+                      index={i}
+                      personaName={personaMap.get(memory.persona_id)?.name ?? 'Unknown'}
+                      personaColor={personaMap.get(memory.persona_id)?.color ?? '#6b7280'}
+                      isSelected={selected?.id === memory.id}
+                      onSelect={() => setSelected((prev) => (prev?.id === memory.id ? null : memory))}
+                    />
+                  ))}
+                </AnimatePresence>
+              )}
+            </LoadingReveal>
           </div>
         </div>
       </ContentBody>

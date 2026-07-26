@@ -13,7 +13,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
 import { categoryColor } from '../libs/memoryVisualTokens';
@@ -26,11 +28,12 @@ interface NodePosition { x: number; y: number; }
 export default function MemoriesPageGraph() {
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
+    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories,
     memoryReviewRunning,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
+    memoriesLoading: s.memoriesLoading,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -44,10 +47,18 @@ export default function MemoriesPageGraph() {
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [activeCategory, setActiveCategory] = useState<'all' | string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  // Covers the render-then-effect gap before the mount fetch flips the
+  // store's `memoriesLoading` — without it the first commit can paint with
+  // `memories === []` and `memoriesLoading === false`, flashing the "no
+  // memories in this cluster" overlay before the fetch even starts.
+  const [initialFetchPending, setInitialFetchPending] = useState(true);
 
   useEffect(() => {
+    setInitialFetchPending(false);
     fetchMemories({ sort_column: 'created_at', sort_direction: 'desc' });
   }, [fetchMemories]);
+
+  const isLoadingGraph = initialFetchPending || memoriesLoading;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -160,77 +171,87 @@ export default function MemoriesPageGraph() {
             <ClusterLabels width={dimensions.width} height={dimensions.height} />
           )}
 
-          <svg width={dimensions.width} height={dimensions.height} className="absolute inset-0">
-            {/* Edges */}
-            {edges.map((edge) => {
-              const from = nodePositions.get(edge.from);
-              const to = nodePositions.get(edge.to);
-              if (!from || !to) return null;
-              const personaColor = personaMap.get(edge.persona_id)?.color ?? '#64748b';
-              const isHovered = hovered != null && (hovered.id === edge.from || hovered.id === edge.to || hovered.persona_id === edge.persona_id);
-              return (
-                <motion.line
-                  key={`${edge.from}-${edge.to}`}
-                  x1={from.x}
-                  y1={from.y}
-                  x2={to.x}
-                  y2={to.y}
-                  stroke={personaColor}
-                  strokeWidth={isHovered ? 1.5 : 0.5}
-                  opacity={hovered ? (isHovered ? 0.6 : 0.04) : 0.14}
-                  strokeDasharray={isHovered ? 'none' : '4 4'}
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 0.6 }}
-                />
-              );
-            })}
-
-            {/* Nodes */}
-            {filtered.map((memory) => {
-              const pos = nodePositions.get(memory.id);
-              if (!pos) return null;
-              const isDimmed = hovered != null && !highlightedIds.has(memory.id);
-              return (
-                <GraphNode
-                  key={memory.id}
-                  memory={memory}
-                  position={pos}
-                  isSelected={selected?.id === memory.id}
-                  isHighlighted={highlightedIds.has(memory.id)}
-                  isDimmed={isDimmed}
-                  onSelect={(m) => setSelected((prev) => (prev?.id === m.id ? null : m))}
-                  onHover={setHovered}
-                />
-              );
-            })}
-          </svg>
-
-          {/* Legends */}
-          <PersonaLegend personas={personas} memories={memories} />
-          <SizeLegend />
-
-          {/* Detail panel (in-page, not modal) */}
-          <AnimatePresence>
-            {selected && (
-              <DetailPanel
-                key={selected.id}
-                memory={selected}
-                personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
-                onClose={() => setSelected(null)}
-                onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
-              />
-            )}
-          </AnimatePresence>
-
-          {filtered.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex flex-col items-center gap-3">
-                <GitFork className="w-8 h-8 text-foreground" />
-                <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
+          <LoadingReveal
+            loading={isLoadingGraph}
+            placeholder={(
+              <div className="absolute inset-0 p-4">
+                <ListSkeleton calm rows={6} rowHeight={48} leading={false} />
               </div>
-            </div>
-          )}
+            )}
+            className="absolute inset-0"
+          >
+            <svg width={dimensions.width} height={dimensions.height} className="absolute inset-0">
+              {/* Edges */}
+              {edges.map((edge) => {
+                const from = nodePositions.get(edge.from);
+                const to = nodePositions.get(edge.to);
+                if (!from || !to) return null;
+                const personaColor = personaMap.get(edge.persona_id)?.color ?? '#64748b';
+                const isHovered = hovered != null && (hovered.id === edge.from || hovered.id === edge.to || hovered.persona_id === edge.persona_id);
+                return (
+                  <motion.line
+                    key={`${edge.from}-${edge.to}`}
+                    x1={from.x}
+                    y1={from.y}
+                    x2={to.x}
+                    y2={to.y}
+                    stroke={personaColor}
+                    strokeWidth={isHovered ? 1.5 : 0.5}
+                    opacity={hovered ? (isHovered ? 0.6 : 0.04) : 0.14}
+                    strokeDasharray={isHovered ? 'none' : '4 4'}
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.6 }}
+                  />
+                );
+              })}
+
+              {/* Nodes */}
+              {filtered.map((memory) => {
+                const pos = nodePositions.get(memory.id);
+                if (!pos) return null;
+                const isDimmed = hovered != null && !highlightedIds.has(memory.id);
+                return (
+                  <GraphNode
+                    key={memory.id}
+                    memory={memory}
+                    position={pos}
+                    isSelected={selected?.id === memory.id}
+                    isHighlighted={highlightedIds.has(memory.id)}
+                    isDimmed={isDimmed}
+                    onSelect={(m) => setSelected((prev) => (prev?.id === m.id ? null : m))}
+                    onHover={setHovered}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Legends */}
+            <PersonaLegend personas={personas} memories={memories} />
+            <SizeLegend />
+
+            {/* Detail panel (in-page, not modal) */}
+            <AnimatePresence>
+              {selected && (
+                <DetailPanel
+                  key={selected.id}
+                  memory={selected}
+                  personaName={personaMap.get(selected.persona_id)?.name ?? 'Unknown'}
+                  onClose={() => setSelected(null)}
+                  onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
+                />
+              )}
+            </AnimatePresence>
+
+            {filtered.length === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-3">
+                  <GitFork className="w-8 h-8 text-foreground" />
+                  <p className="typo-body text-foreground"><DebtText k="auto_no_memories_in_this_cluster_29741022" /></p>
+                </div>
+              </div>
+            )}
+          </LoadingReveal>
         </div>
       </ContentBody>
     </ContentBox>

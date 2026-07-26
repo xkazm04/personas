@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import GlobalExecutionList from '@/features/overview/sub_activity/components/GlobalExecutionList';
 
 // The per-call LLM usage table is only reached via the "Calls" subtab, so keep
@@ -49,7 +50,17 @@ export default function ExecutionsWithSubtabs() {
         {subtab === 'activity' ? (
           <GlobalExecutionList headerActions={switcher} />
         ) : (
-          <Suspense fallback={null}>
+          // Calm placeholder for the code-split chunk fetch (not the data
+          // fetch — LlmCallsTable gates that itself). `fallback={null}` would
+          // blank the visible pane while the chunk downloads/parses; per the
+          // golden loading pattern a body should never render empty.
+          <Suspense
+            fallback={
+              <div className="flex-1 min-h-0 flex flex-col p-4 md:p-6">
+                <ListSkeleton calm rows={10} />
+              </div>
+            }
+          >
             <LlmCallsTable headerSwitch={switcher} />
           </Suspense>
         )}
