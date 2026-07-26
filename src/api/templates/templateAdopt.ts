@@ -114,3 +114,41 @@ export const adjustAdoptionDraft = (sessionId: string) =>
     { sessionId },
     { timeoutMs: 660_000 },
   );
+
+// ============================================================================
+// Template integrity (Layer 2 — backend-authoritative checksum verification)
+// ============================================================================
+
+export interface TemplateIntegrityResult {
+  path: string;
+  expectedHash: string | null;
+  actualHash: string;
+  valid: boolean;
+  /** `false` when the path isn't in the embedded manifest at all. */
+  isKnownTemplate: boolean;
+}
+
+/** Mirrors `engine::template_checksums::BatchIntegrityResult`. */
+export interface BatchIntegrityResult {
+  results: TemplateIntegrityResult[];
+  allValid: boolean;
+  total: number;
+  validCount: number;
+  invalidCount: number;
+  unknownCount: number;
+}
+
+/**
+ * Verify client-side template JSON against the checksum manifest embedded in
+ * the Rust binary — the authoritative integrity layer, run at catalog init.
+ *
+ * Never rejects on a mismatch: a tampered template comes back with
+ * `valid: false` / `allValid: false`, so callers must inspect the result rather
+ * than relying on the promise settling successfully.
+ */
+export const verifyTemplateIntegrityBatch = (
+  templates: readonly { path: string; content: string }[],
+) =>
+  invoke<BatchIntegrityResult>("verify_template_integrity_batch", {
+    templates: [...templates],
+  });

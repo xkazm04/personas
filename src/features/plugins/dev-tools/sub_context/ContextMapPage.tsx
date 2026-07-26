@@ -5,7 +5,7 @@ import { planWeeklyContextScan } from '@/api/systemOps';
 import type { Event } from '@tauri-apps/api/event';
 import { AnimatePresence } from 'framer-motion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { getScanCodebaseStatus } from '@/api/devTools/devTools';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -354,20 +354,21 @@ export default function ContextMapPage() {
     let cancelled = false;
     (async () => {
       try {
-        const result = await invoke<{ scan_id: string; status: string; error?: string; lines?: string[] }>(
-          'dev_tools_get_scan_codebase_status',
-          { scanId: id },
-        );
+        const result = await getScanCodebaseStatus(id);
         if (cancelled) return;
         if (result.lines && result.lines.length > 0) {
           setScanLines(result.lines.slice(-MAX_SCAN_LINES));
         }
+        // `job.error` is Option<String> on the Rust side, so it arrives as null
+        // (not absent) whenever the job carries no message. finalizeContextScan
+        // takes `errorMessage?: string`, so normalize null -> undefined.
+        const errorMessage = result.error ?? undefined;
         if (result.status === 'completed') {
           finalizeContextScan({ outcome: 'success' }, () => setScanLines([]), t, tx);
         } else if (result.status === 'completed_with_warning') {
-          finalizeContextScan({ outcome: 'warning', errorMessage: result.error }, () => setScanLines([]), t, tx);
+          finalizeContextScan({ outcome: 'warning', errorMessage }, () => setScanLines([]), t, tx);
         } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
-          finalizeContextScan({ outcome: 'failed', errorMessage: result.error }, () => setScanLines([]), t, tx);
+          finalizeContextScan({ outcome: 'failed', errorMessage }, () => setScanLines([]), t, tx);
         }
         // else: still running — listener will catch the event
       } catch (err) { silentCatch("features/plugins/dev-tools/sub_context/ContextMapPage:catch1")(err); }
