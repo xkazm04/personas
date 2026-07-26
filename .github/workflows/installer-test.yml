@@ -102,6 +102,238 @@ jobs:
       - name: Run installer acceptance test
         run: powershell -ExecutionPolicy Bypass -File scripts\test-installer.ps1 -Installer $env:INSTALLER
 
+  # ─── Option B2: Build + smoke-test macOS DMG from HEAD ───────
+  # ADR: 2026-05-01-installer-test-cross-platform.
+  #
+  # The app is unsigned/un-notarized today, so a real double-click launch
+  # would be Gatekeeper-blocked. Tauri still ad-hoc-signs the .app at bundle
+  # time (required for the binary to run at all on Apple Silicon), so after
+  # stripping the com.apple.quarantine xattr the binary itself is executable.
+  # We still cannot promise a headless macOS runner can spawn what is
+  # fundamentally a GUI-subsystem process reliably, so this job degrades on
+  # failure: it always asserts build-succeeds + DMG-mounts + binary-exists +
+  # codesign reports an adhoc/unsigned identity (the exact shape called out
+  # in the ADR), and only *attempts* the same `--health-check` smoke the
+  # Windows job runs as a bonus signal.
+  #
+  # continue-on-error: true for the soak period (mirrors the e2e-smoke.yml
+  # non-blocking-gate precedent — see that workflow's header comment). Flip
+  # to false once this job has been green (or failing only on the expected
+  # "launch didn't come up" degraded path, never on build/mount/binary/sign)
+  # for 5 consecutive scheduled runs.
+  test-build-macos:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.tag == ''
+    runs-on: macos-latest
+    timeout-minutes: 60
+    continue-on-error: true
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: mozilla-actions/sccache-action@v0.0.7
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          cache-on-failure: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG (host arch only, not universal)
+        run: npx tauri build --bundles dmg
+
+      - name: Locate DMG
+        run: |
+          dmg=$(find src-tauri/target/release/bundle/dmg -name '*.dmg' -print -quit)
+          if [ -z "$dmg" ]; then
+            echo "::error::no DMG produced under src-tauri/target/release/bundle/dmg"
+            exit 1
+          fi
+          echo "DMG=$dmg" >> "$GITHUB_ENV"
+
+      - name: Mount DMG
+        run: |
+          mount_point="$RUNNER_TEMP/personas-dmg"
+          mkdir -p "$mount_point"
+          hdiutil attach "$DMG" -mountpoint "$mount_point" -nobrowse -quiet
+          echo "MOUNT_POINT=$mount_point" >> "$GITHUB_ENV"
+
+      - name: Copy .app out of the (read-only) DMG
+        run: |
+          app=$(find "$MOUNT_POINT" -maxdepth 1 -name '*.app' -print -quit)
+          if [ -z "$app" ]; then
+            echo "::error::no .app bundle found inside mounted DMG"
+            exit 1
+          fi
+          cp -R "$app" "$RUNNER_TEMP/Personas.app"
+          echo "APP_PATH=$RUNNER_TEMP/Personas.app" >> "$GITHUB_ENV"
+
+      - name: Structural checks (build + mount + binary + signature)
+        # These are the degraded-mode assertions the ADR calls for. They run
+        # unconditionally (not gated on the launch attempt below) so the job
+        # still reports meaningful signal even when headless launch fails.
+        run: |
+          binary="$APP_PATH/Contents/MacOS/personas-desktop"
+          if [ ! -x "$binary" ]; then
+            echo "::error::binary not found or not executable at $binary"
+            exit 1
+          fi
+          echo "binary-exists: ok ($binary)"
+
+          echo "codesign identity:"
+          codesign -dv --verbose=4 "$APP_PATH" 2>&1 | tee "$RUNNER_TEMP/codesign.txt"
+          # Expect an ad-hoc signature (Signature=adhoc) since the app is
+          # unsigned/un-notarized today. A real Developer ID signature would
+          # also be fine (future state); a total absence of any signature
+          # would be the regression this check exists to catch.
+          if grep -q "Signature=adhoc" "$RUNNER_TEMP/codesign.txt"; then
+            echo "signature: adhoc (expected for unsigned build)"
+          elif grep -qi "Authority=" "$RUNNER_TEMP/codesign.txt"; then
+            echo "signature: real Developer ID signature found (unexpected but not a failure)"
+          else
+            echo "::error::no code signature at all -- expected at least adhoc"
+            exit 1
+          fi
+
+      - name: Attempt health-check launch (best-effort)
+        # Real signal when it works, but headless launch of a Tauri
+        # (GUI-subsystem) binary on a macOS runner is not guaranteed —
+        # this step's own failure does not fail the job (see continue-on-error
+        # above at the job level); the structural checks above are the load-
+        # bearing assertions for this platform until launch is proven stable.
+        run: |
+          xattr -rd com.apple.quarantine "$APP_PATH" || true
+          binary="$APP_PATH/Contents/MacOS/personas-desktop"
+          "$binary" --health-check > "$RUNNER_TEMP/health.log" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/health.log"
+          if [ $code -ne 0 ]; then
+            echo "::warning::health-check exited $code (see degraded-mode structural checks above for the load-bearing assertions)"
+            exit 1
+          fi
+          if ! grep -q "health-check: passed" "$RUNNER_TEMP/health.log"; then
+            echo "::warning::health-check did not report 'passed'"
+            exit 1
+          fi
+
+      - name: Detach DMG
+        if: always()
+        run: hdiutil detach "$MOUNT_POINT" -quiet || true
+
+  # ─── Option B3: Build + smoke-test Linux deb + AppImage from HEAD ─
+  # ADR: 2026-05-01-installer-test-cross-platform.
+  #
+  # continue-on-error: true for the soak period (mirrors the e2e-smoke.yml
+  # non-blocking-gate precedent). Flip to false once green for 5 consecutive
+  # scheduled runs, same promotion bar as the macOS job above.
+  test-build-linux:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.tag == ''
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    continue-on-error: true
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - uses: mozilla-actions/sccache-action@v0.0.7
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          cache-on-failure: true
+
+      # Same package list as ci.yml's rust-tests / e2e-smoke.yml jobs (tauri
+      # v2 build-time deps), plus xvfb (headless X server for the launch
+      # smoke) and libfuse2 (AppImage's runtime needs FUSE to mount itself;
+      # Ubuntu 22.04+ doesn't ship it by default).
+      - name: Install Tauri Linux deps + xvfb + fuse
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libpipewire-0.3-dev \
+            libfuse2 \
+            xvfb
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build deb + AppImage bundles
+        run: npx tauri build --bundles deb,appimage
+
+      - name: Install + smoke-test the .deb
+        run: |
+          deb=$(find src-tauri/target/release/bundle/deb -name '*.deb' -print -quit)
+          if [ -z "$deb" ]; then
+            echo "::error::no .deb produced under src-tauri/target/release/bundle/deb"
+            exit 1
+          fi
+          echo "Installing: $deb"
+          sudo apt-get install -y "$deb"
+
+          binary=$(dpkg -L personas-desktop | grep '/usr/bin/' | head -n1)
+          if [ -z "$binary" ] || [ ! -x "$binary" ]; then
+            echo "::error::installed binary not found via dpkg -L personas-desktop"
+            exit 1
+          fi
+          echo "binary-exists: ok ($binary)"
+
+          xvfb-run -a -- "$binary" --health-check > deb-health.log 2>&1
+          code=$?
+          cat deb-health.log
+          if [ $code -ne 0 ] || ! grep -q "health-check: passed" deb-health.log; then
+            echo "::error::deb health-check smoke failed (exit $code)"
+            exit 1
+          fi
+
+      - name: Smoke-test the AppImage
+        run: |
+          appimage=$(find src-tauri/target/release/bundle/appimage -name '*.AppImage' -print -quit)
+          if [ -z "$appimage" ]; then
+            echo "::error::no AppImage produced under src-tauri/target/release/bundle/appimage"
+            exit 1
+          fi
+          chmod +x "$appimage"
+          echo "AppImage: $appimage"
+
+          xvfb-run -a -- "$appimage" --appimage-extract-and-run --health-check > appimage-health.log 2>&1
+          code=$?
+          cat appimage-health.log
+          if [ $code -ne 0 ] || ! grep -q "health-check: passed" appimage-health.log; then
+            echo "::error::AppImage health-check smoke failed (exit $code)"
+            exit 1
+          fi
+
   # ─── Option C: Test a specific tag ───────────────────────────
   test-tag:
     if: >-
