@@ -111,6 +111,28 @@ pub fn is_known_kind(kind: &str) -> bool {
     list_kinds().iter().any(|k| k.kind == kind)
 }
 
+/// The status a run records at dispatch time. Delegated ops (health ingest,
+/// signal dispatch) only EMIT a request here — the frontend does the work and
+/// reports the real outcome via `system_ops_report_outcome` — so recording
+/// `"ok"` at emit time would claim success for work that may never have run
+/// (an emit to zero listeners still succeeds). They record `"requested"`;
+/// synchronous/launch ops keep `"ok"`.
+pub fn initial_status(op_kind: &str) -> &'static str {
+    match op_kind {
+        OP_HEALTH_INGEST | OP_SIGNAL_DISPATCH_RUNNER | OP_SIGNAL_DISPATCH_FLEET => "requested",
+        _ => "ok",
+    }
+}
+
+/// Thread the automation's id into the op params under a reserved key, so a
+/// delegated op can carry it in its emitted payload and the frontend can report
+/// the run's real outcome back to this automation row.
+fn inject_automation_id(params: &mut Value, automation_id: &str) {
+    if let Some(obj) = params.as_object_mut() {
+        obj.insert("_automationId".to_string(), json!(automation_id));
+    }
+}
+
 /// Compute the next fire time (RFC3339) for a cron, seeded by the automation id
 /// so identical crons across automations don't thundering-herd.
 pub fn compute_next_run_at(cron_expr: &str, id: &str, tz: Option<&str>) -> Option<String> {
@@ -173,9 +195,10 @@ fn run_signal_dispatch(
             )
         })?;
 
+    let automation_id = params.get("_automationId").and_then(|v| v.as_str());
     app.emit(
         EVENT_SIGNAL_DISPATCH_REQUESTED,
-        json!({ "ideaId": idea_id, "target": target, "source": source }),
+        json!({ "ideaId": idea_id, "target": target, "source": source, "automationId": automation_id }),
     )
     .map_err(|e| AppError::Internal(format!("failed to request signal dispatch: {e}")))?;
 
@@ -196,9 +219,10 @@ fn run_health_ingest(app: &AppHandle, params: &Value, source: &str) -> Result<St
         .filter(|s| !s.trim().is_empty())
         .ok_or_else(|| AppError::Validation("health_ingest requires a projectId".into()))?;
 
+    let automation_id = params.get("_automationId").and_then(|v| v.as_str());
     app.emit(
         EVENT_HEALTH_INGEST_REQUESTED,
-        serde_json::json!({ "projectId": project_id, "source": source }),
+        serde_json::json!({ "projectId": project_id, "source": source, "automationId": automation_id }),
     )
     .map_err(|e| AppError::Internal(format!("failed to request health ingest: {e}")))?;
 
@@ -321,9 +345,10 @@ pub fn run_due_schedule_automations(app: &AppHandle, pool: &DbPool) {
             .cron
             .as_deref()
             .and_then(|c| compute_next_run_at(c, &a.id, a.timezone.as_deref()));
-        let params: Value = serde_json::from_str(&a.params_json).unwrap_or_else(|_| json!({}));
+        let mut params: Value = serde_json::from_str(&a.params_json).unwrap_or_else(|_| json!({}));
+        inject_automation_id(&mut params, &a.id);
         let (status, detail) = match run_op(app, pool, &a.op_kind, &params, "schedule") {
-            Ok(d) => ("ok", d),
+            Ok(d) => (initial_status(&a.op_kind), d),
             Err(e) => ("failed", e.to_string()),
         };
         let _ = repo::mark_run(pool, &a.id, status, Some(&detail), next.as_deref());
@@ -380,8 +405,9 @@ pub fn dispatch_event_automations(app: &AppHandle, pool: &DbPool, events: &[Pers
                     }),
                 );
             }
+            inject_automation_id(&mut params, &a.id);
             let (status, detail) = match run_op(app, pool, &a.op_kind, &params, "event") {
-                Ok(d) => ("ok", d),
+                Ok(d) => (initial_status(&a.op_kind), d),
                 Err(e) => ("failed", e.to_string()),
             };
             let _ = repo::mark_run(pool, &a.id, status, Some(&detail), None);

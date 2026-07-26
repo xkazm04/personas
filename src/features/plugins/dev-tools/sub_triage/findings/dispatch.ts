@@ -85,15 +85,26 @@ export async function dispatchFinding(
   return task ? 'opened a Fleet session (task linked)' : 'opened a Fleet session';
 }
 
-/** Event handler: a `signal_dispatch_*` op fired. */
+/** Event handler: a `signal_dispatch_*` op fired. Reports the real outcome back
+ *  to the automation row when one fired it (the dispatcher recorded `requested`). */
 export async function handleSignalDispatchRequested(
   ideaId: string,
   target: DispatchTarget,
+  automationId?: string,
 ): Promise<void> {
   const addToast = useToastStore.getState().addToast;
+  const report = (status: 'ok' | 'failed', detail: string) => {
+    if (!automationId) return;
+    void import('@/api/systemOps').then((api) =>
+      api
+        .reportSystemOpOutcome(automationId, status, detail)
+        .catch(silentCatch('dispatch:reportOutcome')),
+    );
+  };
   try {
     const detail = await dispatchFinding(ideaId, target);
     addToast(`Finding dispatched — ${detail}`, 'success');
+    report('ok', detail);
 
     // Refresh so an open Triage/Runner tab reflects it immediately.
     const sys = useSystemStore.getState();
@@ -104,5 +115,6 @@ export async function handleSignalDispatchRequested(
   } catch (e) {
     silentCatch('dispatch:run')(e);
     addToast(`Finding dispatch to ${target} failed`, 'error');
+    report('failed', e instanceof Error ? e.message : String(e));
   }
 }

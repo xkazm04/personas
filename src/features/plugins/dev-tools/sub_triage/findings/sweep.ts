@@ -85,6 +85,10 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   const { project, credentials, passport, plan, kpiAttention, contextIdForCulprit } = inputs;
   const drafts: FindingDraft[] = [];
   const skippedSensors: string[] = [];
+  const errors: string[] = [];
+  const recordError = (stage: string, e: unknown) => {
+    errors.push(`${stage}: ${e instanceof Error ? e.message : String(e)}`);
+  };
 
   // -- E1/E2: the passport sensors (need a scan to have run) ------------------
   if (passport) {
@@ -211,6 +215,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
         if (verdict.state !== 'pending') verified[verdict.state] += 1;
       } catch (e) {
         silentCatch('findings/sweep:setVerifyState')(e);
+        recordError('verify', e);
       }
     }
   }
@@ -249,6 +254,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
       if (idea) created += 1;
     } catch (e) {
       silentCatch('findings/sweep:createFinding')(e);
+      recordError('persist', e);
     }
   }
 
@@ -257,6 +263,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     duplicates: drafts.length - fresh.length,
     dropped,
     skippedSensors,
+    errors,
     verified,
   };
 }

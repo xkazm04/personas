@@ -59,6 +59,9 @@ export interface SweepResult {
   dropped: number;
   /** Sensors that couldn't be read (not wired / errored) — a sweep still runs. */
   skippedSensors: string[];
+  /** Persistence failures (createFinding / setVerifyState) — a partial sweep must
+   *  never report itself as a clean run. */
+  errors: string[];
   /** Verdicts taken on shipped findings this pass (Phase 3A). `unchanged` and
    *  `regressed` are reported alongside `cleared` — merged is not fixed. */
   verified: { cleared: number; moved: number; unchanged: number; regressed: number };

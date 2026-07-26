@@ -139,9 +139,38 @@ pub fn system_ops_run_now(
 ) -> Result<String, AppError> {
     require_auth_sync(&state)?;
     let a = repo::get(&state.db, &id)?;
-    let params: serde_json::Value =
-        serde_json::from_str(&a.params_json).unwrap_or(serde_json::Value::Null);
+    let mut params: serde_json::Value =
+        serde_json::from_str(&a.params_json).unwrap_or_else(|_| serde_json::json!({}));
+    if let Some(obj) = params.as_object_mut() {
+        obj.insert("_automationId".to_string(), serde_json::json!(a.id));
+    }
     let detail = ops::run_op(&app, &state.db, &a.op_kind, &params, "manual")?;
-    let _ = repo::mark_run(&state.db, &id, "ok", Some(&detail), a.next_run_at.as_deref());
+    let _ = repo::mark_run(
+        &state.db,
+        &id,
+        ops::initial_status(&a.op_kind),
+        Some(&detail),
+        a.next_run_at.as_deref(),
+    );
     Ok(detail)
+}
+
+/// The frontend reports the REAL outcome of a delegated run (health ingest /
+/// signal dispatch) once the sweep or dispatch actually finished. Without this
+/// write-back a scheduled automation records success the moment its request
+/// event is emitted, even if nothing ran.
+#[tauri::command]
+pub fn system_ops_report_outcome(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    status: String,
+    detail: Option<String>,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    if !matches!(status.as_str(), "ok" | "partial" | "failed") {
+        return Err(AppError::Validation(format!(
+            "Unknown run outcome status: {status} (expected ok | partial | failed)"
+        )));
+    }
+    repo::mark_outcome(&state.db, &id, &status, detail.as_deref())
 }

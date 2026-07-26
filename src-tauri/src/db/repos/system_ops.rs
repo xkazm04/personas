@@ -128,6 +128,27 @@ pub fn mark_run(
     Ok(())
 }
 
+/// Record the REAL outcome of a delegated run, reported back by the frontend
+/// after the sweep/dispatch actually finished. Unlike `mark_run` this touches
+/// only `last_status`/`last_detail` — the fire time and re-arm are already
+/// recorded by the dispatcher (`mark_run` with status `requested`).
+pub fn mark_outcome(
+    pool: &DbPool,
+    id: &str,
+    status: &str,
+    detail: Option<&str>,
+) -> Result<bool, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let rows = conn.execute(
+        "UPDATE system_op_automations
+            SET last_status = ?1, last_detail = ?2, updated_at = ?3
+          WHERE id = ?4",
+        params![status, detail, now, id],
+    )?;
+    Ok(rows > 0)
+}
+
 /// Schedule automations whose next fire time has arrived.
 pub fn get_due_schedules(pool: &DbPool, now: &str) -> Result<Vec<SystemOpAutomation>, AppError> {
     let conn = pool.get()?;

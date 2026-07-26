@@ -352,6 +352,9 @@ export interface HealthIngestRequestedPayload {
   projectId: string;
   /** "schedule" | "event" | "manual" — diagnostics only. */
   source: string;
+  /** The automation row that fired this — the frontend reports the run's real
+   *  outcome back to it via `system_ops_report_outcome`. Absent on ad-hoc runs. */
+  automationId?: string | null;
 }
 
 /** Dispatch a finding. `target` is the route's choice, not the engine's. */
@@ -359,6 +362,8 @@ export interface SignalDispatchRequestedPayload {
   ideaId: string;
   target: 'runner' | 'fleet';
   source: string;
+  /** See HealthIngestRequestedPayload.automationId. */
+  automationId?: string | null;
 }
 
 export interface HealingEventPayload {

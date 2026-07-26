@@ -264,7 +264,7 @@ const registry: EventRegistration[] = [
     setup: async () => {
       const unlisten = await typedListen(EventName.HEALTH_INGEST_REQUESTED, (payload) => {
         void import('@/features/plugins/dev-tools/sub_triage/findings/healthIngest').then((m) =>
-          m.handleHealthIngestRequested(payload.projectId),
+          m.handleHealthIngestRequested(payload.projectId, payload.automationId ?? undefined),
         );
       });
       return [unlisten];
@@ -279,7 +279,7 @@ const registry: EventRegistration[] = [
     setup: async () => {
       const unlisten = await typedListen(EventName.SIGNAL_DISPATCH_REQUESTED, (payload) => {
         void import('@/features/plugins/dev-tools/sub_triage/findings/dispatch').then((m) =>
-          m.handleSignalDispatchRequested(payload.ideaId, payload.target),
+          m.handleSignalDispatchRequested(payload.ideaId, payload.target, payload.automationId ?? undefined),
         );
       });
       return [unlisten];

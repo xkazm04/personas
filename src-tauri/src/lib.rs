@@ -3162,6 +3162,7 @@ pub fn run() {
             commands::infrastructure::system_ops::system_ops_set_enabled,
             commands::infrastructure::system_ops::system_ops_delete_automation,
             commands::infrastructure::system_ops::system_ops_run_now,
+            commands::infrastructure::system_ops::system_ops_report_outcome,
             // Dev Tools -- Context Group Relationships
             commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
             commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,
