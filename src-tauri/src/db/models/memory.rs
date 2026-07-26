@@ -41,6 +41,7 @@ pub fn normalize_category(value: &str) -> &'static str {
 /// Description metadata for a single memory category, exposed to the frontend.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct MemoryCategoryInfo {
     /// Machine-readable key (e.g. "fact").
     pub key: String,

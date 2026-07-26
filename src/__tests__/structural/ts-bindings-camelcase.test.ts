@@ -4,11 +4,11 @@
  * binding it generates presents camelCase to the frontend like the rest of the
  * codebase. A struct without it leaks Rust's snake_case across the IPC boundary.
  *
- * 319 structs (of 804 exported) predate the rule and are baselined below,
+ * 312 structs (of 804 exported) predate the rule and are baselined below,
  * grouped by file so each shrink is reviewable in a diff. **The baseline may only
  * SHRINK.** Two assertions enforce that:
  *   1. a NEW exported struct without the rename fails the day it is written —
- *      that is the drift mechanism which produced the 319;
+ *      that is the drift mechanism which produced the 312;
  *   2. a baseline entry that gained the rename (or was deleted) must be removed
  *      from the list, so the ratchet cannot silently go slack.
  *
@@ -153,8 +153,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'PersonaEvent', 'PersonaEventSubscription', 'UpdateEventSubscriptionInput',
   ],
   'src-tauri/src/db/models/execution.rs': [
-    'ExecutionCounts', 'ExecutionListItem', 'ExecutionSearchResult', 'GlobalExecutionRow',
-    'PersonaExecution',
+    'ExecutionListItem', 'ExecutionSearchResult', 'GlobalExecutionRow', 'PersonaExecution',
   ],
   'src-tauri/src/db/models/execution_annotation.rs': [
     'ExecutionAnnotation',
@@ -170,8 +169,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'HealingKnowledge', 'PersonaHealingIssue',
   ],
   'src-tauri/src/db/models/identity.rs': [
-    'IdentityCard', 'ImportTrustedPeerInput', 'LocalIdentity', 'PeerIdentity', 'TrustedPeer',
-    'UpdateTrustedPeerInput',
+    'IdentityCard', 'LocalIdentity', 'PeerIdentity', 'TrustedPeer', 'UpdateTrustedPeerInput',
   ],
   'src-tauri/src/db/models/knowledge.rs': [
     'ExecutionKnowledge', 'KnowledgeGraphSummary',
@@ -180,7 +178,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'LlmSpendDashboard', 'LlmSpendDay', 'LlmSpendGroup', 'LlmSpendTotals',
   ],
   'src-tauri/src/db/models/memory.rs': [
-    'CreatePersonaMemoryInput', 'MemoryCategoryInfo', 'PersonaMemory',
+    'CreatePersonaMemoryInput', 'PersonaMemory',
   ],
   'src-tauri/src/db/models/message.rs': [
     'CreateMessageInput', 'PersonaMessage', 'PersonaMessageDelivery',
@@ -190,13 +188,10 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/src/db/models/observability.rs': [
     'AlertRule', 'DashboardCostAnomaly', 'DashboardDailyPoint', 'DashboardTopPersona',
-    'ExecutionDashboardData', 'ExecutionHeatmapData', 'FiredAlert', 'HeatmapDay',
-    'HeatmapInsights', 'MetricAnomaly', 'MetricsChartData', 'MetricsChartPoint',
-    'MetricsPersonaBreakdown', 'PersonaCostEntry', 'PersonaMetricsSnapshot',
-    'PersonaPromptVersion', 'PromptPerformanceData', 'PromptPerformancePoint', 'VersionMarker',
-  ],
-  'src-tauri/src/db/models/obsidian_brain.rs': [
-    'DetectedVault',
+    'ExecutionDashboardData', 'ExecutionHeatmapData', 'FiredAlert', 'HeatmapInsights',
+    'MetricAnomaly', 'MetricsChartData', 'MetricsChartPoint', 'MetricsPersonaBreakdown',
+    'PersonaCostEntry', 'PersonaMetricsSnapshot', 'PersonaPromptVersion',
+    'PromptPerformanceData', 'PromptPerformancePoint', 'VersionMarker',
   ],
   'src-tauri/src/db/models/ocr.rs': [
     'OcrDocument', 'OcrResult',
@@ -241,7 +236,7 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'AdoptedTeamPresetFailure', 'AdoptedTeamPresetMember', 'AdoptedTeamPresetResult',
     'PresetAdoptionSchema', 'PresetMemberAdoptionSchema', 'TeamPreset',
     'TeamPresetAdoptProgress', 'TeamPresetConnection', 'TeamPresetGroupSpec',
-    'TeamPresetMember', 'TeamPresetTeamSpec',
+    'TeamPresetMember',
   ],
   'src-tauri/src/db/models/template_feedback.rs': [
     'TemplateFeedback', 'TemplatePerformance',
@@ -268,9 +263,6 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   ],
   'src-tauri/src/db/repos/communication/sla.rs': [
     'PersonaDailyReliability', 'PersonaReliability',
-  ],
-  'src-tauri/src/db/repos/dev_workspaces.rs': [
-    'IngestSummary',
   ],
   'src-tauri/src/db/repos/execution/chain_stop_reasons.rs': [
     'ChainStopReason',

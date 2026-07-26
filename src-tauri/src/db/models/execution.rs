@@ -152,6 +152,7 @@ pub struct GlobalExecutionRow {
 /// filter badges independently from the paginated row list.
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ExecutionCounts {
     #[ts(type = "number")]
     pub total: i64,
