@@ -50,7 +50,24 @@ export interface UseDirector {
   openDirector: () => void;
 }
 
-export function useDirector(): UseDirector {
+export interface UseDirectorOptions {
+  /**
+   * Defer the Director data fetch (portfolio, verdicts, brain flag,
+   * vault-availability) until the Director persona is confirmed present in
+   * the agent store. For surfaces that mount unconditionally alongside other
+   * content (e.g. the personas-page teaser) rather than behind explicit user
+   * navigation — avoids firing the cluster on every page load when Director
+   * isn't seeded for this install/tier. Default `false` preserves the
+   * original eager-fetch-on-mount behavior for surfaces (the Director
+   * command-center tab) that need `ready` to resolve even when `director`
+   * turns out to be absent, so they can render their own empty state instead
+   * of hanging on a spinner forever.
+   */
+  lazy?: boolean;
+}
+
+export function useDirector(options: UseDirectorOptions = {}): UseDirector {
+  const { lazy = false } = options;
   const personas = useAgentStore((s) => s.personas);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
@@ -89,10 +106,21 @@ export function useDirector(): UseDirector {
   }, [period]);
 
   // Refetch on mount and whenever the selected period changes (refresh closes
-  // over `period`, so it's a fresh callback per window).
+  // over `period`, so it's a fresh callback per window). `lazy` callers (the
+  // always-mounted DirectorPanel teaser) additionally wait for the Director
+  // persona to be confirmed present — derived from the agentStore's
+  // already-loaded personas, no extra IPC — before firing; that's the gate
+  // that keeps the four Director reads (portfolio, verdicts, brain flag,
+  // vault-availability) off installs/tiers where Director isn't seeded, and
+  // off the very first paint before the persona roster resolves. Non-lazy
+  // callers (the Director command-center tab, reached only by explicit user
+  // navigation) keep the original eager behavior — they must still resolve
+  // `ready` even when `director` turns out to be absent, so their empty
+  // state (not an infinite spinner) can render.
   useEffect(() => {
+    if (lazy && !director) return;
     refresh();
-  }, [refresh]);
+  }, [refresh, lazy, director]);
 
   const setPeriod = useCallback((days: number | null) => setPeriodState(days), []);
 
