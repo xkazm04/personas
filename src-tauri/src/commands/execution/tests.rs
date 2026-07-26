@@ -1,5 +1,7 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
@@ -18,6 +20,18 @@ use crate::engine::{eval, parser, prompt};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 #[tauri::command]
 pub async fn start_test_run(
@@ -64,10 +78,12 @@ pub async fn start_test_run(
 
     let cancelled_clone = cancelled.clone();
     let run_id_for_cancel = run_id.clone();
+    let pool_for_panic = pool.clone();
+    let run_id_for_panic = run_id_for_cancel.clone();
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_test(
+        let work = AssertUnwindSafe(test_runner::run_test(
             app,
             pool,
             run_id_for_cancel.clone(),
@@ -78,8 +94,24 @@ pub async fn start_test_run(
             use_case_filter,
             preloaded_scenarios,
             fixture_inputs,
-        )
+        ))
+        .catch_unwind()
         .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(run_id = %run_id_for_panic, panic = %msg, "test run task panicked — marking run as failed");
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = repo::update_run_status(
+                &pool_for_panic,
+                &run_id_for_panic,
+                LabRunStatus::Failed,
+                None,
+                None,
+                None,
+                Some(&now),
+            );
+        }
     });
 
     Ok(run)
@@ -379,8 +411,11 @@ pub async fn test_n8n_draft(
     // Background task: read stdout, emit events, determine result
     let test_id_bg = test_id.clone();
     let app_bg = app.clone();
+    let test_id_for_panic = test_id_bg.clone();
+    let app_for_panic = app_bg.clone();
     tokio::spawn(async move {
         let _guard = run_guard;
+        let work = AssertUnwindSafe(async move {
         let mut reader = match driver.take_stdout_reader() {
             Some(r) => r.lines(),
             None => {
@@ -520,6 +555,23 @@ pub async fn test_n8n_draft(
                 passed,
             },
         );
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(test_id = %test_id_for_panic, panic = %msg, "draft n8n test task panicked — marking test as failed");
+            let _ = app_for_panic.emit(
+                event_name::N8N_TEST_STATUS,
+                N8nTestStatusEvent {
+                    test_id: test_id_for_panic,
+                    status: "failed".to_string(),
+                    error: Some(format!("Internal error: test task panicked: {msg}")),
+                    passed: Some(false),
+                },
+            );
+        }
     });
 
     Ok(())

@@ -4,9 +4,11 @@
 //! spawns ffmpeg process, parses stderr for progress, emits Tauri events.
 
 use std::collections::{HashMap, HashSet};
+use std::panic::AssertUnwindSafe;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tauri::{Emitter, State};
@@ -14,6 +16,18 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command as TokioCommand;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 use crate::background_job::BackgroundJobManager;
 use crate::engine::event_registry::event_name;
@@ -576,8 +590,11 @@ pub async fn artist_export_composition(
 
     let app_handle = app.clone();
     let job_id_clone = job_id.clone();
+    let app_handle_for_panic = app_handle.clone();
+    let job_id_for_panic = job_id_clone.clone();
 
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = tokio::select! {
             _ = cancel_token.cancelled() => {
                 Err(AppError::Internal("Export cancelled".into()))
@@ -612,6 +629,17 @@ pub async fn artist_export_composition(
         }
 
         let _ = MEDIA_EXPORT_JOBS.remove(&job_id_clone);
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(job_id = %job_id_for_panic, panic = %msg, "media export task panicked — marking job as failed");
+            MEDIA_EXPORT_JOBS.set_status(&app_handle_for_panic, &job_id_for_panic, "failed", Some(msg.clone()));
+            MEDIA_EXPORT_JOBS.emit_line(&app_handle_for_panic, &job_id_for_panic, format!("[Error] {msg}"));
+            let _ = MEDIA_EXPORT_JOBS.remove(&job_id_for_panic);
+        }
     });
 
     Ok(json!({ "job_id": job_id }))

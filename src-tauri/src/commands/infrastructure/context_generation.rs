@@ -5,8 +5,10 @@
 //! and creates DevContextGroup + DevContext entries via protocol messages.
 //! Progress is streamed to the frontend via Tauri events.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, LazyLock, Mutex};
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use serde_json::json;
 use tauri::{Emitter, State};
@@ -24,6 +26,18 @@ use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 /// Per-project single-flight guard for context-map scans. Two concurrent
 /// rescans of one project interleave `clear_project_context_map` (a full DELETE
@@ -548,7 +562,14 @@ pub(crate) fn launch_context_scan(
     let token_for_task = cancel_token;
     let project_name = project.name.clone();
 
+    let app_handle_for_panic = app_handle.clone();
+    let scan_id_for_panic = scan_id_for_task.clone();
+    let pool_for_panic = pool.clone();
+    let project_id_for_panic = project_id.clone();
+    let project_name_for_panic = project_name.clone();
+
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         // Hold the per-project single-flight guard for the task's whole life;
         // it releases on drop when this task ends (success, error, or cancel).
         let _scan_guard = scan_guard;
@@ -641,6 +662,32 @@ pub(crate) fn launch_context_scan(
                     &format!("{project_name}: {msg}"),
                 );
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                scan_id = %scan_id_for_panic,
+                panic = %msg,
+                "context-map generation task panicked — marking scan as failed"
+            );
+            CONTEXT_GEN_JOBS.set_status(&app_handle_for_panic, &scan_id_for_panic, "failed", Some(msg.clone()));
+            CONTEXT_GEN_JOBS.emit_line(&app_handle_for_panic, &scan_id_for_panic, format!("[Error] {msg}"));
+            crate::engine::system_ops::publish_context_scan_event(
+                &pool_for_panic,
+                "completed",
+                &project_id_for_panic,
+                &project_name_for_panic,
+                json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_panic }),
+            );
+            crate::notifications::send(
+                &app_handle_for_panic,
+                "Context Scan Failed",
+                &format!("{project_name_for_panic}: internal error during scan"),
+            );
         }
     });
 

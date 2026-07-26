@@ -1,5 +1,7 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use tauri::{Emitter, State};
 use tokio_util::sync::CancellationToken;
 
@@ -12,6 +14,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // -- Job-specific extra state --------------------------------------------
 
@@ -73,8 +87,11 @@ pub async fn start_nl_query(
     let pool = state.db.clone();
     let user_db = state.user_db.clone();
 
+    let app_for_panic = app.clone();
+    let query_id_for_panic = query_id.clone();
+
     tokio::spawn(async move {
-        run_nl_query(RunParams {
+        let work = AssertUnwindSafe(run_nl_query(RunParams {
             app,
             pool,
             user_db,
@@ -84,8 +101,19 @@ pub async fn start_nl_query(
             conversation_history: conversation_history.unwrap_or_default(),
             database_type,
             cancel_token,
-        })
+        }))
+        .catch_unwind()
         .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                query_id = %query_id_for_panic,
+                panic = %msg,
+                "NL query task panicked — marking job as failed"
+            );
+            NL_QUERY_JOBS.set_status(&app_for_panic, &query_id_for_panic, "failed", Some(msg));
+        }
     });
 
     Ok(())
