@@ -242,7 +242,10 @@ impl ManifestSync {
         let entries = stmt
             .query_map([], |row| {
                 let tags_json: String = row.get(4)?;
-                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
+                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_else(|e| {
+                    tracing::warn!(error = %e, "unparseable exposed_resources tags; defaulting to empty");
+                    Vec::new()
+                });
                 Ok(ManifestEntry {
                     resource_type: row.get(0)?,
                     resource_id: row.get(1)?,
@@ -317,7 +320,10 @@ impl ManifestSync {
         let entries = stmt
             .query_map(rusqlite::params![peer_id], |row| {
                 let tags_json: String = row.get(6)?;
-                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
+                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_else(|e| {
+                    tracing::warn!(peer_id = %peer_id, error = %e, "unparseable peer_manifests tags; defaulting to empty");
+                    Vec::new()
+                });
                 Ok(PeerManifestEntry {
                     id: row.get(0)?,
                     peer_id: row.get(1)?,

@@ -414,12 +414,21 @@ pub struct ScraperConfig {
 fn row_to_config(row: &rusqlite::Row) -> rusqlite::Result<ScraperConfig> {
     let urls_s: String = row.get("urls")?;
     let rules_s: String = row.get("rules")?;
+    let id: String = row.get("id")?;
+    let urls = serde_json::from_str(&urls_s).unwrap_or_else(|e| {
+        tracing::warn!(scraper_id = %id, error = %e, "unparseable scraper urls; this scraper will run with 0 URLs");
+        Vec::new()
+    });
+    let rules = serde_json::from_str(&rules_s).unwrap_or_else(|e| {
+        tracing::warn!(scraper_id = %id, error = %e, "unparseable scraper rules; defaulting to null");
+        Value::Null
+    });
     Ok(ScraperConfig {
-        id: row.get("id")?,
+        id,
         name: row.get("name")?,
         description: row.get("description")?,
-        urls: serde_json::from_str(&urls_s).unwrap_or_default(),
-        rules: serde_json::from_str(&rules_s).unwrap_or(Value::Null),
+        urls,
+        rules,
         dataset: row.get("dataset")?,
         key_field: row.get("key_field")?,
         cron: row.get("cron")?,

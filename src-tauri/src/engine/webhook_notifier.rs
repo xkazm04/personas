@@ -336,7 +336,13 @@ pub fn pattern_matches(pattern: &str, event_type: &str) -> bool {
 }
 
 fn parse_patterns(event_types_json: &str) -> Vec<String> {
-    serde_json::from_str::<Vec<String>>(event_types_json).unwrap_or_default()
+    // A silently-empty pattern list means this subscription matches NOTHING —
+    // the webhook goes quiet with no error surfaced anywhere. Log so a corrupt
+    // event_types column is at least visible in telemetry.
+    serde_json::from_str::<Vec<String>>(event_types_json).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "unparseable webhook subscription event_types; this subscription will match no events");
+        Vec::new()
+    })
 }
 
 // =============================================================================
