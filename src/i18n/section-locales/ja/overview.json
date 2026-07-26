@@ -428,7 +428,10 @@
     "mode_backlog": "バックログ",
     "mode_knowledge": "共有知識",
     "mode_reviews": "手動レビュー",
-    "mode_switch_label": "決定の種類"
+    "mode_switch_label": "決定の種類",
+    "backlog_effort_title": "工数",
+    "backlog_impact_title": "影響",
+    "backlog_risk_title": "リスク"
   },
   "messages_view": {
     "title": "メッセージ",

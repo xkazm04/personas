@@ -6192,7 +6192,10 @@
       "mode_backlog": "ব্যাকলগ",
       "mode_knowledge": "ওয়ার্কস্পেস জ্ঞান",
       "mode_reviews": "ম্যানুয়াল পর্যালোচনা",
-      "mode_switch_label": "সিদ্ধান্তের ধরন"
+      "mode_switch_label": "সিদ্ধান্তের ধরন",
+      "backlog_effort_title": "প্রচেষ্টা",
+      "backlog_impact_title": "প্রভাব",
+      "backlog_risk_title": "ঝুঁকি"
     },
     "messages_view": {
       "title": "বার্তা",

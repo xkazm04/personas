@@ -6192,7 +6192,10 @@
       "mode_backlog": "बैकलॉग",
       "mode_knowledge": "वर्कस्पेस ज्ञान",
       "mode_reviews": "मैन्युअल समीक्षा",
-      "mode_switch_label": "निर्णय प्रकार"
+      "mode_switch_label": "निर्णय प्रकार",
+      "backlog_effort_title": "प्रयास",
+      "backlog_impact_title": "प्रभाव",
+      "backlog_risk_title": "जोखिम"
     },
     "messages_view": {
       "title": "संदेश",

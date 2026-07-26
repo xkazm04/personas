@@ -428,7 +428,10 @@
     "mode_backlog": "Backlog",
     "mode_knowledge": "Pengetahuan Ruang Kerja",
     "mode_reviews": "Ulasan Manual",
-    "mode_switch_label": "Jenis keputusan"
+    "mode_switch_label": "Jenis keputusan",
+    "backlog_effort_title": "Upaya",
+    "backlog_impact_title": "Dampak",
+    "backlog_risk_title": "Risiko"
   },
   "messages_view": {
     "title": "Pesan",

@@ -428,7 +428,10 @@
     "mode_backlog": "Backlog",
     "mode_knowledge": "Connaissances de l'espace",
     "mode_reviews": "Révision manuelle",
-    "mode_switch_label": "Type de décision"
+    "mode_switch_label": "Type de décision",
+    "backlog_effort_title": "Effort",
+    "backlog_impact_title": "Impact",
+    "backlog_risk_title": "Risque"
   },
   "messages_view": {
     "title": "Messages",

@@ -6192,7 +6192,10 @@
       "mode_backlog": "Backlog",
       "mode_knowledge": "Znalosti prostoru",
       "mode_reviews": "Ruční kontrola",
-      "mode_switch_label": "Typ rozhodnutí"
+      "mode_switch_label": "Typ rozhodnutí",
+      "backlog_effort_title": "Úsilí",
+      "backlog_impact_title": "Dopad",
+      "backlog_risk_title": "Riziko"
     },
     "messages_view": {
       "title": "Zprávy",

@@ -428,7 +428,10 @@
     "mode_backlog": "待办事项",
     "mode_knowledge": "共享知识",
     "mode_reviews": "人工审核",
-    "mode_switch_label": "决策类型"
+    "mode_switch_label": "决策类型",
+    "backlog_effort_title": "工作量",
+    "backlog_impact_title": "影响",
+    "backlog_risk_title": "风险"
   },
   "messages_view": {
     "title": "消息",

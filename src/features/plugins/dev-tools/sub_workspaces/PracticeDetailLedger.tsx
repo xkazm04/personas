@@ -1,11 +1,10 @@
-// VARIANT — "Ledger": the record-with-margin metaphor, borrowed straight from
-// Manual Review's focus card (sub_manual-review/FocusedDecisionCard.tsx).
+// "Ledger" — the record-with-margin layout, /prototype round-1 winner, borrowed
+// from Manual Review's focus card (sub_manual-review/FocusedDecisionCard.tsx).
 //
-// Where Dossier solves the readability problem by making everything ONE column
-// and letting type size carry hierarchy, Ledger solves it by SEPARATION OF
-// KIND: prose lives left, facts live right, and a single vertical divider does
-// the work a dozen little borders were doing. Nothing in the reading column is
-// a key/value pair, so the claim and its evidence never compete with metadata.
+// It solves the readability complaint by SEPARATION OF KIND: prose lives left,
+// facts live right, and a single vertical divider does the work a dozen little
+// borders were doing. Nothing in the reading column is a key/value pair, so the
+// claim and its evidence never compete with metadata.
 //
 //   • the argument column reads like a document: accent-barred lede, then
 //     evidence prose — no boxes at all;
@@ -14,9 +13,10 @@
 //     sits with the facts it depends on;
 //   • verdict affordances follow Manual Review's overlay-button language
 //     (colour-on-hover, ring when active) rather than generic footer buttons.
-import { Check, X, Ban, Share2, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, X, Ban, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { DecisionActions } from '@/features/shared/components/decisions/DecisionActions';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -148,28 +148,28 @@ export function PracticeDetailLedger({
 
             {(pending || adopted) && (
               <div className="mt-4 pt-3 border-t border-primary/10 flex flex-col gap-2">
+                {/* Same control the backlog and the review queue use — adopt is
+                    an `accept`, reject is a `reject`, and the tones come from
+                    one place so the three streams can't drift. */}
+                <DecisionActions
+                  layout="stacked"
+                  size="md"
+                  actions={
+                    pending
+                      ? [
+                          { id: 'adopt', label: tw.decide_adopt, tone: 'accept', icon: <Check className="w-4 h-4" />, disabled: busy, onClick: () => onDecide('adopt') },
+                          { id: 'reject', label: tw.decide_reject, tone: 'reject', icon: <X className="w-4 h-4" />, disabled: busy, onClick: () => onDecide('reject') },
+                        ]
+                      : [
+                          ...(onRollout
+                            ? [{ id: 'rollout', label: tw.rollout_dispatch, tone: 'accept' as const, icon: <Share2 className="w-4 h-4" />, disabled: busy, onClick: onRollout }]
+                            : []),
+                          { id: 'deprecate', label: tw.decide_deprecate, tone: 'neutral', icon: <Ban className="w-4 h-4" />, disabled: busy, onClick: () => onDecide('deprecate') },
+                        ]
+                  }
+                />
                 {pending && (
-                  <>
-                    <Button block onClick={() => onDecide('adopt')} disabled={busy} icon={<Check className="w-4 h-4" />} className="whitespace-nowrap">
-                      {tw.decide_adopt}
-                    </Button>
-                    <Button block variant="secondary" onClick={() => onDecide('reject')} disabled={busy} icon={<X className="w-4 h-4" />} className="whitespace-nowrap">
-                      {tw.decide_reject}
-                    </Button>
-                    <p className="typo-caption text-muted-foreground">{tw.decide_reject_hint}</p>
-                  </>
-                )}
-                {adopted && (
-                  <>
-                    {onRollout && (
-                      <Button block onClick={onRollout} disabled={busy} icon={<Share2 className="w-4 h-4" />} iconRight={<ExternalLink className="w-3 h-3 opacity-60" />} className="whitespace-nowrap">
-                        {tw.rollout_dispatch}
-                      </Button>
-                    )}
-                    <Button block variant="secondary" onClick={() => onDecide('deprecate')} disabled={busy} icon={<Ban className="w-4 h-4" />} className="whitespace-nowrap">
-                      {tw.decide_deprecate}
-                    </Button>
-                  </>
+                  <p className="typo-caption text-muted-foreground">{tw.decide_reject_hint}</p>
                 )}
               </div>
             )}

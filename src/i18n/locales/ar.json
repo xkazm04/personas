@@ -6192,7 +6192,10 @@
       "mode_backlog": "المتراكم",
       "mode_knowledge": "معرفة المساحة",
       "mode_reviews": "المراجعة اليدوية",
-      "mode_switch_label": "نوع القرار"
+      "mode_switch_label": "نوع القرار",
+      "backlog_effort_title": "الجهد",
+      "backlog_impact_title": "التأثير",
+      "backlog_risk_title": "الخطر"
     },
     "messages_view": {
       "title": "الرسائل",

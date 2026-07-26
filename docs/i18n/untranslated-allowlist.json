@@ -1670,6 +1670,8 @@
   "fr:overview.realtime_page.pause",
   "fr:overview.realtime_viz.pause",
   "fr:overview.review.agent",
+  "fr:overview.review.backlog_effort_title",
+  "fr:overview.review.backlog_impact_title",
   "fr:overview.review.cloud_badge",
   "fr:overview.review.mode_backlog",
   "fr:overview.review.source_cloud",

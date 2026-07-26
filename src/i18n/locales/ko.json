@@ -6192,7 +6192,10 @@
       "mode_backlog": "백로그",
       "mode_knowledge": "공유 지식",
       "mode_reviews": "수동 검토",
-      "mode_switch_label": "결정 유형"
+      "mode_switch_label": "결정 유형",
+      "backlog_effort_title": "노력",
+      "backlog_impact_title": "영향",
+      "backlog_risk_title": "위험"
     },
     "messages_view": {
       "title": "메시지",

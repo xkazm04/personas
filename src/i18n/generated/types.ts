@@ -6396,6 +6396,9 @@ export type Translations = {
       backlog_risk: string;
       knowledge_empty_title: string;
       knowledge_empty_subtitle: string;
+      backlog_effort_title: string;
+      backlog_impact_title: string;
+      backlog_risk_title: string;
     };
     messages_view: {
       title: string;

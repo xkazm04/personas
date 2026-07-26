@@ -6192,7 +6192,10 @@
       "mode_backlog": "Tồn đọng",
       "mode_knowledge": "Tri thức chung",
       "mode_reviews": "Đánh giá thủ công",
-      "mode_switch_label": "Loại quyết định"
+      "mode_switch_label": "Loại quyết định",
+      "backlog_effort_title": "Nỗ lực",
+      "backlog_impact_title": "Tác động",
+      "backlog_risk_title": "Rủi ro"
     },
     "messages_view": {
       "title": "Tin nhắn",

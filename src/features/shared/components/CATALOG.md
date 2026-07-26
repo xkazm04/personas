@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**117 reusable components** live under `src/features/shared/components/`.
+**119 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -20,6 +20,13 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AsyncButton` | Button that shows a spinner + disables itself while an async onClick is in flight. |
 | `Button` | Canonical button — variants (primary/secondary/ghost/danger/accent), sizes, icons. Never style a raw <button>. |
 | `CopyButton` | Copy-to-clipboard button with built-in copied feedback. Use instead of raw navigator.clipboard.writeText. |
+
+## decisions
+
+| Component | What it's for |
+|---|---|
+| `DecisionActions` | Accept/reject control shared by every decision surface (review, backlog, knowledge). |
+| `DecisionRow` | One list row for any decision stream — title, supporting line, facts, verdict. |
 
 ## display — Read-only display: badges, status, avatars, tables, time, numbers, tooltips
 
@@ -186,4 +193,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_117 components, 43 without a `@catalog` description._
+_119 components, 43 without a `@catalog` description._

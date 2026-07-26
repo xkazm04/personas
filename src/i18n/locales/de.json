@@ -6192,7 +6192,10 @@
       "mode_backlog": "Backlog",
       "mode_knowledge": "Arbeitsbereich-Wissen",
       "mode_reviews": "Manuelle Überprüfung",
-      "mode_switch_label": "Entscheidungstyp"
+      "mode_switch_label": "Entscheidungstyp",
+      "backlog_effort_title": "Aufwand",
+      "backlog_impact_title": "Auswirkung",
+      "backlog_risk_title": "Risiko"
     },
     "messages_view": {
       "title": "Nachrichten",

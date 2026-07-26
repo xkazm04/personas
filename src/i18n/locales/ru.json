@@ -6192,7 +6192,10 @@
       "mode_backlog": "Бэклог",
       "mode_knowledge": "Знания области",
       "mode_reviews": "Ручная проверка",
-      "mode_switch_label": "Тип решения"
+      "mode_switch_label": "Тип решения",
+      "backlog_effort_title": "Усилие",
+      "backlog_impact_title": "Влияние",
+      "backlog_risk_title": "Риск"
     },
     "messages_view": {
       "title": "Сообщения",
