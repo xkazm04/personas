@@ -8,6 +8,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
@@ -17,6 +19,13 @@ import { isOngoing, goalStatusMeta } from './goalStatus';
 import { GoalAtmosphere, SectionLabel, GoalProjectBadge } from './goalsTheme';
 import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
+
+/**
+ * Rows in the first viewport that play the one-shot entrance cascade when a
+ * fresh bucket set lands (35ms stagger via RevealItem, id-guarded so polling,
+ * refresh, and scrolling never replay it). Rows beyond this render plainly.
+ */
+const CASCADE_ROWS = 14;
 
 // Lazy so its ~12KB of traced path data stays out of the eager entry chunk (this file
 // is pulled in by two separate lazy chunks — see GoalsEmptyGlyph).
@@ -54,13 +63,20 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
 
   // Cross-project mode (e.g. the multi-team channel sidebar): show ALL not-done
   // goals across every project, not just the active one — fetched directly so
-  // it never depends on a single project being loaded into the store.
+  // it never depends on a single project being loaded into the store. This is
+  // this view's OWN fetch (store-mode's loading gate lives in the page shell),
+  // so isFetchingAll gates only the ghost below, never store-mode content.
   const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
+  const [isFetchingAll, setIsFetchingAll] = useState(allProjects);
   useEffect(() => {
     if (!allProjects) return;
     let cancelled = false;
+    setIsFetchingAll(true);
     void fetchProjects?.();
-    void devApi.listAllGoals().then((g) => { if (!cancelled) setAllGoals(g); }).catch(silentCatch('GoalsTimeline.allGoals'));
+    void devApi.listAllGoals()
+      .then((g) => { if (!cancelled) setAllGoals(g); })
+      .catch(silentCatch('GoalsTimeline.allGoals'))
+      .finally(() => { if (!cancelled) setIsFetchingAll(false); });
     return () => { cancelled = true; };
   }, [allProjects, fetchProjects]);
   const goals = allProjects ? (allGoals ?? []) : storeGoals;
@@ -99,10 +115,25 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
 
   const openGoal = (goalId: string) => setDetailGoalId(goalId);
 
+  // One-shot row cascade (docs/design/overview-loading.md law 4): entered ids
+  // are remembered per scope, so polling/refetching the same goals never
+  // replays it; switching scope (single project <-> all projects) resets and
+  // ripples the new set once.
+  const revealResetKey = allProjects ? 'all' : (activeProjectId ?? 'none');
+  const enter = useRevealTracker(revealResetKey);
+
   // Empty only when there are NO ongoing goals at all (dated OR undated) — the
   // undated group is first-class, never a reason to show the empty state.
   const ongoingCount = BUCKET_ORDER.reduce((n, b) => n + grouped[b].length, 0);
   if (ongoingCount === 0) {
+    // allProjects mode fetches directly (above) — while that fetch is in
+    // flight and nothing has landed yet, show a calm delayed ghost of the
+    // bucketed rail instead of the "no goals" empty state (which would
+    // otherwise flash before the real fetch settles). Store-mode has no
+    // fetching signal of its own here — the page shell owns that gate.
+    if (allProjects && isFetchingAll) {
+      return <GoalsTimelineGhost compact={compact} />;
+    }
     return (
       <div className="relative flex flex-col items-center justify-center py-16 text-center">
         <GoalAtmosphere />
@@ -115,7 +146,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
     );
   }
 
-  let rowIndex = 0;
+  let cascadeIndex = 0;
   return (
     <div className={`relative ${compact ? 'space-y-3.5 pb-3' : 'space-y-5 pb-6'}`}>
       {!compact && <GoalAtmosphere />}
@@ -127,18 +158,23 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
           {/* Rail */}
           <ul className="relative ml-1 border-l border-primary/10 space-y-1.5 pl-4">
             {grouped[b].map((g) => {
-              const delay = Math.min(rowIndex++, 14) * 30;
+              const order = cascadeIndex++;
               return (
               <li key={g.id} className="relative">
                 <span
                   className="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full border-2 border-background"
                   style={{ backgroundColor: goalStatusMeta(g.status).map.fill, boxShadow: `0 0 8px -1px ${goalStatusMeta(g.status).map.glow}` }}
                 />
+                <RevealItem
+                  revealId={g.id}
+                  order={order}
+                  hasEntered={(id) => order >= CASCADE_ROWS || enter.hasEntered(id)}
+                  markEntered={enter.markEntered}
+                >
                 <button
                   type="button"
                   onClick={() => openGoal(g.id)}
-                  style={{ animationDelay: `${delay}ms` }}
-                  className="animate-fade-slide-in w-full text-left rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 px-3 py-2 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/25 motion-reduce:transform-none focus-ring"
+                  className="w-full text-left rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 px-3 py-2 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/25 motion-reduce:transform-none focus-ring"
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground truncate flex-1">{g.title}</span>
@@ -159,6 +195,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
                     <span className="typo-caption text-foreground tabular-nums shrink-0">{g.progress}%</span>
                   </div>
                 </button>
+                </RevealItem>
               </li>
               );
             })}
@@ -182,6 +219,55 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
           onClose={() => setEditGoal(null)}
         />
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GoalsTimelineGhost — calm placeholder for the ONLY moment allProjects mode's
+// own direct fetch (listAllGoals) is in flight and nothing has landed yet.
+// Mirrors the real rail's geometry (bucket label bar + rail rows) so the
+// ghost-to-content swap moves nothing. Each element is invisible for its
+// first ~120ms (animation-delay + fill-mode both) so a fast fetch never
+// paints a single ghost — no `animate-pulse`, ever.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_ROW_WIDTHS = ['w-48', 'w-36', 'w-40'];
+
+function GoalsTimelineGhost({ compact }: { compact?: boolean }) {
+  return (
+    <div className={`relative ${compact ? 'space-y-3.5 pb-3' : 'space-y-5 pb-6'}`} aria-hidden="true">
+      {!compact && <GoalAtmosphere />}
+      {[0, 1].map((bucket) => (
+        <div key={bucket}>
+          <div className="mb-2 flex items-center gap-2 animate-fade-in" style={{ animationDelay: '120ms' }}>
+            <span className="h-3 w-0.5 rounded-full bg-foreground/20" />
+            <span className={`h-2.5 w-20 ${GHOST_BAR}`} />
+          </div>
+          <ul className="relative ml-1 border-l border-primary/10 space-y-1.5 pl-4">
+            {GHOST_ROW_WIDTHS.map((w, i) => {
+              const delay = `${140 + (bucket * GHOST_ROW_WIDTHS.length + i) * 35}ms`;
+              return (
+                <li key={i} className="relative">
+                  <span className="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full border-2 border-background bg-foreground/15" />
+                  <div
+                    className="w-full rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 px-3 py-2 animate-fade-in"
+                    style={{ animationDelay: delay }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={`h-3.5 ${w} ${GHOST_BAR}`} />
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="flex-1 h-1 bg-primary/10 rounded-full overflow-hidden" />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
