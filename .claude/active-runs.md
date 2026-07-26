@@ -2,9 +2,6 @@
 
 ## Active
 
-### architect-resume-15items — /architect resume multi-execute orchestration — session fable-5
-- Started 2026-07-26 (~16:00). Status: started. Orchestrating 14 backlog items via Opus/Sonnet subagents in isolated worktrees (waves). Declared paths: many, but ALL agents excluded from the currently-dirty source files (memories.rs, build_sessions.rs, n8n_transform, twin.rs, companion/*, db/repos/dev_tools.rs, connector_explorer, git_checkpoint.rs, verification_command.rs) — those remain other sessions' territory. Vault: Architect/*. Merges land on master sequentially as branches finish.
-
 ### workspace-approvals-unification — practice-detail /prototype + move Knowledge Library into Overview.Approvals — session opus-5[1m]
 - Started: 2026-07-26. Status: started. Round 1 = 2 directional variants of PracticeDetailModal behind a temp switcher (Dossier / Ledger), focused on typographic hierarchy + divider + component strategy; then consolidation of the three decision surfaces (Manual Review / Dev Tools backlog / Workspace Knowledge) under a 3-mode nav in Overview -> Approvals, unifying toward Manual Review as the superior path.
 - Paths: src/features/plugins/dev-tools/sub_workspaces/{PracticeDetailModal,PracticeDetailVariant1,PracticeDetailVariant2,practiceAreaTheme,KnowledgeLibrary,KnowledgeTree}.tsx, src/features/overview/sub_manual-review/components/** (ManualReviewList, BacklogInboxGroup + new mode switcher), src/i18n/**, docs/features/plugins/dev tools/workspaces.md. NOTE: working on MAIN CHECKOUT not a worktree - the user is live-reviewing the library in the running dev server, and variants in a worktree would be invisible to it; per-file staging + atomic per-round commits instead. No active session overlaps sub_workspaces or sub_manual-review (checked).
@@ -294,6 +291,10 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### architect-resume-15items — /architect resume orchestration — session fable-5 — COMPLETE
+- 2026-07-26. Status: completed (origin/master pushed at 584f9a042). 14 backlog items executed via 13 subagent worktree branches in 3 waves; architect-devtools branch merged (275f529c1); orphaned pre-restart work committed (2b1e56c9b/efc57998c/0babf5246); origin's 9 commits merged (584f9a042). Gates on final master: cargo 0 err, tsc 0, lint 0 err/908 warn, vitest 2659/2659, i18n strict clean. All run worktrees removed + branches deleted. VISUAL VERIFY PENDING: schedules windowing (>=24 rows), Studio unattended selector, Director defer.
+
 
 ### friend-mastermind — /friend endless loop over the Mastermind canvas — session fable-5 — COMPLETED + MERGED
 - 2026-07-26. **MERGED to master `798099f88`** (ff; master was 3 ahead, merged in first, gates re-run green). 13 cycles, commits `b484685a7..348b23df4`. Worktree + branch removed (node_modules junction unlinked FIRST).
