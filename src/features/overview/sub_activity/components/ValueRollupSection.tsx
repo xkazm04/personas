@@ -40,7 +40,7 @@ export function ValueRollupSection({ days }: Props) {
       .then((r) => {
         if (active) setRollup(r);
       })
-      .catch(silentCatch);
+      .catch(silentCatch('ValueRollupSection:getValueRollup'));
     return () => {
       active = false;
     };

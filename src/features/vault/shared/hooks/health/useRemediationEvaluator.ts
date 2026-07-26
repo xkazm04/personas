@@ -22,6 +22,7 @@ import {
   type RemediationEvent,
 } from '@/lib/credentials/remediationBus';
 import { executeRemediationAction } from '@/lib/credentials/remediationExecutor';
+import { silentCatch } from '@/lib/silentCatch';
 
 /** Evaluation interval: check all credentials every 30 minutes. */
 const EVAL_INTERVAL_MS = 30 * 60 * 1000;
@@ -136,7 +137,8 @@ export function useRemediationEvaluator() {
     mountedRef.current = true;
 
     const safeEvaluate = () => {
-      evaluate().catch(() => {
+      evaluate().catch((err: unknown) => {
+        silentCatch('useRemediationEvaluator:evaluate')(err);
         if (mountedRef.current) setEvaluating(false);
       });
     };
@@ -160,7 +162,8 @@ export function useRemediationEvaluator() {
   /** Force an immediate re-evaluation (e.g., after manual healthcheck). */
   const forceEvaluate = useCallback(() => {
     remediationBus.resetCooldowns();
-    evaluate().catch(() => {
+    evaluate().catch((err: unknown) => {
+      silentCatch('useRemediationEvaluator:forceEvaluate')(err);
       if (mountedRef.current) setEvaluating(false);
     });
   }, [evaluate]);

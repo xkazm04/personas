@@ -8,6 +8,7 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('ByomApiKeyManager');
 
@@ -113,7 +114,10 @@ export function ByomApiKeyManager() {
   useEffect(() => {
     let cancelled = false;
     getAppSettingsBulk(settingsKeys)
-      .catch(() => ({} as Record<string, string | null>))
+      .catch((err) => {
+        silentCatch('ByomApiKeyManager:getAppSettingsBulk')(err);
+        return {} as Record<string, string | null>;
+      })
       .then((map) => {
         if (cancelled) return;
         const results: KeyEntry[] = PROVIDER_KEYS.map((def) => {
@@ -265,7 +269,10 @@ function QwenKeyRow() {
     let cancelled = false;
     getQwenStatus()
       .then((st) => { if (!cancelled) setConfigured(st.configured); })
-      .catch(() => setConfigured(false));
+      .catch((err) => {
+        silentCatch('ByomApiKeyManager:getQwenStatus')(err);
+        setConfigured(false);
+      });
     return () => { cancelled = true; };
   }, []);
 

@@ -11,6 +11,7 @@ import type { SavedView } from '@/lib/bindings/SavedView';
 import type { EventFilterInput } from '@/lib/bindings/EventFilterInput';
 import type { PersonaEvent } from '@/lib/types/types';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('event-log');
 
@@ -93,7 +94,7 @@ export function useEventLog() {
   useEffect(() => {
     listSavedViewsByType(SAVED_VIEW_TYPE)
       .then(setSavedViews)
-      .catch((err) => logger.warn('Failed to load saved views', { error: err }));
+      .catch(silentCatch('useEventLog:listSavedViews'));
   }, []);
 
   // Load the known-vocabulary registry (curated seed ∪ observed types) so the
@@ -102,10 +103,10 @@ export function useEventLog() {
   useEffect(() => {
     listKnownEventTypes()
       .then((entries) => setRegistryTypes(entries.map((e) => e.eventType)))
-      .catch((err) => logger.warn('Failed to load event vocabulary', { error: err }));
+      .catch(silentCatch('useEventLog:listKnownEventTypes'));
     getEventSkippedStats()
       .then(setSkippedStats)
-      .catch((err) => logger.warn('Failed to load skipped stats', { error: err }));
+      .catch(silentCatch('useEventLog:getEventSkippedStats'));
   }, []);
 
   const handleBusEvent = useCallback((evt: PersonaEvent) => {

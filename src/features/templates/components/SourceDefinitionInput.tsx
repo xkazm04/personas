@@ -123,7 +123,8 @@ export function SourceDefinitionInput({
           [...r].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
         );
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch("features/shared/components/forms/SourceDefinitionInput:catch3")(err);
         if (!cancelled) setProjects([]);
       })
       .finally(() => {
@@ -137,7 +138,9 @@ export function SourceDefinitionInput({
   // Make sure connector definitions are loaded so we can resolve categories.
   useEffect(() => {
     if (connectorDefinitions.length === 0) {
-      fetchConnectorDefinitions().catch(() => {});
+      fetchConnectorDefinitions().catch(
+        silentCatch("features/shared/components/forms/SourceDefinitionInput:catch4"),
+      );
     }
   }, [connectorDefinitions.length, fetchConnectorDefinitions]);
 

@@ -4,10 +4,8 @@ import type { BrowserLogEntry } from '../helpers/types';
 import { extractFirstUrl } from '../helpers/autoCredHelpers';
 import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
-
-const logger = createLogger('auto-cred-cards');
 
 /** Prominent amber card for WAITING: messages */
 export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLatest: boolean }) {
@@ -20,7 +18,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   const handleOpenUrl = useCallback(() => {
     if (!url) return;
-    openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
+    openExternalUrl(url).catch(silentCatch('AutoCredCards:openUrl'));
   }, [url]);
 
   if (confirmed && !isLatest) {

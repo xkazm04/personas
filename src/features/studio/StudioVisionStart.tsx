@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Bot, Sparkles } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { webbuildBunStatus } from '@/api/webbuild';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Vision-phase project init — the "Build with Athena" from-zero start. The user
 // describes what they want; the parent scaffolds + starts the dev server, then
@@ -63,7 +64,10 @@ export default function StudioVisionStart({
     let alive = true;
     webbuildBunStatus()
       .then((path) => alive && setBunMissing(!path))
-      .catch(() => alive && setBunMissing(false));
+      .catch((err) => {
+        silentCatch('StudioVisionStart:bunStatus')(err);
+        if (alive) setBunMissing(false);
+      });
     return () => {
       alive = false;
     };

@@ -36,7 +36,7 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
   useEffect(() => {
     if ((!credentials || credentials.length === 0) && !credentialsRequestedRef.current) {
       credentialsRequestedRef.current = true;
-      fetchCredentials().catch(() => {});
+      fetchCredentials().catch(silentCatch('cockpit_connected_services_fetch_credentials'));
     }
   }, [credentials, fetchCredentials]);
 

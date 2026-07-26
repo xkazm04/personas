@@ -65,7 +65,10 @@ export function StudioPatchbay() {
   useEffect(() => { void fetchTeams(); }, [fetchTeams]);
   useEffect(() => {
     let stale = false;
-    Promise.all([listAllTriggers(), listEvents(1000).catch(() => [] as PersonaEvent[])])
+    Promise.all([listAllTriggers(), listEvents(1000).catch((err) => {
+      silentCatch('features/triggers/sub_studio/StudioPatchbay:listEvents')(err);
+      return [] as PersonaEvent[];
+    })])
       .then(([t, e]) => { if (!stale) { setTriggers(t); setEvents(e); } })
       .catch(silentCatch('features/triggers/sub_studio/StudioPatchbay:load'));
     return () => { stale = true; };

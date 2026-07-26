@@ -9,6 +9,7 @@ import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import { domainForCategories } from './exploreDomains';
 import recipeIndex from './recipeIndex.generated.json';
+import { silentCatch } from '@/lib/silentCatch';
 
 export interface ExploreItem {
   id: string;
@@ -101,7 +102,10 @@ export function useExploreCatalog() {
         setItems(entries.map(toItem));
         setLoading(false);
       })
-      .catch(() => alive && setLoading(false));
+      .catch((err) => {
+        silentCatch('templates:exploreCatalog')(err);
+        if (alive) setLoading(false);
+      });
     return () => { alive = false; };
   }, []);
 

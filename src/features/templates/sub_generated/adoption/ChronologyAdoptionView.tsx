@@ -966,9 +966,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         // field today; the matrix preview already reflects the filter).
         selected_use_case_ids: showUseCasePicker ? [...selectedUseCaseIds] : null,
       };
-      void saveAdoptionAnswers(sessionId, JSON.stringify(payload)).catch((err) => {
-        logger.warn("Failed to persist adoption answers", { err });
-      });
+      void saveAdoptionAnswers(sessionId, JSON.stringify(payload)).catch(
+        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers"),
+      );
     }
   }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
 
@@ -1131,7 +1131,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           void useAgentStore
             .getState()
             .deletePersona(createdPersonaId)
-            .catch(() => { /* best-effort cleanup */ });
+            .catch(silentCatch("ChronologyAdoptionView:cleanupOrphanedDraft"));
           setPersonaId(null);
         }
         useToastStore.getState().addToast(
@@ -1196,7 +1196,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
               runId: personaId,
             });
           })
-          .catch(() => {});
+          .catch(silentCatch("ChronologyAdoptionView:adjustStatusUpdate"));
         // The wrapper owns the long (660s) timeout — see adjustAdoptionDraft.
         await adjustAdoptionDraft(sessionId);
       } catch (err) {
@@ -1229,7 +1229,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       const action = currentBuildPhase === 'promoted' ? 'completed' as const : 'failed' as const;
       void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
         useOverviewStore.getState().processEnded('template_adopt', action, personaId);
-      }).catch(() => {});
+      }).catch(silentCatch("ChronologyAdoptionView:processEndedTerminal"));
       useSystemStore.getState().setTemplateAdoptActive(false);
       return;
     }
@@ -1248,7 +1248,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         'template_adopt', mapped.status,
         { lastEvent: mapped.event, runId: personaId },
       );
-    }).catch(() => {});
+    }).catch(silentCatch("ChronologyAdoptionView:processStatusUpdate"));
   }, [currentBuildPhase, seeded, personaId]);
 
   // Quick-add credential modal state. The questionnaire's "Connect a
@@ -1352,12 +1352,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     const sys = useSystemStore.getState();
     // Fire-and-forget cleanup — UI closes immediately either way
     if (personaId) {
-      void agent.deletePersona(personaId).catch(() => { /* best-effort */ });
+      void agent.deletePersona(personaId).catch(silentCatch("ChronologyAdoptionView:deleteDraftCleanup"));
     }
     agent.resetBuildSession();
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
       useOverviewStore.getState().processEnded('template_adopt', 'failed', personaId ?? 'unknown');
-    }).catch(() => {});
+    }).catch(silentCatch("ChronologyAdoptionView:deleteDraftProcessEnded"));
     sys.setTemplateAdoptActive(false);
     sys.setAdoptionDraft(null);
     onClose();

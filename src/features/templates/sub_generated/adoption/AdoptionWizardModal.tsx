@@ -6,6 +6,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { ChronologyAdoptionView } from './ChronologyAdoptionView';
 import { BaseModal } from '../shared/BaseModal';
+import { silentCatch } from '@/lib/silentCatch';
 import {
   ConfirmDestructiveModal,
   type ConfirmDestructiveConfig,
@@ -74,12 +75,12 @@ export default function AdoptionWizardModal({
         const sys = useSystemStore.getState();
         const pid = agent.buildPersonaId;
         if (pid) {
-          void agent.deletePersona(pid).catch(() => { /* best-effort */ });
+          void agent.deletePersona(pid).catch(silentCatch('AdoptionWizardModal:deletePersona'));
         }
         agent.resetBuildSession();
         void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
           useOverviewStore.getState().processEnded('template_adopt', 'failed', pid ?? 'unknown');
-        }).catch(() => {});
+        }).catch(silentCatch('AdoptionWizardModal:processEnded'));
         sys.setTemplateAdoptActive(false);
         sys.setAdoptionDraft(null);
         onClose();

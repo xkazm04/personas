@@ -42,8 +42,14 @@ export function TestTab() {
   useEffect(() => {
     let stale = false;
     Promise.all([
-      listEvents(500).catch(() => [] as PersonaEvent[]),
-      listAllSubscriptions().catch(() => [] as PersonaEventSubscription[]),
+      listEvents(500).catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:catch2")(err);
+        return [] as PersonaEvent[];
+      }),
+      listAllSubscriptions().catch((err) => {
+        silentCatch("features/triggers/sub_test/TestTab:catch3")(err);
+        return [] as PersonaEventSubscription[];
+      }),
     ]).then(([events, subs]) => {
       if (stale) return;
       setRecentEvents(events);

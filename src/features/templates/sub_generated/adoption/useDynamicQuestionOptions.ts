@@ -3,6 +3,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { discoverConnectorResources, type DiscoveredItem } from '@/api/discovery/discovery';
 import type { PersonaConnectorSlot, TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -299,6 +300,7 @@ export function useDynamicQuestionOptions(
           }));
         })
         .catch((err: unknown) => {
+          silentCatch("useDynamicQuestionOptions:discoverConnectorResources")(err);
           if (requestIdRef.current[q.id] !== requestId) return;
           // Tauri serializes AppError as `{error: string, kind: string}` —
           // prefer the `error` field, fall back to `message`, then stringify.
