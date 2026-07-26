@@ -36,6 +36,7 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
+import { silentCatch } from '@/lib/silentCatch';
 
 export default function GraphPanel() {
   const { t } = useTranslation();
@@ -84,7 +85,7 @@ export default function GraphPanel() {
   useEffect(() => {
     if (!connected) return;
     loadStats();
-    void obsidianGraphStartWatcher().catch(() => {});
+    void obsidianGraphStartWatcher().catch(silentCatch('GraphPanel:startWatcher'));
     let unlisten: (() => void) | null = null;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     void listen<VaultChangedEvent>(VAULT_CHANGED_EVENT, () => {
@@ -102,7 +103,7 @@ export default function GraphPanel() {
       // Stop the watcher on every unmount AND on vault switch — otherwise
       // each (connected, activeVaultPath) change starts a fresh backend
       // watcher without stopping the previous one.
-      void obsidianGraphStopWatcher().catch(() => {});
+      void obsidianGraphStopWatcher().catch(silentCatch('GraphPanel:stopWatcher'));
     };
   }, [connected, activeVaultPath, loadStats]);
 

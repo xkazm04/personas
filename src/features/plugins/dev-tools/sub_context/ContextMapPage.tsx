@@ -83,8 +83,8 @@ function finalizeContextScan(
 
   // Always re-fetch when there's any chance work was committed (success or warning).
   if ((outcome === 'success' || outcome === 'warning') && pid) {
-    useSystemStore.getState().fetchContextGroups(pid).catch(() => {});
-    useSystemStore.getState().fetchContexts(pid).catch(() => {});
+    useSystemStore.getState().fetchContextGroups(pid).catch(silentCatch('ContextMapPage:finalizeContextScan:fetchContextGroups'));
+    useSystemStore.getState().fetchContexts(pid).catch(silentCatch('ContextMapPage:finalizeContextScan:fetchContexts'));
   }
 
   // Drawer activity end

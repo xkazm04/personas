@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { artistReadImageBase64 } from '@/api/artist';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Module-level cache keyed by filePath. Keeps decoded data URLs in memory
@@ -103,11 +104,17 @@ export function useLocalImage(filePath: string | null | undefined) {
         return url;
       });
       inflight.set(filePath, promise);
-      promise.catch(() => inflight.delete(filePath));
+      promise.catch((err) => {
+        silentCatch('useLocalImage:loadImage')(err);
+        inflight.delete(filePath);
+      });
     }
     promise
       .then((url) => { if (!cancelled) setDataUrl(url); })
-      .catch(() => { if (!cancelled) setDataUrl(null); });
+      .catch((err) => {
+        silentCatch('useLocalImage:loadImage')(err);
+        if (!cancelled) setDataUrl(null);
+      });
     return () => { cancelled = true; };
   }, [filePath]);
 

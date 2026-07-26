@@ -49,7 +49,10 @@ export function DistilledFactsPanel({ twinId }: Props) {
 
   useEffect(() => {
     if (!twinId) return;
-    twinApi.listDistilledFacts(twinId).then(setFacts).catch(() => setFacts([]));
+    twinApi.listDistilledFacts(twinId).then(setFacts).catch((err: unknown) => {
+      silentCatch('DistilledFactsPanel:listDistilledFacts')(err);
+      setFacts([]);
+    });
     void fetchComms(twinId, undefined, 50);
   }, [twinId, fetchComms]);
 

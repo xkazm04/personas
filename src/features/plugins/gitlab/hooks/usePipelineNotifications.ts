@@ -94,9 +94,9 @@ export function usePipelineNotifications(pipelines: GitLabPipeline[], projectId?
       } else {
         requestPermission().then((perm) => {
           permissionGrantedRef.current = perm === 'granted';
-        }).catch(() => {});
+        }).catch(silentCatch('usePipelineNotifications:requestPermission'));
       }
-    }).catch(() => {});
+    }).catch(silentCatch('usePipelineNotifications:isPermissionGranted'));
   }, []);
 
   useEffect(() => {

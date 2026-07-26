@@ -4,6 +4,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Import the Dev Clone template JSON directly — templateIndex already imports it.
 import devCloneTemplate from '../../../../../scripts/templates/development/dev-clone.json';
@@ -32,7 +33,7 @@ export function useDevCloneAdoption() {
       const result = await instantAdoptTemplate('Dev Clone', designResultJson);
 
       // Refresh the agent store so the new persona appears in lists.
-      await fetchPersonas().catch(() => { /* non-fatal */ });
+      await fetchPersonas().catch(silentCatch('useDevCloneAdoption:refreshPersonas'));
 
       addToast(t.plugins.dev_tools.dev_clone_adopted_toast, 'success');
       return result.persona;

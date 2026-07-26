@@ -3,7 +3,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { ArrowRightCircle, BookHeart, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -48,7 +48,10 @@ export function ReflectionsPanel({ twinId }: Props) {
     twinApi
       .listTwinReflections(twinId)
       .then(setReflections)
-      .catch(() => setReflections([]));
+      .catch((err: unknown) => {
+        silentCatch('ReflectionsPanel:listTwinReflections')(err);
+        setReflections([]);
+      });
   }, [twinId]);
 
   const handleGenerate = async () => {

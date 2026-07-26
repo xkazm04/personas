@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
+import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import {
   fetchLlmPinpoints,
@@ -69,7 +70,10 @@ export function useLlmPinpoints() {
         setCredentials(creds);
         setCredLoaded(true);
       })
-      .catch(() => setCredLoaded(true));
+      .catch((err: unknown) => {
+        silentCatch('useLlmPinpoints:listCredentials')(err);
+        setCredLoaded(true);
+      });
   }, []);
 
   const llmCreds = credentials.filter(isLlmTrackingCred);

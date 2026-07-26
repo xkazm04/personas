@@ -131,7 +131,7 @@ export function AthenaAvatar({
           el.currentTime = 0;
           // Autoplay can be blocked until a user gesture; tolerate rejection
           // silently. Don't start playback while the tab is hidden.
-          if (!document.hidden) el.play().catch(() => {});
+          if (!document.hidden) el.play().catch(silentCatch('AthenaAvatar:playActive'));
         } else {
           try {
             el.pause();
@@ -165,7 +165,7 @@ export function AthenaAvatar({
           silentCatch('features/plugins/companion/AthenaAvatar:visibility')(err);
         }
       } else {
-        el.play().catch(() => {});
+        el.play().catch(silentCatch('AthenaAvatar:visibilityResume'));
       }
     };
     document.addEventListener('visibilitychange', onVis);
@@ -201,7 +201,7 @@ export function AthenaAvatar({
         const el = refFor(which);
         if (el) {
           el.currentTime = 0;
-          el.play().catch(() => {});
+          el.play().catch(silentCatch('AthenaAvatar:onEndedReplay'));
         }
       }
     },
