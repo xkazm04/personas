@@ -44,7 +44,12 @@ export function useEventLog() {
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId: setPersonaId } = useOverviewFilterActions();
-  const [isLoading, setIsLoading] = useState(true);
+  // True while the initial/filter-context (re)fetch of recentEvents is in
+  // flight. It NEVER hides rows already on screen (store data — usually
+  // pre-warmed by the event bus + prior visits — paints on the first frame);
+  // it only decides whether an empty row-region shows ghost rows or the
+  // empty state (docs/design/overview-loading.md, law 1).
+  const [isFetching, setIsFetching] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Search state
@@ -78,11 +83,11 @@ export function useEventLog() {
   useEffect(() => {
     let active = true;
     const load = async () => {
-      setIsLoading(true);
+      setIsFetching(true);
       try {
         await fetchRecentEvents(INITIAL_LIMIT);
       } finally {
-        if (active) setIsLoading(false);
+        if (active) setIsFetching(false);
       }
     };
     load();
@@ -394,7 +399,7 @@ export function useEventLog() {
     sortDirection, toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId: setPersonaId,
-    isLoading, isRefreshing, isSearching,
+    isFetching, isRefreshing, isSearching,
     filteredEvents,
     handleRefresh, getPersona,
     // Search
