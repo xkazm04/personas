@@ -2,9 +2,8 @@
 
 ## Active
 
-### architect-dev-tools-area — /architect area scan (dev-tools domain) — session fable-5
-- Started 2026-07-26. Status: started (Phase 3 parallel scan running).
-- Declared paths: Obsidian Architect/{scans,decisions,backlog.md,weak-patterns.md,strong-patterns.md,coverage.md}, Lessons/2026-07-26-architect.md; working tree TBD by triage (likely src/features/plugins/dev-tools/**, src/features/teams/**, src-tauri/src/commands/infrastructure/dev_tools*, docs/features/plugins/dev tools/**); always .claude/active-runs.md.
+### architect-resume-15items — /architect resume multi-execute orchestration — session fable-5
+- Started 2026-07-26 (~16:00). Status: started. Orchestrating 14 backlog items via Opus/Sonnet subagents in isolated worktrees (waves). Declared paths: many, but ALL agents excluded from the currently-dirty source files (memories.rs, build_sessions.rs, n8n_transform, twin.rs, companion/*, db/repos/dev_tools.rs, connector_explorer, git_checkpoint.rs, verification_command.rs) — those remain other sessions' territory. Vault: Architect/*. Merges land on master sequentially as branches finish.
 
 
 ### workspace-knowledge-center-arc2 — extraction engine — session fable-5/opus-5 — COMPLETE
@@ -292,6 +291,19 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### friend-mastermind — /friend endless loop over the Mastermind canvas — session fable-5 — COMPLETED + MERGED
+- 2026-07-26. **MERGED to master `798099f88`** (ff; master was 3 ahead, merged in first, gates re-run green). 13 cycles, commits `b484685a7..348b23df4`. Worktree + branch removed (node_modules junction unlinked FIRST).
+- Shipped: context-menu dim rows wired (both §12 no-ops now closed) · KPI cell → KpiListPopover · **dimension-categories far/mid collapse** (lifts the ~15-cell lattice ceiling — a 16th dim is now a registry entry + 1 lattice coord per variant) · datalinks/support `stack-list` popovers · persona rows live+navigable (`navigateToProcess` EXTRACTED from MonitorDrawer → `features/fleet/monitor/navigateToProcess.ts`, now shared) · CategoryPopover · demo signposting · category attention badge · auth `viewOnly` marker · group rollup + group-scoped Fleet dispatch · group state histogram · context menu grouped by category · **ListPopover shell** (6 popovers folded, −60 LOC).
+- DECLINED on findings: fleet-lane scan dispatch — would make Ideas freshness go green on a run producing zero ideas (headless-parse vs PTY lanes are not interchangeable). §10 deviation STANDS. Real want underneath = a live-log surface; `IDEA_SCAN_JOBS.emit_line` emits and nothing in src/features consumes it.
+- GRADUATED to /perfect: dependency-health 16th dimension (passport carries no dependency data at all). Vault: `Friend/graduated/2026-07-26-*.md`.
+- Auth stays inert BY DESIGN — making it actionable is a Passport-wall change (no `auth` row in deployActions/connectors; would break dimActions' "clickable exactly when the wall row shows a gear" invariant).
+- Gates: tsc clean · eslint 0 errors · vitest 190/190 (teams) · i18n strict 0/0 ×14 + 0 untranslated. Paths: `src/features/teams/sub_mastermind/**`, `src/features/fleet/monitor/{navigateToProcess.ts,MonitorDrawer.tsx}`, `docs/features/plugins/dev tools/mastermind.md`, `src/i18n/**`. Kept OFF `sub_factory/passport/improve/**` (ledger-flagged as another session's).
+
+
+### architect-dev-tools-area — /architect area scan+execute (dev-tools) — session fable-5 — COMPLETE
+- 2026-07-26. Status: completed on branch `worktree-architect-devtools` (9 commits 7fbcead5b..2514063f0, UNMERGED — main checkout has in-flight uncommitted edits to src-tauri/src/db/repos/dev_tools.rs that overlap; merge when that session commits). 8 findings executed: loop-honesty trio (outcome write-back, verify probedOrigins gate, unattended_mode approval gate), idea_scanner panic capture, dev_ideas UNIQUE dedup + aging fix + rescan reconcile, nav exact-guards, dev_tools.rs 4-way split (3924→1957 LOC), camelCase ratchet test. Gates: tsc 0, lint 910 (baseline 909), cargo check clean, vitest 2603 pass (2 pnpm-junction artifacts), i18n strict clean. Worktree left in place pending merge.
+
 
 ### motionize-live-roadmap — /motionize on docs/features/live-roadmap — session opus-5 — COMPLETE
 - Started + complete 2026-07-26. Commit: `73b95d4f2` (motionPresets.ts preset library + MotionizedGlyph entrance/ambient/hover composition; roadmapRouteGlyph -> RoadmapRouteRail hero rail w/ pulse; roadmapWaypointGlyph -> RoadmapLaneEmptyGlyph replacing the empty-lane em-dash; releases.whats_new.lane_empty x14 locales; emit-glyph.mjs TracedGlyph shape fix + SKILL.md trace gotchas). Gates: tsc clean, eslint clean, vitest 2606/2606 (270 files), i18n strict 0/0 + 0 untranslated, check:themes AA, vite build clean, glyph lazy chunks confirmed. NOT live-verified in the app (Chrome extension not connected). UNPUSHED.
