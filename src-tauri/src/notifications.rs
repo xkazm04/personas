@@ -10,6 +10,7 @@ use ts_rs::TS;
 use crate::db::models::{ChannelScopeV2, ChannelSpecV2, ChannelSpecV2Type};
 use crate::engine::crypto::SecureString;
 use crate::engine::event_registry::{emit_event, event_name};
+use crate::error::AppError;
 
 /// Per-persona notification preferences parsed from `notification_channels` JSON.
 #[derive(Debug, Deserialize)]
@@ -1271,7 +1272,7 @@ pub async fn test_channel_delivery(
     channel_specs: Vec<ChannelSpecV2>,
     sample_title: String,
     sample_body: String,
-) -> Result<Vec<TestDeliveryResult>, String> {
+) -> Result<Vec<TestDeliveryResult>, AppError> {
     let mut results = Vec::with_capacity(channel_specs.len());
     let now = std::time::Instant::now();
     let mut rate_map = TEST_DELIVERY_RATE_LIMIT.lock().await;
@@ -1424,20 +1425,37 @@ async fn test_deliver_external(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn test_notification_channel(channel_json: String) -> Result<String, String> {
-    let channel: ExternalChannel =
-        serde_json::from_str(&channel_json).map_err(|e| format!("Invalid channel config: {e}"))?;
+pub async fn test_notification_channel(channel_json: String) -> Result<String, AppError> {
+    let channel: ExternalChannel = serde_json::from_str(&channel_json)
+        .map_err(|e| AppError::Validation(format!("Invalid channel config: {e}")))?;
 
     let title = "Personas -- Test Notification";
     let body = "If you see this, your notification channel is working correctly.";
 
+    // The `deliver_*` helpers are shared with the real dispatch path and still
+    // return `String`; wrap at this boundary. A delivery failure is an outbound
+    // call to a third-party channel API → `External`.
     match channel.channel_type.as_str() {
-        "slack" => deliver_slack(&channel, title, body).await?,
-        "telegram" => deliver_telegram(&channel, title, body).await?,
-        "email" => deliver_email(&channel, title, body).await?,
-        "discord" => deliver_discord(&channel, title, body).await?,
-        "teams" => deliver_teams(&channel, title, body).await?,
-        other => return Err(format!("Unknown channel type: {other}")),
+        "slack" => deliver_slack(&channel, title, body)
+            .await
+            .map_err(AppError::External)?,
+        "telegram" => deliver_telegram(&channel, title, body)
+            .await
+            .map_err(AppError::External)?,
+        "email" => deliver_email(&channel, title, body)
+            .await
+            .map_err(AppError::External)?,
+        "discord" => deliver_discord(&channel, title, body)
+            .await
+            .map_err(AppError::External)?,
+        "teams" => deliver_teams(&channel, title, body)
+            .await
+            .map_err(AppError::External)?,
+        other => {
+            return Err(AppError::Validation(format!(
+                "Unknown channel type: {other}"
+            )))
+        }
     }
 
     Ok("Notification delivered successfully".into())
