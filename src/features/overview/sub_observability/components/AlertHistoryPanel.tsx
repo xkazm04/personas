@@ -6,6 +6,7 @@ import { IllustratedEmptyState as EmptyState } from '@/features/shared/component
 import { StatusDot, type SeverityState } from '@/features/shared/components/display/StatusDot';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { silentCatch } from '@/lib/silentCatch';
 
 
 const SEVERITY_BY_KEY: Record<string, SeverityState> = {
@@ -81,7 +82,7 @@ export function AlertHistoryPanel() {
         </div>
         {alertHistory.length > 0 && (
           <button
-            onClick={() => { clearAlertHistory().catch(() => {}); }}
+            onClick={() => { clearAlertHistory().catch(silentCatch('AlertHistoryPanel:clearAlertHistory')); }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:text-red-400 hover:border-red-500/20 transition-colors"
           >
             <Trash2 className="w-3 h-3" /> Clear
@@ -95,7 +96,7 @@ export function AlertHistoryPanel() {
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {alertHistory.map((alert) => (
-            <AlertRow key={alert.id} alert={alert} onDismiss={() => { dismissAlert(alert.id).catch(() => {}); }} />
+            <AlertRow key={alert.id} alert={alert} onDismiss={() => { dismissAlert(alert.id).catch(silentCatch('AlertHistoryPanel:dismissAlert')); }} />
           ))}
       </div>
     </div>

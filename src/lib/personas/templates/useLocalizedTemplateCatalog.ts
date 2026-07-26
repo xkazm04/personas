@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useI18nStore } from '@/stores/i18nStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import {
   getLocalizedTemplateCatalog,
@@ -74,6 +75,7 @@ export function useLocalizedTemplateCatalogStatus(): UseLocalizedTemplateCatalog
         setPhase(r.status);
       })
       .catch((err) => {
+        silentCatch('useLocalizedTemplateCatalog:load')(err);
         if (cancelled) return;
         setError(err instanceof Error ? err : new Error(String(err)));
         setPhase('failed');

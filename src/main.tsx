@@ -254,7 +254,7 @@ function mountReact(root: HTMLElement) {
 // Warm the app-data directory lookup so the first custom persona-icon render
 // is synchronous (see customIconStore.ts). Fire-and-forget — failure just
 // means custom icons resolve a tick later.
-void ensureAppDataDir().catch(() => { /* resolved lazily on first use */ });
+void ensureAppDataDir().catch(silentCatch('main:ensureAppDataDir'));
 
 // Durability mirror for appearance prefs (theme/density/text-scale/…): restores
 // from the backend on a fresh/cleared webview profile, and write-through-persists
@@ -268,11 +268,7 @@ echoLanguageMirrorOnce();
 
 if (root) {
   void preloadPersistedLocaleBeforeMount()
-    .catch((e) => {
-      globalErrorLogger.warn("Persisted locale preload failed", {
-        error: e instanceof Error ? e.message : String(e),
-      });
-    })
+    .catch(silentCatch('main:preloadPersistedLocale'))
     .finally(() => mountReact(root));
 } else {
   globalErrorLogger.error("#root element not found");
@@ -293,8 +289,8 @@ if (import.meta.env.DEV) (async () => {
     monitorStore(useSystemStore, 'systemStore');
     monitorStore(useAgentStore, 'agentStore');
     // Lazy stores monitored when they load
-    import("./stores/overviewStore").then(({ useOverviewStore }) => monitorStore(useOverviewStore, 'overviewStore')).catch(() => {});
-    import("./stores/vaultStore").then(({ useVaultStore }) => monitorStore(useVaultStore, 'vaultStore')).catch(() => {});
+    import("./stores/overviewStore").then(({ useOverviewStore }) => monitorStore(useOverviewStore, 'overviewStore')).catch(silentCatch('main:monitorOverviewStore'));
+    import("./stores/vaultStore").then(({ useVaultStore }) => monitorStore(useVaultStore, 'vaultStore')).catch(silentCatch('main:monitorVaultStore'));
   } catch (err) { silentCatch("main:catch4")(err); }
 })();
 

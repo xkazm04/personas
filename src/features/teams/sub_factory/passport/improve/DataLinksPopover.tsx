@@ -13,6 +13,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { anchorTip } from '../passportInk';
 import { parseDataLinkIds } from '../usePassportData';
 import { useImprove } from './ImproveContext';
+import { silentCatch } from '@/lib/silentCatch';
 
 const WIDTH = 300;
 
@@ -38,7 +39,7 @@ export function DataLinksPopover({ slug, anchor, onClose }: {
         if (cancelled) return;
         setOthers(rows.filter((r) => r.id !== slug).map((r) => ({ id: r.id, name: r.name })).sort((a, b) => a.name.localeCompare(b.name)));
       })
-      .catch(() => { if (!cancelled) setOthers([]); });
+      .catch((err) => { silentCatch('DataLinksPopover:listProjects')(err); if (!cancelled) setOthers([]); });
     return () => { cancelled = true; };
   }, [slug]);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(parseDataLinkIds(raw?.project.data_links)));

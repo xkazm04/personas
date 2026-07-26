@@ -106,6 +106,7 @@ export function useByomSettings() {
       setCorruptPolicyError(null);
       setLoaded(true);
     }).catch((err: unknown) => {
+      silentCatch('useByomSettings:getByomPolicy')(err);
       // The backend returns a validation error when the stored JSON is corrupt.
       // Surface this to the user instead of silently falling back to open-access.
       const msg = err && typeof err === 'object' && 'error' in err

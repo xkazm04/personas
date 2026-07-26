@@ -1413,7 +1413,7 @@ const bridge: TestBridge = {
       const existing = await invoke<Array<{ id: string; name: string }>>('list_personas');
       for (const p of existing) {
         if (p.name === name) {
-          await invoke('delete_persona', { id: p.id }).catch(() => {});
+          await invoke('delete_persona', { id: p.id }).catch(silentCatch('test/automation/bridge:setupDiscordTwinPersona'));
         }
       }
 

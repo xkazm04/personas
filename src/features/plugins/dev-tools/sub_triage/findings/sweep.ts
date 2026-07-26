@@ -118,7 +118,10 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   if (llmCred && hasLiveAdapter(llmCred.serviceType)) {
     try {
       const pinpoints = await fetchLlmPinpoints(llmCred.serviceType, llmCred.id, '30d');
-      const useCases = await listUseCases(project.id, 'active').catch(() => []);
+      const useCases = await listUseCases(project.id, 'active').catch((err: unknown) => {
+        silentCatch('findings/sweep:listUseCases')(err);
+        return [];
+      });
       const idBySlug = new Map(useCases.map((u) => [u.slug, u.id]));
       drafts.push(...emitLlmCostFindings(pinpoints, '30d', idBySlug));
       probedOrigins.add('llm_cost');
@@ -162,7 +165,10 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   try {
     const [usage, installed] = await Promise.all([
       getSkillUsageOverview(),
-      listSkills(project.id).catch(() => []),
+      listSkills(project.id).catch((err: unknown) => {
+        silentCatch('findings/sweep:listSkills')(err);
+        return [];
+      }),
     ]);
     if (usage.length === 0) {
       skippedSensors.push('skills');

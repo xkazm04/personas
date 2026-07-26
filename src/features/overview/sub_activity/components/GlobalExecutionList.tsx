@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { GroupedVirtualList } from '@/features/shared/components/display/GroupedVirtualList';
@@ -199,7 +200,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     focusFetchAttemptedForRef.current = pendingExecutionFocus;
     // Preserve the active status filter — the bare refetch also used to
     // clobber the filtered list with unfiltered data.
-    void fetchGlobalExecutions(true, filter === 'all' ? undefined : filter).catch(() => {});
+    void fetchGlobalExecutions(true, filter === 'all' ? undefined : filter).catch(silentCatch('GlobalExecutionList:focusFetch'));
   }, [pendingExecutionFocus, globalExecutions, fetchGlobalExecutions, setPendingExecutionFocus, filter]);
 
   const hasRunning = useMemo(

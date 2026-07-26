@@ -52,6 +52,7 @@ import {
 import type { BuildEvent } from "@/lib/types/buildTypes";
 import { buildBatchedAnswerPayload } from "@/lib/build/answerPayload";
 import { createLogger } from "@/lib/log";
+import { silentCatch } from "@/lib/silentCatch";
 
 const logger = createLogger("build-session");
 
@@ -350,10 +351,10 @@ export function useBuildSession(
                 abortController.signal.aborted ||
                 generation !== generationRef.current
               ) {
-                void cancelBuildSession(sessionId).catch(() => undefined);
+                void cancelBuildSession(sessionId).catch(silentCatch("hooks/build/useBuildSession:cancelStaleSession"));
               }
             })
-            .catch(() => undefined);
+            .catch(silentCatch("hooks/build/useBuildSession:startInvokeChain"));
           const sessionId = await abortableStart(
             startInvoke,
             abortController.signal,
@@ -368,7 +369,7 @@ export function useBuildSession(
             abortController.signal.aborted ||
             generation !== generationRef.current
           ) {
-            void cancelBuildSession(sessionId).catch(() => undefined);
+            void cancelBuildSession(sessionId).catch(silentCatch("hooks/build/useBuildSession:cancelDuringStartGuard"));
             throw buildStartCancelledError();
           }
 
@@ -406,7 +407,7 @@ export function useBuildSession(
             startPromiseRef.current = null;
           }
         })
-        .catch(() => undefined);
+        .catch(silentCatch("hooks/build/useBuildSession:startPromiseCleanup"));
       return promise;
     },
     [personaId, handleChannelMessage],

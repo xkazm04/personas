@@ -1,6 +1,7 @@
 import { companionTts, type TtsEngineId, type TtsSettings } from '@/api/companion';
 import { attachPlayback } from './audioLevel';
 import { useSystemStore } from '@/stores/systemStore';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
@@ -67,7 +68,11 @@ export function play(url: string): { audio: HTMLAudioElement; done: Promise<void
       () => { unsubVolume(); reject(new Error('audio playback failed')); },
       { once: true },
     );
-    audio.play().catch((e) => { unsubVolume(); reject(e); });
+    audio.play().catch((e) => {
+      silentCatch('voicePlayback:play')(e);
+      unsubVolume();
+      reject(e);
+    });
   });
   return { audio, done };
 }

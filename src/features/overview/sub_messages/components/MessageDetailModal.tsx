@@ -141,7 +141,10 @@ export function MessageDetailModal({
     setDeliveriesLoading(true);
     getMessageDeliveries(msgId)
       .then(setDeliveries)
-      .catch(() => setDeliveries([]))
+      .catch((err) => {
+        silentCatch('MessageDetailModal:getMessageDeliveries')(err);
+        setDeliveries([]);
+      })
       .finally(() => setDeliveriesLoading(false));
   }, [msgId]);
 

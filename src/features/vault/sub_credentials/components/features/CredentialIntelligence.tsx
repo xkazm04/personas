@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, Users, Clock, Shield, AlertTriangle, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('credential-intelligence');
+import { silentCatch } from '@/lib/silentCatch';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import {
@@ -55,7 +53,7 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
         setDependents(d);
         setAuditLog(a);
       })
-      .catch((err) => { logger.error('Failed to load credential intelligence', { error: String(err) }); })
+      .catch(silentCatch('CredentialIntelligence:loadIntelligence'))
       .finally(() => {
         if (!cancelled) setLoading(false);
       });

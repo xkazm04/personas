@@ -1,5 +1,5 @@
 /**
- * RuleTester coverage for the 11 custom ESLint rules in `eslint-rules/`.
+ * RuleTester coverage for the 12 custom ESLint rules in `eslint-rules/`.
  *
  * Each rule gets a few valid + invalid cases. Coverage is illustrative, not
  * exhaustive — the goal is to catch behavior regressions when a rule's regex
@@ -24,6 +24,7 @@ const noRawTextClasses = require("../../../eslint-rules/no-raw-text-classes.cjs"
 const noSilentCatch = require("../../../eslint-rules/no-silent-catch.cjs");
 const noUnmanagedEffectResources = require("../../../eslint-rules/no-unmanaged-effect-resources.cjs");
 const noDirectWhiteColors = require("../../../eslint-rules/no-direct-white-colors.cjs");
+const asyncCatchRequiresHelper = require("../../../eslint-rules/async-catch-requires-helper.cjs");
 
 // RuleTester needs vitest's `it` / `describe` so its case generation
 // integrates with our reporter.
@@ -320,10 +321,67 @@ ruleTester.run("custom/no-direct-white-colors", noDirectWhiteColors, {
   ],
 });
 
+ruleTester.run("custom/async-catch-requires-helper", asyncCatchRequiresHelper, {
+  valid: [
+    {
+      // direct sanctioned-helper call
+      code: `import { silentCatch } from "@/lib/silentCatch";
+somePromise.catch(silentCatch("feature:context"));`,
+    },
+    {
+      code: `import { toastCatch } from "@/lib/silentCatch";
+somePromise.catch(toastCatch("feature:action", "Failed to save"));`,
+    },
+    {
+      code: `import { silentCatchNull } from "@/lib/silentCatch";
+somePromise.catch(silentCatchNull("feature:context"));`,
+    },
+    {
+      // handler bound to a sanctioned helper via a local variable
+      code: `import { silentCatch } from "@/lib/silentCatch";
+const onFail = silentCatch("feature:context");
+somePromise.catch(onFail);`,
+    },
+    {
+      // reject-forwarding inside a Promise executor
+      code: `function wrap() {
+  return new Promise((resolve, reject) => {
+    inner().catch(reject);
+  });
+}`,
+    },
+    {
+      // inline handler that still delegates to the sanctioned helper for
+      // the breadcrumb, alongside other necessary recovery logic
+      code: `import { silentCatch } from "@/lib/silentCatch";
+somePromise.catch((err) => {
+  silentCatch("feature:context")(err);
+  cachedValue = null;
+});`,
+    },
+  ],
+  invalid: [
+    {
+      // empty inline handler
+      code: `somePromise.catch(() => {});`,
+      errors: 1,
+    },
+    {
+      // non-empty inline handler — still bypasses Sentry breadcrumb discipline
+      code: `somePromise.catch((err) => { console.error(err); });`,
+      errors: 1,
+    },
+    {
+      code: `somePromise.catch(function (err) { setError(err); });`,
+      errors: 1,
+    },
+  ],
+});
+
 // Sanity assertion to make this file a valid vitest spec — the RuleTester
 // blocks above register their own cases; this just confirms the file ran.
 describe("eslint custom rules suite", () => {
-  it("registered RuleTester cases for all 11 custom rules", () => {
+  it("registered RuleTester cases for all 12 custom rules", () => {
     expect(true).toBe(true);
   });
 });

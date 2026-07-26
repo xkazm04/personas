@@ -7,6 +7,7 @@ import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { isTerminalState } from '@/lib/execution/executionState';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ExecutionMemoriesProps {
   executionId: string;
@@ -26,7 +27,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
           setExecutionMemories(memories);
           setMemoriesLoaded(true);
         })
-        .catch(() => setMemoriesLoaded(true));
+        .catch((err) => { silentCatch('ExecutionMemories:listMemoriesByExecution')(err); setMemoriesLoaded(true); });
     }
   }, [executionId, executionStatus]);
 

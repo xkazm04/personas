@@ -155,7 +155,9 @@ function CompositionPreviewImpl(
     if (!video || !activeVideo) return;
     if (playing) {
       const attempt = video.play();
-      if (attempt && typeof attempt.then === 'function') attempt.catch(() => {});
+      if (attempt && typeof attempt.then === 'function') {
+        attempt.catch(silentCatch('CompositionPreview:videoPlay'));
+      }
     } else {
       video.pause();
     }
@@ -227,7 +229,7 @@ function CompositionPreviewImpl(
 
   useEffect(() => {
     if (playing && audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume().catch(() => {});
+      audioCtxRef.current.resume().catch(silentCatch('CompositionPreview:audioContextResume'));
     }
   }, [playing]);
 
@@ -277,7 +279,7 @@ function CompositionPreviewImpl(
         } catch (err) { silentCatch("features/plugins/artist/sub_media_studio/CompositionPreview:catch3")(err); }
       }
 
-      if (playing && el.paused) el.play().catch(() => {});
+      if (playing && el.paused) el.play().catch(silentCatch('CompositionPreview:audioPlay'));
       else if (!playing && !el.paused) el.pause();
     }
   }, [dedicatedTracks, plan, currentTime, playing]);

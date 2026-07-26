@@ -38,9 +38,7 @@ export function DriveSignDialog({
   const { ensureIdentity } = signing;
 
   useEffect(() => {
-    ensureIdentity().catch(() => {
-      /* surfaced inline below */
-    });
+    ensureIdentity().catch(silentCatch("DriveSignDialog:ensureIdentity"));
   }, [ensureIdentity]);
 
   const handleSign = async () => {

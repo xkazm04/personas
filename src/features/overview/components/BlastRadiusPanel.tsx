@@ -3,6 +3,7 @@ import { AlertTriangle, Zap, Clock, Link2, Radio, Loader2, History, Brain, KeyRo
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BlastRadiusItem } from '@/api/agents/personas';
+import { silentCatch } from '@/lib/silentCatch';
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   automation: Zap,
@@ -81,7 +82,8 @@ export function useBlastRadius(
       .then((result) => {
         if (!cancelled) setItems(result);
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch('BlastRadiusPanel:fetchBlastRadius')(err);
         if (!cancelled) setItems([]);
       })
       .finally(() => {

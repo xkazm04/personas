@@ -67,7 +67,7 @@ export function useRoutingState({
     let stale = false;
     listAllSubscriptions()
       .then(subs => { if (!stale) setSubscriptions(subs); })
-      .catch(() => { /* non-critical */ });
+      .catch(silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:catch2"));
     return () => { stale = true; };
   }, []);
 
@@ -75,8 +75,14 @@ export function useRoutingState({
     try {
       const [t, e, s] = await Promise.all([
         listAllTriggers(),
-        listEvents(1000).catch(() => [] as PersonaEvent[]),
-        listAllSubscriptions().catch(() => [] as PersonaEventSubscription[]),
+        listEvents(1000).catch((err) => {
+          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listEvents")(err);
+          return [] as PersonaEvent[];
+        }),
+        listAllSubscriptions().catch((err) => {
+          silentCatch("features/triggers/sub_studio/routing/layouts/useRoutingState:listAllSubscriptions")(err);
+          return [] as PersonaEventSubscription[];
+        }),
       ]);
       setAllTriggers(t);
       setRecentEvents(e);

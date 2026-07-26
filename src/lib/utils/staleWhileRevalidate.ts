@@ -5,6 +5,8 @@
  * Deduplicates concurrent requests to the same key automatically.
  */
 
+import { silentCatch } from '@/lib/silentCatch';
+
 interface CacheEntry<T> {
   data: T;
   fetchedAt: number;
@@ -90,9 +92,7 @@ export function createSWRFetcher<T>(
     // If we have stale data, return it immediately but still await in background
     if (cached) {
       // Fire-and-forget: the promise updates the cache when it resolves
-      promise.catch(() => {
-        /* stale fallback — swallow background errors */
-      });
+      promise.catch(silentCatch('staleWhileRevalidate:backgroundRefresh'));
       return { data: cached.data, fromCache: true };
     }
 

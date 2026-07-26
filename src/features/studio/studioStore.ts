@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
 import { extractAssistantTextDelta } from '@/features/plugins/companion/extractAssistantText';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
   webbuildDevStop,
@@ -246,7 +246,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         beginLivenessWatch(id);
         return;
       }
-    } catch {
+    } catch (err) {
+      silentCatch('studioStore:attachOrStart')(err);
       /* not running / transient — fall through to a cold start */
     }
     await start(id);
@@ -293,9 +294,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             }
           }
         })
-        .catch(() => {
-          /* transient while booting */
-        });
+        .catch(silentCatch('studioStore:beginPoll'));
     }, 1500);
     pollTimers.set(id, timer);
   };
@@ -333,9 +332,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             void start(id);
           }
         })
-        .catch(() => {
-          /* transient IPC error — don't count it as a miss */
-        });
+        .catch(silentCatch('studioStore:beginLivenessWatch'));
     }, 6000);
     livenessTimers.set(id, timer);
   };
@@ -489,7 +486,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             set({ activeId: activeTabId });
             persistTabs();
           }
-        } catch {
+        } catch (err) {
+          silentCatch('studioStore:rehydrate')(err);
           /* projects list unavailable — leave Studio blank rather than crash */
         }
       })();
@@ -504,7 +502,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       stopLiveness(id);
       stopAuto(id);
       pendingStream.delete(id);
-      void webbuildDevStop(id).catch(() => {});
+      void webbuildDevStop(id).catch(silentCatch('studioStore:closeTab'));
       set((s) => {
         const { [id]: _gone, ...rest } = s.runtimes;
         const order = s.tabOrder.filter((t) => t !== id);
@@ -582,7 +580,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       // `busy`; autonomous is already off so it won't chain another turn.
       stopAuto(id);
       patch(id, { autonomous: false, resumeAuto: false });
-      void webbuildSessionStop(id).catch(() => {});
+      void webbuildSessionStop(id).catch(silentCatch('studioStore:stopTurn'));
     },
   };
 });

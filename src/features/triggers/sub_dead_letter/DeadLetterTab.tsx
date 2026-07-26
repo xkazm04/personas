@@ -29,6 +29,7 @@ import type { BulkDeadLetterFailure } from '@/lib/bindings/BulkDeadLetterFailure
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
@@ -174,7 +175,7 @@ export function DeadLetterTab() {
     let cancelled = false;
     getDeadLetterConfig().then((cfg) => {
       if (!cancelled) setMaxManualRetries(cfg.maxManualRetries);
-    }).catch(() => { /* fallback retained */ });
+    }).catch(silentCatch("features/triggers/sub_dead_letter/DeadLetterTab:getDeadLetterConfig"));
     return () => { cancelled = true; };
   }, []);
 

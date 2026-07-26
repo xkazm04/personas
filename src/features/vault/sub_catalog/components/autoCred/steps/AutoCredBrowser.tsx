@@ -1,5 +1,6 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('auto-cred-browser');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -57,7 +58,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
       logger.warn('Blocked unsafe URL from auto-cred log', { url });
       return;
     }
-    openExternalUrl(safe).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
+    openExternalUrl(safe).catch(silentCatch('AutoCredBrowser:openUrl'));
   }, []);
 
   const groupedEntries = useMemo(() => groupLogEntries(visibleLogs), [visibleLogs]);

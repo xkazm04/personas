@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import { getCredentialRecipe } from '@/api/vault/credentialRecipes';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeConfidenceBannerProps {
@@ -33,7 +34,7 @@ export function RecipeConfidenceBanner({ instruction }: RecipeConfidenceBannerPr
     getCredentialRecipe(normalized).then((recipe) => {
       if (cancelled || !recipe) return;
       setMatch({ label: recipe.connector_label, usageCount: recipe.usage_count });
-    }).catch(() => {});
+    }).catch(silentCatch('RecipeConfidenceBanner:getCredentialRecipe'));
 
     return () => { cancelled = true; };
   }, [instruction]);

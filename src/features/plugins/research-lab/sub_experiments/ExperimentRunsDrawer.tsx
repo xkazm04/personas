@@ -34,7 +34,8 @@ export default function ExperimentRunsDrawer({ experiment, onClose, refreshToken
         if (!cancelled) setRuns(rows);
       })
       .catch((err) => {
-        if (!cancelled) toastCatch("ExperimentRunsDrawer:list")(err);
+        if (cancelled) return;
+        toastCatch("ExperimentRunsDrawer:list")(err);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

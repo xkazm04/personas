@@ -26,6 +26,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
+import { silentCatch } from '@/lib/silentCatch';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import {
@@ -56,7 +57,7 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
   useEffect(() => {
     if ((!personas || personas.length === 0) && !personasRequestedRef.current) {
       personasRequestedRef.current = true;
-      fetchPersonas().catch(() => {});
+      fetchPersonas().catch(silentCatch('cockpit_persona_overview_fetch_personas'));
     }
   }, [personas, fetchPersonas]);
 

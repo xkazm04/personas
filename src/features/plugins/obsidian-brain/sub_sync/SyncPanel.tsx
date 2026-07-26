@@ -21,6 +21,7 @@ import {
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 import ConflictDiffView from './ConflictDiffView';
+import { silentCatch } from '@/lib/silentCatch';
 
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
@@ -57,7 +58,7 @@ export default function SyncPanel() {
 
   useEffect(() => {
     if (connected) {
-      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
+      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:loadSyncLog'));
     }
   }, [connected, activeVaultPath]);
 
@@ -107,7 +108,7 @@ export default function SyncPanel() {
       });
       setLastSyncAt(new Date().toISOString());
       addToast(`Push: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`, result.errors.length > 0 ? 'error' : 'success');
-      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
+      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPush'));
     } catch (e) {
       addToast(`Push failed: ${e}`, 'error');
     } finally {
@@ -145,7 +146,7 @@ export default function SyncPanel() {
           'success',
         );
       }
-      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
+      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPull'));
     } catch (e) {
       addToast(`Pull failed: ${e}`, 'error');
     } finally {

@@ -215,6 +215,7 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
         setListening(true);
       })
       .catch((err: unknown) => {
+        silentCatch('useLocalDictation.start.getUserMedia')(err);
         pendingStartRef.current = false;
         abortStartRef.current = false;
         setError(err instanceof Error ? err.message : 'mic_denied');

@@ -14,7 +14,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { deleteAllMemories } from '@/api/overview/memories';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
@@ -146,7 +146,7 @@ export default function MemoriesPageDense() {
   }, [memoryStats, memories]);
 
   const handleReview = useCallback(() => {
-    void reviewMemories(undefined).catch(() => {});
+    void reviewMemories(undefined).catch(silentCatch('MemoriesPageDense:reviewMemories'));
   }, [reviewMemories]);
 
   // Reflection is per-persona (insights need one coherent memory pool), so
@@ -163,7 +163,7 @@ export default function MemoriesPageDense() {
 
   const handleReflect = useCallback((personaId: string) => {
     setReflectMenuOpen(false);
-    void reflectMemories(personaId).catch(() => {});
+    void reflectMemories(personaId).catch(silentCatch('MemoriesPageDense:reflectMemories'));
   }, [reflectMemories]);
 
   return (

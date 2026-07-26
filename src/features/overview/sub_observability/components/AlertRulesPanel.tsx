@@ -320,8 +320,8 @@ export function AlertRulesPanel() {
               key={rule.id}
               rule={rule}
               personas={personaList}
-              onToggle={() => { toggleAlertRule(rule.id).catch(() => {}); }}
-              onDelete={() => { deleteAlertRule(rule.id).catch(() => {}); }}
+              onToggle={() => { toggleAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:toggleAlertRule')); }}
+              onDelete={() => { deleteAlertRule(rule.id).catch(silentCatch('AlertRulesPanel:deleteAlertRule')); }}
               onEdit={() => { setEditingId(rule.id); setShowForm(false); }}
             />
           )

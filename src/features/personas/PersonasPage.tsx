@@ -23,6 +23,7 @@ import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestra
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Section PRIMARIES (Home, Overview, Teams canvas, Agents table, Events,
 // Connections, Templates, Plugins browse, Studio, Settings) are registry-driven
@@ -164,7 +165,7 @@ export default function PersonasPage() {
   // Hydrate persisted persona selection on app restart
   useEffect(() => {
     if (selectedPersonaId) {
-      fetchDetail(selectedPersonaId).catch(() => {/* non-critical: persisted selection may be stale */ });
+      fetchDetail(selectedPersonaId).catch(silentCatch('PersonasPage:fetchDetail'));
     }
   }, [fetchDetail, selectedPersonaId]);
 

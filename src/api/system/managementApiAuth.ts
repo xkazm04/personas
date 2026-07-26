@@ -9,6 +9,7 @@
  */
 
 import { getSystemApiKey } from "@/api/auth/externalApiKeys";
+import { silentCatch } from "@/lib/silentCatch";
 
 const MANAGEMENT_API_BASE = "http://127.0.0.1:9420";
 
@@ -17,6 +18,7 @@ let cachedKey: Promise<string> | null = null;
 function loadKey(): Promise<string> {
   if (cachedKey === null) {
     cachedKey = getSystemApiKey().catch((err) => {
+      silentCatch("managementApiAuth:loadKey")(err);
       // Drop the cached failure so retries can recover.
       cachedKey = null;
       throw err;

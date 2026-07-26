@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import * as twinApi from '@/api/twin/twin';
 import { scoreTopicCoverage, type TopicCoverage } from './topicCoverage';
@@ -99,7 +99,11 @@ export function useTrainingSession(): TrainingSession {
       // Coverage scores the FULL approved set (not the grounding-capped slice)
       // so the topic deck's per-card pills reflect everything the twin knows.
       setTopicCoverage(scoreTopicCoverage(mems));
-    }).catch(() => { setGroundingFacts([]); setTopicCoverage([]); });
+    }).catch((err: unknown) => {
+      silentCatch('useTrainingSession:listPendingMemories')(err);
+      setGroundingFacts([]);
+      setTopicCoverage([]);
+    });
   }, [activeTwinId]);
 
   // Cross-tab handoff: Reflections panel populates pendingTrainingQuestions

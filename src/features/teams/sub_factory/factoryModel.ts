@@ -6,6 +6,8 @@
 // from the deleted throwaway prototype dataset (factoryMock.ts / MOCK_PROJECTS)
 // that first modeled the shape; renaming them is a mechanical follow-up.
 
+import { silentCatch } from '@/lib/silentCatch';
+
 export type KpiCategory = 'technical' | 'quality' | 'traffic' | 'value';
 export type KpiTier = 'north_star' | 'primary' | 'supporting';
 export type MeasureKind = 'codebase' | 'connector' | 'manual' | 'derived';
@@ -236,7 +238,9 @@ export function describeMeasureConfig(
     if (o.connector) return `connector ${o.connector}${o.instruction ? `: ${o.instruction}` : ''}`;
     if (o.recipe) return `recipe: ${o.recipe}`;
     if (o.instruction) return String(o.instruction);
-  } catch { /* fall through */ }
+  } catch (err) {
+    silentCatch('factoryModel:describeMeasurementConfig')(err);
+  }
   return opts?.unparsedFallback ?? emptyText;
 }
 

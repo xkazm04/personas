@@ -15,6 +15,7 @@ import type { CloudTrigger, CloudTriggerFiring, CloudDeployment } from '@/api/sy
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface Props {
   deployments: CloudDeployment[];
@@ -52,7 +53,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     setIsLoading(true);
     try {
       const results = await Promise.all(
-        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch(() => [] as CloudTrigger[])),
+        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggers')(err); return [] as CloudTrigger[]; })),
       );
       setTriggers(results.flat());
     } finally {
@@ -71,7 +72,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
     setIsLoadingFirings(true);
     cloudListTriggerFirings(expandedId, 10)
       .then((data) => { if (!cancelled) setFirings(data); })
-      .catch(() => { if (!cancelled) setFirings([]); })
+      .catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggerFirings')(err); if (!cancelled) setFirings([]); })
       .finally(() => { if (!cancelled) setIsLoadingFirings(false); });
     return () => { cancelled = true; };
   }, [expandedId]);

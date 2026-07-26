@@ -8,7 +8,7 @@ import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import * as api from "@/api/overview/observability";
 import { useToastStore } from "@/stores/toastStore";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { en } from "@/i18n/en";
 
 // -- Alert metric / severity display helpers (sourced from backend enums) -----
@@ -352,9 +352,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
               pending.delete(alert.id);
               return { pendingSyncAlertIds: pending };
             });
-          }).catch(() => {
-            // Will retry again on the next eval cycle
-          });
+          }).catch(silentCatch("stores/slices/overview/alertSlice:retryPendingSyncAlert"));
         }
       }
     }
@@ -464,11 +462,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
               pending.delete(alert.id);
               return { pendingSyncAlertIds: pending };
             });
-          }).catch((err) => {
-            const msg = err instanceof Error ? err.message : String(err);
-            console.warn(`[alerts] Failed to persist fired alert ${alert.id}: ${msg}`);
-            // Alert stays in pendingSyncAlertIds for retry on next eval cycle
-          });
+          }).catch(silentCatch("stores/slices/overview/alertSlice:persistFiredAlert"));
         }
       } else {
         set((state) => ({

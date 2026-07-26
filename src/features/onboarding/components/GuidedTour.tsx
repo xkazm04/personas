@@ -15,6 +15,7 @@ import { TourProgressArc } from './TourProgressArc';
 import { useTourNarration } from './useTourNarration';
 import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 const DEFAULT_PANEL_WIDTH = 440;
 
@@ -183,7 +184,7 @@ export default function GuidedTour() {
                 useSystemStore.getState().emitTourEvent('tour:obsidian-detected');
               }
             })
-            .catch(() => { /* probe is best-effort; the acknowledge fallback covers it */ });
+            .catch(silentCatch('onboarding/GuidedTour:obsidianDetectProbe'));
         }, 400);
       } else if (step.id === 'obsidian-vault-connect') {
         // Already-connected vaults complete the step on entry; otherwise the

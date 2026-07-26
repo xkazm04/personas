@@ -20,6 +20,7 @@ import { categoryColor } from '../libs/memoryVisualTokens';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import { DebtText } from '@/i18n/DebtText';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface NodePosition { x: number; y: number; }
 
@@ -86,7 +87,7 @@ export default function MemoriesPageGraph() {
   }, [memories, memoriesTotal, memoryStats]);
 
   const handleReview = useCallback(() => {
-    void reviewMemories(undefined).catch(() => {});
+    void reviewMemories(undefined).catch(silentCatch('MemoriesPageGraph:reviewMemories'));
   }, [reviewMemories]);
 
   return (

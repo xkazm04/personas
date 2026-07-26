@@ -238,6 +238,7 @@ export function ExecutionList() {
     setExpandedId(nextExpandedId);
     if (nextExpandedId) {
       void hydrateExecution(nextExpandedId).catch((err) => {
+        silentCatch('execution-list:hydrateExecution')(err);
         logger.warn('Failed to hydrate execution detail', { executionId: nextExpandedId, error: err });
       });
     }
@@ -260,6 +261,7 @@ export function ExecutionList() {
   const handleOpenParent = useCallback((parentId: string) => {
     setExpandedId(parentId);
     void hydrateExecution(parentId).catch((err) => {
+      silentCatch('execution-list:hydrateParentExecution')(err);
       logger.warn('Failed to hydrate parent execution', { parentId, error: err });
     });
     // Rows are virtualized, so an off-screen parent may not be in the DOM —
@@ -315,6 +317,7 @@ export function ExecutionList() {
       setShowBulkReport(true);
       // Refresh shared execution list so new rows surface in the table.
       void useAgentStore.getState().fetchExecutions(personaId).catch((err) => {
+        silentCatch('execution-list:postBulkRerunFetch')(err);
         logger.warn('Post-bulk-rerun fetch failed', { err });
       });
     } catch (err) {

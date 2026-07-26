@@ -1,8 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
 import { cancelCredentialDesign, startCredentialDesign } from "@/api/vault/credentialDesignApi";
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('credential-design');
 import { EventName } from '@/lib/eventRegistry';
 
 import { useVaultStore } from "@/stores/vaultStore";
@@ -117,9 +114,7 @@ export function useCredentialDesign() {
       setSavedCredentialId(credId);
 
       // Cache the recipe for reuse by Negotiator and AutoCred paths
-      void saveRecipeFromDesign(snapshot).catch((err) => {
-        logger.warn('Failed to cache recipe from design (non-critical)', { error: String(err) });
-      });
+      void saveRecipeFromDesign(snapshot).catch(silentCatch("hooks/design/credential/useCredentialDesign:catch2"));
 
       flow.setPhase('done');
     } catch (err) {

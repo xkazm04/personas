@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { deleteAppSetting, setAppSetting } from '@/api/system/settings';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('app-setting');
 
@@ -54,9 +55,7 @@ export function useAppSetting(
           }
         }
       })
-      .catch((err) => {
-        logger.error('Failed to load app setting', { key, err: err instanceof Error ? err.message : String(err) });
-      })
+      .catch(silentCatch('hooks/utility/data/useAppSetting:loadAppSetting'))
       .finally(() => setLoaded(true));
   }, [key]);
 

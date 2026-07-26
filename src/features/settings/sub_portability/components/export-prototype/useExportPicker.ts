@@ -52,26 +52,34 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     setIncludeMemories(true);
     setIncludeKpiSetup(true);
 
-    const guard =
-      <T,>(label: string, fallback: T) =>
-      (e: unknown): T => {
-        silentCatch(label)(e);
-        return fallback;
-      };
-
     (async () => {
       const [personas, teams, credentials, kpis] = await Promise.all([
-        listPersonas().catch(guard('useExportPicker:listPersonas', [] as Persona[])),
-        listTeams().catch(guard('useExportPicker:listTeams', [] as PersonaTeam[])),
-        listCredentials().catch(guard('useExportPicker:listCredentials', [] as PersonaCredential[])),
-        listAllKpis().catch(guard('useExportPicker:listAllKpis', [] as DevKpi[])),
+        listPersonas().catch((e) => {
+          silentCatch('useExportPicker:listPersonas')(e);
+          return [] as Persona[];
+        }),
+        listTeams().catch((e) => {
+          silentCatch('useExportPicker:listTeams')(e);
+          return [] as PersonaTeam[];
+        }),
+        listCredentials().catch((e) => {
+          silentCatch('useExportPicker:listCredentials')(e);
+          return [] as PersonaCredential[];
+        }),
+        listAllKpis().catch((e) => {
+          silentCatch('useExportPicker:listAllKpis')(e);
+          return [] as DevKpi[];
+        }),
       ]);
 
       const memberLists = await Promise.all(
         teams.map((t) =>
           listTeamMembers(t.id)
             .then((ms) => [t.id, ms.map((m) => m.persona_id)] as const)
-            .catch(() => [t.id, [] as string[]] as const),
+            .catch((e) => {
+              silentCatch('useExportPicker:listTeamMembers')(e);
+              return [t.id, [] as string[]] as const;
+            }),
         ),
       );
       const memberMap = new Map<string, string[]>(memberLists);

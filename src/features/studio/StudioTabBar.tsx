@@ -8,6 +8,7 @@ import { webbuildNextReady } from '@/api/webbuild';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { phaseProgress } from './studioBuildModel';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Browser-style tab strip. Each open project is a tab carrying its own live
 // status dot (so you can see which projects are building while you're on
@@ -85,7 +86,7 @@ export default function StudioTabBar({
         const set = new Set(readyIds);
         setNextReady(Object.fromEntries(ids.map((id) => [id, set.has(id)])));
       })
-      .catch(() => {});
+      .catch(silentCatch('StudioTabBar:checkNextReady'));
     return () => {
       cancelled = true;
     };

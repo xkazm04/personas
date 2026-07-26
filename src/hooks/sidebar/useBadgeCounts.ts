@@ -19,6 +19,7 @@ import { useAttention } from "@/hooks/useAttention";
 import { getPollingCoordinator } from "@/lib/polling/pollingCoordinator";
 import { getDirectorPortfolio } from "@/api/director";
 import { flaggedAgentCount } from "@/features/overview/sub_director/attention";
+import { silentCatch } from "@/lib/silentCatch";
 
 interface BadgeCounts {
   pendingReviewCount: number;
@@ -41,13 +42,13 @@ export function useBadgeCounts(): BadgeCounts {
     // Stagger fetches across frames to avoid a burst of simultaneous
     // set() calls that cause cascading React re-renders in one frame.
     await state.fetchPendingReviewCount();
-    state.fetchUnreadMessageCount().catch(() => {});
+    state.fetchUnreadMessageCount().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchUnreadMessageCount'));
     await new Promise(r => setTimeout(r, 0)); // yield to browser
-    state.fetchRecentEvents().catch(() => {});
-    fetchBudgetSpend().catch(() => {});
+    state.fetchRecentEvents().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchRecentEvents'));
+    fetchBudgetSpend().catch(silentCatch('hooks/sidebar/useBadgeCounts:fetchBudgetSpend'));
     getDirectorPortfolio()
       .then((p) => setDirectorAttentionCount(flaggedAgentCount(p.roster, Date.now())))
-      .catch(() => {});
+      .catch(silentCatch('hooks/sidebar/useBadgeCounts:getDirectorPortfolio'));
   }, [fetchBudgetSpend]);
 
   useEffect(() => {

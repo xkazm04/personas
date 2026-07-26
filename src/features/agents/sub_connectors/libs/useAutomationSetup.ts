@@ -8,7 +8,7 @@ import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
-import { silentCatchNull } from "@/lib/silentCatch";
+import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
 import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
@@ -158,7 +158,11 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     setLoadingZaps(true);
     zapierListZaps(platformCredentialId)
       .then((zaps) => { if (cancelled) return; setZapierZaps(zaps); setLoadingZaps(false); })
-      .catch(() => { if (cancelled) return; setZapierZaps([]); setLoadingZaps(false); });
+      .catch((err) => {
+        silentCatch("useAutomationSetup:zapierListZaps")(err);
+        if (cancelled) return;
+        setZapierZaps([]); setLoadingZaps(false);
+      });
     return () => { cancelled = true; };
   }, [platform, platformCredentialId]);
 

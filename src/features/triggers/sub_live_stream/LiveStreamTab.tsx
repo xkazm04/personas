@@ -14,6 +14,7 @@ import { EventDetailModal } from './EventDetailModal';
 import { EventTypeChip } from './EventTypeChip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { silentCatch } from '@/lib/silentCatch';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
@@ -116,7 +117,10 @@ export function LiveStreamTab() {
         setEvents(recentEvents);
         setIsLoading(false);
       }
-    }).catch(() => { if (!stale) setIsLoading(false); });
+    }).catch((err) => {
+      silentCatch("features/triggers/sub_live_stream/LiveStreamTab:listEvents")(err);
+      if (!stale) setIsLoading(false);
+    });
     return () => { stale = true; };
   }, []);
 

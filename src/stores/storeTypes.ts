@@ -57,6 +57,7 @@ import type { ProcessActivitySlice } from "./slices/processActivitySlice";
 // -- Shared helpers ------------------------------------------------------
 import * as Sentry from "@sentry/react";
 import { isTauriError, type TauriErrorKind } from "@/lib/types/tauriError";
+import { silentCatch } from "@/lib/silentCatch";
 
 /** A single scoped error entry keyed by action name. */
 export interface SliceError {
@@ -149,7 +150,7 @@ export function reportError(
       // Use storeBus to avoid circular dependency at module load time
       import("@/lib/storeBus").then(({ storeBus }) => {
         storeBus.emit('toast', { message, type: 'error' });
-      }).catch(() => {});
+      }).catch(silentCatch("stores/storeTypes:reportErrorToastEmit"));
     }
   }
   return message;

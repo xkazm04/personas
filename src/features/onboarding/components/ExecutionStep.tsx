@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { useAgentStore } from "@/stores/agentStore";
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 export function ExecutionStep({
   personaId,
@@ -74,9 +75,7 @@ export function ExecutionStep({
         unlisten = fn;
         unlistenRef.current = fn;
       })
-      .catch(() => {
-        // listen() failed — nothing to clean up.
-      });
+      .catch(silentCatch('onboarding/ExecutionStep:listenExecutionComplete'));
 
     return () => {
       cancelled = true;

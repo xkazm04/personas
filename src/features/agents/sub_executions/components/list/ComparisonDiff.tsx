@@ -11,6 +11,7 @@ import {
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('comparison-diff');
 
@@ -71,6 +72,7 @@ export function OutputDiffSection({
         setDiffLoading(false);
       })
       .catch((err) => {
+        silentCatch('ComparisonDiff:computeLineDiffOffThread')(err);
         setDiffLoading(false);
         logger.warn('Failed to compute comparison diff', { error: err });
       });
@@ -161,6 +163,7 @@ export function JsonDiffSection({
     void job.promise
       .then(setDiffs)
       .catch((err) => {
+        silentCatch('ComparisonDiff:computeJsonDiffOffThread')(err);
         setDiffs([]);
         logger.warn('Failed to compute JSON comparison diff', { error: err });
       });

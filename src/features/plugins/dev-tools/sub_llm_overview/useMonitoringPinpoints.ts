@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
+import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import {
   fetchSentryStats,
@@ -68,7 +69,10 @@ export function useMonitoringPinpoints() {
         setCredentials(creds);
         setCredLoaded(true);
       })
-      .catch(() => setCredLoaded(true));
+      .catch((err: unknown) => {
+        silentCatch('useMonitoringPinpoints:listCredentials')(err);
+        setCredLoaded(true);
+      });
   }, []);
 
   const monCreds = credentials.filter(isMonitoringCred);

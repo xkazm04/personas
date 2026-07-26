@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useEditorDirtyState, useEditorHistory } from '../libs/EditorDocument';
 import { useEditorSave } from '../libs/useEditorSave';
 import { type PersonaDraft, buildDraft, checkModelProfileIntegrity } from '../libs/PersonaDraft';
+import { silentCatch } from '@/lib/silentCatch';
 
 const emptyDraft = () => buildDraft({ name: '', enabled: false });
 
@@ -57,7 +58,7 @@ export function useEditorDraft() {
   useEffect(() => {
     if (!selectedPersonaId || pendingPersonaId || isSaving) return;
     const handle = window.setTimeout(() => {
-      void preparePersonaExecution(selectedPersonaId).catch(() => undefined);
+      void preparePersonaExecution(selectedPersonaId).catch(silentCatch('useEditorDraft:preparePersonaExecution'));
     }, 800);
     return () => window.clearTimeout(handle);
   }, [selectedPersonaId, pendingPersonaId, isSaving, preparationFingerprint]);

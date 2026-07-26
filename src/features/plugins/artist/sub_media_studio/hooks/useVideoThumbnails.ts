@@ -144,11 +144,17 @@ export function useVideoThumbnails(filePath: string | null): string[] | null {
         return p;
       });
       inflight.set(filePath, promise);
-      promise.catch(() => inflight.delete(filePath));
+      promise.catch((err) => {
+        silentCatch('useVideoThumbnails:extractFrames')(err);
+        inflight.delete(filePath);
+      });
     }
     promise
       .then((p) => { if (!cancelled) setFrames(p); })
-      .catch(() => { if (!cancelled) setFrames(null); });
+      .catch((err) => {
+        silentCatch('useVideoThumbnails:extractFrames')(err);
+        if (!cancelled) setFrames(null);
+      });
     return () => { cancelled = true; };
   }, [filePath]);
 

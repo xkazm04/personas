@@ -23,6 +23,7 @@ import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { DeepFanoutToggle } from '@/features/agents/sub_editor/components/DeepFanoutToggle';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -63,13 +64,13 @@ export function PersonaSettingsTab({
     if (!personaId) return;
     getAppSetting(`execution_retention_months:${personaId}`)
       .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
-      .catch(() => { /* use default */ });
+      .catch(silentCatch('PersonaSettingsTab:getExecutionRetention'));
   }, [personaId]);
 
   const handleRetentionChange = useCallback((months: number) => {
     setRetentionMonths(months);
     if (!personaId) return;
-    setAppSetting(`execution_retention_months:${personaId}`, String(months)).catch(() => { /* ignore */ });
+    setAppSetting(`execution_retention_months:${personaId}`, String(months)).catch(silentCatch('PersonaSettingsTab:setExecutionRetention'));
   }, [personaId]);
 
   return (

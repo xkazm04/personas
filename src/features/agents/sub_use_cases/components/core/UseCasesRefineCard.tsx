@@ -4,6 +4,7 @@ import { answerBuildQuestion, getLatestBuildSession } from '@/api/agents/buildSe
 import { createLogger } from '@/lib/log';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { silentCatch } from '@/lib/silentCatch';
 
 
 const logger = createLogger('use-cases-refine');
@@ -27,7 +28,7 @@ export function UseCasesRefineCard({ personaId }: Props) {
     setSessionId(null);
     getLatestBuildSession(personaId)
       .then((s) => { if (!cancelled) setSessionId(s?.id ?? null); })
-      .catch(() => { if (!cancelled) setSessionId(null); });
+      .catch((err) => { silentCatch('UseCasesRefineCard:getLatestBuildSession')(err); if (!cancelled) setSessionId(null); });
     return () => { cancelled = true; };
   }, [personaId]);
 

@@ -479,7 +479,7 @@ export function UnifiedBuildEntry() {
       const action = currentPhase === 'promoted' ? 'completed' as const : 'failed' as const;
       void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
         useOverviewStore.getState().processEnded('agent_build', action, draftPersonaId);
-      }).catch(() => {});
+      }).catch(silentCatch("features/agents/components/matrix/UnifiedBuildEntry:processEnded"));
       return;
     }
     const phaseMap: Record<string, { status: ActiveProcess["status"]; event: string }> = {
@@ -498,7 +498,7 @@ export function UnifiedBuildEntry() {
         'agent_build', mapped.status,
         { lastEvent: mapped.event, runId: draftPersonaId },
       );
-    }).catch(() => {});
+    }).catch(silentCatch("features/agents/components/matrix/UnifiedBuildEntry:updateProcessStatus"));
   }, [currentPhase, draftPersonaId]);
 
   // -- Sync agent name from build draft (agent_ir.name) -------------------

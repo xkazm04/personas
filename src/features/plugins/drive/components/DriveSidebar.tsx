@@ -89,7 +89,8 @@ export function DriveSidebar({
       .then((list) => {
         if (!cancelled) setTrashCount(list.length);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        silentCatch("DriveSidebar:loadTrashCount")(err);
         if (!cancelled) setTrashCount(0);
       });
     return () => {

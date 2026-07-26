@@ -48,7 +48,10 @@ export function useBrainConnection() {
     setKbLoading(true);
     invoke<KbInfo>('get_knowledge_base', { kbId })
       .then((kb) => setKbInfo(kb))
-      .catch(() => setKbInfo(null))
+      .catch((err: unknown) => {
+        silentCatch('useBrainConnection:loadKb')(err);
+        setKbInfo(null);
+      })
       .finally(() => setKbLoading(false));
   }, [kbId]);
 
@@ -58,7 +61,10 @@ export function useBrainConnection() {
     setKbLoading(true);
     invoke<KbInfo>('get_knowledge_base', { kbId })
       .then((kb) => { setKbInfo(kb); lastLoadedKbId.current = kbId; })
-      .catch(() => setKbInfo(null))
+      .catch((err: unknown) => {
+        silentCatch('useBrainConnection:refreshKb')(err);
+        setKbInfo(null);
+      })
       .finally(() => setKbLoading(false));
   };
 

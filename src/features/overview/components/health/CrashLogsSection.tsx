@@ -29,10 +29,16 @@ export function CrashLogsSection() {
       let cancelled = false;
       getCrashLogs()
         .then((data) => { if (!cancelled) setBackendLogs(data); })
-        .catch(() => { if (!cancelled) setBackendLogs([]); });
+        .catch((err) => {
+          silentCatch('CrashLogsSection:getCrashLogs')(err);
+          if (!cancelled) setBackendLogs([]);
+        });
       getFrontendCrashes(50)
         .then((data) => { if (!cancelled) setFrontendDbLogs(data); })
-        .catch(() => { if (!cancelled) setFrontendDbLogs([]); });
+        .catch((err) => {
+          silentCatch('CrashLogsSection:getFrontendCrashes')(err);
+          if (!cancelled) setFrontendDbLogs([]);
+        });
       if (!cancelled) setFrontendLsLogs(readCrashLogs());
       return () => { cancelled = true; };
     }

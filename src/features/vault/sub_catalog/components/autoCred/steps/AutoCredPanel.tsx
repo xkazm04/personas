@@ -1,9 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('auto-cred');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { TRANSITION_SLOW } from '@/lib/utils/animation/animationPresets';
 
@@ -18,7 +15,6 @@ import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
 import { tauriPlaywrightAdapter, tauriGuidedAdapter } from '../helpers/TauriPlaywrightAdapter';
 import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
-import { isTauriError } from '@/lib/types/tauriError';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredModeBanner } from './AutoCredModeBanner';
 import { AutoCredBrowser } from './AutoCredBrowser';
@@ -26,6 +22,7 @@ import { AutoCredReview } from './AutoCredReview';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { AutoCredBrowserError } from './AutoCredBrowserError';
 import { AutoCredErrorDisplay } from '../display/AutoCredErrorDisplay';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoCredPanelProps {
@@ -46,12 +43,8 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   useEffect(() => {
     checkPlaywrightAvailable()
       .then((available) => setMode(available ? 'playwright' : 'guided'))
-      .catch((err) => {
-        // `check_auto_cred_playwright_available` returns `Result<_, AppError>` --
-        // the rejection is the structured envelope, not a plain `Error`.
-        logger.warn('Playwright availability check failed, falling back to guided mode', {
-          error: isTauriError(err) ? err.error : String(err),
-        });
+      .catch((err: unknown) => {
+        silentCatch('AutoCredPanel:checkPlaywrightAvailable')(err);
         setMode('guided');
       });
   }, []);

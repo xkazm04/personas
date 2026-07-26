@@ -66,8 +66,14 @@ export async function runHealthIngest(projectId: string): Promise<SweepResult | 
   }
 
   const [ideas, tasks] = await Promise.all([
-    listIdeas(projectId).catch(() => []),
-    listTasks(projectId).catch(() => []),
+    listIdeas(projectId).catch((err: unknown) => {
+      silentCatch('healthIngest:listIdeas')(err);
+      return [];
+    }),
+    listTasks(projectId).catch((err: unknown) => {
+      silentCatch('healthIngest:listTasks')(err);
+      return [];
+    }),
   ]);
 
   const credentials = useVaultStore.getState().credentials;

@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { getExecutionLog } from '@/api/agents/executions';
 
 import { createLogger } from '@/lib/log';
+import { silentCatch } from '@/lib/silentCatch';
 import { TimelineScrubber } from './TimelineScrubber';
 
 const logger = createLogger("replay-sandbox");
@@ -39,7 +40,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
       .then((content) => {
         if (!cancelled) setLogContent(content);
       })
-      .catch((err) => { logger.warn('Failed to load execution log', { error: err }); })
+      .catch((err) => { silentCatch('ReplaySandbox:getExecutionLog')(err); logger.warn('Failed to load execution log', { error: err }); })
       .finally(() => {
         if (!cancelled) setLogLoading(false);
       });

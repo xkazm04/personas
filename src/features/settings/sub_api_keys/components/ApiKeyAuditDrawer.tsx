@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listApiKeyAudit, type ApiKeyAuditEntry } from '@/api/auth/externalApiKeys';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ApiKeyAuditDrawerProps {
   keyId: string;
@@ -37,6 +38,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
         if (alive) setRows(r);
       })
       .catch((e) => {
+        silentCatch('ApiKeyAuditDrawer:listApiKeyAudit')(e);
         if (alive) setError(e instanceof Error ? e.message : String(e));
       });
     return () => {

@@ -76,7 +76,7 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
         const ordered = [...chain].sort((a, b) => a.created_at.localeCompare(b.created_at));
         // Stop reasons are best-effort: a chain still renders if they fail to load.
         const stopReasons = await getChainStopReasons(chainId, personaId).catch((err) => {
-          silentCatch(err);
+          silentCatch('useChainTrace:getChainStopReasons')(err);
           return [] as ChainStopReason[];
         });
         if (!cancelled) {

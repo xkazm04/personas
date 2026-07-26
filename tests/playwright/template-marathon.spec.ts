@@ -144,6 +144,7 @@ test('marathon-template', async () => {
           body: JSON.stringify({ method: 'getState', params: {}, timeout_secs: 5 }),
         });
         if (r.ok) { ready = true; break; }
+        // eslint-disable-next-line custom/no-silent-catch -- Playwright/Node test fixture, not app code: silentCatch isn't resolvable via the "@/" alias outside `src/` here; this is a plain poll-retry loop.
       } catch { /* retry */ }
       await sleep(2_000);
     }
@@ -347,6 +348,7 @@ test('marathon-template', async () => {
       | { design_context?: string }
       | null;
     if (persona?.design_context) parsedDesignContext = JSON.parse(persona.design_context);
+    // eslint-disable-next-line custom/no-silent-catch -- Playwright/Node test fixture, not app code: silentCatch isn't resolvable via the "@/" alias outside `src/` here.
   } catch { /* fall through with empty */ }
 
   const capabilities: CapShape[] = parsedDesignContext.useCases ?? parsedDesignContext.use_cases ?? [];

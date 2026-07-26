@@ -127,9 +127,12 @@ async function sendOsNotificationIfNotFocused(title: string, body: string): Prom
     if (!IS_DESKTOP) return;
     const { getCurrentWindow } = await import("@tauri-apps/api/window");
     const win = getCurrentWindow();
-    const focused = await win.isFocused().catch(() => true);
+    const focused = await win.isFocused().catch((err) => {
+      silentCatch("stores/slices/agents/backgroundChatSlice:catch6")(err);
+      return true;
+    });
     if (focused) return;
-    await sendAppNotification(title, body).catch(() => {/* best-effort */});
+    await sendAppNotification(title, body).catch(silentCatch("stores/slices/agents/backgroundChatSlice:catch7"));
   } catch (err) { silentCatch("stores/slices/agents/backgroundChatSlice:catch1")(err); }
 }
 
@@ -202,7 +205,7 @@ export const createBackgroundChatSlice: StateCreator<
         personaId,
         chatMode: "advisory",
         title: title.length > 60 ? title.slice(0, 57) + "..." : title,
-      }).catch(() => {/* best-effort */});
+      }).catch(silentCatch("stores/slices/agents/backgroundChatSlice:catch8"));
 
       // 3. Build the advisory-mode conversation input. On turn 1 we send the
       //    full conversation with _advisory: true so the CLI prompt wraps it
@@ -398,7 +401,7 @@ function setupBackgroundExecListeners(
               sessionId,
               personaId,
               ...(claudeSessionId ? { claudeSessionId } : {}),
-            }).catch(() => {/* best-effort */});
+            }).catch(silentCatch("stores/slices/agents/backgroundChatSlice:catch9"));
           }
         } catch (err) {
           logger.warn("Failed to persist assistant reply", { feedbackId, executionId, error: err });

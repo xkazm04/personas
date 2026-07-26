@@ -60,7 +60,7 @@ export async function lookupRecipeAsDesignResult(
   if (!recipe) return null;
 
   // Increment usage count in the background
-  void recordCredentialRecipeUse(connectorName).catch(() => {/* non-critical */});
+  void recordCredentialRecipeUse(connectorName).catch(silentCatch('credentialRecipeRegistry:recordUse'));
 
   return recipeToDesignResult(recipe);
 }

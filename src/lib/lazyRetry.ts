@@ -21,11 +21,15 @@ export function isChunkLoadError(error: unknown): boolean {
  * blips and stale-chunk 404s after a deploy.
  */
 function importWithRetry<T>(importFn: () => Promise<T>): Promise<T> {
-  return importFn().catch(
-    () =>
-      new Promise<T>((resolve, reject) =>
-        setTimeout(() => importFn().then(resolve, reject), 1500),
-      ),
+  return (
+    importFn()
+      .catch(
+        // eslint-disable-next-line custom/async-catch-requires-helper -- retry combinator, not a swallow: must return a Promise<T> that resolves/rejects from the retried import, which silentCatch's void-returning handler can't express. A permanent failure still propagates to the caller (see lazyRetry docstring) and is surfaced by the nearest ErrorBoundary.
+        () =>
+          new Promise<T>((resolve, reject) =>
+            setTimeout(() => importFn().then(resolve, reject), 1500),
+          ),
+      )
   );
 }
 

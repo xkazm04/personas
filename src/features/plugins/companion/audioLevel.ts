@@ -71,7 +71,7 @@ function ensureGraph(): boolean {
  */
 export function attachPlayback(audio: HTMLAudioElement): void {
   if (!ensureGraph() || !ctx || !analyser) return;
-  if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
+  if (ctx.state === 'suspended') void ctx.resume().catch(silentCatch('audioLevel:resumeContext'));
 
   let src: MediaElementAudioSourceNode | null = null;
   if (!connected.has(audio)) {
