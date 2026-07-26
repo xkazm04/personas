@@ -31,7 +31,7 @@
     "dev": "vite",
     "dev:inspect": "cross-env PERSONAS_INSPECTOR=1 npm run dev",
     "prebuild": "node scripts/run-codegen.mjs prebuild",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/sync-system-skills.mjs && tsc -b && vite build",
     "preview": "vite preview",
     "check:dead": "knip",
     "check:dead:files": "knip --include files",

@@ -125,6 +125,9 @@
           "Indonesian": "nsis/languages/Indonesian.nsh"
         }
       }
+    },
+    "resources": {
+      "resources/skills": "skills"
     }
   }
 }

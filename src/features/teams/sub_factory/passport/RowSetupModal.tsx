@@ -106,6 +106,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
       listCredentials()
         .then((creds) => dispatchSkillToRepo({
           skillName: 'passport-onboard',
+          system: true,
           targetProjectId: raw.project.id,
           targetRoot: raw.project.root_path,
           dispatchKey: passportDispatchKey(rowKey, slug),

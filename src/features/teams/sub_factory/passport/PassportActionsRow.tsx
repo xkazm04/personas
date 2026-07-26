@@ -120,6 +120,7 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
       // (from the global library) so /passport-onboard resolves there, then run.
       .then((creds) => dispatchSkillToRepo({
         skillName: 'passport-onboard',
+        system: true,
         targetProjectId: raw.project.id,
         targetRoot: raw.project.root_path,
         dispatchKey: onboardDispatchKey(slug),

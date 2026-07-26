@@ -9,7 +9,7 @@
 // (workspace rollouts, per-dimension guided runs, …). The copy is deterministic
 // (`skill_files_install`: SKILL.md + reference files, provenance-stamped) — no
 // LLM, no token cost, and the workbench later reads it as installed.
-import { installSkill, listSkills } from '@/api/devTools/devTools';
+import { installSkill, installSystemSkill, listSkills } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { composeMemoryBlock } from './memoryBlock';
@@ -33,6 +33,10 @@ export interface DispatchSkillToRepoOpts {
    *  (default true) so a run never uses a stale/edited local copy. Pass false to
    *  preserve an already-installed (possibly customized) copy. */
   overwrite?: boolean;
+  /** App-owned system skill (e.g. passport-onboard): source it from the app
+   *  bundle / repo instead of the user's global library, so it resolves on a
+   *  fresh clone or clean installer. `sourceProjectId` is ignored when set. */
+  system?: boolean;
 }
 
 /** Ensure `skillName` is present in the target repo, then dispatch a Fleet
@@ -45,7 +49,11 @@ export interface DispatchSkillToRepoOpts {
  *  or `none` skills dispatch unchanged. Block composition is best-effort: a
  *  memory failure never blocks the dispatch itself. */
 export async function dispatchSkillToRepo(opts: DispatchSkillToRepoOpts): Promise<string> {
-  await installSkill(opts.skillName, opts.sourceProjectId ?? null, opts.targetProjectId, opts.overwrite ?? true);
+  if (opts.system) {
+    await installSystemSkill(opts.skillName, opts.targetProjectId, opts.overwrite ?? true);
+  } else {
+    await installSkill(opts.skillName, opts.sourceProjectId ?? null, opts.targetProjectId, opts.overwrite ?? true);
+  }
   let prompt = opts.prompt;
   try {
     const binding = (await listSkills(opts.targetProjectId))

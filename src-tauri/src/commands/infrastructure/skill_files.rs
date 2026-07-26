@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 use ts_rs::TS;
 
 use crate::error::AppError;
@@ -209,6 +209,55 @@ fn skills_dir(state: &AppState, project_id: Option<&str>) -> Result<PathBuf, App
 /// available to every project. `None` if the home dir can't be resolved.
 pub(crate) fn global_skills_dir() -> Option<PathBuf> {
     dirs::home_dir().map(|h| h.join(".claude").join("skills"))
+}
+
+/// App-owned "system" skills the app itself dispatches (Onboard, …). These MUST
+/// ship with the app — they can't rely on the user's global library — so they
+/// are git-tracked in the repo's `.claude/skills/` AND bundled into the
+/// installer (tauri.conf `bundle.resources` → `<resource_dir>/skills/`).
+const SYSTEM_SKILLS: &[&str] = &["passport-onboard"];
+
+/// Is `name` an app-owned system skill (sourced from the bundle/repo, never the
+/// user's global library)?
+pub(crate) fn is_system_skill(name: &str) -> bool {
+    SYSTEM_SKILLS.contains(&name)
+}
+
+/// Resolve the directory that holds the app's bundled system skills, in order:
+///   1. Tauri resource dir (`<res>/skills`) — the packaged installer AND
+///      `tauri dev` (Tauri copies `bundle.resources` to the target dir).
+///   2. The current working directory's `.claude/skills` — a CLONED REPO run
+///      from source (the case that was previously broken: a fresh clone has no
+///      global copy of passport-onboard).
+///   3. The user-global library — last resort so a hand-installed copy still
+///      works.
+/// Returns the first candidate that actually contains files.
+fn system_skills_dir(app: &AppHandle) -> Option<PathBuf> {
+    // 1. Bundled resource dir — the packaged installer (and dev, when the sync
+    //    script has populated `src-tauri/resources/skills`).
+    if let Ok(res) = app.path().resource_dir() {
+        let p = res.join("skills");
+        if p.is_dir() {
+            return Some(p);
+        }
+    }
+    // 2. Cloned repo / run-from-source: the process cwd under `tauri dev` is
+    //    `src-tauri`, not the repo root, so WALK UP looking for a `.claude/
+    //    skills` dir. This is the case the bug report hit — a fresh clone has
+    //    the git-tracked skills but no global copy.
+    if let Ok(cwd) = std::env::current_dir() {
+        let mut cur: Option<&Path> = Some(cwd.as_path());
+        for _ in 0..6 {
+            let Some(dir) = cur else { break };
+            let p = dir.join(".claude").join("skills");
+            if p.is_dir() {
+                return Some(p);
+            }
+            cur = dir.parent();
+        }
+    }
+    // 3. Last resort: a hand-installed global copy.
+    global_skills_dir().filter(|p| p.is_dir())
 }
 
 /// Resolve a registered project's `.claude/skills` directory from its id.
@@ -692,6 +741,60 @@ pub fn skill_files_install(
             "source skill not found: {skill_name}"
         )))
     }
+}
+
+/// Install an app-owned SYSTEM skill (e.g. passport-onboard) into a target
+/// project, sourcing it from the bundled/repo location (`system_skills_dir`)
+/// rather than the user's global library — so it works on a fresh clone and a
+/// clean installer, neither of which has the skill in `~/.claude/skills`. Only
+/// skills in `SYSTEM_SKILLS` are allowed through this door.
+#[tauri::command]
+pub fn skill_files_install_system(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    skill_name: String,
+    target_project_id: String,
+    overwrite: bool,
+) -> Result<SkillInstallResult, AppError> {
+    require_auth_sync(&state)?;
+    validate_skill_name(&skill_name)?;
+    if !is_system_skill(&skill_name) {
+        return Err(AppError::Validation(format!(
+            "'{skill_name}' is not an app system skill"
+        )));
+    }
+
+    let source_dir = system_skills_dir(&app).ok_or_else(|| {
+        AppError::NotFound(
+            "app system-skills directory not found (bundle + repo + global all missing)".into(),
+        )
+    })?;
+    let target_skills = project_skills_dir(&state, &target_project_id)?;
+    let src_dir = source_dir.join(&skill_name);
+
+    if !src_dir.is_dir() {
+        return Err(AppError::NotFound(format!(
+            "system skill '{skill_name}' not found under {}",
+            source_dir.display()
+        )));
+    }
+    let target_dir = target_skills.join(&skill_name);
+    if target_dir.exists() && !overwrite {
+        return Ok(SkillInstallResult {
+            installed: false,
+            target_path: target_dir.to_string_lossy().into_owned(),
+            file_count: 0,
+            reason: Some("exists".into()),
+        });
+    }
+    let file_count = copy_dir_recursive(&src_dir, &target_dir)?;
+    write_provenance(&target_dir, &src_dir, "system", None);
+    Ok(SkillInstallResult {
+        installed: true,
+        target_path: target_dir.to_string_lossy().into_owned(),
+        file_count,
+        reason: None,
+    })
 }
 
 /// Preview what a (re-)install of `skill_name` into `target_project_id` would

@@ -2641,6 +2641,7 @@ pub fn run() {
             commands::infrastructure::skill_files::skill_files_read,
             commands::infrastructure::skill_files::skill_files_write,
             commands::infrastructure::skill_files::skill_files_install,
+            commands::infrastructure::skill_files::skill_files_install_system,
             commands::infrastructure::skill_files::skill_files_install_preview,
             // Skill usage telemetry (Brainiac-adoption P1)
             commands::infrastructure::skill_usage::skill_usage_scan,

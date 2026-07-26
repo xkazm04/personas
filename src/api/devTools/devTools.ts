@@ -1344,6 +1344,23 @@ export const installSkill = (
   });
 
 /**
+ * Install an app-owned SYSTEM skill (e.g. passport-onboard) into a target
+ * project, sourced from the app bundle / repo `.claude/skills` instead of the
+ * user's global library — so it resolves on a fresh clone and a clean
+ * installer. Only skills in the backend SYSTEM_SKILLS allowlist are accepted.
+ */
+export const installSystemSkill = (
+  skillName: string,
+  targetProjectId: string,
+  overwrite: boolean,
+) =>
+  invoke<SkillInstallResult>("skill_files_install_system", {
+    skillName,
+    targetProjectId,
+    overwrite,
+  });
+
+/**
  * Preview what a (re-)install would change at the target, without writing.
  * Returns per-file deltas + counts so the UI can summarize an overwrite before
  * committing it.
