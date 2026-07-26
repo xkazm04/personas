@@ -21,7 +21,8 @@ import { INK, anchorTip } from './passportInk';
 import { useImprove } from './improve/ImproveContext';
 import { FindingsPopover } from './improve/StandardsScan';
 import { buildOnboardPrompt, onboardDispatchKey } from './onboardDispatch';
-import { dispatchRowToFleet, PASSPORT_FLEET_INK } from './passportFleet';
+import { PASSPORT_FLEET_INK } from './passportFleet';
+import { dispatchSkillToRepo } from './skillPlacement';
 import { passportToMarkdown } from './passportExport';
 
 const CONFIRM_WIDTH = 296;
@@ -115,7 +116,15 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
     if (!raw || onboardBusy) return;
     setOnboardBusy(true);
     listCredentials()
-      .then((creds) => dispatchRowToFleet(onboardDispatchKey(slug), raw.project.root_path, buildOnboardPrompt(p, raw, creds)))
+      // Place the canonical passport-onboard skill into the target repo first
+      // (from the global library) so /passport-onboard resolves there, then run.
+      .then((creds) => dispatchSkillToRepo({
+        skillName: 'passport-onboard',
+        targetProjectId: raw.project.id,
+        targetRoot: raw.project.root_path,
+        dispatchKey: onboardDispatchKey(slug),
+        prompt: buildOnboardPrompt(p, raw, creds),
+      }))
       .then(() => setOnboardBusy(false))
       .catch((e) => { setOnboardBusy(false); toastCatch('passport onboard dispatch')(e); });
   };
