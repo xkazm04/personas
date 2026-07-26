@@ -128,16 +128,37 @@ export default function GeneratedReviewsTab({
     else { logger.warn('Review not found for resume draft', { reviewId: draft.reviewId }); setAdoptionDraft(null); }
   };
 
-  if (gallery.isLoading && gallery.allItems.length === 0 && gallery.total === 0) {
-    return null;
-  }
-
-  if (gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
+  // Loading choreography (docs/design/overview-loading.md, row-level): the
+  // rich "nothing in the whole gallery" empty state only fires once the
+  // fetch has settled — during a cold fetch we fall through and render the
+  // real chrome (search bar, trending frame, list frame) with ghosts inside
+  // the still-empty regions instead of blanking the surface.
+  if (!gallery.isLoading && gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
     return <EmptyState />;
   }
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
   const showTrending = gallery.trendingTemplates.length > 0 && noActiveFilters;
+  // Ghost the trending shelf only into its own emptiness — decoupled from
+  // the main list's loading state, since trending resolves independently.
+  const showTrendingGhost = noActiveFilters && gallery.isLoading && gallery.trendingTemplates.length === 0;
+
+  // A new search/filter/sort context replays the first-viewport row cascade
+  // in TemplateVirtualList; a poll/refresh re-delivering the same ids does
+  // not (RevealItem's id guard handles that internally).
+  const galleryRevealResetKey = [
+    gallery.search,
+    gallery.connectorFilter.join(','),
+    gallery.categoryFilter.join(','),
+    gallery.coverageFilter,
+    componentFilter.join(','),
+    difficultyFilter.join(','),
+    setupFilter.join(','),
+    gallery.sortBy,
+    gallery.sortDir,
+    density,
+    gallery.aiSearchActive ? 'ai' : 'browse',
+  ].join('|');
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -209,7 +230,9 @@ export default function GeneratedReviewsTab({
         onSetupFilterChange={setSetupFilter}
       />
 
-      {showTrending && (
+      {showTrendingGhost ? (
+        <TrendingCarouselGhost />
+      ) : showTrending ? (
         <TrendingCarousel
           trendingTemplates={gallery.trendingTemplates}
           onSelectTemplate={(t) => {
@@ -218,7 +241,7 @@ export default function GeneratedReviewsTab({
           }}
           onAdoptTemplate={(t) => modals.open({ type: 'adopt', review: t })}
         />
-      )}
+      ) : null}
 
       <div className="relative flex-1 flex flex-col overflow-hidden">
         <TemplateVirtualList
@@ -247,6 +270,7 @@ export default function GeneratedReviewsTab({
           compareSelectedIds={compare.selectedIds}
           compareAtCapacity={!compare.canAdd}
           onToggleCompare={compare.toggle}
+          revealResetKey={galleryRevealResetKey}
         />
 
         <CompareTray
@@ -313,6 +337,41 @@ export default function GeneratedReviewsTab({
         onCredentialSave={actions.handleCredentialSave}
         onCredentialModalClose={actions.clearCredentialModal}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TrendingCarouselGhost — calm placeholder for the trending shelf's own cold
+// fetch (decoupled from the main list's loading state). Mirrors the real
+// shelf's frame (`px-4 py-3 border-b`) and card geometry (`w-[200px] p-3`) so
+// the swap to real cards moves nothing. Delayed entrance per the shared
+// ghost convention — invisible for its first ~120ms so a fast fetch never
+// paints one. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+function TrendingCarouselGhost() {
+  return (
+    <div className="px-4 py-3 border-b border-primary/10 flex-shrink-0" aria-hidden="true">
+      <div className="flex items-center gap-2 mb-2.5">
+        <span className="w-4 h-4 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
+        <span className="h-3 w-24 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '120ms' }} />
+      </div>
+      <div className="flex gap-2.5 overflow-x-auto pb-1">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="w-[200px] p-3 rounded-modal bg-primary/[0.03] border border-primary/10 flex-shrink-0 animate-fade-in"
+            style={{ animationDelay: `${140 + i * 35}ms` }}
+          >
+            <span className="block h-3.5 w-3/4 rounded bg-primary/[0.06]" />
+            <div className="flex items-center gap-2 mt-2">
+              <span className="h-2.5 w-10 rounded bg-primary/[0.06]" />
+              <span className="h-5 w-5 rounded-full bg-primary/[0.06]" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
