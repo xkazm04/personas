@@ -3,9 +3,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useCertificationData } from './useCertificationData';
 import { CertOverview } from './components/CertOverview';
 import { RunHistoryView } from './components/RunHistoryView';
@@ -38,6 +38,16 @@ export default function CertificationCommandCenter() {
 
   const [tab, setTab] = useState<CertTab>('overview');
   const [detailMode, setDetailMode] = useState(false);
+
+  // ── Loading choreography (docs/design/overview-loading.md, panel recipe) ──
+  // Both trackers live here (CertificationCommandCenter stays mounted across
+  // tab switches / detail-mode toggles) so switching back to a tab that
+  // already has data never replays its cascade — only the first arrival of a
+  // dataset plays the ripple. The detail-section tracker resets per run id:
+  // opening a *different* run is genuinely new content and replays; re-render
+  // of the same run does not.
+  const cardEnter = useRevealTracker();
+  const sectionEnter = useRevealTracker(evalRunDetail?.runId);
 
   const handleSelectRun = useCallback(
     (runId: string) => {
@@ -88,12 +98,16 @@ export default function CertificationCommandCenter() {
         {showEmptyError ? (
           <InlineErrorBanner severity="error" title={c.error_title} message={certError} onRetry={handleRefresh} />
         ) : detailMode ? (
-          <LoadingReveal
-            loading={certDetailLoading || !evalRunDetail}
-            placeholder={<RunDetailPlaceholder />}
-          >
-            {evalRunDetail && <RunDetailView detail={evalRunDetail} onBack={handleBack} />}
-          </LoadingReveal>
+          certDetailLoading || !evalRunDetail ? (
+            <RunDetailPlaceholder />
+          ) : (
+            <RunDetailView
+              detail={evalRunDetail}
+              onBack={handleBack}
+              hasEntered={sectionEnter.hasEntered}
+              markEntered={sectionEnter.markEntered}
+            />
+          )
         ) : (
           <div className="space-y-4">
             <SegmentedTabs<CertTab>
@@ -106,16 +120,23 @@ export default function CertificationCommandCenter() {
               ariaLabel={c.title}
             />
 
-            <LoadingReveal
-              loading={certLoading && certStatus.length === 0 && evalRuns.length === 0}
-              placeholder={tab === 'overview' ? <CertOverviewPlaceholder /> : <RunHistoryPlaceholder />}
-            >
-              {tab === 'overview' ? (
-                <CertOverview certStatus={certStatus} onSelectRun={handleSelectRun} />
-              ) : (
-                <RunHistoryView runs={evalRuns} onSelectRun={handleSelectRun} />
-              )}
-            </LoadingReveal>
+            {certLoading && certStatus.length === 0 && evalRuns.length === 0 ? (
+              tab === 'overview' ? <CertOverviewPlaceholder /> : <RunHistoryPlaceholder />
+            ) : tab === 'overview' ? (
+              <CertOverview
+                certStatus={certStatus}
+                onSelectRun={handleSelectRun}
+                hasEntered={cardEnter.hasEntered}
+                markEntered={cardEnter.markEntered}
+              />
+            ) : (
+              // RunHistoryView renders through UnifiedTable, which owns row
+              // rendering — it has no per-row entrance hook to cascade into
+              // (docs/design/overview-loading.md, "Lists & tables" recipe:
+              // report the gap rather than hack the shared table primitive).
+              // Rows paint instantly on data arrival (law 2); no ripple here.
+              <RunHistoryView runs={evalRuns} onSelectRun={handleSelectRun} />
+            )}
           </div>
         )}
       </ContentBody>

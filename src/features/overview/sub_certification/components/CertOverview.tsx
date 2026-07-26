@@ -1,16 +1,24 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { ShieldCheck } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { TeamCertCard } from './TeamCertCard';
 import type { TeamCertStatus } from '@/lib/bindings/TeamCertStatus';
 
 interface CertOverviewProps {
   certStatus: TeamCertStatus[];
   onSelectRun: (runId: string) => void;
+  /**
+   * One-shot per-card entrance tracker owned by `CertificationCommandCenter`
+   * (docs/design/overview-loading.md) — it survives this component's mount
+   * lifetime, so switching tabs away and back never replays the cascade.
+   */
+  hasEntered: (id: string) => boolean;
+  markEntered: (id: string) => void;
 }
 
 /** Grid of per-team certification cards. */
-export function CertOverview({ certStatus, onSelectRun }: CertOverviewProps) {
+export function CertOverview({ certStatus, onSelectRun, hasEntered, markEntered }: CertOverviewProps) {
   const { t } = useTranslation();
   const c = t.overview.certification;
 
@@ -29,8 +37,16 @@ export function CertOverview({ certStatus, onSelectRun }: CertOverviewProps) {
         </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {certStatus.map((s) => (
-          <TeamCertCard key={s.teamId} status={s} onSelectRun={onSelectRun} />
+        {certStatus.map((s, index) => (
+          <RevealItem
+            key={s.teamId}
+            revealId={s.teamId}
+            order={index}
+            hasEntered={hasEntered}
+            markEntered={markEntered}
+          >
+            <TeamCertCard status={s} onSelectRun={onSelectRun} />
+          </RevealItem>
         ))}
       </div>
     </div>
