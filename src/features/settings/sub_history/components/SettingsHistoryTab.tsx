@@ -7,8 +7,24 @@ import {
 } from '@/api/system/settings';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
 const PAGE_SIZE = 100;
+
+/**
+ * Module-scoped session cache (docs/design/overview-loading.md, law 1). Settings
+ * tabs unmount on panel switch, so without this the audit log falls back to a
+ * cold ghost state on every return visit even though nothing changed. Keyed by
+ * category filter; a fresh fetch still runs and silently replaces it.
+ */
+const historyCache = new Map<string, SettingsAuditEntry[]>();
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 20;
+const HISTORY_ROW_H = 40;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-52', 'w-32'];
 
 const ACTION_COLOR: Record<string, string> = {
   create: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
@@ -37,10 +53,15 @@ export default function SettingsHistoryTab() {
     [s],
   );
 
-  const [entries, setEntries] = useState<SettingsAuditEntry[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [entries, setEntries] = useState<SettingsAuditEntry[] | null>(
+    () => historyCache.get('') ?? null,
+  );
+  // `loading` is in-flight-only, never a content gate — it decides whether an
+  // EMPTY row region shows ghosts (fetch running) or the empty state (fetch
+  // settled). Warm cache means it can be true while cached rows still paint.
+  const [loading, setLoading] = useState(() => !historyCache.has(''));
+  const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
@@ -52,6 +73,7 @@ export default function SettingsHistoryTab() {
         categoryFilter || undefined,
       );
       setEntries(rows);
+      historyCache.set(categoryFilter, rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -80,6 +102,13 @@ export default function SettingsHistoryTab() {
   };
 
   const visible = entries ?? [];
+  // Ghosts only into genuine emptiness — never over rows already on screen
+  // (cache or a previous fetch). `entries === null` means "never fetched
+  // this session"; an empty array is a settled, real "no entries" result.
+  const showGhost = loading && entries === null;
+  // A category switch replays the first-viewport cascade for its result set;
+  // a background refresh re-delivering the same ids does not.
+  const enter = useRevealTracker(categoryFilter);
 
   return (
     <ContentBox>
@@ -130,90 +159,124 @@ export default function SettingsHistoryTab() {
           )}
         </div>
 
-        {loading && !entries && (
-          <div className="typo-caption text-foreground py-6 text-center">{s.loading}</div>
-        )}
-
-        {!loading && visible.length === 0 && (
+        {showGhost ? (
+          <>
+            <span className="sr-only" role="status">{s.loading}</span>
+            <HistoryGhostRows />
+          </>
+        ) : visible.length === 0 ? (
           <div className="typo-caption text-foreground py-10 text-center bg-secondary/20 rounded">
             {categoryFilter ? s.empty_filtered : s.empty}
           </div>
-        )}
-
-        <div className="space-y-1">
-          {visible.map((entry) => {
-            const isExpanded = expanded.has(entry.id);
-            const hasDetails =
-              (entry.beforeValue !== null && entry.beforeValue !== undefined) ||
-              (entry.afterValue !== null && entry.afterValue !== undefined);
-            const actionClass = ACTION_COLOR[entry.action] ?? ACTION_COLOR_FALLBACK;
-            return (
-              <div
-                key={entry.id}
-                className="rounded-card border border-border/30 bg-secondary/20 overflow-hidden"
-              >
-                <button
-                  type="button"
-                  onClick={() => hasDetails && toggleExpanded(entry.id)}
-                  disabled={!hasDetails}
-                  className={`w-full flex items-center gap-3 px-3 py-2 ${
-                    hasDetails ? 'hover:bg-secondary/40 cursor-pointer' : 'cursor-default'
-                  } transition-colors`}
+        ) : (
+          <div className="space-y-1">
+            {visible.map((entry, index) => {
+              const isExpanded = expanded.has(entry.id);
+              const hasDetails =
+                (entry.beforeValue !== null && entry.beforeValue !== undefined) ||
+                (entry.afterValue !== null && entry.afterValue !== undefined);
+              const actionClass = ACTION_COLOR[entry.action] ?? ACTION_COLOR_FALLBACK;
+              return (
+                <RevealItem
+                  key={entry.id}
+                  revealId={entry.id}
+                  order={index}
+                  hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                  markEntered={enter.markEntered}
+                  className="rounded-card border border-border/30 bg-secondary/20 overflow-hidden block"
                 >
-                  <span
-                    className={`typo-caption px-1.5 py-0.5 rounded border uppercase tracking-wider ${actionClass}`}
+                  <button
+                    type="button"
+                    onClick={() => hasDetails && toggleExpanded(entry.id)}
+                    disabled={!hasDetails}
+                    className={`w-full flex items-center gap-3 px-3 py-2 ${
+                      hasDetails ? 'hover:bg-secondary/40 cursor-pointer' : 'cursor-default'
+                    } transition-colors`}
                   >
-                    {entry.action}
-                  </span>
-                  <span className="typo-caption text-foreground uppercase tracking-wider">
-                    {categoryLabel(entry.category)}
-                  </span>
-                  <span className="typo-body font-medium text-foreground truncate flex-1 text-left">
-                    {entry.settingKey}
-                  </span>
-                  {entry.actor && (
-                    <span className="typo-caption text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
-                      {entry.actor}
+                    <span
+                      className={`typo-caption px-1.5 py-0.5 rounded border uppercase tracking-wider ${actionClass}`}
+                    >
+                      {entry.action}
                     </span>
-                  )}
-                  <span
-                    className="typo-caption text-foreground shrink-0"
-                    title={formatTimestamp(entry.createdAt)}
-                  >
-                    {formatRelativeTime(entry.createdAt, '', { dateFallbackDays: 30 })}
-                  </span>
-                  {hasDetails && (
-                    <ChevronDown
-                      size={12}
-                      className={`text-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                    />
-                  )}
-                </button>
-                {isExpanded && hasDetails && (
-                  <div className="border-t border-border/20 bg-secondary/10 px-3 py-2 space-y-2 typo-code">
-                    {entry.beforeValue !== null && entry.beforeValue !== undefined && (
-                      <div>
-                        <div className="typo-caption text-foreground mb-0.5">{s.before}</div>
-                        <pre className="bg-secondary/30 rounded p-2 text-foreground whitespace-pre-wrap break-all">
-                          {entry.beforeValue}
-                        </pre>
-                      </div>
+                    <span className="typo-caption text-foreground uppercase tracking-wider">
+                      {categoryLabel(entry.category)}
+                    </span>
+                    <span className="typo-body font-medium text-foreground truncate flex-1 text-left">
+                      {entry.settingKey}
+                    </span>
+                    {entry.actor && (
+                      <span className="typo-caption text-foreground bg-secondary/40 px-1.5 py-0.5 rounded">
+                        {entry.actor}
+                      </span>
                     )}
-                    {entry.afterValue !== null && entry.afterValue !== undefined && (
-                      <div>
-                        <div className="typo-caption text-foreground mb-0.5">{s.after}</div>
-                        <pre className="bg-secondary/30 rounded p-2 text-foreground whitespace-pre-wrap break-all">
-                          {entry.afterValue}
-                        </pre>
-                      </div>
+                    <span
+                      className="typo-caption text-foreground shrink-0"
+                      title={formatTimestamp(entry.createdAt)}
+                    >
+                      {formatRelativeTime(entry.createdAt, '', { dateFallbackDays: 30 })}
+                    </span>
+                    {hasDetails && (
+                      <ChevronDown
+                        size={12}
+                        className={`text-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      />
                     )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  </button>
+                  {isExpanded && hasDetails && (
+                    <div className="border-t border-border/20 bg-secondary/10 px-3 py-2 space-y-2 typo-code">
+                      {entry.beforeValue !== null && entry.beforeValue !== undefined && (
+                        <div>
+                          <div className="typo-caption text-foreground mb-0.5">{s.before}</div>
+                          <pre className="bg-secondary/30 rounded p-2 text-foreground whitespace-pre-wrap break-all">
+                            {entry.beforeValue}
+                          </pre>
+                        </div>
+                      )}
+                      {entry.afterValue !== null && entry.afterValue !== undefined && (
+                        <div>
+                          <div className="typo-caption text-foreground mb-0.5">{s.after}</div>
+                          <pre className="bg-secondary/30 rounded p-2 text-foreground whitespace-pre-wrap break-all">
+                            {entry.afterValue}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </RevealItem>
+              );
+            })}
+          </div>
+        )}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HistoryGhostRows — calm, delayed ghost rows shown only while the audit log
+// has never been fetched this session (docs/design/overview-loading.md §C).
+// Same row height/geometry as a real entry row so the ghost→content swap
+// moves nothing. No `animate-pulse` — the entrance stagger is the only motion.
+// ---------------------------------------------------------------------------
+function HistoryGhostRows() {
+  return (
+    <div className="space-y-1" aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => {
+        const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-3 rounded-card border border-border/20 bg-secondary/10 animate-fade-in"
+            style={{ height: HISTORY_ROW_H, animationDelay: delay }}
+          >
+            <span className={`h-4 w-14 rounded border border-transparent ${GHOST_BAR}`} />
+            <span className={`h-3 w-20 ${GHOST_BAR}`} />
+            <span className={`h-3.5 ${titleW} max-w-[40%] ${GHOST_BAR}`} />
+            <span className={`h-3 w-16 ${GHOST_BAR} ml-auto`} />
+          </div>
+        );
+      })}
+    </div>
   );
 }

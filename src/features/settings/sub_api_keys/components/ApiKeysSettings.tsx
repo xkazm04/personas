@@ -38,6 +38,8 @@ import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 
 // A key is considered "stale" — i.e. probably forgotten — when it's older than
 // the grace window AND either never used or unused for the inactivity window.
@@ -72,24 +74,44 @@ import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
+/**
+ * Module-scoped session cache (docs/design/overview-loading.md, law 1). This
+ * tab unmounts on settings-panel switch, so without it the list falls back to
+ * a cold ghost state on every return visit even though nothing changed. A
+ * fresh fetch still runs on mount and silently replaces it.
+ */
+let keysCache: ExternalApiKey[] | null = null;
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 12;
+const KEY_ROW_H = 68;
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_NAME_WIDTHS = ['w-40', 'w-28', 'w-52', 'w-32'];
+
 export default function ApiKeysSettings() {
   const { t } = useTranslation();
   const s = t.settings.api_keys;
 
-  const [keys, setKeys] = useState<ExternalApiKey[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [keys, setKeys] = useState<ExternalApiKey[] | null>(() => keysCache);
+  // `loading` is in-flight-only, never a content gate — it decides whether an
+  // EMPTY row region shows ghosts (fetch running) or the empty state (fetch
+  // settled). Warm cache means it can be true while cached rows still paint.
+  const [loading, setLoading] = useState(() => keysCache === null);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
   const [auditTarget, setAuditTarget] = useState<ExternalApiKey | null>(null);
+  const enter = useRevealTracker('api-keys');
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const all = await listExternalApiKeys();
-      setKeys(all.filter((k) => !HIDDEN_KEY_NAMES.has(k.name)));
+      const filtered = all.filter((k) => !HIDDEN_KEY_NAMES.has(k.name));
+      setKeys(filtered);
+      keysCache = filtered;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -168,7 +190,7 @@ export default function ApiKeysSettings() {
       <ContentHeader
         icon={<Key className="w-5 h-5 text-fuchsia-400" />}
         title={s.title}
-        subtitle={loading ? s.loading : `${activeCount} ${s.active_keys}`}
+        subtitle={keys === null ? s.loading : `${activeCount} ${s.active_keys}`}
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="api_keys" />
@@ -207,28 +229,34 @@ export default function ApiKeysSettings() {
         <div className="mt-6">
           <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-fuchsia-400" />} titleClassName="text-primary">
             <div className="space-y-2">
-              {loading && !keys && (
-                <div className="typo-caption text-foreground py-6 text-center">
-                  {s.loading_keys}
-                </div>
-              )}
-
-              {!loading && regularKeys.length === 0 && (
+              {loading && keys === null ? (
+                <>
+                  <span className="sr-only" role="status">{s.loading_keys}</span>
+                  <ApiKeyGhostRows />
+                </>
+              ) : regularKeys.length === 0 ? (
                 <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
                   {s.empty}
                 </div>
+              ) : (
+                regularKeys.map((key, index) => (
+                  <RevealItem
+                    key={key.id}
+                    revealId={key.id}
+                    order={index}
+                    hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                    markEntered={enter.markEntered}
+                  >
+                    <ApiKeyRow
+                      apiKey={key}
+                      actioning={actioning === key.id}
+                      onRevoke={() => handleRevoke(key.id)}
+                      onDelete={() => handleDelete(key.id)}
+                      onAudit={() => setAuditTarget(key)}
+                    />
+                  </RevealItem>
+                ))
               )}
-
-              {regularKeys.map((key) => (
-                <ApiKeyRow
-                  key={key.id}
-                  apiKey={key}
-                  actioning={actioning === key.id}
-                  onRevoke={() => handleRevoke(key.id)}
-                  onDelete={() => handleDelete(key.id)}
-                  onAudit={() => setAuditTarget(key)}
-                />
-              ))}
             </div>
           </SectionCard>
         </div>
@@ -503,6 +531,41 @@ function PairedAppRow({ apiKey, actioning, onDisconnect, onAudit }: PairedAppRow
           )}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ApiKeyGhostRows — calm, delayed ghost rows shown only while the key list
+// has never been fetched this session (docs/design/overview-loading.md §C).
+// Same two-line row height/geometry as a real ApiKeyRow so the ghost→content
+// swap moves nothing. No `animate-pulse` — the entrance stagger is the only
+// motion.
+// ---------------------------------------------------------------------------
+function ApiKeyGhostRows() {
+  return (
+    <div className="space-y-2" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const nameW = GHOST_NAME_WIDTHS[i % GHOST_NAME_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-secondary/20 animate-fade-in"
+            style={{ height: KEY_ROW_H, animationDelay: delay }}
+          >
+            <div className="flex-1 min-w-0 space-y-2">
+              <span className={`block h-3.5 ${nameW} max-w-full ${GHOST_BAR}`} />
+              <div className="flex items-center gap-3">
+                <span className={`h-3 w-20 ${GHOST_BAR}`} />
+                <span className={`h-3 w-24 ${GHOST_BAR}`} />
+                <span className={`h-3 w-16 ${GHOST_BAR}`} />
+              </div>
+            </div>
+            <span className="h-6 w-24 rounded-interactive bg-primary/[0.06] flex-shrink-0" />
+          </div>
+        );
+      })}
     </div>
   );
 }
