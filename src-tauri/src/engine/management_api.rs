@@ -1340,7 +1340,14 @@ async fn set_auto_optimize(
     Json(config): Json<AutoOptimizeConfig>,
 ) -> impl IntoResponse {
     let key = format!("{}{}", settings_keys::AUTO_OPTIMIZE_PREFIX, persona_id);
-    let json = serde_json::to_string(&config).unwrap_or_default();
+    let json = match serde_json::to_string(&config) {
+        Ok(j) => j,
+        Err(e) => {
+            tracing::error!(persona_id = %persona_id, error = %e, "failed to serialize auto-optimize config");
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to serialize config: {e}"))
+                .into_response();
+        }
+    };
     match settings::set(&state.pool, &key, &json) {
         Ok(()) => ok_json(config).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
@@ -1377,7 +1384,14 @@ async fn set_health_watch(
     Json(config): Json<HealthWatchConfig>,
 ) -> impl IntoResponse {
     let key = format!("{}{}", settings_keys::HEALTH_WATCH_PREFIX, persona_id);
-    let json = serde_json::to_string(&config).unwrap_or_default();
+    let json = match serde_json::to_string(&config) {
+        Ok(j) => j,
+        Err(e) => {
+            tracing::error!(persona_id = %persona_id, error = %e, "failed to serialize health-watch config");
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to serialize config: {e}"))
+                .into_response();
+        }
+    };
     match settings::set(&state.pool, &key, &json) {
         Ok(()) => ok_json(config).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
@@ -2023,7 +2037,10 @@ async fn build_status(
                 .as_deref()
                 .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
             let resolved_cells: serde_json::Value =
-                serde_json::from_str(&session.resolved_cells).unwrap_or_default();
+                serde_json::from_str(&session.resolved_cells).unwrap_or_else(|e| {
+                    tracing::warn!(session_id = %session.id, error = %e, "unparseable resolved_cells in build_status");
+                    serde_json::Value::Null
+                });
             ok_json(serde_json::json!({
                 "session_id": session.id,
                 "persona_id": session.persona_id,
