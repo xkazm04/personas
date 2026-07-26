@@ -32,3 +32,4 @@ pub mod stale;
 pub mod transcript;
 pub mod transcript_read;
 pub mod types;
+pub mod wait;

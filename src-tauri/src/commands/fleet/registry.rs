@@ -17,6 +17,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use tokio::sync::watch;
+
 use portable_pty::MasterPty;
 
 use super::types::{state_to_token, FleetSession, FleetSessionMode, FleetSessionState};
@@ -58,6 +60,11 @@ pub struct OutputRing {
     parser: Option<vt100::Parser>,
     /// Dims the parser currently models — a mismatch triggers a rebuild.
     parser_dims: (u16, u16),
+    /// Broadcasts `rev` on every push so waiters can block on screen changes
+    /// instead of polling. See [`super::wait`]. Kept alongside `rev` rather
+    /// than replacing it: the preview poll wants a cheap value to compare, a
+    /// waiter wants to be woken.
+    gen_tx: watch::Sender<u32>,
 }
 
 impl OutputRing {
@@ -69,13 +76,21 @@ impl OutputRing {
             rev: 0,
             parser: None,
             parser_dims: (0, 0),
+            gen_tx: watch::channel(0).0,
         }
+    }
+
+    /// Receiver that fires on every push. `send_modify`/`send_replace` are used
+    /// on the sending side, so a ring with no waiters costs one atomic store.
+    pub fn subscribe(&self) -> watch::Receiver<u32> {
+        self.gen_tx.subscribe()
     }
 
     /// Append raw PTY bytes, trimming the oldest beyond `cap`, and feed the
     /// live screen model (if one has been materialized) incrementally.
     pub fn push(&mut self, bytes: &[u8]) {
         self.rev = self.rev.wrapping_add(1);
+        let _ = self.gen_tx.send_replace(self.rev);
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
@@ -389,6 +404,21 @@ impl FleetSessionInner {
     }
 }
 
+/// How long the screen must stay unchanged before we accept that the composer
+/// has finished ingesting a pasted line. Replaces a fixed 350 ms sleep: the
+/// wait ends as soon as redraws stop, so a fast machine pays ~this much and a
+/// slow one gets as long as it needs (bounded by [`SUBMIT_SETTLE_TIMEOUT`]).
+const SUBMIT_SETTLE_MS: u64 = 180;
+
+/// Upper bound on settling. A TUI that never stops redrawing (a spinner mid
+/// stream) must not stall the submit forever — we send Enter anyway.
+const SUBMIT_SETTLE_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(1_500);
+
+/// How long to wait for submission proof (the session flipping `Running`)
+/// before retrying Enter. Matches the previous 10 × 400 ms budget, but the wait
+/// now returns the instant the state lands instead of on a poll boundary.
+const SUBMIT_CONFIRM_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4);
+
 /// The single global registry. Use [`registry`] to access.
 #[derive(Default)]
 pub struct FleetRegistry {
@@ -549,6 +579,16 @@ impl FleetRegistry {
         Ok(())
     }
 
+    /// Clone the handles a [`super::wait`] waiter needs (the shared ring plus
+    /// the dims to render it at), so the wait can block without holding the
+    /// registry lock — which would stall every PTY writer and the ticker for
+    /// the duration of the wait.
+    pub fn wait_handle(&self, session_id: &str) -> Option<(Arc<Mutex<OutputRing>>, u16, u16)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get(session_id)?;
+        Some((session.output.clone(), session.rows, session.cols))
+    }
+
     /// Current lifecycle state, or `None` for an unknown session.
     pub fn session_state(&self, session_id: &str) -> Option<FleetSessionState> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -591,8 +631,19 @@ impl FleetRegistry {
 
         let sid = session_id.to_string();
         tauri::async_runtime::spawn(async move {
-            // Let the composer ingest the paste before the submit keystroke.
-            tokio::time::sleep(std::time::Duration::from_millis(350)).await;
+            use super::wait::{self, WaitCondition};
+
+            // Wait for the composer to actually finish ingesting the paste,
+            // rather than guessing at a fixed sleep. A busy machine used to
+            // under-run the old 350 ms; an idle one over-paid it.
+            let _ = wait::wait_for_screen(
+                &sid,
+                WaitCondition::StableMs(SUBMIT_SETTLE_MS),
+                SUBMIT_SETTLE_TIMEOUT,
+            )
+            .await;
+
+            let mut last_miss = None;
             for attempt in 1..=2u32 {
                 if attempt == 2 {
                     // Tabbed AskUserQuestion recovery: when the "typed" answer
@@ -604,39 +655,77 @@ impl FleetRegistry {
                     if registry().write_input(&sid, b"\x1b[C").is_err() {
                         return;
                     }
-                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                    let _ = wait::wait_for_screen(
+                        &sid,
+                        WaitCondition::StableMs(SUBMIT_SETTLE_MS),
+                        SUBMIT_SETTLE_TIMEOUT,
+                    )
+                    .await;
                 }
                 if registry().write_input(&sid, b"\r").is_err() {
                     return; // writer gone (killed / dozed mid-flight) — nothing to confirm
                 }
                 // Submission proof: the session flips Running (UserPromptSubmit
-                // hook, or a tool hook reviving it). Poll briefly.
-                for _ in 0..10 {
-                    tokio::time::sleep(std::time::Duration::from_millis(400)).await;
-                    if matches!(
-                        registry().session_state(&sid),
-                        Some(FleetSessionState::Running) | None
-                    ) {
-                        super::debug_log::athena(
-                            &sid,
-                            "input submitted",
-                            &format!("confirmed running (enter attempt {attempt})"),
-                        );
-                        return;
-                    }
+                // hook, or a tool hook reviving it). Event-driven — this returns
+                // the moment the state lands instead of on a poll boundary.
+                let outcome = wait::wait_for_running(&sid, SUBMIT_CONFIRM_TIMEOUT).await;
+                if outcome.matched {
+                    super::debug_log::athena(
+                        &sid,
+                        "input submitted",
+                        &format!(
+                            "confirmed running in {}ms (enter attempt {attempt})",
+                            outcome.elapsed_ms
+                        ),
+                    );
+                    return;
                 }
+                // A session that already ended can never confirm — stop
+                // hammering Enter into a dead PTY and report the real cause.
+                if outcome.diagnostics.as_ref().is_some_and(|d| d.ended) {
+                    last_miss = outcome.diagnostics;
+                    break;
+                }
+                last_miss = outcome.diagnostics;
                 // An extra lone Enter is a no-op in an empty composer, so one
                 // retry is safe; more would risk driving an unrelated prompt.
             }
+
+            // The shareable debug log gets SHAPE ONLY — never terminal contents
+            // (see the recorder's contract in fleet.md). The full screen goes to
+            // tracing behind the existing local-verbose knob.
+            let shape = last_miss
+                .as_ref()
+                .map(|d| d.shape())
+                .unwrap_or_else(|| "no diagnostics".into());
+            let ended = last_miss.as_ref().is_some_and(|d| d.ended);
             super::debug_log::athena(
                 &sid,
                 "input NOT confirmed",
-                "typed text + 2× Enter but the session never flipped Running — the composer may still hold the text",
+                &if ended {
+                    format!("session ended before the submit could confirm · {shape}")
+                } else {
+                    format!(
+                        "typed text + 2× Enter but the session never flipped Running — the composer may still hold the text · {shape}"
+                    )
+                },
             );
             tracing::warn!(
                 session_id = %sid,
+                ended,
+                diagnostics = %shape,
                 "fleet write_text_line: submit unconfirmed after 2 Enter attempts"
             );
+            if std::env::var("PERSONAS_FLEET_DEBUG").is_ok() {
+                if let Some(d) = last_miss.as_ref() {
+                    tracing::warn!(
+                        session_id = %sid,
+                        screen = %d.screen,
+                        raw_tail = %d.raw_tail,
+                        "fleet write_text_line: screen at unconfirmed submit"
+                    );
+                }
+            }
         });
         Ok(())
     }

@@ -851,6 +851,10 @@ pub fn emit_session_state(
     reason: Option<String>,
 ) {
     super::debug_log::state_change(session_id, from, state, reason.as_deref().unwrap_or(""));
+    // Wake anyone blocked on a state condition. This is the single choke point
+    // all four state lanes funnel through, so one bump here covers every
+    // transition without each lane knowing waiters exist. See `super::wait`.
+    super::wait::note_state_changed();
     // Durable registry: mirror the new state into `fleet_sessions` so an app
     // restart can resurrect this conversation. Enqueue-only (one map read + a
     // channel send) — the SQLite write happens on the persistence thread, so a
