@@ -13,6 +13,8 @@ import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSumma
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 import type { FleetDebugLogStatus } from '@/lib/bindings/FleetDebugLogStatus';
+import type { FleetRunSummary } from '@/lib/bindings/FleetRunSummary';
+import type { FleetRunReport } from '@/lib/bindings/FleetRunReport';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -251,3 +253,32 @@ export const debugLogStop = () => invoke<FleetDebugLogStatus>('fleet_debug_log_s
 
 /** Poll recorder state — drives the Grid button's live event counter. */
 export const debugLogStatus = () => invoke<FleetDebugLogStatus>('fleet_debug_log_status');
+
+// ---------------------------------------------------------------------------
+// Run harvest — "what did the fleet deliver?"
+// ---------------------------------------------------------------------------
+
+/**
+ * Index of recent runs (a run = the sessions spawned in one dispatch window,
+ * or an explicitly-named run), newest first.
+ */
+export const listRuns = (limit?: number) =>
+  invoke<FleetRunSummary[]>('fleet_list_runs', { limit });
+
+/**
+ * Full report for one run: per-session outcome + declared FLEET:DONE summary +
+ * transcript rollup stats, plus run totals. Folds data the machine already
+ * produces — no extra polling.
+ */
+export const runReport = (runId: string) =>
+  invoke<FleetRunReport>('fleet_run_report', { runId });
+
+/**
+ * Open a NAMED run — every session spawned until `endRun()` joins it. Without
+ * this, spawns auto-group by dispatch window; this only adds a human label.
+ */
+export const beginRun = (label?: string | null) =>
+  invoke<string>('fleet_begin_run', { label: label ?? null });
+
+/** Close the active run; the next spawn opens a fresh one. */
+export const endRun = () => invoke<null>('fleet_end_run', {});

@@ -56,6 +56,7 @@ Key libs (all under `lib/`):
 | `ink.ts` | `STATE_INK`, `DIM_INK`, `FLEET_INK`, `scoreInkVar`, `mix()`, font stacks |
 | `useIslandDrag.ts` | Header-handle drag with click-vs-drag threshold (≤4 px release = select). **Render-free**: the island <g> transform is written imperatively mid-drag; state commits once on release (GroupLayer moves member islands the same way) |
 | `useEventCallback.ts` | Stable-identity callbacks so memoized islands skip re-renders |
+| `ListPopover.tsx` | **The one list-popover shell** — positioned surface, header band (glyph/dot + title + trailing), scrolling list, and `usePopoverDismiss` (Escape + outside click, attached next tick). All six list popovers (goals, KPIs, personas, stack lists, categories, fleet sessions) render their own ROWS into it; only the shell is shared. `anchor="absolute"` for the fleet list, which lives inside CanvasShell and lets the shell own dismissal. |
 
 **Render scale (optimizer pass, hundreds of islands):** island props carry a **quantized z** (~6% steps — islands re-render ~12× per zoom doubling, not per frame); `positioned` islands in MastermindPage are **content-stable** (per-slug cache; a fleet tick re-renders only the affected island); neighbor-dimming on hover writes opacity **imperatively** to the island `<g>`s (`data-mm-island`); halos are shared per-state **radialGradients** / layered plates, not per-island Gaussian filters; passports publish **two-phase** (evidence-less first paint, probe evidence merged in a second commit).
 | `CanvasShell.tsx` | Everything shared per §1/§7/§8; owns groups/links/notes state + editors |
@@ -78,7 +79,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | LLM spend | `sceneStore` → `lib/llmSpend` — `fetchLlmPinpoints(serviceType, credId, '30d')` per project with a bound live tracing credential (LlmTrackingCell's sum), 5-min throttle | absent key ⇒ not wired ("—") |
 | Layout artifacts | `layoutStore` (app-settings document) | |
 
-**Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands). A centered **DemoNotice card** (`lib/DemoNotice.tsx`) makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project; dismissing it leaves a corner "sample data" badge for the session. Demo islands are inert for Improve/terminal actions. The canvas is also held back behind a spinner during the FIRST passport load (not just layout hydration), so an in-flight fetch never renders as an empty world.
+**Demo scene:** with zero scanned projects, `deriveScene` emits a built-in 6-island demo (varied states, fleet sessions, personas, all Ideas freshness bands). A centered **DemoNotice card** (`lib/DemoNotice.tsx`) makes the sample unmistakable and offers the two exits — scan the workspace (`rescan()`) or add a project; dismissing it leaves a corner "sample data" badge for the session — which is itself a **button that re-opens the notice**, since a dismissed demo canvas is otherwise a wall of cells that refuse every click. Demo islands are inert for Improve/terminal actions (they carry no passport, so `dimAction` resolves nothing), and their cells append *"sample project — actions are disabled"* to the native tooltip so a refused click explains itself instead of reading broken. The canvas is also held back behind a spinner during the FIRST passport load (not just layout hydration), so an in-flight fetch never renders as an empty world.
 
 **Data honesty:** each fetch family carries a status; failures surface in `DataHealthBar` by name with a retry — the canvas never silently renders a partial truth. The passport family itself is included (a failed passport load joins the bar rather than rendering a raw error string), and the bar anchors ABOVE the mode toolbar so degraded data never hides mode switching. Idea-scan dispatches are busy **per project** with a 3-minute safety timeout; the in-flight Ideas cell pulses.
 
@@ -94,15 +95,17 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `tests` | Tests | tests level (+ coverage detail) | `tests` → Deploy |
 | `security` | Security | security level/tools | `security` → Deploy |
 | `hosting` | Hosting | `stack.hosting` | `hosting` → Deploy |
-| `auth` | Auth | `stack.auth` | — (inert) |
+| `auth` | Auth | `stack.auth` | — (**view-only by design**, see below) |
 | `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
 | `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
-| `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | — (inert) |
+| `kpi` | KPIs | Factory KPI rollup; off-track ⇒ `alert` | any KPI defined → **KpiListPopover** |
 | `ideas` | Ideas | days since last `DevScan` | always actionable → **IdeaScanPopover** |
 | `goals` | Goals | ongoing (not-done) dev-goal count — `dev_tools_list_all_goals` batched via sceneStore | count > 0 → **GoalListPopover** (titles asc, inert rows) |
-| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | — (inert for now) |
-| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | — (inert for now) |
+| `datalinks` | Data analysis | `stack.dataLinks` (user-declared related data-processing projects) — binary: `solid` when linked, `absent` otherwise | anything declared → **DimListPopover** |
+| `support` | Support | `stack.supportChannels` (from the bound support connector) — binary: `solid` when a channel is bound, `absent` otherwise | anything declared → **DimListPopover** |
+
+**KPI rule:** the cell's colour comes from the Factory rollup (`off > 0` ⇒ `alert`, else `solid`, none defined ⇒ `absent`). Clicking it answers *which* — `KpiListPopover` lists every KPI on the project sorted worst-status first (`crit` → `warn` → `ok` → `met` → unmeasured), each with its `current / target unit` reading. The rollup keeps only counts, so the page projects the list separately from the same Factory projects (`kpiListByProject`). A project with zero KPIs is downgraded to inert.
 
 **Goals rule:** count = goals where `isOngoing(status)` (any non-`done`: open / in-progress / awaiting_acceptance / blocked). Count renders as the far/mid payload (`payloadKind: 'count'`); 0 = grey icon-only inert cell; family failure = `unknown`.
 
@@ -116,7 +119,15 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 **Skills Workbench (shared with the Passport wall):** a green Skills cell (project has installed `.claude/skills`) resolves to `dimActions`' `'skills-run'` action and opens the unified **`SkillsWorkbench`** (`sub_factory/passport/improve/`) on its **Dispatch** lane — the SAME fixed-size component the Passport wall's skills cell opens on its **Manage** lane. A landing chooser (Manage vs Dispatch) leads into a two-pane workbench (title-only skill list grouped by category — Development / Testing / Maintenance / Data / Other from SKILL.md `category:` frontmatter, groups name-asc, uncategorized under Other; the share LLM assigns the category when generalizing into the library + detail pane); Dispatch runs `/skill <args>` as a background Fleet session via `spawnSession` (staying on the canvas), Manage adopts/shares via `engine.deployNow`. The workbench folds all three lanes (adopt/share/dispatch) through one `useSkillsWorkbench` hook.
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15 (`goals` plus the 2026-07-23 `datalinks`/`support` additions took the last comfortable slots); we are AT the ~15 ceiling — before injecting more, plan the **dimension-categories** evolution (far/mid shows 4–5 aggregated category cells that explode at near/close) before injecting more.
+**Dimension categories (far/mid LOD).** Fifteen same-sized dots is not a shape you can read from orbit, so the zoomed-out bands collapse the body into the four registry `category` groups — **Runtime · Delivery · Agentic · Product** — and near/close explodes it back to the full lattice. `lib/dimCategories.ts` owns the pure rollup (unit-tested in `__tests__/dimCategories.test.ts`); the registry's `category` field, reserved since it was written, is what it reads.
+
+Rollup rule, pessimistic about problems and strict about green: any `alert` → `alert`; else any `risk` → `risk`; else any `unknown` → `unknown` (a failed data family must never read as healthy); else all-`absent` → `absent`; else all-`solid` → `solid`; else `partial`. Each cell renders the category icon (`Cpu` / `PackageCheck` / `Sparkles` / `Compass`) in that colour plus a `solid/total` ratio, with a native `<title>` carrying "*{solid} of {total} wired*". A category holding `alert` or `risk` dimensions also gets a corner **attention badge** with that count — the colour says *something* is wrong, the badge says *how many*. `attention` deliberately excludes `absent`: a gap you chose is not a problem (pinned by a test).
+
+Geometry: four oversized cells in a symmetric quad around the core (`CAT_AXIAL` in `MosaicIsland`, `CAT_RING` in `InverseIsland`). Cluster extents are **always measured from the full lattice**, so the halo/plate, banner, stat columns and fleet badges hold still across the band change — only the cells inside swap. In **edit** mode a click opens **`CategoryPopover`** — the category's dimensions sorted worst status first (`STATUS_RANK`), rendered as the SAME rows the island context menu uses (shared `MenuGlyph`, same actionable/inert convention), each actionable row routing through the same `onDimOpen`. So a red Delivery cell at far zoom tells you *which* dimension is red and lets you act on it without zooming in first. A **double-click** frames the island instead (the drill-in gesture that explodes it back into real cells). In connect/group/note mode the cell is inert so it never swallows the mode's own drag.
+
+This is what lifts the ~15-cell ceiling: a 16th dimension needs a registry entry and a lattice slot as before, but the far-zoom read no longer degrades with the count.
+
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15. The far/mid **dimension-categories** collapse (below) has since landed, so the zoomed-out read no longer degrades with the count — a 16th dimension needs a registry entry plus one lattice coord in each variant.
 
 ## 6. Zoom bands and level-of-detail
 
@@ -124,9 +135,9 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 | Band | Cells render | Identity |
 | --- | --- | --- |
-| far | fullscale state-coloured icon (or day-count payload) per cell | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
-| mid | same fullscale icons | banner 18 px |
-| near | icon + uppercase label | banner 17 px; stat columns visible |
+| far | **4 category cells** (see §5 Dimension categories) — fullscale icon in the rolled-up status colour + `solid/total` ratio | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
+| mid | same 4 category cells | banner 18 px |
+| near | the full lattice **explodes back** — icon + uppercase label per dimension | banner 17 px; stat columns visible |
 | close | + tool detail + ordinal progress bar | banner 16 px |
 
 The banner is rendered in world space but **counter-scaled by 1/z** (the Civilization city-label trick), so identity holds at any distance. Native `<title>` tooltips on every cell name the dimension + tool regardless of LOD. Stat columns hide at far. The dev-only `ZoomBadge` (top-right, `import.meta.env.DEV`) shows exact z / % / band for tuning.
@@ -145,7 +156,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 | Mode | Behaviour |
 | --- | --- |
 | **Edit** (default) | sea drag = pan; **header (banner) drag** moves an island (body is inert for moving); header click (≤4 px) opens the right sidebar; groups move (carrying contained islands), resize (corner handle), rename; notes drag/edit; link labels editable |
-| **Group** | drag draws a labelled rectangle (dashed, primary-tinted); label inline-renamable; × deletes |
+| **Group** | drag draws a labelled rectangle (dashed, primary-tinted); label inline-renamable; × deletes. The label plate is also the group's **rollup**: a **state histogram** (one dot+count per state present, worst first — a single worst-state dot would summarize ten projects by their unluckiest member), total blockers (error-red, only when non-zero), and — in edit mode — a rocket that dispatches ONE instruction to every dispatchable project in the box (`DispatchFleetModal` with a `targetCount` badge; spawns run sequentially, since firing six PTY+Claude processes at once is how a portfolio dispatch stalls the machine). Plate width tracks whichever segments render. |
 | **Connect** | drag from island A → rubber-band line, nearest island in radius highlights, release links; click-click fallback; editor popover: label, full/dashed, 6-colour palette |
 | **Note** | click places a world-space text note — sizes S/M/L/XL (16/26/42/64), fonts Inter/Roboto/**Caveat** (import-free stacks; Caveat falls back to Segoe Script/Ink Free) |
 
@@ -153,7 +164,7 @@ Retired along the way (deleted, in git history): Archipelago (R1 winner, later b
 
 **Hover focus:** hovering an island dims everything except it and its integration neighbours.
 
-**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions sorted by name with the same glyphs; hovering a dimension row echoes a double ring on the matching cell; dimension row click is currently a no-op (reserved for the per-dimension action layer). Both Fleet rows are disabled for demo islands / projects with no `root_path`.
+**Context menu:** right-click a header → two Fleet action rows (**Open terminal**, **Dispatch Fleet…**) above the island's dimensions **grouped by category** (Runtime / Delivery / Agentic / Product — the same shape the collapsed island shows at far zoom) and sorted worst-status-first inside each group, with the same glyphs; hovering a dimension row echoes a double ring on the matching cell. **Clicking an actionable dimension row does exactly what clicking its cell does** — the island's nodes reach the menu already decorated by `MastermindPage`'s `dimAction` pass, so the row routes through the same `onDimOpen` (Improve / Deploy popover, `IdeaScanPopover`, `GoalListPopover`, Skills Workbench), anchored at the row. Inert dimensions render as plain non-focusable rows with no pointer and no hover affordance — the same "no action, no affordance" convention §5 defines for cells. Both Fleet rows are disabled for demo islands / projects with no `root_path`.
 
 **Motion:** sidebars fade+slide, islands fade in/out on hide/show/create (AnimatePresence), all linear.
 
@@ -163,7 +174,7 @@ Below each island, an ops-badge row (`FleetBadges`, counter-scaled):
 
 - **Terminal state badges** — one badge per fleet-session state present (attention-first order; `awaiting_input` dot pulses). Click → `FleetListPopover` listing that state's sessions, each with a deterministic **animal glyph** (hash of session id — Cat/Dog/Bird/Fish/Rabbit/Squirrel/Turtle/Snail) so parallel terminals stay tellable. Picking one opens…
 - **`FleetPreviewPanel`** — the live managed terminal (`FleetTerminalPane`, fully interactive: typing goes straight to the PTY). Headless/exited sessions get a status body (no TTY). There is also an **Open terminal** action (spawns a fleet session in the project's `root_path` via `spawnSession`; disabled for demo islands / missing path), and a **Dispatch Fleet…** action (`DispatchFleetModal` — a textarea instruction seeds a *background* session via `spawnSession(root, [instruction])`; no preview panel opens, so the canvas stays put and the session docks as an island fleet badge for later).
-- **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover` with the names; rows deliberately inert for now.
+- **Personas badge** — Bot icon + count of personas with a running execution (processing-blue). Click → `PersonaListPopover`: one row per persona with the Monitor's own status dot, a live elapsed-time column (ticking while open), and a click that navigates to whatever surface the process declared. That routing goes through `navigateToProcess` (`features/fleet/monitor/`, extracted from `MonitorDrawer` for this) so a persona click lands identically from the canvas and from the Monitor. Rows whose process declares no destination — and demo islands, which have names but no processes — stay inert.
 - **Live attention:** any awaiting/stale session raises the island's "needs you" marker; real monitoring errors can drive island colour (§4).
 
 ## 10. Actionable layer (Improve + scans)
@@ -186,9 +197,9 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 ## 12. Known gaps / deferred
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
-- **Context-menu row click** and **persona list row click** are reserved no-ops (per-item action layers to come).
-- `auth` and `kpi` dimensions have no Improve counterpart yet (inert).
+- `auth` stays inert on purpose. Making it actionable is a **Passport-wall** change, not a canvas one: there is no `auth` row in `deployActions`/`connectors`, the wall renders it as a plain presence cell, and `passportModel` marks `stack.auth` view-only. A canvas action would break `dimActions`' invariant that a cell is clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true` so its cells say so in the tooltip.
+- **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
-- **Dimension categories** for ≥15 dimensions (see §5). Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
+- **Dimension categories** shipped (see §5) — the ceiling is lifted. Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.
 - Demo islands cannot exercise Improve actions, terminals, or real scan freshness.
 - Persona attribution requires the project to have a `team_id`.

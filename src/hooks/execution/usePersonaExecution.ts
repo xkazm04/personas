@@ -2,9 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
-import { createLogger } from "@/lib/log";
-
-const logger = createLogger("persona-execution");
+import { silentCatch } from "@/lib/silentCatch";
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
@@ -88,7 +86,7 @@ export function usePersonaExecution() {
           durationMs: duration_ms ?? null,
           costUsd: cost_usd ?? null,
         };
-        void runMiddleware('finalize_status', finalizePayload, trace).catch((err) => { logger.warn('finalize_status middleware failed', { executionId: store.activeExecutionId, error: String(err) }); });
+        void runMiddleware('finalize_status', finalizePayload, trace).catch(silentCatch('hooks/execution/usePersonaExecution:finalizeStatusMiddleware'));
       }
     }
     if (error) {
@@ -107,7 +105,7 @@ export function usePersonaExecution() {
 
     // After successful execution, check for new human reviews
     if (status === 'completed' && execPersonaId) {
-      void checkNewHumanReviews(execPersonaId, execPersonaName).catch(() => {});
+      void checkNewHumanReviews(execPersonaId, execPersonaName).catch(silentCatch('hooks/execution/usePersonaExecution:checkNewHumanReviews'));
     }
   }, []);
 
@@ -186,9 +184,7 @@ export function usePersonaExecution() {
           }
         }
       })
-      .catch(() => {
-        // Recovery failed -- execution may have completed during reload
-      });
+      .catch(silentCatch('hooks/execution/usePersonaExecution:replayRecovery'));
   }, []);
 
   // Listen for queue-status events only while an execution is active.

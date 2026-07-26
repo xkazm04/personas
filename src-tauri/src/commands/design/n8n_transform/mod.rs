@@ -7,8 +7,4 @@ pub mod streaming;
 pub(crate) mod types;
 
 // Re-export shared utilities used by template_adopt
-pub use cli_runner::{
-    extract_first_json_object, extract_questions_output, parse_persona_output,
-    run_claude_prompt_text, run_claude_prompt_text_inner,
-};
-pub use types::N8nPersonaOutput;
+pub use cli_runner::{extract_first_json_object, run_claude_prompt_text, run_claude_prompt_text_inner};

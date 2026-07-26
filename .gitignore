@@ -60,6 +60,7 @@ recordings/
 # Claude Code (allow commands, skills, context docs, and CLAUDE.md to be tracked)
 .claude/*
 !.claude/CLAUDE.md
+!.claude/Design.md
 !.claude/active-runs.md
 !.claude/skills/
 !.claude/agents/
@@ -116,3 +117,6 @@ scripts/test/.soak/
 
 # Personal app-cost passport file (never in VCS)
 app-cost.json
+
+# Working plan documents (session-local, not shared)
+docs/plans/

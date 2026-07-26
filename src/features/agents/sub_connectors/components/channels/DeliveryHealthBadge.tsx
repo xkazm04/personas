@@ -6,6 +6,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import type { ChannelDeliveryStats } from '@/lib/bindings/ChannelDeliveryStats';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface DeliveryHealthBadgeProps {
   channelTypes: NotificationChannelType[];
@@ -35,13 +36,13 @@ export function DeliveryHealthBadge({ channelTypes }: DeliveryHealthBadgeProps) 
   useEffect(() => {
     getNotificationDeliveryStats()
       .then((s) => setStats({ slack: s.slack, telegram: s.telegram, email: s.email }))
-      .catch(() => {});
+      .catch(silentCatch('DeliveryHealthBadge:getNotificationDeliveryStats'));
   }, []);
 
   const handleDelivery = useCallback(() => {
     getNotificationDeliveryStats()
       .then((s) => setStats({ slack: s.slack, telegram: s.telegram, email: s.email }))
-      .catch(() => {});
+      .catch(silentCatch('DeliveryHealthBadge:handleDelivery'));
   }, []);
   useTypedTauriEvent(EventName.NOTIFICATION_DELIVERY, handleDelivery);
 

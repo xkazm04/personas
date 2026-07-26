@@ -436,7 +436,7 @@ mod tests {
     fn civil_time_matches_known_epochs() {
         assert_eq!(civil_from_ms(0), (1970, 1, 1, 0, 0, 0));
         // 2026-07-23T14:05:31Z
-        assert_eq!(civil_from_ms(1_784_988_331_000), (2026, 7, 23, 14, 5, 31));
+        assert_eq!(civil_from_ms(1_784_815_531_000), (2026, 7, 23, 14, 5, 31));
     }
 
     #[test]

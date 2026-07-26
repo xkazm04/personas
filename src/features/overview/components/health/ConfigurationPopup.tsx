@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger("configuration-popup");
 
@@ -73,7 +74,7 @@ export function ConfigurationPopup({
         setValues((prev) => ({ ...prev, ...updated }));
       })
       .catch((err) => {
-        logger.error('Failed to load config settings', { error: err });
+        silentCatch('ConfigurationPopup:loadSettings')(err);
         setLoadError(true);
       })
       .finally(() => setLoaded(true));

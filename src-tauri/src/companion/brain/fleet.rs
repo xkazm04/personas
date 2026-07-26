@@ -132,7 +132,6 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::Idle           => "idle",
         FleetSessionState::Stale          => "stale",
         FleetSessionState::Finished       => "task complete",
-        FleetSessionState::Finished       => "finished",
         FleetSessionState::Hibernated     => "hibernated",
         FleetSessionState::Exited         => "exited",
     }

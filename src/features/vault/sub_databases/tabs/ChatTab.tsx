@@ -95,7 +95,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
           pollRef.current = undefined;
           setActiveQueryId(null);
           setGenerating(false);
-          cancelNlQuery(queryId).catch(() => {});
+          cancelNlQuery(queryId).catch(silentCatch('ChatTab:cancelNlQueryTimeout'));
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantMsg.id
@@ -149,7 +149,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
 
   const handleCancel = useCallback(() => {
     if (activeQueryId) {
-      cancelNlQuery(activeQueryId).catch(() => {});
+      cancelNlQuery(activeQueryId).catch(silentCatch('ChatTab:cancelNlQuery'));
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = undefined; }
       setActiveQueryId(null);
       setGenerating(false);

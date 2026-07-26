@@ -53,6 +53,7 @@ pub struct KnowledgeCandidate {
 /// candidate that was refused (a lossy ingest is never silent).
 #[derive(Debug, Default, serde::Serialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct IngestSummary {
     pub inserted: u32,
     pub skipped: Vec<String>,

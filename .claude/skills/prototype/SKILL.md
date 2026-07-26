@@ -35,7 +35,7 @@ After Phase 1 confirms which file is actually-rendered, but BEFORE Phase 2 gener
 
 **At session end** (after the consolidation commit lands and variant files are deleted): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <consolidation-sha>)` or `aborted (<reason>: e.g. user picked no winner)`. Trim entries older than 14 days while you're there.
 
-Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+Full design rationale: [`docs/architecture/cli-coordination.md`](../../../docs/architecture/cli-coordination.md).
 
 ### Parallel-safety primitives (mandatory)
 
@@ -93,7 +93,7 @@ Goal: add a top-of-component tab strip that lets the user A/B between variants w
 3. Every variant must accept the same `Props` shape the component already uses — consumers stay untouched.
 4. Keep baseline as the default selected tab so nothing visually changes on load.
 
-Principle: the scaffold is throwaway. Don't over-engineer it. A 15-line tab switcher is enough.
+Principle: the scaffold is throwaway. Don't over-engineer it. A 15-line tab switcher is enough — it's the one piece exempt from the shared-catalog rule *because it never ships*: Phase 5 deletes it. That exemption is exactly why the no-lingering-switcher rule in Phase 5 exists.
 
 ---
 
@@ -107,7 +107,9 @@ Do these four things, in order, every time:
 
 1. **Check the shared-component catalog before building ANY widget.** In Personas it's `src/features/shared/components/CATALOG.md` (auto-generated, always fresh; CLAUDE.md mandates reading it before writing UI). **Do not hand-roll — or copy a baseline's hand-rolled — selects, inputs, toggles, modals, tooltips, empty states, spinners, or badges. Import the catalogued component.** The recurring failure mode is reusing the *existing* component's raw `<select>`/`<input>` verbatim instead of upgrading to the shared one — a raw `<select>` renders OS-styled options, not app-themed ones. Canonical swaps: `<select>`/dropdown → `forms/ThemedSelect` (the ergonomic drop-in; `filterable hideSearch` for short option lists) or `forms/Listbox` (low-level render-prop primitive — more code, more control); text field → the `INPUT_FIELD` token from `@/lib/utils/designTokens` or `forms/FormField`; toggle → `forms/AccessibleToggle`; tab strip → `layout/SegmentedTabs`. **If the baseline you're prototyping on uses a raw element, upgrade it in the variants — don't carry the debt forward.**
 
-2. **Read the design-system doc if one exists.** In Personas, `CLAUDE.md` points to `.claude/Design.md`, but that file is frequently absent — when it is, fall back to the live token sources: `src/styles/typography.css` (the `typo-*` scale) and `src/lib/utils/designTokens.ts` (spacing tokens + `INPUT_FIELD`). Other projects may have `design-tokens.md`, a Storybook index, or a `styles/` readme. Note the canonical tokens you're expected to use: semantic typography classes (`typo-hero`, `typo-section-title`, `typo-data-lg`, `typo-label`, `typo-caption`), status-token colours (`text-status-success/warning/error/info`), semantic radii (`rounded-card`, `rounded-interactive`, `rounded-input`), elevation tiers (`shadow-elevation-1..4`), brand tokens. **Using these from round 1 is what separates production-grade variants from prototype-grade variants.** Raw `bg-violet-500/15` / `text-amber-300` is a tell.
+2. **Read the design-system doc.** In Personas that's `.claude/Design.md` (canonical per CLAUDE.md); if it's absent in your checkout, fall back to the live token sources: `src/styles/typography.css` (the `typo-*` scale) and `src/lib/utils/designTokens.ts` (spacing tokens + `INPUT_FIELD`). Note the canonical tokens: semantic typography (`typo-hero`, `typo-section-title`, `typo-data-lg`, `typo-label`, `typo-caption`), status colours (`text-status-success/warning/error/info`), semantic radii (`rounded-card`, `rounded-interactive`, `rounded-input`), elevation tiers (`shadow-elevation-1..4`), and foreground/surface tokens (`text-foreground/*`, `bg-secondary/*` — **never** `text-white/*` or `bg-white/*`).
+
+   **Token compliance is a disqualification gate, not a style preference.** Before presenting a round to the user, self-audit every variant: grep your new files for `text-white`, `bg-white`, raw palette classes (`bg-violet-500/15`, `text-amber-300`, `text-[10px]`), and hand-rolled spinners/modals/tooltips. A variant that fails this audit does not go in front of the user — fix it first. The user should only ever be choosing between *directions*, never spending a round on "use the tokens".
 
 3. **Find one or two sibling surfaces in the same repo that exemplify the quality bar.** Good candidates: the most elaborate adoption/onboarding flow, the feature's "hero" view, or any folder the user has previously called out as polished. In Personas, strong references are `src/features/templates/sub_generated/adoption/questionnaire/` (three-pane layout, decorative background SVG, header band with animated halo, story thread) and `src/features/templates/sub_generated/adoption/glyph/`. **If the user names inspiration folders, treat that as authoritative** — mine those, even if the filenames don't match the feature you're prototyping.
 
@@ -135,7 +137,7 @@ Each variant should earn its name by carrying a **single central metaphor** thro
 Deliverables per variant:
 - File: `{Name}{Variant}.tsx` in the same folder.
 - Short header comment describing the metaphor + why it's different from baseline.
-- Reuse shared primitives (existing QuestionCard, category meta, icons) — don't reinvent form widgets.
+- Reuse shared primitives (catalog components, existing QuestionCard, category meta, icons) — don't reinvent form widgets, spinners, modals, or tooltips. Built entirely on semantic tokens (see 3a.2's disqualification gate).
 - Degrade gracefully for edge cases the baseline handles (blocked credentials, dynamic options, etc.).
 - **Prefer data-concrete symbols over abstract markers.** A brand logo or parsed channel chip beats a coloured presence dot. The user evaluates variants partly on "does this encode *real* template data the user already cares about, or is it an abstract diagram?" When the metaphor allows, pull from the live data model (connector names, event types, cron strings) over stylised shapes.
 - **Design for extraction.** The user scores a variant partly on what it contributes back to the rest of the app: named sub-components (`ConnectorTotem`, `DimensionPanel`, `CapabilitySigil`) that could live elsewhere, not a monolithic `.tsx`. If a variant has no extractable pieces, it may be killed on reusability grounds even if it looks good.
@@ -182,12 +184,13 @@ Each round: end with an **explicit menu** of what you changed, then ask the user
 Transition keywords that trigger this phase: "I think we have it", "this is the one", "promote X to default", **"set X as the production baseline"**, "X becomes our go-to". The last two carry a broader mandate than the first three — they authorise cleanup that extends beyond the prototyping variants (see step 3).
 
 1. Stop iterating.
-2. Make the winner the default tab OR remove the switcher entirely and render only the winner.
-3. Delete remaining non-winner variants from disk and from imports. **If the transition keyword was "production baseline" or equivalent, the cleanup scope extends to *legacy variants on the same surface* that the user never asked to prototype but is now willing to cut now that there's a clear winner** — e.g. removing the old matrix/theme variant that the prototype was originally competing against. Ask once if unsure; don't delete silently.
-4. Run typecheck to confirm no dangling references.
-5. **Do NOT refactor in this phase.** Refactor is a separate, explicit request. Premature refactor destroys diff visibility while the user is still evaluating the winner live.
+2. **One atomic consolidation step:** remove the switcher, delete ALL loser variant files from disk, remove their imports and tab entries, and make the winner the sole render — in the same commit. Never leave a "winner as default tab, losers still selectable" intermediate state. **If the transition keyword was "production baseline" or equivalent, the cleanup scope extends to *legacy variants on the same surface* that the user never asked to prototype but is now willing to cut** — e.g. the old matrix/theme variant the prototype was competing against. Ask once if unsure; don't delete silently.
+3. **No switcher survives the session.** Leftover A/B switchers have historically lingered in this codebase for weeks (four were consolidated in a single ship-loop milestone). If the user defers the winner decision ("let me live with both for a few days"), that's allowed — but record a dated follow-up before ending the session: a `TODO(prototype, <YYYY-MM-DD>): consolidate <Component> switcher` comment at the switcher plus a line in the active-runs ledger entry (`handoff: switcher pending user decision`). A deferred decision with no dated trace is the failure mode.
+4. **LOC cap (standing user directive):** if the consolidated winner exceeds ~200 LOC, extract named sub-components in the same consolidation step — this is not "premature refactor", it's a standing user directive (never ship 200+ LOC components). Anything already hoisted during Phase 4 makes this cheap. Deeper restructuring (subfolder, barrel, hooks split) stays in Phase 6 on explicit request.
+5. **i18n extraction:** any user-facing string the winner introduced must go through `t.section.key` — add keys to `src/i18n/locales/en.json`, then run the translate pipeline (`node scripts/i18n/translate-extract.mjs` → per-locale subagents → `node scripts/i18n/translate-merge.mjs`). `npm run check:i18n:strict` must be clean; the pre-commit hook blocks gaps anyway.
+6. Run typecheck to confirm no dangling references.
 
-Exit this phase with: one file, one component, baseline untouched-by-scaffold (or the winner has replaced it), typecheck clean, user can reload and see the winner as the live render.
+Exit this phase with: one component, zero variant files, zero switcher, typecheck + i18n clean, user can reload and see the winner as the live render.
 
 ---
 
@@ -308,8 +311,11 @@ Red flags → slow down and reset direction:
 ## Exit checklist
 
 At the end of the workflow, confirm:
-- [ ] Winner variant is the default rendered component.
+- [ ] Winner variant is the sole rendered component — **switcher removed** (or, if the user deferred, a dated `TODO(prototype, …)` + ledger handoff line exist).
 - [ ] All non-winner variants deleted from disk, imports, and tab configs.
+- [ ] Winner uses semantic tokens only (no `text-white/*`, `bg-white/*`, raw palette classes) and shared catalog primitives.
+- [ ] Winner ≤ ~200 LOC per file, or sub-components extracted.
+- [ ] New user-facing strings extracted to i18n; `npm run check:i18n:strict` clean.
 - [ ] Typecheck clean on touched files (pre-existing unrelated errors ignored).
 - [ ] Lint warnings explicitly audited — incremental-migration warnings (typography, spacing tokens, i18n) are acceptable; 0 errors required.
 - [ ] Consumer import paths still resolve (grep for old filename confirms zero references).

@@ -95,7 +95,10 @@ export function CloudWebhooksTab() {
     setFiringsLoading(true);
     cloudListTriggerFirings(selectedTriggerId, 20)
       .then(setFirings)
-      .catch(() => setFirings([]))
+      .catch((err) => {
+        silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch4")(err);
+        setFirings([]);
+      })
       .finally(() => setFiringsLoading(false));
   }, [selectedTriggerId]);
 

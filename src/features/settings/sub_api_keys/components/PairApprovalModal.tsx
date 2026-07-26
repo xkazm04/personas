@@ -11,7 +11,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   listPendingPairings,
   approvePairing,
@@ -41,7 +41,7 @@ export default function PairApprovalModal() {
   useEffect(() => {
     listPendingPairings()
       .then(setQueue)
-      .catch(() => {});
+      .catch(silentCatch('PairApprovalModal:listPendingPairings'));
   }, []);
 
   const enqueue = useCallback(

@@ -3,7 +3,7 @@ import { Users, Edit2, Save, X, Clock } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -135,7 +135,10 @@ export function ContactsPanel({ twinId }: Props) {
     twinApi
       .listTwinContacts(twinId)
       .then(setContacts)
-      .catch(() => setContacts([]))
+      .catch((err: unknown) => {
+        silentCatch('ContactsPanel:listTwinContacts')(err);
+        setContacts([]);
+      })
       .finally(() => setIsFetching(false));
     // Pull a recent slice of communications to feed the per-contact 7d
     // sparkline. Idempotent against the slice — other Brain panels load

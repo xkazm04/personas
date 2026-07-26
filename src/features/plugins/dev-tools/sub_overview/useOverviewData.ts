@@ -16,6 +16,7 @@ import {
   type RepoProvider,
 } from './adapters';
 import { formatErr } from './overviewHelpers';
+import { silentCatch } from '@/lib/silentCatch';
 
 export type ConnectionState = 'empty' | 'unmapped' | 'connected' | 'loading' | 'error';
 
@@ -67,7 +68,10 @@ export function useOverviewData() {
     listCredentials().then((creds) => {
       setCredentials(creds);
       setCredLoaded(true);
-    }).catch(() => setCredLoaded(true));
+    }).catch((err: unknown) => {
+      silentCatch('useOverviewData:listCredentials')(err);
+      setCredLoaded(true);
+    });
   }, []);
 
   const repoCreds = credentials.filter((c) => isGitHubCred(c) || isGitLabCred(c));

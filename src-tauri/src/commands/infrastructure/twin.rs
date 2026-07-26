@@ -1698,7 +1698,7 @@ fn strip_html_to_text(html: &str) -> String {
 /// but factored out so both new commands can reuse it without duplicating the
 /// Windows creation_flags / env_overrides / stdin-pipe boilerplate.
 async fn spawn_claude_with_prompt(prompt_text: String) -> Result<String, AppError> {
-    let mut child = crate::engine::cli_process::spawn_headless_claude(
+    let child = crate::engine::cli_process::spawn_headless_claude(
         prompt_text,
         "claude-sonnet-4-6",
         &[],

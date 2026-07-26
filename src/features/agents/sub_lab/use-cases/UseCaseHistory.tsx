@@ -6,6 +6,7 @@ import { formatRelativeTime, formatDuration } from '@/lib/utils/formatters';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { silentCatch } from '@/lib/silentCatch';
 
 const logger = createLogger("use-case-history");
 
@@ -49,6 +50,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         setExecutions(data);
       })
       .catch((err) => {
+        silentCatch('UseCaseHistory:listExecutionsForUseCase')(err);
         logger.warn('Failed to load executions', { error: err });
         if (fetchSeqRef.current !== seq) return;
         setExecutions([]);

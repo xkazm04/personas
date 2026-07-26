@@ -15,6 +15,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useImprove } from './ImproveContext';
 import { connectorSpecFor, candidateCredentials, catalogToolsFor, type CatalogTool } from './connectors';
+import { silentCatch } from '@/lib/silentCatch';
 
 export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowKey: string; onClose: () => void }) {
   const engine = useImprove();
@@ -37,10 +38,10 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
         cands.forEach((c) => {
           healthcheckCredential(c.id)
             .then((r) => { if (!cancelled) setHealth((h) => ({ ...h, [c.id]: r.success })); })
-            .catch(() => { if (!cancelled) setHealth((h) => ({ ...h, [c.id]: false })); });
+            .catch((err) => { silentCatch('ConnectorSection:healthcheckCredential')(err); if (!cancelled) setHealth((h) => ({ ...h, [c.id]: false })); });
         });
       })
-      .catch(() => { if (!cancelled) setCandidates([]); });
+      .catch((err) => { silentCatch('ConnectorSection:listCredentials')(err); if (!cancelled) setCandidates([]); });
     return () => { cancelled = true; };
   }, [spec]);
 

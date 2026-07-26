@@ -17,6 +17,7 @@ import {
 } from './adapters';
 import { formatErr } from './overviewHelpers';
 import type { ConnectionState } from './useOverviewData';
+import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -334,6 +335,7 @@ export function SentryProjectPicker({
         if (list.length === 1 && list[0]) setOrgSlug(list[0].slug);
       })
       .catch((err) => {
+        silentCatch('SentryProjectPicker:fetchOrgs')(err);
         if (cancelled) return;
         setDiscoveryError(formatErr(err));
         setManualMode(true);
@@ -350,6 +352,7 @@ export function SentryProjectPicker({
     fetchSentryProjects(selectedCredId, orgSlug)
       .then((list) => { if (!cancelled) setProjects(list); })
       .catch((err) => {
+        silentCatch('SentryProjectPicker:fetchProjects')(err);
         if (cancelled) return;
         setDiscoveryError(formatErr(err));
         setManualMode(true);

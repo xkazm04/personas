@@ -156,8 +156,11 @@ fn compute_node_analytics(
     }
 
     for run in runs {
-        let entries: Vec<NodeStatusEntry> =
-            serde_json::from_str(&run.node_statuses).unwrap_or_default();
+        let entries: Vec<NodeStatusEntry> = serde_json::from_str(&run.node_statuses)
+            .unwrap_or_else(|e| {
+                tracing::warn!(run_id = %run.id, error = %e, "unparseable node_statuses; excluding this run from node analytics");
+                Vec::new()
+            });
 
         for entry in entries {
             if let Some(stats) = member_stats.get_mut(&entry.member_id) {

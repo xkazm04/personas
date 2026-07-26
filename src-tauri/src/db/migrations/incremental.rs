@@ -4467,11 +4467,8 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN use_case_id TEXT;").ok();
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN evidence TEXT;").ok();
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN dedup_key TEXT;").ok();
-    ddl_step(
-        conn,
-        "CREATE INDEX IF NOT EXISTS idx_dev_ideas_dedup ON dev_ideas(project_id, dedup_key);",
-    )
-    .ok();
+    // (The non-unique idx_dev_ideas_dedup this step used to create was replaced
+    // by the partial UNIQUE index below — see the dedup-TOCTOU block.)
 
     // -- dev_ideas: VERIFICATION (docs/plans/dev-findings-loop.md §7, Phase 3A).
     // Nothing in the app checked whether shipped work moved the number that raised
@@ -4500,6 +4497,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_assignment_per_goal
          ON team_assignments(goal_id)
          WHERE goal_id IS NOT NULL AND status IN ('queued','running','awaiting_review');",
+    )
+    .ok();
+
+    // -- dedup_key TOCTOU (same class as GAP-W2 above): create_idea_deduped /
+    // create_finding used a COUNT-then-INSERT guard with no transaction — two
+    // concurrent sweeps both passed and both inserted. DB-enforce it, the way
+    // audit_incidents.dedup_key already is. Hand-written ideas carry NULL
+    // dedup_key (SQLite treats NULLs as distinct), so the partial index is
+    // safe. First null-out any later duplicates a past race already produced
+    // (keep the oldest row), or the index creation would fail.
+    conn.execute(
+        "UPDATE dev_ideas SET dedup_key = NULL
+          WHERE dedup_key IS NOT NULL
+            AND rowid NOT IN (
+              SELECT MIN(rowid) FROM dev_ideas
+               WHERE dedup_key IS NOT NULL
+               GROUP BY project_id, dedup_key)",
+        [],
+    )
+    .ok();
+    ddl_step(
+        conn,
+        "DROP INDEX IF EXISTS idx_dev_ideas_dedup;
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_ideas_dedup_unique
+             ON dev_ideas(project_id, dedup_key)
+             WHERE dedup_key IS NOT NULL;",
     )
     .ok();
 
@@ -4916,6 +4939,18 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_system_op_automations_event
             ON system_op_automations(trigger_kind, enabled, listen_event_type);",
     )?;
+
+    // `unattended_mode` (`auto` | `approval`): the safety gate for system-op
+    // automations that act on production signal (the signal-dispatch ops).
+    // `approval` holds the run (`last_status = "held"`) instead of dispatching;
+    // the human dispatches from Triage. Default `auto` preserves the behavior
+    // existing rows already had.
+    if !has_column(conn, "system_op_automations", "unattended_mode")? {
+        ddl_step(
+            conn,
+            "ALTER TABLE system_op_automations ADD COLUMN unattended_mode TEXT NOT NULL DEFAULT 'auto';",
+        )?;
+    }
 
     // -- Research Lab plugin: defensive column ALTERs ---------------------------
     // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
@@ -5633,6 +5668,57 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                         ON fleet_decisions(session_id, created_at DESC);
                     CREATE INDEX IF NOT EXISTS idx_fleet_decisions_dedupe
                         ON fleet_decisions(claude_session_id, screen_hash);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            // Fleet registry durability — the fleet's session registry was
+            // in-memory only (`registry::FleetRegistry::sessions`), so every
+            // app restart / update / crash lost the WHOLE fleet (three
+            // total-loss restarts on 2026-07-24; recovering eight stranded
+            // conversations took a hand-written json + a resume script).
+            // Everything needed to resurrect a row is already known, so this
+            // table mirrors the registry: rows are upserted from the existing
+            // emit points and rehydrated as dozing tombstones on boot.
+            //
+            // Only rows with a BOUND `claude_session_id` are ever written —
+            // they are the only ones `claude --resume` can bring back, and it
+            // keeps never-attached spawns out of the rehydration set.
+            // `run_id` / `run_label` are the run-harvest lane's grouping key
+            // (a batch tag stamped at spawn); nullable = "ad hoc".
+            id: "fleet_sessions",
+            description: "Durable fleet session registry (survives app restarts)",
+            already_applied: |conn| has_table(conn, "fleet_sessions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS fleet_sessions (
+                        id                 TEXT PRIMARY KEY,
+                        claude_session_id  TEXT NOT NULL,
+                        cwd                TEXT NOT NULL,
+                        project_label      TEXT NOT NULL,
+                        name               TEXT,
+                        title              TEXT,
+                        args_json          TEXT NOT NULL DEFAULT '[]',
+                        mode               TEXT NOT NULL DEFAULT 'interactive',
+                        state              TEXT NOT NULL,
+                        state_reason       TEXT,
+                        run_id             TEXT,
+                        run_label          TEXT,
+                        created_at_ms      INTEGER NOT NULL,
+                        last_activity_ms   INTEGER NOT NULL,
+                        updated_at_ms      INTEGER NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_state
+                        ON fleet_sessions(state, updated_at_ms DESC);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_claude
+                        ON fleet_sessions(claude_session_id);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_sessions_run
+                        ON fleet_sessions(run_id, created_at_ms);",
                 )?;
                 Ok(())
             },

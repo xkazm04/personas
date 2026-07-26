@@ -10,7 +10,7 @@ import {
 
 import type { DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import type { VerifyDocumentResult } from "@/api/signing";
 import { BaseModal } from "@/features/shared/components/modals";
 
@@ -48,7 +48,10 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           setSidecarFound(false);
         }
       })
-      .catch(() => setSidecarFound(false));
+      .catch((err: unknown) => {
+        silentCatch("DriveVerifyDialog:findSidecarInDrive")(err);
+        setSidecarFound(false);
+      });
 
     return () => {
       cancelled = true;

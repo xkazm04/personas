@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
+import { silentCatch } from '@/lib/silentCatch';
 
 import { projectKpis, applyEdit, collectKpiAttention, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
@@ -56,7 +57,7 @@ export function FactoryShell({
         manualRating: e.rating,
         pros: e.pros,
         cons: e.cons,
-      }).catch(() => {});
+      }).catch(silentCatch('FactoryShell:saveKpiAssessment'));
     }, 600);
     return () => clearTimeout(t);
   }, [kpiId, edits]);

@@ -137,7 +137,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         sessionId: activeChatSessionId,
         personaId: chatSessionContext.personaId,
         chatMode: mode,
-      }).catch(() => {/* best-effort */});
+      }).catch(silentCatch("stores/slices/agents/chatSlice:catch2"));
     }
   },
 
@@ -167,7 +167,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         sessionId,
         personaId,
         chatMode: get().chatMode,
-      }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
+      }).then((ctx) => set({ chatSessionContext: ctx })).catch(silentCatch("stores/slices/agents/chatSlice:catch3"));
     } catch (err) {
       reportError(err, "Failed to fetch chat messages", set);
     }
@@ -200,7 +200,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       chatMode: get().chatMode,
       ...(isFirstMessage ? { title: deriveTitle(content) } : {}),
       summary: buildSummary(allMessages),
-    }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
+    }).then((ctx) => set({ chatSessionContext: ctx })).catch(silentCatch("stores/slices/agents/chatSlice:catch4"));
 
     // 3. Determine if we can --resume an existing Claude session. Only trust the
     // context's claudeSessionId when the context actually belongs to the session
@@ -348,7 +348,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         personaId,
         summary: buildSummary(updatedMessages),
         ...(capturedClaudeSessionId ? { claudeSessionId: capturedClaudeSessionId } : {}),
-      }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
+      }).then((ctx) => set({ chatSessionContext: ctx })).catch(silentCatch("stores/slices/agents/chatSlice:catch5"));
 
       // Advisory mode was wired to the in-editor chat UI, which has been
       // retired in favour of companion chat. The slice still exists so legacy

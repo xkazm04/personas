@@ -122,10 +122,9 @@ test.describe('Companion real-claude deep orchestration', () => {
     if (tmpRepo && fs.existsSync(tmpRepo)) {
       try {
         fs.rmSync(tmpRepo, { recursive: true, force: true });
+        // eslint-disable-next-line custom/no-silent-catch -- Playwright/Node test fixture, not app code: silentCatch pulls in @sentry/react + the Zustand toast store (neither resolvable via the "@/" alias outside `src/`, which is all this project's tsconfig "include" covers). Windows occasionally holds the .git/node cache briefly after the spawned claude exits; best-effort cleanup, the tmp dir is namespaced so it can't collide on the next run.
       } catch {
-        // Windows occasionally holds the .git or node cache briefly
-        // after the spawned claude exits. Best-effort cleanup; the
-        // tmp dir is namespaced so it can't collide on the next run.
+        // see disable comment above
       }
     }
   });

@@ -34,6 +34,7 @@ pub struct DiscoveredApp {
 /// An MCP server configuration imported from Claude Desktop.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportedMcpServer {
     /// Server name from the config key.
     pub name: String,

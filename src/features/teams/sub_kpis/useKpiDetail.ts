@@ -9,7 +9,7 @@ import type { DevKpiBinding } from '@/lib/bindings/DevKpiBinding';
 import { listKpiBindings } from '@/api/devTools/kpis';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function useKpiDetail(kpi: DevKpi) {
   const { t } = useTranslation();
@@ -24,7 +24,7 @@ export function useKpiDetail(kpi: DevKpi) {
   const [bindings, setBindings] = useState<DevKpiBinding[]>([]);
 
   const refreshBindings = useCallback(() => {
-    listKpiBindings(kpi.id).then(setBindings).catch(() => setBindings([]));
+    listKpiBindings(kpi.id).then(setBindings).catch((err) => { silentCatch('useKpiDetail:listKpiBindings')(err); setBindings([]); });
   }, [kpi.id]);
 
   useEffect(() => {

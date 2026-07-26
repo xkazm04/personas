@@ -410,7 +410,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
       }
     });
     // Keep the chain alive even if this link rejects so later switches run.
-    activeTwinSwitchChain = run.catch(() => {});
+    activeTwinSwitchChain = run.catch(silentCatch("stores/slices/system/twinSlice:activeTwinSwitchChain"));
     return run;
   },
 

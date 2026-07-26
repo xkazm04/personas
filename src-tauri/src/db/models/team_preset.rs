@@ -70,6 +70,7 @@ pub struct TeamPreset {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TeamPresetTeamSpec {
     pub name: String,
     pub description: Option<String>,

@@ -172,17 +172,11 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         "features/agents/operations-hub.md",
         include_str!("../../../../docs/features/agents/operations-hub.md"),
     ),
-    (
-        "concepts/ambient-context-fusion.md",
-        include_str!("../../../../docs/concepts/ambient-context-fusion.md"),
-    ),
+    // (ambient-context-fusion.md and mobile.md were removed in the 2026-07-26
+    // docs pruning — their doctrine entries go with them.)
     (
         "concepts/invisible-apps-p2p.md",
         include_str!("../../../../docs/concepts/invisible-apps-p2p.md"),
-    ),
-    (
-        "concepts/mobile.md",
-        include_str!("../../../../docs/concepts/mobile.md"),
     ),
     (
         "concepts/persona-design-best-practices.md",

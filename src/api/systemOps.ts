@@ -74,6 +74,10 @@ export interface CreateAutomationInput {
   listenEventType?: string;
   sourceFilter?: string;
   label?: string;
+  /** Safety gate for ops that act on production signal (the dispatch ops).
+   *  `approval` holds automation-fired runs (`last_status = "held"`); the human
+   *  dispatches from Triage. Manual "run now" bypasses the gate. Default `auto`. */
+  unattendedMode?: 'auto' | 'approval';
 }
 
 export const createSystemOpAutomation = (input: CreateAutomationInput) =>
@@ -86,6 +90,7 @@ export const createSystemOpAutomation = (input: CreateAutomationInput) =>
     listenEventType: input.listenEventType,
     sourceFilter: input.sourceFilter,
     label: input.label,
+    unattendedMode: input.unattendedMode,
   });
 
 export const setSystemOpAutomationEnabled = (id: string, enabled: boolean) =>
@@ -97,6 +102,19 @@ export const deleteSystemOpAutomation = (id: string) =>
 /** Run an automation's operation immediately (does not change its schedule). */
 export const runSystemOpNow = (id: string) =>
   invoke<string>('system_ops_run_now', { id });
+
+/**
+ * Report the REAL outcome of a delegated run (health ingest / signal dispatch)
+ * back to the automation row that fired it. The Rust dispatcher records
+ * `requested` at emit time; this write-back is what makes `last_status`
+ * trustworthy — without it a scheduled run "succeeds" the moment the request
+ * event is emitted, even if nothing ran.
+ */
+export const reportSystemOpOutcome = (
+  id: string,
+  status: 'ok' | 'partial' | 'failed',
+  detail?: string,
+) => invoke<boolean>('system_ops_report_outcome', { id, status, detail });
 
 // ---------------------------------------------------------------------------
 // Convenience builders for the context-scan op (always scoped to one project)

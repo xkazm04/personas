@@ -3,6 +3,7 @@ import { ArrowRight, Briefcase, Compass, Heart, Lightbulb, MessageSquare, Rocket
 import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { scoreTopicCoverage, type PresetId } from './topicCoverage';
 import type { LucideIcon } from 'lucide-react';
@@ -75,7 +76,10 @@ export function NextMovesPanel({ onPick }: Props) {
     twinApi
       .listPendingMemories(activeTwinId, 'approved')
       .then(setMemories)
-      .catch(() => setMemories([]));
+      .catch((err: unknown) => {
+        silentCatch('NextMovesPanel:listPendingMemories')(err);
+        setMemories([]);
+      });
   }, [activeTwinId]);
 
   const scored = useMemo(() => scorePresetCoverage(memories ?? []), [memories]);

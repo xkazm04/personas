@@ -6,7 +6,11 @@
  */
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import {
+  createAdoptionSession,
+  saveAdoptionAnswers,
+} from "@/api/agents/buildSession";
+import { adjustAdoptionDraft } from "@/api/templates/templateAdopt";
 import { createLogger } from "@/lib/log";
 import { useVaultStore } from "@/stores/vaultStore";
 
@@ -962,12 +966,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         // field today; the matrix preview already reflects the filter).
         selected_use_case_ids: showUseCasePicker ? [...selectedUseCaseIds] : null,
       };
-      void invokeWithTimeout("save_adoption_answers", {
-        sessionId,
-        adoptionAnswersJson: JSON.stringify(payload),
-      }).catch((err) => {
-        logger.warn("Failed to persist adoption answers", { err });
-      });
+      void saveAdoptionAnswers(sessionId, JSON.stringify(payload)).catch(
+        silentCatch("ChronologyAdoptionView:persistAdoptionAnswers"),
+      );
     }
   }, [questionsComplete, seeded, adoptionAnswers, filteredAdoptionQuestions, selectedUseCaseIds, showUseCasePicker]);
 
@@ -1061,19 +1062,19 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         // selections, not the template's defaults.
         const agentIrJson = JSON.stringify(effectiveDesignResult);
         const resolvedCellsJson = JSON.stringify(dimensionData);
-        const sessionId = await invokeWithTimeout<string>("create_adoption_session", {
-          personaId: persona.id,
-          // Append a prose hint for the picked cross-persona event
-          // subscriptions so the backend LLM has the context the structured
-          // event_subscriptions can't fully convey (matches the glyph
-          // builder's serializeQuickConfig approach).
-          intent: (review.instruction || templateName)
+        // The intent appends a prose hint for the picked cross-persona event
+        // subscriptions so the backend LLM has the context the structured
+        // event_subscriptions can't fully convey (matches the glyph builder's
+        // serializeQuickConfig approach).
+        const sessionId = await createAdoptionSession(
+          persona.id,
+          (review.instruction || templateName)
             + manualConnectorsHint(manualConnectors, connectorTables)
             + notificationChannelsHint(notificationChannels)
             + eventSubscriptionsHint(eventSubsByCap),
           agentIrJson,
           resolvedCellsJson,
-        });
+        );
         adoptionSessionIdRef.current = sessionId;
 
         // Register the adoption session in buildSessions via hydrateBuildSession.
@@ -1130,7 +1131,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           void useAgentStore
             .getState()
             .deletePersona(createdPersonaId)
-            .catch(() => { /* best-effort cleanup */ });
+            .catch(silentCatch("ChronologyAdoptionView:cleanupOrphanedDraft"));
           setPersonaId(null);
         }
         useToastStore.getState().addToast(
@@ -1195,11 +1196,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
               runId: personaId,
             });
           })
-          .catch(() => {});
-        // Long timeout: above the backend's 600s LLM margin so the frontend
-        // never gives up before the backend resolves (scoped output keeps the
-        // typical pass well under a minute).
-        await invokeWithTimeout("adjust_adoption_draft", { sessionId }, { timeoutMs: 660_000 });
+          .catch(silentCatch("ChronologyAdoptionView:adjustStatusUpdate"));
+        // The wrapper owns the long (660s) timeout — see adjustAdoptionDraft.
+        await adjustAdoptionDraft(sessionId);
       } catch (err) {
         // Non-fatal: backend keeps the deterministic base IR on failure.
         silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:adjust")(err);
@@ -1230,7 +1229,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       const action = currentBuildPhase === 'promoted' ? 'completed' as const : 'failed' as const;
       void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
         useOverviewStore.getState().processEnded('template_adopt', action, personaId);
-      }).catch(() => {});
+      }).catch(silentCatch("ChronologyAdoptionView:processEndedTerminal"));
       useSystemStore.getState().setTemplateAdoptActive(false);
       return;
     }
@@ -1249,7 +1248,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         'template_adopt', mapped.status,
         { lastEvent: mapped.event, runId: personaId },
       );
-    }).catch(() => {});
+    }).catch(silentCatch("ChronologyAdoptionView:processStatusUpdate"));
   }, [currentBuildPhase, seeded, personaId]);
 
   // Quick-add credential modal state. The questionnaire's "Connect a
@@ -1353,12 +1352,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     const sys = useSystemStore.getState();
     // Fire-and-forget cleanup — UI closes immediately either way
     if (personaId) {
-      void agent.deletePersona(personaId).catch(() => { /* best-effort */ });
+      void agent.deletePersona(personaId).catch(silentCatch("ChronologyAdoptionView:deleteDraftCleanup"));
     }
     agent.resetBuildSession();
     void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
       useOverviewStore.getState().processEnded('template_adopt', 'failed', personaId ?? 'unknown');
-    }).catch(() => {});
+    }).catch(silentCatch("ChronologyAdoptionView:deleteDraftProcessEnded"));
     sys.setTemplateAdoptActive(false);
     sys.setAdoptionDraft(null);
     onClose();

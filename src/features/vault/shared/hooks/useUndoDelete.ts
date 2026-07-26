@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { DeleteConfirmState } from '@/features/vault/sub_credentials/components/card/CredentialDeleteDialog';
 import { listCredentialEvents } from "@/api/vault/credentials";
+import { silentCatch } from '@/lib/silentCatch';
 
 import type { CredentialMetadata } from '@/lib/types/types';
 
@@ -34,6 +35,7 @@ export function useUndoDelete({ onDelete, onError }: UseUndoDeleteOptions): Undo
     const { credential } = deleteConfirm;
     setDeleteConfirm(null);
     onDelete(credential.id).catch((err: unknown) => {
+      silentCatch('useUndoDelete:confirmDelete')(err);
       onError(err instanceof Error ? err.message : 'Failed to delete credential');
     });
   }, [deleteConfirm, onDelete, onError]);

@@ -16,7 +16,7 @@ import type { DimNode, ZoomBand } from './types';
 
 const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction }: {
+export function DimTile({ node, x, y, w, h, band, highlighted = false, hint, onAction }: {
   node: DimNode;
   x: number;
   y: number;
@@ -25,6 +25,9 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
   band: ZoomBand;
   /** Context-menu hover echo — unmistakably THIS tile. */
   highlighted?: boolean;
+  /** Appended to the native tooltip — used to explain a whole island's
+   *  inertness (demo islands) rather than leaving a silent refusal. */
+  hint?: string;
   /** Set only when the tile has an Improve action — enables click + hover affordance. */
   onAction?: (e: React.MouseEvent) => void;
 }) {
@@ -48,7 +51,7 @@ export function DimTile({ node, x, y, w, h, band, highlighted = false, onAction 
       onClick={onAction ? (e) => { e.stopPropagation(); onAction(e); } : undefined}
     >
       {/* native tooltip — names the dimension even when zoomed-out LOD hides labels */}
-      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}`}</title>
+      <title>{`${node.label}${node.detail ? ` — ${node.detail}` : absent ? ` — ${t.mastermind.cell_empty}` : ''}${hint ? ` · ${hint}` : ''}`}</title>
       <rect
         width={w} height={h} rx={8}
         fill={absent ? mix('var(--secondary)', 40, 'var(--background)') : mix(ink, 16, 'var(--background)')}

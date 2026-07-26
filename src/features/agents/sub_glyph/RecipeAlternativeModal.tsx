@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { Sparkles, Cpu, ArrowRight } from "lucide-react";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { getRecipe } from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
 import { BaseModal } from "@/features/shared/components/modals";
 import Button from "@/features/shared/components/buttons/Button";
@@ -89,7 +89,7 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
 
   useEffect(() => {
     let live = true;
-    invokeWithTimeout<RecipeDefinition>("get_recipe", { id: recipeId })
+    getRecipe(recipeId)
       .then((r) => { if (live) setRecipe(r); })
       .catch((e) => { silentCatch("RecipeAlternativeModal.get")(e); if (live) setError(true); });
     return () => { live = false; };

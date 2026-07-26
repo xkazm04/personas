@@ -412,6 +412,7 @@ pub async fn set_use_case_generation_settings(
 /// excluded so the user only sees *external* consumers they might break.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct EventListenerCounts {
     #[ts(type = "number")]
     pub subscriptions: usize,

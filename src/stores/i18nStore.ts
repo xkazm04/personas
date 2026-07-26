@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { getLocaleDescriptor } from '@/i18n/locales.manifest';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Supported UI languages. Driven by the LOCALES manifest —
@@ -93,10 +94,7 @@ function applyLangAttributes(lang: Language) {
 function mirrorLanguageToBackend(language: Language): void {
   void import('@/api/system/settings')
     .then(({ setAppSetting }) => setAppSetting('app_language', language))
-    .catch(() => {
-      // Pre-auth/boot writes may fail; the post-boot echo retries. Silent by
-      // design — never block or toast a language switch on a mirror write.
-    });
+    .catch(silentCatch('stores/i18nStore:mirrorLanguageToBackend'));
 }
 
 export const useI18nStore = create<I18nState>()(

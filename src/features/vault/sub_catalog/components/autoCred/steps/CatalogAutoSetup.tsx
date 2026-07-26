@@ -9,6 +9,7 @@ import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { lookupRecipeAsDesignResult } from '@/lib/credentials/credentialRecipeRegistry';
 import type { AutoCredMode } from '../helpers/types';
+import { silentCatch } from '@/lib/silentCatch';
 import { DesktopBridgeBlock, SetupHeader } from './SetupSteps';
 
 type Phase = 'analyzing' | 'auto';
@@ -72,7 +73,10 @@ function CatalogAutoSetupInner({ connector, onComplete, onCancel }: CatalogAutoS
   useEffect(() => {
     checkPlaywrightAvailable()
       .then((available) => setMode(available ? 'playwright' : 'guided'))
-      .catch(() => setMode('guided'));
+      .catch((err: unknown) => {
+        silentCatch('CatalogAutoSetup:checkPlaywrightAvailable')(err);
+        setMode('guided');
+      });
   }, []);
 
   const design = useCredentialDesign();

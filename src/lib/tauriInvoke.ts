@@ -504,7 +504,9 @@ function _invokeCore<T>(
     settled = true;
     _inflight = Math.max(0, _inflight - 1);
     if (timerId !== null) clearTimeout(timerId);
-  }).catch(() => {/* rejection handled by Promise.race */});
+  })
+    // eslint-disable-next-line custom/async-catch-requires-helper -- deliberately inert: `invocation`'s rejection is the real error and is already observed (logged/breadcrumbed) via the Promise.race branch below. Adding a helper here would double-report every single failed invoke across the whole app.
+    .catch(() => {/* rejection handled by Promise.race */});
 
   return Promise.race([invocation, timeout]).then(
     (result) => {

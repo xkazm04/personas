@@ -15,6 +15,7 @@ export type DimStatus = 'absent' | 'solid' | 'partial' | 'risk' | 'alert' | 'unk
 // the dimension system) so a new registry entry extends the key space with no
 // edit here. Type-only import → no runtime cycle (dimRegistry imports DimStatus
 // from this file, also type-only). Imported for local use AND re-exported.
+import type { CategoryNode } from './dimCategories';
 import type { DimKey } from './dimRegistry';
 import type { IslandStat } from './islandStats';
 
@@ -44,7 +45,7 @@ export interface DimNode {
    *  standards = Tier-0 config popover, deploy = Claude deploy/connector/skills
    *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
    *  list popover, null = inert (no click, no hover affordance). */
-  action?: 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
+  action?: 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'stack-list' | 'skills-run' | null;
   /** Ideas dimension only: whole days since the last idea scan (null = never). */
   days?: number | null;
   /** An action we dispatched for this cell is still in flight (Ideas scan) —
@@ -147,12 +148,18 @@ export interface VariantProps {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — open the persona name list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Collapsed category cell clicked at far/mid zoom — open the list of the
+   *  dimensions it rolled up, each still routable to its own action. */
+  onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
   /** Island context-menu "Open terminal" — spawn an interactive Fleet session
    *  in the project's root and open its preview. */
   onOpenTerminal: (slug: string) => void;
   /** Island context-menu "Dispatch Fleet…" — open the instruction modal, which
    *  spawns a background Fleet session running the typed task (stays on canvas). */
   onDispatchFleet: (slug: string) => void;
+  /** Group label-plate rocket — dispatch ONE instruction to every dispatchable
+   *  project inside that group. Empty label = an unnamed group. */
+  onDispatchGroupFleet: (slugs: string[], label: string) => void;
   /** Whether a given island can host a terminal (real project + root_path);
    *  false for demo islands and projects without a folder path. Gates BOTH the
    *  "Open terminal" and "Dispatch Fleet…" rows (each needs a real repo root). */

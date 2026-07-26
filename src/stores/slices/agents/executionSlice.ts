@@ -639,9 +639,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         errorMessage: statusData?.errorMessage,
         recentExecutions,
       };
-      void runMiddleware('frontend_complete', completePayload, trace).catch((err) => {
-        logger.warn("frontend_complete middleware failed", { executionId: execId, personaId: execPersonaId, error: String(err) });
-      });
+      void runMiddleware('frontend_complete', completePayload, trace).catch(silentCatch("stores/slices/agents/executionSlice:catch6"));
     }
 
     // Foreground run reached terminal — drop its stable idempotency key so the
@@ -660,7 +658,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const finishedPersonaId = execPersonaId ?? get().selectedPersona?.id ?? null;
     if (execId && finishedPersonaId) {
       void upsertFinishedExecution(execId, finishedPersonaId).catch((err) => {
-        logger.warn("finishExecution upsert failed — falling back to fetch", { executionId: execId, error: String(err) });
+        silentCatch("stores/slices/agents/executionSlice:catch7")(err);
         const pid = get().selectedPersona?.id;
         if (pid) void get().fetchExecutions(pid);
       });

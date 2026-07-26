@@ -22,8 +22,10 @@
 //! the bar is deliberately conservative because applications legitimately
 //! differ — a divergence is only real when the *problem* is shared.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};
 
+use futures_util::FutureExt;
 use serde::Deserialize;
 use serde_json::json;
 use tauri::State;
@@ -37,6 +39,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 /// Model for the synthesis pass. Clustering + adjudication over a digest is a
 /// reasoning task on a small input — Sonnet is the right tier, matching the
@@ -234,24 +248,42 @@ pub async fn dev_tools_workspace_run_divergence(
     let jid = job_id.clone();
     let wid = workspace_id.clone();
     let valid_projects: Vec<String> = members.iter().map(|p| p.name.clone()).collect();
+    let app_for_panic = app.clone();
+    let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
-        let result = run_divergence(&app, &jid, &db, &wid, prompt, exec_dir, &valid_projects, token).await;
-        match result {
-            Ok(counts) => {
-                DIVERGENCE_JOBS.emit_line(
-                    &app,
-                    &jid,
-                    format!(
-                        "[Complete] {} proposed · {} landed as observed",
-                        counts.0, counts.1
-                    ),
-                );
-                DIVERGENCE_JOBS.set_status(&app, &jid, "completed", None);
+        let work = AssertUnwindSafe(async move {
+            let result =
+                run_divergence(&app, &jid, &db, &wid, prompt, exec_dir, &valid_projects, token).await;
+            match result {
+                Ok(counts) => {
+                    DIVERGENCE_JOBS.emit_line(
+                        &app,
+                        &jid,
+                        format!(
+                            "[Complete] {} proposed · {} landed as observed",
+                            counts.0, counts.1
+                        ),
+                    );
+                    DIVERGENCE_JOBS.set_status(&app, &jid, "completed", None);
+                }
+                Err(e) => {
+                    DIVERGENCE_JOBS.emit_line(&app, &jid, format!("[Failed] {e}"));
+                    DIVERGENCE_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
+                }
             }
-            Err(e) => {
-                DIVERGENCE_JOBS.emit_line(&app, &jid, format!("[Failed] {e}"));
-                DIVERGENCE_JOBS.set_status(&app, &jid, "failed", Some(e.to_string()));
-            }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                job_id = %jid_for_panic,
+                panic = %msg,
+                "workspace divergence task panicked — marking job as failed"
+            );
+            DIVERGENCE_JOBS.emit_line(&app_for_panic, &jid_for_panic, format!("[Failed] {msg}"));
+            DIVERGENCE_JOBS.set_status(&app_for_panic, &jid_for_panic, "failed", Some(msg));
         }
     });
 

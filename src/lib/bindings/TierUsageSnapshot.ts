@@ -13,20 +13,20 @@ tier: TierConfig,
 /**
  * Per-bucket rate limiter usage.
  */
-rate_buckets: Array<RateBucketUsage>, 
+rateBuckets: Array<RateBucketUsage>, 
 /**
  * Total running executions across all personas.
  */
-total_running: number, 
+totalRunning: number, 
 /**
  * Total queued executions across all personas.
  */
-total_queued: number, 
+totalQueued: number, 
 /**
  * Configured max queue depth per persona.
  */
-max_queue_depth: number, 
+maxQueueDepth: number, 
 /**
  * Whether any bucket is at or above 80% of its limit.
  */
-approaching_limit: boolean, };
+approachingLimit: boolean, };

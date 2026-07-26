@@ -7,16 +7,16 @@ export type TierConfig = {
 /**
  * Display name: "free", "pro", "enterprise"
  */
-tier_name: string, 
+tierName: string, 
 /**
  * Max events per source per minute.
  */
-event_source_max: number, 
+eventSourceMax: number, 
 /**
  * Max webhook calls per trigger per minute.
  */
-webhook_trigger_max: number, 
+webhookTriggerMax: number, 
 /**
  * Max queue depth per persona.
  */
-max_queue_depth: number, };
+maxQueueDepth: number, };

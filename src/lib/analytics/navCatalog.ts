@@ -60,28 +60,33 @@ export interface TabDimension {
 export const SECTIONS: readonly SidebarSection[] = NAV_SECTIONS.map((e) => e.id);
 
 // -- Per-dimension value sets (mirror the unions in types.ts) ----------------
-// Declared separately so each gets its own `satisfies` drift guard.
+// Each set is declared as a `Record<Union, true>` and unwrapped by `exact()`.
+// Unlike the previous `satisfies readonly X[]` guards — which accept SUBSETS,
+// and therefore missed `mastermind` and `missions` when those tabs shipped —
+// a Record requires EVERY union member as a key, so both an omission and a
+// stale extra are compile errors.
 
-const HOME_TABS = ['welcome', 'cockpit', 'roadmap', 'system-check', 'learning'] as const satisfies readonly HomeTab[];
+const exact = <T extends string>(map: Record<T, true>): readonly T[] => Object.keys(map) as T[];
+
+const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 'system-check': true, learning: true });
 // `observability` was removed from OverviewTab — it had no OverviewPage router
 // case (the ObservabilityDashboard component is mounted elsewhere), so tracking
 // it inflated the "ignored" denominator with an unreachable tab.
-const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
-// kpis + factory are live TeamsSidebarNav tabs with PersonasPage router cases.
-const TEAMS_TABS = ['workspace', 'goals', 'kpis', 'factory', 'projects', 'lifecycle', 'competition'] as const satisfies readonly TeamsTab[];
-const GOALS_TABS = ['board', 'timeline', 'progress'] as const satisfies readonly GoalsTab[];
-// explore is a live template sidebar tab (the gallery Explore view).
-const TEMPLATE_TABS = ['n8n', 'generated', 'explore', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
-const AGENT_TABS = ['all', 'create', 'groups', 'cloud'] as const satisfies readonly AgentTab[];
-const EDITOR_TABS = ['activity', 'matrix', 'use-cases', 'lab', 'settings', 'chat', 'design', 'assertions'] as const satisfies readonly EditorTab[];
-const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messaging', 'automations'] as const satisfies readonly DesignSubTab[];
-const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
-const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'radio', 'engine', 'byom', 'portability', 'network', 'admin', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
-const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'scraper'] as const satisfies readonly PluginTab[];
-// llm-overview added (the Dev Tools "Observability" sub-tab). `skills` is kept —
-const DEV_TOOLS_TABS = ['overview', 'llm-overview', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'fleet', 'workspaces'] as const satisfies readonly DevToolsTab[];
-const EVENT_BUS_TABS = ['studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
-const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 'experiments', 'findings', 'reports', 'graph'] as const satisfies readonly ResearchLabTab[];
+const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, executions: true, 'manual-review': true, messages: true, events: true, knowledge: true, sla: true, health: true, leaderboard: true, director: true, certification: true });
+const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, competition: true, mastermind: true });
+const GOALS_TABS = exact<GoalsTab>({ board: true, timeline: true, progress: true, missions: true });
+const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
+const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
+const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true });
+// `parameters` was missing from the old subset-tolerant guard too — the exact
+// Record caught it on conversion (third omission after mastermind + missions).
+const DESIGN_SUB_TABS = exact<DesignSubTab>({ 'use-cases': true, prompt: true, parameters: true, connectors: true, triggers: true, messaging: true, automations: true });
+const CLOUD_TABS = exact<CloudTab>({ cloud: true, gitlab: true, unified: true });
+const SETTINGS_TABS = exact<SettingsTab>({ account: true, appearance: true, notifications: true, radio: true, engine: true, byom: true, portability: true, network: true, admin: true, 'api-keys': true, history: true, limits: true });
+const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, artist: true, 'obsidian-brain': true, 'research-lab': true, drive: true, twin: true, companion: true, scraper: true });
+const DEV_TOOLS_TABS = exact<DevToolsTab>({ overview: true, 'llm-overview': true, 'context-map': true, 'idea-scanner': true, 'idea-triage': true, 'task-runner': true, fleet: true, workspaces: true, skills: true });
+const EVENT_BUS_TABS = exact<EventBusTab>({ studio: true, shared: true, 'live-stream': true, 'rate-limits': true, test: true, 'smee-relay': true, 'cloud-webhooks': true, 'dead-letter': true });
+const RESEARCH_LAB_TABS = exact<ResearchLabTab>({ dashboard: true, projects: true, literature: true, hypotheses: true, experiments: true, findings: true, reports: true, graph: true });
 
 /**
  * Every store-backed tab dimension. `section` is best-effort attribution for

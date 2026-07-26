@@ -5,13 +5,19 @@
  * Failures are swallowed — browser/webpack treats the chunk as still-absent
  * and will retry naturally on real navigation.
  */
+import { silentCatch } from '@/lib/silentCatch';
 
 type Prefetcher = () => Promise<unknown>;
 
 function cache(fn: Prefetcher): Prefetcher {
   let pending: Promise<unknown> | null = null;
   return () => {
-    if (!pending) pending = fn().catch(() => { pending = null; });
+    if (!pending) {
+      pending = fn().catch((err) => {
+        silentCatch('home/prefetch:chunkPrefetch')(err);
+        pending = null;
+      });
+    }
     return pending;
   };
 }

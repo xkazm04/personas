@@ -33,6 +33,7 @@ import NavHistoryShortcuts from "@/lib/keyboard/NavHistoryShortcuts";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 import { lazyRetry } from "@/lib/lazyRetry";
+import { silentCatch } from "@/lib/silentCatch";
 
 initPseudoLocale();
 
@@ -195,9 +196,7 @@ export default function App() {
         markPhase('bootstrap-sessions');
         import("@/lib/buildSessionBootstrap")
           .then(m => m.bootstrapActiveBuildSessions())
-          .catch((err) => {
-            appLogger.error("buildSessionBootstrap failed", { error: err instanceof Error ? err.message : String(err) });
-          });
+          .catch(silentCatch("App:bootstrapActiveBuildSessions"));
 
         // Seed the template catalog into the DB once per session so the
         // onboarding template picker and the gallery are populated on a fresh
@@ -206,9 +205,7 @@ export default function App() {
         // gates first paint. The Templates page hook shares the same runner.
         import("@/lib/personas/templates/seedTemplates")
           .then(m => m.seedCatalogTemplatesOnce())
-          .catch((err) => {
-            appLogger.error("template catalog seed failed", { error: err instanceof Error ? err.message : String(err) });
-          });
+          .catch(silentCatch("App:seedCatalogTemplatesOnce"));
       };
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
       if (typeof ric === "function") {
@@ -216,9 +213,7 @@ export default function App() {
       } else {
         setTimeout(runBootstrap, 1000);
       }
-    })().catch((err) => {
-      appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
-    });
+    })().catch(silentCatch("App:criticalStartupModule"));
     markPhase('auth-init');
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
@@ -236,7 +231,7 @@ export default function App() {
     if (typeof bootTime === "number") {
       const tti = performance.now() - bootTime;
       import("@tauri-apps/api/core").then(({ invoke }) => {
-        invoke("report_frontend_ready", { ttiMs: tti }).catch(() => {});
+        invoke("report_frontend_ready", { ttiMs: tti }).catch(silentCatch("App:reportFrontendReady"));
       });
     }
     // Defer BackgroundServices: health digest, credential remediation, lab events

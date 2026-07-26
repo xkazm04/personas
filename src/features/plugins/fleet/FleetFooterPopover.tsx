@@ -2,6 +2,7 @@ import { ExternalLink } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FLEET_STATE_META } from './fleetStateMeta';
+import { FleetLimitEtaChip } from './FleetLimitEtaChip';
 
 interface FleetFooterPopoverProps {
   counts: Record<FleetSessionState, number>;
@@ -11,6 +12,10 @@ interface FleetFooterPopoverProps {
   hint: string;
   /** Jump to the full Fleet page (Dev Tools → Fleet). */
   onOpenPage: () => void;
+  /** Soonest Claude limit reset across the fleet, if any session is parked on
+   *  one. Surfaced here because "when does the whole fleet resume?" is a
+   *  fleet-level question the per-tile chip can't answer at a glance. */
+  limitResetAtMs?: number | null;
 }
 
 /**
@@ -25,7 +30,13 @@ interface FleetFooterPopoverProps {
  * sessions the icon opens the grid overlay in place, so "take me to the actual
  * Fleet page" needs its own affordance.
  */
-export function FleetFooterPopover({ counts, total, hint, onOpenPage }: FleetFooterPopoverProps) {
+export function FleetFooterPopover({
+  counts,
+  total,
+  hint,
+  onOpenPage,
+  limitResetAtMs = null,
+}: FleetFooterPopoverProps) {
   const { t, tx } = useTranslation();
   const rows = FLEET_STATE_META.filter((m) => counts[m.id] > 0);
 
@@ -62,6 +73,12 @@ export function FleetFooterPopover({ counts, total, hint, onOpenPage }: FleetFoo
             </li>
           ))}
         </ul>
+      )}
+
+      {limitResetAtMs != null && (
+        <div className="mt-1 flex justify-center border-t border-primary/10 pt-1.5">
+          <FleetLimitEtaChip limitResetAtMs={limitResetAtMs} testId="footer-fleet-limit-eta" />
+        </div>
       )}
 
       <div className="mt-1 pt-1 border-t border-primary/10">

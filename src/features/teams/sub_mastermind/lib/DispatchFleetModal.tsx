@@ -9,15 +9,19 @@ import { Rocket } from 'lucide-react';
 import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
 
-export function DispatchFleetModal({ name, onDispatch, onClose }: {
-  /** Project (island) display name — shown in the header. */
+export function DispatchFleetModal({ name, targetCount, onDispatch, onClose }: {
+  /** Project (island) display name, or a group's label — shown in the header. */
   name: string;
+  /** How many projects the instruction will reach. Omitted or 1 = a single
+   *  island; more = a group dispatch, and the header says so, because "run this
+   *  in 6 repos" is not a click you want to make by accident. */
+  targetCount?: number;
   /** Spawn the background session with this instruction. Rejects on failure so
    *  the modal stays open and the button re-enables. */
   onDispatch: (instruction: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [text, setText] = useState('');
   const [dispatching, setDispatching] = useState(false);
   const instruction = text.trim();
@@ -40,6 +44,11 @@ export function DispatchFleetModal({ name, onDispatch, onClose }: {
           <Rocket className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="mm-dispatch-title" className="typo-title truncate">{t.mastermind.dispatch_modal_title}</span>
           <span className="ml-auto typo-caption text-foreground/50 truncate max-w-[160px]">{name}</span>
+          {(targetCount ?? 1) > 1 && (
+            <span className="typo-caption text-primary tabular-nums shrink-0 px-1.5 py-0.5 rounded-interactive bg-primary/10 border border-primary/20">
+              {tx(t.mastermind.dispatch_target_count, { count: targetCount ?? 1 })}
+            </span>
+          )}
         </div>
 
         <div className="px-4 py-3 space-y-2.5">

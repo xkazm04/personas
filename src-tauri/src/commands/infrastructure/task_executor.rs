@@ -3,8 +3,10 @@
 //! Follows the same BackgroundJobManager pattern as idea_scanner.rs:
 //! spawns CLI process, streams output via Tauri events, updates DB.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde_json::json;
 use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -19,6 +21,18 @@ use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // =============================================================================
 // Job state
@@ -361,7 +375,12 @@ pub async fn dev_tools_execute_task(
     let worktree_name = extract_worktree_name(task.session_id.as_deref());
     let exec_model = model.unwrap_or_else(|| DEFAULT_DEV_TASK_MODEL.to_string());
 
+    let app_handle_for_panic = app_handle.clone();
+    let pool_for_panic = pool.clone();
+    let task_id_for_panic = task_id_for_spawn.clone();
+
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         for w in &context_warnings {
             TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Warning] {w}"));
         }
@@ -477,6 +496,34 @@ pub async fn dev_tools_execute_task(
                 }
             }
         }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                task_id = %task_id_for_panic,
+                panic = %msg,
+                "dev-tools task execution panicked — marking task as failed"
+            );
+            let completed_now = chrono::Utc::now().to_rfc3339();
+            let _ = repo::update_task(
+                &pool_for_panic,
+                &task_id_for_panic,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(&app_handle_for_panic, &task_id_for_panic, "failed", Some(msg.clone()));
+            TASK_EXEC_JOBS.emit_line(&app_handle_for_panic, &task_id_for_panic, format!("[Error] {msg}"));
+        }
     });
 
     Ok(json!({ "task_id": task_id }))
@@ -500,8 +547,12 @@ pub async fn dev_tools_start_batch(
         let sem = semaphore.clone();
         let app_handle = app.clone();
         let pool = state.db.clone();
+        let app_handle_for_panic = app_handle.clone();
+        let pool_for_panic = pool.clone();
+        let tid_for_panic = tid.clone();
 
         tokio::spawn(async move {
+            let work = AssertUnwindSafe(async move {
             let _permit = sem.acquire().await;
 
             // Read task to get project info
@@ -678,6 +729,34 @@ pub async fn dev_tools_start_batch(
                         );
                     }
                 }
+            }
+            })
+            .catch_unwind()
+            .await;
+
+            if let Err(panic) = work {
+                let msg = extract_panic_message(panic);
+                tracing::error!(
+                    task_id = %tid_for_panic,
+                    panic = %msg,
+                    "dev-tools batch task execution panicked — marking task as failed"
+                );
+                let completed_now = chrono::Utc::now().to_rfc3339();
+                let _ = repo::update_task(
+                    &pool_for_panic,
+                    &tid_for_panic,
+                    None,
+                    None,
+                    Some("failed"),
+                    None,
+                    None,
+                    None,
+                    Some(Some(&msg)),
+                    None,
+                    Some(Some(&completed_now)),
+                );
+                TASK_EXEC_JOBS.set_status(&app_handle_for_panic, &tid_for_panic, "failed", Some(msg.clone()));
+                TASK_EXEC_JOBS.emit_line(&app_handle_for_panic, &tid_for_panic, format!("[Error] {msg}"));
             }
         });
     }
@@ -1423,7 +1502,11 @@ pub async fn dev_tools_start_auto_run(
     let run_id_for_spawn = run_id.clone();
     let cancel_for_spawn = cancel_token.clone();
 
+    let app_handle_for_panic = app_handle.clone();
+    let run_id_for_panic = run_id_for_spawn.clone();
+
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let mut iterations: u32 = 0;
         let mut termination_reason = "exhausted".to_string();
 
@@ -1517,6 +1600,19 @@ pub async fn dev_tools_start_auto_run(
                 "{completed} completed, {failed} failed, {skipped} skipped — {termination_reason}"
             ),
         );
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                run_id = %run_id_for_panic,
+                panic = %msg,
+                "dev-tools auto-run task panicked — marking run as failed"
+            );
+            AUTO_RUN_JOBS.set_status(&app_handle_for_panic, &run_id_for_panic, "failed", Some(msg));
+        }
     });
 
     Ok(json!({

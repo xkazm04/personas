@@ -174,7 +174,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
             selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
           };
         });
-      }).catch(() => { /* silent */ });
+      }).catch(silentCatch("stores/slices/agents/personaSlice:catch2"));
     } catch (err) {
       reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });
       throw err;

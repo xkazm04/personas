@@ -429,6 +429,9 @@ pub fn spawn_session(
         .map_err(|e| format!("take writer failed: {e}"))?;
 
     let now = now_ms();
+    // Claim the run this spawn belongs to BEFORE building the row — the window
+    // is time-based, so it must be read at spawn time, not at first state emit.
+    let (run_id, run_label) = super::run::claim_run_for_spawn();
     let project_label = cwd
         .file_name()
         .and_then(|s| s.to_str())
@@ -461,6 +464,10 @@ pub fn spawn_session(
         child_pid,
         exit_code: None,
         state_reason: Some("PTY spawned".to_string()),
+        limit_reset_at_ms: 0,
+        // Run-harvest grouping — a burst of spawns shares one dispatch window.
+        run_id,
+        run_label,
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
@@ -844,6 +851,11 @@ pub fn emit_session_state(
     reason: Option<String>,
 ) {
     super::debug_log::state_change(session_id, from, state, reason.as_deref().unwrap_or(""));
+    // Durable registry: mirror the new state into `fleet_sessions` so an app
+    // restart can resurrect this conversation. Enqueue-only (one map read + a
+    // channel send) — the SQLite write happens on the persistence thread, so a
+    // slow DB can never wedge a PTY reader or the staleness ticker.
+    super::persist::note_changed(app, session_id);
     let _ = app.emit(
         event_name::FLEET_SESSION_STATE,
         SessionStatePayload {
@@ -864,6 +876,15 @@ struct SessionStatePayload<'a> {
 
 /// Emit a registry-changed event from a Tauri command.
 pub fn emit_registry_changed(app: &AppHandle, kind: &str, session_id: &str) {
+    // Same durability hook as `emit_session_state`, for the non-state changes
+    // that still alter a row's rehydratable identity (rename, title, doze,
+    // spawn) — and the delete path when a row leaves the registry.
+    match kind {
+        "removed" => super::persist::note_removed(app, session_id),
+        // "rehydrated" carries no session id — it IS the restore broadcast.
+        "rehydrated" => {}
+        _ => super::persist::note_changed(app, session_id),
+    }
     let _ = app.emit(
         event_name::FLEET_REGISTRY_CHANGED,
         RegistryChangedPayload { kind, session_id },

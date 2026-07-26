@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Bot, RotateCcw } from 'lucide-react';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import StudioTabBar from './StudioTabBar';
@@ -104,7 +104,10 @@ export default function StudioPage() {
       const id = activeId;
       webbuildListRoutes(id)
         .then((r) => setRoutesByTab((m) => ({ ...m, [id]: r })))
-        .catch(() => setRoutesByTab((m) => ({ ...m, [id]: [] })));
+        .catch((err) => {
+          silentCatch('StudioPage:listRoutes')(err);
+          setRoutesByTab((m) => ({ ...m, [id]: [] }));
+        });
     }
   }, [activeId, active?.phase, activeNonce]);
 

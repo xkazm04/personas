@@ -162,6 +162,7 @@ async function findExecutionByMessageId(
     try {
       const parsed = JSON.parse(exec.input_data) as Record<string, unknown>;
       if (parsed.messageId === messageId) return exec;
+      // eslint-disable-next-line custom/no-silent-catch -- Playwright/Node test fixture, not app code: silentCatch isn't resolvable via the "@/" alias outside `src/` here. Malformed input_data is expected for unrelated executions; skip and keep scanning.
     } catch {
       // not JSON — skip
     }

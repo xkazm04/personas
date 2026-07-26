@@ -1,7 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('credential-negotiator');
+import { silentCatch } from '@/lib/silentCatch';
 import {
   startCredentialNegotiation,
   cancelCredentialNegotiation,
@@ -164,7 +162,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       connector,
       setup_instructions: '',
       summary: '',
-    }, 'negotiator').catch((err) => { logger.warn('Failed to cache recipe from negotiator (non-critical)', { error: err }); });
+    }, 'negotiator').catch(silentCatch('hooks/design/credential/useCredentialNegotiator:catch1'));
 
     // Convert AuthDetectionInfo[] to plain records for the backend invoke
     const authForBackend = authServices.length > 0

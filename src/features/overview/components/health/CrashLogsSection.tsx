@@ -57,10 +57,14 @@ export function CrashLogsSection() {
     let cancelled = false;
     setLoadingLogs(true);
     setFrontendLsLogs(readCrashLogs());
+    // allSettled keeps the loading gate honest (both settle before we clear it);
+    // a rejected arm still drops a Sentry breadcrumb before falling back to [].
     Promise.allSettled([getCrashLogs(), getFrontendCrashes(50)]).then(([backendResult, frontendResult]) => {
       if (cancelled) return;
-      setBackendLogs(backendResult.status === 'fulfilled' ? backendResult.value : []);
-      setFrontendDbLogs(frontendResult.status === 'fulfilled' ? frontendResult.value : []);
+      if (backendResult.status === 'fulfilled') setBackendLogs(backendResult.value);
+      else { silentCatch('CrashLogsSection:getCrashLogs')(backendResult.reason); setBackendLogs([]); }
+      if (frontendResult.status === 'fulfilled') setFrontendDbLogs(frontendResult.value);
+      else { silentCatch('CrashLogsSection:getFrontendCrashes')(frontendResult.reason); setFrontendDbLogs([]); }
       setLoadingLogs(false);
     });
     return () => { cancelled = true; };

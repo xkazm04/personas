@@ -17,6 +17,7 @@ import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface Props {
   deployments: CloudDeployment[];
@@ -61,7 +62,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
     setIsLoading(true);
     try {
       const results = await Promise.all(
-        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch(() => [] as CloudTrigger[])),
+        Array.from(deployedPersonaIds).map((pid) => cloudListTriggers(pid).catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggers')(err); return [] as CloudTrigger[]; })),
       );
       setTriggers(results.flat());
     } finally {
@@ -80,7 +81,7 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
     setIsLoadingFirings(true);
     cloudListTriggerFirings(expandedId, 10)
       .then((data) => { if (!cancelled) setFirings(data); })
-      .catch(() => { if (!cancelled) setFirings([]); })
+      .catch((err) => { silentCatch('CloudSchedulesPanel:cloudListTriggerFirings')(err); if (!cancelled) setFirings([]); })
       .finally(() => { if (!cancelled) setIsLoadingFirings(false); });
     return () => { cancelled = true; };
   }, [expandedId]);

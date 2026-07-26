@@ -35,12 +35,18 @@ pub struct SystemOpAutomation {
     /// Next computed fire time (schedule kind only).
     pub next_run_at: Option<String>,
     pub last_run_at: Option<String>,
-    /// `"ok"` | `"failed"` | `"running"`.
+    /// `"ok"` | `"failed"` | `"requested"` (delegated op emitted, frontend not
+    /// yet reported back) | `"partial"` | `"held"` (approval mode).
     pub last_status: Option<String>,
     /// Short human detail of the last run (e.g. a scan id or error).
     pub last_detail: Option<String>,
     /// Optional user-facing label.
     pub label: Option<String>,
+    /// `"auto"` | `"approval"` — the safety gate for ops that act on production
+    /// signal (the signal-dispatch ops). `approval` holds the run instead of
+    /// dispatching (`last_status = "held"`); the human acts from Triage.
+    /// Manual `run_now` bypasses the gate — running by hand IS the approval.
+    pub unattended_mode: String,
     pub created_at: String,
     pub updated_at: String,
 }

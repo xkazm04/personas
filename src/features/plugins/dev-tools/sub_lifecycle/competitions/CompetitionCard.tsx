@@ -6,6 +6,7 @@ import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getCompetition, pickCompetitionWinner, cancelCompetition, deleteCompetition, type CompetitionDetail } from '@/api/devTools/devTools';
 import { CompetitionSlotRow } from './CompetitionSlotRow';
@@ -146,6 +147,7 @@ export function CompetitionCard({ competition, onRefresh, onRematch }: { competi
 
     // Background cleanup (worktree removal, task cancellation)
     cancelCompetition(competition.id).catch((err) => {
+      silentCatch('CompetitionCard:handleCancel:cleanup')(err);
       addToast(tx(dl.background_cleanup_issue, { error: err instanceof Error ? err.message : dl.unknown_error }), 'error');
     });
   }, [competition.id, addToast, onRefresh, dl, tx]);

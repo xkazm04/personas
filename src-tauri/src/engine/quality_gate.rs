@@ -141,7 +141,10 @@ pub fn load(pool: &crate::db::DbPool) -> QualityGateConfig {
     use crate::db::settings_keys::QUALITY_GATE_CONFIG;
 
     match settings::get(pool, QUALITY_GATE_CONFIG) {
-        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_default(),
+        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "unparseable quality-gate config; using defaults");
+            QualityGateConfig::default()
+        }),
         _ => QualityGateConfig::default(),
     }
 }

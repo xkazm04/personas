@@ -1,19 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Wand2, Send } from 'lucide-react';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
-import { answerBuildQuestion } from '@/api/agents/buildSession';
+import { answerBuildQuestion, getLatestBuildSession } from '@/api/agents/buildSession';
 import { createLogger } from '@/lib/log';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { silentCatch } from '@/lib/silentCatch';
 
 
 const logger = createLogger('use-cases-refine');
-
-interface LatestBuildSession {
-  id: string;
-  personaId: string;
-  phase: string;
-}
 
 interface Props {
   personaId: string;
@@ -32,9 +26,9 @@ export function UseCasesRefineCard({ personaId }: Props) {
   useEffect(() => {
     let cancelled = false;
     setSessionId(null);
-    invokeWithTimeout<LatestBuildSession | null>('get_latest_build_session', { personaId })
+    getLatestBuildSession(personaId)
       .then((s) => { if (!cancelled) setSessionId(s?.id ?? null); })
-      .catch(() => { if (!cancelled) setSessionId(null); });
+      .catch((err) => { silentCatch('UseCasesRefineCard:getLatestBuildSession')(err); if (!cancelled) setSessionId(null); });
     return () => { cancelled = true; };
   }, [personaId]);
 

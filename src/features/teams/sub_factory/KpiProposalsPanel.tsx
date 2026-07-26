@@ -18,6 +18,7 @@ import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, describeMeasureConfig, type Kpi
 /** Cadence token → label, tolerant of any stored string. */
 const cadenceLabel = (c: string) => CADENCE_LABEL[c as 'daily' | 'weekly' | 'manual'] ?? c;
 import { errMsg } from './composeTask';
+import { silentCatch } from '@/lib/silentCatch';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -48,7 +49,7 @@ export function KpiProposalsPanel({
 
   useEffect(() => {
     let alive = true;
-    void listKpis(projectId, 'proposed').then((p) => { if (alive) setProposals(p); }).catch(() => {});
+    void listKpis(projectId, 'proposed').then((p) => { if (alive) setProposals(p); }).catch(silentCatch('KpiProposalsPanel:listKpis'));
     return () => { alive = false; };
   }, [projectId]);
 
@@ -65,7 +66,7 @@ export function KpiProposalsPanel({
         await sleep(3000);
         if (!aliveRef.current) break;
         await refetch();
-        const st = await getKpiScanStatus(scan_id).catch(() => null);
+        const st = await getKpiScanStatus(scan_id).catch((err) => { silentCatch('KpiProposalsPanel:getKpiScanStatus')(err); return null; });
         if (!st || st.status !== 'running') break;
       }
       if (aliveRef.current) await refetch();

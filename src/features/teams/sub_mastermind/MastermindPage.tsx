@@ -8,6 +8,7 @@
 // switcher stays until the module is complete and a final view mode is chosen.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
@@ -16,15 +17,17 @@ import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
-import { collectKpiAttention, groupKpis } from '@/features/teams/sub_factory/factoryModel';
+import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/SkillsWorkbench';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
@@ -45,13 +48,18 @@ import { deriveScene, type FamilyHealth, type KpiRollup } from './lib/deriveScen
 import { dimAction } from './lib/dimActions';
 import { DispatchFleetModal } from './lib/DispatchFleetModal';
 import { FleetPreviewPanel } from './lib/FleetPreviewPanel';
+import { CategoryPopover } from './lib/CategoryPopover';
+import type { CategoryNode } from './lib/dimCategories';
+import { DimListPopover } from './lib/DimListPopover';
+import { DIM_INK } from './lib/ink';
 import { GoalListPopover } from './lib/GoalListPopover';
+import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
-import { PersonaListPopover } from './lib/PersonaListPopover';
+import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode } from './lib/types';
@@ -68,6 +76,21 @@ const EMPTY_NAMES: string[] = [];
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const norm = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
+
+/** The declared names behind a `stack-list` dimension. Read from the passport
+ *  rather than split back out of the cell's joined `detail` string. */
+function stackItems(passport: AppPassport | undefined, key: string): string[] {
+  if (!passport) return EMPTY_NAMES;
+  if (key === 'datalinks') return passport.stack.dataLinks ?? EMPTY_NAMES;
+  if (key === 'support') return passport.stack.supportChannels ?? EMPTY_NAMES;
+  return EMPTY_NAMES;
+}
+
+/** Header icon + ink per stack-list dimension — the same glyph its cell paints. */
+const STACK_META = {
+  datalinks: { icon: GitFork, titleKey: 'datalinks_title' },
+  support: { icon: LifeBuoy, titleKey: 'support_title' },
+} as const;
 
 export default function MastermindPage() {
   // Factory data context feeds the KPI dimension (same rollup the Passport
@@ -146,6 +169,10 @@ function MastermindInner() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
   const [goalPopup, setGoalPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [kpiPopup, setKpiPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
+  const [stackPopup, setStackPopup] = useState<{ slug: string; key: 'datalinks' | 'support'; x: number; y: number } | null>(null);
+  const [dispatchGroup, setDispatchGroup] = useState<{ slugs: string[]; label: string } | null>(null);
+  const [categoryPopup, setCategoryPopup] = useState<{ slug: string; category: CategoryNode; x: number; y: number } | null>(null);
   const { startBackgroundScan } = useContextScanBackground();
   // In-progress personas — same sources + persona→team→project join the
   // Monitor's project columns use (active processes attributed to personas).
@@ -250,6 +277,21 @@ function MastermindInner() {
     return m;
   }, [factoryProjects]);
 
+  // The KPI cell's colour says "something is off"; the popover has to say WHICH.
+  // The rollup above keeps only counts (that's all the cell's derive needs), so
+  // the list is projected separately from the same Factory projects — every KPI
+  // reduced to the row shape KpiListPopover renders, worst-status first.
+  const kpiListByProject = useMemo(() => {
+    const m = new Map<string, KpiListItem[]>();
+    for (const p of factoryProjects) {
+      m.set(p.id, p.groups.flatMap(groupKpis).map((k) => ({
+        id: k.id, name: k.name, status: kpiStatus(k),
+        current: k.current, target: k.target, unit: k.unit,
+      })));
+    }
+    return m;
+  }, [factoryProjects]);
+
   // Session → project by longest cwd/root_path prefix match (a session has no
   // project_id; cwd doubles as the project key per FleetSession).
   const fleetByProject = useMemo(() => {
@@ -292,6 +334,38 @@ function MastermindInner() {
     const m = new Map<string, string[]>();
     for (const proj of projects) {
       if (proj.team_id && namesByTeam.has(proj.team_id)) m.set(proj.id, namesByTeam.get(proj.team_id)!);
+    }
+    return m;
+  }, [agentPersonas, activeProcesses, projects]);
+
+  // The popover needs more than the names the badge counts: live status,
+  // elapsed time, and whether the process declares somewhere to navigate. Kept
+  // as a separate map (like kpiListByProject) so `Island.personasRunning` stays
+  // the plain name list the scene model and the render cache are built on.
+  const personaRowsByProject = useMemo(() => {
+    const byId = new Map(agentPersonas.map((p) => [p.id, p]));
+    const rowsByTeam = new Map<string, PersonaRow[]>();
+    const seen = new Set<string>();
+    for (const proc of Object.values(activeProcesses)) {
+      if (proc.status !== 'running' || !proc.personaId || seen.has(proc.personaId)) continue;
+      seen.add(proc.personaId);
+      const persona = byId.get(proc.personaId);
+      const team = persona?.home_team_id;
+      if (!persona || !team) continue;
+      const row: PersonaRow = {
+        personaId: proc.personaId,
+        name: persona.name,
+        status: proc.status,
+        startedAt: proc.startedAt,
+        navigable: Boolean(proc.navigateTo),
+      };
+      const list = rowsByTeam.get(team);
+      if (list) list.push(row);
+      else rowsByTeam.set(team, [row]);
+    }
+    const m = new Map<string, PersonaRow[]>();
+    for (const proj of projects) {
+      if (proj.team_id && rowsByTeam.has(proj.team_id)) m.set(proj.id, rowsByTeam.get(proj.team_id)!);
     }
     return m;
   }, [agentPersonas, activeProcesses, projects]);
@@ -398,6 +472,10 @@ function MastermindInner() {
         };
         // A zero-count Goals cell has nothing to list — inert, no affordance.
         if (n.key === 'goals' && !(n.days && n.days > 0)) decorated.action = null;
+        // Same for a project with no KPIs defined at all.
+        if (n.key === 'kpi' && (kpiListByProject.get(i.slug)?.length ?? 0) === 0) decorated.action = null;
+        // Declaration-only cells: nothing declared, nothing to list.
+        if (decorated.action === 'stack-list' && stackItems(passport, n.key).length === 0) decorated.action = null;
         return decorated;
       });
       // Attention derives from the RESOLVED fleet (live for real projects, the
@@ -411,7 +489,7 @@ function MastermindInner() {
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs]);
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject]);
 
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {
@@ -453,6 +531,14 @@ function MastermindInner() {
       setGoalPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
       return;
     }
+    if (node.action === 'stack-list' && (node.key === 'datalinks' || node.key === 'support')) {
+      setStackPopup({ slug, key: node.key, x: Math.min(e.clientX, window.innerWidth - 260), y: Math.min(e.clientY + 10, window.innerHeight - 300) });
+      return;
+    }
+    if (node.action === 'kpi') {
+      setKpiPopup({ slug, x: Math.min(e.clientX, window.innerWidth - 284), y: Math.min(e.clientY + 10, window.innerHeight - 320) });
+      return;
+    }
     // Green Skills cell — run an installed skill via a background Fleet session.
     if (node.action === 'skills-run') {
       setSkillRunSlug(slug);
@@ -460,6 +546,21 @@ function MastermindInner() {
     }
     if (!node.action || !node.rowKey) return;
     setImprovePopup({ slug, rowKey: node.rowKey, standards: node.action === 'standards', anchor: new DOMRect(e.clientX, e.clientY, 1, 1) });
+  };
+
+  // Persona rows for one island. Demo islands have names but no processes
+  // behind them, so they degrade to inert name-only rows.
+  const personaRows = (slug: string): PersonaRow[] => {
+    const live = personaRowsByProject.get(slug);
+    if (live) return live;
+    const names = positioned.islands.find((i) => i.slug === slug)?.personasRunning ?? EMPTY_NAMES;
+    return names.map((name) => ({ personaId: name, name, status: 'running', startedAt: null, navigable: false }));
+  };
+
+  // Row click → the process's own destination, through the Monitor's switch.
+  const openPersona = (personaId: string) => {
+    const proc = Object.values(activeProcesses).find((p) => p.personaId === personaId && p.navigateTo);
+    if (proc) navigateToProcess(proc, () => setPersonaMenu(null));
   };
 
   // Island context-menu "Open terminal": a project can host one when it's a real
@@ -576,8 +677,10 @@ function MastermindInner() {
           onProjectOpen={setOpenSlug}
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
+          onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
           onOpenTerminal={openTerminal}
           onDispatchFleet={setDispatchSlug}
+          onDispatchGroupFleet={(slugs, label) => setDispatchGroup({ slugs, label })}
           canOpenTerminal={canOpenTerminal}
         />
       ) : (
@@ -620,9 +723,10 @@ function MastermindInner() {
 
       {personaMenu && (
         <PersonaListPopover
-          names={positioned.islands.find((i) => i.slug === personaMenu.slug)?.personasRunning ?? []}
+          rows={personaRows(personaMenu.slug)}
           x={personaMenu.x}
           y={personaMenu.y}
+          onOpen={openPersona}
           onClose={() => setPersonaMenu(null)}
         />
       )}
@@ -636,6 +740,42 @@ function MastermindInner() {
         />
       )}
 
+      {categoryPopup && (
+        <CategoryPopover
+          category={categoryPopup.category}
+          x={categoryPopup.x}
+          y={categoryPopup.y}
+          onDimOpen={(node, e) => onDimOpen(categoryPopup.slug, node, e)}
+          onClose={() => setCategoryPopup(null)}
+        />
+      )}
+
+      {stackPopup && (() => {
+        const meta = STACK_META[stackPopup.key];
+        const node = positioned.islands.find((i) => i.slug === stackPopup.slug)?.nodes.find((n) => n.key === stackPopup.key);
+        return (
+          <DimListPopover
+            title={t.mastermind[meta.titleKey]}
+            icon={meta.icon}
+            ink={DIM_INK[node?.status ?? 'solid']}
+            items={stackItems(passportBySlug.get(stackPopup.slug), stackPopup.key)}
+            x={stackPopup.x}
+            y={stackPopup.y}
+            testId={`mm-stack-list-${stackPopup.key}`}
+            onClose={() => setStackPopup(null)}
+          />
+        );
+      })()}
+
+      {kpiPopup && (
+        <KpiListPopover
+          items={kpiListByProject.get(kpiPopup.slug) ?? []}
+          x={kpiPopup.x}
+          y={kpiPopup.y}
+          onClose={() => setKpiPopup(null)}
+        />
+      )}
+
       {dispatchSlug && (() => {
         const island = positioned.islands.find((i) => i.slug === dispatchSlug);
         return (
@@ -646,6 +786,20 @@ function MastermindInner() {
           />
         );
       })()}
+
+      {dispatchGroup && (
+        <DispatchFleetModal
+          name={dispatchGroup.label || t.mastermind.group_untitled}
+          targetCount={dispatchGroup.slugs.length}
+          onDispatch={async (instruction) => {
+            // Sequential on purpose: each spawn is a PTY + a Claude process, and
+            // firing six at once is how a portfolio-wide dispatch becomes a
+            // machine-wide stall. A failure surfaces and stops the rest.
+            for (const slug of dispatchGroup.slugs) await dispatchFleet(slug, instruction);
+          }}
+          onClose={() => setDispatchGroup(null)}
+        />
+      )}
 
       {skillRunSlug && (
         <SkillsWorkbench slug={skillRunSlug} initialMode="dispatch" onClose={() => setSkillRunSlug(null)} />
@@ -687,9 +841,19 @@ function MastermindInner() {
         />
       )}
       {scene.demo && demoDismissed && (
-        <div className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10">
+        // The badge is the way BACK to the notice: once dismissed, the canvas
+        // is a wall of cells that quietly refuse every click (demo islands have
+        // no passport, so nothing resolves an action). Clicking it re-opens the
+        // two exits — scan the workspace, or add a project.
+        <button
+          type="button"
+          onClick={() => setDemoDismissed(false)}
+          title={t.mastermind.demo_badge_reopen}
+          className="absolute bottom-3 left-3 z-10 typo-caption text-foreground/50 px-2 py-1 rounded-interactive bg-secondary/60 border border-primary/10 hover:text-foreground hover:border-primary/25 transition-colors focus-ring"
+          data-testid="mm-demo-badge"
+        >
           {t.mastermind.demo_badge}
-        </div>
+        </button>
       )}
 
       <DataHealthBar failed={failedFamilies} onRetry={onRetryData} />

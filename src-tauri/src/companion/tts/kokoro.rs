@@ -249,7 +249,6 @@ pub async fn synthesize(
     // (DETACHED_PROCESS avoids a conhost flash; all stdio is piped/null).
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
         const DETACHED_PROCESS: u32 = 0x00000008;
         cmd.creation_flags(DETACHED_PROCESS);
     }

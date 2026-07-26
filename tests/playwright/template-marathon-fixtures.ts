@@ -196,6 +196,7 @@ export function loadAllTemplates(): TemplateMeta[] {
         missingConnectors: [],
         questions,
       });
+      // eslint-disable-next-line custom/no-silent-catch -- Playwright/Node test fixture, not app code: silentCatch isn't resolvable via the "@/" alias outside `src/` here.
     } catch {
       // Skip unparseable templates — they shouldn't exist post-migration
       // but we don't want the marathon to crash on one bad file.

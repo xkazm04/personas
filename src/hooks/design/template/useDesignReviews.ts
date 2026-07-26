@@ -134,7 +134,7 @@ export function useDesignReviews() {
               invalidateSWRCache(SWR_KEY);
               fetchReviewsSWR().then(({ data: fresh }) => {
                 if (!cancelled) setReviews(fresh);
-              }).catch(() => { /* non-critical */ });
+              }).catch(silentCatch("hooks/design/template/useDesignReviews:catch3"));
             }
           });
         }

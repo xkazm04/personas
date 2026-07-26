@@ -3169,6 +3169,7 @@ pub fn run() {
             commands::infrastructure::system_ops::system_ops_set_enabled,
             commands::infrastructure::system_ops::system_ops_delete_automation,
             commands::infrastructure::system_ops::system_ops_run_now,
+            commands::infrastructure::system_ops::system_ops_report_outcome,
             // Dev Tools -- Context Group Relationships
             commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
             commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,
@@ -3495,6 +3496,10 @@ pub fn run() {
             commands::fleet::commands::fleet_debug_log_start,
             commands::fleet::commands::fleet_debug_log_stop,
             commands::fleet::commands::fleet_debug_log_status,
+            commands::fleet::commands::fleet_begin_run,
+            commands::fleet::commands::fleet_end_run,
+            commands::fleet::commands::fleet_list_runs,
+            commands::fleet::commands::fleet_run_report,
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::transcript_read::fleet_session_metadata,

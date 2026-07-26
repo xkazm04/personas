@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { RadioState } from '@/lib/bindings/RadioState';
-import { radioPause, radioPlay, radioSetStation } from '../api/radioApi';
+import { radioPause, radioPlay, radioSetStation } from '@/api/radio';
 
 export interface StationPreview {
   /** Station id currently auditioning (playing or buffering), else null. */

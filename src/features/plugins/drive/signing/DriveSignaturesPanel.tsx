@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "@/i18n/useTranslation";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 import { BaseModal } from "@/features/shared/components/modals";
 import EmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
@@ -49,9 +49,7 @@ export function DriveSignaturesPanel({
   const { refreshSignatures } = signing;
 
   useEffect(() => {
-    refreshSignatures().catch(() => {
-      /* toasts handled in hook */
-    });
+    refreshSignatures().catch(silentCatch("DriveSignaturesPanel:refreshSignatures"));
   }, [refreshSignatures]);
 
   const handleExport = async (id: string) => {

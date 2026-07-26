@@ -3,7 +3,7 @@ import { mutateUseCases } from '@/hooks/design/core/useDesignContextMutator';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { syncCapabilityParameters } from '@/api/agents/personaParameters';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DesignUseCase, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { Recipe, BindingValue } from '../types';
@@ -74,7 +74,7 @@ export function useAdoption() {
         // Reconcile persona.parameters + the injected `## Capability Parameters`
         // section from the recipe's input_schema (Gap 2). Idempotent and
         // best-effort — a parameterization failure must not fail the adopt.
-        await invokeWithTimeout('sync_capability_parameters', { personaId }).catch(
+        await syncCapabilityParameters(personaId).catch(
           silentCatch('useAdoption:adopt:syncParams'),
         );
         await fetchDetail(personaId);
@@ -106,7 +106,7 @@ export function useAdoption() {
         if (!removedAny) return false; // nothing to detach — stale UI, no-op
         // Re-sync so the removed capability's parameter lines drop out of the
         // injected section (its params stay, inert, per the documented contract).
-        await invokeWithTimeout('sync_capability_parameters', { personaId }).catch(
+        await syncCapabilityParameters(personaId).catch(
           silentCatch('useAdoption:remove:syncParams'),
         );
         await fetchDetail(personaId);

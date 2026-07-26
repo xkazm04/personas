@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { sendAppNotification } from "@/api/system/system";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
-import { silentCatchNull } from "@/lib/silentCatch";
+import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
 import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
@@ -113,9 +113,7 @@ export function useHealthDigestScheduler() {
           });
         }
 
-        await sendAppNotification(title, body).catch(() => {
-          // Notification permission may not be granted -- silently ignore
-        });
+        await sendAppNotification(title, body).catch(silentCatch("useHealthDigestScheduler:sendAppNotification"));
       } finally {
         // Always unlock unless digest completed or was permanently skipped
         if (!ran.current) {

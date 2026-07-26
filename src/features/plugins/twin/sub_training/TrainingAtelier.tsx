@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { useTrainingMomentum } from './useTrainingMomentum';
 import * as twinApi from '@/api/twin/twin';
+import { silentCatch } from '@/lib/silentCatch';
 import { NextMovesPanel } from './NextMovesPanel';
 import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
@@ -70,8 +71,10 @@ export default function TrainingAtelier() {
       .then((m) => {
         if (!cancelled) setPendingCount(m.length);
       })
-      .catch(() => {
-        if (!cancelled) setPendingCount(null);
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        silentCatch('TrainingAtelier:listPendingMemories')(err);
+        setPendingCount(null);
       });
     return () => {
       cancelled = true;

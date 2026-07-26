@@ -9,6 +9,8 @@
  * (panel open, send), so the context is allowed to start.
  */
 
+import { silentCatch } from '@/lib/silentCatch';
+
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
@@ -55,7 +57,7 @@ export function playReplyChime() {
   if (!audio) return;
   // If the context was suspended (tab inactive, etc.), try to resume.
   if (audio.state === 'suspended') {
-    audio.resume().catch(() => {});
+    audio.resume().catch(silentCatch('chime:resumeContext'));
   }
   const now = audio.currentTime;
   // Two ascending notes, ~80ms apart. A4 (440Hz) → E5 (659Hz) — major

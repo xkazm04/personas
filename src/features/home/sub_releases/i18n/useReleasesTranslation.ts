@@ -40,6 +40,8 @@ export interface ReleasesTranslation {
   summary: { inProgress: string; next: string };
   live: { updatedPrefix: string; sourceCache: string; sourceStale: string; sourceFallback: string };
   empty: string;
+  /** Caption under the empty-waypoint glyph in a NOW/NEXT/LATER lane with no items. */
+  laneEmpty: string;
   releases: Record<string, ReleaseI18n>;
 }
 
@@ -92,6 +94,7 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
       sourceFallback: r.live_source_fallback,
     },
     empty: r.empty,
+    laneEmpty: r.lane_empty,
     releases: {
       '0.0.1': {
         label: r.release_0_0_1_label,

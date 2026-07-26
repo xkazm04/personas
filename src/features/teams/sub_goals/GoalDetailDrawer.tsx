@@ -120,12 +120,12 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
     setLoading(true);
     try {
       const [prog, its, kids, assignments, sigs, dps] = await Promise.all([
-        devApi.resolveGoalProgress(goalId).catch(() => null),
+        devApi.resolveGoalProgress(goalId).catch((err) => { silentCatch('GoalDetailDrawer:resolveGoalProgress')(err); return null; }),
         devApi.listGoalItems(goalId),
         devApi.listChildGoals(goalId),
-        listTeamAssignmentsForGoal(goalId).catch(() => []),
+        listTeamAssignmentsForGoal(goalId).catch((err) => { silentCatch('GoalDetailDrawer:listTeamAssignmentsForGoal')(err); return []; }),
         devApi.listGoalSignals(goalId),
-        devApi.listGoalDependencies(goalId).catch(() => []),
+        devApi.listGoalDependencies(goalId).catch((err) => { silentCatch('GoalDetailDrawer:listGoalDependencies')(err); return []; }),
       ]);
       setProgress(prog);
       setItems(its);
@@ -134,7 +134,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
       setDeps(dps);
       setAssignments(assignments);
       const stepLists = await Promise.all(
-        assignments.map((a) => listTeamAssignmentSteps(a.id).catch(() => [] as TeamAssignmentStep[])),
+        assignments.map((a) => listTeamAssignmentSteps(a.id).catch((err) => { silentCatch('GoalDetailDrawer:listTeamAssignmentSteps')(err); return [] as TeamAssignmentStep[]; })),
       );
       setSteps(stepLists.flat());
     } catch (err) {

@@ -54,11 +54,12 @@ export function KpiSimControl({ projectId, onIngested }: {
         if (s.skipped.length > 0) addToast(tx(t.kpis.sim_skipped_toast, { count: s.skipped.length }), 'warning');
         onIngested?.();
       })
-      .catch(auto
+      .catch((err) => {
+        silentCatch('kpiSim:ingest')(err);
         // A finished session without a result file (aborted run) is normal on
         // the auto path — stay quiet; the manual import reports loudly.
-        ? silentCatch('kpiSim:auto-ingest')
-        : toastCatch('kpiSim:ingest'))
+        if (!auto) toastCatch('kpiSim:ingest')(err);
+      })
       .finally(() => { ingesting.current = false; });
   }, [projectId, addToast, tx, t, onIngested]);
 

@@ -4,7 +4,9 @@ Heavy-hitter codebase scan for **structural patterns** — both weak ones to upg
 
 This is the highest-risk, highest-payoff skill in the suite. It pairs with `/research` (external sources) and `/explorer` (per-area paper cuts) — those handle the small and the medium; `/architect` handles the large.
 
-This skill is **personas-specific.** It uses `.claude/codebase-context.md` and `.claude/codebase-stack.md` for taxonomy, and the Obsidian vault for a durable backlog of architectural decisions that span multiple sessions.
+This skill is **personas-specific.** It uses `.claude/codebase-context.md` and `.claude/codebase-stack.md` for taxonomy (with `context-map.json` at the repo root as the machine-readable file→context authority), and the Obsidian vault for a durable backlog of architectural decisions that span multiple sessions.
+
+**Deliverable contract — every finding ends as an artifact.** An architect run that produces observations without enforcement artifacts is a failed run. Each finding that survives triage must terminate as exactly one of: **(a)** an ADR-style vault note (Phase 7b/8a), **(b)** a lint rule / CI gate / structural-test proposal (Phase 7B), or **(c)** a scoped rollout plan with per-PR steps (the ADR's Rollout section). Only `drop` verdicts are artifact-free, and they are recorded with a reason. If you reach Phase 12 with a surviving finding that has none of the three, the run is not done.
 
 ## Interaction conventions
 
@@ -75,9 +77,10 @@ If the user's first message is ambiguous about mode (e.g. just `/architect`), pr
 - **Codebase reference files:**
   - `.claude/codebase-context.md` — DB-derived feature map. Used to resolve area scope and target file lists.
   - `.claude/codebase-stack.md` — hand-curated architecture, conventions, engine internals. Heavily consulted in scan mode.
-  - `.claude/CLAUDE.md` — project rules.
-  - `.claude/Design.md` — design system canonical reference.
-- **Vault root** (resolved at Phase 0): one of two paths, whichever exists.
+  - `context-map.json` (repo root) — machine-readable file→context map; the authority when codebase-context.md and reality disagree.
+  - `.claude/CLAUDE.md` — project rules (especially "Concurrent CLI sessions" + "Parallel-safety primitives").
+  - `.claude/Design.md` — design system canonical reference (rebuilt 2026-07-26, grounded in typography.css + designTokens.ts + globals.css).
+- **Vault root** (resolved at Phase 0): `C:/Users/kazda/Documents/Obsidian/personas`
   - `Architect/scans/` — one note per scan run, the synthesis output
   - `Architect/decisions/` — one ADR per accepted decision (Markdown, ADR-style)
   - `Architect/backlog.md` — durable queue of accepted decisions with status
@@ -98,6 +101,8 @@ If the user's first message is ambiguous about mode (e.g. just `/architect`), pr
 
 Before materially editing the working tree (which `/architect` always does in Phase 7 — Execute), register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps your area-mode scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
 
+**Ledger edits are a single bash invocation** (read + append/move in one command) — parallel sessions rewrite the file between an Edit-tool read and its write, so multi-step edits lose entries. Always edit the ledger in the **main checkout**, even when the code work happens in a worktree.
+
 **Declared paths for `/architect`:**
 - Obsidian: `Architect/scans/<run>.md`, `Architect/decisions/<adr>.md`, `Architect/backlog.md`, `Architect/strong-patterns.md`, `Architect/weak-patterns.md`, `Lessons/{date}-architect.md`
 - Working tree (varies by area mode): typically a subset of `src-tauri/src/<area>/`, `src/features/<area>/`, `.planning/architect/<run>.md`
@@ -105,22 +110,15 @@ Before materially editing the working tree (which `/architect` always does in Ph
 
 **At session end** (Phase 7 commit lands, the user closes without execute, or the run aborts): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
 
-Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+Full design rationale: [`docs/architecture/cli-coordination.md`](../../../docs/architecture/cli-coordination.md).
 
 ---
 
 ## Phase 0: Resolve vault path
 
-Two machines, one vault per machine. Probe both, use whichever exists.
-
 ```bash
-if [ -d "C:/Users/mkdol/Documents/Obsidian/personas" ]; then
-  VAULT="C:/Users/mkdol/Documents/Obsidian/personas"
-elif [ -d "C:/Users/kazda/Documents/Obsidian/personas" ]; then
-  VAULT="C:/Users/kazda/Documents/Obsidian/personas"
-else
-  echo "No personas vault found at either path. Aborting." && exit 1
-fi
+VAULT="C:/Users/kazda/Documents/Obsidian/personas"
+[ -d "$VAULT" ] || { echo "No personas vault at $VAULT. Aborting."; exit 1; }
 ```
 
 Record `$VAULT` for the rest of the run.
@@ -422,7 +420,7 @@ Reply with `<finding>=<verdict>`, space-separated. Examples:
   Enter               →  same as "all=2"   ← default
 ```
 
-The four-way triage matters: architect findings rarely all execute now, but they shouldn't all drop either. Most go to the queue.
+The four-way triage matters: architect findings rarely all execute now, but they shouldn't all drop either. Most go to the queue. Every non-drop verdict routes to a concrete enforcement artifact (ADR, lint rule / CI gate / test guard, or per-PR rollout plan) — see the deliverable contract at the top. A finding left as prose in the scan note is a run failure.
 
 For each verdict:
 
@@ -457,30 +455,29 @@ Codification is on by default if the user picks `codify` for any pattern (new or
 
 ## Phase 7: Execute (one decision, this session)
 
-This is the high-rigor execution path. Architect changes default to a dedicated branch with full validation. **Always ask** about branching — sometimes rapid-development chaos doesn't allow it.
+This is the high-rigor execution path, with full validation. Isolation follows CLAUDE.md's parallel-safety primitives, not ad-hoc branching.
 
-### 7a. Branch handling
+### 7a. Isolation: worktree by default
 
-The default is **commit on top of the current branch.** This codebase is in a chaotic rapid-development phase where multiple CLIs and editors coexist on the same working tree; restrictive branching fights that, controlled chaos doesn't.
+Per CLAUDE.md's **parallel-safety primitives**, multi-file work MUST NOT happen on `master` next to other sessions. Architect rollouts are almost always multi-file, so the default is a dedicated worktree:
 
-Ask:
 ```
-Branch handling for this decision:
+Isolation for this decision:
 
-  1. commit on current branch ({git branch --show-current})  ← default, recommended
-  2. switch to a new branch architect/{slug}                 ← only when clean separation matters
-                                                                (e.g. risky migration meant to be reviewed as a unit)
+  1. worktree .claude/worktrees/architect-{slug}   ← default (mandatory for multi-file rollouts)
+  2. commit on current checkout                    ← only if the rollout touches a single file
 
-Pick 1 or 2.
+Pick 1 or 2 (Enter = 1).
 ```
 
-Pick 2 ONLY when the user explicitly asks for it. Do not push toward branching; pushing toward branching when the user is mid-flight on other work creates conflict pain instead of avoiding it. The architect ADR is the artifact that gives the change its identity — not the branch.
-
-If the user picks 2, create the branch:
+If option 1:
 ```bash
-git switch -c architect/{slug}
+git worktree add .claude/worktrees/architect-{slug} -b worktree-architect-{slug}
+cd .claude/worktrees/architect-{slug}
 ```
-Note that this carries any uncommitted work in the tree onto the new branch, which is fine — switching branches with a dirty tree is non-destructive.
+Work and commit inside the worktree; vault writes and `.claude/active-runs.md` edits still target the main checkout/vault paths. After the branch is merged into `master` and confirmed in `git log master`, clean up (Phase 12 ritual): `git worktree remove .claude/worktrees/architect-{slug}` then `git branch -D worktree-architect-{slug}`.
+
+Option 2 is legitimate only for genuinely single-file changes. If the user insists on the main checkout for a multi-file rollout, warn once (citing CLAUDE.md's primitive 2), then honor it — the ADR is what gives the change its identity either way.
 
 ### 7b. Write the ADR first
 
@@ -496,7 +493,7 @@ reach: "{concrete count}"
 risk: {1-5}
 effort: {s/m/l/xl}
 payoff: {1-5}
-branch: architect/{slug} | "(committed to master)"
+branch: worktree-architect-{slug} | "(committed on main checkout)"
 related_scan: [[Architect/scans/{date}-{theme}]]
 ---
 
@@ -535,7 +532,7 @@ related_scan: [[Architect/scans/{date}-{theme}]]
 
 ### 7c. Pre-flight checks
 
-**Do NOT require a clean working tree.** Concurrent CLIs run on the same tree; assuming a clean baseline is wrong, and acting on that assumption (stash, reset, checkout) destroys other people's work. Instead, **inspect, classify, and coexist**:
+In a fresh worktree (7a option 1) the tree starts clean — skip straight to step 3 (baselines). On the main checkout (option 2), **do NOT require a clean working tree.** Concurrent CLIs run on the same tree; assuming a clean baseline is wrong, and acting on that assumption (stash, reset, checkout) destroys other people's work. Instead, **inspect, classify, and coexist**:
 
 1. **Inspect the tree:**
    ```bash
@@ -582,8 +579,9 @@ For each step in the ADR's Rollout section:
 3. **Compare to baseline** — TS errors must not increase, lint warnings must not exceed baseline + small rounding (5 max), tests must pass at the baseline rate. Note: if the baseline already had non-zero errors/warnings from in-flight other-author work, those propagate forward — that's fine; the metric is *delta*, not absolute.
 4. If validation regresses → fix inline. Do NOT stack failing commits. Do NOT use `--no-verify` or `--amend`.
 5. Stage **only the paths this step touched** — `git add path/one path/two`. Never `git add -A`, `git add .`, or `git add -u` — those would sweep up in-flight work from other CLIs or the user's editor. If you can't enumerate the paths, you don't know what you changed; stop and re-inspect with `git status --short` and `git diff --name-only`.
-6. Commit with `architect: <step title>` prefix, Co-Authored-By footer, body referencing the ADR by wikilink.
-7. Record the commit SHA in the ADR's Rollout section as you go.
+6. **Verify the staged index before committing:** run `git diff --cached --stat`. If the staged file count exceeds the paths you just `git add`-ed, the index held pre-staged files from another session — `git restore --staged <path>` each unrelated file first. Never trust the index; even worktrees can carry foreign pre-staged content.
+7. Commit with `architect: <step title>` prefix, Co-Authored-By footer, body referencing the ADR by wikilink.
+8. Record the commit SHA in the ADR's Rollout section as you go.
 
 ### 7e. Final regression sweep
 
@@ -608,7 +606,7 @@ If only some steps shipped, status stays `in-progress` and the ADR records which
 ### 7g. Frontend changes — non-negotiable
 
 If any commit touches `src/**/*.tsx`:
-- Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/en.ts`. No hardcoded English in JSX, placeholder, title, aria-label.
+- Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/locales/en.json`, translated into all 14 locales in the same change (`translate-extract` → per-locale subagents → `translate-merge`; the `i18n-no-gaps` pre-commit hook blocks gaps). No hardcoded English in JSX, placeholder, title, aria-label.
 - Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`.
 - Error messages via `resolveErrorTranslated()`.
 - Use semantic design tokens (Design.md §8).
@@ -648,7 +646,7 @@ If the user picks `multiple`, codify each vehicle in a separate atomic commit.
 ### 7B.b. Lint rule vehicle
 
 1. Read `eslint.config.js` and `eslint-rules/` to learn the project's custom-rule conventions (rule file shape, naming, registration).
-2. Write a new rule under `eslint-rules/<rule-name>.js` (or `.cjs` if that's the existing pattern). Follow the existing custom rules' shape — name format, severity, message, fix function if mechanically auto-fixable.
+2. Write a new rule under `eslint-rules/<rule-name>.cjs` (the existing pattern — see `enforce-base-modal.cjs` et al.). Follow the existing custom rules' shape — name format, severity, message, fix function if mechanically auto-fixable.
 3. Register the rule in `eslint.config.js`. Default severity: `warn` (matches the project's "warnings as known migration" baseline). Only use `error` if the user explicitly says "ship blocker."
 4. Run `npm run lint` and capture the new warning count. Compare to baseline. If the new count is enormous (>500 warnings), warn the user — the rule is too noisy and either the pattern isn't actually as load-bearing as thought, or the rule needs scope narrowing. Pause for guidance.
 5. Commit: `architect: codify <pattern> as ESLint rule` — body explains the rule, threshold, and current warning count.
@@ -676,7 +674,7 @@ In `$VAULT/Architect/strong-patterns.md`, update the entry:
 - Add `Codified: {date}` line.
 - Add `Codification ADR: [[Architect/decisions/{date}-codify-{slug}]]` (see 7B.f).
 - If a docs vehicle was used, link to the file: `Docs at: .claude/codebase-stack.md#<anchor>`.
-- If a lint vehicle was used: `Lint rule: eslint-rules/<rule-name>.js`.
+- If a lint vehicle was used: `Lint rule: eslint-rules/<rule-name>.cjs`.
 
 ### 7B.f. Mini-ADR
 
@@ -830,7 +828,7 @@ If nothing material has changed, fill in any sketchy parts of the Rollout sectio
 
 ### 9d. Execute
 
-Jump to Phase 7c (pre-flight checks) and run through 7d–7h normally. The branch question still applies — ask.
+Jump to Phase 7a (isolation) and run through 7b–7h normally — resume executions get a worktree like any other multi-file rollout.
 
 ---
 
@@ -929,7 +927,7 @@ dropped: [4, 6]
 reworked: [7, 8]
 adrs_written: ["[[2026-05-01-loading-state-shape]]", "[[2026-05-01-poll-primitive]]"]
 commits: [<sha1>, <sha2>, <sha3>]   # only if execute path was taken
-branch: architect/loading-state-shape | "(committed to master)" | "(no execution this run)"
+branch: worktree-architect-loading-state-shape | "(committed on main checkout)" | "(no execution this run)"
 ---
 
 # Architect scan — {theme or area} ({date})
@@ -948,7 +946,7 @@ the full reports in working memory; otherwise omit}
 ### [2] {title}  ✅ executed → {commit shas}
 **Type:** struct-bug
 **Reach / Risk / Effort / Payoff:** ...
-**Verdict:** executed; ADR [[date-slug]]; branch architect/{slug}
+**Verdict:** executed; ADR [[date-slug]]; branch worktree-architect-{slug}
 
 ### [3] ...
 
@@ -1006,7 +1004,8 @@ Architect run complete.
     3. /explorer             — daily wandering on adjacent area
     4. /research             — external-source companion run
     5. done
-    {if branch was created: also note "merge architect/{slug} when ready"}
+    {if a worktree was created: also note "merge worktree-architect-{slug}, then
+     remove the worktree (.claude/worktrees/architect-{slug}) and delete the branch"}
 ```
 
 ---
@@ -1015,8 +1014,7 @@ Architect run complete.
 
 - **Cadence** — once a week is plenty. Architect runs are heavy; the backlog absorbs the inventory and resume mode amortizes the work.
 - **Scan vs resume** — alternate. Scan to fill the queue, resume to drain it. A backlog of 20 pending items means the next session should be resume, not scan.
-- **Coexist with uncommitted work.** Architect never requires a clean baseline. Concurrent CLIs and editor sessions all share the working tree; architect inspects what's there, edits only its own paths, and commits only those paths. If a path it wants to edit already has uncommitted changes, surface the conflict to the user (Phase 7c step 2). Never `git stash`, never `git reset --hard`, never `git checkout --` someone else's work. Branching is opt-in for clean separation, not a way to escape mess.
-- **The branch question is real** — say `no` when you're already on a topic branch and the change belongs there, or when the change is small enough that a feature branch is overkill. The default suggestion is `yes` because architect changes are typically not small, but the user's "no" is honored without pushback.
+- **Coexist with uncommitted work.** This skill's pattern is the canonical reference cited by CLAUDE.md's parallel-safety primitives — keep it aligned with that section. Architect never requires a clean baseline on a shared checkout: inspect what's there, edit only its own paths, stage only those paths, and verify the staged index before every commit (Phase 7d step 6). Never `git stash`, never `git reset --hard`, never `git checkout --` someone else's work. Physical isolation comes from the worktree default (Phase 7a), not from cleaning the shared tree.
 - **Conflict signal** — if a finding contradicts a `strong-pattern` already in the vault, treat it as the most interesting finding of the run. Either the strong-pattern entry is stale (codebase moved on) or the new finding is wrong. Either way, the answer changes the model meaningfully.
 - **Drift signal** — if 3 consecutive scans on different themes produce backlog items but zero get executed via resume, the user is using architect as a brainstorming tool, not a shipping tool. Surface this in self-reflection: ask whether to lower the bar for execution or accept that the backlog is the artifact.
 - **Tech swaps are the riskiest** — never propose a swap with reach ≥100 files unless smell strength is 5. A reach-280 swap (the react-hook-form example) is a multi-week project; the ADR's Rollout section should reflect that with 5–10+ atomic PRs.

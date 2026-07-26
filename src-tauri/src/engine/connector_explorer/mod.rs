@@ -196,7 +196,7 @@ pub async fn explore_url(
 
 /// Internal pre-cluster shape.
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct RawEndpoint {
+pub struct RawEndpoint {
     pub path: String,
     pub method: String,
     pub form_inputs: Vec<String>,

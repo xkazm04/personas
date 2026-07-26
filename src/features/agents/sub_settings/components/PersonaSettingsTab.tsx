@@ -19,10 +19,11 @@ import { FieldHint } from '@/features/shared/components/display/FieldHint';
 import { PersonaAssertionsSection } from './PersonaAssertionsSection';
 import { INPUT_FIELD, inputFieldClass } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { DeepFanoutToggle } from '@/features/agents/sub_editor/components/DeepFanoutToggle';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -61,15 +62,15 @@ export function PersonaSettingsTab({
 
   useEffect(() => {
     if (!personaId) return;
-    invokeWithTimeout<string | null>('get_app_setting', { key: `execution_retention_months:${personaId}` })
+    getAppSetting(`execution_retention_months:${personaId}`)
       .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
-      .catch(() => { /* use default */ });
+      .catch(silentCatch('PersonaSettingsTab:getExecutionRetention'));
   }, [personaId]);
 
   const handleRetentionChange = useCallback((months: number) => {
     setRetentionMonths(months);
     if (!personaId) return;
-    invokeWithTimeout('set_app_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
+    setAppSetting(`execution_retention_months:${personaId}`, String(months)).catch(silentCatch('PersonaSettingsTab:setExecutionRetention'));
   }, [personaId]);
 
   return (

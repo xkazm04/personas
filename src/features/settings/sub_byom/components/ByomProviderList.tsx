@@ -9,6 +9,7 @@ import { ProviderSparkline } from './ProviderSparkline';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Centralized sparkline colors so a future palette migration touches one site.
 // These are raw Tailwind 500-shade hex values — there is no theme-aware CSS
@@ -182,7 +183,10 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
     let cancelled = false;
     getQwenStatus()
       .then((st) => { if (!cancelled) setQwenConfigured(st.configured); })
-      .catch(() => setQwenConfigured(false));
+      .catch((err) => {
+        silentCatch('ByomProviderList:getQwenStatus')(err);
+        setQwenConfigured(false);
+      });
     return () => { cancelled = true; };
   }, []);
 

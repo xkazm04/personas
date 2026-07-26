@@ -22,17 +22,17 @@ Ask **two** numbered-menu questions, in this order. Numeric input picks the opti
 Area? (Enter = pick for me)
   1. other → type a hint (path fragment, keyword, or context id)
   2. agents
-  3. vault
-  4. orchestration
-  5. triggers
-  6. execution
-  7. templates
-  8. deployment
+  3. execution
+  4. observability
+  5. automation
+  6. collaboration
+  7. security
+  8. plugins
   9. platform
   10. pick for me   ← default
 ```
 
-Numeric options 2–9 map 1:1 to the 8 groups in `codebase-context.md` (`AI Agent Configuration`, `Credential & Integration Vault`, `Pipeline & Team Orchestration`, `Event & Trigger Automation`, `Execution & Observability`, `Template & Recipe Library`, `Deployment & Sharing`, `Platform Administration`). Option 1's free text falls through to the Phase 2a resolver (path fragment / keyword / exact context id). Option 10 / Enter triggers Phase 2b auto-pick.
+Numeric options 2–9 map 1:1 to the 8 groups in `codebase-context.md` (`Agent Platform`, `Execution Engine`, `Observability`, `Automation & Pipelines`, `Team Collaboration`, `Security & Credentials`, `Plugin Ecosystem`, `Platform Infrastructure`). Option 1's free text falls through to the Phase 2a resolver (path fragment / keyword / exact context id). Option 10 / Enter triggers Phase 2b auto-pick.
 
 ### Q2 — Category
 
@@ -59,10 +59,10 @@ If the user replies just "go" or "wander" or types `/explorer` with no arguments
 ## Constants
 
 - **Codebase reference files** (always loaded):
-  - `.claude/codebase-context.md` — DB-derived feature map (8 groups, ~32 contexts). The natural area taxonomy.
+  - `.claude/codebase-context.md` — feature map rendered from `context-map.json` (8 groups, 49 contexts). The natural area taxonomy.
   - `.claude/codebase-stack.md` — hand-curated architecture, conventions, engine internals.
-  - `.claude/CLAUDE.md` — project rules (i18n, design tokens, error handling, lint baseline).
-- **Vault root** (resolved at Phase 0): one of two paths, whichever exists.
+  - `.claude/CLAUDE.md` — project rules (i18n, design tokens, error handling, lint baseline, parallel safety).
+- **Vault root** (resolved at Phase 0):
   - `Explorer/sweeps/` — one note per run, the canonical artifact
   - `Explorer/state.md` — informational claim board (which areas are being explored *right now*)
   - `Explorer/coverage.md` — heatmap of last visit per area + yield density
@@ -77,16 +77,9 @@ If the user replies just "go" or "wander" or types `/explorer` with no arguments
 
 ## Phase 0: Resolve vault path
 
-Two machines, one vault per machine. Probe both, use whichever exists.
-
 ```bash
-if [ -d "C:/Users/mkdol/Documents/Obsidian/personas" ]; then
-  VAULT="C:/Users/mkdol/Documents/Obsidian/personas"
-elif [ -d "C:/Users/kazda/Documents/Obsidian/personas" ]; then
-  VAULT="C:/Users/kazda/Documents/Obsidian/personas"
-else
-  echo "No personas vault found at either path. Aborting." && exit 1
-fi
+VAULT="C:/Users/kazda/Documents/Obsidian/personas"
+[ -d "$VAULT" ] || { echo "No personas vault at $VAULT. Aborting."; exit 1; }
 ```
 
 Record `$VAULT` for the rest of the run.
@@ -148,7 +141,7 @@ For each of `codebase-context.md` and `codebase-stack.md` under `.claude/`:
 
 ### 1b. Read in order
 
-1. `.claude/codebase-context.md` — to learn the area taxonomy (8 groups, ~32 contexts, file paths, keywords).
+1. `.claude/codebase-context.md` — to learn the area taxonomy (8 groups, 49 contexts, file paths, keywords).
 2. `.claude/codebase-stack.md` — to learn engine internals and conventions.
 3. `.claude/CLAUDE.md` — to learn project rules (i18n, design tokens, error handling, lint baseline).
 4. `$VAULT/Architect/strong-patterns.md` (if present) — to know the canonical shapes the codebase has been observed to do well. When you propose a fix in Phase 5, **prefer the shape of an existing strong pattern** over inventing a new one. Reference the pattern in the item's `strong_pattern_ref` field.
@@ -218,6 +211,8 @@ Append an entry to `$VAULT/Explorer/state.md` under the `## Active` section:
 
 This is **informational, not a lock.** Other explorers reading this file will pick a different area. There's no enforcement, but the user said only one explorer runs at a time, so this is sufficient for awareness.
 
+Also append one entry to the repo ledger `.claude/active-runs.md` under `## Active` (per CLAUDE.md "Concurrent CLI sessions"), declaring the area's paths as your scope. If an existing `started` entry <2h old overlaps those paths, surface the conflict to the user before scanning.
+
 Print the claim line to the user so they know what's recorded.
 
 ---
@@ -237,6 +232,8 @@ Use `Read` with offset/limit when files are >500 lines — read top + bottom + a
 
 ### 4b. What to look for, by category
 
+**Hard exclusion — lint-baseline migrations.** The ~10k-warning baseline (`custom/no-raw-*-classes` design-token migration, `custom/no-hardcoded-jsx-text` i18n extraction) is fix-as-you-touch per CLAUDE.md, never a standalone item. Do NOT surface "migrate raw Tailwind classes in X" or "extract N hardcoded strings from Y" as items. i18n/ui items must be *structural* defects (wrong mechanism, broken behavior), not baseline backlog.
+
 For `quality`:
 - Dead code, unreachable branches, unused exports.
 - Duplicated logic across files (3+ near-identical blocks).
@@ -252,7 +249,7 @@ For `dx`:
 - Missing error context (errors thrown without enough info to debug).
 
 For `ui`:
-- Raw Tailwind classes where semantic tokens exist (Design.md §8). ESLint already warns; surface the *high-density* offenders.
+- Hand-rolled duplicates of shared primitives (spinner, empty state, modal backdrop, tooltip — see CATALOG.md table in CLAUDE.md).
 - Visual bugs (overflow, alignment, contrast). Only flag if you can reproduce or strongly suspect from the code.
 - Inconsistent spacing/radius/shadow vs the design tokens.
 - Missing loading / empty / error states on user-facing components.
@@ -275,11 +272,11 @@ For `bug`:
 - Errors swallowed silently (catch with empty body or just `console.log`).
 
 For `i18n`:
-- Hardcoded English in JSX, placeholder, title, aria-label (the `custom/no-hardcoded-jsx-text` warnings).
 - Status tokens displayed raw (should use `tokenLabel()`).
 - Error messages bypassing `resolveErrorTranslated()`.
 - Constants with `label:` instead of `labelKey:`.
-- **Bundle nearby strings** — when a single component has 4+ hardcoded strings, surface ONE finding for "extract `<Component>` strings to en.ts" rather than 4 separate findings. Reach matters; one fix knocks out all of them.
+- New feature-scoped `i18n/` dirs or parallel locale data (forbidden — everything goes through `src/i18n/locales/en.json`).
+- NOT bulk string extraction — that's the lint-baseline exclusion above.
 
 For `a11y`:
 - Missing labels on form inputs.
@@ -299,8 +296,19 @@ For `sec`:
 
 - If `Patterns/explorer-preferences.md` contains a rule like "user rejects cosmetic CSS findings without a measurable issue," skip those.
 - If `Explorer/passes.md` for this area lists items by short fingerprint (file:line + 1-line summary), skip exact matches. A near-match is OK to surface — but note "previously passed; resurfacing because <reason>".
+- Cross-check the area's previous sweep notes (`Explorer/sweeps/*-{area-slug}.md`) — don't resurface an item a past run already surfaced, unless its status changed.
 
-### 4d. Stop conditions
+### 4d. Dedupe against recent history (one command, seconds)
+
+Before finalizing candidates, run **one** git log over the area's paths:
+
+```bash
+git log --oneline -20 -- <area path globs>
+```
+
+Drop any candidate whose anchor was plausibly fixed or reworked by a recent commit (verify by reading the current code, not the commit message). If a candidate survives despite recent activity, note "still present after <sha>" in its evidence. This plus passes.md plus prior sweeps is the full dedupe — no deeper archaeology.
+
+### 4e. Stop conditions
 
 - 10 items found → stop scanning, move to Phase 5.
 - Exhausted the area without 10 items → widen scope by pulling in the *adjacent* context from the same group in `codebase-context.md`. Note the widening in the run record. If still <10 after widening twice, stop with what you have and explain the shortfall.
@@ -311,6 +319,10 @@ For `sec`:
 ---
 
 ## Phase 5: Categorize and structure each item
+
+### Premise verification (hard gate — no item ships without it)
+
+Every item's `anchor` must be a `file:line` **you actually Read in this session**, and its `evidence` must quote or paraphrase the real code at that line. Before presenting, re-Read the anchor lines of any item whose premise came from a grep hit or a sampled slice, and confirm the defect is really there (the guard isn't elsewhere, the "dead" export isn't imported, the "missing" abort isn't in a wrapper — one targeted Grep settles it). Pattern-matched suspicion ("this *usually* means…") is not an item. If verification kills a candidate, replace it or run short — never pad with unverified ones.
 
 For each of the 10 (or fewer) items, capture:
 
@@ -324,7 +336,7 @@ For each of the 10 (or fewer) items, capture:
   evidence: "<2-3 sentence explanation of the gap, with verbatim code snippet if helpful>"
   suggested_fix: "<1-2 sentence shape of the fix — not the fix itself>"
   strong_pattern_ref: "<wikilink to Architect/strong-patterns#... entry>" | null
-  i18n_impact: "<none | adds keys to en.ts | touches existing keys>"
+  i18n_impact: "<none | adds keys to en.json (all locales!) | touches existing keys>"
   cluster_hint: "<other ids that ship naturally with this one, or 'standalone'>"
 ```
 
@@ -361,7 +373,7 @@ Print a summary table, then per-item detail.
 ─   ─────   ────   ──────  ─────────────────────────────────────────────────  ──────────────────────────
 1   bug     high   s       Race in session-resume effect                      src/features/agents/sub_chat/hooks/useResumeSession.ts:42
 2   perf    med    xs      Memoize ChatBubble props (renders on every tick)   src/features/agents/sub_chat/ChatBubbles.tsx:118
-3   i18n    med    m       Extract AdvisoryLaunchpad strings (12 keys)        src/features/agents/sub_chat/AdvisoryLaunchpad.tsx
+3   i18n    med    s       Status badge shows raw token, bypasses tokenLabel  src/features/agents/sub_chat/SessionBadge.tsx:31
 ...
 ```
 
@@ -383,7 +395,7 @@ If any items are clustered, end the section with a short "Clusters" block:
 ```
 Clusters:
   - [2, 5, 8] — all in ChatBubbles.tsx; ship in one PR. Order: 5 → 2 → 8.
-  - [3] alone — i18n extraction, separate PR.
+  - [3] alone — tokenLabel fix, separate commit.
 ```
 
 ---
@@ -408,17 +420,21 @@ For each accepted item, execute it **in this same session**. Same default as `/r
 **Single accepted item with a clear anchor (Option A):**
 1. Apply the edit at `anchor`.
 2. Run validation:
-   - Rust → `cargo check` in `src-tauri/`
+   - Rust → `cargo check` in `src-tauri/` (needs `--features desktop`)
    - TypeScript → `npx tsc --noEmit`
-   - i18n → `node scripts/i18n/check-coverage.mjs`
+   - i18n (if locales touched) → `npm run check:i18n:strict`
    - Frontend → `npm run lint` (warnings OK; errors must be fixed)
-3. **Stage only the paths this item touched** — `git add path/one path/two`. Never `git add -A`, `git add .`, or `git add -u` (those would sweep up in-flight work from concurrent CLIs or the user's editor). If you can't list the paths you changed, stop and run `git diff --name-only` first.
+3. **Stage scoped + verify + commit in ONE Bash invocation** (concurrent sessions rewrite the index between separate calls):
+   ```bash
+   git add path/one path/two && git diff --cached --stat
+   ```
+   Never `git add -A`, `git add .`, or `git add -u`. If the cached stat lists **more files than you added**, the index held another session's pre-staged work — `git restore --staged <path>` each unrelated file, re-verify, THEN commit. Never trust the index.
 4. Commit atomically: `explorer: <short title>` + Co-Authored-By footer + body explaining the why.
 
 **2+ accepted items (Option B):**
 1. Print the inline plan (one paragraph per item: file, change shape, validation).
 2. Execute in **risk-ascending order** (xs effort first, l last; severity ties broken by category — `bug` before `perf` before `i18n` before `quality`).
-3. Atomic commit per item. Validation per commit.
+3. Atomic commit per item, validation per commit, same one-invocation stage-verify-commit discipline as Option A.
 4. If validation fails → fix inline, do NOT stack failing commits. No `--no-verify`, no `--amend`.
 5. If a downstream item turns out to be redundant after an upstream commit, drop it and note the drop in the run record.
 
@@ -428,10 +444,10 @@ Record it in the run record as `decided: deferred` with the reason. Do NOT write
 ### Frontend changes — non-negotiable
 
 If any accepted item touches `src/**/*.tsx`:
-- Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/en.ts`. No hardcoded English in JSX, placeholder, title, aria-label.
-- Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`.
-- Error messages via `resolveErrorTranslated()`.
-- Use semantic design tokens (Design.md §8) — no raw white/black/shadow utilities.
+- Honor i18n contract: all user-facing strings via `useTranslation()` + keys in `src/i18n/locales/en.json`. No hardcoded English in JSX, placeholder, title, aria-label.
+- **New en.json keys must be translated into all 13 other locales in the same commit** (the `i18n-no-gaps` pre-commit hook blocks gaps). For 1–3 keys use the translate pipeline (`translate-extract.mjs` → per-locale fill → `translate-merge.mjs`). If an item would add many keys, defer it — that's a session of its own, not a paper cut.
+- Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`; error messages via `resolveErrorTranslated()`.
+- Use semantic design tokens (Design.md §8) and shared components from the catalog — no raw white/black/shadow utilities, no hand-rolled primitives.
 
 If you can't honor these in the change, defer the item — don't ship it half-converted.
 
@@ -581,7 +597,7 @@ Update or insert the row for this area:
 
 ### 9g. Release the claim
 
-Remove the entry written in Phase 3 from `$VAULT/Explorer/state.md`.
+Remove the entry written in Phase 3 from `$VAULT/Explorer/state.md`, and move the `.claude/active-runs.md` entry to the top of `## Recently completed` with the resulting commit SHA(s) (or `aborted (<reason>)`).
 
 ---
 
@@ -626,5 +642,5 @@ If zero items were accepted, frame the run as a successful pass over a healthy a
 
 - **Pair with `/research`** — run `/explorer` after a research session that touched a specific area, to immediately surface adjacent gaps the research run didn't cover.
 - **Cadence** — daily or every-other-day is a reasonable rhythm. Coverage.md will tell you when the codebase is uniformly fresh and you should switch to `/architect` instead.
-- **Coexist with uncommitted work.** Multiple CLIs and editor sessions share the working tree. Explorer never stashes, resets, or discards anything it didn't author. Each commit stages **only the specific paths** the explorer touched (`git add path/one path/two`); never `git add -A`, `git add .`, or `git add -u`. If an item's anchor file already has uncommitted changes from someone else, surface it: "this file already has changes — commit them first, or layer on top?" Default to layer-on-top if the user doesn't pick. Forbidden at all times: `git stash`, `git reset --hard`, `git restore`, `git checkout --` on paths the run didn't author, `git clean -f`.
+- **Coexist with uncommitted work.** Multiple CLIs and editor sessions share the working tree. Explorer never stashes, resets, or discards anything it didn't author. Each commit stages **only the specific paths** the explorer touched (`git add path/one path/two`); never `git add -A`, `git add .`, or `git add -u`. If an item's anchor file already has uncommitted changes from someone else, surface it: "this file already has changes — commit them first, or layer on top?" Default to layer-on-top if the user doesn't pick. Forbidden at all times: `git stash`, `git reset --hard`, worktree-touching `git restore` / `git checkout --` on paths the run didn't author, `git clean -f`. (`git restore --staged <path>` to unstage a foreign pre-staged file is allowed — it never touches the working tree.)
 - **Drift signal** — if 3+ explorer runs in a row produce 0 accepted items, the calibration is off (severity bar too low, or area was wrong). Trigger a self-reflection: read the last 3 sweeps and ask the user "what shape would have actually been useful?"

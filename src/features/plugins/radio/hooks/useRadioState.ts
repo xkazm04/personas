@@ -5,7 +5,7 @@ import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import type { Station } from '@/lib/bindings/Station';
 import { silentCatch } from '@/lib/silentCatch';
-import { getNowPlaying, getRadioState, listStations } from '../api/radioApi';
+import { getNowPlaying, getRadioState, listStations } from '@/api/radio';
 
 interface RadioSnapshot {
   state: RadioState | null;

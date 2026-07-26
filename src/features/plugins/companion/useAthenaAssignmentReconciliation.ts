@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
-import { invokeWithTimeout } from '@/lib/tauriInvoke';
+import { companionRecordAssignmentOutcome } from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
 
 const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
@@ -47,9 +47,9 @@ export function useAthenaAssignmentReconciliation() {
         // returns false for any assignment with no operation to reconcile (every
         // team-UI assignment), so calling it on every terminal transition is safe
         // and lets the hook fire for Athena assignments not in the store cache.
-        void invokeWithTimeout<boolean>('companion_record_assignment_outcome', {
-          assignmentId: assignment_id,
-        }).catch(silentCatch('teams/athenaReconciliation'));
+        void companionRecordAssignmentOutcome(assignment_id).catch(
+          silentCatch('teams/athenaReconciliation'),
+        );
       },
     ).then((u) => {
       if (cancelled) u();

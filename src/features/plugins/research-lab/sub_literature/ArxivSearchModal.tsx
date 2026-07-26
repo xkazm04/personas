@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Search, ExternalLink, Check, Loader2, AlertTriangle, SearchX } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
 import { searchArxiv, ArxivSearchError, type ArxivResult } from './arxivClient';
@@ -108,7 +108,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
             // metadata from arXiv. Skip deduped rows so we never clobber an
             // existing source's status.
             if (r.summary) {
-              await updateSourceStatus(source.id, 'indexed').catch(() => {});
+              await updateSourceStatus(source.id, 'indexed').catch(silentCatch('ArxivSearchModal:markIndexed'));
             }
           } else {
             duplicates += 1;

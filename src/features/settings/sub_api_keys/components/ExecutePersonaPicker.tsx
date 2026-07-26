@@ -11,6 +11,7 @@ import { Search } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listPersonas } from '@/api/agents/personas';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/types/types';
 
 interface ExecutePersonaPickerProps {
@@ -32,7 +33,8 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
       .then((rows) => {
         if (alive) setPersonas(rows);
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch('ExecutePersonaPicker:listPersonas')(err);
         if (alive) setPersonas([]);
       });
     return () => {

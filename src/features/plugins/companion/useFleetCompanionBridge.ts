@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { companionRecordFleetEvent } from '@/api/companion/bridges';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
@@ -85,16 +85,14 @@ export function useFleetCompanionBridge(): void {
           return;
         }
         lastState.set(event.payload.session_id, event.payload.state as FleetSessionState);
-        invoke<string>('companion_record_fleet_event', {
-          input: {
-            sessionId: sess.id,
-            claudeSessionId: sess.claudeSessionId,
-            projectLabel: sess.projectLabel,
-            cwd: sess.cwd,
-            kind: 'state_changed',
-            state: event.payload.state,
-            reason: event.payload.reason ?? null,
-          },
+        companionRecordFleetEvent({
+          sessionId: sess.id,
+          claudeSessionId: sess.claudeSessionId,
+          projectLabel: sess.projectLabel,
+          cwd: sess.cwd,
+          kind: 'state_changed',
+          state: event.payload.state,
+          reason: event.payload.reason ?? null,
         }).catch(silentCatch('useFleetCompanionBridge:state'));
       },
     );
@@ -108,15 +106,13 @@ export function useFleetCompanionBridge(): void {
           return;
         }
         lastState.set(event.payload.session_id, 'exited');
-        invoke<string>('companion_record_fleet_event', {
-          input: {
-            sessionId: sess.id,
-            claudeSessionId: sess.claudeSessionId,
-            projectLabel: sess.projectLabel,
-            cwd: sess.cwd,
-            kind: 'exited',
-            exitCode: event.payload.exit_code,
-          },
+        companionRecordFleetEvent({
+          sessionId: sess.id,
+          claudeSessionId: sess.claudeSessionId,
+          projectLabel: sess.projectLabel,
+          cwd: sess.cwd,
+          kind: 'exited',
+          exitCode: event.payload.exit_code,
         }).catch(silentCatch('useFleetCompanionBridge:exited'));
       },
     );
@@ -135,15 +131,13 @@ export function useFleetCompanionBridge(): void {
           if (!sess) return;
           if (lastState.has(sess.id)) return; // already recorded via state path
           lastState.set(sess.id, sess.state);
-          invoke<string>('companion_record_fleet_event', {
-            input: {
-              sessionId: sess.id,
-              claudeSessionId: sess.claudeSessionId,
-              projectLabel: sess.projectLabel,
-              cwd: sess.cwd,
-              kind: 'spawned',
-              athenaOwned: false,
-            },
+          companionRecordFleetEvent({
+            sessionId: sess.id,
+            claudeSessionId: sess.claudeSessionId,
+            projectLabel: sess.projectLabel,
+            cwd: sess.cwd,
+            kind: 'spawned',
+            athenaOwned: false,
           }).catch(silentCatch('useFleetCompanionBridge:added'));
         }, 250);
       },

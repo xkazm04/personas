@@ -3,7 +3,7 @@
 // / dismiss. Polls the selected deliberation while it's active, since the
 // autonomous moderator tick mutates it server-side.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   advanceTeamDeliberation,
   approveDeliberationAction,
@@ -124,7 +124,7 @@ export function useTeamDeliberations(teamId: string) {
       // Skip the reap here when approveAction's own imperative loop already owns
       // it (actionBusy) — otherwise both loops call pollDeliberationAction for the
       // same id concurrently.
-      if (running && !actionBusy) void pollDeliberationAction(selectedId).catch(() => {});
+      if (running && !actionBusy) void pollDeliberationAction(selectedId).catch(silentCatch('useTeamDeliberations:pollDeliberationAction'));
       void refreshDetail(selectedId);
       void refreshList();
     }, POLL_MS);

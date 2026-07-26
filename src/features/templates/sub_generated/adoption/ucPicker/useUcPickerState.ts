@@ -11,6 +11,7 @@
 // otherwise it manages local state so the component works standalone.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { silentCatch } from '@/lib/silentCatch';
 import { listAllSubscriptions } from '@/api/overview/events';
 import {
   ConnectorIcon as _ConnectorIcon,
@@ -60,7 +61,7 @@ export function useUcPickerState({
   const vaultCredentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   useEffect(() => {
-    fetchCredentials().catch(() => {});
+    fetchCredentials().catch(silentCatch("useUcPickerState:fetchCredentials"));
   }, [fetchCredentials]);
 
   // Event-type catalog: merges template-declared emits + persona
@@ -73,7 +74,7 @@ export function useUcPickerState({
         for (const s of subs) types.add(s.event_type);
         setSubscribedEventTypes(Array.from(types));
       })
-      .catch(() => {});
+      .catch(silentCatch("useUcPickerState:listAllSubscriptions"));
   }, []);
 
   const availableEventKeys = useMemo(() => {

@@ -77,6 +77,7 @@ const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024; // 2 MB
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ScanFileEntry {
     pub path: String,
     pub sha256: String,
@@ -85,6 +86,7 @@ pub struct ScanFileEntry {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct ScanDelta {
     pub added: Vec<String>,
     pub modified: Vec<String>,

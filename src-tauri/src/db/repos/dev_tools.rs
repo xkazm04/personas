@@ -2254,6 +2254,22 @@ pub fn clear_project_context_map(
                  )",
                 params![project_id],
             )?;
+            // The rescan recreates contexts under FRESH ids. dev_use_case_contexts
+            // gets a name-based reconcile afterwards, but dev_ideas.context_id and
+            // dev_goals.context_id have no FK and no reconcile — null the refs we
+            // just made dangling instead of leaving them pointing at deleted rows.
+            conn.execute(
+                "UPDATE dev_ideas SET context_id = NULL
+                  WHERE project_id = ?1 AND context_id IS NOT NULL
+                    AND context_id NOT IN (SELECT id FROM dev_contexts WHERE project_id = ?1)",
+                params![project_id],
+            )?;
+            conn.execute(
+                "UPDATE dev_goals SET context_id = NULL
+                  WHERE project_id = ?1 AND context_id IS NOT NULL
+                    AND context_id NOT IN (SELECT id FROM dev_contexts WHERE project_id = ?1)",
+                params![project_id],
+            )?;
             Ok((grp_rows, ctx_rows))
         }
     )
@@ -2960,7 +2976,7 @@ pub fn create_idea_deduped(
         }
     }
 
-    insert_idea(
+    match insert_idea(
         pool,
         Some(project_id),
         context_id,
@@ -2976,8 +2992,24 @@ pub fn create_idea_deduped(
         provider,
         model,
         Some(dedup_key),
+    ) {
+        Ok(idea) => Ok(Some(idea)),
+        // Lost the race to a concurrent writer — same contract as the COUNT
+        // guard above: the key exists, so this creation is a no-op.
+        Err(e) if is_dedup_unique_violation(&e) => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
+/// Whether an error is the partial-unique `idx_dev_ideas_dedup_unique` firing —
+/// i.e. we lost a dedup race another writer won. The COUNT pre-checks in the
+/// guarded doors are a fast-path courtesy; THIS is the actual guarantee.
+fn is_dedup_unique_violation(err: &AppError) -> bool {
+    matches!(
+        err,
+        AppError::Database(rusqlite::Error::SqliteFailure(e, _))
+            if e.code == rusqlite::ErrorCode::ConstraintViolation
     )
-    .map(Some)
 }
 
 /// The single INSERT both `create_idea` and `create_idea_deduped` go through,
@@ -3028,11 +3060,17 @@ fn insert_idea(
     })
 }
 
-/// Reversible aging for the backlog: pending ideas older than `older_than_days`
-/// that never became work (no linked task) move to `archived`. Mirrors the
-/// memory engine's `run_decay_forgetting` — nothing is deleted, the row keeps
-/// its `dedup_key` (so archiving can never reopen the duplication door), and a
-/// human can restore it by setting the status back to `pending`.
+/// Reversible aging for the backlog: pending SCANNER ideas older than
+/// `older_than_days` that never became work (no linked task) move to
+/// `archived`. Mirrors the memory engine's `run_decay_forgetting` — nothing is
+/// deleted, the row keeps its `dedup_key` (so archiving can never reopen the
+/// duplication door), and a human can restore it by setting the status back to
+/// `pending`.
+///
+/// Sensor FINDINGS (`origin IS NOT NULL`) are excluded: their lifecycle
+/// belongs to the sensors — every sweep re-measures them — and because dedup
+/// blocks re-emission in ANY status, aging one out would silence that sensor
+/// signal permanently on a 30-day timer nobody chose.
 ///
 /// Returns the number of ideas archived.
 pub fn archive_stale_ideas(
@@ -3055,12 +3093,14 @@ pub fn archive_stale_ideas(
             Some(pid) => conn.execute(
                 "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
                  WHERE status = 'pending' AND created_at < ?2 AND project_id = ?3
+                   AND origin IS NULL
                    AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
                 params![now, cutoff, pid],
             )?,
             None => conn.execute(
                 "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
                  WHERE status = 'pending' AND created_at < ?2
+                   AND origin IS NULL
                    AND NOT EXISTS (SELECT 1 FROM dev_tasks WHERE dev_tasks.source_idea_id = dev_ideas.id)",
                 params![now, cutoff],
             )?,
@@ -3122,7 +3162,7 @@ pub fn create_finding(
             .and_then(crate::db::models::IdeaCategory::from_token)
             .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
 
-        conn.execute(
+        let inserted = conn.execute(
             "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, origin, use_case_id, evidence, dedup_key, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
             params![
@@ -3142,7 +3182,19 @@ pub fn create_finding(
                 dedup_key,
                 now
             ],
-        )?;
+        );
+        match inserted {
+            Ok(_) => {}
+            // Lost the dedup race to a concurrent sweep — same contract as the
+            // COUNT guard above (the partial UNIQUE index is the real guarantee).
+            Err(e) => {
+                let err = AppError::Database(e);
+                if is_dedup_unique_violation(&err) {
+                    return Ok(None);
+                }
+                return Err(err);
+            }
+        }
 
         drop(conn);
         let idea = get_idea_by_id(pool, &id)?;
@@ -5195,7 +5247,7 @@ pub fn update_kpi(
         // Build SET clause field-by-field (small N; clarity over cleverness).
         let mut sets: Vec<String> = vec!["updated_at = datetime('now')".into()];
         let mut vals: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let mut push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
+        let push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
             vals.push(v);
             sets.push(format!("{col} = ?{}", vals.len()));
         };

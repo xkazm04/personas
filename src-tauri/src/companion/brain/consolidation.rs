@@ -16,7 +16,6 @@
 //! bad fact distillation can poison every future retrieval. We make
 //! reviewing fast, not silent.
 
-use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Utc;

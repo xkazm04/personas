@@ -252,7 +252,7 @@ function ConnectorHandshakeCard({
         });
         setAddedNames((prev) => new Set([...prev, addingConnector.name]));
         setAddingConnector(null);
-        await fetchCredentials().catch(() => {});
+        await fetchCredentials().catch(silentCatch("features/templates/sub_generated/adoption/chronology/TestReportModal:catch2"));
         onCredentialAdded?.();
       } catch (err) { silentCatch("features/templates/sub_generated/adoption/chronology/TestReportModal:catch1")(err); }
     },

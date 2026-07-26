@@ -19,8 +19,10 @@
 //!
 //! Spawn/stream boilerplate is cloned from `kpi_scan.rs`.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
+use futures_util::FutureExt;
 use serde_json::{json, Value};
 use tauri::State;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -33,6 +35,18 @@ use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 /// Job extra: the single composed result envelope (`{"kpi_measure"|"kpi_proposal": …}`).
 #[derive(Clone, Default)]
@@ -266,7 +280,10 @@ fn launch_compose(
 
     let app_handle = app.clone();
     let task_for_run = task_id.clone();
+    let app_handle_for_panic = app_handle.clone();
+    let task_for_panic = task_for_run.clone();
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = tokio::select! {
             _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
             res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
@@ -284,6 +301,16 @@ fn launch_compose(
                 KPI_COMPOSE_JOBS.emit_line(&app_handle, &task_for_run, format!("[Error] {msg}"));
                 KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "failed", Some(msg));
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose task panicked — marking job as failed");
+            KPI_COMPOSE_JOBS.emit_line(&app_handle_for_panic, &task_for_panic, format!("[Error] {msg}"));
+            KPI_COMPOSE_JOBS.set_status(&app_handle_for_panic, &task_for_panic, "failed", Some(msg));
         }
     });
 
@@ -309,7 +336,10 @@ fn launch_compose_apply(
 
     let app_handle = app.clone();
     let task = task_id.clone();
+    let app_handle_for_panic = app_handle.clone();
+    let task_for_panic = task.clone();
     tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let spend = Some(ComposeSpend {
             pool: pool.clone(),
             trigger_kind: "kpi_compose",
@@ -340,6 +370,16 @@ fn launch_compose_apply(
                 KPI_COMPOSE_JOBS.emit_line(&app_handle, &task, format!("[Error] {msg}"));
                 KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "failed", Some(msg));
             }
+        }
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(task_id = %task_for_panic, panic = %msg, "KPI compose-apply task panicked — marking job as failed");
+            KPI_COMPOSE_JOBS.emit_line(&app_handle_for_panic, &task_for_panic, format!("[Error] {msg}"));
+            KPI_COMPOSE_JOBS.set_status(&app_handle_for_panic, &task_for_panic, "failed", Some(msg));
         }
     });
     task_id

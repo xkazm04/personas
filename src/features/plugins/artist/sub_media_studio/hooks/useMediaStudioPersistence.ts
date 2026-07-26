@@ -145,8 +145,14 @@ export function useMediaStudioPersistence({
 
   const promptSavePath = useCallback(async (): Promise<string | null> => {
     const [defaultDir, ext] = await Promise.all([
-      artistDefaultSaveDir().catch(() => null),
-      artistCompositionFileExtension().catch(() => 'mstudio.json'),
+      artistDefaultSaveDir().catch((err: unknown) => {
+        silentCatch('mediaStudioPersistence:promptSavePath:defaultDir')(err);
+        return null;
+      }),
+      artistCompositionFileExtension().catch((err: unknown) => {
+        silentCatch('mediaStudioPersistence:promptSavePath:extension')(err);
+        return 'mstudio.json';
+      }),
     ]);
     const suggestedName = `${composition.name || 'Untitled'}.${ext}`;
     const defaultPath = defaultDir
@@ -162,8 +168,14 @@ export function useMediaStudioPersistence({
 
   const promptOpenPath = useCallback(async (): Promise<string | null> => {
     const [defaultDir, ext] = await Promise.all([
-      artistDefaultSaveDir().catch(() => null),
-      artistCompositionFileExtension().catch(() => 'mstudio.json'),
+      artistDefaultSaveDir().catch((err: unknown) => {
+        silentCatch('mediaStudioPersistence:promptOpenPath:defaultDir')(err);
+        return null;
+      }),
+      artistCompositionFileExtension().catch((err: unknown) => {
+        silentCatch('mediaStudioPersistence:promptOpenPath:extension')(err);
+        return 'mstudio.json';
+      }),
     ]);
     const picked = await openDialog({
       title: 'Open Media Studio composition',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Module-level cache of waveform peaks keyed by filePath. Each entry is a
@@ -110,11 +111,17 @@ export function useAudioWaveform(filePath: string | null): Float32Array | null {
         return p;
       });
       inflight.set(filePath, promise);
-      promise.catch(() => inflight.delete(filePath));
+      promise.catch((err) => {
+        silentCatch('useAudioWaveform:extractPeaks')(err);
+        inflight.delete(filePath);
+      });
     }
     promise
       .then((p) => { if (!cancelled) setPeaks(p); })
-      .catch(() => { if (!cancelled) setPeaks(null); });
+      .catch((err) => {
+        silentCatch('useAudioWaveform:extractPeaks')(err);
+        if (!cancelled) setPeaks(null);
+      });
     return () => { cancelled = true; };
   }, [filePath]);
 

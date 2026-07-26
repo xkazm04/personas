@@ -592,12 +592,6 @@ export type Translations = {
     browse: string;
     dev_tools: string;
     active_project: string;
-    projects: string;
-    context_map: string;
-    idea_scanner: string;
-    idea_triage: string;
-    task_runner: string;
-    skills: string;
     network: string;
     coming_soon: string;
     sign_in_to_unlock: string;
@@ -617,6 +611,11 @@ export type Translations = {
     lifecycle: string;
     competition: string;
     mastermind: string;
+    context_map: string;
+    idea_scanner: string;
+    idea_triage: string;
+    task_runner: string;
+    projects: string;
   };
   home: {
     get_started: {
@@ -12339,6 +12338,22 @@ export type Translations = {
       doze_tooltip: string;
       dismiss_session: string;
       tombstone_wake_hint: string;
+      limit_eta_resumes: string;
+      limit_eta_in_minutes: string;
+      limit_eta_in_hours: string;
+      limit_eta_tooltip: string;
+      harvest_open: string;
+      harvest_title: string;
+      harvest_copy: string;
+      harvest_copied: string;
+      harvest_empty: string;
+      harvest_no_summary: string;
+      harvest_run_untitled: string;
+      harvest_totals: string;
+      harvest_files: string;
+      harvest_files_tooltip: string;
+      harvest_turns: string;
+      harvest_tokens: string;
     };
     title: string;
     subtitle: string;
@@ -16840,6 +16855,7 @@ export type Translations = {
       nav_bar_roadmap_label: string;
       nav_rail_label: string;
       empty: string;
+      lane_empty: string;
       status_released: string;
       status_active: string;
       status_planned: string;
@@ -18615,5 +18631,20 @@ export type Translations = {
     memory_import_vault: string;
     memory_vault_synced: string;
     memory_vault_imported: string;
+    kpis_title: string;
+    kpi_unmeasured: string;
+    dim_cat_runtime: string;
+    dim_cat_delivery: string;
+    dim_cat_agentic: string;
+    dim_cat_product: string;
+    dim_cat_summary: string;
+    datalinks_title: string;
+    support_title: string;
+    persona_open: string;
+    demo_cell_hint: string;
+    demo_badge_reopen: string;
+    dim_view_only: string;
+    dispatch_target_count: string;
+    group_untitled: string;
   };
 };

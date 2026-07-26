@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Single credential source for the Home Welcome surface.
@@ -26,7 +27,7 @@ export function useVaultCredentials(): CredentialLite[] {
       if (cancelled) return;
       const s = useVaultStore.getState();
       setCreds(s.credentials);
-      if (s.credentials.length === 0) s.fetchCredentials().catch(() => {});
+      if (s.credentials.length === 0) s.fetchCredentials().catch(silentCatch('useVaultCredentials:fetchCredentials'));
       let prev = s.credentials;
       unsub = useVaultStore.subscribe((st) => {
         if (st.credentials !== prev) {

@@ -6,6 +6,7 @@ pub mod dev_tools;
 pub mod dev_workspaces;
 pub mod execution;
 pub mod fleet_decisions;
+pub mod fleet_sessions;
 pub mod lab;
 pub mod llm_spend;
 pub mod orchestration;

@@ -61,7 +61,13 @@ export function DistilledFactsPanel({ twinId }: Props) {
   useEffect(() => {
     if (!twinId) return;
     setIsFetching(true);
-    twinApi.listDistilledFacts(twinId).then(setFacts).catch(() => setFacts([])).finally(() => setIsFetching(false));
+    twinApi.listDistilledFacts(twinId)
+      .then(setFacts)
+      .catch((err: unknown) => {
+        silentCatch('DistilledFactsPanel:listDistilledFacts')(err);
+        setFacts([]);
+      })
+      .finally(() => setIsFetching(false));
     void fetchComms(twinId, undefined, 50);
   }, [twinId, fetchComms]);
 

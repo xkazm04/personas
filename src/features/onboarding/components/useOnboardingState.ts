@@ -134,6 +134,7 @@ export function useOnboardingState() {
         });
       })
       .catch((err) => {
+        silentCatch('useOnboardingState:discoverDesktopApps')(err);
         if (cancelled) return;
         const message = err instanceof Error ? err.message : String(err);
         setDiscoveredApps([]);

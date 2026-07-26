@@ -238,6 +238,7 @@ export function useOAuthPolling<
         setSessionId(oauthStart.session_id);
       })
       .catch((err) => {
+        silentCatch("hooks/design/oauth/useOAuthPolling:catch3")(err);
         clearStartTimeout();
         setSessionId(null);
         setIsAuthorizing(false);

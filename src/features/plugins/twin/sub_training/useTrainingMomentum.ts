@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as twinApi from '@/api/twin/twin';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Training momentum for the active twin: how many quick-interview sessions
@@ -39,8 +40,10 @@ export function useTrainingMomentum(twinId: string | null, refreshToken?: unknow
         }
         setMomentum({ sessions, lastTrainedAt: last });
       })
-      .catch(() => {
-        if (!cancelled) setMomentum({ sessions: 0, lastTrainedAt: null });
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        silentCatch('useTrainingMomentum:listCommunications')(err);
+        setMomentum({ sessions: 0, lastTrainedAt: null });
       });
     return () => {
       cancelled = true;

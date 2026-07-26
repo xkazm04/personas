@@ -16,6 +16,7 @@
 import { useEffect, useState } from 'react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { appDataDir } from '@tauri-apps/api/path';
+import { silentCatch } from '@/lib/silentCatch';
 
 // ── Value scheme ──────────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ export function ensureAppDataDir(): Promise<string> {
         return cachedDir;
       })
       .catch((err) => {
+        silentCatch('customIconStore:ensureAppDataDir')(err);
         // Allow a later retry rather than caching the rejection forever.
         dirPromise = null;
         throw err;
@@ -107,7 +109,8 @@ export function useCustomIconSrc(assetId: string | null | undefined): string | n
       .then(() => {
         if (alive) setSrc(customIconSrc(assetId));
       })
-      .catch(() => {
+      .catch((err) => {
+        silentCatch('customIconStore:useCustomIconSrc')(err);
         if (alive) setSrc(null);
       });
     return () => {

@@ -322,7 +322,10 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       // it's still running and billing.
       const [serverDeployments, history] = await Promise.all([
         cloudListDeployments(),
-        listDeploymentHistoryAll().catch(() => []),
+        listDeploymentHistoryAll().catch((err) => {
+          silentCatch("stores/slices/system/cloudSlice:listDeploymentHistoryAll")(err);
+          return [];
+        }),
       ]);
       const knownIds = new Set(
         history

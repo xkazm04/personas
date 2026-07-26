@@ -3,6 +3,7 @@
 // behind a "show procedure" disclosure for power users.
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { Translations } from '@/i18n/generated/types';
+import { silentCatch } from '@/lib/silentCatch';
 
 type Tx = (template: string, vars: Record<string, string | number>) => string;
 
@@ -40,8 +41,8 @@ export function describeMeasurement(kpi: DevKpi, t: Translations, tx: Tx): strin
   let config: Record<string, unknown> = {};
   try {
     config = JSON.parse(kpi.measure_config) as Record<string, unknown>;
-  } catch {
-    /* malformed config — fall through to generic sentences */
+  } catch (err) {
+    silentCatch('describeMeasurement:parseMeasureConfig')(err);
   }
 
   const cadence =

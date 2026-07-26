@@ -12,6 +12,7 @@ import { emit } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { PersonaEventStatus } from '@/lib/bindings/PersonaEventStatus';
+import { silentCatch } from '@/lib/silentCatch';
 
 export type DeploymentEventType =
   | 'deploy_started'
@@ -55,7 +56,5 @@ export function emitDeploymentEvent(opts: EmitOptions): void {
   };
 
   // Emit through Tauri's event system -- the singleton listener picks it up
-  emit(EventName.EVENT_BUS, event).catch(() => {
-    // If Tauri emit fails (e.g. in tests), silently ignore
-  });
+  emit(EventName.EVENT_BUS, event).catch(silentCatch('hooks/realtime/emitDeploymentEvent:emitDeploymentEvent'));
 }

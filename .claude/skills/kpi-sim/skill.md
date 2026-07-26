@@ -7,59 +7,85 @@ description: KPI Simulation — measure a project's KPIs locally, simulate user 
 
 # KPI Simulation (engine reference)
 
+> **Maintenance: authority = `src/features/teams/sub_kpis/kpiSimPrompt.ts`**
+> (+ `src-tauri/src/commands/infrastructure/kpi_sim.rs` for ingest guardrails).
+> When this file and they disagree, fix THIS file.
 > Design + phasing: [`docs/plans/kpi-simulation-skill.md`](../../../docs/plans/kpi-simulation-skill.md).
-> **Distribution model:** the canonical engine is the DISPATCH PROMPT
-> (`src/features/teams/sub_kpis/kpiSimPrompt.ts`) — the Personas app runs it
-> *into* managed repos via a Fleet session (`kpi-sim:<project>` key), so target
-> repos need nothing installed. This skill file exists for (a) running the
-> operation by hand from a CLI in any repo that has a `kpi-sim/snapshot.json`,
-> and (b) optional adoption into a specific repo via the passport Skills module
-> when a team wants to customize the bindings per-repo.
+
+**Distribution:** the canonical engine is the dispatch prompt — the app runs it
+*into* managed repos via a Fleet session (`kpi-sim:<project>` key). This skill
+is for hand-running the operation from a CLI, or per-repo adoption via the
+passport Skills module.
+
+## Standalone run — preconditions and lifecycle
+
+1. **`kpi-sim/snapshot.json` must exist at the repo root** — ground truth
+   (project identity + every managed KPI + env axis). Only the app writes it
+   (`dev_tools_kpi_sim_prepare`); no snapshot → stop and have the user trigger
+   the sim from the KPI dashboard once. KPI ids in output MUST come from it
+   verbatim. Status `"proposed"` KPIs await review — never re-propose (by id
+   or name) or measure them; context only.
+2. **Write `kpi-sim/runs/<YYYY-MM-DD-HHmm>/result.json` + `report.md`.** Only
+   writes: that run dir + appending `kpi-sim/` to `.gitignore` if needed.
+   Never touch app code, config, or KPIs.
+3. **Ingest** is app-side (`dev_tools_kpi_sim_ingest`): auto on Fleet session
+   exit, or the dashboard's Import button. Picks the newest run dir with
+   `result.json` and no `ingested.json` marker; idempotent. A valid run:
+   parseable JSON, ≤1 MiB, ≤50 measurements, ≤8 proposals; bad rows are
+   skipped and reported, not fatal.
+
+## result.json (exact schema: kpiSimPrompt.ts OUTPUT_CONTRACT)
+
+```
+{ "sim_run_id": "<run dir name>",
+  "measurements": [ { kpi_id, value, env: "local"|"test", confidence: 0-1,
+                      evidence: { ..., cert: "L1"|"L2" }, note } ],
+  "proposals":    [ { kind: "adopt_measure_config"|"adjust_target"|"retire"|"new_kpi",
+                      kpi_id, payload, rationale, citations: [] } ],
+  "findings":     [ { title, description, kpi_id?, evidence } ] }
+```
+
+`new_kpi` payload = a full KPI (name, description, category, measure_kind,
+measure_config, unit, direction, baseline_value, target_value, cadence);
+`adjust_target` payload = `{"target_value": <n>, "target_date"?: "YYYY-MM-DD"}`.
 
 ## The three epistemic classes (never blend)
 
 | Class | KPIs | What you do | Lands as |
 |---|---|---|---|
-| 1 — measurable locally | technical/quality with a runnable procedure | author/verify `measure_config` (cmd + parse), RUN it, capture value + output tail | `adopt_measure_config` proposal (human accepts → the app's no-LLM evaluator owns it) |
-| 2 — simulated user behavior | user-facing outcomes (completion, time-to-value) | 3–5 Characters (reuse `uat/characters/` if present) walk KPI-bound journeys over the CODE (L1); optionally drive the live app (L2, `--l2`) | measurement rows, env `test` (or `local`), source `simulation`, evidence = character/journal aggregate + confidence |
-| 3 — real traffic/value | users, revenue, retention | web-research 2–4 comparable products; never emit a measurement | `adjust_target` / `new_kpi` / `retire` proposals with citations |
+| 1 — measurable locally | technical/quality with a runnable procedure | author/verify `measure_config` (cmd + parse), RUN it | `adopt_measure_config` proposal, evidence = verified value + output tail |
+| 2 — simulated user behavior | user-facing outcomes (completion, time-to-value) | 3–5 Characters (reuse `uat/characters/` if present — never invent a second cast) walk KPI-bound journeys over the CODE (L1); `--l2` adds live driving | measurements, env `local` (repo cmds) or `test` (walks/live), evidence = `{characters, completed, journals}` + confidence |
+| 3 — real traffic/value | users, revenue, retention | web-research 2–4 comparable products; NEVER emit a measurement | `adjust_target` / `new_kpi` / `retire` proposals with citations |
 
 Honestly unsimulatable → one finding, skip. **Never invent a number.**
 
-## Hard rules (enforced by the app's ingester — violations are dropped)
+## Hard rules (ingester-enforced — violations are dropped)
 
 - Every measurement carries `evidence`; evidence-free rows are refused.
-- `env` is `local` or `test` only — production is real telemetry's channel.
-- Simulated rows never advance `current_value` / pace / autopilot (app-side).
-- ≤ 8 new-KPI proposals; existing-KPI mutations are proposals, never edits.
-- Only write under `kpi-sim/runs/<id>/` (+ gitignore `kpi-sim/` if needed).
-
-## Orchestration
-
-You (the session) are the ORCHESTRATOR: classify KPIs from
-`kpi-sim/snapshot.json`, fan out research subagents via the Task/Agent tool
-(sonnet-class model for research when the harness allows choosing), run class-1
-commands and class-2 walks, then synthesize + adversarially self-check.
-
-Output contract: `kpi-sim/runs/<YYYY-MM-DD-HHmm>/result.json` + `report.md` —
-exact schema in `kpiSimPrompt.ts` (measurements / proposals / findings). The
-app ingests via `dev_tools_kpi_sim_ingest` (auto on session exit, or the KPI
-dashboard's Import button).
+- `env` is `local`/`test` only — `production` is real telemetry's channel and
+  is rejected. Simulated rows never advance `current_value`/pace (app-side).
+- ≤8 proposals per run; prefer adjust/adopt over inventing. All KPI mutations
+  are proposals — applied only after a human accepts.
+- A failing command = a class-1 gap (finding), never a reason to fabricate.
 
 ## Modes
 
-- `run` — full pass (default L1-only; `--l2` adds live driving where the repo
-  offers a mechanism: documented harness > playwright/puppeteer devDependency >
-  plain HTTP; no mechanism → finding + L1 fallback).
-- `predict` — class-3 refresh only (web benchmarks → adjustment proposals).
-- `--kpi <id>` scopes to one KPI; `--project-root <path>` when run outside the
-  target repo.
+- `run` — full pass, L1-only by default. `--l2`: probe for a driver in order —
+  documented test/automation harness → Playwright/Puppeteer already in
+  devDependencies (minimal per-journey script) → plain HTTP curl. Act → wait
+  to settle → capture REAL output and judge that, not your expectation. No
+  mechanism / app won't start → one "no live-simulation path" finding + L1
+  fallback; never fake L2. L2 rows: env `test`, `"cert":"L2"` in evidence.
+- `predict` — class-3-only research refresh: 2–4 current, named benchmarks →
+  proposals + findings. **`"measurements": []` REQUIRED**; every proposal
+  needs ≥1 citation. No repo commands, no journey walks.
+- `--kpi <id>` scopes to one snapshot KPI; `--project-root <path>` when run
+  outside the target repo.
 
-## L1 vs L2 (what each is for)
+## Orchestration
 
-L1 (code-grounded walk) is cheap and mass-parallel — it catches structural
-gaps and produces defensible completion/effort estimates. L2 (live driving)
-additionally observes real latency, real rendering, and the actual quality of
-generated output — at serial cost, contending for the app instance. The
-Personas dashboard dispatches either; the sim-vs-real convergence view (plan
-P3) is the scorecard for whether L2's extra cost buys better predictions.
+Classify every snapshot KPI into exactly one class, fan out research via the
+Task/Agent tool (sonnet-class; keep synthesis in this session), run class-1
+commands and class-2 walks. Before finishing: adversarially re-check
+result.json — delete any value you cannot trace to evidence, validate it
+parses, print measurements/proposals/findings counts.

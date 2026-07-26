@@ -1,9 +1,11 @@
+use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
 use crate::engine::background::ZombieExecutionEvent;
 use crate::engine::event_registry::event_name;
+use futures_util::FutureExt;
 use serde::Serialize;
 use tauri::{Emitter, State};
 use ts_rs::TS;
@@ -23,6 +25,18 @@ use crate::error::AppError;
 use crate::ipc_auth::{require_auth};
 use crate::AppState;
 use personas_macros::requires;
+
+/// Extract a printable message from a panic payload returned by `catch_unwind`.
+/// Mirrors the canonical pattern at `commands/execution/lab.rs::extract_panic_message`.
+fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        return s.to_string();
+    }
+    if let Some(s) = panic.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "unknown panic".to_string()
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -633,7 +647,12 @@ pub async fn cloud_execute_persona(
     let app_for_emit = app.clone();
     let exec_ids_map = state.cloud_exec_ids.clone();
 
+    let pool_for_panic = pool.clone();
+    let exec_id_for_panic = exec_id.clone();
+    let exec_ids_map_for_panic = exec_ids_map.clone();
+
     let handle = tokio::spawn(async move {
+        let work = AssertUnwindSafe(async move {
         let result = cloud::runner::run_cloud_execution(
             app_clone,
             client_clone,
@@ -722,6 +741,26 @@ pub async fn cloud_execute_persona(
         // Clean up the local->cloud execution ID mapping AFTER DB persist,
         // so cancellation remains possible during retry windows.
         exec_ids_map.lock().await.remove(&exec_id);
+        })
+        .catch_unwind()
+        .await;
+
+        if let Err(panic) = work {
+            let msg = extract_panic_message(panic);
+            tracing::error!(
+                execution_id = %exec_id_for_panic,
+                panic = %msg,
+                "Cloud execution task panicked — marking execution as failed"
+            );
+            let update = UpdateExecutionStatus {
+                status: crate::engine::types::ExecutionState::Failed,
+                error_message: Some(format!("Internal error: cloud execution task panicked: {msg}")),
+                ..Default::default()
+            };
+            let _ =
+                executions::update_status_if_not_final(&pool_for_panic, &exec_id_for_panic, update);
+            exec_ids_map_for_panic.lock().await.remove(&exec_id_for_panic);
+        }
     });
 
     state

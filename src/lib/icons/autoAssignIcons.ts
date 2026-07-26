@@ -7,6 +7,7 @@
 import type { Persona } from '@/lib/bindings/Persona';
 import { updatePersona } from '@/api/agents/personas';
 import { isAgentIcon, AGENT_ICONS, toAgentIconValue } from './agentIconCatalog';
+import { silentCatch } from '@/lib/silentCatch';
 
 // v2: broadened filter to also migrate personas whose icon is a stale Lucide
 // PascalCase name ("Mail", "Database", …) — the legacy output of the build LLM
@@ -98,9 +99,7 @@ export async function autoAssignPersonaIcons(personas: Persona[]): Promise<boole
         if (!p.color && entry) {
           updates.color = entry.suggestedColor;
         }
-        return updatePersona(p.id, updates as never).catch(() => {
-          // Silently skip failures (e.g. if persona was deleted concurrently)
-        });
+        return updatePersona(p.id, updates as never).catch(silentCatch('autoAssignIcons:updatePersona'));
       }),
     );
   }

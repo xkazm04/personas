@@ -4,6 +4,7 @@ import { getCompositePartialMatch } from '@/api/pipeline/triggers';
 import type { PartialMatchResult } from '@/lib/bindings/PartialMatchResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface Props {
   triggerId: string;
@@ -25,7 +26,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
     const load = () => {
       getCompositePartialMatch(triggerId).then((r) => {
         if (!cancelled) setResult(r);
-      }).catch(() => {});
+      }).catch(silentCatch("features/triggers/sub_triggers/CompositePartialMatchIndicator:getCompositePartialMatch"));
     };
     load();
     const interval = setInterval(load, 4000);

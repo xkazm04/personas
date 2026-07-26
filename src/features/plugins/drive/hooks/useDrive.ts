@@ -285,6 +285,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         pathCacheRef.current.set(currentPath, list);
       })
       .catch((e) => {
+        silentCatch("useDrive:refresh")(e);
         setError(e instanceof Error ? e.message : String(e));
         setEntries([]);
       })

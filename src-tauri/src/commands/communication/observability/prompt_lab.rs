@@ -151,6 +151,7 @@ pub fn get_prompt_error_rate(
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct PromptAbTestResult {
     pub version_a_id: String,
     pub version_b_id: String,

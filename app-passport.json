@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-23",
+  "generatedAt": "2026-07-26",
   "generatedBy": "personas passport-onboard",
   "dimensions": {
     "context_coverage": { "level": "full", "tool": "personas context scan", "skippedByChoice": false, "note": "49 app contexts / 236-context repo map" },
@@ -11,11 +11,12 @@
     "hosting": { "level": "delivery", "tool": "GitHub Releases + Tauri updater", "skippedByChoice": false, "note": "signed installers, update channel" },
     "database": { "level": "versioned", "tool": "SQLite + guarded incremental migrations", "skippedByChoice": false, "note": "schema_version ledger deliberately deferred" },
     "auth": { "level": "not_applicable", "tool": "OS keychain vault crypto", "skippedByChoice": false, "note": "local single-user app; auth = key management" },
-    "ci": { "level": "delivery", "tool": "GitHub Actions + lefthook + Renovate", "skippedByChoice": false, "note": "post-push checks, trunk-based by design" },
+    "ci": { "level": "delivery", "tool": "GitHub Actions + lefthook + Renovate", "skippedByChoice": false, "note": "post-push checks, trunk-based by design; pr_credential_id binding pending on wall" },
     "tests": { "level": "comprehensive", "tool": "Vitest + cargo test + Playwright", "skippedByChoice": false, "note": "257 TS test files, ~3k Rust tests" },
     "evals": { "level": "partial", "tool": "vitest evals harness", "skippedByChoice": false, "note": "agent-spec contract + 5 golden prompt suites" },
-    "observability": { "level": "connected", "tool": "Sentry (frontend + Rust)", "skippedByChoice": false, "note": "release builds only, PII-scrubbed" },
-    "llm_tracking": { "level": "internal", "tool": "in-app per-call table", "skippedByChoice": false, "note": "external tracer deliberately declined for local-first view" },
+    "observability": { "level": "connected", "tool": "Sentry (frontend + Rust)", "skippedByChoice": false, "note": "release builds only, PII-scrubbed; monitoring_credential_id binding pending on wall" },
+    "llm_tracking": { "level": "internal", "tool": "in-app per-call table", "skippedByChoice": true, "note": "external tracer (langfuse/helicone/langsmith/tracklight) reconfirmed declined 2026-07-26 for local-first view; no matching Vault connector exists" },
+    "security": { "level": "gated", "tool": "CodeQL + cargo-deny/npm audit (weekly) + gitleaks pre-commit", "skippedByChoice": false, "note": "codeql.yml, audit.yml, scripts/secret-scan.mjs; .env untracked" },
     "app_cost": { "level": "known", "tool": null, "skippedByChoice": false, "note": "private app-cost.json maintained locally (gitignored)" }
   }
 }

@@ -1,363 +1,165 @@
+---
+name: codebase-init
+description: Initialize any codebase for autonomous development by Dev Clone and QA Guardian personas. Detects the tech stack, generates grounded CLAUDE.md conventions, a brand manual (UI projects), CI suggestions, and writes a result.json the Personas app ingests through its one gated door. Resumable — re-running skips completed artifacts. Invoke with `/codebase-init [--project-root <path>]`.
+---
+
 # Codebase Init
 
-Initialize any codebase for autonomous development by Dev Clone and QA Guardian personas. This skill performs a comprehensive one-time setup that establishes conventions, scans the tech stack, configures CI/CD, and creates the foundation for AI-assisted development.
+One-time bootstrap that prepares a target repo for autonomous development by Dev Clone / QA Guardian personas: establishes conventions, scans the tech stack, suggests CI/CD, and emits a machine-readable result for the Personas app.
 
 ## When to Use
 
-Run this skill on a codebase BEFORE activating Dev Clone or QA Guardian personas. It creates the prerequisite configuration files, documentation, and scanning infrastructure they expect.
-
-Can also be used standalone to bootstrap best practices in any new or existing project.
+Run on a codebase BEFORE activating Dev Clone or QA Guardian personas — it creates the configuration and documentation they expect. Also usable standalone to bootstrap best practices in any project.
 
 ## Input
 
-Ask the user: **"Which codebase should I initialize? Point me to the root directory and tell me what the project does."**
+Ask the user: **"Which codebase should I initialize? Point me to the root directory and tell me what the project does."** Wait for the response, then execute the phases below against that root.
 
-Wait for their response. Then execute all phases below.
+If `codebase-init/snapshot.json` exists at the target root (app-dispatched run), read it FIRST — it carries the project's registered name, stack hints, and any prior-run `repo_fingerprint`. If absent (standalone run), infer everything from the repo itself.
 
 ---
 
-## Coordination — Active-Runs Ledger
+## Output Boundary (D8 — files only, never application state)
 
-`/codebase-init` writes the project's foundational `.claude/CLAUDE.md` (and possibly `Design.md` / `codebase-stack.md`) — concurrent runs would clobber each other. Register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md) BEFORE Phase 1 detection starts. Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
+You write **files across a validated boundary — never application state**. No database writes, no app APIs, no IPC. The Personas app consumes exactly one artifact through its one gated ingest door:
 
-**Declared paths for `/codebase-init`:**
-- `.claude/CLAUDE.md` (created or rewritten — single-writer)
-- `.claude/codebase-stack.md` (created — only if not yet present; do not clobber an existing one)
-- `.claude/Design.md` (created — UI projects only)
-- `.claude/codebase-context-overrides.md` (optional, only if hand-curated overrides are seeded)
-- Always: `.claude/active-runs.md`
+**`codebase-init/result.json`** at the target repo root:
 
-**At session end** (final summary, after CLAUDE.md is written): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
+```json
+{
+  "contract_version": 1,
+  "run_id": "<YYYY-MM-DD-HHmm>",
+  "repo_fingerprint": "<git rev-parse HEAD, or sha256 of root file listing if not a git repo>",
+  "stack": { "language": "", "framework": "", "styling": "", "database": "", "testing": "", "ci": "", "package_manager": "" },
+  "commands": { "dev": "", "build": "", "test": "", "lint": "" },
+  "artifacts": [ { "path": ".claude/CLAUDE.md", "action": "created|updated|skipped", "phase": 2 } ],
+  "scan": { "todos": 0, "files_without_tests": 0, "large_files_over_300_loc": 0, "debug_statements": 0, "unguarded_async": 0 },
+  "readiness": { "claude_md": true, "brand_manual": false, "ci": false }
+}
+```
 
-Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+- Every `commands.*` value must be **verified** (see "Adapt, don't paste" below); omit a key rather than emit an unverified guess.
+- **Idempotency marker**: `run_id` + `repo_fingerprint`. The app's ingest door dedups on this pair — re-writing result.json for an unchanged repo with the same fingerprint is a no-op on the app side, so overwriting the file on re-run is always safe.
+- Also write a short human `codebase-init/report.md` (what was generated, what was skipped, what needs the human).
+- Working state lives in `codebase-init/state.json` (below). Only these three files plus the declared artifacts are ever written.
 
-### Parallel-safety primitives (mandatory)
+## Resumability — state manifest
 
-Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md) on the personas repo (the cross-link applies when this skill runs on personas; for fresh codebases, the rules below are self-contained), every CLI session must:
+Before Phase 1, read `codebase-init/state.json` if present:
 
-1. **Never `git stash`** other sessions' work — not even with `--keep-index`. Stash sweeps the entire working tree (and untracked files with `-u`) and silently relocates other sessions' in-flight edits. If your commit step needs a clean stage, use `git add <path>` per file (NOT `git add -A` / `git add .` / `git add -u`); leave everything else alone.
-2. **Use a worktree for multi-file scope.** `/codebase-init` writes 2-4 foundational `.claude/` docs in one run — that's multi-file by definition. Default to:
-   ```bash
-   git worktree add .claude/worktrees/codebase-init -b worktree-codebase-init
-   cd .claude/worktrees/codebase-init
-   ```
-3. **Atomic commits per task** — `CLAUDE.md` is one commit; `codebase-stack.md` is another; `Design.md` is another; `codebase-context-overrides.md` if present is another. Never accumulate >30 min of uncommitted work in one mega-commit.
-4. **Clean up the worktree after merge.** Once the worktree's branch is in `git log master` (or whatever the target branch is on the codebase being initialized), from the main checkout: `git worktree remove .claude/worktrees/codebase-init` and `git branch -D worktree-codebase-init`. Treat as part of the final-summary ledger ritual.
+```json
+{ "run_id": "...", "repo_fingerprint": "...", "phases": { "1": "done", "2": "done", "3": "skipped:no-ui", "4": "pending", "5": "pending" } }
+```
+
+- A phase marked `done` whose artifact file still exists is **skipped** on re-run (print "Phase N: already complete — skipping"). `skipped:*` phases stay skipped unless the reason no longer holds.
+- If the `repo_fingerprint` has changed materially (new framework, new test runner), offer to refresh stale artifacts instead of skipping.
+- Update `state.json` **immediately after each phase completes**, so an interrupted run resumes exactly where it stopped.
+
+## Adapt, don't paste (applies to every generated artifact)
+
+Every artifact must be grounded in THIS repo — no template boilerplate:
+
+1. **Reference only real files and commands** discovered in the target repo. Never emit a placeholder like `{detected test command}` into a written file; if you couldn't detect it, omit the section and note the gap in `report.md`.
+2. **Verify each command before documenting it.** Run it (or the cheapest safe probe: `--help`, `--version`, `--dry-run`, or a list-only mode for anything destructive/long-running). A command that fails does not go into CLAUDE.md or ci.yml — investigate or omit.
+3. **Cite evidence**: naming/pattern claims in CLAUDE.md come from actually reading 5-10 source files, lint configs, and `git log --oneline -20` — not from stack defaults.
+
+---
+
+## Coordination & git safety
+
+If the target repo has a `.claude/active-runs.md` ledger, register per its header convention before Phase 1 and deregister at session end (rationale: `docs/architecture/cli-coordination.md` in the personas repo). Regardless of ledger presence, these rules are mandatory:
+
+1. **Never `git stash`** — it sweeps the whole tree including other sessions' in-flight work. If you need a clean stage, `git add <path>` per file; never `git add -A` / `.` / `-u`.
+2. **Multi-file scope → worktree.** This skill writes several foundational files; if other sessions may be active on the checkout, work in `git worktree add .claude/worktrees/codebase-init -b worktree-codebase-init`.
+3. **Atomic commits per artifact** — CLAUDE.md is one commit; brand-manual.md another; ci.yml another; result.json + state + report another. Never accumulate one mega-commit.
+4. **Before committing**: scan `git status --porcelain` and classify each entry (yours vs. someone else's); after staging, check `git diff --cached --stat` — if the staged count exceeds what you added, `git restore --staged` the strangers.
+5. After merge, remove the worktree and its branch.
+
+**Declared paths**: `.claude/CLAUDE.md` (created/updated), `.claude/brand-manual.md` (UI projects), `.github/workflows/ci.yml` (only with user consent), `codebase-init/{state.json,result.json,report.md}`, plus the ledger itself if present.
 
 ---
 
 ## Phase 1: Tech Stack Detection
 
-Automatically detect the project's technology stack by reading configuration files:
+Detect by reading configuration files (glob first, then read the hits):
 
-### Package Managers & Languages
-- `package.json` → Node.js/TypeScript/JavaScript (check for `typescript` dep)
-- `Cargo.toml` → Rust
-- `requirements.txt` / `pyproject.toml` / `setup.py` → Python
-- `go.mod` → Go
-- `Gemfile` → Ruby
-- `pom.xml` / `build.gradle` → Java/Kotlin
+- **Language/PM**: `package.json` (+`typescript` dep), `Cargo.toml`, `pyproject.toml`/`requirements.txt`, `go.mod`, `Gemfile`, `pom.xml`/`build.gradle`; lockfile → package manager.
+- **Framework**: `next.config.*`, `vite.config.*`, `remix.config.*`, `nuxt.config.*`, `angular.json`, `tauri.conf.json`; `django`/`fastapi`/`actix-web`/`axum` in deps.
+- **Testing**: `jest.config.*`, `vitest` in deps, `pytest`, `cypress.config.*`, `playwright.config.*`.
+- **CI/CD**: `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/`.
+- **Styling**: `tailwind.config.*`, global CSS custom properties, theme files.
+- **Database**: `prisma/schema.prisma`, `drizzle.config.*`, other DB config.
 
-### Frameworks
-- `next.config.*` → Next.js
-- `vite.config.*` → Vite (React/Vue/Svelte)
-- `remix.config.*` → Remix
-- `nuxt.config.*` → Nuxt
-- `angular.json` → Angular
-- `django` in deps → Django
-- `fastapi` in deps → FastAPI
-- `actix-web` / `axum` in deps → Rust web framework
-- `tauri.conf.json` → Tauri desktop app
-
-### Testing
-- `jest.config.*` → Jest
-- `vitest` in deps → Vitest
-- `pytest` in deps → pytest
-- `cypress.config.*` → Cypress
-- `playwright.config.*` → Playwright
-
-### CI/CD
-- `.github/workflows/` → GitHub Actions (read existing workflows)
-- `.gitlab-ci.yml` → GitLab CI
-- `Jenkinsfile` → Jenkins
-- `circle.yml` / `.circleci/` → CircleCI
-
-### Styling & UI
-- `tailwind.config.*` → Tailwind CSS (read for brand colors)
-- `src/styles/globals.css` → CSS custom properties
-- Theme files → Design tokens
-
-### Database
-- `prisma/schema.prisma` → Prisma
-- `drizzle.config.*` → Drizzle
-- Supabase, PlanetScale, or other DB config files
-
-**Output**: Print a summary of detected technologies:
-```
-Tech Stack Detected:
-  Language:   TypeScript
-  Framework:  Next.js 14 (App Router)
-  Styling:    Tailwind CSS
-  Database:   Prisma + PostgreSQL
-  Testing:    Vitest + Playwright
-  CI/CD:      GitHub Actions (2 workflows)
-  Package Mgr: pnpm
-```
-
----
+Print a summary table (Language / Framework / Styling / Database / Testing / CI/CD / Package Mgr) and record it in `result.json → stack`. Mark Phase 1 done.
 
 ## Phase 2: CLAUDE.md Generation
 
-Create or update `.claude/CLAUDE.md` with project-specific conventions. This file is automatically loaded by Claude Code in every session.
+Create or update `.claude/CLAUDE.md`. Sections (include only what was actually detected — see "Adapt, don't paste"):
 
-### Structure
+- **Project Overview** — from user input + package manifest + README.
+- **Common Commands** — dev / build / test / lint, each one **verified to run** in this repo. Note quirks discovered while verifying (e.g. "tsc not on PATH — use npx").
+- **Architecture Overview** — top-level directories with purpose inferred from their actual contents.
+- **Code Conventions** — naming (components/files/variables/test files), state management, data fetching, error handling, styling approach, import style — each detected from real source files, lint config (`.eslintrc*`, `.prettierrc*`, `tsconfig.json` paths, `.editorconfig`), and `git log --oneline -20` (commit message format) / `git branch -r` (branch naming).
+- **Working Agreements** (always include — this is what Dev Clone / QA Guardian will operate under):
+  - **Atomic commits**: one logical change per commit; never accumulate >30 min of uncommitted work.
+  - **Parallel-session safety**: never `git stash`; stage with scoped `git add <path>` only; verify the staged index (`git diff --cached --stat`) matches intent before committing; use worktrees for multi-file work when sessions run concurrently.
+  - **Verification before "done"**: a change is complete only when the repo's test + lint + typecheck gates (name the actual commands from Common Commands) pass locally. Compiling is not passing; never claim done on build success alone — observe the actual behavior.
+- **Do NOT** — generated files detected in the repo, `.env` files, plus anti-patterns evident from `.gitignore` and lint config.
 
-```markdown
-# CLAUDE.md
+Commit, record the artifact in `result.json → artifacts`, mark Phase 2 done.
 
-## Project Overview
-{Project name and what it does — from user input + package.json/README}
+## Phase 3: Brand Manual (UI projects only)
 
-## Tech Stack
-{Auto-detected from Phase 1}
+If the project has a UI (React/Vue/Svelte/Angular or a CSS framework), extract the actual design system and write `.claude/brand-manual.md`:
 
-## Common Commands
+- **Colors** — from `tailwind.config.*` theme, `:root` custom properties, or theme files, with hex values and usage context.
+- **Typography** — font families and scales from CSS/Tailwind config, `next/font`, `@font-face`.
+- **Component/icon/animation libraries** — detected from deps (shadcn/ui, Radix, MUI, Chakra; Lucide, Heroicons; Framer Motion…).
+- **Design tokens & visual guidelines** — spacing scale, radius, shadows, dark-mode support as actually configured.
 
-### Development
-```bash
-{detected dev command: npm run dev / cargo run / python manage.py runserver}
-{detected build command}
-{detected test command}
-{detected lint command}
-```
-
-### Testing
-```bash
-{unit test command}
-{e2e test command if applicable}
-{coverage command}
-```
-
-## Architecture Overview
-{Generated from directory structure analysis}
-- `src/` — {purpose based on contents}
-- `src/components/` or `src/features/` — {UI structure pattern}
-- `src/lib/` or `src/utils/` — {shared utilities}
-- `src/api/` or `src/routes/` — {API layer}
-- `tests/` or `__tests__/` — {test organization}
-
-## Code Conventions
-
-### Naming
-- Components: {PascalCase / kebab-case — detected from existing files}
-- Files: {detected pattern}
-- Variables: {camelCase / snake_case — detected from source}
-- Test files: {*.test.ts / *.spec.ts — detected pattern}
-
-### Patterns
-- State management: {Zustand / Redux / Context — detected}
-- Data fetching: {SWR / React Query / tRPC / fetch — detected}
-- Error handling: {pattern detected from existing code}
-- Styling approach: {Tailwind classes / CSS modules / styled-components}
-
-### Import Conventions
-- {Absolute imports via @ / relative imports — detected from tsconfig paths}
-- {Import ordering convention — detected from existing files}
-
-## Important Conventions
-- {Any conventions detected from existing linting config (.eslintrc, .prettierrc)}
-- {Commit message format from git log analysis}
-- {Branch naming from git branch analysis}
-
-## Do NOT
-- Do not modify generated files (list auto-generated files detected)
-- Do not commit .env files
-- {Other anti-patterns detected from .gitignore}
-```
-
-### Detection Methods
-
-For each section, use these strategies:
-- **Commands**: Read `package.json` scripts, `Makefile`, `Cargo.toml`
-- **Architecture**: `list_files` at top level and key directories, infer purpose from file names
-- **Naming**: Read 5-10 source files, detect dominant patterns
-- **Patterns**: `search_code` for import patterns, state management, data fetching
-- **Conventions**: Read `.eslintrc*`, `.prettierrc*`, `tsconfig.json`, `.editorconfig`
-- **Commit style**: `git log --oneline -20` to detect commit message conventions
-- **Branch naming**: `git branch -r` to detect branch naming patterns
-
----
-
-## Phase 3: Brand Manual (UI Projects Only)
-
-If the project has a UI (detected via React, Vue, Svelte, Angular, or CSS framework):
-
-### Extract Brand Identity
-
-Read design configuration files to extract:
-
-**Colors:**
-- `tailwind.config.*` → `theme.extend.colors` or `theme.colors`
-- CSS custom properties from `globals.css` or `:root` declarations
-- Theme files (Material UI, Chakra, etc.)
-
-**Typography:**
-- Font families from CSS/Tailwind config
-- Font loading from `next/font`, Google Fonts imports, or `@font-face`
-- Heading/body size scales
-
-**Components:**
-- Detect component library: shadcn/ui, Radix, MUI, Chakra, Headless UI
-- Detect icon library: Lucide, Heroicons, FontAwesome
-- Detect animation library: Framer Motion, CSS transitions
-
-**Write** `.claude/brand-manual.md`:
-```markdown
-# Brand Manual
-
-## Colors
-- Primary: {hex} — {usage context}
-- Secondary: {hex}
-- Accent: {hex}
-- Background: {hex}
-- Text: {hex}
-- Error: {hex}
-- Success: {hex}
-
-## Typography
-- Headings: {font-family}
-- Body: {font-family}
-- Code: {font-family}
-
-## Component Library
-- UI Kit: {shadcn/ui, MUI, Chakra, custom}
-- Icons: {Lucide, Heroicons, etc.}
-- Animations: {Framer Motion, CSS, none}
-
-## Design Tokens
-{Extracted spacing scale, border-radius values, shadow definitions}
-
-## Visual Guidelines
-- Corner radius: {detected default}
-- Shadow style: {subtle, prominent, none}
-- Spacing base: {4px, 8px — detected}
-- Dark mode: {supported / not — detected from theme config}
-```
-
----
+Only include values read from the repo; skip sections with no evidence. Non-UI projects: mark Phase 3 `skipped:no-ui`.
 
 ## Phase 4: CI/CD Configuration
 
-### If GitHub Actions exists:
-- Read existing workflows
-- Suggest additions if missing: lint, test, build, deploy
-- Do NOT overwrite existing workflows
+- **CI exists**: read the workflows; suggest (don't write) missing lint/test/build jobs.
+- **No CI**: ask *"No CI/CD configuration detected. Should I create a GitHub Actions workflow?"* If yes, generate `.github/workflows/ci.yml` for the detected stack, using only the **verified** commands from Phase 2 — the workflow steps are exactly `install → lint → test → build` with the repo's real commands and detected runtime version. Never overwrite an existing workflow.
+- Print branch-protection recommendations for the default branch (require PR review, require the CI check, no force pushes/deletions) with the repo's actual `Settings → Branches` URL if the remote is on GitHub.
 
-### If NO CI/CD exists:
-Ask the user: "No CI/CD configuration detected. Should I create a GitHub Actions workflow?"
+Mark Phase 4 done (or `skipped:declined`).
 
-If yes, generate `.github/workflows/ci.yml` based on detected tech stack:
+## Phase 5: Codebase Scan → result.json
 
-**For TypeScript/Node.js:**
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '{detected version}' }
-      - run: {detected install command}
-      - run: {detected lint command}
-      - run: {detected test command}
-      - run: {detected build command}
-```
+Run a quick health scan and record the counts in `result.json → scan`:
 
-Adapt for Rust (cargo), Python (pytest), Go (go test), etc.
+- TODOs/FIXMEs; source files without corresponding test files; files >300 lines; leftover debug output (`console.log` / `print` / `dbg!` as appropriate for the stack); async calls without error handling.
 
-### Branch Protection Recommendations
-Print recommendations:
-```
-Recommended GitHub Branch Protection for 'main':
-  ✓ Require pull request reviews (1 reviewer minimum)
-  ✓ Require status checks to pass (CI workflow)
-  ✓ Require branches to be up to date
-  ✓ Do not allow force pushes
-  ✓ Do not allow deletions
-
-Configure at: https://github.com/{owner}/{repo}/settings/branches
-```
-
----
-
-## Phase 5: Codebase Scan Configuration
-
-Create initial scan configuration for the Dev Tools / Codebases connector:
-
-### Generate Context Map
-Analyze the project structure and create logical context groupings:
-- **API Layer**: all route handlers, API endpoints, middleware
-- **Data Layer**: database models, repositories, migrations
-- **UI Layer**: components, pages, layouts (if applicable)
-- **Business Logic**: services, utils, helpers
-- **Configuration**: config files, environment, constants
-- **Tests**: test files, fixtures, mocks
-
-### Generate Initial Ideas Scan
-Run a quick scan for common improvement areas:
-- TODOs and FIXMEs in code
-- Files without test coverage (files in `src/` without corresponding test files)
-- Large files (>300 lines) that might benefit from splitting
-- Deprecated dependency usage
-- Console.log / print statements left in production code
-- Missing error handling (try/catch around async operations)
-
-Report findings:
-```
-Initial Codebase Scan:
-  TODOs found: {N} across {M} files
-  Files without tests: {N}
-  Large files (>300 lines): {N}
-  Console.log statements: {N}
-  Missing error handling: {N} async calls without try/catch
-```
-
----
+Print the counts, then assemble and write `codebase-init/result.json` (full shape above — stack, verified commands, artifacts with actions, scan counts, readiness flags) and `codebase-init/report.md`. This is the **only** hand-off to the Personas app: it ingests result.json through its one governed door, dedup-gated on `run_id` + `repo_fingerprint`; you never touch the app's state directly.
 
 ## Phase 6: Dev Clone Readiness Checklist
 
-Print a readiness checklist for activating Dev Clone:
+Print the checklist with real check states from this run:
 
 ```
-Dev Clone Readiness Checklist:
+Dev Clone Readiness:
+  [state] CLAUDE.md with verified commands + working agreements
+  [state] Brand manual (UI projects only)
+  [state] CI/CD configured / suggestions reviewed
+  [state] Codebase scan completed → codebase-init/result.json
 
-  [✓] CLAUDE.md created with project conventions
-  [✓] Tech stack detected and documented
-  [✓/✗] Brand manual generated (UI projects only)
-  [✓/✗] CI/CD configured
-  [✓/✗] Branch protection recommendations reviewed
-  [✓] Initial codebase scan completed
-  [✓] Context map generated
-
-  Prerequisites for Dev Clone activation:
-  [ ] GitHub PAT configured with repo permissions
-  [ ] Webhook configured (GitHub → Smee → Personas)
-  [ ] Target repository and base branch confirmed
-  [ ] Codebases connector has this project registered
-
-  Prerequisites for QA Guardian activation:
-  [ ] Separate GitHub PAT (different account recommended)
-  [ ] Same webhook or event subscription configured
+  Human prerequisites — Dev Clone:
+  [ ] GitHub PAT with repo permissions · webhook (GitHub → Smee → Personas)
+  [ ] Target repository + base branch confirmed · Codebases connector registration
+  Human prerequisites — QA Guardian:
+  [ ] Separate PAT (different account recommended) · event subscription
   [ ] Approve threshold and write_tests preference decided
 ```
+
+Finish the ledger/worktree ritual from "Coordination & git safety".
 
 ---
 
 ## Notes
 
-- This skill is designed to be **distributed manually** to any codebase. Copy the `.claude/skills/codebase-init/` directory to the target project.
-- All generated files are placed in `.claude/` (CLAUDE.md, brand-manual.md) or standard locations (.github/workflows/).
-- The skill never modifies source code — it only generates configuration and documentation.
-- Re-running the skill is safe: it will update existing files rather than duplicating.
+- Distributed manually: copy `.claude/skills/codebase-init/` into any target project.
+- Never modifies source code — only configuration, documentation, and the `codebase-init/` boundary files.
+- Re-running is safe by construction: `state.json` skips completed phases; existing files are updated in place, never duplicated; result.json ingest is idempotent on the fingerprint pair.

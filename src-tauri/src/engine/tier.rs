@@ -4,6 +4,7 @@ use ts_rs::TS;
 /// Per-tier rate and queue limits.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct TierConfig {
     /// Display name: "free", "pro", "enterprise"
     pub tier_name: String,

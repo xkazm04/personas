@@ -12,6 +12,7 @@
 // applicability.layers so they still participate in the same tree.
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
+import { silentCatch } from '@/lib/silentCatch';
 
 export interface KnowledgeItemView {
   id: string;
@@ -56,8 +57,8 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
       };
       layers = parsed.layers ?? [];
       frameworks = parsed.frameworks ?? [];
-    } catch {
-      // malformed applicability never breaks the library
+    } catch (err) {
+      silentCatch('libraryModel:viewFromRow:parseApplicability')(err);
     }
   }
   return {

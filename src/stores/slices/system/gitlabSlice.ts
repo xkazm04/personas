@@ -315,7 +315,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       // blank out the agent list.
       const [agents, statuses] = await Promise.all([
         gitlabListAgents(projectId),
-        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+        gitlabDeploymentStatus(projectId).catch((err) => {
+          silentCatch("stores/slices/system/gitlabSlice:gitlabFetchAgentsStatus")(err);
+          return [] as GitLabDeploymentStatus[];
+        }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
     } catch (err) {
@@ -329,7 +332,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       // Refresh the list + reconciled statuses
       const [agents, statuses] = await Promise.all([
         gitlabListAgents(projectId),
-        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+        gitlabDeploymentStatus(projectId).catch((err) => {
+          silentCatch("stores/slices/system/gitlabSlice:gitlabUndeployAgentStatus")(err);
+          return [] as GitLabDeploymentStatus[];
+        }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'gitlab', detail: `agent:${agentId}` });
@@ -367,7 +373,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       // Refresh agent list + reconciled statuses
       const [agents, statuses] = await Promise.all([
         gitlabListAgents(projectId),
-        gitlabDeploymentStatus(projectId).catch(() => [] as GitLabDeploymentStatus[]),
+        gitlabDeploymentStatus(projectId).catch((err) => {
+          silentCatch("stores/slices/system/gitlabSlice:gitlabRedeployAgentStatus")(err);
+          return [] as GitLabDeploymentStatus[];
+        }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabRedeployingAgentId: null });
       storeBus.emit('toast', { message: "Agent redeployed successfully", type: "success" });
@@ -507,7 +516,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
 
       // Refresh version list
       if (persona?.name) {
-        const versions = await gitlabListPersonaVersions(projectId, persona.name).catch(() => []);
+        const versions = await gitlabListPersonaVersions(projectId, persona.name).catch((err) => {
+          silentCatch("stores/slices/system/gitlabSlice:gitlabDeployPersonaVersions")(err);
+          return [];
+        });
         set({ gitlabPersonaVersions: versions });
       }
 
@@ -528,7 +540,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackPersona(projectId, personaName, targetTag);
       // Refresh versions after rollback
-      const versions = await gitlabListPersonaVersions(projectId, personaName).catch(() => []);
+      const versions = await gitlabListPersonaVersions(projectId, personaName).catch((err) => {
+        silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackPersonaVersions")(err);
+        return [];
+      });
       set({ gitlabPersonaVersions: versions, gitlabRollingBack: false });
       storeBus.emit('toast', {
         message: `Rolled back ${personaName} to ${targetTag}`,
@@ -598,7 +613,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackFromHistory(projectId, deploymentId);
       // Refresh history after rollback
-      const history = await gitlabListDeploymentHistory(projectId).catch(() => []);
+      const history = await gitlabListDeploymentHistory(projectId).catch((err) => {
+        silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackFromHistoryList")(err);
+        return [];
+      });
       set({ gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false });
       storeBus.emit('toast', { message: "Rolled back to previous deployment", type: "success" });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback-from-history:${deploymentId}` });

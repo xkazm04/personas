@@ -7,6 +7,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { errMsg } from '@/stores/storeTypes';
 
 import { PreviewResults } from './PreviewResults';
 import {
@@ -161,7 +162,8 @@ function Row({
       try {
         setTestRows(await previewScraperExtract(config.urls, config.rules, 1));
       } catch (e) {
-        setTestError(e instanceof Error ? e.message : String(e));
+        // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
+        setTestError(errMsg(e, String(e)));
       } finally {
         setTesting(false);
       }

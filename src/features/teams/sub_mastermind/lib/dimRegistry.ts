@@ -68,9 +68,11 @@ export type DimCategory = 'runtime' | 'delivery' | 'agentic' | 'product';
 /** Which Improve resolution path a dimension takes (see dimActions.dimAction):
  *  standards = Tier-0 standards popover, deploy = Claude deploy/connector/skills
  *  popover, ideas = the idea-scan dispatch popover, goals = the active-goal
- *  list popover, skills-run = the "run an installed skill via Fleet" modal
- *  (green Skills cell only), null = never actionable. */
-export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'skills-run' | null;
+ *  list popover, kpi = the project-KPI list popover, stack-list = the generic
+ *  name-list popover for declaration-only dimensions (data links, support
+ *  channels), skills-run = the "run an installed skill via Fleet" modal (green
+ *  Skills cell only), null = never actionable. */
+export type DimActionKind = 'standards' | 'deploy' | 'ideas' | 'goals' | 'kpi' | 'stack-list' | 'skills-run' | null;
 
 /** How a cell renders its far/mid-zoom payload. `icon` = the dimension glyph;
  *  `days` = a large day-counter with a `d` suffix (Ideas' freshness); `count`
@@ -85,6 +87,12 @@ export interface DimRegistryEntry {
   rowKey: string | null;
   action: DimActionKind;
   payloadKind: DimPayloadKind;
+  /** True for dimensions that are inert BY DESIGN, not by omission — the
+   *  passport reports them read-only and the wall offers no row action either
+   *  (`auth`). The cells say so in their tooltip instead of leaving the user
+   *  clicking a dead square. A dimension that is merely un-wired yet does NOT
+   *  belong here; it belongs in a future action kind. */
+  viewOnly?: boolean;
   derive: (p: AppPassport, extras: DimDeriveExtras) => DimDerived;
 }
 
@@ -193,8 +201,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     derive: (p) => ({ status: presence(p.stack.hosting), detail: p.stack.hosting ?? null, reached: 0, steps: 0 }),
   },
   auth: {
+    // View-only by design: `stack.auth` is a detection, not a setting. There is
+    // no `auth` row in deployActions/connectors and the wall renders it as a
+    // plain presence cell, so a canvas action here would break dimActions'
+    // invariant that a cell is clickable exactly when its wall row shows a gear.
     label: 'Auth', category: 'runtime', icon: KeyRound,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: null, payloadKind: 'icon', viewOnly: true,
     derive: (p) => ({ status: presence(p.stack.auth), detail: p.stack.auth ?? null, reached: 0, steps: 0 }),
   },
   agents: {
@@ -220,8 +232,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     derive: (p) => ({ status: p.stack.llmTracking ? 'solid' : 'absent', detail: p.stack.llmTracking ?? null, reached: 0, steps: 0 }),
   },
   kpi: {
+    // Click lists the project's KPIs worst-first (KpiListPopover). The cell has
+    // no Passport-wall counterpart — KPIs live in the Factory, not the wall —
+    // so the action is its own kind rather than a rowKey mapping. The page
+    // downgrades a cell with zero KPIs to inert (nothing to list).
     label: 'KPIs', category: 'product', icon: Gauge,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'kpi', payloadKind: 'icon',
     derive: (_p, { kpi, kpiUnknown }) => {
       if (kpiUnknown) return { status: 'unknown', detail: null, reached: 0, steps: 0 };
       return {
@@ -263,11 +279,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     },
   },
   // The two prototype passport dimensions (2026-07-23) — deliberately binary
-  // (grey absent / green solid) and INERT (rowKey/action null: no hover ring,
-  // no click) until their deeper functionality is wired.
+  // (grey absent / green solid). They have no wall counterpart and nothing to
+  // deploy; what they DO have is a declared list, so the click just names it
+  // (stack-list). The page downgrades an empty list to inert.
   datalinks: {
     label: 'Data analysis', category: 'product', icon: GitFork,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'stack-list', payloadKind: 'icon',
     derive: (p) => {
       const links = p.stack.dataLinks ?? [];
       return { status: links.length > 0 ? 'solid' : 'absent', detail: links.join(' · ') || null, reached: 0, steps: 0 };
@@ -275,7 +292,7 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
   },
   support: {
     label: 'Support', category: 'product', icon: LifeBuoy,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: 'stack-list', payloadKind: 'icon',
     derive: (p) => {
       const channels = p.stack.supportChannels ?? [];
       return { status: channels.length > 0 ? 'solid' : 'absent', detail: channels.join(' · ') || null, reached: 0, steps: 0 };

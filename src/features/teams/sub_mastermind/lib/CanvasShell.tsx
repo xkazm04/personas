@@ -21,7 +21,7 @@ import { loadNotes, saveNotes } from './notes';
 import { loadPositions } from './positions';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { FleetListPopover } from './FleetListPopover';
-import { GroupLayer } from './GroupLayer';
+import { GroupLayer, type GroupMember } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
 import { LinkEditor } from './LinkEditor';
 import { LinkLayer } from './LinkLayer';
@@ -33,6 +33,7 @@ import { ZoomBadge } from './ZoomBadge';
 import { ZoomControls } from './ZoomControls';
 import { sceneBounds, zoomBand, type CanvasMode, type CanvasNote, type DimNode, type GroupRect, type Island, type UserLink, type VariantProps, type ZoomBand } from './types';
 import { useCanvasCamera } from './useCanvasCamera';
+import type { CategoryNode } from './dimCategories';
 
 
 const MIN_GROUP_SIZE = 60; // world px — smaller drags are treated as clicks
@@ -68,9 +69,11 @@ export interface IslandCtx {
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
   /** In-progress-personas badge clicked — page opens the persona list. */
   onPersonasOpen: (slug: string, e: React.MouseEvent) => void;
+  /** Collapsed category cell clicked — page opens its dimension list. */
+  onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onOpenTerminal, onDispatchFleet, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -137,6 +140,16 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
       fitted.current = true;
     }
   }, [scene.islands, fit]);
+
+  // Group rollups need a little more than island centres — the state dot, the
+  // blocker total, and whether each project can host a Fleet session.
+  const groupMembers = useMemo<GroupMember[]>(
+    () => scene.islands.map((i) => ({
+      slug: i.slug, x: i.x, y: i.y, state: i.state, blockers: i.blockers,
+      dispatchable: canOpenTerminal(i.slug),
+    })),
+    [scene.islands, canOpenTerminal],
+  );
 
   const band = zoomBand(cam.z);
   // Quantized z for island props (~6% steps): a wheel-zoom gesture commits
@@ -302,6 +315,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   const onFleetOpenStable = useEventCallback(onFleetOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
   const onPersonasOpenStable = useEventCallback(onPersonasOpen);
+  const onCategoryOpenStable = useEventCallback(onCategoryOpen);
 
   // --- Tidy map: one-shot relation-aware arrangement + single-level undo. -------
   // Islands are moved through the existing per-island commit (updates the page's
@@ -458,6 +472,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     onFleetList,
     onDimOpen: onDimOpenStable,
     onPersonasOpen: onPersonasOpenStable,
+    onCategoryOpen: onCategoryOpenStable,
   });
 
   return (
@@ -500,11 +515,12 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             draft={draft ? normalize(draft) : null}
             z={cam.z}
             mode={mode}
-            islands={scene.islands}
+            islands={groupMembers}
             onGroupsChange={commitGroups}
             onIslandCommit={onIslandCommit}
             onRename={setEditing}
             onDelete={(id) => commitGroups(groups.filter((g) => g.id !== id))}
+            onDispatchGroup={(id, slugs) => onDispatchGroupFleet(slugs, groups.find((g) => g.id === id)?.label ?? '')}
           />
           {scene.edges.map((e) => (
             <Route key={`${e.from}→${e.to}`} e={e} a={bySlug.get(e.from)} b={bySlug.get(e.to)} lit={hover === e.from || hover === e.to} />
@@ -605,6 +621,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             terminalEnabled={canOpenTerminal(menu.slug)}
             onOpenTerminal={() => { onOpenTerminal(menu.slug); setMenu(null); setHighlight(null); }}
             onDispatchFleet={() => { onDispatchFleet(menu.slug); setMenu(null); setHighlight(null); }}
+            onDimOpen={(node, e) => { onDimOpen(menu.slug, node, e); setHighlight(null); }}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}
           />

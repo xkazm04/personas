@@ -23,3 +23,34 @@ export async function testChannelDelivery(
     sampleBody,
   });
 }
+
+/**
+ * Shape-v1 external channel — the JSON `test_notification_channel` deserializes
+ * into `notifications::ExternalChannel`. Field names are the WIRE names, so
+ * `type` (not `channelType`) and `credential_id` (not `credentialId`); the Rust
+ * struct uses `#[serde(rename = "type")]` and no `rename_all`.
+ */
+export interface ExternalChannelSpec {
+  type: string;
+  enabled: boolean;
+  config: Record<string, string>;
+  credential_id?: string;
+}
+
+/**
+ * Send a fixed test notification through one shape-v1 external channel
+ * (slack / telegram / email / …). Resolves with a human-readable delivery note;
+ * REJECTS with the provider error string on failure — unlike
+ * {@link testChannelDelivery}, which reports per-channel failure in its result.
+ *
+ * The command takes the channel as a JSON *string*, so this wrapper owns the
+ * serialization: callers pass the object and can't get the wire field names
+ * wrong.
+ */
+export async function testNotificationChannel(
+  channel: ExternalChannelSpec,
+): Promise<string> {
+  return invokeWithTimeout<string>('test_notification_channel', {
+    channelJson: JSON.stringify(channel),
+  });
+}

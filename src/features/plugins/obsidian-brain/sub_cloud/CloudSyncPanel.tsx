@@ -16,6 +16,7 @@ import {
   getGoogleDriveStatus,
   type DriveSyncResult,
 } from '@/api/obsidianBrain';
+import { silentCatch } from '@/lib/silentCatch';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -72,7 +73,7 @@ export default function CloudSyncPanel() {
           });
         }
       })
-      .catch(() => {})
+      .catch(silentCatch('CloudSyncPanel:checkDriveConnection'))
       .finally(() => setLoading(false));
   }, [isAuthenticated, setDriveConnected, setDriveEmail, setDriveFileCount, setDriveStorage, setLastDriveSyncAt]);
 
@@ -103,7 +104,7 @@ export default function CloudSyncPanel() {
       obsidianDriveStatus().then((s) => {
         setDriveStorage(s.storageUsedBytes, s.storageLimitBytes);
         setDriveFileCount(s.manifestFileCount);
-      }).catch(() => {});
+      }).catch(silentCatch('CloudSyncPanel:refreshStatusAfterPush'));
     } catch (e) {
       addToast(`Drive push failed: ${e}`, 'error');
     } finally {

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import {
+  companionMcpPendingSnapshot,
+  companionMcpResolveRequest,
+} from '@/api/companion/bridges';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   useMcpRequestStore,
@@ -30,7 +33,7 @@ export function useMcpRequestBridge(): void {
     // (id, kind, fleet_session_id) tuples only — we don't have payload
     // backfill, so on a reload the strip shows the request as "pending
     // (reloaded)" and prompts the user to resolve it conservatively.
-    void invoke<PendingSnapshotEntry[]>('companion_mcp_pending_snapshot', {})
+    void companionMcpPendingSnapshot()
       .then((rows) => {
         for (const r of rows ?? []) {
           add({
@@ -62,12 +65,6 @@ interface RawRequestNotice {
   fleetSessionId: string;
   kind: McpRequestKind;
   payload: unknown;
-}
-
-interface PendingSnapshotEntry {
-  requestId: string;
-  fleetSessionId: string;
-  kind: McpRequestKind;
 }
 
 function toPendingRequest(raw: RawRequestNotice): McpPendingRequest {
@@ -126,10 +123,7 @@ export async function resolveMcpRequest(
   requestId: string,
   response: Record<string, unknown>,
 ): Promise<boolean> {
-  const ok = await invoke<boolean>('companion_mcp_resolve_request', {
-    requestId,
-    response,
-  }).catch((e) => {
+  const ok = await companionMcpResolveRequest(requestId, response).catch((e) => {
     silentCatch('resolveMcpRequest')(e);
     return false;
   });

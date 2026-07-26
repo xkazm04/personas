@@ -1,16 +1,16 @@
 ---
 name: perfect
-description: Session-after-session product perfection loop. The strongest available model (Opus at xhigh reasoning) directs — it walks the repo's context map context-by-context, proposes 5 challenged, high-value directions per context (features, design elevations, significant optimizations), gates them with the user until 10 are accepted, then orchestrates one Opus builder subagent per context in isolated worktrees while making every review/merge decision itself. All state lives in a linked Obsidian vault so any future session resumes the loop exactly where the last one stopped. Invoke with `/perfect [init|propose|build|status|reflect] [context-name]`.
+description: Session-after-session product perfection loop. The strongest available model at xhigh reasoning (currently Fable 5) directs — it walks the repo's context map context-by-context, proposes 5 challenged, high-value directions per context (features, design elevations, significant optimizations), gates them with the user until 10 are accepted, then orchestrates one Opus-class builder subagent per context in isolated worktrees while making every review/merge decision itself. All state lives in a linked Obsidian vault so any future session resumes the loop exactly where the last one stopped. Invoke with `/perfect [init|propose|build|status|reflect] [context-name]`.
 ---
 
 # Perfect — the direction-and-delivery loop
 
-> One model configuration is best at *judgment* — seeing what would make a product excellent, challenging its own ideas, reviewing diffs ruthlessly. A well-scoped builder is great at *execution* inside a tight brief. `/perfect` wires the two together in a permanent loop: **Opus-at-xhigh directs, Opus builds, the vault remembers.** Each session moves the product measurably closer to the best UX, architecture, and feature quality it can have; no session ever starts from zero.
+> One model configuration is best at *judgment* — seeing what would make a product excellent, challenging its own ideas, reviewing diffs ruthlessly. A well-scoped builder is great at *execution* inside a tight brief. `/perfect` wires the two together in a permanent loop: **the strongest model at xhigh directs, Opus-class builders build, the vault remembers.** Each session moves the product measurably closer to the best UX, architecture, and feature quality it can have; no session ever starts from zero.
 
 ## Roles — Director and Builders
 
-- **Director (the main session — Opus at xhigh reasoning, the strongest configuration available).** Owns everything that is judgment: opportunity-scoring contexts, drafting directions, adversarially challenging them before the user ever sees them, running the acceptance gate, writing builder briefs, answering builders' product questions mid-flight, reviewing every diff, deciding merge/redo/drop, running the repo gates, committing, and writing the vault. The Director **never delegates a decision** to a builder and never rubber-stamps a builder's diff.
-- **Builders (Opus subagents, `model: "opus"`, one per context).** Each receives a tight brief (direction specs + acceptance criteria + the context's `file_paths` scope + repo-convention digest) and implements in its **own worktree**. Builders return a structured report; when they hit a genuine product ambiguity they **return the question instead of guessing** — the Director answers via `SendMessage` and the builder continues.
+- **Director (the main session — the strongest available model at xhigh reasoning; currently Fable 5, Opus 5 acceptable fallback).** Owns everything that is judgment: opportunity-scoring contexts, drafting directions, adversarially challenging them before the user ever sees them, running the acceptance gate, writing builder briefs, answering builders' product questions mid-flight, reviewing every diff, deciding merge/redo/drop, running the repo gates, committing, and writing the vault. The Director **never delegates a decision** to a builder and never rubber-stamps a builder's diff.
+- **Builders (Opus-class subagents, `model: "opus"`, one per context).** Each receives a tight brief (direction specs + acceptance criteria + the context's `file_paths` scope + repo-convention digest) and implements in its **own worktree**. Builders return a structured report; when they hit a genuine product ambiguity they **return the question instead of guessing** — the Director answers via `SendMessage` and the builder continues.
 - **Scouts (Explore subagents, cheap).** Produce the per-context current-state brief the Director synthesizes directions from. Never used for judgment.
 
 ## The Obsidian vault — durable loop state
@@ -18,9 +18,7 @@ description: Session-after-session product perfection loop. The strongest availa
 Resolve the vault root (first hit wins), then use `$VAULT/Perfect/`:
 
 ```bash
-for v in "C:/Users/kazda/Documents/Obsidian/personas" "C:/Users/mkdol/Documents/Obsidian/personas"; do
-  [ -d "$v" ] && VAULT="$v" && break
-done
+VAULT="C:/Users/kazda/Documents/Obsidian/personas"   # verified to exist; contains Perfect/
 # Portable fallback: if no Obsidian vault exists, use <repo>/.perfect/ (same schema — still an Obsidian-openable folder).
 ```
 
@@ -91,18 +89,24 @@ Loop while `pool < 10` and the user hasn't said stop:
 1. **Cursor** = highest-opportunity context not on cooldown. **Prefetch**: before presenting context *k*, launch the scout for context *k+1* in the background.
 2. **Scout** (Explore, "very thorough", read-only): given the context's `file_paths`, `entry_points`, `db_tables` → return a current-state brief: what exists, what's rough, dead ends, UX seams, perf smells, with `file:line` evidence. **A component only "exists" if it RENDERS — trace every surface the brief describes to an actual mount point** (round 3's smoke pass caught a strip that scout + two builders treated as live while it had zero consumers).
 3. **Draft 5 directions** — one per lens by default: **feature** (new user value), **ux** (design/flow elevation), **optimization** (perf/cost/significant simplification), **robustness** (failure modes, observability, architecture), **wildcard** (the non-obvious idea a great PM would pitch). Each sized to ONE builder session; a bigger vision ships as its phase-1 slice.
-   **Weight the slate by `config.md → ## User taste`** — the lens spread is a starting point, not a quota. Default depth is the *engine*, not the chrome: for any context with backend/algorithmic substance, most directions should be architecture-level (data model, algorithms, lifecycle, prompt/recall paths, cost structure); UI surfacing appears at most once-twice unless the user steers otherwise. Scout prompts must match this depth (trace the full pipeline, not just the components).
+   **Weight the slate by `config.md → ## User taste`** — the lens spread is a starting point, not a quota. **Learned taste through round 8: the user accepts outcome-value work** (features/optimizations with a visible user payoff) **and rejects cosmetic churn** (e.g. dark-mode remount tweaks). Pre-filter the 5 through that lens and say in the presentation that you did. Default depth is the *engine*, not the chrome: for any context with backend/algorithmic substance, most directions should be architecture-level (data model, algorithms, lifecycle, prompt/recall paths, cost structure); UI surfacing appears at most once-twice unless the user steers otherwise. Scout prompts must match this depth (trace the full pipeline, not just the components).
 4. **Challenge before presenting** (the Director argues against itself; a direction that fails any check is replaced, not presented):
    - Does it already exist in code? (scout evidence, not assumption)
    - Was it already proposed/rejected/shipped? (check `contexts/<name>.md` history + memory)
    - Does it conflict with an active arc or a "removed, don't re-suggest" memory?
    - Is the value claim concrete — can I name the user moment it improves?
-   - Can one Opus session genuinely ship it behind the acceptance criteria?
+   - Can one builder session genuinely ship it behind the acceptance criteria?
+
+   **Director self-check before the gate** — a proposal that fails any of these never reaches the user:
+   - Names the concrete files it will touch (from scout evidence, not guessed).
+   - Names the user-visible outcome in one sentence a non-developer would care about.
+   - States why it beats the next-best alternative direction for this context.
+   - Survives the taste filter above (outcome-value, not cosmetic churn).
 5. **Present** the 5 in chat — numbered, each: title · lens · size · one-paragraph why · evidence · acceptance criteria. Then gate with **AskUserQuestion (multiSelect)** — the tool caps options at 4 per question, so use TWO questions in one call: Q1 = directions 1–3, Q2 = directions 4–5 (labels = `N · short title`, description = one-line value claim + size). The user can annotate via "Other" (e.g. `edit 2: …`, `stop`); selecting nothing in both = none accepted.
 6. Record outcomes in the vault (rejected ones too, with the user's implied reason — rejections steer future proposals). Accepted → `directions/<slug>.md` with `status: accepted`, pool counter++, context gets `cooldown_until`. Update `Perfect.md` after every context, not at session end — a killed session must lose nothing.
 7. **A `none` gate that carries a steer** (the user says what they wanted instead) is a re-scout order, not a rejection of the context: promote the steer to `config.md → ## User taste` if it generalizes, re-scout at the steered depth/angle, and re-propose the SAME context once before advancing the cursor. Never re-present any rejected direction.
 
-### Phase B — Build (one Opus builder per context, the Director decides everything)
+### Phase B — Build (one Opus-class builder per context, the Director decides everything)
 1. **Wave plan**: group the pool's accepted directions by context → one builder per context, ≤ `config.wave_size` (default 3) concurrent, and **≤ 3 directions per builder brief** (a 4-direction brief exceeded one agent-session budget in round 1 — split a bigger context into two sequential builders). Present the wave plan in one screen; on user go (or when invoked as `/perfect build`), execute.
 2. **Worktree per builder** — prepared by the Director, NOT via Agent-tool isolation (those worktrees lack `node_modules`):
    ```bash
@@ -110,7 +114,7 @@ Loop while `pool < 10` and the user hasn't said stop:
    cmd //c mklink //J ".claude\\worktrees\\perfect-<ctx>\\node_modules" "..\\..\\..\\node_modules"   # junction, NOT copy
    # Builders run Rust checks with the shared target: CARGO_TARGET_DIR=<main>/src-tauri/target cargo check / cargo test --lib
    ```
-3. **Brief** each builder (see template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`, all briefs in one message so they run concurrently.
+3. **Brief** each builder (see template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`, all briefs in one message so they run concurrently. **Brief quality bar:** every brief lists the exact repo gates the builder must pass before reporting done — `npx tsc --noEmit`, `npm run lint` (no new warnings in touched files), targeted vitest, `npm run check:i18n:strict` if any string/locale touched, `cargo test export_bindings` + commit `src/lib/bindings/` if any Rust struct touched. Director review time is for judgment, not gate failures.
 4. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director via `SendMessage` — product calls, trade-offs, and scope cuts are the Director's alone. A builder that stops without its final report gets one `SendMessage` nudge.
    **Builder-death recovery (learned round 1 — session limits WILL kill builders):** the instant a builder dies, `git add -A && git commit --no-verify` a `wip(…)` snapshot **inside its worktree** (isolated tree — add-all is safe there; never-lose-work beats commit hygiene). Then the Director either finishes the work inline (review the WIP diff, complete gaps, split into per-direction commits along file boundaries — same-file hunks may share a commit if the message says so) or re-briefs a fresh builder after the limit resets with "continue from the WIP commit".
 5. **Review — the Director earns its title here.** Per builder branch: `git diff master...worktree-perfect-<ctx>` and review against each direction's acceptance criteria, repo conventions (shared-component catalog, design tokens, i18n keys, `invokeWithTimeout`, error registry), and taste. Verdict per direction: **merge** / **redo with notes** (SendMessage, builder fixes in place) / **drop** (`status: failed`, reason recorded). Never merge on "tests pass" alone — read the diff.
@@ -127,7 +131,7 @@ Loop while `pool < 10` and the user hasn't said stop:
 ### Phase W — Wrap (every session, even interrupted ones)
 1. Update every touched vault note; write the session note with the **`next:` pointer** (e.g. `next: propose — cursor at overview-analytics, pool 7/10` or `next: build wave 2 — trigger-system + agent-lab remain`).
 2. `Perfect.md` headline refreshed: pool count, queue cursor, shipped-total, last-session link.
-3. Move the active-runs ledger entry to Recently completed with SHAs. Best-effort POST to the codex-gf feature log (silent on failure).
+3. Move the active-runs ledger entry to Recently completed with SHAs.
 4. **Reflect on the skill itself**: 2-4 bullets in `config.md → ## Skill improvement log` — what dragged, what the user overrode, what the next round should change. This log is the input for the between-rounds skill revision.
 
 ## Direction quality bar (what earns a slot in the 5)
@@ -141,7 +145,7 @@ Loop while `pool < 10` and the user hasn't said stop:
 ## Builder brief template
 
 ```
-You are an Opus builder for the `<context>` context of the Personas desktop app
+You are an Opus-class builder for the `<context>` context of the Personas desktop app
 (Tauri 2 + React 19 + TS + Tailwind 4 + Zustand 5; local-first SQLite).
 Work ONLY in this worktree: <abs path>. Your scope is this context's files:
 <file_paths from context-map.json>. Touching other contexts requires DECISION NEEDED.
@@ -170,15 +174,17 @@ in shared files, commit by FILE boundaries and document the shared commit —
 never hunk-split interactively.
 
 Repo law (non-negotiable):
-- Read .claude/Design.md before any UI; reuse shared/components (CATALOG.md) — never hand-roll
+- Read .claude/CLAUDE.md § Styling before any UI; reuse shared/components (CATALOG.md) — never hand-roll
   spinners/modals/tooltips/buttons; semantic tokens only (typo-*, rounded-*, shadow-elevation-*).
 - Every user-facing string: add key to src/i18n/locales/en.json AND translate into all 13 other
   locales yourself via scripts/i18n/translate-extract.mjs → fill .i18n-work/missing-<code>.json
   (medium quality fine) → translate-merge.mjs. The pre-commit hook blocks gaps.
 - IPC via invokeWithTimeout; errors via toastCatch/silentCatch + error registry; components < 200 LOC.
 - New Rust types with ts-rs: run `cargo test export_bindings` and commit src/lib/bindings/ changes.
-- Verify before claiming done: npx tsc --noEmit, targeted vitest, and drive the actual flow when a
-  dev server is available; report what you COULD NOT verify honestly.
+- GATES you must pass before reporting done: npx tsc --noEmit · npm run lint (no new warnings in
+  files you touched) · targeted vitest · npm run check:i18n:strict if you touched strings/locales ·
+  cargo test export_bindings (+ commit src/lib/bindings/) if you touched Rust structs. Then drive
+  the actual flow when a dev server is available; report what you COULD NOT verify honestly.
 
 If a product decision is ambiguous, STOP that direction and return `DECISION NEEDED: <question>`
 with your recommendation — never guess. Final report format:
@@ -197,7 +203,7 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 ## Guardrails
 
 - **Never stash, never `git add -A`** — per-file staging, staged-count check before every commit; other sessions' work is sacred (parallel-safety primitives in CLAUDE.md apply in full).
-- **Cost discipline**: scouts are Explore-tier; Opus is spent only on accepted work; the Director never re-runs a scout whose brief is < 1 round old (it's in the context note).
+- **Cost discipline**: scouts are Explore-tier; builder-tier model spend goes only to accepted work; the Director never re-runs a scout whose brief is < 1 round old (it's in the context note).
 - **Honest ledger**: a direction only reaches `shipped` with gates green AND the Director having read the diff; anything else is `failed` with a reason. No silent drops — every accepted direction's fate is recorded.
 - **Interruptibility is a feature**: write the vault incrementally (after every context in P, after every merge in B) so a killed session resumes losslessly.
 - **The user is the product owner**: the gate is theirs; the Director challenges but never overrides a rejection, and repeated rejections of a lens/context recalibrate the queue scores.

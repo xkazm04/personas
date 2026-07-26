@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
+import { silentCatch } from "@/lib/silentCatch";
 import type { ObsidianConflictResolution } from "@/api/enums";
 
 export type { ObsidianConflictResolution } from "@/api/enums";
@@ -155,7 +156,10 @@ export const obsidianAvailable = (): Promise<ObsidianAvailability> => {
   const promise = invoke<ObsidianAvailability>("obsidian_available");
   obsidianAvailCache = { at: Date.now(), promise };
   // A rejected probe must not stick — clear it so the next caller retries.
-  promise.catch(() => { if (obsidianAvailCache?.promise === promise) obsidianAvailCache = null; });
+  promise.catch((err) => {
+    silentCatch("obsidianBrain:obsidianAvailable")(err);
+    if (obsidianAvailCache?.promise === promise) obsidianAvailCache = null;
+  });
   return promise;
 };
 

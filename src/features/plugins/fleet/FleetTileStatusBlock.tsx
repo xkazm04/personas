@@ -4,6 +4,7 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useNowTick, formatAgo } from './relativeAgo';
 import { FleetContextPill } from './sub_grid/FleetContextPill';
+import { FleetLimitEtaChip } from './FleetLimitEtaChip';
 import type { FleetLabelKey } from './FleetStatusDots';
 
 /**
@@ -60,6 +61,9 @@ export function FleetTileStatusBlock({ session: s }: { session: FleetSession }) 
       {s.state === 'hibernated' && (
         <span className="typo-caption opacity-70">{t.plugins.fleet.tombstone_wake_hint}</span>
       )}
+      {/* Limit-parked: say WHEN it comes back rather than leaving the operator
+          to guess while mechanical retries cycle. */}
+      <FleetLimitEtaChip limitResetAtMs={s.limitResetAtMs} compact testId={`fleet-limit-eta-${s.id}`} />
       <FleetContextPill claudeSessionId={s.claudeSessionId} />
     </div>
   );

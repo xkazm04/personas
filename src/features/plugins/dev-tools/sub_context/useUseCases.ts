@@ -61,6 +61,7 @@ export function useUseCases(projectId: string | null): UseCasesState {
         }
       })
       .catch((err: unknown) => {
+        silentCatch('useUseCases:listUseCases')(err);
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       })
       .finally(() => {

@@ -22,9 +22,11 @@ pub mod headless;
 pub mod hook_install;
 pub mod hooks;
 pub mod naming;
+pub mod persist;
 pub mod process_scan;
 pub mod pty;
 pub mod registry;
+pub mod run;
 pub mod stale;
 #[cfg(feature = "desktop")]
 pub mod transcript;

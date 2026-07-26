@@ -10,6 +10,7 @@ import {
   type TranslationSection,
 } from './englishSections';
 import { useActiveI18nSections } from './routeSections';
+import { silentCatch } from '@/lib/silentCatch';
 
 export type { Translations };
 
@@ -92,6 +93,7 @@ function loadSection(lang: Language, section: TranslationSection): Promise<void>
 
   const promise = loader()
     .catch(
+      // eslint-disable-next-line custom/async-catch-requires-helper -- retry combinator, not an error swallow: returns a new Promise that retries the load once, chained further below.
       () =>
         new Promise<{ default: unknown }>((resolve, reject) => {
           setTimeout(() => {
@@ -105,14 +107,7 @@ function loadSection(lang: Language, section: TranslationSection): Promise<void>
       bundleVersion++;
       listeners.forEach((fn) => fn());
     })
-    .catch((err: unknown) => {
-      import('@/lib/log').then(({ createLogger }) => {
-        createLogger('i18n').error(
-          `Failed to load "${lang}.${section}" translation section after retry -- falling back to English`,
-          { error: err instanceof Error ? err.message : String(err) },
-        );
-      });
-    })
+    .catch(silentCatch(`i18n:loadSection:${lang}.${section}`))
     .finally(() => {
       loadingPromises.delete(key);
     });

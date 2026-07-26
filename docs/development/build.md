@@ -217,6 +217,12 @@ See `.github/workflows/ci.yml`:
 AppImage artifacts plus the `latest.json` updater manifest. Per-target rust
 cache key prevents x64/arm64 cross-contamination.
 
+`installer-test.yml` (manual dispatch, or after `release.yml` completes) runs
+installer acceptance smoke tests: Windows NSIS (blocking), plus macOS DMG and
+Linux deb/AppImage (both `continue-on-error: true` during their soak period —
+see the workflow file for the promotion bar). All three exercise the same
+`--health-check` binary flag (`src-tauri/src/main.rs`).
+
 ## Android
 
 Hardcoded NDK linker paths were removed from `src-tauri/.cargo/config.toml`

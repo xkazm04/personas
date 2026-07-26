@@ -18,6 +18,7 @@ import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 
 import { mapWithConcurrency } from './passport/usePassportData';
+import { silentCatch } from '@/lib/silentCatch';
 
 import type {
   MockProject,
@@ -251,7 +252,7 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
               devApi.listContexts(p.id),
               // Placement needs every non-archived use case: a KPI may be
               // scoped to one that is still awaiting triage.
-              useCaseApi.listUseCases(p.id).catch(() => [] as DevUseCase[]),
+              useCaseApi.listUseCases(p.id).catch((err) => { silentCatch('useFactoryData:listUseCases')(err); return [] as DevUseCase[]; }),
             ]);
             // Matrix shows MANAGED KPIs only; proposed ones live in the
             // proposals on-ramp (KpiProposalsPanel) and archived are gone.
