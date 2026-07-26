@@ -425,7 +425,13 @@ pub async fn load_manifest(
 
     if let Some(manifest_file) = list.files.first() {
         let content = download_file(client, &manifest_file.id).await?;
-        let manifest: SyncManifest = serde_json::from_str(&content).unwrap_or_default();
+        // A silent default here would look identical to "nothing synced yet" and
+        // the next save_manifest call would overwrite the real remote manifest
+        // with an empty one, forcing (or worse, masking) a full re-sync.
+        let manifest: SyncManifest = serde_json::from_str(&content).map_err(|e| {
+            tracing::error!(file_id = %manifest_file.id, error = %e, "unparseable sync manifest downloaded from Drive");
+            drive_err(e)
+        })?;
         Ok((Some(manifest_file.id.clone()), manifest))
     } else {
         Ok((None, SyncManifest::default()))

@@ -1273,7 +1273,13 @@ fn prune_dangling_file_paths(
     let mut contexts_touched = 0usize;
 
     for c in &contexts {
-        let files: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
+        let files: Vec<String> = match serde_json::from_str(&c.file_paths) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!(context_id = %c.id, error = %e, "self-heal: unparseable file_paths; skipping prune for this context");
+                continue;
+            }
+        };
         if files.is_empty() {
             continue;
         }

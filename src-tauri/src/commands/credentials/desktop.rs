@@ -83,8 +83,7 @@ pub async fn approve_desktop_capabilities(
     for cap in &capabilities {
         if !manifest.capabilities.contains(cap) {
             return Err(AppError::Validation(format!(
-                "Capability '{}' is not declared by connector '{connector_name}'",
-                serde_json::to_string(cap).unwrap_or_default()
+                "Capability '{cap:?}' is not declared by connector '{connector_name}'"
             )));
         }
     }
@@ -153,7 +152,10 @@ pub async fn register_imported_mcp_server(
         service_type: service_type.clone(),
         encrypted_data: String::new(),
         iv: String::new(),
-        metadata: Some(serde_json::to_string(&metadata).unwrap_or_default()),
+        metadata: Some(
+            serde_json::to_string(&metadata)
+                .map_err(|e| AppError::Internal(format!("Failed to serialize credential metadata: {e}")))?,
+        ),
         session_encrypted_data: None,
         healthcheck_passed: None,
         oauth_session_ref: None,

@@ -639,7 +639,21 @@ fn read_zip_entry<R: Read + std::io::Seek>(
 }
 
 fn filter_fields(value: &mut serde_json::Value, resource: &ExposedResource) {
-    let fields: Vec<String> = serde_json::from_str(&resource.fields_exposed).unwrap_or_default();
+    // An EMPTY whitelist means "expose all fields" (see below) — so a parse
+    // failure must NOT silently collapse to the same empty Vec, or a corrupt
+    // fields_exposed column would fail OPEN and leak every field of the
+    // resource instead of filtering it. Fail closed: keep only id/name.
+    let fields: Vec<String> = match serde_json::from_str(&resource.fields_exposed) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::error!(
+                resource = %resource.display_name,
+                error = %e,
+                "unparseable fields_exposed — failing closed (only id/name exposed) instead of exposing all fields"
+            );
+            vec!["id".to_string(), "name".to_string()]
+        }
+    };
     if fields.is_empty() {
         return; // Empty whitelist = expose all fields
     }

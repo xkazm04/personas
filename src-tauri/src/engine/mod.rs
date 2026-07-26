@@ -4363,8 +4363,18 @@ fn find_matching_connector_names(
     let mut seen = std::collections::HashSet::new();
     for tool in tools {
         for connector in connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
+            let services: Vec<serde_json::Value> = match serde_json::from_str(&connector.services)
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(
+                        connector = %connector.name,
+                        error = %e,
+                        "unparseable connector.services — excluding this connector from matching"
+                    );
+                    continue;
+                }
+            };
             let tool_listed = services.iter().any(|s| {
                 s.get("toolName")
                     .and_then(|v| v.as_str())

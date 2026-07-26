@@ -490,8 +490,12 @@ impl MdnsService {
         let peers = stmt
             .query_map([], |row| {
                 let addresses_json: String = row.get(2)?;
-                let addresses: Vec<String> =
-                    serde_json::from_str(&addresses_json).unwrap_or_default();
+                let peer_id_for_log: String = row.get(0)?;
+                let addresses: Vec<String> = serde_json::from_str(&addresses_json)
+                    .unwrap_or_else(|e| {
+                        tracing::warn!(peer_id = %peer_id_for_log, error = %e, "unparseable discovered_peers addresses; peer will appear unreachable");
+                        Vec::new()
+                    });
 
                 Ok(super::types::DiscoveredPeer {
                     peer_id: row.get(0)?,
