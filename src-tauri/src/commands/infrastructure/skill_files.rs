@@ -69,6 +69,11 @@ pub struct SkillEntry {
     /// the outbox) or `"none"`. `None` = undeclared → dispatches carry no
     /// MEMORY BLOCK (opt-in; docs/plans/skill-memory-unification.md §3.4).
     pub memory: Option<String>,
+    /// Frontmatter `contexts: tracked` — the skill declares its method walks
+    /// the context map and anchors its memory to contexts (drives the Skills
+    /// Management UI's coverage rows; evidence via skill-attributed nodes is
+    /// the runtime complement).
+    pub context_tracked: bool,
 }
 
 /// On-disk provenance sidecar ([`PROVENANCE_FILE`]). Internal — not exported to
@@ -384,6 +389,10 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                 let desc = content.as_deref().and_then(extract_skill_description);
                 let category = content.as_deref().and_then(extract_skill_category);
                 let memory = content.as_deref().and_then(extract_skill_memory);
+                let context_tracked = content
+                    .as_deref()
+                    .map(extract_skill_context_tracked)
+                    .unwrap_or(false);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -396,6 +405,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     source_kind: None,
                     category,
                     memory,
+                    context_tracked,
                 });
             }
             continue;
@@ -417,10 +427,10 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
         let description = skill_md_path
             .as_ref()
             .and_then(|p| read_first_line_description(p));
-        let (category, memory) = skill_md_path
+        let (category, memory, context_tracked) = skill_md_path
             .as_ref()
             .map(|p| read_skill_meta(p))
-            .unwrap_or((None, None));
+            .unwrap_or((None, None, false));
 
         // Count reference files (everything except SKILL.md and the internal
         // provenance sidecar, which is engine-managed, not user content).
@@ -446,6 +456,7 @@ pub(crate) fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
             source_kind,
             category,
             memory,
+            context_tracked,
         });
     }
 
@@ -508,11 +519,23 @@ fn extract_skill_memory(content: &str) -> Option<String> {
         .map(|m| (*m).to_string())
 }
 
-/// Category + memory binding over a SKILL.md path (one read, both fields).
-fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>) {
+/// Frontmatter `contexts: tracked` (or `true`) — the context-map declaration.
+fn extract_skill_context_tracked(content: &str) -> bool {
+    extract_frontmatter_value(content, "contexts")
+        .map(|v| v.eq_ignore_ascii_case("tracked") || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
+/// Category + memory binding + context declaration over a SKILL.md path
+/// (one read, all fields).
+fn read_skill_meta(skill_md_path: &Path) -> (Option<String>, Option<String>, bool) {
     match std::fs::read_to_string(skill_md_path) {
-        Ok(content) => (extract_skill_category(&content), extract_skill_memory(&content)),
-        Err(_) => (None, None),
+        Ok(content) => (
+            extract_skill_category(&content),
+            extract_skill_memory(&content),
+            extract_skill_context_tracked(&content),
+        ),
+        Err(_) => (None, None, false),
     }
 }
 

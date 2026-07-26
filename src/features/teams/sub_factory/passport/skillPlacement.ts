@@ -51,7 +51,7 @@ export async function dispatchSkillToRepo(opts: DispatchSkillToRepoOpts): Promis
     const binding = (await listSkills(opts.targetProjectId))
       .find((s) => s.name === opts.skillName)?.memory;
     if (binding === 'project' || binding === 'vault') {
-      prompt = `${prompt}\n\n${await composeMemoryBlock(opts.targetProjectId, binding)}`;
+      prompt = `${prompt}\n\n${await composeMemoryBlock(opts.targetProjectId, binding, opts.skillName)}`;
     }
   } catch (e) {
     silentCatch('dispatchSkillToRepo memory block')(e);

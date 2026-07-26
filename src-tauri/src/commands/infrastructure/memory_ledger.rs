@@ -58,6 +58,9 @@ struct OutboxLine {
     /// Context by dev_contexts NAME (what skills see in context-map.json).
     #[serde(default)]
     context: Option<String>,
+    /// Writing skill's name — attribution for per-skill context coverage.
+    #[serde(default)]
+    skill: Option<String>,
     // edge fields
     #[serde(default)]
     from: Option<String>,
@@ -109,6 +112,17 @@ pub struct MemoryCoverage {
 
 fn outbox_path(root: &str) -> PathBuf {
     PathBuf::from(root).join(".personas").join("memory-outbox.jsonl")
+}
+
+/// Skill-name sanitizer for attribution sources — mirrors valid skill dir
+/// names (lowercase alnum / '-' / '_'), capped.
+fn sanitize_skill_name(s: &str) -> String {
+    s.trim()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .map(|c| c.to_ascii_lowercase())
+        .take(60)
+        .collect()
 }
 
 fn content_hash(kind: &str, title: &str, body: &str, context_id: &str) -> String {
@@ -241,6 +255,16 @@ pub fn dev_tools_memory_ingest(
                     continue;
                 }
                 let node_id = uuid::Uuid::new_v4().to_string();
+                // Attribution: `skill:<name>` when the writer names itself
+                // (drives per-skill context coverage); bare `skill:outbox`
+                // for anonymous writers.
+                let source = parsed
+                    .skill
+                    .as_deref()
+                    .map(sanitize_skill_name)
+                    .filter(|s| !s.is_empty())
+                    .map(|s| format!("skill:{s}"))
+                    .unwrap_or_else(|| "skill:outbox".to_string());
                 conn.execute(
                     "INSERT INTO memory_nodes (id, project_id, context_id, kind, title, body, source, content_hash)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
@@ -251,7 +275,7 @@ pub fn dev_tools_memory_ingest(
                         kind,
                         title,
                         body,
-                        "skill:outbox",
+                        source,
                         hash
                     ],
                 )
@@ -695,6 +719,142 @@ pub fn dev_tools_memory_import_vault(
         }
     }
     Ok(out)
+}
+
+// ── Per-skill context coverage (Skills Management UI) ───────────────────────
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillCoverageRow {
+    /// Skill name (from `skill:<name>` attribution).
+    pub skill: String,
+    /// Distinct contexts with ≥1 fresh (≤30d) node from THIS skill.
+    pub covered_contexts: i32,
+    /// Fresh nodes total from this skill (anchored or not).
+    pub fresh_nodes: i32,
+    pub latest_at: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillContextRow {
+    pub context_id: String,
+    pub name: String,
+    /// Fresh (≤30d) active nodes from the skill in this context.
+    pub fresh_nodes: i32,
+    pub latest_at: Option<String>,
+}
+
+/// Per-skill coverage rollup for a project — one row per attributed skill
+/// (`skill:<name>`, anonymous `skill:outbox` excluded), 30d window. The UI's
+/// coverage %, together with `dev_tools_memory_coverage().contexts` as the
+/// denominator.
+#[tauri::command]
+pub fn dev_tools_memory_skill_coverage(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<SkillCoverageRow>, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT SUBSTR(source, 7) AS skill,
+                    COUNT(DISTINCT CASE WHEN context_id IS NOT NULL THEN context_id END),
+                    COUNT(*),
+                    MAX(updated_at)
+             FROM memory_nodes
+             WHERE project_id = ?1 AND status = 'active'
+               AND source LIKE 'skill:%' AND source != 'skill:outbox'
+               AND datetime(updated_at) >= datetime('now', ?2)
+             GROUP BY source ORDER BY skill",
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params![project_id, format!("-{FRESH_DAYS} days")],
+            |r| {
+                Ok(SkillCoverageRow {
+                    skill: r.get(0)?,
+                    covered_contexts: r.get(1)?,
+                    fresh_nodes: r.get(2)?,
+                    latest_at: r.get(3)?,
+                })
+            },
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .flatten()
+        .collect();
+    Ok(rows)
+}
+
+/// Per-context progress for ONE skill (the context-detail modal): every
+/// dev_context with the skill's fresh node count — 0-count contexts included
+/// so the modal shows the uncovered remainder honestly.
+#[tauri::command]
+pub fn dev_tools_memory_skill_contexts(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    skill: String,
+) -> Result<Vec<SkillContextRow>, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    let source = format!("skill:{}", sanitize_skill_name(&skill));
+    let mut stmt = conn
+        .prepare(
+            "SELECT c.id, c.name,
+                    COUNT(n.id),
+                    MAX(n.updated_at)
+             FROM dev_contexts c
+             LEFT JOIN memory_nodes n
+               ON n.context_id = c.id AND n.project_id = c.project_id
+              AND n.status = 'active' AND n.source = ?2
+              AND datetime(n.updated_at) >= datetime('now', ?3)
+             WHERE c.project_id = ?1
+             GROUP BY c.id, c.name ORDER BY c.name",
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows = stmt
+        .query_map(
+            rusqlite::params![project_id, source, format!("-{FRESH_DAYS} days")],
+            |r| {
+                Ok(SkillContextRow {
+                    context_id: r.get(0)?,
+                    name: r.get(1)?,
+                    fresh_nodes: r.get(2)?,
+                    latest_at: r.get(3)?,
+                })
+            },
+        )
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .flatten()
+        .collect();
+    Ok(rows)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sanitize_skill_name_keeps_dir_safe_charset() {
+        assert_eq!(sanitize_skill_name("Passport-Onboard"), "passport-onboard");
+        assert_eq!(sanitize_skill_name("  kpi sim! "), "kpisim");
+        assert_eq!(sanitize_skill_name("../../evil"), "evil");
+        assert_eq!(sanitize_skill_name(""), "");
+    }
+
+    #[test]
+    fn note_body_strips_frontmatter_and_links_section() {
+        let md = "---\npersonas_id: x\ntitle: \"T\"\n---\n\nBody text here.\n\n## Links\n- relates [[other]]\n";
+        assert_eq!(note_body(md), "Body text here.");
+        assert_eq!(note_body("Plain body, no frontmatter."), "Plain body, no frontmatter.");
+    }
+
+    #[test]
+    fn slug_collapses_and_caps() {
+        assert_eq!(slug("Hello, World!"), "hello-world");
+        assert_eq!(slug("  --x--  "), "x");
+    }
 }
 
 /// Coverage: contexts with ≥1 fresh (≤30d) active node / all contexts.

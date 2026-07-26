@@ -1009,6 +1009,28 @@ export const projectMemoryToVault = (projectId: string) =>
 export const importMemoryFromVault = (projectId: string) =>
   invoke<MemoryVaultImportResult>("dev_tools_memory_import_vault", { projectId });
 
+export interface SkillCoverageRow {
+  skill: string;
+  coveredContexts: number;
+  freshNodes: number;
+  latestAt: string | null;
+}
+
+export interface SkillContextRow {
+  contextId: string;
+  name: string;
+  freshNodes: number;
+  latestAt: string | null;
+}
+
+/** Per-skill context coverage (30d) — one row per attributed skill. */
+export const memorySkillCoverage = (projectId: string) =>
+  invoke<SkillCoverageRow[]>("dev_tools_memory_skill_coverage", { projectId });
+
+/** Per-context progress for ONE skill (0-count contexts included). */
+export const memorySkillContexts = (projectId: string, skill: string) =>
+  invoke<SkillContextRow[]>("dev_tools_memory_skill_contexts", { projectId, skill });
+
 /**
  * Execute a queued Dev-runner task. `model` optionally overrides the model for
  * THIS run (e.g. skill adopt/share pins "claude-sonnet-5"); omit to keep the
@@ -1240,6 +1262,9 @@ export interface SkillEntry {
   /** Memory binding from SKILL.md frontmatter (`memory:` — 'project' | 'vault'
    *  | 'none'), or null = undeclared → dispatches carry no MEMORY BLOCK. */
   memory: string | null;
+  /** Frontmatter `contexts: tracked` — the skill declares it walks the context
+   *  map and anchors its memory per context (coverage rows in the Skills UI). */
+  contextTracked: boolean;
 }
 
 export interface SkillFileContent {

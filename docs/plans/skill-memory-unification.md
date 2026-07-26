@@ -159,3 +159,14 @@ scan reconciler; Obsidian projection/import reusing the Brain plugin's vault —
 ingest). Note: vault projection is one-way-per-direction on explicit triggers —
 edges project as wikilinks but vault-side wikilink edits do not import as edges
 (nodes only).
+
+**P4 addendum — skill↔context standardization (Skills Manager, 2026-07-26):**
+attribution: outbox node lines carry `"skill":"<name>"` → ingest stores
+`source = skill:<name>` (the MEMORY BLOCK bakes the concrete name in);
+declaration: frontmatter `contexts: tracked` promises the skill's method walks
+the context map (share prompt sets it only on evidence, adopt preserves it);
+recognition: a skill row is context-related ⇔ declared OR fresh attributed
+context-anchored nodes exist; coverage % = distinct fresh contexts (30d) from
+that skill / all dev_contexts (`dev_tools_memory_skill_coverage` /
+`_skill_contexts`). Usage counters need NO skill instrumentation — the
+`skill_usage` transcript miner already counts every invocation automatically.

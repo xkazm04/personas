@@ -141,6 +141,9 @@ export const devToolsItems: SubNavItem[] = [
   // Workspace Knowledge Center — workspace management + cross-project
   // practice library (docs/plans/workspace-knowledge-center.md).
   { id: 'workspaces', label: 'Workspaces', icon: Landmark },
+  // Skills Manager — workspace library vs active project, adopt/share,
+  // memory bindings + per-skill context coverage (skill-memory-unification).
+  { id: 'skills', label: 'Skills', icon: Wand2 },
 ];
 
 export const twinItems: SubNavItem[] = [

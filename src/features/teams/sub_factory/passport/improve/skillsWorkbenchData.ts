@@ -43,6 +43,10 @@ export interface WorkbenchSkill {
   /** Canonical category (Development/Testing/Maintenance/Data/Other); null
    *  renders under "Other". Assigned by the share LLM in SKILL.md frontmatter. */
   category: string | null;
+  /** Memory binding (project|vault|none) — installed skills only. */
+  memory?: string | null;
+  /** `contexts: tracked` declaration — installed skills only. */
+  contextTracked?: boolean;
 }
 
 export interface SkillsWorkbench {
@@ -165,7 +169,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
   const dispatchItems = useMemo<WorkbenchSkill[]>(() =>
     installed.map((s) => {
       const u = raw?.skillUsage?.[s.name];
-      return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null, category: s.category };
+      return { name: s.name, description: s.description, sourceLabel: s.sourceKind, usage: u ?? null, category: s.category, memory: s.memory, contextTracked: s.contextTracked };
     }), [installed, raw]);
 
   const runAdopt = useCallback(async (name: string) => {

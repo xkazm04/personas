@@ -509,8 +509,28 @@ src/features/plugins/dev-tools/
 │   ├── goals/forceLayout.ts      # constellation force-directed layout
 │   ├── GoalConstellation.tsx · GoalKanban.tsx
 │   └── i18n/                     # 14 language stubs (deprecated — use root i18n)
-└── sub_skills/
-    └── SkillBrowserPage.tsx      # markdown skill browser + inline editor
+└── sub_skills/                   # Skills Manager (2nd-level "Skills" item)
+    ├── SkillsManagerPage.tsx     # host: project switcher toolbar + variants
+    ├── skillsManagerData.ts      # data spine (workbench reuse + coverage + usage + memory switch)
+    ├── skillsManagerBits.tsx     # MemoryBindingButton · UsageLine · CoverageBar
+    ├── SkillsManagerRegistry.tsx # prototype variant A (editorial ledger)
+    ├── SkillsManagerExchange.tsx # prototype variant B (trading floor)
+    └── SkillContextsModal.tsx    # per-context progress modal (Bars/Grid)
 ```
+
+### Skills Manager (`skills` tab)
+
+The workspace skill library (`~/.claude/skills`) on the left, the **active
+project's** installed skills on the right, a project switcher in the toolbar.
+Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
+LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
+skill instrumentation needed), a **memory-binding icon** (internal ledger /
+Obsidian / none — click cycles it by patching the SKILL.md `memory:`
+frontmatter), and the project side splits **context-tracked** skills (declared
+`contexts: tracked` in frontmatter OR evidenced by skill-attributed Memory
+Ledger nodes) from standard ones. Context-tracked rows show **coverage %**
+(distinct contexts with fresh ≤30d nodes from that skill / all contexts) and
+click through to a per-context progress modal. Attribution contract: outbox
+node lines carry `"skill":"<name>"` (baked into the dispatch MEMORY BLOCK).
 
 All copy lives under `t.plugins.dev_tools.*` in `src/i18n/locales/en.json` (≈180 keys, including the `pr_bridge_*` and `scoreboard_*` blocks). Color tokens are static maps in `constants/ideaColors.ts` — dynamic Tailwind classes (`bg-${color}-500/15`) are banned because the JIT cannot see them. Tauri IPC uses `invokeWithTimeout` from `@/lib/tauriInvoke`; raw `invoke` is blocked by ESLint. Store slices live under `src/stores/slices/system/devTools*Slice.ts` and are composed into the single `useSystemStore`.

@@ -86,7 +86,7 @@ export function buildKpiSimPrompt(project: DevProject, mode: KpiSimMode): string
     // Project Memory Ledger (docs/plans/skill-memory-unification.md P1): the
     // sim leaves durable notes for the next terminal — the app sweeps the
     // outbox into memory_nodes when this session exits.
-    'MEMORY: before finishing, append 3-6 JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) recording what the NEXT run needs: measurement gotchas, which commands/harness actually worked, decisions taken. Line shape: {"type":"node","kind":"progress|gotcha|decision|fact","title":"≤200 chars","body":"optional detail"}. The app ingests and deletes the file after your session ends.',
+    'MEMORY: before finishing, append 3-6 JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) recording what the NEXT run needs: measurement gotchas, which commands/harness actually worked, decisions taken. Line shape: {"type":"node","kind":"progress|gotcha|decision|fact","title":"≤200 chars","body":"optional detail","skill":"kpi-sim"}. Always include "skill":"kpi-sim" (it drives the app’s per-skill coverage instrument). The app ingests and deletes the file after your session ends.',
     '',
     'Before finishing: adversarially re-check your own result.json — delete any value you cannot trace to evidence, then validate it is parseable JSON. Print a final summary line: measurements / proposals / findings counts.',
   ].join('\n');
