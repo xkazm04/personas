@@ -1,13 +1,19 @@
 import { useState, useMemo } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink, Info, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { rankBy, RANK_OPTIONS, type RankKey } from '../libs/leaderboardRanking';
 import type { LeaderboardEntry, PerformanceTier } from '../libs/leaderboardScoring';
 import { metricValue, fleetValue, scoreTint } from './leaderboardViewHelpers';
 import type { LeaderboardViewProps } from './leaderboardViewTypes';
+
+/** Per-row stagger step (ms) and the cap on how many rows stagger within the
+ *  one-shot entrance ripple (docs/design/overview-loading.md §4). */
+const ROW_STEP_MS = 35;
+const MAX_ROW_STAGGER = 8;
 
 // Mirrors the real matrix's columns (rank + agent + 6 metrics) so the
 // placeholder's grid lands at the same geometry the content swaps into —
@@ -25,14 +31,17 @@ const PLACEHOLDER_COLUMNS: TableSkeletonColumn[] = [
 
 /**
  * Calm, content-shaped placeholder for {@link LeaderboardMatrixView} — the
- * legend strip + sortable table geometry, statically sized (no pulse) so
- * `LoadingReveal` can cross-fade it straight into the real matrix.
+ * legend strip + sortable table geometry, statically sized (no pulse).
+ * Invisible for its first 150ms (`animate-fade-in` + `animationDelay`, per
+ * docs/design/overview-loading.md §C) so a fast fleet-health fetch never
+ * paints it at all; the swap to the real matrix is a plain conditional in
+ * `LeaderboardPage`, not a cross-fade gate.
  */
 export function LeaderboardMatrixPlaceholder() {
   return (
-    <div className="max-w-5xl mx-auto w-full" aria-hidden="true">
+    <div className="max-w-5xl mx-auto w-full animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
       {/* Legend + sort-hint strip */}
-      <div className="flex items-center justify-between gap-3 mb-2.5 px-1">
+      <div className="flex items-center justify-between gap-3 mb-2.5 px-1 animate-fade-in" style={{ animationDelay: '150ms' }}>
         <div className="flex items-center gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className="flex items-center gap-1">
@@ -44,7 +53,10 @@ export function LeaderboardMatrixPlaceholder() {
         <span className="h-2.5 w-24 rounded bg-primary/[0.06]" />
       </div>
 
-      <div className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
+      <div
+        className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1 animate-fade-in"
+        style={{ animationDelay: '185ms' }}
+      >
         <TableSkeleton columns={PLACEHOLDER_COLUMNS} rows={6} calm rowPaddingY="py-2.5" headerPaddingY="py-3" />
       </div>
     </div>
@@ -135,6 +147,14 @@ export function LeaderboardMatrixView({
 
   const rows = useMemo(() => rankBy(leaderboard, sortKey), [leaderboard, sortKey]);
 
+  // One-shot entrance ripple (docs/design/overview-loading.md §4): each row
+  // fades in with a small per-row delay the first time it appears. Entered
+  // ids are remembered for the component's lifetime (no resetKey) so a
+  // refresh/poll recompute delivering the same agents never replays it, and
+  // re-sorting (same rows, new order) doesn't replay it either — only a
+  // genuinely new persona id ripples in.
+  const enter = useRevealTracker();
+
   // Surface the known latency-mapping gap: if every agent has the same speed
   // score, the column is non-differentiating and we flag it inline.
   const speedAllEqual = useMemo(() => {
@@ -189,13 +209,18 @@ export function LeaderboardMatrixView({
             </tr>
           </thead>
           <tbody>
-            {rows.map((entry, idx) => (
-              <motion.tr
+            {rows.map((entry, idx) => {
+              const animate = !reduce && !enter.hasEntered(entry.personaId);
+              const delay = animate ? Math.min(idx, MAX_ROW_STAGGER) * ROW_STEP_MS : 0;
+              return (
+              <tr
                 key={entry.personaId}
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: reduce ? 0 : 0.22, delay: reduce ? 0 : idx * 0.025 }}
-                className="hover:bg-primary/[0.03] transition-colors"
+                className={`hover:bg-primary/[0.03] transition-colors ${animate ? 'animate-fade-in' : ''}`}
+                style={animate ? { animationDelay: `${delay}ms` } : undefined}
+                onAnimationEnd={(e) => {
+                  // Only our own entrance fade — ignore bubbled child animations.
+                  if (e.target === e.currentTarget) enter.markEntered(entry.personaId);
+                }}
               >
                 <td className="px-2 py-2 text-center align-middle border-t border-primary/[0.06]">
                   {entry.medal ? (
@@ -225,8 +250,9 @@ export function LeaderboardMatrixView({
                     headline={opt.key === 'overall'}
                   />
                 ))}
-              </motion.tr>
-            ))}
+              </tr>
+              );
+            })}
 
             {/* Fleet-average reference row */}
             <tr className="bg-primary/[0.02]">

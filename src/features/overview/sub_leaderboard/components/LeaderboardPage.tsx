@@ -2,7 +2,6 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useAgentStore } from '@/stores/agentStore';
@@ -71,20 +70,24 @@ export default function LeaderboardPage() {
       />
 
       <ContentBody centered>
-        <LoadingReveal loading={loading && leaderboard.length === 0} placeholder={<LeaderboardMatrixPlaceholder />}>
-          {leaderboard.length === 0 ? (
-            <EmptyState />
-          ) : leaderboard.length === 1 ? (
-            <SingleAgentView entry={leaderboard[0]!} />
-          ) : (
-            <LeaderboardMatrixView
-              leaderboard={leaderboard}
-              fleetBenchmark={fleetBenchmark}
-              fleetAvgScore={fleetAvgScore}
-              onNavigateToAgent={handleNavigateToAgent}
-            />
-          )}
-        </LoadingReveal>
+        {/* Loading choreography (docs/design/overview-loading.md): data on
+            screen is sacred, so this only decides what an EMPTY board shows.
+            A populated board never re-placeholders on refresh/poll — the gate
+            below flips to false the moment `leaderboard` has entries. */}
+        {loading && leaderboard.length === 0 ? (
+          <LeaderboardMatrixPlaceholder />
+        ) : leaderboard.length === 0 ? (
+          <EmptyState />
+        ) : leaderboard.length === 1 ? (
+          <SingleAgentView entry={leaderboard[0]!} />
+        ) : (
+          <LeaderboardMatrixView
+            leaderboard={leaderboard}
+            fleetBenchmark={fleetBenchmark}
+            fleetAvgScore={fleetAvgScore}
+            onNavigateToAgent={handleNavigateToAgent}
+          />
+        )}
       </ContentBody>
     </ContentBox>
   );
