@@ -113,13 +113,10 @@ function idleYield(): Promise<void> {
 export function useExecutionDashboardPipeline() {
   const { effectiveDays, compareEnabled, previousPeriodDays, selectedPersonaId } = useOverviewFilterValues();
   const {
-    fetchExecutionDashboard, fetchGlobalExecutions, fetchHealingIssues,
-    fetchObservabilityMetrics, fetchAlertRules, fetchAlertHistory,
+    runDashboardWave1, runDashboardWave2, fetchAlertRules, fetchAlertHistory,
   } = useOverviewStore(useShallow((s) => ({
-    fetchExecutionDashboard: s.fetchExecutionDashboard,
-    fetchGlobalExecutions: s.fetchGlobalExecutions,
-    fetchHealingIssues: s.fetchHealingIssues,
-    fetchObservabilityMetrics: s.fetchObservabilityMetrics,
+    runDashboardWave1: s.runDashboardWave1,
+    runDashboardWave2: s.runDashboardWave2,
     fetchAlertRules: s.fetchAlertRules,
     fetchAlertHistory: s.fetchAlertHistory,
   })));
@@ -159,24 +156,21 @@ export function useExecutionDashboardPipeline() {
         && Date.now() - lastPipelineRun.at < PIPELINE_TTL_MS) {
         return;
       }
-      // Wave 1: critical above-the-fold data
-      const wave1Ok = await settleAndReport([
-        { name: 'executionDashboard', fn: () => fetchExecutionDashboard(fetchDays) },
-        { name: 'globalExecutions', fn: () => fetchGlobalExecutions(true, undefined, selectedPersonaId || undefined) },
-      ], 'DashboardPipeline', signal);
+      // Wave 1: critical above-the-fold data (executionDashboard +
+      // globalExecutions). Coalesced into a single store commit by
+      // runDashboardWave1 instead of 3 sequential set()s.
+      const wave1Ok = await runDashboardWave1(fetchDays, selectedPersonaId || undefined);
       if (signal.cancelled) return;
       // Cache only a clean run — a partial failure should retry next mount.
       if (wave1Ok) lastPipelineRun = { filterKey, at: Date.now() };
       // Yield to an idle slot so wave 2 doesn't race wave 1's paint.
       await idleYield();
       if (signal.cancelled) return;
-      // Wave 2: secondary data
-      await settleAndReport([
-        { name: 'observabilityMetrics', fn: () => fetchObservabilityMetrics(fetchDays, selectedPersonaId || undefined) },
-        { name: 'healingIssues', fn: fetchHealingIssues },
-      ], 'DashboardPipeline', signal);
+      // Wave 2: secondary data (observabilityMetrics + healingIssues),
+      // likewise coalesced into a single commit by runDashboardWave2.
+      await runDashboardWave2(fetchDays, selectedPersonaId || undefined);
     },
-    [fetchExecutionDashboard, fetchObservabilityMetrics, fetchHealingIssues, fetchGlobalExecutions, fetchDays, selectedPersonaId, filterKey],
+    [runDashboardWave1, runDashboardWave2, fetchDays, selectedPersonaId, filterKey],
   );
 
   // Debounce filter-driven refreshes to avoid redundant fetches when

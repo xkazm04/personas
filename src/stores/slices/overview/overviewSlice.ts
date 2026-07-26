@@ -11,9 +11,11 @@ import type { ManualReviewStatus } from "@/lib/bindings/ManualReviewStatus";
 import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { MetricsChartPoint } from "@/lib/bindings/MetricsChartPoint";
+import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import { listAllExecutions, countExecutions } from "@/api/agents/executions";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import { getExecutionDashboard, getOverviewBundle } from "@/api/overview/observability";
+import { listHealingIssues } from "@/api/overview/healing";
 import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } from "@/api/overview/reviews";
 
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
@@ -90,6 +92,21 @@ export interface OverviewSlice {
    *  dashboard's pipeline subscribers. Architect perf scan, Phase B. */
   applyPipelineResults: (results: ReadonlyArray<{ source: string; error: string | null }>) => void;
   clearPipelineErrors: () => void;
+  /** Coalesced replacement for the pipeline's wave 1 (executionDashboard +
+   *  globalExecutions). Runs both fetches concurrently and, on the common
+   *  all-success path, applies both data sets + pipeline bookkeeping in a
+   *  SINGLE set() — instead of the 3 sequential set()s (one per fetch action
+   *  plus applyPipelineResults) the pipeline drove before. A source that
+   *  errors still gets its own dedicated error state (matching what
+   *  `fetchExecutionDashboard`/`fetchGlobalExecutions` did standalone) but
+   *  that no longer blocks the sibling source's data from landing in the
+   *  same commit as the pipeline bookkeeping. Returns true iff every source
+   *  succeeded (the pipeline's cache-gate needs this). Architect perf scan,
+   *  Phase B follow-up. */
+  runDashboardWave1: (days: number, personaId?: string) => Promise<boolean>;
+  /** Coalesced replacement for the pipeline's wave 2 (observabilityMetrics +
+   *  healingIssues). Same shape as `runDashboardWave1`. */
+  runDashboardWave2: (days: number, personaId?: string) => Promise<boolean>;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchGlobalExecutionCounts: (personaId?: string) => Promise<void>;
   fetchManualReviews: (status?: string) => Promise<void>;
@@ -192,6 +209,149 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     return { pipelineErrors: errors, pipelineFetchedAt: fetchedAt };
   }),
   clearPipelineErrors: () => set({ pipelineErrors: {} }),
+
+  runDashboardWave1: async (days, personaId) => {
+    const seq = ++fetchGlobalSeq;
+    const limit = GLOBAL_PAGE_SIZE; // wave 1 always calls fetchGlobalExecutions(reset=true, ...)
+    const [dashSettled, globalSettled] = await Promise.allSettled([
+      measureStoreAction('fetchExecutionDashboard', () =>
+        withRetry(() => getExecutionDashboard(days), "Failed to load execution dashboard"),
+      ),
+      listAllExecutions(limit, undefined, personaId),
+    ]);
+
+    let allOk = true;
+    const patch: Partial<OverviewStore> = { executionDashboardLoading: false };
+    const pipelineResults: Array<{ source: string; error: string | null }> = [];
+
+    if (dashSettled.status === 'fulfilled') {
+      patch.executionDashboard = dashSettled.value;
+      patch.executionDashboardDays = days;
+      patch.executionDashboardError = null;
+      pipelineResults.push({ source: 'executionDashboard', error: null });
+    } else {
+      allOk = false;
+      const classified = dashSettled.reason instanceof ApiError
+        ? dashSettled.reason
+        : classifyError(dashSettled.reason, "Failed to load execution dashboard");
+      const prefix = classified.isTransient ? '[Temporary] ' : '';
+      patch.executionDashboardError = prefix + classified.message;
+      pipelineResults.push({ source: 'executionDashboard', error: classified.message });
+    }
+
+    // Stale-response guard, same semantics as fetchGlobalExecutions: a
+    // superseded response is dropped silently (recorded as a no-op success)
+    // rather than clobbering a newer in-flight request's result.
+    if (seq !== fetchGlobalSeq) {
+      pipelineResults.push({ source: 'globalExecutions', error: null });
+    } else if (globalSettled.status === 'fulfilled') {
+      const rows = globalSettled.value;
+      const seen = new Set<string>();
+      const merged: GlobalExecution[] = [];
+      for (const r of rows) {
+        if (seen.has(r.id)) continue;
+        seen.add(r.id);
+        merged.push({
+          ...r,
+          director_score: null,
+          director_review_md: null,
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
+          persona_name: r.persona_name ?? undefined,
+          persona_icon: r.persona_icon ?? undefined,
+          persona_color: r.persona_color ?? undefined,
+        });
+      }
+      const rawCount = rows.length;
+      patch.globalExecutions = merged;
+      patch.globalExecutionsLimit = limit;
+      patch.globalExecutionsHasMore = rawCount >= limit;
+      patch.globalExecutionsOffset = merged.length;
+      patch.globalExecutionsWarning = null;
+      pipelineResults.push({ source: 'globalExecutions', error: null });
+    } else {
+      allOk = false;
+      const msg = reportError(globalSettled.reason, "Failed to fetch global executions", set);
+      pipelineResults.push({ source: 'globalExecutions', error: msg });
+    }
+
+    set((prev) => {
+      const errors = { ...prev.pipelineErrors };
+      const fetchedAt = { ...prev.pipelineFetchedAt };
+      const now = Date.now();
+      for (const { source, error } of pipelineResults) {
+        if (error) errors[source] = error;
+        else { delete errors[source]; fetchedAt[source] = now; }
+      }
+      return { ...patch, pipelineErrors: errors, pipelineFetchedAt: fetchedAt };
+    });
+
+    return allOk;
+  },
+
+  runDashboardWave2: async (days, personaId) => {
+    const dashboard = get().executionDashboard;
+    const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days;
+
+    const [obsSettled, healingSettled] = await Promise.allSettled([
+      withRetry(() => getOverviewBundle(days, personaId), "Failed to load observability metrics"),
+      listHealingIssues(),
+    ]);
+
+    let allOk = true;
+    const patch: Partial<OverviewStore> = {};
+    const pipelineResults: Array<{ source: string; error: string | null }> = [];
+
+    if (obsSettled.status === 'fulfilled') {
+      const bundle = obsSettled.value;
+      const summary = canReuseDashboard
+        ? {
+            totalExecutions: dashboard.total_executions,
+            successfulExecutions: dashboard.successful_executions,
+            failedExecutions: dashboard.failed_executions,
+            totalCostUsd: dashboard.total_cost,
+            activePersonas: dashboard.active_personas,
+            periodDays: days,
+          }
+        : bundle.metricsSummary;
+      patch.observabilityMetrics = { summary, chartData: bundle.metricsChartData };
+      patch.observabilityError = null;
+      pipelineResults.push({ source: 'observabilityMetrics', error: null });
+    } else {
+      allOk = false;
+      const classified = obsSettled.reason instanceof ApiError
+        ? obsSettled.reason
+        : classifyError(obsSettled.reason, "Failed to load observability metrics");
+      const prefix = classified.isTransient ? '[Temporary] ' : '';
+      patch.observabilityError = prefix + classified.message;
+      if (classified.isTransient) {
+        log.warn('overviewSlice', 'Transient error fetching observability metrics (retries exhausted)', { error: classified.message });
+      }
+      pipelineResults.push({ source: 'observabilityMetrics', error: classified.message });
+    }
+
+    if (healingSettled.status === 'fulfilled') {
+      patch.healingIssues = healingSettled.value as PersonaHealingIssue[];
+      pipelineResults.push({ source: 'healingIssues', error: null });
+    } else {
+      allOk = false;
+      const msg = reportError(healingSettled.reason, "Failed to fetch healing issues", set);
+      pipelineResults.push({ source: 'healingIssues', error: msg });
+    }
+
+    set((prev) => {
+      const errors = { ...prev.pipelineErrors };
+      const fetchedAt = { ...prev.pipelineFetchedAt };
+      const now = Date.now();
+      for (const { source, error } of pipelineResults) {
+        if (error) errors[source] = error;
+        else { delete errors[source]; fetchedAt[source] = now; }
+      }
+      return { ...patch, pipelineErrors: errors, pipelineFetchedAt: fetchedAt };
+    });
+
+    return allOk;
+  },
 
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {
     const seq = ++fetchGlobalSeq;
