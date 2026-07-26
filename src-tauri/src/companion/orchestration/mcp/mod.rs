@@ -147,7 +147,7 @@ struct JsonRpcResponse {
 }
 
 #[derive(Serialize)]
-struct JsonRpcError {
+pub(crate) struct JsonRpcError {
     code: i32,
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -53,7 +53,6 @@ pub async fn run_verification(dir: &Path, command: &str, timeout: Duration) -> V
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
 

@@ -2595,7 +2595,7 @@ pub async fn promote_build_draft_inner(
     // below drops the persona object; stamped into `personas.core_profile`
     // after the promote transaction (Design-D parity with instant adopt —
     // until 2026-07-06 the mainline promote path silently lost the dials).
-    let mut promoted_core: Option<String> = None;
+    let promoted_core: Option<String>;
     let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
         None => {
             return Err(AppError::Validation(

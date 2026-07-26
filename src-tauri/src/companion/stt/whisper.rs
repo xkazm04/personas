@@ -166,7 +166,6 @@ pub async fn transcribe(
     // DETACHED_PROCESS avoids a flashing conhost; all stdio is piped).
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
         const DETACHED_PROCESS: u32 = 0x00000008;
         cmd.creation_flags(DETACHED_PROCESS);
     }

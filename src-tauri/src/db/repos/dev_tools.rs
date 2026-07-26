@@ -5195,7 +5195,7 @@ pub fn update_kpi(
         // Build SET clause field-by-field (small N; clarity over cleverness).
         let mut sets: Vec<String> = vec!["updated_at = datetime('now')".into()];
         let mut vals: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-        let mut push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
+        let push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
             vals.push(v);
             sets.push(format!("{col} = ?{}", vals.len()));
         };

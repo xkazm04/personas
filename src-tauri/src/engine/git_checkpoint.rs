@@ -39,7 +39,6 @@ async fn git(dir: &Path, args: &[&str]) -> Result<String, String> {
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
 

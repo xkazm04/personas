@@ -391,7 +391,6 @@ async fn synthesize_sidecar(
     // Hide the console window on Windows — same reasoning as kokoro.rs.
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
         const DETACHED_PROCESS: u32 = 0x00000008;
         cmd.creation_flags(DETACHED_PROCESS);
     }

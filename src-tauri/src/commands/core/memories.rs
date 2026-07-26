@@ -670,16 +670,10 @@ fn truncate_for_prompt(s: &str, max_chars: usize) -> String {
     if s.chars().count() <= max_chars {
         return s.to_string();
     }
-    let mut end = 0usize;
-    for (i, _) in s.char_indices().take(max_chars) {
-        end = i;
-    }
-    // `end` now points at the last kept-char's start; advance to its end.
-    if let Some((next_idx, _)) = s.char_indices().nth(max_chars) {
-        end = next_idx;
-    } else {
-        end = s.len();
-    }
+    let end = match s.char_indices().nth(max_chars) {
+        Some((next_idx, _)) => next_idx,
+        None => s.len(),
+    };
     format!("{}…[truncated]", &s[..end])
 }
 
