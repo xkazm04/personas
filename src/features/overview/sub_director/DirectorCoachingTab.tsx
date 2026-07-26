@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags, Inbox } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -8,7 +8,6 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { LoadingReveal } from '@/features/shared/components/feedback/LoadingReveal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { COACHING_GLYPH } from '@/features/shared/glyph/glyphs/coachingGlyph';
@@ -50,6 +49,16 @@ export default function DirectorCoachingTab() {
   const [selected, setSelected] = useState<DirectorRosterEntry | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [rosterFilter, setRosterFilter] = useState<RosterFilter | null>(null);
+
+  // One-shot entrance ripple for the scorecard sections (docs/design/overview-loading.md
+  // §"Panels & metric grids"): plays only the render where `ready` first flips true.
+  // A later refresh/period-change re-render leaves the sections already mounted —
+  // `enteredRef` flips permanently so the animate classes never re-apply.
+  const enteredRef = useRef(false);
+  const playEntrance = d.ready && !enteredRef.current;
+  useEffect(() => {
+    if (d.ready) enteredRef.current = true;
+  }, [d.ready]);
 
   // A facet (e.g. score-band 5) can become stale when the window changes and
   // that band empties — clear the filter on period change so it never points at
@@ -143,8 +152,9 @@ export default function DirectorCoachingTab() {
           className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
         />
         <div className="relative z-10">
-        <LoadingReveal loading={!d.ready} placeholder={<DirectorScorecardPlaceholder />}>
-        {!p || inScope === 0 ? (
+        {!d.ready ? (
+          <DirectorScorecardPlaceholder />
+        ) : !p || inScope === 0 ? (
           <EmptyState
             glyph={COACHING_GLYPH}
             title={t.director.empty_title}
@@ -210,10 +220,12 @@ export default function DirectorCoachingTab() {
             </div>
 
             {/* Scorecard */}
-            <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} />
+            <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} playEntrance={playEntrance} />
 
             {/* Coaching table */}
             <DirectorSection
+              className={playEntrance ? 'animate-fade-in' : undefined}
+              style={playEntrance ? { animationDelay: '105ms' } : undefined}
               label={t.director.table_title}
               icon={Star}
               action={
@@ -233,7 +245,6 @@ export default function DirectorCoachingTab() {
             </DirectorSection>
           </div>
         )}
-        </LoadingReveal>
         </div>
        </div>
       </ContentBody>
@@ -250,16 +261,22 @@ function Scorecard({
   d,
   filter,
   onFilterChange,
+  playEntrance,
 }: {
   d: ReturnType<typeof useDirector>;
   filter: RosterFilter | null;
   onFilterChange: (filter: RosterFilter | null) => void;
+  /** One-shot entrance ripple, true only on the render where the surface first
+   * becomes ready — never replayed by a refresh/period-change re-render. */
+  playEntrance: boolean;
 }) {
   const { t, tx } = useTranslation();
   const p = d.portfolio!;
   const { rollup } = p;
   const avgTone = p.avgScore != null ? scoreTone(p.avgScore) : null;
   const maxModelRuns = Math.max(1, ...rollup.models.map((m) => m.executions));
+  const entrance = (delayMs: number) =>
+    playEntrance ? { className: 'animate-fade-in', style: { animationDelay: `${delayMs}ms` } } : {};
 
   return (
     <>
@@ -298,19 +315,21 @@ function Scorecard({
         />
       </div>
 
-      <MomentumSummary roster={p.roster} filter={filter} onSelect={onFilterChange} />
+      <div {...entrance(0)}>
+        <MomentumSummary roster={p.roster} filter={filter} onSelect={onFilterChange} />
+      </div>
 
-      <DirectorSection label={t.director.value_leak_title} icon={Layers}>
+      <DirectorSection label={t.director.value_leak_title} icon={Layers} {...entrance(35)}>
         <ValueLeakBar rollup={rollup} />
       </DirectorSection>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
+        <DirectorSection label={t.director.score_distribution} icon={BarChart3} {...entrance(70)}>
           <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} filter={filter} onSelect={onFilterChange} />
         </DirectorSection>
 
         {rollup.models.length > 0 && (
-          <DirectorSection label={t.director.model_efficiency} icon={Cpu}>
+          <DirectorSection label={t.director.model_efficiency} icon={Cpu} {...entrance(70)}>
             <div className="space-y-1.5">
               {rollup.models.map((m) => {
                 const runPct = (m.executions / maxModelRuns) * 100;
@@ -337,7 +356,7 @@ function Scorecard({
       </div>
 
       {d.verdicts.length > 0 && (
-        <DirectorSection label={t.director.category_rollup_title} icon={Tags}>
+        <DirectorSection label={t.director.category_rollup_title} icon={Tags} {...entrance(105)}>
           <CategoryRollup verdicts={d.verdicts} />
         </DirectorSection>
       )}
@@ -348,19 +367,30 @@ function Scorecard({
 /**
  * Calm, sized placeholder mirroring the Scorecard + coaching-table silhouette
  * (subheader bar, 4 KPI tiles, momentum row, value-leak card, a two-up grid,
- * table rows) — shown only while `!d.ready` via `<LoadingReveal>`, so the
- * eventual swap to real content is a fade rather than a resize. No pulse, per
- * the golden loading pattern (`docs/design/overview-loading.md`).
+ * table rows) — shown only while `!d.ready`, swapped for real content via a
+ * plain conditional (no gate, no held content). Per §C of
+ * `docs/design/overview-loading.md`, the whole placeholder is invisible for
+ * its first 150ms (`animate-fade-in` + `fill-mode: both`) so a fast fetch
+ * never paints it, and its sections stagger in +35ms apart underneath that
+ * root delay. No pulse — the entrance stagger is the only motion.
  */
 function DirectorScorecardPlaceholder() {
   const bar = 'bg-primary/[0.06] rounded';
+  /** Absolute delay for a section, `stepMs` past the root's own 150ms gate. */
+  const delayOf = (stepMs: number) => `${150 + stepMs}ms`;
   return (
-    <div className="space-y-4 pb-6" aria-hidden="true">
+    <div className="space-y-4 pb-6 animate-fade-in" style={{ animationDelay: '150ms' }} aria-hidden="true">
       {/* Thin subheader */}
-      <div className="h-9 rounded-card border border-primary/10 bg-secondary/10" />
+      <div
+        className="h-9 rounded-card border border-primary/10 bg-secondary/10 animate-fade-in"
+        style={{ animationDelay: delayOf(0) }}
+      />
 
       {/* KPI tiles */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 animate-fade-in"
+        style={{ animationDelay: delayOf(35) }}
+      >
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -377,16 +407,22 @@ function DirectorScorecardPlaceholder() {
       </div>
 
       {/* Momentum row */}
-      <div className={`h-6 w-64 ${bar}`} />
+      <div className={`h-6 w-64 ${bar} animate-fade-in`} style={{ animationDelay: delayOf(70) }} />
 
       {/* Value-leak card */}
-      <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 72 }}>
+      <div
+        className="rounded-card border border-primary/10 bg-secondary/10 p-4 animate-fade-in"
+        style={{ height: 72, animationDelay: delayOf(105) }}
+      >
         <span className={`h-2.5 w-24 block mb-3 ${bar}`} />
         <span className={`h-3 w-full block ${bar}`} />
       </div>
 
       {/* Score distribution + model efficiency */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in"
+        style={{ animationDelay: delayOf(140) }}
+      >
         <div className="rounded-card border border-primary/10 bg-secondary/10 p-4" style={{ height: 160 }}>
           <span className={`h-2.5 w-32 block mb-3 ${bar}`} />
           <span className={`h-24 w-full block ${bar}`} />
@@ -398,7 +434,10 @@ function DirectorScorecardPlaceholder() {
       </div>
 
       {/* Coaching table */}
-      <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
+      <div
+        className="rounded-card border border-primary/10 bg-secondary/10 p-4 animate-fade-in"
+        style={{ animationDelay: delayOf(175) }}
+      >
         <span className={`h-2.5 w-28 block mb-3 ${bar}`} />
         <ListSkeleton calm rows={5} rowHeight={44} />
       </div>
