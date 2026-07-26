@@ -25,6 +25,7 @@ import { traceProgress } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useExecutionSummary } from '@/hooks/execution/useExecutionSummary';
+import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
@@ -147,6 +148,8 @@ export default function ExecutionMiniPlayer() {
   const elapsed = useElapsedTimer(isExecuting);
 
   const backgroundExecutions = useAgentStore((s) => s.backgroundExecutions);
+
+  useExecutionScope(activeExecutionId, executionPersonaId);
 
   // Structured execution trace for Power mode summary
   const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
