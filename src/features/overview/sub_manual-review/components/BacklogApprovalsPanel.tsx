@@ -10,7 +10,6 @@ import { ScanSearch, Check, X } from 'lucide-react';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
 import type { DecisionRecord } from '@/features/shared/components/decisions/decisionTypes';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 
@@ -31,11 +30,7 @@ export function BacklogApprovalsPanel({
   const r = t.overview.review;
 
   if (loading && ideas.length === 0) {
-    return (
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ListSkeleton rows={6} rowHeight={72} />
-      </div>
-    );
+    return <BacklogGhostRows />;
   }
 
   if (ideas.length === 0) {
@@ -95,6 +90,50 @@ export function BacklogApprovalsPanel({
           ]}
         />
       ))}
+    </ul>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BacklogGhostRows — calm, delayed ghost rows matching the DecisionRow
+// geometry (title + summary + fact chips + accept/reject actions) for the
+// only moment the backlog body has nothing to show while a fetch is in
+// flight (docs/design/overview-loading.md). No `animate-pulse`; each row
+// enters via `animate-fade-in` behind a >=120ms staggered delay so a fast
+// fetch never paints one.
+// ---------------------------------------------------------------------------
+
+const BACKLOG_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const BACKLOG_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
+
+function BacklogGhostRows() {
+  return (
+    <ul className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => {
+        const titleW = BACKLOG_GHOST_TITLE_WIDTHS[i % BACKLOG_GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <li
+            key={i}
+            className="flex items-start gap-3 px-4 py-3 border-l-2 border-l-transparent border-b border-primary/[0.06] animate-fade-in"
+            style={{ minHeight: 72, animationDelay: delay }}
+          >
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <span className={`block h-3.5 ${titleW} max-w-full ${BACKLOG_GHOST_BAR}`} />
+              <span className={`block h-2.5 w-2/3 max-w-[260px] ${BACKLOG_GHOST_BAR}`} />
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-10 ${BACKLOG_GHOST_BAR}`} />
+                <span className={`h-2.5 w-10 ${BACKLOG_GHOST_BAR}`} />
+                <span className={`h-2.5 w-10 ${BACKLOG_GHOST_BAR}`} />
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+              <span className="h-6 w-16 rounded-card bg-primary/[0.06]" />
+              <span className="h-6 w-16 rounded-card bg-primary/[0.06]" />
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

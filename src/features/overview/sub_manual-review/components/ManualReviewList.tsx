@@ -10,7 +10,6 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from "@/stores/toastStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -394,12 +393,16 @@ export default function ManualReviewList() {
       />
 
       <ContentBody flex>
-        <AnimatePresence mode="wait">
+        {/* Loading choreography (docs/design/overview-loading.md): the ghost
+            state is NOT part of the filter-view AnimatePresence below — a
+            fetch never wait-swaps against real content. It renders only when
+            the row region would otherwise be empty while a fetch is in
+            flight; the moment data lands it's replaced on the same frame. */}
         {reviewQueue.loading && filteredReviews.length === 0 ? (
-          <div key="loading" className="flex-1 min-h-0 overflow-hidden">
-            <ListSkeleton rows={8} rowHeight={84} />
-          </div>
-        ) : filteredReviews.length === 0 ? (
+          <ReviewGhostRows />
+        ) : (
+        <AnimatePresence mode="wait">
+        {filteredReviews.length === 0 ? (
           <motion.div
             key="empty"
             className="flex-1 flex items-center justify-center p-6"
@@ -462,6 +465,7 @@ export default function ManualReviewList() {
           </motion.div>
         )}
         </AnimatePresence>
+        )}
       </ContentBody>
 
       {/* Bulk selection belongs to the reviews queue only — the backlog and the
@@ -488,5 +492,60 @@ export default function ManualReviewList() {
         />
       )}
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReviewGhostRows — calm ghost rows for the ONLY moment the review-queue body
+// has nothing to show (a fetch with a cold store / empty filter context).
+//
+// Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
+// staggered animation-delay starting at 120ms — `both` holds opacity 0 through
+// the delay, so a fetch that resolves quickly never paints a single ghost.
+// The delay IS the anti-flash: no timers, no minimum display, and real content
+// (the focus flow or the inbox panel) replaces this on the very frame data
+// arrives — no gate, no held content. No `animate-pulse`, ever: the entrance
+// stagger is the only motion. Row height mirrors the 84px review-card
+// silhouette the old skeleton approximated.
+// ---------------------------------------------------------------------------
+
+const REVIEW_GHOST_BAR = 'rounded bg-primary/[0.06]';
+/** Deterministic width variation so ghosts read as review cards, not a barcode. */
+const REVIEW_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
+
+function ReviewGhostRows() {
+  return (
+    <div className="flex-1 min-h-0 overflow-hidden" aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => {
+        const titleW = REVIEW_GHOST_TITLE_WIDTHS[i % REVIEW_GHOST_TITLE_WIDTHS.length];
+        const delay = `${120 + i * 35}ms`;
+        return (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+            style={{ height: 84, animationDelay: delay }}
+          >
+            {/* persona icon */}
+            <span className="w-8 h-8 rounded-full bg-primary/[0.06] flex-shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              {/* title bar */}
+              <span className={`block h-3.5 ${titleW} max-w-full ${REVIEW_GHOST_BAR}`} />
+              {/* description bar */}
+              <span className={`block h-2.5 w-2/3 max-w-[280px] ${REVIEW_GHOST_BAR}`} />
+              {/* severity chip */}
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-2.5 w-2.5 rounded-interactive bg-primary/[0.06]" />
+                <span className="h-2.5 w-14 rounded bg-primary/[0.06]" />
+              </div>
+            </div>
+            {/* action-strip bars (approve / reject) */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="h-6 w-14 rounded-card bg-primary/[0.06]" />
+              <span className="h-6 w-14 rounded-card bg-primary/[0.06]" />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
