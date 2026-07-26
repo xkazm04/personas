@@ -86,5 +86,6 @@
   "support_title": "Canales de soporte",
   "persona_open": "Abrir donde trabaja esta persona",
   "demo_cell_hint": "proyecto de ejemplo — acciones desactivadas",
-  "demo_badge_reopen": "Ver cómo cargar tus propios proyectos"
+  "demo_badge_reopen": "Ver cómo cargar tus propios proyectos",
+  "dim_view_only": "solo lectura — detectado, no se configura aquí"
 }

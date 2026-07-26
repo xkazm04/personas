@@ -87,6 +87,12 @@ export interface DimRegistryEntry {
   rowKey: string | null;
   action: DimActionKind;
   payloadKind: DimPayloadKind;
+  /** True for dimensions that are inert BY DESIGN, not by omission — the
+   *  passport reports them read-only and the wall offers no row action either
+   *  (`auth`). The cells say so in their tooltip instead of leaving the user
+   *  clicking a dead square. A dimension that is merely un-wired yet does NOT
+   *  belong here; it belongs in a future action kind. */
+  viewOnly?: boolean;
   derive: (p: AppPassport, extras: DimDeriveExtras) => DimDerived;
 }
 
@@ -195,8 +201,12 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
     derive: (p) => ({ status: presence(p.stack.hosting), detail: p.stack.hosting ?? null, reached: 0, steps: 0 }),
   },
   auth: {
+    // View-only by design: `stack.auth` is a detection, not a setting. There is
+    // no `auth` row in deployActions/connectors and the wall renders it as a
+    // plain presence cell, so a canvas action here would break dimActions'
+    // invariant that a cell is clickable exactly when its wall row shows a gear.
     label: 'Auth', category: 'runtime', icon: KeyRound,
-    rowKey: null, action: null, payloadKind: 'icon',
+    rowKey: null, action: null, payloadKind: 'icon', viewOnly: true,
     derive: (p) => ({ status: presence(p.stack.auth), detail: p.stack.auth ?? null, reached: 0, steps: 0 }),
   },
   agents: {

@@ -18582,6 +18582,7 @@
     "support_title": "Support channels",
     "persona_open": "Open where this persona is working",
     "demo_cell_hint": "sample project — actions are disabled",
-    "demo_badge_reopen": "Show how to load your own projects"
+    "demo_badge_reopen": "Show how to load your own projects",
+    "dim_view_only": "view-only — detected, not configured here"
   }
 }

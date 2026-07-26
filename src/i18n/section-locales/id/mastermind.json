@@ -86,5 +86,6 @@
   "support_title": "Kanal dukungan",
   "persona_open": "Buka tempat persona ini bekerja",
   "demo_cell_hint": "proyek contoh — aksi dinonaktifkan",
-  "demo_badge_reopen": "Lihat cara memuat proyek Anda sendiri"
+  "demo_badge_reopen": "Lihat cara memuat proyek Anda sendiri",
+  "dim_view_only": "hanya lihat — terdeteksi, tidak diatur di sini"
 }

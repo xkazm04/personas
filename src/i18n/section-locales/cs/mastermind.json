@@ -86,5 +86,6 @@
   "support_title": "Kanály podpory",
   "persona_open": "Otevřít, kde tato persona pracuje",
   "demo_cell_hint": "ukázkový projekt — akce jsou vypnuté",
-  "demo_badge_reopen": "Zobrazit, jak načíst vlastní projekty"
+  "demo_badge_reopen": "Zobrazit, jak načíst vlastní projekty",
+  "dim_view_only": "jen ke čtení — zjištěno, zde se nenastavuje"
 }

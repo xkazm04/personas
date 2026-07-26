@@ -94,7 +94,7 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 | `tests` | Tests | tests level (+ coverage detail) | `tests` → Deploy |
 | `security` | Security | security level/tools | `security` → Deploy |
 | `hosting` | Hosting | `stack.hosting` | `hosting` → Deploy |
-| `auth` | Auth | `stack.auth` | — (inert) |
+| `auth` | Auth | `stack.auth` | — (**view-only by design**, see below) |
 | `agents` | Agents | automation level L1–L5 | `aiflow` → Deploy |
 | `skills` | Skills | `artifacts.skills` | green (installed) → **Skills Workbench** (Dispatch lane); else adopt → Deploy |
 | `llm` | LLM cost | `stack.llmTracking` | `llmtracking` → Deploy/connector |
@@ -194,7 +194,7 @@ Both sidebars, the context menu, and the list popovers share the app sidebar-men
 ## 12. Known gaps / deferred
 
 - **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
-- `auth` has no Improve counterpart yet (inert).
+- `auth` stays inert on purpose. Making it actionable is a **Passport-wall** change, not a canvas one: there is no `auth` row in `deployActions`/`connectors`, the wall renders it as a plain presence cell, and `passportModel` marks `stack.auth` view-only. A canvas action would break `dimActions`' invariant that a cell is clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true` so its cells say so in the tooltip.
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).
 - **Dimension categories** shipped (see §5) — the ceiling is lifted. Candidate future dimensions were brainstormed (Memory, Billing gate, Integrations constellation, Brand-in-core, Secrets hygiene, Dependency health, Backups/DR, i18n, Uptime, Agent Context, Evals) — design notes live in session history, not yet implemented.

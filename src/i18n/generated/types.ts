@@ -18589,5 +18589,6 @@ export type Translations = {
     persona_open: string;
     demo_cell_hint: string;
     demo_badge_reopen: string;
+    dim_view_only: string;
   };
 };

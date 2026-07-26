@@ -86,5 +86,6 @@
   "support_title": "Canaux de support",
   "persona_open": "Ouvrir là où ce persona travaille",
   "demo_cell_hint": "projet d’exemple — actions désactivées",
-  "demo_badge_reopen": "Voir comment charger vos propres projets"
+  "demo_badge_reopen": "Voir comment charger vos propres projets",
+  "dim_view_only": "lecture seule — détecté, non configurable ici"
 }

@@ -11,6 +11,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DimTile } from '../lib/DimTile';
 import { CATEGORY_ICON, categoryNodes, type CategoryNode } from '../lib/dimCategories';
+import { cellHint } from '../lib/dimMeta';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, scoreInkVar, STATE_INK } from '../lib/ink';
 import { FleetBadges } from '../lib/FleetBadges';
@@ -127,7 +128,7 @@ export const InverseIsland = memo(function InverseIsland({ island, z, band, mode
               h={CH}
               band={band}
               highlighted={highlightKey === n.key}
-              hint={isDemo ? t.mastermind.demo_cell_hint : undefined}
+              hint={cellHint(n.key, isDemo, t)}
               onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
             />
           );

@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { DimGlyph } from '../lib/DimGlyph';
 import { CATEGORY_ICON, categoryNodes, type CategoryNode } from '../lib/dimCategories';
+import { cellHint } from '../lib/dimMeta';
 import { DIM_REGISTRY } from '../lib/dimRegistry';
 import { DIM_INK, mix, STATE_INK } from '../lib/ink';
 import { hexPoints } from '../lib/hex';
@@ -126,7 +127,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
               y={p.y}
               band={band}
               highlighted={highlightKey === n.key}
-              hint={isDemo ? t.mastermind.demo_cell_hint : undefined}
+              hint={cellHint(n.key, isDemo, t)}
               onAction={n.action ? (e) => onDimOpen(island.slug, n, e) : undefined}
             />
           );
