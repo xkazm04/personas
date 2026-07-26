@@ -328,7 +328,17 @@ pub async fn synthesize_team_from_templates(
     let mut persona_ids: Vec<String> = Vec::new();
     for (tmpl, _role) in &valid_templates {
         let design_json = tmpl.design_result.as_deref().unwrap_or("{}");
-        let design: serde_json::Value = serde_json::from_str(design_json).unwrap_or_default();
+        let design: serde_json::Value = match serde_json::from_str(design_json) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::error!(
+                    template_id = %tmpl.test_case_name,
+                    error = %e,
+                    "unparseable design_result while synthesizing team — falling back to generic persona prompt"
+                );
+                serde_json::Value::Null
+            }
+        };
 
         let full_prompt = design
             .get("full_prompt_markdown")

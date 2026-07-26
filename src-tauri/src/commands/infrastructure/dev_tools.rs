@@ -596,8 +596,15 @@ pub fn dev_tools_run_goal_uat(
     }
     // Resolve scenario + target URL from the gate config, falling back to the
     // project's configured test-environment URL.
-    let cfg: serde_json::Value =
-        serde_json::from_str(gate.verify_config.as_deref().unwrap_or("{}")).unwrap_or_default();
+    let cfg: serde_json::Value = match serde_json::from_str(gate.verify_config.as_deref().unwrap_or("{}")) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::error!(goal_id = %goal_id, error = %e, "unparseable verify_config on browser UAT gate");
+            return Err(AppError::Validation(format!(
+                "This goal's UAT gate configuration is corrupted and could not be parsed: {e}"
+            )));
+        }
+    };
     let scenario = cfg
         .get("scenario")
         .and_then(|v| v.as_str())
