@@ -5,12 +5,17 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import { parseExperimentConfig, evaluatePass } from '../shared/experimentConfig';
 import { runPersonaAndWait } from '../shared/runPersona';
 import { createExperimentRun } from '@/api/researchLab/researchLab';
 import type { ResearchExperiment } from '@/api/researchLab/researchLab';
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 14;
 
 const AddExperimentForm = lazy(() => import('./AddExperimentForm'));
 const ExperimentRunsDrawer = lazy(() => import('./ExperimentRunsDrawer'));
@@ -59,6 +64,11 @@ export default function ExperimentsPanel() {
     () => Object.fromEntries(personas.map((p) => [p.id, p])),
     [personas],
   );
+
+  // A project switch replays the first-viewport cascade for its experiments;
+  // a refresh/poll re-delivering the same ids does not.
+  const enter = useRevealTracker(activeProjectId ?? 'none');
+  const showGhost = loading && projectExperiments.length === 0;
 
   const handleRun = useCallback(async (e: React.MouseEvent, exp: ResearchExperiment) => {
     e.stopPropagation();
@@ -125,10 +135,8 @@ export default function ExperimentsPanel() {
         extra={<span className="typo-caption text-foreground">{projectExperiments.length}</span>}
       />
 
-      {loading && projectExperiments.length === 0 ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground">{t.common.loading}</p>
-        </div>
+      {showGhost ? (
+        <ExperimentGhostRows />
       ) : projectExperiments.length === 0 ? (
         <EmptyState
           icon={FlaskConical}
@@ -139,14 +147,18 @@ export default function ExperimentsPanel() {
         />
       ) : (
         <div className="space-y-3">
-          {projectExperiments.map((exp: ResearchExperiment) => {
+          {projectExperiments.map((exp: ResearchExperiment, index) => {
             const linked = exp.hypothesisId ? hypothesisMap[exp.hypothesisId] : null;
             const config = parseExperimentConfig(exp.inputSchema);
             const persona = config.linkedPersonaId ? personaMap[config.linkedPersonaId] : null;
             const isRunning = runningId === exp.id;
             return (
-              <div
+              <RevealItem
                 key={exp.id}
+                revealId={exp.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
                 className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group"
               >
                 <div className="flex items-start gap-3">
@@ -219,7 +231,7 @@ export default function ExperimentsPanel() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
+              </RevealItem>
             );
           })}
         </div>
@@ -240,6 +252,40 @@ export default function ExperimentsPanel() {
           />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ExperimentGhostRows — calm ghost rows for the ONLY moment the experiment
+// list has nothing to show. Delayed `animate-fade-in` entrance (120ms+
+// stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-56', 'w-44', 'w-60'];
+
+function ExperimentGhostRows() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-secondary/50 border border-border/30 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="w-4 h-4 rounded bg-primary/[0.06] mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <span className="block h-2.5 w-40 rounded bg-primary/[0.04]" />
+              <div className="flex items-center gap-2 mt-3">
+                <span className="h-4 w-16 rounded-full bg-primary/[0.06]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

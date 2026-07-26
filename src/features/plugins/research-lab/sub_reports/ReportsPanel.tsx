@@ -3,10 +3,15 @@ import { FileText, Trash2, Eye } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import type { ResearchReport } from '@/api/researchLab/researchLab';
 import type { Translations } from '@/i18n/en';
+
+/** Cards in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_CARDS = 14;
 
 const AddReportForm = lazy(() => import('./AddReportForm'));
 const ReportPreviewDrawer = lazy(() => import('./ReportPreviewDrawer'));
@@ -43,6 +48,11 @@ export default function ReportsPanel() {
     [reports, activeProjectId],
   );
 
+  // A project switch replays the first-viewport cascade for its reports;
+  // a refresh/poll re-delivering the same ids does not.
+  const enter = useRevealTracker(activeProjectId ?? 'none');
+  const showGhost = loading && projectReports.length === 0;
+
   if (!activeProjectId) {
     return (
       <NoActiveProject
@@ -68,10 +78,8 @@ export default function ReportsPanel() {
         extra={<span className="typo-caption text-foreground">{projectReports.length}</span>}
       />
 
-      {loading && projectReports.length === 0 ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground">{t.common.loading}</p>
-        </div>
+      {showGhost ? (
+        <ReportGhostCards />
       ) : projectReports.length === 0 ? (
         <EmptyState
           icon={FileText}
@@ -82,9 +90,13 @@ export default function ReportsPanel() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projectReports.map((r: ResearchReport) => (
-            <div
+          {projectReports.map((r: ResearchReport, index) => (
+            <RevealItem
               key={r.id}
+              revealId={r.id}
+              order={index}
+              hasEntered={(id) => index >= CASCADE_CARDS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
               onClick={() => setPreviewing(r)}
               className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group cursor-pointer"
             >
@@ -127,7 +139,7 @@ export default function ReportsPanel() {
                   </button>
                 </div>
               </div>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}
@@ -143,6 +155,40 @@ export default function ReportsPanel() {
           <ReportPreviewDrawer report={previewing} onClose={() => setPreviewing(null)} />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ReportGhostCards — calm ghost cards for the ONLY moment the report grid
+// has nothing to show. Delayed `animate-fade-in` entrance (120ms+ stagger);
+// no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-32', 'w-44', 'w-36'];
+
+function ReportGhostCards() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-secondary/50 border border-border/30 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="w-4 h-4 rounded bg-primary/[0.06] mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <div className="flex items-center gap-2 mt-2">
+                <span className="h-4 w-16 rounded-full bg-primary/[0.06]" />
+                <span className="h-4 w-10 rounded-full bg-primary/[0.06]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

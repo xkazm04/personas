@@ -4,6 +4,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState } from '../shared/EmptyState';
 import { PrototypeTabs } from '../shared/PrototypeTabs';
@@ -11,6 +13,9 @@ import { projectStatusColor, projectStatusLabel, domainLabel } from '../shared/t
 import type { ResearchProject } from '@/api/researchLab/researchLab';
 import ResearchProjectListAtelier from './ResearchProjectListAtelier';
 import ResearchProjectListCartograph from './ResearchProjectListCartograph';
+
+/** Cards in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_CARDS = 14;
 
 const ResearchProjectForm = lazy(() => import('./ResearchProjectForm'));
 
@@ -92,13 +97,13 @@ function ResearchProjectListBaseline() {
     setEditing(null);
   };
 
-  if (loading && projects.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="typo-body text-foreground">{t.common.loading}</p>
-      </div>
-    );
-  }
+  // ── Loading choreography (docs/design/overview-loading.md, row-level) ──
+  // isFetching decides only what an EMPTY card region shows; store data
+  // already on screen is never hidden behind a refetch. No filter context
+  // exists on this list, so the cascade plays once per mount (nothing to
+  // reset against) and never replays on poll/revisit.
+  const enter = useRevealTracker();
+  const showGhost = loading && projects.length === 0;
 
   return (
     <div className="p-6 space-y-4 overflow-y-auto h-full">
@@ -108,7 +113,9 @@ function ResearchProjectListBaseline() {
         onAction={() => setShowForm(true)}
       />
 
-      {projects.length === 0 ? (
+      {showGhost ? (
+        <ProjectGhostCards />
+      ) : projects.length === 0 ? (
         <EmptyState
           icon={FolderSearch}
           title={t.research_lab.no_projects}
@@ -118,9 +125,13 @@ function ResearchProjectListBaseline() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map((project) => (
-            <div
+          {projects.map((project, index) => (
+            <RevealItem
               key={project.id}
+              revealId={project.id}
+              order={index}
+              hasEntered={(id) => index >= CASCADE_CARDS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
               onClick={() => handleSelect(project.id)}
               className={`rounded-card border p-4 hover:border-primary/30 transition-colors cursor-pointer group ${
                 activeId === project.id
@@ -193,7 +204,7 @@ function ResearchProjectListBaseline() {
                   </>
                 )}
               </div>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}
@@ -203,6 +214,43 @@ function ResearchProjectListBaseline() {
           <ResearchProjectForm onClose={handleCloseForm} editing={editing ?? undefined} />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ProjectGhostCards — calm ghost cards for the ONLY moment the grid has
+// nothing to show (a fetch with a cold store). Each ghost enters via
+// `animate-fade-in` (150ms, fill-mode: both) behind a staggered
+// animation-delay starting at 120ms, so a fetch that resolves quickly never
+// paints a single ghost. Real cards replace ghosts the frame data arrives
+// and play the same cascade in the same grid geometry. No `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
+
+function ProjectGhostCards() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card border border-border/30 bg-secondary/50 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <span className="block h-2.5 w-full max-w-[85%] rounded bg-primary/[0.04]" />
+            </div>
+            <span className="h-4 w-16 rounded-full bg-primary/[0.06] flex-shrink-0" />
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="h-4 w-14 rounded-full bg-primary/[0.06]" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -4,10 +4,15 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import { SignalMeter } from '../shared/SignalMeter';
 import type { ResearchHypothesis } from '@/api/researchLab/researchLab';
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 14;
 
 const AddHypothesisForm = lazy(() => import('./AddHypothesisForm'));
 const GenerateHypothesesModal = lazy(() => import('./GenerateHypothesesModal'));
@@ -54,6 +59,11 @@ export default function HypothesesPanel() {
     () => hypotheses.filter((h) => h.projectId === activeProjectId),
     [hypotheses, activeProjectId],
   );
+
+  // A project switch replays the first-viewport cascade for its hypotheses;
+  // a refresh/poll re-delivering the same ids does not.
+  const enter = useRevealTracker(activeProjectId ?? 'none');
+  const showGhost = loading && projectHypotheses.length === 0;
 
   if (!activeProjectId) {
     return (
@@ -102,10 +112,8 @@ export default function HypothesesPanel() {
         }
       />
 
-      {loading && projectHypotheses.length === 0 ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground">{t.common.loading}</p>
-        </div>
+      {showGhost ? (
+        <HypothesisGhostRows />
       ) : projectHypotheses.length === 0 ? (
         <EmptyState
           icon={Lightbulb}
@@ -116,12 +124,16 @@ export default function HypothesesPanel() {
         />
       ) : (
         <div className="space-y-3">
-          {projectHypotheses.map((h: ResearchHypothesis) => {
+          {projectHypotheses.map((h: ResearchHypothesis, index) => {
             const supporting = parseCount(h.supportingEvidence);
             const counter = parseCount(h.counterEvidence);
             return (
-              <div
+              <RevealItem
                 key={h.id}
+                revealId={h.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
                 className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group"
               >
                 <div className="flex items-start gap-3">
@@ -160,7 +172,7 @@ export default function HypothesesPanel() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
+              </RevealItem>
             );
           })}
         </div>
@@ -177,6 +189,39 @@ export default function HypothesesPanel() {
           <GenerateHypothesesModal project={activeProject} onClose={() => setShowGenerate(false)} />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HypothesisGhostRows — calm ghost rows for the ONLY moment the hypothesis
+// list has nothing to show. Delayed `animate-fade-in` entrance (120ms+
+// stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-60', 'w-48', 'w-64', 'w-52'];
+
+function HypothesisGhostRows() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-secondary/50 border border-border/30 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="w-4 h-4 rounded bg-primary/[0.06] mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <div className="flex items-center gap-4 mt-2">
+                <span className="h-3 w-24 rounded bg-primary/[0.04]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

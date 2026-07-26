@@ -3,6 +3,8 @@ import { BookOpen, ExternalLink, Trash2, Database, Search } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import { PrototypeTabs } from '../shared/PrototypeTabs';
@@ -12,6 +14,9 @@ import { useIngestSource } from '../shared/useIngestSource';
 import LiteratureSearchPanelAtelier from './LiteratureSearchPanelAtelier';
 import LiteratureSearchPanelWorkbench from './LiteratureSearchPanelWorkbench';
 import { debtText } from '@/i18n/DebtText';
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 14;
 
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
@@ -62,6 +67,13 @@ function LiteratureSearchPanelBaseline() {
     );
   }, [sources, filter]);
 
+  // A new project or a text-filter change replays the first-viewport cascade
+  // for the rows it produces; a refresh/poll re-delivering the same ids does
+  // not (they're already marked entered).
+  const revealResetKey = `${activeProjectId ?? 'none'}|${filter}`;
+  const enter = useRevealTracker(revealResetKey);
+  const showGhost = loading && sources.length === 0;
+
   if (!activeProjectId) {
     return (
       <NoActiveProject
@@ -111,10 +123,8 @@ function LiteratureSearchPanelBaseline() {
         />
       )}
 
-      {loading && sources.length === 0 ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground">{t.common.loading}</p>
-        </div>
+      {showGhost ? (
+        <SourceGhostRows />
       ) : filtered.length === 0 ? (
         sources.length === 0 ? (
           <EmptyState
@@ -129,9 +139,13 @@ function LiteratureSearchPanelBaseline() {
         )
       ) : (
         <div className="space-y-3">
-          {filtered.map((source) => (
-            <div
+          {filtered.map((source, index) => (
+            <RevealItem
               key={source.id}
+              revealId={source.id}
+              order={index}
+              hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
               className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group"
             >
               <div className="flex items-start gap-3">
@@ -194,7 +208,7 @@ function LiteratureSearchPanelBaseline() {
                   </button>
                 </div>
               </div>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}
@@ -210,6 +224,42 @@ function LiteratureSearchPanelBaseline() {
           <ArxivSearchModal projectId={activeProjectId} onClose={() => setShowArxiv(false)} />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SourceGhostRows — calm ghost rows for the ONLY moment the source list has
+// nothing to show (a fetch with a cold store / empty project). Delayed
+// `animate-fade-in` entrance (120ms+ stagger) so a fast fetch never paints
+// one; no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-56', 'w-44', 'w-64', 'w-48'];
+
+function SourceGhostRows() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-secondary/50 border border-border/30 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="w-4 h-4 rounded bg-primary/[0.06] mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <span className="block h-2.5 w-32 rounded bg-primary/[0.04]" />
+              <div className="flex items-center gap-2 mt-2">
+                <span className="h-4 w-16 rounded-full bg-primary/[0.06]" />
+                <span className="h-4 w-14 rounded-full bg-primary/[0.06]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

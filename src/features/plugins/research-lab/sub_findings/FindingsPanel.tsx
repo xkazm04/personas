@@ -3,10 +3,15 @@ import { Target, Trash2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import { SignalMeter } from '../shared/SignalMeter';
 import type { ResearchFinding } from '@/api/researchLab/researchLab';
+
+/** Rows in the first viewport that play the one-shot entrance cascade. */
+const CASCADE_ROWS = 14;
 
 const AddFindingForm = lazy(() => import('./AddFindingForm'));
 
@@ -29,6 +34,11 @@ export default function FindingsPanel() {
     () => findings.filter((f) => f.projectId === activeProjectId),
     [findings, activeProjectId],
   );
+
+  // A project switch replays the first-viewport cascade for its findings;
+  // a refresh/poll re-delivering the same ids does not.
+  const enter = useRevealTracker(activeProjectId ?? 'none');
+  const showGhost = loading && projectFindings.length === 0;
 
   if (!activeProjectId) {
     return (
@@ -55,10 +65,8 @@ export default function FindingsPanel() {
         extra={<span className="typo-caption text-foreground">{projectFindings.length}</span>}
       />
 
-      {loading && projectFindings.length === 0 ? (
-        <div className="flex items-center justify-center py-16">
-          <p className="typo-body text-foreground">{t.common.loading}</p>
-        </div>
+      {showGhost ? (
+        <FindingGhostRows />
       ) : projectFindings.length === 0 ? (
         <EmptyState
           icon={Target}
@@ -69,9 +77,13 @@ export default function FindingsPanel() {
         />
       ) : (
         <div className="space-y-3">
-          {projectFindings.map((f: ResearchFinding) => (
-            <div
+          {projectFindings.map((f: ResearchFinding, index) => (
+            <RevealItem
               key={f.id}
+              revealId={f.id}
+              order={index}
+              hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
               className="rounded-card bg-secondary/50 border border-border/30 p-4 hover:border-primary/30 transition-colors group"
             >
               <div className="flex items-start gap-3">
@@ -106,7 +118,7 @@ export default function FindingsPanel() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
+            </RevealItem>
           ))}
         </div>
       )}
@@ -116,6 +128,41 @@ export default function FindingsPanel() {
           <AddFindingForm projectId={activeProjectId} onClose={() => setShowForm(false)} />
         </Suspense>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// FindingGhostRows — calm ghost rows for the ONLY moment the finding list
+// has nothing to show. Delayed `animate-fade-in` entrance (120ms+ stagger);
+// no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-52', 'w-40', 'w-56'];
+
+function FindingGhostRows() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-secondary/50 border border-border/30 p-4 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="w-4 h-4 rounded bg-primary/[0.06] mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <span className={`block h-3.5 ${GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length]} max-w-full ${GHOST_BAR}`} />
+              <span className="block h-2.5 w-44 rounded bg-primary/[0.04]" />
+              <div className="flex items-center gap-2 mt-3">
+                <span className="h-4 w-14 rounded-full bg-primary/[0.06]" />
+                <span className="h-4 w-16 rounded-full bg-primary/[0.06]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
