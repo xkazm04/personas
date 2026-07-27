@@ -1248,7 +1248,7 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
     // does not cover redirects, so the request itself must go through the
     // SSRF-safe client whose resolver rejects private/internal IPs on every
     // connection (including redirect hops).
-    let client = crate::SSRF_SAFE_HTTP.clone();
+    let client = personas_core::http_clients::SSRF_SAFE_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(
@@ -1289,7 +1289,7 @@ async fn execute_tool_sse(
     // does not cover redirects, so the request itself must go through the
     // SSRF-safe client whose resolver rejects private/internal IPs on every
     // connection (including redirect hops).
-    let client = crate::SSRF_SAFE_HTTP.clone();
+    let client = personas_core::http_clients::SSRF_SAFE_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(

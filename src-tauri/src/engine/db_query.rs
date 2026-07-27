@@ -131,7 +131,7 @@ fn inject_row_limit(query_text: &str) -> String {
 /// DNS-rebinding window and blocks pivots to cloud IMDS / internal services.
 /// Self-hosted DBs on private addresses are intentionally rejected.
 fn http_client() -> reqwest::Client {
-    crate::SSRF_SAFE_HTTP.clone()
+    personas_core::http_clients::SSRF_SAFE_HTTP.clone()
 }
 
 /// Strip credential material from error messages before they reach the UI,

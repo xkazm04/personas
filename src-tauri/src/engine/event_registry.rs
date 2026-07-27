@@ -57,20 +57,9 @@ pub fn try_emit_event<P: Serialize + Clone>(
     app.emit(event, payload.clone())
 }
 
-// ---------------------------------------------------------------------------
-// Re-export payload types for convenient single-import
-// ---------------------------------------------------------------------------
-
-#[allow(unused_imports)]
-pub use super::auto_rollback::AutoRollbackEvent;
-#[allow(unused_imports)]
-pub use super::background::{OverdueTriggersEvent, SubscriptionCrashEvent, ZombieExecutionEvent};
-#[allow(unused_imports)]
-pub use super::failover::{CircuitBreakerStatus, CircuitTransitionEvent};
-#[allow(unused_imports)]
-pub use super::trace::TraceSpanEvent;
-#[allow(unused_imports)]
-pub use super::types::{
-    AiHealingStatusEvent, ExecutionOutputEvent, ExecutionStatusEvent, HealingEventPayload,
-    HealingIssueUpdatedEvent, HeartbeatEvent, QueueStatusEvent, StructuredExecutionEvent,
-};
+// NOTE: this module used to re-export the event payload types for
+// "convenient single-import". Every one of those re-exports was unused (they
+// all carried `#[allow(unused_imports)]`), and they made the registry depend on
+// `background`, `auto_rollback` and `failover` — 4k LOC of AppState/cloud/daemon
+// wiring — which in turn contaminated 14 other engine modules for the crate
+// split. Import payload types from the module that defines them.

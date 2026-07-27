@@ -54,7 +54,8 @@ const TRASH_DIRNAME: &str = ".trash";
 const TRASH_TTL_SECS: u64 = 7 * 24 * 60 * 60;
 
 /// Cached canonical managed root — resolved lazily on first call.
-static MANAGED_ROOT: OnceLock<PathBuf> = OnceLock::new();
+// The cache itself lives in `personas_core::drive_root` so `engine::prompt`
+// can read it without depending on the command layer. Resolution stays here.
 
 /// Returns true for filesystem noise the drive walkers should never surface
 /// (OS-generated metadata files). Shared by every directory walker so the
@@ -335,13 +336,13 @@ pub struct DriveStorageInfo {
 /// the cache first and fall back to a clean "open the drive panel once"
 /// error if it's still cold.
 pub fn managed_root_cache() -> Option<PathBuf> {
-    MANAGED_ROOT.get().cloned()
+    personas_core::drive_root::get()
 }
 
 /// Resolve and cache the managed drive root. Creates it on first call.
 pub(crate) fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
-    if let Some(root) = MANAGED_ROOT.get() {
-        return Ok(root.clone());
+    if let Some(root) = personas_core::drive_root::get() {
+        return Ok(root);
     }
 
     let base = if cfg!(debug_assertions) {
@@ -365,8 +366,7 @@ pub(crate) fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
     let canonical = std::fs::canonicalize(&base)?;
 
     // First writer wins — if two callers race, both see the same value.
-    let _ = MANAGED_ROOT.set(canonical.clone());
-    Ok(MANAGED_ROOT.get().cloned().unwrap_or(canonical))
+    Ok(personas_core::drive_root::set(canonical))
 }
 
 /// Sandbox a user-supplied relative path. Rejects absolute paths, `..`

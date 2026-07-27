@@ -119,7 +119,7 @@ impl N8nClient {
         Ok(Self {
             base_url,
             api_key,
-            http: crate::SHARED_HTTP.clone(),
+            http: personas_core::http_clients::SHARED_HTTP.clone(),
         })
     }
 

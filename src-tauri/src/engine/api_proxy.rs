@@ -832,9 +832,9 @@ pub async fn execute_api_request(
     // they can reach a self-hosted instance on localhost/LAN — a scoped, explicit
     // relaxation for those connectors only.
     let client = if allow_private {
-        crate::HTTP_ALLOW_PRIVATE.clone()
+        personas_core::http_clients::HTTP_ALLOW_PRIVATE.clone()
     } else {
-        crate::SSRF_SAFE_HTTP.clone()
+        personas_core::http_clients::SSRF_SAFE_HTTP.clone()
     };
     let upper_method = method.to_uppercase();
 

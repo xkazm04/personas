@@ -1026,7 +1026,7 @@ async fn execute_healthcheck_request_with_strategy(
     let client = if allow_private {
         // Self-hosted connector opted into private-network access — the
         // non-filtered client lets a localhost/LAN healthcheck connect.
-        crate::HTTP_ALLOW_PRIVATE.clone()
+        personas_core::http_clients::HTTP_ALLOW_PRIVATE.clone()
     } else {
         reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))

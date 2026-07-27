@@ -664,7 +664,7 @@ async fn try_refresh_oauth_token(
         connector_name
     );
 
-    let response = match crate::SHARED_HTTP
+    let response = match personas_core::http_clients::SHARED_HTTP
         .post(token_url)
         .header("Accept", "application/json")
         .form(&[

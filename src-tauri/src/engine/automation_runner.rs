@@ -533,7 +533,7 @@ async fn invoke_webhook(
         }
     };
 
-    let mut req = crate::SSRF_SAFE_HTTP
+    let mut req = personas_core::http_clients::SSRF_SAFE_HTTP
         .request(req_method, url)
         .timeout(std::time::Duration::from_millis(timeout_ms.max(1000) as u64));
 

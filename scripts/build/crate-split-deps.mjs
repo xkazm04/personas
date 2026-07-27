@@ -115,7 +115,7 @@ function stripComments(text) {
  * resolves to for this file, or null when it cannot cross a unit boundary.
  */
 function refsInFile(text, unitPrefix) {
-  const src = stripComments(text);
+  let src = stripComments(text);
   const lineOf = (idx) => src.slice(0, idx).split('\n').length;
   const found = []; // [unit, line]
 
@@ -140,7 +140,16 @@ function refsInFile(text, unitPrefix) {
   }
 
   // `super::sibling` — resolved against the file's parent module.
+  //
+  // ...but only OUTSIDE a nested `mod`, because inside one `super::` means the
+  // file's own module, not its parent. Nearly every nested module here is a
+  // `#[cfg(test)] mod tests` block at the end of the file, so truncating there
+  // is enough: `rate_limiter`'s test writing `super::AUTO_PRUNE_INTERVAL` was
+  // otherwise read as a dependency on `engine/mod.rs`, which alone made three
+  // more modules look unextractable.
   if (unitPrefix) {
+    const testMod = src.search(/\n\s*mod\s+tests\s*\{/);
+    if (testMod >= 0) src = src.slice(0, testMod);
     for (const m of src.matchAll(/super::([a-zA-Z0-9_]+(?:::[a-zA-Z0-9_]+)*)/g)) {
       found.push([unitOfPath(`${unitPrefix}::${m[1]}`), lineOf(m.index)]);
     }
@@ -202,6 +211,14 @@ const CORE_ALREADY = new Set(
     .filter((n) => n !== 'lib')
 );
 
+/**
+ * Top-level modules that are now separate crates, re-exported under their old
+ * name from `lib.rs` (`pub use personas_db as db;`). Same hazard as
+ * CORE_ALREADY: they have no source under `src/`, so without this they look
+ * like crate-root items and fold into `lib`, which depends on everything.
+ */
+const EXTRACTED_CRATES = new Map([['db', 'personas-db']]);
+
 // Everything else with no source file — `crate::AppState`, `crate::SHARED_HTTP`,
 // `crate::declare_lifecycle!` — is an item declared at the crate root. Fold
 // those into `lib` so a closure reports "this pulls in the crate root" rather
@@ -219,7 +236,9 @@ for (const [from, deps] of edges) {
     // on the last segment too.
     const leaf = restSegs.length ? restSegs[restSegs.length - 1] : to;
     let target;
-    if (CORE_ALREADY.has(to) || CORE_ALREADY.has(leaf)) {
+    if (EXTRACTED_CRATES.has(parent)) {
+      target = EXTRACTED_CRATES.get(parent);
+    } else if (CORE_ALREADY.has(to) || CORE_ALREADY.has(leaf)) {
       target = 'personas-core';
     } else if (restSegs.length && loc.has(parent)) {
       // `crate::db::init_test_db` — a snake_case name under a real module that
@@ -260,6 +279,53 @@ if (flag('--from') && flag('--to')) {
   process.exit(0);
 }
 
+if (flag('--portable')) {
+  // Largest extractable subset of a module tree.
+  //
+  // `--closure` answers "what must travel with X". This answers the inverse and
+  // more useful question for a big tangled tree: "how much of `engine` could
+  // leave TODAY, if the parts that reach upward simply stayed behind?" A module
+  // that pokes at `AppState` is application wiring, not library code, so leaving
+  // it in app_lib is a defensible boundary rather than a compromise.
+  //
+  // Fixpoint: start with every unit under the prefix, then repeatedly drop any
+  // unit with an edge to an excluded unit or to an already-dropped one.
+  const prefix = flag('--portable');
+  const excludeRoots = (flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const isExcluded = (u) => excludeRoots.some((e) => u === e || u.startsWith(`${e}::`));
+  const inPrefix = (u) => u === prefix || u.startsWith(`${prefix}::`);
+
+  const keep = new Set([...loc.keys()].filter(inPrefix));
+  const dropped = new Map(); // unit -> why
+  for (;;) {
+    let changed = false;
+    for (const u of [...keep]) {
+      for (const [to] of edges.get(u) ?? []) {
+        if (to === 'personas-core' || to === 'personas-db' || keep.has(to)) continue;
+        if (inPrefix(to) && !dropped.has(to)) continue;
+        const why = dropped.has(to) ? `via ${to}` : `-> ${to}`;
+        if (isExcluded(to) || dropped.has(to)) {
+          keep.delete(u);
+          dropped.set(u, why);
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+
+  const sum = (s) => [...s].reduce((a, u) => a + (loc.get(u) ?? 0), 0);
+  const keptRows = [...keep].map((u) => [u, loc.get(u) ?? 0]).sort((a, b) => b[1] - a[1]);
+  const dropRows = [...dropped].map(([u, w]) => [u, loc.get(u) ?? 0, w]).sort((a, b) => b[1] - a[1]);
+  console.log(`PORTABLE subset of \`${prefix}\` — ${keep.size} units, ${sum(keep)} LOC\n`);
+  for (const [u, n] of keptRows) console.log(`  ${String(n).padStart(6)}  ${u}`);
+  console.log(`\nSTAYS BEHIND — ${dropped.size} units, ${sum(new Set(dropped.keys()))} LOC`);
+  console.log('(reason: reaches an excluded unit, directly or through another that does)\n');
+  for (const [u, n, w] of dropRows) console.log(`  ${String(n).padStart(6)}  ${u.padEnd(38)} ${w}`);
+  process.exit(0);
+}
+
 if (flag('--closure')) {
   const seed = flag('--closure').split(',').map((s) => s.trim());
   // Units the caller commits to keeping OUT of the move. The closure stops at
@@ -283,7 +349,7 @@ if (flag('--closure')) {
   while (queue.length) {
     const u = queue.shift();
     for (const [to, count] of edges.get(u) ?? []) {
-      if (to === 'personas-core' || set.has(to)) continue;
+      if (to === 'personas-core' || to === 'personas-db' || set.has(to)) continue;
       if (excluded.has(to)) {
         if (!breaks.has(to)) breaks.set(to, []);
         breaks.get(to).push([u, count]);

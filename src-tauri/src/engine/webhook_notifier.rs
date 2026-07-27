@@ -418,7 +418,7 @@ pub async fn dispatch_to_url(
     provider: NotificationProvider,
     body: JsonValue,
 ) -> DispatchOutcome {
-    let client = crate::SSRF_SAFE_HTTP.clone();
+    let client = personas_core::http_clients::SSRF_SAFE_HTTP.clone();
     let req = client
         .post(url)
         .timeout(DELIVERY_TIMEOUT)

@@ -62,41 +62,11 @@ use engine::event_registry::event_name;
 use keyed_pool::KeyedResourcePool;
 use tauri::{Emitter, Manager};
 
-/// Shared HTTP client for all general-purpose HTTP callsites.
-///
-/// `reqwest::Client` is backed by an `Arc` internally, so `.clone()` is cheap
-/// and all clones share the same connection pool, TLS sessions, and DNS cache.
-/// This eliminates the overhead of constructing a fresh TLS connector and
-/// connection pool on every request.
-pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .expect("Failed to build shared HTTP client")
-});
-
-/// HTTP client with SSRF-safe DNS resolver that rejects private/internal IPs
-/// at connection time.  Used by the API proxy and any other path where the
-/// target URL is influenced by user-supplied credential data.
-pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    engine::url_safety::build_ssrf_safe_client(std::time::Duration::from_secs(30))
-});
-
-/// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
-/// targets by design. Used ONLY for connector requests whose connector metadata
-/// declares `allow_private_network: true` (inherently self-hosted tools such as a
-/// local LightTrack or a self-hosted Langfuse/LangSmith). The API proxy gates this
-/// strictly behind that flag; every other path keeps using [`SSRF_SAFE_HTTP`].
-///
-/// SECURITY: routing an untrusted / non-allow-private request through this client
-/// re-opens the SSRF hole `SSRF_SAFE_HTTP` closes. Only the flag-gated branch in
-/// `engine::api_proxy::execute_api_request` may use it.
-pub(crate) static HTTP_ALLOW_PRIVATE: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .expect("Failed to build allow-private HTTP client")
-});
+// The three process-wide HTTP clients live in `personas_core::http_clients` —
+// eleven engine call sites use them, and a `LazyLock` at this crate's root is
+// unreachable from any crate below. Re-exported so `crate::SHARED_HTTP` and
+// friends keep resolving.
+pub(crate) use personas_core::http_clients::{HTTP_ALLOW_PRIVATE, SHARED_HTTP, SSRF_SAFE_HTTP};
 
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {

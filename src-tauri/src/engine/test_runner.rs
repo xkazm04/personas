@@ -794,7 +794,7 @@ async fn execute_scenario_ollama(
         "stream": false
     });
 
-    let client = crate::SHARED_HTTP.clone();
+    let client = personas_core::http_clients::SHARED_HTTP.clone();
     let response = client
         .post(&url)
         .json(&body)
