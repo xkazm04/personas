@@ -210,12 +210,12 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
 /// strand a task mid-run; a warning is enough to catch a new writer that
 /// invents a vocabulary the Run Desk cannot render.
 fn warn_unknown_task_status(status: &str, op: &str) {
-    if !crate::db::models::TASK_STATUSES.contains(&status) {
+    if !crate::models::TASK_STATUSES.contains(&status) {
         tracing::warn!(
             status,
             op,
             "dev_tasks: unknown status written — the Run Desk renders only {:?}",
-            crate::db::models::TASK_STATUSES
+            crate::models::TASK_STATUSES
         );
     }
 }

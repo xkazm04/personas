@@ -24,8 +24,8 @@ fn test_pool() -> DbPool {
     {
         let conn = pool.get().expect("conn");
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        crate::db::migrations::run(&conn).expect("initial migrations");
-        crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        crate::migrations::run(&conn).expect("initial migrations");
+        crate::migrations::run_incremental(&conn).expect("incremental migrations");
     }
     pool
 }
@@ -511,7 +511,7 @@ fn legacy_pending_task_status_is_normalized_to_queued() {
     // Re-running the incremental migrations is what a boot does.
     {
         let conn = pool.get().unwrap();
-        crate::db::migrations::run_incremental(&conn).unwrap();
+        crate::migrations::run_incremental(&conn).unwrap();
     }
 
     assert_eq!(get_task_by_id(&pool, &task.id).unwrap().status, "queued");

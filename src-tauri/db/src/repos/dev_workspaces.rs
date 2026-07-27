@@ -870,8 +870,8 @@ pub fn materialize_practice_ideas(
         ),
         _ => practice.statement.trim().to_string(),
     };
-    let category = crate::db::models::IdeaCategory::from_token(&practice.kind)
-        .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+    let category = crate::models::IdeaCategory::from_token(&practice.kind)
+        .unwrap_or(crate::models::DEFAULT_IDEA_CATEGORY);
     let evidence = serde_json::json!({
         "practice_id": practice.id,
         "workspace_id": practice.workspace_id,
@@ -890,7 +890,7 @@ pub fn materialize_practice_ideas(
 
     let mut created = 0u32;
     for project_id in project_ids {
-        match crate::db::repos::dev_tools::create_finding(
+        match crate::repos::dev_tools::create_finding(
             pool,
             project_id,
             PRACTICE_ORIGIN,
@@ -1029,7 +1029,7 @@ pub fn practice_id_from_evidence(origin: Option<&str>, evidence: Option<&str>) -
 /// Best-effort — mirrors `record_idea_decision`'s posture: the verdict is the
 /// source of truth, the matrix is a projection, and a projection failure must
 /// never fail the verdict.
-pub fn sync_practice_adoption(pool: &DbPool, idea: &crate::db::models::DevIdea) {
+pub fn sync_practice_adoption(pool: &DbPool, idea: &crate::models::DevIdea) {
     if idea.status != "rejected" {
         return;
     }
@@ -1060,7 +1060,7 @@ pub fn sync_practice_adoption(pool: &DbPool, idea: &crate::db::models::DevIdea) 
 /// on failure). Best-effort, same posture as [`sync_practice_adoption`].
 pub fn sync_practice_adoption_for_task(
     pool: &DbPool,
-    idea: &crate::db::models::DevIdea,
+    idea: &crate::models::DevIdea,
     state: &str,
     note: &str,
 ) {
@@ -1773,8 +1773,8 @@ mod tests {
         {
             let conn = pool.get().expect("conn");
             conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-            crate::db::migrations::run(&conn).expect("migrations");
-            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+            crate::migrations::run(&conn).expect("migrations");
+            crate::migrations::run_incremental(&conn).expect("incremental migrations");
         }
         pool
     }
@@ -1785,7 +1785,7 @@ mod tests {
         let ws = create_workspace(pool, "WS", None, None).unwrap();
         let mut projects = Vec::new();
         for i in 0..n {
-            let p = crate::db::repos::dev_tools::create_project(
+            let p = crate::repos::dev_tools::create_project(
                 pool,
                 &format!("Proj {i}"),
                 &format!("/tmp/proj{i}"),
@@ -1814,13 +1814,13 @@ mod tests {
         (ws.id, k.id, projects)
     }
 
-    fn practice_ideas(pool: &DbPool, practice_id: &str) -> Vec<crate::db::models::DevIdea> {
+    fn practice_ideas(pool: &DbPool, practice_id: &str) -> Vec<crate::models::DevIdea> {
         let conn = pool.get().unwrap();
         let mut stmt = conn
             .prepare("SELECT * FROM dev_ideas WHERE dedup_key = ?1 ORDER BY project_id")
             .unwrap();
         let rows = stmt
-            .query_map(params![practice_dedup_key(practice_id)], crate::db::repos::dev_tools::row_to_idea)
+            .query_map(params![practice_dedup_key(practice_id)], crate::repos::dev_tools::row_to_idea)
             .unwrap();
         rows.collect::<Result<Vec<_>, _>>().unwrap()
     }
@@ -1931,7 +1931,7 @@ mod tests {
             .into_iter()
             .find(|i| i.project_id.as_deref() == Some(projects[0].as_str()))
             .unwrap();
-        crate::db::repos::dev_tools::update_idea(
+        crate::repos::dev_tools::update_idea(
             &pool, &accepted.id, None, None, Some("accepted"), None, None, None, None, None,
         )
         .unwrap();

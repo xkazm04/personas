@@ -6236,7 +6236,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                 // FKs off for the drop/rename: the guard must live OUTSIDE the
                 // ddl_step transaction — `PRAGMA foreign_keys` is a no-op once
                 // a transaction is open.
-                let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+                let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
                 ddl_step(
                     conn,
                     "DROP TABLE IF EXISTS workspace_practice_adoption_new;
