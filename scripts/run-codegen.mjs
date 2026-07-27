@@ -28,7 +28,7 @@ const TASKS = {
   "i18n-split": "scripts/i18n/split-locales.mjs",
   connectors:"scripts/generate-connector-seed.mjs",
   // Regenerates the curated connector-update event seed
-  // (src-tauri/src/db/builtin_shared_events.rs) + watch manifest from the
+  // (src-tauri/db/src/builtin_shared_events.rs) + watch manifest from the
   // connector list, preserving the firings ledger. Argless = catalog-only
   // refresh (a new connector auto-gets a Marketplace feed); firings are only
   // added via the manual --changes ingest. See docs/plans/curated-connector-events.md.

@@ -5,7 +5,7 @@
  *
  * Outputs:
  *   - src/lib/personas/templates/templateChecksums.ts   (frontend)
- *   - src-tauri/src/engine/template_checksums.rs         (backend)
+ *   - src-tauri/engine/src/template_checksums.rs         (backend)
  *
  * Run with:
  *   node scripts/generate-template-checksums.mjs
@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..');
 const TEMPLATES_DIR = join(ROOT, 'scripts', 'templates');
 const OUTPUT_FILE = join(ROOT, 'src', 'lib', 'personas', 'templates', 'templateChecksums.ts');
-const RUST_OUTPUT_FILE = join(ROOT, 'src-tauri', 'src', 'engine', 'template_checksums.rs');
+const RUST_OUTPUT_FILE = join(ROOT, 'src-tauri', 'engine', 'src', 'template_checksums.rs');
 
 function computeContentHashSync(content) {
   let h1 = 0xdeadbeef;

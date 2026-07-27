@@ -1739,13 +1739,10 @@ pub fn run() {
             // Phase 1
             greet,
             log_frontend_error,
-            get_startup_timing,
             report_frontend_ready,
             // Test automation (always registered; server only starts when enabled)
             test_automation::__test_respond,
             // Core -- Validation
-            commands::core::validation::get_validation_rules,
-            commands::core::validation::validate_persona_contracts,
             // Core -- Personas
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
@@ -1800,15 +1797,10 @@ pub fn run() {
             commands::core::memories::list_persona_memory_review_proposals,
             commands::core::memories::get_persona_memory_review_proposal,
             commands::core::memories::update_memory_tier,
-            commands::core::memories::run_memory_lifecycle,
             commands::core::memory_compile::compile_persona_memories,
             // Core -- Memory curation runs (persona_background_job framework)
-            commands::core::persona_jobs::enqueue_persona_memory_curation,
             commands::core::persona_jobs::enqueue_persona_memory_reflection,
             commands::core::persona_jobs::enqueue_team_memory_reflection,
-            commands::core::persona_jobs::list_persona_jobs,
-            commands::core::persona_jobs::get_persona_job,
-            commands::core::persona_jobs::cancel_persona_job,
             commands::core::persona_jobs::set_persona_curation_schedule,
             commands::core::persona_jobs::get_persona_curation_schedule,
             // Core -- Custom persona icons (desktop only — image decode pipeline)
@@ -1865,7 +1857,6 @@ pub fn run() {
             commands::execution::executions::count_executions,
             commands::execution::executions::search_executions,
             commands::execution::executions::get_execution,
-            commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,
             commands::execution::executions::prepare_persona_execution,
             commands::execution::executions::cancel_execution,
@@ -1981,7 +1972,6 @@ pub fn run() {
             commands::execution::evolution::evolution_trigger_cycle,
             commands::execution::evolution::evolution_check_eligibility,
             commands::execution::evolution::get_run_budget_state,
-            commands::execution::evolution::list_run_budgets,
             commands::execution::evolution::probe_cli_capabilities,
             // Execution -- Healing
             commands::execution::healing::list_healing_issues,
@@ -1989,8 +1979,6 @@ pub fn run() {
             commands::execution::healing::update_healing_status,
             commands::execution::healing::run_healing_analysis,
             commands::execution::healing::get_retry_chain,
-            commands::execution::healing::list_healing_knowledge,
-            commands::execution::healing::trigger_ai_healing,
             commands::execution::healing::get_healing_timeline,
             commands::execution::healing::list_healing_audit_log,
             commands::execution::healing::get_healing_effectiveness,
@@ -2003,7 +1991,6 @@ pub fn run() {
             commands::execution::knowledge::verify_knowledge_annotation,
             commands::execution::knowledge::dismiss_knowledge_annotation,
             commands::execution::knowledge::get_shared_knowledge_injection,
-            commands::execution::knowledge::build_kb_index,
             // Design -- Analysis
             commands::design::analysis::start_design_analysis,
             commands::design::analysis::refine_design,
@@ -2016,11 +2003,9 @@ pub fn run() {
             commands::design::build_sessions::start_build_session_headless,
             commands::design::build_sessions::answer_build_question,
             commands::design::build_sessions::cancel_build_session,
-            commands::design::build_sessions::reset_build_session_phase,
             commands::design::build_sessions::get_active_build_session,
             commands::design::build_sessions::get_latest_build_session,
             commands::design::build_sessions::list_build_sessions,
-            commands::design::build_sessions::list_pending_build_questions,
             commands::design::build_sessions::get_build_status,
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
@@ -2049,11 +2034,9 @@ pub fn run() {
             commands::design::n8n_transform::confirmation::confirm_n8n_persona_draft,
             commands::design::n8n_transform::cli_runner::continue_n8n_transform,
             // Design -- N8n Limits (canonical payload caps)
-            commands::design::n8n_limits::get_n8n_payload_limits,
             // Design -- N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
-            commands::design::n8n_sessions::list_n8n_sessions,
             commands::design::n8n_sessions::list_n8n_session_summaries,
             commands::design::n8n_sessions::update_n8n_session,
             commands::design::n8n_sessions::delete_n8n_session,
@@ -2075,9 +2058,7 @@ pub fn run() {
             commands::design::template_adopt::cancel_template_generate,
             commands::design::template_adopt::save_custom_template,
             // Design -- Template Integrity (backend verification)
-            commands::design::template_adopt::verify_template_integrity,
             commands::design::template_adopt::verify_template_integrity_batch,
-            commands::design::template_adopt::get_template_manifest_count,
             // Design -- Template Feedback
             commands::design::template_feedback::create_template_feedback,
             commands::design::template_feedback::list_template_feedback,
@@ -2118,8 +2099,6 @@ pub fn run() {
             commands::design::reviews::list_review_messages,
             commands::design::reviews::add_review_message,
             commands::design::reviews::seed_mock_manual_review,
-            commands::design::reviews::seed_linked_message_and_review,
-            commands::core::memories::seed_mock_memory,
             commands::execution::knowledge::seed_mock_knowledge,
             commands::tools::triggers::seed_mock_cron_agent,
             commands::communication::messages::seed_mock_message,
@@ -2169,9 +2148,6 @@ pub fn run() {
             commands::credentials::connectors::update_connector,
             commands::credentials::connectors::delete_connector,
             // OpenAPI Autopilot
-            commands::credentials::openapi_autopilot::openapi_parse_from_url,
-            commands::credentials::openapi_autopilot::openapi_parse_from_content,
-            commands::credentials::openapi_autopilot::openapi_generate_connector,
             commands::credentials::openapi_autopilot::openapi_playground_test,
             // Credentials -- Credential Design
             commands::credentials::credential_design::start_credential_design,
@@ -2330,7 +2306,6 @@ pub fn run() {
             commands::execution::ambient::capture_validation_screenshot,
             // Clipboard Intelligence -- error detection + KB search
             #[cfg(all(feature = "desktop", feature = "ml"))]
-            commands::execution::clipboard_intel::search_kb_for_clipboard_error,
             // Credential Recipes -- shared discovery cache
             commands::credentials::credential_recipes::get_credential_recipe,
             commands::credentials::credential_recipes::list_credential_recipes,
@@ -2351,7 +2326,6 @@ pub fn run() {
             commands::recipes::crud::get_credential_recipes,
             commands::recipes::crud::start_recipe_generation,
             commands::recipes::crud::cancel_recipe_generation,
-            commands::recipes::crud::get_use_case_recipes,
             commands::recipes::crud::promote_use_case_to_recipe,
             commands::recipes::crud::get_recipe_versions,
             commands::recipes::crud::start_recipe_versioning,
@@ -2360,7 +2334,6 @@ pub fn run() {
             commands::recipes::crud::revert_recipe_version,
             // Recipes -- Stage B Phase 1b derivation from templates
             commands::recipes::recipe_derivation::derive_recipes_from_template,
-            commands::recipes::recipe_derivation::list_recipes_by_template,
             // Recipes -- Stage D Phase 1 keyword matcher (composer suggestions)
             commands::recipes::recipe_match::match_recipes_to_intent,
             // Recipes -- Stage D Phase 4 telemetry (impression/accept/dismiss)
@@ -2368,16 +2341,12 @@ pub fn run() {
             commands::recipes::recipe_suggestion_log::get_recipe_suggestion_stats,
             commands::recipes::recipe_suggestion_log::list_recipe_suggestion_events,
             // Recipes -- Stage E.1 eligibility scoring (recipe vs persona)
-            commands::recipes::recipe_eligibility::get_recipe_eligibility,
-            commands::recipes::recipe_eligibility::get_recipe_catalog_for_persona,
             // Recipes -- Stage E.2 adoption pipeline (eligibility precheck + link)
             commands::recipes::recipe_adoption::adopt_recipe_for_persona,
-            commands::recipes::recipe_adoption::unadopt_recipe_from_persona,
             // Communication -- Events
             commands::communication::events::list_events,
             commands::communication::events::list_events_in_range,
             commands::communication::events::search_events,
-            commands::communication::events::publish_event,
             commands::communication::events::list_known_event_types,
             commands::communication::events::get_event_skipped_stats,
             commands::communication::events::list_subscriptions,
@@ -2484,7 +2453,6 @@ pub fn run() {
             commands::teams::teams::get_pipeline_analytics,
             commands::teams::teams::suggest_topology,
             commands::teams::teams::suggest_topology_llm,
-            commands::teams::teams::compile_workflow,
             // Team Memories
             commands::teams::team_channel::list_team_channel,
             commands::teams::team_channel::count_team_channel_kinds,
@@ -2575,7 +2543,6 @@ pub fn run() {
             // Tools -- GitHub Platform
             commands::tools::github_platform::github_list_repos,
             commands::tools::github_platform::github_check_permissions,
-            commands::tools::github_platform::github_create_patch_release,
             // Tools -- Deploy Automation
             commands::tools::deploy_automation::deploy_automation,
             // Tools -- Triggers
@@ -2589,10 +2556,8 @@ pub fn run() {
             commands::tools::triggers::delete_trigger,
             commands::tools::triggers::validate_trigger,
             commands::tools::triggers::get_trigger_health_map,
-            commands::tools::triggers::list_trigger_chains,
             commands::tools::triggers::link_persona_to_event,
             commands::tools::triggers::unlink_persona_from_event,
-            commands::tools::triggers::initialize_event_handlers_for_persona,
             commands::tools::triggers::update_persona_event_handler,
             commands::tools::triggers::cleanup_dead_trigger_events,
             commands::tools::triggers::rename_event_type,
@@ -2620,7 +2585,6 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::signing::list_document_signatures,
             #[cfg(feature = "p2p")]
-            commands::signing::get_document_signature,
             #[cfg(feature = "p2p")]
             commands::signing::delete_document_signature,
             #[cfg(feature = "p2p")]
@@ -2635,9 +2599,6 @@ pub fn run() {
             commands::ocr::ocr_drive_file_gemini,
             commands::ocr::ocr_drive_file_claude,
             commands::ocr::cancel_ocr_operation,
-            commands::ocr::list_ocr_documents,
-            commands::ocr::get_ocr_document,
-            commands::ocr::delete_ocr_document,
             // Artist -- 3D/2D Asset Management
             commands::artist::artist_check_blender,
             commands::artist::artist_install_blender_mcp,
@@ -2701,7 +2662,6 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_dispatch,
             // Connector Explorer -- reverse-engineering CLI factory (v1)
-            commands::design::connector_explorer::connector_explorer_explore,
             // Drive -- managed local filesystem plugin
             commands::drive::drive_get_root,
             commands::drive::drive_storage_info,
@@ -2746,7 +2706,6 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_read_vault_note,
             commands::obsidian_brain::obsidian_brain_push_goals,
             commands::obsidian_brain::obsidian_brain_lint_vault,
-            commands::obsidian_brain::obsidian_brain_semantic_lint_vault,
             commands::obsidian_brain::obsidian_drive_status,
             commands::obsidian_brain::obsidian_drive_push_sync,
             commands::obsidian_brain::obsidian_drive_pull_sync,
@@ -2787,14 +2746,11 @@ pub fn run() {
             commands::companion::chat::companion_set_fleet_boldness,
             commands::companion::chat::companion_get_fleet_boldness,
             commands::companion::chat::companion_wake_stats,
-            commands::companion::chat::companion_review_recent_executions_now,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,
-            commands::companion::fleet_bridge::companion_extract_fleet_patterns,
             commands::companion::mcp_bridge::companion_mcp_resolve_request,
             commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
             #[cfg(feature = "test-automation")]
-            commands::companion::mcp_bridge::companion_test_fleet_dispatch,
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
@@ -2832,7 +2788,6 @@ pub fn run() {
             commands::companion::consolidate::companion_apply_consolidation_item,
             commands::companion::consolidate::companion_reject_consolidation_item,
             commands::companion::consolidate::companion_decay_unused_facts,
-            commands::companion::consolidate::companion_prune_low_value_facts,
             commands::companion::consolidate::companion_run_reflection,
             commands::companion::consolidate::companion_list_reflections,
             commands::companion::consolidate::companion_get_reflection,
@@ -2840,8 +2795,6 @@ pub fn run() {
             commands::companion::consolidate::companion_get_cockpit,
             commands::companion::consolidate::companion_pin_widget_to_cockpit,
             commands::companion::consolidate::companion_unpin_widget_from_cockpit,
-            commands::companion::consolidate::companion_enqueue_curation_run,
-            commands::companion::consolidate::companion_discard_consolidation_run,
             commands::companion::observability::companion_get_usage_dashboard,
             commands::companion::observability::companion_get_health,
             commands::companion::observability::companion_get_adaptations,
@@ -2854,7 +2807,6 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_set_sensory_source_enabled,
             #[cfg(feature = "desktop")]
-            commands::companion::sensory::companion_purge_sensory_source,
             #[cfg(feature = "desktop")]
             commands::companion::sensory::companion_list_sensory_signals,
             #[cfg(feature = "desktop")]
@@ -2931,10 +2883,6 @@ pub fn run() {
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::get_model_routing_rules,
             commands::infrastructure::settings::set_model_routing_rules,
-            commands::infrastructure::git_checkpoint::dev_checkpoint_stage,
-            commands::infrastructure::git_checkpoint::dev_fork_from_checkpoint,
-            commands::infrastructure::git_checkpoint::dev_rollback_to_checkpoint,
-            commands::infrastructure::git_checkpoint::dev_list_run_checkpoints,
             commands::infrastructure::settings::delete_app_setting,
             commands::infrastructure::settings::get_quality_gate_config,
             commands::infrastructure::settings::set_quality_gate_config,
@@ -3065,7 +3013,6 @@ pub fn run() {
             commands::infrastructure::director::get_director_brain_history,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
-            commands::infrastructure::dev_tools::dev_tools_get_project,
             commands::infrastructure::dev_tools::dev_tools_create_project,
             commands::infrastructure::dev_tools::dev_tools_update_project,
             commands::infrastructure::dev_tools::dev_tools_set_standards_config,
@@ -3096,10 +3043,8 @@ pub fn run() {
             commands::infrastructure::workspace_divergence::dev_tools_workspace_cancel_divergence,
             commands::infrastructure::workspace_verify::dev_tools_workspace_verify_adoptions,
             commands::infrastructure::workspace_verify::dev_tools_workspace_get_verify_status,
-            commands::infrastructure::workspace_verify::dev_tools_workspace_cancel_verify,
             // Dev Tools -- Goals
             commands::infrastructure::dev_tools::dev_tools_list_goals,
-            commands::infrastructure::dev_tools::dev_tools_get_goal,
             commands::infrastructure::dev_tools::dev_tools_create_goal,
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
@@ -3160,7 +3105,6 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_remove_goal_dependency,
             // Dev Tools -- Goal Signals
             commands::infrastructure::dev_tools::dev_tools_list_goal_signals,
-            commands::infrastructure::dev_tools::dev_tools_create_goal_signal,
             // Dev Tools -- Goal Items + progress resolver (goals hub)
             commands::infrastructure::dev_tools::dev_tools_list_goal_items,
             commands::infrastructure::dev_tools::dev_tools_create_goal_item,
@@ -3181,8 +3125,6 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_resolve_goal_acceptance,
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
-            commands::infrastructure::dev_tools::dev_tools_portfolio_summary,
-            commands::infrastructure::dev_tools::dev_tools_attention_queue,
             commands::infrastructure::dev_tools::dev_tools_goal_advancing_teams,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
@@ -3192,18 +3134,15 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_reorder_context_groups,
             // Dev Tools -- Contexts
             commands::infrastructure::dev_tools::dev_tools_list_contexts,
-            commands::infrastructure::dev_tools::dev_tools_get_context,
             commands::infrastructure::dev_tools::dev_tools_create_context,
             commands::infrastructure::dev_tools::dev_tools_update_context,
             commands::infrastructure::dev_tools::dev_tools_delete_context,
-            commands::infrastructure::dev_tools::dev_tools_move_context_to_group,
             commands::infrastructure::dev_tools::dev_tools_set_context_pinned,
             // Dev Tools -- Context Generation (LLM-powered codebase scan)
             commands::infrastructure::context_generation::dev_tools_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
             commands::infrastructure::context_audit::dev_tools_audit_contexts,
-            commands::infrastructure::incremental_scan::dev_tools_compute_scan_delta,
             // System operations (trigger → built-in op automations; Chain Studio + Context Map)
             commands::infrastructure::system_ops::system_ops_list_kinds,
             commands::infrastructure::system_ops::system_ops_list_automations,
@@ -3232,8 +3171,6 @@ pub fn run() {
             // Dev Tools -- Scans
             commands::infrastructure::dev_tools::dev_tools_list_scans,
             commands::infrastructure::dev_tools::dev_tools_get_scan,
-            commands::infrastructure::dev_tools::dev_tools_create_scan,
-            commands::infrastructure::dev_tools::dev_tools_update_scan,
             // Dev Tools -- Idea Scanner (LLM-powered)
             commands::infrastructure::idea_scanner::dev_tools_list_scan_agents,
             commands::infrastructure::idea_scanner::dev_tools_run_scan,
@@ -3246,10 +3183,7 @@ pub fn run() {
             commands::infrastructure::static_scan::dev_tools_run_static_scan,
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,
-            commands::infrastructure::dev_tools::dev_tools_get_task,
             commands::infrastructure::dev_tools::dev_tools_create_task,
-            commands::infrastructure::dev_tools::dev_tools_update_task,
-            commands::infrastructure::dev_tools::dev_tools_delete_task,
             // Dev Tools -- Task Executor (CLI-powered)
             commands::infrastructure::task_executor::dev_tools_execute_task,
             commands::infrastructure::task_executor::dev_tools_start_batch,
@@ -3263,14 +3197,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_run_triage_rules,
             // Dev Tools -- Pipelines (Idea-to-Execution)
-            commands::infrastructure::dev_tools::dev_tools_create_pipeline,
-            commands::infrastructure::dev_tools::dev_tools_list_pipelines,
-            commands::infrastructure::dev_tools::dev_tools_get_pipeline,
-            commands::infrastructure::dev_tools::dev_tools_advance_pipeline,
-            commands::infrastructure::dev_tools::dev_tools_delete_pipeline,
             // Dev Tools -- Health Snapshots
-            commands::infrastructure::dev_tools::dev_tools_list_health_snapshots,
-            commands::infrastructure::dev_tools::dev_tools_save_health_snapshot,
             // Dev Tools -- Cross-Project (Codebases connector)
             commands::infrastructure::dev_tools::dev_tools_list_cross_project_relations,
             commands::infrastructure::dev_tools::dev_tools_upsert_cross_project_relation,
@@ -3387,30 +3314,22 @@ pub fn run() {
             commands::network::identity::delete_trusted_peer,
             // Network -- Owned Devices (cross-device persona continuity, ADR 2026-05-24 Stage 2)
             #[cfg(feature = "p2p")]
-            commands::network::owned_devices::get_device_group_id,
             #[cfg(feature = "p2p")]
-            commands::network::owned_devices::list_owned_devices,
             #[cfg(feature = "p2p")]
-            commands::network::owned_devices::register_owned_device,
             #[cfg(feature = "p2p")]
-            commands::network::owned_devices::forget_owned_device,
             // Network -- Exposure Manifest (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_exposed_resources,
             #[cfg(feature = "p2p")]
-            commands::network::exposure::get_exposed_resource,
             #[cfg(feature = "p2p")]
             commands::network::exposure::create_exposed_resource,
             #[cfg(feature = "p2p")]
-            commands::network::exposure::update_exposed_resource,
             #[cfg(feature = "p2p")]
             commands::network::exposure::delete_exposed_resource,
             #[cfg(feature = "p2p")]
-            commands::network::exposure::get_exposure_manifest,
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_provenance,
             #[cfg(feature = "p2p")]
-            commands::network::exposure::get_resource_provenance,
             // Network -- Bundle (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::bundle::export_persona_bundle,
@@ -3419,7 +3338,6 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::bundle::apply_bundle_import,
             #[cfg(feature = "p2p")]
-            commands::network::bundle::verify_bundle,
             #[cfg(feature = "p2p")]
             commands::network::bundle::export_bundle_to_clipboard,
             #[cfg(feature = "p2p")]
@@ -3433,7 +3351,6 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::bundle::import_from_share_link,
             #[cfg(feature = "p2p")]
-            commands::network::bundle::resolve_share_deep_link,
             // Network -- Sovereign Enclaves
             #[cfg(feature = "p2p")]
             commands::network::enclave::seal_enclave,
@@ -3451,21 +3368,16 @@ pub fn run() {
             #[cfg(feature = "p2p")]
             commands::network::discovery::sync_peer_manifest,
             #[cfg(feature = "p2p")]
-            commands::network::discovery::get_connection_status,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_status,
             #[cfg(feature = "p2p")]
-            commands::network::discovery::get_connection_health,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_network_snapshot,
             #[cfg(feature = "p2p")]
             commands::network::discovery::get_messaging_metrics,
             #[cfg(feature = "p2p")]
-            commands::network::discovery::send_agent_message,
             #[cfg(feature = "p2p")]
-            commands::network::discovery::get_received_messages,
             #[cfg(feature = "p2p")]
-            commands::network::discovery::set_network_config,
             // Vector Knowledge Base
             #[cfg(feature = "ml")]
             commands::credentials::vector_kb::create_knowledge_base,

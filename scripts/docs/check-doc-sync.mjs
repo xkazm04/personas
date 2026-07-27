@@ -46,7 +46,7 @@ const SKIP_PATTERNS = [
   /^docs\//,
   /^scripts\/templates\//,
   /^scripts\/connectors\//,
-  /^src-tauri\/src\/db\/migrations\//,
+  /^src-tauri\/db\/src\/migrations\//,
 ];
 
 function readStdin() {
