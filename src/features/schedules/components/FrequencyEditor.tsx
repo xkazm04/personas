@@ -47,7 +47,7 @@ export default function FrequencyEditor({
   // schedule's own zone (scheduleTz) when set, otherwise the user's app-theme
   // pref, otherwise system local.
   const previewDisplayTz = scheduleTz ?? (themeTimezone === 'local' ? undefined : themeTimezone === 'utc' ? 'UTC' : themeTimezone);
-  const tzLabel = previewDisplayTz ? previewDisplayTz.split('/').pop()?.replace(/_/g, ' ') || previewDisplayTz : 'Local';
+  const tzLabel = previewDisplayTz ? previewDisplayTz.split('/').pop()?.replace(/_/g, ' ') || previewDisplayTz : t.schedules.tz_local;
 
   // Overlap detection: how many times in the next 7 days does this schedule
   // conflict with existing schedules? Backend-driven so the count matches

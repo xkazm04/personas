@@ -194,8 +194,7 @@ function ScheduleRow({
         <div className="text-right shrink-0 min-w-[90px]">
           {nextRun ? (
             <div className="typo-caption text-foreground">
-              <span className="text-foreground">next </span>
-              {formatRelative(nextRun.toISOString())}
+              {tx(t.schedules.next_at, { time: formatRelative(nextRun.toISOString()) })}
             </div>
           ) : (
             <div className="typo-caption text-foreground">--</div>
@@ -209,7 +208,7 @@ function ScheduleRow({
               className="inline-flex items-center gap-1 text-[10px] text-foreground mt-0.5 hover:text-foreground/80 transition-colors group/peek"
             >
               <ChevronRight className={`w-2.5 h-2.5 transition-transform ${showHistory ? 'rotate-90' : ''} text-foreground group-hover/peek:text-foreground/80`} />
-              <span>last {formatRelative(lastRun.toISOString())}</span>
+              <span>{tx(t.schedules.last_at, { time: formatRelative(lastRun.toISOString()) })}</span>
             </button>
           )}
         </div>

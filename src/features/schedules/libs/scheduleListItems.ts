@@ -11,7 +11,7 @@
  * only knows how to window a flat index range. That collapse is this module —
  * a pure function, so the index math is testable without a DOM.
  */
-import type { ScheduleEntry, TimeGroup } from './scheduleHelpers';
+import type { ScheduleEntry, TimeGroup, TimeGroupId } from './scheduleHelpers';
 
 /** A single windowed row: either a group header or one schedule entry. */
 export type ScheduleListItem =
@@ -19,8 +19,9 @@ export type ScheduleListItem =
       kind: 'header';
       /** Stable React key. */
       key: string;
-      /** Group label as produced by `groupByTimeWindow`. */
-      label: string;
+      /** Group id as produced by `groupByTimeWindow`; the display label is
+       *  resolved from i18n (`schedules.group_<id>`) at render time. */
+      id: TimeGroupId;
       /** Number of entries in this group (rendered next to the label). */
       count: number;
       /** True for the first header in the sequence — it gets no top spacing. */
@@ -30,8 +31,8 @@ export type ScheduleListItem =
       kind: 'row';
       key: string;
       entry: ScheduleEntry;
-      /** Label of the group this row belongs to (for a11y / debugging). */
-      groupLabel: string;
+      /** Id of the group this row belongs to (for a11y / debugging). */
+      groupId: TimeGroupId;
       /** True for the last row of its group — it gets no bottom gap. */
       lastInGroup: boolean;
     };
@@ -62,8 +63,8 @@ export function flattenScheduleGroups(groups: TimeGroup[]): FlattenedScheduleLis
     headerIndexes.push(items.length);
     items.push({
       kind: 'header',
-      key: `header:${group.label}`,
-      label: group.label,
+      key: `header:${group.id}`,
+      id: group.id,
       count: group.entries.length,
       first: headerIndexes.length === 1,
     });
@@ -72,7 +73,7 @@ export function flattenScheduleGroups(groups: TimeGroup[]): FlattenedScheduleLis
         kind: 'row',
         key: `row:${entry.agent.trigger_id}`,
         entry,
-        groupLabel: group.label,
+        groupId: group.id,
         lastInGroup: i === group.entries.length - 1,
       });
       rowCount += 1;

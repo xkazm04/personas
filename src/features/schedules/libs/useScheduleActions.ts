@@ -10,6 +10,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from '@/stores/toastStore';
 import { formatRelative } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 export interface ScheduleActionState {
@@ -24,6 +25,7 @@ export interface ScheduleActionState {
 }
 
 export function useScheduleActions() {
+  const { t, tx } = useTranslation();
   const fetchCronAgents = useOverviewStore((s) => s.fetchCronAgents);
   const isBudgetBlocked = useAgentStore((s) => s.isBudgetBlocked);
   const addToast = useToastStore((s) => s.addToast);
@@ -39,23 +41,23 @@ export function useScheduleActions() {
 
   const manualExecute = useCallback(async (agent: CronAgent) => {
     if (isBudgetBlocked(agent.persona_id)) {
-      addToast(`Budget enforcement for "${agent.persona_name}" -- execution blocked (budget exceeded or data unavailable)`, 'error');
+      addToast(tx(t.schedules.toast_budget_blocked, { name: agent.persona_name }), 'error');
       return;
     }
     setState((s) => ({ ...s, executing: agent.trigger_id }));
     try {
       await executePersona(agent.persona_id, agent.trigger_id);
-      addToast(`Triggered "${agent.persona_name}" manually`, 'success');
+      addToast(tx(t.schedules.toast_triggered, { name: agent.persona_name }), 'success');
       await fetchCronAgents();
     } catch (err) {
       addToast(
-        `Failed to execute "${agent.persona_name}": ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_execute_failed, { name: agent.persona_name, error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
     } finally {
       setState((s) => ({ ...s, executing: null }));
     }
-  }, [isBudgetBlocked, addToast, fetchCronAgents]);
+  }, [isBudgetBlocked, addToast, fetchCronAgents, t, tx]);
 
   // -- Change Cron Frequency -----------------------------------------------
 
@@ -113,17 +115,17 @@ export function useScheduleActions() {
         enabled: null,
         next_trigger_at: null,
       });
-      addToast(`Updated schedule for "${agent.persona_name}"`, 'success');
+      addToast(tx(t.schedules.toast_updated_schedule, { name: agent.persona_name }), 'success');
       await fetchCronAgents();
     } catch (err) {
       addToast(
-        `Failed to update schedule: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_update_failed, { error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
     } finally {
       setState((s) => ({ ...s, editing: null }));
     }
-  }, [fetchCronAgents, addToast]);
+  }, [fetchCronAgents, addToast, t, tx]);
 
   // -- Toggle Trigger Enabled ----------------------------------------------
 
@@ -136,17 +138,17 @@ export function useScheduleActions() {
         next_trigger_at: null,
       });
       addToast(
-        `${agent.trigger_enabled ? 'Paused' : 'Resumed'} "${agent.persona_name}"`,
+        tx(agent.trigger_enabled ? t.schedules.toast_paused : t.schedules.toast_resumed, { name: agent.persona_name }),
         'success',
       );
       await fetchCronAgents();
     } catch (err) {
       addToast(
-        `Failed to toggle: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_toggle_failed, { error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
     }
-  }, [fetchCronAgents, addToast]);
+  }, [fetchCronAgents, addToast, t, tx]);
 
   // -- Skip next fire ------------------------------------------------------
   //
@@ -158,7 +160,7 @@ export function useScheduleActions() {
 
   const skipNextFire = useCallback(async (agent: CronAgent) => {
     if (!agent.next_trigger_at) {
-      addToast('Schedule has no upcoming fire to skip', 'error');
+      addToast(t.schedules.toast_no_upcoming_fire, 'error');
       return;
     }
     try {
@@ -178,10 +180,7 @@ export function useScheduleActions() {
           agent.trigger_id,
         );
         if (times.length === 0) {
-          addToast(
-            `Could not compute a fire after the next one (cron may only fire once in the next 7 days)`,
-            'error',
-          );
+          addToast(t.schedules.toast_no_fire_after_next, 'error');
           return;
         }
         newNext = times[0]!;
@@ -189,7 +188,7 @@ export function useScheduleActions() {
         const skipped = new Date(agent.next_trigger_at).getTime();
         newNext = new Date(skipped + Number(agent.interval_seconds) * 1000).toISOString();
       } else {
-        addToast('Schedule has no cron or interval to skip', 'error');
+        addToast(t.schedules.toast_no_cron_or_interval, 'error');
         return;
       }
 
@@ -200,17 +199,17 @@ export function useScheduleActions() {
         next_trigger_at: newNext,
       });
       addToast(
-        `Skipped next fire of "${agent.persona_name}" — next now ${formatRelative(newNext)}`,
+        tx(t.schedules.toast_skipped_next, { name: agent.persona_name, time: formatRelative(newNext) }),
         'success',
       );
       await fetchCronAgents();
     } catch (err) {
       addToast(
-        `Failed to skip next fire: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_skip_failed, { error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
     }
-  }, [fetchCronAgents, addToast]);
+  }, [fetchCronAgents, addToast, t, tx]);
 
   // -- Delayed run ---------------------------------------------------------
   //
@@ -222,7 +221,7 @@ export function useScheduleActions() {
 
   const runIn = useCallback(async (agent: CronAgent, delayMs: number) => {
     if (delayMs <= 0) {
-      addToast('Delay must be positive', 'error');
+      addToast(t.schedules.toast_delay_positive, 'error');
       return;
     }
     try {
@@ -234,17 +233,17 @@ export function useScheduleActions() {
         next_trigger_at: fireAt,
       });
       addToast(
-        `Will run "${agent.persona_name}" ${formatRelative(fireAt)}`,
+        tx(t.schedules.toast_will_run, { name: agent.persona_name, time: formatRelative(fireAt) }),
         'success',
       );
       await fetchCronAgents();
     } catch (err) {
       addToast(
-        `Failed to schedule delayed run: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_delayed_failed, { error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
     }
-  }, [fetchCronAgents, addToast]);
+  }, [fetchCronAgents, addToast, t, tx]);
 
   // -- Preview Cron --------------------------------------------------------
 
@@ -288,28 +287,26 @@ export function useScheduleActions() {
         lastBackfill: { ...s.lastBackfill, [agent.trigger_id]: result },
       }));
       if (result.slotsEnqueued > 0) {
-        addToast(
-          `Enqueued ${result.slotsEnqueued} catch-up run${result.slotsEnqueued === 1 ? '' : 's'} for "${agent.persona_name}"${result.capped ? ' (capped)' : ''}`,
-          'success',
+        const base = tx(
+          result.slotsEnqueued === 1 ? t.schedules.toast_backfill_enqueued_one : t.schedules.toast_backfill_enqueued_other,
+          { count: result.slotsEnqueued, name: agent.persona_name },
         );
+        addToast(result.capped ? base + t.schedules.toast_backfill_capped_suffix : base, 'success');
       } else {
-        addToast(
-          `No missed slots in that window for "${agent.persona_name}"`,
-          'success',
-        );
+        addToast(tx(t.schedules.toast_backfill_none, { name: agent.persona_name }), 'success');
       }
       await fetchCronAgents();
       return result;
     } catch (err) {
       addToast(
-        `Backfill failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        tx(t.schedules.toast_backfill_failed, { error: err instanceof Error ? err.message : t.common.unknown_error }),
         'error',
       );
       return null;
     } finally {
       setState((s) => ({ ...s, backfilling: null }));
     }
-  }, [fetchCronAgents, addToast]);
+  }, [fetchCronAgents, addToast, t, tx]);
 
   return {
     state,

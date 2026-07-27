@@ -33,7 +33,8 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { ScheduleEntry, TimeGroup } from '../libs/scheduleHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { ScheduleEntry, TimeGroup, TimeGroupId } from '../libs/scheduleHelpers';
 import {
   ESTIMATED_SCHEDULE_ROW_HEIGHT,
   SCHEDULE_GROUP_HEADER_HEIGHT,
@@ -42,14 +43,14 @@ import {
   type ScheduleListItem,
 } from '../libs/scheduleListItems';
 
-const GROUP_COLORS: Record<string, string> = {
-  'Overdue': 'text-red-400 border-red-500/20',
-  'Next 15 minutes': 'text-emerald-400 border-emerald-500/20',
-  'Next hour': 'text-blue-400 border-blue-500/20',
-  'Next 6 hours': 'text-violet-400 border-violet-500/20',
-  'Next 24 hours': 'text-amber-400 border-amber-500/20',
-  'Later': 'text-foreground border-primary/10',
-  'Paused / Unscheduled': 'text-foreground border-primary/10',
+const GROUP_COLORS: Record<TimeGroupId, string> = {
+  overdue: 'text-red-400 border-red-500/20',
+  next_15m: 'text-emerald-400 border-emerald-500/20',
+  next_hour: 'text-blue-400 border-blue-500/20',
+  next_6h: 'text-violet-400 border-violet-500/20',
+  next_24h: 'text-amber-400 border-amber-500/20',
+  later: 'text-foreground border-primary/10',
+  paused: 'text-foreground border-primary/10',
 };
 
 /** Vertical gap between rows inside a group, in px (was `space-y-1.5`). */
@@ -59,13 +60,14 @@ const GROUP_GAP = 20;
 
 // -- Group header --------------------------------------------------------------
 
-function GroupHeader({ label, count, first }: { label: string; count: number; first: boolean }) {
+function GroupHeader({ id, count, first }: { id: TimeGroupId; count: number; first: boolean }) {
+  const { t } = useTranslation();
   return (
     <div
-      className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[label] || 'text-foreground border-primary/10'}`}
+      className={`flex items-center gap-2 mb-2 pb-1.5 border-b ${GROUP_COLORS[id]}`}
       style={first ? undefined : { marginTop: GROUP_GAP }}
     >
-      <span className="typo-caption uppercase tracking-wider">{label}</span>
+      <span className="typo-caption uppercase tracking-wider">{t.schedules[`group_${id}` as const]}</span>
       <span className="text-[10px] font-mono opacity-60">({count})</span>
     </div>
   );
@@ -105,7 +107,7 @@ function ItemBody({
   renderEntry: (entry: ScheduleEntry) => ReactNode;
 }) {
   if (item.kind === 'header') {
-    return <GroupHeader label={item.label} count={item.count} first={item.first} />;
+    return <GroupHeader id={item.id} count={item.count} first={item.first} />;
   }
   return (
     <div className={MEASURABLE_ROW} style={item.lastInGroup ? undefined : { paddingBottom: ROW_GAP }}>

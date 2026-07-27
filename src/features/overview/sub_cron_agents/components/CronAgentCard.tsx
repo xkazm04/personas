@@ -5,6 +5,7 @@ import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '../libs/cronHelpers';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (
@@ -20,6 +21,7 @@ function AgentSection({ title, agents }: { title: string; agents: CronAgent[] })
 }
 
 function AgentRow({ agent }: { agent: CronAgent }) {
+  const { t, tx } = useTranslation();
   const failureRate = agent.recent_executions > 0
     ? agent.recent_failures / agent.recent_executions
     : 0;
@@ -88,15 +90,14 @@ function AgentRow({ agent }: { agent: CronAgent }) {
       <div className="text-right shrink-0">
         {agent.next_trigger_at ? (
           <div className="typo-caption text-foreground">
-            <span className="text-foreground">next </span>
-            {formatRelative(agent.next_trigger_at)}
+            {tx(t.schedules.next_at, { time: formatRelative(agent.next_trigger_at) })}
           </div>
         ) : (
           <div className="typo-caption text-foreground">--</div>
         )}
         {agent.last_triggered_at && (
           <div className="text-[10px] text-foreground mt-0.5">
-            last {formatRelative(agent.last_triggered_at)}
+            {tx(t.schedules.last_at, { time: formatRelative(agent.last_triggered_at) })}
           </div>
         )}
       </div>

@@ -81,47 +81,59 @@ export function sortByNextRun(entries: ScheduleEntry[]): ScheduleEntry[] {
 
 // -- Time grouping -----------------------------------------------------------
 
+/** Stable machine ids for the time-window buckets. Display labels live in
+ *  en.json (`schedules.group_<id>`) and are resolved at render time — the id
+ *  is what styling tables and React keys key off, never the English text. */
+export type TimeGroupId =
+  | 'overdue'
+  | 'next_15m'
+  | 'next_hour'
+  | 'next_6h'
+  | 'next_24h'
+  | 'later'
+  | 'paused';
+
+export const TIME_GROUP_IDS: readonly TimeGroupId[] = [
+  'overdue',
+  'next_15m',
+  'next_hour',
+  'next_6h',
+  'next_24h',
+  'later',
+  'paused',
+] as const;
+
 export interface TimeGroup {
-  label: string;
+  id: TimeGroupId;
   entries: ScheduleEntry[];
 }
 
 export function groupByTimeWindow(entries: ScheduleEntry[]): TimeGroup[] {
   const now = Date.now();
 
-  const labels = [
-    'Overdue',
-    'Next 15 minutes',
-    'Next hour',
-    'Next 6 hours',
-    'Next 24 hours',
-    'Later',
-    'Paused / Unscheduled',
-  ] as const;
-
-  const buckets = new Map<string, ScheduleEntry[]>(
-    labels.map((l) => [l, []]),
+  const buckets = new Map<TimeGroupId, ScheduleEntry[]>(
+    TIME_GROUP_IDS.map((id) => [id, []]),
   );
 
   for (const entry of entries) {
     if (entry.health === 'paused' || !entry.nextRun) {
-      buckets.get('Paused / Unscheduled')!.push(entry);
+      buckets.get('paused')!.push(entry);
       continue;
     }
 
     const diff = entry.nextRun.getTime() - now;
 
-    if (diff < 0) buckets.get('Overdue')!.push(entry);
-    else if (diff < 15 * 60_000) buckets.get('Next 15 minutes')!.push(entry);
-    else if (diff < 60 * 60_000) buckets.get('Next hour')!.push(entry);
-    else if (diff < 6 * 3_600_000) buckets.get('Next 6 hours')!.push(entry);
-    else if (diff < 24 * 3_600_000) buckets.get('Next 24 hours')!.push(entry);
-    else buckets.get('Later')!.push(entry);
+    if (diff < 0) buckets.get('overdue')!.push(entry);
+    else if (diff < 15 * 60_000) buckets.get('next_15m')!.push(entry);
+    else if (diff < 60 * 60_000) buckets.get('next_hour')!.push(entry);
+    else if (diff < 6 * 3_600_000) buckets.get('next_6h')!.push(entry);
+    else if (diff < 24 * 3_600_000) buckets.get('next_24h')!.push(entry);
+    else buckets.get('later')!.push(entry);
   }
 
-  return labels
-    .filter((l) => buckets.get(l)!.length > 0)
-    .map((label) => ({ label, entries: buckets.get(label)! }));
+  return TIME_GROUP_IDS
+    .filter((id) => buckets.get(id)!.length > 0)
+    .map((id) => ({ id, entries: buckets.get(id)! }));
 }
 
 // CRON_PRESETS is re-exported above from @/lib/utils/cronPresets so all

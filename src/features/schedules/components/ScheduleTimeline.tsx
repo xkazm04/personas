@@ -256,7 +256,7 @@ export default function ScheduleTimeline() {
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'
                     : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
                 }`}
-                title={schedulerStats.running ? 'Scheduler running -- click to pause' : 'Scheduler stopped -- click to start'}
+                title={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}
               >
                 {schedulerStats.running ? (
                   <>
