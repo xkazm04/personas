@@ -5,21 +5,17 @@ export function formatInterval(seconds: number): string {
   return `${Math.round(seconds / 86400)}d`;
 }
 
+/** Locale-aware relative time, past AND future ("in 5 min." / "3 hr. ago").
+ *  Distinct from lib/utils/formatters.ts#formatRelativeTime, which is past-only;
+ *  schedules need the future direction for next-fire labels. Uses the same
+ *  `undefined`-locale convention as the shared AbsoluteTime component. */
+const RELATIVE_FMT = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto', style: 'narrow' });
+
 export function formatRelative(iso: string): string {
   const diff = new Date(iso).getTime() - Date.now();
   const abs = Math.abs(diff);
-  const past = diff < 0;
-  const suffix = past ? 'ago' : '';
-
-  if (abs < 60_000) return past ? 'just now' : 'in <1m';
-  if (abs < 3_600_000) {
-    const m = Math.round(abs / 60_000);
-    return past ? `${m}m ${suffix}` : `in ${m}m`;
-  }
-  if (abs < 86_400_000) {
-    const h = Math.round(abs / 3_600_000);
-    return past ? `${h}h ${suffix}` : `in ${h}h`;
-  }
-  const d = Math.round(abs / 86_400_000);
-  return past ? `${d}d ${suffix}` : `in ${d}d`;
+  if (abs < 60_000) return RELATIVE_FMT.format(Math.round(diff / 1000), 'second');
+  if (abs < 3_600_000) return RELATIVE_FMT.format(Math.round(diff / 60_000), 'minute');
+  if (abs < 86_400_000) return RELATIVE_FMT.format(Math.round(diff / 3_600_000), 'hour');
+  return RELATIVE_FMT.format(Math.round(diff / 86_400_000), 'day');
 }
