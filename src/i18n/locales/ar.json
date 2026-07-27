@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "رفض",
       "backlog_view_focus": "تركيز",
       "backlog_view_switch_label": "طريقة عرض قائمة الأفكار",
-      "backlog_view_table": "جدول"
+      "backlog_view_table": "جدول",
+      "backlog_athena_applied": "تم تطبيق {accepted} قبول و{rejected} رفض",
+      "backlog_athena_apply": "طبّق {accepts} قبول / {rejects} رفض",
+      "backlog_athena_cap": "تُقيّم Athena {max} عنصرًا كحد أقصى في المرة الواحدة — واستُبعد الباقي.",
+      "backlog_athena_expired": "انتهت صلاحية هذه الدفعة قبل تطبيقها. أعد تشغيل الفرز.",
+      "backlog_athena_failed": "تعذّر على Athena إنهاء هذه الدفعة.",
+      "backlog_athena_none": "لا توجد عناصر معلّقة لإرسالها.",
+      "backlog_athena_not_judged": "تم تخطي {count} من العناصر المحددة (تم البت فيها أو أنها مفقودة).",
+      "backlog_athena_override": "عكس الحكم",
+      "backlog_athena_requesting": "تقوم Athena بتقييم {count} من عناصر قائمة الأعمال…",
+      "backlog_athena_send": "أرسل إلى Athena",
+      "backlog_athena_skip_hint": "اترك هذا العنصر دون بتّ",
+      "backlog_athena_title": "حكم Athena",
+      "backlog_athena_verdict_accept": "قبول",
+      "backlog_athena_verdict_reject": "رفض",
+      "backlog_athena_verdict_skip": "تخطٍّ",
+      "backlog_execute_accepted": "نفّذ المقبولة",
+      "backlog_execute_none": "لا توجد عناصر مقبولة للتنفيذ.",
+      "backlog_execute_queued": "تمت جدولة {count} من المهام في Run Desk."
     },
     "messages_view": {
       "title": "الرسائل",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "أضف صوتك",
       "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
       "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
-      "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%."
+      "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%.",
+      "action_label_backlog_apply_triage": "تطبيق أحكام فرز قائمة الأعمال"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",
@@ -14996,7 +15015,19 @@
       "action_label": "الإجراء:",
       "new_rule": "قاعدة جديدة",
       "run_rules": "تشغيل القواعد",
-      "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا"
+      "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا",
+      "origin_doc_rot": "مستند قديم",
+      "origin_evidence": "الدليل",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "محاكاة KPI",
+      "origin_llm_cost": "تكلفة LLM",
+      "origin_memory_disputed": "ذاكرة متنازع عليها",
+      "origin_passport_gap": "الجاهزية",
+      "origin_sentry_spike": "الأخطاء",
+      "origin_skill_dormant": "مهارة خاملة",
+      "origin_standards_finding": "المعايير",
+      "origin_why_raised": "سبب إثارة هذا البند",
+      "origin_workspace_practice": "ممارسة مساحة العمل"
     },
     "companion_label": "الرفيق",
     "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",

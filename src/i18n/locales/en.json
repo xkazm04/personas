@@ -6462,7 +6462,25 @@
       "backlog_deck_delete_title": "Delete",
       "backlog_deck_hint_reject": "Reject",
       "backlog_deck_hint_accept": "Accept",
-      "backlog_session_summary": "Done — triaged {total} idea(s) in {minutes}m ({accepted} accepted, {rejected} rejected)"
+      "backlog_session_summary": "Done — triaged {total} idea(s) in {minutes}m ({accepted} accepted, {rejected} rejected)",
+      "backlog_athena_send": "Send to Athena",
+      "backlog_athena_title": "Athena's verdict",
+      "backlog_athena_requesting": "Athena is judging {count} backlog items…",
+      "backlog_athena_verdict_accept": "Accept",
+      "backlog_athena_verdict_reject": "Reject",
+      "backlog_athena_verdict_skip": "Skip",
+      "backlog_athena_override": "Flip verdict",
+      "backlog_athena_skip_hint": "Leave this item undecided",
+      "backlog_athena_apply": "Apply {accepts} accepts / {rejects} rejects",
+      "backlog_athena_applied": "Applied {accepted} accepts, {rejected} rejects",
+      "backlog_athena_expired": "This batch expired before it was applied. Run the triage again.",
+      "backlog_athena_failed": "Athena couldn't finish this batch.",
+      "backlog_athena_none": "No pending items to send.",
+      "backlog_athena_cap": "Athena judges at most {max} items at a time — the rest were left out.",
+      "backlog_athena_not_judged": "{count} selected items were skipped (already decided or missing).",
+      "backlog_execute_accepted": "Execute accepted",
+      "backlog_execute_none": "No accepted items to execute.",
+      "backlog_execute_queued": "Queued {count} tasks on the Run Desk."
     },
     "messages_view": {
       "title": "Messages",
@@ -14548,7 +14566,8 @@
       "voice_pocket_hf_gate_title": "Hugging Face account required",
       "voice_pocket_hf_gate_desc": "Managing your own cloned voices requires a Hugging Face access token in the Credential Vault — it anchors the voice-cloning model license to your account. Add a Hugging Face credential, then come back here.",
       "voice_pocket_delete_title": "Remove voice",
-      "voice_pocket_delete_body": "The reference recording for this voice will be deleted from this computer."
+      "voice_pocket_delete_body": "The reference recording for this voice will be deleted from this computer.",
+      "action_label_backlog_apply_triage": "Apply backlog triage verdicts"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
@@ -15265,7 +15284,19 @@
       "action_label": "Action:",
       "new_rule": "New Rule",
       "run_rules": "Run Rules",
-      "suggestion_name_reject_origin": "Auto-reject {origin} findings"
+      "suggestion_name_reject_origin": "Auto-reject {origin} findings",
+      "origin_standards_finding": "Standards",
+      "origin_passport_gap": "Readiness",
+      "origin_llm_cost": "LLM cost",
+      "origin_sentry_spike": "Errors",
+      "origin_kpi_offtrack": "KPI",
+      "origin_skill_dormant": "Dormant skill",
+      "origin_doc_rot": "Stale doc",
+      "origin_kpi_sim": "KPI sim",
+      "origin_memory_disputed": "Disputed memory",
+      "origin_workspace_practice": "Workspace practice",
+      "origin_why_raised": "Why this was raised",
+      "origin_evidence": "Evidence"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",

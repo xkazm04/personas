@@ -1648,6 +1648,7 @@ pub async fn dev_tools_start_auto_run(
 /// means this is the most recent finished run. `run_id: None` = the project
 /// has never had an auto-run.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct AutoRunStatus {
     pub run_id: Option<String>,

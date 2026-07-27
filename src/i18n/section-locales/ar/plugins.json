@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "أضف صوتك",
     "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
     "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
-    "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%."
+    "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%.",
+    "action_label_backlog_apply_triage": "تطبيق أحكام فرز قائمة الأعمال"
   },
   "artist_gallery": {
     "loading_viewer": "جارٍ تحميل العارض…",
@@ -3083,7 +3084,19 @@
     "action_label": "الإجراء:",
     "new_rule": "قاعدة جديدة",
     "run_rules": "تشغيل القواعد",
-    "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا"
+    "suggestion_name_reject_origin": "رفض نتائج {origin} تلقائيًا",
+    "origin_doc_rot": "مستند قديم",
+    "origin_evidence": "الدليل",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "محاكاة KPI",
+    "origin_llm_cost": "تكلفة LLM",
+    "origin_memory_disputed": "ذاكرة متنازع عليها",
+    "origin_passport_gap": "الجاهزية",
+    "origin_sentry_spike": "الأخطاء",
+    "origin_skill_dormant": "مهارة خاملة",
+    "origin_standards_finding": "المعايير",
+    "origin_why_raised": "سبب إثارة هذا البند",
+    "origin_workspace_practice": "ممارسة مساحة العمل"
   },
   "companion_label": "الرفيق",
   "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",

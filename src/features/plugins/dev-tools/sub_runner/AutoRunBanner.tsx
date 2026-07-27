@@ -35,8 +35,8 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
   const rehydrate = useCallback(() => {
     getAutoRunStatus(projectId)
       .then((s) => {
-        setStatus(s.run_id ? s : null);
-        if (s.run_id && s.live) setDismissed(false);
+        setStatus(s.runId ? s : null);
+        if (s.runId && s.live) setDismissed(false);
       })
       .catch(silentCatch('features/plugins/dev-tools/sub_runner/AutoRunBanner:rehydrate'));
   }, [projectId]);
@@ -60,12 +60,12 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
   }, [rehydrate, onRunFinished]);
 
   const handleCancel = useCallback(async () => {
-    if (!status?.run_id) return;
-    await cancelAutoRun(status.run_id);
+    if (!status?.runId) return;
+    await cancelAutoRun(status.runId);
     rehydrate();
   }, [status, rehydrate]);
 
-  if (!status || !status.run_id) return null;
+  if (!status || !status.runId) return null;
 
   const running = status.live && status.status === 'running';
   if (!running && dismissed) return null;
@@ -91,7 +91,7 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
 
       <span className="text-foreground">
         {running
-          ? tx(dr.auto_run_snapshot, { count: status.snapshot_size })
+          ? tx(dr.auto_run_snapshot, { count: status.snapshotSize })
           : tx(dr.auto_run_summary, {
               completed: status.completed,
               failed: status.failed,
@@ -99,8 +99,8 @@ export function AutoRunBanner({ projectId, refreshToken = 0, onRunFinished }: Au
             })}
       </span>
 
-      {!running && status.termination_reason && (
-        <span className="text-foreground">{status.termination_reason}</span>
+      {!running && status.terminationReason && (
+        <span className="text-foreground">{status.terminationReason}</span>
       )}
 
       <div className="ml-auto">

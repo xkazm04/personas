@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "却下",
       "backlog_view_focus": "フォーカス",
       "backlog_view_switch_label": "バックログ表示",
-      "backlog_view_table": "テーブル"
+      "backlog_view_table": "テーブル",
+      "backlog_athena_applied": "{accepted} 件を承認、{rejected} 件を却下しました",
+      "backlog_athena_apply": "{accepts} 件承認 / {rejects} 件却下を適用",
+      "backlog_athena_cap": "Athena は一度に最大 {max} 件まで判定します。残りは対象外です。",
+      "backlog_athena_expired": "このバッチは適用前に期限切れになりました。トリアージを再実行してください。",
+      "backlog_athena_failed": "Athena はこのバッチを完了できませんでした。",
+      "backlog_athena_none": "送信できる保留中の項目がありません。",
+      "backlog_athena_not_judged": "選択した {count} 件をスキップしました（判定済みまたは存在しません）。",
+      "backlog_athena_override": "判定を反転",
+      "backlog_athena_requesting": "Athena がバックログ {count} 件を判定中…",
+      "backlog_athena_send": "Athena に送る",
+      "backlog_athena_skip_hint": "この項目は保留のままにする",
+      "backlog_athena_title": "Athena の判定",
+      "backlog_athena_verdict_accept": "承認",
+      "backlog_athena_verdict_reject": "却下",
+      "backlog_athena_verdict_skip": "スキップ",
+      "backlog_execute_accepted": "承認済みを実行",
+      "backlog_execute_none": "実行できる承認済み項目がありません。",
+      "backlog_execute_queued": "Run Desk に {count} 件のタスクを登録しました。"
     },
     "messages_view": {
       "title": "メッセージ",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "あなたの声を追加",
       "voice_pocket_hf_gate_desc": "自分のクローン音声を管理するには、Credential Vault（認証情報保管庫）に Hugging Face アクセストークンが必要です。これにより、音声クローンモデルのライセンスがあなたのアカウントに紐付けられます。Hugging Face の認証情報を追加してから、こちらに戻ってきてください。",
       "voice_pocket_hf_gate_title": "Hugging Face アカウントが必要です",
-      "persona_overview_kpi_trust_clamped": "信頼スコアが範囲外だったため、100% に制限されました。"
+      "persona_overview_kpi_trust_clamped": "信頼スコアが範囲外だったため、100% に制限されました。",
+      "action_label_backlog_apply_triage": "バックログのトリアージ判定を適用"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",
@@ -14996,7 +15015,19 @@
       "action_label": "アクション:",
       "new_rule": "新規ルール",
       "run_rules": "ルールを実行",
-      "suggestion_name_reject_origin": "{origin}の検出結果を自動で却下"
+      "suggestion_name_reject_origin": "{origin}の検出結果を自動で却下",
+      "origin_doc_rot": "古いドキュメント",
+      "origin_evidence": "根拠",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "KPI シミュレーション",
+      "origin_llm_cost": "LLM コスト",
+      "origin_memory_disputed": "異議のある記憶",
+      "origin_passport_gap": "準備状況",
+      "origin_sentry_spike": "エラー",
+      "origin_skill_dormant": "休眠中のスキル",
+      "origin_standards_finding": "規約",
+      "origin_why_raised": "この項目が挙がった理由",
+      "origin_workspace_practice": "ワークスペースの実践"
     },
     "companion_label": "Companion",
     "companion_desc": "Athena — いつでも頼れる思考パートナーです。記憶を確認したり、外観を設定したり、音声を紐づけたりできます。",

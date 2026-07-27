@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Tambahkan suara Anda",
     "voice_pocket_hf_gate_desc": "Mengelola suara kloning Anda sendiri memerlukan token akses Hugging Face di Credential Vault — token ini mengaitkan lisensi model kloning suara dengan akun Anda. Tambahkan kredensial Hugging Face, lalu kembali ke sini.",
     "voice_pocket_hf_gate_title": "Akun Hugging Face diperlukan",
-    "persona_overview_kpi_trust_clamped": "Skor kepercayaan berada di luar rentang dan telah dibatasi hingga 100%."
+    "persona_overview_kpi_trust_clamped": "Skor kepercayaan berada di luar rentang dan telah dibatasi hingga 100%.",
+    "action_label_backlog_apply_triage": "Terapkan keputusan triase backlog"
   },
   "artist_gallery": {
     "loading_viewer": "Memuat penampil…",
@@ -3083,7 +3084,19 @@
     "action_label": "Tindakan:",
     "new_rule": "Aturan Baru",
     "run_rules": "Jalankan Aturan",
-    "suggestion_name_reject_origin": "Tolak otomatis temuan {origin}"
+    "suggestion_name_reject_origin": "Tolak otomatis temuan {origin}",
+    "origin_doc_rot": "Dokumen usang",
+    "origin_evidence": "Bukti",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "Simulasi KPI",
+    "origin_llm_cost": "Biaya LLM",
+    "origin_memory_disputed": "Memori dipersengketakan",
+    "origin_passport_gap": "Kesiapan",
+    "origin_sentry_spike": "Kesalahan",
+    "origin_skill_dormant": "Skill tidak terpakai",
+    "origin_standards_finding": "Standar",
+    "origin_why_raised": "Mengapa ini diangkat",
+    "origin_workspace_practice": "Praktik ruang kerja"
   },
   "companion_label": "Pendamping",
   "companion_desc": "Athena — mitra berpikir Anda yang selalu siap. Periksa memorinya, konfigurasi chrome-nya, dan pasangkan suara.",

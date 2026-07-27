@@ -91,6 +91,10 @@ export function actionLabel(t: T, action: string): string {
       return c.action_label_fleet_intervene;
     case 'fleet_redirect_op':
       return c.action_label_fleet_redirect_op;
+    // System-created, not emitted by Athena's grammar: one "Send to Athena"
+    // backlog batch, awaiting the click that applies its verdicts.
+    case 'backlog_apply_triage':
+      return c.action_label_backlog_apply_triage;
     default:
       return titleCase(action);
   }

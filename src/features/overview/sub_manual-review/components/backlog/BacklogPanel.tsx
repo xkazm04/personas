@@ -9,7 +9,7 @@
 // This component owns the three things the table and the ledger must NOT: the
 // status filter, the selection set, and the modal's snapshotted queue.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { Bot, Play, SlidersHorizontal } from 'lucide-react';
 
 import { nextQueueIndex } from '@/features/plugins/dev-tools/sub_workspaces/libraryModel';
 // Cross-feature imports, precedented (see BacklogTable): these are the triage
@@ -20,10 +20,14 @@ import { TriageRulesPanel } from '@/features/plugins/dev-tools/sub_triage/Triage
 import { SensorScoreboard } from '@/features/plugins/dev-tools/sub_triage/findings/SensorScoreboard';
 import { SweepButton } from '@/features/plugins/dev-tools/sub_triage/findings/SweepButton';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import * as devApi from '@/api/devTools/devTools';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { AthenaVerdictCard } from './AthenaVerdictCard';
 import { BacklogDetailModal } from './BacklogDetailModal';
 import { BacklogFocusDeck } from './BacklogFocusDeck';
 import { BacklogTable } from './BacklogTable';
@@ -41,6 +45,9 @@ import {
 import type { BacklogQueue, BacklogStatus } from './useBacklogQueue';
 
 const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'];
+/** Mirrors `backlog_triage::MAX_BATCH_IDEAS` — the backend rejects more, so the
+ *  panel truncates and says so rather than letting the call fail. */
+const ATHENA_BATCH_CAP = 30;
 const SORT_MODES: BacklogSortMode[] = ['default', 'value', 'quick'];
 
 type BacklogView = 'table' | 'focus';
@@ -50,6 +57,11 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const r = t.overview.review;
   const categoryLabel = useCategoryLabel();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const setPendingTaskFocusId = useSystemStore((s) => s.setPendingTaskFocusId);
+  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setPluginTab = useSystemStore((s) => s.setPluginTab);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [view, setView] = useState<BacklogView>('table');
   const [sortMode, setSortMode] = useState<BacklogSortMode>('default');
@@ -60,6 +72,10 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   useClickOutside(levelsRef, levelsOpen, () => setLevelsOpen(false));
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Snapshot of the ids sent to Athena. Non-null = the verdict card is open; the
+  // card never re-reads the selection, so changing it mid-review is harmless.
+  const [athenaIds, setAthenaIds] = useState<string[] | null>(null);
+  const [dispatching, setDispatching] = useState(false);
   // The modal walks a SNAPSHOT of the ordering taken when it opened. Recomputing
   // from the live rows would re-sort the queue under the cursor the moment a
   // verdict changes a row's status, and "next" would stop meaning next.
@@ -135,6 +151,63 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     },
     [selectedIds, queue],
   );
+
+  // The two panel-level batch actions share one rule: operate on the SELECTION
+  // when there is one, otherwise on everything currently visible. "Visible"
+  // means after the effort/risk filter and the sort — what the user is looking
+  // at, not what the server happens to hold.
+  const targetRows = useCallback(
+    (predicate: (i: BacklogIdea) => boolean) => {
+      const pool = selectedIds.size > 0
+        ? visibleRows.filter((i) => selectedIds.has(i.id))
+        : visibleRows;
+      return pool.filter(predicate);
+    },
+    [selectedIds, visibleRows],
+  );
+
+  const sendToAthena = useCallback(() => {
+    const pending = targetRows((i) => i.status === 'pending');
+    if (pending.length === 0) {
+      addToast(r.backlog_athena_none, 'warning');
+      return;
+    }
+    // The backend refuses an over-cap batch outright; truncating with a notice
+    // beats a red error on a button the user pressed in good faith.
+    if (pending.length > ATHENA_BATCH_CAP) {
+      addToast(tx(r.backlog_athena_cap, { max: ATHENA_BATCH_CAP }), 'warning');
+    }
+    setAthenaIds(pending.slice(0, ATHENA_BATCH_CAP).map((i) => i.id));
+  }, [targetRows, addToast, tx, r.backlog_athena_none, r.backlog_athena_cap]);
+
+  // Execute accepted → the Run Desk. `dispatchIdeas` creates the tasks AND
+  // starts them; the handoff focuses the first one so the user lands on the
+  // thing they just launched instead of the top of a list.
+  const executeAccepted = useCallback(async () => {
+    const accepted = targetRows((i) => i.status === 'accepted');
+    if (accepted.length === 0) {
+      addToast(r.backlog_execute_none, 'warning');
+      return;
+    }
+    setDispatching(true);
+    try {
+      const result = await devApi.dispatchIdeas(accepted.map((i) => i.id), 'runner');
+      addToast(tx(r.backlog_execute_queued, { count: result.dispatched.length }), 'success');
+      queue.reload();
+      const first = result.dispatched[0];
+      if (first) setPendingTaskFocusId(first.taskId);
+      setSidebarSection('plugins');
+      setPluginTab('dev-tools');
+      setDevToolsTab('task-runner');
+    } catch (err) {
+      toastCatch('BacklogPanel:executeAccepted')(err);
+    } finally {
+      setDispatching(false);
+    }
+  }, [
+    targetRows, addToast, tx, r.backlog_execute_none, r.backlog_execute_queued,
+    queue, setPendingTaskFocusId, setSidebarSection, setPluginTab, setDevToolsTab,
+  ]);
 
   function closeDetail() {
     setQueueIds([]);
@@ -244,6 +317,23 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           );
         })}
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={sendToAthena}
+            className="flex items-center gap-1.5 typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
+          >
+            <Bot className="w-3.5 h-3.5" aria-hidden />
+            {r.backlog_athena_send}
+          </button>
+          <button
+            type="button"
+            onClick={() => void executeAccepted()}
+            disabled={dispatching}
+            className="flex items-center gap-1.5 typo-label rounded-interactive border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-300 hover:bg-emerald-500/15 disabled:opacity-40 transition-colors"
+          >
+            <Play className="w-3.5 h-3.5" aria-hidden />
+            {r.backlog_execute_accepted}
+          </button>
           <SweepButton projectId={activeProjectId} onSwept={queue.reload} />
           <SegmentedTabs<BacklogView>
             tabs={[
@@ -309,6 +399,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             onToggleSelectAll={toggleSelectAll}
             onBulkAccept={() => bulkDecide('accept')}
             onBulkReject={() => bulkDecide('reject')}
+            onBulkAthena={sendToAthena}
             onClearSelection={clearSelection}
             onRowClick={openDetail}
             toolbar={sortControls}
@@ -316,6 +407,15 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           />
         )}
       </div>
+
+      {athenaIds && (
+        <AthenaVerdictCard
+          ideaIds={athenaIds}
+          rowsById={byId}
+          onClose={() => { setAthenaIds(null); clearSelection(); }}
+          onApplied={queue.reload}
+        />
+      )}
 
       {detailIdea && (
         <BacklogDetailModal

@@ -41,7 +41,7 @@ function idea(over: Partial<DevIdea> = {}): DevIdea {
 function counts(over: Partial<TriageCounts> = {}): TriageCounts {
   return {
     total: 10, pending: 6, accepted: 3, rejected: 1, archived: 0,
-    by_origin: { scanner: 6 }, by_category: { technical: 10 },
+    byOrigin: { scanner: 6 }, byCategory: { technical: 10 },
     ...over,
   };
 }
@@ -65,7 +65,7 @@ describe('devToolsTriageSlice — cross-project fetch', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('omits projectId and forwards the status/origin/category filters', async () => {
-    triageIdeasMock.mockResolvedValue({ ideas: [idea()], cursor: 'c1', has_more: true, counts: counts() });
+    triageIdeasMock.mockResolvedValue({ ideas: [idea()], cursor: 'c1', hasMore: true, counts: counts() });
     const h = harness();
 
     await h.get().fetchTriageIdeas(undefined, { status: 'pending', origin: 'sentry_spike', category: 'technical', limit: 100 });
@@ -81,12 +81,12 @@ describe('devToolsTriageSlice — cross-project fetch', () => {
   });
 
   it('appends the next keyset page and de-dupes overlapping rows', async () => {
-    triageIdeasMock.mockResolvedValue({ ideas: [idea({ id: 'a' })], cursor: 'c1', has_more: true, counts: counts() });
+    triageIdeasMock.mockResolvedValue({ ideas: [idea({ id: 'a' })], cursor: 'c1', hasMore: true, counts: counts() });
     const h = harness();
     await h.get().fetchTriageIdeas(undefined, { status: 'pending' });
 
     triageIdeasMock.mockResolvedValue({
-      ideas: [idea({ id: 'a' }), idea({ id: 'b' })], cursor: null, has_more: false, counts: counts(),
+      ideas: [idea({ id: 'a' }), idea({ id: 'b' })], cursor: null, hasMore: false, counts: counts(),
     });
     await h.get().fetchMoreTriageIdeas(undefined, { status: 'pending' });
 
@@ -109,7 +109,7 @@ describe('devToolsTriageSlice — verdict bookkeeping', () => {
 
   it('moves the row out of the bucket it was actually in', async () => {
     triageIdeasMock.mockResolvedValue({
-      ideas: [idea({ id: 'a', status: 'rejected' })], cursor: null, has_more: false,
+      ideas: [idea({ id: 'a', status: 'rejected' })], cursor: null, hasMore: false,
       counts: counts({ pending: 6, rejected: 1, accepted: 3 }),
     });
     const h = harness();
@@ -125,7 +125,7 @@ describe('devToolsTriageSlice — verdict bookkeeping', () => {
 
   it('never drives a bucket negative and decrements total on delete', async () => {
     triageIdeasMock.mockResolvedValue({
-      ideas: [idea({ id: 'a' })], cursor: null, has_more: false,
+      ideas: [idea({ id: 'a' })], cursor: null, hasMore: false,
       counts: counts({ total: 1, pending: 0, accepted: 0, rejected: 0 }),
     });
     const h = harness();

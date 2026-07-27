@@ -6469,6 +6469,24 @@ export type Translations = {
       backlog_deck_hint_reject: string;
       backlog_deck_hint_accept: string;
       backlog_session_summary: string;
+      backlog_athena_send: string;
+      backlog_athena_title: string;
+      backlog_athena_requesting: string;
+      backlog_athena_verdict_accept: string;
+      backlog_athena_verdict_reject: string;
+      backlog_athena_verdict_skip: string;
+      backlog_athena_override: string;
+      backlog_athena_skip_hint: string;
+      backlog_athena_apply: string;
+      backlog_athena_applied: string;
+      backlog_athena_expired: string;
+      backlog_athena_failed: string;
+      backlog_athena_none: string;
+      backlog_athena_cap: string;
+      backlog_athena_not_judged: string;
+      backlog_execute_accepted: string;
+      backlog_execute_none: string;
+      backlog_execute_queued: string;
     };
     messages_view: {
       title: string;
@@ -14555,6 +14573,7 @@ export type Translations = {
       voice_pocket_hf_gate_desc: string;
       voice_pocket_delete_title: string;
       voice_pocket_delete_body: string;
+      action_label_backlog_apply_triage: string;
     };
     artist_gallery: {
       loading_viewer: string;
@@ -15272,6 +15291,18 @@ export type Translations = {
       new_rule: string;
       run_rules: string;
       suggestion_name_reject_origin: string;
+      origin_standards_finding: string;
+      origin_passport_gap: string;
+      origin_llm_cost: string;
+      origin_sentry_spike: string;
+      origin_kpi_offtrack: string;
+      origin_skill_dormant: string;
+      origin_doc_rot: string;
+      origin_kpi_sim: string;
+      origin_memory_disputed: string;
+      origin_workspace_practice: string;
+      origin_why_raised: string;
+      origin_evidence: string;
     };
     artist_label: string;
     artist_desc: string;

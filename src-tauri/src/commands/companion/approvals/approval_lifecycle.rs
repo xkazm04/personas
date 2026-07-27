@@ -126,6 +126,11 @@ pub async fn companion_approve_action(
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
         "open_test_env" => execute_open_test_env(&state, &app, &params),
         "update_dev_goal" => execute_update_dev_goal(&state, &params),
+        // Workstream 2 — apply one batch of Athena backlog verdicts. Created by
+        // `dev_tools_athena_triage_batch`, not by Athena's own grammar; this arm
+        // is the plain-Approvals door (the Backlog verdict card uses
+        // `dev_tools_apply_triage_verdicts` for per-item overrides).
+        "backlog_apply_triage" => execute_backlog_apply_triage(&state, &params),
         // KPI layer — outcome steering on the user's behalf.
         "calibrate_kpi" => execute_calibrate_kpi(&state, &params),
         "evaluate_kpi" => execute_evaluate_kpi(&state, &params).await,

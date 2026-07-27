@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন",
     "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
     "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
-    "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।"
+    "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।",
+    "action_label_backlog_apply_triage": "ব্যাকলগ ট্রায়াজ সিদ্ধান্ত প্রয়োগ করুন"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",
@@ -3083,7 +3084,19 @@
     "action_label": "ক্রিয়া:",
     "new_rule": "নতুন নিয়ম",
     "run_rules": "নিয়ম চালান",
-    "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন"
+    "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন",
+    "origin_doc_rot": "পুরোনো নথি",
+    "origin_evidence": "প্রমাণ",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "KPI সিম",
+    "origin_llm_cost": "LLM খরচ",
+    "origin_memory_disputed": "বিতর্কিত মেমরি",
+    "origin_passport_gap": "প্রস্তুতি",
+    "origin_sentry_spike": "ত্রুটি",
+    "origin_skill_dormant": "নিষ্ক্রিয় স্কিল",
+    "origin_standards_finding": "স্ট্যান্ডার্ড",
+    "origin_why_raised": "কেন এটি উত্থাপিত হলো",
+    "origin_workspace_practice": "ওয়ার্কস্পেস অনুশীলন"
   },
   "companion_label": "কম্প্যানিয়ন",
   "companion_desc": "Athena — আপনার সর্বদা উপলব্ধ চিন্তার সঙ্গী। তার স্মৃতি পরীক্ষা করুন, তার চেহারা কনফিগার করুন এবং একটি ভয়েস যুক্ত করুন।",

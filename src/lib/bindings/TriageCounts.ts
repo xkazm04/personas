@@ -8,4 +8,4 @@ export type TriageCounts = { total: number, pending: number, accepted: number, r
 /**
  * Keyed by origin, with `scanner` standing in for `origin IS NULL`.
  */
-by_origin: { [key in string]?: number }, by_category: { [key in string]?: number }, };
+byOrigin: { [key in string]?: number }, byCategory: { [key in string]?: number }, };

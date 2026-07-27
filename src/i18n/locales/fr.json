@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "Rejeter",
       "backlog_view_focus": "Focus",
       "backlog_view_switch_label": "Vue du backlog",
-      "backlog_view_table": "Tableau"
+      "backlog_view_table": "Tableau",
+      "backlog_athena_applied": "{accepted} acceptations et {rejected} rejets appliqués",
+      "backlog_athena_apply": "Appliquer {accepts} acceptations / {rejects} rejets",
+      "backlog_athena_cap": "Athena évalue au maximum {max} éléments à la fois — le reste a été écarté.",
+      "backlog_athena_expired": "Ce lot a expiré avant d'être appliqué. Relancez le tri.",
+      "backlog_athena_failed": "Athena n'a pas pu terminer ce lot.",
+      "backlog_athena_none": "Aucun élément en attente à envoyer.",
+      "backlog_athena_not_judged": "{count} éléments sélectionnés ignorés (déjà tranchés ou absents).",
+      "backlog_athena_override": "Inverser le verdict",
+      "backlog_athena_requesting": "Athena évalue {count} éléments du backlog…",
+      "backlog_athena_send": "Envoyer à Athena",
+      "backlog_athena_skip_hint": "Laisser cet élément sans décision",
+      "backlog_athena_title": "Verdict d'Athena",
+      "backlog_athena_verdict_accept": "Accepter",
+      "backlog_athena_verdict_reject": "Rejeter",
+      "backlog_athena_verdict_skip": "Ignorer",
+      "backlog_execute_accepted": "Exécuter les acceptés",
+      "backlog_execute_none": "Aucun élément accepté à exécuter.",
+      "backlog_execute_queued": "{count} tâches mises en file dans le Run Desk."
     },
     "messages_view": {
       "title": "Messages",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "Ajoutez votre voix",
       "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
       "voice_pocket_hf_gate_title": "Compte Hugging Face requis",
-      "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %."
+      "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %.",
+      "action_label_backlog_apply_triage": "Appliquer les verdicts de tri du backlog"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",
@@ -14996,7 +15015,19 @@
       "action_label": "Action :",
       "new_rule": "Nouvelle règle",
       "run_rules": "Exécuter les règles",
-      "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}"
+      "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}",
+      "origin_doc_rot": "Doc obsolète",
+      "origin_evidence": "Preuves",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "Simulation de KPI",
+      "origin_llm_cost": "Coût LLM",
+      "origin_memory_disputed": "Mémoire contestée",
+      "origin_passport_gap": "Préparation",
+      "origin_sentry_spike": "Erreurs",
+      "origin_skill_dormant": "Compétence dormante",
+      "origin_standards_finding": "Standards",
+      "origin_why_raised": "Pourquoi ceci a été soulevé",
+      "origin_workspace_practice": "Pratique d'espace de travail"
     },
     "companion_label": "Compagnon",
     "companion_desc": "Athena — votre partenaire de réflexion toujours disponible. Consultez sa mémoire, configurez son interface et attribuez-lui une voix.",

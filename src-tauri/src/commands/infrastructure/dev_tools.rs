@@ -846,6 +846,208 @@ pub fn dev_tools_create_task(
     Ok(task)
 }
 
+// ============================================================================
+// The accept → execute bridge (plan 1D)
+// ============================================================================
+
+/// One idea that made it onto the runway, with everything either executor needs.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchedIdea {
+    pub idea_id: String,
+    pub task_id: String,
+    pub title: String,
+    pub project_id: Option<String>,
+    pub project_name: Option<String>,
+    /// The project's working directory — `None` when the project is gone or
+    /// pathless. The fleet arm needs it; the runner arm doesn't.
+    pub root_path: Option<String>,
+    /// The composed task description, so the fleet arm can seed a session with
+    /// the exact same text the runner would have executed.
+    pub prompt: String,
+}
+
+/// An idea that could not be dispatched, and why. Reported per item — a batch
+/// dispatch that silently drops half its input is worse than one that fails.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchSkip {
+    pub idea_id: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchIdeasResult {
+    /// `runner` | `fleet` — echoed so the caller can branch without re-reading
+    /// its own request.
+    pub target: String,
+    pub dispatched: Vec<DispatchedIdea>,
+    pub skipped: Vec<DispatchSkip>,
+    /// True when the runner batch was actually started (fleet dispatches leave
+    /// this false — the frontend spawns the sessions).
+    pub started: bool,
+}
+
+/// The prompt a dispatched idea carries into its executor.
+///
+/// Ported verbatim in spirit from `findings/dispatch.ts::dispatchPrompt`: the
+/// description is already written as an instruction (emitters seed it that
+/// way), the reasoning explains why it was raised, and the evidence is the bar
+/// the fix has to clear — an agent that can see the numbers can tell whether it
+/// actually fixed the thing instead of guessing.
+pub fn dispatch_prompt(idea: &DevIdea) -> String {
+    let mut lines: Vec<String> = vec![idea.title.trim().to_string()];
+    if let Some(d) = idea.description.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(d.trim().to_string());
+    }
+    if let Some(r) = idea.reasoning.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(format!("Why this was raised: {}", r.trim()));
+    }
+    if let Some(e) = idea.evidence.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(format!("Evidence this was raised on: {}", e.trim()));
+        lines.push(
+            "Treat those numbers as the bar: the fix has to move them, not merely look plausible."
+                .to_string(),
+        );
+    }
+    lines.join("\n")
+}
+
+/// Dispatch accepted backlog ideas to an executor — the bridge that made the
+/// Backlog's "accept" mean something.
+///
+/// Per idea: **dispatching IS a decision**, so a still-pending idea is
+/// auto-accepted through [`apply_idea_verdict`] (never a raw status write — the
+/// decision memory and the workspace adoption sync must happen too). Then a
+/// task is created through [`dev_tools_create_task`], deliberately reusing that
+/// command rather than `repo::create_task`, because it is the path that carries
+/// a materialized workspace practice's adoption cell from `to_process` to
+/// `dispatched`. Calling the repo directly here would silently skip that sync.
+///
+/// `runner` starts the created tasks through the existing batch machinery
+/// (`dev_tools_start_batch`, unchanged — no fork of the execution path).
+/// `fleet` returns the tasks plus each project's `root_path` and the composed
+/// prompt, and the frontend spawns the sessions (v1 decision: the fleet arm
+/// stays frontend-composed).
+#[tauri::command]
+pub async fn dev_tools_dispatch_ideas(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    idea_ids: Vec<String>,
+    target: String,
+    depth: Option<String>,
+    max_parallel: Option<usize>,
+) -> Result<DispatchIdeasResult, AppError> {
+    require_auth(&state).await?;
+
+    if idea_ids.is_empty() {
+        return Err(AppError::Validation("No ideas selected to dispatch.".into()));
+    }
+    if !matches!(target.as_str(), "runner" | "fleet") {
+        return Err(AppError::Validation(format!(
+            "dispatch target must be `runner` or `fleet`, got `{target}`"
+        )));
+    }
+
+    let mut dispatched: Vec<DispatchedIdea> = Vec::new();
+    let mut skipped: Vec<DispatchSkip> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    for id in idea_ids {
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        let idea = match repo::get_idea_by_id(&state.db, &id) {
+            Ok(i) => i,
+            Err(_) => {
+                skipped.push(DispatchSkip { idea_id: id, reason: "not found".into() });
+                continue;
+            }
+        };
+        if idea.status == "rejected" || idea.status == "archived" {
+            skipped.push(DispatchSkip {
+                idea_id: id,
+                reason: format!("is {}", idea.status),
+            });
+            continue;
+        }
+        // Dispatching IS the decision — route it through the shared verdict core
+        // so the memory + adoption write-backs happen exactly as they would from
+        // a click. Idempotent, so an already-accepted idea costs nothing.
+        let idea = if idea.status == "pending" {
+            match apply_idea_verdict(&state.db, &id, IdeaVerdict::Accept) {
+                Ok(i) => i,
+                Err(e) => {
+                    skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                    continue;
+                }
+            }
+        } else {
+            idea
+        };
+
+        let prompt = dispatch_prompt(&idea);
+        let task = match dev_tools_create_task(
+            state.clone(),
+            idea.project_id.clone(),
+            idea.title.clone(),
+            Some(prompt.clone()),
+            Some(idea.id.clone()),
+            None,
+            None,
+            depth.clone(),
+        ) {
+            Ok(t) => t,
+            Err(e) => {
+                skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                continue;
+            }
+        };
+
+        let project = idea
+            .project_id
+            .as_deref()
+            .and_then(|pid| repo::get_project_by_id(&state.db, pid).ok());
+        dispatched.push(DispatchedIdea {
+            idea_id: idea.id.clone(),
+            task_id: task.id,
+            title: idea.title.clone(),
+            project_id: idea.project_id.clone(),
+            project_name: project.as_ref().map(|p| p.name.clone()),
+            root_path: project.as_ref().map(|p| p.root_path.clone()),
+            prompt,
+        });
+    }
+
+    if dispatched.is_empty() {
+        return Err(AppError::Validation(
+            "Nothing could be dispatched — see the per-item reasons.".into(),
+        ));
+    }
+
+    let mut started = false;
+    if target == "runner" {
+        let task_ids: Vec<String> = dispatched.iter().map(|d| d.task_id.clone()).collect();
+        crate::commands::infrastructure::task_executor::dev_tools_start_batch(
+            state.clone(),
+            app,
+            task_ids,
+            max_parallel,
+        )
+        .await?;
+        started = true;
+    }
+
+    Ok(DispatchIdeasResult { target, dispatched, skipped, started })
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub fn dev_tools_update_task(

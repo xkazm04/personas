@@ -8,7 +8,7 @@
 // Columns are deliberately few. Reasoning, evidence and the E/I/R breakdown are
 // review detail — they live in the ledger, not here, or the title column starves.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, CheckSquare, ScanSearch, Square, X } from 'lucide-react';
+import { Bot, Check, CheckSquare, ScanSearch, Square, X } from 'lucide-react';
 
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
 import type { DataGridBulkAction, DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -17,7 +17,7 @@ import { CATEGORY_TW, DEFAULT_CATEGORY_TW } from '@/features/plugins/dev-tools/c
 // Cross-feature import, precedented: the sensor palette is defined once next to
 // the badge that renders it, and the Backlog must label origins identically to
 // the findings surfaces or the same sensor reads as two different things.
-import { FindingBadge, originMeta } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
+import { FindingBadge, useOriginLabel } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
 import { ValueBadge } from '@/features/plugins/dev-tools/sub_scanner/IdeaScannerCards';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -40,6 +40,7 @@ export function BacklogTable({
   onToggleSelectAll,
   onBulkAccept,
   onBulkReject,
+  onBulkAthena,
   onClearSelection,
   onRowClick,
   toolbar,
@@ -52,6 +53,8 @@ export function BacklogTable({
   onToggleSelectAll: () => void;
   onBulkAccept: () => void;
   onBulkReject: () => void;
+  /** Send the current selection to Athena for one batch verdict. */
+  onBulkAthena: () => void;
   onClearSelection: () => void;
   /** Receives the clicked row plus the CURRENT visible ordering (queue contract). */
   onRowClick: (row: BacklogIdea, ordered: BacklogIdea[]) => void;
@@ -64,6 +67,7 @@ export function BacklogTable({
   const r = t.overview.review;
 
   const categoryLabel = useCategoryLabel();
+  const originLabel = useOriginLabel();
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
@@ -211,7 +215,7 @@ export function BacklogTable({
   const bulkActions: DataGridBulkAction[] = [
     { id: 'accept', label: r.backlog_bulk_accept, icon: Check, onClick: onBulkAccept },
     { id: 'reject', label: r.backlog_bulk_reject, icon: X, variant: 'danger', onClick: onBulkReject },
-    // "Send to Athena" docks here in P8.
+    { id: 'athena', label: r.backlog_athena_send, icon: Bot, onClick: onBulkAthena },
   ];
 
   return (
@@ -232,7 +236,7 @@ export function BacklogTable({
       pageSize={25}
       density="compact"
       formatSegment={(segment, path) =>
-        isOriginSegment(path) ? originMeta(segment)?.label ?? segment : categoryLabel(segment)
+        isOriginSegment(path) ? originLabel(segment) : categoryLabel(segment)
       }
       labels={{
         allGroups: r.backlog_all_groups,

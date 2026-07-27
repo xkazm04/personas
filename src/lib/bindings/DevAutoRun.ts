@@ -5,4 +5,4 @@
  * view; this table is what survives a restart, so the Run Desk banner can
  * rehydrate instead of silently forgetting an in-flight run.
  */
-export type DevAutoRun = { id: string, project_id: string | null, status: string, snapshot_size: number, completed: number, failed: number, skipped: number, iterations: number, termination_reason: string | null, started_at: string | null, finished_at: string | null, };
+export type DevAutoRun = { id: string, projectId: string | null, status: string, snapshotSize: number, completed: number, failed: number, skipped: number, iterations: number, terminationReason: string | null, startedAt: string | null, finishedAt: string | null, };

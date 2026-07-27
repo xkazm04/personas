@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "अस्वीकार करें",
       "backlog_view_focus": "फोकस",
       "backlog_view_switch_label": "बैकलॉग दृश्य",
-      "backlog_view_table": "तालिका"
+      "backlog_view_table": "तालिका",
+      "backlog_athena_applied": "{accepted} स्वीकृतियाँ, {rejected} अस्वीकृतियाँ लागू कीं",
+      "backlog_athena_apply": "{accepts} स्वीकृत / {rejects} अस्वीकृत लागू करें",
+      "backlog_athena_cap": "Athena एक बार में अधिकतम {max} आइटम आँकती है — बाकी छोड़ दिए गए।",
+      "backlog_athena_expired": "यह बैच लागू होने से पहले समाप्त हो गया। ट्राइएज फिर चलाएँ।",
+      "backlog_athena_failed": "Athena यह बैच पूरा नहीं कर सकी।",
+      "backlog_athena_none": "भेजने के लिए कोई लंबित आइटम नहीं।",
+      "backlog_athena_not_judged": "{count} चयनित आइटम छोड़े गए (पहले से तय या मौजूद नहीं)।",
+      "backlog_athena_override": "निर्णय पलटें",
+      "backlog_athena_requesting": "Athena {count} बैकलॉग आइटम आँक रही है…",
+      "backlog_athena_send": "Athena को भेजें",
+      "backlog_athena_skip_hint": "इस आइटम को अनिर्णीत छोड़ें",
+      "backlog_athena_title": "Athena का निर्णय",
+      "backlog_athena_verdict_accept": "स्वीकारें",
+      "backlog_athena_verdict_reject": "अस्वीकारें",
+      "backlog_athena_verdict_skip": "छोड़ें",
+      "backlog_execute_accepted": "स्वीकृत निष्पादित करें",
+      "backlog_execute_none": "निष्पादित करने के लिए कोई स्वीकृत आइटम नहीं।",
+      "backlog_execute_queued": "Run Desk पर {count} कार्य कतारबद्ध किए।"
     },
     "messages_view": {
       "title": "संदेश",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें",
       "voice_pocket_hf_gate_desc": "अपनी क्लोन की गई आवाज़ों को स्वयं प्रबंधित करने के लिए क्रेडेंशियल वॉल्ट में Hugging Face एक्सेस टोकन आवश्यक है — यह वॉइस-क्लोनिंग मॉडल के लाइसेंस को आपके खाते से जोड़ता है। एक Hugging Face क्रेडेंशियल जोड़ें, फिर यहाँ वापस आएं।",
       "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है",
-      "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।"
+      "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।",
+      "action_label_backlog_apply_triage": "बैकलॉग ट्राइएज निर्णय लागू करें"
     },
     "artist_gallery": {
       "loading_viewer": "viewer लोड हो रहा है…",
@@ -14996,7 +15015,19 @@
       "action_label": "कार्य:",
       "new_rule": "नया नियम",
       "run_rules": "नियम चलाएँ",
-      "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें"
+      "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें",
+      "origin_doc_rot": "पुराना दस्तावेज़",
+      "origin_evidence": "प्रमाण",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "KPI सिम",
+      "origin_llm_cost": "LLM लागत",
+      "origin_memory_disputed": "विवादित स्मृति",
+      "origin_passport_gap": "तैयारी",
+      "origin_sentry_spike": "त्रुटियाँ",
+      "origin_skill_dormant": "निष्क्रिय स्किल",
+      "origin_standards_finding": "मानक",
+      "origin_why_raised": "यह क्यों उठाया गया",
+      "origin_workspace_practice": "वर्कस्पेस प्रथा"
     },
     "companion_label": "कंपेनियन",
     "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",

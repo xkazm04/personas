@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Thêm giọng nói của bạn",
     "voice_pocket_hf_gate_desc": "Để tự quản lý các giọng nói đã nhân bản của bạn, cần có mã truy cập Hugging Face trong Kho lưu trữ thông tin xác thực — mã này gắn giấy phép của mô hình nhân bản giọng nói với tài khoản của bạn. Hãy thêm thông tin xác thực Hugging Face, sau đó quay lại đây.",
     "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face",
-    "persona_overview_kpi_trust_clamped": "Điểm tin cậy nằm ngoài phạm vi và đã được giới hạn ở mức 100%."
+    "persona_overview_kpi_trust_clamped": "Điểm tin cậy nằm ngoài phạm vi và đã được giới hạn ở mức 100%.",
+    "action_label_backlog_apply_triage": "Áp dụng phán quyết phân loại tồn đọng"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",
@@ -3083,7 +3084,19 @@
     "action_label": "Hành động:",
     "new_rule": "Quy tắc mới",
     "run_rules": "Chạy quy tắc",
-    "suggestion_name_reject_origin": "Tự động từ chối các phát hiện từ {origin}"
+    "suggestion_name_reject_origin": "Tự động từ chối các phát hiện từ {origin}",
+    "origin_doc_rot": "Tài liệu lỗi thời",
+    "origin_evidence": "Bằng chứng",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "Mô phỏng KPI",
+    "origin_llm_cost": "Chi phí LLM",
+    "origin_memory_disputed": "Ký ức tranh chấp",
+    "origin_passport_gap": "Mức sẵn sàng",
+    "origin_sentry_spike": "Lỗi",
+    "origin_skill_dormant": "Kỹ năng ngủ đông",
+    "origin_standards_finding": "Tiêu chuẩn",
+    "origin_why_raised": "Vì sao mục này được nêu",
+    "origin_workspace_practice": "Thực hành không gian làm việc"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — người bạn đồng hành luôn sẵn sàng cùng bạn suy nghĩ. Xem bộ nhớ của cô ấy, tùy chỉnh giao diện, và gắn giọng nói cho cô ấy.",

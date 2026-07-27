@@ -2894,6 +2894,7 @@ pub struct TriageFilter {
 /// Bucket counts for the triage surface. Scoped to the NON-status filters, so
 /// the status tabs can show every bucket's size while one status is displayed.
 #[derive(Debug, Clone, Default, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TriageCounts {
     pub total: u32,
@@ -2908,6 +2909,7 @@ pub struct TriageCounts {
 
 /// One keyset page of triage ideas plus the counts the facet rail renders.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TriagePage {
     pub ideas: Vec<DevIdea>,
@@ -4023,6 +4025,7 @@ pub fn delete_task(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// `triage_ideas` (`"{created_at}|{id}"`, `created_at DESC, id DESC`).
 /// `list_tasks` stays untouched for the existing unpaginated callers.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct TasksPage {
     pub tasks: Vec<DevTask>,
@@ -4186,6 +4189,7 @@ pub fn retry_task(pool: &DbPool, task_id: &str) -> Result<DevTask, AppError> {
 /// view; this table is what survives a restart, so the Run Desk banner can
 /// rehydrate instead of silently forgetting an in-flight run.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct DevAutoRun {
     pub id: String,

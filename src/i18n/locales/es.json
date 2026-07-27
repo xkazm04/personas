@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "Rechazar",
       "backlog_view_focus": "Enfoque",
       "backlog_view_switch_label": "Vista del backlog",
-      "backlog_view_table": "Tabla"
+      "backlog_view_table": "Tabla",
+      "backlog_athena_applied": "Aplicados {accepted} aceptados y {rejected} rechazados",
+      "backlog_athena_apply": "Aplicar {accepts} aceptados / {rejects} rechazados",
+      "backlog_athena_cap": "Athena evalúa como máximo {max} elementos a la vez; el resto quedó fuera.",
+      "backlog_athena_expired": "Este lote caducó antes de aplicarse. Vuelve a ejecutar el triaje.",
+      "backlog_athena_failed": "Athena no pudo terminar este lote.",
+      "backlog_athena_none": "No hay elementos pendientes que enviar.",
+      "backlog_athena_not_judged": "Se omitieron {count} elementos seleccionados (ya decididos o inexistentes).",
+      "backlog_athena_override": "Invertir veredicto",
+      "backlog_athena_requesting": "Athena está evaluando {count} elementos del backlog…",
+      "backlog_athena_send": "Enviar a Athena",
+      "backlog_athena_skip_hint": "Dejar este elemento sin decidir",
+      "backlog_athena_title": "Veredicto de Athena",
+      "backlog_athena_verdict_accept": "Aceptar",
+      "backlog_athena_verdict_reject": "Rechazar",
+      "backlog_athena_verdict_skip": "Omitir",
+      "backlog_execute_accepted": "Ejecutar aceptados",
+      "backlog_execute_none": "No hay elementos aceptados que ejecutar.",
+      "backlog_execute_queued": "{count} tareas en cola en el Run Desk."
     },
     "messages_view": {
       "title": "Mensajes",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "Añade tu voz",
       "voice_pocket_hf_gate_desc": "Para gestionar tus propias voces clonadas se necesita un token de acceso de Hugging Face en la Bóveda de credenciales — así se vincula la licencia del modelo de clonación de voz a tu cuenta. Agrega una credencial de Hugging Face y luego vuelve aquí.",
       "voice_pocket_hf_gate_title": "Se requiere una cuenta de Hugging Face",
-      "persona_overview_kpi_trust_clamped": "La puntuación de confianza estaba fuera de rango y se ha limitado al 100 %."
+      "persona_overview_kpi_trust_clamped": "La puntuación de confianza estaba fuera de rango y se ha limitado al 100 %.",
+      "action_label_backlog_apply_triage": "Aplicar veredictos de triaje del backlog"
     },
     "artist_gallery": {
       "loading_viewer": "Cargando visor…",
@@ -14996,7 +15015,19 @@
       "action_label": "Acción:",
       "new_rule": "Nueva Regla",
       "run_rules": "Ejecutar Reglas",
-      "suggestion_name_reject_origin": "Rechazar automáticamente los hallazgos de {origin}"
+      "suggestion_name_reject_origin": "Rechazar automáticamente los hallazgos de {origin}",
+      "origin_doc_rot": "Documento obsoleto",
+      "origin_evidence": "Evidencia",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "Simulación de KPI",
+      "origin_llm_cost": "Coste de LLM",
+      "origin_memory_disputed": "Memoria en disputa",
+      "origin_passport_gap": "Preparación",
+      "origin_sentry_spike": "Errores",
+      "origin_skill_dormant": "Habilidad inactiva",
+      "origin_standards_finding": "Estándares",
+      "origin_why_raised": "Por qué se planteó esto",
+      "origin_workspace_practice": "Práctica del espacio de trabajo"
     },
     "companion_label": "Compañera",
     "companion_desc": "Athena — su compañera de pensamiento siempre disponible. Inspeccione su memoria, configure su apariencia y vincule una voz.",

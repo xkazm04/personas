@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "প্রত্যাখ্যান করুন",
       "backlog_view_focus": "ফোকাস",
       "backlog_view_switch_label": "ব্যাকলগ ভিউ",
-      "backlog_view_table": "টেবিল"
+      "backlog_view_table": "টেবিল",
+      "backlog_athena_applied": "{accepted} গৃহীত ও {rejected} প্রত্যাখ্যাত প্রয়োগ করা হয়েছে",
+      "backlog_athena_apply": "{accepts} গৃহীত / {rejects} প্রত্যাখ্যাত প্রয়োগ করুন",
+      "backlog_athena_cap": "Athena একবারে সর্বোচ্চ {max} আইটেম বিচার করে — বাকিগুলো বাদ পড়েছে।",
+      "backlog_athena_expired": "প্রয়োগের আগেই এই ব্যাচের মেয়াদ শেষ হয়েছে। ট্রায়াজ আবার চালান।",
+      "backlog_athena_failed": "Athena এই ব্যাচ শেষ করতে পারেনি।",
+      "backlog_athena_none": "পাঠানোর মতো কোনো মুলতুবি আইটেম নেই।",
+      "backlog_athena_not_judged": "{count}টি নির্বাচিত আইটেম বাদ দেওয়া হয়েছে (আগেই সিদ্ধান্ত হয়েছে বা নেই)।",
+      "backlog_athena_override": "সিদ্ধান্ত উল্টান",
+      "backlog_athena_requesting": "Athena {count}টি ব্যাকলগ আইটেম বিচার করছে…",
+      "backlog_athena_send": "Athena-কে পাঠান",
+      "backlog_athena_skip_hint": "এই আইটেম অমীমাংসিত রাখুন",
+      "backlog_athena_title": "Athena-র সিদ্ধান্ত",
+      "backlog_athena_verdict_accept": "গ্রহণ",
+      "backlog_athena_verdict_reject": "প্রত্যাখ্যান",
+      "backlog_athena_verdict_skip": "এড়িয়ে যান",
+      "backlog_execute_accepted": "গৃহীতগুলো চালান",
+      "backlog_execute_none": "চালানোর মতো কোনো গৃহীত আইটেম নেই।",
+      "backlog_execute_queued": "Run Desk-এ {count}টি কাজ সারিবদ্ধ হয়েছে।"
     },
     "messages_view": {
       "title": "বার্তা",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "আপনার ভয়েস যোগ করুন",
       "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
       "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
-      "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।"
+      "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।",
+      "action_label_backlog_apply_triage": "ব্যাকলগ ট্রায়াজ সিদ্ধান্ত প্রয়োগ করুন"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",
@@ -14996,7 +15015,19 @@
       "action_label": "ক্রিয়া:",
       "new_rule": "নতুন নিয়ম",
       "run_rules": "নিয়ম চালান",
-      "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন"
+      "suggestion_name_reject_origin": "{origin} ফলাফল স্বয়ংক্রিয়ভাবে প্রত্যাখ্যান করুন",
+      "origin_doc_rot": "পুরোনো নথি",
+      "origin_evidence": "প্রমাণ",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "KPI সিম",
+      "origin_llm_cost": "LLM খরচ",
+      "origin_memory_disputed": "বিতর্কিত মেমরি",
+      "origin_passport_gap": "প্রস্তুতি",
+      "origin_sentry_spike": "ত্রুটি",
+      "origin_skill_dormant": "নিষ্ক্রিয় স্কিল",
+      "origin_standards_finding": "স্ট্যান্ডার্ড",
+      "origin_why_raised": "কেন এটি উত্থাপিত হলো",
+      "origin_workspace_practice": "ওয়ার্কস্পেস অনুশীলন"
     },
     "companion_label": "কম্প্যানিয়ন",
     "companion_desc": "Athena — আপনার সর্বদা উপলব্ধ চিন্তার সঙ্গী। তার স্মৃতি পরীক্ষা করুন, তার চেহারা কনফিগার করুন এবং একটি ভয়েস যুক্ত করুন।",

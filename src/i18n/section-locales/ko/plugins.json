@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "내 목소리 추가",
     "voice_pocket_hf_gate_desc": "직접 복제한 음성을 관리하려면 자격 증명 보관함(Credential Vault)에 Hugging Face 액세스 토큰이 필요합니다. 이 토큰은 음성 복제 모델 라이선스를 사용자 계정과 연결합니다. Hugging Face 자격 증명을 추가한 뒤 다시 돌아오세요.",
     "voice_pocket_hf_gate_title": "Hugging Face 계정이 필요합니다",
-    "persona_overview_kpi_trust_clamped": "신뢰 점수가 범위를 벗어나 100%로 제한되었습니다."
+    "persona_overview_kpi_trust_clamped": "신뢰 점수가 범위를 벗어나 100%로 제한되었습니다.",
+    "action_label_backlog_apply_triage": "백로그 분류 판정 적용"
   },
   "artist_gallery": {
     "loading_viewer": "뷰어 로딩 중…",
@@ -3083,7 +3084,19 @@
     "action_label": "작업:",
     "new_rule": "새 규칙",
     "run_rules": "규칙 실행",
-    "suggestion_name_reject_origin": "{origin} 결과 자동 거부"
+    "suggestion_name_reject_origin": "{origin} 결과 자동 거부",
+    "origin_doc_rot": "오래된 문서",
+    "origin_evidence": "근거",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "KPI 시뮬레이션",
+    "origin_llm_cost": "LLM 비용",
+    "origin_memory_disputed": "이의 제기된 기억",
+    "origin_passport_gap": "준비도",
+    "origin_sentry_spike": "오류",
+    "origin_skill_dormant": "휴면 스킬",
+    "origin_standards_finding": "표준",
+    "origin_why_raised": "이 항목이 제기된 이유",
+    "origin_workspace_practice": "워크스페이스 관행"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — 언제나 곁에 있는 생각의 파트너입니다. 기억을 살펴보고, 표시 방식을 설정하고, 음성을 연결하세요.",

@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Přidejte svůj hlas",
     "voice_pocket_hf_gate_desc": "Správa vašich vlastních klonovaných hlasů vyžaduje přístupový token Hugging Face v Trezoru přihlašovacích údajů — ten propojuje licenci modelu pro klonování hlasu s vaším účtem. Přidejte přihlašovací údaje Hugging Face a poté se sem vraťte.",
     "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face",
-    "persona_overview_kpi_trust_clamped": "Skóre důvěry bylo mimo rozsah a bylo omezeno na 100 %."
+    "persona_overview_kpi_trust_clamped": "Skóre důvěry bylo mimo rozsah a bylo omezeno na 100 %.",
+    "action_label_backlog_apply_triage": "Použít verdikty triage backlogu"
   },
   "artist_gallery": {
     "loading_viewer": "Načítání prohlížeče…",
@@ -3083,7 +3084,19 @@
     "action_label": "Akce:",
     "new_rule": "Nové pravidlo",
     "run_rules": "Spustit pravidla",
-    "suggestion_name_reject_origin": "Automaticky odmítat nálezy z {origin}"
+    "suggestion_name_reject_origin": "Automaticky odmítat nálezy z {origin}",
+    "origin_doc_rot": "Zastaralý dokument",
+    "origin_evidence": "Důkazy",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "Simulace KPI",
+    "origin_llm_cost": "Náklady na LLM",
+    "origin_memory_disputed": "Sporná paměť",
+    "origin_passport_gap": "Připravenost",
+    "origin_sentry_spike": "Chyby",
+    "origin_skill_dormant": "Nevyužitá dovednost",
+    "origin_standards_finding": "Standardy",
+    "origin_why_raised": "Proč to bylo vyvoláno",
+    "origin_workspace_practice": "Praxe pracovního prostoru"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — váš vždy dostupný myšlenkový partner. Prohlédněte její paměť, nastavte její vzhled a přiřaďte hlas.",

@@ -5,6 +5,7 @@
 //! dev feedback, observability digest) lands in Phase 1+.
 
 pub mod approvals;
+pub mod backlog_triage;
 pub mod brain;
 pub mod browser_test;
 pub mod chat;

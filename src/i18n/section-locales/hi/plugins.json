@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "अपनी आवाज़ जोड़ें",
     "voice_pocket_hf_gate_desc": "अपनी क्लोन की गई आवाज़ों को स्वयं प्रबंधित करने के लिए क्रेडेंशियल वॉल्ट में Hugging Face एक्सेस टोकन आवश्यक है — यह वॉइस-क्लोनिंग मॉडल के लाइसेंस को आपके खाते से जोड़ता है। एक Hugging Face क्रेडेंशियल जोड़ें, फिर यहाँ वापस आएं।",
     "voice_pocket_hf_gate_title": "Hugging Face खाता आवश्यक है",
-    "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।"
+    "persona_overview_kpi_trust_clamped": "ट्रस्ट स्कोर सीमा से बाहर था और इसे 100% पर सीमित कर दिया गया है।",
+    "action_label_backlog_apply_triage": "बैकलॉग ट्राइएज निर्णय लागू करें"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",
@@ -3083,7 +3084,19 @@
     "action_label": "कार्य:",
     "new_rule": "नया नियम",
     "run_rules": "नियम चलाएँ",
-    "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें"
+    "suggestion_name_reject_origin": "{origin} निष्कर्षों को स्वतः अस्वीकार करें",
+    "origin_doc_rot": "पुराना दस्तावेज़",
+    "origin_evidence": "प्रमाण",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "KPI सिम",
+    "origin_llm_cost": "LLM लागत",
+    "origin_memory_disputed": "विवादित स्मृति",
+    "origin_passport_gap": "तैयारी",
+    "origin_sentry_spike": "त्रुटियाँ",
+    "origin_skill_dormant": "निष्क्रिय स्किल",
+    "origin_standards_finding": "मानक",
+    "origin_why_raised": "यह क्यों उठाया गया",
+    "origin_workspace_practice": "वर्कस्पेस प्रथा"
   },
   "companion_label": "कंपेनियन",
   "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",

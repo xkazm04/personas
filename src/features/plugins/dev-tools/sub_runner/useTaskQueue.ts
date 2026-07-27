@@ -109,7 +109,7 @@ export function useTaskQueue({ projectId, statusFilter, enabled = true }: UseTas
         devApi.tasksPage(projectId, statuses, PAGE_SIZE, cursor ?? undefined).then((page) => ({
           rows: page.tasks,
           nextCursor: page.cursor,
-          hasMore: page.has_more,
+          hasMore: page.hasMore,
         })),
       [projectId, statuses],
     ),

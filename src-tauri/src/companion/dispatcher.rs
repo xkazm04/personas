@@ -279,6 +279,15 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // click-approved, and each run ends in a reflection turn.
     "dev_improve",
     "dev_merge",
+    // Workstream 2 — "Send to Athena". A batch of accept/reject verdicts over
+    // selected `dev_ideas`, produced by `dev_tools_athena_triage_batch` (a
+    // headless micro-tier turn) and persisted as a pending approval so the
+    // verdicts are durable, expire through the consent-freshness window, and
+    // still need a human click. Listed here so the row validates + renders like
+    // every other approval; Athena does NOT emit this op from chat (the
+    // Backlog's button is the only producer today — an Athena-proposable
+    // `triage_backlog` op is a deliberate later step).
+    "backlog_apply_triage",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
@@ -1784,6 +1793,26 @@ pub fn dispatch(
                             "rejected {action}: `sources` (episode_id list) must be non-empty",
                             action = env.action
                         ));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+                // A backlog-triage batch with no items would render an
+                // actionable card whose Approve button applies nothing. Reject
+                // it at parse time rather than persisting a no-op consent
+                // surface (same reasoning as the blank-action skip in
+                // `companion_list_pending_approvals`).
+                if env.action == "backlog_apply_triage" {
+                    let has_items = env
+                        .params
+                        .get("items")
+                        .and_then(|v| v.as_array())
+                        .is_some_and(|arr| !arr.is_empty());
+                    if !has_items {
+                        out.warnings.push(
+                            "rejected backlog_apply_triage: `items` must be a non-empty array"
+                                .to_string(),
+                        );
                         cleaned_lines.push(line);
                         continue;
                     }

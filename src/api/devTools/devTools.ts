@@ -26,6 +26,9 @@ import type { TriageRule } from "@/lib/bindings/TriageRule";
 import type { TriagePage } from "@/lib/bindings/TriagePage";
 import type { TasksPage } from "@/lib/bindings/TasksPage";
 import type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
+import type { AthenaTriageBatch } from "@/lib/bindings/AthenaTriageBatch";
+import type { AppliedTriage } from "@/lib/bindings/AppliedTriage";
+import type { DispatchIdeasResult } from "@/lib/bindings/DispatchIdeasResult";
 
 // ---------------------------------------------------------------------------
 // Safe invoke helper — hoisted to `@/lib/utils/tauri/safeInvoke` (Wave 5).
@@ -752,6 +755,9 @@ export const FINDING_ORIGINS = [
   "doc_rot",
   "kpi_sim",
   "memory_disputed",
+  // Not a measurement sensor — the Workspace Knowledge Center materializing an
+  // adopted practice as one backlog item per member repo (plan 1C).
+  "workspace_practice",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -980,6 +986,48 @@ export const createTask = (title: string, projectId?: string, description?: stri
     goalId: goalId,
     depth: depth,
   });
+
+// -- the accept → execute bridge + Athena batch triage ----------------------
+
+/**
+ * Dispatch accepted backlog ideas to an executor.
+ *
+ * `runner` creates the tasks AND starts them through the existing batch
+ * machinery. `fleet` creates the tasks and returns each one's project
+ * `rootPath` + composed `prompt` so the caller can `spawnSession` per project
+ * (the fleet arm stays frontend-composed in v1).
+ *
+ * Pending ideas are auto-accepted server-side — dispatching IS the decision.
+ */
+export const dispatchIdeas = (
+  ideaIds: string[],
+  target: "runner" | "fleet",
+  opts?: { depth?: string; maxParallel?: number },
+) =>
+  invoke<DispatchIdeasResult>("dev_tools_dispatch_ideas", {
+    ideaIds,
+    target,
+    depth: opts?.depth,
+    maxParallel: opts?.maxParallel,
+  });
+
+/**
+ * One headless Athena turn over up to 30 selected pending ideas. Persists the
+ * verdicts as a PENDING approval and returns them for the verdict card; nothing
+ * is applied until {@link applyTriageVerdicts} (or the plain Approvals card).
+ */
+export const athenaTriageBatch = (ideaIds: string[]) =>
+  invoke<AthenaTriageBatch>("dev_tools_athena_triage_batch", { ideaIds });
+
+/**
+ * Confirm a triage batch, with per-item human overrides layered over Athena's
+ * verdicts (`skip` leaves an idea untouched). Ideas are written first, the
+ * approval row is closed last.
+ */
+export const applyTriageVerdicts = (
+  approvalId: string,
+  overrides: { ideaId: string; verdict: "accept" | "reject" | "skip"; reason?: string }[],
+) => invoke<AppliedTriage>("dev_tools_apply_triage_verdicts", { approvalId, overrides });
 
 export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
   safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {

@@ -2757,6 +2757,8 @@ pub fn run() {
             #[cfg(feature = "test-automation")]
             commands::companion::mcp_bridge::companion_test_fleet_dispatch,
             commands::companion::approvals::companion_list_pending_approvals,
+            commands::companion::backlog_triage::dev_tools_athena_triage_batch,
+            commands::companion::backlog_triage::dev_tools_apply_triage_verdicts,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
@@ -3215,6 +3217,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_delete_task,
             commands::infrastructure::dev_tools::dev_tools_tasks_page,
             commands::infrastructure::dev_tools::dev_tools_retry_task,
+            commands::infrastructure::dev_tools::dev_tools_dispatch_ideas,
             // Dev Tools -- Task Executor (CLI-powered)
             commands::infrastructure::task_executor::dev_tools_execute_task,
             commands::infrastructure::task_executor::dev_tools_start_batch,

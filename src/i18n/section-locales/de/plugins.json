@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Deine Stimme hinzufügen",
     "voice_pocket_hf_gate_desc": "Zum Verwalten Ihrer eigenen geklonten Stimmen ist ein Hugging-Face-Zugriffstoken im Anmeldedaten-Tresor erforderlich — es verknüpft die Lizenz des Voice-Cloning-Modells mit Ihrem Konto. Fügen Sie eine Hugging-Face-Anmeldeinformation hinzu und kehren Sie dann hierher zurück.",
     "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich",
-    "persona_overview_kpi_trust_clamped": "Der Vertrauenswert lag außerhalb des Bereichs und wurde auf 100 % begrenzt."
+    "persona_overview_kpi_trust_clamped": "Der Vertrauenswert lag außerhalb des Bereichs und wurde auf 100 % begrenzt.",
+    "action_label_backlog_apply_triage": "Backlog-Triage-Urteile anwenden"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",
@@ -3083,7 +3084,19 @@
     "action_label": "Aktion:",
     "new_rule": "Neue Regel",
     "run_rules": "Regeln ausführen",
-    "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen"
+    "suggestion_name_reject_origin": "{origin}-Befunde automatisch ablehnen",
+    "origin_doc_rot": "Veraltetes Dokument",
+    "origin_evidence": "Belege",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "KPI-Simulation",
+    "origin_llm_cost": "LLM-Kosten",
+    "origin_memory_disputed": "Umstrittene Erinnerung",
+    "origin_passport_gap": "Reifegrad",
+    "origin_sentry_spike": "Fehler",
+    "origin_skill_dormant": "Ruhende Skill",
+    "origin_standards_finding": "Standards",
+    "origin_why_raised": "Warum das aufkam",
+    "origin_workspace_practice": "Workspace-Praxis"
   },
   "companion_label": "Begleiter",
   "companion_desc": "Athena — Ihr stets verfügbarer Denkpartner. Athenas Gedächtnis einsehen, ihr Erscheinungsbild konfigurieren und ihr eine Stimme zuweisen.",

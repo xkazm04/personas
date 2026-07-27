@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "Отклонить",
       "backlog_view_focus": "Фокус",
       "backlog_view_switch_label": "Вид бэклога",
-      "backlog_view_table": "Таблица"
+      "backlog_view_table": "Таблица",
+      "backlog_athena_applied": "Применено: {accepted} принято, {rejected} отклонено",
+      "backlog_athena_apply": "Применить {accepts} принятых / {rejects} отклонённых",
+      "backlog_athena_cap": "Athena оценивает не более {max} элементов за раз — остальные не вошли.",
+      "backlog_athena_expired": "Этот набор истёк до применения. Запустите триаж заново.",
+      "backlog_athena_failed": "Athena не смогла завершить этот набор.",
+      "backlog_athena_none": "Нет ожидающих элементов для отправки.",
+      "backlog_athena_not_judged": "Пропущено элементов: {count} (уже решены или отсутствуют).",
+      "backlog_athena_override": "Изменить вердикт",
+      "backlog_athena_requesting": "Athena оценивает элементов бэклога: {count}…",
+      "backlog_athena_send": "Отправить Athena",
+      "backlog_athena_skip_hint": "Оставить без решения",
+      "backlog_athena_title": "Вердикт Athena",
+      "backlog_athena_verdict_accept": "Принять",
+      "backlog_athena_verdict_reject": "Отклонить",
+      "backlog_athena_verdict_skip": "Пропустить",
+      "backlog_execute_accepted": "Выполнить принятые",
+      "backlog_execute_none": "Нет принятых элементов для выполнения.",
+      "backlog_execute_queued": "В Run Desk поставлено задач: {count}."
     },
     "messages_view": {
       "title": "Сообщения",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "Добавьте свой голос",
       "voice_pocket_hf_gate_desc": "Для управления собственными клонированными голосами требуется токен доступа Hugging Face в Хранилище учётных данных — он привязывает лицензию модели клонирования голоса к вашей учётной записи. Добавьте учётные данные Hugging Face, а затем вернитесь сюда.",
       "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face",
-      "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %."
+      "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %.",
+      "action_label_backlog_apply_triage": "Применить вердикты триажа бэклога"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",
@@ -14996,7 +15015,19 @@
       "action_label": "Действие:",
       "new_rule": "Новое правило",
       "run_rules": "Запустить правила",
-      "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}"
+      "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}",
+      "origin_doc_rot": "Устаревший документ",
+      "origin_evidence": "Доказательства",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "KPI-симуляция",
+      "origin_llm_cost": "Расходы на LLM",
+      "origin_memory_disputed": "Спорная память",
+      "origin_passport_gap": "Готовность",
+      "origin_sentry_spike": "Ошибки",
+      "origin_skill_dormant": "Неиспользуемый навык",
+      "origin_standards_finding": "Стандарты",
+      "origin_why_raised": "Почему это возникло",
+      "origin_workspace_practice": "Практика рабочей области"
     },
     "companion_label": "Компаньон",
     "companion_desc": "Athena — ваш всегда доступный партнёр для размышлений. Загляните в её память, настройте её оформление и подключите голос.",

@@ -6265,7 +6265,25 @@
       "backlog_swipe_reject": "拒绝",
       "backlog_view_focus": "聚焦",
       "backlog_view_switch_label": "待办视图",
-      "backlog_view_table": "表格"
+      "backlog_view_table": "表格",
+      "backlog_athena_applied": "已应用 {accepted} 项采纳、{rejected} 项拒绝",
+      "backlog_athena_apply": "应用 {accepts} 项采纳 / {rejects} 项拒绝",
+      "backlog_athena_cap": "Athena 每次最多评判 {max} 个条目，其余未纳入。",
+      "backlog_athena_expired": "该批次在应用前已过期。请重新运行分诊。",
+      "backlog_athena_failed": "Athena 未能完成此批次。",
+      "backlog_athena_none": "没有待处理条目可发送。",
+      "backlog_athena_not_judged": "已跳过 {count} 个所选条目（已决策或不存在）。",
+      "backlog_athena_override": "翻转结论",
+      "backlog_athena_requesting": "Athena 正在评判 {count} 个待办条目…",
+      "backlog_athena_send": "发送给 Athena",
+      "backlog_athena_skip_hint": "暂不决定此条目",
+      "backlog_athena_title": "Athena 的结论",
+      "backlog_athena_verdict_accept": "采纳",
+      "backlog_athena_verdict_reject": "拒绝",
+      "backlog_athena_verdict_skip": "跳过",
+      "backlog_execute_accepted": "执行已采纳项",
+      "backlog_execute_none": "没有可执行的已采纳条目。",
+      "backlog_execute_queued": "已在 Run Desk 排入 {count} 个任务。"
     },
     "messages_view": {
       "title": "消息",
@@ -14279,7 +14297,8 @@
       "voice_pocket_upload_title": "添加你的声音",
       "voice_pocket_hf_gate_desc": "管理你自己克隆的语音需要在凭据保险库中提供 Hugging Face 访问令牌 —— 它会将语音克隆模型的许可与你的账户绑定。请先添加 Hugging Face 凭据，然后回到这里。",
       "voice_pocket_hf_gate_title": "需要 Hugging Face 账户",
-      "persona_overview_kpi_trust_clamped": "信任分数超出范围，已限制为 100%。"
+      "persona_overview_kpi_trust_clamped": "信任分数超出范围，已限制为 100%。",
+      "action_label_backlog_apply_triage": "应用待办分诊结论"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",
@@ -14996,7 +15015,19 @@
       "action_label": "操作：",
       "new_rule": "新规则",
       "run_rules": "运行规则",
-      "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果"
+      "suggestion_name_reject_origin": "自动拒绝{origin}的检测结果",
+      "origin_doc_rot": "文档过时",
+      "origin_evidence": "证据",
+      "origin_kpi_offtrack": "KPI",
+      "origin_kpi_sim": "KPI 模拟",
+      "origin_llm_cost": "LLM 成本",
+      "origin_memory_disputed": "存疑记忆",
+      "origin_passport_gap": "就绪度",
+      "origin_sentry_spike": "错误",
+      "origin_skill_dormant": "闲置技能",
+      "origin_standards_finding": "规范",
+      "origin_why_raised": "为何提出此项",
+      "origin_workspace_practice": "工作区实践"
     },
     "companion_label": "伴侣",
     "companion_desc": "Athena——您随时待命的思考伙伴。查看她的记忆、配置她的呈现方式，并绑定语音。",

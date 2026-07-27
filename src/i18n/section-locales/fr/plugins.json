@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Ajoutez votre voix",
     "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
     "voice_pocket_hf_gate_title": "Compte Hugging Face requis",
-    "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %."
+    "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %.",
+    "action_label_backlog_apply_triage": "Appliquer les verdicts de tri du backlog"
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",
@@ -3083,7 +3084,19 @@
     "action_label": "Action :",
     "new_rule": "Nouvelle règle",
     "run_rules": "Exécuter les règles",
-    "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}"
+    "suggestion_name_reject_origin": "Rejeter automatiquement les résultats de {origin}",
+    "origin_doc_rot": "Doc obsolète",
+    "origin_evidence": "Preuves",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "Simulation de KPI",
+    "origin_llm_cost": "Coût LLM",
+    "origin_memory_disputed": "Mémoire contestée",
+    "origin_passport_gap": "Préparation",
+    "origin_sentry_spike": "Erreurs",
+    "origin_skill_dormant": "Compétence dormante",
+    "origin_standards_finding": "Standards",
+    "origin_why_raised": "Pourquoi ceci a été soulevé",
+    "origin_workspace_practice": "Pratique d'espace de travail"
   },
   "companion_label": "Compagnon",
   "companion_desc": "Athena — votre partenaire de réflexion toujours disponible. Consultez sa mémoire, configurez son interface et attribuez-lui une voix.",

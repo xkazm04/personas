@@ -52,6 +52,16 @@ pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // transcript, so a hallucinated target revives nothing.
     "fleet_wake",
     "fleet_resume",
+    // DELIBERATELY NOT LISTED: `backlog_apply_triage`.
+    //
+    // A batch triage decides up to 30 backlog items at once, and the reject arm
+    // writes a `constraint` memory per item — a durable instruction to future
+    // scans and future task prompts NOT to re-surface that work. Auto-firing it
+    // would let one unreviewed micro-tier turn quietly delete a month of
+    // proposals AND teach the whole loop to never propose them again. Athena's
+    // verdicts are a proposal by design: the whole point of "Send to Athena" is
+    // that a human reads the accept/reject column and can flip any row before
+    // applying. Autonomous mode does not override that click.
 ];
 
 /// If `approval.action` is on the conservative autoapprove allowlist,

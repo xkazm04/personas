@@ -91,7 +91,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       set({
         triageItems: result.ideas,
         triageCursor: result.cursor,
-        triageHasMore: result.has_more,
+        triageHasMore: result.hasMore,
         triageCounts: result.counts,
         error: null,
       });
@@ -120,7 +120,7 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
           ...result.ideas.filter((i) => !state.triageItems.some((e) => e.id === i.id)),
         ],
         triageCursor: result.cursor,
-        triageHasMore: result.has_more,
+        triageHasMore: result.hasMore,
         triageCounts: result.counts,
         error: null,
       }));

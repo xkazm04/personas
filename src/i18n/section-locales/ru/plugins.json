@@ -2366,7 +2366,8 @@
     "voice_pocket_upload_title": "Добавьте свой голос",
     "voice_pocket_hf_gate_desc": "Для управления собственными клонированными голосами требуется токен доступа Hugging Face в Хранилище учётных данных — он привязывает лицензию модели клонирования голоса к вашей учётной записи. Добавьте учётные данные Hugging Face, а затем вернитесь сюда.",
     "voice_pocket_hf_gate_title": "Требуется аккаунт Hugging Face",
-    "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %."
+    "persona_overview_kpi_trust_clamped": "Оценка доверия вышла за пределы диапазона и была ограничена 100 %.",
+    "action_label_backlog_apply_triage": "Применить вердикты триажа бэклога"
   },
   "artist_gallery": {
     "loading_viewer": "Загрузка просмотрщика…",
@@ -3083,7 +3084,19 @@
     "action_label": "Действие:",
     "new_rule": "Новое правило",
     "run_rules": "Запустить правила",
-    "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}"
+    "suggestion_name_reject_origin": "Автоматически отклонять находки {origin}",
+    "origin_doc_rot": "Устаревший документ",
+    "origin_evidence": "Доказательства",
+    "origin_kpi_offtrack": "KPI",
+    "origin_kpi_sim": "KPI-симуляция",
+    "origin_llm_cost": "Расходы на LLM",
+    "origin_memory_disputed": "Спорная память",
+    "origin_passport_gap": "Готовность",
+    "origin_sentry_spike": "Ошибки",
+    "origin_skill_dormant": "Неиспользуемый навык",
+    "origin_standards_finding": "Стандарты",
+    "origin_why_raised": "Почему это возникло",
+    "origin_workspace_practice": "Практика рабочей области"
   },
   "companion_label": "Компаньон",
   "companion_desc": "Athena — ваш всегда доступный партнёр для размышлений. Загляните в её память, настройте её оформление и подключите голос.",
