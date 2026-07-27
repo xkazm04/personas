@@ -120,3 +120,8 @@ app-cost.json
 
 # Working plan documents (session-local, not shared)
 docs/plans/
+
+# Practice-harvest / promote handoff state. The app writes snapshot.json into a
+# member repo and agents write runs/<id>/result.json back; the ingest door then
+# stamps ingested.json. All of it is machine-local ingest state, never source.
+practice-harvest/
