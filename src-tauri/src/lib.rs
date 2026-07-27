@@ -1159,6 +1159,35 @@ pub fn run() {
             );
             app.manage(state_arc.clone());
 
+            // Engine-owned handles get their own slots in Tauri's state map, in
+            // addition to living on `AppState`. The engine reaches them through
+            // these rather than through `AppState`, which is what let it stop
+            // depending on the whole application struct (and transitively on
+            // `commands`, `cloud` and `gitlab`). Same objects, same `Arc`s — the
+            // only thing that changes is which type the engine asks for.
+            app.manage(state_arc.engine.clone());
+            app.manage(state_arc.scheduler.clone());
+            app.manage(state_arc.session_pool.clone());
+            app.manage(state_arc.ambient_context.clone());
+
+            // Side effects the engine fires into the shell. Registered here
+            // because every target — tray, notifications, the companion's
+            // proactive lane — sits above the engine. Unregistered, they are
+            // no-ops, so a headless build still runs.
+            engine::set_host_hooks(engine::HostHooks {
+                refresh_tray: |app| {
+                    #[cfg(feature = "desktop")]
+                    tray::refresh_tray(app);
+                    #[cfg(not(feature = "desktop"))]
+                    let _ = app;
+                },
+                notify_execution_completed: notifications::notify_execution_completed,
+                notify_execution_completed_rich: notifications::notify_execution_completed_rich,
+                notify_healing_issue: notifications::notify_healing_issue,
+                signal_execution_finished:
+                    companion::proactive::execution_review::signal_execution_finished,
+            });
+
             // Engine leadership (multi-driver orchestration, ADR 2026-05-26):
             // try to become the singleton-loop leader for this device/DB, then
             // keep the lease fresh via a heartbeat task. Uses its own
@@ -1229,7 +1258,31 @@ pub fn run() {
             // F7 quality-gate fix-loop worker: drives opt-in persona re-entries
             // after a completed-but-quality-failed run, decoupled from the
             // execution pipeline to avoid a recursive async type cycle.
-            crate::engine::init_fix_loop_worker(app.handle().clone());
+            // The engine owns the channel; this loop owns the draining, because
+            // `execute_persona_inner` takes `&AppState` and the engine must not.
+            if let Some(mut fix_rx) = crate::engine::init_fix_loop_worker() {
+                let fix_app = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    while let Some(req) = fix_rx.recv().await {
+                        let state = fix_app.state::<Arc<AppState>>().inner().clone();
+                        if let Err(e) = commands::execution::executions::execute_persona_inner(
+                            &state,
+                            fix_app.clone(),
+                            req.persona_id,
+                            None,
+                            Some(req.input),
+                            None,
+                            None,
+                            None,
+                            false,
+                        )
+                        .await
+                        {
+                            tracing::warn!("fix-loop re-entry failed: {e}");
+                        }
+                    }
+                });
+            }
 
             // Radio: footer-anchored dual-engine player (YouTube IFrame for
             // curated tracklists, HTML5 audio for internet-radio streams).

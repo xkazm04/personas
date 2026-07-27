@@ -296,13 +296,25 @@ if (flag('--portable')) {
   // unit with an edge to an excluded unit or to an already-dropped one.
   const prefix = flag('--portable');
   const excludeRoots = (flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  // `--assume-clean a,b` = "pretend these units' upward references are already
-  // fixed". Turns "should we do this refactor?" into a measured number: run it
-  // for a candidate fix and see how much LOC the fix would actually unlock,
-  // BEFORE writing any of it. Counting references at a call site tells you the
-  // cost; only this tells you the benefit.
+  // `--assume-clean a,b` = "pretend these units' UPWARD references are already
+  // fixed". Turns "should we do this refactor?" into a measured number before
+  // writing any of it.
+  //
+  // It drops only edges that leave the prefix — NOT intra-prefix ones. The first
+  // version dropped every outgoing edge, which modelled "this module depends on
+  // nothing at all" and produced a badly optimistic ladder: it predicted that
+  // cleaning `engine/mod.rs` would free 15,494 LOC, when in reality mod.rs also
+  // depends on `engine::background`, which reaches `daemon`. Real answer after
+  // doing the work: 0. A what-if tool that models more than the proposed change
+  // is worse than no tool, because it is believed.
   const assumeClean = new Set((flag('--assume-clean') ?? '').split(',').map((s) => s.trim()).filter(Boolean));
-  for (const u of assumeClean) edges.set(u, new Map());
+  for (const u of assumeClean) {
+    const kept = new Map();
+    for (const [to, n] of edges.get(u) ?? []) {
+      if (to === prefix || to.startsWith(`${prefix}::`)) kept.set(to, n);
+    }
+    edges.set(u, kept);
+  }
   const isExcluded = (u) => excludeRoots.some((e) => u === e || u.startsWith(`${e}::`));
   const inPrefix = (u) => u === prefix || u.startsWith(`${prefix}::`);
 
