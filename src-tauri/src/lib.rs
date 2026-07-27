@@ -1273,6 +1273,10 @@ pub fn run() {
                 app.handle().clone(),
                 cdc_receiver,
                 pool.clone(),
+                db::cdc::CdcHooks {
+                    notify_cloud_dirty: cloud::sync::notify_dirty,
+                    wake_event_bus: || engine::subscription::event_bus_wake_signal().notify_one(),
+                },
             );
             st.checkpoint("cdc_drain_task");
 

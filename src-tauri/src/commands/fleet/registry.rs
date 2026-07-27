@@ -15,7 +15,6 @@
 use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use tokio::sync::watch;
 
@@ -1334,12 +1333,9 @@ fn is_generic_claude_title(title: &str) -> bool {
 
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
-pub fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
-}
+// Moved to `personas_core::utils` so the data layer can stamp Fleet rows
+// without depending on the command layer. Re-exported: callers here unchanged.
+pub use personas_core::utils::now_ms;
 
 #[cfg(test)]
 mod tests {

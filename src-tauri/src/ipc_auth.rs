@@ -28,7 +28,6 @@
 
 use std::cell::Cell;
 use std::collections::HashSet;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, OnceLock};
 
 use crate::error::AppError;
@@ -40,7 +39,9 @@ use crate::AppState;
 
 /// Global IPC session token.  Set once during app startup via `init_session_token`.
 static IPC_SESSION_TOKEN: OnceLock<String> = OnceLock::new();
-static IPC_IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
+// The counter itself lives in `personas_core::ipc_gauge` so `db` can poll it
+// for a quiet maintenance window without depending on this module.
+pub use personas_core::ipc_gauge::ipc_in_flight;
 
 /// Initialise the global session token.  Panics on double-init (should never happen).
 pub fn init_session_token(token: String) {
@@ -57,22 +58,18 @@ pub fn generate_ipc_session_token() -> String {
     hex::encode(buf)
 }
 
-pub fn ipc_in_flight() -> usize {
-    IPC_IN_FLIGHT.load(Ordering::Acquire)
-}
-
 struct IpcInFlightGuard;
 
 impl IpcInFlightGuard {
     fn new() -> Self {
-        IPC_IN_FLIGHT.fetch_add(1, Ordering::AcqRel);
+        personas_core::ipc_gauge::enter();
         Self
     }
 }
 
 impl Drop for IpcInFlightGuard {
     fn drop(&mut self) {
-        IPC_IN_FLIGHT.fetch_sub(1, Ordering::AcqRel);
+        personas_core::ipc_gauge::leave();
     }
 }
 

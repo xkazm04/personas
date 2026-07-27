@@ -2436,7 +2436,7 @@ mod tests {
 
         // timeout_ms > engine ceiling
         let mut input = base();
-        input.timeout_ms = Some(crate::engine::ENGINE_MAX_EXECUTION_MS + 1);
+        input.timeout_ms = Some(personas_core::limits::ENGINE_MAX_EXECUTION_MS + 1);
         assert!(create(&pool, input).is_err());
 
         // max_budget_usd < 0
@@ -2498,7 +2498,7 @@ mod tests {
 
         // timeout_ms > engine ceiling
         let mut input = base();
-        input.timeout_ms = Some(crate::engine::ENGINE_MAX_EXECUTION_MS + 1);
+        input.timeout_ms = Some(personas_core::limits::ENGINE_MAX_EXECUTION_MS + 1);
         assert!(update(&pool, &persona.id, input).is_err());
 
         // max_budget_usd negative
@@ -2767,7 +2767,7 @@ mod tests {
 
         // Parse both sides via parse_channels_v2 to normalize field ordering +
         // verify every shape-v2 key survives.
-        use crate::notifications::parse_channels_v2;
+        use personas_core::models::parse_channels_v2;
         let input_parsed = parse_channels_v2(Some(shape_v2)).expect("input is v2");
         let out_parsed = parse_channels_v2(Some(&decrypted)).expect("output is v2");
         assert_eq!(
@@ -2784,7 +2784,7 @@ mod tests {
         let encrypted = encrypt_notification_channels(shape_v2).expect("encrypt");
         let decrypted = decrypt_notification_channels(&encrypted, "test_persona_id");
 
-        use crate::notifications::parse_channels_v2;
+        use personas_core::models::parse_channels_v2;
         let out = parse_channels_v2(Some(&decrypted)).expect("output is v2");
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].credential_id.as_deref(), Some("cred_abc"));
@@ -2799,7 +2799,7 @@ mod tests {
         let encrypted = encrypt_notification_channels(shape_v2).expect("encrypt");
         let decrypted = decrypt_notification_channels(&encrypted, "test_persona_id");
 
-        use crate::notifications::parse_channels_v2;
+        use personas_core::models::parse_channels_v2;
         let out = parse_channels_v2(Some(&decrypted)).expect("parses back as v2");
         assert_eq!(out.len(), 1);
         use crate::db::models::{ChannelScopeV2, ChannelSpecV2Type};

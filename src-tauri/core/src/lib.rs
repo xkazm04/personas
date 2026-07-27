@@ -39,8 +39,10 @@
 pub mod cron;
 pub mod crypto;
 pub mod error;
+pub mod events;
 pub mod error_taxonomy;
 pub mod healing;
+pub mod ipc_gauge;
 pub mod lifecycle;
 pub mod limits;
 pub mod models;

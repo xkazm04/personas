@@ -920,3 +920,36 @@ pub struct UpdatePersonaInput {
     #[serde(default)]
     pub source: Option<String>,
 }
+
+// ---------------------------------------------------------------------------
+// Channel-spec parsing
+//
+// Lives beside the `ChannelSpecV2` types rather than in `notifications` (where
+// it was written) because the repo layer parses this column too, and the repo
+// layer sits below notifications.
+// ---------------------------------------------------------------------------
+
+// v3.2 — Parse shape-v2 notification_channels (D-02, D-05).
+// Shape discriminant: JSON is an array AND the first element contains the key
+// `use_case_ids`. Returns `None` when the JSON is not v2-shaped (shape A object,
+// shape B legacy array, empty/None input); callers fall through to the legacy
+// `parse_prefs` / `parse_channels` paths without any behavior change.
+//
+// Accepts an empty array `[]` as a valid v2 value (means "no channels
+// configured"); the empty `use_case_ids: []` sentinel guard lives in
+// `validation::persona::validate_notification_channels` (runs at DB write).
+pub fn parse_channels_v2(json: Option<&str>) -> Option<Vec<ChannelSpecV2>> {
+    let json_str = json?.trim();
+    if !json_str.starts_with('[') {
+        return None; // shape A object — not v2
+    }
+    let raw: Vec<serde_json::Value> = serde_json::from_str(json_str).ok()?;
+    if raw.is_empty() {
+        return Some(Vec::new()); // empty array is a valid v2 value
+    }
+    // Discriminant: first element must have `use_case_ids` to be shape v2.
+    // Absent => shape B legacy; `None` here means "not v2", and the caller
+    // falls through to `parse_channels`.
+    raw[0].get("use_case_ids")?;
+    serde_json::from_str::<Vec<ChannelSpecV2>>(json_str).ok()
+}

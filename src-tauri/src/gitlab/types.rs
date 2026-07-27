@@ -250,31 +250,12 @@ pub struct GitLabTagCommit {
 // Deployment History types
 // ============================================================================
 
-/// A record of a deployment action for auditability and rollback.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct GitLabDeploymentRecord {
-    pub id: String,
-    pub persona_id: String,
-    pub persona_name: String,
-    pub project_id: i64,
-    /// "api" or "agents_md"
-    pub method: String,
-    pub credentials_provisioned: u32,
-    /// "success" or "failed"
-    pub deploy_result: String,
-    pub agent_id: Option<String>,
-    pub web_url: Option<String>,
-    /// Snapshot of the system prompt at deploy time
-    pub snapshot_prompt: Option<String>,
-    /// If this was a rollback, the ID of the deployment it rolled back from
-    pub rolled_back_from: Option<String>,
-    /// Deploy target: "gitlab" (Duo agent / AGENTS.md) or "cloud" (Personas
-    /// Cloud managed endpoint). Lets the unified audit trail mix both sources.
-    pub target: String,
-    pub created_at: String,
-}
+// `GitLabDeploymentRecord` moved to `personas_core::models` (crate-split 4b).
+// It is a row shape for the `gitlab_deployment_history` table, so the repo
+// layer owns it; keeping it here made `db::repos` depend on the whole gitlab
+// integration module. Re-exported so `gitlab::types::GitLabDeploymentRecord`
+// keeps resolving.
+pub use personas_core::models::GitLabDeploymentRecord;
 
 /// A git branch from GitLab API (internal — not exposed to frontend).
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -229,13 +229,37 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
 // Drain task
 // ---------------------------------------------------------------------------
 
+/// Side effects the drain task fires on relevant changes, injected by the
+/// caller.
+///
+/// Both targets live *above* the data layer — the cloud mirror and the
+/// subscription event bus — so calling them directly made `db` depend on
+/// `cloud` and `engine`, which is the inversion that kept the data layer from
+/// being extractable into its own crate. Passing them in at the one place that
+/// already wires this task up keeps the dependency pointing downward, and
+/// unlike a global hook registry it cannot be silently left unregistered.
+#[derive(Clone, Copy)]
+pub struct CdcHooks {
+    /// Called when a table the cloud mirror tracks changes, so the sync loop
+    /// can pick it up. The loop debounces and no-ops when sync is disabled.
+    pub notify_cloud_dirty: fn(),
+    /// Called on `persona_events` INSERT to wake the subscription event bus
+    /// rather than waiting for its next poll tick.
+    pub wake_event_bus: fn(),
+}
+
 /// Spawns a background tokio task that drains CDC events from the sync channel
 /// and emits them to the frontend via Tauri.
 ///
 /// For `persona_events`, the task fetches the full row by rowid (needed by the
 /// frontend event bus).  For all other tables, it emits the lightweight
 /// [`CdcEvent`] itself as the notification payload.
-pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: crate::db::DbPool) {
+pub fn spawn_cdc_drain_task(
+    app_handle: AppHandle,
+    receiver: CdcReceiver,
+    db: crate::db::DbPool,
+    hooks: CdcHooks,
+) {
     tauri::async_runtime::spawn(async move {
         // Capture the persona_events high-water rowid BEFORE the startup wait.
         // Anything inserted during the 6s blackout below is normally buffered in
@@ -311,7 +335,7 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 event.table.as_str(),
                 "personas" | "persona_executions" | "persona_events" | "persona_messages"
             ) {
-                crate::cloud::sync::notify_dirty();
+                (hooks.notify_cloud_dirty)();
             }
 
             // Special handling for persona_events: fetch the full row for the
@@ -337,7 +361,7 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 // the retained poll heartbeat picks the event up next interval.
                 // UPDATE is a status transition, not new work — no signal.
                 if event.action == CdcAction::Insert {
-                    crate::engine::subscription::event_bus_wake_signal().notify_one();
+                    (hooks.wake_event_bus)();
                 }
 
                 match fetch_persona_event_by_rowid(&db, event.rowid) {

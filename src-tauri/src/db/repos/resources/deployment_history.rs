@@ -2,7 +2,7 @@ use rusqlite::params;
 
 use crate::db::DbPool;
 use crate::error::AppError;
-use crate::gitlab::types::GitLabDeploymentRecord;
+use crate::db::models::GitLabDeploymentRecord;
 
 /// Insert a deployment history record.
 #[allow(clippy::too_many_arguments)]

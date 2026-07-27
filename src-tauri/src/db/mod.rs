@@ -170,7 +170,7 @@ pub fn spawn_idle_maintenance_task(primary_pool: DbPool, user_pool: UserDbPool) 
     tauri::async_runtime::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         loop {
-            if crate::ipc_auth::ipc_in_flight() == 0 {
+            if personas_core::ipc_gauge::ipc_in_flight() == 0 {
                 for (name, pool) in [
                     ("personas.db", &primary_pool),
                     ("personas_data.db", &user_pool),
@@ -193,7 +193,7 @@ pub fn spawn_idle_maintenance_task(primary_pool: DbPool, user_pool: UserDbPool) 
                 }
             } else {
                 tracing::debug!(
-                    in_flight = crate::ipc_auth::ipc_in_flight(),
+                    in_flight = personas_core::ipc_gauge::ipc_in_flight(),
                     "SQLite idle maintenance deferred while IPC is active"
                 );
             }

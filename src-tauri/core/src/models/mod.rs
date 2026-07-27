@@ -22,6 +22,7 @@ mod exposure;
 mod external_api_key;
 mod frontend_crash;
 mod genome;
+mod gitlab;
 mod healing;
 #[cfg(feature = "p2p")]
 mod identity;
@@ -117,6 +118,7 @@ pub use obsidian_brain::*;
 pub use ocr::*;
 pub use output_assertion::*;
 pub use owned_device::*;
+pub use gitlab::*;
 pub use persona::*;
 pub use persona_change_log::*;
 pub use platform_definition::*;

@@ -90,7 +90,7 @@ pub fn upsert(pool: &DbPool, row: &FleetSessionRow) -> Result<(), AppError> {
                 row.run_label,
                 row.created_at_ms,
                 row.last_activity_ms,
-                crate::commands::fleet::registry::now_ms(),
+                crate::utils::now_ms(),
             ],
         )?;
         Ok(())
