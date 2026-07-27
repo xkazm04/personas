@@ -167,11 +167,11 @@ export function agentColor(agent: CronAgent, index: number): string {
 
 // -- Format helpers -----------------------------------------------------------
 
+// Locale-aware (same `undefined`-locale convention as the shared AbsoluteTime
+// component): renders "3 PM" in en-US, "15" / "15 h" in 24-hour locales instead
+// of hardcoded English AM/PM.
 export function formatHour(hour: number): string {
-  if (hour === 0) return '12 AM';
-  if (hour < 12) return `${hour} AM`;
-  if (hour === 12) return '12 PM';
-  return `${hour - 12} PM`;
+  return new Date(2000, 0, 1, hour).toLocaleTimeString(undefined, { hour: 'numeric' });
 }
 
 export function formatDayHeader(d: Date, view: CalendarView): string {
@@ -181,9 +181,11 @@ export function formatDayHeader(d: Date, view: CalendarView): string {
   return d.getDate().toString();
 }
 
-const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/** Short weekday label for column headers; `i` matches Date#getDay (0 = Sunday).
+ *  2000-01-02 was a Sunday, so offsetting from it maps index → weekday without
+ *  a hardcoded English name table. */
 export function weekdayShort(i: number): string {
-  return WEEKDAY_SHORT[i] ?? '';
+  return new Date(2000, 0, 2 + i).toLocaleDateString(undefined, { weekday: 'short' });
 }
 
 // -- Conflict detection -------------------------------------------------------
