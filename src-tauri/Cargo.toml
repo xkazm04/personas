@@ -11,7 +11,7 @@
 #   db     — data layer
 #   engine — business logic
 #   .      — Tauri commands + companion (what's left)
-members = [".", "macros", "core", "db"]
+members = [".", "macros", "core", "db", "engine"]
 
 [package]
 name = "personas-desktop"
@@ -41,6 +41,7 @@ desktop = [
     # that crate compiles its mobile "keychain unavailable" stub instead.
     "personas-core/desktop",
     "personas-db/desktop",
+    "personas-engine/desktop",
     "tauri/tray-icon",
     "dep:arboard",
     "dep:notify",
@@ -55,9 +56,9 @@ desktop = [
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
-ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml", "personas-db/ml"]
+ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml", "personas-db/ml", "personas-engine/ml"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
-p2p = ["personas-core/p2p", "personas-db/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
+p2p = ["personas-core/p2p", "personas-db/p2p", "personas-engine/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing.
@@ -71,11 +72,11 @@ test-automation = ["dep:xcap", "dep:image"]
 # wiring listed in src/features/settings/sub_engine/libs/engineCapabilities.ts
 # (EngineKind variant, runner dispatch, PROVIDERS row, capability column).
 # Build with `cargo build --features ollama` when iterating on it.
-ollama = []
+ollama = ["personas-engine/ollama"]
 # Embedded local scraper (Pumper). Phase 0: http tier only, SSRF-safe, exposed
 # as the `fetch_readable` MCP tool + `scraper_fetch_readable` command. Not in any
 # release profile yet — build with `cargo build --features scraper` while iterating.
-scraper = ["dep:pumper-core", "personas-db/scraper"]
+scraper = ["dep:pumper-core", "personas-db/scraper", "personas-engine/scraper"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
@@ -97,6 +98,8 @@ personas-core = { path = "core" }
 # Data layer (see src-tauri/db/). Re-exported from lib.rs as `db` so existing
 # `crate::db::…` paths keep resolving unchanged.
 personas-db = { path = "db" }
+# Portable half of the execution engine (see src-tauri/engine/).
+personas-engine = { path = "engine" }
 
 # Embedded local scraper (Pumper) — Phase 0. `default-features = false` drops
 # pumper-core's sqlx/storage tier, so this pulls only the engine traits +

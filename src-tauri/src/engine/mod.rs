@@ -1,61 +1,28 @@
-pub mod a2a;
-pub mod adoption_answers;
-pub mod archetype_catalog;
-pub mod ai_healing;
 pub mod ai_helpers;
-#[cfg(feature = "desktop")]
-pub mod ambient_context;
-#[cfg(feature = "desktop")]
-pub mod ambient_signal_repo;
-pub mod api_definition;
-#[cfg(feature = "desktop")]
-pub mod cli_session_audit_repo;
-#[cfg(feature = "desktop")]
-pub mod cli_session_awareness;
 pub mod api_proxy;
-#[cfg(feature = "desktop")]
-pub mod app_focus;
 pub mod auto_rollback;
-pub mod auto_triage;
-pub mod autonomy;
-pub mod autopilot;
 pub mod automation_runner;
 pub mod background;
 pub mod build_session;
 #[cfg(feature = "p2p")]
 pub mod bundle;
-pub mod bus;
 pub mod capability;
-pub mod capability_contract;
-pub mod chunker;
-pub mod claude_md_projection;
-pub mod workspace_projection;
-pub mod cli_capabilities;
-pub mod cli_mcp_config;
-pub mod cli_process;
-#[cfg(feature = "desktop")]
-pub mod clipboard_error_detector;
-#[cfg(feature = "desktop")]
-pub mod clipboard_monitor;
 pub mod cloud_webhook_relay;
-pub mod compilation_pipeline;
-pub mod compiler;
 pub mod composite;
-pub mod config_merge;
 pub mod connector_strategy;
-pub mod context_fidelity;
-#[cfg(feature = "desktop")]
-pub mod context_rules;
-pub mod cost;
-pub mod connector_explorer;
-pub mod credential_design;
-pub mod credential_negotiator;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and
 // `validation`, which sit below the engine, so leaving them here forced the
 // whole engine into the bottom layer of the graph.
 pub use personas_core::{cron, crypto, lifecycle, trace, types, url_safety};
+// The portable half of the engine now lives in `personas-engine` (see
+// src-tauri/engine/). Re-exported wholesale so every `crate::engine::<name>`
+// path across commands, companion and the remaining engine modules resolves
+// unchanged. What stayed in this file and its siblings is the part that reaches
+// `AppState`, `notifications`, `tray`, `cloud` or a command entry point.
+pub use personas_engine::*;
+
 // Moved to `personas-core` (crate-split step 4a). These six carry no engine
 // dependencies of their own — `healing`, `run_budget`, `topology_graph`,
 // `redact` and `limits` are pure classification/algorithm/constant modules, and
@@ -76,19 +43,6 @@ pub mod curation_scheduler;
 pub mod system_ops;
 pub mod db_query;
 pub mod deliberation;
-pub mod design;
-pub mod design_context;
-#[cfg(feature = "desktop")]
-pub mod bridge_manifest;
-#[cfg(feature = "desktop")]
-pub mod desktop_bridges;
-#[cfg(feature = "desktop")]
-pub mod desktop_discovery;
-#[cfg(feature = "desktop")]
-pub mod desktop_runtime;
-#[cfg(feature = "desktop")]
-pub mod channel_reply;
-pub mod desktop_security;
 pub mod digest;
 pub mod director;
 pub mod director_brain;
@@ -96,41 +50,17 @@ pub mod director_memory;
 pub mod discord_poller;
 pub mod discovery;
 pub mod dispatch;
-pub mod dream_replay;
 pub mod dry_run;
-#[cfg(feature = "p2p")]
-pub mod enclave;
 /// Moved to `personas-core` (crate-split step 2) — `error.rs` depends on it, so
 /// it had to sit below both. Re-exported so the 6 existing
 /// `crate::engine::error_taxonomy::…` call sites resolve unchanged.
 pub use personas_core::error_taxonomy;
-pub mod eval;
-pub mod event_registry;
-pub mod event_vocabulary;
-pub mod events;
 pub mod evolution;
-mod execution_engine;
 pub mod failover;
-pub mod failure_signature;
-#[cfg(feature = "desktop")]
-pub mod file_watcher;
-pub mod fix_loop;
-pub mod git_checkpoint;
 pub mod genome;
 pub mod genome_critique;
-pub mod google_oauth;
-pub mod healing_orchestrator;
-pub mod healing_timeline;
 pub mod healthcheck;
-pub mod hooks_sidecar;
 pub mod leadership;
-pub mod skill_scratchpad;
-pub mod skills_sidecar;
-#[cfg(feature = "p2p")]
-pub mod identity;
-pub mod inflight_guard;
-pub mod intent_compiler;
-pub mod kb_index;
 #[cfg(feature = "ml")]
 pub mod kb_extract;
 #[cfg(feature = "ml")]
@@ -139,32 +69,18 @@ pub mod kb_ingest;
 pub mod kb_scan;
 pub mod knowledge;
 pub mod llm_topology;
-pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
 pub mod memory_reflection;
-pub mod pairing;
 pub mod oauth_refresh;
-pub mod oauth_refresh_lock;
 // Ollama-as-CLI-engine is deferred (decision recorded 2026-05-05). The native
 // HTTP path here is not dispatched from `runner` and is gated behind the
 // `ollama` Cargo feature so it does not get compiled into normal builds.
 // See ollama.rs module docs for the full revival checklist.
-#[cfg(feature = "ollama")]
-pub mod ollama;
 /// Remote HTTP inference (Qwen/DashScope) — Phase 1 split engine. See module docs.
 pub mod http_engine;
-pub mod optimizer;
-pub mod output_assertions;
-#[cfg(feature = "p2p")]
-pub mod p2p;
-pub mod parser;
-pub mod path_safety;
-pub mod persona_icon;
 pub mod persona_jobs;
-pub mod pipeline;
 pub mod pipeline_executor;
-pub mod platform_rules;
 pub mod goal_advance;
 pub mod incident_continuation;
 pub mod kpi_eval;
@@ -172,59 +88,28 @@ pub mod kpi_derivation;
 pub mod kpi_binding;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
-pub mod team_handoff;
 pub mod platforms;
 pub mod polling;
-pub mod prepared_run_cache;
-pub mod process_activity;
 pub mod process_session;
 pub mod project_tracking;
-pub mod prompt;
-pub mod protocol;
-pub mod provider;
-pub mod queue;
 pub mod resource_governor;
-pub mod rate_limiter;
-pub mod recipe_eligibility;
-pub mod recipe_matcher;
-pub mod recipe_parameters;
 pub mod recipe_seed;
 pub mod render_plan;
 pub mod resource_listing;
 pub mod rotation;
 pub mod runner;
-pub mod safe_json;
-pub mod scope_enforcement;
-#[cfg(feature = "scraper")]
-pub mod scraper;
-pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;
-pub mod shared_event_local_relay;
 pub mod shared_event_relay;
-pub mod sla_breach;
 pub mod slack_poller;
 pub mod smee_relay;
-pub mod str_utils;
 pub mod subscription;
 pub mod team_preset_adopter;
-pub mod team_preset_loader;
-pub mod template_checksums;
-pub mod template_v3;
-pub mod test_runner;
-pub mod tier;
-pub mod tool_outcome;
 pub mod tool_runner;
-pub mod topology_heuristic;
-pub mod topology_types;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.
 #[allow(dead_code)]
-pub mod verification_command;
 pub mod webhook;
 pub mod webhook_notifier;
-pub mod workflow_compiler;
-pub mod workspace_sync;
-pub mod worktree_settings;
 
 #[cfg(test)]
 mod circuit_breakers_integration_tests;
