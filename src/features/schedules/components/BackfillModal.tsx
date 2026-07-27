@@ -4,6 +4,7 @@ import { X, History, Check, AlertTriangle } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { BackfillResult } from '@/api/pipeline/scheduler';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface BackfillModalProps {
@@ -65,15 +66,21 @@ export default function BackfillModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 surface-blur-modal">
-      <div className="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 w-[520px] max-w-[calc(100%-2rem)] mx-4 overflow-hidden">
+    <BaseModal
+      isOpen
+      onClose={() => { if (!isRunning) onCancel(); }}
+      titleId="backfill-modal-title"
+      maxWidthClass="max-w-[520px]"
+      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      staggerChildren={false}
+    >
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-card bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
               <History className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <h3 className="typo-heading text-foreground/90">{t.schedules.backfill_title}</h3>
+              <h3 id="backfill-modal-title" className="typo-heading text-foreground/90">{t.schedules.backfill_title}</h3>
               <p className="typo-caption text-foreground">{agent.persona_name}</p>
             </div>
           </div>
@@ -216,7 +223,6 @@ export default function BackfillModal({
             )}
           </button>
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
