@@ -67,7 +67,7 @@ home_team_id: string | null,
  * only by the reflection apply path
  * (`repos::core::memories::create_synthesized`).
  */
-derived_from: Array<string> | null,
+derived_from: Array<string> | null, 
 /**
  * Open NEGATIVE dispute claims (`wrong`/`outdated`, unresolved) against
  * this memory — Brainiac-adoption P3. Denormalized counter maintained

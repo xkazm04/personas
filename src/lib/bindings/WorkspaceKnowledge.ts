@@ -54,7 +54,7 @@ governing_id: string | null,
 /**
  * Prevalence — how many raw sites/instances back this finding.
  */
-evidence_count: number | null, 
+evidence_count: bigint | null, 
 /**
  * JSON `{ layers: [], languages: [], frameworks: [], conditions: [] }` —
  * which member projects this practice can apply to. Opaque to the repo.

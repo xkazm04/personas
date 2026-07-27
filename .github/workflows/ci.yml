@@ -260,12 +260,19 @@ jobs:
             libpipewire-0.3-dev
 
       - name: Regenerate TypeScript bindings
-        # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR set in
-        # src-tauri/.cargo/config.toml. The drift check below diffs that path.
+        # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR, emitted by each
+        # crate's own build.rs. The drift check below diffs that path.
         # Fail loudly: if Rust compile errors prevent export, the binding-drift
         # gate is meaningless. (Previously wrapped in `2>/dev/null || true`,
         # which silently masked Rust-side breakage.)
-        run: cargo test --manifest-path src-tauri/Cargo.toml export_bindings
+        #
+        # `--workspace` is REQUIRED, not tidiness. `--manifest-path` alone selects
+        # only `personas-desktop`, and the crate split moved ~200 `#[ts(export)]`
+        # types (all of `db::models`) into `personas-core`. Without this flag
+        # those types are never regenerated here, so the gate silently stops
+        # covering the majority of the binding surface — which is exactly how the
+        # six files fixed alongside this change drifted in the first place.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml export_bindings
 
       - name: Check for binding drift
         run: |

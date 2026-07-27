@@ -79,7 +79,10 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
     ftype: row.ftype ?? null,
     durability: (row.durability as Durability | null) ?? null,
     governingId: row.governing_id ?? null,
-    evidenceCount: row.evidence_count ?? null,
+    // ts-rs maps Rust `i64` to `bigint`; Tauri delivers it over IPC as a plain
+    // JSON number, so narrow it here rather than letting `bigint` leak into the
+    // view model (counts here are single/double digits — no precision at risk).
+    evidenceCount: row.evidence_count != null ? Number(row.evidence_count) : null,
   };
 }
 

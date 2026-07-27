@@ -4,18 +4,62 @@ import type { ToolCallStep } from "./ToolCallStep";
 /**
  * Execution row with persona metadata included via SQL JOIN.
  * Eliminates N+1 queries when listing executions across all personas.
+ *
+ * Flattens `PersonaExecution` as its base (see that struct for field docs,
+ * including the ts-rs `execution_flows` workaround) so new execution columns
+ * only need to be added once and can't silently drift between the two shapes.
  */
-export type GlobalExecutionRow = { id: string, persona_id: string, trigger_id: string | null, use_case_id: string | null, status: string, input_data: string | null, output_data: string | null, claude_session_id: string | null, log_file_path: string | null, execution_flows: unknown, model_used: string | null, 
+export type GlobalExecutionRow = { persona_name: string | null, persona_icon: string | null, persona_color: string | null, id: string, persona_id: string, trigger_id: string | null, use_case_id: string | null, status: string, input_data: string | null, output_data: string | null, claude_session_id: string | null, log_file_path: string | null, execution_flows: unknown, model_used: string | null, 
 /**
  * Resolved Claude CLI `--effort` level the run was spawned with
  * (low/medium/high) — the "thinking" dial for cost observability.
  */
-thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number, error_message: string | null, duration_ms: number | null, tool_steps: Array<ToolCallStep> | null, retry_of_execution_id: string | null, retry_count: number, started_at: string | null, completed_at: string | null, created_at: string, execution_config: string | null, 
+thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number, 
+/**
+ * Prompt-cache tokens served from cache (cheap input reuse). 0 when the CLI
+ * reported no cache usage. See P1 cache visibility.
+ */
+cache_read_tokens: number, 
+/**
+ * Prompt-cache tokens written this run (cache-creation cost).
+ */
+cache_creation_tokens: number, error_message: string | null, duration_ms: number | null, tool_steps: Array<ToolCallStep> | null, 
+/**
+ * If this execution is a healing retry, links to the original execution.
+ */
+retry_of_execution_id: string | null, 
+/**
+ * Number of retries attempted (0 = original execution).
+ */
+retry_count: number, started_at: string | null, completed_at: string | null, created_at: string, 
+/**
+ * Frozen ExecutionConfig JSON snapshot assembled at execution start.
+ */
+execution_config: string | null, 
 /**
  * `true` when the execution log file may be incomplete due to I/O errors.
  */
 log_truncated: boolean, 
 /**
- * Phase C3 — simulation runs are excluded from the default activity feed.
+ * Phase C3 — `true` when this execution was started via
+ * `simulate_use_case`. Simulations skip real notification dispatch and
+ * are filtered out of the default activity feed.
  */
-is_simulation: boolean, business_outcome: string, persona_name: string | null, persona_icon: string | null, persona_color: string | null, };
+is_simulation: boolean, 
+/**
+ * LLM's self-assessment of business value delivery for this run.
+ * One of `value_delivered`, `no_input_available`, `precondition_failed`,
+ * `partial`, `unknown`. See `EXECUTION_MODE_DIRECTIVE` for semantics.
+ */
+business_outcome: string, 
+/**
+ * The Director's overall 0-5 score for this run, set when the Director
+ * reviews it. `None` ⇒ not reviewed (the Verdict column shows "—").
+ */
+director_score: number | null, 
+/**
+ * Rendered markdown of the Director's full assessment for this run (score +
+ * summary + coaching verdicts). Backs the "Director" tab in the execution
+ * detail modal. `None` until the Director reviews this execution.
+ */
+director_review_md: string | null, };

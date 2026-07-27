@@ -141,7 +141,7 @@ export function PracticeDetailLedger({
               )}
               {practice.evidence_count != null && practice.evidence_count > 1 && (
                 <Row label={tw.detail_evidence}>
-                  {tx(tw.detail_evidence_count, { count: practice.evidence_count })}
+                  {tx(tw.detail_evidence_count, { count: Number(practice.evidence_count) })}
                 </Row>
               )}
             </div>
