@@ -8,7 +8,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Share2 } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
-import { listWorkspaceAdoption, projectWorkspacePractices } from '@/api/devTools/workspaces';
+import {
+  decideWorkspaceKnowledgeBulk,
+  listWorkspaceAdoption,
+  projectWorkspacePractices,
+} from '@/api/devTools/workspaces';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
@@ -90,6 +94,28 @@ export default function KnowledgeLibrary({
     return () => { live = false; };
   }, [workspace.id, rows]);
 
+  // Bulk review. A twelve-territory harvest lands a few hundred `observed`
+  // items; one modal per item is hours of work, so the governance pillar never
+  // moves and the rational response becomes "don't harvest". Same governance
+  // gate, larger batch.
+  const bulkDecide = async (ids: string[], decision: 'adopt' | 'reject') => {
+    try {
+      const res = await decideWorkspaceKnowledgeBulk(ids, decision);
+      addToast(
+        tx(decision === 'adopt' ? w.bulk_adopted : w.bulk_rejected, { count: res.decided }),
+        res.decided > 0 ? 'success' : 'warning',
+      );
+      // Partial failure is reported, never swallowed — a reviewer who thinks
+      // they cleared 50 items must not silently have cleared 47.
+      if (res.failed.length > 0) {
+        addToast(tx(w.bulk_failed, { count: res.failed.length }), 'warning');
+      }
+      onChanged();
+    } catch (err) {
+      toastCatch('workspaces:bulkDecide')(err);
+    }
+  };
+
   const closeDetail = () => { setQueue([]); setQueueIdx(0); };
 
   const openDetail = (item: KnowledgeItemView, ordered: readonly KnowledgeItemView[]) => {
@@ -167,6 +193,7 @@ export default function KnowledgeLibrary({
           // entirely and offered to distribute practices still sitting at
           // `observed`.
           onRowClick={openDetail}
+          onBulkDecide={bulkDecide}
         />
       </div>
 

@@ -13197,7 +13197,14 @@
         "state_to_process": "Perlu diproses",
         "harvest_coverage": "{done}/{total} cakupan dipanen",
         "harvest_no_scopes": "Tidak ada cakupan yang bisa dipanen di {project}.",
-        "harvest_wave_dispatched": "Memanen {count} cakupan dari {project} — {remaining} masih belum dibaca."
+        "harvest_wave_dispatched": "Memanen {count} cakupan dari {project} — {remaining} masih belum dibaca.",
+        "bulk_adopt": "Adopsi yang dipilih",
+        "bulk_adopted": "{count} praktik diadopsi.",
+        "bulk_failed": "{count} tidak dapat diputuskan.",
+        "bulk_reject": "Tolak yang dipilih",
+        "bulk_rejected": "{count} praktik ditolak.",
+        "bulk_select_row": "Pilih untuk tinjauan massal",
+        "harvest_depth": "{done}/{total} cakupan · ~{pct}% dibaca"
       },
       "skills_adopt": "Adopsi",
       "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

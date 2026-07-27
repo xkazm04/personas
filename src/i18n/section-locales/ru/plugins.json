@@ -1242,7 +1242,14 @@
       "state_to_process": "К обработке",
       "harvest_coverage": "Обработано областей: {done}/{total}",
       "harvest_no_scopes": "В проекте {project} не найдено областей для сбора.",
-      "harvest_wave_dispatched": "Сбор {count} обл. проекта {project} — ещё не прочитано: {remaining}."
+      "harvest_wave_dispatched": "Сбор {count} обл. проекта {project} — ещё не прочитано: {remaining}.",
+      "bulk_adopt": "Принять выбранные",
+      "bulk_adopted": "Принято практик: {count}.",
+      "bulk_failed": "Не удалось принять решение по {count}.",
+      "bulk_reject": "Отклонить выбранные",
+      "bulk_rejected": "Отклонено практик: {count}.",
+      "bulk_select_row": "Выбрать для массовой проверки",
+      "harvest_depth": "Областей {done}/{total} · прочитано ~{pct}%"
     },
     "skills_adopt": "Внедрить",
     "skills_adopt_hint": "Внедрить в {name} — Claude адаптирует под репозиторий",

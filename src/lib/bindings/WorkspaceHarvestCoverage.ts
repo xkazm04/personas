@@ -30,4 +30,17 @@ last_harvested_at: string | null, last_run_dir: string | null,
 /**
  * Items the most recent run produced for this scope.
  */
-items_found: bigint, run_count: bigint, updated_at: string, };
+items_found: bigint, run_count: bigint, 
+/**
+ * How much of the territory the last run actually READ, self-reported by
+ * the harvest session. "Visited" and "covered" are different claims and
+ * the ledger must not conflate them: a scope read at 11% is a scope that
+ * still owes a pass, even though `last_harvested_at` is set.
+ */
+files_read: bigint | null, files_total: bigint | null, estimated_pct: bigint | null, 
+/**
+ * JSON array of paths the last run named as unread. Fed back into the
+ * next dispatch for this scope, which is what turns a re-run into a
+ * genuine second pass instead of a re-read of the same ground.
+ */
+unread_pockets: string | null, coverage_note: string | null, updated_at: string, };

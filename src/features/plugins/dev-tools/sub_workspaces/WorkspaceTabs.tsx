@@ -7,7 +7,7 @@
 // Directional opposite of the Rail — it trades always-visible counts for width
 // (past ~8 workspaces the strip scrolls horizontally), and edit affordances
 // hide behind the active tab's chevron rather than every row's hover.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronDown, Layers, Plus } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,11 +15,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { createWorkspace, unassignedProjects, type Workspace } from './workspaceStore';
 import { WorkspaceEditMenu } from './WorkspaceEditMenu';
 
-export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
+export function WorkspaceTabs({ projects, workspaces, activeId, onSelect, actions }: {
   projects: { id: string }[];
   workspaces: Workspace[];
   activeId: string | null;
   onSelect: (id: string | null) => void;
+  /**
+   * Page-level actions rendered at the right end of the strip. The manager page
+   * used to stack its action row ABOVE this one; folding them together keeps the
+   * strip's full-width rule as the single horizontal divider instead of two
+   * competing rows of chrome.
+   */
+  actions?: ReactNode;
 }) {
   const { t } = useTranslation();
   const dp = t.plugins.dev_projects;
@@ -34,7 +41,12 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
 
   return (
     <div className="relative" data-testid="workspace-tabs">
-      <div className="flex items-stretch gap-0.5 border-b border-primary/10 overflow-x-auto">
+      {/* The border-b lives on this outer row so the rule spans the full width,
+          including under `actions`. The TABS scroll horizontally past ~8
+          workspaces; `actions` must not, so it is a shrink-0 sibling OUTSIDE
+          the scroll container rather than a child of it. */}
+      <div className="flex items-stretch border-b border-primary/10">
+      <div className="flex items-stretch gap-0.5 overflow-x-auto flex-1 min-w-0">
         <button
           type="button"
           onClick={() => onSelect(null)}
@@ -92,6 +104,16 @@ export function WorkspaceTabs({ projects, workspaces, activeId, onSelect }: {
           <Plus className="w-3.5 h-3.5" aria-hidden />
           {COPY.newWorkspace}
         </button>
+      </div>
+
+        {actions && (
+          // `self-center` so page buttons keep their own height instead of being
+          // stretched by `items-stretch`; the divider separates workspace-scoped
+          // controls from page-scoped ones.
+          <div className="self-center flex items-center gap-2 shrink-0 pl-3 ml-2 border-l border-primary/10">
+            {actions}
+          </div>
+        )}
       </div>
 
       {workspaces.length === 0 && (

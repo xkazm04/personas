@@ -224,6 +224,10 @@ pub struct WorkspaceKnowledge {
     pub valid_to: Option<String>,
     /// When the user adopted/rejected/deprecated the item.
     pub decided_at: Option<String>,
+    /// Which harvest territory produced this practice
+    /// (`group:execution-orchestration`, `repo-global`, …). NULL for
+    /// hand-authored rows and for runs that predate scoping.
+    pub harvest_scope: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -272,6 +276,18 @@ pub struct WorkspaceHarvestCoverage {
     /// Items the most recent run produced for this scope.
     pub items_found: i64,
     pub run_count: i64,
+    /// How much of the territory the last run actually READ, self-reported by
+    /// the harvest session. "Visited" and "covered" are different claims and
+    /// the ledger must not conflate them: a scope read at 11% is a scope that
+    /// still owes a pass, even though `last_harvested_at` is set.
+    pub files_read: Option<i64>,
+    pub files_total: Option<i64>,
+    pub estimated_pct: Option<i64>,
+    /// JSON array of paths the last run named as unread. Fed back into the
+    /// next dispatch for this scope, which is what turns a re-run into a
+    /// genuine second pass instead of a re-read of the same ground.
+    pub unread_pockets: Option<String>,
+    pub coverage_note: Option<String>,
     pub updated_at: String,
 }
 

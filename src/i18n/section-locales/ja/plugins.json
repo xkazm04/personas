@@ -1242,7 +1242,14 @@
       "state_to_process": "処理待ち",
       "harvest_coverage": "{total} 個中 {done} 個のスコープを収集済み",
       "harvest_no_scopes": "{project} に収集可能なスコープが見つかりません。",
-      "harvest_wave_dispatched": "{project} のスコープ {count} 件を収集中 — 残り {remaining} 件は未読です。"
+      "harvest_wave_dispatched": "{project} のスコープ {count} 件を収集中 — 残り {remaining} 件は未読です。",
+      "bulk_adopt": "選択項目を採用",
+      "bulk_adopted": "{count} 件のプラクティスを採用しました。",
+      "bulk_failed": "{count} 件は判定できませんでした。",
+      "bulk_reject": "選択項目を却下",
+      "bulk_rejected": "{count} 件のプラクティスを却下しました。",
+      "bulk_select_row": "一括レビュー用に選択",
+      "harvest_depth": "スコープ {done}/{total} · 約 {pct}% 読了"
     },
     "skills_adopt": "採用",
     "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

@@ -13509,7 +13509,14 @@
         "decide_adopted_queued": "Adopted — queued in every applicable repo to process",
         "harvest_coverage": "{done}/{total} scopes harvested",
         "harvest_no_scopes": "No harvestable scopes found in {project}.",
-        "harvest_wave_dispatched": "Harvesting {count} scope(s) of {project} — {remaining} still unread."
+        "harvest_wave_dispatched": "Harvesting {count} scope(s) of {project} — {remaining} still unread.",
+        "bulk_adopt": "Adopt selected",
+        "bulk_reject": "Reject selected",
+        "bulk_select_row": "Select for bulk review",
+        "bulk_adopted": "Adopted {count} practice(s).",
+        "bulk_rejected": "Rejected {count} practice(s).",
+        "bulk_failed": "{count} could not be decided.",
+        "harvest_depth": "{done}/{total} scopes · ~{pct}% read"
       }
     },
     "doc_signing": {

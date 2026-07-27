@@ -1242,7 +1242,14 @@
       "state_to_process": "Por procesar",
       "harvest_coverage": "{done}/{total} ámbitos recolectados",
       "harvest_no_scopes": "No se encontraron ámbitos recolectables en {project}.",
-      "harvest_wave_dispatched": "Recolectando {count} ámbito(s) de {project}: quedan {remaining} sin leer."
+      "harvest_wave_dispatched": "Recolectando {count} ámbito(s) de {project}: quedan {remaining} sin leer.",
+      "bulk_adopt": "Adoptar seleccionadas",
+      "bulk_adopted": "Se adoptaron {count} prácticas.",
+      "bulk_failed": "No se pudo decidir sobre {count}.",
+      "bulk_reject": "Rechazar seleccionadas",
+      "bulk_rejected": "Se rechazaron {count} prácticas.",
+      "bulk_select_row": "Seleccionar para revisión masiva",
+      "harvest_depth": "{done}/{total} ámbitos · ~{pct} % leído"
     },
     "skills_adopt": "Adoptar",
     "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

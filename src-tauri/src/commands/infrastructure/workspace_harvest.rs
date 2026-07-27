@@ -60,6 +60,28 @@ struct HarvestResult {
     /// are stamped against `repo-global` — that is honestly what they read.
     #[serde(default)]
     scope: Option<String>,
+    /// Self-reported read depth. Optional — an agent that will not estimate
+    /// must leave it absent rather than have the app invent a number.
+    #[serde(default)]
+    coverage: Option<HarvestCoverageReport>,
+}
+
+/// What the session says it actually read. The 2026-07-27 scan proved agents
+/// volunteer this accurately and unprompted ("~11% of 404 files", plus the
+/// named pockets they never opened); the first ledger threw it away.
+#[derive(Debug, Default, Deserialize)]
+struct HarvestCoverageReport {
+    #[serde(default)]
+    files_read: Option<i64>,
+    #[serde(default)]
+    files_total: Option<i64>,
+    #[serde(default)]
+    estimated_pct: Option<i64>,
+    /// Paths this run did NOT open — fed back into the next dispatch.
+    #[serde(default)]
+    unread_pockets: Vec<String>,
+    #[serde(default)]
+    note: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -165,6 +187,14 @@ pub async fn dev_tools_workspace_harvest_prepare(
                 "last_harvested_at": cov.and_then(|c| c.last_harvested_at.clone()),
                 "items_found_last_run": cov.map(|c| c.items_found).unwrap_or(0),
                 "run_count": cov.map(|c| c.run_count).unwrap_or(0),
+                "last_estimated_pct": cov.and_then(|c| c.estimated_pct),
+                // What the PREVIOUS pass over this scope said it never opened.
+                // This is what makes a second wave a second pass instead of a
+                // re-read of the same ground.
+                "unread_pockets": cov
+                    .and_then(|c| c.unread_pockets.as_deref())
+                    .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+                    .unwrap_or_default(),
             })
         })
         .collect();
@@ -187,6 +217,15 @@ pub async fn dev_tools_workspace_harvest_prepare(
         "existing_practice_titles": existing_titles,
         "rejected_dedup_keys": rejected_keys,
         "kinds": repo::KNOWLEDGE_KINDS,
+        // The SHAPE axis, closed for the same reason the topic areas are: left
+        // as a prompt comment it produced 90 distinct values across 330 items.
+        "ftypes": {
+            "rule": "ftype = exactly one value from this closed list. It answers what SHAPE the practice is; `topic` answers where it lives. Never coin a new ftype — an unrecognized value is filed on an `unsorted` shelf.",
+            "values": taxonomy::FTYPE_HINTS
+                .iter()
+                .map(|(t, hint)| json!({ "ftype": t, "covers": hint }))
+                .collect::<Vec<_>>(),
+        },
         // The closed topic vocabulary travels with the snapshot the agent is
         // already reading, so there is no second copy of it to drift. Areas
         // are precedence-ordered and closed; clusters are a starter set the
@@ -337,6 +376,16 @@ pub async fn dev_tools_workspace_knowledge_ingest(
         }
     }
     total.skipped.extend(failures);
+
+    // Derive doctrine links across the whole workspace once the batch is in.
+    // A harvest session only ever sees its own territory, so it cannot know
+    // what a topic already holds — this is the one place the full topic is
+    // visible. Never fatal: the practices are already stored.
+    if total.inserted > 0 {
+        if let Err(e) = repo::roll_up_topic_doctrine(&state.db, &workspace_id) {
+            tracing::warn!(error = %e, "could not roll up topic doctrine after ingest");
+        }
+    }
     Ok(total)
 }
 
@@ -393,6 +442,7 @@ fn ingest_one_run(
                 ))
             });
             KnowledgeCandidate {
+                harvest_scope: Some(scope_id.clone()),
                 kind: it.kind,
                 title: it.title,
                 statement: it.statement,
@@ -417,12 +467,32 @@ fn ingest_one_run(
     // territory that was harvested and yielded only duplicates has still been
     // read, and re-dispatching it ahead of never-read territory is exactly the
     // decay this ledger exists to stop.
+    let cov = result.coverage.unwrap_or_default();
+    let depth = repo::HarvestDepth {
+        files_read: cov.files_read,
+        files_total: cov.files_total,
+        // Derive the percentage when the agent gave counts but no percentage;
+        // never invent one from nothing.
+        estimated_pct: cov.estimated_pct.or_else(|| {
+            match (cov.files_read, cov.files_total) {
+                (Some(r), Some(t)) if t > 0 => Some(((r as f64 / t as f64) * 100.0).round() as i64),
+                _ => None,
+            }
+        }),
+        unread_pockets: if cov.unread_pockets.is_empty() {
+            None
+        } else {
+            serde_json::to_string(&cov.unread_pockets).ok()
+        },
+        note: cov.note,
+    };
     if let Err(e) = repo::stamp_harvest_scope(
         &state.db,
         project_id,
         &scope_id,
         &dir.to_string_lossy(),
         item_count,
+        &depth,
     ) {
         // Never fail an ingest over bookkeeping — the practices are already in.
         tracing::warn!(scope = %scope_id, error = %e, "could not stamp harvest coverage");

@@ -70,7 +70,7 @@ const TOPIC = `TOPIC — the library uses a CLOSED, precedence-ordered vocabular
 - Prefer a listed cluster. If none genuinely fits you MAY name a new one, but only under a listed area — never invent an area. An unrecognized area is quarantined on an \`unsorted/\` shelf for a human to file.
 - Your scope does NOT dictate your topic. A territory contributes practices across several areas; classify each item on its own merits.`;
 
-const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY-MM-DD-HHmm>-<scope-id>/result.json\` (and a short \`report.md\`). Put the scope id in the directory name so concurrent scope sessions never collide. The app ingests result.json; you NEVER write any database. Exact shape:
+const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY-MM-DD-HHmm>-<scope-id>/result.json\` (and a short \`report.md\`). Put the scope id in the directory name so concurrent scope sessions never collide — replacing \`:\` with \`-\`, since a colon is not a legal path character on Windows. The \`scope\` FIELD below keeps the id verbatim; that is what stamps coverage. The app ingests result.json; you NEVER write any database. Exact shape:
 {
   "scope": "<your scope id, exactly as given above>",   // REQUIRED: stamps coverage
   "items": [
@@ -81,24 +81,42 @@ const OUTPUT_CONTRACT = `OUTPUT CONTRACT — write \`practice-harvest/runs/<YYYY
       "detail_md": "Evidence: real code/config from THIS repo (markdown). Optional but strongly preferred.",
       "topic": "errors/degradation",               // REQUIRED: area/cluster from snapshot.json's taxonomy — see TOPIC above
       "abstraction": "meso",                       // macro | meso | micro — the altitude; prefer meso/macro design patterns over micro lint
-      "ftype": "error-strategy",                   // architecture | module-boundary | data-flow | extensibility | api-design | state-mgmt | error-strategy | concurrency-reliability | perf-strategy | micro-technique
-      "durability": "durable",                     // durable | situational | mechanical (mechanical = belongs in the linter, not here)
+      "ftype": "error-strategy",                   // REQUIRED: one value from \`ftypes\` in snapshot.json — a CLOSED list, same as the topic areas. Never coin one.
       "evidence_count": 4,                         // optional prevalence (how many sites)
       "applicability": { "layers": ["code-quality"], "languages": ["TypeScript"], "frameworks": ["React"] }, // optional object
       "dedup_key": "harvest:<stable-slug>",        // optional; the app derives one from the title if omitted
       "confidence": 0.7                            // optional 0..1
     }
-  ]
+  ],
+  "coverage": {                                    // REQUIRED — see COVERAGE below
+    "files_read": 45,
+    "files_total": 359,
+    "estimated_pct": 13,
+    "unread_pockets": ["src/features/teams/sub_goals", "src/features/teams/teamStudio"],
+    "note": "Schedules and triggers read near-exhaustively; teams/ is the real gap."
+  }
 }`;
+
+// The SHAPE axis is closed for exactly the reason the topic areas are. Left as
+// a prompt comment it produced NINETY distinct values across 330 items in the
+// 2026-07-27 scan — `guard`, `guardrail`, `trap`, `convention`, `policy`,
+// `user-honesty` … — while the enforced `topic` axis held at 5.8 items/topic.
+// A filter over a field where every writer coins their own value is not a
+// filter. `durability` is gone from the contract entirely: the same scan
+// returned `durable` for 330 of 330 items, because this prompt tells authors
+// mechanical items don't belong here, so the axis can never discriminate.
+const SHAPE = `FTYPE — \`ftype\` is a CLOSED vocabulary shipped as \`ftypes\` in snapshot.json. Pick the one that fits and never invent a value; an unrecognized ftype is filed on an \`unsorted\` shelf, which helps nobody. If your instinct is "guard" / "guardrail" / "trap" / "anti-pattern", the answer is \`error-strategy\`. Do NOT send \`durability\` — it is not an author's call.`;
 
 // No item cap. The ingest door caps a single run at 120 candidates
 // (MAX_INGEST_PER_RUN) and 1 MiB of JSON — those are the machine guards. A
 // prompt-level cap does not improve quality, it just stops the reading early.
 const BUDGET = `HOW MANY ITEMS — there is no cap. Report every practice your territory genuinely supports; for a scope of a few hundred files that is usually somewhere between 5 and 25. Two failure modes, both real:
 - Stopping early because you have "enough" — you are the only pass over this territory, and what you skip is not covered by anyone else.
-- Padding with generic advice this repo does not actually practise, or with lint-level mechanics (\`durability: "mechanical"\`) that belong in a linter. Quality still gates every individual item; it just no longer caps the count.`;
+- Padding with generic advice this repo does not actually practise, or with lint-level mechanics that belong in a linter rather than a practice library. Quality still gates every individual item; it just no longer caps the count.`;
 
-const REPORT = `REPORT — \`report.md\` must state, honestly: which paths inside your scope you actually read, which you did NOT get to, and anything you deliberately skipped and why. A harvest that read 10% of its territory and says so is useful; one that implies completeness is not. This is the only place a coverage gap can be recorded.`;
+const COVERAGE = `COVERAGE — result.json MUST carry a \`coverage\` block (shape above). It is read by the app, not by a human: \`estimated_pct\` decides whether this territory still owes a pass, and \`unread_pockets\` is handed to the NEXT session assigned here so it starts where you stopped instead of re-reading your ground. Estimate honestly — under-reporting costs nothing, over-reporting silently retires a territory nobody finished. If you genuinely cannot estimate, omit the field rather than guessing.`;
+
+const REPORT = `REPORT — \`report.md\` is a REQUIRED deliverable of this contract, not a courtesy summary: write it even if you would normally avoid writing report-style files. It must state, honestly: which paths inside your scope you actually read, which you did NOT get to, and anything you deliberately skipped and why. A harvest that read 10% of its territory and says so is useful; one that implies completeness is not. This is the only place a coverage gap can be recorded.`;
 
 const RULES = `HARD RULES:
 - Only write files under \`practice-harvest/runs/<id>/\`. Touch nothing else in the repo.
@@ -126,7 +144,11 @@ export function buildHarvestPrompt(
     '',
     OUTPUT_CONTRACT,
     '',
+    SHAPE,
+    '',
     BUDGET,
+    '',
+    COVERAGE,
     '',
     REPORT,
     '',

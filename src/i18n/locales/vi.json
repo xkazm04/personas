@@ -13197,7 +13197,14 @@
         "state_to_process": "Cần xử lý",
         "harvest_coverage": "Đã thu thập {done}/{total} phạm vi",
         "harvest_no_scopes": "Không tìm thấy phạm vi nào có thể thu thập trong {project}.",
-        "harvest_wave_dispatched": "Đang thu thập {count} phạm vi của {project} — còn {remaining} chưa đọc."
+        "harvest_wave_dispatched": "Đang thu thập {count} phạm vi của {project} — còn {remaining} chưa đọc.",
+        "bulk_adopt": "Áp dụng mục đã chọn",
+        "bulk_adopted": "Đã áp dụng {count} thực hành.",
+        "bulk_failed": "Không thể quyết định {count} mục.",
+        "bulk_reject": "Từ chối mục đã chọn",
+        "bulk_rejected": "Đã từ chối {count} thực hành.",
+        "bulk_select_row": "Chọn để duyệt hàng loạt",
+        "harvest_depth": "{done}/{total} phạm vi · đã đọc ~{pct}%"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

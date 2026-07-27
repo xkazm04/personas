@@ -3,7 +3,7 @@
 // shared FacetedDecisionTable; this file is the Workspaces-specific binding:
 // columns, filters, comparator and i18n labels.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Library } from 'lucide-react';
+import { Check, CheckSquare, Library, Square, X } from 'lucide-react';
 
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
 import type { DataGridColumn } from '@/features/shared/components/display/DataGrid';
@@ -14,7 +14,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { KnowledgeStatusChip } from './centerShared';
-import { STATUS_RANK, type KnowledgeItemView } from './libraryModel';
+import { reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
@@ -28,9 +28,12 @@ export default function KnowledgeTree({
   items,
   projectById,
   onRowClick,
+  onBulkDecide,
 }: {
   items: KnowledgeItemView[];
   projectById: Map<string, DevProject>;
+  /** Adjudicate the current selection. Absent = selection UI stays off. */
+  onBulkDecide?: (ids: string[], decision: 'adopt' | 'reject') => Promise<void>;
   /** Open the practice's detail/review surface. Receives the CURRENT visible
    *  ordering alongside the clicked row so the modal can walk the same queue
    *  the user is looking at — filters, sort and search included. */
@@ -57,8 +60,14 @@ export default function KnowledgeTree({
   // Origin filter: which member repo a practice was harvested from. '' is the
   // workspace itself (hand-authored, no origin project).
   const [projectFilter, setProjectFilter] = useState('all');
-  const [sortKey, setSortKey] = useState('updated');
+  // Default to review VALUE, not ingest order: at a few hundred pending items
+  // the order decides what gets adjudicated before attention runs out.
+  const [sortKey, setSortKey] = useState('value');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  // Bulk review. Only UNDECIDED rows are selectable — "adopt" on something
+  // already rejected is not a batch operation, it is a mistake.
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   // Only origins that actually occur in the corpus — a filter that can only
   // ever produce an empty table is noise, not a control.
@@ -106,12 +115,54 @@ export default function KnowledgeTree({
         case 'title':
           return a.title.localeCompare(b.title) * dir;
         case 'updated':
-        default:
           return a.updatedAt.localeCompare(b.updatedAt) * dir;
+        case 'value':
+        default: {
+          // Undecided first — a reviewed item is not competing for attention.
+          const pending = (i: KnowledgeItemView) =>
+            i.status === 'observed' || i.status === 'proposed' ? 0 : 1;
+          const byPending = pending(a) - pending(b);
+          if (byPending !== 0) return byPending;
+          const byValue = (reviewValue(a) - reviewValue(b)) * dir;
+          return byValue !== 0 ? byValue : a.updatedAt.localeCompare(b.updatedAt) * dir;
+        }
       }
     },
     [sortKey, sortDir],
   );
+
+  const pending = useCallback(
+    (i: KnowledgeItemView) => i.status === 'observed' || i.status === 'proposed',
+    [],
+  );
+  // Everything the current filters expose, so select-all means "all of what I
+  // am looking at" — not all of what happens to be on this page.
+  const selectablePendingIds = useMemo(
+    () => items.filter((i) => pending(i) && filterRow(i)).map((i) => i.id),
+    [items, pending, filterRow],
+  );
+  const allSelected =
+    selectablePendingIds.length > 0 && selectablePendingIds.every((id) => selected.has(id));
+
+  const toggleRow = useCallback((row: KnowledgeItemView) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(row.id)) next.delete(row.id);
+      else next.add(row.id);
+      return next;
+    });
+  }, []);
+
+  const bulk = async (decision: 'adopt' | 'reject') => {
+    if (!onBulkDecide || selected.size === 0) return;
+    setBulkBusy(true);
+    try {
+      await onBulkDecide([...selected], decision);
+      setSelected(new Set());
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const onSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -125,6 +176,38 @@ export default function KnowledgeTree({
   // confidence are review detail — carrying them here starved the Practice
   // column until titles were unreadable. They all surface in the detail modal.
   const columns: DataGridColumn<KnowledgeItemView>[] = [
+    // Only present when bulk review is wired, and only undecided rows get a
+    // box: batch-adopting something already rejected is a mistake, not a
+    // shortcut.
+    ...(onBulkDecide
+      ? [
+          {
+            key: 'select',
+            label: '',
+            width: '36px',
+            render: (row: KnowledgeItemView) =>
+              pending(row) ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleRow(row);
+                  }}
+                  aria-label={tw.bulk_select_row}
+                  aria-pressed={selected.has(row.id)}
+                  title={tw.bulk_select_row}
+                  className="text-foreground/60 hover:text-primary transition-colors"
+                >
+                  {selected.has(row.id) ? (
+                    <CheckSquare className="w-3.5 h-3.5 text-primary" />
+                  ) : (
+                    <Square className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              ) : null,
+          } as DataGridColumn<KnowledgeItemView>,
+        ]
+      : []),
     {
       key: 'status',
       label: tw.col_status,
@@ -190,6 +273,36 @@ export default function KnowledgeTree({
       onSort={onSort}
       compare={compare}
       onRowClick={onRowClick}
+      isRowSelected={onBulkDecide ? (r) => selected.has(r.id) : undefined}
+      selectAll={allSelected}
+      onSelectAll={
+        onBulkDecide
+          ? () => setSelected(allSelected ? new Set() : new Set(selectablePendingIds))
+          : undefined
+      }
+      selectedCount={selected.size}
+      onClearSelection={() => setSelected(new Set())}
+      bulkActions={
+        onBulkDecide
+          ? [
+              {
+                id: 'adopt',
+                label: tw.bulk_adopt,
+                icon: Check,
+                disabled: bulkBusy,
+                onClick: () => void bulk('adopt'),
+              },
+              {
+                id: 'reject',
+                label: tw.bulk_reject,
+                icon: X,
+                variant: 'danger' as const,
+                disabled: bulkBusy,
+                onClick: () => void bulk('reject'),
+              },
+            ]
+          : undefined
+      }
       emptyIcon={Library}
       pageSize={25}
       density="compact"

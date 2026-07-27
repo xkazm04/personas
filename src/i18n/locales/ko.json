@@ -13197,7 +13197,14 @@
         "state_to_process": "처리 대기",
         "harvest_coverage": "{total}개 중 {done}개 범위 수집됨",
         "harvest_no_scopes": "{project}에서 수집할 수 있는 범위를 찾지 못했습니다.",
-        "harvest_wave_dispatched": "{project}의 범위 {count}개를 수집하는 중 — {remaining}개는 아직 읽지 않았습니다."
+        "harvest_wave_dispatched": "{project}의 범위 {count}개를 수집하는 중 — {remaining}개는 아직 읽지 않았습니다.",
+        "bulk_adopt": "선택 항목 채택",
+        "bulk_adopted": "{count}개 사례를 채택했습니다.",
+        "bulk_failed": "{count}개는 결정하지 못했습니다.",
+        "bulk_reject": "선택 항목 거부",
+        "bulk_rejected": "{count}개 사례를 거부했습니다.",
+        "bulk_select_row": "일괄 검토용으로 선택",
+        "harvest_depth": "범위 {done}/{total} · 약 {pct}% 읽음"
       },
       "skills_adopt": "채택",
       "skills_adopt_hint": "{name}에 채택 — Claude가 저장소에 맞게 맞춤 설정합니다",

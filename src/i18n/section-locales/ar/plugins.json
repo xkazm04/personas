@@ -1242,7 +1242,14 @@
       "state_to_process": "قيد المعالجة",
       "harvest_coverage": "{done}/{total} نطاق تم حصاده",
       "harvest_no_scopes": "لم يتم العثور على نطاقات قابلة للحصاد في {project}.",
-      "harvest_wave_dispatched": "جارٍ حصاد {count} نطاق من {project} — ما زال {remaining} غير مقروء."
+      "harvest_wave_dispatched": "جارٍ حصاد {count} نطاق من {project} — ما زال {remaining} غير مقروء.",
+      "bulk_adopt": "اعتماد المحدد",
+      "bulk_adopted": "تم اعتماد {count} ممارسة.",
+      "bulk_failed": "تعذّر البتّ في {count}.",
+      "bulk_reject": "رفض المحدد",
+      "bulk_rejected": "تم رفض {count} ممارسة.",
+      "bulk_select_row": "تحديد للمراجعة الجماعية",
+      "harvest_depth": "{done}/{total} نطاق · قُرئ ~{pct}%"
     },
     "skills_adopt": "اعتماد",
     "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

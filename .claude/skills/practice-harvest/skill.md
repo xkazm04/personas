@@ -64,18 +64,51 @@ lint-level mechanics (`durability: "mechanical"`).
 ## Output
 
 Write `practice-harvest/runs/<YYYY-MM-DD-HHmm>-<scope-id>/result.json` plus a
-short `report.md`. Set `"scope": "<your scope id>"` at the top level of
-result.json — it stamps the coverage ledger, and without it the run is recorded
+short `report.md` (replace `:` in the scope id with `-` for the directory name —
+a colon is not a legal path character on Windows). Set
+`"scope": "<your scope id, verbatim>"` at the top level of result.json — it stamps the coverage ledger, and without it the run is recorded
 against `repo-global`. The scope id in the directory name keeps concurrent
 scope sessions from colliding.
 
-`report.md` must say which paths inside your scope you actually read, which you
+`result.json` must also carry a `coverage` block — it is read by the app, not by
+a human:
+
+```json
+"coverage": {
+  "files_read": 45, "files_total": 359, "estimated_pct": 13,
+  "unread_pockets": ["src/features/teams/sub_goals"],
+  "note": "Schedules read near-exhaustively; teams/ is the real gap."
+}
+```
+
+`estimated_pct` decides whether this territory still owes a pass, and
+`unread_pockets` is handed to the **next** session assigned here so it starts
+where you stopped. Under-reporting costs nothing; over-reporting silently
+retires a territory nobody finished. Omit a field rather than guess it.
+
+`report.md` is a **required deliverable of this contract, not a courtesy
+summary** — write it even if you would normally avoid writing report-style
+files. It must say which paths inside your scope you actually read, which you
 did not get to, and what you deliberately skipped. A harvest that read 10% of
 its territory and says so is useful; one that implies completeness is not. You NEVER write any database — the app ingests result.json through
 its one governed door. The exact `items[]` schema (kind ∈
 pattern|pitfall|decision|howto|fact; required title + statement + topic;
 optional detail_md / applicability object / dedup_key / confidence) is defined
 canonically in `practiceHarvestPrompt.ts` (OUTPUT_CONTRACT) — follow it exactly.
+
+### ftype — also a closed vocabulary
+
+`ftype` answers what **shape** the practice is. Take one value from `ftypes` in
+`snapshot.json` and never coin your own; unrecognized values are filed on an
+`unsorted` shelf. If your instinct is "guard" / "guardrail" / "trap" /
+"anti-pattern", the answer is `error-strategy`.
+
+> The first full scan produced **90 distinct ftypes across 330 items** for a
+> field designed with 11, while the enforced `topic` axis held at 5.8
+> items/topic. Enforcing one axis does not protect its neighbours.
+
+Do **not** send `durability`. That same scan returned `durable` for 330 of 330
+items — the axis cannot discriminate, so it is not an author's call.
 
 ### Topic — a closed vocabulary
 

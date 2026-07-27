@@ -149,25 +149,44 @@ pub async fn dev_tools_workspace_verify_adoptions(
         )));
     }
 
-    // Only practices this project has actually adopted are verifiable — a
-    // proposed one has nothing to have drifted from.
+    // Verification is no longer only about DRIFT. Since `to_process` became
+    // evidence-driven, this pass answers two questions at once:
+    //   - `adopted` cells: does canon this repo applied still hold? (drift)
+    //   - `proposed`/`to_process` cells: does this repo comply at all? (work)
+    // A cell is verifiable in either state; the verdict's MEANING comes from
+    // the prior state (repo::adoption_state_after_verdict).
     let adoption = repo::list_adoption(&state.db, &workspace_id)?;
-    let adopted_here: std::collections::HashSet<String> = adoption
+    let prior_state: std::collections::HashMap<String, String> = adoption
         .iter()
-        .filter(|a| a.project_id == project_id && a.state == "adopted")
-        .map(|a| a.practice_id.clone())
+        .filter(|a| a.project_id == project_id && a.state != "na")
+        .map(|a| (a.practice_id.clone(), a.state.clone()))
         .collect();
-    if adopted_here.is_empty() {
+    if prior_state.is_empty() {
         return Err(AppError::Validation(
-            "This project has not adopted any practices yet — nothing to verify.".into(),
+            "This project has no applicable adopted practices yet — nothing to verify.".into(),
         ));
     }
     let knowledge = repo::list_knowledge(&state.db, &workspace_id, None)?;
-    let practices: Vec<WorkspaceKnowledge> = knowledge
+    let mut candidates: Vec<WorkspaceKnowledge> = knowledge
         .into_iter()
-        .filter(|k| adopted_here.contains(&k.id))
-        .take(MAX_VERIFY_PER_RUN)
+        .filter(|k| prior_state.contains_key(&k.id))
         .collect();
+    // A run is capped, so ORDER decides what gets verified. Actionable kinds
+    // first: `kind` cannot tell you whether a repo complies, but it is a fine
+    // pre-filter for which practices are worth spending a verification on — a
+    // `fact` has no work behind it either way. Then never-verified cells
+    // (`proposed`) ahead of re-checks, so the queue fills before it refreshes.
+    candidates.sort_by_key(|k| {
+        let actionable = if repo::is_actionable_kind(&k.kind) { 0 } else { 1 };
+        let unseen = match prior_state.get(&k.id).map(String::as_str) {
+            Some("proposed") => 0,
+            Some("to_process") => 1,
+            _ => 2,
+        };
+        (actionable, unseen, k.id.clone())
+    });
+    let practices: Vec<WorkspaceKnowledge> =
+        candidates.into_iter().take(MAX_VERIFY_PER_RUN).collect();
 
     let refs: Vec<&WorkspaceKnowledge> = practices.iter().collect();
     let prompt = build_verify_prompt(&project.name, &refs);
@@ -179,13 +198,16 @@ pub async fn dev_tools_workspace_verify_adoptions(
     VERIFY_JOBS.insert_running(job_id.clone(), token.clone(), VerifyExtra::default())?;
 
     let db = state.db.clone();
+    let priors = prior_state;
     let jid = job_id.clone();
     let pid = project_id.clone();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
         let work = AssertUnwindSafe(async move {
-            match run_verify(&app, &jid, &db, &pid, &ids, &titles, prompt, root, token).await {
+            match run_verify(&app, &jid, &db, &pid, &ids, &titles, &priors, prompt, root, token)
+                .await
+            {
                 Ok((checked, diverged)) => {
                     VERIFY_JOBS.emit_line(
                         &app,
@@ -257,6 +279,9 @@ async fn run_verify(
     project_id: &str,
     ids: &[String],
     titles: &[String],
+    // Cell state BEFORE this pass, per practice id. The verdict is the same
+    // signal either way; what it means depends on where the cell already was.
+    priors: &std::collections::HashMap<String, String>,
     prompt: String,
     root: std::path::PathBuf,
     token: CancellationToken,
@@ -264,7 +289,7 @@ async fn run_verify(
     VERIFY_JOBS.emit_line(
         app,
         job_id,
-        format!("[Milestone] Verifying {} adopted practices…", ids.len()),
+        format!("[Milestone] Verifying {} practices…", ids.len()),
     );
 
     let mut child = crate::engine::cli_process::spawn_headless_claude(
@@ -360,7 +385,11 @@ async fn run_verify(
             continue; // a repeated verdict for one item — first wins
         }
         let practice_id = &ids[v.n - 1];
-        let state = if v.holds { "adopted" } else { "diverged" };
+        let prior = priors
+            .get(practice_id)
+            .map(String::as_str)
+            .unwrap_or("proposed");
+        let state = repo::adoption_state_after_verdict(prior, v.holds);
         let note = v.evidence.as_deref().map(|e| {
             let trimmed = e.trim();
             crate::utils::text::truncate_on_char_boundary(trimmed, 600).to_string()

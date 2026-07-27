@@ -41,19 +41,26 @@ import type { Workspace } from './workspaceStore';
 function ScopeCoverage({
   rows,
   label,
+  depthLabel,
   tx,
 }: {
   rows: WorkspaceHarvestCoverage[] | undefined;
   label: string;
+  depthLabel: string;
   tx: (template: string, vars: Record<string, string | number>) => string;
 }) {
   const ratio = coverageRatio(rows);
   if (!ratio) return null;
+  // "12/12 scopes" on its own would read as done even when every one of them
+  // was skimmed — show the depth whenever the runs reported it.
+  const complete = ratio.done === ratio.total && (ratio.pct ?? 0) >= 80;
   return (
     <span
-      className={`typo-caption block ${ratio.done === ratio.total ? 'text-muted-foreground' : 'text-status-warning'}`}
+      className={`typo-caption block ${complete ? 'text-muted-foreground' : 'text-status-warning'}`}
     >
-      {tx(label, ratio)}
+      {ratio.pct === null
+        ? tx(label, { done: ratio.done, total: ratio.total })
+        : tx(depthLabel, { done: ratio.done, total: ratio.total, pct: ratio.pct })}
     </span>
   );
 }
@@ -366,7 +373,12 @@ export function ExtractionMenu({
               >
                 <span className="min-w-0 flex-1">
                   <span className="typo-body text-foreground truncate block">{p.name}</span>
-                  <ScopeCoverage rows={coverage[p.id]} label={tw.harvest_coverage} tx={tx} />
+                  <ScopeCoverage
+                    rows={coverage[p.id]}
+                    label={tw.harvest_coverage}
+                    depthLabel={tw.harvest_depth}
+                    tx={tx}
+                  />
                 </span>
                 <button
                   type="button"

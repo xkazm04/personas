@@ -227,6 +227,31 @@ pub fn dev_tools_workspace_knowledge_delete(
 // Adoption matrix
 // ============================================================================
 
+/// Adjudicate many practices at once — the review path for a large harvest.
+/// Same governance gate as the single decide (agents propose, humans adopt);
+/// only the batch size changes.
+#[tauri::command]
+pub fn dev_tools_workspace_knowledge_decide_bulk(
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<String>,
+    decision: String,
+) -> Result<repo::BulkDecision, AppError> {
+    if ids.is_empty() {
+        return Ok(repo::BulkDecision::default());
+    }
+    repo::decide_knowledge_bulk(&state.db, &ids, &decision, None)
+}
+
+/// Derive `governing_id` across a workspace: within each topic, the macro
+/// doctrine adopts its instances. Runs after ingest and on demand.
+#[tauri::command]
+pub fn dev_tools_workspace_roll_up_doctrine(
+    state: State<'_, Arc<AppState>>,
+    workspace_id: String,
+) -> Result<u32, AppError> {
+    repo::roll_up_topic_doctrine(&state.db, &workspace_id)
+}
+
 #[tauri::command]
 pub fn dev_tools_workspace_adoption_list(
     state: State<'_, Arc<AppState>>,

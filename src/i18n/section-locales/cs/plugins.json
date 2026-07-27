@@ -1242,7 +1242,14 @@
       "state_to_process": "Ke zpracování",
       "harvest_coverage": "{done}/{total} oblastí zpracováno",
       "harvest_no_scopes": "V projektu {project} nebyly nalezeny žádné zpracovatelné oblasti.",
-      "harvest_wave_dispatched": "Zpracovávám {count} oblastí projektu {project} — {remaining} zatím nepřečteno."
+      "harvest_wave_dispatched": "Zpracovávám {count} oblastí projektu {project} — {remaining} zatím nepřečteno.",
+      "bulk_adopt": "Přijmout vybrané",
+      "bulk_adopted": "Přijato {count} praktik.",
+      "bulk_failed": "U {count} se nepodařilo rozhodnout.",
+      "bulk_reject": "Zamítnout vybrané",
+      "bulk_rejected": "Zamítnuto {count} praktik.",
+      "bulk_select_row": "Vybrat k hromadné kontrole",
+      "harvest_depth": "{done}/{total} oblastí · přečteno ~{pct} %"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

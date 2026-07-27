@@ -1242,7 +1242,14 @@
       "state_to_process": "À traiter",
       "harvest_coverage": "{done}/{total} périmètres analysés",
       "harvest_no_scopes": "Aucun périmètre exploitable trouvé dans {project}.",
-      "harvest_wave_dispatched": "Analyse de {count} périmètre(s) de {project} — {remaining} encore non lus."
+      "harvest_wave_dispatched": "Analyse de {count} périmètre(s) de {project} — {remaining} encore non lus.",
+      "bulk_adopt": "Adopter la sélection",
+      "bulk_adopted": "{count} pratique(s) adoptée(s).",
+      "bulk_failed": "{count} n'ont pas pu être traitées.",
+      "bulk_reject": "Rejeter la sélection",
+      "bulk_rejected": "{count} pratique(s) rejetée(s).",
+      "bulk_select_row": "Sélectionner pour la revue groupée",
+      "harvest_depth": "{done}/{total} périmètres · ~{pct} % lu"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

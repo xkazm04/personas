@@ -13197,7 +13197,14 @@
         "state_to_process": "Zu bearbeiten",
         "harvest_coverage": "{done}/{total} Bereiche ausgewertet",
         "harvest_no_scopes": "In {project} wurden keine auswertbaren Bereiche gefunden.",
-        "harvest_wave_dispatched": "{count} Bereich(e) von {project} werden ausgewertet – {remaining} noch ungelesen."
+        "harvest_wave_dispatched": "{count} Bereich(e) von {project} werden ausgewertet – {remaining} noch ungelesen.",
+        "bulk_adopt": "Auswahl übernehmen",
+        "bulk_adopted": "{count} Praktik(en) übernommen.",
+        "bulk_failed": "{count} konnten nicht entschieden werden.",
+        "bulk_reject": "Auswahl ablehnen",
+        "bulk_rejected": "{count} Praktik(en) abgelehnt.",
+        "bulk_select_row": "Für Sammelprüfung auswählen",
+        "harvest_depth": "{done}/{total} Bereiche · ~{pct} % gelesen"
       },
       "skills_adopt": "Übernehmen",
       "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

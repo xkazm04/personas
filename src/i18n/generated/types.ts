@@ -13516,6 +13516,13 @@ export type Translations = {
         harvest_coverage: string;
         harvest_no_scopes: string;
         harvest_wave_dispatched: string;
+        bulk_adopt: string;
+        bulk_reject: string;
+        bulk_select_row: string;
+        bulk_adopted: string;
+        bulk_rejected: string;
+        bulk_failed: string;
+        harvest_depth: string;
       };
     };
     doc_signing: {

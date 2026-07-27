@@ -43,21 +43,55 @@ pub fn is_actionable_kind(kind: &str) -> bool {
 }
 
 /// Seed state for a per-project adoption cell the moment a practice becomes
-/// canon. `na` when the practice cannot apply to that stack at all;
-/// `to_process` when it names work that repo owes (the queue a future executor
-/// drains); plain `proposed` for reference material, which is "distributed"
-/// rather than "done".
+/// canon: `na` when the practice cannot apply to that stack at all, otherwise
+/// `proposed`.
+///
+/// **`to_process` is deliberately NOT seeded here.** The first design keyed it
+/// on `kind`, reasoning that a pitfall or pattern names work a repo owes. The
+/// 2026-07-27 twelve-territory scan falsified that: 302 of 330 harvested items
+/// (91.5%) are pitfall-or-pattern, and 288 are also `durable` and non-`macro`,
+/// so no refinement of the authored metadata rescues it. A queue holding 90% of
+/// the library is a synonym for "adopted", not a queue.
+///
+/// The error was conceptual, not a threshold: `kind` describes the SHAPE of a
+/// practice, never whether THIS repo violates it. A pattern the repo already
+/// follows is not work. Only evidence can answer that, and the app already
+/// gathers it — the verify pass reads the repo and rules on each practice. So
+/// `to_process` is now entered from a verdict (see `adoption_state_after_verdict`),
+/// never from a guess at adoption time. `is_actionable_kind` survives as the
+/// pre-filter for WHICH practices are worth spending a verification on.
 pub fn initial_adoption_state(
     kind: &str,
     applicability: Option<&str>,
     tech_stack: Option<&str>,
 ) -> &'static str {
-    if !applicability_matches(applicability, tech_stack) {
-        "na"
-    } else if is_actionable_kind(kind) {
-        "to_process"
-    } else {
+    let _ = kind;
+    if applicability_matches(applicability, tech_stack) {
         "proposed"
+    } else {
+        "na"
+    }
+}
+
+/// Where a cell lands after the verify pass rules on it.
+///
+/// The prior state carries the meaning, so the same verdict means different
+/// things in different places:
+/// - a practice this repo had ADOPTED that no longer holds has **drifted** →
+///   `diverged` (a regression; someone changed the code out from under canon)
+/// - a practice this repo has NOT applied that does not hold is **work owed**
+///   → `to_process` (the executor queue, now sized by real gaps)
+/// - a practice that HOLDS is satisfied here, whether or not anyone ever
+///   "adopted" it → `adopted`. A repo that already complies should not sit at
+///   `proposed` forever; that understated liquidity is why the pillar read low.
+pub fn adoption_state_after_verdict(prior: &str, holds: bool) -> &'static str {
+    match (prior, holds) {
+        (_, true) => "adopted",
+        ("adopted", false) => "diverged",
+        // `na` is a stack judgement, not a code judgement — a verdict on a
+        // practice that cannot apply here does not resurrect the cell.
+        ("na", false) => "na",
+        (_, false) => "to_process",
     }
 }
 
@@ -67,6 +101,9 @@ pub fn initial_adoption_state(
 /// against the workspace's existing keys (incl. the 90-day rejected window).
 #[derive(Debug, Clone)]
 pub struct KnowledgeCandidate {
+    /// Territory that produced this candidate. App-owned (stamped at ingest
+    /// from the run's `scope`), never trusted from the item itself.
+    pub harvest_scope: Option<String>,
     pub kind: String,
     pub title: String,
     pub statement: String,
@@ -144,6 +181,7 @@ fn row_to_knowledge(row: &Row) -> rusqlite::Result<WorkspaceKnowledge> {
         valid_from: row.get("valid_from")?,
         valid_to: row.get("valid_to")?,
         decided_at: row.get("decided_at")?,
+        harvest_scope: row.get("harvest_scope")?,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -737,6 +775,114 @@ pub fn decide_knowledge(
     })
 }
 
+/// Adjudicate many practices in one call.
+///
+/// A twelve-territory scan lands a few hundred `observed` items at once. At one
+/// modal per item a reviewer needs hours, the governance pillar sits at ~5%
+/// forever, and the honest response to a large harvest becomes "don't run one".
+/// Reviewing a whole topic at a time is the shape that actually matches how a
+/// human reads a library.
+///
+/// Per-item failures are collected, never fatal: one malformed row must not
+/// discard a reviewer's decision on the other forty-nine.
+pub fn decide_knowledge_bulk(
+    pool: &DbPool,
+    ids: &[String],
+    decision: &str,
+    superseded_by: Option<&str>,
+) -> Result<BulkDecision, AppError> {
+    let mut out = BulkDecision::default();
+    for id in ids {
+        match decide_knowledge(pool, id, decision, superseded_by) {
+            Ok(k) => {
+                out.decided += 1;
+                out.ids.push(k.id);
+            }
+            Err(e) => {
+                tracing::warn!(practice_id = %id, error = %e, "bulk decide: item failed");
+                out.failed.push(format!("{id}: {e}"));
+            }
+        }
+    }
+    Ok(out)
+}
+
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+pub struct BulkDecision {
+    pub decided: u32,
+    pub ids: Vec<String>,
+    pub failed: Vec<String>,
+}
+
+/// Link every practice in a topic to that topic's governing doctrine.
+///
+/// `governing_id` has existed since the categorization axes shipped and the
+/// 2026-07-27 scan set it on 0 of 330 items — a harvest session sees one
+/// territory and cannot know what a topic already holds. So the app derives it
+/// after ingest, where the whole topic IS visible.
+///
+/// The rule is deliberately dumb and deterministic: within a topic, the
+/// `macro` item with the most evidence is the doctrine, and every other live
+/// item in that topic with no governor points at it. No doctrine, no linking —
+/// an invented parent is worse than a flat list.
+pub fn roll_up_topic_doctrine(pool: &DbPool, workspace_id: &str) -> Result<u32, AppError> {
+    timed_query!("workspace_knowledge", "dev_workspaces::roll_up_topic_doctrine", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+        let rows: Vec<(String, String, Option<String>, i64, Option<String>)> = {
+            let mut stmt = tx.prepare(
+                "SELECT id, topic, abstraction, COALESCE(evidence_count, 0), governing_id
+                 FROM workspace_knowledge
+                 WHERE workspace_id = ?1 AND status NOT IN ('rejected', 'deprecated')",
+            )?;
+            let r = stmt
+                .query_map(params![workspace_id], |r| {
+                    Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            r
+        };
+
+        let mut doctrine: HashMap<String, (String, i64)> = HashMap::new();
+        for (id, topic, abstraction, evidence, _) in &rows {
+            if abstraction.as_deref() != Some("macro") {
+                continue;
+            }
+            doctrine
+                .entry(topic.clone())
+                .and_modify(|best| {
+                    // Ties break on id so the choice is stable across runs.
+                    if *evidence > best.1 || (*evidence == best.1 && *id < best.0) {
+                        *best = (id.clone(), *evidence);
+                    }
+                })
+                .or_insert((id.clone(), *evidence));
+        }
+
+        let mut linked = 0u32;
+        for (id, topic, _, _, governing) in &rows {
+            if governing.is_some() {
+                continue;
+            }
+            let Some((doc_id, _)) = doctrine.get(topic) else {
+                continue;
+            };
+            if doc_id == id {
+                continue; // the doctrine does not govern itself
+            }
+            tx.execute(
+                "UPDATE workspace_knowledge SET governing_id = ?1, updated_at = ?2 WHERE id = ?3",
+                params![doc_id, now, id],
+            )?;
+            linked += 1;
+        }
+        tx.commit()?;
+        Ok(linked)
+    })
+}
+
 pub fn delete_knowledge(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("workspace_knowledge", "dev_workspaces::delete_knowledge", {
         let mut conn = pool.get()?;
@@ -850,6 +996,11 @@ pub fn list_harvest_coverage(
                     last_run_dir: row.get("last_run_dir")?,
                     items_found: row.get("items_found")?,
                     run_count: row.get("run_count")?,
+                    files_read: row.get("files_read")?,
+                    files_total: row.get("files_total")?,
+                    estimated_pct: row.get("estimated_pct")?,
+                    unread_pockets: row.get("unread_pockets")?,
+                    coverage_note: row.get("coverage_note")?,
                     updated_at: row.get("updated_at")?,
                 })
             })?;
@@ -863,12 +1014,26 @@ pub fn list_harvest_coverage(
 /// produced the items — including when the run produced ZERO, because "read
 /// and found nothing" is a genuinely different state from "never read" and
 /// only one of them is worth re-dispatching.
+/// Self-reported read depth for one harvested scope. Every field is optional:
+/// an agent that will not estimate its own coverage must leave it unknown
+/// rather than have the app invent a number for it.
+#[derive(Debug, Clone, Default)]
+pub struct HarvestDepth {
+    pub files_read: Option<i64>,
+    pub files_total: Option<i64>,
+    pub estimated_pct: Option<i64>,
+    /// JSON array of paths the run named as unread.
+    pub unread_pockets: Option<String>,
+    pub note: Option<String>,
+}
+
 pub fn stamp_harvest_scope(
     pool: &DbPool,
     project_id: &str,
     scope_id: &str,
     run_dir: &str,
     items: i64,
+    depth: &HarvestDepth,
 ) -> Result<(), AppError> {
     timed_query!(
         "workspace_harvest_coverage",
@@ -883,15 +1048,36 @@ pub fn stamp_harvest_scope(
             conn.execute(
                 "INSERT INTO workspace_harvest_coverage
                      (project_id, scope_id, scope_label, kind, file_count,
-                      last_harvested_at, last_run_dir, items_found, run_count, updated_at)
-                 VALUES (?1, ?2, ?2, 'unknown', 0, ?3, ?4, ?5, 1, ?3)
+                      last_harvested_at, last_run_dir, items_found, run_count,
+                      files_read, files_total, estimated_pct, unread_pockets,
+                      coverage_note, updated_at)
+                 VALUES (?1, ?2, ?2, 'unknown', 0, ?3, ?4, ?5, 1, ?6, ?7, ?8, ?9, ?10, ?3)
                  ON CONFLICT(project_id, scope_id) DO UPDATE SET
                      last_harvested_at = excluded.last_harvested_at,
                      last_run_dir      = excluded.last_run_dir,
                      items_found       = excluded.items_found,
                      run_count         = workspace_harvest_coverage.run_count + 1,
+                     -- Depth reflects the LAST run, including when that run
+                     -- declined to estimate: carrying an older, rosier number
+                     -- forward would overstate coverage.
+                     files_read        = excluded.files_read,
+                     files_total       = excluded.files_total,
+                     estimated_pct     = excluded.estimated_pct,
+                     unread_pockets    = excluded.unread_pockets,
+                     coverage_note     = excluded.coverage_note,
                      updated_at        = excluded.updated_at",
-                params![project_id, scope_id, now, run_dir, items],
+                params![
+                    project_id,
+                    scope_id,
+                    now,
+                    run_dir,
+                    items,
+                    depth.files_read,
+                    depth.files_total,
+                    depth.estimated_pct,
+                    depth.unread_pockets,
+                    depth.note,
+                ],
             )?;
             Ok(())
         }
@@ -1346,8 +1532,8 @@ pub fn ingest_candidates(
                      (id, workspace_id, kind, title, statement, detail_md, topic,
                       abstraction, ftype, durability, governing_id, evidence_count,
                       applicability, status, origin_project_id, provenance, confidence, dedup_key,
-                      valid_from, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'observed', ?14, ?15, ?16, ?17, ?18, ?18, ?18)",
+                      harvest_scope, valid_from, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'observed', ?14, ?15, ?16, ?17, ?19, ?18, ?18, ?18)",
                 params![
                     id,
                     workspace_id,
@@ -1362,8 +1548,17 @@ pub fn ingest_candidates(
                     // shelf rather than silently inventing a new top level.
                     crate::repos::workspace_taxonomy::normalize_topic(c.topic.as_deref()),
                     c.abstraction,
-                    c.ftype,
-                    c.durability,
+                    // Same treatment for the SHAPE axis. Left free-form, it
+                    // fragmented harder than topic ever did (90 values / 330
+                    // items in the 2026-07-27 scan) — see workspace_taxonomy.
+                    crate::repos::workspace_taxonomy::normalize_ftype(c.ftype.as_deref()),
+                    // `durability` is deliberately NOT taken from the writer.
+                    // The same scan returned `durable` for 330 of 330 items:
+                    // the prompt tells authors mechanical items don't belong
+                    // here, so nothing is ever labelled anything else and the
+                    // axis carries zero information. It is a REVIEWER's call
+                    // now (or nothing at all), never an author's.
+                    None::<String>,
                     c.governing_id,
                     c.evidence_count,
                     c.applicability,
@@ -1372,6 +1567,7 @@ pub fn ingest_candidates(
                     c.confidence,
                     c.dedup_key,
                     now,
+                    c.harvest_scope,
                 ],
             )?;
             summary.inserted += 1;
@@ -1502,6 +1698,8 @@ fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate>
         out.push((
             identity.clone(),
             KnowledgeCandidate {
+                // Not produced by a territory scan (miner / divergence pass).
+                harvest_scope: None,
                 kind: "pitfall".into(),
                 title: format!("Shared finding: {title}"),
                 statement: format!(
@@ -1647,6 +1845,8 @@ fn cluster_skill_adoption(
         }
         let top = uses.iter().map(|u| u.invokes_30d).max().unwrap_or(0);
         out.push(KnowledgeCandidate {
+            // Not produced by a territory scan (miner / divergence pass).
+            harvest_scope: None,
             kind: "howto".into(),
             title: format!("Adopt the '{name}' skill workspace-wide"),
             statement: format!(
@@ -1705,23 +1905,44 @@ mod tests {
     }
 
     #[test]
-    fn adoption_seed_state_splits_actionable_from_reference() {
-        // Actionable canon owes work in the repo → the execution queue.
-        assert_eq!(initial_adoption_state("pitfall", None, Some("Rust")), "to_process");
-        assert_eq!(initial_adoption_state("pattern", None, Some("Rust")), "to_process");
-        // Reference material is distributed, not executed.
-        assert_eq!(initial_adoption_state("fact", None, Some("Rust")), "proposed");
-        assert_eq!(initial_adoption_state("decision", None, Some("Rust")), "proposed");
-        assert_eq!(initial_adoption_state("howto", None, Some("Rust")), "proposed");
-        // Inapplicable beats actionable — a pitfall about React is not work a
-        // Rust repo owes.
+    fn adoption_seed_state_is_applicability_only_never_kind() {
+        // Kind must NOT decide the seed: the 12-territory scan showed 91.5% of
+        // real harvested items are pitfall-or-pattern, so a kind-keyed queue
+        // holds almost the whole library.
+        for kind in KNOWLEDGE_KINDS {
+            assert_eq!(
+                initial_adoption_state(kind, None, Some("Rust")),
+                "proposed",
+                "{kind} must seed proposed — to_process is earned by evidence"
+            );
+            assert!(ADOPTION_STATES.contains(&initial_adoption_state(kind, None, None)));
+        }
+        // Applicability is still the one thing decidable without reading code.
         assert_eq!(
             initial_adoption_state("pitfall", Some("{\"frameworks\":[\"react\"]}"), Some("Rust, Axum")),
             "na"
         );
-        // Every seed state must survive the column CHECK.
-        for kind in KNOWLEDGE_KINDS {
-            assert!(ADOPTION_STATES.contains(&initial_adoption_state(kind, None, None)));
+    }
+
+    #[test]
+    fn verdict_meaning_depends_on_the_prior_state() {
+        // Drift: canon this repo had applied stopped holding.
+        assert_eq!(adoption_state_after_verdict("adopted", false), "diverged");
+        // Work owed: never applied here, and the code does not comply.
+        assert_eq!(adoption_state_after_verdict("proposed", false), "to_process");
+        // Still owed after a previous pass said so.
+        assert_eq!(adoption_state_after_verdict("to_process", false), "to_process");
+        // Compliance is compliance, however the cell got here — a repo that
+        // already follows the practice must not sit at `proposed` forever.
+        for prior in ["proposed", "to_process", "adopted", "diverged"] {
+            assert_eq!(adoption_state_after_verdict(prior, true), "adopted");
+        }
+        // `na` is a stack judgement; a code verdict does not resurrect it.
+        assert_eq!(adoption_state_after_verdict("na", false), "na");
+        for prior in ADOPTION_STATES {
+            for holds in [true, false] {
+                assert!(ADOPTION_STATES.contains(&adoption_state_after_verdict(prior, holds)));
+            }
         }
     }
 
@@ -1984,11 +2205,26 @@ mod tests {
             .unwrap()
     }
 
+    /// Adopt, then run the evidence step that actually earns `to_process`.
+    ///
+    /// Adoption alone no longer queues work (see `initial_adoption_state`): a
+    /// cell reaches `to_process` only when a verdict says THIS repo does not
+    /// comply. These tests exercise the materialization layer, so they need a
+    /// queue — this is the verdict path in miniature, not a shortcut around it.
+    fn adopt_and_find_gaps(pool: &DbPool, practice: &str, projects: &[String]) {
+        decide_knowledge(pool, practice, "adopt", None).unwrap();
+        for project in projects {
+            let prior = cell(pool, practice, project);
+            let next = adoption_state_after_verdict(&prior, false);
+            set_adoption(pool, practice, project, next, None, None).unwrap();
+        }
+    }
+
     #[test]
     fn adopting_an_actionable_practice_materializes_one_idea_per_project_exactly_once() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        adopt_and_find_gaps(&pool, &practice, &projects);
 
         assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 2);
         let ideas = practice_ideas(&pool, &practice);
@@ -2027,8 +2263,8 @@ mod tests {
     #[test]
     fn pitfall_titles_read_as_removal_work() {
         let pool = test_pool();
-        let (_ws, practice, _p) = seeded(&pool, 1, "pitfall");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        let (_ws, practice, projects) = seeded(&pool, 1, "pitfall");
+        adopt_and_find_gaps(&pool, &practice, &projects);
         materialize_pending_for_practice(&pool, &practice).unwrap();
         assert_eq!(
             practice_ideas(&pool, &practice)[0].title,
@@ -2038,11 +2274,15 @@ mod tests {
 
     #[test]
     fn reference_kinds_never_reach_the_backlog() {
-        // `fact` / `decision` / `howto` are carried as knowledge, not executed —
-        // their cells seed `proposed`, so nothing is owed and nothing is written.
+        // `fact` / `decision` / `howto` are carried as knowledge, not executed.
+        // Stronger than the old seeding-based version: even when a verdict
+        // pushes their cells all the way to `to_process`, materialization
+        // refuses on kind — the backlog guard does not depend on how the queue
+        // was filled.
         let pool = test_pool();
-        let (_ws, practice, _p) = seeded(&pool, 2, "fact");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        let (_ws, practice, projects) = seeded(&pool, 2, "fact");
+        adopt_and_find_gaps(&pool, &practice, &projects);
+        assert_eq!(cell(&pool, &practice, &projects[0]), "to_process");
         assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
         assert!(practice_ideas(&pool, &practice).is_empty());
         assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
@@ -2052,7 +2292,7 @@ mod tests {
     fn backfill_materializes_a_queue_seeded_before_the_feature_existed() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        adopt_and_find_gaps(&pool, &practice, &projects);
         // Cells exist at `to_process` but no ideas — the pre-P6 world.
         assert!(practice_ideas(&pool, &practice).is_empty());
 
@@ -2070,7 +2310,7 @@ mod tests {
     fn deprecating_a_practice_archives_only_its_undecided_ideas() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        adopt_and_find_gaps(&pool, &practice, &projects);
         materialize_pending_for_practice(&pool, &practice).unwrap();
 
         // One project already accepted the work: that verdict is a human's and
@@ -2098,7 +2338,7 @@ mod tests {
     fn adoption_cell_follows_the_idea_and_its_task() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        adopt_and_find_gaps(&pool, &practice, &projects);
         materialize_pending_for_practice(&pool, &practice).unwrap();
         let ideas = practice_ideas(&pool, &practice);
         let for_project = |pid: &str| {
@@ -2148,7 +2388,7 @@ mod tests {
     fn lifecycle_sync_ignores_ideas_that_are_not_materialized_practices() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 1, "pattern");
-        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        adopt_and_find_gaps(&pool, &practice, &projects);
         materialize_pending_for_practice(&pool, &practice).unwrap();
 
         let mut foreign = practice_ideas(&pool, &practice)[0].clone();

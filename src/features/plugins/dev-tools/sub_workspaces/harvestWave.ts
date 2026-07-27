@@ -45,15 +45,33 @@ export function selectHarvestWave(
   };
 }
 
-/** Harvested-vs-total for a project. `null` when there is nothing to report,
- *  so the UI can stay silent instead of rendering a 0/0 that reads as
- *  "nothing to harvest here". */
+/**
+ * Harvested-vs-total for a project, plus how DEEPLY it was read.
+ *
+ * `done/total` alone repeats the mistake one level up: a scope skimmed at 11%
+ * and one read exhaustively both count as "harvested". `pct` is the
+ * file-weighted mean read-depth across scopes that reported one, so a repo that
+ * has been visited everywhere and read nowhere cannot look finished.
+ *
+ * `null` when there is nothing to report, so the UI stays silent instead of
+ * rendering a 0/0 that reads as "nothing to harvest here".
+ */
 export function coverageRatio(
   rows: readonly WorkspaceHarvestCoverage[] | undefined,
-): { done: number; total: number } | null {
+): { done: number; total: number; pct: number | null } | null {
   if (!rows || rows.length === 0) return null;
-  return {
-    done: rows.filter((r) => r.last_harvested_at !== null).length,
-    total: rows.length,
-  };
+  const done = rows.filter((r) => r.last_harvested_at !== null).length;
+
+  // Weight by territory size: 100% of a 73-file scope is not the same evidence
+  // as 11% of a 587-file one. Scopes that reported no depth are excluded from
+  // the mean rather than assumed complete.
+  let weighted = 0;
+  let weight = 0;
+  for (const r of rows) {
+    if (r.estimated_pct === null) continue;
+    const w = Math.max(1, Number(r.file_count));
+    weighted += Number(r.estimated_pct) * w;
+    weight += w;
+  }
+  return { done, total: rows.length, pct: weight > 0 ? Math.round(weighted / weight) : null };
 }

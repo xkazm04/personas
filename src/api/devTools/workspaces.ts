@@ -13,6 +13,7 @@ import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { ProjectionResult } from "@/lib/bindings/ProjectionResult";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
+import type { BulkDecision } from "@/lib/bindings/BulkDecision";
 import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
@@ -153,6 +154,27 @@ export async function decideWorkspaceKnowledge(
     decision,
     supersededBy,
   });
+}
+
+/**
+ * Adjudicate many practices at once.
+ *
+ * A twelve-territory harvest lands a few hundred `observed` items; at one modal
+ * per item the review queue is measured in hours and the governance pillar
+ * never moves. Same gate as the single decide — only the batch size changes.
+ * Per-item failures come back in `failed` rather than sinking the batch.
+ */
+export async function decideWorkspaceKnowledgeBulk(
+  ids: string[],
+  decision: KnowledgeDecision,
+): Promise<BulkDecision> {
+  return invoke<BulkDecision>("dev_tools_workspace_knowledge_decide_bulk", { ids, decision });
+}
+
+/** Derive `governing_id` across a workspace: within each topic, the macro
+ *  doctrine adopts its instances. Runs automatically after ingest. */
+export async function rollUpDoctrine(workspaceId: string): Promise<number> {
+  return invoke<number>("dev_tools_workspace_roll_up_doctrine", { workspaceId });
 }
 
 export async function deleteWorkspaceKnowledge(id: string): Promise<boolean> {

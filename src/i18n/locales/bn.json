@@ -13197,7 +13197,14 @@
         "state_to_process": "প্রক্রিয়া করতে হবে",
         "harvest_coverage": "{done}/{total} স্কোপ সংগ্রহ করা হয়েছে",
         "harvest_no_scopes": "{project}-এ সংগ্রহযোগ্য কোনো স্কোপ পাওয়া যায়নি।",
-        "harvest_wave_dispatched": "{project}-এর {count}টি স্কোপ সংগ্রহ করা হচ্ছে — {remaining}টি এখনও পড়া হয়নি।"
+        "harvest_wave_dispatched": "{project}-এর {count}টি স্কোপ সংগ্রহ করা হচ্ছে — {remaining}টি এখনও পড়া হয়নি।",
+        "bulk_adopt": "নির্বাচিত গ্রহণ করুন",
+        "bulk_adopted": "{count}টি অনুশীলন গৃহীত হয়েছে।",
+        "bulk_failed": "{count}টির সিদ্ধান্ত নেওয়া যায়নি।",
+        "bulk_reject": "নির্বাচিত বাতিল করুন",
+        "bulk_rejected": "{count}টি অনুশীলন বাতিল হয়েছে।",
+        "bulk_select_row": "একসাথে পর্যালোচনার জন্য নির্বাচন",
+        "harvest_depth": "{done}/{total} স্কোপ · ~{pct}% পড়া"
       },
       "skills_adopt": "গ্রহণ করুন",
       "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

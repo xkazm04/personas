@@ -215,6 +215,82 @@ territory that was harvested and yielded only duplicates has still been read,
 and re-dispatching it ahead of never-read ground is exactly the decay the ledger
 exists to stop. Runs that predate scopes (or omit the `scope` field) are stamped
 `repo-global`, which is honestly what they read.
+
+### What the first full scan changed (2026-07-27)
+
+Twelve territories were harvested in parallel: **330 items**, against 14 from the
+previous whole-repo run. Contract compliance was near-perfect (0 invented areas,
+0 malformed topics, 0 duplicate titles across 12 independent agents), and the
+closed taxonomy held at **5.8 items/topic** — the fragmentation incident that
+originally motivated the item cap was 1.15. Volume rose 23x and topic density
+improved 5x, which settles the question: the taxonomy protects the library, the
+cap only suppressed reading.
+
+The same scan falsified four things in the design, each fixed:
+
+1. **Fragmentation had simply moved to `ftype`** — 90 distinct values for a field
+   designed with 11 (`guard`, `guardrail`, `convention`, `policy`, …). Only
+   `topic` was ever shipped as a closed vocabulary and normalized at ingest.
+   `ftype` is now closed the same way (`FTYPES` + `FTYPE_HINTS` in
+   `workspace_taxonomy.rs`, shipped in `snapshot.json`, aliased and quarantined
+   by `normalize_ftype`). **Lesson: enforcing one axis does not protect its
+   neighbours.**
+2. **`durability` was a dead axis** — 330 of 330 items said `durable`, because
+   the prompt tells authors mechanical items don't belong here. It is gone from
+   the author contract and ignored at ingest; it is a reviewer's call or nothing.
+3. **`to_process` keyed on `kind` captured 91.5% of the library** — see below.
+4. **`governing_id` was set on 0 of 330 items.** A session sees one territory
+   and cannot know what a topic already holds, so the app derives it after
+   ingest (`roll_up_topic_doctrine`): within a topic, the `macro` item with the
+   most evidence governs the rest. No doctrine, no linking.
+
+Coverage also gained **depth**. Every agent volunteered its real read-depth and
+the pockets it never opened ("~11% of 404 files", "teams/ is the real gap") and
+the first ledger discarded all of it. `result.json` now carries a `coverage`
+block (`files_read` / `files_total` / `estimated_pct` / `unread_pockets`), the
+ledger stores it, the Extract menu shows `4/13 scopes · ~26% read`, and the next
+dispatch for a scope receives the previous pass's unread pockets — which is what
+makes a second wave a second *pass* rather than a re-read.
+
+### `to_process` is earned by evidence, not inferred from kind
+
+The original rule seeded `to_process` for actionable kinds (pitfall/pattern) at
+adoption time. On real data that is 302 of 330 items — and tightening on the
+other axes doesn't help (288 are also `durable` and non-`macro`). A queue holding
+90% of the library is a synonym for "adopted".
+
+The error was conceptual: **`kind` describes the shape of a practice, never
+whether *this repo* violates it.** A pattern the repo already follows is not
+work. Only evidence answers that, and the verify pass already gathers it. So:
+
+| Cell before | Verdict | Cell after | Meaning |
+| --- | --- | --- | --- |
+| `adopted` | holds | `adopted` | still true here |
+| `adopted` | fails | `diverged` | **drift** — the code moved away from canon |
+| `proposed` / `to_process` | fails | `to_process` | **work owed** — this repo does not comply |
+| any | holds | `adopted` | already satisfied here, however the cell got there |
+| `na` | — | `na` | a stack judgement; a code verdict does not resurrect it |
+
+Adoption seeds `proposed` (or `na`) and nothing else. `is_actionable_kind`
+survives as the pre-filter deciding *which* practices are worth spending a
+verification on — a `fact` has no work behind it either way — and the verify
+pass now orders its capped run actionable-first, then never-verified-first.
+`materialize_practice_ideas` (the `to_process` → `dev_ideas` bridge) is
+unchanged and still refuses non-actionable kinds, so the backlog guard holds
+regardless of how the queue was filled.
+
+### Reviewing a large library
+
+330 pending items at one modal each is roughly four hours, which makes the
+governance pillar unmovable and the rational response "don't harvest". So the
+library table supports **bulk review**: multi-select (undecided rows only —
+batch-adopting something already rejected is a mistake, not a shortcut), select-all
+across the *current filters*, and Adopt/Reject on the selection via
+`dev_tools_workspace_knowledge_decide_bulk`. Per-item failures are reported, never
+swallowed: a reviewer who thinks they cleared 50 must not silently have cleared 47.
+The default sort is now **review value** (`evidence_count x confidence`, undecided
+first) rather than ingest order — at this volume the order decides what actually
+gets adjudicated before attention runs out.
 - **Find divergences (AI)** — the question only visible in aggregate: *are
   several member projects solving the same problem in different, locally
   reasonable ways?* Runs **in-app** as a headless background job (not a Fleet

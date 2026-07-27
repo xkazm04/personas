@@ -1242,7 +1242,14 @@
       "state_to_process": "प्रोसेस करना है",
       "harvest_coverage": "{done}/{total} स्कोप संग्रहित",
       "harvest_no_scopes": "{project} में कोई संग्रह-योग्य स्कोप नहीं मिला।",
-      "harvest_wave_dispatched": "{project} के {count} स्कोप संग्रहित हो रहे हैं — {remaining} अब भी अपठित।"
+      "harvest_wave_dispatched": "{project} के {count} स्कोप संग्रहित हो रहे हैं — {remaining} अब भी अपठित।",
+      "bulk_adopt": "चयनित अपनाएँ",
+      "bulk_adopted": "{count} प्रथाएँ अपनाई गईं।",
+      "bulk_failed": "{count} पर निर्णय नहीं हो सका।",
+      "bulk_reject": "चयनित अस्वीकार करें",
+      "bulk_rejected": "{count} प्रथाएँ अस्वीकृत।",
+      "bulk_select_row": "सामूहिक समीक्षा के लिए चुनें",
+      "harvest_depth": "{done}/{total} स्कोप · ~{pct}% पढ़ा"
     },
     "skills_adopt": "अपनाएँ",
     "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

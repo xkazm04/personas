@@ -13197,7 +13197,14 @@
         "state_to_process": "待处理",
         "harvest_coverage": "已采集 {done}/{total} 个范围",
         "harvest_no_scopes": "在 {project} 中未找到可采集的范围。",
-        "harvest_wave_dispatched": "正在采集 {project} 的 {count} 个范围 — 还有 {remaining} 个未读。"
+        "harvest_wave_dispatched": "正在采集 {project} 的 {count} 个范围 — 还有 {remaining} 个未读。",
+        "bulk_adopt": "采纳所选",
+        "bulk_adopted": "已采纳 {count} 条实践。",
+        "bulk_failed": "{count} 条无法裁定。",
+        "bulk_reject": "拒绝所选",
+        "bulk_rejected": "已拒绝 {count} 条实践。",
+        "bulk_select_row": "选择以批量审阅",
+        "harvest_depth": "{done}/{total} 个范围 · 已读约 {pct}%"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

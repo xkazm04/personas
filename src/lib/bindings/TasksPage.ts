@@ -6,7 +6,7 @@ import type { DevTask } from "./DevTask";
  * `triage_ideas` (`"{created_at}|{id}"`, `created_at DESC, id DESC`).
  * `list_tasks` stays untouched for the existing unpaginated callers.
  */
-export type TasksPage = { tasks: Array<DevTask>, cursor: string | null, hasMore: boolean,
+export type TasksPage = { tasks: Array<DevTask>, cursor: string | null, hasMore: boolean, 
 /**
  * Per-status totals scoped to the project (NOT to the status filter), so
  * status chips stay truthful beyond the loaded page.
