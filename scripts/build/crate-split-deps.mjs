@@ -18,6 +18,10 @@
  *   node scripts/build/crate-split-deps.mjs --closure a,b      # transitive closure
  *   node scripts/build/crate-split-deps.mjs --closure a --exclude engine,lib
  *   node scripts/build/crate-split-deps.mjs --from x --to y    # every x -> y site
+ *   node scripts/build/crate-split-deps.mjs --portable engine --exclude ...
+ *   node scripts/build/crate-split-deps.mjs --portable engine --exclude ...
+ *        --assume-clean engine,notifications
+ *        # what-if: how much LOC would fixing those units unlock?
  *   node scripts/build/crate-split-deps.mjs --folded           # resolver debug
  *
  * `--exclude` is the flag that makes this usable. Without it every closure
@@ -292,6 +296,13 @@ if (flag('--portable')) {
   // unit with an edge to an excluded unit or to an already-dropped one.
   const prefix = flag('--portable');
   const excludeRoots = (flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  // `--assume-clean a,b` = "pretend these units' upward references are already
+  // fixed". Turns "should we do this refactor?" into a measured number: run it
+  // for a candidate fix and see how much LOC the fix would actually unlock,
+  // BEFORE writing any of it. Counting references at a call site tells you the
+  // cost; only this tells you the benefit.
+  const assumeClean = new Set((flag('--assume-clean') ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+  for (const u of assumeClean) edges.set(u, new Map());
   const isExcluded = (u) => excludeRoots.some((e) => u === e || u.startsWith(`${e}::`));
   const inPrefix = (u) => u === prefix || u.startsWith(`${prefix}::`);
 
