@@ -6,6 +6,7 @@ These documents describe the implemented product surface. They are written for u
 
 | Area | Docs | Implementation roots |
 | --- | --- | --- |
+| Sidebar navigation | [navigation.md](navigation.md) | `src/features/shared/chrome/sidebar`, `src/lib/navigation/registry.ts` |
 | Home and onboarding | [home.md](home.md), [onboarding.md](onboarding.md) | `src/features/home`, `src/features/onboarding`, `src/features/simple-mode` |
 | Overview dashboard | [overview/README.md](overview/README.md) | `src/features/overview` |
 | Agents / personas | [personas/README.md](personas/README.md) | `src/features/personas`, `src/features/agents`, `src-tauri/src/commands/core/personas.rs` |

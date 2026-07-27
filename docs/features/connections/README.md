@@ -16,6 +16,21 @@ Connections is the credential, connector, resource, database, and dependency-man
 
 Navigation tab definitions live in `credentialItems` in `sidebarData.ts`.
 
+**Sidebar layout (2026-07-27).** Connections' Level-2 nav is the grouped
+`SidebarGroupNav` layout shared by every section, and it owns **two** groups:
+
+| Group | Contents | Section |
+| --- | --- | --- |
+| Credentials | the five tabs above | `credentials` |
+| Templates | n8n Import · Generated · Explore · Recipes · Presets | `design-reviews` |
+
+Templates was **folded into Connections** — it is no longer a Level-1 rail
+entry. Its registry entry (`src/lib/navigation/registry.ts`) now declares
+`reachability: 'nested'` with `parent: 'credentials'`, so it remains a full
+content-router destination while the rail highlights Connections and the
+Connections nav stays rendered. Any deep link that still calls
+`setSidebarSection('design-reviews')` keeps working unchanged.
+
 **SQL editor safeguards (`engine/db_query.rs`).** Query execution is bounded so a
 careless query can't exhaust memory or hang the UI:
 
