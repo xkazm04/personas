@@ -63,7 +63,26 @@ export function useCalendarEvents(
   const startMs = start.getTime();
   const endMs = end.getTime();
 
+  // Effect keys on a value signature instead of the `entries` array identity
+  // (mirrors useConflictPreview's `sig` below): every 30s poll produces a
+  // brand-new entries array, and identity-keying refired this effect — re-running
+  // every cron_fire_times_in_range IPC (up to 500 slots × N schedules) with an
+  // open calendar even when nothing changed. Run-history freshness is preserved:
+  // a run completing changes recent_executions / last_triggered_at, which are
+  // part of the signature.
+  const sig = entries
+    .map(({ agent: a, health }) => [
+      a.trigger_id, health, a.cron_expression ?? '', a.interval_seconds ?? '',
+      a.timezone ?? '', a.next_trigger_at ?? '', a.last_triggered_at ?? '',
+      a.recent_executions, a.recent_failures,
+      a.persona_id, a.persona_name, a.persona_icon ?? '', a.persona_color ?? '',
+    ].join('|'))
+    .join('::');
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
   useEffect(() => {
+    const entries = entriesRef.current;
     if (entries.length === 0 || endMs <= startMs) {
       setResult({ events: [], loading: false });
       return;
@@ -184,7 +203,7 @@ export function useCalendarEvents(
       events.sort((a, b) => a.time.getTime() - b.time.getTime());
       setResult({ events, loading: false });
     })();
-  }, [entries, startMs, endMs]);
+  }, [sig, startMs, endMs]);
 
   return result;
 }
