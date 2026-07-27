@@ -9,7 +9,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const RUST = resolve(ROOT, "src-tauri/src/engine/event_registry.rs");
+const RUST = resolve(ROOT, "src-tauri/core/src/events.rs");
 const TS = resolve(ROOT, "src/lib/eventRegistry.ts");
 
 const rustSrc = readFileSync(RUST, "utf8");

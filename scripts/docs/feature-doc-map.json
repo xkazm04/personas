@@ -211,8 +211,8 @@
         "src/features/agents/**",
         "src-tauri/src/commands/core/personas.rs",
         "src-tauri/src/commands/core/agent_ir.rs",
-        "src-tauri/src/db/models/persona.rs",
-        "src-tauri/src/db/models/agent_ir.rs"
+        "src-tauri/core/src/models/persona.rs",
+        "src-tauri/core/src/models/agent_ir.rs"
       ],
       "onboardingFlows": [
         "persona-creation",
@@ -225,10 +225,10 @@
       "sourceGlobs": [
         "src/features/templates/**",
         "src-tauri/src/commands/design/**",
-        "src-tauri/src/engine/adoption_answers.rs",
+        "src-tauri/engine/src/adoption_answers.rs",
         "src-tauri/src/engine/discovery.rs",
         "src-tauri/src/engine/connector_strategy.rs",
-        "src-tauri/src/engine/template_checksums.rs",
+        "src-tauri/engine/src/template_checksums.rs",
         "src-tauri/src/engine/build_session/**"
       ],
       "onboardingFlows": [
@@ -245,16 +245,16 @@
         "src-tauri/src/commands/execution/**",
         "src-tauri/src/engine/runner.rs",
         "src-tauri/src/engine/background.rs",
-        "src-tauri/src/engine/bus.rs",
+        "src-tauri/engine/src/bus.rs",
         "src-tauri/src/engine/scheduler.rs",
-        "src-tauri/src/engine/cron.rs",
-        "src-tauri/src/engine/chain.rs",
+        "src-tauri/core/src/cron.rs",
+        "src-tauri/db/src/chain.rs",
         "src-tauri/src/engine/dispatch.rs",
-        "src-tauri/src/engine/prompt.rs",
-        "src-tauri/src/engine/cli_process.rs",
+        "src-tauri/src/companion/prompt.rs",
+        "src-tauri/engine/src/cli_process.rs",
         "src-tauri/src/engine/parser.rs",
-        "src-tauri/src/engine/trace.rs",
-        "src-tauri/src/engine/cost.rs",
+        "src-tauri/core/src/trace.rs",
+        "src-tauri/engine/src/cost.rs",
         "src-tauri/src/engine/automation_runner.rs",
         "src-tauri/src/engine/tool_runner.rs"
       ],
@@ -280,7 +280,7 @@
         "src/features/triggers/**",
         "src-tauri/src/commands/communication/**",
         "src-tauri/src/engine/webhook.rs",
-        "src-tauri/src/engine/event_registry.rs"
+        "src-tauri/engine/src/event_registry.rs"
       ],
       "onboardingFlows": [
         "events-intro",
@@ -319,7 +319,7 @@
     {
       "doc": "docs/features/integrations/README.md",
       "sourceGlobs": [
-        "src-tauri/src/engine/pairing.rs",
+        "src-tauri/engine/src/pairing.rs",
         "src-tauri/src/mcp_bin.rs",
         "src-tauri/src/mcp_server/**",
         "sdk/**",
@@ -424,7 +424,7 @@
         "src-tauri/src/commands/infrastructure/dev_workspaces.rs",
         "src-tauri/src/commands/infrastructure/workspace_harvest.rs",
         "src-tauri/src/commands/infrastructure/workspace_divergence.rs",
-        "src-tauri/src/db/repos/dev_workspaces.rs"
+        "src-tauri/db/src/repos/dev_workspaces.rs"
       ]
     },
     {
@@ -516,7 +516,7 @@
         "src-tauri/src/commands/network/**",
         "src-tauri/src/engine/bundle.rs",
         "src-tauri/src/engine/share_link.rs",
-        "src-tauri/src/engine/p2p/**"
+        "src-tauri/engine/src/p2p/**"
       ]
     },
     {
@@ -538,7 +538,7 @@
         "src-tauri/src/commands/teams/**",
         "src-tauri/src/db/repos/core/teams.rs",
         "src-tauri/src/db/repos/core/groups.rs",
-        "src-tauri/src/db/repos/orchestration/**",
+        "src-tauri/db/src/repos/orchestration/**",
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
         "src-tauri/src/engine/team_assignment_matching.rs"
       ],

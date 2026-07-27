@@ -37,7 +37,23 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
 const REPO_ROOT = resolve(__dirname, '../../..');
-const RUST_SRC = join(REPO_ROOT, 'src-tauri/src');
+
+/**
+ * Every Rust crate in the workspace, not just the desktop one.
+ *
+ * The 2026-07-27 crate split moved ~166k LOC out of `src-tauri/src` into
+ * `core`, `db` and `engine`. The single-root walker caught that itself — the
+ * struct count fell through the sanity floor — but a floor only catches a move
+ * large enough to breach it. The per-crate assertion below is the stronger
+ * guarantee: every extracted crate must actually contribute structs, so a root
+ * cannot go stale quietly. Add a root here when a crate is added.
+ */
+const RUST_ROOTS = [
+  'src-tauri/src',
+  'src-tauri/core/src',
+  'src-tauri/db/src',
+  'src-tauri/engine/src',
+].map((r) => join(REPO_ROOT, r));
 
 /**
  * Legacy exported structs shipped before the rule, keyed by file. Shrink-only —
@@ -111,33 +127,33 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'DryRunResult', 'DryRunSimulatedEvent', 'RecentScheduleRun', 'TriggerChainLink',
     'TriggerCleanupResult', 'WebhookStatus',
   ],
-  'src-tauri/src/db/models/audit_incident.rs': [
+  'src-tauri/core/src/models/audit_incident.rs': [
     'CreateAuditIncidentInput', 'IncidentFilters',
   ],
-  'src-tauri/src/db/models/audit_log.rs': [
+  'src-tauri/core/src/models/audit_log.rs': [
     'CredentialDependent',
   ],
-  'src-tauri/src/db/models/build_session.rs': [
+  'src-tauri/core/src/models/build_session.rs': [
     'UserAnswer',
   ],
-  'src-tauri/src/db/models/connector.rs': [
+  'src-tauri/core/src/models/connector.rs': [
     'ConnectorDefinition', 'CreateConnectorDefinitionInput', 'UpdateConnectorDefinitionInput',
   ],
-  'src-tauri/src/db/models/credential.rs': [
+  'src-tauri/core/src/models/credential.rs': [
     'CreateCredentialEventInput', 'CredentialEvent', 'UpdateCredentialEventInput',
   ],
   // held — LedgerHealthEntry is persisted inside the persona_credentials.metadata ledger — a rename silently drops fields from existing rows
-  'src-tauri/src/db/models/credential_ledger.rs': [
+  'src-tauri/core/src/models/credential_ledger.rs': [
     'CredentialLedger', 'LedgerAnomalyScore', 'LedgerHealthEntry',
   ],
-  'src-tauri/src/db/models/credential_recipe.rs': [
+  'src-tauri/core/src/models/credential_recipe.rs': [
     'CredentialRecipe',
   ],
-  'src-tauri/src/db/models/db_schema.rs': [
+  'src-tauri/core/src/models/db_schema.rs': [
     'DbSavedQuery', 'DbSchemaTable', 'QueryResult',
   ],
   // held — ScanAgentMeta is the Deserialize target for the embedded scan_agents.toml registry — a rename panics at startup
-  'src-tauri/src/db/models/dev_tools.rs': [
+  'src-tauri/core/src/models/dev_tools.rs': [
     'ContextHealthSnapshot', 'CrossProjectRelation', 'DevCompetition', 'DevCompetitionSlot',
     'DevContext', 'DevContextGroup', 'DevContextGroupRelationship', 'DevGoal',
     'DevGoalDependency', 'DevGoalItem', 'DevGoalSignal', 'DevIdea', 'DevKpi', 'DevKpiBinding',
@@ -148,135 +164,135 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'TechRadarEntry', 'TestRunResult', 'TriageRule', 'WorkspaceImportItem',
     'WorkspaceKnowledge', 'WorkspacePracticeAdoption',
   ],
-  'src-tauri/src/db/models/event.rs': [
+  'src-tauri/core/src/models/event.rs': [
     'CreateEventSubscriptionInput', 'CreatePersonaEventInput', 'PaginatedEvents',
     'PersonaEvent', 'PersonaEventSubscription', 'UpdateEventSubscriptionInput',
   ],
-  'src-tauri/src/db/models/execution.rs': [
+  'src-tauri/core/src/models/execution.rs': [
     'ExecutionListItem', 'ExecutionSearchResult', 'GlobalExecutionRow', 'PersonaExecution',
   ],
-  'src-tauri/src/db/models/execution_annotation.rs': [
+  'src-tauri/core/src/models/execution_annotation.rs': [
     'ExecutionAnnotation',
   ],
-  'src-tauri/src/db/models/exposure.rs': [
+  'src-tauri/core/src/models/exposure.rs': [
     'CreateExposedResourceInput', 'CreateProvenanceInput', 'ExposedResource',
     'ExposureManifest', 'ResourceProvenance', 'UpdateExposedResourceInput',
   ],
-  'src-tauri/src/db/models/external_api_key.rs': [
+  'src-tauri/core/src/models/external_api_key.rs': [
     'ApiKeyAuditEntry', 'CreateApiKeyResponse', 'ExternalApiKey',
   ],
-  'src-tauri/src/db/models/healing.rs': [
+  'src-tauri/core/src/models/healing.rs': [
     'HealingKnowledge', 'PersonaHealingIssue',
   ],
-  'src-tauri/src/db/models/identity.rs': [
+  'src-tauri/core/src/models/identity.rs': [
     'IdentityCard', 'LocalIdentity', 'PeerIdentity', 'TrustedPeer', 'UpdateTrustedPeerInput',
   ],
-  'src-tauri/src/db/models/knowledge.rs': [
+  'src-tauri/core/src/models/knowledge.rs': [
     'ExecutionKnowledge', 'KnowledgeGraphSummary',
   ],
-  'src-tauri/src/db/models/llm_spend.rs': [
+  'src-tauri/core/src/models/llm_spend.rs': [
     'LlmSpendDashboard', 'LlmSpendDay', 'LlmSpendGroup', 'LlmSpendTotals',
   ],
-  'src-tauri/src/db/models/memory.rs': [
+  'src-tauri/core/src/models/memory.rs': [
     'CreatePersonaMemoryInput', 'PersonaMemory',
   ],
-  'src-tauri/src/db/models/message.rs': [
+  'src-tauri/core/src/models/message.rs': [
     'CreateMessageInput', 'PersonaMessage', 'PersonaMessageDelivery',
   ],
-  'src-tauri/src/db/models/n8n_session.rs': [
+  'src-tauri/core/src/models/n8n_session.rs': [
     'N8nSessionResponse', 'N8nSessionSummary', 'N8nTransformSession',
   ],
-  'src-tauri/src/db/models/observability.rs': [
+  'src-tauri/core/src/models/observability.rs': [
     'AlertRule', 'DashboardCostAnomaly', 'DashboardDailyPoint', 'DashboardTopPersona',
     'ExecutionDashboardData', 'ExecutionHeatmapData', 'FiredAlert', 'HeatmapInsights',
     'MetricAnomaly', 'MetricsChartData', 'MetricsChartPoint', 'MetricsPersonaBreakdown',
     'PersonaCostEntry', 'PersonaMetricsSnapshot', 'PersonaPromptVersion',
     'PromptPerformanceData', 'PromptPerformancePoint', 'VersionMarker',
   ],
-  'src-tauri/src/db/models/ocr.rs': [
+  'src-tauri/core/src/models/ocr.rs': [
     'OcrDocument', 'OcrResult',
   ],
-  'src-tauri/src/db/models/persona.rs': [
+  'src-tauri/core/src/models/persona.rs': [
     'ChannelSpecV2', 'CreatePersonaInput', 'Persona', 'PersonaParameter', 'UpdatePersonaInput',
   ],
-  'src-tauri/src/db/models/recipe.rs': [
+  'src-tauri/core/src/models/recipe.rs': [
     'CreatePersonaRecipeLinkInput', 'CreateRecipeInput', 'DeriveResult',
     'GenerateRecipeDraftInput', 'PersonaRecipeLink', 'RecipeDefinition', 'RecipeDraft',
     'RecipeExecutionInput', 'RecipeExecutionResult', 'RecipeVersion', 'RecipeVersionDraft',
     'UpdateRecipeInput',
   ],
-  'src-tauri/src/db/models/recipe_suggestion.rs': [
+  'src-tauri/core/src/models/recipe_suggestion.rs': [
     'RecipeSuggestionEvent', 'RecipeSuggestionStats',
   ],
-  'src-tauri/src/db/models/review.rs': [
+  'src-tauri/core/src/models/review.rs': [
     'CreateManualReviewInput', 'CreateReviewMessageInput', 'PersonaDesignPattern',
     'PersonaDesignReview', 'PersonaManualReview', 'ReviewMessage', 'UpdateManualReviewInput',
   ],
-  'src-tauri/src/db/models/rotation.rs': [
+  'src-tauri/core/src/models/rotation.rs': [
     'CreateRotationPolicyInput', 'CredentialRotationEntry', 'CredentialRotationPolicy',
     'UpdateRotationPolicyInput',
   ],
-  'src-tauri/src/db/models/saved_views.rs': [
+  'src-tauri/core/src/models/saved_views.rs': [
     'CreateSavedViewInput', 'SavedView',
   ],
-  'src-tauri/src/db/models/signing.rs': [
+  'src-tauri/core/src/models/signing.rs': [
     'DocumentSignature', 'SignDocumentResult', 'VerifyDocumentInput', 'VerifyDocumentResult',
   ],
-  'src-tauri/src/db/models/sla.rs': [
+  'src-tauri/core/src/models/sla.rs': [
     'GlobalSlaStats', 'HealingSummary', 'PersonaSlaStats', 'SlaDailyPoint', 'SlaDashboardData',
   ],
-  'src-tauri/src/db/models/team.rs': [
+  'src-tauri/core/src/models/team.rs': [
     'CreateTeamInput', 'PersonaTeam', 'PersonaTeamConnection', 'PersonaTeamMember',
     'PipelineRun', 'TeamCounts', 'UpdateTeamInput',
   ],
-  'src-tauri/src/db/models/team_memory.rs': [
+  'src-tauri/core/src/models/team_memory.rs': [
     'CreateTeamMemoryInput', 'TeamMemory', 'TeamMemoryStats',
   ],
-  'src-tauri/src/db/models/team_preset.rs': [
+  'src-tauri/core/src/models/team_preset.rs': [
     'AdoptedTeamPresetFailure', 'AdoptedTeamPresetMember', 'AdoptedTeamPresetResult',
     'PresetAdoptionSchema', 'PresetMemberAdoptionSchema', 'TeamPreset',
     'TeamPresetAdoptProgress', 'TeamPresetConnection', 'TeamPresetGroupSpec',
     'TeamPresetMember',
   ],
-  'src-tauri/src/db/models/template_feedback.rs': [
+  'src-tauri/core/src/models/template_feedback.rs': [
     'TemplateFeedback', 'TemplatePerformance',
   ],
-  'src-tauri/src/db/models/test_run.rs': [
+  'src-tauri/core/src/models/test_run.rs': [
     'PersonaTestResult', 'PersonaTestRun',
   ],
-  'src-tauri/src/db/models/tool.rs': [
+  'src-tauri/core/src/models/tool.rs': [
     'CreateToolDefinitionInput', 'PersonaTool', 'PersonaToolDefinition',
     'UpdateToolDefinitionInput',
   ],
-  'src-tauri/src/db/models/tool_audit.rs': [
+  'src-tauri/core/src/models/tool_audit.rs': [
     'ToolPerformanceSummary',
   ],
-  'src-tauri/src/db/models/tool_usage.rs': [
+  'src-tauri/core/src/models/tool_usage.rs': [
     'PersonaToolUsage', 'PersonaUsageSummary', 'ToolUsageOverTime', 'ToolUsageSummary',
   ],
-  'src-tauri/src/db/models/trigger.rs': [
+  'src-tauri/core/src/models/trigger.rs': [
     'CreateTriggerInput', 'PendingTriggerFire', 'PersonaTrigger', 'UpdateTriggerInput',
   ],
-  'src-tauri/src/db/models/twin.rs': [
+  'src-tauri/core/src/models/twin.rs': [
     'TwinChannel', 'TwinCommunication', 'TwinContact', 'TwinDistilledFact', 'TwinPendingMemory',
     'TwinProfile', 'TwinReflection', 'TwinTone', 'TwinVoiceProfile',
   ],
-  'src-tauri/src/db/repos/communication/sla.rs': [
+  'src-tauri/db/src/repos/communication/sla.rs': [
     'PersonaDailyReliability', 'PersonaReliability',
   ],
-  'src-tauri/src/db/repos/execution/chain_stop_reasons.rs': [
+  'src-tauri/db/src/repos/execution/chain_stop_reasons.rs': [
     'ChainStopReason',
   ],
-  'src-tauri/src/db/repos/execution/healing.rs': [
+  'src-tauri/db/src/repos/execution/healing.rs': [
     'HealingEffectivenessReport', 'HealingStrategyStat',
   ],
-  'src-tauri/src/db/repos/execution/provider_audit.rs': [
+  'src-tauri/db/src/repos/execution/provider_audit.rs': [
     'ProviderUsageStats', 'ProviderUsageTimeseries',
   ],
-  'src-tauri/src/db/repos/resources/triggers.rs': [
+  'src-tauri/db/src/repos/resources/triggers.rs': [
     'RenameEventTypeResult',
   ],
-  'src-tauri/src/engine/api_definition.rs': [
+  'src-tauri/engine/src/api_definition.rs': [
     'ApiEndpoint', 'ApiParameter', 'ApiRequestBody',
   ],
   'src-tauri/src/engine/api_proxy.rs': [
@@ -286,22 +302,22 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
     'BundleExportResult', 'BundleImportOptions', 'BundleImportPreview', 'BundleResourcePreview',
     'BundleVerification', 'NetworkAccessScope',
   ],
-  'src-tauri/src/engine/byom.rs': [
+  'src-tauri/db/src/byom.rs': [
     'ByomPolicy', 'ComplianceRule', 'ProviderAuditEntry', 'RoutingRule',
   ],
   'src-tauri/src/engine/capability.rs': [
     'CapabilityHealth',
   ],
-  'src-tauri/src/engine/cost.rs': [
+  'src-tauri/engine/src/cost.rs': [
     'ExecutionPreview',
   ],
-  'src-tauri/src/engine/design.rs': [
+  'src-tauri/engine/src/design.rs': [
     'FeasibilityResult',
   ],
-  'src-tauri/src/engine/desktop_discovery.rs': [
+  'src-tauri/engine/src/desktop_discovery.rs': [
     'DiscoveredApp',
   ],
-  'src-tauri/src/engine/desktop_security.rs': [
+  'src-tauri/engine/src/desktop_security.rs': [
     'DesktopConnectorManifest',
   ],
   'src-tauri/src/engine/dry_run.rs': [
@@ -310,22 +326,22 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/engine/mcp_tools.rs': [
     'McpTool', 'McpToolContent', 'McpToolResult',
   ],
-  'src-tauri/src/engine/optimizer.rs': [
+  'src-tauri/engine/src/optimizer.rs': [
     'NodeAnalytics', 'PipelineAnalytics', 'TopologySuggestion',
   ],
-  'src-tauri/src/engine/p2p/protocol.rs': [
+  'src-tauri/engine/src/p2p/protocol.rs': [
     'AgentEnvelope',
   ],
-  'src-tauri/src/engine/p2p/types.rs': [
+  'src-tauri/engine/src/p2p/types.rs': [
     'DiscoveredPeer', 'NetworkStatusInfo', 'PeerManifestEntry',
   ],
-  'src-tauri/src/engine/pairing.rs': [
+  'src-tauri/engine/src/pairing.rs': [
     'PendingPairingView',
   ],
-  'src-tauri/src/engine/recipe_eligibility.rs': [
+  'src-tauri/engine/src/recipe_eligibility.rs': [
     'RecipeEligibility',
   ],
-  'src-tauri/src/engine/recipe_matcher.rs': [
+  'src-tauri/engine/src/recipe_matcher.rs': [
     'RecipeMatch',
   ],
   'src-tauri/src/engine/rotation.rs': [
@@ -334,22 +350,22 @@ const LEGACY_SNAKE_CASE_BASELINE: Record<string, string[]> = {
   'src-tauri/src/engine/share_link.rs': [
     'ResolvedShareLink', 'ShareLinkResult',
   ],
-  'src-tauri/src/engine/test_runner.rs': [
+  'src-tauri/engine/src/test_runner.rs': [
     'MockToolResponse', 'TestRunStatusEvent', 'TestScenario', 'TestScores',
   ],
   'src-tauri/src/engine/tool_runner.rs': [
     'ToolInvocationResult', 'ToolTestResult',
   ],
-  'src-tauri/src/engine/topology_types.rs': [
+  'src-tauri/engine/src/topology_types.rs': [
     'BlueprintConnection', 'BlueprintMember',
   ],
-  'src-tauri/src/engine/trace.rs': [
+  'src-tauri/core/src/trace.rs': [
     'ExecutionTrace', 'TraceSpan',
   ],
-  'src-tauri/src/engine/types.rs': [
+  'src-tauri/core/src/types.rs': [
     'ToolCallStep',
   ],
-  'src-tauri/src/engine/workspace_projection.rs': [
+  'src-tauri/engine/src/workspace_projection.rs': [
     'ProjectionResult',
   ],
   'src-tauri/src/logging.rs': [
@@ -448,7 +464,7 @@ export function parseExportedStructs(source: string): Omit<ExportedStruct, 'file
 
 function collectAll(): ExportedStruct[] {
   const all: ExportedStruct[] = [];
-  for (const path of rustFiles(RUST_SRC)) {
+  for (const path of RUST_ROOTS.flatMap((root) => rustFiles(root))) {
     const source = readFileSync(path, 'utf-8');
     if (!source.includes('#[ts(')) continue;
     const file = relative(REPO_ROOT, path).replace(/\\/g, '/');
@@ -460,8 +476,16 @@ function collectAll(): ExportedStruct[] {
 describe('ts-rs bindings — camelCase ratchet', () => {
   const structs = collectAll();
 
-  it('walks the Rust tree (sanity: layout moved → fix RUST_SRC)', () => {
+  it('walks every crate (sanity: layout moved → fix RUST_ROOTS)', () => {
     expect(structs.length).toBeGreaterThan(600);
+    // Each extracted crate must contribute, otherwise a root silently went
+    // stale and the ratchet stops covering it while still reporting green.
+    for (const crate of ['core', 'db', 'engine']) {
+      expect(
+        structs.some((s) => s.file.startsWith(`src-tauri/${crate}/src/`)),
+        `no #[ts(export)] structs found under src-tauri/${crate}/src — RUST_ROOTS is stale`
+      ).toBe(true);
+    }
   });
 
   it('every exported struct outside the baseline declares #[serde(rename_all = "camelCase")]', () => {

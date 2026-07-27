@@ -42,15 +42,17 @@ describe('builtinConnectors — personas_messages (CONN-01..CONN-03 regression)'
 
   it('CONN-02 (fresh install): builtin_connectors.rs contains the personas_messages entry', () => {
     const src = readFileSync(
-      join(process.cwd(), 'src-tauri/src/db/builtin_connectors.rs'),
+      join(process.cwd(), 'src-tauri/db/src/builtin_connectors.rs'),
       'utf8',
     );
     expect(src).toContain('r##"personas_messages"##');
   });
 
-  it('CONN-02 (existing install): both seed paths in db/mod.rs are idempotent — no new migration required', () => {
+  it('CONN-02 (existing install): both seed paths in the db crate root are idempotent — no new migration required', () => {
+    // The data layer became its own crate on 2026-07-27, so `db/mod.rs` is now
+    // `personas-db`'s `lib.rs`.
     const src = readFileSync(
-      join(process.cwd(), 'src-tauri/src/db/mod.rs'),
+      join(process.cwd(), 'src-tauri/db/src/lib.rs'),
       'utf8',
     );
     // seed_builtin_connectors uses INSERT OR IGNORE on connector_definitions
