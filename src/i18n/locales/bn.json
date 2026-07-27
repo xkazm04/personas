@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "ব্যবহার",
       "skills_window_chip": "৩০ দিন",
       "skills_workspace_library": "ওয়ার্কস্পেস লাইব্রেরি",
-      "skills_ws_empty": "ওয়ার্কস্পেস লাইব্রেরি খালি — এটি শুরু করতে একটি প্রকল্প skill শেয়ার করুন।"
+      "skills_ws_empty": "ওয়ার্কস্পেস লাইব্রেরি খালি — এটি শুরু করতে একটি প্রকল্প skill শেয়ার করুন।",
+      "skills_args_label": "আর্গুমেন্ট",
+      "skills_args_optional": "ঐচ্ছিক",
+      "skills_args_placeholder": "যেমন run --l2",
+      "skills_col_action": "অ্যাকশন",
+      "skills_col_lastused": "সর্বশেষ ব্যবহৃত",
+      "skills_confirm_adopt_cta": "{name}-এ গ্রহণ করুন",
+      "skills_confirm_no_desc": "কোনো বিবরণ দেওয়া হয়নি।",
+      "skills_confirm_share_cta": "লাইব্রেরিতে শেয়ার করুন",
+      "skills_confirm_use_cta": "ডিসপ্যাচ",
+      "skills_kind_adopt": "গ্রহণ",
+      "skills_kind_share": "শেয়ার",
+      "skills_kind_use": "ব্যবহার",
+      "skills_never_used": "কখনো নয়",
+      "skills_use": "ব্যবহার",
+      "skills_use_hint": "এই স্কিলটি এখনই {name}-এ একটি ব্যাকগ্রাউন্ড Fleet সেশন হিসেবে চালান"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

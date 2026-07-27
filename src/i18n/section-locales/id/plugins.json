@@ -1268,7 +1268,22 @@
     "skills_sort_usage": "Penggunaan",
     "skills_window_chip": "30h",
     "skills_workspace_library": "Pustaka ruang kerja",
-    "skills_ws_empty": "Pustaka ruang kerja kosong — bagikan skill proyek untuk mengisinya."
+    "skills_ws_empty": "Pustaka ruang kerja kosong — bagikan skill proyek untuk mengisinya.",
+    "skills_args_label": "Argumen",
+    "skills_args_optional": "opsional",
+    "skills_args_placeholder": "mis. run --l2",
+    "skills_col_action": "Tindakan",
+    "skills_col_lastused": "Terakhir digunakan",
+    "skills_confirm_adopt_cta": "Adopsi ke {name}",
+    "skills_confirm_no_desc": "Tidak ada deskripsi.",
+    "skills_confirm_share_cta": "Bagikan ke pustaka",
+    "skills_confirm_use_cta": "Kirim",
+    "skills_kind_adopt": "Adopsi",
+    "skills_kind_share": "Bagikan",
+    "skills_kind_use": "Gunakan",
+    "skills_never_used": "tidak pernah",
+    "skills_use": "Gunakan",
+    "skills_use_hint": "Jalankan skill ini sekarang sebagai sesi Fleet latar belakang di {name}"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

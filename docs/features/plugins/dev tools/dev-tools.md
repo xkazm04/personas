@@ -549,18 +549,24 @@ src/features/plugins/dev-tools/
     ├── SkillsManagerPage.tsx     # host: project switcher toolbar
     ├── skillsManagerData.ts      # data spine (workbench reuse + coverage + usage + memory switch)
     ├── skillsManagerBits.tsx     # MemoryBindingButton · UsageLine · CoverageBar
-    ├── SkillsManagerBoard.tsx    # fused board: panel containers + dense rows, sortable headers
-    └── SkillContextsModal.tsx    # per-context progress modal (Bars/Grid)
+    ├── SkillsManagerBoard.tsx    # columnar board (Name·Usage·Last used·Action), icon actions
+    ├── SkillActionConfirm.tsx    # Adopt/Share/Use confirmation modal (description + args for Use)
+    └── SkillContextsModal.tsx    # per-context progress modal (Bars)
 ```
 
 ### Skills Manager (`skills` tab)
 
 The workspace skill library (`~/.claude/skills`) on the left, the **active
 project's** installed skills on the right, a project switcher in the toolbar.
-Both panels have sortable Skill/Usage column headers (sorting applies WITHIN
-groups); grouping renders as divider rows only (left: category; right:
-context-tracked vs standard, no category), installed state is an icon, and the
-30-day window is stated once per panel footer, never per row.
+Both panels are columnar — **Name · Usage · Last used · Action** — with sortable
+Skill/Usage headers (sorting applies WITHIN groups); grouping renders as divider
+rows only (left: category; right: context-tracked vs standard, no category),
+installed state is an icon, and the 30-day window is stated once per panel
+footer. Row actions are **icon-only** (Adopt ↓ / Share ↑ / Use ▶) and each opens
+a **confirmation modal** showing the skill's description before firing; the
+**Use** action (project side) dispatches the skill as a background Fleet session
+(`/skill args`, optional args field + live preview) via the SkillsWorkbench
+dispatch lane.
 Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
 LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
 skill instrumentation needed), a **memory-binding icon** (internal ledger /

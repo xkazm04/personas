@@ -49,6 +49,9 @@ export interface SkillsManagerVariantProps {
   projectName: string;
   onAdopt: (name: string) => void;
   onShare: (name: string) => void;
+  /** Project side — dispatch the installed skill as a background Fleet session
+   *  (`/skill args`), the SkillsWorkbench dispatch lane. */
+  onUse: (name: string, args: string) => void;
   /** Project-side rows only — the host binds the active project id. */
   onSwitchMemory: (skillName: string, next: MemoryBinding) => void;
   onOpenContexts: (skill: string) => void;
@@ -124,6 +127,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           projectName={projectName}
           onAdopt={(name) => { void data.wb?.runAdopt(name); }}
           onShare={(name) => { void data.wb?.runShare(name); }}
+          onUse={(name, args) => { void data.wb?.runDispatch(name, args); }}
           onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
           onOpenContexts={setContextsSkill}
         />

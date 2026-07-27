@@ -1268,7 +1268,22 @@
     "skills_sort_usage": "Utilisation",
     "skills_window_chip": "30j",
     "skills_workspace_library": "Bibliothèque de l’espace de travail",
-    "skills_ws_empty": "La bibliothèque de l’espace de travail est vide — partagez une skill de projet pour l’amorcer."
+    "skills_ws_empty": "La bibliothèque de l’espace de travail est vide — partagez une skill de projet pour l’amorcer.",
+    "skills_args_label": "Arguments",
+    "skills_args_optional": "facultatif",
+    "skills_args_placeholder": "ex. run --l2",
+    "skills_col_action": "Action",
+    "skills_col_lastused": "Dernière utilisation",
+    "skills_confirm_adopt_cta": "Adopter dans {name}",
+    "skills_confirm_no_desc": "Aucune description fournie.",
+    "skills_confirm_share_cta": "Partager dans la bibliothèque",
+    "skills_confirm_use_cta": "Lancer",
+    "skills_kind_adopt": "Adopter",
+    "skills_kind_share": "Partager",
+    "skills_kind_use": "Utiliser",
+    "skills_never_used": "jamais",
+    "skills_use": "Utiliser",
+    "skills_use_hint": "Exécuter cette compétence maintenant en tant que session Fleet en arrière-plan dans {name}"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

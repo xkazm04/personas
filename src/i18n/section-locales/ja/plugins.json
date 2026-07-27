@@ -1268,7 +1268,22 @@
     "skills_sort_usage": "使用状況",
     "skills_window_chip": "30日",
     "skills_workspace_library": "ワークスペースライブラリ",
-    "skills_ws_empty": "ワークスペースライブラリは空です — プロジェクトスキルを共有して初期化してください。"
+    "skills_ws_empty": "ワークスペースライブラリは空です — プロジェクトスキルを共有して初期化してください。",
+    "skills_args_label": "引数",
+    "skills_args_optional": "任意",
+    "skills_args_placeholder": "例: run --l2",
+    "skills_col_action": "アクション",
+    "skills_col_lastused": "最終使用",
+    "skills_confirm_adopt_cta": "{name} に取り込む",
+    "skills_confirm_no_desc": "説明はありません。",
+    "skills_confirm_share_cta": "ライブラリに共有",
+    "skills_confirm_use_cta": "実行",
+    "skills_kind_adopt": "取り込む",
+    "skills_kind_share": "共有",
+    "skills_kind_use": "使用",
+    "skills_never_used": "なし",
+    "skills_use": "使用",
+    "skills_use_hint": "このスキルを今すぐ {name} でバックグラウンドの Fleet セッションとして実行します"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

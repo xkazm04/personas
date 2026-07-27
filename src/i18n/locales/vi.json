@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "Sử dụng",
       "skills_window_chip": "30 ngày",
       "skills_workspace_library": "Thư viện không gian làm việc",
-      "skills_ws_empty": "Thư viện không gian làm việc trống — chia sẻ một skill dự án để khởi tạo."
+      "skills_ws_empty": "Thư viện không gian làm việc trống — chia sẻ một skill dự án để khởi tạo.",
+      "skills_args_label": "Đối số",
+      "skills_args_optional": "tùy chọn",
+      "skills_args_placeholder": "vd. run --l2",
+      "skills_col_action": "Hành động",
+      "skills_col_lastused": "Dùng lần cuối",
+      "skills_confirm_adopt_cta": "Áp dụng vào {name}",
+      "skills_confirm_no_desc": "Không có mô tả.",
+      "skills_confirm_share_cta": "Chia sẻ vào thư viện",
+      "skills_confirm_use_cta": "Gửi",
+      "skills_kind_adopt": "Áp dụng",
+      "skills_kind_share": "Chia sẻ",
+      "skills_kind_use": "Dùng",
+      "skills_never_used": "chưa bao giờ",
+      "skills_use": "Dùng",
+      "skills_use_hint": "Chạy kỹ năng này ngay bây giờ dưới dạng phiên Fleet chạy nền trong {name}"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

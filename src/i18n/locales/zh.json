@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "使用情况",
       "skills_window_chip": "30 天",
       "skills_workspace_library": "工作区库",
-      "skills_ws_empty": "工作区库为空 — 分享一个项目技能来充实它。"
+      "skills_ws_empty": "工作区库为空 — 分享一个项目技能来充实它。",
+      "skills_args_label": "参数",
+      "skills_args_optional": "可选",
+      "skills_args_placeholder": "例如 run --l2",
+      "skills_col_action": "操作",
+      "skills_col_lastused": "上次使用",
+      "skills_confirm_adopt_cta": "采用到 {name}",
+      "skills_confirm_no_desc": "未提供描述。",
+      "skills_confirm_share_cta": "共享到库",
+      "skills_confirm_use_cta": "派发",
+      "skills_kind_adopt": "采用",
+      "skills_kind_share": "共享",
+      "skills_kind_use": "使用",
+      "skills_never_used": "从未",
+      "skills_use": "使用",
+      "skills_use_hint": "立即在 {name} 中将此技能作为后台 Fleet 会话运行"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "الاستخدام",
       "skills_window_chip": "30 يومًا",
       "skills_workspace_library": "مكتبة مساحة العمل",
-      "skills_ws_empty": "مكتبة مساحة العمل فارغة — شارك مهارة مشروع لتعبئتها."
+      "skills_ws_empty": "مكتبة مساحة العمل فارغة — شارك مهارة مشروع لتعبئتها.",
+      "skills_args_label": "الوسائط",
+      "skills_args_optional": "اختياري",
+      "skills_args_placeholder": "مثال: run --l2",
+      "skills_col_action": "إجراء",
+      "skills_col_lastused": "آخر استخدام",
+      "skills_confirm_adopt_cta": "التبني في {name}",
+      "skills_confirm_no_desc": "لم يتم تقديم وصف.",
+      "skills_confirm_share_cta": "المشاركة في المكتبة",
+      "skills_confirm_use_cta": "إرسال",
+      "skills_kind_adopt": "تبني",
+      "skills_kind_share": "مشاركة",
+      "skills_kind_use": "استخدام",
+      "skills_never_used": "أبدًا",
+      "skills_use": "استخدام",
+      "skills_use_hint": "شغّل هذه المهارة الآن كجلسة Fleet في الخلفية ضمن {name}"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

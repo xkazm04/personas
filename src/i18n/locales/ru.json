@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "Использование",
       "skills_window_chip": "30 дн.",
       "skills_workspace_library": "Библиотека рабочего пространства",
-      "skills_ws_empty": "Библиотека рабочего пространства пуста — поделитесь навыком проекта, чтобы заполнить её."
+      "skills_ws_empty": "Библиотека рабочего пространства пуста — поделитесь навыком проекта, чтобы заполнить её.",
+      "skills_args_label": "Аргументы",
+      "skills_args_optional": "необязательно",
+      "skills_args_placeholder": "напр. run --l2",
+      "skills_col_action": "Действие",
+      "skills_col_lastused": "Последнее использование",
+      "skills_confirm_adopt_cta": "Внедрить в {name}",
+      "skills_confirm_no_desc": "Описание отсутствует.",
+      "skills_confirm_share_cta": "Поделиться в библиотеку",
+      "skills_confirm_use_cta": "Запустить",
+      "skills_kind_adopt": "Внедрить",
+      "skills_kind_share": "Поделиться",
+      "skills_kind_use": "Использовать",
+      "skills_never_used": "никогда",
+      "skills_use": "Использовать",
+      "skills_use_hint": "Запустить этот навык сейчас как фоновую сессию Fleet в {name}"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",

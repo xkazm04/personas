@@ -1268,7 +1268,22 @@
     "skills_sort_usage": "사용량",
     "skills_window_chip": "30일",
     "skills_workspace_library": "워크스페이스 라이브러리",
-    "skills_ws_empty": "워크스페이스 라이브러리가 비어 있습니다 — 프로젝트 스킬을 공유하여 채우세요."
+    "skills_ws_empty": "워크스페이스 라이브러리가 비어 있습니다 — 프로젝트 스킬을 공유하여 채우세요.",
+    "skills_args_label": "인수",
+    "skills_args_optional": "선택 사항",
+    "skills_args_placeholder": "예: run --l2",
+    "skills_col_action": "작업",
+    "skills_col_lastused": "마지막 사용",
+    "skills_confirm_adopt_cta": "{name}에 도입",
+    "skills_confirm_no_desc": "설명이 없습니다.",
+    "skills_confirm_share_cta": "라이브러리에 공유",
+    "skills_confirm_use_cta": "실행",
+    "skills_kind_adopt": "도입",
+    "skills_kind_share": "공유",
+    "skills_kind_use": "사용",
+    "skills_never_used": "없음",
+    "skills_use": "사용",
+    "skills_use_hint": "이 스킬을 지금 {name}에서 백그라운드 Fleet 세션으로 실행합니다"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

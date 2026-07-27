@@ -1268,7 +1268,22 @@
     "skills_sort_usage": "उपयोग",
     "skills_window_chip": "30 दिन",
     "skills_workspace_library": "वर्कस्पेस लाइब्रेरी",
-    "skills_ws_empty": "वर्कस्पेस लाइब्रेरी खाली है — इसे शुरू करने के लिए एक प्रोजेक्ट skill साझा करें।"
+    "skills_ws_empty": "वर्कस्पेस लाइब्रेरी खाली है — इसे शुरू करने के लिए एक प्रोजेक्ट skill साझा करें।",
+    "skills_args_label": "आर्ग्युमेंट",
+    "skills_args_optional": "वैकल्पिक",
+    "skills_args_placeholder": "जैसे run --l2",
+    "skills_col_action": "कार्रवाई",
+    "skills_col_lastused": "अंतिम उपयोग",
+    "skills_confirm_adopt_cta": "{name} में अपनाएँ",
+    "skills_confirm_no_desc": "कोई विवरण नहीं दिया गया।",
+    "skills_confirm_share_cta": "लाइब्रेरी में साझा करें",
+    "skills_confirm_use_cta": "डिस्पैच",
+    "skills_kind_adopt": "अपनाएँ",
+    "skills_kind_share": "साझा करें",
+    "skills_kind_use": "उपयोग",
+    "skills_never_used": "कभी नहीं",
+    "skills_use": "उपयोग",
+    "skills_use_hint": "इस स्किल को अभी {name} में बैकग्राउंड Fleet सत्र के रूप में चलाएँ"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

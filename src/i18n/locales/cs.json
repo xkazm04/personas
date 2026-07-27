@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "Využití",
       "skills_window_chip": "30 d",
       "skills_workspace_library": "Knihovna pracovního prostoru",
-      "skills_ws_empty": "Knihovna pracovního prostoru je prázdná — sdílejte projektový skill a naplňte ji."
+      "skills_ws_empty": "Knihovna pracovního prostoru je prázdná — sdílejte projektový skill a naplňte ji.",
+      "skills_args_label": "Argumenty",
+      "skills_args_optional": "volitelné",
+      "skills_args_placeholder": "např. run --l2",
+      "skills_col_action": "Akce",
+      "skills_col_lastused": "Naposledy použito",
+      "skills_confirm_adopt_cta": "Převzít do {name}",
+      "skills_confirm_no_desc": "Žádný popis.",
+      "skills_confirm_share_cta": "Sdílet do knihovny",
+      "skills_confirm_use_cta": "Spustit",
+      "skills_kind_adopt": "Převzít",
+      "skills_kind_share": "Sdílet",
+      "skills_kind_use": "Použít",
+      "skills_never_used": "nikdy",
+      "skills_use": "Použít",
+      "skills_use_hint": "Spustit tuto dovednost nyní jako sezení Fleet na pozadí v {name}"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

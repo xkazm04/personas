@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "Uso",
       "skills_window_chip": "30d",
       "skills_workspace_library": "Biblioteca del espacio de trabajo",
-      "skills_ws_empty": "La biblioteca del espacio de trabajo está vacía — comparte una skill de proyecto para poblarla."
+      "skills_ws_empty": "La biblioteca del espacio de trabajo está vacía — comparte una skill de proyecto para poblarla.",
+      "skills_args_label": "Argumentos",
+      "skills_args_optional": "opcional",
+      "skills_args_placeholder": "p. ej. run --l2",
+      "skills_col_action": "Acción",
+      "skills_col_lastused": "Último uso",
+      "skills_confirm_adopt_cta": "Adoptar en {name}",
+      "skills_confirm_no_desc": "No se proporcionó descripción.",
+      "skills_confirm_share_cta": "Compartir en la biblioteca",
+      "skills_confirm_use_cta": "Ejecutar",
+      "skills_kind_adopt": "Adoptar",
+      "skills_kind_share": "Compartir",
+      "skills_kind_use": "Usar",
+      "skills_never_used": "nunca",
+      "skills_use": "Usar",
+      "skills_use_hint": "Ejecuta esta habilidad ahora como una sesión Fleet en segundo plano en {name}"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",

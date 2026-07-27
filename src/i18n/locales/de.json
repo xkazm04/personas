@@ -13223,7 +13223,22 @@
       "skills_sort_usage": "Nutzung",
       "skills_window_chip": "30 T",
       "skills_workspace_library": "Workspace-Bibliothek",
-      "skills_ws_empty": "Die Workspace-Bibliothek ist leer — teile eine Projekt-Skill, um sie zu füllen."
+      "skills_ws_empty": "Die Workspace-Bibliothek ist leer — teile eine Projekt-Skill, um sie zu füllen.",
+      "skills_args_label": "Argumente",
+      "skills_args_optional": "optional",
+      "skills_args_placeholder": "z. B. run --l2",
+      "skills_col_action": "Aktion",
+      "skills_col_lastused": "Zuletzt verwendet",
+      "skills_confirm_adopt_cta": "In {name} übernehmen",
+      "skills_confirm_no_desc": "Keine Beschreibung vorhanden.",
+      "skills_confirm_share_cta": "In Bibliothek teilen",
+      "skills_confirm_use_cta": "Starten",
+      "skills_kind_adopt": "Übernehmen",
+      "skills_kind_share": "Teilen",
+      "skills_kind_use": "Nutzen",
+      "skills_never_used": "nie",
+      "skills_use": "Nutzen",
+      "skills_use_hint": "Diese Fähigkeit jetzt als Fleet-Sitzung im Hintergrund in {name} ausführen"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",
