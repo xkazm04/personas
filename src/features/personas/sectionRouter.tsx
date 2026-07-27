@@ -77,12 +77,22 @@ export function isRoutableSection(id: SidebarSection): id is RoutableSection {
 /**
  * Mount a section's primary surface, wrapped exactly as the pre-registry ladder
  * did: `ErrorBoundary(name) → Suspense → <Component />`.
+ *
+ * `fallback` overrides the default `null` Suspense fallback. Pass a delayed
+ * route skeleton (`RouteChunkSkeleton`) for a heavy, un-prefetched primary whose
+ * cold chunk-load would otherwise flash a blank content area (e.g. the Teams
+ * canvas); the default `null` stays right for chunks that are idle-prefetched
+ * and warm by first navigation.
  */
-export function renderSectionRoute(section: RoutableSection, onGoHome: () => void): ReactNode {
+export function renderSectionRoute(
+  section: RoutableSection,
+  onGoHome: () => void,
+  fallback: ReactNode = SectionFallback,
+): ReactNode {
   const { Component, boundaryName } = SECTION_ROUTES[section];
   return (
     <ErrorBoundary onGoHome={onGoHome} name={boundaryName}>
-      <Suspense fallback={SectionFallback}>
+      <Suspense fallback={fallback}>
         <Component />
       </Suspense>
     </ErrorBoundary>

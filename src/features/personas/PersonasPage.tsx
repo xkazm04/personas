@@ -22,6 +22,7 @@ import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequ
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -175,14 +176,38 @@ export default function PersonasPage() {
   // first-load work. Ordered most-frequently-visited first; failures ignored.
   useEffect(() => {
     if (!personasFetched) return;
-    return idlePrefetch([
+    const cancelPrefetch = idlePrefetch([
       () => import('@/features/overview/components/dashboard/OverviewPage'),
       () => import('@/features/vault/sub_credentials/manager/CredentialManager'),
       () => import('@/features/settings/components/SettingsPage'),
       () => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'),
       () => import('@/features/templates/components/DesignReviewsPage'),
       () => import('@/features/triggers/TriggersPage'),
+      // Projects (teams) submodule primaries — previously un-prefetched, so a
+      // cold first-open paid full chunk fetch+eval behind the route skeleton.
+      // Warming them here brings the Projects tabs to Overview-level cold-load
+      // parity (Overview's chunk has always led this list). Ordered by visit
+      // frequency; FactoryPage last (broadest module graph).
+      () => import('@/features/teams/sub_teamWorkspace/TeamCanvas'),
+      () => import('@/features/teams/sub_goals/GoalsPage'),
+      () => import('@/features/teams/sub_kpis/KPIsPage'),
+      () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
+      () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'),
+      () => import('@/features/plugins/dev-tools/sub_lifecycle/CompetitionPage'),
+      () => import('@/features/teams/sub_factory/FactoryPage'),
     ], { initialDelayMs: 1500 });
+    // Warm the projects list once, off the startup critical path. Every
+    // dev-tools Projects submodule (Manage / Lifecycle / Competition / Factory)
+    // and the Goals/KPIs shells gate their first paint on it, and it is not in
+    // the runStartup waves. Delayed so it doesn't join the wave-2 IPC stampede;
+    // the ghost-under-chrome still covers a click that beats this.
+    const projectsWarm = setTimeout(() => {
+      void useSystemStore.getState().fetchProjects?.().catch(silentCatch('PersonasPage:prewarmProjects'));
+    }, 2000);
+    return () => {
+      cancelPrefetch();
+      clearTimeout(projectsWarm);
+    };
   }, [personasFetched]);
 
   // Auto-resume active build when returning to personas from another section.
@@ -258,28 +283,32 @@ export default function PersonasPage() {
 
     if (sidebarSection === 'teams') {
       // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
+      // These primaries are NOT idle-prefetched at the same priority as Overview,
+      // so a cold first-open would flash a blank content area under a `null`
+      // fallback. A delayed header-only `RouteChunkSkeleton` shows calm chrome
+      // instead — invisible (150ms CSS delay) once the chunk is warm/prefetched.
       if (teamsTab === 'factory') {
-        return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={SectionFallback}><FactoryPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={<RouteChunkSkeleton />}><FactoryPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'kpis') {
-        return <ErrorBoundary onGoHome={goHome} name="KPIs"><Suspense fallback={SectionFallback}><KPIsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="KPIs"><Suspense fallback={<RouteChunkSkeleton />}><KPIsPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'goals') {
-        return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={<RouteChunkSkeleton />}><GoalsPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'projects') {
-        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={SectionFallback}><ProjectManagerPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Projects"><Suspense fallback={<RouteChunkSkeleton />}><ProjectManagerPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'lifecycle') {
-        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={SectionFallback}><LifecyclePage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Lifecycle"><Suspense fallback={<RouteChunkSkeleton />}><LifecyclePage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'competition') {
-        return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={SectionFallback}><CompetitionPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Competition"><Suspense fallback={<RouteChunkSkeleton />}><CompetitionPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'mastermind') {
-        return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={SectionFallback}><MastermindPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Mastermind"><Suspense fallback={<RouteChunkSkeleton />}><MastermindPage /></Suspense></ErrorBoundary>;
       }
-      return renderSectionRoute('teams', goHome);
+      return renderSectionRoute('teams', goHome, <RouteChunkSkeleton />);
     }
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
