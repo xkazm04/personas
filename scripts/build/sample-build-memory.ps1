@@ -35,6 +35,8 @@ $names = @('rustc', 'cargo', 'link', 'lld-link', 'rust-lld')
 $peakByName   = @{}
 $peakSingle   = @{}   # largest SINGLE process of that name, ever
 $peakTotal    = 0
+$peakArgs     = ''    # command line of the largest rustc ever seen
+$peakArgsMb   = 0
 $samples      = 0
 $start        = Get-Date
 
@@ -48,6 +50,15 @@ while (-not (Test-Path $StopFile)) {
         $total += $sum
         if (-not $peakByName.ContainsKey($n) -or $sum -gt $peakByName[$n]) { $peakByName[$n] = $sum }
         if (-not $peakSingle.ContainsKey($n) -or $max -gt $peakSingle[$n]) { $peakSingle[$n] = $max }
+        # Attribute the biggest rustc to a crate: without this you know the peak
+        # but not which compilation unit produced it, which is the only thing
+        # that tells you where to act.
+        if ($n -eq 'rustc' -and $max -gt $peakArgsMb) {
+            $peakArgsMb = $max
+            $top = $procs | Sort-Object WorkingSet64 -Descending | Select-Object -First 1
+            $ci = Get-CimInstance Win32_Process -Filter "ProcessId = $($top.Id)" -ErrorAction SilentlyContinue
+            if ($ci) { $peakArgs = $ci.CommandLine }
+        }
     }
     if ($total -gt $peakTotal) { $peakTotal = $total }
     $samples++
@@ -61,6 +72,7 @@ $result = [ordered]@{
     peak_all_rustc_mb  = if ($peakByName.ContainsKey('rustc'))   { & $mb $peakByName['rustc'] }   else { 0 }
     peak_cargo_mb      = if ($peakByName.ContainsKey('cargo'))   { & $mb $peakByName['cargo'] }   else { 0 }
     peak_linker_mb     = (@('link','lld-link','rust-lld') | ForEach-Object { if ($peakByName.ContainsKey($_)) { & $mb $peakByName[$_] } else { 0 } } | Measure-Object -Maximum).Maximum
+    peak_rustc_cmdline = $peakArgs
     samples            = $samples
     duration_s         = [math]::Round(((Get-Date) - $start).TotalSeconds, 0)
 }
