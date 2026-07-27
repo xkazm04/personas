@@ -178,14 +178,14 @@ macro_rules! declare_lifecycle {
             }
 
             /// Attempt a state transition, returning the new state or an error.
-            pub fn transition_to(self, target: $Name) -> Result<$Name, $crate::engine::lifecycle::InvalidTransition> {
+            pub fn transition_to(self, target: $Name) -> Result<$Name, $crate::lifecycle::InvalidTransition> {
                 if self == target {
                     return Ok(self);
                 }
                 if self.can_transition_to(target) {
                     Ok(target)
                 } else {
-                    Err($crate::engine::lifecycle::InvalidTransition {
+                    Err($crate::lifecycle::InvalidTransition {
                         entity: $entity,
                         from: self.as_str().to_string(),
                         to: target.as_str().to_string(),

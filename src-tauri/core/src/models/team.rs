@@ -1,4 +1,4 @@
-use crate::db::models::serde_util::double_option;
+use crate::models::serde_util::double_option;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -151,7 +151,7 @@ impl PipelineRun {
     /// Parse the status string into the canonical ExecutionState enum.
     /// Logs an error if the stored status is unrecognised so data corruption
     /// is immediately visible instead of silently mapping to `Failed`.
-    pub fn state(&self) -> crate::engine::types::ExecutionState {
+    pub fn state(&self) -> crate::types::ExecutionState {
         match self.status.parse() {
             Ok(s) => s,
             Err(_) => {
@@ -160,7 +160,7 @@ impl PipelineRun {
                     raw_status = %self.status,
                     "Unknown pipeline run status in DB — treating as Failed"
                 );
-                crate::engine::types::ExecutionState::Failed
+                crate::types::ExecutionState::Failed
             }
         }
     }

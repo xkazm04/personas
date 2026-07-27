@@ -5,8 +5,8 @@ use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::serde_util::double_option;
-use crate::engine::lifecycle::TriggerStatus;
+use crate::models::serde_util::double_option;
+use crate::lifecycle::TriggerStatus;
 
 // ============================================================================
 // Triggers
@@ -526,7 +526,7 @@ impl PersonaTrigger {
     /// legacy plaintext formats.
     fn decrypted_config_json(&self) -> Option<String> {
         let raw = self.config.as_deref()?;
-        match crate::engine::crypto::decrypt_trigger_config(raw) {
+        match crate::crypto::decrypt_trigger_config(raw) {
             Ok(decrypted) => Some(decrypted),
             Err(e) => {
                 tracing::warn!(

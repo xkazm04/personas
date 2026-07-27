@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::LabRunStatus;
+use crate::models::LabRunStatus;
 
 // =============================================================================
 // Genome Breeding Run

@@ -53,8 +53,12 @@ pub mod cost;
 pub mod connector_explorer;
 pub mod credential_design;
 pub mod credential_negotiator;
-pub mod cron;
-pub mod crypto;
+// Moved to `personas-core` (crate-split step 3). Re-exported so every existing
+// `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
+// keeps resolving — these six modules are needed by `db::models` and
+// `validation`, which sit below the engine, so leaving them here forced the
+// whole engine into the bottom layer of the graph.
+pub use personas_core::{cron, crypto, lifecycle, trace, types, url_safety};
 pub mod curation_scheduler;
 pub mod system_ops;
 pub mod db_query;
@@ -124,7 +128,6 @@ pub mod kb_ingest;
 #[cfg(feature = "ml")]
 pub mod kb_scan;
 pub mod knowledge;
-pub mod lifecycle;
 pub mod limits;
 pub mod llm_topology;
 pub mod logger;
@@ -212,9 +215,6 @@ pub mod tool_runner;
 pub mod topology_graph;
 pub mod topology_heuristic;
 pub mod topology_types;
-pub mod trace;
-pub mod types;
-pub mod url_safety;
 #[cfg(feature = "ml")]
 pub mod vector_store;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.
@@ -262,13 +262,11 @@ pub(crate) use self::execution_engine::persist::persist_status_update;
 use self::execution_engine::persist::{persist_status_if_not_final, persist_status_if_running};
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
-/// Hard engine-level ceiling for any single execution (20 minutes).
-/// This is a non-overridable safety net that prevents runaway executions
-/// regardless of per-persona timeout configuration.
-pub const ENGINE_MAX_EXECUTION_SECS: u64 = 20 * 60;
-
-/// Engine ceiling expressed in milliseconds for validation and clamping.
-pub const ENGINE_MAX_EXECUTION_MS: i32 = (ENGINE_MAX_EXECUTION_SECS * 1000) as i32;
+/// Hard engine-level execution ceilings. Defined in `personas-core` (see
+/// `core/src/limits.rs`) because `validation` clamps against them from below
+/// the engine; re-exported here so `crate::engine::ENGINE_MAX_EXECUTION_*`
+/// keeps working.
+pub use personas_core::limits::{ENGINE_MAX_EXECUTION_MS, ENGINE_MAX_EXECUTION_SECS};
 
 /// Run an execution with a hard engine-level timeout ceiling.
 ///

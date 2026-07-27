@@ -22,7 +22,31 @@
 //! is core → db → engine, because the back-edges (db→engine, db→commands) are
 //! only 3-8% of the forward edges and are mostly pure types.
 
+// Lint posture for code that arrived here by `git mv`.
+//
+// `models/`, `validation/`, and the six engine modules were moved verbatim —
+// only module paths were rewritten, no logic touched. Clippy flags a handful of
+// long-standing style issues in them, and a code-motion commit is the wrong
+// place to fix those: `large_enum_variant` and `should_implement_trait` would
+// change a public API, and the doc lints want hand-aligned doc tables
+// de-aligned. Allowed here, tracked as separate cleanup. Do NOT extend this
+// list for newly written code.
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::doc_overindented_list_items)]
+#![allow(clippy::large_enum_variant)]
+#![allow(clippy::should_implement_trait)]
+
+pub mod cron;
+pub mod crypto;
 pub mod error;
 pub mod error_taxonomy;
+pub mod lifecycle;
+pub mod limits;
+pub mod models;
+pub mod pool;
 pub mod retrieval;
+pub mod trace;
+pub mod types;
+pub mod url_safety;
 pub mod utils;
+pub mod validation;

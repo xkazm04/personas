@@ -14,7 +14,7 @@ use rsa::{
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::db::DbPool;
+use crate::pool::DbPool;
 use crate::error::AppError;
 
 // ---------------------------------------------------------------------------

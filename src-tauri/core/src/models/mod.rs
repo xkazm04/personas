@@ -29,7 +29,7 @@ mod json_column;
 mod knowledge;
 #[cfg(feature = "ml")]
 mod knowledge_base;
-pub(crate) mod lab;
+pub mod lab;
 mod llm_spend;
 mod memory;
 mod message;
@@ -51,7 +51,7 @@ mod research_lab;
 mod review;
 mod rotation;
 mod saved_views;
-pub(crate) mod serde_util;
+pub mod serde_util;
 mod settings_audit_log;
 mod shared_event;
 #[cfg(feature = "p2p")]

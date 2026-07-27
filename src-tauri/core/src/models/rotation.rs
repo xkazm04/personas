@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::engine::lifecycle::RotationEntryStatus;
+use crate::lifecycle::RotationEntryStatus;
 
 // ============================================================================
 // Credential Rotation Policy

@@ -1,4 +1,4 @@
-use crate::engine::ENGINE_MAX_EXECUTION_MS;
+use crate::limits::ENGINE_MAX_EXECUTION_MS;
 
 use super::contract::{ValidationError, ValidationRule};
 

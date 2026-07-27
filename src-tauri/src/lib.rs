@@ -40,7 +40,13 @@ pub mod test_automation;
 #[cfg(feature = "desktop")]
 mod tray;
 pub use personas_core::utils;
-mod validation;
+// Moved to `personas-core` (crate-split step 3) — `db::models` validates
+// through it, so it had to sit below the data layer.
+pub use personas_core::validation;
+// `declare_lifecycle!` is `#[macro_export]`ed from `personas_core::lifecycle`,
+// which lands it at that crate's root. Re-export so `crate::declare_lifecycle!`
+// keeps working (engine::process_session is the remaining caller here).
+pub use personas_core::declare_lifecycle;
 mod webbuild;
 
 use std::collections::HashMap;

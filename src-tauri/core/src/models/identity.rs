@@ -4,7 +4,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::serde_util::double_option;
+use crate::models::serde_util::double_option;
 use crate::error::AppError;
 
 // -- Enums ---------------------------------------------------------------
@@ -14,7 +14,7 @@ use crate::error::AppError;
 /// # Why three variants
 ///
 /// `Manual` and `Revoked` are both currently set by code paths
-/// ([`crate::db::repos::resources::identity::add_trusted_peer`] hardcodes
+/// (`db::repos::resources::identity::add_trusted_peer` hardcodes
 /// `Manual`; [`revoke_peer_trust`] sets `Revoked`). `Verified` is
 /// **aspirational** — the variant exists so the type system is ready for
 /// the planned signed-challenge / QR-fingerprint verification flow

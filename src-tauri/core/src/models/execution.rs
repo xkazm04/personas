@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use super::Json;
-use crate::engine::types::{ExecutionState, ToolCallStep};
+use crate::types::{ExecutionState, ToolCallStep};
 
 // ============================================================================
 // Executions

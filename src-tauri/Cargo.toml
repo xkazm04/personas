@@ -37,6 +37,9 @@ default = []
 # Use this for fast local builds (~5 min faster than desktop-full).
 # All #[cfg(feature = "desktop")] gates pass with this feature.
 desktop = [
+    # Forwards the OS-keychain code path in personas-core::crypto. Without this,
+    # that crate compiles its mobile "keychain unavailable" stub instead.
+    "personas-core/desktop",
     "tauri/tray-icon",
     "dep:arboard",
     "dep:notify",
@@ -53,7 +56,7 @@ desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
 ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
-p2p = ["dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
+p2p = ["personas-core/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing.

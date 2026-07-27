@@ -147,14 +147,14 @@ pub struct TraceCollector {
     persona_id: String,
     chain_trace_id: Option<String>,
     epoch: Instant,
-    pub(crate) spans: Mutex<SpanStore>,
+    pub spans: Mutex<SpanStore>,
     root_span_id: String,
     evicted_span_count: AtomicU64,
 }
 
 /// Internal storage pairing a span vec with an O(1) span_id -> index lookup.
-pub(crate) struct SpanStore {
-    pub(crate) vec: Vec<TraceSpan>,
+pub struct SpanStore {
+    pub vec: Vec<TraceSpan>,
     index: HashMap<String, usize>,
 }
 

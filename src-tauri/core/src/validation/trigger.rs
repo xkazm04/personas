@@ -145,7 +145,7 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                     if let Some(expr) = parsed.get(key).and_then(|v| v.as_str()) {
                         let trimmed = expr.trim();
                         if !trimmed.is_empty() {
-                            if let Err(reason) = crate::engine::cron::parse_cron(trimmed) {
+                            if let Err(reason) = crate::cron::parse_cron(trimmed) {
                                 errors.push(ValidationError::new(
                                     format!("config.{key}"),
                                     "cron",
@@ -264,7 +264,7 @@ pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<Val
         });
     if let Some(u) = url {
         if !u.is_empty() {
-            if let Err(reason) = crate::engine::url_safety::validate_url_safety(&u) {
+            if let Err(reason) = crate::url_safety::validate_url_safety(&u) {
                 return vec![ValidationError::new(
                     "config.url",
                     "url_safety",

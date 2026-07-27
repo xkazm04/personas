@@ -25,7 +25,7 @@ use std::sync::Arc;
 /// covers CGNAT (`100.64.0.0/10`, e.g. Tailscale) and IPv4-mapped-IPv6 private
 /// addresses. Other modules (`healthcheck`, `ssrf_safe_dns`) delegate here so
 /// the historical divergent copies cannot drift and reopen an SSRF bypass.
-pub(crate) fn is_private_ip(ip: IpAddr) -> bool {
+pub fn is_private_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => {
             v4.is_loopback()              // 127.0.0.0/8

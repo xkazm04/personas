@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{Persona, PersonaToolDefinition, PersonaTrustLevel, PersonaTrustOrigin};
+use crate::models::{Persona, PersonaToolDefinition, PersonaTrustLevel, PersonaTrustOrigin};
 
 // =============================================================================
 // ExecutionState -- canonical state machine for execution status
@@ -320,12 +320,12 @@ pub struct ExecutionResult {
     pub log_file_path: Option<String>,
     pub claude_session_id: Option<String>,
     pub duration_ms: u64,
-    pub execution_flows: Option<crate::db::models::Json<serde_json::Value>>,
+    pub execution_flows: Option<crate::models::Json<serde_json::Value>>,
     pub model_used: Option<String>,
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub cost_usd: f64,
-    pub tool_steps: Option<crate::db::models::Json<Vec<ToolCallStep>>>,
+    pub tool_steps: Option<crate::models::Json<Vec<ToolCallStep>>>,
     /// Trace ID for this execution (used for chain trace propagation).
     pub trace_id: Option<String>,
     /// Frozen config snapshot assembled at the validate stage.
@@ -545,7 +545,7 @@ impl EphemeralPersona {
             trust_verified_at: None,
             trust_score: 1.0,
             parameters: None,
-            gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
+            gateway_exposure: crate::models::PersonaGatewayExposure::LocalOnly,
             template_category: None,
             cli_awareness_enabled: false,
             setup_status: "ready".to_string(),

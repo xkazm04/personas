@@ -7,8 +7,10 @@ pub mod cdc;
 pub(crate) mod credential_fields;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
-#[allow(dead_code)]
-pub mod models;
+// Moved to `personas-core` (crate-split step 3): 14k LOC of pure data structs
+// that `engine::types` / `validation` also need. Re-exported so every
+// `crate::db::models::…` path resolves unchanged.
+pub use personas_core::models;
 pub mod perf;
 pub mod query_builder;
 #[allow(dead_code)]
@@ -24,7 +26,10 @@ use std::time::{Duration, Instant};
 
 use crate::error::AppError;
 
-pub type DbPool = Pool<SqliteConnectionManager>;
+// Defined in `personas-core` (`core/src/pool.rs`) — `crypto`'s credential
+// migrations take a `&DbPool` and sit below this module. Pool construction and
+// instrumentation stay here.
+pub use personas_core::pool::DbPool;
 
 /// Connection timeout for pool acquisitions. Past this, `pool.get()` fails
 /// with a `r2d2::Error` instead of blocking the IPC worker indefinitely —
