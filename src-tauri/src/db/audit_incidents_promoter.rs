@@ -34,7 +34,7 @@ use crate::db::models::{
 };
 use crate::db::repos::execution::audit_incidents as repo;
 use crate::db::DbPool;
-use crate::engine::byom::ProviderAuditEntry;
+use crate::db::byom::ProviderAuditEntry;
 
 /// Env var that gates incident promotion. Unset → every promoter is a no-op.
 pub const PROMOTION_ENV: &str = "PERSONAS_INCIDENTS_PROMOTION";

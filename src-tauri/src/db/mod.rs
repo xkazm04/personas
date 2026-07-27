@@ -9,6 +9,8 @@ pub mod cdc;
 // only on `db`, `db::repos` and `personas-core`, while `db::repos` calls INTO
 // them — an inversion that made the data layer impossible to extract. `engine`
 // re-exports all six, so `crate::db::chain::…` etc. resolve unchanged.
+pub mod audit_incidents_promoter;
+pub mod byom;
 pub mod chain;
 #[cfg(feature = "ml")]
 pub mod embedder;

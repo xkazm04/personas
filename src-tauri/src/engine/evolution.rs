@@ -30,41 +30,9 @@ static EVOLUTION_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard
 // Types
 // =============================================================================
 
-/// Status of an evolution cycle.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "snake_case")]
-pub enum EvolutionCycleStatus {
-    Breeding,
-    Evaluating,
-    Promoting,
-    Completed,
-    Failed,
-}
-
-impl EvolutionCycleStatus {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Breeding => "breeding",
-            Self::Evaluating => "evaluating",
-            Self::Promoting => "promoting",
-            Self::Completed => "completed",
-            Self::Failed => "failed",
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn from_db(s: &str) -> Self {
-        match s {
-            "breeding" => Self::Breeding,
-            "evaluating" => Self::Evaluating,
-            "promoting" => Self::Promoting,
-            "completed" => Self::Completed,
-            "failed" => Self::Failed,
-            _ => Self::Failed,
-        }
-    }
-}
+// Moved to `personas_core::evolution_status` — `db::repos::lab::evolution`
+// persists this value and cannot depend on the evolution engine above it.
+pub use personas_core::evolution_status::EvolutionCycleStatus;
 
 /// Summary of an evolution cycle result.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

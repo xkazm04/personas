@@ -16,7 +16,7 @@ use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::provider::EngineKind;
+use personas_core::engine_kind::EngineKind;
 
 /// Settings key for the BYOM policy JSON.
 pub const BYOM_POLICY_KEY: &str = "byom_policy";

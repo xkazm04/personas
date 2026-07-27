@@ -93,7 +93,7 @@ pub fn delete_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<bool, AppEr
 /// no longer silent — [`composite_and_coverage`] pairs this value with a
 /// `partial_coverage` flag surfaced on the rating row so the UI can annotate it.
 fn composite_from_parts(ta: Option<f64>, oq: Option<f64>, pc: Option<f64>) -> Option<f64> {
-    use crate::engine::eval::{
+    use personas_core::score_weights::{
         WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE, WEIGHT_TOOL_ACCURACY,
     };
     let mut sum = 0.0;

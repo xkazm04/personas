@@ -38,10 +38,14 @@
 
 pub mod cron;
 pub mod crypto;
+pub mod digest_config;
+pub mod engine_kind;
 pub mod error;
 pub mod events;
+pub mod evolution_status;
 pub mod error_taxonomy;
 pub mod healing;
+pub mod healthcheck_ledger;
 pub mod ipc_gauge;
 pub mod lifecycle;
 pub mod limits;
@@ -49,6 +53,7 @@ pub mod models;
 pub mod pool;
 pub mod redact;
 pub mod retrieval;
+pub mod score_weights;
 pub mod run_budget;
 pub mod scheduler;
 pub mod topology_graph;

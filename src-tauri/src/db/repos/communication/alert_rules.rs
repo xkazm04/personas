@@ -284,7 +284,7 @@ pub fn create_fired_alert(db: &DbPool, alert: &FiredAlert) -> Result<(), AppErro
         // Best-effort: promote into the cross-source incidents inbox. No-op
         // unless PERSONAS_INCIDENTS_PROMOTION=1; failures are logged but never
         // fail the audit insert.
-        crate::engine::audit_incidents_promoter::promote_fired_alert(db, alert);
+        crate::db::audit_incidents_promoter::promote_fired_alert(db, alert);
         Ok(())
     })
 }

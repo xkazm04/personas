@@ -2,7 +2,7 @@ use rusqlite::params;
 
 use crate::db::models::{EvolutionCycle, EvolutionPolicy, UpsertEvolutionPolicyInput};
 use crate::db::DbPool;
-use crate::engine::evolution::EvolutionCycleStatus;
+use personas_core::evolution_status::EvolutionCycleStatus;
 use crate::error::AppError;
 
 // -- Row mappers ------------------------------------------------

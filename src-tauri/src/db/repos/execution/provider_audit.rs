@@ -2,7 +2,7 @@ use rusqlite::params;
 use ts_rs::TS;
 
 use crate::db::DbPool;
-use crate::engine::byom::ProviderAuditEntry;
+use crate::db::byom::ProviderAuditEntry;
 use crate::error::AppError;
 
 /// Insert a provider audit log entry (append-only).
@@ -34,7 +34,7 @@ pub fn insert(pool: &DbPool, entry: &ProviderAuditEntry) -> Result<(), AppError>
         // Best-effort: promote provider failovers into the incidents inbox.
         // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `was_failover=1`
         // rows surface (see `audit_incidents_promoter::promote_provider_audit`).
-        crate::engine::audit_incidents_promoter::promote_provider_audit(pool, entry);
+        crate::db::audit_incidents_promoter::promote_provider_audit(pool, entry);
         Ok(())
     })
 }

@@ -61,7 +61,7 @@ pub fn insert(
                 error_kind: error_kind.map(|s| s.to_string()),
                 created_at: now.clone(),
             };
-            crate::engine::audit_incidents_promoter::promote_tool_audit(pool, &entry);
+            crate::db::audit_incidents_promoter::promote_tool_audit(pool, &entry);
         }
         Ok(())
     })

@@ -846,7 +846,7 @@ pub fn append_healthcheck_metadata(
             // Delegate to rotation engine for ring-buffer append logic (entry
             // construction, FIFO overflow, error classification). `HealthcheckEntry`
             // is a type alias for `LedgerHealthEntry`, so no conversion is needed.
-            let updated = crate::engine::rotation::append_healthcheck_entry(
+            let updated = personas_core::healthcheck_ledger::append_healthcheck_entry(
                 &ledger.healthcheck_results,
                 success,
                 message,

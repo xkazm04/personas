@@ -53,7 +53,7 @@ pub fn insert(
             reason: reason.map(|s| s.to_string()),
             created_at: now.clone(),
         };
-        crate::engine::audit_incidents_promoter::promote_policy_event(pool, &event);
+        crate::db::audit_incidents_promoter::promote_policy_event(pool, &event);
 
         Ok(id)
     })

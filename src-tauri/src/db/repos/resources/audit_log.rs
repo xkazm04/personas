@@ -87,7 +87,7 @@ fn insert_inner(
             detail: sanitized_detail.clone(),
             created_at: now.clone(),
         };
-        crate::engine::audit_incidents_promoter::promote_credential_audit(pool, &entry);
+        crate::db::audit_incidents_promoter::promote_credential_audit(pool, &entry);
 
         Ok(())
     })

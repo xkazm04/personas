@@ -15,7 +15,6 @@ pub mod cli_session_awareness;
 pub mod api_proxy;
 #[cfg(feature = "desktop")]
 pub mod app_focus;
-pub mod audit_incidents_promoter;
 pub mod auto_rollback;
 pub mod auto_triage;
 pub mod autonomy;
@@ -26,7 +25,6 @@ pub mod build_session;
 #[cfg(feature = "p2p")]
 pub mod bundle;
 pub mod bus;
-pub mod byom;
 pub mod capability;
 pub mod capability_contract;
 pub mod chunker;
@@ -67,7 +65,9 @@ pub use personas_core::{cron, crypto, lifecycle, trace, types, url_safety};
 pub use personas_core::{healing, limits, redact, run_budget, scheduler, topology_graph};
 // Relocated into `db` (crate-split step 4c) — see the note there. Re-exported
 // so `crate::engine::chain::…` and friends keep resolving.
-pub use crate::db::{chain, memory_recall, model_routing, quality_gate};
+pub use crate::db::{
+    audit_incidents_promoter, byom, chain, memory_recall, model_routing, quality_gate,
+};
 #[cfg(feature = "ml")]
 pub use crate::db::embedder;
 #[cfg(feature = "ml")]

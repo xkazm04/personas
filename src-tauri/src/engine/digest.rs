@@ -16,31 +16,11 @@ use crate::db::DbPool;
 // Digest configuration (persisted in app_settings as JSON)
 // ---------------------------------------------------------------------------
 
-/// User-configurable digest settings, stored as JSON under the
-/// `performance_digest` app_settings key.
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct DigestConfig {
-    /// Whether the digest is enabled.
-    pub enabled: bool,
-    /// Cadence: "daily" or "weekly".
-    pub cadence: String,
-    /// JSON array of notification channels (same format as persona notification_channels).
-    /// When empty, only OS notifications are sent.
-    #[serde(default)]
-    pub channels: Option<String>,
-}
+// The config shape moved to `personas_core::digest_config` so
+// `db::settings_keys` can validate the stored JSON without depending on this
+// module (which needs `notifications`). Re-exported: callers unchanged.
+pub use personas_core::digest_config::DigestConfig;
 
-impl Default for DigestConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            cadence: "weekly".to_string(),
-            channels: None,
-        }
-    }
-}
 
 /// Load digest config from app_settings. Returns default (disabled) if unset.
 pub fn load_config(pool: &DbPool) -> DigestConfig {

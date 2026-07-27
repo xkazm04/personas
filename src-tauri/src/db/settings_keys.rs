@@ -901,14 +901,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // The consumer parses the SAME type, so any value we reject here would
         // also fail to load — no valid write is newly blocked.
         // -------------------------------------------------------------------
-        BYOM_POLICY => validate_json_as::<crate::engine::byom::ByomPolicy>(key, value),
+        BYOM_POLICY => validate_json_as::<crate::db::byom::ByomPolicy>(key, value),
         MODEL_ROUTING_RULES => {
             validate_json_as::<Vec<crate::db::model_routing::ModelRoutingRule>>(key, value)
         }
         QUALITY_GATE_CONFIG => {
             validate_json_as::<crate::db::quality_gate::QualityGateConfig>(key, value)
         }
-        PERFORMANCE_DIGEST => validate_json_as::<crate::engine::digest::DigestConfig>(key, value),
+        PERFORMANCE_DIGEST => validate_json_as::<personas_core::digest_config::DigestConfig>(key, value),
         GLOBAL_MODEL_PROFILE => {
             validate_json_as::<personas_core::types::ModelProfile>(key, value)
         }

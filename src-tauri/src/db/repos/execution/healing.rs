@@ -239,7 +239,7 @@ pub fn create_with_source(
         // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `status='open'`
         // and severity ≥ medium surfaces (see
         // `audit_incidents_promoter::promote_healing_issue`).
-        crate::engine::audit_incidents_promoter::promote_healing_issue(pool, &issue);
+        crate::db::audit_incidents_promoter::promote_healing_issue(pool, &issue);
 
         Ok(Some(issue))
     })
@@ -795,7 +795,7 @@ pub fn create_audit_entry(
         detail: detail.map(|s| s.to_string()),
         created_at: now,
     };
-    crate::engine::audit_incidents_promoter::promote_healing_audit(pool, &entry);
+    crate::db::audit_incidents_promoter::promote_healing_audit(pool, &entry);
 }
 
 /// List healing audit log entries, optionally filtered by persona_id.
