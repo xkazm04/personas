@@ -29,6 +29,38 @@ Personas.
 | LLM tracking | `langfuse`, `helicone`, `langsmith`, `tracklight` (LightTrack) |
 | Analytics (occasionally offered under observability) | `posthog`, `mixpanel`, `amplitude`, `segment` |
 
+## CLI auth (machine-auth connectors)
+
+Some services' most efficient integration is their **native CLI, authed
+interactively by the user** — no token ever enters the Vault, the repo, or
+this skill. The auth state lives on the machine (the CLI's own keychain) and
+readiness is a *probe*, not a stored secret:
+
+| Service | Login (user runs it) | Probe (skill runs it; exit 0 = authed) |
+|---|---|---|
+| Vercel | `vercel login` | `vercel whoami` |
+| Netlify | `netlify login` | `netlify status` |
+| Cloudflare | `wrangler login` | `wrangler whoami` |
+| Fly.io | `flyctl auth login` | `flyctl auth whoami` |
+| Railway | `railway login` | `railway whoami` |
+| GitHub | `gh auth login` | `gh auth status` |
+
+Doctrine:
+
+- **CLI auth satisfies the local/agent-deploy slot** of a hosting or VCS
+  dimension. It does NOT satisfy CI (non-interactive — CI needs a token as a
+  CI secret by NAME) and it is **per-machine** (useless to remote agents).
+  Offer both modes per their environment, never one as covering the other.
+- In standalone mode, an unauthed CLI is a 60-second fix: tell the user to
+  run `! <provider> login` in this session, then re-probe. Prefer this over
+  skipping the dimension.
+- The manifest records the mode per accepted env: `"authMode": "cli"` or
+  `"token"` — so re-runs trust the probe result and don't re-ask.
+- App-side, this maps to the readiness model's probe-class connectors
+  (machine-state probes like `connector_readiness.rs`'s GlobalProbe): "CLI
+  authed on this machine" is a legitimate ready state, distinct from a Vault
+  credential binding.
+
 ## The offer flow
 
 1. **An existing connector fits** (context block lists a matching

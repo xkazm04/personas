@@ -88,18 +88,39 @@ verification step (build passes; the tool's init path runs without a value
 present — degrade, don't crash).
 
 ### 6. Hosting  *(deliberately before CI — CI's deploy step needs a target)*
+
+Two auth modes, by environment — never conflate them:
+
+| Deploy path | Right auth | Why |
+|---|---|---|
+| Local / agent-driven deploys, previews | **CLI auth** on this machine (`vercel login` once) | interactive login; the secret never touches the Vault, the repo, or this skill |
+| CI deploys (test/production) | **Token** stored as a CI secret, referenced by NAME | CI is non-interactive; a CLI login session doesn't exist there |
+
+CLI auth is per-machine: perfect for local + Fleet-dispatched agent deploys,
+useless for CI and remote agents. Never present it as covering the CI story.
+
 - **Assess**: deploy configs present (vercel/netlify/fly/railway configs,
   Dockerfile, compose); which envs have a real target today (test_env_url in
-  the snapshot = test exists).
-- **Offer** (per env): Skip env · Use existing connector <name> (when the
-  context block has a hosting-type credential) · Add hosting config for
-  <detected-fit provider> (recommended by stack fit: static/Next→Vercel or
-  Netlify or Cloudflare; container/service→Fly, Railway, DigitalOcean; VM/
-  cloud→AWS) · Local env usually just needs a documented `dev` command — offer
-  "document local run" not "host local".
+  the snapshot = test exists); AND probe the provider CLI — binary present +
+  authed (`vercel whoami`, `netlify status`, `wrangler whoami`,
+  `flyctl auth whoami`, `railway whoami`, `gh auth status`; exit 0 = authed).
+  An authed CLI is a legitimate ready state for the local/agent slot.
+- **Offer** (per env): Skip env · **Authenticate the <provider> CLI now**
+  (recommended for local/agent deploys when the CLI probe failed — in
+  standalone mode tell the user to run `! <provider> login` right in this
+  session, then re-probe; the login IS the entire setup) · Use existing
+  connector <name> (when the context block has a hosting-type credential —
+  covers the CI slot) · Add hosting config for <detected-fit provider>
+  (recommended by stack fit: static/Next→Vercel or Netlify or Cloudflare;
+  container/service→Fly, Railway, DigitalOcean; VM/cloud→AWS) · Local env
+  usually just needs a documented `dev` command — offer "document local run"
+  not "host local".
 - **Execute**: idiomatic config for the chosen provider + a DEPLOY note (env
-  vars by NAME, deploy command); never hardcode secrets.
-- **Done**: hosting present for the accepted envs.
+  vars by NAME, deploy command); never hardcode secrets. When CLI auth was
+  chosen, verify with the whoami probe and record it; when token/CI was
+  chosen, the token is a CI secret by NAME (`VERCEL_TOKEN`), never a value.
+- **Done**: hosting present for the accepted envs; the manifest records
+  `authMode` (`"cli"` / `"token"`) per accepted env so re-runs don't re-ask.
 
 ### 7. Database & migrations
 - **Assess**: persistence detected (engine, ORM), migrations framework
@@ -126,20 +147,57 @@ present — degrade, don't crash).
   must fill real hosts.
 - **Done**: auth present.
 
-### 9. CI  *(after hosting so auto-deploy has a target)*
-- **Assess**: workflow files, which checks actually gate merges, deploy
-  automation presence; the repo's remote (GitHub vs GitLab decides the
-  connector and workflow dialect).
-- **Offer**: Skip · Checks-only pipeline: build+test+lint on PR (recommended
-  first rung) · Checks + auto-deploy to the TEST environment on main
-  (needs a test hosting target from §6; uses the GitHub/GitLab connector) ·
-  Full gated delivery (mature repos).
+### 9. CI  *(after hosting so auto-deploy has a target; env-scoped like the
+rest of Group 2 — the delivery story resolves per environment)*
+
+The ladder is five observable rungs. "A workflow exists" is telemetry, not a
+gate — the signal that matters is whether checks are REQUIRED before merge.
+Environments are separated by **artifact promotion** (tag/release/approval),
+never by long-lived `test`/`production` code branches — branch divergence is
+poison when parallel agents produce many merges a day. Doctrine, stated once
+in the round intro so the user isn't asked to design it: *trunk-based +
+short-lived branches (+ merge queue at scale); env separation by promotion,
+not branches.*
+
+- **Rung 0 — local gates**: pre-commit/pre-push hooks (lefthook-class).
+  First line when agents commit constantly; nearly free.
+- **Rung 1 — checks**: build+test+lint workflow runs on PR.
+- **Rung 2 — gated**: those checks are *required* — branch protection on,
+  direct pushes to the default branch blocked or check-gated. This rung is an
+  API call, not homework: execute it via the bound GitHub/GitLab connector or
+  an authed `gh` CLI (`gh api` branch-protection endpoint; probe with
+  `gh auth status` per §6's CLI-auth doctrine).
+- **Rung 3 — delivery**: per-PR **preview deploys** (Vercel/Netlify give this
+  free — the best way to review agent work) + auto-deploy to the TEST env on
+  merge to main (needs a test hosting target from §6).
+- **Rung 4 — promoted**: production is an explicit *promotion* of the
+  artifact already validated in test — tag/release trigger or approval
+  environment — with release tagging into the monitoring tool (§12) and a
+  documented rollback. Where the repo has an eval suite (§11), offer wiring
+  it as a promotion gate.
+
+- **Assess**: workflow files; whether checks are REQUIRED (branch
+  protection / required checks — readable via `gh api`), not merely present;
+  preview-deploy presence; deploy automation per env; merge-queue presence;
+  the repo's remote (GitHub vs GitLab decides connector and dialect). Signs
+  of parallel-agent delivery (`.claude/` dir, active-runs ledger, high
+  commit frequency) make the agent-parallel overlay relevant.
+- **Offer** as TWO decisions, not one: **(a) Gating** — Skip · Make checks
+  required before merge (recommended; executable now via connector/CLI) ·
+  add merge queue too (agent-swarm repos). **(b) Delivery** — per env, only
+  for envs with a §6 hosting target: Skip env · Preview deploys on PR ·
+  Auto-deploy test on main · Production promotion flow (tag/approval;
+  mature repos).
 - **Execute**: idiomatic workflow files; secrets referenced by NAME as CI
   secrets, never inline; the deploy job targets the test env ONLY unless the
-  user explicitly chose production.
-- **Done**: CI level checks→gated→delivery; the GitHub/GitLab credential is
-  bound as the project's `pr_credential_id` (connectors.md § Binding closes
-  the loop).
+  user explicitly chose production; branch-protection/merge-queue changes
+  applied via API and verified by reading the setting back.
+- **Done**: record sub-signals in the manifest, not one opaque level —
+  `{ "checks": true, "gating": true, "preview": false, "testDeploy": true,
+  "prodPromotion": "manual" | "tag" | "none", "mergeQueue": false }` — so
+  re-runs and the wall know exactly which rung is missing. The GitHub/GitLab
+  credential is bound as the project's `pr_credential_id` (connectors.md
+  § Binding closes the loop).
 
 ---
 

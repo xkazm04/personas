@@ -92,7 +92,17 @@ and wait for typed input). Rules:
 - Connector-flavored options come from `references/connectors.md`: prefer an
   EXISTING user connector by name when the context block lists one, offer
   "add a new <type> connector in Personas Vault first" when none fits, and
-  never invent credentials — wiring in code always reads env var NAMES.
+  never invent credentials — wiring in code always reads env var NAMES. For
+  hosting/VCS tools with a native CLI, an **authed CLI is a first-class
+  option** (connectors.md § CLI auth): probe it during assessment, and when
+  unauthed offer "run `! <provider> login` now" — it covers the local/agent
+  slot; a token as a named CI secret covers CI.
+- **CI is two decisions, not one** (dimensions.md §9): (a) *gating* — make
+  checks required before merge (executable now via connector/`gh` CLI; offer
+  merge queue for agent-swarm repos); (b) *delivery* — per environment, only
+  for envs with a hosting target. State the branching doctrine in the round
+  intro (trunk-based + promotion, not env branches) instead of asking the
+  user to design it.
 - After the last round, echo a one-screen **decision ledger** (dimension →
   chosen path or skip) before any execution starts. This is the contract for
   the rest of the run.
@@ -170,6 +180,14 @@ commits — it is publishable by design):
   }
 }
 ```
+
+Two dimensions carry extra structured fields (see `references/dimensions.md`):
+hosting records `"authMode": "cli" | "token"` per accepted env (an authed
+provider CLI is a legitimate ready state — re-runs re-probe instead of
+re-asking); CI records its observable sub-signals instead of one opaque
+level — `"ci": { "checks": true, "gating": true, "preview": false,
+"testDeploy": true, "prodPromotion": "manual", "mergeQueue": false }`.
+All still public-safe: booleans and mode names, never tokens or URLs.
 
 PUBLIC-SAFE means levels + tool *names* only — NEVER credential ids, URLs,
 env values, costs (`app-cost.json` stays private/gitignored), or local paths.
