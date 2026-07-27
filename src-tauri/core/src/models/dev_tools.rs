@@ -236,12 +236,42 @@ pub struct WorkspaceKnowledge {
 pub struct WorkspacePracticeAdoption {
     pub practice_id: String,
     pub project_id: String,
-    /// 'na' | 'proposed' | 'dispatched' | 'adopted' | 'diverged' (DB CHECK).
+    /// 'na' | 'proposed' | 'to_process' | 'dispatched' | 'adopted' | 'diverged'
+    /// (DB CHECK). `to_process` is the execution queue seeded when an
+    /// ACTIONABLE practice (pitfall/pattern) is adopted.
     pub state: String,
     /// Dedup key of the adopt Fleet dispatch (`workspace:<practice>:<slug>`).
     pub fleet_key: Option<String>,
     pub note: Option<String>,
     pub last_verified_at: Option<String>,
+    pub updated_at: String,
+}
+
+/// Per-scope harvest coverage for one member repo — the answer to "how much of
+/// this codebase has the library actually read?".
+///
+/// Without this row a harvest run cannot tell where it has already been, so
+/// every run re-reads the cheapest territory (root configs), finds it already
+/// proposed via the dedup list, and returns less than the run before it. The
+/// coverage table is what makes successive runs ADVANCE instead of decay, and
+/// what lets the UI report an unread surface instead of implying completeness.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct WorkspaceHarvestCoverage {
+    pub project_id: String,
+    /// Stable scope slug (`group:execution-orchestration`, `repo-global`, …).
+    pub scope_id: String,
+    pub scope_label: String,
+    /// 'group' | 'directory' | 'global'.
+    pub kind: String,
+    /// Files in the territory — the denominator behind a coverage claim.
+    pub file_count: i64,
+    /// NULL means never harvested. That is the point of the row existing.
+    pub last_harvested_at: Option<String>,
+    pub last_run_dir: Option<String>,
+    /// Items the most recent run produced for this scope.
+    pub items_found: i64,
+    pub run_count: i64,
     pub updated_at: String,
 }
 

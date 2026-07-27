@@ -32,6 +32,8 @@ use crate::db::repos::dev_tools as dev_repo;
 use crate::db::repos::dev_workspaces as repo;
 use crate::db::repos::dev_workspaces::KnowledgeCandidate;
 use crate::db::repos::workspace_taxonomy as taxonomy;
+use personas_core::harvest_scopes as scopes;
+use crate::db::models::WorkspaceHarvestCoverage;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
@@ -53,6 +55,11 @@ pub struct HarvestPrepared {
 struct HarvestResult {
     #[serde(default)]
     items: Vec<HarvestItem>,
+    /// Which territory this run covered (`group:execution-orchestration`,
+    /// `repo-global`, …). Optional for back-compat with pre-scope runs, which
+    /// are stamped against `repo-global` — that is honestly what they read.
+    #[serde(default)]
+    scope: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,9 +128,52 @@ pub async fn dev_tools_workspace_harvest_prepare(
         .filter_map(|k| k.dedup_key.clone())
         .collect();
 
+    // Territory. Derived from the repo itself (context map when present), then
+    // reconciled into the coverage ledger so "never harvested" is a fact the
+    // dispatcher can read rather than something nobody tracks. See
+    // personas_core::harvest_scopes for why one-agent-per-repo failed.
+    let scopes = scopes::derive_scopes(&root);
+    repo::sync_harvest_scopes(
+        &state.db,
+        &project_id,
+        &scopes
+            .iter()
+            .map(|s| repo::HarvestScopeInput {
+                id: s.id.clone(),
+                label: s.label.clone(),
+                kind: s.kind.to_string(),
+                file_count: s.file_count as i64,
+            })
+            .collect::<Vec<_>>(),
+    )?;
+    let coverage = repo::list_harvest_coverage(&state.db, &project_id)?;
+    let covered_at: std::collections::HashMap<&str, &WorkspaceHarvestCoverage> = coverage
+        .iter()
+        .map(|c| (c.scope_id.as_str(), c))
+        .collect();
+    let scopes_json: Vec<serde_json::Value> = scopes
+        .iter()
+        .map(|s| {
+            let cov = covered_at.get(s.id.as_str());
+            json!({
+                "id": s.id,
+                "label": s.label,
+                "kind": s.kind,
+                "paths": s.paths,
+                "file_count": s.file_count,
+                "contexts": s.contexts,
+                "last_harvested_at": cov.and_then(|c| c.last_harvested_at.clone()),
+                "items_found_last_run": cov.map(|c| c.items_found).unwrap_or(0),
+                "run_count": cov.map(|c| c.run_count).unwrap_or(0),
+            })
+        })
+        .collect();
+
     let snapshot = json!({
         "generated_at": chrono::Utc::now().to_rfc3339(),
         "workspace": { "id": ws.id, "name": ws.name },
+        // The map the agent was previously missing entirely.
+        "scopes": scopes_json,
         "project": {
             "id": project.id,
             "name": project.name,
@@ -178,10 +228,19 @@ pub async fn dev_tools_workspace_harvest_prepare(
 
 // ── ingest ─────────────────────────────────────────────────────────────────
 
-fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
+/// EVERY un-ingested run, oldest first.
+///
+/// A scope fan-out puts several sessions in the same repo at once, so several
+/// run dirs land within seconds of each other. The previous "newest only"
+/// behaviour would import one and strand the rest until some later poll
+/// happened to pick them up — the fan-out's whole yield hanging on ingest
+/// order. Oldest-first so a partially-failing batch still advances.
+fn find_ingestable_runs(root: &Path) -> Vec<PathBuf> {
     let runs = root.join("practice-harvest").join("runs");
-    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&runs)
-        .ok()?
+    let Ok(entries) = std::fs::read_dir(&runs) else {
+        return Vec::new();
+    };
+    let mut candidates: Vec<(std::time::SystemTime, PathBuf)> = entries
         .flatten()
         .filter_map(|e| {
             let p = e.path();
@@ -192,14 +251,18 @@ fn find_ingestable_run(root: &Path) -> Option<PathBuf> {
             Some((t, p))
         })
         .collect();
-    candidates.sort_by(|a, b| b.0.cmp(&a.0));
-    candidates.into_iter().map(|(_, p)| p).next()
+    candidates.sort_by(|a, b| a.0.cmp(&b.0));
+    candidates.into_iter().map(|(_, p)| p).collect()
 }
 
-/// Ingest a finished harvest run into the workspace library. `run_dir` optional
-/// — defaults to the newest un-ingested run. Path-confined, size-capped,
-/// idempotent (a run dir is marked after ingest and refused twice). Items land
-/// `observed` with agent provenance and `origin_project_id = <this member>`.
+/// Ingest finished harvest run(s) into the workspace library.
+///
+/// `run_dir` optional — when omitted EVERY un-ingested run is imported, not
+/// just the newest, because a scope fan-out produces one run per territory.
+/// Path-confined, size-capped, idempotent (a run dir is marked after ingest and
+/// refused twice). Items land `observed` with agent provenance and
+/// `origin_project_id = <this member>`; each run also stamps its scope in the
+/// coverage ledger.
 #[tauri::command]
 pub async fn dev_tools_workspace_knowledge_ingest(
     state: State<'_, Arc<AppState>>,
@@ -216,7 +279,7 @@ pub async fn dev_tools_workspace_knowledge_ingest(
     }
     let root = PathBuf::from(&project.root_path);
 
-    let dir = match run_dir {
+    let dirs: Vec<PathBuf> = match run_dir {
         Some(d) => {
             let p = PathBuf::from(&d);
             let runs_root = root.join("practice-harvest").join("runs");
@@ -231,15 +294,60 @@ pub async fn dev_tools_workspace_knowledge_ingest(
                     "Run dir must be inside the project's practice-harvest/runs/".into(),
                 ));
             }
-            canon
+            vec![canon]
         }
-        None => find_ingestable_run(&root).ok_or_else(|| {
-            AppError::Validation(
-                "No un-ingested harvest run found under practice-harvest/runs/ — run the harvest first"
-                    .into(),
-            )
-        })?,
+        None => {
+            let found = find_ingestable_runs(&root);
+            if found.is_empty() {
+                return Err(AppError::Validation(
+                    "No un-ingested harvest run found under practice-harvest/runs/ — run the harvest first"
+                        .into(),
+                ));
+            }
+            found
+        }
     };
+
+    // One bad run must not sink the batch: a fan-out of 4 sessions where one
+    // wrote malformed JSON should still import the other 3 and say so.
+    let mut total = repo::IngestSummary {
+        inserted: 0,
+        skipped: Vec::new(),
+    };
+    let mut failures: Vec<String> = Vec::new();
+    let single = dirs.len() == 1;
+    for dir in dirs {
+        match ingest_one_run(&state, &workspace_id, &project_id, &dir) {
+            Ok(summary) => {
+                total.inserted += summary.inserted;
+                total.skipped.extend(summary.skipped);
+            }
+            Err(e) => {
+                // A lone explicitly-named run keeps the old loud behaviour.
+                if single {
+                    return Err(e);
+                }
+                let name = dir
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                tracing::warn!(run = %name, error = %e, "harvest run failed to ingest");
+                failures.push(format!("{name}: {e}"));
+            }
+        }
+    }
+    total.skipped.extend(failures);
+    Ok(total)
+}
+
+/// Ingest exactly one run directory. Split out of the command so a fan-out
+/// batch can survive a single malformed run.
+fn ingest_one_run(
+    state: &State<'_, Arc<AppState>>,
+    workspace_id: &str,
+    project_id: &str,
+    dir: &Path,
+) -> Result<repo::IngestSummary, AppError> {
     if dir.join("ingested.json").is_file() {
         return Err(AppError::Validation(format!(
             "Run {} was already ingested",
@@ -260,6 +368,17 @@ pub async fn dev_tools_workspace_knowledge_ingest(
         .map_err(|e| AppError::Validation(format!("result.json not readable: {e}")))?;
     let result: HarvestResult = serde_json::from_str(&raw)
         .map_err(|e| AppError::Validation(format!("result.json is not valid: {e}")))?;
+    // A run that predates scopes (or an agent that dropped the field) read the
+    // repo the old way — root-first. Stamping it `repo-global` is the honest
+    // reading and keeps every real territory correctly marked unread.
+    let scope_id = result
+        .scope
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("repo-global")
+        .to_string();
+    let item_count = result.items.len() as i64;
 
     // Map to candidates — stamp origin_project_id (app-owned, not trusted from
     // the skill) and derive a stable dedup_key when the skill omits one.
@@ -285,7 +404,7 @@ pub async fn dev_tools_workspace_knowledge_ingest(
                 governing_id: None,
                 evidence_count: it.evidence_count,
                 applicability: it.applicability.map(|v| v.to_string()),
-                origin_project_id: Some(project_id.clone()),
+                origin_project_id: Some(project_id.to_string()),
                 dedup_key,
                 confidence: it.confidence,
             }
@@ -294,11 +413,27 @@ pub async fn dev_tools_workspace_knowledge_ingest(
 
     let summary = repo::ingest_candidates(&state.db, &workspace_id, &candidates, "agent", None)?;
 
+    // Coverage is stamped on WHAT WAS READ, not on what survived dedup: a
+    // territory that was harvested and yielded only duplicates has still been
+    // read, and re-dispatching it ahead of never-read territory is exactly the
+    // decay this ledger exists to stop.
+    if let Err(e) = repo::stamp_harvest_scope(
+        &state.db,
+        project_id,
+        &scope_id,
+        &dir.to_string_lossy(),
+        item_count,
+    ) {
+        // Never fail an ingest over bookkeeping — the practices are already in.
+        tracing::warn!(scope = %scope_id, error = %e, "could not stamp harvest coverage");
+    }
+
     // Idempotency marker.
     let _ = std::fs::write(
         dir.join("ingested.json"),
         serde_json::to_string_pretty(&json!({
             "ingested_at": chrono::Utc::now().to_rfc3339(),
+            "scope": scope_id,
             "inserted": summary.inserted,
             "skipped": summary.skipped.len(),
         }))
@@ -306,4 +441,18 @@ pub async fn dev_tools_workspace_knowledge_ingest(
     );
 
     Ok(summary)
+}
+
+// ── coverage ────────────────────────────────────────────────────────────────
+
+/// Per-scope harvest coverage for a member repo — what the dispatcher reads to
+/// pick the next wave, and what the UI shows so an unread codebase can never
+/// look like a complete one.
+#[tauri::command]
+pub async fn dev_tools_workspace_harvest_coverage(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<WorkspaceHarvestCoverage>, AppError> {
+    require_auth(&state).await?;
+    repo::list_harvest_coverage(&state.db, &project_id)
 }

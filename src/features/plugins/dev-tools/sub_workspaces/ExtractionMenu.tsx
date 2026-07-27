@@ -1,7 +1,13 @@
 // Extraction controls for a workspace's library (Arc 2). Two paths:
 //  • Mine  — deterministic, no-LLM cross-project miners; instant, dedup-gated.
-//  • Harvest — dispatch a Fleet session per member repo that reads the repo and
-//    proposes practices; Import pulls the finished run into the library.
+//  • Harvest — dispatch Fleet sessions that read the repo and propose
+//    practices; Import pulls the finished runs into the library.
+//
+// Harvest fans OUT PER SCOPE (see workspace_scopes.rs). One session per repo
+// could satisfy its brief by reading the root configs — measured: 14 items,
+// none from feature code — so a repo is split into named territories and each
+// wave dispatches the least-recently-harvested ones. Coverage state makes
+// successive waves ADVANCE instead of re-reading the cheapest ground.
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Pickaxe, Play, DownloadCloud, ChevronDown, GitCompare, Loader2, ShieldCheck } from 'lucide-react';
 
@@ -9,6 +15,7 @@ import { listSessions, renameSession, spawnSession } from '@/api/fleet/fleet';
 import {
   getDivergenceStatus,
   ingestWorkspaceHarvest,
+  listHarvestCoverage,
   prepareWorkspaceHarvest,
   runWorkspaceDivergence,
   runWorkspaceMiners,
@@ -21,9 +28,35 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import type { WorkspaceHarvestCoverage } from '@/lib/bindings/WorkspaceHarvestCoverage';
+
+import { coverageRatio, selectHarvestWave } from './harvestWave';
 import { buildHarvestPrompt, harvestDispatchKey } from './practiceHarvestPrompt';
 import { useHarvestAutoIngest } from './useHarvestAutoIngest';
 import type { Workspace } from './workspaceStore';
+
+/** "3/13 scopes harvested" — the number that makes an unread codebase visible.
+ *  Renders nothing until coverage has loaded, rather than flashing a 0/0 that
+ *  would read as "nothing to harvest". */
+function ScopeCoverage({
+  rows,
+  label,
+  tx,
+}: {
+  rows: WorkspaceHarvestCoverage[] | undefined;
+  label: string;
+  tx: (template: string, vars: Record<string, string | number>) => string;
+}) {
+  const ratio = coverageRatio(rows);
+  if (!ratio) return null;
+  return (
+    <span
+      className={`typo-caption block ${ratio.done === ratio.total ? 'text-muted-foreground' : 'text-status-warning'}`}
+    >
+      {tx(label, ratio)}
+    </span>
+  );
+}
 
 export function ExtractionMenu({
   workspace,
@@ -44,6 +77,9 @@ export function ExtractionMenu({
   const [divergenceJob, setDivergenceJob] = useState<string | null>(null);
   const [divergenceLine, setDivergenceLine] = useState<string | null>(null);
   const settled = useRef(false);
+  // Per-project scope coverage, loaded when the menu opens. Read-only signal:
+  // it exists so a half-read repo cannot look finished.
+  const [coverage, setCoverage] = useState<Record<string, WorkspaceHarvestCoverage[]>>({});
 
   // Close the agent loop: a harvest that finishes in Fleet ingests itself.
   // Manual Import stays as the fallback for runs finished while this surface
@@ -53,6 +89,32 @@ export function ExtractionMenu({
     memberProjects,
     onIngested: onChanged,
   });
+
+  // Coverage is only interesting while the menu is open, and it changes on
+  // ingest — reload on every open rather than holding a subscription.
+  useEffect(() => {
+    if (!open) return;
+    let live = true;
+    // One unreadable repo must not blank the whole menu's coverage, but the
+    // failure still deserves a breadcrumb — hence try/catch + silentCatch
+    // rather than a bare inline .catch().
+    const load = async (id: string): Promise<readonly [string, WorkspaceHarvestCoverage[]]> => {
+      try {
+        return [id, await listHarvestCoverage(id)] as const;
+      } catch (err) {
+        silentCatch('workspaces:harvestCoverage')(err);
+        return [id, []] as const;
+      }
+    };
+    void Promise.all(memberProjects.map((p) => load(p.id)))
+      .then((pairs) => {
+        if (live) setCoverage(Object.fromEntries(pairs));
+      })
+      .catch(silentCatch('workspaces:harvestCoverage'));
+    return () => {
+      live = false;
+    };
+  }, [open, memberProjects]);
 
   useEffect(() => {
     if (!divergenceJob) return;
@@ -163,19 +225,53 @@ export function ExtractionMenu({
   const harvest = async (project: DevProject) => {
     setBusy(`harvest:${project.id}`);
     try {
-      const key = harvestDispatchKey(workspace.id, project.id);
+      // prepare() derives the territories AND reconciles the coverage ledger,
+      // so it must run before we read coverage to pick a wave.
+      const prep = await prepareWorkspaceHarvest(workspace.id, project.id);
+      const coverage = await listHarvestCoverage(project.id);
+      if (coverage.length === 0) {
+        addToast(tx(tw.harvest_no_scopes, { project: project.name }), 'warning');
+        return;
+      }
+
+      // Already-running territories are skipped rather than re-dispatched;
+      // the rest are already ordered never-harvested-first by the backend.
       const snap = await listSessions();
-      if (snap.sessions.find((s) => s.name === key && s.state !== 'exited')) {
+      const running = new Set(
+        snap.sessions.filter((s) => s.state !== 'exited').map((s) => s.name),
+      );
+      const { wave, remaining } = selectHarvestWave(coverage, (scopeId) =>
+        running.has(harvestDispatchKey(workspace.id, project.id, scopeId)),
+      );
+      if (wave.length === 0) {
         addToast(tx(tw.harvest_already, { project: project.name }), 'warning');
         return;
       }
-      const prep = await prepareWorkspaceHarvest(workspace.id, project.id);
-      const sessionId = await spawnSession(prep.root_path, [buildHarvestPrompt(wsShim, project)]);
-      await renameSession(sessionId, key);
+
+      for (const scope of wave) {
+        const key = harvestDispatchKey(workspace.id, project.id, scope.scope_id);
+        const sessionId = await spawnSession(prep.root_path, [
+          buildHarvestPrompt(wsShim, project, {
+            id: scope.scope_id,
+            label: scope.scope_label,
+            fileCount: Number(scope.file_count),
+          }),
+        ]);
+        await renameSession(sessionId, key);
+      }
       // Arm the auto-ingest watcher immediately, so a session that finishes
       // between polls still produces an active→settled transition.
       markLive(project.id);
-      addToast(tx(tw.harvest_dispatched, { project: project.name }), 'success');
+      // Say what is left, not just what started: a wave that covers 4 of 13
+      // territories must not read as "the repo has been harvested".
+      addToast(
+        tx(tw.harvest_wave_dispatched, {
+          project: project.name,
+          count: wave.length,
+          remaining,
+        }),
+        'success',
+      );
     } catch (err) {
       toastCatch('workspaces:harvest')(err);
     } finally {
@@ -268,7 +364,10 @@ export function ExtractionMenu({
                 key={p.id}
                 className="flex items-center gap-2 rounded-interactive px-2.5 py-1.5 hover:bg-secondary/30 transition-colors"
               >
-                <span className="typo-body text-foreground truncate flex-1 min-w-0">{p.name}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="typo-body text-foreground truncate block">{p.name}</span>
+                  <ScopeCoverage rows={coverage[p.id]} label={tw.harvest_coverage} tx={tx} />
+                </span>
                 <button
                   type="button"
                   aria-label={tx(tw.harvest_action, { project: p.name })}

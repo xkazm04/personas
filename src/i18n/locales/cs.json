@@ -13194,7 +13194,10 @@
         "decide_adopted_queued": "Přijato — zařazeno ke zpracování ve všech relevantních repozitářích",
         "filter_by_project": "Filtrovat podle zdrojového projektu",
         "pulse_to_process": "{count} slotů repozitářů ke zpracování",
-        "state_to_process": "Ke zpracování"
+        "state_to_process": "Ke zpracování",
+        "harvest_coverage": "{done}/{total} oblastí zpracováno",
+        "harvest_no_scopes": "V projektu {project} nebyly nalezeny žádné zpracovatelné oblasti.",
+        "harvest_wave_dispatched": "Zpracovávám {count} oblastí projektu {project} — {remaining} zatím nepřečteno."
       },
       "skills_adopt": "Převzít",
       "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

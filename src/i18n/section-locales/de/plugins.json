@@ -1239,7 +1239,10 @@
       "decide_adopted_queued": "Übernommen – in jedem passenden Repo zur Bearbeitung eingereiht",
       "filter_by_project": "Nach Ursprungsprojekt filtern",
       "pulse_to_process": "{count} Repo-Slots zu bearbeiten",
-      "state_to_process": "Zu bearbeiten"
+      "state_to_process": "Zu bearbeiten",
+      "harvest_coverage": "{done}/{total} Bereiche ausgewertet",
+      "harvest_no_scopes": "In {project} wurden keine auswertbaren Bereiche gefunden.",
+      "harvest_wave_dispatched": "{count} Bereich(e) von {project} werden ausgewertet – {remaining} noch ungelesen."
     },
     "skills_adopt": "Übernehmen",
     "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",

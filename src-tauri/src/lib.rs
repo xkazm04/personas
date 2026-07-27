@@ -3055,6 +3055,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_project_practices,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_harvest_prepare,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_knowledge_ingest,
+            commands::infrastructure::workspace_harvest::dev_tools_workspace_harvest_coverage,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_run_divergence,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_get_divergence_status,
             commands::infrastructure::workspace_divergence::dev_tools_workspace_cancel_divergence,

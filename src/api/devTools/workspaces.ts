@@ -13,6 +13,7 @@ import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { ProjectionResult } from "@/lib/bindings/ProjectionResult";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
+import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
@@ -201,7 +202,7 @@ export async function backfillPracticeIdeas(): Promise<number> {
 
 // -- extraction engine (Arc 2) -----------------------------------------------
 
-export type { IngestSummary };
+export type { IngestSummary, WorkspaceHarvestCoverage };
 
 /** Run the deterministic (no-LLM) miners over a workspace and ingest their
  *  candidates as `observed` knowledge with miner provenance. Cheap signal
@@ -218,8 +219,19 @@ export async function prepareWorkspaceHarvest(
   return invoke<HarvestPrepared>("dev_tools_workspace_harvest_prepare", { workspaceId, projectId });
 }
 
-/** Ingest a finished harvest run from a member repo into the workspace library
- *  (newest un-ingested run by default). Items land `observed`, dedup-gated. */
+/** Per-scope harvest coverage for one member repo — which territories have
+ *  ever been read, when, and with what yield. Never-harvested scopes sort
+ *  first, so the caller can dispatch into unread ground without re-deriving
+ *  the order. */
+export async function listHarvestCoverage(
+  projectId: string,
+): Promise<WorkspaceHarvestCoverage[]> {
+  return invoke<WorkspaceHarvestCoverage[]>("dev_tools_workspace_harvest_coverage", { projectId });
+}
+
+/** Ingest finished harvest run(s) from a member repo into the workspace
+ *  library. With no `runDir` EVERY un-ingested run is imported — a scope
+ *  fan-out produces one per territory. Items land `observed`, dedup-gated. */
 export async function ingestWorkspaceHarvest(
   workspaceId: string,
   projectId: string,

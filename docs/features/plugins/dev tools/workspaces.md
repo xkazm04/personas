@@ -159,17 +159,62 @@ The library fills itself. From the library header's **Extract** menu:
   **adoption gaps** (a skill heavily used in one member, absent in a sibling →
   a howto). Candidates land `observed`, dedup-gated. Cheap signal before any LLM
   spend. Command: `dev_tools_workspace_run_miners`.
-- **Harvest a project (AI)** — per member repo, dispatches a Fleet Dev-runner
-  session (the `practice-harvest` skill / `practiceHarvestPrompt.ts` engine)
-  that reads the repo's real conventions and writes
-  `practice-harvest/runs/<id>/result.json`. **Results import themselves** — while
-  the Workspaces surface is open, a poll watches each dispatched session and
-  ingests its run once the work settles (an interactive CLI session parks at
-  `idle`, not `exited`); ingest is idempotent via the run-dir `ingested.json`
-  marker, so firing on idle/exit/vanish is safe. **Import** stays as the manual
-  fallback for runs that finished while the surface was closed. Commands:
-  `dev_tools_workspace_harvest_prepare` → (Fleet) →
-  `dev_tools_workspace_knowledge_ingest`.
+- **Harvest a project (AI)** — dispatches Fleet Dev-runner sessions (the
+  `practice-harvest` skill / `practiceHarvestPrompt.ts` engine) that read the
+  repo and write `practice-harvest/runs/<id>-<scope>/result.json`. Harvest fans
+  out **per scope**, not per repo — see *Scopes and coverage* below. **Results
+  import themselves** — while the Workspaces surface is open, a poll watches
+  each project's harvest sessions and ingests once the wave settles (an
+  interactive CLI session parks at `idle`, not `exited`); ingest is idempotent
+  via the run-dir `ingested.json` marker, so firing on idle/exit/vanish is safe,
+  and a no-argument ingest imports **every** un-ingested run, not just the
+  newest. **Import** stays as the manual fallback for runs that finished while
+  the surface was closed. Commands: `dev_tools_workspace_harvest_prepare` →
+  (Fleet) → `dev_tools_workspace_knowledge_ingest`, with
+  `dev_tools_workspace_harvest_coverage` for the per-scope ledger.
+
+### Scopes and coverage — why harvest fans out
+
+The first harvest engine sent **one agent at a whole repository** with a ~15-item
+cap and the instruction *"prefer a small number of high-signal practices over
+volume"*. On a large codebase that brief is satisfiable **without reading the
+codebase**: the cheapest place to find something that looks like a convention is
+the root config files. A measured run on the Personas repo (2026-07-27) spent
+~11 tool calls over 8,568 tracked files, returned 14 items, and every one came
+from `eslint.config.js` / `lefthook.yml` / `scripts/` / `build.rs` — **nothing**
+from the 236 mapped contexts of feature code. The run was not failing; it was
+complying. Worse, it compounded: the snapshot tells each run which practices
+already exist but never told it *where it had already looked*, so run N+1
+re-read the same configs, hit the dedup list and returned less (an earlier run
+returned 2 items).
+
+Three changes fix it, and they only work together:
+
+1. **Territory** — `personas_core::harvest_scopes` derives named scopes from the
+   repo: one per **group** in `context-map.json` when present (12 groups /
+   ~3,700 files here), otherwise a generic walk grouping files by their first
+   two path segments. `repo-global` (root configs, CI, hooks, scripts) is always
+   emitted — it is a legitimate territory, just not the whole repo. Each session
+   owns exactly one scope and is told to stay in it.
+2. **No item cap** — the prompt asks for everything the territory genuinely
+   supports (usually 5–25). The closed taxonomy in `workspace_taxonomy.rs` is
+   what prevents the 154-topics-for-177-items fragmentation the cap was
+   originally introduced for; keeping both meant the library was protected by
+   the taxonomy *and* starved by the cap. The machine guards remain:
+   `MAX_INGEST_PER_RUN` = 120 candidates, 1 MiB of `result.json`.
+3. **Coverage memory** — `workspace_harvest_coverage` holds one row per (member
+   repo, scope). `last_harvested_at IS NULL` means *never read*, and the backend
+   returns never-read scopes first. Each Harvest click dispatches a bounded
+   **wave** of 4 scopes into the stalest ground and reports how many remain, so
+   repeated clicks advance instead of re-reading. The Extract menu shows
+   `3/13 scopes harvested` per project — an unread codebase can no longer look
+   like a complete one.
+
+Coverage is stamped on what was **read**, not on what survived dedup: a
+territory that was harvested and yielded only duplicates has still been read,
+and re-dispatching it ahead of never-read ground is exactly the decay the ledger
+exists to stop. Runs that predate scopes (or omit the `scope` field) are stamped
+`repo-global`, which is honestly what they read.
 - **Find divergences (AI)** — the question only visible in aggregate: *are
   several member projects solving the same problem in different, locally
   reasonable ways?* Runs **in-app** as a headless background job (not a Fleet

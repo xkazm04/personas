@@ -6260,6 +6260,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- workspace_harvest_coverage: which territory has been read ----------
+    // The harvest engine used to send one agent at a whole repository with an
+    // item cap and no map, so it read the root configs and stopped — and had
+    // no way to know that on the next run either. This table is the memory:
+    // one row per (member repo, scope), NULL `last_harvested_at` meaning "never
+    // read". Rows are rebuilt from the derived scope list on every prepare,
+    // preserving harvest history for scopes that survive a re-scan.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_harvest_coverage (
+            project_id        TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            scope_id          TEXT NOT NULL,
+            scope_label       TEXT NOT NULL,
+            kind              TEXT NOT NULL DEFAULT 'group',
+            file_count        INTEGER NOT NULL DEFAULT 0,
+            last_harvested_at TEXT,
+            last_run_dir      TEXT,
+            items_found       INTEGER NOT NULL DEFAULT 0,
+            run_count         INTEGER NOT NULL DEFAULT 0,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (project_id, scope_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_harvest_coverage_project
+            ON workspace_harvest_coverage(project_id, last_harvested_at);",
+    )?;
     Ok(())
 }
 

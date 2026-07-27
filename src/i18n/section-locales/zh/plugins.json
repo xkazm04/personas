@@ -1239,7 +1239,10 @@
       "decide_adopted_queued": "已采纳 — 已在每个适用的仓库中排队待处理",
       "filter_by_project": "按来源项目筛选",
       "pulse_to_process": "{count} 个仓库待处理",
-      "state_to_process": "待处理"
+      "state_to_process": "待处理",
+      "harvest_coverage": "已采集 {done}/{total} 个范围",
+      "harvest_no_scopes": "在 {project} 中未找到可采集的范围。",
+      "harvest_wave_dispatched": "正在采集 {project} 的 {count} 个范围 — 还有 {remaining} 个未读。"
     },
     "skills_adopt": "采用",
     "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

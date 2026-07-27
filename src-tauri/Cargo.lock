@@ -5226,6 +5226,7 @@ dependencies = [
  "ts-rs",
  "url",
  "uuid",
+ "walkdir",
  "whoami",
  "windows 0.58.0",
  "zeroize",

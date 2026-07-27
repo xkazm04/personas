@@ -13194,7 +13194,10 @@
         "decide_adopted_queued": "Adoptada: en cola para procesar en cada repo aplicable",
         "filter_by_project": "Filtrar por proyecto de origen",
         "pulse_to_process": "{count} espacios de repo por procesar",
-        "state_to_process": "Por procesar"
+        "state_to_process": "Por procesar",
+        "harvest_coverage": "{done}/{total} ámbitos recolectados",
+        "harvest_no_scopes": "No se encontraron ámbitos recolectables en {project}.",
+        "harvest_wave_dispatched": "Recolectando {count} ámbito(s) de {project}: quedan {remaining} sin leer."
       },
       "skills_adopt": "Adoptar",
       "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

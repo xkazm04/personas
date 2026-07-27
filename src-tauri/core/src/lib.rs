@@ -45,6 +45,7 @@ pub mod error;
 pub mod events;
 pub mod evolution_status;
 pub mod error_taxonomy;
+pub mod harvest_scopes;
 pub mod healing;
 pub mod http_clients;
 pub mod healthcheck_ledger;

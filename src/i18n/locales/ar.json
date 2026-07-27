@@ -13194,7 +13194,10 @@
         "decide_adopted_queued": "تم الاعتماد — مُدرَج للمعالجة في كل مستودع منطبق",
         "filter_by_project": "تصفية حسب مشروع المصدر",
         "pulse_to_process": "{count} فتحة مستودع للمعالجة",
-        "state_to_process": "قيد المعالجة"
+        "state_to_process": "قيد المعالجة",
+        "harvest_coverage": "{done}/{total} نطاق تم حصاده",
+        "harvest_no_scopes": "لم يتم العثور على نطاقات قابلة للحصاد في {project}.",
+        "harvest_wave_dispatched": "جارٍ حصاد {count} نطاق من {project} — ما زال {remaining} غير مقروء."
       },
       "skills_adopt": "اعتماد",
       "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

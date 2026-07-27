@@ -13506,7 +13506,10 @@
         "filter_by_project": "Filter by origin project",
         "state_to_process": "To process",
         "pulse_to_process": "{count} repo slot(s) to process",
-        "decide_adopted_queued": "Adopted — queued in every applicable repo to process"
+        "decide_adopted_queued": "Adopted — queued in every applicable repo to process",
+        "harvest_coverage": "{done}/{total} scopes harvested",
+        "harvest_no_scopes": "No harvestable scopes found in {project}.",
+        "harvest_wave_dispatched": "Harvesting {count} scope(s) of {project} — {remaining} still unread."
       }
     },
     "doc_signing": {

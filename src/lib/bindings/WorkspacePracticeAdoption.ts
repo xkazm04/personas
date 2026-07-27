@@ -7,7 +7,9 @@
  */
 export type WorkspacePracticeAdoption = { practice_id: string, project_id: string, 
 /**
- * 'na' | 'proposed' | 'dispatched' | 'adopted' | 'diverged' (DB CHECK).
+ * 'na' | 'proposed' | 'to_process' | 'dispatched' | 'adopted' | 'diverged'
+ * (DB CHECK). `to_process` is the execution queue seeded when an
+ * ACTIONABLE practice (pitfall/pattern) is adopted.
  */
 state: string, 
 /**

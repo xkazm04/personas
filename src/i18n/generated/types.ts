@@ -13513,6 +13513,9 @@ export type Translations = {
         state_to_process: string;
         pulse_to_process: string;
         decide_adopted_queued: string;
+        harvest_coverage: string;
+        harvest_no_scopes: string;
+        harvest_wave_dispatched: string;
       };
     };
     doc_signing: {

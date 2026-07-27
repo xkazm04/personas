@@ -1239,7 +1239,10 @@
       "decide_adopted_queued": "গৃহীত — প্রযোজ্য প্রতিটি রিপোতে প্রক্রিয়াকরণের সারিতে",
       "filter_by_project": "উৎস প্রকল্প অনুসারে ফিল্টার",
       "pulse_to_process": "{count}টি রিপো স্লট প্রক্রিয়া করতে হবে",
-      "state_to_process": "প্রক্রিয়া করতে হবে"
+      "state_to_process": "প্রক্রিয়া করতে হবে",
+      "harvest_coverage": "{done}/{total} স্কোপ সংগ্রহ করা হয়েছে",
+      "harvest_no_scopes": "{project}-এ সংগ্রহযোগ্য কোনো স্কোপ পাওয়া যায়নি।",
+      "harvest_wave_dispatched": "{project}-এর {count}টি স্কোপ সংগ্রহ করা হচ্ছে — {remaining}টি এখনও পড়া হয়নি।"
     },
     "skills_adopt": "গ্রহণ করুন",
     "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

@@ -1239,7 +1239,10 @@
       "decide_adopted_queued": "Đã áp dụng — đưa vào hàng đợi xử lý ở mọi repo phù hợp",
       "filter_by_project": "Lọc theo dự án nguồn",
       "pulse_to_process": "{count} vị trí repo cần xử lý",
-      "state_to_process": "Cần xử lý"
+      "state_to_process": "Cần xử lý",
+      "harvest_coverage": "Đã thu thập {done}/{total} phạm vi",
+      "harvest_no_scopes": "Không tìm thấy phạm vi nào có thể thu thập trong {project}.",
+      "harvest_wave_dispatched": "Đang thu thập {count} phạm vi của {project} — còn {remaining} chưa đọc."
     },
     "skills_adopt": "Áp dụng",
     "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

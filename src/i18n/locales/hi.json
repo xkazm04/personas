@@ -13194,7 +13194,10 @@
         "decide_adopted_queued": "अपनाया गया — हर लागू रेपो में प्रोसेस करने के लिए कतार में",
         "filter_by_project": "मूल प्रोजेक्ट से फ़िल्टर करें",
         "pulse_to_process": "{count} रेपो स्लॉट प्रोसेस करने हैं",
-        "state_to_process": "प्रोसेस करना है"
+        "state_to_process": "प्रोसेस करना है",
+        "harvest_coverage": "{done}/{total} स्कोप संग्रहित",
+        "harvest_no_scopes": "{project} में कोई संग्रह-योग्य स्कोप नहीं मिला।",
+        "harvest_wave_dispatched": "{project} के {count} स्कोप संग्रहित हो रहे हैं — {remaining} अब भी अपठित।"
       },
       "skills_adopt": "अपनाएँ",
       "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

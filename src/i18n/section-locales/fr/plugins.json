@@ -1239,7 +1239,10 @@
       "decide_adopted_queued": "Adoptée — en file d'attente dans chaque dépôt concerné",
       "filter_by_project": "Filtrer par projet d'origine",
       "pulse_to_process": "{count} emplacements de dépôt à traiter",
-      "state_to_process": "À traiter"
+      "state_to_process": "À traiter",
+      "harvest_coverage": "{done}/{total} périmètres analysés",
+      "harvest_no_scopes": "Aucun périmètre exploitable trouvé dans {project}.",
+      "harvest_wave_dispatched": "Analyse de {count} périmètre(s) de {project} — {remaining} encore non lus."
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",
