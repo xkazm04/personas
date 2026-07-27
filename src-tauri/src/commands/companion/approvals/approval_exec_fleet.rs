@@ -535,18 +535,12 @@ mod multiselect_tests {
         .collect()
     }
 
+    /// Render a plan the SAME way the trace and the debug log do, so a failing
+    /// assertion here reads exactly like the artifact you'd inspect in the
+    /// field. Previously this was a private `SP,DN,CR` vocabulary that existed
+    /// nowhere else — two notations for one concept.
     fn flat(keys: &[Vec<u8>]) -> String {
-        keys.iter()
-            .map(|k| match k.as_slice() {
-                b" " => "SP".to_string(),
-                b"\r" => "CR".to_string(),
-                b"\x1b[A" => "UP".to_string(),
-                b"\x1b[B" => "DN".to_string(),
-                b"\x1b[C" => "RT".to_string(),
-                _ => "?".to_string(),
-            })
-            .collect::<Vec<_>>()
-            .join(",")
+        crate::commands::fleet::keys::describe_plan(keys)
     }
 
     #[test]
@@ -554,7 +548,7 @@ mod multiselect_tests {
         let keys = multiselect_keystrokes(&menu(), "1,2,3,4").expect("a multi-select plan");
         // Per option: SP then DN (last option no trailing DN); DN past option4,
         // DN past 'Type something' to Submit; CR (confirm), CR (finalize).
-        assert_eq!(flat(&keys), "SP,DN,SP,DN,SP,DN,SP,DN,DN,CR,CR");
+        assert_eq!(flat(&keys), "<Space><Down><Space><Down><Space><Down><Space><Down><Down><CR><CR>");
     }
 
     #[test]
@@ -565,7 +559,7 @@ mod multiselect_tests {
         // Option 1 already checked → no SP (just DN to opt2); option 2
         // wanted+unchecked → SP, DN; opts 3,4 not wanted → DN each; then DN
         // past 'Type something' to Submit; CR, CR.
-        assert_eq!(flat(&keys), "DN,SP,DN,DN,DN,DN,CR,CR");
+        assert_eq!(flat(&keys), "<Down><Space><Down><Down><Down><Down><CR><CR>");
     }
 
     /// Tabbed AskUserQuestion layout (Claude Code ≥ mid-2026): a `←  ☐ Question
@@ -595,7 +589,7 @@ mod multiselect_tests {
         // Toggle 1 and 2 (SP,DN,SP), DN past 3 and 4 keeps cursor deterministic,
         // then RT to the Submit tab and CR on "Submit answers" — no DN-hunt for
         // a Submit row, no double Enter.
-        assert_eq!(flat(&keys), "SP,DN,SP,DN,DN,RT,CR");
+        assert_eq!(flat(&keys), "<Space><Down><Space><Down><Down><Right><CR>");
     }
 
     #[test]
@@ -689,17 +683,24 @@ pub(crate) fn execute_fleet_send_input(
             // exact plan, and CONFIRMS the submit (session flips Running) with
             // one Enter retry — mirroring write_text_line's contract, which the
             // driver path predated.
+            let plan_notation = crate::commands::fleet::keys::describe_plan(&keys);
             tracing::warn!(
                 target: "fleet_multiselect",
                 session_id = %sid,
-                plan = ?keys.iter().map(|k| String::from_utf8_lossy(k).into_owned()).collect::<Vec<_>>(),
+                plan = %plan_notation,
                 screen = %lines.join("\n").chars().take(2200).collect::<String>(),
                 "driving multi-select — screen + plan (diagnostic)"
             );
+            // The plan now rides into the SHAREABLE log too. It couldn't before:
+            // the only rendering was raw byte chunks. `describe_plan` redacts any
+            // text chunk to `text(Nch)`, so this carries the plan's shape without
+            // the terminal contents the recorder is contractually forbidden from
+            // writing — and "N keystrokes" alone was never enough to tell a
+            // correct plan from one that walked onto the wrong row.
             crate::commands::fleet::debug_log::athena(
                 &sid,
                 "driving multi-select",
-                &format!("{count} keystrokes, 200ms pace, submit-confirmed"),
+                &format!("{count} keystrokes, 200ms pace, submit-confirmed · {plan_notation}"),
             );
             // MUST be the app's long-lived runtime. This executor runs inside a
             // proactive turn's throwaway current-thread runtime — a plain
@@ -859,7 +860,7 @@ pub(crate) fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec
     let tabbed = joined.contains('☐') || joined.contains('☒');
 
     let down: &[u8] = b"\x1b[B";
-    let right: &[u8] = b"\x1b[C";
+    let right: &[u8] = crate::commands::fleet::keys::RIGHT;
     let space: &[u8] = b" ";
     let enter: &[u8] = b"\r";
     let mut keys: Vec<Vec<u8>> = Vec::new();

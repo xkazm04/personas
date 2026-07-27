@@ -21,6 +21,7 @@ pub mod debug_log;
 pub mod headless;
 pub mod hook_install;
 pub mod hooks;
+pub mod keys;
 pub mod naming;
 pub mod persist;
 pub mod process_scan;

@@ -651,7 +651,7 @@ impl FleetRegistry {
                     // TAB, reached with → and confirmed with Enter (verified live
                     // 2026-07-24). In a plain composer → merely moves the caret,
                     // so this retry stays safe for ordinary text.
-                    if registry().write_input(&sid, b"\x1b[C").is_err() {
+                    if registry().write_input(&sid, super::keys::RIGHT).is_err() {
                         return;
                     }
                     let _ = wait::wait_for_screen(
