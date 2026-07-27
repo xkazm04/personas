@@ -920,7 +920,10 @@
     "auto_healed": "Automaticky vyléčeno",
     "cancelled": "Zrušeno",
     "failing": "{count} selhává",
-    "healed": "{count} vyléčeno"
+    "healed": "{count} vyléčeno",
+    "agent": "Agent",
+    "runs": "Běhy",
+    "streak": "Série"
   },
   "realtime_page": {
     "title": "Monitor Event Bus",

@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} connecteurs intégrés",
       "trend_up": "en hausse de {pct}% par rapport aux 24h précédentes",
       "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
-      "trend_flat": "aucun changement par rapport aux 24h précédentes"
+      "trend_flat": "aucun changement par rapport aux 24h précédentes",
+      "agents_enabled": "{count} agent actif",
+      "agents_enabled_other": "{count} agents actifs"
     },
     "get_started": {
       "ask_cta": "Interroger l'assistant",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Auto-guéri",
       "cancelled": "Annulées",
       "failing": "{count} en échec",
-      "healed": "{count} guéri(s)"
+      "healed": "{count} guéri(s)",
+      "agent": "Agent",
+      "runs": "Exécutions",
+      "streak": "Série"
     },
     "realtime_page": {
       "title": "Moniteur du bus d'événements",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Consolide le pool de souvenirs choisi en enseignements durables. Le résultat est une proposition à valider dans Vue d'ensemble → Souvenirs — rien ne change sans votre accord.",
       "reflect_scope_label": "Réfléchir sur",
       "reflect_scope_team": "Équipe",
-      "reflection_label": "Réflexion mémoire"
+      "reflection_label": "Réflexion mémoire",
+      "close_sources_rail": "Masquer le panneau des sources",
+      "close_targets_rail": "Masquer le panneau des cibles",
+      "open_sources_rail": "Afficher le panneau des sources",
+      "open_targets_rail": "Afficher le panneau des cibles"
     },
     "trigger_configured": "déclencheur configuré",
     "secret_label": "Secret",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Réessayer la découverte automatique",
     "enter_slugs_manually": "Saisir les slugs manuellement à la place",
     "today_activity_heading": "AUJOURD'HUI",
-    "pipeline_heading": "Pipeline"
+    "pipeline_heading": "Pipeline",
+    "connections_heading": "Connexions"
   },
   "plugins": {
     "fleet": {

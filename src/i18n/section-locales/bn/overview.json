@@ -920,7 +920,10 @@
     "auto_healed": "স্বয়ংক্রিয়-সারানো",
     "cancelled": "বাতিল",
     "failing": "{count}টি ব্যর্থ হচ্ছে",
-    "healed": "{count}টি সারানো হয়েছে"
+    "healed": "{count}টি সারানো হয়েছে",
+    "agent": "এজেন্ট",
+    "runs": "রান",
+    "streak": "স্ট্রিক"
   },
   "realtime_page": {
     "title": "ইভেন্ট বাস মনিটর",

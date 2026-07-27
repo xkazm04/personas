@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Sloučí vybrané vzpomínky do trvalých poznatků. Výsledkem je návrh, který zkontrolujete v Přehledu → Vzpomínky — bez vašeho schválení se nic nezmění.",
     "reflect_scope_label": "Reflektovat",
     "reflect_scope_team": "Tým",
-    "reflection_label": "Reflexe paměti"
+    "reflection_label": "Reflexe paměti",
+    "close_sources_rail": "Skrýt panel zdrojů",
+    "close_targets_rail": "Skrýt panel cílů",
+    "open_sources_rail": "Zobrazit panel zdrojů",
+    "open_targets_rail": "Zobrazit panel cílů"
   },
   "trigger_configured": "trigger nakonfigurován",
   "secret_label": "Tajný klíč",

@@ -733,7 +733,11 @@
     "reflect_scope_hint": "選択したメモリ群を永続的なインサイトに統合します。結果は提案として届き、概要 → メモリで確認できます — 承認するまで何も変更されません。",
     "reflect_scope_label": "リフレクション対象",
     "reflect_scope_team": "チーム",
-    "reflection_label": "メモリのリフレクション"
+    "reflection_label": "メモリのリフレクション",
+    "close_sources_rail": "ソースパネルを非表示",
+    "close_targets_rail": "ターゲットパネルを非表示",
+    "open_sources_rail": "ソースパネルを表示",
+    "open_targets_rail": "ターゲットパネルを表示"
   },
   "trigger_configured": "トリガー設定済み",
   "secret_label": "シークレット",

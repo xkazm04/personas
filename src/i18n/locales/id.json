@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} konektor bawaan",
       "trend_up": "naik {pct}% vs 24 jam sebelumnya",
       "trend_down": "turun {pct}% vs 24 jam sebelumnya",
-      "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya"
+      "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya",
+      "agents_enabled": "{count} agen aktif",
+      "agents_enabled_other": "{count} agen aktif"
     },
     "get_started": {
       "ask_cta": "Tanya asisten",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Dipulihkan Otomatis",
       "cancelled": "Dibatalkan",
       "failing": "{count} gagal",
-      "healed": "{count} dipulihkan"
+      "healed": "{count} dipulihkan",
+      "agent": "Agen",
+      "runs": "Proses",
+      "streak": "Beruntun"
     },
     "realtime_page": {
       "title": "Monitor Bus Peristiwa",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Menggabungkan kumpulan memori terpilih menjadi wawasan tahan lama. Hasilnya berupa proposal yang Anda tinjau di Ringkasan → Memori — tidak ada yang berubah tanpa persetujuan Anda.",
       "reflect_scope_label": "Refleksikan",
       "reflect_scope_team": "Tim",
-      "reflection_label": "Refleksi memori"
+      "reflection_label": "Refleksi memori",
+      "close_sources_rail": "Sembunyikan panel sumber",
+      "close_targets_rail": "Sembunyikan panel target",
+      "open_sources_rail": "Tampilkan panel sumber",
+      "open_targets_rail": "Tampilkan panel target"
     },
     "trigger_configured": "pemicu dikonfigurasi",
     "secret_label": "Rahasia",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Coba deteksi otomatis lagi",
     "enter_slugs_manually": "Masukkan slug secara manual",
     "today_activity_heading": "HARI INI",
-    "pipeline_heading": "Pipeline"
+    "pipeline_heading": "Pipeline",
+    "connections_heading": "Koneksi"
   },
   "plugins": {
     "fleet": {

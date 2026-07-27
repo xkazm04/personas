@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} موصّلات مدمجة",
       "trend_up": "ارتفع {pct}% مقارنةً بالـ 24 ساعة السابقة",
       "trend_down": "انخفض {pct}% مقارنةً بالـ 24 ساعة السابقة",
-      "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة"
+      "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة",
+      "agents_enabled": "{count} وكيل نشط",
+      "agents_enabled_other": "{count} وكلاء نشطون"
     },
     "get_started": {
       "ask_cta": "اسأل المساعد",
@@ -6682,7 +6684,10 @@
       "auto_healed": "إصلاح تلقائي",
       "cancelled": "ملغى",
       "failing": "{count} يفشل",
-      "healed": "{count} مُصلَح"
+      "healed": "{count} مُصلَح",
+      "agent": "الوكيل",
+      "runs": "التشغيلات",
+      "streak": "السلسلة"
     },
     "realtime_page": {
       "title": "مراقب ناقل الأحداث",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "يدمج مجموعة الذكريات المختارة في رؤى دائمة. النتيجة اقتراح تراجعه في نظرة عامة ← الذكريات — لا يتغير شيء دون موافقتك.",
       "reflect_scope_label": "التأمّل في",
       "reflect_scope_team": "فريق",
-      "reflection_label": "تأمّل الذاكرة"
+      "reflection_label": "تأمّل الذاكرة",
+      "close_sources_rail": "إخفاء لوحة المصادر",
+      "close_targets_rail": "إخفاء لوحة الأهداف",
+      "open_sources_rail": "إظهار لوحة المصادر",
+      "open_targets_rail": "إظهار لوحة الأهداف"
     },
     "trigger_configured": "تم ضبط المحفّز",
     "secret_label": "سري",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "إعادة محاولة الاكتشاف التلقائي",
     "enter_slugs_manually": "أدخل المعرّفات يدويًا بدلاً من ذلك",
     "today_activity_heading": "اليوم",
-    "pipeline_heading": "خط الأنابيب"
+    "pipeline_heading": "خط الأنابيب",
+    "connections_heading": "الاتصالات"
   },
   "plugins": {
     "fleet": {

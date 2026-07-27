@@ -920,7 +920,10 @@
     "auto_healed": "إصلاح تلقائي",
     "cancelled": "ملغى",
     "failing": "{count} يفشل",
-    "healed": "{count} مُصلَح"
+    "healed": "{count} مُصلَح",
+    "agent": "الوكيل",
+    "runs": "التشغيلات",
+    "streak": "السلسلة"
   },
   "realtime_page": {
     "title": "مراقب ناقل الأحداث",

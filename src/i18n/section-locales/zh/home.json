@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count} 个内置连接器",
     "trend_up": "较前 24 小时上升 {pct}%",
     "trend_down": "较前 24 小时下降 {pct}%",
-    "trend_flat": "较前 24 小时无变化"
+    "trend_flat": "较前 24 小时无变化",
+    "agents_enabled": "{count} 个已启用代理",
+    "agents_enabled_other": "{count} 个已启用代理"
   },
   "get_started": {
     "ask_cta": "向助手提问",

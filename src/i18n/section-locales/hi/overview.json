@@ -920,7 +920,10 @@
     "auto_healed": "स्वतः-ठीक",
     "cancelled": "रद्द",
     "failing": "{count} विफल",
-    "healed": "{count} ठीक"
+    "healed": "{count} ठीक",
+    "agent": "एजेंट",
+    "runs": "रन",
+    "streak": "स्ट्रीक"
   },
   "realtime_page": {
     "title": "इवेंट बस मॉनिटर",

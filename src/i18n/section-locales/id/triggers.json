@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Menggabungkan kumpulan memori terpilih menjadi wawasan tahan lama. Hasilnya berupa proposal yang Anda tinjau di Ringkasan → Memori — tidak ada yang berubah tanpa persetujuan Anda.",
     "reflect_scope_label": "Refleksikan",
     "reflect_scope_team": "Tim",
-    "reflection_label": "Refleksi memori"
+    "reflection_label": "Refleksi memori",
+    "close_sources_rail": "Sembunyikan panel sumber",
+    "close_targets_rail": "Sembunyikan panel target",
+    "open_sources_rail": "Tampilkan panel sumber",
+    "open_targets_rail": "Tampilkan panel target"
   },
   "trigger_configured": "pemicu dikonfigurasi",
   "secret_label": "Rahasia",

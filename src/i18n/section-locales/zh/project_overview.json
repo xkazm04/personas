@@ -48,5 +48,6 @@
   "try_auto_discovery": "重新尝试自动发现",
   "enter_slugs_manually": "改为手动输入标识",
   "today_activity_heading": "今天",
-  "pipeline_heading": "流水线"
+  "pipeline_heading": "流水线",
+  "connections_heading": "连接"
 }

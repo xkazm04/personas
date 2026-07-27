@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} conectores integrados",
       "trend_up": "subió {pct}% respecto a las 24h anteriores",
       "trend_down": "bajó {pct}% respecto a las 24h anteriores",
-      "trend_flat": "sin cambios respecto a las 24h anteriores"
+      "trend_flat": "sin cambios respecto a las 24h anteriores",
+      "agents_enabled": "{count} agente activo",
+      "agents_enabled_other": "{count} agentes activos"
     },
     "get_started": {
       "ask_cta": "Pregunta al asistente",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Auto-Recuperado",
       "cancelled": "Cancelado",
       "failing": "{count} fallando",
-      "healed": "{count} recuperados"
+      "healed": "{count} recuperados",
+      "agent": "Agente",
+      "runs": "Ejecuciones",
+      "streak": "Racha"
     },
     "realtime_page": {
       "title": "Monitor de Bus de Eventos",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Consolida el conjunto de recuerdos elegido en conclusiones duraderas. El resultado es una propuesta que revisas en Resumen → Recuerdos — nada cambia sin tu aprobación.",
       "reflect_scope_label": "Reflexionar sobre",
       "reflect_scope_team": "Equipo",
-      "reflection_label": "Reflexión de memoria"
+      "reflection_label": "Reflexión de memoria",
+      "close_sources_rail": "Ocultar panel de fuentes",
+      "close_targets_rail": "Ocultar panel de destinos",
+      "open_sources_rail": "Mostrar panel de fuentes",
+      "open_targets_rail": "Mostrar panel de destinos"
     },
     "trigger_configured": "disparador configurado",
     "secret_label": "Secreto",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Reintentar descubrimiento automático",
     "enter_slugs_manually": "Introducir los slugs manualmente",
     "today_activity_heading": "HOY",
-    "pipeline_heading": "Pipeline"
+    "pipeline_heading": "Pipeline",
+    "connections_heading": "Conexiones"
   },
   "plugins": {
     "fleet": {

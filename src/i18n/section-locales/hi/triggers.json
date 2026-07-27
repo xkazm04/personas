@@ -733,7 +733,11 @@
     "reflect_scope_hint": "चुने गए स्मृति समूह को स्थायी अंतर्दृष्टियों में समेकित करता है। परिणाम एक प्रस्ताव है जिसे आप अवलोकन → स्मृतियाँ में समीक्षा करते हैं — आपकी स्वीकृति के बिना कुछ नहीं बदलता।",
     "reflect_scope_label": "चिंतन का दायरा",
     "reflect_scope_team": "टीम",
-    "reflection_label": "स्मृति चिंतन"
+    "reflection_label": "स्मृति चिंतन",
+    "close_sources_rail": "स्रोत पैनल छुपाएं",
+    "close_targets_rail": "लक्ष्य पैनल छुपाएं",
+    "open_sources_rail": "स्रोत पैनल दिखाएं",
+    "open_targets_rail": "लक्ष्य पैनल दिखाएं"
   },
   "trigger_configured": "ट्रिगर कॉन्फ़िगर हुआ",
   "secret_label": "सीक्रेट",

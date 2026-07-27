@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} integrierte Connectors",
       "trend_up": "+{pct}% gegenüber den letzten 24 Std.",
       "trend_down": "-{pct}% gegenüber den letzten 24 Std.",
-      "trend_flat": "Keine Änderung gegenüber den letzten 24 Std."
+      "trend_flat": "Keine Änderung gegenüber den letzten 24 Std.",
+      "agents_enabled": "{count} aktiver Agent",
+      "agents_enabled_other": "{count} aktive Agenten"
     },
     "get_started": {
       "ask_cta": "Assistenten fragen",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Automatisch geheilt",
       "cancelled": "Abgebrochen",
       "failing": "{count} fehlerhaft",
-      "healed": "{count} geheilt"
+      "healed": "{count} geheilt",
+      "agent": "Agent",
+      "runs": "Läufe",
+      "streak": "Serie"
     },
     "realtime_page": {
       "title": "Ereignis-Bus-Monitor",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Führt den gewählten Erinnerungspool zu dauerhaften Erkenntnissen zusammen. Das Ergebnis ist ein Vorschlag, den du unter Übersicht → Erinnerungen prüfst — ohne deine Freigabe ändert sich nichts.",
       "reflect_scope_label": "Reflektieren über",
       "reflect_scope_team": "Team",
-      "reflection_label": "Erinnerungs-Reflexion"
+      "reflection_label": "Erinnerungs-Reflexion",
+      "close_sources_rail": "Quellenbereich ausblenden",
+      "close_targets_rail": "Zielbereich ausblenden",
+      "open_sources_rail": "Quellenbereich einblenden",
+      "open_targets_rail": "Zielbereich einblenden"
     },
     "trigger_configured": "Trigger konfiguriert",
     "secret_label": "Geheimnis",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Automatische Erkennung erneut versuchen",
     "enter_slugs_manually": "Stattdessen Slugs manuell eingeben",
     "today_activity_heading": "HEUTE",
-    "pipeline_heading": "Build-Pipeline"
+    "pipeline_heading": "Build-Pipeline",
+    "connections_heading": "Verbindungen"
   },
   "plugins": {
     "fleet": {

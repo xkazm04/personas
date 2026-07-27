@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} встроенных коннекторов",
       "trend_up": "+{pct}% по сравнению с предыдущими 24 ч",
       "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
-      "trend_flat": "без изменений по сравнению с предыдущими 24 ч"
+      "trend_flat": "без изменений по сравнению с предыдущими 24 ч",
+      "agents_enabled": "{count} активный агент",
+      "agents_enabled_other": "{count} активных агентов"
     },
     "get_started": {
       "ask_cta": "Спросить ассистента",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Авто-восстановлено",
       "cancelled": "Отменено",
       "failing": "{count} сбоев",
-      "healed": "{count} восстановлено"
+      "healed": "{count} восстановлено",
+      "agent": "Агент",
+      "runs": "Запуски",
+      "streak": "Серия"
     },
     "realtime_page": {
       "title": "Монитор шины событий",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Объединяет выбранный пул воспоминаний в устойчивые выводы. Результат — предложение, которое вы проверяете в Обзор → Воспоминания; без вашего одобрения ничего не изменится.",
       "reflect_scope_label": "Рефлексия по",
       "reflect_scope_team": "Команда",
-      "reflection_label": "Рефлексия памяти"
+      "reflection_label": "Рефлексия памяти",
+      "close_sources_rail": "Скрыть панель источников",
+      "close_targets_rail": "Скрыть панель целей",
+      "open_sources_rail": "Показать панель источников",
+      "open_targets_rail": "Показать панель целей"
     },
     "trigger_configured": "триггер настроен",
     "secret_label": "Секрет",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Повторить автопоиск",
     "enter_slugs_manually": "Ввести слаги вручную",
     "today_activity_heading": "СЕГОДНЯ",
-    "pipeline_heading": "Конвейер"
+    "pipeline_heading": "Конвейер",
+    "connections_heading": "Подключения"
   },
   "plugins": {
     "fleet": {

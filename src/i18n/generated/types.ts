@@ -676,6 +676,8 @@ export type Translations = {
       trend_up: string;
       trend_down: string;
       trend_flat: string;
+      agents_enabled: string;
+      agents_enabled_other: string;
     };
     learning: {
       title: string;
@@ -7090,6 +7092,9 @@ export type Translations = {
       cancelled: string;
       failing: string;
       healed: string;
+      agent: string;
+      runs: string;
+      streak: string;
     };
     realtime_page: {
       title: string;
@@ -9440,6 +9445,10 @@ export type Translations = {
       reflect_pick_agent: string;
       reflect_pick_team: string;
       reflect_scope_hint: string;
+      open_sources_rail: string;
+      close_sources_rail: string;
+      open_targets_rail: string;
+      close_targets_rail: string;
     };
     subscription_list: {
       active: string;
@@ -12201,6 +12210,7 @@ export type Translations = {
     sentry_discovery_failed: string;
     try_auto_discovery: string;
     enter_slugs_manually: string;
+    connections_heading: string;
   };
   plugins: {
     fleet: {

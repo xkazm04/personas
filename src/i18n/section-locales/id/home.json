@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count} konektor bawaan",
     "trend_up": "naik {pct}% vs 24 jam sebelumnya",
     "trend_down": "turun {pct}% vs 24 jam sebelumnya",
-    "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya"
+    "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya",
+    "agents_enabled": "{count} agen aktif",
+    "agents_enabled_other": "{count} agen aktif"
   },
   "get_started": {
     "ask_cta": "Tanya asisten",

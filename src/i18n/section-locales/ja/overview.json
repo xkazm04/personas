@@ -920,7 +920,10 @@
     "auto_healed": "自動ヒール",
     "cancelled": "キャンセル",
     "failing": "{count}件失敗中",
-    "healed": "{count}件ヒール済み"
+    "healed": "{count}件ヒール済み",
+    "agent": "エージェント",
+    "runs": "実行",
+    "streak": "連続成功"
   },
   "realtime_page": {
     "title": "イベントバスモニター",

@@ -920,7 +920,10 @@
     "auto_healed": "自动修复",
     "cancelled": "已取消",
     "failing": "{count} 个失败",
-    "healed": "{count} 个已修复"
+    "healed": "{count} 个已修复",
+    "agent": "代理",
+    "runs": "运行次数",
+    "streak": "连续成功"
   },
   "realtime_page": {
     "title": "事件总线监控",

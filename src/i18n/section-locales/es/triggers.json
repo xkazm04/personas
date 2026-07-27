@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Consolida el conjunto de recuerdos elegido en conclusiones duraderas. El resultado es una propuesta que revisas en Resumen → Recuerdos — nada cambia sin tu aprobación.",
     "reflect_scope_label": "Reflexionar sobre",
     "reflect_scope_team": "Equipo",
-    "reflection_label": "Reflexión de memoria"
+    "reflection_label": "Reflexión de memoria",
+    "close_sources_rail": "Ocultar panel de fuentes",
+    "close_targets_rail": "Ocultar panel de destinos",
+    "open_sources_rail": "Mostrar panel de fuentes",
+    "open_targets_rail": "Mostrar panel de destinos"
   },
   "trigger_configured": "disparador configurado",
   "secret_label": "Secreto",

@@ -920,7 +920,10 @@
     "auto_healed": "Automatisch geheilt",
     "cancelled": "Abgebrochen",
     "failing": "{count} fehlerhaft",
-    "healed": "{count} geheilt"
+    "healed": "{count} geheilt",
+    "agent": "Agent",
+    "runs": "Läufe",
+    "streak": "Serie"
   },
   "realtime_page": {
     "title": "Ereignis-Bus-Monitor",

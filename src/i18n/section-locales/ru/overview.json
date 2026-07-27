@@ -920,7 +920,10 @@
     "auto_healed": "Авто-восстановлено",
     "cancelled": "Отменено",
     "failing": "{count} сбоев",
-    "healed": "{count} восстановлено"
+    "healed": "{count} восстановлено",
+    "agent": "Агент",
+    "runs": "Запуски",
+    "streak": "Серия"
   },
   "realtime_page": {
     "title": "Монитор шины событий",

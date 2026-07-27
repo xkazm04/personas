@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count} vestavěných konektorů",
     "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
     "trend_down": "dolů o {pct} % oproti předchozím 24 h",
-    "trend_flat": "žádná změna oproti předchozím 24 h"
+    "trend_flat": "žádná změna oproti předchozím 24 h",
+    "agents_enabled": "{count} aktivní agent",
+    "agents_enabled_other": "{count} aktivních agentů"
   },
   "get_started": {
     "ask_cta": "Zeptat se asistenta",

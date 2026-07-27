@@ -920,7 +920,10 @@
     "auto_healed": "Auto-Recuperado",
     "cancelled": "Cancelado",
     "failing": "{count} fallando",
-    "healed": "{count} recuperados"
+    "healed": "{count} recuperados",
+    "agent": "Agente",
+    "runs": "Ejecuciones",
+    "streak": "Racha"
   },
   "realtime_page": {
     "title": "Monitor de Bus de Eventos",

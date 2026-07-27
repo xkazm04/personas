@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} 个内置连接器",
       "trend_up": "较前 24 小时上升 {pct}%",
       "trend_down": "较前 24 小时下降 {pct}%",
-      "trend_flat": "较前 24 小时无变化"
+      "trend_flat": "较前 24 小时无变化",
+      "agents_enabled": "{count} 个已启用代理",
+      "agents_enabled_other": "{count} 个已启用代理"
     },
     "get_started": {
       "ask_cta": "向助手提问",
@@ -6682,7 +6684,10 @@
       "auto_healed": "自动修复",
       "cancelled": "已取消",
       "failing": "{count} 个失败",
-      "healed": "{count} 个已修复"
+      "healed": "{count} 个已修复",
+      "agent": "代理",
+      "runs": "运行次数",
+      "streak": "连续成功"
     },
     "realtime_page": {
       "title": "事件总线监控",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "将所选记忆池整合为持久洞察。结果以提案形式呈现，可在概览 → 记忆中审核 — 未经你批准不会有任何更改。",
       "reflect_scope_label": "反思范围",
       "reflect_scope_team": "团队",
-      "reflection_label": "记忆反思"
+      "reflection_label": "记忆反思",
+      "close_sources_rail": "隐藏来源面板",
+      "close_targets_rail": "隐藏目标面板",
+      "open_sources_rail": "显示来源面板",
+      "open_targets_rail": "显示目标面板"
     },
     "trigger_configured": "触发器已配置",
     "secret_label": "密钥",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "重新尝试自动发现",
     "enter_slugs_manually": "改为手动输入标识",
     "today_activity_heading": "今天",
-    "pipeline_heading": "流水线"
+    "pipeline_heading": "流水线",
+    "connections_heading": "连接"
   },
   "plugins": {
     "fleet": {

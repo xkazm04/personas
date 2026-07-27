@@ -48,5 +48,6 @@
   "try_auto_discovery": "Zkusit automatické vyhledávání znovu",
   "enter_slugs_manually": "Zadat slugy ručně",
   "today_activity_heading": "DNES",
-  "pipeline_heading": "Pipeline"
+  "pipeline_heading": "Pipeline",
+  "connections_heading": "Připojení"
 }

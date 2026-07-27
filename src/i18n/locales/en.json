@@ -669,7 +669,9 @@
       "connections_builtin_other": "{count} built-in connectors",
       "trend_up": "up {pct}% vs the prior 24h",
       "trend_down": "down {pct}% vs the prior 24h",
-      "trend_flat": "no change vs the prior 24h"
+      "trend_flat": "no change vs the prior 24h",
+      "agents_enabled": "{count} active agent",
+      "agents_enabled_other": "{count} active agents"
     },
     "learning": {
       "title": "Learning Center",
@@ -7083,7 +7085,10 @@
       "auto_healed": "Auto-Healed",
       "cancelled": "Cancelled",
       "failing": "{count} failing",
-      "healed": "{count} healed"
+      "healed": "{count} healed",
+      "agent": "Agent",
+      "runs": "Runs",
+      "streak": "Streak"
     },
     "realtime_page": {
       "title": "Event Bus Monitor",
@@ -9433,7 +9438,11 @@
       "reflect_scope_team": "Team",
       "reflect_pick_agent": "Pick an agent…",
       "reflect_pick_team": "Pick a team…",
-      "reflect_scope_hint": "Consolidates the chosen memory pool into durable insights. The result is a proposal you review in Overview → Memories — nothing changes without your approval."
+      "reflect_scope_hint": "Consolidates the chosen memory pool into durable insights. The result is a proposal you review in Overview → Memories — nothing changes without your approval.",
+      "open_sources_rail": "Show sources panel",
+      "close_sources_rail": "Hide sources panel",
+      "open_targets_rail": "Show targets panel",
+      "close_targets_rail": "Hide targets panel"
     },
     "subscription_list": {
       "active": "Active",
@@ -12194,7 +12203,8 @@
     "select_project_option": "Select a project",
     "sentry_discovery_failed": "Sentry discovery failed: {error}",
     "try_auto_discovery": "Try auto-discovery again",
-    "enter_slugs_manually": "Enter slugs manually instead"
+    "enter_slugs_manually": "Enter slugs manually instead",
+    "connections_heading": "Connections"
   },
   "plugins": {
     "fleet": {

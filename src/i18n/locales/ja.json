@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count}件の組み込みコネクター",
       "trend_up": "前の24時間比で{pct}%増",
       "trend_down": "前の24時間比で{pct}%減",
-      "trend_flat": "前の24時間比で変化なし"
+      "trend_flat": "前の24時間比で変化なし",
+      "agents_enabled": "有効なエージェント {count} 件",
+      "agents_enabled_other": "有効なエージェント {count} 件"
     },
     "get_started": {
       "ask_cta": "アシスタントに聞く",
@@ -6682,7 +6684,10 @@
       "auto_healed": "自動ヒール",
       "cancelled": "キャンセル",
       "failing": "{count}件失敗中",
-      "healed": "{count}件ヒール済み"
+      "healed": "{count}件ヒール済み",
+      "agent": "エージェント",
+      "runs": "実行",
+      "streak": "連続成功"
     },
     "realtime_page": {
       "title": "イベントバスモニター",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "選択したメモリ群を永続的なインサイトに統合します。結果は提案として届き、概要 → メモリで確認できます — 承認するまで何も変更されません。",
       "reflect_scope_label": "リフレクション対象",
       "reflect_scope_team": "チーム",
-      "reflection_label": "メモリのリフレクション"
+      "reflection_label": "メモリのリフレクション",
+      "close_sources_rail": "ソースパネルを非表示",
+      "close_targets_rail": "ターゲットパネルを非表示",
+      "open_sources_rail": "ソースパネルを表示",
+      "open_targets_rail": "ターゲットパネルを表示"
     },
     "trigger_configured": "トリガー設定済み",
     "secret_label": "シークレット",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "自動検出を再試行",
     "enter_slugs_manually": "代わりにスラッグを手動で入力",
     "today_activity_heading": "今日",
-    "pipeline_heading": "パイプライン"
+    "pipeline_heading": "パイプライン",
+    "connections_heading": "接続"
   },
   "plugins": {
     "fleet": {

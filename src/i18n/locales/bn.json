@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count}টি বিল্ট-ইন কানেক্টর",
       "trend_up": "আগের ২৪ ঘণ্টার তুলনায় {pct}% বেশি",
       "trend_down": "আগের ২৪ ঘণ্টার তুলনায় {pct}% কম",
-      "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই"
+      "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই",
+      "agents_enabled": "{count}টি সক্রিয় এজেন্ট",
+      "agents_enabled_other": "{count}টি সক্রিয় এজেন্ট"
     },
     "get_started": {
       "ask_cta": "সহকারীকে জিজ্ঞেস করুন",
@@ -6682,7 +6684,10 @@
       "auto_healed": "স্বয়ংক্রিয়-সারানো",
       "cancelled": "বাতিল",
       "failing": "{count}টি ব্যর্থ হচ্ছে",
-      "healed": "{count}টি সারানো হয়েছে"
+      "healed": "{count}টি সারানো হয়েছে",
+      "agent": "এজেন্ট",
+      "runs": "রান",
+      "streak": "স্ট্রিক"
     },
     "realtime_page": {
       "title": "ইভেন্ট বাস মনিটর",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "নির্বাচিত স্মৃতিগুলিকে স্থায়ী অন্তর্দৃষ্টিতে একত্রিত করে। ফলাফল একটি প্রস্তাব যা আপনি ওভারভিউ → স্মৃতিতে পর্যালোচনা করবেন — আপনার অনুমোদন ছাড়া কিছুই পরিবর্তিত হয় না।",
       "reflect_scope_label": "প্রতিফলনের পরিধি",
       "reflect_scope_team": "দল",
-      "reflection_label": "স্মৃতির প্রতিফলন"
+      "reflection_label": "স্মৃতির প্রতিফলন",
+      "close_sources_rail": "উৎস প্যানেল লুকান",
+      "close_targets_rail": "লক্ষ্য প্যানেল লুকান",
+      "open_sources_rail": "উৎস প্যানেল দেখান",
+      "open_targets_rail": "লক্ষ্য প্যানেল দেখান"
     },
     "trigger_configured": "ট্রিগার কনফিগার করা হয়েছে",
     "secret_label": "সিক্রেট",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "স্বয়ংক্রিয় আবিষ্কার আবার চেষ্টা করুন",
     "enter_slugs_manually": "পরিবর্তে ম্যানুয়ালি স্লাগ লিখুন",
     "today_activity_heading": "আজ",
-    "pipeline_heading": "পাইপলাইন"
+    "pipeline_heading": "পাইপলাইন",
+    "connections_heading": "সংযোগ"
   },
   "plugins": {
     "fleet": {

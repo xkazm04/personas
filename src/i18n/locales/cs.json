@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} vestavěných konektorů",
       "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
       "trend_down": "dolů o {pct} % oproti předchozím 24 h",
-      "trend_flat": "žádná změna oproti předchozím 24 h"
+      "trend_flat": "žádná změna oproti předchozím 24 h",
+      "agents_enabled": "{count} aktivní agent",
+      "agents_enabled_other": "{count} aktivních agentů"
     },
     "get_started": {
       "ask_cta": "Zeptat se asistenta",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Automaticky vyléčeno",
       "cancelled": "Zrušeno",
       "failing": "{count} selhává",
-      "healed": "{count} vyléčeno"
+      "healed": "{count} vyléčeno",
+      "agent": "Agent",
+      "runs": "Běhy",
+      "streak": "Série"
     },
     "realtime_page": {
       "title": "Monitor Event Bus",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Sloučí vybrané vzpomínky do trvalých poznatků. Výsledkem je návrh, který zkontrolujete v Přehledu → Vzpomínky — bez vašeho schválení se nic nezmění.",
       "reflect_scope_label": "Reflektovat",
       "reflect_scope_team": "Tým",
-      "reflection_label": "Reflexe paměti"
+      "reflection_label": "Reflexe paměti",
+      "close_sources_rail": "Skrýt panel zdrojů",
+      "close_targets_rail": "Skrýt panel cílů",
+      "open_sources_rail": "Zobrazit panel zdrojů",
+      "open_targets_rail": "Zobrazit panel cílů"
     },
     "trigger_configured": "trigger nakonfigurován",
     "secret_label": "Tajný klíč",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Zkusit automatické vyhledávání znovu",
     "enter_slugs_manually": "Zadat slugy ručně",
     "today_activity_heading": "DNES",
-    "pipeline_heading": "Pipeline"
+    "pipeline_heading": "Pipeline",
+    "connections_heading": "Připojení"
   },
   "plugins": {
     "fleet": {

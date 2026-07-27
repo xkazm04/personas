@@ -48,5 +48,6 @@
   "try_auto_discovery": "Coba deteksi otomatis lagi",
   "enter_slugs_manually": "Masukkan slug secara manual",
   "today_activity_heading": "HARI INI",
-  "pipeline_heading": "Pipeline"
+  "pipeline_heading": "Pipeline",
+  "connections_heading": "Koneksi"
 }

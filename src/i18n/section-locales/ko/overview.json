@@ -920,7 +920,10 @@
     "auto_healed": "자동 복구됨",
     "cancelled": "취소됨",
     "failing": "{count}개 실패 중",
-    "healed": "{count}개 복구됨"
+    "healed": "{count}개 복구됨",
+    "agent": "에이전트",
+    "runs": "실행 횟수",
+    "streak": "연속 성공"
   },
   "realtime_page": {
     "title": "이벤트 버스 모니터",

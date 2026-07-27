@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count}টি বিল্ট-ইন কানেক্টর",
     "trend_up": "আগের ২৪ ঘণ্টার তুলনায় {pct}% বেশি",
     "trend_down": "আগের ২৪ ঘণ্টার তুলনায় {pct}% কম",
-    "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই"
+    "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই",
+    "agents_enabled": "{count}টি সক্রিয় এজেন্ট",
+    "agents_enabled_other": "{count}টি সক্রিয় এজেন্ট"
   },
   "get_started": {
     "ask_cta": "সহকারীকে জিজ্ঞেস করুন",

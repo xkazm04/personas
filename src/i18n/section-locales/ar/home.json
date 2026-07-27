@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count} موصّلات مدمجة",
     "trend_up": "ارتفع {pct}% مقارنةً بالـ 24 ساعة السابقة",
     "trend_down": "انخفض {pct}% مقارنةً بالـ 24 ساعة السابقة",
-    "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة"
+    "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة",
+    "agents_enabled": "{count} وكيل نشط",
+    "agents_enabled_other": "{count} وكلاء نشطون"
   },
   "get_started": {
     "ask_cta": "اسأل المساعد",

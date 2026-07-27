@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} बिल्ट-इन कनेक्टर्स",
       "trend_up": "पिछले 24 घंटों की तुलना में {pct}% ऊपर",
       "trend_down": "पिछले 24 घंटों की तुलना में {pct}% नीचे",
-      "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं"
+      "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं",
+      "agents_enabled": "{count} सक्रिय एजेंट",
+      "agents_enabled_other": "{count} सक्रिय एजेंट"
     },
     "get_started": {
       "ask_cta": "असिस्टेंट से पूछें",
@@ -6682,7 +6684,10 @@
       "auto_healed": "स्वतः-ठीक",
       "cancelled": "रद्द",
       "failing": "{count} विफल",
-      "healed": "{count} ठीक"
+      "healed": "{count} ठीक",
+      "agent": "एजेंट",
+      "runs": "रन",
+      "streak": "स्ट्रीक"
     },
     "realtime_page": {
       "title": "इवेंट बस मॉनिटर",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "चुने गए स्मृति समूह को स्थायी अंतर्दृष्टियों में समेकित करता है। परिणाम एक प्रस्ताव है जिसे आप अवलोकन → स्मृतियाँ में समीक्षा करते हैं — आपकी स्वीकृति के बिना कुछ नहीं बदलता।",
       "reflect_scope_label": "चिंतन का दायरा",
       "reflect_scope_team": "टीम",
-      "reflection_label": "स्मृति चिंतन"
+      "reflection_label": "स्मृति चिंतन",
+      "close_sources_rail": "स्रोत पैनल छुपाएं",
+      "close_targets_rail": "लक्ष्य पैनल छुपाएं",
+      "open_sources_rail": "स्रोत पैनल दिखाएं",
+      "open_targets_rail": "लक्ष्य पैनल दिखाएं"
     },
     "trigger_configured": "ट्रिगर कॉन्फ़िगर हुआ",
     "secret_label": "सीक्रेट",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "स्वतः-खोज फिर से आज़माएं",
     "enter_slugs_manually": "इसके बजाय स्लग मैन्युअल रूप से दर्ज करें",
     "today_activity_heading": "आज",
-    "pipeline_heading": "पाइपलाइन"
+    "pipeline_heading": "पाइपलाइन",
+    "connections_heading": "कनेक्शन"
   },
   "plugins": {
     "fleet": {

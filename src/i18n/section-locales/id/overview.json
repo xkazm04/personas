@@ -920,7 +920,10 @@
     "auto_healed": "Dipulihkan Otomatis",
     "cancelled": "Dibatalkan",
     "failing": "{count} gagal",
-    "healed": "{count} dipulihkan"
+    "healed": "{count} dipulihkan",
+    "agent": "Agen",
+    "runs": "Proses",
+    "streak": "Beruntun"
   },
   "realtime_page": {
     "title": "Monitor Bus Peristiwa",

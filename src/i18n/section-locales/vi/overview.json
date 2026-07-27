@@ -920,7 +920,10 @@
     "auto_healed": "Tự động phục hồi",
     "cancelled": "Đã hủy",
     "failing": "{count} đang thất bại",
-    "healed": "{count} đã phục hồi"
+    "healed": "{count} đã phục hồi",
+    "agent": "Agent",
+    "runs": "Lượt chạy",
+    "streak": "Chuỗi thành công"
   },
   "realtime_page": {
     "title": "Màn hình Bus sự kiện",

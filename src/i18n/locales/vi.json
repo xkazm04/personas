@@ -714,7 +714,9 @@
       "connections_builtin_other": "{count} connector tích hợp sẵn",
       "trend_up": "tăng {pct}% so với 24h trước",
       "trend_down": "giảm {pct}% so với 24h trước",
-      "trend_flat": "không đổi so với 24h trước"
+      "trend_flat": "không đổi so với 24h trước",
+      "agents_enabled": "{count} agent đang hoạt động",
+      "agents_enabled_other": "{count} agent đang hoạt động"
     },
     "get_started": {
       "ask_cta": "Hỏi trợ lý",
@@ -6682,7 +6684,10 @@
       "auto_healed": "Tự động phục hồi",
       "cancelled": "Đã hủy",
       "failing": "{count} đang thất bại",
-      "healed": "{count} đã phục hồi"
+      "healed": "{count} đã phục hồi",
+      "agent": "Agent",
+      "runs": "Lượt chạy",
+      "streak": "Chuỗi thành công"
     },
     "realtime_page": {
       "title": "Màn hình Bus sự kiện",
@@ -9840,7 +9845,11 @@
       "reflect_scope_hint": "Hợp nhất nhóm ký ức đã chọn thành những hiểu biết bền vững. Kết quả là một đề xuất bạn xem xét trong Tổng quan → Ký ức — không gì thay đổi nếu bạn chưa phê duyệt.",
       "reflect_scope_label": "Chiêm nghiệm trên",
       "reflect_scope_team": "Nhóm",
-      "reflection_label": "Chiêm nghiệm ký ức"
+      "reflection_label": "Chiêm nghiệm ký ức",
+      "close_sources_rail": "Ẩn bảng nguồn",
+      "close_targets_rail": "Ẩn bảng đích",
+      "open_sources_rail": "Hiện bảng nguồn",
+      "open_targets_rail": "Hiện bảng đích"
     },
     "trigger_configured": "trigger đã cấu hình",
     "secret_label": "Bí mật",
@@ -11927,7 +11936,8 @@
     "try_auto_discovery": "Thử tự động khám phá lại",
     "enter_slugs_manually": "Nhập slug thủ công thay thế",
     "today_activity_heading": "HÔM NAY",
-    "pipeline_heading": "Pipeline"
+    "pipeline_heading": "Pipeline",
+    "connections_heading": "Kết nối"
   },
   "plugins": {
     "fleet": {
