@@ -17,7 +17,7 @@ Twin treats the user as a first-class entity that personas can adopt. A **twin p
 | **Brain** (Obsidian vault + vector KB) | `twin_profiles.obsidian_subpath` + `knowledge_base_id` | Two-layer memory: human-readable notes in Obsidian + a vector-indexed knowledge base for semantic recall. |
 | **Memory** (pending review → approved) | `twin_pending_memories` | Facts, preferences, decisions. Memories start as `pending`, get human-reviewed, then index into the KB. |
 | **Communications** (raw interaction log) | `twin_communications` | Every message sent or received through the Twin connector, with direction + channel + contact handle. |
-| **Voice** (ElevenLabs synthesis config) | `twin_voice_profile` | Voice ID, model, stability/similarity/style sliders. |
+| **Voice** (ElevenLabs synthesis config) | `twin_voice_profile` | Voice ID, model, stability/similarity/style sliders. No dedicated UI tab today (see below) — the table and connector tools are still live. |
 | **Channels** (deployment bindings) | `twin_channels` | Where the twin speaks — Discord, Slack, Telegram, etc. — each bound to a vault credential and optionally a persona. |
 
 A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client X")`) resolves the **active twin** and reads the relevant layer. The connector never stores state itself — the twin layers are the source of truth.
@@ -26,7 +26,7 @@ A persona invoking a twin tool (e.g. `get_tone("slack")`, `recall_memory("client
 
 ## User flow
 
-The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Voice**, **Channels**, **Training**. Each tab opens directly into its **Atelier** view: a violet hero band carries the active twin's name, readiness, and KPI rail, so there is no longer a separate "speaking as" banner above the page body. The Profiles Atelier doubles as the canonical roster surface — its hero card shows the active twin's readiness arc + milestone chips, with satellite cards beneath for the rest of the roster. Sub-page hero bands (Brain and Voice today, the remaining bespoke headers in a later pass) carry a compact **readiness ribbon** — the active twin's score plus six clickable milestone dots — so the same "what's left, jump to fix it" context follows you onto every tab, not just Profiles. The Profiles, Identity, Tone, Brain, Knowledge, Channels, and Training subsections render only their Atelier layout; the **Voice** subsection still shows a small *Atelier / Current* prototype switcher at the top while the new Atelier layout is being evaluated against the existing picker UI.
+The plugin is organised as seven tabs — **Profiles**, **Identity**, **Tone**, **Brain**, **Knowledge**, **Channels**, **Training**. (A **Voice** entry existed in the sidebar until 2026-07-27 but never had a page behind it — selecting it silently rendered a blank screen — and was removed rather than built out; voice-of-writing is configured under **Tone**, and TTS voice selection for the assistant lives under **Companion → Voice**.) Each tab opens directly into its **Atelier** view: a violet hero band carries the active twin's name, readiness, and KPI rail, so there is no longer a separate "speaking as" banner above the page body. The Profiles Atelier doubles as the canonical roster surface — its hero card shows the active twin's readiness arc + milestone chips, with satellite cards beneath for the rest of the roster. Sub-page hero bands (Brain today, the remaining bespoke headers in a later pass) carry a compact **readiness ribbon** — the active twin's score plus six clickable milestone dots — so the same "what's left, jump to fix it" context follows you onto every tab, not just Profiles. The Profiles, Identity, Tone, Brain, Knowledge, Channels, and Training subsections render only their Atelier layout.
 
 ### 1. Profiles — manage twins
 
@@ -79,16 +79,7 @@ Below the Contacts panel the tab is a two-column grid:
 - **Memory Inbox (left)** — filters for `pending` / `approved` / `rejected`. Each pending card shows title, content, channel badge, priority if > 3, an optional **provenance chip** ("from `abc12345…`") linking back to the source `twin_communications.id` that produced it (populated for memories created by `record_interaction`; NULL for URL-ingest and wiki-audit memories), and two actions: **Approve** (index into KB) or **Reject** (discard). Approved memories power future recalls. When viewing the **pending** filter, a bulk-action bar appears above the list with a "Select all on this page" checkbox; each row also gets its own checkbox. With one or more selected, "Approve N" and "Reject N" buttons fire sequential reviews and show a single completion toast — turns a 10-card triage into two clicks.
 - **Conversation History (right)** — chronological log of every interaction through the Twin connector. Inbound vs outbound is color-coded (cyan vs violet), and each row shows channel, contact handle, timestamp, content, and optional summary. This is the raw trail; the inbox is the curated extract.
 
-### 6. Voice — ElevenLabs configuration
-
-1. Paste a **Voice ID** from the ElevenLabs voice library (the "Find voices" link opens it).
-2. Enter a **Credential ID** pointing to the ElevenLabs API key stored in the vault. Required for synthesis, optional for configuration.
-3. Pick a **Model** (Multilingual v2, Monolingual v1, Turbo v2 / v2.5).
-4. Adjust the three sliders (**Stability**, **Similarity Boost**, **Style**) — labels underneath make the trade-off obvious ("More expressive" ↔ "More consistent").
-5. Hit **Preview** (next to Save) to synthesize a short sample line with the current form values via `companion_tts` and play it inline — works against the unsaved form, so you can A/B slider changes without committing.
-6. **Configure Voice** saves the profile. From there `synthesize_speech` is callable by any persona adopting this twin.
-
-### 7. Channels — where the twin speaks
+### 6. Channels — where the twin speaks
 
 1. Open **Channels**. Press **Add Channel**.
 2. Pick a **Channel Type** (Discord, Slack, Email/Gmail, Telegram, SMS/Twilio, Teams, WhatsApp). The credential picker immediately filters by matching service type.
@@ -97,7 +88,7 @@ Below the Contacts panel the tab is a two-column grid:
 5. The **Persona** binding in the add-channel form is a searchable dropdown of registered personas (with a "— None —" option) rather than a raw ID input — the row chip then shows the persona name instead of a truncated id.
 6. Beneath the channel list sits the **Reply outbox** — draft a channel-appropriate reply with approve-before-send. Pick a channel + contact, paste the inbound message, optionally add directions, and **Generate draft** (via `twin_draft_reply`); review/edit it, then **Approve & log** to record it as an outbound communication (nothing is bridged automatically — the human stays in control). When the twin has a bound knowledge base, the draft is additionally grounded in the KB passages that best match the inbound message (semantic search, close-match filtered, token-budgeted, with source-document provenance) — so a reply can cite what the twin actually knows; with no KB bound the draft grounds exactly as before. When you pick a contact, a **recent-thread strip** surfaces your last few logged exchanges with them on that channel so you draft with conversation context instead of from a blank slate — and clicking a *received* row sets it as the inbound message being answered. The Draft-voice options each preview the first line of their voice directives, so you pick a register by what it sounds like. **Quick-steer chips** (Shorter / Warmer / More formal / End with a question) under the Directions field fill the steering text in one tap — and when a draft is already on screen, the tap regenerates it immediately with that direction. If the twin has tone rows, a **Draft voice** selector picks which tone register grounds the draft (default: the target channel's tone, generic fallback) — so you can draft an email-register answer for Discord without editing tone rows first. Below the outbox, a **Recently sent** rail lists the last few logged outbound replies (channel · contact · relative time), each with a copy button to reuse the wording and an **Adapt in outbox** action that prefills the outbox with that reply's channel, contact, and text (approve context frozen to the original tuple) — making the draft → approve → log loop visible and reusable rather than write-only.
 
-### 8. Training — teach the twin by conversation
+### 7. Training — teach the twin by conversation
 
 1. Open **Training**. Pick a topic preset (Work & Background, Tech Opinions, Communication Style, Values & Principles, Domain Expertise, Personal Interests) or type a custom topic. Each preset card carries a **coverage pill** (Thin / Some / Well covered) showing how much the active twin's approved memories already touch that topic — so you can see where it's light *before* picking — and the thinnest-covered preset wears a **"Train this next" star** (suppressed until the twin has its first grounding fact, where every topic would tie at zero). It's the same coverage signal that drives the post-session "where to go next" recommendation, surfaced up front.
 2. The model generates 5 interview questions **grounded in what's already approved in the KB** — the topic screen shows "Already known: N memories — questions will avoid duplicates."
@@ -172,7 +163,7 @@ The compound moat is quiet but strong: you need a desktop app to persist the mem
 
 ### 1. ElevenLabs voice picker & preview-on-save
 
-Voice today is a config form: paste a voice ID, adjust sliders, hope it sounds right. Turn it into a discovery experience:
+There is currently no UI page for Twin voice at all — the `twin_voice_profile` table and its commands (`twin_get_voice_profile` / `twin_upsert_voice_profile` / `twin_delete_voice_profile`) and the connector's `synthesize_speech` / `get_voice_profile` tools are still live in the backend, but the sidebar entry that once pointed at a config form was removed 2026-07-27 (it had drifted out of the `TwinTab` union and rendered a blank page). Rebuilding this as a real tab is a clean-slate opportunity — skip the old paste-an-ID form and go straight to a discovery experience:
 
 - List voices via the ElevenLabs API using the stored vault credential, rendered as a grid with name, accent, gender, and a **Play sample** button.
 - A **Test voice** button synthesizes a line from the twin's bio so you can hear how *your* voice + *your* bio combine before committing.
@@ -282,7 +273,6 @@ src/features/plugins/twin/
 ├── sub_tone/TonePage.tsx               # still wraps Atelier / Console / Baseline behind the prototype strip
 ├── sub_brain/BrainPage.tsx             # renders BrainAtelier directly
 ├── sub_knowledge/KnowledgePage.tsx     # renders KnowledgeAtelier directly
-├── sub_voice/VoicePage.tsx             # 2-tab switcher: VoiceAtelier (new) vs VoiceBaseline (current)
 ├── sub_channels/ChannelsPage.tsx       # renders ChannelsAtelier directly
 └── sub_training/TrainingPage.tsx       # renders TrainingAtelier directly
 ```
@@ -301,4 +291,4 @@ scripts/connectors/builtin/
 └── twin.json                           # builtin-twin connector seed (twin_profile_id picker, requires_picker:"twin", min_tier: builder)
 ```
 
-All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 8 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
+All copy lives under `t.twin.*` in the canonical locale bundle at `src/i18n/locales/en.json` (feature-scoped i18n directories were retired in the 2026-05-08 i18n consolidation pass). The `TwinBindingCard` in the persona editor reads/writes `design_context.twinId`, which is typed as `twin_id: Option<String>` in the Rust `DesignContextData` struct (`src-tauri/src/db/models/persona.rs`). Sidebar navigation for the 7 sub-tabs is defined as `twinItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
