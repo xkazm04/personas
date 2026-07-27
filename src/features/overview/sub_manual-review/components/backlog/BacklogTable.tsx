@@ -7,7 +7,7 @@
 //
 // Columns are deliberately few. Reasoning, evidence and the E/I/R breakdown are
 // review detail — they live in the ledger, not here, or the title column starves.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, CheckSquare, ScanSearch, Square, X } from 'lucide-react';
 
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
@@ -43,6 +43,7 @@ export function BacklogTable({
   onClearSelection,
   onRowClick,
   toolbar,
+  sortHint,
 }: {
   rows: BacklogIdea[];
   projectOptions: { value: string; label: string }[];
@@ -55,6 +56,9 @@ export function BacklogTable({
   /** Receives the clicked row plus the CURRENT visible ordering (queue contract). */
   onRowClick: (row: BacklogIdea, ordered: BacklogIdea[]) => void;
   toolbar?: React.ReactNode;
+  /** Panel-level sort pill, mirrored onto the column sort so the two agree.
+   *  The user can still override it by clicking any column header. */
+  sortHint?: { key: BacklogSortKey; dir: SortDir };
 }) {
   const { t, tx } = useTranslation();
   const r = t.overview.review;
@@ -63,8 +67,19 @@ export function BacklogTable({
 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
-  const [sortKey, setSortKey] = useState<BacklogSortKey>('created');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortKey, setSortKey] = useState<BacklogSortKey>(sortHint?.key ?? 'created');
+  const [sortDir, setSortDir] = useState<SortDir>(sortHint?.dir ?? 'desc');
+
+  // Adopt the panel's sort pill whenever it changes. Deliberately NOT a
+  // controlled prop: once the pill has been applied, clicking a column header
+  // still wins until the pill moves again.
+  const hintKey = sortHint?.key;
+  const hintDir = sortHint?.dir;
+  useEffect(() => {
+    if (!hintKey || !hintDir) return;
+    setSortKey(hintKey);
+    setSortDir(hintDir);
+  }, [hintKey, hintDir]);
 
   const filterRow = useCallback(
     (i: BacklogIdea) =>

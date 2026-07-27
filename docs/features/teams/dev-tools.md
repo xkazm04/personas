@@ -12,5 +12,6 @@ points here-no-longer and the Stop hook now watches the plugin doc.
 
 For project-level surfaces (Manage / Goals / Lifecycle / Competition / Factory),
 see the **Projects** section docs; for the dev-automation surfaces (Overview,
-Observability, Context Map, Idea Scanner, Idea Triage, Task Runner, Fleet), see
+Observability, Context Map, Idea Scanner, Task Runner, Fleet — idea triage now
+lives in Overview › Approvals › Backlog), see
 the plugin doc linked above.

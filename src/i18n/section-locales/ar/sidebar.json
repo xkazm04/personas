@@ -77,7 +77,6 @@
   "manage": "إدارة",
   "context_map": "خريطة السياق",
   "idea_scanner": "فاحص الأفكار",
-  "idea_triage": "تصنيف الأفكار",
-  "task_runner": "منفذ المهام",
-  "projects": "المشاريع"
+  "projects": "المشاريع",
+  "task_runner": "مكتب التشغيل"
 }

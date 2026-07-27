@@ -77,7 +77,6 @@
   "manage": "प्रबंधन",
   "context_map": "संदर्भ मानचित्र",
   "idea_scanner": "आइडिया स्कैनर",
-  "idea_triage": "आइडिया ट्रायज",
-  "task_runner": "टास्क रनर",
-  "projects": "प्रोजेक्ट"
+  "projects": "प्रोजेक्ट",
+  "task_runner": "रन डेस्क"
 }

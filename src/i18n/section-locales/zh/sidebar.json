@@ -77,7 +77,6 @@
   "manage": "管理",
   "context_map": "上下文映射",
   "idea_scanner": "想法扫描器",
-  "idea_triage": "想法分类",
-  "task_runner": "任务运行器",
-  "projects": "项目"
+  "projects": "项目",
+  "task_runner": "运行台"
 }

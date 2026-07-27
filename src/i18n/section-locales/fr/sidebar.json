@@ -77,7 +77,6 @@
   "manage": "Gérer",
   "context_map": "Carte contextuelle",
   "idea_scanner": "Analyseur d'idées",
-  "idea_triage": "Tri des idées",
-  "task_runner": "Exécuteur de tâches",
-  "projects": "Projets"
+  "projects": "Projets",
+  "task_runner": "Poste d'exécution"
 }

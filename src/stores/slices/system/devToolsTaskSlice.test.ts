@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { createDevToolsTaskSlice } from './devToolsTaskSlice';
 import type { SystemStore } from '../../storeTypes';
+import type { DevTask } from '@/lib/bindings/DevTask';
 
 // Minimal Zustand-style harness (mirrors uiSlice.test.ts / tourSlice.test.ts).
 // appendTaskOutput / clearTaskOutput only touch `set` state — no devApi calls —
@@ -22,6 +23,29 @@ function makeHarness(seed: Partial<SystemStore> = {}) {
   return {
     get: () => state,
     buffer: (taskId: string) => state.taskOutputBuffers[taskId] ?? [],
+    task: (id: string) => state.tasks.find((t) => t.id === id),
+  };
+}
+
+function makeTask(overrides: Partial<DevTask> & { id: string }): DevTask {
+  return {
+    project_id: null,
+    title: `task ${overrides.id}`,
+    description: null,
+    source_idea_id: null,
+    goal_id: null,
+    status: 'queued',
+    session_id: null,
+    progress_pct: 0,
+    output_lines: 0,
+    error: null,
+    started_at: null,
+    completed_at: null,
+    created_at: '2026-07-27T00:00:00Z',
+    depth: 'quick',
+    parent_task_id: null,
+    attempt: 1,
+    ...overrides,
   };
 }
 
@@ -95,5 +119,55 @@ describe('devToolsTaskSlice — bounded output ring', () => {
     // clearTaskOutput must delete the key outright, not leave an empty array.
     expect(h.get().taskOutputBuffers['done']).toBeUndefined();
     expect('done' in h.get().taskOutputBuffers).toBe(false);
+  });
+});
+
+describe('devToolsTaskSlice — setTasks / patchTask (Run Desk event path)', () => {
+  it('setTasks replaces the window wholesale', () => {
+    const h = makeHarness();
+    h.get().setTasks([makeTask({ id: 'a' }), makeTask({ id: 'b' })]);
+    expect(h.get().tasks.map((t) => t.id)).toEqual(['a', 'b']);
+    h.get().setTasks([makeTask({ id: 'c' })]);
+    expect(h.get().tasks.map((t) => t.id)).toEqual(['c']);
+  });
+
+  it('patchTask merges a partial into the matching row only', () => {
+    const h = makeHarness();
+    h.get().setTasks([
+      makeTask({ id: 'a', status: 'running', progress_pct: 20 }),
+      makeTask({ id: 'b', status: 'queued' }),
+    ]);
+    h.get().patchTask('a', { status: 'completed', progress_pct: 100 });
+    expect(h.task('a')).toMatchObject({ status: 'completed', progress_pct: 100 });
+    // Untouched fields survive the merge...
+    expect(h.task('a')?.title).toBe('task a');
+    // ...and the sibling row is untouched.
+    expect(h.task('b')).toMatchObject({ status: 'queued', progress_pct: 0 });
+  });
+
+  it('patchTask keeps the identity of rows it did not touch (memo bail-out)', () => {
+    const h = makeHarness();
+    const rows = [makeTask({ id: 'a' }), makeTask({ id: 'b' })];
+    h.get().setTasks(rows);
+    const beforeB = h.task('b');
+    h.get().patchTask('a', { status: 'running' });
+    expect(h.task('b')).toBe(beforeB);
+    expect(h.task('a')).not.toBe(rows[0]);
+  });
+
+  it('patchTask is a no-op for an id outside the loaded window', () => {
+    const h = makeHarness();
+    h.get().setTasks([makeTask({ id: 'a' })]);
+    const before = h.get().tasks;
+    h.get().patchTask('not-loaded', { status: 'failed' });
+    // Same array identity — an off-window event must not re-render the queue.
+    expect(h.get().tasks).toBe(before);
+  });
+
+  it('patchTask carries the error string from a failed status event', () => {
+    const h = makeHarness();
+    h.get().setTasks([makeTask({ id: 'a', status: 'running' })]);
+    h.get().patchTask('a', { status: 'failed', error: 'boom', completed_at: '2026-07-27T01:00:00Z' });
+    expect(h.task('a')).toMatchObject({ status: 'failed', error: 'boom' });
   });
 });

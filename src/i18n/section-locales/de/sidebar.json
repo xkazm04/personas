@@ -77,7 +77,6 @@
   "manage": "Verwalten",
   "context_map": "Kontextkarte",
   "idea_scanner": "Ideen-Scanner",
-  "idea_triage": "Ideen-Triage",
-  "task_runner": "Aufgaben-Runner",
-  "projects": "Projekte"
+  "projects": "Projekte",
+  "task_runner": "Ausführungspult"
 }

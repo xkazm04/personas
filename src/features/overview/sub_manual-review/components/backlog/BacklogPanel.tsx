@@ -8,23 +8,56 @@
 //
 // This component owns the three things the table and the ledger must NOT: the
 // status filter, the selection set, and the modal's snapshotted queue.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 
 import { nextQueueIndex } from '@/features/plugins/dev-tools/sub_workspaces/libraryModel';
+// Cross-feature imports, precedented (see BacklogTable): these are the triage
+// instruments the Idea Triage page owned. The page is gone; the instruments
+// stay where they are defined and dock here instead of being copied.
+import { EffortRiskFilter } from '@/features/plugins/dev-tools/sub_triage/EffortRiskFilter';
+import { TriageRulesPanel } from '@/features/plugins/dev-tools/sub_triage/TriageRulesPanel';
+import { SensorScoreboard } from '@/features/plugins/dev-tools/sub_triage/findings/SensorScoreboard';
+import { SweepButton } from '@/features/plugins/dev-tools/sub_triage/findings/SweepButton';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { BacklogDetailModal } from './BacklogDetailModal';
+import { BacklogFocusDeck } from './BacklogFocusDeck';
 import { BacklogTable } from './BacklogTable';
 import { useCategoryLabel } from './backlogLabels';
-import type { BacklogIdea } from './backlogModel';
+import {
+  applyBacklogSort,
+  FULL_LEVEL_RANGE,
+  hasLevelFilter,
+  SORT_MODE_COLUMN,
+  withinLevelRanges,
+  type BacklogIdea,
+  type BacklogSortMode,
+  type LevelRange,
+} from './backlogModel';
 import type { BacklogQueue, BacklogStatus } from './useBacklogQueue';
 
 const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'];
+const SORT_MODES: BacklogSortMode[] = ['default', 'value', 'quick'];
+
+type BacklogView = 'table' | 'focus';
 
 export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const { t, tx } = useTranslation();
   const r = t.overview.review;
   const categoryLabel = useCategoryLabel();
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+
+  const [view, setView] = useState<BacklogView>('table');
+  const [sortMode, setSortMode] = useState<BacklogSortMode>('default');
+  const [effortRange, setEffortRange] = useState<LevelRange>(FULL_LEVEL_RANGE);
+  const [riskRange, setRiskRange] = useState<LevelRange>(FULL_LEVEL_RANGE);
+  const [levelsOpen, setLevelsOpen] = useState(false);
+  const levelsRef = useRef<HTMLDivElement>(null);
+  useClickOutside(levelsRef, levelsOpen, () => setLevelsOpen(false));
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // The modal walks a SNAPSHOT of the ordering taken when it opened. Recomputing
@@ -40,10 +73,28 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
     archived: r.backlog_status_archived,
   };
 
-  const byId = useMemo(
-    () => new Map(queue.rows.map((i) => [i.id, i])),
-    [queue.rows],
+  // ONE derivation feeds both surfaces. The table further narrows it with its
+  // own rail/search/column filters, but the row SET and the base ORDER are
+  // decided here so the deck and the table are always looking at the same queue.
+  const visibleRows = useMemo(
+    () => applyBacklogSort(
+      queue.rows.filter((i) => withinLevelRanges(i, effortRange, riskRange)),
+      sortMode,
+    ),
+    [queue.rows, effortRange, riskRange, sortMode],
   );
+
+  const byId = useMemo(
+    () => new Map(visibleRows.map((i) => [i.id, i])),
+    [visibleRows],
+  );
+
+  // Focus mode is a verdict surface: swiping an already-decided row would
+  // silently re-decide it, so it only exists over the pending bucket.
+  const focusAvailable = queue.status === 'pending';
+  useEffect(() => {
+    if (!focusAvailable) setView('table');
+  }, [focusAvailable]);
 
   const setStatus = (s: BacklogStatus) => {
     queue.setStatus(s);
@@ -62,11 +113,11 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
 
   const toggleSelectAll = useCallback(() => {
     setSelectedIds((prev) =>
-      prev.size === queue.rows.length && queue.rows.length > 0
+      prev.size === visibleRows.length && visibleRows.length > 0
         ? new Set()
-        : new Set(queue.rows.map((i) => i.id)),
+        : new Set(visibleRows.map((i) => i.id)),
     );
-  }, [queue.rows]);
+  }, [visibleRows]);
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
@@ -110,6 +161,65 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
 
   const detailIdea = queueIds.length > 0 ? byId.get(queueIds[queueIdx] ?? '') ?? null : null;
 
+  // Sort pills + the effort/risk popover. Defined once, docked twice: into the
+  // table's toolbar (right next to its search box) in table mode, and above the
+  // deck in focus mode — the same controls in whichever place the eye already is.
+  const levelFilterActive = hasLevelFilter(effortRange, riskRange);
+  const sortControls = (
+    <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
+        {SORT_MODES.map((mode) => {
+          const active = sortMode === mode;
+          const label = { default: r.backlog_sort_default, value: r.backlog_sort_value, quick: r.backlog_sort_quick }[mode];
+          const tip = { default: undefined, value: r.backlog_sort_value_tip, quick: r.backlog_sort_quick_tip }[mode];
+          return (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setSortMode(mode)}
+              title={tip}
+              aria-pressed={active}
+              className={`typo-label rounded-card px-2 py-1 border transition-colors ${
+                active
+                  ? 'bg-primary/10 text-foreground border-primary/25'
+                  : 'text-muted-foreground border-transparent hover:bg-primary/5'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="relative" ref={levelsRef}>
+        <button
+          type="button"
+          onClick={() => setLevelsOpen((o) => !o)}
+          aria-expanded={levelsOpen}
+          title={r.backlog_levels_filter}
+          aria-label={r.backlog_levels_filter}
+          className={`flex items-center gap-1 typo-label rounded-card px-2 py-1 border transition-colors ${
+            levelFilterActive
+              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+              : 'text-muted-foreground border-primary/15 hover:bg-primary/5'
+          }`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
+          {r.backlog_levels_filter}
+        </button>
+        {levelsOpen && (
+          <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-primary/15 bg-background shadow-elevation-3">
+            <EffortRiskFilter
+              effortRange={effortRange}
+              riskRange={riskRange}
+              onEffortChange={setEffortRange}
+              onRiskChange={setRiskRange}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col min-h-0 h-full gap-3 px-4 pt-3 pb-4">
       <div className="flex items-center gap-2 flex-wrap">
@@ -133,26 +243,66 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             </button>
           );
         })}
-        {/* P5 docks the sweep button, the triage-rules panel and the
-            table|focus deck toggle here. */}
-        {queue.hasMore && (
-          <button
-            type="button"
-            onClick={queue.loadMore}
-            disabled={queue.loadingMore}
-            className="ml-auto typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
-          >
-            {tx(r.backlog_load_more, { count: queue.rows.length })}
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          <SweepButton projectId={activeProjectId} onSwept={queue.reload} />
+          <SegmentedTabs<BacklogView>
+            tabs={[
+              { id: 'table', label: r.backlog_view_table },
+              {
+                id: 'focus',
+                label: r.backlog_view_focus,
+                disabled: !focusAvailable,
+                ariaLabel: r.backlog_view_focus,
+              },
+            ]}
+            activeTab={view}
+            onTabChange={setView}
+            ariaLabel={r.backlog_view_switch_label}
+            variant="segment"
+            size="sm"
+            fullWidth={false}
+            layoutId="backlog-view"
+            idPrefix="backlog-view"
+          />
+          {queue.hasMore && (
+            <button
+              type="button"
+              onClick={queue.loadMore}
+              disabled={queue.loadingMore}
+              className="typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+            >
+              {tx(r.backlog_load_more, { count: queue.rows.length })}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Auto-triage rules — self-collapsing disclosure, project-scoped. */}
+      {activeProjectId && <TriageRulesPanel projectId={activeProjectId} />}
+      {/* Renders itself away until a sensor has actually raised something. */}
+      <SensorScoreboard />
 
       <div className="flex-1 min-h-0">
         {queue.loading && queue.rows.length === 0 ? (
           <BacklogGhostRows />
+        ) : view === 'focus' ? (
+          <div className="h-full min-h-0 flex flex-col gap-2">
+            <div className="flex justify-end">{sortControls}</div>
+            <div className="flex-1 min-h-0">
+              <BacklogFocusDeck
+                rows={visibleRows}
+                counts={queue.counts}
+                categoryLabel={categoryLabel}
+                busy={queue.actingId !== null}
+                onAccept={queue.accept}
+                onReject={queue.reject}
+                onDelete={queue.remove}
+              />
+            </div>
+          </div>
         ) : (
           <BacklogTable
-            rows={queue.rows}
+            rows={visibleRows}
             projectOptions={queue.projectOptions}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
@@ -161,6 +311,8 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             onBulkReject={() => bulkDecide('reject')}
             onClearSelection={clearSelection}
             onRowClick={openDetail}
+            toolbar={sortControls}
+            sortHint={SORT_MODE_COLUMN[sortMode]}
           />
         )}
       </div>

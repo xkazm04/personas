@@ -77,7 +77,6 @@
   "manage": "Управление",
   "context_map": "Карта контекста",
   "idea_scanner": "Сканер идей",
-  "idea_triage": "Сортировка идей",
-  "task_runner": "Задачи",
-  "projects": "Проекты"
+  "projects": "Проекты",
+  "task_runner": "Пульт выполнения"
 }

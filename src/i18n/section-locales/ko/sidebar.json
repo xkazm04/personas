@@ -77,7 +77,6 @@
   "manage": "관리",
   "context_map": "컨텍스트 맵",
   "idea_scanner": "아이디어 스캐너",
-  "idea_triage": "아이디어 분류",
-  "task_runner": "작업 실행기",
-  "projects": "프로젝트"
+  "projects": "프로젝트",
+  "task_runner": "실행 데스크"
 }

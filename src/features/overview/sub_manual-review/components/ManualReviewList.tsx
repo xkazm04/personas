@@ -67,6 +67,15 @@ export default function ManualReviewList() {
   // — persona reviews, Dev Tools backlog, Workspace Knowledge — behind one
   // shell instead of three surfaces in three idioms.
   const [mode, setMode] = useState<DecisionMode>('reviews');
+  // Deep-link handoff (mirror of `pendingTaskFocusId`): another surface can ask
+  // Approvals to open on a specific decision mode. Consumed once on mount and
+  // cleared, so a later manual tab change isn't reverted on the next remount.
+  useEffect(() => {
+    const pending = useSystemStore.getState().pendingApprovalsMode;
+    if (!pending) return;
+    setMode(pending);
+    useSystemStore.getState().setPendingApprovalsMode(null);
+  }, []);
   // Hoisted out of BacklogPanel deliberately: the mode tab has to show the
   // backlog's pending count BEFORE the user opens that tab, so the queue is
   // owned here and handed down.

@@ -34,8 +34,8 @@ Dev Tools tabs today:
 | **Observability** (LLM + app-monitoring mapping) | External → App | Two sub-tabs sharing one assignment-matrix pattern: **LLM** (`dev_projects.llm_tracking_credential_id`; use-case rollups from Langfuse / LangSmith / Helicone / LightTrack) and **Monitoring** (`dev_projects.monitoring_credential_id`; Sentry unresolved-issues + events 24h/7d via the shared `fetchSentryStats`; Better Stack listed but pending an adapter) |
 | **Context Map** (semantic code domains) | App ↔ Codebase | `dev_context_groups` + `dev_contexts`, generated from a filesystem walk |
 | **Idea Scanner** (21 LLM agents) | App → LLM → App | `dev_ideas` rows tagged with `scan_type` + per-scan history |
-| **Idea Triage** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules. Also the landing point of the **findings spine** — Observability, the Factory passport, the golden-standard scan, and the KPI layer all emit into `dev_ideas` with `origin` / `evidence` / `dedup_key`, so every sensor feeds the same triage → task → PR loop |
-| **Task Runner** (batched execution) | App → LLM → App | `dev_tasks` rows + live output buffer + PR Bridge card |
+| **Idea Triage** — *moved to* **Overview › Approvals › Backlog** (accept / reject / delete) | Human → App | Idea status transitions; optional auto-triage rules. Also the landing point of the **findings spine** — Observability, the Factory passport, the golden-standard scan, and the KPI layer all emit into `dev_ideas` with `origin` / `evidence` / `dedup_key`, so every sensor feeds the same triage → task → PR loop |
+| **Run Desk** (batched execution) | App → LLM → App | `dev_tasks` rows + live output buffer + PR Bridge card |
 | **Fleet** (Claude Code session aggregator) | App ↔ CLIs | Per-session xterm terminals over the active project's cwd |
 | **Workspaces** (Workspace Knowledge Center — see [`workspaces.md`](./workspaces.md)) | App ↔ App | `dev_workspaces` + `dev_projects.workspace_id` (project grouping, promoted from the localStorage prototype) + `workspace_knowledge` / `workspace_practice_adoption` (governed cross-project practice library + per-project adoption matrix) |
 
@@ -47,7 +47,7 @@ Ideas are linked to the agent that proposed them via `DevIdea.scan_type` (a stri
 
 ## User flow
 
-The eight tabs are sequenced so a new project can walk top-to-bottom exactly once, then loops through **Scanner → Triage → Runner → PR** forever after.
+The tabs are sequenced so a new project can walk top-to-bottom exactly once, then loops through **Scanner → Triage → Runner → PR** forever after. Triage itself no longer lives here: the swipe deck moved into **Overview › Approvals › Backlog** (see §4).
 
 ### 1. Projects — register a codebase
 
@@ -67,7 +67,7 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 > and the forward roadmap.
 
 1. Open **Context Map**. It renders as a single **ledger** (`ContextLedger.tsx`) — a cross-tab whose rows are contexts (grouped into colour-tagged group bands) and whose columns are the project's active **use cases**. See *Use cases* below for how to read it.
-2. Click **Scan Codebase**. The scan spawns a Claude CLI pass over the repo (not a structural file walk) and streams `ContextGroup`/`ContextItem` rows back; a **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each ledger row carries that context's **coverage cluster** — files · use cases · goals · ideas · KPIs — where the goal count jumps to the **Goals** board (pre-selecting the first matching goal via the `pendingGoalSpotlightId` slot in `uiSlice`) and the idea count jumps to **Idea Triage**. Selecting a row opens the right-side **ContextDetail** pane, which lists the linked goals inline (title, progress %, and a "done / total tasks" summary per goal) plus the use cases covering that context.
+2. Click **Scan Codebase**. The scan spawns a Claude CLI pass over the repo (not a structural file walk) and streams `ContextGroup`/`ContextItem` rows back; a **ScanOverlay** streams progress lines and can be cancelled mid-flight. Each ledger row carries that context's **coverage cluster** — files · use cases · goals · ideas · KPIs — where the goal count jumps to the **Goals** board (pre-selecting the first matching goal via the `pendingGoalSpotlightId` slot in `uiSlice`) and the idea count jumps to **Overview › Approvals › Backlog** (seeding `pendingApprovalsMode`). Selecting a row opens the right-side **ContextDetail** pane, which lists the linked goals inline (title, progress %, and a "done / total tasks" summary per goal) plus the use cases covering that context.
 
    **Runtime chips (findings loop 1A).** When the project has an LLM tracer and/or Sentry wired, each row also carries what that area actually *does* at runtime: a **30d LLM-spend** chip and an **unresolved-errors** chip (which jumps to Overview). The joins already existed in the data model — LLM pinpoints roll up per use-case slug, a use case slices N contexts (`context_ids`), and a Sentry issue's `culprit` is usually a path a context owns via `filePaths`. An unwired project renders exactly the chips it always did (`useContextRuntime` degrades to empty maps; telemetry being down can never break the ledger).
 
@@ -84,7 +84,7 @@ cross-tabulation, not a card board:
 - **Rows are contexts**, wrapped in their group bands. Each row carries that
   context's real coverage — files · use cases · goals · ideas · KPIs — and the
   goal / idea counts **click through** (goals seed the spotlight and open the
-  Goals board; ideas open the triage queue).
+  Goals board; ideas open Approvals › Backlog).
 - **Columns are the active use cases.** A filled cell means *this use case
   slices through this context*; the use case's primary context is ringed. So
   you read **down** a column to see a use case's whole slice, and **across** a
@@ -132,15 +132,43 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 4. The **Results** grid shows per-scan idea cards with color-coded level badges. A **Scan History** table below records timestamps, token counts, duration, and the agent set for every past scan.
 5. The **Agent Performance** collapsible panel (see *Agent Scoreboard* below) surfaces per-agent accept / implementation / avg-impact stats aggregated across the whole project; it expands/collapses with a height transition.
 5a. **Static Scan** runs a deterministic static-analysis CLI (`dev_tools_run_static_scan`). With no tool configured for the project, the button now opens a **Static scan tool** config modal (pick the tool — Fallow/Knip/Jscpd — and the argv command, persisted via `dev_tools_set_static_scan_config`) instead of firing a doomed run that surfaced the generic "Some input values are invalid" validation error; saving runs the scan immediately. Failure status now auto-clears so the control never looks stuck.
-7. The **Idea Evolution** panel includes an **Accepted ideas — lifecycle** section at the top — a 3-step Accepted → Tasked → Shipped strip per recently-accepted idea. Each step is tinted by state (emerald for done, amber for running, red for failed, neutral for pending); the Tasked step is clickable and jumps to Task Runner with the matching task scroll-focused + ring-highlighted via the existing `pendingTaskFocusId` slot. The story of how an idea became code now lives in one strip instead of three tabs.
+7. The **Idea Evolution** panel includes an **Accepted ideas — lifecycle** section at the top — a 3-step Accepted → Tasked → Shipped strip per recently-accepted idea. Each step is tinted by state (emerald for done, amber for running, red for failed, neutral for pending); the Tasked step is clickable and jumps to the Run Desk with the matching task scroll-focused + ring-highlighted via the existing `pendingTaskFocusId` slot. The story of how an idea became code now lives in one strip instead of three tabs.
 6. The **Scan History** table below the results gains an agent-set filter chip row (one chip per agent that has ever scanned, with a count badge — OR-combine semantics; an amber "Clear filter" chip appears when any chip is active) and a per-row **Rerun** button that re-runs the historical agent set against the current code. Rerun is disabled while another scan is in flight.
 
-### 4. Idea Triage — Tinder-style accept / reject
+### 4. Triage — now in Overview › Approvals › Backlog
 
-1. Open **Idea Triage**. Pending ideas form a 3-card stack in the center; sidebar filters narrow by category, scan type, effort range, and risk range.
-2. Swipe right (or ➡ / Z) to accept, left (or ⬅ / A) to reject. The top card drags physically via Framer Motion; the border glows red/green based on drag direction. Each card surfaces the proposing agent's identity and Scoreboard rank inline below the title — "🔒 Security Auditor · rank #3 (81% accept)" — computed from the same `computeAgentStats` aggregation the Scoreboard uses, so the credibility signal travels with every triage decision.
-3. The optional **Auto-Triage Rules** panel above the stack lets you define conditional rules (e.g. "if effort ≤ 3 and impact ≥ 7 → accept") that are applied in bulk via `dev_tools_run_triage_rules`. Conditions can target `effort` / `impact` / `risk` / `category` / `scan_type` and — since the findings spine — **`origin`**, the sensor that raised the idea (e.g. "auto-accept `passport_gap`"). A classic scanner idea has no origin, so an origin rule never sweeps it up.
-4. Progress bar + status badges (accepted / rejected / pending) update live. The help button (and the app-wide `?` shortcut) opens the global keyboard-shortcut cheat-sheet, which lists the triage accept/reject keys under its **Agents** section alongside every other discoverable binding.
+The standalone **Idea Triage** page was removed; `dev_ideas` are triaged in the
+one decision center that already owned the other two "should this be accepted?"
+queues. Open **Overview → Approvals → Backlog** (the Context Map's idea-coverage
+badge deep-links straight there).
+
+1. **Table** mode is the default — a cross-project faceted table (rail derived
+   from `category/origin`, search, per-column filters, checkbox bulk verdicts,
+   and a detail ledger that walks the visible ordering). See
+   [`docs/features/overview/README.md`](../../overview/README.md).
+2. **Focus** mode is the swipe deck, carried over intact: pending ideas form a
+   3-card stack, dragged physically via Framer Motion with the border glowing
+   red/green by direction. Swipe right (or ➡ / Z) to accept, left (or ⬅ / A) to
+   reject; the action bar also offers **delete** and **Build now** (queue a
+   linked task and accept in one move). A progress bar tracks reviewed/total and
+   a session-summary toast fires when the queue empties after a real run.
+   Focus mode is only offered over the **pending** bucket — swiping an
+   already-decided row would silently re-decide it. What the deck lost in the
+   move: the per-card agent rank / accept-rate line, which rewarded plausibility
+   rather than outcome (the Sensor Scoreboard scores the same question honestly).
+3. Both modes read the **same filtered + ordered row set**, so switching between
+   them never reshuffles the queue. Panel-level **sort pills** (Default / Best
+   value / Quick wins) and an **effort & risk** popover sit next to the search
+   box; the value pill maps onto the table's value column.
+4. The **Auto-Triage Rules** panel (conditional rules applied in bulk via
+   `dev_tools_run_triage_rules`), the **Sweep** button and the **Sensor
+   Scoreboard** moved with it and sit in the Backlog's action row. Rule
+   conditions can target `effort` / `impact` / `risk` / `category` / `scan_type`
+   and — since the findings spine — **`origin`**, the sensor that raised the
+   idea (e.g. "auto-accept `passport_gap`"). A classic scanner idea has no
+   origin, so an origin rule never sweeps it up.
+5. The app-wide `?` cheat-sheet still lists the accept/reject keys under its
+   **Agents** section.
 
 #### The findings spine — every sensor feeds triage
 
@@ -164,7 +192,7 @@ existing deck changed.
 | `doc_rot` | Doc-rot scan (git) | a doc's coupled sources have commits newer than the doc (harm-ranked: docs read WHILE stale first, then oldest staleness; top 3 per sweep; dedup `doc:<path>`; the description carries the changed sources as the refresh-task prompt) |
 | `memory_disputed` | Memory claims loop | a persona/team memory carries open `wrong`/`outdated` claims (most-disputed first, top 3; dedup `memory:<id>`; NOT a Claude-task seed — the description routes to Overview → Memories where a human resolves reverify/deprecate/dismiss) |
 
-**Sweeping.** The 🛰 button on the triage action row runs `runFindingSweep` for the
+**Sweeping.** The 🛰 button on the Backlog action row runs `runFindingSweep` for the
 active project: gather → emit → dedup → cap → persist. Every sensor is optional (a
 project with no tracer, no Sentry, or no scan still sweeps what it has), and the
 result toast **names the sensors it skipped** — a thin sweep must never read as a
@@ -223,14 +251,20 @@ rate** — of the findings that shipped and were judged, how many cleared or imp
   whose findings you keep rejecting produces an **"auto-reject &lt;sensor&gt;" rule
   suggestion** rather than quietly re-tuning itself.
 
-### 5. Task Runner — execute accepted ideas
+### 5. Run Desk — execute accepted ideas
 
-1. Open **Task Runner**. Click **Batch from Accepted** to materialize one `DevTask` per accepted idea (source-linked via `source_idea_id`), or **New Task** to create an ad-hoc task with a **Quick / Campaign / Deep Build** depth picker.
-2. Press **Start Batch**. Tasks transition through phases: `analyzing → planning → implementing → validating → complete`, visible as a tinted progress bar per card.
-3. Output streams live via the **TaskOutputPanel** (expandable). Context warnings from the LLM (e.g. "couldn't load referenced file") are flagged as a **Partial context** badge with the full list revealed on expand.
-4. A **Self-Healing** panel above the queue watches for failures and offers one-click retries.
-5. **PR Bridge** (see *Proposal A* below) appears on every completed task — a collapsible card with the suggested branch name, commit message, PR title and body (with agent citation), plus several actions: *Copy PR body*, *Copy all*, *Copy reasoning* (visible only when the source idea carries reasoning text — drops just the agent's reasoning blob onto the clipboard for pasting into review threads), *Copy git commands* (outputs a ready-to-paste bash block: `git checkout -b`, `git add -A`, multi-line commit via single-quoted heredoc so the reasoning blob round-trips unescaped, `git push -u`, and an optional `gh pr create --draft` block when a GitHub URL is recognized), *Prepare branch & commit* (uses `dev_tools_create_branch` + `dev_tools_commit_changes`), *Open draft PR on GitHub* (via `@tauri-apps/plugin-shell` with GitHub's `quick_pull=1` URL pre-fill). When the source idea has a known scan agent the **PR title** is prefixed `[<emoji> <Agent Label>] <title>` so agent attribution survives in commit-log surfaces (GitHub PR list, `git log --oneline`) that never render the PR body.
-6. Tasks linked to a goal show a clickable violet **goal pill** beside the source label; clicking it jumps to the **Goals** tab in one hop (`setDevToolsTab('goals')` + the `pendingGoalSpotlightId` slot in `uiSlice`).
+> Renamed from **Task Runner** (the sidebar tab id stays `task-runner`). The page is `sub_runner/RunDeskPage.tsx`; `TaskRunnerPage.tsx` is gone.
+
+1. Open **Run Desk**. Click **Batch from Accepted** to materialize one `DevTask` per accepted idea (source-linked via `source_idea_id`), or **New Task** to create an ad-hoc task with a **Quick / Campaign / Deep Build** depth picker.
+2. Press **Start Batch**. Every card shows the **real** progress % from `progress_pct`, the status token, and the last streamed output line — the old invented phase ladder (`analyzing → planning → …`, derived from the progress number rather than reported by the executor) was removed because it told users things the backend never said.
+3. The queue is **paged, not fetch-all**: `useTaskQueue` layers L0 per-status counts (from `dev_tools_tasks_page`'s `counts`, project-wide so the filter chips stay truthful) over a 40-row keyset page, with a scroll sentinel pulling the next page. Status filter chips across the top switch the server-side filter.
+4. Live events **patch one row** instead of refetching the project: `TASK_EXEC_OUTPUT` feeds the bounded output ring, `TASK_EXEC_STATUS` / `TASK_EXEC_COMPLETE` call the `patchTask(id, partial)` store action, and a reload happens only when a transition can move a row across the active filter window, or on `AUTO_RUN_COMPLETE`.
+5. **Auto-Run All** starts the scheduler at the chosen concurrency. The banner rehydrates from `dev_tools_get_auto_run_status` on mount, so reloading mid-run keeps the live banner (and a finished run leaves a dismissible summary line) instead of forgetting it existed. The **Parallel** stepper next to the actions binds `maxParallelTasks`, which previously had no UI at all.
+6. Output streams live via the **TaskOutputPanel** (expandable). Context warnings from the LLM (e.g. "couldn't load referenced file") are flagged as a **Partial context** badge with the full list revealed on expand. (These arrive on the completion event only and are session-scoped — `dev_tasks` has no column for them.)
+7. **Retries** go through `dev_tools_retry_task`: the new row copies the title verbatim and records lineage in `parent_task_id` / `attempt`, surfaced as an **Attempt N** chip (tooltipped with the parent title when that row is loaded). The old path prepended `[Retry] ` to the title, so a twice-retried task read `[Retry] [Retry] …` with no link back to its origin.
+8. A **Self-Healing** panel above the queue watches for failures and offers one-click retries.
+9. **PR Bridge** (see *Proposal A* below) appears on every completed task — a collapsible card with the suggested branch name, commit message, PR title and body (with agent citation), plus several actions: *Copy PR body*, *Copy all*, *Copy reasoning* (visible only when the source idea carries reasoning text — drops just the agent's reasoning blob onto the clipboard for pasting into review threads), *Copy git commands* (outputs a ready-to-paste bash block: `git checkout -b`, `git add -A`, multi-line commit via single-quoted heredoc so the reasoning blob round-trips unescaped, `git push -u`, and an optional `gh pr create --draft` block when a GitHub URL is recognized), *Prepare branch & commit* (uses `dev_tools_create_branch` + `dev_tools_commit_changes`), *Open draft PR on GitHub* (via `@tauri-apps/plugin-shell` with GitHub's `quick_pull=1` URL pre-fill). When the source idea has a known scan agent the **PR title** is prefixed `[<emoji> <Agent Label>] <title>` so agent attribution survives in commit-log surfaces (GitHub PR list, `git log --oneline`) that never render the PR body.
+10. Tasks linked to a goal show a clickable violet **goal pill** beside the source label; clicking it jumps to the **Goals** tab in one hop (`setDevToolsTab('goals')` + the `pendingGoalSpotlightId` slot in `uiSlice`).
 
 ### 6. Overview — live health signals
 
@@ -282,7 +316,7 @@ Frontend lives in `sub_llm_overview/` (`LlmOverviewPage`, `useLlmPinpoints`, `ll
 > **Restructured (2026-06):** these are now three independent sidebar items. The old Lifecycle tab strip is gone (Lifecycle is Setup-only) and its **Project Tracking** sub-tab was removed entirely.
 
 1. **Lifecycle** is the autonomous **Dev Clone** setup surface — a vertical step list (`FlowStepsList`): Dev Clone adopted, hourly scan trigger configured, approval-listener trigger, rejection-listener trigger, and goal count. Each step renders its own state (passed / pending / blocked) so the user can see exactly which piece is missing without a separate readiness summary. One-click **Adopt Dev Clone** registers the persona, its tools, and its triggers; the trigger list below the step-stones shows the live event-listener and schedule rows.
-2. **Goals** renders a force-directed **Goal Constellation** (via `forceLayout.ts`) plus a Kanban board with `your turn / agent's turn / done` swim lanes. Goals can have dependencies, and tasks can link to a goal so progress propagates. The **Project Pulse** variant adds a right-side **spotlight pane** that lists the goal's dependency chain (requires / blocks) AND the tasks linked to it — title, status dot, live progress, and a `done/total` counter at the section heading; each task row is a button that hands off to Task Runner and highlights the matching card. Clicking any goal in the left rail updates the spotlight without leaving the tab; clicking a node in the **Baseline** force graph also switches to the Pulse variant with that goal pre-selected, so the spatial view and the actionable view stay connected. The **Kanban** board is interactive: drag a goal card between lanes to change its status (`pending` / `in_progress` / `completed`), and hover any card to reveal ±5% progress nudge buttons on either side of the progress bar — both routes hit `updateGoal` optimistically through the Zustand slice. Each card's top-right corner carries an **add-to-dos** button (left of the expand affordance, hover-revealed) for goals without a checklist.
+2. **Goals** renders a force-directed **Goal Constellation** (via `forceLayout.ts`) plus a Kanban board with `your turn / agent's turn / done` swim lanes. Goals can have dependencies, and tasks can link to a goal so progress propagates. The **Project Pulse** variant adds a right-side **spotlight pane** that lists the goal's dependency chain (requires / blocks) AND the tasks linked to it — title, status dot, live progress, and a `done/total` counter at the section heading; each task row is a button that hands off to the Run Desk and highlights the matching card. Clicking any goal in the left rail updates the spotlight without leaving the tab; clicking a node in the **Baseline** force graph also switches to the Pulse variant with that goal pre-selected, so the spatial view and the actionable view stay connected. The **Kanban** board is interactive: drag a goal card between lanes to change its status (`pending` / `in_progress` / `completed`), and hover any card to reveal ±5% progress nudge buttons on either side of the progress bar — both routes hit `updateGoal` optimistically through the Zustand slice. Each card's top-right corner carries an **add-to-dos** button (left of the expand affordance, hover-revealed) for goals without a checklist.
 3. **Competition** (its own sidebar item) spawns 2–4 strategy variants in Claude Code worktrees racing against the same prompt. The **StrategyLeaderboard** ranks them by quality score + duration. A **WinnerInsightDialog** captures *why* a strategy won for future prompt tuning — its textarea now opens pre-filled with a plain-text summary of how the winner's prompt differs from each other variant (`summarizePromptDiff` in `PromptDiffModal.tsx` walks each pair through the same line-LCS used for the side-by-side diff, surfaces up to 4 added/removed sample lines per other, then prefixes "— My take on why this won:" so the user picks up where the data ends). When a competition has two or more slots, each row also carries a checkbox; select any two and click **Open diff** to see the full line-level prompt diff in a side-by-side modal.
 
 ### 8. Skills — browse dev patterns
@@ -491,10 +525,11 @@ src/features/plugins/dev-tools/
 │   ├── AgentScoreboard.tsx       # Proposal B: per-agent performance table
 │   ├── IdeaEvolutionPanel.tsx    # fitness ranking + synthesis + duplicates
 │   └── ideaEvolution.ts
-├── sub_triage/
-│   ├── IdeaTriagePage.tsx        # Tinder-style swipe stack + filters
+├── sub_triage/                   # component library only — the page moved to
+│   │                             # Overview › Approvals › Backlog
 │   ├── TriageRulesPanel.tsx      # conditional auto-triage rules
-│   └── EffortRiskFilter.tsx
+│   ├── EffortRiskFilter.tsx
+│   └── findings/                 # FindingBadge · SweepButton · SensorScoreboard
 ├── sub_runner/
 │   ├── TaskRunnerPage.tsx        # batch queue + phase progress
 │   ├── PrBridge.tsx              # Proposal A: idea → draft PR card

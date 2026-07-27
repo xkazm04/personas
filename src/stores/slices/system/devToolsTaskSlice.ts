@@ -15,7 +15,8 @@ import * as devApi from "@/api/devTools/devTools";
  * O(cap) (effectively O(1) amortized) and per-task memory flat regardless of
  * how chatty a task is. This mirrors the Rust-side stderr ring (200 lines /
  * 32 KB) with extra headroom for on-screen review. Completed/failed buffers are
- * additionally freed wholesale on terminal status by TaskRunnerPage.
+ * additionally freed wholesale on terminal status by the Run Desk's
+ * `useTaskQueue`.
  */
 const MAX_TASK_OUTPUT_LINES = 1000;
 
@@ -38,6 +39,28 @@ export interface DevToolsTaskSlice {
   maxParallelTasks: number;
 
   fetchTasks: (projectId?: string, status?: string, goalId?: string) => Promise<void>;
+  /**
+   * Replace the task window wholesale. The Run Desk owns a *paged* window
+   * (keyset page of 40 + status filter) rather than the whole project, and
+   * mirrors it here so the store stays the single render/patch source for
+   * every task consumer (cards, SelfHealingPanel, goal spotlight).
+   */
+  setTasks: (tasks: DevTask[]) => void;
+  /**
+   * Patch ONE task row in place from a live execution event.
+   *
+   * The old Task Runner refetched the whole project on every
+   * `TASK_EXEC_STATUS`/`TASK_EXEC_COMPLETE` event — an O(project) IPC round
+   * trip per status tick, which is why a 40-task auto-run melted the queue.
+   * Status/progress/error/completion deltas are fully described by the event
+   * payload, so they are applied locally; only a transition that can move a
+   * row in or out of the active filter window triggers a reload.
+   *
+   * No-ops (returns an unchanged state object) when the id is not in the
+   * current window, so an event for an off-window task can't force a
+   * re-render of every card.
+   */
+  patchTask: (id: string, partial: Partial<DevTask>) => void;
   createTask: (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string, depth?: string) => Promise<DevTask>;
   batchCreateTasks: (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) => Promise<DevTask[]>;
   startTask: (id: string) => Promise<void>;
@@ -94,6 +117,21 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
     } catch (err) {
       reportError(err, "Failed to fetch tasks", set, { stateUpdates: { tasksLoading: false } });
     }
+  },
+
+  setTasks: (tasks) => {
+    set({ tasks });
+  },
+
+  patchTask: (id, partial) => {
+    set((state) => {
+      const idx = state.tasks.findIndex((t) => t.id === id);
+      const current = idx === -1 ? undefined : state.tasks[idx];
+      if (!current) return {};
+      const next = state.tasks.slice();
+      next[idx] = { ...current, ...partial };
+      return { tasks: next };
+    });
   },
 
   createTask: async (title, projectId, description, sourceIdeaId, goalId, depth) => {

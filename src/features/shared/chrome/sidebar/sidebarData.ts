@@ -3,7 +3,7 @@ import {
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
-  FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
+  FolderKanban, Map, Lightbulb, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy, AlertOctagon,
   User, Mic, Volume2, Sparkles, Headphones,
@@ -130,7 +130,6 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'llm-overview', label: 'Observability', icon: BarChart3 },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
-  { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
   // Fleet — Claude Code session aggregator for the active project.
   // Inherits the active project's root_path as the spawn cwd. Not

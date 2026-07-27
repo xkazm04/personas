@@ -97,10 +97,15 @@ export function backlogHaystack(i: BacklogIdea): string[] {
   return [i.title, i.description, i.reasoning];
 }
 
-export type BacklogSortKey = 'category' | 'title' | 'project' | 'value' | 'created';
+export type BacklogSortKey = 'category' | 'title' | 'project' | 'value' | 'quick' | 'created';
 export type SortDir = 'asc' | 'desc';
 
-/** Comparator for the table. `value` sorts by {@link triageValueScore}. */
+/**
+ * Comparator for the table AND the focus deck. `value` sorts by
+ * {@link triageValueScore}; `quick` is the quick-wins order (cheapest first,
+ * highest impact as the tiebreak) and has no column of its own — it is reached
+ * only through the panel's sort pills.
+ */
 export function compareBacklog(
   a: BacklogIdea,
   b: BacklogIdea,
@@ -117,10 +122,48 @@ export function compareBacklog(
       return a.projectName.localeCompare(b.projectName) * s;
     case 'value':
       return (triageValueScore(a) - triageValueScore(b)) * s;
+    case 'quick':
+      return (a.effort - b.effort || b.impact - a.impact) * s;
     case 'created':
     default:
       return a.createdAt.localeCompare(b.createdAt) * s;
   }
+}
+
+/**
+ * The panel-level ordering, ported from Idea Triage's sort pills. It sits ABOVE
+ * the table's per-column sort: whichever mode is picked feeds the deck's card
+ * order and the table's initial sort in the same breath, so Table ⇄ Focus never
+ * reshuffles the queue under the user.
+ */
+export type BacklogSortMode = 'default' | 'value' | 'quick';
+
+/** Each pill's equivalent table sort. `quick` has no column (see compareBacklog). */
+export const SORT_MODE_COLUMN: Record<BacklogSortMode, { key: BacklogSortKey; dir: SortDir }> = {
+  default: { key: 'created', dir: 'desc' },
+  value: { key: 'value', dir: 'desc' },
+  quick: { key: 'quick', dir: 'asc' },
+};
+
+/** Order a row set by a sort mode. Returns a copy; never mutates the input. */
+export function applyBacklogSort(rows: BacklogIdea[], mode: BacklogSortMode): BacklogIdea[] {
+  const { key, dir } = SORT_MODE_COLUMN[mode];
+  return [...rows].sort((a, b) => compareBacklog(a, b, key, dir));
+}
+
+/** Inclusive effort/risk band, as the EffortRiskFilter presets express it. */
+export type LevelRange = [number, number];
+export const FULL_LEVEL_RANGE: LevelRange = [1, 10];
+
+/** True when a row falls inside both bands. */
+export function withinLevelRanges(i: BacklogIdea, effort: LevelRange, risk: LevelRange): boolean {
+  return i.effort >= effort[0] && i.effort <= effort[1]
+    && i.risk >= risk[0] && i.risk <= risk[1];
+}
+
+/** True when either band is narrower than the full 1-10 range (drives the badge). */
+export function hasLevelFilter(effort: LevelRange, risk: LevelRange): boolean {
+  return effort[0] !== 1 || effort[1] !== 10 || risk[0] !== 1 || risk[1] !== 10;
 }
 
 /**

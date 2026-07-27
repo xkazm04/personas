@@ -77,7 +77,6 @@
   "manage": "Kelola",
   "context_map": "Peta Konteks",
   "idea_scanner": "Pemindai Ide",
-  "idea_triage": "Triase Ide",
-  "task_runner": "Pemroses Tugas",
-  "projects": "Proyek"
+  "projects": "Proyek",
+  "task_runner": "Meja Eksekusi"
 }
