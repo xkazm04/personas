@@ -4608,6 +4608,15 @@ export type Translations = {
       refresh_oauth: string;
       refresh: string;
     };
+    setup_kind: {
+      generic: string;
+      vault_credential: string;
+      cli_login: string;
+      dev_project: string;
+      obsidian_vault: string;
+      twin_profile: string;
+      misconfigured: string;
+    };
     vault_badge: {
       needs_attention: string;
       secure: string;

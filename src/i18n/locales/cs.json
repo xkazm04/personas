@@ -5321,6 +5321,15 @@
       "perm_errors": "Zjištěny trvalé chyby -- pokus o rotaci, upozornění odesláno.",
       "degrading": "Dlouhodobá degradace -- spuštěna preventivní rotace.",
       "backoff": "Přechodná selhání -- aktivní exponenciální backoff."
+    },
+    "setup_kind": {
+      "cli_login": "CLI poskytovatele je nainstalované, ale nejste přihlášeni — spusťte v terminálu jeho přihlašovací příkaz (například `vercel login` nebo `gh auth login`)",
+      "dev_project": "zaregistrujte projekt v Dev Tools",
+      "generic": "Jeden nebo více deklarovaných konektorů vyžaduje nastavení. Otevřete personu a zjistěte, co každý z nich potřebuje.",
+      "misconfigured": "tento konektor je neznámý nebo špatně nakonfigurovaný — odeberte jej nebo aktualizujte aplikaci",
+      "obsidian_vault": "nastavte svůj vault v pluginu Obsidian Brain",
+      "twin_profile": "vytvořte profil Twin v pluginu Twin",
+      "vault_credential": "přidejte přihlašovací údaje v Settings → Vault"
     }
   },
   "deployment": {

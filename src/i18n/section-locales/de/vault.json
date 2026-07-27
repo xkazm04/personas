@@ -1677,5 +1677,14 @@
     "perm_errors": "Permanente Fehler erkannt -- Rotation versucht, Warnung ausgelöst.",
     "degrading": "Anhaltende Verschlechterung -- präventive Rotation ausgelöst.",
     "backoff": "Vorübergehende Fehler -- exponentielles Backoff aktiv."
+  },
+  "setup_kind": {
+    "cli_login": "Die CLI des Anbieters ist installiert, aber nicht angemeldet — führe im Terminal ihren Login-Befehl aus (zum Beispiel `vercel login` oder `gh auth login`)",
+    "dev_project": "ein Projekt in Dev Tools registrieren",
+    "generic": "Ein oder mehrere deklarierte Konnektoren benötigen eine Einrichtung. Öffne die Persona, um zu sehen, was jeder davon erfordert.",
+    "misconfigured": "dieser Konnektor ist unbekannt oder falsch konfiguriert — entferne ihn oder aktualisiere die App",
+    "obsidian_vault": "deinen Vault im Obsidian-Brain-Plugin konfigurieren",
+    "twin_profile": "ein Twin-Profil im Twin-Plugin erstellen",
+    "vault_credential": "die Zugangsdaten unter Settings → Vault hinzufügen"
   }
 }
