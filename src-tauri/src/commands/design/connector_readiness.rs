@@ -7,17 +7,15 @@
 //! pass adoption and then fail promote.
 //!
 //! Dispatch is driven by `ConnectorClass` (see `db::models::connector`):
-//!   - `ZeroConfig`   → always ready.
-//!   - `Credential`   → uniquely bindable to one concrete vault credential
-//!                      (exact service_type, else a category match). An
-//!                      ambiguous or absent match is NeedsSetup — EXCEPT for
-//!                      the connectors in `CLI_PROBE_CONNECTORS`, which fall
-//!                      back to "is the provider CLI on this machine
-//!                      authenticated?" (see below).
-//!   - `GlobalProbe`  → a connector-specific probe against a backing local
-//!                      entity: a Dev Tools project (`codebase`), a Twin
-//!                      profile (`twin`), an Obsidian vault (`obsidian_
-//!                      memory`). Resolved globally — no per-persona binding.
+//! - `ZeroConfig` → always ready.
+//! - `Credential` → uniquely bindable to one concrete vault credential (exact
+//!   service_type, else a category match). An ambiguous or absent match is
+//!   NeedsSetup — EXCEPT for the connectors in `CLI_PROBE_CONNECTORS`, which
+//!   fall back to "is the provider CLI on this machine authenticated?" (see
+//!   below).
+//! - `GlobalProbe` → a connector-specific probe against a backing local entity:
+//!   a Dev Tools project (`codebase`), a Twin profile (`twin`), an Obsidian
+//!   vault (`obsidian_memory`). Resolved globally — no per-persona binding.
 //!
 //! ## The CLI-auth fallback (Credential class only)
 //!
@@ -28,15 +26,15 @@
 //! the connectors listed in `CLI_PROBE_CONNECTORS` the resolver therefore tries
 //! a second path, strictly ordered:
 //!
-//!   1. A uniquely bound, usable Vault credential → `Ready`. This ALWAYS wins:
-//!      it is the only mode that survives leaving this machine (CI, another
-//!      device, a headless run).
-//!   2. No credential resolves → probe the provider CLI (cached, ~5 min TTL):
-//!      - exit 0 (authenticated)      → `Ready`
-//!      - binary present, probe fails → `NeedsSetup { CliLogin }` — the user
-//!        runs e.g. `vercel login`, not a Vault round-trip
-//!      - binary absent               → `NeedsSetup { VaultCredential }`
-//!        (unchanged pre-existing behavior)
+//! 1. A uniquely bound, usable Vault credential → `Ready`. This ALWAYS wins:
+//!    it is the only mode that survives leaving this machine (CI, another
+//!    device, a headless run).
+//! 2. No credential resolves → probe the provider CLI (cached, ~5 min TTL):
+//!    - exit 0 (authenticated) → `Ready`
+//!    - binary present, probe fails → `NeedsSetup { CliLogin }` — the user runs
+//!      e.g. `vercel login`, not a Vault round-trip
+//!    - binary absent → `NeedsSetup { VaultCredential }` (unchanged
+//!      pre-existing behavior)
 //!
 //! Readiness is recomputed often (every adopt, promote, credential mutation
 //! and run gate), so the probe MUST NOT spawn a process per call — it is
