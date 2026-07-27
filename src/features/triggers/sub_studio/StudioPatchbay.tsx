@@ -127,7 +127,7 @@ export function StudioPatchbay() {
         onClick={() => setSourceRailOpen((v) => !v)}
         aria-expanded={sourceRailOpen}
         aria-label={sourceRailOpen ? st.close_sources_rail : st.open_sources_rail}
-        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-border bg-card/90 px-1.5 py-3 text-foreground backdrop-blur transition-colors hover:bg-secondary/60"
+        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-border bg-background px-1.5 py-3 text-foreground transition-colors hover:bg-secondary"
       >
         {sourceRailOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
       </button>
@@ -136,7 +136,7 @@ export function StudioPatchbay() {
         onClick={() => setTargetRailOpen((v) => !v)}
         aria-expanded={targetRailOpen}
         aria-label={targetRailOpen ? st.close_targets_rail : st.open_targets_rail}
-        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-border bg-card/90 px-1.5 py-3 text-foreground backdrop-blur transition-colors hover:bg-secondary/60"
+        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-border bg-background px-1.5 py-3 text-foreground transition-colors hover:bg-secondary"
       >
         {targetRailOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
       </button>
