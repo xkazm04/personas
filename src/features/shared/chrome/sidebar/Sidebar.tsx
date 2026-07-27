@@ -12,6 +12,7 @@ import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { sections } from '@/features/shared/chrome/sidebar/sidebarData';
+import { railSection } from '@/lib/navigation/registry';
 import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/DesktopFooter';
 import SidebarLevel1 from '@/features/shared/chrome/sidebar/SidebarLevel1';
 import SidebarLevel2 from '@/features/shared/chrome/sidebar/SidebarLevel2';
@@ -202,7 +203,12 @@ export default function Sidebar() {
           }>
             <div className="px-4 py-3 border-b border-primary/10 bg-primary/5">
               <h2 className="typo-label text-foreground/90">
-                {labelOf(sidebarSection, sections.find((s) => s.id === sidebarSection)?.label ?? t.sidebar.overview)}
+                {(() => {
+                  // Nested sections (Templates → Connections) keep the parent's
+                  // panel title, since the parent's L2 nav is what's rendered.
+                  const railId = railSection(sidebarSection);
+                  return labelOf(railId, sections.find((s) => s.id === railId)?.label ?? t.sidebar.overview);
+                })()}
               </h2>
             </div>
             <div className="relative flex-1 min-h-0">

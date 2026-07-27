@@ -608,7 +608,21 @@
     "context_map": "Peta Konteks",
     "idea_scanner": "Pemindai Ide",
     "projects": "Proyek",
-    "task_runner": "Meja Eksekusi"
+    "task_runner": "Meja Eksekusi",
+    "group_advanced": "Lanjutan",
+    "group_build": "Bangun",
+    "group_connect": "Hubungkan",
+    "group_credentials": "Kredensial",
+    "group_drafts": "Build draf",
+    "group_general": "Umum",
+    "group_home": "Beranda",
+    "group_llm": "LLM",
+    "group_maintain": "Pemeliharaan",
+    "group_memory": "Memori",
+    "group_monitoring": "Pemantauan",
+    "group_operations": "Operasi",
+    "group_plugins": "Plugin",
+    "group_templates": "Templat"
   },
   "home": {
     "setup": {

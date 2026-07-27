@@ -608,7 +608,21 @@
     "context_map": "কনটেক্সট ম্যাপ",
     "idea_scanner": "আইডিয়া স্ক্যানার",
     "projects": "প্রজেক্ট",
-    "task_runner": "রান ডেস্ক"
+    "task_runner": "রান ডেস্ক",
+    "group_advanced": "উন্নত",
+    "group_build": "তৈরি",
+    "group_connect": "সংযোগ",
+    "group_credentials": "শংসাপত্র",
+    "group_drafts": "খসড়া বিল্ড",
+    "group_general": "সাধারণ",
+    "group_home": "হোম",
+    "group_llm": "LLM",
+    "group_maintain": "রক্ষণাবেক্ষণ",
+    "group_memory": "স্মৃতি",
+    "group_monitoring": "মনিটরিং",
+    "group_operations": "পরিচালনা",
+    "group_plugins": "প্লাগিন",
+    "group_templates": "টেমপ্লেট"
   },
   "home": {
     "setup": {

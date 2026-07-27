@@ -608,7 +608,21 @@
     "context_map": "Context Map",
     "idea_scanner": "Idea Scanner",
     "task_runner": "Run Desk",
-    "projects": "Projects"
+    "projects": "Projects",
+    "group_home": "Home",
+    "group_monitoring": "Monitoring",
+    "group_operations": "Operations",
+    "group_memory": "Memory",
+    "group_build": "Build",
+    "group_maintain": "Maintain",
+    "group_credentials": "Credentials",
+    "group_templates": "Templates",
+    "group_general": "General",
+    "group_connect": "Connect",
+    "group_llm": "LLM",
+    "group_advanced": "Advanced",
+    "group_drafts": "Draft builds",
+    "group_plugins": "Plugins"
   },
   "home": {
     "get_started": {

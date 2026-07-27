@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
+import { Plus, List, Star, Cloud, Clock, Activity, FolderGit2, Hammer } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -10,6 +10,7 @@ import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import SidebarGroupNav, { childRowClass, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 
@@ -73,10 +74,6 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const devProjects = useSystemStore((s) => s.projects);
   const fetchDevProjects = useSystemStore((s) => s.fetchProjects);
-  const [favoritesCollapsed, setFavoritesCollapsed] = useState(false);
-  const [recentsCollapsed, setRecentsCollapsed] = useState(false);
-  const [progressCollapsed, setProgressCollapsed] = useState(false);
-  const [activeProjectCollapsed, setActiveProjectCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
   const { getPrefetchProps } = usePrefetchOnHover();
 
@@ -224,6 +221,223 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
     [personas, codebasePersonaIds, activeProjectId],
   );
 
+  // ── Row renderers ───────────────────────────────────────────────────
+  // Persona rows live inside a group's left rail, so they use the shared
+  // `childRowClass` and only add what's specific to an agent: the health /
+  // running status border and the favorite toggle.
+
+  const personaRow = (
+    p: { id: string; name: string },
+    opts: { favorite: boolean; tooltip?: string; trailing?: React.ReactNode } = { favorite: false },
+  ) => {
+    const isRunning = executingPersonaIds.has(p.id);
+    const isActive = selectedPersonaId === p.id && !isCreatingPersona;
+    const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
+    return (
+      <button
+        type="button"
+        key={p.id}
+        {...getPrefetchProps(p.id)}
+        onClick={() => selectPersona(p.id)}
+        aria-current={isActive ? 'page' : undefined}
+        title={opts.tooltip ?? rowStatusTitle(healthGrades[p.id], isRunning)}
+        className={`${childRowClass(isActive)} group ${statusBorder} ${isRunning && !isActive ? 'bg-orange-500/5' : ''}`}
+      >
+        <span className={`truncate min-w-0 flex-1 text-left ${isRunning && !isActive ? 'text-orange-300/90' : ''}`}>
+          {p.name}
+        </span>
+        {opts.trailing}
+        {opts.favorite && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
+            className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
+            title={favorites.has(p.id) ? t.shared.sidebar_extra.remove_favorites : t.shared.sidebar_extra.add_favorites}
+            aria-label={favorites.has(p.id) ? t.shared.sidebar_extra.remove_favorites : t.shared.sidebar_extra.add_favorites}
+          >
+            <Star className={`w-3 h-3 ${favorites.has(p.id) ? 'text-amber-400 fill-amber-400' : 'text-foreground/90'}`} aria-hidden="true" />
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  // ── Dynamic groups ──────────────────────────────────────────────────
+  // Agents has no fixed group set: sections appear and disappear with the
+  // user's actual state (a draft in flight, an active project, favorites).
+  // Each one is still rendered through the shared group primitive so it
+  // reads identically to the static sections.
+
+  const groups: SidebarNavGroup[] = [];
+
+  if (activeDrafts.length > 0) {
+    groups.push({
+      id: 'drafts',
+      label: t.shared.sidebar_extra.draft_builds,
+      icon: Hammer,
+      accentClass: 'text-violet-400/70 hover:text-violet-400/90',
+      count: activeDrafts.length,
+      collapsible: true,
+      render: activeDrafts.map((draft) => {
+        const isActive = isCreatingPersona && draft.sessionId === activeBuildSessionId;
+        const displayName = draft.persona?.name ?? t.shared.sidebar_extra.draft_agent_fallback;
+        const needsAnswers = draft.pendingCount > 0 || draft.phase === 'awaiting_input';
+        const phaseLabel = tokenLabel(t, 'build', draft.phase);
+        return (
+          <button
+            type="button"
+            key={draft.sessionId}
+            onClick={() => {
+              setActiveBuildSession(draft.sessionId);
+              useSystemStore.getState().setIsCreatingPersona(true);
+            }}
+            aria-current={isActive ? 'page' : undefined}
+            className={`w-full flex items-start gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors text-left ${
+              isActive
+                ? needsAnswers
+                  ? 'bg-amber-500/10 text-amber-300 font-medium'
+                  : 'bg-violet-500/10 text-violet-300 font-medium'
+                : needsAnswers
+                  ? 'text-foreground/70 hover:bg-amber-500/5 hover:text-amber-300'
+                  : 'text-foreground/70 hover:bg-violet-500/5 hover:text-violet-300'
+            }`}
+            title={
+              needsAnswers
+                ? tx(
+                    (draft.pendingCount || 1) === 1
+                      ? t.shared.sidebar_extra.draft_needs_answers_one
+                      : t.shared.sidebar_extra.draft_needs_answers_other,
+                    { name: displayName, count: draft.pendingCount || 1 },
+                  )
+                : tx(t.shared.sidebar_extra.draft_switch_title, { name: displayName, phase: phaseLabel })
+            }
+          >
+            <LoadingSpinner className={`mt-0.5 flex-shrink-0 ${needsAnswers ? 'text-amber-400' : 'text-violet-400'}`} />
+            {/* Two lines: the draft's name owns the full row width and the
+                phase moves to its own caption line, aligned to the rail. A
+                right-pinned phase chip used to collide with longer names
+                ("Test complete" ate half the row). */}
+            <span className="flex-1 min-w-0 flex flex-col">
+              <span className="truncate">{displayName}</span>
+              <span className={`flex items-center gap-1 truncate typo-caption ${needsAnswers ? 'text-amber-300/80' : 'text-violet-400/70'}`}>
+                <span className="truncate">{phaseLabel}</span>
+                {needsAnswers && (
+                  <span className="flex-shrink-0" aria-hidden="true">
+                    ?{draft.pendingCount > 0 ? draft.pendingCount : ''}
+                  </span>
+                )}
+              </span>
+            </span>
+          </button>
+        );
+      }),
+    });
+  }
+
+  if (activeProject && activeProjectPersonas.length > 0) {
+    groups.push({
+      id: 'active-project',
+      label: activeProject.name,
+      icon: FolderGit2,
+      accentClass: 'text-indigo-400/70 hover:text-indigo-400/90',
+      count: activeProjectPersonas.length,
+      collapsible: true,
+      render: activeProjectPersonas.map((p) => personaRow(p, { favorite: false })),
+    });
+  }
+
+  if (favoritePersonas.length > 0) {
+    groups.push({
+      id: 'favorites',
+      label: t.sidebar.favorites,
+      icon: Star,
+      accentClass: 'text-amber-400/70 hover:text-amber-400/90',
+      count: favoritePersonas.length,
+      collapsible: true,
+      render: favoritePersonas.map((p) => personaRow(p, { favorite: true })),
+    });
+  }
+
+  if (recentPersonas.length > 0) {
+    groups.push({
+      id: 'recent',
+      label: t.sidebar.recent,
+      icon: Clock,
+      accentClass: 'text-blue-400/70 hover:text-blue-400/90',
+      count: recentPersonas.length,
+      collapsible: true,
+      render: recentPersonas.map((p) => personaRow(p, { favorite: true })),
+    });
+  }
+
+  if (progressEntries.length > 0) {
+    groups.push({
+      id: 'progress',
+      label: t.shared.sidebar_extra.progress,
+      icon: Activity,
+      accentClass: 'text-emerald-400/70 hover:text-emerald-400/90',
+      count: progressEntries.length,
+      collapsible: true,
+      render: progressEntries.map((entry) =>
+        personaRow(
+          { id: entry.personaId, name: entry.personaName },
+          {
+            favorite: false,
+            tooltip: `${entry.personaName}\n${entry.labels.join(' · ')}`,
+            // One pulsing dot per task class this persona has in flight.
+            trailing: (
+              <span className="flex items-center gap-1 flex-shrink-0">
+                {(['draft', 'exec', 'lab'] as const)
+                  .filter((type) => entry.types.has(type))
+                  .map((type) => {
+                    const meta = PROGRESS_COLORS[type];
+                    return (
+                      <span key={type} className="relative flex h-2 w-2" aria-label={type}>
+                        <span className={`absolute inset-0 rounded-full animate-ping ${meta.ping}`} />
+                        <span className={`relative w-2 h-2 rounded-full ${meta.dot}`} />
+                      </span>
+                    );
+                  })}
+              </span>
+            ),
+          },
+        ),
+      ),
+    });
+  }
+
+  // Cloud (still dev-only) — a navigable group header whose sub-tabs appear
+  // once the section is open. Groups→Teams consolidation (Phase 4) retired
+  // the standalone "Groups" entry; a team is the workspace now.
+  if (isDev) {
+    groups.push({
+      id: 'cloud',
+      groupItem: {
+        id: 'cloud-section',
+        label: t.shared.sidebar_extra.cloud_label,
+        icon: Cloud,
+        dev: true,
+        onSelect: () => {
+          selectPersona(null);
+          setAgentTab('cloud');
+          useSystemStore.getState().setIsCreatingPersona(false);
+        },
+        rightSlot: (
+          <span className="typo-caption uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300/80">
+            {t.shared.sidebar_extra.cloud_dev_pill}
+          </span>
+        ),
+      },
+      items: agentTab === 'cloud'
+        ? cloudItems.map((item) => ({ id: item.id, label: item.label, icon: item.icon }))
+        : [],
+    });
+  }
+
+  const allAgentsActive = agentTab === 'all' && !isCreatingPersona;
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -233,364 +447,32 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <button
             type="button"
             onClick={onCreatePersona}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg typo-caption font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
             <Plus className="w-3 h-3" />
-            Create
+            {t.sidebar.create}
           </button>
         </div>
       </div>
 
-      {/* Nav items */}
-      <div className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
-        {/* All Agents */}
-        <button
-          type="button"
-          onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
-          aria-current={agentTab === 'all' && !isCreatingPersona ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            agentTab === 'all' && !isCreatingPersona
-              ? 'bg-primary/10 text-foreground font-semibold'
-              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
-          }`}
-        >
-          <List className="w-4 h-4 flex-shrink-0" />
-          {t.shared.sidebar_extra.all_agents_label}
-          <span className="ml-auto text-[11px] text-foreground/90">{personas.length}</span>
-        </button>
-
-        {/* Active draft builds — one row per session in the buildSessions map.
-            Click to switch to that draft. "New draft" button starts another one. */}
-        {activeDrafts.length > 0 && (
-          <div className="mt-1 space-y-0.5">
-            <div className="flex items-center justify-between px-3 py-1">
-              <span className="text-[10px] uppercase tracking-wider text-violet-400/50 font-medium">
-                {t.shared.sidebar_extra.draft_builds}{activeDrafts.length > 1 ? ` (${activeDrafts.length})` : ''}
-              </span>
-            </div>
-            {activeDrafts.map((draft) => {
-              const isActive = isCreatingPersona && draft.sessionId === activeBuildSessionId;
-              const displayName = draft.persona?.name ?? t.shared.sidebar_extra.draft_agent_fallback;
-              const needsAnswers = draft.pendingCount > 0 || draft.phase === 'awaiting_input';
-              const phaseLabel = tokenLabel(t, 'build', draft.phase);
-              return (
-                <button
-                  type="button"
-                  key={draft.sessionId}
-                  onClick={() => {
-                    setActiveBuildSession(draft.sessionId);
-                    useSystemStore.getState().setIsCreatingPersona(true);
-                  }}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-                    isActive
-                      ? needsAnswers
-                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold'
-                        : 'bg-violet-500/10 text-violet-300 border border-violet-500/15 font-semibold'
-                      : needsAnswers
-                        ? 'text-foreground hover:bg-amber-500/5 hover:text-amber-300 font-normal'
-                        : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300 font-normal'
-                  }`}
-                  title={
-                    needsAnswers
-                      ? tx(
-                          (draft.pendingCount || 1) === 1
-                            ? t.shared.sidebar_extra.draft_needs_answers_one
-                            : t.shared.sidebar_extra.draft_needs_answers_other,
-                          { name: displayName, count: draft.pendingCount || 1 },
-                        )
-                      : tx(t.shared.sidebar_extra.draft_switch_title, { name: displayName, phase: phaseLabel })
-                  }
-                >
-                  <LoadingSpinner className={`flex-shrink-0 ${needsAnswers ? 'text-amber-400' : 'text-violet-400'}`} />
-                  <span className="truncate">{displayName}</span>
-                  {needsAnswers ? (
-                    <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium text-amber-300">
-                      <span aria-hidden="true">?</span>
-                      {draft.pendingCount > 0 ? draft.pendingCount : ''}
-                    </span>
-                  ) : (
-                    <span className="ml-auto text-[10px] text-violet-400/60">{phaseLabel}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Active Dev Tools project — personas with the built-in "codebase"
-            connector. Shown only when a project is selected AND at least one
-            persona is wired up; otherwise hidden so the sidebar doesn't
-            advertise an empty group. */}
-        {activeProject && activeProjectPersonas.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-primary/10">
-            <button
-              type="button"
-              onClick={() => setActiveProjectCollapsed(!activeProjectCollapsed)}
-              aria-expanded={!activeProjectCollapsed}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-indigo-400/70 hover:text-indigo-400/90 transition-colors"
-              title={`Active project: ${activeProject.name}${activeProject.root_path ? ` — ${activeProject.root_path}` : ''}`}
-            >
-              <FolderGit2 className="w-3 h-3" aria-hidden="true" />
-              <span className="truncate min-w-0">{activeProject.name}</span>
-              <span className="text-[10px] font-mono text-indigo-400/50 ml-0.5">{activeProjectPersonas.length}</span>
-              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${activeProjectCollapsed ? '-rotate-90' : ''}`} />
-            </button>
-            {!activeProjectCollapsed && (
-              <div className="mt-1 space-y-0.5">
-                {activeProjectPersonas.map((p) => {
-                  const isRunning = executingPersonaIds.has(p.id);
-                  const isActive = selectedPersonaId === p.id && !isCreatingPersona;
-                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
-                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
-                  return (
-                    <button
-                      type="button"
-                      key={p.id}
-                      {...getPrefetchProps(p.id)}
-                      onClick={() => selectPersona(p.id)}
-                      aria-current={isActive ? 'page' : undefined}
-                      title={statusTitle}
-                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
-                        isActive
-                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(99,102,241,0.12)] border border-indigo-500/20'
-                          : isRunning
-                            ? 'bg-orange-500/5 hover:bg-secondary/40'
-                            : 'hover:bg-secondary/40'
-                      }`}
-                    >
-                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
-                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
-                      }`}>{p.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Favorites section */}
-        {favoritePersonas.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-primary/10">
-            <button
-              type="button"
-              onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
-              aria-expanded={!favoritesCollapsed}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-amber-400/60 hover:text-amber-400/80 transition-colors"
-            >
-              <Star className="w-3 h-3 fill-amber-400/60" aria-hidden="true" />
-              Favorites
-              <span className="text-[10px] font-mono text-amber-400/40 ml-0.5">{favoritePersonas.length}</span>
-              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${favoritesCollapsed ? '-rotate-90' : ''}`} />
-            </button>
-            {!favoritesCollapsed && (
-              <div className="mt-1 space-y-0.5">
-                {favoritePersonas.map((p) => {
-                  const isRunning = executingPersonaIds.has(p.id);
-                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
-                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
-                  return (
-                    <button
-                      type="button"
-                      key={p.id}
-                      {...getPrefetchProps(p.id)}
-                      onClick={() => selectPersona(p.id)}
-                      title={statusTitle}
-                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors hover:bg-secondary/40 group ${statusBorder}`}
-                    >
-                      <span className="text-foreground/90 truncate text-[13px] min-w-0 flex-1 text-left">{p.name}</span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-                        className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                        title={t.shared.sidebar_extra.remove_favorites}
-                        aria-label={t.shared.sidebar_extra.remove_favorites}
-                      >
-                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" aria-hidden="true" />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Recent section */}
-        {recentPersonas.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-primary/10">
-            <button
-              type="button"
-              onClick={() => setRecentsCollapsed(!recentsCollapsed)}
-              aria-expanded={!recentsCollapsed}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-blue-400/60 hover:text-blue-400/80 transition-colors"
-            >
-              <Clock className="w-3 h-3" aria-hidden="true" />
-              Recent
-              <span className="text-[10px] font-mono text-blue-400/40 ml-0.5">{recentPersonas.length}</span>
-              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${recentsCollapsed ? '-rotate-90' : ''}`} />
-            </button>
-            {!recentsCollapsed && (
-              <div className="mt-1 space-y-0.5">
-                {recentPersonas.map((p) => {
-                  const isRunning = executingPersonaIds.has(p.id);
-                  const isActive = selectedPersonaId === p.id && !isCreatingPersona;
-                  const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
-                  const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
-                  return (
-                    <button
-                      type="button"
-                      key={p.id}
-                      {...getPrefetchProps(p.id)}
-                      onClick={() => selectPersona(p.id)}
-                      aria-current={isActive ? 'page' : undefined}
-                      title={statusTitle}
-                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
-                        isActive
-                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
-                          : isRunning
-                            ? 'bg-orange-500/5 hover:bg-secondary/40'
-                            : 'hover:bg-secondary/40'
-                      }`}
-                    >
-                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
-                        isActive ? 'text-foreground/90 font-medium' : isRunning ? 'text-orange-300/90' : 'text-foreground'
-                      }`}>{p.name}</span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(p.id); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); toggleFavorite(p.id); } }}
-                        className="flex-shrink-0 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-500/10 rounded cursor-pointer"
-                        title={t.shared.sidebar_extra.add_favorites}
-                        aria-label={t.shared.sidebar_extra.add_favorites}
-                      >
-                        <Star className="w-3 h-3 text-foreground/90" aria-hidden="true" />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Progress section — one entry per persona with active work.
-            Mirrors the colors used by the L1 orbit dots so the same task
-            class is visually consistent across the whole sidebar. */}
-        {progressEntries.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-primary/10">
-            <button
-              type="button"
-              onClick={() => setProgressCollapsed(!progressCollapsed)}
-              aria-expanded={!progressCollapsed}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-emerald-400/60 hover:text-emerald-400/80 transition-colors"
-            >
-              <Activity className="w-3 h-3" aria-hidden="true" />
-              {t.shared.sidebar_extra.progress}
-              <span className="text-[10px] font-mono text-emerald-400/40 ml-0.5">{progressEntries.length}</span>
-              <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${progressCollapsed ? '-rotate-90' : ''}`} />
-            </button>
-            {!progressCollapsed && (
-              <div className="mt-1 space-y-0.5">
-                {progressEntries.map((entry) => {
-                  const isActive = selectedPersonaId === entry.personaId && !isCreatingPersona;
-                  const isRunning = executingPersonaIds.has(entry.personaId);
-                  const statusBorder = rowStatusBorder(healthGrades[entry.personaId], isRunning);
-                  // Tooltip: show all active task labels for this persona.
-                  const tooltip = `${entry.personaName}\n${entry.labels.join(' · ')}`;
-                  return (
-                    <button
-                      type="button"
-                      key={entry.personaId}
-                      {...getPrefetchProps(entry.personaId)}
-                      onClick={() => selectPersona(entry.personaId)}
-                      aria-current={isActive ? 'page' : undefined}
-                      title={tooltip}
-                      className={`w-full flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-lg typo-body transition-colors group ${statusBorder} ${
-                        isActive
-                          ? 'bg-primary/10 text-foreground/90 shadow-[0_0_12px_rgba(59,130,246,0.12)] border border-primary/20'
-                          : 'hover:bg-secondary/40'
-                      }`}
-                    >
-                      <span className={`truncate text-[13px] min-w-0 flex-1 text-left ${
-                        isActive ? 'text-foreground/90 font-medium' : 'text-foreground'
-                      }`}>{entry.personaName}</span>
-                      {/* One pulsing dot per task class this persona has in flight. */}
-                      <span className="flex items-center gap-1 flex-shrink-0">
-                        {(['draft', 'exec', 'lab'] as const)
-                          .filter((type) => entry.types.has(type))
-                          .map((type) => {
-                            const meta = PROGRESS_COLORS[type];
-                            return (
-                              <span
-                                key={type}
-                                className="relative flex h-2 w-2"
-                                aria-label={type}
-                              >
-                                <span className={`absolute inset-0 rounded-full animate-ping ${meta.ping}`} />
-                                <span className={`relative w-2 h-2 rounded-full ${meta.dot}`} />
-                              </span>
-                            );
-                          })}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Teams (productionized at TEAM tier) + Cloud (still dev-only).
-            Groups→Teams consolidation (Phase 4): the standalone "Groups"
-            entry is retired — workspace grouping now lives inside Teams
-            (a team is the workspace). Personas' groups migrated to
-            home-team membership in Phase 3. */}
-        {isDev && (
-          <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
-            {isDev && (
-              <button
-                type="button"
-                onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
-                aria-current={agentTab === 'cloud' ? 'page' : undefined}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
-                  agentTab === 'cloud'
-                    ? 'bg-amber-500/10 text-foreground font-semibold'
-                    : 'text-foreground/70 hover:bg-amber-500/5 hover:text-foreground font-normal'
-                }`}
-              >
-                <Cloud className="w-4 h-4 flex-shrink-0" />
-                <span>{t.shared.sidebar_extra.cloud_label}</span>
-                <span className="ml-auto text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300/80 font-medium">
-                  {t.shared.sidebar_extra.cloud_dev_pill}
-                </span>
-              </button>
-            )}
-            {/* Cloud sub-tabs */}
-            {agentTab === 'cloud' && (
-              <div className="ml-4 space-y-0.5">
-                {cloudItems.map((item) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    onClick={() => setCloudTab(item.id as CloudTab)}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
-                      cloudTab === item.id
-                        ? 'bg-primary/10 text-foreground'
-                        : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
-                    }`}
-                  >
-                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="flex-1 px-2 py-2 overflow-y-auto">
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.agents}
+          lead={{
+            id: 'all',
+            label: t.shared.sidebar_extra.all_agents_label,
+            icon: List,
+            badge: { count: personas.length, className: 'bg-secondary/50 border border-primary/10 text-foreground font-normal' },
+            onSelect: () => {
+              selectPersona(null);
+              setAgentTab('all');
+              useSystemStore.getState().setIsCreatingPersona(false);
+            },
+          }}
+          groups={groups}
+          activeId={agentTab === 'cloud' ? cloudTab : allAgentsActive ? 'all' : ''}
+          onSelect={(id) => setCloudTab(id as CloudTab)}
+        />
       </div>
     </div>
   );

@@ -608,7 +608,21 @@
     "context_map": "Carte contextuelle",
     "idea_scanner": "Analyseur d'idées",
     "projects": "Projets",
-    "task_runner": "Poste d'exécution"
+    "task_runner": "Poste d'exécution",
+    "group_advanced": "Avancé",
+    "group_build": "Créer",
+    "group_connect": "Connecter",
+    "group_credentials": "Identifiants",
+    "group_drafts": "Brouillons",
+    "group_general": "Général",
+    "group_home": "Accueil",
+    "group_llm": "LLM",
+    "group_maintain": "Maintenance",
+    "group_memory": "Mémoire",
+    "group_monitoring": "Surveillance",
+    "group_operations": "Opérations",
+    "group_plugins": "Extensions",
+    "group_templates": "Modèles"
   },
   "home": {
     "setup": {

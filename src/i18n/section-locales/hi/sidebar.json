@@ -78,5 +78,19 @@
   "context_map": "संदर्भ मानचित्र",
   "idea_scanner": "आइडिया स्कैनर",
   "projects": "प्रोजेक्ट",
-  "task_runner": "रन डेस्क"
+  "task_runner": "रन डेस्क",
+  "group_advanced": "उन्नत",
+  "group_build": "निर्माण",
+  "group_connect": "कनेक्ट",
+  "group_credentials": "क्रेडेंशियल",
+  "group_drafts": "ड्राफ्ट बिल्ड",
+  "group_general": "सामान्य",
+  "group_home": "होम",
+  "group_llm": "LLM",
+  "group_maintain": "रखरखाव",
+  "group_memory": "स्मृति",
+  "group_monitoring": "मॉनिटरिंग",
+  "group_operations": "संचालन",
+  "group_plugins": "प्लगइन",
+  "group_templates": "टेम्पलेट"
 }

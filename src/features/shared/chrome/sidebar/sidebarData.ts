@@ -204,6 +204,97 @@ export const obsidianBrainItems: SubNavItem[] = [
   { id: 'sync',       label: 'Sync',         icon: RefreshCw },
 ];
 
+// ─── L2 grouping ────────────────────────────────────────────────────────
+//
+// Every section's Level-2 list is presented as the Projects-style grouped
+// nav (see SidebarGroupNav): a caption heading per group with its items
+// nested behind a left rail. These descriptors declare group membership by
+// item id; `SidebarLevel2` resolves them against the flat item arrays above,
+// so an item that is tier/dev-filtered out simply disappears from its group
+// (and an empty group disappears entirely).
+
+export interface SidebarItemGroupDef {
+  /** Stable group key (also the collapse-state key). */
+  id: string;
+  /** `t.sidebar.<labelKey>` — the caption rendered above the rail. */
+  labelKey: string;
+  /** Item ids, in the order they should appear before label sorting. */
+  itemIds: string[];
+}
+
+/** Overview → Monitoring / Operations / Memory. */
+export const overviewGroups: SidebarItemGroupDef[] = [
+  { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'health', 'leaderboard', 'home', 'sla'] },
+  { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'certification', 'director', 'incidents', 'messages'] },
+  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['knowledge'] },
+];
+
+/** Home → a single group holding every home tab. */
+export const homeGroups: SidebarItemGroupDef[] = [
+  { id: 'home', labelKey: 'group_home', itemIds: ['welcome', 'cockpit', 'learning', 'roadmap', 'system-check'] },
+];
+
+/** Events → Build (author + try) / Maintain (operate + diagnose). */
+export const eventGroups: SidebarItemGroupDef[] = [
+  { id: 'build',    labelKey: 'group_build',    itemIds: ['studio', 'smee-relay', 'shared', 'test'] },
+  { id: 'maintain', labelKey: 'group_maintain', itemIds: ['cloud-webhooks', 'dead-letter', 'live-stream', 'rate-limits'] },
+];
+
+/**
+ * Connections → Credentials / Templates. The Templates section was folded
+ * into Connections (it is no longer a Level-1 rail entry); its items live in
+ * the second group and switch `sidebarSection` to 'design-reviews' on select.
+ */
+export const credentialGroups: SidebarItemGroupDef[] = [
+  { id: 'credentials', labelKey: 'group_credentials', itemIds: ['credentials', 'databases', 'from-template', 'graph', 'add-new'] },
+];
+
+export const templateGroups: SidebarItemGroupDef[] = [
+  { id: 'templates', labelKey: 'group_templates', itemIds: ['n8n', 'generated', 'explore', 'recipes', 'presets'] },
+];
+
+/** Settings → General / Connect / LLM / Advanced (dev-only surfaces). */
+export const settingsGroups: SidebarItemGroupDef[] = [
+  { id: 'general',  labelKey: 'group_general',  itemIds: ['account', 'appearance', 'portability', 'radio', 'notifications'] },
+  { id: 'connect',  labelKey: 'group_connect',  itemIds: ['api-keys'] },
+  { id: 'llm',      labelKey: 'group_llm',      itemIds: ['engine', 'byom', 'limits'] },
+  { id: 'advanced', labelKey: 'group_advanced', itemIds: ['network', 'history', 'admin'] },
+];
+
+/**
+ * Resolve group descriptors against a (already tier/dev-filtered) item list.
+ *
+ * Items are returned in `itemIds` order; groups that end up empty are dropped.
+ * Any item that no group claims is appended to the LAST group rather than
+ * silently disappearing — so adding an entry to `overviewItems` without
+ * touching `overviewGroups` still renders (in the wrong group, visibly, which
+ * is the failure mode you want).
+ */
+export function groupItems<T extends { id: string }>(
+  defs: SidebarItemGroupDef[],
+  items: T[],
+): Array<{ def: SidebarItemGroupDef; items: T[] }> {
+  // NOTE: `Map` is shadowed in this module by the lucide `Map` icon import —
+  // use a plain record for the id index.
+  const byId: Record<string, T | undefined> = {};
+  for (const item of items) byId[item.id] = item;
+  const claimed = new Set<string>();
+  const out = defs.map((def) => {
+    const picked: T[] = [];
+    for (const id of def.itemIds) {
+      const item = byId[id];
+      if (item) { picked.push(item); claimed.add(id); }
+    }
+    return { def, items: picked };
+  });
+  const orphans = items.filter((i) => !claimed.has(i.id));
+  if (orphans.length > 0) {
+    const last = out[out.length - 1];
+    if (last) last.items = [...last.items, ...orphans];
+  }
+  return out.filter((g) => g.items.length > 0);
+}
+
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
   const tier = activeTier ?? TIERS.TEAM;
   return [

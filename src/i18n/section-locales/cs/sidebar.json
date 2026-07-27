@@ -78,5 +78,19 @@
   "context_map": "Kontextová mapa",
   "idea_scanner": "Scanner nápadů",
   "projects": "Projekty",
-  "task_runner": "Řídicí pult"
+  "task_runner": "Řídicí pult",
+  "group_advanced": "Pokročilé",
+  "group_build": "Tvorba",
+  "group_connect": "Připojení",
+  "group_credentials": "Přihlašovací údaje",
+  "group_drafts": "Návrhy sestavení",
+  "group_general": "Obecné",
+  "group_home": "Domů",
+  "group_llm": "LLM",
+  "group_maintain": "Údržba",
+  "group_memory": "Paměť",
+  "group_monitoring": "Monitorování",
+  "group_operations": "Provoz",
+  "group_plugins": "Pluginy",
+  "group_templates": "Šablony"
 }

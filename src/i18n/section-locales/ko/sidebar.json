@@ -78,5 +78,19 @@
   "context_map": "컨텍스트 맵",
   "idea_scanner": "아이디어 스캐너",
   "projects": "프로젝트",
-  "task_runner": "실행 데스크"
+  "task_runner": "실행 데스크",
+  "group_advanced": "고급",
+  "group_build": "빌드",
+  "group_connect": "연결",
+  "group_credentials": "자격 증명",
+  "group_drafts": "초안 빌드",
+  "group_general": "일반",
+  "group_home": "홈",
+  "group_llm": "LLM",
+  "group_maintain": "유지 관리",
+  "group_memory": "메모리",
+  "group_monitoring": "모니터링",
+  "group_operations": "운영",
+  "group_plugins": "플러그인",
+  "group_templates": "템플릿"
 }

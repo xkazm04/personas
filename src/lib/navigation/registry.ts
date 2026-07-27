@@ -25,6 +25,9 @@
  *   - `gates`         — `{ minTier?, devOnly? }` visibility gates
  *   - `reachability`  — how a user can actually reach this surface:
  *       · `'sidebar'`      — rendered in the Level-1 rail and mounted by the content router
+ *       · `'nested'`       — NOT in the rail; reached from another section's Level-2
+ *                            nav (e.g. Templates, folded into Connections). Still a
+ *                            full content-router destination.
  *       · `'overlay-only'` — NOT in the rail; summoned as a title-bar overlay (e.g. Schedules)
  *       · `'hidden'`       — has a type member / persisted value but no live surface
  */
@@ -37,7 +40,7 @@ import type { SidebarSection } from '@/lib/types/types';
 import { type Tier, TIERS } from '@/lib/constants/uiModes';
 
 /** How a user can actually reach a navigation section. */
-export type NavReachability = 'sidebar' | 'overlay-only' | 'hidden';
+export type NavReachability = 'sidebar' | 'nested' | 'overlay-only' | 'hidden';
 
 /** Visibility gates evaluated before a section renders. */
 export interface NavGates {
@@ -56,6 +59,12 @@ export interface NavSectionEntry {
   icon: LucideIcon;
   gates: NavGates;
   reachability: NavReachability;
+  /**
+   * For `reachability: 'nested'` — the rail section whose Level-2 nav owns this
+   * destination. The rail highlights the parent while this section is active,
+   * and the Level-2 panel keeps rendering the parent's nav.
+   */
+  parent?: SidebarSection;
 }
 
 /**
@@ -69,7 +78,10 @@ export const NAV_SECTIONS: readonly NavSectionEntry[] = [
   { id: 'personas',       label: 'Agents',      labelKey: 'personas',       icon: Bot,           gates: {},                      reachability: 'sidebar' },
   { id: 'events',         label: 'Events',      labelKey: 'events',         icon: Radio,         gates: { minTier: TIERS.TEAM }, reachability: 'sidebar' },
   { id: 'credentials',    label: 'Connections', labelKey: 'credentials',    icon: Key,           gates: {},                      reachability: 'sidebar' },
-  { id: 'design-reviews', label: 'Templates',   labelKey: 'design-reviews', icon: FlaskConical,  gates: {},                      reachability: 'sidebar' },
+  // Templates was folded into Connections on 2026-07-27 — it is no longer a
+  // rail entry, but remains a full content-router destination reached from the
+  // Connections Level-2 nav ("Templates" group).
+  { id: 'design-reviews', label: 'Templates',   labelKey: 'design-reviews', icon: FlaskConical,  gates: {},                      reachability: 'nested', parent: 'credentials' },
   { id: 'plugins',        label: 'Plugins',     labelKey: 'plugins',        icon: Puzzle,        gates: { minTier: TIERS.TEAM }, reachability: 'sidebar' },
   // Studio — the Athena web-dev companion preview. Dev-only while in
   // active development; still rail-rendered (behind the devOnly gate).
@@ -109,6 +121,19 @@ export function navSection(id: SidebarSection): NavSectionEntry {
 /** Sections rendered in the Level-1 sidebar rail (before tier/dev filtering). */
 export const SIDEBAR_SECTIONS: readonly NavSectionEntry[] =
   NAV_SECTIONS.filter((e) => e.reachability === 'sidebar');
+
+/** Sections reached from another section's Level-2 nav (e.g. Templates). */
+export const NESTED_SECTIONS: readonly NavSectionEntry[] =
+  NAV_SECTIONS.filter((e) => e.reachability === 'nested');
+
+/**
+ * The rail entry that should read as "active" for a section — itself for rail
+ * sections, its `parent` for nested ones. Use wherever the sidebar highlights
+ * or titles the current section.
+ */
+export function railSection(id: SidebarSection): SidebarSection {
+  return navSection(id).parent ?? id;
+}
 
 /** Sections summoned as an overlay rather than the rail (e.g. Schedules). */
 export const OVERLAY_SECTIONS: readonly NavSectionEntry[] =

@@ -615,6 +615,20 @@ export type Translations = {
     idea_scanner: string;
     task_runner: string;
     projects: string;
+    group_home: string;
+    group_monitoring: string;
+    group_operations: string;
+    group_memory: string;
+    group_build: string;
+    group_maintain: string;
+    group_credentials: string;
+    group_templates: string;
+    group_general: string;
+    group_connect: string;
+    group_llm: string;
+    group_advanced: string;
+    group_drafts: string;
+    group_plugins: string;
   };
   home: {
     get_started: {

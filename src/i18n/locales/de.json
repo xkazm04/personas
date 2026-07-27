@@ -608,7 +608,21 @@
     "context_map": "Kontextkarte",
     "idea_scanner": "Ideen-Scanner",
     "projects": "Projekte",
-    "task_runner": "Ausführungspult"
+    "task_runner": "Ausführungspult",
+    "group_advanced": "Erweitert",
+    "group_build": "Erstellen",
+    "group_connect": "Verbinden",
+    "group_credentials": "Zugangsdaten",
+    "group_drafts": "Entwurfs-Builds",
+    "group_general": "Allgemein",
+    "group_home": "Start",
+    "group_llm": "LLM",
+    "group_maintain": "Wartung",
+    "group_memory": "Speicher",
+    "group_monitoring": "Überwachung",
+    "group_operations": "Betrieb",
+    "group_plugins": "Plugins",
+    "group_templates": "Vorlagen"
   },
   "home": {
     "setup": {

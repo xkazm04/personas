@@ -10,13 +10,14 @@ import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 
-import SidebarSubNav from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import type { SubNavBadge, SubNavIndicator } from '@/features/shared/chrome/sidebar/SidebarSubNav';
+import SidebarGroupNav, { type GroupNavItem, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
   eventBusItems, getSettingsItems,
+  homeGroups, overviewGroups, eventGroups, credentialGroups, templateGroups, settingsGroups,
+  groupItems, type SidebarItemGroupDef,
 } from '@/features/shared/chrome/sidebar/sidebarData';
-import { SETTINGS_ICON_ACCENTS } from '@/lib/design/statusTokens';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from '@/features/shared/chrome/sidebar/sidebarData';
 import { AgentsSidebarNav } from '@/features/shared/chrome/sidebar/sections/AgentsSidebarNav';
@@ -38,6 +39,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   const { t } = useTranslation();
   const labelOf = useSidebarLabels();
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
   // Vault and pipeline stores loaded lazily to keep them out of the main bundle.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,12 +125,43 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         overrides?.[b.id] ?? labelOf(b.id, b.label),
       ),
     );
-  // Connections is alphabetical too, but the "Add new" action is pinned to the
-  // bottom regardless of its label.
-  const sortCredentialItems = (list: SubNavItem[]): SubNavItem[] => {
-    const pinned = list.filter((i) => i.id === 'add-new');
-    const rest = list.filter((i) => i.id !== 'add-new');
-    return [...sortByLabel(rest), ...pinned];
+  /**
+   * Turn a section's flat item list + its group descriptors into the grouped
+   * shape `SidebarGroupNav` renders. Items stay alphabetical *within* a group
+   * (the repo's long-standing L2 ordering convention), with `pinLast` ids
+   * forced to the bottom regardless of label.
+   */
+  const buildGroups = (
+    defs: SidebarItemGroupDef[],
+    items: SubNavItem[],
+    opts: {
+      badges?: Record<string, SubNavBadge>;
+      indicators?: Record<string, SubNavIndicator>;
+      devIds?: Set<string>;
+      labelOverrides?: Record<string, string>;
+      pinLast?: string[];
+      onSelectItem?: (id: string) => void;
+    } = {},
+  ): SidebarNavGroup[] => {
+    const pinned = new Set(opts.pinLast ?? []);
+    return groupItems(defs, items).map(({ def, items: groupedItems }) => {
+      const rest = groupedItems.filter((i) => !pinned.has(i.id));
+      const tail = groupedItems.filter((i) => pinned.has(i.id));
+      const ordered = [...sortByLabel(rest, opts.labelOverrides), ...tail];
+      return {
+        id: def.id,
+        label: (t.sidebar as unknown as Record<string, string>)[def.labelKey] ?? def.id,
+        items: ordered.map<GroupNavItem>((item) => ({
+          id: item.id,
+          label: item.label,
+          icon: item.icon,
+          badge: opts.badges?.[item.id],
+          indicator: opts.indicators?.[item.id],
+          dev: opts.devIds?.has(item.id),
+          onSelect: opts.onSelectItem ? () => opts.onSelectItem!(item.id) : undefined,
+        })),
+      };
+    });
   };
 
   switch (sidebarSection) {
@@ -143,16 +176,15 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         : {};
       return (
         <div className="flex flex-col h-full">
-          <SidebarSubNav
-            items={homeItems}
+          <SidebarGroupNav
+            ariaLabel={t.sidebar.home}
+            groups={buildGroups(homeGroups, homeItems, { indicators: homeIndicators })}
             activeId={homeTab}
             onSelect={(id) => setHomeTab(id as HomeTab)}
-            indicators={homeIndicators}
             onHoverItem={(id) => {
               if (id === 'roadmap') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeReleases());
               else if (id === 'learning') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeLearning());
             }}
-            variant="overview"
           />
           <div className="flex-1" />
           <div className="flex items-center justify-center py-6 opacity-[0.08] pointer-events-none select-none">
@@ -174,19 +206,22 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
       const overviewDevSet = isDev
         ? new Set(overviewItems.filter((i) => i.devOnly).map((i) => i.id))
         : undefined;
+      // The overview dashboard tab's id is 'home', which collides with the
+      // top-level 'home' section in the shared sidebar label map (both resolve
+      // to t.sidebar.home = "Home"). Override it here so this tab reads
+      // "Mission control" without renaming the top-level section.
+      const overviewLabelOverrides = { home: t.sidebar.mission_control };
       return (
-        <SidebarSubNav
-          items={sortByLabel(filterSimple(visibleOverviewItems), { home: t.sidebar.mission_control })}
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.overview}
+          groups={buildGroups(overviewGroups, filterSimple(visibleOverviewItems), {
+            badges: overviewBadges,
+            devIds: overviewDevSet,
+            labelOverrides: overviewLabelOverrides,
+          })}
           activeId={overviewTab}
           onSelect={(id) => setOverviewTab(id as OverviewTab)}
-          badges={overviewBadges}
-          variant="overview"
-          devItems={overviewDevSet}
-          // The overview dashboard tab's id is 'home', which collides with the
-          // top-level 'home' section in the shared sidebar label map (both
-          // resolve to t.sidebar.home = "Home"). Override it here so this tab
-          // reads "Mission control" without renaming the top-level section.
-          labelOverrides={{ home: t.sidebar.mission_control }}
+          labelOverrides={overviewLabelOverrides}
         />
       );
     }
@@ -201,24 +236,46 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
       const visibleEventItems = isDev ? eventBusItems : eventBusItems.filter(i => !i.devOnly);
       const eventDevSet = isDev ? new Set(eventBusItems.filter(i => i.devOnly).map(i => i.id)) : undefined;
       return (
-        <SidebarSubNav
-          items={sortByLabel(visibleEventItems)}
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.events}
+          groups={buildGroups(eventGroups, visibleEventItems, { devIds: eventDevSet })}
           activeId={eventBusTab}
           onSelect={(id) => setEventBusTab(id as EventBusTab)}
-          devItems={eventDevSet}
         />
       );
     }
 
+    // Connections owns two groups: Credentials (its own views) and Templates
+    // (the former Level-1 "Templates" section, folded in here — selecting one
+    // of its rows switches `sidebarSection` to 'design-reviews', which routes
+    // to the templates page while this same nav stays rendered).
     case 'credentials':
+    case 'design-reviews': {
+      const onTemplates = sidebarSection === 'design-reviews';
+      const groups: SidebarNavGroup[] = [
+        ...buildGroups(credentialGroups, filterSimple(credentialItems), {
+          badges: credentialBadges,
+          pinLast: ['add-new'],
+          onSelectItem: (id) => {
+            if (onTemplates) setSidebarSection('credentials');
+            navigate(id as CredentialNavKey);
+          },
+        }),
+        ...buildGroups(templateGroups, filterSimple(templateItems), {
+          onSelectItem: (id) => {
+            setSidebarSection('design-reviews');
+            setTemplateTab(id as TemplateTab);
+          },
+        }),
+      ];
       return (
-        <SidebarSubNav
-          items={sortCredentialItems(filterSimple(credentialItems))}
-          activeId={credentialView}
-          onSelect={(id) => navigate(id as CredentialNavKey)}
-          badges={credentialBadges}
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.keys}
+          groups={groups}
+          activeId={onTemplates ? templateTab : credentialView}
+          onSelect={() => {}}
         >
-          {credentials.length === 0 && credentialView === 'credentials' && (
+          {credentials.length === 0 && !onTemplates && credentialView === 'credentials' && (
             <div className="text-center py-8 space-y-3">
               <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
                 <Key className="w-5 h-5 text-emerald-400/60" />
@@ -235,18 +292,9 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
               </Button>
             </div>
           )}
-        </SidebarSubNav>
+        </SidebarGroupNav>
       );
-
-    case 'design-reviews':
-      return (
-        <SidebarSubNav
-          items={sortByLabel(filterSimple(templateItems))}
-          activeId={templateTab}
-          onSelect={(id) => setTemplateTab(id as TemplateTab)}
-        />
-      );
-
+    }
 
     case 'schedules':
       return <SchedulesSidebarNav />;
@@ -256,12 +304,13 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 
     case 'settings':
       return (
-        <SidebarSubNav
-          items={sortByLabel(settingsItems)}
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.settings}
+          groups={buildGroups(settingsGroups, settingsItems, {
+            devIds: isDev ? new Set(['engine', 'byom', 'network', 'config', 'history', 'admin']) : undefined,
+          })}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'history', 'admin']) : undefined}
-          accents={SETTINGS_ICON_ACCENTS}
         />
       );
 
