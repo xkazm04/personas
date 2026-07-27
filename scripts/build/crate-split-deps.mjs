@@ -8,15 +8,23 @@
  * transitive closure of a candidate move — "which modules must travel together
  * for the result to be acyclic".
  *
- * This script answers that. It parses `crate::`/`super::` paths out of the Rust
- * sources, collapses them to top-level module units (a `foo.rs` or `foo/` under
- * `src/`, plus `db::models` and `db::repos` which are big enough to be their own
- * units), and reports either the whole edge matrix or the closure of a seed set.
+ * This script answers that. It parses `crate::` paths out of the Rust sources,
+ * collapses them to module units (top-level modules, plus second-level ones
+ * under `db`/`engine`/`commands`/`companion`, which are far too big to treat as
+ * single nodes), and reports the edge matrix or the closure of a seed set.
  *
  * Usage:
- *   node scripts/build/crate-split-deps.mjs                 # edge summary
- *   node scripts/build/crate-split-deps.mjs --closure a,b,c # transitive closure of a seed
- *   node scripts/build/crate-split-deps.mjs --from x --to y # list every x -> y reference
+ *   node scripts/build/crate-split-deps.mjs                    # edge summary
+ *   node scripts/build/crate-split-deps.mjs --closure a,b      # transitive closure
+ *   node scripts/build/crate-split-deps.mjs --closure a --exclude engine,lib
+ *   node scripts/build/crate-split-deps.mjs --from x --to y    # every x -> y site
+ *   node scripts/build/crate-split-deps.mjs --folded           # resolver debug
+ *
+ * `--exclude` is the flag that makes this usable. Without it every closure
+ * collapses to "the whole crate", because a single `crate::engine::SOME_CONST`
+ * in a 1.5k-LOC module is enough to drag all 157k LOC of `engine` in. Exclude
+ * the units you intend to keep out, and the tool reports exactly which
+ * references cross the boundary — that list IS the work item for the step.
  *
  * Caveat: this is a textual approximation, not rustc. It does not resolve `use`
  * aliases or glob re-exports, so treat a clean closure as "worth attempting",
@@ -151,22 +159,50 @@ for (const file of files) {
 }
 
 /**
- * Modules that already live in `personas-core` but are still reachable as
- * `crate::error::…` through the re-export shims in `lib.rs`. They have no source
- * files under `src/`, so they must be named explicitly — otherwise they get
- * mistaken for crate-root items and folded into `lib`, which (since `lib`
- * depends on everything) makes every closure explode to the whole crate.
+ * Modules that already live in `personas-core`, read off the filesystem rather
+ * than hardcoded — a stale list here silently makes every closure explode.
+ *
+ * They are still reachable as `crate::error::…` / `crate::db::models::…`
+ * through the re-export shims, but have no source file under `src/` any more.
+ * Without recognizing them they look like crate-root items and get folded into
+ * `lib`, and since `lib` transitively depends on everything, the answer becomes
+ * "the whole crate" no matter what you ask.
  */
-const CORE_ALREADY = new Set(['error', 'error_taxonomy', 'retrieval', 'utils']);
+const CORE_ALREADY = new Set(
+  readdirSync(join(process.cwd(), 'src-tauri', 'core', 'src'))
+    .map((n) => n.replace(/\.rs$/, ''))
+    .filter((n) => n !== 'lib')
+);
 
 // Everything else with no source file — `crate::AppState`, `crate::SHARED_HTTP`,
 // `crate::declare_lifecycle!` — is an item declared at the crate root. Fold
 // those into `lib` so a closure reports "this pulls in the crate root" rather
 // than inventing zero-LOC phantom units.
-for (const [, deps] of edges) {
+/** raw unresolved name -> Set of units that referenced it (for --folded). */
+const foldedFrom = new Map();
+for (const [from, deps] of edges) {
   for (const to of [...deps.keys()]) {
     if (loc.has(to)) continue;
-    const target = CORE_ALREADY.has(to) ? 'personas-core' : 'lib';
+    if (!foldedFrom.has(to)) foldedFrom.set(to, { froms: new Set(), target: null });
+    foldedFrom.get(to).froms.add(from);
+    const [parent, ...restSegs] = to.split('::');
+    // `crate::db::models` and `crate::engine::types` still read as `db::…` /
+    // `engine::…` at the call site even though both now live in core, so match
+    // on the last segment too.
+    const leaf = restSegs.length ? restSegs[restSegs.length - 1] : to;
+    let target;
+    if (CORE_ALREADY.has(to) || CORE_ALREADY.has(leaf)) {
+      target = 'personas-core';
+    } else if (restSegs.length && loc.has(parent)) {
+      // `crate::db::init_test_db` — a snake_case name under a real module that
+      // has no file of its own is a FUNCTION on that module's `mod.rs`, not a
+      // submodule. Attribute it to the parent; calling it a crate-root item
+      // would wrongly make the closure depend on `lib`, i.e. on everything.
+      target = parent;
+    } else {
+      target = 'lib';
+    }
+    foldedFrom.get(to).target = target;
     deps.set(target, (deps.get(target) ?? 0) + deps.get(to));
     deps.delete(to);
   }
@@ -177,6 +213,16 @@ const flag = (name) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : null;
 };
+
+if (args.includes('--folded')) {
+  // Debug aid: every referenced name with no source file, and who names it.
+  // Anything landing in `lib` that is NOT a genuine crate-root item (AppState,
+  // SHARED_HTTP, a `#[macro_export]` macro) means the resolver is wrong.
+  for (const [name, { froms, target }] of [...foldedFrom].sort()) {
+    console.log(`${String(target).padEnd(14)} ${name.padEnd(28)} <- ${[...froms].join(', ')}`);
+  }
+  process.exit(0);
+}
 
 if (flag('--from') && flag('--to')) {
   const key = `${flag('--from')}->${flag('--to')}`;
@@ -193,7 +239,15 @@ if (flag('--closure')) {
   // reported as an edge that has to be broken by hand. This is the mode that
   // makes the tool useful: without it a single `crate::engine::SOME_CONST` in a
   // 1.5k-LOC module drags all 157k LOC of `engine` into the answer.
-  const excluded = new Set((flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+  // Prefix-aware: `--exclude commands` stops at `commands::fleet` too. Without
+  // this, one `crate::commands::fleet::now_ms` in a repo file quietly readmits
+  // all 123k LOC of `commands` to the closure.
+  const excludeRoots = (flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const excluded = {
+    has: (u) => excludeRoots.some((e) => u === e || u.startsWith(`${e}::`)),
+    size: excludeRoots.length,
+    [Symbol.iterator]: () => excludeRoots[Symbol.iterator](),
+  };
   const set = new Set(seed);
   const queue = [...seed];
   /** excluded unit -> total references into it from inside the closure */
