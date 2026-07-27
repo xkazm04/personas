@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, Wrench, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
@@ -96,26 +96,21 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           </section>
         )}
 
-        <AnimatePresence initial={false}>
-          {customizing && a.schema && a.stage === 'preview' && (
-            <motion.div
-              key="questionnaire"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="overflow-hidden"
-            >
-              <PresetQuestionnaireForm
-                schema={a.schema}
-                value={a.overrides}
-                onChange={a.setOverrides}
-                expandedRoles={a.expandedRoles}
-                onToggleRole={a.toggleRoleExpanded}
-              />
-            </motion.div>
+        <Collapse
+          open={!!(customizing && a.schema && a.stage === 'preview')}
+          unmountWhenClosed
+          duration={200}
+        >
+          {a.schema && (
+            <PresetQuestionnaireForm
+              schema={a.schema}
+              value={a.overrides}
+              onChange={a.setOverrides}
+              expandedRoles={a.expandedRoles}
+              onToggleRole={a.toggleRoleExpanded}
+            />
           )}
-        </AnimatePresence>
+        </Collapse>
 
         {/* Member rows — preview state shows just role + template; live
             adoption switches to status badges. */}

@@ -1,7 +1,8 @@
-import { useRef, useState, useCallback, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useCallback, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { silentCatch } from '@/lib/silentCatch';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 
 type SectionCardSize = 'sm' | 'md' | 'lg';
@@ -162,7 +163,6 @@ function CollapsibleBody({
   children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => readStorage(storageKey, defaultCollapsed));
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {
@@ -196,28 +196,11 @@ function CollapsibleBody({
         </div>
       </button>
 
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            ref={contentRef}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
-            onAnimationStart={() => {
-              if (contentRef.current) contentRef.current.style.overflow = 'hidden';
-            }}
-            onAnimationComplete={() => {
-              if (contentRef.current && !collapsed) contentRef.current.style.overflow = 'visible';
-            }}
-          >
-            <div className={`border-t border-primary/8 ${BODY_PAD[size]} pt-3`}>
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={!collapsed} unmountWhenClosed revealOverflowWhenOpen duration={200}>
+        <div className={`border-t border-primary/8 ${BODY_PAD[size]} pt-3`}>
+          {children}
+        </div>
+      </Collapse>
     </div>
   );
 }

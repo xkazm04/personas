@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 import {
   ACTION_ICONS,
@@ -6,7 +6,7 @@ import {
   StepHeader,
 } from '@/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers';
 import type { NegotiatorStepCardProps } from '@/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers';
-import { MOTION_TIMING } from '@/lib/utils/animation/animationPresets';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { StepExpandedContent } from './StepActions';
 
 export function NegotiatorStepCard({
@@ -59,31 +59,21 @@ export function NegotiatorStepCard({
       />
 
       {/* Expanded content */}
-      <AnimatePresence>
-        {isActive && (
-          <motion.div
-            role="region"
-            aria-labelledby={headerId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={MOTION_TIMING.FLOW}
-            className="overflow-hidden"
-          >
-            <StepExpandedContent
-              step={step}
-              stepIndex={stepIndex}
-              isCompleted={isCompleted}
-              capturedValues={capturedValues}
-              onComplete={onComplete}
-              onCaptureValue={onCaptureValue}
-              onRequestHelp={onRequestHelp}
-              stepHelp={stepHelp}
-              isLoadingHelp={isLoadingHelp}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={isActive} unmountWhenClosed duration={250}>
+        <div role="region" aria-labelledby={headerId}>
+          <StepExpandedContent
+            step={step}
+            stepIndex={stepIndex}
+            isCompleted={isCompleted}
+            capturedValues={capturedValues}
+            onComplete={onComplete}
+            onCaptureValue={onCaptureValue}
+            onRequestHelp={onRequestHelp}
+            stepHelp={stepHelp}
+            isLoadingHelp={isLoadingHelp}
+          />
+        </div>
+      </Collapse>
     </motion.div>
   );
 }

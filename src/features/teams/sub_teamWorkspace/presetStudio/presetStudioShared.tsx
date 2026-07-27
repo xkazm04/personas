@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2, Loader2, RotateCcw, Settings2, Wrench } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -8,6 +7,7 @@ import {
   PresetQuestionnaireForm,
 } from '@/features/templates/sub_presets/PresetQuestionnaireForm';
 import type { PresetAdoptionController, PresetMemberRowState } from '@/features/templates/sub_presets/usePresetAdoption';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 /**
  * Shared leaf components for the in-app preset-adoption flow — the live
@@ -168,26 +168,17 @@ export function PresetPrimaryActions({
 /** Collapsible combined questionnaire — shown when the user is customizing. */
 export function PresetCustomizePanel({ a, customizing }: { a: PresetAdoptionController; customizing: boolean }) {
   return (
-    <AnimatePresence initial={false}>
-      {customizing && a.schema && a.stage === 'preview' && (
-        <motion.div
-          key="questionnaire"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="overflow-hidden"
-        >
-          <PresetQuestionnaireForm
-            schema={a.schema}
-            value={a.overrides}
-            onChange={a.setOverrides}
-            expandedRoles={a.expandedRoles}
-            onToggleRole={a.toggleRoleExpanded}
-          />
-        </motion.div>
+    <Collapse open={customizing && !!a.schema && a.stage === 'preview'} unmountWhenClosed duration={200}>
+      {a.schema && (
+        <PresetQuestionnaireForm
+          schema={a.schema}
+          value={a.overrides}
+          onChange={a.setOverrides}
+          expandedRoles={a.expandedRoles}
+          onToggleRole={a.toggleRoleExpanded}
+        />
       )}
-    </AnimatePresence>
+    </Collapse>
   );
 }
 

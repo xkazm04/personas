@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES, formatDuration, formatCost } from '../libs/knowledgeHelpers';
 import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import { ConfidenceArc } from '@/features/shared/components/display/ConfidenceArc';
 import { StatusBadge, type BadgeAccent } from '@/features/shared/components/display/StatusBadge';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -53,35 +54,22 @@ function NestedObjectCard({ label, data }: { label: string; data: Record<string,
         <span className="typo-label uppercase tracking-wider text-foreground">{label}</span>
         <span className="typo-caption text-foreground ml-auto">{Object.keys(data).length} fields</span>
       </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              height: { type: 'spring', stiffness: 400, damping: 30, mass: 0.8 },
-              opacity: { duration: 0.15 },
-            }}
-            className="overflow-hidden"
-          >
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 pl-4">
-              {Object.entries(data).map(([k, v]) =>
-                isPrimitive(v) ? (
-                  <div key={k} className="bg-secondary/10 rounded-card p-2">
-                    <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{formatLabel(k)}</div>
-                    <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(v)}</div>
-                  </div>
-                ) : (
-                  <div key={k} className="col-span-full">
-                    <NestedObjectCard label={formatLabel(k)} data={v as Record<string, unknown>} />
-                  </div>
-                )
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={open} unmountWhenClosed>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 pl-4">
+          {Object.entries(data).map(([k, v]) =>
+            isPrimitive(v) ? (
+              <div key={k} className="bg-secondary/10 rounded-card p-2">
+                <div className="typo-label uppercase tracking-wider text-foreground mb-0.5">{formatLabel(k)}</div>
+                <div className="typo-body font-medium text-foreground break-words">{formatPrimitiveValue(v)}</div>
+              </div>
+            ) : (
+              <div key={k} className="col-span-full">
+                <NestedObjectCard label={formatLabel(k)} data={v as Record<string, unknown>} />
+              </div>
+            )
+          )}
+        </div>
+      </Collapse>
     </motion.div>
   );
 }
@@ -272,19 +260,8 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
         </div>
       </div>
 
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              height: { type: 'spring', stiffness: 400, damping: 30, mass: 0.8 },
-              opacity: { duration: 0.15 },
-            }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-3 pt-0 space-y-3">
+      <Collapse open={expanded} unmountWhenClosed>
+        <div className="px-4 pb-3 pt-0 space-y-3">
               {isAnnotation && entry.annotation_text && (
                 <motion.div
                   initial={{ opacity: 0, y: 4 }}
@@ -328,10 +305,8 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
                   </motion.div>
                 )}
               </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </Collapse>
     </div>
   );
 }

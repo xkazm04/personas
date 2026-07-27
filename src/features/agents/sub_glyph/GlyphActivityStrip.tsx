@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Terminal, ChevronDown } from "lucide-react";
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 interface GlyphActivityStripProps {
   lines: string[];
@@ -23,24 +23,15 @@ export function GlyphActivityStrip({ lines }: GlyphActivityStripProps) {
         </span>
         <ChevronDown className={`w-3.5 h-3.5 text-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 p-3 rounded-modal bg-black/20 border border-border/20 max-h-48 overflow-y-auto">
-              {lines.slice(-100).map((line, i) => (
-                <div key={i} className="typo-caption font-mono text-foreground leading-snug whitespace-pre-wrap break-words">
-                  {line}
-                </div>
-              ))}
+      <Collapse open={expanded} unmountWhenClosed>
+        <div className="mt-2 p-3 rounded-modal bg-black/20 border border-border/20 max-h-48 overflow-y-auto">
+          {lines.slice(-100).map((line, i) => (
+            <div key={i} className="typo-caption font-mono text-foreground leading-snug whitespace-pre-wrap break-words">
+              {line}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+      </Collapse>
     </div>
   );
 }

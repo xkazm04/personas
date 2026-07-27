@@ -14,6 +14,7 @@ import type { TwinContact } from '@/lib/bindings/TwinContact';
 import type { TwinChannelKind } from '@/api/enums';
 import * as twinApi from '@/api/twin/twin';
 import { silentCatch } from '@/lib/silentCatch';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 /* ------------------------------------------------------------------ *
  *  ReplyOutbox — draft-reply staging with approve-before-send.
@@ -312,44 +313,38 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         </Button>
       </div>
 
-      {replyDraft !== null && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 pt-4 border-t border-primary/10"
+      <Collapse open={replyDraft !== null} unmountWhenClosed className="mt-4 pt-4 border-t border-primary/10">
+        <Field
+          label={
+            draftContext
+              ? `Draft reply for ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''} — edit before approving`
+              : 'Draft reply — edit before approving'
+          }
         >
-          <Field
-            label={
-              draftContext
-                ? `Draft reply for ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''} — edit before approving`
-                : 'Draft reply — edit before approving'
-            }
+          <textarea
+            rows={5}
+            value={replyDraft ?? ''}
+            onChange={(e) => setDraft(e.target.value)}
+            className={`${INPUT_FIELD} resize-y font-normal`}
+          />
+        </Field>
+        <div className="flex justify-end gap-2 mt-3">
+          <Button onClick={clearDraft} variant="ghost" size="sm" disabled={approving}>
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            Discard
+          </Button>
+          <Button
+            onClick={() => setConfirmSend(true)}
+            disabled={approving || !replyDraft?.trim()}
+            size="sm"
+            variant="accent"
+            accentColor="emerald"
           >
-            <textarea
-              rows={5}
-              value={replyDraft}
-              onChange={(e) => setDraft(e.target.value)}
-              className={`${INPUT_FIELD} resize-y font-normal`}
-            />
-          </Field>
-          <div className="flex justify-end gap-2 mt-3">
-            <Button onClick={clearDraft} variant="ghost" size="sm" disabled={approving}>
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-              Discard
-            </Button>
-            <Button
-              onClick={() => setConfirmSend(true)}
-              disabled={approving || !replyDraft.trim()}
-              size="sm"
-              variant="accent"
-              accentColor="emerald"
-            >
-              {approving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-              {approving ? 'Recording…' : 'Approve & log'}
-            </Button>
-          </div>
-        </motion.div>
-      )}
+            {approving ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
+            {approving ? 'Recording…' : 'Approve & log'}
+          </Button>
+        </div>
+      </Collapse>
 
       {localError && <p className="typo-caption text-red-400 mt-3">{localError}</p>}
 

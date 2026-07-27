@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CloudUpload, RefreshCw, ChevronDown, AlertCircle, MonitorSmartphone } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import Button from '@/features/shared/components/buttons/Button';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { SpringCount } from '@/features/shared/components/display/SpringCount';
@@ -238,15 +238,7 @@ export default function CloudSyncCard() {
                 </span>
               </button>
 
-              <AnimatePresence initial={false}>
-                {showDetails && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeInOut' }}
-                    className="overflow-hidden"
-                  >
+              <Collapse open={showDetails} unmountWhenClosed duration={200}>
                     <ul className="divide-y divide-primary/8 border-t border-primary/8">
                       {tables.map((tbl) => (
                         <li
@@ -277,9 +269,7 @@ export default function CloudSyncCard() {
                         </li>
                       ))}
                     </ul>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              </Collapse>
             </div>
           )}
 

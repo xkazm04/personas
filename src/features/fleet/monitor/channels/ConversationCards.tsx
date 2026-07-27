@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Pause, Play, Scale, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -134,15 +134,7 @@ export function AssignmentCard({
         <ChevronDown className={`w-4 h-4 flex-shrink-0 text-foreground opacity-40 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="overflow-hidden border-t border-status-info/20"
-          >
+      <Collapse open={expanded} unmountWhenClosed duration={180} className="border-t border-status-info/20">
             <div className="px-3 py-2 space-y-1.5">
               {steps.map((s) => {
                 const m = stepMeta(s.status);
@@ -187,9 +179,7 @@ export function AssignmentCard({
                 </button>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Collapse>
     </div>
   );
 }
@@ -259,15 +249,7 @@ export function DeliberationCard({
         <ChevronDown className={`w-4 h-4 flex-shrink-0 text-foreground opacity-40 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="overflow-hidden border-t border-violet-400/20"
-          >
+      <Collapse open={expanded} unmountWhenClosed duration={180} className="border-t border-violet-400/20">
             <div className="px-3 py-2 space-y-1.5">
               {items.map((turn) => {
                 const persona = turn.personaId ? personaIndex.get(turn.personaId) : undefined;
@@ -281,9 +263,7 @@ export function DeliberationCard({
                 );
               })}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Collapse>
     </div>
   );
 }

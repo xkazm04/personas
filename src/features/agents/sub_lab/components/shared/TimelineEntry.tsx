@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Shield, Beaker, Archive, RotateCcw, Star } from 'lucide-react';
 import type { PersonaPromptVersion } from '@/lib/bindings/PersonaPromptVersion';
 import { TAG_STYLES, formatRelative } from '../../shared/labPrimitives';
 import { InlineDiffPreview } from './InlineDiffPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 
 interface TimelineEntryProps {
@@ -107,57 +107,47 @@ export function TimelineEntry({
         </button>
 
         {/* Expanded content: diff + actions */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-2 p-3 rounded-card border border-primary/10 bg-secondary/[0.04] space-y-3">
-                {/* Diff preview */}
-                {previousVersion ? (
-                  <InlineDiffPreview older={previousVersion} newer={version} />
-                ) : (
-                  <p className="text-[11px] text-foreground italic"><DebtText k="auto_initial_version_no_previous_version_to_com_4630b990" /></p>
-                )}
+        <Collapse open={expanded} unmountWhenClosed duration={200}>
+          <div className="mt-2 p-3 rounded-card border border-primary/10 bg-secondary/[0.04] space-y-3">
+            {/* Diff preview */}
+            {previousVersion ? (
+              <InlineDiffPreview older={previousVersion} newer={version} />
+            ) : (
+              <p className="text-[11px] text-foreground italic"><DebtText k="auto_initial_version_no_previous_version_to_com_4630b990" /></p>
+            )}
 
-                {/* Actions */}
-                <div className="flex items-center gap-1.5 pt-1 border-t border-primary/[0.06]">
-                  {version.tag !== 'production' && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                    >
-                      <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
-                    </button>
-                  )}
-                  {version.tag !== 'archived' && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
-                    >
-                      <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
-                    </button>
-                  )}
-                  {!isFirst && (
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
-                    >
-                      <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* Actions */}
+            <div className="flex items-center gap-1.5 pt-1 border-t border-primary/[0.06]">
+              {version.tag !== 'production' && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                >
+                  <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
+                </button>
+              )}
+              {version.tag !== 'archived' && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
+                >
+                  <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
+                </button>
+              )}
+              {!isFirst && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
+                </button>
+              )}
+            </div>
+          </div>
+        </Collapse>
       </div>
     </div>
   );

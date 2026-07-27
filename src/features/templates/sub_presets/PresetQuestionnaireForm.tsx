@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, Settings2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import type { PresetAdoptionSchema } from '@/lib/bindings/PresetAdoptionSchema';
 import type { PresetMemberAdoptionSchema } from '@/lib/bindings/PresetMemberAdoptionSchema';
 import type { PresetParameterOverrides } from '@/api/templates/teamPresets';
@@ -215,34 +215,23 @@ function MemberSection({
         </span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {expanded && hasQuestions && (
-          <motion.div
-            key="member-questions"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-3 pb-3 pt-2 space-y-3 border-t border-primary/10">
-              {member.template_description && (
-                <p className="typo-caption text-foreground italic leading-relaxed">
-                  {member.template_description}
-                </p>
-              )}
-              {questions.map((q) => (
-                <QuestionField
-                  key={q.id}
-                  question={q}
-                  value={overrides[q.id]}
-                  onChange={(v) => onSetOverride(q.id, v)}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse open={expanded && hasQuestions} unmountWhenClosed duration={180}>
+        <div className="px-3 pb-3 pt-2 space-y-3 border-t border-primary/10">
+          {member.template_description && (
+            <p className="typo-caption text-foreground italic leading-relaxed">
+              {member.template_description}
+            </p>
+          )}
+          {questions.map((q) => (
+            <QuestionField
+              key={q.id}
+              question={q}
+              value={overrides[q.id]}
+              onChange={(v) => onSetOverride(q.id, v)}
+            />
+          ))}
+        </div>
+      </Collapse>
     </div>
   );
 }

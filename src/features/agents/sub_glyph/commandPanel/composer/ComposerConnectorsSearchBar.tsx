@@ -1,9 +1,9 @@
 import { forwardRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { humanizeCategory } from "./ComposerConnectorCard";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 
 interface CategoryEntry {
@@ -61,49 +61,38 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
             </button>
           )}
         </div>
-        <AnimatePresence initial={false}>
-          {filtersOpen && categories.length > 1 && (
-            <motion.div
-              key="filters"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.18 }}
-              className="overflow-hidden"
+        <Collapse open={filtersOpen && categories.length > 1} unmountWhenClosed duration={180}>
+          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            <button
+              type="button"
+              onClick={() => onCategoryChange("__all__")}
+              className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
+                category === "__all__"
+                  ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
+                  : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
+              }`}
             >
-              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <DebtText k="auto_all_c8fb9db1" /> {totalHealthy}
+            </button>
+            {categories.map(({ cat, n }) => {
+              const active = category === cat;
+              return (
                 <button
+                  key={cat}
                   type="button"
-                  onClick={() => onCategoryChange("__all__")}
+                  onClick={() => onCategoryChange(cat)}
                   className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
-                    category === "__all__"
+                    active
                       ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
                       : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
                   }`}
                 >
-                  <DebtText k="auto_all_c8fb9db1" /> {totalHealthy}
+                  {humanizeCategory(cat)} · {n}
                 </button>
-                {categories.map(({ cat, n }) => {
-                  const active = category === cat;
-                  return (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => onCategoryChange(cat)}
-                      className={`px-2.5 py-1 rounded-full typo-caption transition-colors ${
-                        active
-                          ? "bg-primary/25 text-foreground border border-primary/50 font-medium"
-                          : "bg-foreground/5 text-foreground border border-border/30 hover:border-primary/30"
-                      }`}
-                    >
-                      {humanizeCategory(cat)} · {n}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              );
+            })}
+          </div>
+        </Collapse>
       </div>
     );
   },

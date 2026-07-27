@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
   ShieldCheck, Copy, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNegotiator';
-import { MOTION_TIMING } from '@/lib/utils/animation/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -150,60 +150,50 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
         <HelpCircle className="w-3 h-3" />
         {showHelp ? t.vault.negotiator_extra.hide_help : t.vault.negotiator_extra.need_help}
       </button>
-      <AnimatePresence>
-        {showHelp && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={MOTION_TIMING.FLOW}
-            className="overflow-hidden mt-2 space-y-2"
+      <Collapse open={showHelp} unmountWhenClosed duration={250} className="mt-2 space-y-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={helpQuestion}
+            onChange={(e) => setHelpQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
+            placeholder={t.vault.negotiator_extra.ask_question}
+            className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
+            data-testid={`negotiator-step-${stepIndex}-help-input`}
+          />
+          <button
+            type="button"
+            onClick={handleAskHelp}
+            disabled={!helpQuestion.trim() || isLoadingHelp}
+            className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
+            data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
           >
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={helpQuestion}
-                onChange={(e) => setHelpQuestion(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAskHelp()}
-                placeholder={t.vault.negotiator_extra.ask_question}
-                className={`flex-1 px-3 py-1.5 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${AI_STATUS.ring!} transition-all`}
-                data-testid={`negotiator-step-${stepIndex}-help-input`}
-              />
-              <button
-                type="button"
-                onClick={handleAskHelp}
-                disabled={!helpQuestion.trim() || isLoadingHelp}
-                className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
-                data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
-              >
-                {isLoadingHelp ? <LoadingSpinner size="xs" /> : t.vault.negotiator_extra.ask_button}
-              </button>
-            </div>
-            {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (
-              <div
-                className={`px-3 py-2 rounded-modal typo-body text-foreground ${AI_STATUS.bg} border ${AI_STATUS.border}`}
-                data-testid={`negotiator-step-${stepIndex}-help-answer`}
-              >
-                {stepHelp.answer}
-              </div>
-            )}
-            {stepHelp && stepHelp.stepIndex === stepIndex && stepHelp.isError && (() => {
-              const translated = resolveErrorTranslated(t, stepHelp.answer);
-              return (
-                <div
-                  className="px-3 py-2 rounded-modal typo-body text-red-300 bg-red-500/10 border border-red-500/20 space-y-1"
-                  data-testid={`negotiator-step-${stepIndex}-help-error`}
-                >
-                  <div>{translated.message}</div>
-                  {translated.suggestion && (
-                    <div className="typo-body text-red-200/70">{translated.suggestion}</div>
-                  )}
-                </div>
-              );
-            })()}
-          </motion.div>
+            {isLoadingHelp ? <LoadingSpinner size="xs" /> : t.vault.negotiator_extra.ask_button}
+          </button>
+        </div>
+        {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (
+          <div
+            className={`px-3 py-2 rounded-modal typo-body text-foreground ${AI_STATUS.bg} border ${AI_STATUS.border}`}
+            data-testid={`negotiator-step-${stepIndex}-help-answer`}
+          >
+            {stepHelp.answer}
+          </div>
         )}
-      </AnimatePresence>
+        {stepHelp && stepHelp.stepIndex === stepIndex && stepHelp.isError && (() => {
+          const translated = resolveErrorTranslated(t, stepHelp.answer);
+          return (
+            <div
+              className="px-3 py-2 rounded-modal typo-body text-red-300 bg-red-500/10 border border-red-500/20 space-y-1"
+              data-testid={`negotiator-step-${stepIndex}-help-error`}
+            >
+              <div>{translated.message}</div>
+              {translated.suggestion && (
+                <div className="typo-body text-red-200/70">{translated.suggestion}</div>
+              )}
+            </div>
+          );
+        })()}
+      </Collapse>
     </motion.div>
   );
 }

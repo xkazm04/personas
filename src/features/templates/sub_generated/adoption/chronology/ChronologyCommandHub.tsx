@@ -13,7 +13,7 @@
  * flow behaves identically across Matrix / Chain / Wildcard variants.
  */
 import { useState, memo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Loader2, Play, Sparkles, ChevronDown, ChevronUp, Send, MessageCircle, Trash2,
 } from 'lucide-react';
@@ -25,6 +25,7 @@ import {
   PromotionSuccessIndicator,
 } from './commandCenterParts';
 import { GlyphQuestionPanel } from '@/features/shared/glyph';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 export interface ChronologyCommandHubProps {
   buildPhase?: BuildPhase;
@@ -324,73 +325,63 @@ function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
         startTestLabelOverride={startTestLabelOverride}
       />
 
-      <AnimatePresence initial={false}>
-        {expanded && needsDrawer && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden"
-          >
-            <div className="relative rounded-modal bg-card-bg border border-card-border shadow-elevation-2 p-4 overflow-hidden">
-              {/* subtle ambient glow at top */}
-              <div
-                className="absolute inset-x-0 top-0 h-px pointer-events-none"
-                style={{ background: 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--primary) 30%, transparent) 50%, transparent 100%)' }}
+      <Collapse open={expanded && needsDrawer} unmountWhenClosed duration={220}>
+        <div className="relative rounded-modal bg-card-bg border border-card-border shadow-elevation-2 p-4 overflow-hidden">
+          {/* subtle ambient glow at top */}
+          <div
+            className="absolute inset-x-0 top-0 h-px pointer-events-none"
+            style={{ background: 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--primary) 30%, transparent) 50%, transparent 100%)' }}
+          />
+          {pendingQuestions.length > 0 && onAnswerBuildQuestion && (
+            <div data-testid="build-inline-questions">
+              <GlyphQuestionPanel
+                questions={pendingQuestions}
+                onAnswer={onAnswerBuildQuestion}
               />
-              {pendingQuestions.length > 0 && onAnswerBuildQuestion && (
-                <div data-testid="build-inline-questions">
-                  <GlyphQuestionPanel
-                    questions={pendingQuestions}
-                    onAnswer={onAnswerBuildQuestion}
-                  />
-                  {onSubmitAllAnswers && (
-                    <button
-                      type="button"
-                      onClick={onSubmitAllAnswers}
-                      className="mt-2 self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
-                    >
-                      {t.templates.chronology.hub_submit_answer}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {buildPhase === 'draft_ready' && pendingQuestions.length === 0 && onRefine && (
-                <DraftReadyRefinePanel
-                  onRefine={onRefine}
-                  onStartTest={onStartTest}
-                  onDeleteDraft={onDeleteDraft}
-                />
-              )}
-
-              {buildPhase === 'testing' && pendingQuestions.length === 0 && (
-                <TestRunningIndicator testOutputLines={testOutputLines} />
-              )}
-
-              {buildPhase === 'test_complete' && pendingQuestions.length === 0 && (
-                <TestResultsPanel
-                  passed={testPassed}
-                  outputLines={testOutputLines}
-                  error={testError}
-                  onApprove={onApproveTest}
-                  onApproveAnyway={onApproveTestAnyway}
-                  onReject={onRejectTest}
-                  onRefine={onRefine}
-                  onDeleteDraft={onDeleteDraft}
-                  toolResults={toolTestResults}
-                  summary={testSummary}
-                />
-              )}
-
-              {buildPhase === 'promoted' && pendingQuestions.length === 0 && (
-                <PromotionSuccessIndicator onViewAgent={onViewAgent} />
+              {onSubmitAllAnswers && (
+                <button
+                  type="button"
+                  onClick={onSubmitAllAnswers}
+                  className="mt-2 self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
+                >
+                  {t.templates.chronology.hub_submit_answer}
+                </button>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {buildPhase === 'draft_ready' && pendingQuestions.length === 0 && onRefine && (
+            <DraftReadyRefinePanel
+              onRefine={onRefine}
+              onStartTest={onStartTest}
+              onDeleteDraft={onDeleteDraft}
+            />
+          )}
+
+          {buildPhase === 'testing' && pendingQuestions.length === 0 && (
+            <TestRunningIndicator testOutputLines={testOutputLines} />
+          )}
+
+          {buildPhase === 'test_complete' && pendingQuestions.length === 0 && (
+            <TestResultsPanel
+              passed={testPassed}
+              outputLines={testOutputLines}
+              error={testError}
+              onApprove={onApproveTest}
+              onApproveAnyway={onApproveTestAnyway}
+              onReject={onRejectTest}
+              onRefine={onRefine}
+              onDeleteDraft={onDeleteDraft}
+              toolResults={toolTestResults}
+              summary={testSummary}
+            />
+          )}
+
+          {buildPhase === 'promoted' && pendingQuestions.length === 0 && (
+            <PromotionSuccessIndicator onViewAgent={onViewAgent} />
+          )}
+        </div>
+      </Collapse>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronRight, ArrowUpFromLine, ArrowDownToLine, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 
 /**
  * Normalized, direction-tagged summary of a push or pull sync. Built from
@@ -116,46 +117,36 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
         )}
       </button>
 
-      <AnimatePresence initial={false}>
-        {!collapsed && hasBreakdown && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-primary/8 px-3.5 pb-3.5 pt-3 space-y-3">
-              <div className="space-y-1.5">
-                {pills.map((p) => (
-                  <div key={p.key} className="flex items-center gap-2.5">
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${p.dotClass}`} />
-                    <span className={`typo-caption tabular-nums w-8 text-right ${p.textClass}`}>{p.count}</span>
-                    <span className="typo-caption text-foreground">{p.label}</span>
+      <Collapse open={!collapsed && hasBreakdown} unmountWhenClosed duration={200}>
+        <div className="border-t border-primary/8 px-3.5 pb-3.5 pt-3 space-y-3">
+          <div className="space-y-1.5">
+            {pills.map((p) => (
+              <div key={p.key} className="flex items-center gap-2.5">
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${p.dotClass}`} />
+                <span className={`typo-caption tabular-nums w-8 text-right ${p.textClass}`}>{p.count}</span>
+                <span className="typo-caption text-foreground">{p.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {summary.errors.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="typo-caption text-red-300/80">{ob.result_error_detail}</p>
+              <div className="space-y-1">
+                {summary.errors.map((err, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-red-500/5 border border-red-500/15"
+                  >
+                    <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <span className="typo-caption text-foreground break-words min-w-0">{err}</span>
                   </div>
                 ))}
               </div>
-
-              {summary.errors.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="typo-caption text-red-300/80">{ob.result_error_detail}</p>
-                  <div className="space-y-1">
-                    {summary.errors.map((err, i) => (
-                      <div
-                        key={i}
-                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-red-500/5 border border-red-500/15"
-                      >
-                        <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
-                        <span className="typo-caption text-foreground break-words min-w-0">{err}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </Collapse>
     </div>
   );
 }

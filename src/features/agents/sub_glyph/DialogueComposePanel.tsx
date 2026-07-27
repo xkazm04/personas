@@ -11,6 +11,7 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, Loader2, ChevronRight, Check } from "lucide-react";
+import { Collapse } from "@/features/shared/components/display/Collapse";
 import { InteractiveSigil } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -164,27 +165,23 @@ export function DialogueComposePanel({
               data-testid="agent-intent-input"
             />
 
-            <AnimatePresence>
-              {(shownStarters.length > 0) && (locked ? !!topStarter : true) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25, ease: EASE }}
-                  className="flex flex-col gap-1.5"
-                >
-                  <span className="typo-label text-foreground flex items-center gap-1.5">
-                    <Sparkles className="w-3 h-3 text-primary" />
-                    {locked ? "Building on recipe" : "Faster path — tap a recipe to start from it"}
-                  </span>
-                  <div className="flex flex-col gap-1.5">
-                    {(locked ? shownStarters.slice(0, 1) : shownStarters.slice(0, 3)).map((m) => (
-                      <StarterRow key={m.recipe_id} match={m} onOpen={locked ? undefined : () => setOpenRecipe(m)} />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <Collapse
+              open={(shownStarters.length > 0) && (locked ? !!topStarter : true)}
+              unmountWhenClosed
+              duration={250}
+            >
+              <div className="flex flex-col gap-1.5">
+                <span className="typo-label text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-primary" />
+                  {locked ? "Building on recipe" : "Faster path — tap a recipe to start from it"}
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  {(locked ? shownStarters.slice(0, 1) : shownStarters.slice(0, 3)).map((m) => (
+                    <StarterRow key={m.recipe_id} match={m} onOpen={locked ? undefined : () => setOpenRecipe(m)} />
+                  ))}
+                </div>
+              </div>
+            </Collapse>
 
             {locked && composing ? (
               <div className="flex items-center gap-2 pt-1" data-testid="dialoguecinema-loadingbar">

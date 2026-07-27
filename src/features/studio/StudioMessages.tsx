@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useStudioStore } from './studioStore';
 import StudioDecision from './StudioDecision';
@@ -195,26 +196,21 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
         </button>
       )}
 
-      <AnimatePresence initial={false}>
-        {showAll && canExpand && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="flex max-h-[42vh] w-full flex-col gap-1.5 overflow-y-auto"
-          >
-            {history.map((m) => (
-              <div key={m.id} className={HISTORY_BUBBLE}>
-                <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
-                <div className="min-w-0">
-                  <MessageBody text={m.text} />
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Collapse
+        open={showAll && canExpand}
+        unmountWhenClosed
+        duration={220}
+        className="flex max-h-[42vh] w-full flex-col gap-1.5 overflow-y-auto"
+      >
+        {history.map((m) => (
+          <div key={m.id} className={HISTORY_BUBBLE}>
+            <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+            <div className="min-w-0">
+              <MessageBody text={m.text} />
+            </div>
+          </div>
+        ))}
+      </Collapse>
 
       <AnimatePresence mode="wait">
         <motion.div

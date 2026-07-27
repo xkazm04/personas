@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, KeyRound } from 'lucide-react';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CATEGORY_META, FALLBACK_CATEGORY } from '../QuestionnaireFormGridConfig';
 import { QuestionCard } from '../QuestionnaireFormGridParts';
@@ -129,23 +130,13 @@ export function QuestionnaireHeroQuestion({
           )}
         </div>
 
-        <AnimatePresence initial={false}>
-          {hasTip && tipOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-3 px-4 py-3 rounded-card bg-foreground/[0.03] border border-border">
-                <p className="typo-body text-foreground leading-relaxed">
-                  {question.context}
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <Collapse open={hasTip && tipOpen} unmountWhenClosed duration={200}>
+          <div className="mt-3 px-4 py-3 rounded-card bg-foreground/[0.03] border border-border">
+            <p className="typo-body text-foreground leading-relaxed">
+              {question.context}
+            </p>
+          </div>
+        </Collapse>
 
         <div className="h-8" />
 
