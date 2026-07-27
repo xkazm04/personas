@@ -102,6 +102,7 @@ export type { ChatSessionContext } from "./ChatSessionContext";
 export type { CircuitBreakerStatus } from "./CircuitBreakerStatus";
 export type { CircuitTransitionEvent } from "./CircuitTransitionEvent";
 export type { CliCapabilities } from "./CliCapabilities";
+export type { CliProbeStatus } from "./CliProbeStatus";
 export type { ClipboardExportResult } from "./ClipboardExportResult";
 export type { CloudConfig } from "./CloudConfig";
 export type { CloudDailyBreakdown } from "./CloudDailyBreakdown";
