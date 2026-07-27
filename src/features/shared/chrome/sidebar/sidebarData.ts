@@ -6,7 +6,7 @@ import {
   FolderKanban, Map, Lightbulb, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy, AlertOctagon,
-  User, Mic, Volume2, Sparkles, Headphones,
+  User, Mic, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
   Clapperboard, MoonStar, Landmark,
@@ -151,7 +151,11 @@ export const twinItems: SubNavItem[] = [
   { id: 'tone', label: 'Tone', icon: Mic },
   { id: 'brain', label: 'Brain', icon: Brain },
   { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
-  { id: 'voice', label: 'Voice', icon: Volume2 },
+  // NOTE: there is deliberately no 'voice' item. One existed until 2026-07-27
+  // but no VoicePage was ever built and 'voice' is not in the `TwinTab` union —
+  // the sidebar's `id as TwinTab` cast (PluginsSidebarNav.tsx) hid that from the
+  // compiler, so clicking it set an unhandled tab and rendered a blank page.
+  // Voice-of-writing lives under Tone; TTS voice selection is Companion → Voice.
   { id: 'channels', label: 'Channels', icon: Radio },
   { id: 'training', label: 'Training', icon: GraduationCap },
 ];

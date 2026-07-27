@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import type { TwinTab } from '@/lib/types/types';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
@@ -20,6 +21,11 @@ const BrainPage = lazy(() => import('./sub_brain/BrainPage'));
 const KnowledgePage = lazy(() => import('./sub_knowledge/KnowledgePage'));
 const ChannelsPage = lazy(() => import('./sub_channels/ChannelsPage'));
 const TrainingPage = lazy(() => import('./sub_training/TrainingPage'));
+
+/** Every tab this page can actually render — the recovery guard's allowlist. */
+const TWIN_TABS: readonly TwinTab[] = [
+  'profiles', 'identity', 'tone', 'brain', 'knowledge', 'channels', 'training',
+];
 
 export default function TwinPage() {
   const twinTab = useSystemStore((s) => s.twinTab);
@@ -52,6 +58,17 @@ export default function TwinPage() {
       setTwinTab('profiles');
     }
   }, [twinProfiles.length, twinTab, setTwinTab]);
+
+  // Belt-and-braces against an unhandled tab rendering an empty page. The
+  // sidebar selects via `id as TwinTab` (PluginsSidebarNav.tsx), so a nav id
+  // with no branch below type-checks fine and silently renders nothing — which
+  // is exactly what a retired 'voice' item did until 2026-07-27. Persisted
+  // state can still hold such a value, so recover instead of showing a blank.
+  useEffect(() => {
+    if (!TWIN_TABS.includes(twinTab)) {
+      setTwinTab('profiles');
+    }
+  }, [twinTab, setTwinTab]);
 
   return (
     <div className="h-full w-full flex flex-col">

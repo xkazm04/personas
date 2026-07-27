@@ -107,7 +107,7 @@ function CellKpi({ kpi, cell, onOpen }: { kpi: MockKpi; cell: MatrixCellStyle; o
         className="rounded px-1.5 py-1 min-w-[2.4rem] text-center transition-transform hover:scale-105"
         style={{ background: `color-mix(in srgb, ${color} 28%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 55%, transparent)` }}
       >
-        <span className="typo-data tabular-nums" style={{ color }}>{kpi.current ?? '—'}</span>
+        <span className="typo-data tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
       </button>
     );
   }
@@ -115,7 +115,7 @@ function CellKpi({ kpi, cell, onOpen }: { kpi: MockKpi; cell: MatrixCellStyle; o
     return (
       <button type="button" onClick={() => onOpen(kpi.id)} title={label} className="flex flex-col items-center rounded px-1 py-0.5 hover:bg-secondary/30 transition-colors">
         <Sparkline series={kpi.series} color={color} width={40} height={12} />
-        <span className="typo-caption tabular-nums" style={{ color }}>{kpi.current ?? '—'}</span>
+        <span className="typo-caption tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
       </button>
     );
   }
@@ -129,7 +129,7 @@ function CellKpi({ kpi, cell, onOpen }: { kpi: MockKpi; cell: MatrixCellStyle; o
       style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
     >
       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
-      <span className="typo-caption tabular-nums" style={{ color }}>{kpi.current ?? '—'}</span>
+      <span className="typo-caption tabular-nums" style={{ color, fontWeight: 400 }}>{kpi.current ?? '—'}</span>
     </button>
   );
 }
