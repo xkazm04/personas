@@ -12,7 +12,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import type { SkillsManagerVariantProps, ProjRow, WsRow } from './SkillsManagerPage';
 import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skillsManagerBits';
-import { SkillActionConfirm, type SkillActionKind } from './SkillActionConfirm';
+import { SkillActionConfirm } from './SkillActionConfirm';
+import { UseSkillDialog } from './UseSkillDialog';
+
+type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
 
 type SortKey = 'name' | 'usage';
 type SortDir = 'asc' | 'desc';
@@ -115,12 +118,12 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
   );
 }
 
-export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts }: SkillsManagerVariantProps) {
+export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, projectId, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts }: SkillsManagerVariantProps) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const wsSort = useSort();
   const projSort = useSort();
-  const [confirm, setConfirm] = useState<{ kind: SkillActionKind; skill: SkillEntry } | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
 
   // Left — category groups (name-asc), sorted within each group.
   const wsGroups = useMemo(() => {
@@ -144,12 +147,11 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     [proj, projSort.key, projSort.dir],
   );
 
-  const confirmAction = (args: string) => {
-    if (!confirm) return;
-    if (confirm.kind === 'adopt') onAdopt(confirm.skill.name);
-    else if (confirm.kind === 'share') onShare(confirm.skill.name);
-    else onUse(confirm.skill.name, args);
-    setConfirm(null);
+  const confirmAdoptShare = () => {
+    if (!pending || pending.kind === 'use') return;
+    if (pending.kind === 'adopt') onAdopt(pending.skill.name);
+    else onShare(pending.skill.name);
+    setPending(null);
   };
 
   const renderProjRow = (r: ProjRow) => (
@@ -174,9 +176,9 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
       <UsageCount usage={r.usage} />
       <LastUsed usage={r.usage} />
       <span className="flex items-center gap-1.5 justify-end">
-        <ActionIcon icon={Play} title={tx(d.skills_use_hint, { name: projectName })} onClick={() => setConfirm({ kind: 'use', skill: r.entry })} testid={`skills-manager-use-${r.entry.name}`} />
+        <ActionIcon icon={Play} title={tx(d.skills_use_hint, { name: projectName })} onClick={() => setPending({ kind: 'use', skill: r.entry, tracked: r.tracked })} testid={`skills-manager-use-${r.entry.name}`} />
         {r.shareable && (
-          <ActionIcon icon={ArrowUpFromLine} title={d.skills_share_hint} onClick={() => setConfirm({ kind: 'share', skill: r.entry })} disabled={busy} testid={`skills-manager-share-${r.entry.name}`} />
+          <ActionIcon icon={ArrowUpFromLine} title={d.skills_share_hint} onClick={() => setPending({ kind: 'share', skill: r.entry })} disabled={busy} testid={`skills-manager-share-${r.entry.name}`} />
         )}
       </span>
     </li>
@@ -200,7 +202,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
                       </span>
                     ) : (
-                      <ActionIcon icon={ArrowDownToLine} title={tx(d.skills_adopt_hint, { name: projectName })} onClick={() => setConfirm({ kind: 'adopt', skill: entry })} disabled={busy} testid={`skills-manager-adopt-${entry.name}`} />
+                      <ActionIcon icon={ArrowDownToLine} title={tx(d.skills_adopt_hint, { name: projectName })} onClick={() => setPending({ kind: 'adopt', skill: entry })} disabled={busy} testid={`skills-manager-adopt-${entry.name}`} />
                     )}
                   </span>
                 </li>
@@ -227,14 +229,25 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         {proj.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_proj_empty}</p>}
       </Panel>
 
-      {confirm && (
+      {pending && pending.kind !== 'use' && (
         <SkillActionConfirm
-          kind={confirm.kind}
-          skill={confirm.skill}
+          kind={pending.kind}
+          skill={pending.skill}
           projectName={projectName}
           busy={busy}
-          onConfirm={confirmAction}
-          onClose={() => setConfirm(null)}
+          onConfirm={confirmAdoptShare}
+          onClose={() => setPending(null)}
+        />
+      )}
+      {pending && pending.kind === 'use' && projectId && (
+        <UseSkillDialog
+          skill={pending.skill}
+          projectId={projectId}
+          projectName={projectName}
+          tracked={pending.tracked}
+          busy={busy}
+          onConfirm={(choice) => { onUse(pending.skill.name, choice); setPending(null); }}
+          onClose={() => setPending(null)}
         />
       )}
     </div>

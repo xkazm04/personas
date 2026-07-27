@@ -14,6 +14,9 @@ import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/I
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
 import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools/devTools';
+import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -21,6 +24,7 @@ import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker'
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
+import type { UseSkillChoice } from './UseSkillDialog';
 
 /** Workspace-side row model. */
 export interface WsRow {
@@ -47,11 +51,13 @@ export interface SkillsManagerVariantProps {
   totalContexts: number;
   busy: boolean;
   projectName: string;
+  /** Active project id — the Use dialog needs it to fetch contexts. */
+  projectId: string | null;
   onAdopt: (name: string) => void;
   onShare: (name: string) => void;
-  /** Project side — dispatch the installed skill as a background Fleet session
-   *  (`/skill args`), the SkillsWorkbench dispatch lane. */
-  onUse: (name: string, args: string) => void;
+  /** Project side — run the installed skill with the operator's dispatch-target
+   *  + context choice (see UseSkillChoice). */
+  onUse: (name: string, choice: UseSkillChoice) => void;
   /** Project-side rows only — the host binds the active project id. */
   onSwitchMemory: (skillName: string, next: MemoryBinding) => void;
   onOpenContexts: (skill: string) => void;
@@ -109,6 +115,26 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   );
 
   const busy = Boolean(data.wb?.managing);
+  const addToast = useToastStore((s) => s.addToast);
+  const { copy } = useCopyToClipboard();
+
+  // Route the operator's Use choice. Context term is folded into the args as a
+  // trailing positional (a "preset terminal input"); "all" runs one dispatch
+  // per context. Fleet → wb.runDispatch; CMD → copy the command(s) so the
+  // operator runs them in their own external terminal (outside Personas).
+  const runUse = (name: string, choice: UseSkillChoice) => {
+    const argSets = choice.contexts.length
+      ? choice.contexts.map((c) => [choice.args, c].filter(Boolean).join(' '))
+      : [choice.args];
+    if (choice.target === 'cmd') {
+      const cmd = argSets.map((a) => `claude "${skillCommand(name, a)}"`).join(' && ');
+      copy(cmd);
+      // Hardcoded pending /prototype consolidation (i18n on winner).
+      addToast('Command copied — run it in your external terminal', 'success');
+      return;
+    }
+    for (const a of argSets) void data.wb?.runDispatch(name, a);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
@@ -125,9 +151,10 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           totalContexts={data.totalContexts}
           busy={busy}
           projectName={projectName}
+          projectId={activeId}
           onAdopt={(name) => { void data.wb?.runAdopt(name); }}
           onShare={(name) => { void data.wb?.runShare(name); }}
-          onUse={(name, args) => { void data.wb?.runDispatch(name, args); }}
+          onUse={runUse}
           onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
           onOpenContexts={setContextsSkill}
         />
