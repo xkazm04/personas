@@ -228,11 +228,16 @@ interface IllustratedEmptyStateProps {
   /** Extra CSS classes on the outer container. */
   className?: string;
   /**
-   * Dominant layout: the illustration is enlarged into a faint, full-bleed
-   * watermark behind a single heading (no description). Used by the Home
-   * dashboard widgets so the empty state reads as a promoted background rather
-   * than a small centered glyph. Leaves the default centered layout untouched
-   * for the other consumers (alerts / metrics panels, etc.).
+   * Dominant layout: heading first, then an enlarged faint illustration
+   * beneath it, and no description. Used by the Home dashboard widgets, where
+   * the message has to stay readable in a short pane. Leaves the default
+   * centered layout untouched for the other consumers (alerts / metrics, etc.).
+   *
+   * This used to paint the illustration as a full-bleed watermark BEHIND the
+   * heading. It was changed on 2026-07-27 because the two genuinely collided:
+   * the glyph was `scale-[3.25]`, and a transform does not resize the layout
+   * box, so it measured 48px while painting 156px — overflowing its own
+   * container and landing on top of the text at small pane heights.
    */
   dominant?: boolean;
 }
@@ -244,14 +249,21 @@ export function IllustratedEmptyState({ variant = 'chart', heading, description,
 
   if (dominant) {
     return (
-      <div className={`relative flex items-center justify-center overflow-hidden min-h-[7rem] ${className}`}>
+      <div className={`flex flex-col items-center justify-center gap-3 overflow-hidden min-h-[7rem] ${className}`}>
+        <h4 className="shrink-0 typo-heading text-foreground text-center px-4">{heading ?? preset.heading}</h4>
+        {/* A real 96x96 layout box, NOT a transform-scaled 48px one: `scale-*`
+            does not resize the layout box, so the old watermark measured 48px
+            while painting 156px and bled outside its own bounds.
+
+            Deliberately NOT `shrink-0`, while the heading above IS: in a short
+            pane something has to give, and it must never be the message. With
+            the sizes reversed, a ~100px pane clips the heading instead. */}
         <div
-          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20"
+          className="pointer-events-none w-24 h-24 min-h-0 opacity-45 [&>svg]:w-full [&>svg]:h-full"
           aria-hidden
         >
-          <div className="origin-center scale-[3.25]"><Svg /></div>
+          <Svg />
         </div>
-        <h4 className="relative typo-heading text-foreground text-center px-4">{heading ?? preset.heading}</h4>
       </div>
     );
   }

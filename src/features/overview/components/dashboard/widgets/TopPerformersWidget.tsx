@@ -82,7 +82,7 @@ function TopPerformerRow({ entry, highlighted }: { entry: LeaderboardEntry; high
       </div>
 
       {/* Avatar + name */}
-      <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="md" />
+      <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="sm" />
       <span className="typo-body text-foreground truncate flex-1 min-w-0">{entry.personaName}</span>
 
       {/* Trend */}
