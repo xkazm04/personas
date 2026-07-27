@@ -219,7 +219,7 @@ export default function FrequencyEditor({
                       )}
                     </>
                   ) : (
-                    <p>{preview.error || 'Invalid cron expression'}</p>
+                    <p>{preview.error || t.schedules.invalid_cron}</p>
                   )}
                 </div>
               )}

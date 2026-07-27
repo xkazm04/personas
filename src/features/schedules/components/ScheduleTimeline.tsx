@@ -323,7 +323,7 @@ export default function ScheduleTimeline() {
               }}
               className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-blue-500/15 transition-colors"
             >
-              Clear
+              {t.common.clear}
             </button>
           </div>
         )}
