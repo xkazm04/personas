@@ -16,6 +16,10 @@
 //! DEV-gated. Keeps ts-rs output and command-name codegen stable across
 //! build profiles.
 
+/// Performance gates over the scale-critical hot paths. Test-only: it carries no
+/// production callers by design, so it costs nothing in a shipped build.
+#[cfg(test)]
+pub mod bench;
 pub mod commands;
 pub mod debug_log;
 pub mod headless;
