@@ -6,7 +6,10 @@
 // tauri.conf `bundle.resources` maps into <resource_dir>/skills/.
 //
 // Runs from `npm run build` (tauri's beforeBuildCommand), so the resource dir
-// exists before Tauri collects bundle resources. Idempotent + cheap; on a
+// exists before Tauri collects bundle resources, AND from the predev/prebuild
+// codegen presets — Tauri validates `bundle.resources` paths in dev mode too,
+// so a checkout that only ever ran `tauri dev` would otherwise die with
+// "resource path `resources\skills` doesn't exist". Idempotent + cheap; on a
 // plain `vite build` (no packaging) it's harmless.
 import { cpSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import path from 'node:path';
