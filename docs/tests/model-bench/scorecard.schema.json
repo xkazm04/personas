@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model-bench/scorecard.schema.json",
+  "title": "model-bench per-run scorecard",
+  "description": "One object per (problem x variant) run. Judged fields are written blind (label only); identity and cost fields are joined in after scoring is sealed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["label", "problem", "judged"],
+  "properties": {
+    "label": {
+      "type": "string",
+      "pattern": "^[A-H]$",
+      "description": "Blind attempt label, per-problem shuffled. The only identifier the judge sees."
+    },
+    "problem": { "enum": ["P1", "P2", "P3"] },
+
+    "identity": {
+      "type": "object",
+      "description": "JOINED AFTER SCORING. Never present in a bundle sent to a judge.",
+      "additionalProperties": false,
+      "required": ["model", "effort"],
+      "properties": {
+        "model": { "enum": ["opus", "fable"] },
+        "effort": { "enum": ["low", "medium", "high", "xhigh"] },
+        "model_id": { "type": "string" },
+        "wave": { "type": "integer", "minimum": 0 },
+        "branch": { "type": "string" }
+      }
+    },
+
+    "objective": {
+      "type": "object",
+      "description": "Harness-measured. Cost fields are withheld from the judge.",
+      "additionalProperties": false,
+      "properties": {
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "cache_read_tokens": { "type": "integer", "minimum": 0 },
+        "turns": { "type": "integer", "minimum": 0 },
+        "tool_calls": { "type": "integer", "minimum": 0 },
+        "files_touched": { "type": "integer", "minimum": 0 },
+        "lines_added": { "type": "integer", "minimum": 0 },
+        "lines_removed": { "type": "integer", "minimum": 0 },
+        "rework_ratio": {
+          "type": "number", "minimum": 0,
+          "description": "Lines written then removed within the same run, over lines added."
+        },
+        "wall_clock_min": { "type": "number", "minimum": 0 },
+        "wave_concurrency": {
+          "type": "integer", "minimum": 1,
+          "description": "Sessions running alongside this one. Required context for wall_clock_min."
+        },
+        "interventions": {
+          "type": "integer", "minimum": 0,
+          "description": "Operator answers beyond the fixed oracle sheet."
+        },
+        "hit_token_ceiling": { "type": "boolean" },
+        "hit_wall_ceiling": { "type": "boolean" },
+        "limit_stall_min": {
+          "type": "number", "minimum": 0,
+          "description": "Time lost to Claude-side usage limits. Excluded from wall_clock_min, not from tokens."
+        },
+        "gates": {
+          "type": "object",
+          "description": "Per-gate pass/fail as actually re-run by the harness, not as claimed by the session.",
+          "additionalProperties": { "enum": ["pass", "fail", "not_applicable", "not_run"] }
+        },
+        "deliverable_complete": {
+          "type": "boolean",
+          "description": "Every artifact the brief demands exists and is non-stub."
+        },
+        "objective_core": {
+          "type": ["integer", "null"], "minimum": 0, "maximum": 3,
+          "description": "P1 only: historical failures correctly detected with the right mechanism named, minus false positives on the good counterparts."
+        },
+        "protocol_deviations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "e.g. emitted FLEET:NEXT, committed, read a forbidden file."
+        }
+      }
+    },
+
+    "judged": {
+      "type": "object",
+      "description": "Written blind by the judge. Dimensions not applicable to the problem are omitted.",
+      "additionalProperties": false,
+      "required": ["dimensions", "strongest_move", "weakest_point", "claim_audit"],
+      "properties": {
+        "judge_model": { "type": "string" },
+        "pass": { "enum": ["primary", "cross_check"] },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "problem_framing": { "$ref": "#/$defs/dimension" },
+            "solution_architecture": { "$ref": "#/$defs/dimension" },
+            "creativity": { "$ref": "#/$defs/dimension" },
+            "rigor": { "$ref": "#/$defs/dimension" },
+            "evidence_discipline": { "$ref": "#/$defs/dimension" },
+            "tradeoff_honesty": { "$ref": "#/$defs/dimension" },
+            "craft": { "$ref": "#/$defs/dimension" },
+            "executability": { "$ref": "#/$defs/dimension" }
+          }
+        },
+        "strongest_move": { "type": "string" },
+        "weakest_point": { "type": "string" },
+        "over_reach": {
+          "type": ["string", "null"],
+          "description": "Scope the attempt took that the brief did not ask for, if any."
+        },
+        "claim_audit": {
+          "type": "array",
+          "description": "Claims in RECAP.md / EVIDENCE.md the judge could not substantiate from artifacts.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim", "verdict"],
+            "properties": {
+              "claim": { "type": "string" },
+              "verdict": { "enum": ["unsubstantiated", "contradicted", "self_labeled_unverified"] },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "rank": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "separator_from_next": {
+          "type": ["string", "null"],
+          "description": "One sentence naming what separates this attempt from the one ranked below it. Null is a permitted, meaningful answer."
+        }
+      }
+    },
+
+    "derived": {
+      "type": "object",
+      "description": "Computed after unsealing.",
+      "additionalProperties": false,
+      "properties": {
+        "quality_score": { "type": "number", "minimum": 0, "maximum": 4 },
+        "value_density": {
+          "type": "number",
+          "description": "quality_score per 100k output tokens."
+        },
+        "claim_violations": {
+          "type": "integer", "minimum": 0,
+          "description": "claim_audit entries with verdict unsubstantiated or contradicted."
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "why"],
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "why": {
+          "type": "string",
+          "description": "One sentence citing a specific file, line, or passage."
+        },
+        "weight": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
