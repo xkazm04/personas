@@ -2,7 +2,7 @@
 //!
 //! When a run fails on a provider usage-limit WINDOW (e.g. Claude's rolling
 //! ~5h cap), healing schedules a retry at the parsed reset time via
-//! [`HealingAction::RetryAt`](crate::engine::healing::HealingAction). A
+//! [`HealingAction::RetryAt`](personas_core::healing::HealingAction). A
 //! multi-hour in-memory sleep would not survive an app restart, so the
 //! schedule lives in the `scheduled_retries` table and the event-bus tick
 //! drains due rows (`ExecutionEngine::drain_due_scheduled_retries`).

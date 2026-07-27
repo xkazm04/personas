@@ -3,7 +3,7 @@ use rusqlite::{params, OptionalExtension};
 use crate::db::models::{CreateTriggerInput, PersonaTrigger, TriggerConfig, UpdateTriggerInput};
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
-use crate::engine::chain;
+use crate::db::chain;
 use personas_core::{crypto, scheduler};
 use crate::error::AppError;
 use crate::validation::contract::check as validate_check;
@@ -131,7 +131,7 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         let next_trigger_at = scheduler::compute_next_from_config(
             &parsed_cfg,
             chrono::Utc::now(),
-            crate::engine::cron::seed_hash(&id),
+            personas_core::cron::seed_hash(&id),
         );
         let invalid_timezone = scheduler::invalid_schedule_timezone(&parsed_cfg);
 
@@ -1850,7 +1850,7 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppErro
 pub fn set_status(
     pool: &DbPool,
     id: &str,
-    status: crate::engine::lifecycle::TriggerStatus,
+    status: personas_core::lifecycle::TriggerStatus,
 ) -> Result<(), AppError> {
     timed_query!("persona_triggers", "persona_triggers::set_status", {
         let now = chrono::Utc::now().to_rfc3339();

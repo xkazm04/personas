@@ -218,7 +218,7 @@ pub fn get_version_ratings(
                 let (composite_score, partial_coverage) = composite_and_coverage(ta, oq, pc);
                 // Ollama's per-call cost is hardcoded 0.0 in the runner — a zero
                 // here is "unknown", not "free". Flag it so the value verdict skips it.
-                let cost_unknown = provider == crate::engine::types::providers::OLLAMA;
+                let cost_unknown = provider == personas_core::types::providers::OLLAMA;
                 Ok(LabVersionRating {
                     version_id: row.get("version_id")?,
                     version_number: row.get::<_, Option<i32>>("version_number")?.unwrap_or(0),

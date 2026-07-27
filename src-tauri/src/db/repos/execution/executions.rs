@@ -5,7 +5,7 @@ use crate::db::models::{
     PersonaExecution, UpdateExecutionStatus,
 };
 use crate::db::DbPool;
-use crate::engine::types::ExecutionState;
+use personas_core::types::ExecutionState;
 use crate::error::AppError;
 
 fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
@@ -658,7 +658,7 @@ pub fn set_cache_tokens(
 /// they are persisted (and thereby forwarded to the inspector / exports / Sentry
 /// / companion memory). No-op when redaction is disabled. See `engine::redact`.
 fn redact_execution_fields(input: &mut UpdateExecutionStatus) {
-    use crate::engine::redact;
+    use personas_core::redact;
     redact::redact_opt(&mut input.output_data);
     redact::redact_opt(&mut input.error_message);
     redact::redact_opt(&mut input.business_outcome);

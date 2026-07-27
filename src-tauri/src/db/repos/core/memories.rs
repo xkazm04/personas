@@ -1615,7 +1615,7 @@ pub fn memory_embedding_text_parts(title: &str, content: &str) -> String {
 /// slow a memory write, so the write path never awaits this.
 #[cfg(feature = "ml")]
 fn spawn_embed_memory(memory_id: String, text: String) {
-    let Some((vec_pool, embedder)) = crate::engine::memory_recall::task_recall_runtime() else {
+    let Some((vec_pool, embedder)) = crate::db::memory_recall::task_recall_runtime() else {
         return;
     };
     let Ok(handle) = tokio::runtime::Handle::try_current() else {
@@ -1643,7 +1643,7 @@ fn spawn_delete_memory_embeddings(ids: Vec<String>) {
     if ids.is_empty() {
         return;
     }
-    let Some((vec_pool, _)) = crate::engine::memory_recall::task_recall_runtime() else {
+    let Some((vec_pool, _)) = crate::db::memory_recall::task_recall_runtime() else {
         return;
     };
     let Ok(handle) = tokio::runtime::Handle::try_current() else {
@@ -1706,7 +1706,7 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::db::UserDbPool) -> Result<(), A
 #[cfg(feature = "ml")]
 pub async fn embed_and_store_memory(
     vec_pool: &crate::db::UserDbPool,
-    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: &std::sync::Arc<crate::db::embedder::EmbeddingManager>,
     memory_id: &str,
     text: &str,
 ) -> Result<(), AppError> {
@@ -1752,7 +1752,7 @@ pub async fn embed_and_store_memory(
 #[cfg(feature = "ml")]
 pub async fn search_similar_memories(
     vec_pool: &crate::db::UserDbPool,
-    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: &std::sync::Arc<crate::db::embedder::EmbeddingManager>,
     query: &str,
     k: usize,
 ) -> Result<Vec<(String, f32)>, AppError> {
@@ -1850,7 +1850,7 @@ fn apply_memory_model_guard(
 pub async fn create_with_embedding(
     pool: &DbPool,
     vec_pool: &crate::db::UserDbPool,
-    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: &std::sync::Arc<crate::db::embedder::EmbeddingManager>,
     input: CreatePersonaMemoryInput,
 ) -> Result<PersonaMemory, AppError> {
     let created = create(pool, input)?;
@@ -1979,7 +1979,7 @@ pub fn spawn_gc_archived_memory_embeddings(main_pool: &DbPool) {
     /// Per-tick sweep bound — small enough to be cheap, large enough to drain a
     /// backlog over a handful of decay ticks.
     const GC_BATCH: usize = 256;
-    let Some((vec_pool, _)) = crate::engine::memory_recall::task_recall_runtime() else {
+    let Some((vec_pool, _)) = crate::db::memory_recall::task_recall_runtime() else {
         return;
     };
     let Ok(handle) = tokio::runtime::Handle::try_current() else {
@@ -2008,7 +2008,7 @@ pub fn spawn_gc_archived_memory_embeddings(_main_pool: &DbPool) {}
 pub async fn backfill_memory_embeddings(
     main_pool: &DbPool,
     vec_pool: &crate::db::UserDbPool,
-    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: &std::sync::Arc<crate::db::embedder::EmbeddingManager>,
     batch_limit: usize,
 ) -> Result<usize, AppError> {
     ensure_memory_vec_table(vec_pool)?;
@@ -3175,7 +3175,7 @@ mod vec_tests {
     use super::*;
 
     fn vec_pool() -> crate::db::UserDbPool {
-        crate::engine::vector_store::ensure_vec_registered_pub();
+        crate::db::vector_store::ensure_vec_registered_pub();
         let dir = std::env::temp_dir().join(format!("pm-vec-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let manager = r2d2_sqlite::SqliteConnectionManager::file(dir.join("vec-test.db"));

@@ -46,7 +46,7 @@ use crate::error::AppError;
 #[allow(clippy::type_complexity)]
 static TASK_RECALL_RUNTIME: std::sync::OnceLock<(
     crate::db::UserDbPool,
-    std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    std::sync::Arc<crate::db::embedder::EmbeddingManager>,
 )> = std::sync::OnceLock::new();
 
 /// Register the embedding runtime for task-relevant recall + embed-on-write.
@@ -55,7 +55,7 @@ static TASK_RECALL_RUNTIME: std::sync::OnceLock<(
 #[cfg(feature = "ml")]
 pub fn init_task_recall_runtime(
     vec_pool: crate::db::UserDbPool,
-    embedder: std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: std::sync::Arc<crate::db::embedder::EmbeddingManager>,
 ) {
     let _ = TASK_RECALL_RUNTIME.set((vec_pool, embedder));
 }
@@ -64,7 +64,7 @@ pub fn init_task_recall_runtime(
 #[cfg(feature = "ml")]
 pub fn task_recall_runtime() -> Option<(
     crate::db::UserDbPool,
-    std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    std::sync::Arc<crate::db::embedder::EmbeddingManager>,
 )> {
     TASK_RECALL_RUNTIME.get().cloned()
 }
@@ -351,7 +351,7 @@ pub async fn pack_by_budget_task_aware(
     now: DateTime<Utc>,
     task_context: &str,
     vec_pool: &crate::db::UserDbPool,
-    embedder: &std::sync::Arc<crate::engine::embedder::EmbeddingManager>,
+    embedder: &std::sync::Arc<crate::db::embedder::EmbeddingManager>,
 ) -> PackedRecall {
     if candidates.is_empty() || task_context.trim().is_empty() {
         return pack_by_budget(candidates, char_budget, now);

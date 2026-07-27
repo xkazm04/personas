@@ -38,7 +38,7 @@ pub fn insert(
         detail,
     );
     if let Err(ref e) = result {
-        let failures = crate::engine::crypto::record_credential_audit_write_failure();
+        let failures = personas_core::crypto::record_credential_audit_write_failure();
         tracing::warn!(
             credential_id = %credential_id,
             operation = %operation,

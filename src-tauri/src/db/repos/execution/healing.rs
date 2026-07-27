@@ -720,7 +720,7 @@ pub fn get_knowledge_hint(
     pool: &DbPool,
     service_type: &str,
     pattern_key: &str,
-) -> Result<Option<crate::engine::healing::KnowledgeHint>, AppError> {
+) -> Result<Option<personas_core::healing::KnowledgeHint>, AppError> {
     timed_query!("healing_events", "healing_events::get_knowledge_hint", {
         let conn = pool.get()?;
         let result = conn.query_row(
@@ -734,7 +734,7 @@ pub fn get_knowledge_hint(
             },
         );
         match result {
-            Ok((delay, count)) => Ok(Some(crate::engine::healing::KnowledgeHint {
+            Ok((delay, count)) => Ok(Some(personas_core::healing::KnowledgeHint {
                 recommended_delay_secs: delay.map(|d| d as u64),
                 occurrence_count: count,
             })),

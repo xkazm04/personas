@@ -102,7 +102,7 @@ pub const DRAFT_RETENTION_DAYS_DEFAULT: i64 = 0;
 pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR: &str = "schedule_executions_per_persona_hour";
 /// Default per-persona hourly ceiling for scheduled executions.
 pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT: i64 =
-    crate::engine::limits::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT;
+    personas_core::limits::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT;
 
 /// Per-persona execution retention override (in months).
 /// Key format: `execution_retention_months:<persona_id>`, value: number string.
@@ -903,14 +903,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         // -------------------------------------------------------------------
         BYOM_POLICY => validate_json_as::<crate::engine::byom::ByomPolicy>(key, value),
         MODEL_ROUTING_RULES => {
-            validate_json_as::<Vec<crate::engine::model_routing::ModelRoutingRule>>(key, value)
+            validate_json_as::<Vec<crate::db::model_routing::ModelRoutingRule>>(key, value)
         }
         QUALITY_GATE_CONFIG => {
-            validate_json_as::<crate::engine::quality_gate::QualityGateConfig>(key, value)
+            validate_json_as::<crate::db::quality_gate::QualityGateConfig>(key, value)
         }
         PERFORMANCE_DIGEST => validate_json_as::<crate::engine::digest::DigestConfig>(key, value),
         GLOBAL_MODEL_PROFILE => {
-            validate_json_as::<crate::engine::types::ModelProfile>(key, value)
+            validate_json_as::<personas_core::types::ModelProfile>(key, value)
         }
         OBSIDIAN_BRAIN_CONFIG => {
             validate_json_as::<crate::db::models::ObsidianVaultConfig>(key, value)
@@ -1297,7 +1297,7 @@ mod tests {
         // equality and the allowlist membership so this can't regress.
         assert_eq!(
             MODEL_ROUTING_RULES,
-            crate::engine::model_routing::MODEL_ROUTING_RULES_KEY
+            crate::db::model_routing::MODEL_ROUTING_RULES_KEY
         );
         assert!(validate_key(MODEL_ROUTING_RULES).is_ok());
         assert!(validate_value(MODEL_ROUTING_RULES, "[]").is_ok());

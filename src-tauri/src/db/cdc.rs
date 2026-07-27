@@ -23,7 +23,7 @@ use rusqlite::hooks::Action;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
-use crate::engine::event_registry::event_name;
+use personas_core::events::event_name;
 
 // ---------------------------------------------------------------------------
 // Drop observability
@@ -433,7 +433,7 @@ fn map_persona_event_row(
 
     let (payload, error_message) = match (raw_payload, payload_iv) {
         (Some(ct), Some(ref iv)) if !iv.is_empty() => {
-            match crate::engine::crypto::decrypt_from_db(&ct, iv) {
+            match personas_core::crypto::decrypt_from_db(&ct, iv) {
                 Ok(pt) => (Some(pt), raw_error),
                 Err(e) => {
                     tracing::warn!("CDC: failed to decrypt event payload: {}", e);

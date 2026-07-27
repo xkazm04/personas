@@ -1,7 +1,7 @@
 use rusqlite::params;
 
 use crate::db::DbPool;
-use crate::engine::trace::ExecutionTrace;
+use personas_core::trace::ExecutionTrace;
 use crate::error::AppError;
 
 /// Save an execution trace to the database.
@@ -265,7 +265,7 @@ mod tests {
     /// returns BOTH — the whole chain groups (no more 'partial').
     #[test]
     fn event_bus_shape_all_hops_share_one_chain_trace_id() {
-        use crate::engine::chain::chain_trace_id_from_input;
+        use crate::db::chain::chain_trace_id_from_input;
         let pool = init_test_db().unwrap();
 
         // Root completes → chooses chain id = its own trace id.

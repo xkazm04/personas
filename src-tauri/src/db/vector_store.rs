@@ -75,15 +75,15 @@ impl SqliteVectorStore {
     }
 
     /// Maximum vectors inserted per transaction to bound memory and DB lock time.
-    /// The single source of truth lives in [`crate::engine::limits::VECTOR_INSERT_BATCH`];
+    /// The single source of truth lives in [`personas_core::limits::VECTOR_INSERT_BATCH`];
     /// kept as a thin alias here so existing call sites that read
     /// `Self::VECTOR_INSERT_BATCH` keep compiling.
-    const VECTOR_INSERT_BATCH: usize = crate::engine::limits::VECTOR_INSERT_BATCH;
+    const VECTOR_INSERT_BATCH: usize = personas_core::limits::VECTOR_INSERT_BATCH;
 
     /// Insert a batch of (chunk_id, embedding) pairs.
     ///
     /// Entries are inserted in transaction batches of [`Self::VECTOR_INSERT_BATCH`]
-    /// (= [`crate::engine::limits::VECTOR_INSERT_BATCH`]) to prevent OOM on
+    /// (= [`personas_core::limits::VECTOR_INSERT_BATCH`]) to prevent OOM on
     /// large ingests and avoid holding the SQLite write lock for extended
     /// periods.
     pub fn insert_vectors(

@@ -592,7 +592,7 @@ pub fn create_connection(
                 .collect();
             edges.push((source_member_id, target_member_id));
 
-            let graph = crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+            let graph = personas_core::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
             if graph.has_cycle() {
                 return Err(AppError::Validation(
                     "This connection would create a cycle. Use connection_type \"feedback\" for intentional back-edges.".into(),
@@ -667,7 +667,7 @@ pub fn update_connection_type(
                 .map(|e| (e.source_member_id.as_str(), e.target_member_id.as_str()))
                 .collect();
 
-            let graph = crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+            let graph = personas_core::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
             if graph.has_cycle() {
                 return Err(AppError::Validation(
                     "Changing this connection type would create a cycle. Keep it as \"feedback\" for intentional back-edges.".into(),

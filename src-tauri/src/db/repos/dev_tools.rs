@@ -3200,7 +3200,7 @@ pub fn create_finding(
         let idea = get_idea_by_id(pool, &id)?;
         // A sensor raised something — tell the bus. `signal.raised` is what the
         // dispatch ops (Task Runner vs Fleet) will route off.
-        publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_RAISED);
+        publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_RAISED);
         Ok(Some(idea))
     })
 }
@@ -3272,7 +3272,7 @@ pub fn set_finding_verify_state(
         // A verdict landed — tell the bus. This is the event B-side learning and any
         // future "the fix regressed, re-open it" route hang off.
         if let Ok(idea) = get_idea_by_id(pool, id) {
-            publish_signal_event(pool, &idea, crate::engine::event_registry::event_name::SIGNAL_VERIFIED);
+            publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
         }
         Ok(())
     })

@@ -8,7 +8,7 @@
 //! `chain_trace_id`, so the Chain tab can render the end-of-chain reason and an
 //! operator can answer "why did this chain stop?" per distributed trace.
 //!
-//! Written best-effort from [`crate::engine::chain::evaluate_chain_triggers`]
+//! Written best-effort from [`crate::db::chain::evaluate_chain_triggers`]
 //! (a failed write never fails the cascade); read via
 //! `get_chain_stop_reasons` for a given chain trace.
 
@@ -37,7 +37,7 @@ pub struct ChainStopReason {
     pub target_persona_id: Option<String>,
     /// Machine token for the reason — resolve to a label via
     /// `status_tokens.chain_stop` on the frontend. See
-    /// [`crate::engine::chain::stop_reason`] for the vocabulary.
+    /// [`crate::db::chain::stop_reason`] for the vocabulary.
     pub reason_token: String,
     /// Human-readable specifics (e.g. the depth reached, the cost vs ceiling).
     pub detail: Option<String>,
@@ -125,7 +125,7 @@ pub fn get_by_chain_trace_id(
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::engine::chain::stop_reason;
+    use crate::db::chain::stop_reason;
 
     fn input<'a>(
         chain: &'a str,

@@ -7,7 +7,7 @@ use crate::db::models::{
     CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
 };
 use crate::db::DbPool;
-use crate::engine::lifecycle::AutomationDeployStatus;
+use personas_core::lifecycle::AutomationDeployStatus;
 use crate::error::AppError;
 
 // row_to_automation uses custom conversions (unwrap_or_default, unwrap_or_else, FromStr), stays manual.

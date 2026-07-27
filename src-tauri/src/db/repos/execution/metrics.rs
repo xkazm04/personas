@@ -596,7 +596,7 @@ pub fn get_error_category_breakdown_with_conn(
     days: i64,
     persona_id: Option<&str>,
 ) -> Result<ErrorCategoryBreakdown, AppError> {
-    use crate::engine::error_taxonomy::classify_error_str;
+    use personas_core::error_taxonomy::classify_error_str;
 
     let pid_clause = if persona_id.is_some() {
         " AND persona_id = ?3"

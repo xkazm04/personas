@@ -30,6 +30,8 @@ use crate::companion::brain::{episodic, semantic};
 use crate::companion::session::DEFAULT_SESSION_ID;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
+use std::sync::Arc;
+#[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 

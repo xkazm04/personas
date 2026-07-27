@@ -7,7 +7,7 @@ use crate::db::models::{
     UpdateRotationPolicyInput,
 };
 use crate::db::DbPool;
-use crate::engine::lifecycle::RotationEntryStatus;
+use personas_core::lifecycle::RotationEntryStatus;
 use crate::error::AppError;
 
 // ============================================================================

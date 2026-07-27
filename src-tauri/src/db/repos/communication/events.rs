@@ -8,7 +8,7 @@ use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::resources::triggers::encrypt_config;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
-use crate::engine::crypto;
+use personas_core::crypto;
 use crate::error::AppError;
 
 // ============================================================================

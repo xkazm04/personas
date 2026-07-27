@@ -9,7 +9,7 @@
 use rusqlite::params;
 
 use crate::db::DbPool;
-use crate::engine::run_budget::{enforce_enabled, RunBudgetRecord, RunBudgetState};
+use personas_core::run_budget::{enforce_enabled, RunBudgetRecord, RunBudgetState};
 use crate::error::AppError;
 
 /// Upsert the persisted budget row for a run. Captures the global enforce-mode

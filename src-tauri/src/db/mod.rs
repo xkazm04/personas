@@ -4,6 +4,19 @@ mod backup;
 pub(crate) mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+// Relocated from `engine/` in crate-split step 4c. Each of these six is
+// data-layer code that happened to live in the engine directory: they depend
+// only on `db`, `db::repos` and `personas-core`, while `db::repos` calls INTO
+// them — an inversion that made the data layer impossible to extract. `engine`
+// re-exports all six, so `crate::db::chain::…` etc. resolve unchanged.
+pub mod chain;
+#[cfg(feature = "ml")]
+pub mod embedder;
+pub mod memory_recall;
+pub mod model_routing;
+pub mod quality_gate;
+#[cfg(feature = "ml")]
+pub mod vector_store;
 pub(crate) mod credential_fields;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
@@ -395,7 +408,7 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
     // are all opened during migrations below — pre-registration would
     // mean "no such module: vec0" from any vec query on those connections.
     #[cfg(feature = "ml")]
-    crate::engine::vector_store::ensure_vec_registered_pub();
+    crate::db::vector_store::ensure_vec_registered_pub();
 
     let manager = SqliteConnectionManager::file(&db_path);
     // User DB hosts the vector knowledge base; a single search holds a

@@ -11,8 +11,8 @@ use crate::db::models::{
 use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
-use crate::engine::crypto;
-use crate::engine::crypto::CryptoError;
+use personas_core::crypto;
+use personas_core::crypto::CryptoError;
 use crate::error::AppError;
 use crate::validation::contract::check as validate_check;
 use crate::validation::persona as pv;

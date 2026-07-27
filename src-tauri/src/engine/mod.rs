@@ -29,7 +29,6 @@ pub mod bus;
 pub mod byom;
 pub mod capability;
 pub mod capability_contract;
-pub mod chain;
 pub mod chunker;
 pub mod claude_md_projection;
 pub mod workspace_projection;
@@ -66,6 +65,13 @@ pub use personas_core::{cron, crypto, lifecycle, trace, types, url_safety};
 // data layer above the engine. Re-exported so every `crate::engine::<name>`
 // path keeps resolving.
 pub use personas_core::{healing, limits, redact, run_budget, scheduler, topology_graph};
+// Relocated into `db` (crate-split step 4c) — see the note there. Re-exported
+// so `crate::engine::chain::…` and friends keep resolving.
+pub use crate::db::{chain, memory_recall, model_routing, quality_gate};
+#[cfg(feature = "ml")]
+pub use crate::db::embedder;
+#[cfg(feature = "ml")]
+pub use crate::db::vector_store;
 pub mod curation_scheduler;
 pub mod system_ops;
 pub mod db_query;
@@ -92,8 +98,6 @@ pub mod discovery;
 pub mod dispatch;
 pub mod dream_replay;
 pub mod dry_run;
-#[cfg(feature = "ml")]
-pub mod embedder;
 #[cfg(feature = "p2p")]
 pub mod enclave;
 /// Moved to `personas-core` (crate-split step 2) — `error.rs` depends on it, so
@@ -138,10 +142,8 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
-pub mod memory_recall;
 pub mod memory_reflection;
 pub mod pairing;
-pub mod model_routing;
 pub mod oauth_refresh;
 pub mod oauth_refresh_lock;
 // Ollama-as-CLI-engine is deferred (decision recorded 2026-05-05). The native
@@ -180,7 +182,6 @@ pub mod project_tracking;
 pub mod prompt;
 pub mod protocol;
 pub mod provider;
-pub mod quality_gate;
 pub mod queue;
 pub mod resource_governor;
 pub mod rate_limiter;
@@ -216,8 +217,6 @@ pub mod tool_outcome;
 pub mod tool_runner;
 pub mod topology_heuristic;
 pub mod topology_types;
-#[cfg(feature = "ml")]
-pub mod vector_store;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.
 #[allow(dead_code)]
 pub mod verification_command;

@@ -32,7 +32,7 @@ fn stringify_field_value(v: &serde_json::Value) -> String {
 /// Runs inside the caller's connection -- the incremental migration context
 /// means this is already within a serialized startup sequence.
 pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<(), AppError> {
-    use crate::engine::crypto;
+    use personas_core::crypto;
     use std::collections::HashMap;
 
     // Find credentials that still carry a legacy `encrypted_data` blob. A
@@ -187,7 +187,7 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
 /// `migrate_blob_credentials_to_fields`) preserves the original blob until
 /// the next attempt succeeds.
 pub(super) fn clear_legacy_credential_blobs(conn: &Connection) -> Result<(), AppError> {
-    use crate::engine::crypto;
+    use personas_core::crypto;
     use std::collections::HashMap;
 
     // Candidates: rows that still carry a legacy blob. We clear a blob ONLY

@@ -8,7 +8,7 @@ use crate::db::models::{
     CredentialLedger, PersonaCredential, UpdateCredentialEventInput, UpdateCredentialInput,
 };
 use crate::db::DbPool;
-use crate::engine::crypto;
+use personas_core::crypto;
 use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 

@@ -31,7 +31,7 @@ use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
-use crate::engine::lifecycle::TriggerStatus;
+use personas_core::lifecycle::TriggerStatus;
 use crate::error::AppError;
 
 /// Maximum chain depth before we refuse to fire further chain triggers.
@@ -43,7 +43,7 @@ const MAX_CHAIN_DEPTH: u32 = 8;
 /// reasons (e.g. `breadth_exceeded` for a fan-out cap) without a schema change;
 /// the frontend resolves each to a label via `status_tokens.chain_stop`.
 pub mod stop_reason {
-    /// The depth ceiling ([`super::MAX_CHAIN_DEPTH`]) was reached.
+    /// The depth ceiling (`engine::MAX_CHAIN_DEPTH`) was reached.
     pub const DEPTH_LIMIT: &str = "depth_limit";
     /// A team-handoff edge was suppressed (DAG owns the flow, or handoffs are
     /// single-hop and the source is already a chain execution).
@@ -2018,7 +2018,7 @@ mod tests {
     /// Insert `n` execution_traces rows sharing `chain_trace_id` to simulate a
     /// chain that has already spawned `n` links.
     fn seed_chain_links(pool: &crate::db::DbPool, chain_trace_id: &str, n: usize) {
-        use crate::engine::trace::ExecutionTrace;
+        use personas_core::trace::ExecutionTrace;
         for i in 0..n {
             let trace = ExecutionTrace {
                 trace_id: format!("t-{chain_trace_id}-{i}"),
