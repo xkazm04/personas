@@ -7,13 +7,11 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { targetBadge, type DeployTarget } from './deploymentTypes';
 
 const HISTORY_ROW_HEIGHT = 30; // matches the li's py-1.5 + typo-caption line box
 const HISTORY_CASCADE_ROWS = 14;
-const HISTORY_CASCADE_STEP_MS = 35;
-const HISTORY_CASCADE_MAX_STAGGER = 8;
 const HISTORY_GHOST_WIDTHS = ['w-32', 'w-24', 'w-40', 'w-28'];
 
 /**
@@ -45,7 +43,6 @@ export function UnifiedDeploymentHistory() {
   // realtime/poll re-delivery of the same ids never replays it).
   const showGhost = loading && history.length === 0;
   const enter = useRevealTracker('unified-deployment-history');
-  const reducedMotion = useReducedMotion();
 
   return (
     <div className="border-t border-primary/10 flex-shrink-0" data-testid="unified-deploy-history">
@@ -78,21 +75,20 @@ export function UnifiedDeploymentHistory() {
                 const tb = targetBadge(target);
                 const TargetIcon = target === 'cloud' ? Cloud : GitBranch;
                 const isRollback = !!r.rolledBackFrom;
-                // One-shot entrance cascade (RevealItem semantics, inlined —
-                // RevealItem renders a <div> which can't wrap an <li> inside
-                // a <ul>). Entered ids never replay on poll/refresh.
-                const animate = !reducedMotion && index < HISTORY_CASCADE_ROWS && !enter.hasEntered(r.id);
-                const delay = animate ? Math.min(Math.max(0, index), HISTORY_CASCADE_MAX_STAGGER) * HISTORY_CASCADE_STEP_MS : 0;
+                // One-shot entrance cascade: first-viewport rows ripple; rows
+                // past HISTORY_CASCADE_ROWS render plainly; entered ids never
+                // replay on poll/refresh.
                 return (
-                  <li
+                  <RevealItem
+                    as="li"
                     key={r.id}
+                    revealId={r.id}
+                    order={index}
+                    hasEntered={(id) => index >= HISTORY_CASCADE_ROWS || enter.hasEntered(id)}
+                    markEntered={enter.markEntered}
                     data-testid={`history-row-${r.id}`}
                     data-target={r.target}
-                    className={`flex items-center gap-2.5 py-1.5 typo-caption ${animate ? 'animate-fade-in' : ''}`}
-                    style={animate ? { animationDelay: `${delay}ms` } : undefined}
-                    onAnimationEnd={(e) => {
-                      if (e.target === e.currentTarget) enter.markEntered(r.id);
-                    }}
+                    className="flex items-center gap-2.5 py-1.5 typo-caption"
                   >
                     <span
                       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card border ${tb.cls}`}
@@ -116,7 +112,7 @@ export function UnifiedDeploymentHistory() {
                     <span className="ml-auto text-foreground tabular-nums">
                       <RelativeTime timestamp={r.createdAt} />
                     </span>
-                  </li>
+                  </RevealItem>
                 );
               })}
             </ul>

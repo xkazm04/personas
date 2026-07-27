@@ -16,11 +16,9 @@ import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
 import { silentCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 const EXEC_CASCADE_ROWS = 14;
-const EXEC_CASCADE_STEP_MS = 35;
-const EXEC_CASCADE_MAX_STAGGER = 8;
 
 
 // ---------------------------------------------------------------------------
@@ -130,7 +128,6 @@ export function CloudHistoryPanel() {
   // re-delivering the same ids never replays it (docs/design/overview-loading.md).
   const showGhost = isLoading && executions.length === 0;
   const enter = useRevealTracker(`${filterPersona}|${filterStatus}|${period}`);
-  const reducedMotion = useReducedMotion();
 
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -247,31 +244,26 @@ export function CloudHistoryPanel() {
       ) : (
         <div className="space-y-1">
           <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({executions.length})</SectionHeading>
-          {executions.map((exec, index) => {
-            // One-shot entrance cascade (RevealItem semantics inlined —
-            // CloudExecutionRow's own div already carries the card styling).
-            const animate = !reducedMotion && index < EXEC_CASCADE_ROWS && !enter.hasEntered(exec.id);
-            const delay = animate ? Math.min(Math.max(0, index), EXEC_CASCADE_MAX_STAGGER) * EXEC_CASCADE_STEP_MS : 0;
-            return (
-              <div
-                key={exec.id}
-                className={animate ? 'animate-fade-in' : undefined}
-                style={animate ? { animationDelay: `${delay}ms` } : undefined}
-                onAnimationEnd={(e) => {
-                  if (e.target === e.currentTarget) enter.markEntered(exec.id);
-                }}
-              >
-                <CloudExecutionRow
-                  exec={exec}
-                  personaName={personaName(exec.personaId)}
-                  isExpanded={expandedId === exec.id}
-                  onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
-                  output={outputMap[exec.id]}
-                  onFetchOutput={() => fetchOutput(exec.id)}
-                />
-              </div>
-            );
-          })}
+          {executions.map((exec, index) => (
+            // One-shot entrance cascade; rows past the first viewport render
+            // plainly (folded into hasEntered); entered ids never replay.
+            <RevealItem
+              key={exec.id}
+              revealId={exec.id}
+              order={index}
+              hasEntered={(id) => index >= EXEC_CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
+            >
+              <CloudExecutionRow
+                exec={exec}
+                personaName={personaName(exec.personaId)}
+                isExpanded={expandedId === exec.id}
+                onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
+                output={outputMap[exec.id]}
+                onFetchOutput={() => fetchOutput(exec.id)}
+              />
+            </RevealItem>
+          ))}
         </div>
       )}
     </div>

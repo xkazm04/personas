@@ -12,7 +12,7 @@ import { DeploymentCard } from './DeploymentCard';
 import { useDeploymentTest } from '../../hooks/useDeploymentTest';
 import { silentCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 
 // ---------------------------------------------------------------------------
@@ -34,8 +34,6 @@ interface Props {
 }
 
 const DEPLOYMENT_CASCADE_ROWS = 14;
-const DEPLOYMENT_CASCADE_STEP_MS = 35;
-const DEPLOYMENT_CASCADE_MAX_STAGGER = 8;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -61,7 +59,6 @@ export function CloudDeploymentsPanel({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { tests, runTest, dismissResult } = useDeploymentTest();
   const enter = useRevealTracker('cloud-deployments');
-  const reducedMotion = useReducedMotion();
   const showGhost = isFetching && deployments.length === 0;
 
   // Which personas are not yet deployed?
@@ -174,37 +171,30 @@ export function CloudDeploymentsPanel({
         <div className="space-y-3">
           <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{t.deployment.deployments_panel.active_deployments} ({deployments.length})</SectionHeading>
 
-          {deployments.map((d, index) => {
-            // One-shot entrance cascade (RevealItem semantics inlined — the
-            // card's own div already carries all visual classes, so we wrap
-            // it in a plain animated div rather than reusing RevealItem's
-            // hardcoded className merge, keeping the card's own styling untouched).
-            const animate = !reducedMotion && index < DEPLOYMENT_CASCADE_ROWS && !enter.hasEntered(d.id);
-            const delay = animate ? Math.min(Math.max(0, index), DEPLOYMENT_CASCADE_MAX_STAGGER) * DEPLOYMENT_CASCADE_STEP_MS : 0;
-            return (
-              <div
-                key={d.id}
-                className={animate ? 'animate-fade-in' : undefined}
-                style={animate ? { animationDelay: `${delay}ms` } : undefined}
-                onAnimationEnd={(e) => {
-                  if (e.target === e.currentTarget) enter.markEntered(d.id);
-                }}
-              >
-                <DeploymentCard
-                  deployment={d}
-                  baseUrl={baseUrl}
-                  personaName={personaName(d.personaId)}
-                  onPause={onPause}
-                  onResume={onResume}
-                  onRemove={onRemove}
-                  testRunning={tests[d.id]?.running}
-                  testResult={tests[d.id]?.result}
-                  onTest={runTest}
-                  onDismissTest={dismissResult}
-                />
-              </div>
-            );
-          })}
+          {deployments.map((d, index) => (
+            // One-shot entrance cascade; rows past the first viewport render
+            // plainly (folded into hasEntered); entered ids never replay.
+            <RevealItem
+              key={d.id}
+              revealId={d.id}
+              order={index}
+              hasEntered={(id) => index >= DEPLOYMENT_CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
+            >
+              <DeploymentCard
+                deployment={d}
+                baseUrl={baseUrl}
+                personaName={personaName(d.personaId)}
+                onPause={onPause}
+                onResume={onResume}
+                onRemove={onRemove}
+                testRunning={tests[d.id]?.running}
+                testResult={tests[d.id]?.result}
+                onTest={runTest}
+                onDismissTest={dismissResult}
+              />
+            </RevealItem>
+          ))}
         </div>
       )}
     </div>

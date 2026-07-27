@@ -13,7 +13,7 @@ import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 interface TestStateMap {
   [deploymentId: string]: { running: boolean; result: TestResult | null };
@@ -26,8 +26,6 @@ interface TestStateMap {
  * (docs/design/overview-loading.md).
  */
 const CASCADE_ROWS = 14;
-const CASCADE_STEP_MS = 35;
-const CASCADE_MAX_STAGGER = 8;
 
 interface DeploymentTableProps {
   displayRows: UnifiedDeployment[];
@@ -79,7 +77,6 @@ export function DeploymentTable({
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
   const enter = useRevealTracker(revealResetKey);
-  const reducedMotion = useReducedMotion();
   return (
     <table className="w-full typo-body">
       <thead className="sticky top-0 z-10 bg-secondary/60 backdrop-blur-sm border-b border-primary/10">
@@ -112,21 +109,18 @@ export function DeploymentTable({
           const testState = testStates?.[row.id];
           const testResult = testState?.result;
 
-          // One-shot entrance cascade for a fresh result set (RevealItem
-          // semantics, inlined here because RevealItem renders a <div> and
-          // can't wrap a <tr>). Rows past the first viewport render plainly;
-          // entered ids never replay on poll/refresh (docs/design/overview-loading.md).
-          const animate = !reducedMotion && index < CASCADE_ROWS && !enter.hasEntered(row.id);
-          const delay = animate ? Math.min(Math.max(0, index), CASCADE_MAX_STAGGER) * CASCADE_STEP_MS : 0;
-
+          // One-shot entrance cascade for a fresh result set: first-viewport
+          // rows ripple in; entered ids never replay on poll/refresh. Rows past
+          // CASCADE_ROWS render plainly (folded into hasEntered).
           return (
-            <tr
+            <RevealItem
+              as="tr"
               key={row.id}
-              className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''} ${animate ? 'animate-fade-in' : ''}`}
-              style={animate ? { animationDelay: `${delay}ms` } : undefined}
-              onAnimationEnd={(e) => {
-                if (e.target === e.currentTarget) enter.markEntered(row.id);
-              }}
+              revealId={row.id}
+              order={index}
+              hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
+              className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}
             >
               <td className="px-4 py-3">
                 <input
@@ -261,7 +255,7 @@ export function DeploymentTable({
                   )}
                 </div>
               </td>
-            </tr>
+            </RevealItem>
           );
         })}
       </tbody>

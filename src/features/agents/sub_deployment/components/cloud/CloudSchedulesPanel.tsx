@@ -16,7 +16,7 @@ import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { CreateTriggerForm } from './CreateTriggerForm';
 import { TriggerListItem } from './TriggerListItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { silentCatch } from '@/lib/silentCatch';
 
 interface Props {
@@ -28,8 +28,6 @@ interface Props {
 }
 
 const TRIGGER_CASCADE_ROWS = 14;
-const TRIGGER_CASCADE_STEP_MS = 35;
-const TRIGGER_CASCADE_MAX_STAGGER = 8;
 
 export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false, onRefresh }: Props) {
   const { t } = useTranslation();
@@ -108,7 +106,6 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
   const triggersFetching = isFetchingDeployments || isLoading;
   const showGhost = triggersFetching && triggers.length === 0;
   const enter = useRevealTracker('cloud-schedules');
-  const reducedMotion = useReducedMotion();
 
   return (
     <div className={DEPLOYMENT_TOKENS.panelSpacing}>
@@ -163,33 +160,28 @@ export function CloudSchedulesPanel({ deployments, isFetchingDeployments = false
         </p>
       ) : (
         <div className="space-y-1">
-          {triggers.map((trigger, index) => {
-            // One-shot entrance cascade (RevealItem semantics inlined —
-            // TriggerListItem's own div already carries the card styling).
-            const animate = !reducedMotion && index < TRIGGER_CASCADE_ROWS && !enter.hasEntered(trigger.id);
-            const delay = animate ? Math.min(Math.max(0, index), TRIGGER_CASCADE_MAX_STAGGER) * TRIGGER_CASCADE_STEP_MS : 0;
-            return (
-              <div
-                key={trigger.id}
-                className={animate ? 'animate-fade-in' : undefined}
-                style={animate ? { animationDelay: `${delay}ms` } : undefined}
-                onAnimationEnd={(e) => {
-                  if (e.target === e.currentTarget) enter.markEntered(trigger.id);
-                }}
-              >
-                <TriggerListItem
-                  trigger={trigger}
-                  isExpanded={expandedId === trigger.id}
-                  firings={expandedId === trigger.id ? firings : []}
-                  isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
-                  personaName={personaName(trigger.personaId)}
-                  onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
-                  onToggleEnabled={() => handleToggle(trigger)}
-                  onDelete={() => handleDelete(trigger.id)}
-                />
-              </div>
-            );
-          })}
+          {triggers.map((trigger, index) => (
+            // One-shot entrance cascade; rows past the first viewport render
+            // plainly (folded into hasEntered); entered ids never replay.
+            <RevealItem
+              key={trigger.id}
+              revealId={trigger.id}
+              order={index}
+              hasEntered={(id) => index >= TRIGGER_CASCADE_ROWS || enter.hasEntered(id)}
+              markEntered={enter.markEntered}
+            >
+              <TriggerListItem
+                trigger={trigger}
+                isExpanded={expandedId === trigger.id}
+                firings={expandedId === trigger.id ? firings : []}
+                isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
+                personaName={personaName(trigger.personaId)}
+                onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
+                onToggleEnabled={() => handleToggle(trigger)}
+                onDelete={() => handleDelete(trigger.id)}
+              />
+            </RevealItem>
+          ))}
         </div>
       )}
     </div>
