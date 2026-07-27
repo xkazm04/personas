@@ -5,9 +5,10 @@
  * 2026-07-27 — see {@link SidebarGroupNav}):
  * - **Browse** is the lead row: the plugin manager, not a plugin.
  * - Every enabled plugin below it is a **group**, whose header row is the
- *   plugin itself and whose nested rail holds that plugin's sub-tabs. The
- *   sub-tabs of the ACTIVE plugin are shown; the others collapse to just
- *   their header, so the list stays scannable at ~8 plugins.
+ *   plugin itself and whose nested rail holds that plugin's sub-tabs. Every
+ *   plugin's sub-tabs are visible at all times — the whole surface is legible
+ *   at a glance rather than requiring a click to discover what a plugin holds.
+ *   Clicking a sub-tab therefore also activates its plugin.
  * - Plugins with no sub-tabs (Drive, Scraper) render as a header-only group.
  *
  * This replaces the old Level-3 push pane: the sub-tabs used to slide the
@@ -266,12 +267,15 @@ export function PluginsSidebarNav() {
         onSelect: () => setPluginTab(plugin.id),
       },
       render: isActive ? contextChip(plugin.id) : null,
-      items: (isActive ? subItemsFor(plugin.id) : []).map<GroupNavItem>((item) => ({
+      items: subItemsFor(plugin.id).map<GroupNavItem>((item) => ({
         id: `${plugin.id}:${item.id}`,
         label: item.label,
         icon: item.icon,
         rightSlot: subItemRightSlot(plugin.id, item.id),
-        onSelect: () => selectSubTab(plugin.id, item.id),
+        // Every plugin's sub-tabs are visible, so a row can be clicked while
+        // its plugin is not the active one — open the plugin first, otherwise
+        // the tab would change behind a page the user isn't looking at.
+        onSelect: () => { setPluginTab(plugin.id); selectSubTab(plugin.id, item.id); },
       })),
     };
   });
