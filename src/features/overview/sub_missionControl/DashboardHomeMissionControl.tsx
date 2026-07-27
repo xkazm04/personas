@@ -508,9 +508,9 @@ export const TriagePane = memo(function TriagePane({
           )}
         </div>
       </PaneHeader>
-      <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
+      <div className="flex-1 min-h-0 flex flex-col divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
-          <EmptyState variant="todos" heading={t.overview.dashboard.todos_empty} dominant className="flex-1 py-8" />
+          <EmptyState variant="todos" heading={t.overview.dashboard.todos_empty} dominant className="flex-1 min-h-0 py-6" />
         ) : (
           items.map((item, idx) => {
             const meta = TRIAGE_META[item.kind];

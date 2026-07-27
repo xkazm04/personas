@@ -199,11 +199,18 @@ pub fn list_items_by_persona_id(
 
 /// Fetch executions across all personas in a single query with persona metadata.
 /// Replaces the N+1 pattern of calling get_by_persona_id once per persona.
+///
+/// `since` is an optional RFC3339 lower bound on `created_at` (caller-supplied,
+/// e.g. a rolling 30-day cutoff). It is a parameter rather than a hardcoded
+/// constant because `get_all_global` also backs the management HTTP API
+/// (`engine::management_api::list_executions`), which legitimately wants the
+/// full unfiltered history — that caller passes `None`.
 pub fn get_all_global(
     pool: &DbPool,
     limit: Option<i64>,
     status: Option<&str>,
     persona_id: Option<&str>,
+    since: Option<&str>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     timed_query!(
         "persona_executions",
@@ -231,6 +238,9 @@ pub fn get_all_global(
             }
             if let Some(pid) = persona_id {
                 qb.where_eq("e.persona_id", pid.to_string());
+            }
+            if let Some(cutoff) = since {
+                qb.where_gte("e.created_at", cutoff.to_string());
             }
             qb.order_by("e.created_at", "DESC");
             qb.limit(limit);

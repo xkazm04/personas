@@ -6,7 +6,6 @@ import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/compo
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { rankBy, RANK_OPTIONS, type RankKey } from '../libs/leaderboardRanking';
-import type { LeaderboardEntry, PerformanceTier } from '../libs/leaderboardScoring';
 import { metricValue, fleetValue, scoreTint } from './leaderboardViewHelpers';
 import type { LeaderboardViewProps } from './leaderboardViewTypes';
 
@@ -57,7 +56,7 @@ export function LeaderboardMatrixPlaceholder() {
         className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1 animate-fade-in"
         style={{ animationDelay: '185ms' }}
       >
-        <TableSkeleton columns={PLACEHOLDER_COLUMNS} rows={6} calm rowPaddingY="py-2.5" headerPaddingY="py-3" />
+        <TableSkeleton columns={PLACEHOLDER_COLUMNS} rows={6} calm rowPaddingY="py-1.5" headerPaddingY="py-3" />
       </div>
     </div>
   );
@@ -74,13 +73,6 @@ const COPY = {
     'Identical for every agent — latency is mapped fleet-wide, not per-agent (known bug). This column can’t differentiate until per-persona latency is plumbed through.',
 };
 
-const TIER_LABEL: Record<PerformanceTier, string> = {
-  elite: 'Elite',
-  strong: 'Strong',
-  average: 'Average',
-  developing: 'Developing',
-};
-
 const MEDAL_STYLE: Record<string, string> = {
   gold: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
   silver: 'bg-slate-300/15 border-slate-400/30 text-slate-200',
@@ -93,39 +85,6 @@ const LEGEND = [
   { label: '40+', dot: 'bg-amber-500' },
   { label: '<40', dot: 'bg-red-500' },
 ];
-
-/** ≤1 decimal, trailing .0 stripped. */
-const d1 = (n: number) => String(Math.round(n * 10) / 10);
-
-function gradeWord(score: number): string {
-  if (score >= 80) return 'Healthy';
-  if (score >= 50) return 'Degraded';
-  if (score > 0) return 'Critical';
-  return '—';
-}
-
-/** Mirrors leaderboardScoring's per-exec cost so the raw matches the score. */
-function costPerExec(e: LeaderboardEntry): number {
-  return e.totalExecutions > 0 ? e.dailyBurnRate / Math.max(1, e.recentExecutions / 7) : 0;
-}
-
-/** Secondary value shown under the score — a measurement where it adds signal
- *  (success %, latency, $/run, runs/7d), a qualitative grade where the raw
- *  would just echo the score (overall → tier, health → grade). ≤1 decimal. */
-function subLabel(entry: LeaderboardEntry, key: RankKey): string {
-  switch (key) {
-    case 'overall': return TIER_LABEL[entry.tier];
-    case 'success': return `${d1(entry.successRate)}%`;
-    case 'health': return gradeWord(metricValue(entry, 'health'));
-    case 'speed': return entry.avgLatencyMs > 0 ? `${d1(entry.avgLatencyMs / 1000)}s` : '—';
-    case 'cost': {
-      const c = costPerExec(entry);
-      return c <= 0 ? '—' : c < 0.1 ? '<$0.1' : `$${d1(c)}`;
-    }
-    case 'activity': return `${entry.recentExecutions}/7d`;
-    default: return '';
-  }
-}
 
 /**
  * Scorecard matrix: one row per persona, one column per metric. Every cell
@@ -223,7 +182,7 @@ export function LeaderboardMatrixView({
                   if (e.target === e.currentTarget) enter.markEntered(entry.personaId);
                 }}
               >
-                <td className="px-2 py-2 text-center align-middle border-t border-primary/[0.06]">
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
                   {entry.medal ? (
                     <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption font-bold tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
                       {entry.rank}
@@ -232,7 +191,7 @@ export function LeaderboardMatrixView({
                     <span className="typo-caption text-foreground tabular-nums">{entry.rank}</span>
                   )}
                 </td>
-                <td className="px-3 py-2 align-middle border-t border-primary/[0.06]">
+                <td className="px-3 py-1.5 align-middle border-t border-primary/[0.06]">
                   <button
                     type="button"
                     onClick={() => onNavigateToAgent(entry.personaId)}
@@ -247,7 +206,6 @@ export function LeaderboardMatrixView({
                   <MetricCell
                     key={opt.key}
                     value={metricValue(entry, opt.key)}
-                    sub={subLabel(entry, opt.key)}
                     emphasized={sortKey === opt.key}
                     headline={opt.key === 'overall'}
                   />
@@ -259,14 +217,14 @@ export function LeaderboardMatrixView({
             {/* Fleet-average reference row */}
             <tr className="bg-primary/[0.02]">
               <td className="border-t-2 border-dashed border-primary/20" />
-              <td className="px-3 py-2.5 align-middle border-t-2 border-dashed border-primary/20">
+              <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-primary/20">
                 <span className="typo-caption font-semibold text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
                 const v = Math.round(fleetValue(opt.key, fleetAvgScore, fleetBenchmark));
                 const tint = scoreTint(v);
                 return (
-                  <td key={opt.key} className={`px-2 py-2.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
+                  <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
                     <span className={`typo-body font-mono font-semibold tabular-nums ${tint.text}`}>{v}</span>
                   </td>
                 );
@@ -279,13 +237,12 @@ export function LeaderboardMatrixView({
   );
 }
 
-function MetricCell({ value, sub, emphasized, headline }: { value: number; sub: string; emphasized?: boolean; headline?: boolean }) {
+function MetricCell({ value, emphasized, headline }: { value: number; emphasized?: boolean; headline?: boolean }) {
   const tint = scoreTint(value);
   return (
-    <td className={`px-1.5 py-1.5 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
-      <div className={`relative rounded-card px-2 pt-1.5 pb-2 text-center overflow-hidden ${tint.bg} ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
+    <td className={`px-1.5 py-1 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
+      <div className={`relative rounded-card px-2 py-1 text-center overflow-hidden ${tint.bg} ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
         <div className={`${headline ? 'typo-heading' : 'typo-body'} font-bold tabular-nums leading-tight ${tint.text}`}>{value}</div>
-        <div className="typo-caption tabular-nums leading-tight truncate">{sub}</div>
         <span
           aria-hidden
           className="absolute left-0 bottom-0 h-0.5 rounded-full opacity-60"

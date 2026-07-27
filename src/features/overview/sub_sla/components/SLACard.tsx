@@ -1,8 +1,8 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { Activity, AlertTriangle, Clock, ChevronDown, ChevronUp, Zap, TrendingUp, TrendingDown, Wrench } from 'lucide-react';
 import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf, SLA_CARD_COLOR_CLASSES, type SlaMetricColor } from '../libs/slaHelpers';
 import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
   label: string; value: string; sub: string; color: string; icon: React.ReactNode;
@@ -37,77 +37,91 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
   );
 }
 
-export function PersonaRow({ stats, expanded, onToggle }: {
-  stats: PersonaSlaStats; expanded: boolean; onToggle: () => void;
+/**
+ * Per-agent reliability matrix: one row per persona, one column per metric —
+ * everything visible and comparable at once, the same spirit as the Leaderboard
+ * and Health matrix views (`LeaderboardMatrixView`). Replaces the old
+ * expand-per-row card list, which only ever showed one agent's detail at a
+ * time. Every field `PersonaRow`'s expanded panel used to hide behind a click
+ * is now its own column — no detail modal needed, `PersonaSlaStats` is small
+ * enough to fit as a row.
+ */
+export function SlaMatrixTable({ rows, onSelectAgent }: {
+  rows: PersonaSlaStats[];
+  /** Optional row-click handler (e.g. deep-link into the agent's own page). */
+  onSelectAgent?: (personaId: string) => void;
 }) {
   const { t } = useTranslation();
-  const health = rateToHealth(stats.success_rate);
-  const rateHealth = HEALTH_STATUS_TOKEN[health];
-  const rateColor = rateHealth.text;
-  const rateBg = `${rateHealth.bg} ${rateHealth.border}`;
-  // Success-rate gutter accent (matches the overview tables): agents below the
-  // healthy threshold read amber (warning) or red (critical), healthy stay neutral.
-  const accent = health === 'critical'
-    ? 'border-l-red-400/70'
-    : health === 'warning'
-      ? 'border-l-amber-400/70'
-      : 'border-l-transparent';
+  const sc = t.overview.sla_card;
+  const sla = t.overview.sla;
 
   return (
-    <div className={`border-l-2 ${accent}`}>
-      <button type="button" onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
-        <div className="flex-1 min-w-0">
-          <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
-          <span className="typo-caption text-foreground tabular-nums">{stats.total_executions} executions</span>
-        </div>
-        <span className={`typo-data tabular-nums font-semibold px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
-        {stats.consecutive_failures > 0 && (() => {
-          // Cap the displayed streak at the lookback window: the SLA
-          // query only inspects the most recent N executions per persona
-          // (see CONSECUTIVE_FAILURE_LOOKBACK in sla.rs), so a true
-          // streak of 25 saturates at 20. Render "20+" so users know
-          // the actual streak may be longer.
-          const capped = stats.consecutive_failures >= stats.consecutive_failure_lookback;
-          const label = capped
-            ? `${stats.consecutive_failure_lookback}+ failing`
-            : `${stats.consecutive_failures} failing`;
-          return (
-            <span
-              className="typo-caption px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25"
-              title={capped ? `At least ${stats.consecutive_failure_lookback} consecutive failures (lookback cap reached)` : undefined}
-            >
-              {label}
-            </span>
-          );
-        })()}
-        {stats.auto_healed_count > 0 && <span className="typo-caption px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{stats.auto_healed_count} healed</span>}
-        {expanded ? <ChevronUp className="w-4 h-4 text-foreground" /> : <ChevronDown className="w-4 h-4 text-foreground" />}
-      </button>
-
-      {expanded && (
-        <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <MiniStat icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.sla_card.successful} value={String(stats.successful)} />
-          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label={t.overview.sla_card.failed} value={String(stats.failed)} />
-          <MiniStat icon={<Clock className="w-3.5 h-3.5" />} label={t.overview.sla_card.avg_latency} value={formatDuration(stats.avg_duration_ms)} />
-          <MiniStat icon={<Zap className="w-3.5 h-3.5" />} label={t.overview.sla_card.p95_latency} value={stats.p95_duration_ms != null ? formatDuration(stats.p95_duration_ms) : 'N/A'} />
-          <MiniStat icon={<TrendingUp className="w-3.5 h-3.5" />} label={t.overview.sla_card.cost} value={`$${stats.total_cost_usd.toFixed(2)}`} />
-          <MiniStat icon={<TrendingDown className="w-3.5 h-3.5" />} label={t.overview.sla_card.mtbf} value={stats.mtbf_seconds != null ? formatMtbf(stats.mtbf_seconds) : 'N/A'} />
-          <MiniStat icon={<Wrench className="w-3.5 h-3.5" />} label={t.overview.sla_card.auto_healed} value={String(stats.auto_healed_count)} />
-          <MiniStat icon={<AlertTriangle className="w-3.5 h-3.5" />} label={t.overview.sla_card.cancelled} value={String(stats.cancelled)} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/10 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-foreground mb-0.5">
-        {icon}
-        <span className="typo-caption">{label}</span>
-      </div>
-      <div className="typo-data tabular-nums text-foreground/90">{value}</div>
+    <div className="overflow-x-auto">
+      <table className="w-full border-separate border-spacing-0">
+        <thead>
+          <tr className="bg-primary/[0.03]">
+            <th className="px-3 py-2 text-left typo-caption font-semibold text-foreground">{sc.agent}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.success_rate}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.runs}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_avg_latency}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_p95_latency}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_cost}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sla.metric_mtbf}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.auto_healed}</th>
+            <th className="px-2 py-2 text-center typo-caption font-semibold text-foreground">{sc.streak}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((stats) => {
+            const health = rateToHealth(stats.success_rate);
+            const rateHealth = HEALTH_STATUS_TOKEN[health];
+            const capped = stats.consecutive_failures >= stats.consecutive_failure_lookback;
+            const streakLabel = stats.consecutive_failures > 0
+              ? (capped ? `${stats.consecutive_failure_lookback}+` : `${stats.consecutive_failures}`)
+              : '—';
+            return (
+              <tr
+                key={stats.persona_id}
+                onClick={onSelectAgent ? () => onSelectAgent(stats.persona_id) : undefined}
+                className={`hover:bg-primary/[0.03] transition-colors ${onSelectAgent ? 'cursor-pointer' : ''}`}
+              >
+                <td className="px-3 py-1.5 align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body font-medium text-foreground truncate block max-w-[200px]">{stats.persona_name}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className={`typo-body tabular-nums font-semibold ${rateHealth.text}`}>{formatPercent(stats.success_rate)}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body tabular-nums text-foreground">{String(stats.total_executions)}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body tabular-nums text-foreground">{formatDuration(stats.avg_duration_ms)}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body tabular-nums text-foreground">{stats.p95_duration_ms != null ? formatDuration(stats.p95_duration_ms) : 'N/A'}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <Numeric value={stats.total_cost_usd} unit="usd" className="typo-body tabular-nums text-foreground" />
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body tabular-nums text-foreground">{stats.mtbf_seconds != null ? formatMtbf(stats.mtbf_seconds) : 'N/A'}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span className="typo-body tabular-nums text-foreground">{String(stats.auto_healed_count)}</span>
+                </td>
+                <td className="px-2 py-1.5 text-center align-middle border-t border-primary/[0.06]">
+                  <span
+                    className={`typo-body tabular-nums ${stats.consecutive_failures > 0 ? 'text-status-error' : 'text-foreground'}`}
+                    title={capped ? `At least ${stats.consecutive_failure_lookback} consecutive failures (lookback cap reached)` : undefined}
+                  >
+                    {streakLabel}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
