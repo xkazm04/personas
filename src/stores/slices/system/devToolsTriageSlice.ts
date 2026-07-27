@@ -2,20 +2,57 @@ import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import type { DevIdea } from "@/lib/bindings/DevIdea";
+import type { TriageCounts } from "@/lib/bindings/TriageCounts";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 import * as devApi from "@/api/devTools/devTools";
+
+/**
+ * Server-side narrowing for a triage page. `projectId` is a separate argument
+ * because omitting it is meaningful (cross-project read — the unified Backlog
+ * default), not just "no filter".
+ */
+export interface TriageQuery {
+  limit?: number;
+  /** Backend defaults to `pending`. */
+  status?: string;
+  /** `scanner` is the pseudo-origin for classic scanner ideas (`origin IS NULL`). */
+  origin?: string;
+  category?: string;
+}
+
+/** Move one idea between status buckets without disturbing the facet counts. */
+function shiftCounts(
+  counts: TriageCounts | null,
+  from: string | undefined,
+  to: keyof TriageCounts | null,
+): TriageCounts | null {
+  if (!counts) return null;
+  const next = { ...counts };
+  if (from && from in next && typeof next[from as keyof TriageCounts] === "number") {
+    (next[from as "pending"] as number) = Math.max(0, next[from as "pending"] - 1);
+  }
+  if (to && typeof next[to] === "number") {
+    (next[to as "accepted"] as number) = next[to as "accepted"] + 1;
+  }
+  return next;
+}
 
 export interface DevToolsTriageSlice {
   // -- Triage ----------------------------------------------------------
   triageItems: DevIdea[];
   triageCursor: string | null;
   triageHasMore: boolean;
-  triageCounts: { total: number; pending: number; accepted: number; rejected: number } | null;
+  triageCounts: TriageCounts | null;
+  /** True while a first page (or a reload) is in flight. */
+  triageLoading: boolean;
+  /** True while a keyset continuation is in flight. */
+  triageLoadingMore: boolean;
   triageFilterCategory: string | null;
   triageFilterScanType: string | null;
 
-  fetchTriageIdeas: (projectId: string, limit?: number) => Promise<void>;
-  fetchMoreTriageIdeas: (projectId: string, limit?: number) => Promise<void>;
+  /** `projectId` undefined = cross-project (the unified Backlog default). */
+  fetchTriageIdeas: (projectId?: string, query?: TriageQuery) => Promise<void>;
+  fetchMoreTriageIdeas: (projectId?: string, query?: TriageQuery) => Promise<void>;
   acceptIdea: (id: string) => Promise<void>;
   rejectIdea: (id: string, reason?: string) => Promise<void>;
   deleteTriageIdea: (id: string) => Promise<void>;
@@ -38,12 +75,19 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   triageCursor: null,
   triageHasMore: false,
   triageCounts: null,
+  triageLoading: false,
+  triageLoadingMore: false,
   triageFilterCategory: null,
   triageFilterScanType: null,
 
-  fetchTriageIdeas: async (projectId, limit) => {
+  fetchTriageIdeas: async (projectId, query) => {
+    set({ triageLoading: true });
     try {
-      const result = await devApi.triageIdeas(projectId, limit);
+      const result = await devApi.triageIdeas(projectId, query?.limit, undefined, {
+        status: query?.status,
+        origin: query?.origin,
+        category: query?.category,
+      });
       set({
         triageItems: result.ideas,
         triageCursor: result.cursor,
@@ -53,16 +97,28 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       });
     } catch (err) {
       reportError(err, "Failed to fetch triage ideas", set);
+    } finally {
+      set({ triageLoading: false });
     }
   },
 
-  fetchMoreTriageIdeas: async (projectId, limit) => {
-    const { triageCursor } = get();
-    if (!triageCursor) return;
+  fetchMoreTriageIdeas: async (projectId, query) => {
+    const { triageCursor, triageLoadingMore } = get();
+    if (!triageCursor || triageLoadingMore) return;
+    set({ triageLoadingMore: true });
     try {
-      const result = await devApi.triageIdeas(projectId, limit, triageCursor);
+      const result = await devApi.triageIdeas(projectId, query?.limit, triageCursor, {
+        status: query?.status,
+        origin: query?.origin,
+        category: query?.category,
+      });
       set((state) => ({
-        triageItems: [...state.triageItems, ...result.ideas],
+        // De-dupe on id: a row inserted between two keyset reads can otherwise
+        // arrive on both pages and React would see duplicate keys.
+        triageItems: [
+          ...state.triageItems,
+          ...result.ideas.filter((i) => !state.triageItems.some((e) => e.id === i.id)),
+        ],
         triageCursor: result.cursor,
         triageHasMore: result.has_more,
         triageCounts: result.counts,
@@ -70,6 +126,8 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       }));
     } catch (err) {
       reportError(err, "Failed to fetch more triage ideas", set);
+    } finally {
+      set({ triageLoadingMore: false });
     }
   },
 
@@ -79,9 +137,13 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       set((state) => ({
         triageItems: state.triageItems.map((i) => (i.id === id ? updated : i)),
         ideas: state.ideas.map((i) => (i.id === id ? updated : i)),
-        triageCounts: state.triageCounts
-          ? { ...state.triageCounts, pending: state.triageCounts.pending - 1, accepted: state.triageCounts.accepted + 1 }
-          : null,
+        // Decrement the bucket the row ACTUALLY left — accepting an already
+        // rejected/archived row must not drive `pending` negative.
+        triageCounts: shiftCounts(
+          state.triageCounts,
+          state.triageItems.find((i) => i.id === id)?.status ?? "pending",
+          "accepted",
+        ),
         error: null,
       }));
     } catch (err) {
@@ -95,9 +157,11 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
       set((state) => ({
         triageItems: state.triageItems.map((i) => (i.id === id ? updated : i)),
         ideas: state.ideas.map((i) => (i.id === id ? updated : i)),
-        triageCounts: state.triageCounts
-          ? { ...state.triageCounts, pending: state.triageCounts.pending - 1, rejected: state.triageCounts.rejected + 1 }
-          : null,
+        triageCounts: shiftCounts(
+          state.triageCounts,
+          state.triageItems.find((i) => i.id === id)?.status ?? "pending",
+          "rejected",
+        ),
         error: null,
       }));
     } catch (err) {
@@ -108,13 +172,15 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
   deleteTriageIdea: async (id) => {
     try {
       await devApi.deleteTriageIdea(id);
-      set((state) => ({
-        triageItems: state.triageItems.filter((i) => i.id !== id),
-        triageCounts: state.triageCounts
-          ? { ...state.triageCounts, total: state.triageCounts.total - 1, pending: state.triageCounts.pending - 1 }
-          : null,
-        error: null,
-      }));
+      set((state) => {
+        const gone = state.triageItems.find((i) => i.id === id);
+        const shifted = shiftCounts(state.triageCounts, gone?.status ?? "pending", null);
+        return {
+          triageItems: state.triageItems.filter((i) => i.id !== id),
+          triageCounts: shifted ? { ...shifted, total: Math.max(0, shifted.total - 1) } : null,
+          error: null,
+        };
+      });
     } catch (err) {
       reportError(err, "Failed to delete triage idea", set);
     }
