@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates src-tauri/src/db/builtin_connectors.rs from JSON files in
+ * Generates src-tauri/db/src/builtin_connectors.rs from JSON files in
  * scripts/connectors/builtin/.
  *
  * Run with:
@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, '..');
 const CONNECTORS_DIR = join(ROOT, 'scripts', 'connectors', 'builtin');
-const OUTPUT_FILE = join(ROOT, 'src-tauri', 'src', 'db', 'builtin_connectors.rs');
+const OUTPUT_FILE = join(ROOT, 'src-tauri', 'db', 'src', 'builtin_connectors.rs');
 
 /** Escape a string for use inside a Rust raw string r##"..."## */
 function rustRawStr(s) {
@@ -68,7 +68,7 @@ for (const file of files) {
 const output = `// Auto-generated from scripts/connectors/builtin/*.json
 // DO NOT EDIT MANUALLY. Regenerate with: node scripts/generate-connector-seed.mjs
 
-pub(crate) struct BuiltinConnector {
+pub struct BuiltinConnector {
     pub id: &'static str,
     pub name: &'static str,
     pub label: &'static str,
@@ -85,7 +85,7 @@ pub(crate) struct BuiltinConnector {
     pub resources: Option<&'static str>,
 }
 
-pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
+pub const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[
 ${entries.join(',\n')}
 ];
 `;

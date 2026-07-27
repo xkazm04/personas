@@ -11,7 +11,7 @@
  *      detected changes as new firings into the durable ledger
  *      scripts/events/connector-events.ledger.json (source of truth; accumulates
  *      across releases; dev-reviewed + committed).
- *   3. CODE-GENERATE src-tauri/src/db/builtin_shared_events.rs from the current
+ *   3. CODE-GENERATE src-tauri/db/src/builtin_shared_events.rs from the current
  *      connector list (catalog: one feed per connector) + the ledger (firings).
  *
  * Run:
@@ -32,7 +32,7 @@ const CONNECTORS_DIR = join(ROOT, 'scripts', 'connectors', 'builtin');
 const EVENTS_DIR = join(ROOT, 'scripts', 'events');
 const MANIFEST_FILE = join(EVENTS_DIR, 'connector-docs.manifest.json');
 const LEDGER_FILE = join(EVENTS_DIR, 'connector-events.ledger.json');
-const OUTPUT_RS = join(ROOT, 'src-tauri', 'src', 'db', 'builtin_shared_events.rs');
+const OUTPUT_RS = join(ROOT, 'src-tauri', 'db', 'src', 'builtin_shared_events.rs');
 
 const CATEGORY = 'connector_updates';
 const PUBLISHER = 'Personas';
