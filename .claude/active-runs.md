@@ -2,14 +2,13 @@
 
 ## Active
 
-### app-lib-crate-split-step3plus — build-memory crate split — session opus-5[1m]
-- 2026-07-27. Status: **STEP 4 COMPLETE — personas-db extracted. app_lib 431,422 -> 321,224 LOC (-25.5%), the first actual memory win.** personas-db 84,040 / personas-core 26,544. Zero call sites changed (`pub use personas_db as db;`).
-- Commits: `df2c19b26` (3) · `ff95e598f` (bindings+CI --workspace) · `262246e14` (4a) · `ea99151cf` (4b) · `b430eb64c` (4c) · `660b52397` (4d, db hits zero engine deps) · `e13a9be3d` (4e, crate extracted). Tooling `b1b73cc1c` + `0bd7ff3d6`.
-- Gates green throughout: `cargo check --features desktop --all-targets` AND `--features desktop-full`, clippy -D warnings on both new crates, ts-rs export idempotent at CI's default features.
-- REMAINING: **step 5, personas-engine (~150k)** -> app_lib ~180k. Same recipe: mapper `--exclude`, push shared items DOWN until the closure is clean, then lift. 4a-4d were 90% of the work; 4e was a directory move.
-- **The 8.9 GB figure has NOT been re-measured** — it predates both `[profile.test] debug = 0` and this split. Worth sampling `cargo test --features desktop --lib --no-run` to get the real number.
-- FOUND, NOT FIXED (pre-existing): app_lib has 434 clippy errors under `--all-targets -D warnings` (CLAUDE.md's clippy command dies at the Tauri build script, so it has never run). **No CI workflow builds `desktop-full`** — the ml/p2p paths have never compiled in CI, which is how consolidation.rs shipped using `Arc` without importing it.
-- Paths: src-tauri/{Cargo.toml,core/**,db/** (NEW),src/**}, scripts/build/**, .github/workflows/ci.yml, src/lib/bindings/**. Validation is `cargo check` ONLY — `cargo test` on app_lib is the 8.9 GB step. MAIN CHECKOUT, per-file staging, atomic per-step commits.
+### app-lib-crate-split-step3plus — build-memory crate split — session opus-5[1m] — COMPLETE
+- 2026-07-27. **DONE AND MEASURED.** app_lib **431,422 -> 265,546 LOC (-38.5%)**; peak single rustc **8,872 -> 6,201 MB (-30%)** at matched debuginfo, 5,933 MB with the committed `debug = 0`. Measured via new `scripts/build/sample-build-memory.ps1` on `cargo test --features desktop --lib --no-run` after `cargo clean -p`.
+- Crates now: personas-core 26,612 · personas-db 84,040 · personas-engine 55,690 · app_lib 265,546.
+- Commits: `df2c19b26` (3) · `ff95e598f` (bindings+CI --workspace) · `262246e14` (4a) · `ea99151cf` (4b) · `b430eb64c` (4c) · `660b52397` (4d) · `e13a9be3d` (4e personas-db) · `cb8eedcc6` (5a) · `b1fa671e3` (5b personas-engine) · `2a88870ba` (sampler). Tooling `b1b73cc1c` + `0bd7ff3d6`.
+- Gates green throughout: `cargo check --features desktop --all-targets` AND `--features desktop-full`, `clippy -D warnings` on all three extracted crates, ts-rs export idempotent at CI's default features with zero drift.
+- **Step 5 is PARTIAL by design**: 103 of 172 engine modules moved; 69 stayed because they reach `AppState` (31 refs / ~25 modules), `notifications`, `tray`, `cloud` or a `commands::*` entry. Going further needs a context TRAIT engine defines and app_lib implements — not another file move. Note LOC fell 38.5% but memory only 30%: per-rustc fixed cost does not shrink, and ONE process still dominates, so more small crates would not help.
+- FOUND, NOT FIXED (pre-existing): app_lib has 434 clippy errors under `--all-targets -D warnings` (CLAUDE.md's clippy command dies at the Tauri build script, so it has never run). **No CI workflow builds `desktop-full`** — the ml/p2p paths have never compiled in CI, which is how consolidation.rs shipped using `Arc` without importing it. One dead-but-complete prompt template (`PROTOCOL_RAISE_INCIDENT`) flagged rather than deleted.
 ### prototype-factory-ship-tab — /prototype (Ship tab, Factory L2) — session fable-5
 - Started: 2026-07-26. Status: started. Prototyping a NEW "Ship" tab (milestone / ship-track convergence layer) for Factory L2 — 3 directional content variants behind an internal switcher, mock data only (no schema work yet).
 - Paths: MAIN CHECKOUT (master) — round 1 merged as c845c453a; iteration continues on src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx + src/features/teams/sub_factory/l2/ship/**. Worktree removed at user direction ("operate on master").
