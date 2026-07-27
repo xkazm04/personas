@@ -16,6 +16,8 @@ import { LevelBadge } from '@/features/plugins/dev-tools/sub_scanner/IdeaScanner
 import { FindingBadge, VerdictChip } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+
 import { prettyEvidence, triageValueScore, type BacklogIdea } from './backlogModel';
 
 /** Position within the review queue, plus the stepper. */
@@ -73,7 +75,7 @@ export function BacklogDetailLedger({
             {idea.origin && <FindingBadge origin={idea.origin} evidence={idea.evidence} />}
             <VerdictChip verifyState={idea.verifyState} />
           </div>
-          <h2 id="backlog-detail" className="typo-title text-foreground">
+          <h2 id="backlog-detail" className="typo-title-lg text-foreground max-w-[68ch]">
             {idea.title}
           </h2>
         </div>
@@ -109,27 +111,34 @@ export function BacklogDetailLedger({
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="flex flex-col md:flex-row md:divide-x divide-primary/10">
-          {/* ARGUMENT COLUMN — prose. No key/value pairs live here. */}
-          <div className="md:flex-1 min-w-0 px-6 py-5 flex flex-col gap-4">
-            <p className="typo-body-lg text-foreground leading-relaxed border-l-2 border-primary/30 pl-4">
+          {/* ARGUMENT COLUMN — prose. No key/value pairs live here.
+              Readability rules (mirrors PracticeDetailLedger + Design.md):
+              body copy is capped at a ~68ch measure (unbounded lines are the
+              main reason long descriptions read badly at modal width), the
+              lead keeps typo-body-lg/1.7, reasoning renders as markdown (the
+              scanners emit lists and backticks) at full body contrast, and
+              evidence wraps in place instead of scrolling sideways. */}
+          <div className="md:flex-1 min-w-0 px-6 py-5 flex flex-col gap-5">
+            <p className="typo-body-lg text-foreground leading-relaxed whitespace-pre-wrap max-w-[68ch] border-l-2 border-primary/30 pl-4">
               {idea.description || r.backlog_no_description}
             </p>
             {idea.reasoning.trim() && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 max-w-[68ch]">
                 <span className="typo-label text-muted-foreground uppercase tracking-wide">
                   {r.backlog_detail_reasoning}
                 </span>
-                <p className="typo-body text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {idea.reasoning}
-                </p>
+                <MarkdownRenderer
+                  content={idea.reasoning}
+                  className="typo-body text-foreground/90 leading-relaxed"
+                />
               </div>
             )}
             {evidence && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 max-w-[68ch]">
                 <span className="typo-label text-muted-foreground uppercase tracking-wide">
                   {r.backlog_detail_evidence}
                 </span>
-                <pre className="typo-caption text-muted-foreground bg-secondary/30 rounded-card p-3 overflow-x-auto">
+                <pre className="typo-caption text-foreground/70 bg-secondary/30 rounded-card p-3 whitespace-pre-wrap break-words">
                   {evidence}
                 </pre>
               </div>
