@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Hợp nhất nhóm ký ức đã chọn thành những hiểu biết bền vững. Kết quả là một đề xuất bạn xem xét trong Tổng quan → Ký ức — không gì thay đổi nếu bạn chưa phê duyệt.",
     "reflect_scope_label": "Chiêm nghiệm trên",
     "reflect_scope_team": "Nhóm",
-    "reflection_label": "Chiêm nghiệm ký ức"
+    "reflection_label": "Chiêm nghiệm ký ức",
+    "close_sources_rail": "Ẩn bảng nguồn",
+    "close_targets_rail": "Ẩn bảng đích",
+    "open_sources_rail": "Hiện bảng nguồn",
+    "open_targets_rail": "Hiện bảng đích"
   },
   "trigger_configured": "trigger đã cấu hình",
   "secret_label": "Bí mật",

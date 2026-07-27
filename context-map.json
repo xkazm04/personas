@@ -1790,7 +1790,6 @@
             "src/features/plugins/dev-tools/sub_runner/TaskRunnerPage.tsx",
             "src/features/plugins/dev-tools/sub_scanner/IdeaScannerPage.tsx",
             "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
-            "src/features/plugins/dev-tools/sub_triage/IdeaTriagePage.tsx",
             "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx",
             "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx",
             "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts",

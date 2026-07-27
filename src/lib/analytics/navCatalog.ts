@@ -84,7 +84,7 @@ const DESIGN_SUB_TABS = exact<DesignSubTab>({ 'use-cases': true, prompt: true, p
 const CLOUD_TABS = exact<CloudTab>({ cloud: true, gitlab: true, unified: true });
 const SETTINGS_TABS = exact<SettingsTab>({ account: true, appearance: true, notifications: true, radio: true, engine: true, byom: true, portability: true, network: true, admin: true, 'api-keys': true, history: true, limits: true });
 const PLUGIN_TABS = exact<PluginTab>({ browse: true, 'dev-tools': true, artist: true, 'obsidian-brain': true, 'research-lab': true, drive: true, twin: true, companion: true, scraper: true });
-const DEV_TOOLS_TABS = exact<DevToolsTab>({ overview: true, 'llm-overview': true, 'context-map': true, 'idea-scanner': true, 'idea-triage': true, 'task-runner': true, fleet: true, workspaces: true, skills: true });
+const DEV_TOOLS_TABS = exact<DevToolsTab>({ overview: true, 'llm-overview': true, 'context-map': true, 'idea-scanner': true, 'task-runner': true, fleet: true, workspaces: true, skills: true });
 const EVENT_BUS_TABS = exact<EventBusTab>({ studio: true, shared: true, 'live-stream': true, 'rate-limits': true, test: true, 'smee-relay': true, 'cloud-webhooks': true, 'dead-letter': true });
 const RESEARCH_LAB_TABS = exact<ResearchLabTab>({ dashboard: true, projects: true, literature: true, hypotheses: true, experiments: true, findings: true, reports: true, graph: true });
 

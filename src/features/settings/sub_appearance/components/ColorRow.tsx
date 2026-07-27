@@ -45,7 +45,7 @@ export function ColorRow({
         aria-haspopup="true"
       />
       <span className="typo-caption font-medium text-foreground w-24 flex-shrink-0">{label}</span>
-      <span className={`typo-code font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
+      <span className="typo-code font-mono flex-1 min-w-0 truncate text-foreground">
         {displayValue}
       </span>
       {isOverridden && (

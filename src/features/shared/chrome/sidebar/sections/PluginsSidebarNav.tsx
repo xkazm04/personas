@@ -1,24 +1,22 @@
 /**
- * Plugins sidebar — Level 2 + Level 3 push pane.
+ * Plugins sidebar — Level 2, grouped.
  *
- * Layout contract:
- * - L2: alphabetical list of every enabled plugin (Browse pinned in by
- *   alphabet, no longer special-cased to the top). Each plugin is a single
- *   row with its icon, label, and any compact status indicator (running
- *   dot, missing-twin dot).
- * - L3: when `pluginTab` is a plugin that owns sub-items (Artist / Dev
- *   Tools / Twin / Companion / Research Lab), the sidebar slides into a
- *   Level 3 pane via {@link SidebarLevel3}. The L3 header shows
- *   "← Plugins" plus an optional context chip (active project for Dev
- *   Tools, active twin for Twin). The body is the plugin's sub-tab list.
- * - Plugins without sub-items (Browse, Brain, Drive) stay flat
- *   on L2 — clicking them just sets `pluginTab` and the page renders the
- *   plugin's own surface.
+ * Layout contract (unified with Projects / Overview / Connections on
+ * 2026-07-27 — see {@link SidebarGroupNav}):
+ * - **Browse** is the lead row: the plugin manager, not a plugin.
+ * - Every enabled plugin below it is a **group**, whose header row is the
+ *   plugin itself and whose nested rail holds that plugin's sub-tabs. The
+ *   sub-tabs of the ACTIVE plugin are shown; the others collapse to just
+ *   their header, so the list stays scannable at ~8 plugins.
+ * - Plugins with no sub-tabs (Drive, Scraper) render as a header-only group.
  *
- * Mirrors the Home → Roadmap L3 pattern landed earlier in the same
- * change. See {@link SidebarLevel3} for the primitive.
+ * This replaces the old Level-3 push pane: the sub-tabs used to slide the
+ * whole panel sideways behind a "← Plugins" back button, which hid the rest
+ * of the plugin list.
+ *
+ * Sub-tab ids are namespaced (`<plugin>:<tab>`) because several plugins reuse
+ * the same tab id (`setup`, `graph`, `knowledge`) and they now share one nav.
  */
-import { AnimatePresence } from 'framer-motion';
 import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, Globe, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
@@ -26,30 +24,34 @@ import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import type { ArtistTab, DevToolsTab, TwinTab, PluginTab, ResearchLabTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
 import { artistItems, companionItems, devToolsItems, filterByTier, obsidianBrainItems, researchLabItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
+import SidebarGroupNav, { type GroupNavItem, type SidebarNavGroup } from '@/features/shared/chrome/sidebar/SidebarGroupNav';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
-import SidebarLevel3, { type SidebarLevel3Item } from '@/features/shared/chrome/sidebar/SidebarLevel3';
 import { debtText } from '@/i18n/DebtText';
 import { PLUGIN_ICONS } from '@/features/plugins/PluginIcons';
-
 
 interface PluginMeta {
   id: PluginTab;
   label: string;
   icon: LucideIcon;
-  /** True when clicking this plugin should push to L3 with its sub-items. */
-  hasSubItems: boolean;
   /**
-   * In-development plugins. Hidden from production builds entirely; in
-   * DEV they appear in the L2 list only (never in Browse), styled with
-   * a golden border so the developer remembers they're not shipped.
+   * In-development plugins. Hidden from production builds entirely; in DEV
+   * they appear in the list only (never in Browse), styled with a golden
+   * border so the developer remembers they're not shipped.
    */
   devOnly?: boolean;
 }
 
-const PLUGINS_WITH_SUBITEMS = new Set<PluginTab>([
-  'artist', 'dev-tools', 'obsidian-brain', 'twin', 'companion', 'research-lab',
-]);
+/** Running/pending pulse dot shared by the plugin rows. */
+function PulseDot({ color, ping, title }: { color: string; ping: string; title?: string }) {
+  return (
+    <span className="relative flex h-2.5 w-2.5" title={title}>
+      <span className={`absolute inset-0 rounded-full animate-ping ${ping}`} />
+      <span className={`relative w-2.5 h-2.5 rounded-full ${color}`} />
+    </span>
+  );
+}
 
 export function PluginsSidebarNav() {
   const { t, tx } = useTranslation();
@@ -79,24 +81,24 @@ export function PluginsSidebarNav() {
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
+  const tier = useTier();
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
   const activeTwin = activeTwinId ? twinProfiles.find((tw) => tw.id === activeTwinId) : null;
 
-  // Plugin catalog. Browse is a management surface, not a plugin itself,
-  // so it stays pinned at the top of the L2 list (rendered separately
-  // below); the remaining enabled plugins are sorted alphabetically by
-  // translated label.
+  // Plugin catalog. Browse is a management surface, not a plugin itself, so it
+  // stays pinned at the top; the enabled plugins below it are sorted
+  // alphabetically by translated label.
   const allPlugins = useMemo<PluginMeta[]>(() => [
-    { id: 'browse',          label: 'Browse',                              icon: Puzzle,    hasSubItems: false },
-    { id: 'artist',          label: 'Artist',                              icon: Palette,   hasSubItems: true, devOnly: true },
-    { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench,   hasSubItems: true },
-    { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain,    hasSubItems: true },
-    { id: 'drive',           label: 'Drive',                               icon: HardDrive, hasSubItems: false },
-    { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
-    { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
-    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true, devOnly: true },
-    { id: 'scraper',         label: 'Scraper',                             icon: Globe,     hasSubItems: false, devOnly: true },
+    { id: 'browse',          label: 'Browse',                              icon: Puzzle },
+    { id: 'artist',          label: 'Artist',                              icon: Palette,   devOnly: true },
+    { id: 'dev-tools',       label: t.shared.sidebar_extra.dev_tools_label, icon: Wrench },
+    { id: 'obsidian-brain',  label: t.shared.sidebar_extra.obsidian_brain,  icon: Brain },
+    { id: 'drive',           label: 'Drive',                               icon: HardDrive },
+    { id: 'twin',            label: 'Twin',                                icon: Sparkles },
+    { id: 'companion',       label: 'Companion',                           icon: Bot },
+    { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen,  devOnly: true },
+    { id: 'scraper',         label: 'Scraper',                             icon: Globe,     devOnly: true },
   ], [t]);
 
   const browseMeta = allPlugins.find((p) => p.id === 'browse')!;
@@ -107,328 +109,195 @@ export function PluginsSidebarNav() {
     [allPlugins, enabledPlugins],
   );
 
-  const activePluginLabel = useMemo(
-    () => allPlugins.find((p) => p.id === pluginTab)?.label ?? pluginTab,
-    [allPlugins, pluginTab],
-  );
+  // Honor the declared gating fields on sub-items — before this they were
+  // silently dropped by the L3 mapping, making `minTier`/`devOnly` dead fields.
+  const gate = <T extends { minTier?: import('@/lib/constants/uiModes').Tier; devOnly?: boolean }>(
+    list: readonly T[],
+  ): T[] => filterByTier([...list], tier.current).filter((i) => !i.devOnly || import.meta.env.DEV);
 
-  const activePluginMeta = allPlugins.find((p) => p.id === pluginTab);
-  const activePluginGated = activePluginMeta?.devOnly && !import.meta.env.DEV;
-  const isL3 = PLUGINS_WITH_SUBITEMS.has(pluginTab) && enabledPlugins.has(pluginTab) && !activePluginGated;
-
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      {isL3 ? (
-        <PluginL3
-          key={`plugin-l3-${pluginTab}`}
-          plugin={pluginTab}
-          onBack={() => setPluginTab('browse')}
-          backLabel={activePluginLabel}
-          artistTab={artistTab}
-          setArtistTab={setArtistTab}
-          devToolsTab={devToolsTab}
-          setDevToolsTab={setDevToolsTab}
-          obsidianBrainTab={obsidianBrainTab}
-          setObsidianBrainTab={setObsidianBrainTab}
-          twinTab={twinTab}
-          setTwinTab={setTwinTab}
-          companionPluginTab={companionPluginTab}
-          setCompanionPluginTab={setCompanionPluginTab}
-          researchLabTab={researchLabTab}
-          setResearchLabTab={setResearchLabTab}
-          activeProjectName={activeProject?.name ?? null}
-          activeTwinName={activeTwin?.name ?? null}
-          fleetWaitingCount={fleetWaitingCount}
-          pendingConflicts={pendingConflicts}
-          studioJobActive={studioJobActive}
-          revitalizeRunning={revitalizeRunning}
-        />
-      ) : (
-        <div key="plugin-l2" className="flex flex-col h-full">
-          <nav className="flex-1 px-2 py-2 overflow-y-auto" role="tablist" aria-label="Plugins">
-            {/* Browse — pinned at top. It's the plugin manager, not a plugin
-                itself, so it sits above the alphabetical plugin list with a
-                divider between them. */}
-            {(() => {
-              const Icon = browseMeta.icon;
-              const isActive = pluginTab === 'browse';
-              return (
-                <button
-                  key="browse"
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  aria-current={isActive ? 'page' : undefined}
-                  onClick={() => setPluginTab('browse')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-                    isActive
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="flex-1 text-left truncate">{browseMeta.label}</span>
-                </button>
-              );
-            })()}
-            {sortedPlugins.length > 0 && (
-              <div className="my-2 border-t border-primary/10" />
-            )}
-            <div className="space-y-1">
-              {sortedPlugins.map((plugin) => {
-                const Icon = plugin.icon;
-                const CustomIcon = PLUGIN_ICONS[plugin.id];
-                const isActive = pluginTab === plugin.id;
-                const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
-                const showTwinStudioRunning = plugin.id === 'twin' && studioJobActive;
-                const showBrainRevitalizing = plugin.id === 'obsidian-brain' && revitalizeRunning;
-                const showTwinMissing = plugin.id === 'twin' && !studioJobActive && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
-                const devBorder = plugin.devOnly ? 'border border-amber-400/60 ring-1 ring-amber-400/20' : 'border border-transparent';
-                return (
-                  <button
-                    key={plugin.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    aria-current={isActive ? 'page' : undefined}
-                    onClick={() => setPluginTab(plugin.id)}
-                    title={plugin.devOnly ? `${plugin.label} — in development (dev builds only)` : undefined}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${devBorder} ${
-                      isActive
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
-                    }`}
-                  >
-                    {CustomIcon
-                      ? <CustomIcon active={isActive} className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />
-                      : <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />}
-                    <span className="flex-1 text-left truncate">{plugin.label}</span>
-                    {plugin.id === 'dev-tools' && fleetWaitingCount > 0 && (
-                      <span
-                        data-testid="devtools-l2-waiting-badge"
-                        className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
-                        title={fleetWaitingCount === 1
-                          ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
-                          : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
-                      >
-                        {fleetWaitingCount}
-                      </span>
-                    )}
-                    {plugin.id === 'companion' && companionApprovalsCount > 0 && (
-                      <span
-                        data-testid="companion-l2-approvals-badge"
-                        className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 typo-caption font-bold border border-amber-500/40"
-                        title={companionApprovalsCount === 1
-                          ? tx(t.plugins.fleet.approvals_pending_one, { count: companionApprovalsCount })
-                          : tx(t.plugins.fleet.approvals_pending_other, { count: companionApprovalsCount })}
-                      >
-                        {companionApprovalsCount}
-                      </span>
-                    )}
-                    {plugin.devOnly && (
-                      <span
-                        className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
-                        aria-label={debtText("auto_in_development_f6146d71")}
-                      >
-                        Dev
-                      </span>
-                    )}
-                    {showArtistRunning && (
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
-                        <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
-                      </span>
-                    )}
-                    {showTwinStudioRunning && (
-                      <span className="relative flex h-2.5 w-2.5" title={t.twin.studioInProgress}>
-                        <span className="absolute inset-0 rounded-full animate-ping bg-violet-500/40" />
-                        <span className="relative w-2.5 h-2.5 rounded-full bg-violet-500 border border-violet-600/50" />
-                      </span>
-                    )}
-                    {showBrainRevitalizing && (
-                      <span className="relative flex h-2.5 w-2.5" title={t.plugins.obsidian_brain.revitalize_badge_running}>
-                        <span className="absolute inset-0 rounded-full animate-ping bg-fuchsia-500/40" />
-                        <span className="relative w-2.5 h-2.5 rounded-full bg-fuchsia-500 border border-fuchsia-600/50" />
-                      </span>
-                    )}
-                    {showTwinMissing && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        </div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ─── L3 pane ────────────────────────────────────────────────────────────
-
-interface PluginL3Props {
-  plugin: PluginTab;
-  onBack: () => void;
-  backLabel: string;
-  artistTab: ArtistTab;
-  setArtistTab: (tab: ArtistTab) => void;
-  devToolsTab: DevToolsTab;
-  setDevToolsTab: (tab: DevToolsTab) => void;
-  obsidianBrainTab: ObsidianBrainTab;
-  setObsidianBrainTab: (tab: ObsidianBrainTab) => void;
-  twinTab: TwinTab;
-  setTwinTab: (tab: TwinTab) => void;
-  companionPluginTab: CompanionPluginTab;
-  setCompanionPluginTab: (tab: CompanionPluginTab) => void;
-  researchLabTab: ResearchLabTab;
-  setResearchLabTab: (tab: ResearchLabTab) => void;
-  activeProjectName: string | null;
-  activeTwinName: string | null;
-  fleetWaitingCount: number;
-  pendingConflicts: number;
-  studioJobActive: boolean;
-  revitalizeRunning: boolean;
-}
-
-function PluginL3(props: PluginL3Props) {
-  const { plugin, onBack, backLabel } = props;
-  const { t } = useTranslation();
-
-  const tier = useTier();
-
-  const items: SidebarLevel3Item[] = useMemo(() => {
-    // Honor the declared gating fields the same way SidebarLevel2 does — before
-    // this, `minTier`/`devOnly` on plugin sub-items were silently dropped by
-    // the mapping below, so a declared gate was a dead field.
-    const gate = <T extends { minTier?: import('@/lib/constants/uiModes').Tier; devOnly?: boolean }>(
-      list: readonly T[],
-    ): T[] => filterByTier([...list], tier.current).filter((i) => !i.devOnly || import.meta.env.DEV);
-
+  const subItemsFor = (plugin: PluginTab): SubNavItem[] => {
     switch (plugin) {
-      case 'artist':
-        return gate(artistItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-        }));
-      case 'dev-tools':
-        return gate(devToolsItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-          rightSlot: item.id === 'fleet' && props.fleetWaitingCount > 0 ? (
-            <span
-              data-testid="fleet-sidebar-waiting-badge"
-              className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
-              title={`${props.fleetWaitingCount} session${props.fleetWaitingCount === 1 ? '' : 's'} awaiting input`}
-            >
-              {props.fleetWaitingCount}
-            </span>
-          ) : null,
-        }));
-      case 'obsidian-brain':
-        return gate(obsidianBrainItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-          rightSlot:
-            item.id === 'sync' && props.pendingConflicts > 0 ? (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption font-medium border border-amber-500/30">
-                {props.pendingConflicts}
-              </span>
-            ) : item.id === 'revitalize' && props.revitalizeRunning ? (
-              <span className="relative flex h-2.5 w-2.5" title={t.plugins.obsidian_brain.revitalize_badge_running}>
-                <span className="absolute inset-0 rounded-full animate-ping bg-fuchsia-500/40" />
-                <span className="relative w-2.5 h-2.5 rounded-full bg-fuchsia-500 border border-fuchsia-600/50" />
-              </span>
-            ) : null,
-        }));
-      case 'twin':
-        return gate(twinItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-          rightSlot: item.id === 'training' && props.studioJobActive ? (
-            <span className="relative flex h-2.5 w-2.5" title={t.twin.studioInProgress}>
-              <span className="absolute inset-0 rounded-full animate-ping bg-violet-500/40" />
-              <span className="relative w-2.5 h-2.5 rounded-full bg-violet-500 border border-violet-600/50" />
-            </span>
-          ) : null,
-        }));
-      case 'companion':
-        return gate(companionItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-        }));
-      case 'research-lab':
-        return gate(researchLabItems).map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-        }));
-      default:
-        return [];
+      case 'artist':         return gate(artistItems);
+      case 'dev-tools':      return gate(devToolsItems);
+      case 'obsidian-brain': return gate(obsidianBrainItems);
+      case 'twin':           return gate(twinItems);
+      case 'companion':      return gate(companionItems);
+      case 'research-lab':   return gate(researchLabItems);
+      default:               return [];
     }
-  }, [plugin, tier.current, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, props.revitalizeRunning, t.twin.studioInProgress, t.plugins.obsidian_brain.revitalize_badge_running]);
+  };
 
-  const activeId = pickActiveId(plugin, props);
-  const onSelect = pickSelectHandler(plugin, props);
+  const activeSubTab = (plugin: PluginTab): string => {
+    switch (plugin) {
+      case 'artist':         return artistTab;
+      case 'dev-tools':      return devToolsTab;
+      case 'obsidian-brain': return obsidianBrainTab;
+      case 'twin':           return twinTab;
+      case 'companion':      return companionPluginTab;
+      case 'research-lab':   return researchLabTab;
+      default:               return '';
+    }
+  };
 
-  const subHeader = renderSubHeader(plugin, props.activeProjectName, props.activeTwinName);
+  const selectSubTab = (plugin: PluginTab, id: string) => {
+    switch (plugin) {
+      case 'artist':         setArtistTab(id as ArtistTab); break;
+      case 'dev-tools':      setDevToolsTab(id as DevToolsTab); break;
+      case 'obsidian-brain': setObsidianBrainTab(id as ObsidianBrainTab); break;
+      case 'twin':           setTwinTab(id as TwinTab); break;
+      case 'companion':      setCompanionPluginTab(id as CompanionPluginTab); break;
+      case 'research-lab':   setResearchLabTab(id as ResearchLabTab); break;
+      default: break;
+    }
+  };
+
+  /** Right-edge adornment for a plugin's header row (counts + running dots). */
+  const headerRightSlot = (plugin: PluginMeta) => {
+    if (plugin.id === 'dev-tools' && fleetWaitingCount > 0) {
+      return (
+        <span
+          data-testid="devtools-l2-waiting-badge"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+          title={fleetWaitingCount === 1
+            ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
+            : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
+        >
+          {fleetWaitingCount}
+        </span>
+      );
+    }
+    if (plugin.id === 'companion' && companionApprovalsCount > 0) {
+      return (
+        <span
+          data-testid="companion-l2-approvals-badge"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 typo-caption font-bold border border-amber-500/40"
+          title={companionApprovalsCount === 1
+            ? tx(t.plugins.fleet.approvals_pending_one, { count: companionApprovalsCount })
+            : tx(t.plugins.fleet.approvals_pending_other, { count: companionApprovalsCount })}
+        >
+          {companionApprovalsCount}
+        </span>
+      );
+    }
+    if (plugin.id === 'artist' && creativeSessionRunning) {
+      return <PulseDot color="bg-orange-500 border border-orange-600/50" ping="bg-orange-500/40" />;
+    }
+    if (plugin.id === 'twin' && studioJobActive) {
+      return <PulseDot color="bg-violet-500 border border-violet-600/50" ping="bg-violet-500/40" title={t.twin.studioInProgress} />;
+    }
+    if (plugin.id === 'obsidian-brain' && revitalizeRunning) {
+      return <PulseDot color="bg-fuchsia-500 border border-fuchsia-600/50" ping="bg-fuchsia-500/40" title={t.plugins.obsidian_brain.revitalize_badge_running} />;
+    }
+    if (plugin.devOnly) {
+      return (
+        <span
+          className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
+          aria-label={debtText("auto_in_development_f6146d71")}
+        >
+          Dev
+        </span>
+      );
+    }
+    return null;
+  };
+
+  /** Right-edge adornment for a plugin sub-tab row. */
+  const subItemRightSlot = (plugin: PluginTab, id: string) => {
+    if (plugin === 'dev-tools' && id === 'fleet' && fleetWaitingCount > 0) {
+      return (
+        <span
+          data-testid="fleet-sidebar-waiting-badge"
+          className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+          title={fleetWaitingCount === 1
+            ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
+            : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
+        >
+          {fleetWaitingCount}
+        </span>
+      );
+    }
+    if (plugin === 'obsidian-brain' && id === 'sync' && pendingConflicts > 0) {
+      return (
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption font-medium border border-amber-500/30">
+          {pendingConflicts}
+        </span>
+      );
+    }
+    if (plugin === 'obsidian-brain' && id === 'revitalize' && revitalizeRunning) {
+      return <PulseDot color="bg-fuchsia-500 border border-fuchsia-600/50" ping="bg-fuchsia-500/40" title={t.plugins.obsidian_brain.revitalize_badge_running} />;
+    }
+    if (plugin === 'twin' && id === 'training' && studioJobActive) {
+      return <PulseDot color="bg-violet-500 border border-violet-600/50" ping="bg-violet-500/40" title={t.twin.studioInProgress} />;
+    }
+    return null;
+  };
+
+  /**
+   * Context chip that used to live in the L3 header (active Dev Tools project /
+   * active Twin). Now rendered at the top of the plugin's own group rail.
+   */
+  const contextChip = (plugin: PluginTab) => {
+    const name = plugin === 'dev-tools' ? activeProject?.name : plugin === 'twin' ? activeTwin?.name : null;
+    if (!name) return null;
+    return (
+      <div className="px-2.5 pb-1">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary typo-caption font-medium truncate max-w-full">
+          {name}
+        </span>
+      </div>
+    );
+  };
+
+  const groups: SidebarNavGroup[] = sortedPlugins.map((plugin) => {
+    const isActive = pluginTab === plugin.id;
+    const CustomIcon = PLUGIN_ICONS[plugin.id];
+    const HeaderIcon: LucideIcon = CustomIcon
+      ? ((({ className }: { className?: string }) => <CustomIcon active={isActive} className={className} />) as unknown as LucideIcon)
+      : plugin.icon;
+    return {
+      id: plugin.id,
+      groupItem: {
+        id: plugin.id,
+        label: plugin.label,
+        icon: HeaderIcon,
+        dev: plugin.devOnly,
+        title: plugin.devOnly ? `${plugin.label} — in development (dev builds only)` : undefined,
+        rightSlot: headerRightSlot(plugin),
+        onSelect: () => setPluginTab(plugin.id),
+      },
+      render: isActive ? contextChip(plugin.id) : null,
+      items: (isActive ? subItemsFor(plugin.id) : []).map<GroupNavItem>((item) => ({
+        id: `${plugin.id}:${item.id}`,
+        label: item.label,
+        icon: item.icon,
+        rightSlot: subItemRightSlot(plugin.id, item.id),
+        onSelect: () => selectSubTab(plugin.id, item.id),
+      })),
+    };
+  });
+
+  const activeId = pluginTab === 'browse'
+    ? 'browse'
+    : activeSubTab(pluginTab)
+      ? `${pluginTab}:${activeSubTab(pluginTab)}`
+      : pluginTab;
 
   return (
-    <SidebarLevel3
-      backLabel={backLabel}
-      onBack={onBack}
-      items={items}
-      activeId={activeId}
-      onSelect={onSelect}
-      ariaLabel={plugin}
-      subHeader={subHeader}
-    />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 px-2 py-2 overflow-y-auto">
+        <SidebarGroupNav
+          ariaLabel={t.sidebar.plugins}
+          lead={{
+            id: 'browse',
+            label: browseMeta.label,
+            icon: browseMeta.icon,
+            onSelect: () => setPluginTab('browse'),
+          }}
+          groups={groups}
+          activeId={activeId}
+          onSelect={() => {}}
+        />
+      </div>
+    </div>
   );
-}
-
-function pickActiveId(plugin: PluginTab, p: PluginL3Props): string {
-  switch (plugin) {
-    case 'artist':         return p.artistTab;
-    case 'dev-tools':      return p.devToolsTab;
-    case 'obsidian-brain': return p.obsidianBrainTab;
-    case 'twin':           return p.twinTab;
-    case 'companion':      return p.companionPluginTab;
-    case 'research-lab':   return p.researchLabTab;
-    default:               return '';
-  }
-}
-
-function pickSelectHandler(plugin: PluginTab, p: PluginL3Props): (id: string) => void {
-  switch (plugin) {
-    case 'artist':         return (id) => p.setArtistTab(id as ArtistTab);
-    case 'dev-tools':      return (id) => p.setDevToolsTab(id as DevToolsTab);
-    case 'obsidian-brain': return (id) => p.setObsidianBrainTab(id as ObsidianBrainTab);
-    case 'twin':           return (id) => p.setTwinTab(id as TwinTab);
-    case 'companion':      return (id) => p.setCompanionPluginTab(id as CompanionPluginTab);
-    case 'research-lab':   return (id) => p.setResearchLabTab(id as ResearchLabTab);
-    default:               return () => {};
-  }
-}
-
-function renderSubHeader(plugin: PluginTab, activeProjectName: string | null, activeTwinName: string | null) {
-  if (plugin === 'dev-tools' && activeProjectName) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary typo-caption font-medium truncate max-w-full">
-        {activeProjectName}
-      </span>
-    );
-  }
-  if (plugin === 'twin' && activeTwinName) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary typo-caption font-medium truncate max-w-full">
-        {activeTwinName}
-      </span>
-    );
-  }
-  return null;
 }

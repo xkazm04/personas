@@ -48,5 +48,6 @@
   "try_auto_discovery": "إعادة محاولة الاكتشاف التلقائي",
   "enter_slugs_manually": "أدخل المعرّفات يدويًا بدلاً من ذلك",
   "today_activity_heading": "اليوم",
-  "pipeline_heading": "خط الأنابيب"
+  "pipeline_heading": "خط الأنابيب",
+  "connections_heading": "الاتصالات"
 }

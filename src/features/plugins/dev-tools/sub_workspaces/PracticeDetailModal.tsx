@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { decideWorkspaceKnowledge } from '@/api/devTools/workspaces';
+import { decideWorkspaceKnowledge, isActionableKind } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { toastCatch } from '@/lib/silentCatch';
@@ -54,8 +54,12 @@ export function PracticeDetailModal({
     setBusy(true);
     try {
       await decideWorkspaceKnowledge(practice.id, decision);
+      // Adopting an ACTIONABLE kind (pitfall/pattern) queues every applicable
+      // member repo at `to_process`; say so, or the decision reads as a state
+      // change with no consequence.
       addToast(
-        decision === 'adopt' ? tw.decide_adopted
+        decision === 'adopt'
+          ? (isActionableKind(practice.kind) ? tw.decide_adopted_queued : tw.decide_adopted)
           : decision === 'reject' ? tw.decide_rejected
             : tw.decide_deprecated,
         decision === 'adopt' ? 'success' : 'warning',

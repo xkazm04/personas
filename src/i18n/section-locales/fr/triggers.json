@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Consolide le pool de souvenirs choisi en enseignements durables. Le résultat est une proposition à valider dans Vue d'ensemble → Souvenirs — rien ne change sans votre accord.",
     "reflect_scope_label": "Réfléchir sur",
     "reflect_scope_team": "Équipe",
-    "reflection_label": "Réflexion mémoire"
+    "reflection_label": "Réflexion mémoire",
+    "close_sources_rail": "Masquer le panneau des sources",
+    "close_targets_rail": "Masquer le panneau des cibles",
+    "open_sources_rail": "Afficher le panneau des sources",
+    "open_targets_rail": "Afficher le panneau des cibles"
   },
   "trigger_configured": "déclencheur configuré",
   "secret_label": "Secret",

@@ -48,5 +48,6 @@
   "try_auto_discovery": "Повторить автопоиск",
   "enter_slugs_manually": "Ввести слаги вручную",
   "today_activity_heading": "СЕГОДНЯ",
-  "pipeline_heading": "Конвейер"
+  "pipeline_heading": "Конвейер",
+  "connections_heading": "Подключения"
 }

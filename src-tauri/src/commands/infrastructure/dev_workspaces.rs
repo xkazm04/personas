@@ -74,7 +74,25 @@ pub fn dev_tools_workspace_assign_project(
     workspace_id: Option<String>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
-    repo::assign_project(&state.db, &project_id, workspace_id.as_deref())
+    let project = repo::assign_project(&state.db, &project_id, workspace_id.as_deref())?;
+    // POST-COMMIT (never inside `assign_project`'s tx — `create_finding` takes
+    // its own connection and publishes on the bus): joining a workspace
+    // inherits its adopted practices, and every cell that landed `to_process`
+    // is work this repo now owes. The backfill is the right shape here — it
+    // walks exactly the `to_process` cells and is dedup-gated, so a re-join
+    // never stacks a second idea.
+    if workspace_id.is_some() {
+        match repo::backfill_practice_ideas(&state.db) {
+            Ok(n) if n > 0 => tracing::info!(
+                project_id = %project_id,
+                count = n,
+                "workspace join materialized {n} practice idea(s)"
+            ),
+            Err(e) => tracing::warn!(project_id = %project_id, error = %e, "practice materialization failed after workspace join"),
+            _ => {}
+        }
+    }
+    Ok(project)
 }
 
 #[tauri::command]
@@ -159,7 +177,41 @@ pub fn dev_tools_workspace_knowledge_decide(
     superseded_by: Option<String>,
 ) -> Result<WorkspaceKnowledge, AppError> {
     require_auth_sync(&state)?;
-    repo::decide_knowledge(&state.db, &id, &decision, superseded_by.as_deref())
+    let item = repo::decide_knowledge(&state.db, &id, &decision, superseded_by.as_deref())?;
+
+    // POST-COMMIT side effects (plan 1C). Deliberately out here rather than
+    // inside `decide_knowledge`'s transaction: `create_finding` takes its own
+    // pooled connection and publishes `signal.raised` on the bus, so running
+    // it under the open tx would risk a pool deadlock and would announce work
+    // a rollback could still erase.
+    match decision.as_str() {
+        // Adopting an ACTIONABLE practice makes it work every applicable member
+        // repo owes — one backlog idea per project whose cell was seeded
+        // `to_process`. Backlog becomes the adoption-queue executor.
+        "adopt" => match repo::materialize_pending_for_practice(&state.db, &id) {
+            Ok(n) if n > 0 => {
+                tracing::info!(practice_id = %id, count = n, "adopted practice materialized {n} backlog idea(s)")
+            }
+            Err(e) => {
+                tracing::warn!(practice_id = %id, error = %e, "practice materialization failed after adopt")
+            }
+            _ => {}
+        },
+        // Retiring a practice retires the work it asked for — but only the part
+        // nobody has decided on yet.
+        "deprecate" | "reject" => match repo::archive_practice_ideas(&state.db, &id) {
+            Ok(n) if n > 0 => {
+                tracing::info!(practice_id = %id, count = n, "retired practice archived {n} pending backlog idea(s)")
+            }
+            Err(e) => {
+                tracing::warn!(practice_id = %id, error = %e, "failed to archive materialized practice ideas")
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+
+    Ok(item)
 }
 
 #[tauri::command]
@@ -202,6 +254,21 @@ pub fn dev_tools_workspace_adoption_set(
         note.as_deref(),
         fleet_key.as_deref(),
     )
+}
+
+/// Reconcile the adoption queue against the backlog: every `to_process` cell of
+/// an adopted actionable practice that has no materialized idea yet gets one.
+///
+/// Idempotent and cheap when there is nothing to do, so it also runs once at
+/// app start. Exposed as a command because the queue can be seeded by paths
+/// that predate materialization (or by a direct `adoption_set`), and the user
+/// should not have to re-adopt a practice to unstick its backlog.
+#[tauri::command]
+pub fn dev_tools_workspace_backfill_practice_ideas(
+    state: State<'_, Arc<AppState>>,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    repo::backfill_practice_ideas(&state.db)
 }
 
 // ============================================================================

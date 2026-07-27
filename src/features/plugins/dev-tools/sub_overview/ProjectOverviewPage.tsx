@@ -270,7 +270,7 @@ export default function ProjectOverviewPage() {
         {/* ==================== Pipeline (read-only) ==================== */}
         <section className="mb-6">
           <h2 className="typo-label text-foreground mb-3">{po.pipeline_heading}</h2>
-          <div className="rounded-card border border-primary/10 bg-card/20 p-4">
+          <div className="relative overflow-hidden rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-5">
             <EditableProjectPipeline
               project={activeProject}
               teams={teams}
@@ -346,7 +346,7 @@ export default function ProjectOverviewPage() {
               <h2 className="typo-label text-foreground">{po.today_activity_heading}</h2>
               <span className="typo-caption text-foreground tabular-nums">{todayActivity.length}</span>
             </div>
-            <ul className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5 max-h-72 overflow-y-auto">
+            <ul className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent divide-y divide-primary/5 max-h-72 overflow-y-auto">
               {todayActivity.map((event) => (
                 <ActivityRow key={event.id} event={event} onJump={handleActivityJump} />
               ))}
@@ -356,8 +356,8 @@ export default function ProjectOverviewPage() {
 
         {/* ==================== Connections rail ==================== */}
         <section>
-          <h2 className="typo-label text-foreground mb-3">CONNECTIONS</h2>
-          <div className="rounded-card border border-primary/10 bg-card/30 divide-y divide-primary/5">
+          <h2 className="typo-label text-foreground mb-3">{po.connections_heading}</h2>
+          <div className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent divide-y divide-primary/5">
             {/* --- Codebase row --- */}
             <ConnectionRow
               icon={Code2}

@@ -29,14 +29,13 @@ import { createLogger } from "@/lib/log";
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { DecisionModeTabs, type DecisionMode } from './DecisionModeTabs';
-import { BacklogApprovalsPanel } from './BacklogApprovalsPanel';
+import { BacklogPanel } from './backlog/BacklogPanel';
+import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { KnowledgeApprovalsPanel } from './KnowledgeApprovalsPanel';
-import { useBacklogIdeas } from '../hooks/useBacklogIdeas';
 import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import type { TriageReview } from './reviewFocusHelpers';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
-import { debtText } from '@/i18n/DebtText';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -68,7 +67,19 @@ export default function ManualReviewList() {
   // — persona reviews, Dev Tools backlog, Workspace Knowledge — behind one
   // shell instead of three surfaces in three idioms.
   const [mode, setMode] = useState<DecisionMode>('reviews');
-  const backlog = useBacklogIdeas();
+  // Deep-link handoff (mirror of `pendingTaskFocusId`): another surface can ask
+  // Approvals to open on a specific decision mode. Consumed once on mount and
+  // cleared, so a later manual tab change isn't reverted on the next remount.
+  useEffect(() => {
+    const pending = useSystemStore.getState().pendingApprovalsMode;
+    if (!pending) return;
+    setMode(pending);
+    useSystemStore.getState().setPendingApprovalsMode(null);
+  }, []);
+  // Hoisted out of BacklogPanel deliberately: the mode tab has to show the
+  // backlog's pending count BEFORE the user opens that tab, so the queue is
+  // owned here and handed down.
+  const backlog = useBacklogQueue();
   const center = useWorkspaceCenter();
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -264,25 +275,17 @@ export default function ManualReviewList() {
       reloadQueue();
       const toastStore = useToastStore.getState();
       if (resolved > 0) {
-        toastStore.addToast(
-          `Auto-resolved ${resolved} stale review${resolved === 1 ? '' : 's'} (older than 7 days).`,
-          'success',
-          2400,
-        );
+        toastStore.addToast(tx(t.overview.review.gc_resolved, { count: resolved }), 'success', 2400);
       } else {
-        toastStore.addToast('No stale reviews to clear.', 'success', 1600);
+        toastStore.addToast(t.overview.review.gc_none, 'success', 1600);
       }
     } catch (err) {
       logger.error('Failed to GC stale reviews', { error: err });
-      useToastStore.getState().addToast(
-        'Could not clear stale reviews — see logs.',
-        'error',
-        2400,
-      );
+      useToastStore.getState().addToast(t.overview.review.gc_failed, 'error', 2400);
     } finally {
       setIsGcing(false);
     }
-  }, [isGcing, reloadQueue]);
+  }, [isGcing, reloadQueue, tx, t.overview.review.gc_resolved, t.overview.review.gc_none, t.overview.review.gc_failed]);
 
   // Hard-delete ALL local manual reviews (confirm-gated). Distinct from the
   // "Clear stale" sweep above, which only auto-resolves old pending rows.
@@ -300,14 +303,28 @@ export default function ManualReviewList() {
     }
   }, [isDeletingAll, reloadQueue]);
 
+  // Per-mode shell. The GC / delete-all / seed actions and the reviews
+  // subtitle describe the persona-review queue ONLY — showing them over the
+  // backlog or the knowledge library implied they acted on whatever was on
+  // screen, which they never did.
+  const knowledgePendingCount = Object.values(center.knowledge)
+    .flat()
+    .filter((k) => k.status === 'observed' || k.status === 'proposed').length;
+
+  const subtitle = mode === 'backlog'
+    ? tx(t.overview.review.backlog_subtitle, { count: backlog.counts?.pending ?? 0 })
+    : mode === 'knowledge'
+      ? tx(t.overview.review.knowledge_subtitle, { count: knowledgePendingCount })
+      : `${statusCounts.all} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`;
+
   return (
     <ContentBox>
       <ContentHeader
         icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.overview.review.title}
-        subtitle={`${statusCounts.all} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
-        actions={(
+        subtitle={subtitle}
+        actions={mode !== 'reviews' ? undefined : (
           <div className="flex items-center gap-2">
             {/* A-grade Phase 8 — on-demand sweep. Always visible (unlike
                 the dev-only seed button below) because it's idempotent
@@ -319,10 +336,10 @@ export default function ManualReviewList() {
                 onClick={() => void handleGcStale()}
                 disabled={isGcing}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={debtText("auto_auto_resolve_any_review_left_in_pending_fo_07992b1b")}
+                title={t.overview.review.gc_tooltip}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                {isGcing ? 'Clearing…' : 'Clear stale'}
+                {isGcing ? t.overview.review.gc_clearing : t.overview.review.gc_clear_stale}
               </button>
             )}
             {(reviewQueue.counts?.total ?? 0) > 0 && (
@@ -349,22 +366,14 @@ export default function ManualReviewList() {
         onModeChange={setMode}
         counts={{
           reviews: statusCounts.pending ?? 0,
-          backlog: backlog.ideas.length,
-          knowledge: Object.values(center.knowledge)
-            .flat()
-            .filter((k) => k.status === 'observed' || k.status === 'proposed').length,
+          backlog: backlog.counts?.pending ?? 0,
+          knowledge: knowledgePendingCount,
         }}
       />
 
       {mode === 'backlog' ? (
-        <ContentBody flex>
-          <BacklogApprovalsPanel
-            ideas={backlog.ideas}
-            loading={backlog.loading}
-            acting={backlog.acting}
-            projectName={backlog.projectName}
-            onAct={backlog.act}
-          />
+        <ContentBody flex noPadding>
+          <BacklogPanel queue={backlog} />
         </ContentBody>
       ) : mode === 'knowledge' ? (
         <ContentBody flex>

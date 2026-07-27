@@ -4,6 +4,8 @@ import {
   NAV_SECTIONS,
   SIDEBAR_SECTIONS,
   OVERLAY_SECTIONS,
+  NESTED_SECTIONS,
+  railSection,
   navSection,
   passesGates,
   type NavReachability,
@@ -28,14 +30,14 @@ const EXPECTED_SECTIONS: Record<SidebarSection, NavReachability> = {
   personas: 'sidebar',
   events: 'sidebar',
   credentials: 'sidebar',
-  'design-reviews': 'sidebar',
+  'design-reviews': 'nested',
   plugins: 'sidebar',
   studio: 'sidebar',
   schedules: 'overlay-only',
   settings: 'sidebar',
 };
 
-const REACHABILITIES: readonly NavReachability[] = ['sidebar', 'overlay-only', 'hidden'];
+const REACHABILITIES: readonly NavReachability[] = ['sidebar', 'nested', 'overlay-only', 'hidden'];
 
 describe('navigation registry — completeness', () => {
   const registeredIds = NAV_SECTIONS.map((e) => e.id);
@@ -108,6 +110,24 @@ describe('navigation registry — completeness', () => {
     for (const id of overlay) expect(sidebar.has(id)).toBe(false);
     expect(sidebar.size + overlay.size).toBeLessThanOrEqual(NAV_SECTIONS.length);
     expect(OVERLAY_SECTIONS.map((e) => e.id)).toEqual(['schedules']);
+  });
+
+  // (f) nested sections are NOT in the rail, still route, and name a rail parent
+  // that IS in the rail — so a nested destination can never become unreachable.
+  it('anchors every nested section to a rail parent', () => {
+    expect(NESTED_SECTIONS.map((e) => e.id)).toEqual(['design-reviews']);
+    const railIds = new Set(SIDEBAR_SECTIONS.map((e) => e.id));
+    for (const entry of NESTED_SECTIONS) {
+      expect(railIds.has(entry.id)).toBe(false);
+      expect(isRoutableSection(entry.id)).toBe(true);
+      expect(entry.parent).toBeDefined();
+      expect(railIds.has(entry.parent!)).toBe(true);
+      expect(railSection(entry.id)).toBe(entry.parent);
+    }
+  });
+
+  it('resolves rail sections to themselves', () => {
+    for (const entry of SIDEBAR_SECTIONS) expect(railSection(entry.id)).toBe(entry.id);
   });
 });
 

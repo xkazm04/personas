@@ -77,7 +77,20 @@
   "manage": "Управление",
   "context_map": "Карта контекста",
   "idea_scanner": "Сканер идей",
-  "idea_triage": "Сортировка идей",
-  "task_runner": "Задачи",
-  "projects": "Проекты"
+  "projects": "Проекты",
+  "task_runner": "Пульт выполнения",
+  "group_advanced": "Дополнительно",
+  "group_build": "Создание",
+  "group_connect": "Подключение",
+  "group_credentials": "Учётные данные",
+  "group_drafts": "Сборки черновиков",
+  "group_general": "Общие",
+  "group_home": "Главная",
+  "group_llm": "LLM",
+  "group_maintain": "Обслуживание",
+  "group_memory": "Память",
+  "group_monitoring": "Мониторинг",
+  "group_operations": "Операции",
+  "group_plugins": "Плагины",
+  "group_templates": "Шаблоны"
 }

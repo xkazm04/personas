@@ -48,5 +48,6 @@
   "try_auto_discovery": "स्वतः-खोज फिर से आज़माएं",
   "enter_slugs_manually": "इसके बजाय स्लग मैन्युअल रूप से दर्ज करें",
   "today_activity_heading": "आज",
-  "pipeline_heading": "पाइपलाइन"
+  "pipeline_heading": "पाइपलाइन",
+  "connections_heading": "कनेक्शन"
 }

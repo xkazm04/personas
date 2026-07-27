@@ -13,6 +13,13 @@ the user fills in to customize it. Adopting a template seeds a
 `persona_design_reviews` row and walks the user through the Matrix
 Adoption flow, ending in a tested + promoted persona.
 
+> **Where it lives in the UI (changed 2026-07-27).** Templates is no longer a
+> top-level sidebar section. It is now the **Templates group inside the
+> Connections** Level-2 nav — the registry marks it `reachability: 'nested'`
+> with `parent: 'credentials'`. The section id (`design-reviews`), its route,
+> its tabs, and every `setSidebarSection('design-reviews')` deep link are
+> unchanged; only the entry point moved.
+
 The system has five layers worth documenting separately:
 
 | Doc | Scope | Read when… |

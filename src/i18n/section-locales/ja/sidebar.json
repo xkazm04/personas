@@ -77,7 +77,20 @@
   "manage": "管理",
   "context_map": "コンテキストマップ",
   "idea_scanner": "アイデアスキャナー",
-  "idea_triage": "アイデアトリアージ",
-  "task_runner": "タスクランナー",
-  "projects": "プロジェクト"
+  "projects": "プロジェクト",
+  "task_runner": "実行デスク",
+  "group_advanced": "詳細",
+  "group_build": "作成",
+  "group_connect": "接続",
+  "group_credentials": "認証情報",
+  "group_drafts": "下書きビルド",
+  "group_general": "一般",
+  "group_home": "ホーム",
+  "group_llm": "LLM",
+  "group_maintain": "保守",
+  "group_memory": "メモリ",
+  "group_monitoring": "モニタリング",
+  "group_operations": "運用",
+  "group_plugins": "プラグイン",
+  "group_templates": "テンプレート"
 }

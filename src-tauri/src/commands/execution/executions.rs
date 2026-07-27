@@ -51,6 +51,13 @@ pub fn list_executions_summary(
     repo::list_items_by_persona_id(&state.db, &persona_id, limit, offset)
 }
 
+/// Rolling window applied to the Activity list: executions older than this
+/// are excluded server-side so the frontend never pages through/renders
+/// stale history it doesn't want. Kept as a command-layer constant (not baked
+/// into `repo::get_all_global`) because that repo function also backs the
+/// management HTTP API, which wants unfiltered history.
+const ACTIVITY_LIST_WINDOW_DAYS: i64 = 30;
+
 #[tauri::command]
 pub fn list_all_executions(
     state: State<'_, Arc<AppState>>,
@@ -59,7 +66,15 @@ pub fn list_all_executions(
     persona_id: Option<String>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all_global(&state.db, limit, status.as_deref(), persona_id.as_deref())
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS))
+        .to_rfc3339();
+    repo::get_all_global(
+        &state.db,
+        limit,
+        status.as_deref(),
+        persona_id.as_deref(),
+        Some(&cutoff),
+    )
 }
 
 /// Return precise counts for the Activity filter badges (total / running /

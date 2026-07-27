@@ -77,12 +77,22 @@ function SortHeaders({ sort, skillLabel, usageLabel }: { sort: ReturnType<typeof
   );
 }
 
-/** Group divider — the ONLY place a group name appears. */
-function GroupDivider({ children }: { children: React.ReactNode }) {
+// Deterministic dot color per group label so repeated renders (and the two
+// fixed "tracked/standard" groups on the right panel) stay visually stable.
+const GROUP_DOT_COLORS = ['bg-amber-400/70', 'bg-blue-400/70', 'bg-violet-400/70', 'bg-emerald-400/70', 'bg-pink-400/70', 'bg-cyan-400/70'];
+function groupDotColor(label: string): string {
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) >>> 0;
+  return GROUP_DOT_COLORS[hash % GROUP_DOT_COLORS.length]!;
+}
+
+/** Group band — the ONLY place a group name appears (Pattern B grouped-list band). */
+function GroupDivider({ count, children }: { count: number; children: string }) {
   return (
-    <div className="flex items-center gap-2 pt-3 pb-1">
-      <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/40 flex-shrink-0">{children}</span>
-      <span className="flex-1 h-px bg-foreground/10" />
+    <div className="flex items-center gap-2 py-1.5 bg-secondary/10 border-b border-primary/5 -mx-3 px-3">
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${groupDotColor(children)}`} />
+      <span className="typo-title truncate">{children}</span>
+      <span className="typo-caption text-foreground/50 tabular-nums">{count}</span> {/* muted-ok: Pattern B group-band count, matches ContextLedger.tsx */}
     </div>
   );
 }
@@ -127,11 +137,11 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
       >
         {wsGroups.map(([cat, rows]) => (
           <div key={cat}>
-            <GroupDivider>{cat}</GroupDivider>
-            <ul>
+            <GroupDivider count={rows.length}>{cat}</GroupDivider>
+            <ul className="divide-y divide-primary/5">
               {rows.map(({ entry, usage, installed }) => (
-                <li key={entry.name} className="group flex items-center gap-2 py-2 border-b border-foreground/[0.08] last:border-b-0">
-                  <span className={`typo-caption font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
+                <li key={entry.name} className="group flex items-center gap-2 py-2">
+                  <span className={`typo-body font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
                   {installed && (
                     <span title={tx(d.skills_installed_in, { name: projectName })} className="flex-shrink-0 inline-flex">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
@@ -169,18 +179,18 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
       >
         {tracked.length > 0 && (
           <>
-            <GroupDivider>{d.skills_group_tracked}</GroupDivider>
-            <ul>
+            <GroupDivider count={tracked.length}>{d.skills_group_tracked}</GroupDivider>
+            <ul className="divide-y divide-primary/5">
               {tracked.map((r) => (
                 <li key={r.entry.name}>
                   <button
                     type="button"
                     onClick={() => onOpenContexts(r.entry.name)}
-                    className="group w-full flex items-center gap-2 py-2 border-b border-foreground/[0.08] last:border-b-0 text-left hover:bg-primary/[0.04] rounded-interactive px-1 -mx-1 transition-colors"
+                    className="group w-full flex items-center gap-2 py-2 text-left hover:bg-secondary/10 rounded-interactive px-1 -mx-1 transition-colors"
                     data-testid={`skills-manager-proj-${r.entry.name}`}
                   >
                     <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
-                    <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
+                    <span className="typo-body font-medium text-foreground truncate">{r.entry.name}</span>
                     <CoverageBar row={r.coverage} total={totalContexts} />
                     <RowTail row={r} busy={busy} onShare={onShare} />
                   </button>
@@ -191,12 +201,12 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         )}
         {plain.length > 0 && (
           <>
-            <GroupDivider>{d.skills_group_standard}</GroupDivider>
-            <ul>
+            <GroupDivider count={plain.length}>{d.skills_group_standard}</GroupDivider>
+            <ul className="divide-y divide-primary/5">
               {plain.map((r) => (
-                <li key={r.entry.name} className="group flex items-center gap-2 py-2 border-b border-foreground/[0.08] last:border-b-0 px-1 -mx-1">
+                <li key={r.entry.name} className="group flex items-center gap-2 py-2 px-1 -mx-1">
                   <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
-                  <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
+                  <span className="typo-body font-medium text-foreground truncate">{r.entry.name}</span>
                   <RowTail row={r} busy={busy} onShare={onShare} />
                 </li>
               ))}

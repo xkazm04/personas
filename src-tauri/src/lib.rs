@@ -848,6 +848,20 @@ pub fn run() {
             }
             st.checkpoint("approval_recovery");
 
+            // Reconcile the workspace adoption queue against the backlog: any
+            // `to_process` cell of an adopted actionable practice that has no
+            // materialized idea gets one (docs/plans/workspace-knowledge-center.md
+            // + plan 1C). Idempotent and dedup-gated — one indexed join and no
+            // writes when the queue is already drained.
+            match db::repos::dev_workspaces::backfill_practice_ideas(&pool) {
+                Ok(n) if n > 0 => {
+                    tracing::info!("Startup: materialized {} workspace-practice backlog idea(s)", n)
+                }
+                Err(e) => tracing::warn!("Failed to backfill workspace practice ideas: {}", e),
+                _ => {}
+            }
+            st.checkpoint("practice_idea_backfill");
+
             // Purge old completed/failed events to prevent unbounded table growth
             match db::repos::communication::events::cleanup(&pool, Some(7)) {
                 Ok(n) if n > 0 => tracing::info!("Startup: cleaned up {} old events", n),
@@ -2752,6 +2766,8 @@ pub fn run() {
             commands::companion::mcp_bridge::companion_mcp_pending_snapshot,
             #[cfg(feature = "test-automation")]
             commands::companion::approvals::companion_list_pending_approvals,
+            commands::companion::backlog_triage::dev_tools_athena_triage_batch,
+            commands::companion::backlog_triage::dev_tools_apply_triage_verdicts,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
@@ -3035,6 +3051,7 @@ pub fn run() {
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_list,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_adoption_set,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_run_miners,
+            commands::infrastructure::dev_workspaces::dev_tools_workspace_backfill_practice_ideas,
             commands::infrastructure::dev_workspaces::dev_tools_workspace_project_practices,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_harvest_prepare,
             commands::infrastructure::workspace_harvest::dev_tools_workspace_knowledge_ingest,
@@ -3166,6 +3183,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_accept_idea,
             commands::infrastructure::dev_tools::dev_tools_reject_idea,
             commands::infrastructure::dev_tools::dev_tools_list_pending_ideas,
+            commands::infrastructure::dev_tools::dev_tools_triage_ideas,
             commands::infrastructure::dev_tools::dev_tools_delete_idea,
             commands::infrastructure::dev_tools::dev_tools_bulk_delete_ideas,
             // Dev Tools -- Scans
@@ -3184,12 +3202,18 @@ pub fn run() {
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,
             commands::infrastructure::dev_tools::dev_tools_create_task,
+            commands::infrastructure::dev_tools::dev_tools_update_task,
+            commands::infrastructure::dev_tools::dev_tools_delete_task,
+            commands::infrastructure::dev_tools::dev_tools_tasks_page,
+            commands::infrastructure::dev_tools::dev_tools_retry_task,
+            commands::infrastructure::dev_tools::dev_tools_dispatch_ideas,
             // Dev Tools -- Task Executor (CLI-powered)
             commands::infrastructure::task_executor::dev_tools_execute_task,
             commands::infrastructure::task_executor::dev_tools_start_batch,
             commands::infrastructure::task_executor::dev_tools_cancel_task_execution,
             commands::infrastructure::task_executor::dev_tools_start_auto_run,
             commands::infrastructure::task_executor::dev_tools_cancel_auto_run,
+            commands::infrastructure::task_executor::dev_tools_get_auto_run_status,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,

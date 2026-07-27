@@ -5,7 +5,7 @@
  * data comes from the shared composer.
  */
 import { useMemo, useState } from 'react';
-import { Search, Zap, Bot, Cog, Store, Globe } from 'lucide-react';
+import { Search, Zap, Bot, Cog, Store, Globe, X } from 'lucide-react';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import type { SystemOpKindMeta } from '@/api/systemOps';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
@@ -51,7 +51,7 @@ function SearchField({ query, onQuery, placeholder }: { query: string; onQuery: 
   );
 }
 
-export function StudioSourceRail({ c }: { c: StudioComposer }) {
+export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: () => void }) {
   const { tx, st } = c;
   const [sourceKind, setSourceKind] = useState<'signals' | 'personas'>('signals');
   const [query, setQuery] = useState('');
@@ -77,8 +77,17 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
   );
 
   return (
-    <div className="w-72 border-r border-border flex flex-col min-h-0 bg-card/30">
+    <div className="w-72 h-full border-r border-border flex flex-col min-h-0 bg-card/95 backdrop-blur">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="typo-label uppercase tracking-wide text-foreground">{st.sources_title}</span>
+          {onClose && (
+            <button type="button" onClick={onClose} aria-label={st.close_sources_rail}
+              className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         <SegmentedTabs<'signals' | 'personas'>
           tabs={[
             { id: 'signals', label: <><Zap className="w-3.5 h-3.5 text-amber-400" />{st.group_signals}</> },
@@ -161,7 +170,7 @@ export function StudioSourceRail({ c }: { c: StudioComposer }) {
   );
 }
 
-export function StudioTargetRail({ c }: { c: StudioComposer }) {
+export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: () => void }) {
   const { tx, st } = c;
   const [targetKind, setTargetKind] = useState<'personas' | 'system'>('personas');
   const [query, setQuery] = useState('');
@@ -173,8 +182,17 @@ export function StudioTargetRail({ c }: { c: StudioComposer }) {
   );
 
   return (
-    <div className="w-72 border-l border-border flex flex-col min-h-0 bg-card/30">
+    <div className="w-72 h-full border-l border-border flex flex-col min-h-0 bg-card/95 backdrop-blur">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="typo-label uppercase tracking-wide text-foreground">{st.targets_title}</span>
+          {onClose && (
+            <button type="button" onClick={onClose} aria-label={st.close_targets_rail}
+              className="p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
         <SegmentedTabs<'personas' | 'system'>
           tabs={[
             { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{st.targets_title}</> },

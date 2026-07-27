@@ -26,7 +26,6 @@ function view(partial: Partial<KnowledgeItemView>): KnowledgeItemView {
     createdAt: partial.createdAt ?? '2026-01-01T00:00:00Z',
     updatedAt: partial.updatedAt ?? '2026-01-01T00:00:00Z',
     confidence: partial.confidence ?? null,
-    mock: partial.mock,
   };
 }
 

@@ -48,5 +48,6 @@
   "try_auto_discovery": "Reintentar descubrimiento automático",
   "enter_slugs_manually": "Introducir los slugs manualmente",
   "today_activity_heading": "HOY",
-  "pipeline_heading": "Pipeline"
+  "pipeline_heading": "Pipeline",
+  "connections_heading": "Conexiones"
 }

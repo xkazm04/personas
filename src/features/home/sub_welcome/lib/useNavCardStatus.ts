@@ -5,7 +5,8 @@
  * type-icon (+ optional 24h-vs-prior-24h trend arrow). The metrics:
  *  - overview:   open incidents, unread messages, pending reviews
  *  - teams:      number of teams
- *  - personas:   distinct agents that ran in the last 24h, trend vs prior day
+ *  - personas:   distinct agents that ran in the last 24h (+ trend vs prior day),
+ *               plus the total enabled/configured fleet size
  *  - events:     events in the last 24h, trend vs prior day
  *  - credentials: external (3rd-party) connections + built-in/local connectors
  *
@@ -21,11 +22,12 @@
  */
 import { useEffect, useMemo } from 'react';
 import {
-  Activity, AlertOctagon, ClipboardCheck, HardDrive, Key, MessageSquare, Users, Zap,
+  Activity, AlertOctagon, Bot, ClipboardCheck, HardDrive, Key, MessageSquare, Users, Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { useAttention } from '@/hooks/useAttention';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Window2 } from '@/stores/slices/overview/homeSpineWindows';
@@ -66,8 +68,13 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
   const agents = useOverviewStore((s) => s.homeActivePersonaWindow) ?? ZERO_WINDOW;
   const events = useOverviewStore((s) => s.homeEventWindow) ?? ZERO_WINDOW;
 
-  // ONE credentials source — the canonical vault store (shared with FleetHealthStrip).
+  // ONE credentials source — the canonical vault store.
   const creds = useVaultCredentials();
+
+  // "Active agents" = ENABLED personas (the configured fleet), distinct from
+  // `agents.curr` above (personas that actually ran in the last 24h). Folded in
+  // from the retired FleetHealthStrip — mirrors its enabled !== false convention.
+  const enabledAgents = useAgentStore((s) => s.personas.filter((p) => p.enabled !== false).length);
 
   // Trigger the shared fetches when cold. `primeHomeSpine` is TTL-guarded, so
   // calling it on every mount is cheap and dedupes across Home surfaces.
@@ -95,11 +102,16 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     // Teams — always show the count (card only renders on Team+ tiers).
     status.teams = [{ key: 'teams', value: teams.length, icon: Users, tone: 'sky', title: tx(teams.length === 1 ? ns.teams : ns.teams_other, { count: teams.length }) }];
 
-    // Agents — distinct active in last 24h + trend.
+    // Agents — distinct active in last 24h + trend (primary, top-right: the
+    // live/actionable metric), then the total enabled/configured fleet size
+    // (secondary, top-left — folded in from the retired FleetHealthStrip).
     {
       const trend = trendOf(agents.curr, agents.prev);
       const base = tx(agents.curr === 1 ? ns.agents_active : ns.agents_active_other, { count: agents.curr });
-      status.personas = [{ key: 'agents', value: agents.curr, icon: Activity, tone: 'cyan', trend, title: `${base} · ${trendTitle(trend, pctChange(agents.curr, agents.prev))}` }];
+      status.personas = [
+        { key: 'agents', value: agents.curr, icon: Activity, tone: 'cyan', trend, title: `${base} · ${trendTitle(trend, pctChange(agents.curr, agents.prev))}` },
+        { key: 'enabled', value: enabledAgents, icon: Bot, tone: 'sky', title: tx(enabledAgents === 1 ? ns.agents_enabled : ns.agents_enabled_other, { count: enabledAgents }) },
+      ];
     }
 
     // Events — volume in last 24h + trend.
@@ -120,5 +132,5 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
     }
 
     return status;
-  }, [incidents, counts.unread_messages, counts.pending_reviews, teams.length, agents, events, creds, ns, tx]);
+  }, [incidents, counts.unread_messages, counts.pending_reviews, teams.length, agents, enabledAgents, events, creds, ns, tx]);
 }

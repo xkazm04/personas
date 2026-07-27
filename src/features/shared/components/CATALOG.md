@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**120 reusable components** live under `src/features/shared/components/`.
+**121 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -48,6 +48,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |
 | `EmptyIllustration` | _(add a `@catalog` tag)_ |
+| `FacetedDecisionTable` | Left group-rail + toolbar + DataGrid table over a derived slash-path facet tree. |
 | `FieldHint` | Valid value range, e. |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
 | `HeroMesh` | _(add a `@catalog` tag)_ |
@@ -194,4 +195,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_120 components, 43 without a `@catalog` description._
+_121 components, 43 without a `@catalog` description._

@@ -11,7 +11,7 @@ import {
   type GatePredicate,
 } from "@/lib/navigation/history";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab, ApprovalsMode } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /**
@@ -126,6 +126,9 @@ export interface UiSlice {
   pendingLifecycleSubTab: 'setup' | 'competitions' | 'tracking' | null;
   /** Pending task ID to scroll-into-view + highlight when TaskRunner next mounts (e.g. from a goal-spotlight task click). */
   pendingTaskFocusId: string | null;
+  /** Pending Approvals decision mode applied when ManualReviewList next mounts
+   *  (e.g. the Context Map's idea-coverage badge handing off to the Backlog). */
+  pendingApprovalsMode: ApprovalsMode | null;
   /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
   pendingGoalSpotlightId: string | null;
 
@@ -238,6 +241,7 @@ export interface UiSlice {
   setPendingCatalogCategoryFilter: (category: string | null) => void;
   setPendingLifecycleSubTab: (tab: 'setup' | 'competitions' | 'tracking' | null) => void;
   setPendingTaskFocusId: (id: string | null) => void;
+  setPendingApprovalsMode: (mode: ApprovalsMode | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
@@ -381,6 +385,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingCatalogCategoryFilter: null,
   pendingLifecycleSubTab: null,
   pendingTaskFocusId: null,
+  pendingApprovalsMode: null,
   pendingGoalSpotlightId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
@@ -490,6 +495,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
   setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
   setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
+  setPendingApprovalsMode: (mode) => set({ pendingApprovalsMode: mode }),
   setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),

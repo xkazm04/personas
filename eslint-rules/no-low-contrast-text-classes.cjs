@@ -20,8 +20,15 @@
  *   - Direct accent colors on badges: `text-cyan-400`, `text-emerald-400`
  *     (the badge color IS the signal — not a contrast tradeoff)
  *   - `text-foreground/85` and above (effectively the same as text-foreground)
- *   - Lines that explicitly opt out with `eslint-disable-next-line` or a
- *     trailing comment `// muted-ok: <reason>`
+ *   - Lines that explicitly opt out with `eslint-disable-next-line`, or carry a
+ *     `muted-ok: <reason>` comment on the same line or the line above. Both
+ *     comment forms work — `// muted-ok: …` in plain TS, and `{/* muted-ok: … *\/}`
+ *     inside JSX, where a line comment is not syntactically possible. **The
+ *     reason is required**; a bare `muted-ok:` does not suppress.
+ *
+ *     Legitimate use is narrow: structural micro-labels (a group-band count, a
+ *     column header) — chrome that helps you LOCATE content. It is never a way
+ *     to mute body copy. See the grouped-list pattern in ContextLedger.tsx.
  *
  * Mapping guide:
  *   text-muted-foreground/60   → text-foreground
@@ -162,6 +169,32 @@ module.exports = {
       return null;
     }
 
+    // `muted-ok: <reason>` escape hatch. Documented in this file's header since
+    // the rule shipped, but never actually implemented — so the only way out was
+    // a blanket `eslint-disable-next-line`, which kills the whole rule for that
+    // line and records no reason.
+    //
+    // Both comment forms are accepted, because the header's `// muted-ok:` is
+    // unusable in the one place the hatch is most needed: you cannot write a
+    // line comment inside JSX, so an annotation next to a className has to be
+    // `{/* muted-ok: … */}`. A reason after the colon is REQUIRED — a bare
+    // opt-out with no justification is what turns an escape hatch into a hole.
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
+    const MUTED_OK_RE = /(^|\s)muted-ok:\s*\S/;
+
+    function hasMutedOkComment(reportNode) {
+      const startLine = reportNode.loc.start.line;
+      const endLine = reportNode.loc.end.line;
+      return sourceCode.getAllComments().some((c) => {
+        if (!MUTED_OK_RE.test(c.value)) return false;
+        const cl = c.loc.start.line;
+        // Same line as the class string, the line directly above it, or — for
+        // multi-line className attributes, which report on an inner quasi —
+        // the attribute's closing line.
+        return cl === startLine || cl === startLine - 1 || cl === endLine;
+      });
+    }
+
     return {
       JSXAttribute(node) {
         if (node.name.name !== "className") return;
@@ -169,7 +202,7 @@ module.exports = {
         const parts = extractStrings(node.value);
         for (const { value, node: reportNode } of parts) {
           const violation = findViolation(value);
-          if (violation) {
+          if (violation && !hasMutedOkComment(reportNode)) {
             context.report({
               node: reportNode,
               messageId: violation.messageId,

@@ -12,7 +12,13 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { WorkspacePracticeAdoption } from '@/lib/bindings/WorkspacePracticeAdoption';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { computeDigest, computeHealth, type Pillar, type PillarKey } from './libraryPulse';
+import {
+  computeDigest,
+  computeHealth,
+  countToProcess,
+  type Pillar,
+  type PillarKey,
+} from './libraryPulse';
 import type { KnowledgeItemView } from './libraryModel';
 
 /** Health reads green only when it is genuinely healthy — the thresholds are
@@ -90,6 +96,7 @@ export function WorkspacePulse({
   const now = useMemo(() => new Date().toISOString(), []);
   const digest = useMemo(() => computeDigest(items, now), [items, now]);
   const health = useMemo(() => computeHealth(items, adoptions, now), [items, adoptions, now]);
+  const toProcess = useMemo(() => countToProcess(items, adoptions), [items, adoptions]);
 
   const pillarCopy: Record<PillarKey, { label: string; hint: string }> = {
     governance: { label: w.pulse_governance, hint: w.pulse_governance_hint },
@@ -160,9 +167,18 @@ export function WorkspacePulse({
         </div>
       </div>
 
-      {digest.pending.length > 0 && (
-        <p className="typo-caption text-muted-foreground mt-2">
-          {tx(w.pulse_pending, { count: digest.pending.length })}
+      {(digest.pending.length > 0 || toProcess > 0) && (
+        <p className="typo-caption text-muted-foreground mt-2 flex items-center gap-2 flex-wrap">
+          {digest.pending.length > 0 && (
+            <span>{tx(w.pulse_pending, { count: digest.pending.length })}</span>
+          )}
+          {/* The other half of the ladder: adoption is only real once some repo
+              owes work for it. These cells are what an executor will drain. */}
+          {toProcess > 0 && (
+            <span className="text-status-warning">
+              {tx(w.pulse_to_process, { count: toProcess })}
+            </span>
+          )}
         </p>
       )}
 

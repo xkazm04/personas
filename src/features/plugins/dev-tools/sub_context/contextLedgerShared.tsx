@@ -13,6 +13,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import type { Translations } from '@/i18n/en';
@@ -121,7 +122,7 @@ export function CoverageChip({ icon, count, label, stem, onJump, jumpTitle }: Co
 
 /** The standard five-metric coverage cluster for one context. Goals and ideas
  *  are click-through: they hand off to the Goals board (seeding the spotlight)
- *  and the idea-triage queue respectively — the shortcuts the old ContextCard
+ *  and the unified Backlog respectively — the shortcuts the old ContextCard
  *  badges carried, preserved on the ledger row. */
 export function ContextCoverage({
   fileCount,
@@ -148,12 +149,22 @@ export function ContextCoverage({
 }) {
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setPendingApprovalsMode = useSystemStore((s) => s.setPendingApprovalsMode);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const jumpToGoals = () => {
     if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
     openGoalsBoard();
   };
-  const jumpToIdeas = () => setDevToolsTab('idea-triage');
+  // Idea Triage is gone — the ideas raised against a context are triaged in
+  // Approvals › Backlog now. Seed the pending mode BEFORE navigating so
+  // ManualReviewList reads it on the mount this click causes.
+  const jumpToIdeas = () => {
+    setPendingApprovalsMode('backlog');
+    setSidebarSection('overview');
+    setOverviewTab('manual-review');
+  };
   const jumpToErrors = () => setDevToolsTab('overview');
 
   return (

@@ -103,13 +103,14 @@ interface ListConnectionsResult {
 }
 
 async function navigateToPresetsTab(): Promise<void> {
-  // L1: Templates section. The sidebar uses `sidebar-design-reviews` per
-  // the SidebarLevel1 convention (`sidebar-${section.id}`); design-reviews
-  // is the legacy id for the Templates sidebar.
-  await clickTestId('sidebar-design-reviews');
-  await waitForVisible('[data-testid="templates-page"]', 8_000);
-  // L2: Presets sub-tab. SubNav buttons are `tab-${item.id}`.
+  // L1: Connections. Templates was folded into Connections on 2026-07-27 —
+  // it no longer has a rail button of its own (registry reachability
+  // 'nested'), so the entry point is the Connections rail item and the
+  // "Templates" group inside its L2 nav.
+  await clickTestId('sidebar-credentials');
+  // L2: Presets, in the Templates group. Nav buttons are `tab-${item.id}`.
   await clickTestId('tab-presets');
+  await waitForVisible('[data-testid="templates-page"]', 8_000);
   await waitForVisible('[data-testid="preset-library-page"]', 8_000);
 }
 

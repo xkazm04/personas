@@ -733,7 +733,11 @@
     "reflect_scope_hint": "يدمج مجموعة الذكريات المختارة في رؤى دائمة. النتيجة اقتراح تراجعه في نظرة عامة ← الذكريات — لا يتغير شيء دون موافقتك.",
     "reflect_scope_label": "التأمّل في",
     "reflect_scope_team": "فريق",
-    "reflection_label": "تأمّل الذاكرة"
+    "reflection_label": "تأمّل الذاكرة",
+    "close_sources_rail": "إخفاء لوحة المصادر",
+    "close_targets_rail": "إخفاء لوحة الأهداف",
+    "open_sources_rail": "إظهار لوحة المصادر",
+    "open_targets_rail": "إظهار لوحة الأهداف"
   },
   "trigger_configured": "تم ضبط المحفّز",
   "secret_label": "سري",

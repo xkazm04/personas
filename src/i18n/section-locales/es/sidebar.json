@@ -77,7 +77,20 @@
   "manage": "Gestionar",
   "context_map": "Mapa de contexto",
   "idea_scanner": "Escáner de ideas",
-  "idea_triage": "Clasificación de ideas",
-  "task_runner": "Ejecutor de tareas",
-  "projects": "Proyectos"
+  "projects": "Proyectos",
+  "task_runner": "Mesa de ejecución",
+  "group_advanced": "Avanzado",
+  "group_build": "Crear",
+  "group_connect": "Conectar",
+  "group_credentials": "Credenciales",
+  "group_drafts": "Borradores en construcción",
+  "group_general": "General",
+  "group_home": "Inicio",
+  "group_llm": "LLM",
+  "group_maintain": "Mantenimiento",
+  "group_memory": "Memoria",
+  "group_monitoring": "Monitoreo",
+  "group_operations": "Operaciones",
+  "group_plugins": "Plugins",
+  "group_templates": "Plantillas"
 }

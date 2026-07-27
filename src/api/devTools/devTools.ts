@@ -23,6 +23,12 @@ import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
 import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
+import type { TriagePage } from "@/lib/bindings/TriagePage";
+import type { TasksPage } from "@/lib/bindings/TasksPage";
+import type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
+import type { AthenaTriageBatch } from "@/lib/bindings/AthenaTriageBatch";
+import type { AppliedTriage } from "@/lib/bindings/AppliedTriage";
+import type { DispatchIdeasResult } from "@/lib/bindings/DispatchIdeasResult";
 
 // ---------------------------------------------------------------------------
 // Safe invoke helper — hoisted to `@/lib/utils/tauri/safeInvoke` (Wave 5).
@@ -49,6 +55,10 @@ export type { DevScan } from "@/lib/bindings/DevScan";
 export type { DevTask } from "@/lib/bindings/DevTask";
 export type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 export type { TriageRule } from "@/lib/bindings/TriageRule";
+export type { TriagePage } from "@/lib/bindings/TriagePage";
+export type { TriageCounts } from "@/lib/bindings/TriageCounts";
+export type { TasksPage } from "@/lib/bindings/TasksPage";
+export type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 
 // ============================================================================
 // Projects
@@ -745,6 +755,9 @@ export const FINDING_ORIGINS = [
   "doc_rot",
   "kpi_sim",
   "memory_disputed",
+  // Not a measurement sensor — the Workspace Knowledge Center materializing an
+  // adopted practice as one backlog item per member repo (plan 1C).
+  "workspace_practice",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -864,11 +877,29 @@ export const runStaticScan = (projectId: string, configOverride?: StaticScanConf
 // Triage
 // ============================================================================
 
-const EMPTY_TRIAGE = { ideas: [] as DevIdea[], cursor: null, has_more: false, counts: { total: 0, pending: 0, accepted: 0, rejected: 0 } };
+export interface TriageIdeasFilters {
+  /** Defaults to `pending` backend-side. */
+  status?: string;
+  /** `scanner` is the pseudo-origin for classic scanner ideas (`origin IS NULL`). */
+  origin?: string;
+  category?: string;
+}
 
-export const triageIdeas = (projectId: string, limit?: number, cursor?: string) =>
-  safeInvoke<typeof EMPTY_TRIAGE>(EMPTY_TRIAGE, "dev_tools_triage_ideas", {
-    projectId,
+/** One keyset page of backlog ideas + facet counts.
+ *
+ *  Was a phantom command until the unified-Backlog work: it lived in
+ *  `commandNames.overrides.ts` and `safeInvoke` silently returned an empty
+ *  page, so every triage surface rendered "nothing to review" regardless of
+ *  the backlog's real contents. It is a real registered command now, so this
+ *  is a plain typed invoke — a missing command must surface, not fake empty.
+ *
+ *  `projectId` omitted = cross-project read (the unified Backlog default). */
+export const triageIdeas = (projectId?: string, limit?: number, cursor?: string, filters?: TriageIdeasFilters) =>
+  invoke<TriagePage>("dev_tools_triage_ideas", {
+    projectId: projectId,
+    status: filters?.status,
+    origin: filters?.origin,
+    category: filters?.category,
     limit: limit,
     cursor: cursor,
   });
@@ -884,8 +915,11 @@ export const rejectIdea = (id: string, reason?: string) =>
 export const listPendingIdeas = (limit?: number) =>
   safeInvoke<DevIdea[]>([], "dev_tools_list_pending_ideas", { limit });
 
+/** Deleting a triage row IS deleting the idea — `dev_tools_delete_triage_idea`
+ *  never existed on the Rust side, so this used to no-op and the row came back
+ *  on the next fetch. Points at the real command. */
 export const deleteTriageIdea = (id: string) =>
-  safeInvoke<boolean>(false, "dev_tools_delete_triage_idea", { id });
+  invoke<boolean>("dev_tools_delete_idea", { id });
 
 // ============================================================================
 // Triage Rules
@@ -928,6 +962,21 @@ export const listTasks = (projectId?: string, status?: string, goalId?: string) 
     goalId: goalId,
   });
 
+/** Keyset page of tasks + per-status counts for the Run Desk.
+ *  `listTasks` stays for the callers that want the whole (unpaged) list. */
+export const tasksPage = (projectId?: string, statuses?: string[], limit?: number, cursor?: string) =>
+  invoke<TasksPage>("dev_tools_tasks_page", {
+    projectId: projectId,
+    statuses: statuses,
+    limit: limit,
+    cursor: cursor,
+  });
+
+/** Queue a fresh attempt of a task. The new row copies the original verbatim
+ *  (no `[Retry] ` title prefix); lineage lives in `parent_task_id`/`attempt`. */
+export const retryTask = (taskId: string) =>
+  invoke<DevTask>("dev_tools_retry_task", { taskId });
+
 export const createTask = (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string, depth?: string) =>
   invoke<DevTask>("dev_tools_create_task", {
     title,
@@ -937,6 +986,48 @@ export const createTask = (title: string, projectId?: string, description?: stri
     goalId: goalId,
     depth: depth,
   });
+
+// -- the accept → execute bridge + Athena batch triage ----------------------
+
+/**
+ * Dispatch accepted backlog ideas to an executor.
+ *
+ * `runner` creates the tasks AND starts them through the existing batch
+ * machinery. `fleet` creates the tasks and returns each one's project
+ * `rootPath` + composed `prompt` so the caller can `spawnSession` per project
+ * (the fleet arm stays frontend-composed in v1).
+ *
+ * Pending ideas are auto-accepted server-side — dispatching IS the decision.
+ */
+export const dispatchIdeas = (
+  ideaIds: string[],
+  target: "runner" | "fleet",
+  opts?: { depth?: string; maxParallel?: number },
+) =>
+  invoke<DispatchIdeasResult>("dev_tools_dispatch_ideas", {
+    ideaIds,
+    target,
+    depth: opts?.depth,
+    maxParallel: opts?.maxParallel,
+  });
+
+/**
+ * One headless Athena turn over up to 30 selected pending ideas. Persists the
+ * verdicts as a PENDING approval and returns them for the verdict card; nothing
+ * is applied until {@link applyTriageVerdicts} (or the plain Approvals card).
+ */
+export const athenaTriageBatch = (ideaIds: string[]) =>
+  invoke<AthenaTriageBatch>("dev_tools_athena_triage_batch", { ideaIds });
+
+/**
+ * Confirm a triage batch, with per-item human overrides layered over Athena's
+ * verdicts (`skip` leaves an idea untouched). Ideas are written first, the
+ * approval row is closed last.
+ */
+export const applyTriageVerdicts = (
+  approvalId: string,
+  overrides: { ideaId: string; verdict: "accept" | "reject" | "skip"; reason?: string }[],
+) => invoke<AppliedTriage>("dev_tools_apply_triage_verdicts", { approvalId, overrides });
 
 export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
   safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {
@@ -1082,6 +1173,12 @@ export const startAutoRun = (projectId: string, maxParallel?: number, maxIterati
 
 export const cancelAutoRun = (runId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_auto_run", { runId });
+
+/** Durable auto-run state for the Run Desk banner — the last `dev_auto_runs`
+ *  row for the project, flagged `live` when the in-memory scheduler still owns
+ *  it. Lets the banner rehydrate after a reload instead of forgetting the run. */
+export const getAutoRunStatus = (projectId?: string) =>
+  invoke<AutoRunStatus>("dev_tools_get_auto_run_status", { projectId: projectId ?? null });
 
 // ============================================================================
 // Cross-Project (Codebases connector)

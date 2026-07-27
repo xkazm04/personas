@@ -48,5 +48,6 @@
   "try_auto_discovery": "স্বয়ংক্রিয় আবিষ্কার আবার চেষ্টা করুন",
   "enter_slugs_manually": "পরিবর্তে ম্যানুয়ালি স্লাগ লিখুন",
   "today_activity_heading": "আজ",
-  "pipeline_heading": "পাইপলাইন"
+  "pipeline_heading": "পাইপলাইন",
+  "connections_heading": "সংযোগ"
 }

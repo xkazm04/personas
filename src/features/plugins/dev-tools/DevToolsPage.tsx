@@ -6,8 +6,7 @@ const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPag
 const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
 const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
-const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));
-const TaskRunnerPage = lazy(() => import('./sub_runner/TaskRunnerPage'));
+const RunDeskPage = lazy(() => import('./sub_runner/RunDeskPage'));
 const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 const WorkspacesPage = lazy(() => import('./sub_workspaces/WorkspacesPage'));
 const SkillsManagerPage = lazy(() => import('./sub_skills/SkillsManagerPage'));
@@ -34,8 +33,7 @@ export default function DevToolsPage() {
           {devToolsTab === 'llm-overview' && <LlmOverviewPage />}
           {devToolsTab === 'context-map' && <ContextMapPage />}
           {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
-          {devToolsTab === 'idea-triage' && <IdeaTriagePage />}
-          {devToolsTab === 'task-runner' && <TaskRunnerPage />}
+          {devToolsTab === 'task-runner' && <RunDeskPage />}
           {devToolsTab === 'fleet' && <FleetPage />}
           {devToolsTab === 'workspaces' && <WorkspacesPage />}
           {devToolsTab === 'skills' && <SkillsManagerPage />}

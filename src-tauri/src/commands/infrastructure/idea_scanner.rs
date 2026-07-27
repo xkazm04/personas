@@ -1060,20 +1060,19 @@ fn apply_triage_decision(
             let Some(p) = priority else { return false };
             repo::set_idea_priority(pool, idea_id, Some(p)).is_ok()
         }
-        "reject" => {
-            match repo::update_idea(
-                pool, idea_id, None, None, Some("rejected"), None, None, None, None,
-                Some(reason),
-            ) {
-                Ok(updated) => {
-                    super::dev_tools::record_idea_decision_by(
-                        pool, &updated, "rejected", "Strategist",
-                    );
-                    true
-                }
-                Err(_) => false,
-            }
-        }
+        // Routed through the shared verdict core (plan 1B) so the Strategist's
+        // rejection writes the same constraint memory a human's would AND
+        // diverges the workspace adoption cell when the idea was a
+        // materialized practice.
+        "reject" => super::dev_tools::apply_idea_verdict_by(
+            pool,
+            idea_id,
+            super::dev_tools::IdeaVerdict::Reject {
+                reason: reason.map(str::to_string),
+            },
+            "Strategist",
+        )
+        .is_ok(),
         _ => false,
     }
 }

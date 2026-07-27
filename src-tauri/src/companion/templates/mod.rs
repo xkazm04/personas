@@ -340,4 +340,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// main/aside tiers (effort ≥ medium) — the bench showed aggressive
 /// act-doctrine at LOW effort regresses awareness (re-spawns in-flight work),
 /// which is why the micro tier (`model_routing::MICRO`) gets no constitution.
-pub const CONSTITUTION_VERSION: u32 = 44;
+///
+/// v45 (batch backlog triage) documents `backlog_apply_triage` — a
+/// SYSTEM-created approval action Athena must recognize on the approval surface
+/// but must never emit from chat. It carries the accept/reject verdicts of one
+/// "Send to Athena" batch over the Approvals › Backlog tab; the ask "triage my
+/// backlog" is answered by pointing at that button, not by composing an op.
+pub const CONSTITUTION_VERSION: u32 = 45;

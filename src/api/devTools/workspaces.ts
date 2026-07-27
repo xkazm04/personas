@@ -18,7 +18,27 @@ import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePractice
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
 export type KnowledgeStatus = "observed" | "proposed" | "adopted" | "deprecated" | "rejected";
 export type KnowledgeDecision = "propose" | "adopt" | "reject" | "deprecate";
-export type AdoptionState = "na" | "proposed" | "dispatched" | "adopted" | "diverged";
+export type AdoptionState =
+  | "na"
+  | "proposed"
+  | "to_process"
+  | "dispatched"
+  | "adopted"
+  | "diverged";
+
+/**
+ * Kinds whose adoption implies WORK inside a member repo rather than a note to
+ * carry: a `pitfall` names something to remove, a `pattern` names something to
+ * converge on. Adopting one seeds every applicable member repo's adoption cell
+ * at `to_process` — the queue an executor drains — instead of the passive
+ * `proposed`. Mirrors `ACTIONABLE_KINDS` in
+ * src-tauri/src/db/repos/dev_workspaces.rs; keep the two in step.
+ */
+export const ACTIONABLE_KINDS: readonly KnowledgeKind[] = ["pitfall", "pattern"];
+
+export function isActionableKind(kind: string): boolean {
+  return (ACTIONABLE_KINDS as readonly string[]).includes(kind);
+}
 
 /** Parsed shape of `WorkspaceKnowledge.applicability` (stored as JSON text). */
 export interface Applicability {
@@ -162,6 +182,21 @@ export async function setWorkspaceAdoption(
     note,
     fleetKey,
   });
+}
+
+/**
+ * Reconcile the adoption queue against the backlog: every `to_process` cell of
+ * an adopted actionable practice that has no materialized idea yet gets one
+ * (one `dev_idea` per member project, `origin: 'workspace_practice'`).
+ *
+ * Idempotent — dedup-gated per `(project_id, dedup_key)` — so calling it twice
+ * creates nothing the second time. Also runs once at app start; this wrapper
+ * exists for queues seeded by paths that predate materialization, so the user
+ * never has to re-adopt a practice to unstick its backlog. Returns the number
+ * of ideas created.
+ */
+export async function backfillPracticeIdeas(): Promise<number> {
+  return invoke<number>('dev_tools_workspace_backfill_practice_ideas', {});
 }
 
 // -- extraction engine (Arc 2) -----------------------------------------------

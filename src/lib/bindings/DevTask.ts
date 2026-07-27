@@ -5,4 +5,14 @@ export type DevTask = { id: string, project_id: string | null, title: string, de
  * Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
  * or "deep_build" (full planning + implementation phases).
  */
-depth: string, };
+depth: string, 
+/**
+ * Retry lineage: the task this one was created as a re-attempt of.
+ * `None` = an original task. The chain is flat by construction — a retry
+ * of a retry points at its immediate parent, and `attempt` counts depth.
+ */
+parent_task_id: string | null, 
+/**
+ * 1 for an original task; `parent.attempt + 1` for each re-attempt.
+ */
+attempt: number, };

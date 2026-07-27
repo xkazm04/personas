@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count}件の組み込みコネクター",
     "trend_up": "前の24時間比で{pct}%増",
     "trend_down": "前の24時間比で{pct}%減",
-    "trend_flat": "前の24時間比で変化なし"
+    "trend_flat": "前の24時間比で変化なし",
+    "agents_enabled": "有効なエージェント {count} 件",
+    "agents_enabled_other": "有効なエージェント {count} 件"
   },
   "get_started": {
     "ask_cta": "アシスタントに聞く",

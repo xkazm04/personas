@@ -4,14 +4,22 @@ import { render, screen, fireEvent } from '@testing-library/react';
 // Succeeds ContextCard.test.tsx: the goal/idea coverage badges moved from the
 // card onto the ledger row when the Cross-tab ledger replaced the board, but the
 // click-through contract they carry (seed the spotlight → open Goals; open the
-// idea-triage queue) is the same and still worth pinning.
+// unified Approvals Backlog) is the same and still worth pinning.
 const setDevToolsTab = vi.fn();
 const setPendingGoalSpotlightId = vi.fn();
+const setSidebarSection = vi.fn();
+const setPendingApprovalsMode = vi.fn();
+const setOverviewTab = vi.fn();
 const openGoalsBoardMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ setDevToolsTab, setPendingGoalSpotlightId }),
+    selector({ setDevToolsTab, setPendingGoalSpotlightId, setSidebarSection, setPendingApprovalsMode }),
+}));
+
+vi.mock('@/stores/overviewStore', () => ({
+  useOverviewStore: (selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ setOverviewTab }),
 }));
 
 vi.mock('@/features/plugins/companion/guidance/appActions', () => ({
@@ -45,6 +53,9 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
   beforeEach(() => {
     setDevToolsTab.mockClear();
     setPendingGoalSpotlightId.mockClear();
+    setSidebarSection.mockClear();
+    setPendingApprovalsMode.mockClear();
+    setOverviewTab.mockClear();
     openGoalsBoardMock.mockClear();
   });
 
@@ -76,10 +87,15 @@ describe('ContextCoverage — the ledger row\'s metric cluster', () => {
     expect(openGoalsBoardMock).toHaveBeenCalled();
   });
 
-  it('clicking the idea metric jumps to the triage queue', () => {
+  it('clicking the idea metric jumps to Approvals › Backlog', () => {
     renderCoverage({ ideaCount: 5 });
     fireEvent.click(screen.getByTitle('Open triage'));
-    expect(setDevToolsTab).toHaveBeenCalledWith('idea-triage');
+    // The pending mode must be seeded BEFORE the navigation, or ManualReviewList
+    // mounts on `reviews` and the handoff silently lands on the wrong tab.
+    expect(setPendingApprovalsMode).toHaveBeenCalledWith('backlog');
+    expect(setSidebarSection).toHaveBeenCalledWith('overview');
+    expect(setOverviewTab).toHaveBeenCalledWith('manual-review');
+    expect(setDevToolsTab).not.toHaveBeenCalled();
   });
 
   it('a metric click does not bubble to the row (which would open the context)', () => {

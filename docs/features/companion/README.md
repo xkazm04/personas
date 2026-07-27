@@ -127,6 +127,8 @@ Athena runs **many conversations at once — one mind, many threads.** Each conv
 
 Athena actions can create pending approvals. The panel lists them through `companion_list_pending_approvals` and resolves them through `companion_approve_action` or `companion_reject_action`.
 
+**Not every approval comes from a chat turn.** `backlog_apply_triage` is created by the app, not by Athena's grammar: pressing **Send to Athena** on Approvals › Backlog runs one headless micro-tier turn (`companion/proactive/backlog_triage.rs`) over up to 30 selected `dev_ideas` and persists its per-item accept/reject verdicts as a pending approval whose params are the verdict list. Approving that card applies every verdict through the shared `apply_idea_verdict_by(..., "Athena")` core (`execute_backlog_apply_triage`); the Backlog's own verdict card takes a second door — `dev_tools_apply_triage_verdicts` — which layers per-item human overrides on first. It is **deliberately absent from `AUTOAPPROVE_ALLOWLIST`**: the reject arm writes a durable `constraint` memory per item, so an unreviewed batch could quietly teach the whole loop never to re-propose a month of work. Ideas (main DB) are written before the approval row (user DB) is closed, and verdict application is idempotent, so a crash between the two pools replays safely.
+
 Events:
 
 - `companion://approvals`: newly created approval rows.

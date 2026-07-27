@@ -603,6 +603,62 @@ pub(crate) fn execute_enqueue_dev_job(
     )))
 }
 
+/// `backlog_apply_triage` — apply one batch of Athena backlog verdicts.
+///
+/// This is the PLAIN door: approving the card from the Approvals list applies
+/// Athena's verdicts exactly as she gave them. The Backlog's verdict card takes
+/// the other door (`dev_tools_apply_triage_verdicts`), which is this plus
+/// per-item human overrides; both end in the same idempotent
+/// `apply_idea_verdict_by(..., "Athena")` core.
+///
+/// Never auto-fires: `backlog_apply_triage` is deliberately absent from
+/// `AUTOAPPROVE_ALLOWLIST` (see the comment there).
+pub(crate) fn execute_backlog_apply_triage(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::commands::companion::backlog_triage::parse_items;
+    use crate::commands::infrastructure::dev_tools::{apply_idea_verdict_by, IdeaVerdict};
+
+    let items = parse_items(params)?;
+    let mut accepted = 0u32;
+    let mut rejected = 0u32;
+    let mut failed: Vec<String> = Vec::new();
+
+    for item in &items {
+        let verdict = if item.verdict == "accept" {
+            IdeaVerdict::Accept
+        } else {
+            IdeaVerdict::Reject {
+                reason: Some(item.reason.clone()).filter(|r| !r.trim().is_empty()),
+            }
+        };
+        let accept = item.verdict == "accept";
+        match apply_idea_verdict_by(&state.db, &item.idea_id, verdict, "Athena") {
+            Ok(_) if accept => accepted += 1,
+            Ok(_) => rejected += 1,
+            Err(e) => {
+                tracing::warn!(idea = %item.idea_id, error = %e, "backlog_apply_triage: verdict failed");
+                failed.push(item.idea_id.clone());
+            }
+        }
+    }
+
+    let mut message = format!("Applied {accepted} accepts, {rejected} rejects.");
+    if !failed.is_empty() {
+        message.push_str(&format!(
+            " {} item(s) could not be written (deleted since triage?).",
+            failed.len()
+        ));
+    }
+    Ok(ExecuteResult {
+        message,
+        client_action: Some(ClientAction::Navigate {
+            route: "overview".to_string(),
+        }),
+    })
+}
+
 /// Athena's `schedule_proactive` approval — persist a future-dated row in
 /// `companion_proactive_message`. The deliver-due sweep
 /// (`proactive::deliver_due_scheduled`, called from

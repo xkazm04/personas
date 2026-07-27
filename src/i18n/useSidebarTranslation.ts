@@ -91,7 +91,6 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['projects', sb.projects],
     ['context-map', sb.context_map],
     ['idea-scanner', sb.idea_scanner],
-    ['idea-triage', sb.idea_triage],
     ['task-runner', sb.task_runner],
   ]);
 }

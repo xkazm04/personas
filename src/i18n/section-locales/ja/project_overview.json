@@ -48,5 +48,6 @@
   "try_auto_discovery": "自動検出を再試行",
   "enter_slugs_manually": "代わりにスラッグを手動で入力",
   "today_activity_heading": "今日",
-  "pipeline_heading": "パイプライン"
+  "pipeline_heading": "パイプライン",
+  "connections_heading": "接続"
 }

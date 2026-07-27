@@ -779,7 +779,15 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 
 /// The sensors that can raise a finding. Kept as a validated allowlist so a typo
 /// in an emitter can't quietly create a new origin the triage UI won't render.
-pub const FINDING_ORIGINS: [&str; 9] = [
+///
+/// `workspace_practice` is the odd one out: it is not a *measurement* sensor but
+/// the Workspace Knowledge Center materializing an adopted practice as work each
+/// member repo owes (`docs/plans/workspace-knowledge-center.md` + plan 1C). It
+/// is deliberately EXCLUDED from cross-project mining — see
+/// `dev_workspaces::mine_shared_findings` — because a practice that fans out to
+/// N repos would otherwise be re-mined as a "shared finding" and re-proposed as
+/// the very practice it came from.
+pub const FINDING_ORIGINS: [&str; 10] = [
     "standards_finding",
     "passport_gap",
     "llm_cost",
@@ -789,6 +797,7 @@ pub const FINDING_ORIGINS: [&str; 9] = [
     "doc_rot",
     "kpi_sim",
     "memory_disputed",
+    "workspace_practice",
 ];
 
 // ============================================================================
@@ -862,7 +871,19 @@ pub struct DevTask {
     /// Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
     /// or "deep_build" (full planning + implementation phases).
     pub depth: String,
+    /// Retry lineage: the task this one was created as a re-attempt of.
+    /// `None` = an original task. The chain is flat by construction — a retry
+    /// of a retry points at its immediate parent, and `attempt` counts depth.
+    pub parent_task_id: Option<String>,
+    /// 1 for an original task; `parent.attempt + 1` for each re-attempt.
+    pub attempt: i32,
 }
+
+/// The task status vocabulary. `pending` is NOT in it — a legacy writer used it
+/// and the Run Desk rendered nothing for it; `run_incremental` normalizes those
+/// rows to `queued`. Unknown values are warned about, never rejected: refusing
+/// a status write would strand a task mid-run.
+pub const TASK_STATUSES: [&str; 5] = ["queued", "running", "completed", "failed", "cancelled"];
 
 // ============================================================================
 // Dev Competitions (multi-clone parallel task execution)

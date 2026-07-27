@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count} connecteurs intégrés",
     "trend_up": "en hausse de {pct}% par rapport aux 24h précédentes",
     "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
-    "trend_flat": "aucun changement par rapport aux 24h précédentes"
+    "trend_flat": "aucun changement par rapport aux 24h précédentes",
+    "agents_enabled": "{count} agent actif",
+    "agents_enabled_other": "{count} agents actifs"
   },
   "get_started": {
     "ask_cta": "Interroger l'assistant",

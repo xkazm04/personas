@@ -733,7 +733,11 @@
     "reflect_scope_hint": "선택한 메모리 풀을 지속적인 인사이트로 통합합니다. 결과는 개요 → 메모리에서 검토하는 제안으로 제공되며, 승인 전에는 아무것도 변경되지 않습니다.",
     "reflect_scope_label": "리플렉션 대상",
     "reflect_scope_team": "팀",
-    "reflection_label": "메모리 리플렉션"
+    "reflection_label": "메모리 리플렉션",
+    "close_sources_rail": "소스 패널 숨기기",
+    "close_targets_rail": "대상 패널 숨기기",
+    "open_sources_rail": "소스 패널 표시",
+    "open_targets_rail": "대상 패널 표시"
   },
   "trigger_configured": "트리거 설정됨",
   "secret_label": "시크릿",

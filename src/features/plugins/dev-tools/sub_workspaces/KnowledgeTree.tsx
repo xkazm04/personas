@@ -1,33 +1,28 @@
-// Knowledge library — the CONSOLIDATED surface (Topics won round B). The left
-// rail renders whatever slash-path hierarchy the harvest agents actually
-// produced (arbitrary depth, counts bubbled up, nothing hardcoded); the right
-// pane lists the selected branch through the shared DataGrid — paginated,
-// per-column sortable/filterable, so it stays crisp at hundreds of items. We
-// reuse DataGrid rather than reinventing table mechanics.
-import { useMemo, useState } from 'react';
-import { ChevronRight, Library, Search } from 'lucide-react';
+// Knowledge library — the CONSOLIDATED surface (Topics won round B). The table
+// mechanics (derived topic rail + toolbar + paginated DataGrid) live in the
+// shared FacetedDecisionTable; this file is the Workspaces-specific binding:
+// columns, filters, comparator and i18n labels.
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Library } from 'lucide-react';
 
-import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
+import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
+import type { DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
-import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { KnowledgeStatusChip } from './centerShared';
-import {
-  buildTopicTree,
-  itemsUnderTopic,
-  searchFilter,
-  STATUS_RANK,
-  type KnowledgeItemView,
-  type TopicNode,
-} from './libraryModel';
+import { STATUS_RANK, type KnowledgeItemView } from './libraryModel';
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
 
 type SortDir = 'asc' | 'desc';
+
+const groupPath = (i: KnowledgeItemView) => i.topic;
+const haystack = (i: KnowledgeItemView) => [i.title, i.statement, i.topic];
 
 export default function KnowledgeTree({
   items,
@@ -57,32 +52,52 @@ export default function KnowledgeTree({
     howto: tw.kind_howto,
     fact: tw.kind_fact,
   };
-  const [selected, setSelected] = useState('');
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']));
-  const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [kindFilter, setKindFilter] = useState('all');
-  const [abstractionFilter] = useState('all');
-  const [hideLint, setHideLint] = useState(true);
+  // Origin filter: which member repo a practice was harvested from. '' is the
+  // workspace itself (hand-authored, no origin project).
+  const [projectFilter, setProjectFilter] = useState('all');
   const [sortKey, setSortKey] = useState('updated');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const tree = useMemo(() => buildTopicTree(items), [items]);
+  // Only origins that actually occur in the corpus — a filter that can only
+  // ever produce an empty table is noise, not a control.
+  const projectOptions = useMemo(() => {
+    const ids = new Set<string>();
+    let hasWorkspaceLevel = false;
+    for (const i of items) {
+      if (i.originProjectId) ids.add(i.originProjectId);
+      else hasWorkspaceLevel = true;
+    }
+    const opts = [...ids]
+      .map((id) => ({ value: id, label: projectById.get(id)?.name ?? tw.origin_removed }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return [
+      { value: 'all', label: tw.all_projects },
+      ...(hasWorkspaceLevel ? [{ value: '', label: tw.origin_workspace }] : []),
+      ...opts,
+    ];
+  }, [items, projectById, tw.all_projects, tw.origin_removed, tw.origin_workspace]);
 
-  const rows = useMemo(() => {
-    const branch = itemsUnderTopic(items, selected);
-    const searched = searchFilter(branch, query);
-    const filtered = searched.filter(
-      (i) =>
-        (statusFilter === 'all' || i.status === statusFilter) &&
-        (kindFilter === 'all' || i.kind === kindFilter) &&
-        (abstractionFilter === 'all' || i.abstraction === abstractionFilter) &&
-        // "Hide lint layer" drops mechanical/micro items (motivate/avoid): a
-        // practice library should surface doctrine, not lint-territory rules.
-        (!hideLint || (i.durability !== 'mechanical' && i.abstraction !== 'micro')),
-    );
-    const dir = sortDir === 'asc' ? 1 : -1;
-    const cmp = (a: KnowledgeItemView, b: KnowledgeItemView): number => {
+  // A workspace whose corpus loses its last row from the filtered project would
+  // otherwise strand the user on an empty table with no obvious way back.
+  useEffect(() => {
+    if (projectFilter !== 'all' && !projectOptions.some((o) => o.value === projectFilter)) {
+      setProjectFilter('all');
+    }
+  }, [projectOptions, projectFilter]);
+
+  const filterRow = useCallback(
+    (i: KnowledgeItemView) =>
+      (statusFilter === 'all' || i.status === statusFilter) &&
+      (kindFilter === 'all' || i.kind === kindFilter) &&
+      (projectFilter === 'all' || (i.originProjectId ?? '') === projectFilter),
+    [statusFilter, kindFilter, projectFilter],
+  );
+
+  const compare = useCallback(
+    (a: KnowledgeItemView, b: KnowledgeItemView): number => {
+      const dir = sortDir === 'asc' ? 1 : -1;
       switch (sortKey) {
         case 'status':
           return (STATUS_RANK[a.status] - STATUS_RANK[b.status]) * dir;
@@ -94,10 +109,9 @@ export default function KnowledgeTree({
         default:
           return a.updatedAt.localeCompare(b.updatedAt) * dir;
       }
-    };
-    return [...filtered].sort(cmp);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected, query, statusFilter, kindFilter, abstractionFilter, hideLint, sortKey, sortDir, projectById]);
+    },
+    [sortKey, sortDir],
+  );
 
   const onSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -148,9 +162,6 @@ export default function KnowledgeTree({
           {r.evidenceCount != null && r.evidenceCount > 1 && (
             <span className="typo-label text-muted-foreground ml-1.5">×{r.evidenceCount}</span>
           )}
-          {r.mock && (
-            <span className="typo-label text-muted-foreground ml-1.5 opacity-60">{tw.demo_tag}</span>
-          )}
         </span>
       ),
     },
@@ -166,200 +177,45 @@ export default function KnowledgeTree({
     },
   ];
 
-  const toggle = (path: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-
   return (
-    <div className="flex min-h-0 h-full gap-4">
-      <aside className="w-60 shrink-0 overflow-y-auto rounded-card border border-primary/10 p-2">
-        <NodeButton
-          label={tw.all_topics}
-          count={tree.total}
-          depth={0}
-          active={selected === ''}
-          hasChildren={false}
-          expanded
-          expandLabel={tw.expand}
-          collapseLabel={tw.collapse}
-          onSelect={() => setSelected('')}
-          onToggle={() => {}}
+    <FacetedDecisionTable
+      items={items}
+      getRowKey={(r) => r.id}
+      getGroupPath={groupPath}
+      columns={columns}
+      filterRow={filterRow}
+      searchHaystack={haystack}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSort={onSort}
+      compare={compare}
+      onRowClick={onRowClick}
+      emptyIcon={Library}
+      pageSize={25}
+      density="compact"
+      labels={{
+        allGroups: tw.all_topics,
+        summary: (topic, count) =>
+          topic ? tx(tw.branch_summary, { topic, count }) : tx(tw.all_topics_summary, { count }),
+        searchPlaceholder: tw.search_practices,
+        expand: tw.expand,
+        collapse: tw.collapse,
+        emptyTitle: tw.library_empty_title,
+        emptyDescription: tw.library_empty_desc,
+      }}
+      toolbar={
+        <ThemedSelect
+          filterable
+          hideSearch={projectOptions.length < 8}
+          options={projectOptions}
+          value={projectFilter}
+          onValueChange={setProjectFilter}
+          placeholder={tw.all_projects}
+          aria-label={tw.filter_by_project}
+          wrapperClassName="ml-auto"
+          className="typo-label !py-1 w-44"
         />
-        {tree.children.map((node) => (
-          <TreeBranch
-            key={node.path}
-            node={node}
-            depth={0}
-            selected={selected}
-            expanded={expanded}
-            expandLabel={tw.expand}
-            collapseLabel={tw.collapse}
-            onSelect={setSelected}
-            onToggle={toggle}
-          />
-        ))}
-      </aside>
-
-      <div className="flex-1 min-w-0 flex flex-col min-h-0">
-        <div className="flex items-center gap-3 pb-2">
-          <span className="typo-caption text-muted-foreground">
-            {selected
-              ? tx(tw.branch_summary, { topic: selected, count: rows.length })
-              : tx(tw.all_topics_summary, { count: rows.length })}
-          </span>
-          <button
-            type="button"
-            onClick={() => setHideLint((v) => !v)}
-            className={`ml-auto typo-label rounded-interactive border px-2 py-1 transition-colors ${
-              hideLint
-                ? 'border-primary/30 bg-primary/10 text-foreground'
-                : 'border-primary/10 text-foreground/70 hover:bg-secondary/40'
-            }`}
-            title={tw.hide_lint_hint}
-          >
-            {tw.hide_lint}
-          </button>
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <input
-              className={`${INPUT_FIELD} pl-8 w-56`}
-              placeholder={tw.search_practices}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <DataGrid
-          columns={columns}
-          data={rows}
-          getRowKey={(r) => r.id}
-          // Demo rows have no database row behind them, so there is no detail
-          // to open — everything real is clickable.
-          onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r, rows); } : undefined}
-          sortKey={sortKey}
-          sortDirection={sortDir}
-          onSort={onSort}
-          pageSize={25}
-          density="compact"
-          emptyIcon={Library}
-          emptyTitle={tw.library_empty_title}
-          emptyDescription={tw.library_empty_desc}
-          className="flex-1 min-h-0 rounded-card border border-primary/10"
-        />
-      </div>
-    </div>
-  );
-}
-
-function TreeBranch({
-  node,
-  depth,
-  selected,
-  expanded,
-  expandLabel,
-  collapseLabel,
-  onSelect,
-  onToggle,
-}: {
-  node: TopicNode;
-  depth: number;
-  selected: string;
-  expanded: Set<string>;
-  expandLabel: string;
-  collapseLabel: string;
-  onSelect: (path: string) => void;
-  onToggle: (path: string) => void;
-}) {
-  const isOpen = expanded.has(node.path);
-  return (
-    <>
-      <NodeButton
-        label={node.segment}
-        count={node.total}
-        depth={depth}
-        active={selected === node.path}
-        hasChildren={node.children.length > 0}
-        expanded={isOpen}
-        expandLabel={expandLabel}
-        collapseLabel={collapseLabel}
-        onSelect={() => onSelect(node.path)}
-        onToggle={() => onToggle(node.path)}
-      />
-      {isOpen &&
-        node.children.map((child) => (
-          <TreeBranch
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            selected={selected}
-            expanded={expanded}
-            expandLabel={expandLabel}
-            collapseLabel={collapseLabel}
-            onSelect={onSelect}
-            onToggle={onToggle}
-          />
-        ))}
-    </>
-  );
-}
-
-function NodeButton({
-  label,
-  count,
-  depth,
-  active,
-  hasChildren,
-  expanded,
-  expandLabel,
-  collapseLabel,
-  onSelect,
-  onToggle,
-}: {
-  label: string;
-  count: number;
-  depth: number;
-  active: boolean;
-  hasChildren: boolean;
-  expanded: boolean;
-  expandLabel: string;
-  collapseLabel: string;
-  onSelect: () => void;
-  onToggle: () => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-1 rounded-interactive pr-2 transition-colors ${
-        active ? 'bg-primary/10' : 'hover:bg-secondary/40'
-      }`}
-      style={{ paddingLeft: `${depth * 14 + 4}px` }}
-    >
-      {hasChildren ? (
-        <button
-          type="button"
-          aria-label={expanded ? collapseLabel : expandLabel}
-          onClick={onToggle}
-          className="p-0.5 text-foreground/70 hover:text-foreground"
-        >
-          <ChevronRight
-            className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`}
-          />
-        </button>
-      ) : (
-        <span className="w-[18px]" />
-      )}
-      <button
-        type="button"
-        onClick={onSelect}
-        className="flex-1 min-w-0 flex items-center justify-between gap-2 py-1 text-left"
-      >
-        <span className="typo-body text-foreground truncate">{label}</span>
-        <span className="typo-caption text-muted-foreground shrink-0">{count}</span>
-      </button>
-    </div>
+      }
+    />
   );
 }

@@ -801,7 +801,7 @@ function DeleteBreakdown({
           key={key}
           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption text-rose-100"
         >
-          <span className="font-semibold tabular-nums">{count}</span>
+          <span className="font-normal tabular-nums text-rose-100">{count}</span>
           <span className="text-rose-100">
             {kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}
           </span>

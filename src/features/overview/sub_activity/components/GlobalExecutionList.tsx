@@ -489,21 +489,21 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         <div className="px-4 min-w-0">
                           {modelShort ? (
                             <Tooltip content={exec.model_used ?? fallbackModel ?? ''}>
-                              <span className="block typo-code text-foreground font-mono truncate">{modelShort}</span>
+                              <span className="block typo-body text-foreground font-mono truncate">{modelShort}</span>
                             </Tooltip>
                           ) : (
-                            <span className="typo-code text-foreground font-mono">{'—'}</span>
+                            <span className="typo-body text-foreground font-mono">{'—'}</span>
                           )}
                         </div>
                         <div className="px-4 text-right">
                           {exec.cost_usd > 0 ? (
-                            <Numeric value={exec.cost_usd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
+                            <Numeric value={exec.cost_usd} unit="usd" language={language} align="right" className="typo-body text-foreground" />
                           ) : (
-                            <span className="typo-code text-foreground font-mono">{'—'}</span>
+                            <span className="typo-body text-foreground font-mono">{'—'}</span>
                           )}
                         </div>
-                        <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-body text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
                       </div>
                     );
                     // One-shot entrance cascade for a fresh result set. Rows

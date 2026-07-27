@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeDigest,
   computeHealth,
+  countToProcess,
   isWellFormedTopic,
   type PillarKey,
 } from '../libraryPulse';
@@ -97,15 +98,6 @@ describe('computeDigest', () => {
     const d = computeDigest([item({ status: 'observed', createdAt: daysAgo(90) })], NOW);
     expect(d.quiet).toBe(true);
     expect(d.pending).toHaveLength(1);
-  });
-
-  it('excludes demo rows — a digest must not count the sample corpus', () => {
-    const d = computeDigest(
-      [item({ status: 'adopted', decidedAt: daysAgo(1), mock: true })],
-      NOW,
-    );
-    expect(d.adopted).toHaveLength(0);
-    expect(d.quiet).toBe(true);
   });
 
   it('survives an unparseable timestamp', () => {
@@ -206,8 +198,15 @@ describe('computeHealth', () => {
     expect(h.pillars.find((p) => p.key === 'governance')!.of).toBe(1);
   });
 
-  it('excludes demo rows from every pillar', () => {
-    const h = computeHealth([item({ status: 'adopted', mock: true })], [], NOW);
-    expect(h.overall).toBeNull();
+  it('counts only to_process cells of practices that are actually canon', () => {
+    const canon = item({ status: 'adopted' });
+    const pending = item({ status: 'observed' });
+    expect(
+      countToProcess([canon, pending], [
+        cell(canon.id, 'to_process', 'p1'),
+        cell(canon.id, 'proposed', 'p2'),
+        cell(pending.id, 'to_process', 'p1'),
+      ]),
+    ).toBe(1);
   });
 });

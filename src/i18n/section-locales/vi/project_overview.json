@@ -48,5 +48,6 @@
   "try_auto_discovery": "Thử tự động khám phá lại",
   "enter_slugs_manually": "Nhập slug thủ công thay thế",
   "today_activity_heading": "HÔM NAY",
-  "pipeline_heading": "Pipeline"
+  "pipeline_heading": "Pipeline",
+  "connections_heading": "Kết nối"
 }

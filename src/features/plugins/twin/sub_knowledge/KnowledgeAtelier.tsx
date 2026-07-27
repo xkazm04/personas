@@ -245,7 +245,7 @@ Memory: ${seed}`;
       <TwinWikiPanel activeTwinId={activeTwinId} />
 
       {/* ── Seed-from-docs panel ─────────────────────────────────── */}
-      <div className="px-4 md:px-6 xl:px-8 py-3 border-b border-primary/10 flex items-center gap-4">
+      <div className="mx-4 md:mx-6 xl:mx-8 mt-3 mb-1 rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent px-4 py-3 flex items-center gap-4">
         <div className="w-9 h-9 rounded-card bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center flex-shrink-0">
           <Download className="w-4 h-4 text-cyan-300" />
         </div>

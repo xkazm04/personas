@@ -163,6 +163,11 @@ export const EventName = {
   USE_CASE_SCAN_STATUS: 'use-case-scan-status',
   USE_CASE_SCAN_OUTPUT: 'use-case-scan-output',
   USE_CASE_SCAN_COMPLETE: 'use-case-scan-complete',
+  // Workspace divergence / adoption-verify background scans
+  DIVERGENCE_SCAN_STATUS: 'divergence-scan-status',
+  DIVERGENCE_SCAN_OUTPUT: 'divergence-scan-output',
+  VERIFY_SCAN_STATUS: 'verify-scan-status',
+  VERIFY_SCAN_OUTPUT: 'verify-scan-output',
 
   // Task executor
   TASK_EXEC_STATUS: 'task-exec-status',
@@ -904,6 +909,11 @@ export interface EventPayloadMap {
   [EventName.USE_CASE_SCAN_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.USE_CASE_SCAN_OUTPUT]: { job_id: string; line: string };
   [EventName.USE_CASE_SCAN_COMPLETE]: { scan_id: string; proposals: number };
+  // Workspace divergence / adoption-verify scans (BackgroundJob pattern)
+  [EventName.DIVERGENCE_SCAN_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.DIVERGENCE_SCAN_OUTPUT]: { job_id: string; line: string };
+  [EventName.VERIFY_SCAN_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.VERIFY_SCAN_OUTPUT]: { job_id: string; line: string };
 
   // Task executor (BackgroundJob pattern)
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };

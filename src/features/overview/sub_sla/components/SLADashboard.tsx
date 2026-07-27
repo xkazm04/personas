@@ -11,7 +11,7 @@ import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
 import { DAY_OPTIONS, formatPercent, formatDuration, slaColor, SLA_METRIC_TEXT_CLASSES, type SlaMetricColor } from '../libs/slaHelpers';
 import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
-import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
+import { SlaCard, SlaMatrixTable, DailyTrendChart } from './SLACard';
 
 interface SLADashboardProps {
   /** When true, render without ContentBox/ContentHeader so the dashboard can
@@ -27,7 +27,6 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState<number>(30);
   const debouncedDays = useDebounce(days, 300);
-  const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
   // One-shot entrance guard (docs/design/overview-loading.md, §"Panels &
   // metric grids"): the per-section stagger below plays only the first time
   // real content paints. A day-range change re-enters this effect with
@@ -48,8 +47,6 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
   useEffect(() => {
     if (data) enteredRef.current = true;
   }, [data]);
-
-  const togglePersona = (id: string) => setExpandedPersona((prev) => (prev === id ? null : id));
 
   const dayPicker = (
     <div className="flex items-center gap-1.5">
@@ -161,11 +158,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
           {data.persona_stats.length === 0 ? (
             <div className="px-5 py-8 text-center typo-body text-foreground">{t.overview.sla.no_agent_data}</div>
           ) : (
-            <div className="divide-y divide-primary/5">
-              {data.persona_stats.map((ps) => (
-                <PersonaRow key={ps.persona_id} stats={ps} expanded={expandedPersona === ps.persona_id} onToggle={() => togglePersona(ps.persona_id)} />
-              ))}
-            </div>
+            <SlaMatrixTable rows={data.persona_stats} />
           )}
         </div>
       </div>

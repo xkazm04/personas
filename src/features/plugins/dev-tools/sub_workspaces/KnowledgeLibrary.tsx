@@ -1,7 +1,9 @@
-// Knowledge library host — Topics won round B. Owns the item derivation
-// (real rows blended with an optional deterministic demo corpus so scale
-// behavior is visible before the harvest engine exists) and renders the
-// consolidated tree + paginated DataGrid. Demo rows never touch the DB.
+// Knowledge library host — Topics won round B. Owns the item derivation from
+// the workspace's real rows and renders the consolidated tree + paginated
+// DataGrid. (A deterministic demo corpus used to be blended in so scale
+// behavior was visible before the harvest engine existed; it was retired once
+// harvesting shipped — a library that shows practices nobody harvested is
+// worse than an empty one.)
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Share2 } from 'lucide-react';
 
@@ -19,7 +21,6 @@ import { PracticeDetailModal } from './PracticeDetailModal';
 import { PracticeRolloutModal } from './PracticeRolloutModal';
 import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
-import { generateMockLibrary } from './libraryMock';
 import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
 import type { Workspace } from './workspaceStore';
@@ -38,9 +39,6 @@ export default function KnowledgeLibrary({
   const { t, tx } = useTranslation();
   const w = t.plugins.dev_tools.workspaces;
 
-  // Default the demo corpus on for near-empty workspaces so the surface never
-  // looks broken before harvesting exists; let the user toggle it off.
-  const [demo, setDemo] = useState<boolean | null>(null);
   const [creating, setCreating] = useState(false);
   const [projecting, setProjecting] = useState(false);
   const [rollout, setRollout] = useState<WorkspaceKnowledge | null>(null);
@@ -52,7 +50,6 @@ export default function KnowledgeLibrary({
   const [queue, setQueue] = useState<string[]>([]);
   const [queueIdx, setQueueIdx] = useState(0);
   const addToast = useToastStore((s) => s.addToast);
-  const useDemo = demo ?? rows.length < 12;
 
   // Ambient distribution: write the workspace's adopted canon into every
   // member repo's Claude memory, so future sessions there carry it for free.
@@ -77,11 +74,7 @@ export default function KnowledgeLibrary({
     }
   };
 
-  const items = useMemo(() => {
-    const real = rows.map(viewFromRow);
-    if (!useDemo) return real;
-    return [...real, ...generateMockLibrary(workspace.id, workspace.projectIds)];
-  }, [rows, useDemo, workspace.id, workspace.projectIds]);
+  const items = useMemo(() => rows.map(viewFromRow), [rows]);
 
   // The adoption matrix is what makes the liquidity pillar measurable (is
   // adopted canon actually reaching the repos?). Re-read whenever the rows
@@ -100,7 +93,7 @@ export default function KnowledgeLibrary({
   const closeDetail = () => { setQueue([]); setQueueIdx(0); };
 
   const openDetail = (item: KnowledgeItemView, ordered: readonly KnowledgeItemView[]) => {
-    const ids = ordered.filter((i) => !i.mock).map((i) => i.id);
+    const ids = ordered.map((i) => i.id);
     const at = ids.indexOf(item.id);
     setQueue(ids.length > 0 ? ids : [item.id]);
     setQueueIdx(Math.max(0, at));
@@ -129,17 +122,6 @@ export default function KnowledgeLibrary({
       <div className="flex items-center justify-between gap-3">
         <h2 className="typo-section-title text-foreground">{w.library_title}</h2>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDemo(!useDemo)}
-            className={`typo-label rounded-interactive border px-2 py-1 transition-colors ${
-              useDemo
-                ? 'border-status-warning/40 bg-status-warning/10 text-status-warning'
-                : 'border-primary/10 text-foreground/70 hover:bg-secondary/40'
-            }`}
-          >
-            {useDemo ? w.demo_on : w.demo_off}
-          </button>
           <ExtractionMenu
             workspace={workspace}
             memberProjects={memberProjects}
@@ -155,8 +137,14 @@ export default function KnowledgeLibrary({
             <Share2 className="w-3.5 h-3.5" />
             {w.project_to_repos}
           </button>
-          <Button size="sm" onClick={() => setCreating(true)}>
-            <Plus className="w-4 h-4" />
+          {/* `icon`, not a child: as a child the glyph shares one inline span
+              with the label and loses the flex gap that keeps them on one row. */}
+          <Button
+            size="sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => setCreating(true)}
+            className="whitespace-nowrap"
+          >
             {w.new_practice}
           </Button>
         </div>

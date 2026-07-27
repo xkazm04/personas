@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 use personas_core::error::AppError;
 
@@ -4209,6 +4209,65 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Triage/Run-Desk keyset indexes. Both surfaces order by
+    // `created_at DESC` under a status (and, for tasks, a project) filter;
+    // without these the paged reads degrade to a full scan + sort of
+    // `dev_ideas` / `dev_tasks` on every page. MUST stay INSIDE
+    // `run_incremental` — the file's tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE this function.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_triage_page_indexes",
+            description: "Keyset indexes for the unified Backlog (dev_ideas) and Run Desk (dev_tasks) paged reads",
+            already_applied: |conn| has_index(conn, "idx_dev_ideas_triage"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_ideas_triage
+                        ON dev_ideas(status, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_dev_tasks_page
+                        ON dev_tasks(project_id, status, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // `pending` was never part of the dev_tasks vocabulary
+    // (queued|running|completed|failed|cancelled) but a legacy writer used it,
+    // and every status-driven surface rendered those rows as nothing — they
+    // were invisible AND unrunnable. Idempotent by construction: after the
+    // first pass the UPDATE matches zero rows, so it can run on every boot.
+    ddl_step(
+        conn,
+        "UPDATE dev_tasks SET status = 'queued' WHERE status = 'pending';",
+    )?;
+
+    // Durable auto-run ledger. The scheduler's state lived only in the
+    // in-memory `AUTO_RUN_JOBS` map, so a restart mid-wave lost the run
+    // entirely — the banner vanished and nothing recorded why the wave
+    // stopped. This table is the restart-surviving record; the in-memory map
+    // stays the live view.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS dev_auto_runs (
+            id                 TEXT PRIMARY KEY,
+            project_id         TEXT,
+            status             TEXT,
+            snapshot_size      INTEGER,
+            completed          INTEGER,
+            failed             INTEGER,
+            skipped            INTEGER,
+            iterations         INTEGER,
+            termination_reason TEXT,
+            started_at         TEXT,
+            finished_at        TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_dev_auto_runs_project
+            ON dev_auto_runs(project_id, started_at DESC);",
+    )?;
+
     Ok(())
 }
 
@@ -4378,6 +4437,19 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // -- dev_tasks: depth column (quick / campaign / deep_build) ---------------
     ddl_step(conn, "ALTER TABLE dev_tasks ADD COLUMN depth TEXT NOT NULL DEFAULT 'quick';")
         .ok(); // ok() — column may already exist
+
+    // -- dev_tasks: retry lineage (parent_task_id + attempt) ------------------
+    // A retry used to be an unrelated task with a `[Retry] ` title prefix, so
+    // nothing linked attempt N to attempt N-1 and the prefix accumulated into
+    // the executor's prompt. Lineage is now structural. Same `.ok()` idiom as
+    // `depth` above: both are also mirrored in the fresh schema, so on a new
+    // database these ALTERs are expected to be duplicate-column no-ops.
+    ddl_step(conn, "ALTER TABLE dev_tasks ADD COLUMN parent_task_id TEXT;").ok();
+    ddl_step(
+        conn,
+        "ALTER TABLE dev_tasks ADD COLUMN attempt INTEGER NOT NULL DEFAULT 1;",
+    )
+    .ok();
 
     // -- dev_projects: monitoring connector fields ----------------------------
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN monitoring_credential_id TEXT;")
@@ -6045,7 +6117,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                     CREATE TABLE IF NOT EXISTS workspace_practice_adoption (
                         practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
                         project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','dispatched','adopted','diverged')),
+                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
                         fleet_key        TEXT,
                         note             TEXT,
                         last_verified_at TEXT,
@@ -6132,6 +6204,61 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_mem_source
             ON dev_memories(project_id, source_kind, source_id)
             WHERE source_id IS NOT NULL;",
+    )?;
+
+    // -- workspace_practice_adoption: the `to_process` execution queue -------
+    // Adopting a practice used to seed every applicable member repo at
+    // `proposed` regardless of what the practice ASKS FOR, so an adopted
+    // pitfall ("stop doing X") looked identical to an adopted fact and nothing
+    // downstream could tell which cells owed work. Actionable kinds now seed
+    // `to_process` (see repos::dev_workspaces::initial_adoption_state) — the
+    // queue a future executor drains. SQLite cannot widen a CHECK in place, so
+    // the table is rebuilt.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_practice_adoption.to_process",
+            description: "Widen workspace_practice_adoption.state CHECK with 'to_process' — the per-repo execution queue seeded when an ACTIONABLE practice (pitfall/pattern) is adopted, distinct from 'proposed' (reference material, distributed not executed).",
+            already_applied: |conn| {
+                let sql: Option<String> = conn
+                    .query_row(
+                        "SELECT sql FROM sqlite_master WHERE type='table' AND name='workspace_practice_adoption'",
+                        [],
+                        |r| r.get(0),
+                    )
+                    .optional()
+                    .map_err(AppError::Database)?;
+                // A missing table is "applied": the CREATE above already ships
+                // the widened CHECK on fresh databases.
+                Ok(sql.map(|s| s.contains("to_process")).unwrap_or(true))
+            },
+            apply: |conn| {
+                // FKs off for the drop/rename: the guard must live OUTSIDE the
+                // ddl_step transaction — `PRAGMA foreign_keys` is a no-op once
+                // a transaction is open.
+                let _fk_guard = crate::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+                ddl_step(
+                    conn,
+                    "DROP TABLE IF EXISTS workspace_practice_adoption_new;
+                    CREATE TABLE workspace_practice_adoption_new (
+                        practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
+                        fleet_key        TEXT,
+                        note             TEXT,
+                        last_verified_at TEXT,
+                        updated_at       TEXT NOT NULL,
+                        PRIMARY KEY (practice_id, project_id)
+                    );
+                    INSERT INTO workspace_practice_adoption_new
+                        SELECT practice_id, project_id, state, fleet_key, note, last_verified_at, updated_at
+                        FROM workspace_practice_adoption;
+                    DROP TABLE workspace_practice_adoption;
+                    ALTER TABLE workspace_practice_adoption_new RENAME TO workspace_practice_adoption;",
+                )?;
+                Ok(())
+            },
+        },
     )?;
     Ok(())
 }

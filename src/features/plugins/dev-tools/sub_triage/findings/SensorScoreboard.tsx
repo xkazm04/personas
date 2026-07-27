@@ -17,7 +17,7 @@ import { AlertTriangle, Radar } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { originMeta } from './FindingBadge';
+import { originMeta, useOriginLabel } from './FindingBadge';
 import {
   computeSensorStats,
   isNoisySensor,
@@ -39,6 +39,7 @@ function rateColor(s: SensorStats): string {
 
 export function SensorScoreboard() {
   const ideas = useSystemStore((s) => s.ideas);
+  const originLabel = useOriginLabel();
   const stats = useMemo(() => computeSensorStats(ideas), [ideas]);
 
   // No sensor has raised anything yet — don't show an empty table.
@@ -74,7 +75,7 @@ export function SensorScoreboard() {
                 <td className="px-3 py-1.5">
                   <span className="inline-flex items-center gap-1.5">
                     {Icon && <Icon className="w-3 h-3 text-foreground/60" aria-hidden />}
-                    <span className="typo-caption text-foreground">{meta?.label ?? s.origin}</span>
+                    <span className="typo-caption text-foreground">{originLabel(s.origin)}</span>
                     {noisy && (
                       <Tooltip content="This sensor's findings ship and the number doesn't move — its threshold is probably wrong, or it's pointing at work that doesn't pay.">
                         <span className="inline-flex items-center gap-0.5 text-red-300 typo-label cursor-help">

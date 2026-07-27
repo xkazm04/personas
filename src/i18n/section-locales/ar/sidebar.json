@@ -77,7 +77,20 @@
   "manage": "إدارة",
   "context_map": "خريطة السياق",
   "idea_scanner": "فاحص الأفكار",
-  "idea_triage": "تصنيف الأفكار",
-  "task_runner": "منفذ المهام",
-  "projects": "المشاريع"
+  "projects": "المشاريع",
+  "task_runner": "مكتب التشغيل",
+  "group_advanced": "متقدم",
+  "group_build": "إنشاء",
+  "group_connect": "اتصال",
+  "group_credentials": "بيانات الاعتماد",
+  "group_drafts": "إصدارات المسودة",
+  "group_general": "عام",
+  "group_home": "الرئيسية",
+  "group_llm": "LLM",
+  "group_maintain": "صيانة",
+  "group_memory": "الذاكرة",
+  "group_monitoring": "المراقبة",
+  "group_operations": "العمليات",
+  "group_plugins": "الإضافات",
+  "group_templates": "القوالب"
 }

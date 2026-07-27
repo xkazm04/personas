@@ -119,9 +119,11 @@ async function setReactInputValue(
 }
 
 async function navigateToPresetsTab(): Promise<void> {
-  await clickTestId('sidebar-design-reviews');
-  await waitForVisible('[data-testid="templates-page"]', 8_000);
+  // Templates lives inside the Connections L2 nav (registry reachability
+  // 'nested') — there is no `sidebar-design-reviews` rail button any more.
+  await clickTestId('sidebar-credentials');
   await clickTestId('tab-presets');
+  await waitForVisible('[data-testid="templates-page"]', 8_000);
   await waitForVisible('[data-testid="preset-library-page"]', 8_000);
 }
 

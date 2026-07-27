@@ -48,5 +48,6 @@
   "try_auto_discovery": "자동 검색 다시 시도",
   "enter_slugs_manually": "대신 슬러그를 직접 입력",
   "today_activity_heading": "오늘",
-  "pipeline_heading": "파이프라인"
+  "pipeline_heading": "파이프라인",
+  "connections_heading": "연결"
 }

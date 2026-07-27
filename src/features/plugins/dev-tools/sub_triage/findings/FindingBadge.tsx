@@ -5,61 +5,85 @@
 // that raised it, and a popover showing the raw evidence that justified emission,
 // so the user can judge the claim instead of trusting it.
 import { useState } from 'react';
-import { Activity, AlertTriangle, BrainCircuit, DollarSign, ClipboardCheck, FileClock, FlaskConical, MoonStar, Target, Info } from 'lucide-react';
+import { Activity, AlertTriangle, BrainCircuit, DollarSign, ClipboardCheck, FileClock, FlaskConical, Library, MoonStar, Target, Info } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { FindingOrigin } from '@/api/devTools/devTools';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 const ORIGIN_META: Record<
   FindingOrigin,
-  { label: string; icon: typeof Activity; tw: string }
+  { labelKey: keyof Translations['plugins']['dev_triage']; icon: typeof Activity; tw: string }
 > = {
   standards_finding: {
-    label: 'Standards',
+    labelKey: 'origin_standards_finding',
     icon: ClipboardCheck,
     tw: 'bg-sky-500/10 text-sky-300 border-sky-500/25',
   },
   passport_gap: {
-    label: 'Readiness',
+    labelKey: 'origin_passport_gap',
     icon: Target,
     tw: 'bg-violet-500/10 text-violet-300 border-violet-500/25',
   },
   llm_cost: {
-    label: 'LLM cost',
+    labelKey: 'origin_llm_cost',
     icon: DollarSign,
     tw: 'bg-amber-500/10 text-amber-300 border-amber-500/25',
   },
   sentry_spike: {
-    label: 'Errors',
+    labelKey: 'origin_sentry_spike',
     icon: AlertTriangle,
     tw: 'bg-red-500/10 text-red-300 border-red-500/25',
   },
   kpi_offtrack: {
-    label: 'KPI',
+    labelKey: 'origin_kpi_offtrack',
     icon: Activity,
     tw: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25',
   },
   skill_dormant: {
-    label: 'Dormant skill',
+    labelKey: 'origin_skill_dormant',
     icon: MoonStar,
     tw: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/25',
   },
   doc_rot: {
-    label: 'Stale doc',
+    labelKey: 'origin_doc_rot',
     icon: FileClock,
     tw: 'bg-orange-500/10 text-orange-300 border-orange-500/25',
   },
   kpi_sim: {
-    label: 'KPI sim',
+    labelKey: 'origin_kpi_sim',
     icon: FlaskConical,
     tw: 'bg-teal-500/10 text-teal-300 border-teal-500/25',
   },
   memory_disputed: {
-    label: 'Disputed memory',
+    labelKey: 'origin_memory_disputed',
     icon: BrainCircuit,
     tw: 'bg-rose-500/10 text-rose-300 border-rose-500/25',
   },
+  // Not a measurement sensor: the Workspace Knowledge Center materializing an
+  // adopted practice (or a pitfall to fix) as one backlog item per member repo.
+  // Missing here through three phases, which is why those rows rendered a bare
+  // title with no provenance at all.
+  workspace_practice: {
+    labelKey: 'origin_workspace_practice',
+    icon: Library,
+    tw: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/25',
+  },
 };
+
+/**
+ * Resolve an origin slug to its translated label. A hook (not a pure function)
+ * because the label lives in the i18n catalog — `originMeta()` still returns
+ * the icon + palette for callers that only need the visual identity.
+ */
+export function useOriginLabel(): (origin: string) => string {
+  const { t } = useTranslation();
+  return (origin: string) => {
+    const meta = originMeta(origin);
+    return meta ? t.plugins.dev_triage[meta.labelKey] : origin;
+  };
+}
 
 export function originMeta(origin: string) {
   return ORIGIN_META[origin as FindingOrigin];
@@ -136,9 +160,12 @@ export function FindingBadge({
   origin: string;
   evidence?: string | null;
 }) {
+  const { t } = useTranslation();
+  const originLabel = useOriginLabel();
   const [open, setOpen] = useState(false);
   const meta = originMeta(origin);
   if (!meta) return null;
+  const label = originLabel(origin);
   const Icon = meta.icon;
 
   let rows: [string, unknown][] = [];
@@ -156,7 +183,7 @@ export function FindingBadge({
 
   return (
     <span className="relative inline-flex">
-      <Tooltip content={rows.length > 0 ? 'Why this was raised' : meta.label}>
+      <Tooltip content={rows.length > 0 ? t.plugins.dev_triage.origin_why_raised : label}>
         <button
           type="button"
           onClick={() => rows.length > 0 && setOpen((v) => !v)}
@@ -166,7 +193,7 @@ export function FindingBadge({
           }`}
         >
           <Icon className="w-3 h-3" aria-hidden />
-          {meta.label}
+          {label}
           {rows.length > 0 && <Info className="w-2.5 h-2.5 opacity-60" aria-hidden />}
         </button>
       </Tooltip>
@@ -176,7 +203,7 @@ export function FindingBadge({
           role="dialog"
           className="absolute top-full left-0 mt-1.5 z-30 min-w-[240px] max-w-[320px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 p-3"
         >
-          <span className="block typo-label text-foreground/50 mb-1.5">Evidence</span>
+          <span className="block typo-label text-foreground/50 mb-1.5">{t.plugins.dev_triage.origin_evidence}</span>
           <dl className="space-y-1">
             {rows.map(([k, v]) => (
               <div key={k} className="flex items-baseline justify-between gap-3">

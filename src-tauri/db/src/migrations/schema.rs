@@ -1278,7 +1278,11 @@ CREATE TABLE IF NOT EXISTS dev_tasks (
   error           TEXT,
   started_at      TEXT,
   completed_at    TEXT,
-  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Retry lineage: attempt N points at attempt N-1. Mirrored by an
+  -- ALTER in ensure_composite_fires_table for pre-existing databases.
+  parent_task_id  TEXT,
+  attempt         INTEGER NOT NULL DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS idx_dev_tasks_status ON dev_tasks(status);
 CREATE INDEX IF NOT EXISTS idx_dev_tasks_project ON dev_tasks(project_id);

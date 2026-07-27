@@ -20,9 +20,10 @@
   grid; the selected workspace unfolds a detail band with membership + library).
   The library listing is the shared **DataGrid** (paginated, per-column
   sortable/filterable) beside an emergent slash-path **topic tree** derived from
-  the items — crisp at hundreds of practices. A **Demo corpus** toggle blends in
-  a deterministic sample dataset so scale is visible before harvesting exists
-  (demo rows never touch the database).
+  the items — crisp at hundreds of practices, with a **project filter** on the
+  listing toolbar that narrows it to one origin repo (or to workspace-level,
+  hand-authored practices). Everything shown is real: the deterministic demo
+  corpus that once padded an empty library was retired when harvesting shipped.
 - **Knowledge item (practice)** — a governed unit of cross-project knowledge:
   `kind` (pattern / pitfall / decision / howto / fact), a distilled `statement`,
   optional evidence (`detail_md`), a slash-path `topic` (`ui/motion/reveals`)
@@ -79,20 +80,33 @@
   state-mgmt / error-strategy / concurrency-reliability / perf-strategy /
   micro-technique), `durability` (durable / situational / mechanical),
   `governing_id` (roll a micro-instance up under a macro doctrine), and
-  `evidence_count` (prevalence). The library's **Altitude** column + a default-on
-  **Hide lint layer** toggle drop `micro` / `mechanical` items — a practice
-  library surfaces *doctrine*, not lint-enforceable rules (route those to
-  eslint/clippy). Machine writers (miners, harvest) set these; hand-authored
-  items may leave them null.
+  `evidence_count` (prevalence). They feed the consistency pillar and the
+  detail modal. Machine writers (miners, harvest) set these; hand-authored
+  items may leave them null. (The default-on **Hide lint layer** toggle that
+  used to drop `micro` / `mechanical` rows from the listing was removed — it
+  hid harvested rows by default, which made the library look emptier than it
+  was. Filter on the axes in the detail surface instead.)
 - **Governance ladder** — `observed` (machine-harvested) → `proposed` →
   `adopted` / `rejected`, plus `deprecated` (optionally superseded by a newer
   practice). **Agents only ever propose; adoption is always your decision.**
   Rejected items are kept so future extraction runs don't re-propose them.
 - **Adoption matrix** — adopting a practice fans it out to every member project as
-  a per-project state: `proposed` (to adopt), `na` (not applicable to that
+  a per-project state: `to_process`, `proposed`, `na` (not applicable to that
   stack), `dispatched`, `adopted`, or `diverged`. A project newly assigned to the
   workspace automatically inherits every applicable adopted practice as its
   to-adopt queue — the library scales with the workspace.
+- **Actionable kinds → the `to_process` queue.** Which seed state a cell gets
+  depends on what the practice *asks for*. A `pitfall` names something to remove
+  and a `pattern` names something to converge on: both are work the repo owes,
+  so their cells seed at **`to_process`** — the execution queue. `decision`,
+  `howto` and `fact` are reference material; they reach the repo through the
+  memory projection and seed at plain `proposed`. The split lives in one place
+  (`initial_adoption_state` in `src-tauri/src/db/repos/dev_workspaces.rs`,
+  mirrored by `ACTIONABLE_KINDS` in `src/api/devTools/workspaces.ts`). The Pulse
+  shows the open `to_process` count, so adopting an actionable practice has a
+  visible consequence instead of being a silent status change. **Draining the
+  queue automatically is not wired yet** — today you clear a cell by dispatching
+  it from the rollout modal; the queue is the hook a future executor reads.
 
 ## Pulse — the library's own dashboard
 
@@ -101,9 +115,7 @@ Above the library sits a **Pulse** band answering the questions you have
 stored** — a stored weekly rollup would be a second source of truth that goes
 wrong the moment a decision is reversed (the plan's *projection principle*).
 
-**Four health pillars**, each 0–1 over the real rows (the demo corpus is
-excluded — a dashboard that counts the sample reports activity that never
-happened):
+**Four health pillars**, each 0–1 over the library's rows:
 
 | Pillar | Asks | Denominator |
 | --- | --- | --- |

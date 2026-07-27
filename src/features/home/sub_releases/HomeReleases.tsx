@@ -32,10 +32,9 @@ import { buildDisplayItems, ROADMAP_PRIORITIES, type DisplayItem } from './roadm
  * re-renders (law 4) — only a genuinely new item id fades in on its own. */
 type RevealTracker = ReturnType<typeof useRevealTracker>;
 
-// Traced glyphs carry ~10KB gzipped of path data each; lazy so they land with the
-// roadmap tab instead of the eager entry chunk. They animate themselves in on mount,
+// Traced glyph carries ~10KB gzipped of path data; lazy so it lands with the
+// roadmap tab instead of the eager entry chunk. It animates itself in on mount,
 // so the one-frame Suspense gap is invisible.
-const RoadmapRouteRail = lazy(() => import('./RoadmapRouteRail'));
 const RoadmapLaneEmptyGlyph = lazy(() => import('./RoadmapLaneEmptyGlyph'));
 
 const statusDot: Record<ReleaseItemStatus, string> = {
@@ -65,18 +64,13 @@ function RoadmapHero({ item, enter, t }: { item: DisplayItem; enter: RevealTrack
           </span>
           <span className="font-mono text-xs text-foreground">· #{item.sort_order} · {t.priority[item.priority]}</span>
         </div>
-        <div className="flex items-stretch gap-5 rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
-          <Suspense fallback={<div className="w-9 shrink-0" />}>
-            <RoadmapRouteRail />
-          </Suspense>
-          <div className="min-w-0">
-            <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
-              {item.title}
-            </h2>
-            {item.description && (
-              <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
-            )}
-          </div>
+        <div className="rounded-modal border border-cyan-500/15 bg-gradient-to-br from-cyan-500/[0.05] via-primary/[0.03] to-transparent p-7">
+          <h2 className="typo-heading text-2xl font-semibold leading-tight text-primary [text-shadow:_0_0_18px_color-mix(in_oklab,var(--primary)_38%,transparent)]">
+            {item.title}
+          </h2>
+          {item.description && (
+            <p className="typo-body mt-4 max-w-prose text-base leading-relaxed text-foreground">{item.description}</p>
+          )}
         </div>
       </article>
     </RevealItem>
@@ -190,7 +184,7 @@ export default function HomeReleases() {
       <ContentBody>
         <div className="relative z-10 mx-auto w-full max-w-6xl space-y-10">
           {hero && (
-            <div className="mx-auto w-full max-w-3xl space-y-3">
+            <div className="w-full space-y-3">
               <div className="flex justify-end">
                 <LiveRoadmapStatusPill
                   status={live.status}
@@ -214,7 +208,7 @@ export default function HomeReleases() {
           )}
 
           {shipped.length > 0 && (
-            <div className="mx-auto w-full max-w-3xl space-y-4">
+            <div className="w-full space-y-4">
               <span className="typo-section-title">{t.navRailLabel}</span>
               {shipped.map((release) => (
                 <BundledReleaseCard key={release.version} release={release} t={t} />

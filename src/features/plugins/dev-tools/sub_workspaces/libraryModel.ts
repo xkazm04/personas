@@ -10,6 +10,12 @@
 // authored by harvest agents, stored in workspace_knowledge.topic. Legacy
 // rows written before that column fall back to a coarse path derived from
 // applicability.layers so they still participate in the same tree.
+import {
+  buildGroupTree,
+  itemsUnderGroup,
+  searchItems,
+  type GroupNode,
+} from '@/features/shared/components/display/facetedTableModel';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import { silentCatch } from '@/lib/silentCatch';
@@ -39,8 +45,6 @@ export interface KnowledgeItemView {
   durability: Durability | null;
   governingId: string | null;
   evidenceCount: number | null;
-  /** True for generated demo rows (never written to the DB). */
-  mock?: boolean;
 }
 
 export type Abstraction = 'macro' | 'meso' | 'micro';
@@ -120,60 +124,22 @@ export function nextQueueIndex(
 }
 
 // -- topic tree (derived, arbitrary depth) -----------------------------------
+//
+// The mechanics now live in the shared, row-type-generic
+// `display/facetedTableModel` (the same tree/search engine backs the Backlog
+// table). These are the Workspaces-typed bindings — the topic accessor and the
+// search haystack — kept as named exports so existing callers/tests are
+// unaffected.
 
-export interface TopicNode {
-  /** Full slash path ('' = root). */
-  path: string;
-  segment: string;
-  /** Items exactly at this node. */
-  own: number;
-  /** Items at this node or any descendant. */
-  total: number;
-  children: TopicNode[];
-}
+/** A node of the derived topic taxonomy. Alias of the generic `GroupNode`. */
+export type TopicNode = GroupNode;
+
+const topicOf = (i: KnowledgeItemView): string => i.topic;
 
 /** Build the taxonomy tree that actually exists in the data — arbitrary depth,
  *  no hardcoded levels. Children sorted by descending total then name. */
 export function buildTopicTree(items: readonly KnowledgeItemView[]): TopicNode {
-  const root: TopicNode = { path: '', segment: '', own: 0, total: 0, children: [] };
-  const byPath = new Map<string, TopicNode>([['', root]]);
-
-  const ensure = (path: string): TopicNode => {
-    const existing = byPath.get(path);
-    if (existing) return existing;
-    const idx = path.lastIndexOf('/');
-    const parent = ensure(idx === -1 ? '' : path.slice(0, idx));
-    const node: TopicNode = {
-      path,
-      segment: idx === -1 ? path : path.slice(idx + 1),
-      own: 0,
-      total: 0,
-      children: [],
-    };
-    parent.children.push(node);
-    byPath.set(path, node);
-    return node;
-  };
-
-  for (const item of items) {
-    const node = ensure(item.topic || '');
-    node.own += 1;
-    // bubble totals to the root
-    for (let p = node.path; ; ) {
-      const n = byPath.get(p)!;
-      n.total += 1;
-      if (p === '') break;
-      const idx = p.lastIndexOf('/');
-      p = idx === -1 ? '' : p.slice(0, idx);
-    }
-  }
-
-  const sortRec = (node: TopicNode) => {
-    node.children.sort((a, b) => b.total - a.total || a.segment.localeCompare(b.segment));
-    node.children.forEach(sortRec);
-  };
-  sortRec(root);
-  return root;
+  return buildGroupTree(items, topicOf);
 }
 
 /** All items under a topic path (the node and its descendants). */
@@ -181,22 +147,15 @@ export function itemsUnderTopic(
   items: readonly KnowledgeItemView[],
   path: string,
 ): KnowledgeItemView[] {
-  if (!path) return [...items];
-  return items.filter((i) => i.topic === path || i.topic.startsWith(`${path}/`));
+  return itemsUnderGroup(items, topicOf, path);
 }
 
 // -- filtering ---------------------------------------------------------------
 
+/** Case-insensitive match against title, statement or topic. */
 export function searchFilter(
   items: readonly KnowledgeItemView[],
   query: string,
 ): KnowledgeItemView[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [...items];
-  return items.filter(
-    (i) =>
-      i.title.toLowerCase().includes(q) ||
-      i.statement.toLowerCase().includes(q) ||
-      i.topic.toLowerCase().includes(q),
-  );
+  return searchItems(items, query, (i) => [i.title, i.statement, i.topic]);
 }

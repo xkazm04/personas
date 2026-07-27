@@ -257,7 +257,7 @@ export default function LimitsSettings() {
           {ceilingNum > 0 ? (
             <>
               <p className="typo-caption text-foreground">
-                <span className="tabular-nums">{formatCost(totalSpend)}</span>{' '}
+                <span className="tabular-nums font-medium text-foreground">{formatCost(totalSpend)}</span>{' '}
                 {tx(s.of_ceiling, { ceiling: formatCost(ceilingNum) })}
               </p>
               {isOverBudget && (

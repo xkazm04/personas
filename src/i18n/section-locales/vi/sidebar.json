@@ -77,7 +77,20 @@
   "manage": "Quản lý",
   "context_map": "Bản đồ ngữ cảnh",
   "idea_scanner": "Quét ý tưởng",
-  "idea_triage": "Phân loại ý tưởng",
-  "task_runner": "Chạy tác vụ",
-  "projects": "Dự án"
+  "projects": "Dự án",
+  "task_runner": "Bàn điều khiển",
+  "group_advanced": "Nâng cao",
+  "group_build": "Tạo",
+  "group_connect": "Kết nối",
+  "group_credentials": "Thông tin xác thực",
+  "group_drafts": "Bản xây dựng nháp",
+  "group_general": "Chung",
+  "group_home": "Trang chủ",
+  "group_llm": "LLM",
+  "group_maintain": "Bảo trì",
+  "group_memory": "Bộ nhớ",
+  "group_monitoring": "Giám sát",
+  "group_operations": "Vận hành",
+  "group_plugins": "Plugin",
+  "group_templates": "Mẫu"
 }

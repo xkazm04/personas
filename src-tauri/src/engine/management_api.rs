@@ -795,6 +795,7 @@ async fn list_executions(
         q.limit,
         q.status.as_deref(),
         q.persona_id.as_deref(),
+        None,
     ) {
         Ok(rows) => ok_json(rows).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),

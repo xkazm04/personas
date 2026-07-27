@@ -733,7 +733,11 @@
     "reflect_scope_hint": "Führt den gewählten Erinnerungspool zu dauerhaften Erkenntnissen zusammen. Das Ergebnis ist ein Vorschlag, den du unter Übersicht → Erinnerungen prüfst — ohne deine Freigabe ändert sich nichts.",
     "reflect_scope_label": "Reflektieren über",
     "reflect_scope_team": "Team",
-    "reflection_label": "Erinnerungs-Reflexion"
+    "reflection_label": "Erinnerungs-Reflexion",
+    "close_sources_rail": "Quellenbereich ausblenden",
+    "close_targets_rail": "Zielbereich ausblenden",
+    "open_sources_rail": "Quellenbereich einblenden",
+    "open_targets_rail": "Zielbereich einblenden"
   },
   "trigger_configured": "Trigger konfiguriert",
   "secret_label": "Geheimnis",

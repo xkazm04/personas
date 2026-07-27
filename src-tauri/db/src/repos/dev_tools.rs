@@ -129,7 +129,7 @@ fn row_to_context_group_relationship(row: &Row) -> rusqlite::Result<DevContextGr
     })
 }
 
-fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
+pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
     Ok(DevIdea {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
@@ -195,7 +195,29 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
         depth: row
             .get::<_, Option<String>>("depth")?
             .unwrap_or_else(|| "quick".to_string()),
+        // Retry-lineage columns — tolerant `unwrap_or` for the same reason as
+        // `dedup_key` on ideas: a row read through a pre-migration connection
+        // (or a SELECT that omits them) must still map.
+        parent_task_id: row.get("parent_task_id").unwrap_or(None),
+        attempt: row
+            .get::<_, Option<i32>>("attempt")
+            .unwrap_or(None)
+            .unwrap_or(1),
     })
+}
+
+/// Warn (never reject) on a status outside `TASK_STATUSES`. Rejecting would
+/// strand a task mid-run; a warning is enough to catch a new writer that
+/// invents a vocabulary the Run Desk cannot render.
+fn warn_unknown_task_status(status: &str, op: &str) {
+    if !crate::models::TASK_STATUSES.contains(&status) {
+        tracing::warn!(
+            status,
+            op,
+            "dev_tasks: unknown status written — the Run Desk renders only {:?}",
+            crate::models::TASK_STATUSES
+        );
+    }
 }
 
 fn row_to_triage_rule(row: &Row) -> rusqlite::Result<TriageRule> {
@@ -2837,6 +2859,208 @@ pub fn list_ideas(
     })
 }
 
+// ----------------------------------------------------------------------------
+// Triage page — keyset pagination + facet counts
+//
+// `list_ideas` is OFFSET-paginated and count-blind; the triage surface needs a
+// stable cursor (rows are inserted while a human triages) and bucket counts
+// that survive pagination. Both live here rather than in the command layer so
+// the SQL is testable without a Tauri app handle.
+// ----------------------------------------------------------------------------
+
+/// Pseudo-origin the triage UI uses for classic Idea-Scanner ideas: only
+/// findings-spine sensors stamp a real `origin`, so "scanner" means
+/// `origin IS NULL`. Kept as a constant so the filter and the count bucket
+/// label can never drift apart.
+pub const TRIAGE_SCANNER_ORIGIN: &str = "scanner";
+
+/// Default / maximum page size for `triage_ideas`.
+const TRIAGE_DEFAULT_LIMIT: i64 = 50;
+const TRIAGE_MAX_LIMIT: i64 = 200;
+
+/// Filters for one triage page. All optional; `project_id: None` is an
+/// explicit cross-project read (the unified Backlog default), NOT "no filter
+/// chosen yet".
+#[derive(Debug, Clone, Default)]
+pub struct TriageFilter {
+    pub project_id: Option<String>,
+    /// Defaults to `pending` when unset.
+    pub status: Option<String>,
+    /// `scanner` is the pseudo-value for `origin IS NULL`.
+    pub origin: Option<String>,
+    pub category: Option<String>,
+}
+
+/// Bucket counts for the triage surface. Scoped to the NON-status filters, so
+/// the status tabs can show every bucket's size while one status is displayed.
+#[derive(Debug, Clone, Default, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TriageCounts {
+    pub total: u32,
+    pub pending: u32,
+    pub accepted: u32,
+    pub rejected: u32,
+    pub archived: u32,
+    /// Keyed by origin, with `scanner` standing in for `origin IS NULL`.
+    pub by_origin: HashMap<String, u32>,
+    pub by_category: HashMap<String, u32>,
+}
+
+/// One keyset page of triage ideas plus the counts the facet rail renders.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TriagePage {
+    pub ideas: Vec<DevIdea>,
+    /// `"{created_at}|{id}"` of the last row, or `None` when the page is last.
+    pub cursor: Option<String>,
+    pub has_more: bool,
+    pub counts: TriageCounts,
+}
+
+/// WHERE fragments for everything EXCEPT status — shared by the page query and
+/// all three count rollups so a filtered page and its counts can't disagree.
+fn triage_scope_clauses(
+    filter: &TriageFilter,
+) -> (Vec<String>, Vec<Box<dyn rusqlite::types::ToSql>>) {
+    let mut clauses: Vec<String> = Vec::new();
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+    if let Some(pid) = &filter.project_id {
+        clauses.push("project_id = ?".to_string());
+        params.push(Box::new(pid.clone()));
+    }
+    match filter.origin.as_deref() {
+        Some(TRIAGE_SCANNER_ORIGIN) => clauses.push("origin IS NULL".to_string()),
+        Some(origin) => {
+            clauses.push("origin = ?".to_string());
+            params.push(Box::new(origin.to_string()));
+        }
+        None => {}
+    }
+    if let Some(category) = &filter.category {
+        clauses.push("category = ?".to_string());
+        params.push(Box::new(category.clone()));
+    }
+
+    (clauses, params)
+}
+
+fn triage_counts(
+    conn: &rusqlite::Connection,
+    filter: &TriageFilter,
+) -> Result<TriageCounts, AppError> {
+    let (clauses, params) = triage_scope_clauses(filter);
+    let where_sql = if clauses.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", clauses.join(" AND "))
+    };
+    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+        params.iter().map(|p| p.as_ref()).collect();
+
+    let group = |expr: &str| -> Result<HashMap<String, u32>, AppError> {
+        let sql = format!(
+            "SELECT {expr} AS bucket, COUNT(*) AS n FROM dev_ideas{where_sql} GROUP BY bucket"
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok((
+                row.get::<_, String>("bucket")?,
+                row.get::<_, i64>("n")?.max(0) as u32,
+            ))
+        })?;
+        rows.collect::<Result<HashMap<_, _>, _>>()
+            .map_err(AppError::Database)
+    };
+
+    let by_status = group("status")?;
+    let by_origin = group(&format!("COALESCE(origin, '{TRIAGE_SCANNER_ORIGIN}')"))?;
+    let by_category = group("category")?;
+
+    let bucket = |name: &str| by_status.get(name).copied().unwrap_or(0);
+    Ok(TriageCounts {
+        total: by_status.values().sum(),
+        pending: bucket("pending"),
+        accepted: bucket("accepted"),
+        rejected: bucket("rejected"),
+        archived: bucket("archived"),
+        by_origin,
+        by_category,
+    })
+}
+
+/// One keyset page of ideas for the triage surface, newest first.
+///
+/// Ordering is `created_at DESC, id DESC` and the cursor is the last row's
+/// `"{created_at}|{id}"`; `id` breaks ties so two ideas written in the same
+/// millisecond can never hide each other across a page boundary. `limit + 1`
+/// rows are fetched to learn `has_more` without a second COUNT.
+pub fn triage_ideas(
+    pool: &DbPool,
+    filter: &TriageFilter,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+) -> Result<TriagePage, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::triage_ideas", {
+        let limit = limit
+            .unwrap_or(TRIAGE_DEFAULT_LIMIT)
+            .clamp(1, TRIAGE_MAX_LIMIT);
+        let status = filter.status.as_deref().unwrap_or("pending");
+
+        let (mut clauses, mut params) = triage_scope_clauses(filter);
+        clauses.push("status = ?".to_string());
+        params.push(Box::new(status.to_string()));
+
+        if let Some(raw) = cursor.filter(|c| !c.is_empty()) {
+            let (created_at, id) = raw.split_once('|').ok_or_else(|| {
+                AppError::Validation(format!("Malformed triage cursor: {raw}"))
+            })?;
+            clauses.push("(created_at < ? OR (created_at = ? AND id < ?))".to_string());
+            params.push(Box::new(created_at.to_string()));
+            params.push(Box::new(created_at.to_string()));
+            params.push(Box::new(id.to_string()));
+        }
+
+        let sql = format!(
+            "SELECT * FROM dev_ideas WHERE {} ORDER BY created_at DESC, id DESC LIMIT {}",
+            clauses.join(" AND "),
+            limit + 1
+        );
+
+        let conn = pool.get()?;
+        let mut ideas: Vec<DevIdea> = {
+            let mut stmt = conn.prepare(&sql)?;
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                params.iter().map(|p| p.as_ref()).collect();
+            let rows = stmt
+                .query_map(params_ref.as_slice(), row_to_idea)?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            rows
+        };
+
+        let has_more = ideas.len() as i64 > limit;
+        if has_more {
+            ideas.truncate(limit as usize);
+        }
+        let next_cursor = if has_more {
+            ideas.last().map(|i| format!("{}|{}", i.created_at, i.id))
+        } else {
+            None
+        };
+
+        let counts = triage_counts(&conn, filter)?;
+        Ok(TriagePage {
+            ideas,
+            cursor: next_cursor,
+            has_more,
+            counts,
+        })
+    })
+}
+
 pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
     timed_query!("dev_ideas", "dev_ideas::get_idea_by_id", {
         let conn = pool.get()?;
@@ -3269,10 +3493,18 @@ pub fn set_finding_verify_state(
         )?;
         drop(conn);
 
-        // A verdict landed — tell the bus. This is the event B-side learning and any
+        // A verdict landed — tell the bus. This is what B-side learning and any
         // future "the fix regressed, re-open it" route hang off.
-        if let Ok(idea) = get_idea_by_id(pool, id) {
-            publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
+        //
+        // `pending` is NOT a verdict: the sweep writes it when a sensor did not
+        // probe, and `finalize_task` writes it to ARM a re-check when work
+        // ships. Publishing `signal.verified` for either would announce a
+        // judgement nobody made and put a "verified" row in the Live Stream for
+        // an unjudged finding. Arming is silent; only real verdicts speak.
+        if verify_state != "pending" {
+            if let Ok(idea) = get_idea_by_id(pool, id) {
+                publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
+            }
         }
         Ok(())
     })
@@ -3685,6 +3917,7 @@ pub fn create_task(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let status = status.unwrap_or("queued");
+        warn_unknown_task_status(status, "create_task");
         let depth = depth.unwrap_or("quick");
 
         let conn = pool.get()?;
@@ -3714,6 +3947,9 @@ pub fn update_task(
 ) -> Result<DevTask, AppError> {
     timed_query!("dev_tasks", "dev_tasks::update_task", {
         get_task_by_id(pool, id)?;
+        if let Some(s) = status {
+            warn_unknown_task_status(s, "update_task");
+        }
         let conn = pool.get()?;
 
         let mut sets: Vec<String> = Vec::new();
@@ -3782,6 +4018,309 @@ pub fn delete_task(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM dev_tasks WHERE id = ?1", params![id])?;
         Ok(rows > 0)
+    })
+}
+
+/// One keyset page of tasks plus per-status counts. Same cursor scheme as
+/// `triage_ideas` (`"{created_at}|{id}"`, `created_at DESC, id DESC`).
+/// `list_tasks` stays untouched for the existing unpaginated callers.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TasksPage {
+    pub tasks: Vec<DevTask>,
+    pub cursor: Option<String>,
+    pub has_more: bool,
+    /// Per-status totals scoped to the project (NOT to the status filter), so
+    /// status chips stay truthful beyond the loaded page.
+    pub counts: HashMap<String, u32>,
+}
+
+const TASKS_PAGE_DEFAULT_LIMIT: i64 = 40;
+const TASKS_PAGE_MAX_LIMIT: i64 = 200;
+
+pub fn tasks_page(
+    pool: &DbPool,
+    project_id: Option<&str>,
+    statuses: Option<&[String]>,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+) -> Result<TasksPage, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::tasks_page", {
+        let limit = limit
+            .unwrap_or(TASKS_PAGE_DEFAULT_LIMIT)
+            .clamp(1, TASKS_PAGE_MAX_LIMIT);
+
+        let mut clauses: Vec<String> = Vec::new();
+        let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+
+        if let Some(pid) = project_id {
+            clauses.push("project_id = ?".to_string());
+            params.push(Box::new(pid.to_string()));
+        }
+        // An empty `statuses` vec is "no status filter", not "match nothing" —
+        // an empty IN () is a SQL error and a blank filter chip must not
+        // silently blank the list.
+        if let Some(list) = statuses.filter(|s| !s.is_empty()) {
+            let placeholders = vec!["?"; list.len()].join(", ");
+            clauses.push(format!("status IN ({placeholders})"));
+            for s in list {
+                params.push(Box::new(s.clone()));
+            }
+        }
+        if let Some(raw) = cursor.filter(|c| !c.is_empty()) {
+            let (created_at, id) = raw
+                .split_once('|')
+                .ok_or_else(|| AppError::Validation(format!("Malformed tasks cursor: {raw}")))?;
+            clauses.push("(created_at < ? OR (created_at = ? AND id < ?))".to_string());
+            params.push(Box::new(created_at.to_string()));
+            params.push(Box::new(created_at.to_string()));
+            params.push(Box::new(id.to_string()));
+        }
+
+        let where_sql = if clauses.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", clauses.join(" AND "))
+        };
+        let sql = format!(
+            "SELECT * FROM dev_tasks{where_sql} ORDER BY created_at DESC, id DESC LIMIT {}",
+            limit + 1
+        );
+
+        let conn = pool.get()?;
+        let mut tasks: Vec<DevTask> = {
+            let mut stmt = conn.prepare(&sql)?;
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                params.iter().map(|p| p.as_ref()).collect();
+            let rows = stmt
+                .query_map(params_ref.as_slice(), row_to_task)?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            rows
+        };
+
+        let has_more = tasks.len() as i64 > limit;
+        if has_more {
+            tasks.truncate(limit as usize);
+        }
+        let next_cursor = if has_more {
+            tasks.last().map(|t| format!("{}|{}", t.created_at, t.id))
+        } else {
+            None
+        };
+
+        let counts: HashMap<String, u32> = {
+            let (count_sql, count_params): (String, Vec<Box<dyn rusqlite::types::ToSql>>) =
+                match project_id {
+                    Some(pid) => (
+                        "SELECT status, COUNT(*) AS n FROM dev_tasks WHERE project_id = ? GROUP BY status"
+                            .to_string(),
+                        vec![Box::new(pid.to_string())],
+                    ),
+                    None => (
+                        "SELECT status, COUNT(*) AS n FROM dev_tasks GROUP BY status".to_string(),
+                        Vec::new(),
+                    ),
+                };
+            let mut stmt = conn.prepare(&count_sql)?;
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                count_params.iter().map(|p| p.as_ref()).collect();
+            let rows = stmt
+                .query_map(params_ref.as_slice(), |row| {
+                    Ok((
+                        row.get::<_, String>("status")?,
+                        row.get::<_, i64>("n")?.max(0) as u32,
+                    ))
+                })?
+                .collect::<Result<HashMap<_, _>, _>>()
+                .map_err(AppError::Database)?;
+            rows
+        };
+
+        Ok(TasksPage {
+            tasks,
+            cursor: next_cursor,
+            has_more,
+            counts,
+        })
+    })
+}
+
+/// Create a fresh `queued` task as a re-attempt of `task_id`.
+///
+/// The title is copied VERBATIM — no `[Retry] ` prefix. The prefix used to
+/// accumulate across attempts and, worse, it changed the text the executor
+/// prompts with, so a retry was not a re-run of the same instruction. Lineage
+/// lives in `parent_task_id` / `attempt`, which the UI renders as a chip.
+pub fn retry_task(pool: &DbPool, task_id: &str) -> Result<DevTask, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::retry_task", {
+        let parent = get_task_by_id(pool, task_id)?;
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_tasks (id, project_id, title, description, source_idea_id, goal_id, status, depth, parent_task_id, attempt, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'queued', ?7, ?8, ?9, ?10)",
+            params![
+                id,
+                parent.project_id,
+                parent.title,
+                parent.description,
+                parent.source_idea_id,
+                parent.goal_id,
+                parent.depth,
+                parent.id,
+                parent.attempt.saturating_add(1),
+                now,
+            ],
+        )?;
+
+        get_task_by_id(pool, &id)
+    })
+}
+
+// ============================================================================
+// Auto-runs (durable record of a backlog-draining wave)
+// ============================================================================
+
+/// One durable auto-run row. The in-memory `AUTO_RUN_JOBS` map is the live
+/// view; this table is what survives a restart, so the Run Desk banner can
+/// rehydrate instead of silently forgetting an in-flight run.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DevAutoRun {
+    pub id: String,
+    pub project_id: Option<String>,
+    pub status: String,
+    pub snapshot_size: u32,
+    pub completed: u32,
+    pub failed: u32,
+    pub skipped: u32,
+    pub iterations: u32,
+    pub termination_reason: Option<String>,
+    pub started_at: Option<String>,
+    pub finished_at: Option<String>,
+}
+
+fn row_to_auto_run(row: &Row) -> rusqlite::Result<DevAutoRun> {
+    let num = |v: Option<i64>| v.unwrap_or(0).max(0) as u32;
+    Ok(DevAutoRun {
+        id: row.get("id")?,
+        project_id: row.get("project_id").unwrap_or(None),
+        status: row
+            .get::<_, Option<String>>("status")?
+            .unwrap_or_else(|| "running".to_string()),
+        snapshot_size: num(row.get("snapshot_size")?),
+        completed: num(row.get("completed")?),
+        failed: num(row.get("failed")?),
+        skipped: num(row.get("skipped")?),
+        iterations: num(row.get("iterations")?),
+        termination_reason: row.get("termination_reason").unwrap_or(None),
+        started_at: row.get("started_at").unwrap_or(None),
+        finished_at: row.get("finished_at").unwrap_or(None),
+    })
+}
+
+/// Record the start of an auto-run. Best-effort by contract at the call site:
+/// a failed bookkeeping write must never abort the run itself.
+pub fn start_auto_run(
+    pool: &DbPool,
+    run_id: &str,
+    project_id: &str,
+    snapshot_size: u32,
+) -> Result<(), AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::start_auto_run", {
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT OR REPLACE INTO dev_auto_runs
+                (id, project_id, status, snapshot_size, completed, failed, skipped, iterations, termination_reason, started_at, finished_at)
+             VALUES (?1, ?2, 'running', ?3, 0, 0, 0, 0, NULL, ?4, NULL)",
+            params![
+                run_id,
+                project_id,
+                snapshot_size,
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn finish_auto_run(
+    pool: &DbPool,
+    run_id: &str,
+    status: &str,
+    completed: u32,
+    failed: u32,
+    skipped: u32,
+    iterations: u32,
+    termination_reason: &str,
+) -> Result<(), AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::finish_auto_run", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_auto_runs
+                SET status = ?2, completed = ?3, failed = ?4, skipped = ?5,
+                    iterations = ?6, termination_reason = ?7, finished_at = ?8
+              WHERE id = ?1",
+            params![
+                run_id,
+                status,
+                completed,
+                failed,
+                skipped,
+                iterations,
+                termination_reason,
+                chrono::Utc::now().to_rfc3339()
+            ],
+        )?;
+        Ok(())
+    })
+}
+
+/// Flip only the status of an auto-run row (cancel / panic arms), leaving the
+/// tallies for the completion arm to fill in if it still gets to run. A panic
+/// or a cancel that never reaches completion must not leave the row `running`
+/// forever — a stuck `running` row is what makes the banner lie after restart.
+pub fn set_auto_run_status(pool: &DbPool, run_id: &str, status: &str) -> Result<(), AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::set_auto_run_status", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_auto_runs SET status = ?2, finished_at = COALESCE(finished_at, ?3) WHERE id = ?1",
+            params![run_id, status, chrono::Utc::now().to_rfc3339()],
+        )?;
+        Ok(())
+    })
+}
+
+/// Most recent auto-run row, optionally scoped to a project.
+pub fn latest_auto_run(
+    pool: &DbPool,
+    project_id: Option<&str>,
+) -> Result<Option<DevAutoRun>, AppError> {
+    timed_query!("dev_auto_runs", "dev_auto_runs::latest_auto_run", {
+        let conn = pool.get()?;
+        let row = match project_id {
+            Some(pid) => conn
+                .query_row(
+                    "SELECT * FROM dev_auto_runs WHERE project_id = ?1 ORDER BY started_at DESC LIMIT 1",
+                    params![pid],
+                    row_to_auto_run,
+                )
+                .optional()?,
+            None => conn
+                .query_row(
+                    "SELECT * FROM dev_auto_runs ORDER BY started_at DESC LIMIT 1",
+                    [],
+                    row_to_auto_run,
+                )
+                .optional()?,
+        };
+        Ok(row)
     })
 }
 
@@ -6246,3 +6785,9 @@ mod use_case_tests {
 #[cfg(test)]
 #[path = "dev_tools_backlog_tests.rs"]
 mod backlog_memory_tests;
+
+// Keyset-pagination + retry-lineage tests for the unified Backlog / Run Desk.
+// Same `#[path]` arrangement as the backlog tests above.
+#[cfg(test)]
+#[path = "dev_tools_page_tests.rs"]
+mod page_tests;

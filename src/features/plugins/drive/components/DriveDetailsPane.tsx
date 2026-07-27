@@ -340,7 +340,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
   const sameMoment = oldest !== null && oldest === newest;
 
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/30 p-3 space-y-2.5">
+    <div className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent p-3 space-y-2.5">
       {/* Top row — total count + total size. */}
       <div>
         <div className="typo-label text-foreground">
@@ -364,7 +364,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
               key={key}
               className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/15 typo-caption text-foreground"
             >
-              <span className="font-semibold tabular-nums">{count}</span>
+              <span className="font-normal tabular-nums text-foreground">{count}</span>
               <span className="text-foreground">
                 {kindGroupLabel(
                   t,
@@ -393,7 +393,7 @@ function MultiSelectSummary({ entries }: { entries: DriveEntry[] }) {
 
 function DetailGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/30 divide-y divide-primary/10 overflow-hidden">
+    <div className="rounded-modal border border-primary/8 bg-gradient-to-br from-primary/[0.03] to-transparent divide-y divide-primary/10 overflow-hidden">
       {children}
     </div>
   );

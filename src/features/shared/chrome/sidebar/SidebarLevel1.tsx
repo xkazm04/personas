@@ -14,6 +14,7 @@ import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 import { sections } from '@/features/shared/chrome/sidebar/sidebarData';
+import { railSection } from '@/lib/navigation/registry';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
@@ -208,7 +209,9 @@ export default function SidebarLevel1({
           .map((section) => {
           const CustomIcon = SIDEBAR_ICONS[section.id];
           const FallbackIcon = section.icon;
-          const isActive = sidebarSection === section.id;
+          // Nested sections (e.g. Templates, folded into Connections) light up
+          // their parent rail entry — the rail has no button of their own.
+          const isActive = railSection(sidebarSection) === section.id;
           const isDisabled = disabledSections.has(section.id);
           const isDevSection = section.devOnly;
           const isDevModeSection = section.devModeOnly;

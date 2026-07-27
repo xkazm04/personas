@@ -430,39 +430,129 @@ pub fn dev_tools_update_idea(
     rejection_reason: Option<Option<String>>,
 ) -> Result<DevIdea, AppError> {
     require_auth_sync(&state)?;
-    repo::update_idea(
+    // A verdict must never reach the table as a raw status write, even through
+    // the generic editor door (plan 1B): the edit lands first, then the verdict
+    // goes through the shared core so the decision memory + workspace adoption
+    // sync happen exactly as they would from the triage UI. Non-verdict
+    // statuses (`pending`, `archived`) are lifecycle, not decisions, and pass
+    // straight through.
+    let verdict = match status.as_deref() {
+        Some("accepted") => Some(IdeaVerdict::Accept),
+        Some("rejected") => Some(IdeaVerdict::Reject {
+            reason: rejection_reason.clone().flatten(),
+        }),
+        _ => None,
+    };
+    let updated = repo::update_idea(
         &state.db,
         &id,
         title.as_deref(),
         description.as_ref().map(|o| o.as_deref()),
-        status.as_deref(),
+        if verdict.is_some() { None } else { status.as_deref() },
         category.as_deref(),
         effort,
         impact,
         risk,
-        rejection_reason.as_ref().map(|o| o.as_deref()),
-    )
+        if verdict.is_some() {
+            None
+        } else {
+            rejection_reason.as_ref().map(|o| o.as_deref())
+        },
+    )?;
+    match verdict {
+        Some(v) => apply_idea_verdict(&state.db, &id, v),
+        None => Ok(updated),
+    }
 }
 
-/// Accept a backlog idea (triage). Persists `status = accepted` and records the
-/// human decision as a shared team memory when the idea's project is team-bound
-/// (the dev-backlog learning loop — mirrors `manual_reviews::update_status`).
+// ============================================================================
+// The shared verdict core (plan 1B)
+// ============================================================================
+
+/// A triage verdict on a backlog idea. Only two verdicts exist — everything
+/// else (`archived`, `pending`) is lifecycle bookkeeping, not a decision, and
+/// deliberately does NOT route through [`apply_idea_verdict`].
+pub enum IdeaVerdict {
+    Accept,
+    Reject { reason: Option<String> },
+}
+
+impl IdeaVerdict {
+    fn status(&self) -> &'static str {
+        match self {
+            Self::Accept => "accepted",
+            Self::Reject { .. } => "rejected",
+        }
+    }
+}
+
+/// THE single door through which a backlog idea gets a verdict.
+///
+/// Three things must happen together and in this order, or the loop lies:
+/// 1. the status write (`update_idea`),
+/// 2. the learning write-back (`record_idea_decision_by` → project + team
+///    memory, which feeds both future scans and future task prompts),
+/// 3. the workspace adoption sync (a rejected practice idea marks that repo's
+///    adoption cell `diverged`).
+///
+/// Before this existed, four call sites did (1), three of them did (2) with
+/// hand-copied code, and none did (3). Any new path that decides an idea —
+/// human triage, a triage rule, the Strategist, Athena's batch verdicts —
+/// calls THIS and nothing else. No raw status writes.
+///
+/// **Idempotent.** Re-applying a verdict an idea already carries is a no-op
+/// success: no second memory row, no second adoption write, no clobbering of
+/// the original rejection reason. That is what makes the Athena batch path
+/// (idea writes first, approval status last) safe to replay after a crash.
+pub fn apply_idea_verdict(
+    db: &crate::db::DbPool,
+    id: &str,
+    verdict: IdeaVerdict,
+) -> Result<DevIdea, AppError> {
+    apply_idea_verdict_by(db, id, verdict, "Human")
+}
+
+/// [`apply_idea_verdict`] with an explicit actor for the memory ledger
+/// ("Human" · "TriageRule" · "Strategist" · "Autonomy").
+pub fn apply_idea_verdict_by(
+    db: &crate::db::DbPool,
+    id: &str,
+    verdict: IdeaVerdict,
+    actor: &str,
+) -> Result<DevIdea, AppError> {
+    let status = verdict.status();
+    let existing = repo::get_idea_by_id(db, id)?;
+    if existing.status == status {
+        return Ok(existing);
+    }
+
+    let reason = match &verdict {
+        IdeaVerdict::Accept => None,
+        IdeaVerdict::Reject { reason } => Some(reason.as_deref()),
+    };
+    let idea = repo::update_idea(db, id, None, None, Some(status), None, None, None, None, reason)?;
+
+    record_idea_decision_by(db, &idea, status, actor);
+    crate::db::repos::dev_workspaces::sync_practice_adoption(db, &idea);
+    Ok(idea)
+}
+
+/// Accept a backlog idea (triage). Delegates to [`apply_idea_verdict`] — the
+/// status write, the decision memory and the workspace adoption sync all live
+/// there.
 #[tauri::command]
 pub fn dev_tools_accept_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<DevIdea, AppError> {
     require_auth_sync(&state)?;
-    let idea = repo::update_idea(
-        &state.db, &id, None, None, Some("accepted"), None, None, None, None, None,
-    )?;
-    record_idea_decision(&state.db, &idea, "accepted");
-    Ok(idea)
+    apply_idea_verdict(&state.db, &id, IdeaVerdict::Accept)
 }
 
-/// Reject a backlog idea (triage). Persists `status = rejected` (+ reason) and
-/// records the decision as a shared team `constraint` memory when team-bound, so
-/// the team + future scans avoid re-surfacing it.
+/// Reject a backlog idea (triage). Delegates to [`apply_idea_verdict`], which
+/// records the decision as a `constraint` memory (so the team + future scans
+/// avoid re-surfacing it) and diverges the workspace adoption cell when the
+/// idea was a materialized practice.
 #[tauri::command]
 pub fn dev_tools_reject_idea(
     state: State<'_, Arc<AppState>>,
@@ -470,12 +560,34 @@ pub fn dev_tools_reject_idea(
     reason: Option<String>,
 ) -> Result<DevIdea, AppError> {
     require_auth_sync(&state)?;
-    let idea = repo::update_idea(
-        &state.db, &id, None, None, Some("rejected"), None, None, None, None,
-        Some(reason.as_deref()),
-    )?;
-    record_idea_decision(&state.db, &idea, "rejected");
-    Ok(idea)
+    apply_idea_verdict(&state.db, &id, IdeaVerdict::Reject { reason })
+}
+
+/// One keyset page of backlog ideas + facet counts — the read behind the
+/// unified Backlog (Approvals › Backlog) and its Focus deck.
+///
+/// `project_id: None` is an explicit CROSS-PROJECT read, not "unfiltered by
+/// accident". `status` defaults to `pending`. `origin` accepts the pseudo-value
+/// `scanner` for classic Idea-Scanner rows (`origin IS NULL`).
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_triage_ideas(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+    status: Option<String>,
+    origin: Option<String>,
+    category: Option<String>,
+    limit: Option<i64>,
+    cursor: Option<String>,
+) -> Result<repo::TriagePage, AppError> {
+    require_auth_sync(&state)?;
+    let filter = repo::TriageFilter {
+        project_id,
+        status,
+        origin,
+        category,
+    };
+    repo::triage_ideas(&state.db, &filter, limit, cursor.as_deref())
 }
 
 /// Pending backlog ideas across ALL projects (bounded) — the source for the
@@ -490,15 +602,16 @@ pub fn dev_tools_list_pending_ideas(
     repo::list_ideas(&state.db, None, Some("pending"), None, Some(limit.unwrap_or(100)), None)
 }
 
-/// Write a human triage decision to the idea's bound team's shared memory ledger
-/// (best-effort). Team-less projects skip the memory; the Scanner-suppress loop
-/// (idea_scanner) covers re-surfacing for those. Deduped by `(team_id, title)`.
-pub(crate) fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str) {
-    record_idea_decision_by(pool, idea, verdict, "Human")
-}
-
-/// Same as [`record_idea_decision`] with an explicit actor ("Human" — the inbox
-/// triage — or "Strategist" — the autonomous backlog-triage job).
+/// Write a triage decision to the project's dev memory + the bound team's
+/// shared ledger (best-effort). Team-less projects skip the team memory; the
+/// Scanner-suppress loop (idea_scanner) covers re-surfacing for those. Deduped
+/// by `(project_id, source_kind, source_id)` and by `(team_id, title)`.
+///
+/// `actor` names who decided: "Human" (triage UI), "TriageRule", "Strategist"
+/// (the autonomous backlog-triage job) or "Autonomy" (the backlog→goal tick).
+///
+/// Not called directly by verdict paths — [`apply_idea_verdict_by`] owns the
+/// ordering. It stays `pub(crate)` for that one caller.
 pub(crate) fn record_idea_decision_by(
     pool: &crate::db::DbPool,
     idea: &DevIdea,
@@ -706,7 +819,7 @@ pub fn dev_tools_create_task(
     depth: Option<String>,
 ) -> Result<DevTask, AppError> {
     require_auth_sync(&state)?;
-    repo::create_task(
+    let task = repo::create_task(
         &state.db,
         project_id.as_deref(),
         &title,
@@ -715,7 +828,224 @@ pub fn dev_tools_create_task(
         goal_id.as_deref(),
         status.as_deref(),
         depth.as_deref(),
-    )
+    )?;
+    // A task created FROM a materialized workspace practice means that repo has
+    // started the work — the adoption cell leaves the `to_process` queue for
+    // `dispatched`. `finalize_task` carries it the rest of the way (adopted on
+    // success, back to `to_process` on failure).
+    if let Some(idea_id) = source_idea_id.as_deref() {
+        if let Ok(idea) = repo::get_idea_by_id(&state.db, idea_id) {
+            crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
+                &state.db,
+                &idea,
+                "dispatched",
+                &format!("task:{}", task.id),
+            );
+        }
+    }
+    Ok(task)
+}
+
+// ============================================================================
+// The accept → execute bridge (plan 1D)
+// ============================================================================
+
+/// One idea that made it onto the runway, with everything either executor needs.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchedIdea {
+    pub idea_id: String,
+    pub task_id: String,
+    pub title: String,
+    pub project_id: Option<String>,
+    pub project_name: Option<String>,
+    /// The project's working directory — `None` when the project is gone or
+    /// pathless. The fleet arm needs it; the runner arm doesn't.
+    pub root_path: Option<String>,
+    /// The composed task description, so the fleet arm can seed a session with
+    /// the exact same text the runner would have executed.
+    pub prompt: String,
+}
+
+/// An idea that could not be dispatched, and why. Reported per item — a batch
+/// dispatch that silently drops half its input is worse than one that fails.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchSkip {
+    pub idea_id: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DispatchIdeasResult {
+    /// `runner` | `fleet` — echoed so the caller can branch without re-reading
+    /// its own request.
+    pub target: String,
+    pub dispatched: Vec<DispatchedIdea>,
+    pub skipped: Vec<DispatchSkip>,
+    /// True when the runner batch was actually started (fleet dispatches leave
+    /// this false — the frontend spawns the sessions).
+    pub started: bool,
+}
+
+/// The prompt a dispatched idea carries into its executor.
+///
+/// Ported verbatim in spirit from `findings/dispatch.ts::dispatchPrompt`: the
+/// description is already written as an instruction (emitters seed it that
+/// way), the reasoning explains why it was raised, and the evidence is the bar
+/// the fix has to clear — an agent that can see the numbers can tell whether it
+/// actually fixed the thing instead of guessing.
+pub fn dispatch_prompt(idea: &DevIdea) -> String {
+    let mut lines: Vec<String> = vec![idea.title.trim().to_string()];
+    if let Some(d) = idea.description.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(d.trim().to_string());
+    }
+    if let Some(r) = idea.reasoning.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(format!("Why this was raised: {}", r.trim()));
+    }
+    if let Some(e) = idea.evidence.as_deref().filter(|s| !s.trim().is_empty()) {
+        lines.push(String::new());
+        lines.push(format!("Evidence this was raised on: {}", e.trim()));
+        lines.push(
+            "Treat those numbers as the bar: the fix has to move them, not merely look plausible."
+                .to_string(),
+        );
+    }
+    lines.join("\n")
+}
+
+/// Dispatch accepted backlog ideas to an executor — the bridge that made the
+/// Backlog's "accept" mean something.
+///
+/// Per idea: **dispatching IS a decision**, so a still-pending idea is
+/// auto-accepted through [`apply_idea_verdict`] (never a raw status write — the
+/// decision memory and the workspace adoption sync must happen too). Then a
+/// task is created through [`dev_tools_create_task`], deliberately reusing that
+/// command rather than `repo::create_task`, because it is the path that carries
+/// a materialized workspace practice's adoption cell from `to_process` to
+/// `dispatched`. Calling the repo directly here would silently skip that sync.
+///
+/// `runner` starts the created tasks through the existing batch machinery
+/// (`dev_tools_start_batch`, unchanged — no fork of the execution path).
+/// `fleet` returns the tasks plus each project's `root_path` and the composed
+/// prompt, and the frontend spawns the sessions (v1 decision: the fleet arm
+/// stays frontend-composed).
+#[tauri::command]
+pub async fn dev_tools_dispatch_ideas(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    idea_ids: Vec<String>,
+    target: String,
+    depth: Option<String>,
+    max_parallel: Option<usize>,
+) -> Result<DispatchIdeasResult, AppError> {
+    require_auth(&state).await?;
+
+    if idea_ids.is_empty() {
+        return Err(AppError::Validation("No ideas selected to dispatch.".into()));
+    }
+    if !matches!(target.as_str(), "runner" | "fleet") {
+        return Err(AppError::Validation(format!(
+            "dispatch target must be `runner` or `fleet`, got `{target}`"
+        )));
+    }
+
+    let mut dispatched: Vec<DispatchedIdea> = Vec::new();
+    let mut skipped: Vec<DispatchSkip> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    for id in idea_ids {
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        let idea = match repo::get_idea_by_id(&state.db, &id) {
+            Ok(i) => i,
+            Err(_) => {
+                skipped.push(DispatchSkip { idea_id: id, reason: "not found".into() });
+                continue;
+            }
+        };
+        if idea.status == "rejected" || idea.status == "archived" {
+            skipped.push(DispatchSkip {
+                idea_id: id,
+                reason: format!("is {}", idea.status),
+            });
+            continue;
+        }
+        // Dispatching IS the decision — route it through the shared verdict core
+        // so the memory + adoption write-backs happen exactly as they would from
+        // a click. Idempotent, so an already-accepted idea costs nothing.
+        let idea = if idea.status == "pending" {
+            match apply_idea_verdict(&state.db, &id, IdeaVerdict::Accept) {
+                Ok(i) => i,
+                Err(e) => {
+                    skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                    continue;
+                }
+            }
+        } else {
+            idea
+        };
+
+        let prompt = dispatch_prompt(&idea);
+        let task = match dev_tools_create_task(
+            state.clone(),
+            idea.project_id.clone(),
+            idea.title.clone(),
+            Some(prompt.clone()),
+            Some(idea.id.clone()),
+            None,
+            None,
+            depth.clone(),
+        ) {
+            Ok(t) => t,
+            Err(e) => {
+                skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
+                continue;
+            }
+        };
+
+        let project = idea
+            .project_id
+            .as_deref()
+            .and_then(|pid| repo::get_project_by_id(&state.db, pid).ok());
+        dispatched.push(DispatchedIdea {
+            idea_id: idea.id.clone(),
+            task_id: task.id,
+            title: idea.title.clone(),
+            project_id: idea.project_id.clone(),
+            project_name: project.as_ref().map(|p| p.name.clone()),
+            root_path: project.as_ref().map(|p| p.root_path.clone()),
+            prompt,
+        });
+    }
+
+    if dispatched.is_empty() {
+        return Err(AppError::Validation(
+            "Nothing could be dispatched — see the per-item reasons.".into(),
+        ));
+    }
+
+    let mut started = false;
+    if target == "runner" {
+        let task_ids: Vec<String> = dispatched.iter().map(|d| d.task_id.clone()).collect();
+        crate::commands::infrastructure::task_executor::dev_tools_start_batch(
+            state.clone(),
+            app,
+            task_ids,
+            max_parallel,
+        )
+        .await?;
+        started = true;
+    }
+
+    Ok(DispatchIdeasResult { target, dispatched, skipped, started })
 }
 
 #[tauri::command]
@@ -756,6 +1086,38 @@ pub fn dev_tools_delete_task(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_task(&state.db, &id)
+}
+
+/// Keyset page of tasks + per-status counts for the Run Desk.
+/// `dev_tools_list_tasks` stays as-is for the unpaginated callers.
+#[tauri::command]
+pub fn dev_tools_tasks_page(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+    statuses: Option<Vec<String>>,
+    limit: Option<i64>,
+    cursor: Option<String>,
+) -> Result<repo::TasksPage, AppError> {
+    require_auth_sync(&state)?;
+    repo::tasks_page(
+        &state.db,
+        project_id.as_deref(),
+        statuses.as_deref(),
+        limit,
+        cursor.as_deref(),
+    )
+}
+
+/// Queue a fresh attempt of a task. The new row copies the original verbatim
+/// (no `[Retry] ` title prefix) and records lineage via `parent_task_id` /
+/// `attempt`.
+#[tauri::command]
+pub fn dev_tools_retry_task(
+    state: State<'_, Arc<AppState>>,
+    task_id: String,
+) -> Result<DevTask, AppError> {
+    require_auth_sync(&state)?;
+    repo::retry_task(&state.db, &task_id)
 }
 
 // ============================================================================
@@ -865,24 +1227,18 @@ pub fn dev_tools_run_triage_rules(
                 } else {
                     None
                 };
-                let update_result = repo::update_idea(
-                    &state.db,
-                    &idea.id,
-                    None,
-                    None,
-                    Some(new_status),
-                    None,
-                    None,
-                    None,
-                    None,
-                    rejection_reason.as_deref().map(Some),
-                );
-                // Mirror the manual accept/reject path: write the decision to
-                // the team's shared memory ledger so future scans don't
-                // re-propose an idea this rule was created to kill.
-                if let Ok(updated_idea) = &update_result {
-                    record_idea_decision_by(&state.db, updated_idea, new_status, "TriageRule");
-                }
+                // Routed through the shared verdict core (plan 1B), so a rule
+                // firing writes the same decision memory and the same
+                // workspace-adoption sync a human accept/reject would.
+                let verdict = if new_status == "accepted" {
+                    IdeaVerdict::Accept
+                } else {
+                    IdeaVerdict::Reject {
+                        reason: rejection_reason,
+                    }
+                };
+                let _ =
+                    apply_idea_verdict_by(&state.db, &idea.id, verdict, "TriageRule");
                 // Increment times_fired
                 let _ = repo::update_triage_rule(
                     &state.db,
@@ -1953,5 +2309,114 @@ mod repo_evidence_tests {
     #[test]
     fn encodes_unix_paths_like_claude_code() {
         assert_eq!(encode_claude_project_dir("/home/x/repo.app"), "-home-x-repo-app");
+    }
+}
+
+/// The shared verdict core (plan 1B). The property that matters here is
+/// IDEMPOTENCY: the Athena batch path writes ideas first and the approval row
+/// last, so a crash between the two replays the whole batch on restart. If
+/// re-applying a verdict duplicated the decision memory, every replay would
+/// inflate the ledger the executor reads back into task prompts.
+#[cfg(test)]
+mod verdict_core_tests {
+    use super::*;
+    use crate::db::DbPool;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    fn test_pool() -> DbPool {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:verdict_core_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        }
+        pool
+    }
+
+    fn seeded_idea(pool: &DbPool) -> String {
+        let project = repo::create_project(pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        repo::create_finding(
+            pool,
+            &project.id,
+            "standards_finding",
+            "Avoid unwrap",
+            Some("Replace unwrap with ?"),
+            Some("technical"),
+            None,
+            None,
+            Some(r#"{"count":3}"#),
+            "standards:no-unwrap",
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+        .unwrap()
+        .id
+    }
+
+    fn decision_memories(pool: &DbPool, idea_id: &str) -> i64 {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM dev_memories WHERE source_kind = 'idea_decision' AND source_id = ?1",
+                rusqlite::params![idea_id],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    #[test]
+    fn re_applying_the_same_verdict_is_a_no_op_success() {
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+
+        let first = apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Accept).unwrap();
+        assert_eq!(first.status, "accepted");
+        assert_eq!(decision_memories(&pool, &idea_id), 1);
+
+        // Replay: same verdict, no error, no second memory row.
+        let again = apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Accept).unwrap();
+        assert_eq!(again.status, "accepted");
+        assert_eq!(decision_memories(&pool, &idea_id), 1);
+    }
+
+    #[test]
+    fn re_rejecting_never_clobbers_the_original_reason() {
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+
+        apply_idea_verdict(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Reject { reason: Some("out of scope".into()) },
+        )
+        .unwrap();
+        // A replay carrying no reason must not erase the one a human gave.
+        let again =
+            apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Reject { reason: None }).unwrap();
+        assert_eq!(again.status, "rejected");
+        assert_eq!(again.rejection_reason.as_deref(), Some("out of scope"));
+    }
+
+    #[test]
+    fn a_genuine_verdict_change_still_lands() {
+        // Idempotency must not calcify: accepted → rejected is a real decision.
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+        apply_idea_verdict(&pool, &idea_id, IdeaVerdict::Accept).unwrap();
+        let flipped = apply_idea_verdict(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Reject { reason: Some("changed our mind".into()) },
+        )
+        .unwrap();
+        assert_eq!(flipped.status, "rejected");
+        assert_eq!(flipped.rejection_reason.as_deref(), Some("changed our mind"));
     }
 }

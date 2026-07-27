@@ -77,7 +77,20 @@
   "manage": "管理",
   "context_map": "上下文映射",
   "idea_scanner": "想法扫描器",
-  "idea_triage": "想法分类",
-  "task_runner": "任务运行器",
-  "projects": "项目"
+  "projects": "项目",
+  "task_runner": "运行台",
+  "group_advanced": "高级",
+  "group_build": "构建",
+  "group_connect": "连接",
+  "group_credentials": "凭证",
+  "group_drafts": "草稿构建",
+  "group_general": "常规",
+  "group_home": "首页",
+  "group_llm": "LLM",
+  "group_maintain": "维护",
+  "group_memory": "记忆",
+  "group_monitoring": "监控",
+  "group_operations": "运维",
+  "group_plugins": "插件",
+  "group_templates": "模板"
 }

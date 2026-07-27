@@ -102,7 +102,9 @@
     "connections_builtin_other": "{count}개 내장 커넥터",
     "trend_up": "이전 24시간 대비 {pct}% 증가",
     "trend_down": "이전 24시간 대비 {pct}% 감소",
-    "trend_flat": "이전 24시간 대비 변화 없음"
+    "trend_flat": "이전 24시간 대비 변화 없음",
+    "agents_enabled": "활성 에이전트 {count}개",
+    "agents_enabled_other": "활성 에이전트 {count}개"
   },
   "get_started": {
     "ask_cta": "어시스턴트에게 묻기",
