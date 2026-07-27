@@ -46,11 +46,16 @@ export interface ExitCriterion {
   dispatch?: string;
 }
 
+export type MilestoneStatus = 'shipped' | 'active' | 'planned';
+
 export interface ShipMilestone {
+  id: string;
   name: string;
+  status: MilestoneStatus;
   /** The one-sentence core-value statement the cut converges on. */
   goal: string;
   cutAgeDays: number;
+  /** Target date while open; ship date once shipped. */
   targetLabel: string | null;
   criteria: ExitCriterion[];
   features: ShipFeature[];
@@ -108,7 +113,9 @@ export function shipVerdict(m: ShipMilestone): CritState {
 // -- the mock milestone -------------------------------------------------------
 
 export const MOCK_MILESTONE: ShipMilestone = {
+  id: 'm-v1',
   name: 'v1 — First Ship',
+  status: 'active',
   goal: 'A visitor can adopt a template, bind one credential, and see their first persona run end-to-end.',
   cutAgeDays: 12,
   targetLabel: 'Aug 15',
@@ -173,3 +180,48 @@ export const MOCK_MILESTONE: ShipMilestone = {
     { id: 'f17', name: 'Webhook trigger for runs', contexts: ['Scheduler', 'Event Bus'], bucket: 'later', state: 'todo', sinceCut: true },
   ],
 };
+
+// The roadmap (round-2 fusion): milestones are the navigation spine. A shipped
+// milestone keeps its record; a planned one starts as an uncut pool — note how
+// v1's "Later" bucket is exactly where v1.1's core candidates come from.
+const ALPHA_MILESTONE: ShipMilestone = {
+  id: 'm-alpha',
+  name: 'v0.9 — Private Alpha',
+  status: 'shipped',
+  goal: 'One hardcoded persona runs end-to-end on a dev machine, watched by five friendly users.',
+  cutAgeDays: 61,
+  targetLabel: 'shipped Jun 30',
+  criteria: [
+    { id: 'ac-verify', kind: 'verify', label: 'Core features verified', evidence: 'All 4 alpha features passed their verify run', done: 4, total: 4, state: 'go' },
+    { id: 'ac-demo', kind: 'contexts', label: 'Demo path stable', evidence: 'Zero crashes across the 5-user demo week', done: 1, total: 1, state: 'go' },
+  ],
+  features: [
+    { id: 'a1', name: 'Prototype persona runner', contexts: ['Execution'], bucket: 'core', state: 'done' },
+    { id: 'a2', name: 'Local SQLite bootstrap', contexts: ['Infra'], bucket: 'core', state: 'done' },
+    { id: 'a3', name: 'Single hardcoded template', contexts: ['Template Catalog'], bucket: 'core', state: 'done' },
+    { id: 'a4', name: 'CLI smoke harness', contexts: ['Infra'], bucket: 'core', state: 'done' },
+  ],
+};
+
+const GROWTH_MILESTONE: ShipMilestone = {
+  id: 'm-v11',
+  name: 'v1.1 — Growth',
+  status: 'planned',
+  goal: 'Returning users share personas with a teammate and keep run costs visible.',
+  cutAgeDays: 0,
+  targetLabel: 'target Sep',
+  criteria: [
+    { id: 'gc-cut', kind: 'passport', label: 'Scope not cut yet', evidence: 'Certify v1 first — then triage this pool into a core cut', done: 0, total: 4, state: 'setup' },
+  ],
+  features: [
+    { id: 'g1', name: 'Persona duplication & versioning', contexts: ['Persona Editor'], bucket: 'core', state: 'todo' },
+    { id: 'g2', name: 'Team sharing & roles', contexts: ['Teams'], bucket: 'core', state: 'todo' },
+    { id: 'g3', name: 'Run cost budget alerts', contexts: ['Observability'], bucket: 'core', state: 'todo' },
+    { id: 'g4', name: 'Prompt A/B compare view', contexts: ['Persona Editor'], bucket: 'later', state: 'todo' },
+    { id: 'g5', name: 'Webhook trigger for runs', contexts: ['Scheduler', 'Event Bus'], bucket: 'later', state: 'todo' },
+    { id: 'g6', name: 'Marketplace publishing', contexts: ['Template Catalog'], bucket: 'later', state: 'todo' },
+  ],
+};
+
+/** Oldest → newest; exactly one `active` milestone at a time. */
+export const SHIP_ROADMAP: ShipMilestone[] = [ALPHA_MILESTONE, MOCK_MILESTONE, GROWTH_MILESTONE];

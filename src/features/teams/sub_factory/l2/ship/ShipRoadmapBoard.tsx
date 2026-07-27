@@ -1,18 +1,18 @@
-// Ship variant 2 — CUT BOARD. The triage metaphor: defining v1 is the act of
-// deciding what's OUT. Three buckets — Core / Later / Never — with the scope
-// cut as the primary interaction (fully working locally in this prototype).
-// New post-cut proposals land in an UNCUT INBOX strip that demands a decision,
-// so the divergent scan output turns into triage instead of silent growth.
-// Exit criteria compress into a quiet chip strip: on this surface the scope is
-// the hero, certification is context.
+// Round-2 FUSION — the surviving Ship direction. Base: the Cut board (its
+// overall design + the status kanban stays; it's also where "add features /
+// contexts into a milestone set" will grow). Fused in from Runway: the
+// MilestoneRail roadmap — navigation between key milestones/deliverables; the
+// board below always shows the SELECTED milestone (a shipped record, the
+// active cut, or a planned pool). Go/No-Go was killed in round 2.
 import { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Archive, Ban, Inbox, Star } from 'lucide-react';
 
 import { INK } from '../../passport/passportInk';
+import { MilestoneRail } from './MilestoneRail';
 import {
-  BUCKET_META, CRIT_HUE, FEATURE_STATE_META, MOCK_MILESTONE,
-  type ScopeBucket, type ShipFeature,
+  BUCKET_META, CRIT_HUE, FEATURE_STATE_META, SHIP_ROADMAP,
+  type ScopeBucket, type ShipFeature, type ShipMilestone,
 } from './shipModel';
 
 const BUCKET_ICON: Record<ScopeBucket, typeof Star> = { core: Star, later: Archive, never: Ban };
@@ -69,11 +69,10 @@ function CoreCard({ f }: { f: ShipFeature }) {
   );
 }
 
-export function ShipCutBoardTab() {
+function MilestoneBoard({ m }: { m: ShipMilestone }) {
   const reduce = useReducedMotion();
-  const m = MOCK_MILESTONE;
-  // Local triage state — the prototype's working interaction. Keyed overrides
-  // on top of the mock so moves are instant and reversible.
+  const shipped = m.status === 'shipped';
+  // Local triage state — keyed overrides on top of the mock; instant + reversible.
   const [moves, setMoves] = useState<Record<string, ScopeBucket>>({});
   const [triaged, setTriaged] = useState<Record<string, ScopeBucket>>({});
 
@@ -89,23 +88,25 @@ export function ShipCutBoardTab() {
   const coreDone = buckets.core.filter((f) => f.state === 'done').length;
 
   return (
-    <div data-testid="factory-ship-cutboard">
-      {/* criteria compress into a quiet chip strip — context, not hero */}
-      <div className="flex items-center gap-2 flex-wrap mb-2.5">
-        <span className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{m.name} · exit</span>
-        {m.criteria.map((c) => (
-          <span
-            key={c.id}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10.5px] tabular-nums"
-            style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }}
-            title={c.evidence}
-          >
-            {c.label} {c.done}/{c.total}
-          </span>
-        ))}
+    <div className={shipped ? 'opacity-75' : ''}>
+      {/* the milestone's goal + its exit criteria as quiet chips */}
+      <div className="flex items-center gap-2 flex-wrap mb-2.5 min-w-0">
+        <span className="typo-caption text-foreground/55 truncate" title={m.goal}>{m.goal}</span>
+        <span className="ml-auto inline-flex items-center gap-2 flex-wrap shrink-0">
+          {m.criteria.map((c) => (
+            <span
+              key={c.id}
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10.5px] tabular-nums"
+              style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }}
+              title={c.evidence}
+            >
+              {c.label} {c.done}/{c.total}
+            </span>
+          ))}
+        </span>
       </div>
 
-      {/* the uncut inbox — scan output demanding a decision */}
+      {/* the uncut inbox — scan output demanding a decision (active cut only) */}
       {inbox.length > 0 && (
         <div className="rounded-card px-3 py-2 mb-3" style={{ border: `1px dashed ${INK.violet}66`, background: `${INK.violet}0a` }} data-testid="ship-uncut-inbox">
           <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] mb-1" style={{ color: INK.violet }}>
@@ -151,15 +152,18 @@ export function ShipCutBoardTab() {
               {b === 'core' ? (
                 <ul className="grid gap-1.5">
                   {items.map((f) => <CoreCard key={f.id} f={f} />)}
+                  {items.length === 0 && <li className="typo-caption text-foreground/35 py-1">No cut yet — triage the pool from Later.</li>}
                 </ul>
               ) : (
                 <ul>
                   {items.map((f) => (
                     <li key={f.id} className={`group flex items-center gap-2 py-1 border-b border-foreground/[0.04] last:border-0 min-w-0 ${b === 'never' ? 'opacity-50' : 'opacity-75'}`}>
                       <span className="typo-caption text-foreground/80 truncate">{f.name}</span>
-                      <span className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <TriageButtons current={bucketOf(f)} onPick={(nb) => setMoves((p) => ({ ...p, [f.id]: nb }))} />
-                      </span>
+                      {!shipped && (
+                        <span className="ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <TriageButtons current={bucketOf(f)} onPick={(nb) => setMoves((p) => ({ ...p, [f.id]: nb }))} />
+                        </span>
+                      )}
                     </li>
                   ))}
                   {items.length === 0 && <li className="typo-caption text-foreground/35 py-1">Nothing here.</li>}
@@ -169,10 +173,21 @@ export function ShipCutBoardTab() {
           );
         })}
       </div>
+    </div>
+  );
+}
 
-      <p className="typo-caption text-foreground/35 mt-2">
-        The cut is the decision — hover a Later/Never row to re-bucket, and everything lands reversibly. Core is deliberately the narrowest column set: {buckets.core.length} features carry the whole of “{m.goal}”
-      </p>
+export function ShipRoadmapBoard() {
+  const [selectedId, setSelectedId] = useState(
+    () => SHIP_ROADMAP.find((m) => m.status === 'active')?.id ?? SHIP_ROADMAP[0]?.id ?? '',
+  );
+  const selected = SHIP_ROADMAP.find((m) => m.id === selectedId) ?? SHIP_ROADMAP[0];
+
+  return (
+    <div data-testid="factory-ship-roadmap-board">
+      <MilestoneRail roadmap={SHIP_ROADMAP} selectedId={selectedId} onSelect={setSelectedId} />
+      {/* key remounts the board per milestone so local triage state stays scoped */}
+      {selected && <MilestoneBoard key={selected.id} m={selected} />}
     </div>
   );
 }
