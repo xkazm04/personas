@@ -184,6 +184,21 @@ export async function setWorkspaceAdoption(
   });
 }
 
+/**
+ * Reconcile the adoption queue against the backlog: every `to_process` cell of
+ * an adopted actionable practice that has no materialized idea yet gets one
+ * (one `dev_idea` per member project, `origin: 'workspace_practice'`).
+ *
+ * Idempotent — dedup-gated per `(project_id, dedup_key)` — so calling it twice
+ * creates nothing the second time. Also runs once at app start; this wrapper
+ * exists for queues seeded by paths that predate materialization, so the user
+ * never has to re-adopt a practice to unstick its backlog. Returns the number
+ * of ideas created.
+ */
+export async function backfillPracticeIdeas(): Promise<number> {
+  return invoke<number>('dev_tools_workspace_backfill_practice_ideas', {});
+}
+
 // -- extraction engine (Arc 2) -----------------------------------------------
 
 export type { IngestSummary };

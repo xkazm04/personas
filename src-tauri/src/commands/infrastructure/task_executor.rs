@@ -332,6 +332,76 @@ struct FinalizeOpts<'a> {
 /// finishes (completion write-back, verification arming, …) belongs HERE and
 /// nowhere else.
 ///
+/// Completion write-back to the SOURCE IDEA of a finished task (plan 1D).
+///
+/// Two things are owed once work ships:
+///
+/// 1. **Workspace adoption truth.** A `workspace_practice` idea exists because
+///    a member repo owed work. Success means the repo now follows the practice
+///    → its adoption cell becomes `adopted`. Failure puts it back in the
+///    `to_process` queue with the error on the note, so the matrix never shows
+///    a practice as adopted on the strength of a run that crashed.
+///
+/// 2. **A re-check is owed.** Any idea carrying a `dedup_key` is a sensor
+///    finding whose signal was measured; shipping a fix does not prove the
+///    number moved. Arming `verify_state = 'pending'` is the "work shipped,
+///    verdict not in yet" marker.
+///
+///    *Why `pending` is the right token* (the P6 open question): the sweep's
+///    eligibility rule (`findings/verify.ts::isVerifiable`) is
+///    `origin != null && dedup_key != null && status == 'accepted' && a linked
+///    task completed` — it never reads `verify_state`, so arming cannot
+///    confuse it. And `pending` is not sensor-owned: `verdictFor` itself
+///    returns `pending` for "the sensor did not probe, so no verdict", and
+///    `VerdictChip` renders nothing for it. Arming therefore says exactly what
+///    we mean — judged: not yet — and a real verdict overwrites it on the next
+///    sweep. (Contrast the alternative of leaving it NULL: indistinguishable
+///    from a finding nobody ever shipped.)
+///
+/// Best-effort throughout: a task's terminal state must never depend on the
+/// projections hanging off it.
+fn write_back_to_source_idea(pool: &crate::db::DbPool, task_id: &str, success: bool) {
+    let task = match repo::get_task_by_id(pool, task_id) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(task_id, error = %e, "completion write-back: task unreadable");
+            return;
+        }
+    };
+    let Some(idea_id) = task.source_idea_id.as_deref() else {
+        return;
+    };
+    let idea = match repo::get_idea_by_id(pool, idea_id) {
+        Ok(i) => i,
+        Err(e) => {
+            tracing::warn!(task_id, idea_id, error = %e, "completion write-back: idea unreadable");
+            return;
+        }
+    };
+
+    if success {
+        crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
+            pool,
+            &idea,
+            "adopted",
+            &format!("task:{task_id} completed"),
+        );
+        if idea.dedup_key.is_some() {
+            if let Err(e) = repo::set_finding_verify_state(pool, &idea.id, "pending", None) {
+                tracing::warn!(task_id, idea_id, error = %e, "completion write-back: failed to arm verification");
+            }
+        }
+    } else {
+        let note = match task.error.as_deref().map(str::trim).filter(|e| !e.is_empty()) {
+            Some(err) => format!("task:{task_id} failed: {err}"),
+            None => format!("task:{task_id} failed"),
+        };
+        crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
+            pool, &idea, "to_process", &note,
+        );
+    }
+}
+
 /// Returns the final status (`"completed"` / `"failed"`).
 fn finalize_task(
     app: &tauri::AppHandle,
@@ -383,6 +453,7 @@ fn finalize_task(
                 "Completed successfully.".to_string()
             };
             record_task_outcome(pool, task_id, true, &detail);
+            write_back_to_source_idea(pool, task_id, true);
 
             if let Some(gid) = goal_id {
                 let _ = repo::create_goal_signal(
@@ -419,6 +490,7 @@ fn finalize_task(
 
             // Learning loop: a failure is the most instructive outcome.
             record_task_outcome(pool, task_id, false, &msg);
+            write_back_to_source_idea(pool, task_id, false);
 
             if let Some(gid) = goal_id {
                 let _ = repo::create_goal_signal(

@@ -779,7 +779,15 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 
 /// The sensors that can raise a finding. Kept as a validated allowlist so a typo
 /// in an emitter can't quietly create a new origin the triage UI won't render.
-pub const FINDING_ORIGINS: [&str; 9] = [
+///
+/// `workspace_practice` is the odd one out: it is not a *measurement* sensor but
+/// the Workspace Knowledge Center materializing an adopted practice as work each
+/// member repo owes (`docs/plans/workspace-knowledge-center.md` + plan 1C). It
+/// is deliberately EXCLUDED from cross-project mining — see
+/// `dev_workspaces::mine_shared_findings` — because a practice that fans out to
+/// N repos would otherwise be re-mined as a "shared finding" and re-proposed as
+/// the very practice it came from.
+pub const FINDING_ORIGINS: [&str; 10] = [
     "standards_finding",
     "passport_gap",
     "llm_cost",
@@ -789,6 +797,7 @@ pub const FINDING_ORIGINS: [&str; 9] = [
     "doc_rot",
     "kpi_sim",
     "memory_disputed",
+    "workspace_practice",
 ];
 
 // ============================================================================

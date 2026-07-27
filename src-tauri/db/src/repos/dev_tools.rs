@@ -129,7 +129,7 @@ fn row_to_context_group_relationship(row: &Row) -> rusqlite::Result<DevContextGr
     })
 }
 
-fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
+pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
     Ok(DevIdea {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
@@ -3491,10 +3491,18 @@ pub fn set_finding_verify_state(
         )?;
         drop(conn);
 
-        // A verdict landed — tell the bus. This is the event B-side learning and any
+        // A verdict landed — tell the bus. This is what B-side learning and any
         // future "the fix regressed, re-open it" route hang off.
-        if let Ok(idea) = get_idea_by_id(pool, id) {
-            publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
+        //
+        // `pending` is NOT a verdict: the sweep writes it when a sensor did not
+        // probe, and `finalize_task` writes it to ARM a re-check when work
+        // ships. Publishing `signal.verified` for either would announce a
+        // judgement nobody made and put a "verified" row in the Live Stream for
+        // an unjudged finding. Arming is silent; only real verdicts speak.
+        if verify_state != "pending" {
+            if let Ok(idea) = get_idea_by_id(pool, id) {
+                publish_signal_event(pool, &idea, personas_core::events::event_name::SIGNAL_VERIFIED);
+            }
         }
         Ok(())
     })

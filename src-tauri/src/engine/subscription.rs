@@ -2166,17 +2166,14 @@ impl ReactiveSubscription for BacklogToGoalSubscription {
                 ) {
                     Ok(_) => {
                         // Mark the idea consumed so it is never re-promoted.
-                        let _ = crate::db::repos::dev_tools::update_idea(
+                        // Through the shared verdict core (plan 1B), so this
+                        // autonomous accept is remembered like every other one
+                        // instead of being an invisible raw status write.
+                        let _ = crate::commands::infrastructure::dev_tools::apply_idea_verdict_by(
                             &pool,
                             &idea.idea_id,
-                            None,
-                            None,
-                            Some("accepted"),
-                            None,
-                            None,
-                            None,
-                            None,
-                            None,
+                            crate::commands::infrastructure::dev_tools::IdeaVerdict::Accept,
+                            "Autonomy",
                         );
                         n += 1;
                         tracing::info!(project_id = %idea.project_id, idea_id = %idea.idea_id, "backlog_to_goal: promoted backlog idea to goal");

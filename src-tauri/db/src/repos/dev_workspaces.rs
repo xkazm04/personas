@@ -808,6 +808,280 @@ pub fn set_adoption(
 }
 
 // ============================================================================
+// Materialization — adopted practice → Backlog ideas (plan 1C)
+// ============================================================================
+
+/// The finding origin every materialized practice idea carries. Also its
+/// `scan_type`, so the Sensor Scoreboard groups them like any other sensor.
+pub const PRACTICE_ORIGIN: &str = "workspace_practice";
+
+/// How much of a practice's `detail_md` is carried into the idea description.
+/// The idea seeds a task prompt, not an archive — the full record stays in the
+/// library, one click away.
+const PRACTICE_DETAIL_BUDGET: usize = 2_000;
+
+/// Stable, project-agnostic dedup key for a practice's materialized ideas.
+/// `create_finding` dedups per `(project_id, dedup_key)`, so the SAME key in
+/// every member repo is exactly right: one idea per project, and re-adopting
+/// (or re-joining) never stacks a second.
+pub fn practice_dedup_key(practice_id: &str) -> String {
+    format!("workspace_practice:{practice_id}")
+}
+
+/// Truncate on a char boundary, appending an ellipsis when anything was cut.
+fn truncate_chars(s: &str, budget: usize) -> String {
+    if s.chars().count() <= budget {
+        return s.to_string();
+    }
+    let mut out: String = s.chars().take(budget).collect();
+    out.push('…');
+    out
+}
+
+/// Turn one adopted practice into the work each named project owes: one
+/// `dev_idea` per project, through the idempotent `create_finding` door
+/// (project-scoped `(project_id, dedup_key)` dedup), so this is safe to call
+/// on every adopt, every join, and from the startup backfill.
+///
+/// MUST be called POST-COMMIT — `create_finding` takes its own pooled
+/// connection and publishes `signal.raised` on the bus; calling it inside an
+/// open transaction would deadlock the pool on a single-connection build and
+/// announce work that a rollback could still erase.
+///
+/// Returns how many ideas were actually inserted (already-present ones count 0).
+pub fn materialize_practice_ideas(
+    pool: &DbPool,
+    practice: &WorkspaceKnowledge,
+    project_ids: &[String],
+) -> Result<u32, AppError> {
+    if !is_actionable_kind(&practice.kind) || project_ids.is_empty() {
+        return Ok(0);
+    }
+
+    let title = match practice.kind.as_str() {
+        "pitfall" => format!("Fix workspace pitfall: {}", practice.title),
+        _ => format!("Adopt workspace practice: {}", practice.title),
+    };
+    let description = match practice.detail_md.as_deref().map(str::trim) {
+        Some(d) if !d.is_empty() => format!(
+            "{}\n\n{}",
+            practice.statement.trim(),
+            truncate_chars(d, PRACTICE_DETAIL_BUDGET)
+        ),
+        _ => practice.statement.trim().to_string(),
+    };
+    let category = crate::db::models::IdeaCategory::from_token(&practice.kind)
+        .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+    let evidence = serde_json::json!({
+        "practice_id": practice.id,
+        "workspace_id": practice.workspace_id,
+        "kind": practice.kind,
+        "topic": practice.topic,
+        "adopted_at": practice.decided_at.clone().unwrap_or_else(|| practice.updated_at.clone()),
+    })
+    .to_string();
+    // Confidence is the only signal the library carries about how strongly the
+    // practice is believed; effort and risk are unknown until someone looks at
+    // the repo, and inventing them would poison the triage value score.
+    let impact = practice
+        .confidence
+        .map(|c| ((c * 5.0).round() as i32).clamp(1, 5));
+    let dedup_key = practice_dedup_key(&practice.id);
+
+    let mut created = 0u32;
+    for project_id in project_ids {
+        match crate::db::repos::dev_tools::create_finding(
+            pool,
+            project_id,
+            PRACTICE_ORIGIN,
+            &title,
+            Some(&description),
+            Some(category.as_str()),
+            None,
+            None,
+            Some(&evidence),
+            &dedup_key,
+            None,
+            impact,
+            None,
+        ) {
+            Ok(Some(_)) => created += 1,
+            Ok(None) => {}
+            // Best-effort per project: one unwritable repo row must not abort
+            // the fan-out to its siblings.
+            Err(e) => tracing::warn!(
+                practice_id = %practice.id,
+                project_id = %project_id,
+                error = %e,
+                "workspace practice materialization failed for one project"
+            ),
+        }
+    }
+    Ok(created)
+}
+
+/// Projects whose adoption cell for this practice sits in the execution queue
+/// (`to_process`) — i.e. exactly the ones that owe the work. `na` (doesn't
+/// apply), `dispatched`/`adopted` (already handled) and `diverged` (a human
+/// said no) are all deliberately excluded.
+pub fn to_process_projects(pool: &DbPool, practice_id: &str) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT project_id FROM workspace_practice_adoption
+         WHERE practice_id = ?1 AND state = 'to_process'",
+    )?;
+    let rows = stmt.query_map(params![practice_id], |r| r.get::<_, String>(0))?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Materialize every `to_process` cell of one practice. The single entry point
+/// the adopt branch, the join branch and the backfill all share.
+pub fn materialize_pending_for_practice(pool: &DbPool, practice_id: &str) -> Result<u32, AppError> {
+    let practice = get_knowledge_by_id(pool, practice_id)?;
+    if practice.status != "adopted" || !is_actionable_kind(&practice.kind) {
+        return Ok(0);
+    }
+    let projects = to_process_projects(pool, practice_id)?;
+    materialize_practice_ideas(pool, &practice, &projects)
+}
+
+/// Retire the ideas a practice put into member backlogs when the practice
+/// itself is deprecated or rejected. Only `pending` rows are touched: work a
+/// human already accepted (or rejected) keeps its own verdict, and the
+/// `archived` row retains the dedup key so re-adoption cannot stack a second
+/// copy (documented consequence — plan §"Open questions").
+pub fn archive_practice_ideas(pool: &DbPool, practice_id: &str) -> Result<u32, AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let conn = pool.get()?;
+    let rows = conn.execute(
+        "UPDATE dev_ideas SET status = 'archived', updated_at = ?1
+         WHERE origin = ?2 AND dedup_key = ?3 AND status = 'pending'",
+        params![now, PRACTICE_ORIGIN, practice_dedup_key(practice_id)],
+    )?;
+    Ok(rows as u32)
+}
+
+/// Startup / on-demand reconciler: every `to_process` cell joined to an adopted
+/// actionable practice gets its idea. Idempotent and cheap when there is
+/// nothing to do (one indexed join, then the `create_finding` dedup gate), so
+/// it is safe to run on every boot. This is what heals a cell seeded before
+/// materialization existed, or one whose post-commit fan-out lost a race.
+pub fn backfill_practice_ideas(pool: &DbPool) -> Result<u32, AppError> {
+    let pairs: Vec<(String, String)> = {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT a.practice_id, a.project_id
+             FROM workspace_practice_adoption a
+             JOIN workspace_knowledge k ON k.id = a.practice_id
+             WHERE a.state = 'to_process' AND k.status = 'adopted'
+               AND k.kind IN ('pitfall','pattern')
+             ORDER BY a.practice_id",
+        )?;
+        let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+    if pairs.is_empty() {
+        return Ok(0);
+    }
+
+    let mut by_practice: HashMap<String, Vec<String>> = HashMap::new();
+    for (practice_id, project_id) in pairs {
+        by_practice.entry(practice_id).or_default().push(project_id);
+    }
+
+    let mut created = 0u32;
+    for (practice_id, project_ids) in by_practice {
+        match get_knowledge_by_id(pool, &practice_id) {
+            Ok(practice) => created += materialize_practice_ideas(pool, &practice, &project_ids)?,
+            Err(e) => tracing::warn!(practice_id = %practice_id, error = %e, "backfill: practice unreadable"),
+        }
+    }
+    Ok(created)
+}
+
+// ============================================================================
+// Lifecycle sync — idea verdict / task outcome → adoption cell
+// ============================================================================
+
+/// Read the `practice_id` back out of a materialized idea's evidence blob.
+/// Returns None for any idea that is not a practice materialization, so
+/// callers can treat "not ours" and "malformed" identically.
+pub fn practice_id_from_evidence(origin: Option<&str>, evidence: Option<&str>) -> Option<String> {
+    if origin != Some(PRACTICE_ORIGIN) {
+        return None;
+    }
+    let parsed: serde_json::Value = serde_json::from_str(evidence?).ok()?;
+    parsed
+        .get("practice_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Keep the adoption matrix honest when a materialized idea gets a verdict.
+///
+/// Rejecting the idea IS the project saying "we're not doing this" — the cell
+/// becomes `diverged` (with the rejection reason as its note), which is the
+/// state the library already renders as an explicit, reviewable exception.
+/// Accepting changes nothing: the cell moves on `dispatched` (task created)
+/// and `adopted` (task completed), which are facts about work, not intent.
+///
+/// Best-effort — mirrors `record_idea_decision`'s posture: the verdict is the
+/// source of truth, the matrix is a projection, and a projection failure must
+/// never fail the verdict.
+pub fn sync_practice_adoption(pool: &DbPool, idea: &crate::db::models::DevIdea) {
+    if idea.status != "rejected" {
+        return;
+    }
+    let (Some(practice_id), Some(project_id)) = (
+        practice_id_from_evidence(idea.origin.as_deref(), idea.evidence.as_deref()),
+        idea.project_id.as_deref(),
+    ) else {
+        return;
+    };
+    let note = idea
+        .rejection_reason
+        .as_deref()
+        .filter(|r| !r.trim().is_empty())
+        .map(|r| format!("backlog rejected: {r}"))
+        .unwrap_or_else(|| "backlog rejected".to_string());
+    if let Err(e) = set_adoption(pool, &practice_id, project_id, "diverged", Some(&note), None) {
+        tracing::warn!(
+            idea_id = %idea.id,
+            practice_id = %practice_id,
+            error = %e,
+            "workspace adoption sync failed (idea rejected)"
+        );
+    }
+}
+
+/// Move a materialized idea's adoption cell in response to a TASK lifecycle
+/// event (`dispatched` on creation, `adopted` on success, back to `to_process`
+/// on failure). Best-effort, same posture as [`sync_practice_adoption`].
+pub fn sync_practice_adoption_for_task(
+    pool: &DbPool,
+    idea: &crate::db::models::DevIdea,
+    state: &str,
+    note: &str,
+) {
+    let (Some(practice_id), Some(project_id)) = (
+        practice_id_from_evidence(idea.origin.as_deref(), idea.evidence.as_deref()),
+        idea.project_id.as_deref(),
+    ) else {
+        return;
+    };
+    if let Err(e) = set_adoption(pool, &practice_id, project_id, state, Some(note), None) {
+        tracing::warn!(
+            idea_id = %idea.id,
+            practice_id = %practice_id,
+            state,
+            error = %e,
+            "workspace adoption sync failed (task lifecycle)"
+        );
+    }
+}
+
+// ============================================================================
 // Ingest (machine-harvested candidates → observed) — Arc 2
 // ============================================================================
 
@@ -1014,9 +1288,16 @@ pub fn mine_shared_findings(pool: &DbPool, workspace_id: &str) -> Result<Vec<Kno
     let conn = pool.get()?;
     let placeholders = member_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
     let sql = format!(
+        // LOOP PREVENTION (non-negotiable — plan 1C): a `workspace_practice`
+        // idea IS this workspace's own adopted practice, fanned out to every
+        // member repo. Mining it back would cluster N copies of one practice
+        // into a "shared finding" and re-propose the practice as a new
+        // candidate — an echo chamber that grows on every miner run. The
+        // sensors mine reality; the library is not reality.
         "SELECT project_id, origin, dedup_key, title FROM dev_ideas
          WHERE project_id IN ({placeholders})
            AND origin IS NOT NULL
+           AND origin != '{PRACTICE_ORIGIN}'
            AND status IN ('pending','accepted')"
     );
     let mut stmt = conn.prepare(&sql)?;
@@ -1042,6 +1323,13 @@ fn cluster_shared_findings(findings: &[MinedFinding]) -> Vec<KnowledgeCandidate>
     // identity key → (representative title, origin, set of project ids)
     let mut buckets: HashMap<String, (String, String, std::collections::BTreeSet<String>)> = HashMap::new();
     for f in findings {
+        // Second gate for the same echo the SQL above already blocks. The
+        // clustering core is pure and independently callable, so the guard
+        // lives here too — a future caller that assembles findings by another
+        // route must not be able to reopen the loop.
+        if f.origin == PRACTICE_ORIGIN {
+            continue;
+        }
         let identity = match f.dedup_key.as_deref() {
             Some(k) if is_project_agnostic_key(k) => format!("{}|{}", f.origin, k),
             _ => format!(
@@ -1394,5 +1682,343 @@ mod tests {
         // below MIN_SKILL_INVOKES_30D
         usage.insert("rare".into(), vec![MinedSkillUse { project_id: "p1".into(), invokes_30d: 1 }]);
         assert!(cluster_skill_adoption(&mem, &present, &usage).is_empty());
+    }
+
+    // ------------------------------------------------------------------
+    // Loop prevention (plan 1C) — the non-negotiable guard
+    // ------------------------------------------------------------------
+
+    /// THE loop this feature could have created: adopting one practice writes a
+    /// `workspace_practice` idea into every member repo. If the finding miner
+    /// then read those back, two repos carrying the SAME practice would look
+    /// exactly like a "shared finding" and be re-proposed as a new workspace
+    /// practice — which, adopted, fans out again. Each miner run would inflate
+    /// the library with echoes of itself.
+    ///
+    /// So: a workspace_practice finding present in ≥2 projects — the exact
+    /// shape that clusters for every other origin — must yield NO candidate.
+    #[test]
+    fn workspace_practice_findings_never_cluster_into_a_candidate() {
+        let key = practice_dedup_key("prac-1");
+        let echo = vec![
+            finding("p1", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
+            finding("p2", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
+            finding("p3", PRACTICE_ORIGIN, Some(key.as_str()), "Adopt workspace practice: Use design tokens"),
+        ];
+        assert!(
+            cluster_shared_findings(&echo).is_empty(),
+            "materialized practices must never be mined back into the library"
+        );
+
+        // Control: the identical shape from a real sensor DOES cluster, proving
+        // the guard is origin-specific and not just a broken clusterer.
+        let real = vec![
+            finding("p1", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
+            finding("p2", "standards_finding", Some("standards:no-unwrap"), "Avoid unwrap"),
+        ];
+        assert_eq!(cluster_shared_findings(&real).len(), 1);
+
+        // And a mixed batch keeps the real signal while dropping the echo.
+        let mut mixed = echo;
+        mixed.extend(real);
+        let out = cluster_shared_findings(&mixed);
+        assert_eq!(out.len(), 1);
+        assert!(!out[0].dedup_key.as_deref().unwrap().contains(PRACTICE_ORIGIN));
+    }
+
+    #[test]
+    fn practice_dedup_key_is_project_agnostic_and_not_miner_matchable() {
+        assert_eq!(practice_dedup_key("abc"), "workspace_practice:abc");
+        // Must NOT be classified project-agnostic: even with the SQL + cluster
+        // guards removed, key-equality matching should never be the thing that
+        // saves us.
+        assert!(!is_project_agnostic_key(&practice_dedup_key("abc")));
+    }
+
+    #[test]
+    fn practice_id_is_recovered_only_from_our_own_ideas() {
+        let ev = r#"{"practice_id":"prac-9","workspace_id":"ws-1","kind":"pattern"}"#;
+        assert_eq!(
+            practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some(ev)).as_deref(),
+            Some("prac-9")
+        );
+        // Another sensor's evidence is never ours, whatever it contains.
+        assert!(practice_id_from_evidence(Some("sentry_spike"), Some(ev)).is_none());
+        assert!(practice_id_from_evidence(None, Some(ev)).is_none());
+        // Missing / malformed / empty evidence degrades to None, never a panic.
+        assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), None).is_none());
+        assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some("not json")).is_none());
+        assert!(practice_id_from_evidence(Some(PRACTICE_ORIGIN), Some(r#"{"practice_id":""}"#)).is_none());
+    }
+
+    #[test]
+    fn detail_truncation_respects_char_boundaries() {
+        assert_eq!(truncate_chars("abc", 10), "abc");
+        assert_eq!(truncate_chars("abcdef", 3), "abc…");
+        // Multi-byte input must not panic or split a code point.
+        assert_eq!(truncate_chars("héllo wörld", 4), "héll…");
+    }
+
+    // ------------------------------------------------------------------
+    // Materialization + lifecycle (DB-backed)
+    // ------------------------------------------------------------------
+
+    fn test_pool() -> DbPool {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:ws_practice_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder().max_size(4).build(manager).expect("pool");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        }
+        pool
+    }
+
+    /// A workspace with `n` member projects and one proposed actionable
+    /// practice. Returns (workspace_id, practice_id, project_ids).
+    fn seeded(pool: &DbPool, n: usize, kind: &str) -> (String, String, Vec<String>) {
+        let ws = create_workspace(pool, "WS", None, None).unwrap();
+        let mut projects = Vec::new();
+        for i in 0..n {
+            let p = crate::db::repos::dev_tools::create_project(
+                pool,
+                &format!("Proj {i}"),
+                &format!("/tmp/proj{i}"),
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+            assign_project(pool, &p.id, Some(&ws.id)).unwrap();
+            projects.push(p.id);
+        }
+        let k = create_knowledge(
+            pool,
+            &ws.id,
+            kind,
+            "Use design tokens",
+            "Raw Tailwind colours drift; use the semantic tokens.",
+            Some("Long detail here."),
+            Some("ui/tokens"),
+            None,
+            None,
+        )
+        .unwrap();
+        (ws.id, k.id, projects)
+    }
+
+    fn practice_ideas(pool: &DbPool, practice_id: &str) -> Vec<crate::db::models::DevIdea> {
+        let conn = pool.get().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT * FROM dev_ideas WHERE dedup_key = ?1 ORDER BY project_id")
+            .unwrap();
+        let rows = stmt
+            .query_map(params![practice_dedup_key(practice_id)], crate::db::repos::dev_tools::row_to_idea)
+            .unwrap();
+        rows.collect::<Result<Vec<_>, _>>().unwrap()
+    }
+
+    fn cell(pool: &DbPool, practice_id: &str, project_id: &str) -> String {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT state FROM workspace_practice_adoption WHERE practice_id = ?1 AND project_id = ?2",
+                params![practice_id, project_id],
+                |r| r.get::<_, String>(0),
+            )
+            .unwrap()
+    }
+
+    #[test]
+    fn adopting_an_actionable_practice_materializes_one_idea_per_project_exactly_once() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+
+        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 2);
+        let ideas = practice_ideas(&pool, &practice);
+        assert_eq!(ideas.len(), 2);
+        assert!(ideas.iter().all(|i| i.origin.as_deref() == Some(PRACTICE_ORIGIN)));
+        assert!(ideas.iter().all(|i| i.status == "pending"));
+        assert_eq!(ideas[0].title, "Adopt workspace practice: Use design tokens");
+        // Statement AND detail reach the description — this text seeds the task prompt.
+        let desc = ideas[0].description.clone().unwrap();
+        assert!(desc.contains("semantic tokens"));
+        assert!(desc.contains("Long detail here."));
+        // Evidence round-trips the practice id, which is how every later
+        // lifecycle write finds its way back to the adoption cell.
+        assert_eq!(
+            practice_id_from_evidence(ideas[0].origin.as_deref(), ideas[0].evidence.as_deref()),
+            Some(practice.clone())
+        );
+
+        // IDEMPOTENCY: re-adopting (or a second backfill) inserts nothing new.
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+        assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
+        assert_eq!(practice_ideas(&pool, &practice).len(), 2);
+
+        // Every project got exactly one.
+        let mut seen: Vec<String> = practice_ideas(&pool, &practice)
+            .into_iter()
+            .filter_map(|i| i.project_id)
+            .collect();
+        seen.sort();
+        let mut expected = projects.clone();
+        expected.sort();
+        assert_eq!(seen, expected);
+    }
+
+    #[test]
+    fn pitfall_titles_read_as_removal_work() {
+        let pool = test_pool();
+        let (_ws, practice, _p) = seeded(&pool, 1, "pitfall");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        materialize_pending_for_practice(&pool, &practice).unwrap();
+        assert_eq!(
+            practice_ideas(&pool, &practice)[0].title,
+            "Fix workspace pitfall: Use design tokens"
+        );
+    }
+
+    #[test]
+    fn reference_kinds_never_reach_the_backlog() {
+        // `fact` / `decision` / `howto` are carried as knowledge, not executed —
+        // their cells seed `proposed`, so nothing is owed and nothing is written.
+        let pool = test_pool();
+        let (_ws, practice, _p) = seeded(&pool, 2, "fact");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+        assert!(practice_ideas(&pool, &practice).is_empty());
+        assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
+    }
+
+    #[test]
+    fn backfill_materializes_a_queue_seeded_before_the_feature_existed() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        // Cells exist at `to_process` but no ideas — the pre-P6 world.
+        assert!(practice_ideas(&pool, &practice).is_empty());
+
+        assert_eq!(backfill_practice_ideas(&pool).unwrap(), 2);
+        assert_eq!(practice_ideas(&pool, &practice).len(), 2);
+        // Second run is a no-op — safe to call on every boot.
+        assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
+
+        // A cell that has moved on is not re-materialized either.
+        set_adoption(&pool, &practice, &projects[0], "diverged", None, None).unwrap();
+        assert_eq!(backfill_practice_ideas(&pool).unwrap(), 0);
+    }
+
+    #[test]
+    fn deprecating_a_practice_archives_only_its_undecided_ideas() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        materialize_pending_for_practice(&pool, &practice).unwrap();
+
+        // One project already accepted the work: that verdict is a human's and
+        // survives the practice being retired.
+        let accepted = practice_ideas(&pool, &practice)
+            .into_iter()
+            .find(|i| i.project_id.as_deref() == Some(projects[0].as_str()))
+            .unwrap();
+        crate::db::repos::dev_tools::update_idea(
+            &pool, &accepted.id, None, None, Some("accepted"), None, None, None, None, None,
+        )
+        .unwrap();
+
+        assert_eq!(archive_practice_ideas(&pool, &practice).unwrap(), 1);
+        let after = practice_ideas(&pool, &practice);
+        assert_eq!(after.iter().filter(|i| i.status == "archived").count(), 1);
+        assert_eq!(after.iter().filter(|i| i.status == "accepted").count(), 1);
+
+        // The archived row keeps the dedup key, so re-adoption cannot stack a
+        // second copy (documented trade-off, plan §Open questions).
+        assert_eq!(materialize_pending_for_practice(&pool, &practice).unwrap(), 0);
+    }
+
+    #[test]
+    fn adoption_cell_follows_the_idea_and_its_task() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        materialize_pending_for_practice(&pool, &practice).unwrap();
+        let ideas = practice_ideas(&pool, &practice);
+        let for_project = |pid: &str| {
+            ideas
+                .iter()
+                .find(|i| i.project_id.as_deref() == Some(pid))
+                .unwrap()
+                .clone()
+        };
+
+        // Reject → the repo has explicitly opted out. `diverged` (not `na`) is
+        // the state that stays visible as a reviewable exception.
+        let mut rejected = for_project(&projects[0]);
+        rejected.status = "rejected".into();
+        rejected.rejection_reason = Some("we use CSS modules".into());
+        sync_practice_adoption(&pool, &rejected);
+        assert_eq!(cell(&pool, &practice, &projects[0]), "diverged");
+        let note: Option<String> = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT note FROM workspace_practice_adoption WHERE practice_id = ?1 AND project_id = ?2",
+                params![practice, projects[0]],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(note.unwrap().contains("we use CSS modules"));
+
+        // Accepting alone changes nothing — intent is not shipped work.
+        let mut accepted = for_project(&projects[1]);
+        accepted.status = "accepted".into();
+        sync_practice_adoption(&pool, &accepted);
+        assert_eq!(cell(&pool, &practice, &projects[1]), "to_process");
+
+        // Task created → dispatched; task failed → back in the queue; task
+        // succeeded → adopted. Failure must never leave the matrix claiming a
+        // practice is adopted.
+        sync_practice_adoption_for_task(&pool, &accepted, "dispatched", "task:t1");
+        assert_eq!(cell(&pool, &practice, &projects[1]), "dispatched");
+        sync_practice_adoption_for_task(&pool, &accepted, "to_process", "task:t1 failed: boom");
+        assert_eq!(cell(&pool, &practice, &projects[1]), "to_process");
+        sync_practice_adoption_for_task(&pool, &accepted, "adopted", "task:t2 completed");
+        assert_eq!(cell(&pool, &practice, &projects[1]), "adopted");
+    }
+
+    #[test]
+    fn lifecycle_sync_ignores_ideas_that_are_not_materialized_practices() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 1, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        materialize_pending_for_practice(&pool, &practice).unwrap();
+
+        let mut foreign = practice_ideas(&pool, &practice)[0].clone();
+        foreign.origin = Some("sentry_spike".into());
+        foreign.status = "rejected".into();
+        sync_practice_adoption(&pool, &foreign);
+        // Untouched — a sensor finding's rejection says nothing about a practice.
+        assert_eq!(cell(&pool, &practice, &projects[0]), "to_process");
+    }
+
+    #[test]
+    fn mining_skips_materialized_practices_end_to_end() {
+        let pool = test_pool();
+        let (ws, practice, _projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        materialize_pending_for_practice(&pool, &practice).unwrap();
+        // Two member projects now hold the same practice idea — the miner must
+        // read past them and find nothing.
+        assert!(mine_shared_findings(&pool, &ws).unwrap().is_empty());
     }
 }
