@@ -84,7 +84,17 @@ pub fn initial_adoption_state(
 /// - a practice that HOLDS is satisfied here, whether or not anyone ever
 ///   "adopted" it → `adopted`. A repo that already complies should not sit at
 ///   `proposed` forever; that understated liquidity is why the pillar read low.
-pub fn adoption_state_after_verdict(prior: &str, holds: bool) -> &'static str {
+/// `applies == false` means the practice targets a stack or concern this repo
+/// does not have. That is a different answer from "the code does not do this",
+/// and conflating them files real work against a repo that should never do it —
+/// the first real verify run queued seven Next.js practices against a Tauri
+/// desktop app exactly that way. The static `applicability` envelope cannot
+/// catch it (it fails open and most harvested practices carry none), so the
+/// verifier, which actually reads the repo, gets the final say.
+pub fn adoption_state_after_verdict(prior: &str, holds: bool, applies: bool) -> &'static str {
+    if !applies {
+        return "na";
+    }
     match (prior, holds) {
         (_, true) => "adopted",
         ("adopted", false) => "diverged",
@@ -1927,21 +1937,31 @@ mod tests {
     #[test]
     fn verdict_meaning_depends_on_the_prior_state() {
         // Drift: canon this repo had applied stopped holding.
-        assert_eq!(adoption_state_after_verdict("adopted", false), "diverged");
+        assert_eq!(adoption_state_after_verdict("adopted", false, true), "diverged");
         // Work owed: never applied here, and the code does not comply.
-        assert_eq!(adoption_state_after_verdict("proposed", false), "to_process");
+        assert_eq!(adoption_state_after_verdict("proposed", false, true), "to_process");
         // Still owed after a previous pass said so.
-        assert_eq!(adoption_state_after_verdict("to_process", false), "to_process");
+        assert_eq!(adoption_state_after_verdict("to_process", false, true), "to_process");
         // Compliance is compliance, however the cell got here — a repo that
         // already follows the practice must not sit at `proposed` forever.
         for prior in ["proposed", "to_process", "adopted", "diverged"] {
-            assert_eq!(adoption_state_after_verdict(prior, true), "adopted");
+            assert_eq!(adoption_state_after_verdict(prior, true, true), "adopted");
         }
         // `na` is a stack judgement; a code verdict does not resurrect it.
-        assert_eq!(adoption_state_after_verdict("na", false), "na");
+        assert_eq!(adoption_state_after_verdict("na", false, true), "na");
+        // "does not apply here" is not "work owed" — the failure mode the first
+        // real run exposed: 7 Next.js practices queued against a Tauri app.
+        for prior in ["proposed", "to_process", "adopted"] {
+            for holds in [true, false] {
+                assert_eq!(adoption_state_after_verdict(prior, holds, false), "na");
+            }
+        }
         for prior in ADOPTION_STATES {
             for holds in [true, false] {
-                assert!(ADOPTION_STATES.contains(&adoption_state_after_verdict(prior, holds)));
+                for applies in [true, false] {
+                    assert!(ADOPTION_STATES
+                        .contains(&adoption_state_after_verdict(prior, holds, applies)));
+                }
             }
         }
     }
@@ -2215,7 +2235,7 @@ mod tests {
         decide_knowledge(pool, practice, "adopt", None).unwrap();
         for project in projects {
             let prior = cell(pool, practice, project);
-            let next = adoption_state_after_verdict(&prior, false);
+            let next = adoption_state_after_verdict(&prior, false, true);
             set_adoption(pool, practice, project, next, None, None).unwrap();
         }
     }

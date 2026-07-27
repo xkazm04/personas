@@ -314,6 +314,11 @@ export interface VerifyStatus {
   lines?: string[];
   checked?: number;
   diverged?: number;
+  /** How many practices the run was asked to rule on. */
+  selected?: number;
+  /** Selected minus checked — verdicts that never landed. A run that lost most
+   *  of its work must not read like a clean one. */
+  lost?: number;
 }
 
 /** Verify that a project's adopted practices still hold in its code. A failed
