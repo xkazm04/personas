@@ -2,12 +2,6 @@
 
 ## Active
 
-### sidebar-unification — unify L2/L3 sidebar on the Projects grouped pattern — session opus-5[1m] — DONE, MERGE PENDING
-- Started/finished: 2026-07-27. Status: **complete on branch `worktree-sidebar-unify`** (worktree `.claude/worktrees/sidebar-unify`), rebased onto `8ce892e31`. Commits `f062fdd75` (feature + i18n) · `2e0081c89` (docs + e2e).
-- Gates green on the branch: `tsc --noEmit` clean · `npm run lint` 0 errors · `vitest` 278 files / 2703 tests pass · `check:i18n:strict` 0 missing / 0 extra · `check-untranslated` clean.
-- **Not fast-forwarded into master:** `exploratory-fix-sweep` has uncommitted edits to `src/features/shared/chrome/sidebar/sidebarData.ts` + `docs/i18n/untranslated-allowlist.json` and staged `src/i18n/locales/*.json`, so `git merge --ff-only` aborts. Nothing was stashed. Once that run commits, `git merge --ff-only worktree-sidebar-unify` from master, then remove the worktree + branch. The two `sidebarData.ts` edits do not overlap (they touch the imports + `twinItems`; this run appended the group descriptors + `groupItems()`).
-- Paths: `src/features/shared/chrome/sidebar/**` (new `SidebarGroupNav.tsx`; `SidebarLevel3.tsx` deleted; `SidebarSubNav.tsx` → `.ts`, types only), `src/lib/navigation/registry.ts` + `registry.test.ts`, `src/i18n/{locales,section-locales,generated}/**`, `docs/features/{navigation.md,README.md,connections,templates}`, `tests/playwright/preset-{team-adoption,questionnaire}.spec.ts`.
-
 ### app-lib-crate-split-step3plus — build-memory crate split — session opus-5[1m] — COMPLETE
 - 2026-07-27. **DONE AND MEASURED.** app_lib **431,422 -> 265,546 LOC (-38.5%)**; peak single rustc **8,872 -> 6,201 MB (-30%)** at matched debuginfo, 5,933 MB with the committed `debug = 0`. Measured via new `scripts/build/sample-build-memory.ps1` on `cargo test --features desktop --lib --no-run` after `cargo clean -p`.
 - Crates now: personas-core 26,612 · personas-db 84,040 · personas-engine 55,690 · app_lib 265,546.
@@ -24,6 +18,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### sidebar-unification — every L2 nav unified on the Projects grouped pattern — session opus-5[1m] — COMPLETE, commits `fd477f8fe` · `e4632b996` · `da6a4d2cf`
+- 2026-07-27. Merged to master (fast-forward) after rebasing onto `7b6dc8b79`; worktree + branch removed.
+- New `SidebarGroupNav` primitive; Home / Overview / Events / Connections / Settings / Agents / Plugins all regrouped. Templates folded into Connections via a new registry `reachability: 'nested'` + `parent` anchor (`railSection()`); the plugins Level-3 push pane retired (`SidebarLevel3.tsx` deleted, `SidebarSubNav.tsx` → `.ts` types-only). 14 new `sidebar.group_*` keys translated into all 13 locales.
+- **Verified in the running app** (`tauri:dev:test`, harness :17320) — group structure dumped per section, Templates-in-Connections routing confirmed (rail highlights Connections, panel title CONNECTIONS, templates-page renders), and window screenshots reviewed. Gates: tsc clean · lint 0 errors · vitest 278/2703 · i18n strict clean.
+- **Gotcha for the next session:** the `/screenshot` harness endpoint matches windows by title *substring* "Personas", so it captured a WindowsTerminal tab titled "Personas - …" instead of the app. Capture by HWND (`Get-Process personas-desktop` → `PrintWindow`) when a terminal tab shares the name.
+- Side fix (`da6a4d2cf`): the db crate split left `scripts/{events/generate-connector-events,generate-connector-seed}.mjs` writing to the old `src-tauri/src/db/` path — `shared-events` died with ENOENT and `predev` aborted at 10/12, so `tauri:dev` could not start at all. Repointed at `src-tauri/db/src/` and made the connector-seed generator emit `pub` so regeneration is idempotent with the crate split.
 
 ### exploratory-fix-sweep — UI/UX defect bundle (modules A-E) + /promote skill — session opus-5[1m] (orchestrator + 5 Sonnet builders) — COMPLETE, commits 4c621f390..41dbfc6be
 - 2026-07-27. Baseline `4e9456ccc`. 9 commits: `4c621f390` /promote skill (+ gitignore practice-harvest/) → `8ce892e31` **REGRESSION FIX** → `2698f9dc4` i18n 10 keys ×14 → `57ecf65f5` A/Home → `2bb17dfe2` B/Overview → `77aaa81a5` C/Events → `2d6c6bee9` D/Settings → `7b6dc8b79` E/Plugins → `932b5938b` eslint muted-ok → `41dbfc6be` docs. Final gates: tsc clean, vitest 278 files / **2703 tests**, eslint 0 errors, cargo check --features desktop exit 0, i18n strict 0/0 ×13 + untranslated clean.
