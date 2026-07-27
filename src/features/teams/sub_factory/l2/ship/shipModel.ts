@@ -225,3 +225,84 @@ const GROWTH_MILESTONE: ShipMilestone = {
 
 /** Oldest → newest; exactly one `active` milestone at a time. */
 export const SHIP_ROADMAP: ShipMilestone[] = [ALPHA_MILESTONE, MOCK_MILESTONE, GROWTH_MILESTONE];
+
+/** The milestone the compose prototypes build (the planned one). */
+export const GROWTH_NAME = GROWTH_MILESTONE.name;
+
+// -- composition library (round 4) --------------------------------------------
+// The personas primitives a milestone is composed FROM. Analysis behind the
+// unit choice: USE CASES (features) are the composition unit — users think in
+// behavior and each carries context_ids, so the context footprint DERIVES;
+// GOALS bind as milestone objectives (measurable statements, not work items);
+// CONTEXTS are never added manually — they join via features and surface only
+// as the derived footprint with health / KPI-coverage gaps.
+
+export type ContextTone = 'ok' | 'warn' | 'crit' | 'setup';
+
+export interface LibContext {
+  name: string;
+  tone: ContextTone;
+  /** Active KPIs measuring this context — 0 is a coverage gap. */
+  kpis: number;
+}
+
+export interface LibFeature {
+  id: string;
+  name: string;
+  contexts: string[];
+  /** KPIs already scoped to this use case. */
+  kpiCount: number;
+  verified: boolean;
+  source: 'scan' | 'manual';
+}
+
+export interface LibGoal {
+  id: string;
+  name: string;
+  metric: string;
+  contexts: string[];
+}
+
+export const TONE_HUE_MAP: Record<ContextTone, string> = {
+  ok: INK.emerald, warn: INK.amber, crit: INK.red, setup: INK.blue,
+};
+
+export const LIB_CONTEXTS: LibContext[] = [
+  { name: 'Teams', tone: 'setup', kpis: 0 },
+  { name: 'Observability', tone: 'ok', kpis: 2 },
+  { name: 'Persona Editor', tone: 'ok', kpis: 3 },
+  { name: 'Scheduler', tone: 'warn', kpis: 0 },
+  { name: 'Template Catalog', tone: 'ok', kpis: 2 },
+  { name: 'Execution', tone: 'ok', kpis: 4 },
+  { name: 'Onboarding', tone: 'warn', kpis: 1 },
+  { name: 'Event Bus', tone: 'ok', kpis: 1 },
+  { name: 'Infra', tone: 'setup', kpis: 0 },
+  { name: 'Vault', tone: 'ok', kpis: 2 },
+  { name: 'Auth & Session', tone: 'crit', kpis: 1 },
+  { name: 'Feedback', tone: 'setup', kpis: 0 },
+];
+
+export function contextTone(name: string): LibContext {
+  return LIB_CONTEXTS.find((c) => c.name === name) ?? { name, tone: 'setup', kpis: 0 };
+}
+
+/** The unbound use-case pool (scan output + hand-added) a cut shops from. */
+export const LIB_FEATURES: LibFeature[] = [
+  { id: 'lf1', name: 'Team sharing & roles', contexts: ['Teams'], kpiCount: 0, verified: false, source: 'scan' },
+  { id: 'lf2', name: 'Workspace invitations', contexts: ['Teams', 'Auth & Session'], kpiCount: 0, verified: false, source: 'scan' },
+  { id: 'lf3', name: 'Run cost budget alerts', contexts: ['Observability'], kpiCount: 2, verified: false, source: 'scan' },
+  { id: 'lf4', name: 'Cost dashboard widget', contexts: ['Observability', 'Execution'], kpiCount: 1, verified: false, source: 'manual' },
+  { id: 'lf5', name: 'Persona duplication & versioning', contexts: ['Persona Editor'], kpiCount: 1, verified: false, source: 'scan' },
+  { id: 'lf6', name: 'Run digest email', contexts: ['Scheduler', 'Event Bus'], kpiCount: 0, verified: false, source: 'manual' },
+  { id: 'lf7', name: 'Prompt A/B compare view', contexts: ['Persona Editor'], kpiCount: 1, verified: false, source: 'scan' },
+  { id: 'lf8', name: 'Webhook trigger for runs', contexts: ['Scheduler', 'Event Bus'], kpiCount: 0, verified: false, source: 'scan' },
+  { id: 'lf9', name: 'Marketplace publishing', contexts: ['Template Catalog'], kpiCount: 0, verified: false, source: 'scan' },
+];
+
+/** Measurable objectives a milestone can bind (not work items). */
+export const LIB_GOALS: LibGoal[] = [
+  { id: 'lg1', name: 'Weekly active teams', metric: '≥ 20 by Oct', contexts: ['Teams'] },
+  { id: 'lg2', name: 'Run cost per active user', metric: '≤ $1.20', contexts: ['Observability'] },
+  { id: 'lg3', name: 'D7 retention', metric: '≥ 35%', contexts: ['Onboarding'] },
+  { id: 'lg4', name: 'Shared persona adoption', metric: '≥ 3 per team', contexts: ['Teams', 'Persona Editor'] },
+];

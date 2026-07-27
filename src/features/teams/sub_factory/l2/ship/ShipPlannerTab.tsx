@@ -1,10 +1,8 @@
-// Ship variant (round 3) — PLANNER. The split-pane scope manager: optimized
-// for WORKING the plan. Left: the roadmap as a vertical timeline of generous
-// milestone cards (the navigation spine, always in view). Right: the selected
-// milestone's workspace — "In the cut" as spacious feature cards, and
-// everything outside the cut as ONE readable ledger table (full names, no
-// columns fighting for width) whose bucket cell is the triage control.
-// Answers "can I manage the scope easily?"
+// The Ship BASELINE (round-4 fusion): Planner's split-pane layout survives —
+// vertical roadmap spine left, milestone workspace right — with both scope
+// sections now the SAME list style ("In the cut" matches "Outside the cut"),
+// each row carrying the Board variant's kept Core-card theme via LedgerRow.
+// Horizon and the original Board were retired in this round.
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowUp, Check, Rocket, Sparkles, Telescope } from 'lucide-react';
@@ -12,8 +10,9 @@ import { ArrowUp, Check, Rocket, Sparkles, Telescope } from 'lucide-react';
 import { INK } from '../../passport/passportInk';
 import {
   BUCKET_META, CRIT_HUE, FEATURE_STATE_META, MOCK_MILESTONE, SHIP_ROADMAP, shipProgress,
-  type ShipMilestone,
+  type ScopeBucket, type ShipMilestone,
 } from './shipModel';
+import { LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import { useScopeTriage } from './shipTriage';
 
 const STATUS_META: Record<ShipMilestone['status'], { hue: string; icon: typeof Check }> = {
@@ -34,7 +33,6 @@ function TimelineCard({ m, selected, onSelect, index, reduce }: {
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.09, duration: 0.3 }}
     >
-      {/* node on the spine */}
       <span className="absolute left-[5px] top-4 w-3 h-3 rounded-full flex items-center justify-center"
         style={m.status === 'shipped' ? { background: hue } : { border: `1.5px ${m.status === 'planned' ? 'dashed' : 'solid'} ${hue}`, background: 'var(--background)' }} />
       <button
@@ -65,6 +63,19 @@ function TimelineCard({ m, selected, onSelect, index, reduce }: {
   );
 }
 
+function BucketBtn({ b, on, onClick, hue }: { b: string; on?: boolean; onClick: () => void; hue?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/80'}`}
+      style={{ borderColor: on && hue ? hue : 'rgba(148,163,184,.16)' }}
+    >
+      {b}
+    </button>
+  );
+}
+
 export function ShipPlannerTab() {
   const reduce = useReducedMotion();
   const [selectedId, setSelectedId] = useState(() => SHIP_ROADMAP.find((m) => m.status === 'active')?.id ?? '');
@@ -76,6 +87,25 @@ export function ShipPlannerTab() {
     ...triage.buckets.never.map((f) => ({ f, fresh: false })),
   ];
   const coreDone = triage.buckets.core.filter((f) => f.state === 'done').length;
+
+  const moveBtns = (id: string, fresh: boolean, current: ScopeBucket | null) => (
+    <>
+      <button
+        type="button"
+        onClick={() => (fresh ? triage.triageNew(id, 'core') : triage.move(id, 'core'))}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
+        style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+        title="Promote into the cut"
+      >
+        <ArrowUp className="w-3 h-3" aria-hidden />
+        Cut
+      </button>
+      {(['later', 'never'] as const).map((b) => (
+        <BucketBtn key={b} b={BUCKET_META[b].label} on={current === b} hue={BUCKET_META[b].hue}
+          onClick={() => (fresh ? triage.triageNew(id, b) : triage.move(id, b))} />
+      ))}
+    </>
+  );
 
   return (
     <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(230px, 270px) minmax(0, 1fr)' }} data-testid="factory-ship-planner">
@@ -89,7 +119,7 @@ export function ShipPlannerTab() {
         </ul>
       </div>
 
-      {/* the workspace */}
+      {/* the workspace — one ledger language for both sections */}
       <motion.div key={m.id} className="min-w-0" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <p className="typo-title-lg">{m.goal}</p>
         <div className="flex items-center gap-2 flex-wrap mt-2 mb-4">
@@ -100,86 +130,55 @@ export function ShipPlannerTab() {
           ))}
         </div>
 
-        {/* in the cut */}
-        <div className="flex items-baseline gap-2 mb-2">
-          <h3 className="typo-title">In the cut</h3>
-          <span className="typo-data text-foreground/40">{coreDone}/{triage.buckets.core.length} done</span>
-          <span className="typo-caption">— what “{m.name}” means, nothing more</span>
-        </div>
-        <ul className="grid gap-2 mb-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))' }}>
-          {triage.buckets.core.map((f) => {
-            const st = FEATURE_STATE_META[f.state];
-            return (
-              <li key={f.id} className="rounded-card px-3 py-2.5 min-w-0" style={{ background: 'rgba(148,163,184,.045)', border: `1px solid ${f.blocker ? `${INK.amber}44` : 'rgba(148,163,184,.12)'}` }}>
-                <span className="flex items-start gap-2">
-                  <span className="w-2 h-2 rounded-full shrink-0 mt-[7px]" style={{ background: st.hue, boxShadow: f.state === 'done' ? undefined : `0 0 5px ${st.hue}77` }} />
-                  <span className="typo-body font-medium text-foreground/95 min-w-0">{f.name}</span>
-                  <span className="ml-auto typo-caption shrink-0" style={{ color: st.hue }}>{st.label}</span>
-                </span>
-                <span className="typo-caption block mt-1 pl-4">{f.contexts.join(' · ')}</span>
-                {f.blocker && <p className="typo-caption mt-1 pl-4" style={{ color: INK.amber }}>{f.blocker}</p>}
+        <LedgerHeader title="In the cut" count={`${coreDone}/${triage.buckets.core.length} done`} aside={`what “${m.name}” means, nothing more`} />
+        <div className="mb-5">
+          <LedgerList testid="ship-cut-list">
+            {triage.buckets.core.map((f) => {
+              const st = FEATURE_STATE_META[f.state];
+              return (
+                <LedgerRow
+                  key={f.id}
+                  name={f.name}
+                  contexts={f.contexts}
+                  stateLabel={st.label}
+                  stateHue={st.hue}
+                  blocker={f.blocker}
+                  actions={m.status !== 'shipped' && (
+                    <>
+                      {(['later', 'never'] as const).map((b) => (
+                        <BucketBtn key={b} b={BUCKET_META[b].label} onClick={() => triage.move(f.id, b)} />
+                      ))}
+                    </>
+                  )}
+                />
+              );
+            })}
+            {triage.buckets.core.length === 0 && (
+              <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
+                No cut yet — promote from the ledger below to define this milestone.
               </li>
-            );
-          })}
-          {triage.buckets.core.length === 0 && (
-            <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
-              No cut yet — promote from the ledger below to define this milestone.
-            </li>
-          )}
-        </ul>
-
-        {/* outside the cut — the ledger */}
-        <div className="flex items-baseline gap-2 mb-1.5">
-          <h3 className="typo-title" style={{ color: 'var(--foreground)', opacity: 0.8 }}>Outside the cut</h3>
-          <span className="typo-data text-foreground/40">{outside.length}</span>
-          <span className="typo-caption">— the bucket cell is the decision</span>
+            )}
+          </LedgerList>
         </div>
-        <ul className="rounded-card border border-foreground/[0.07] overflow-hidden" style={{ background: 'rgba(148,163,184,.02)' }}>
+
+        <LedgerHeader title="Outside the cut" count={outside.length} aside="the row's buttons are the decision" muted />
+        <LedgerList testid="ship-outside-list">
           {outside.map(({ f, fresh }) => {
             const current = fresh ? null : triage.bucketOf(f);
             return (
-              <li key={f.id} className="flex items-center gap-3 px-3.5 py-2 border-b border-foreground/[0.05] last:border-0 min-w-0">
-                {fresh
-                  ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-                  : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'rgba(148,163,184,.4)' }} />}
-                <span className="min-w-0 flex-1">
-                  <span className={`typo-body font-medium block ${current === 'never' ? 'text-foreground/50' : 'text-foreground/90'}`}>
-                    {f.name}
-                    {fresh && <span className="typo-caption ml-2" style={{ color: INK.violet }}>proposed since the cut</span>}
-                  </span>
-                  <span className="typo-caption block">{f.contexts.join(' · ')}</span>
-                </span>
-                <span className="inline-flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => (fresh ? triage.triageNew(f.id, 'core') : triage.move(f.id, 'core'))}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
-                    style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
-                    title="Promote into the cut"
-                  >
-                    <ArrowUp className="w-3 h-3" aria-hidden />
-                    Cut
-                  </button>
-                  {(['later', 'never'] as const).map((b) => {
-                    const on = current === b;
-                    return (
-                      <button
-                        key={b}
-                        type="button"
-                        onClick={() => (fresh ? triage.triageNew(f.id, b) : triage.move(f.id, b))}
-                        className={`px-2 py-1 rounded-interactive typo-caption border transition-colors focus-ring ${on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/80'}`}
-                        style={{ borderColor: on ? BUCKET_META[b].hue : 'rgba(148,163,184,.16)' }}
-                      >
-                        {BUCKET_META[b].label}
-                      </button>
-                    );
-                  })}
-                </span>
-              </li>
+              <LedgerRow
+                key={f.id}
+                name={f.name}
+                contexts={f.contexts}
+                dim={current === 'never'}
+                marker={fresh ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden /> : undefined}
+                meta={fresh ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>proposed since the cut</span> : undefined}
+                actions={m.status !== 'shipped' && moveBtns(f.id, fresh, current)}
+              />
             );
           })}
           {outside.length === 0 && <li className="typo-caption px-3.5 py-2.5">Everything is in the cut — suspiciously disciplined.</li>}
-        </ul>
+        </LedgerList>
       </motion.div>
     </div>
   );
