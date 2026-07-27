@@ -862,7 +862,19 @@ pub struct DevTask {
     /// Task depth: "quick" (immediate execution), "campaign" (subtask breakdown),
     /// or "deep_build" (full planning + implementation phases).
     pub depth: String,
+    /// Retry lineage: the task this one was created as a re-attempt of.
+    /// `None` = an original task. The chain is flat by construction — a retry
+    /// of a retry points at its immediate parent, and `attempt` counts depth.
+    pub parent_task_id: Option<String>,
+    /// 1 for an original task; `parent.attempt + 1` for each re-attempt.
+    pub attempt: i32,
 }
+
+/// The task status vocabulary. `pending` is NOT in it — a legacy writer used it
+/// and the Run Desk rendered nothing for it; `run_incremental` normalizes those
+/// rows to `queued`. Unknown values are warned about, never rejected: refusing
+/// a status write would strand a task mid-run.
+pub const TASK_STATUSES: [&str; 5] = ["queued", "running", "completed", "failed", "cancelled"];
 
 // ============================================================================
 // Dev Competitions (multi-clone parallel task execution)

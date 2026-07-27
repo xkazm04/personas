@@ -3174,6 +3174,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_accept_idea,
             commands::infrastructure::dev_tools::dev_tools_reject_idea,
             commands::infrastructure::dev_tools::dev_tools_list_pending_ideas,
+            commands::infrastructure::dev_tools::dev_tools_triage_ideas,
             commands::infrastructure::dev_tools::dev_tools_delete_idea,
             commands::infrastructure::dev_tools::dev_tools_bulk_delete_ideas,
             // Dev Tools -- Scans
@@ -3197,12 +3198,15 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_create_task,
             commands::infrastructure::dev_tools::dev_tools_update_task,
             commands::infrastructure::dev_tools::dev_tools_delete_task,
+            commands::infrastructure::dev_tools::dev_tools_tasks_page,
+            commands::infrastructure::dev_tools::dev_tools_retry_task,
             // Dev Tools -- Task Executor (CLI-powered)
             commands::infrastructure::task_executor::dev_tools_execute_task,
             commands::infrastructure::task_executor::dev_tools_start_batch,
             commands::infrastructure::task_executor::dev_tools_cancel_task_execution,
             commands::infrastructure::task_executor::dev_tools_start_auto_run,
             commands::infrastructure::task_executor::dev_tools_cancel_auto_run,
+            commands::infrastructure::task_executor::dev_tools_get_auto_run_status,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,

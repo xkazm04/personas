@@ -305,6 +305,137 @@ fn build_task_prompt(
 }
 
 // =============================================================================
+// Terminal chokepoint
+// =============================================================================
+
+/// The per-path differences between the three task-execution arms. Everything
+/// else about reaching a terminal state is identical and lives in
+/// [`finalize_task`].
+struct FinalizeOpts<'a> {
+    /// `Some(project_name)` → also send a desktop notification. Only the
+    /// single-task path does; batch and auto-run would spam one per task.
+    notify_project: Option<&'a str>,
+    /// Message attached to the `task_completed` goal signal.
+    goal_success_message: &'a str,
+    /// When true the success outcome memory quotes the produced line count
+    /// (single-task path); otherwise it records a flat "Completed successfully.".
+    outcome_quotes_line_count: bool,
+}
+
+/// THE single terminal chokepoint for a dev-task run.
+///
+/// Every path that can end a task — single execute, batch, auto-run — funnels
+/// its result through here, so the terminal `update_task` write, the job-status
+/// flip, the `TASK_EXEC_COMPLETE` emit, the outcome memory and the goal signal
+/// happen exactly once and in one order. This used to be three hand-copied
+/// blocks that had already drifted; anything that must happen when a task
+/// finishes (completion write-back, verification arming, …) belongs HERE and
+/// nowhere else.
+///
+/// Returns the final status (`"completed"` / `"failed"`).
+fn finalize_task(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    task_id: &str,
+    result: Result<i32, AppError>,
+    context_warnings: &[String],
+    goal_id: Option<&str>,
+    opts: FinalizeOpts<'_>,
+) -> String {
+    let completed_now = chrono::Utc::now().to_rfc3339();
+
+    match result {
+        Ok(line_count) => {
+            let _ = repo::update_task(
+                pool,
+                task_id,
+                None,
+                None,
+                Some("completed"),
+                None,
+                Some(100),
+                Some(line_count),
+                None,
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(app, task_id, "completed", None);
+            let _ = app.emit(
+                event_name::TASK_EXEC_COMPLETE,
+                json!({
+                    "task_id": task_id,
+                    "output_lines": line_count,
+                    "context_warnings": context_warnings,
+                }),
+            );
+            if let Some(project_name) = opts.notify_project {
+                crate::notifications::send(
+                    app,
+                    "Task Complete",
+                    &format!("{project_name}: task finished with {line_count} output lines."),
+                );
+            }
+
+            // Learning loop: record what this run taught the project.
+            let detail = if opts.outcome_quotes_line_count {
+                format!("Produced {line_count} output lines.")
+            } else {
+                "Completed successfully.".to_string()
+            };
+            record_task_outcome(pool, task_id, true, &detail);
+
+            if let Some(gid) = goal_id {
+                let _ = repo::create_goal_signal(
+                    pool,
+                    gid,
+                    "task_completed",
+                    Some(task_id),
+                    Some(10),
+                    Some(opts.goal_success_message),
+                );
+            }
+            "completed".to_string()
+        }
+        Err(e) => {
+            let msg = format!("{e}");
+            let _ = repo::update_task(
+                pool,
+                task_id,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(app, task_id, "failed", Some(msg.clone()));
+            TASK_EXEC_JOBS.emit_line(app, task_id, format!("[Error] {msg}"));
+            if let Some(project_name) = opts.notify_project {
+                crate::notifications::send(app, "Task Failed", &format!("{project_name}: {msg}"));
+            }
+
+            // Learning loop: a failure is the most instructive outcome.
+            record_task_outcome(pool, task_id, false, &msg);
+
+            if let Some(gid) = goal_id {
+                let _ = repo::create_goal_signal(
+                    pool,
+                    gid,
+                    "task_failed",
+                    Some(task_id),
+                    None,
+                    Some(&msg),
+                );
+            }
+            "failed".to_string()
+        }
+    }
+}
+
+// =============================================================================
 // Tauri commands
 // =============================================================================
 
@@ -400,102 +531,19 @@ pub async fn dev_tools_execute_task(
             ) => res
         };
 
-        let completed_now = chrono::Utc::now().to_rfc3339();
-
-        match result {
-            Ok(line_count) => {
-                let _ = repo::update_task(
-                    &pool,
-                    &task_id_for_spawn,
-                    None,
-                    None,
-                    Some("completed"),
-                    None,
-                    Some(100),
-                    Some(line_count),
-                    None,
-                    None,
-                    Some(Some(&completed_now)),
-                );
-                TASK_EXEC_JOBS.set_status(&app_handle, &task_id_for_spawn, "completed", None);
-                let _ = app_handle.emit(
-                    event_name::TASK_EXEC_COMPLETE,
-                    json!({
-                        "task_id": task_id_for_spawn,
-                        "output_lines": line_count,
-                        "context_warnings": context_warnings,
-                    }),
-                );
-                crate::notifications::send(
-                    &app_handle,
-                    "Task Complete",
-                    &format!("{project_name}: task finished with {line_count} output lines."),
-                );
-
-                // Learning loop: record what this run taught the project.
-                record_task_outcome(
-                    &pool,
-                    &task_id_for_spawn,
-                    true,
-                    &format!("Produced {line_count} output lines."),
-                );
-
-                // Record goal signal if task has a goal_id
-                if let Some(ref gid) = goal_id {
-                    let _ = repo::create_goal_signal(
-                        &pool,
-                        gid,
-                        "task_completed",
-                        Some(&task_id_for_spawn),
-                        Some(10),
-                        Some("Task completed successfully"),
-                    );
-                }
-            }
-            Err(e) => {
-                let msg = format!("{e}");
-                let _ = repo::update_task(
-                    &pool,
-                    &task_id_for_spawn,
-                    None,
-                    None,
-                    Some("failed"),
-                    None,
-                    None,
-                    None,
-                    Some(Some(&msg)),
-                    None,
-                    Some(Some(&completed_now)),
-                );
-                TASK_EXEC_JOBS.set_status(
-                    &app_handle,
-                    &task_id_for_spawn,
-                    "failed",
-                    Some(msg.clone()),
-                );
-                TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Error] {msg}"));
-                crate::notifications::send(
-                    &app_handle,
-                    "Task Failed",
-                    &format!("{project_name}: {msg}"),
-                );
-
-                // Learning loop: a failure is the most instructive outcome.
-                record_task_outcome(&pool, &task_id_for_spawn, false, &msg);
-
-                // Record goal signal for failure
-                if let Some(ref gid) = goal_id {
-                    let _ = repo::create_goal_signal(
-                        &pool,
-                        gid,
-                        "task_failed",
-                        Some(&task_id_for_spawn),
-                        None,
-                        Some(&msg),
-                    );
-                }
-            }
-        }
+        finalize_task(
+            &app_handle,
+            &pool,
+            &task_id_for_spawn,
+            result,
+            &context_warnings,
+            goal_id.as_deref(),
+            FinalizeOpts {
+                notify_project: Some(&project_name),
+                goal_success_message: "Task completed successfully",
+                outcome_quotes_line_count: true,
+            },
+        );
         })
         .catch_unwind()
         .await;
@@ -655,81 +703,21 @@ pub async fn dev_tools_start_batch(
                 ) => res
             };
 
-            let completed_now = chrono::Utc::now().to_rfc3339();
             let goal_id = task.goal_id.clone();
 
-            match result {
-                Ok(line_count) => {
-                    let _ = repo::update_task(
-                        &pool,
-                        &tid,
-                        None,
-                        None,
-                        Some("completed"),
-                        None,
-                        Some(100),
-                        Some(line_count),
-                        None,
-                        None,
-                        Some(Some(&completed_now)),
-                    );
-                    TASK_EXEC_JOBS.set_status(&app_handle, &tid, "completed", None);
-                    let _ = app_handle.emit(
-                        event_name::TASK_EXEC_COMPLETE,
-                        json!({
-                            "task_id": tid,
-                            "output_lines": line_count,
-                            "context_warnings": context_warnings,
-                        }),
-                    );
-
-                    // Learning loop: record what this run taught the project.
-                    record_task_outcome(&pool, &tid, true, "Completed successfully.");
-
-                    if let Some(ref gid) = goal_id {
-                        let _ = repo::create_goal_signal(
-                            &pool,
-                            gid,
-                            "task_completed",
-                            Some(&tid),
-                            Some(10),
-                            Some("Task completed successfully"),
-                        );
-                    }
-                }
-                Err(e) => {
-                    let msg = format!("{e}");
-                    let _ = repo::update_task(
-                        &pool,
-                        &tid,
-                        None,
-                        None,
-                        Some("failed"),
-                        None,
-                        None,
-                        None,
-                        Some(Some(&msg)),
-                        None,
-                        Some(Some(&completed_now)),
-                    );
-                    TASK_EXEC_JOBS.set_status(&app_handle, &tid, "failed", Some(msg.clone()));
-                    TASK_EXEC_JOBS.emit_line(&app_handle, &tid, format!("[Error] {msg}"));
-
-                    // Learning loop: a failure is the most instructive outcome.
-                    record_task_outcome(&pool, &tid, false, &msg);
-
-                    if let Some(ref gid) = goal_id {
-                        let _ = repo::create_goal_signal(
-                            &pool,
-                            gid,
-                            "task_failed",
-                            Some(&tid),
-                            None,
-                            Some(&msg),
-                        );
-                    }
-                }
-            }
+            finalize_task(
+                &app_handle,
+                &pool,
+                &tid,
+                result,
+                &context_warnings,
+                goal_id.as_deref(),
+                FinalizeOpts {
+                    notify_project: None,
+                    goal_success_message: "Task completed successfully",
+                    outcome_quotes_line_count: false,
+                },
+            );
             })
             .catch_unwind()
             .await;
@@ -1392,81 +1380,20 @@ async fn run_one_task_for_auto(
         ) => res
     };
 
-    let completed_now = chrono::Utc::now().to_rfc3339();
     let goal_id = task.goal_id.clone();
-    let final_status = match result {
-        Ok(line_count) => {
-            let _ = repo::update_task(
-                &pool,
-                &task_id,
-                None,
-                None,
-                Some("completed"),
-                None,
-                Some(100),
-                Some(line_count),
-                None,
-                None,
-                Some(Some(&completed_now)),
-            );
-            TASK_EXEC_JOBS.set_status(&app, &task_id, "completed", None);
-            let _ = app.emit(
-                event_name::TASK_EXEC_COMPLETE,
-                json!({
-                    "task_id": task_id,
-                    "output_lines": line_count,
-                    "context_warnings": context_warnings,
-                }),
-            );
-            // Learning loop: record what this run taught the project.
-            record_task_outcome(&pool, &task_id, true, "Completed successfully.");
-
-            if let Some(ref gid) = goal_id {
-                let _ = repo::create_goal_signal(
-                    &pool,
-                    gid,
-                    "task_completed",
-                    Some(&task_id),
-                    Some(10),
-                    Some("Task completed (auto-run)"),
-                );
-            }
-            "completed".to_string()
-        }
-        Err(e) => {
-            let msg = format!("{e}");
-            let _ = repo::update_task(
-                &pool,
-                &task_id,
-                None,
-                None,
-                Some("failed"),
-                None,
-                None,
-                None,
-                Some(Some(&msg)),
-                None,
-                Some(Some(&completed_now)),
-            );
-            TASK_EXEC_JOBS.set_status(&app, &task_id, "failed", Some(msg.clone()));
-            TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Error] {msg}"));
-            // Learning loop: a failure is the most instructive outcome.
-            record_task_outcome(&pool, &task_id, false, &msg);
-
-            if let Some(ref gid) = goal_id {
-                let _ = repo::create_goal_signal(
-                    &pool,
-                    gid,
-                    "task_failed",
-                    Some(&task_id),
-                    None,
-                    Some(&msg),
-                );
-            }
-            "failed".to_string()
-        }
-    };
-    final_status
+    finalize_task(
+        &app,
+        &pool,
+        &task_id,
+        result,
+        &context_warnings,
+        goal_id.as_deref(),
+        FinalizeOpts {
+            notify_project: None,
+            goal_success_message: "Task completed (auto-run)",
+            outcome_quotes_line_count: false,
+        },
+    )
 }
 
 #[tauri::command]
@@ -1496,6 +1423,12 @@ pub async fn dev_tools_start_auto_run(
     AUTO_RUN_JOBS.insert_running(run_id.clone(), cancel_token.clone(), AutoRunExtra)?;
     AUTO_RUN_JOBS.set_status(&app, &run_id, "running", None);
 
+    // Durable ledger row. Best-effort: bookkeeping must never abort the run,
+    // but without it a restart mid-wave leaves no trace the wave existed.
+    if let Err(e) = repo::start_auto_run(&state.db, &run_id, &project_id, snapshot_size as u32) {
+        tracing::warn!(run_id = %run_id, error = %e, "auto-run: failed to record start row");
+    }
+
     let app_handle = app.clone();
     let pool = state.db.clone();
     let project_id_for_spawn = project_id.clone();
@@ -1504,6 +1437,7 @@ pub async fn dev_tools_start_auto_run(
 
     let app_handle_for_panic = app_handle.clone();
     let run_id_for_panic = run_id_for_spawn.clone();
+    let pool_for_panic = pool.clone();
 
     tokio::spawn(async move {
         let work = AssertUnwindSafe(async move {
@@ -1583,16 +1517,24 @@ pub async fn dev_tools_start_auto_run(
             termination_reason: termination_reason.clone(),
         };
         let _ = app_handle.emit(event_name::AUTO_RUN_COMPLETE, &payload);
-        AUTO_RUN_JOBS.set_status(
-            &app_handle,
+        let terminal_status = if termination_reason == "cancelled" {
+            "cancelled"
+        } else {
+            "completed"
+        };
+        if let Err(e) = repo::finish_auto_run(
+            &pool,
             &run_id_for_spawn,
-            if termination_reason == "cancelled" {
-                "cancelled"
-            } else {
-                "completed"
-            },
-            None,
-        );
+            terminal_status,
+            completed,
+            failed,
+            skipped,
+            iterations,
+            &termination_reason,
+        ) {
+            tracing::warn!(run_id = %run_id_for_spawn, error = %e, "auto-run: failed to record completion row");
+        }
+        AUTO_RUN_JOBS.set_status(&app_handle, &run_id_for_spawn, terminal_status, None);
         crate::notifications::send(
             &app_handle,
             "Auto-Run Complete",
@@ -1612,6 +1554,12 @@ pub async fn dev_tools_start_auto_run(
                 "dev-tools auto-run task panicked — marking run as failed"
             );
             AUTO_RUN_JOBS.set_status(&app_handle_for_panic, &run_id_for_panic, "failed", Some(msg));
+            // Never leave the durable row `running` — a stuck row is what makes
+            // the rehydrated banner claim a wave is still in flight.
+            if let Err(e) = repo::set_auto_run_status(&pool_for_panic, &run_id_for_panic, "failed")
+            {
+                tracing::warn!(run_id = %run_id_for_panic, error = %e, "auto-run: failed to mark panicked run");
+            }
         }
     });
 
@@ -1619,6 +1567,93 @@ pub async fn dev_tools_start_auto_run(
         "run_id": run_id,
         "snapshot_size": snapshot_size,
     }))
+}
+
+/// What the Run Desk's auto-run banner rehydrates from.
+///
+/// `live = true` means the in-memory scheduler still owns this run (the
+/// tallies are the last durable snapshot, not a live count); `live = false`
+/// means this is the most recent finished run. `run_id: None` = the project
+/// has never had an auto-run.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct AutoRunStatus {
+    pub run_id: Option<String>,
+    pub project_id: Option<String>,
+    /// `running` | `completed` | `cancelled` | `failed`, or `None` when there
+    /// is no run to report.
+    pub status: Option<String>,
+    pub snapshot_size: u32,
+    pub completed: u32,
+    pub failed: u32,
+    pub skipped: u32,
+    pub iterations: u32,
+    pub termination_reason: Option<String>,
+    pub started_at: Option<String>,
+    pub finished_at: Option<String>,
+    /// True when the in-memory scheduler still reports this run as running.
+    pub live: bool,
+}
+
+impl AutoRunStatus {
+    fn from_row(row: crate::db::repos::dev_tools::DevAutoRun, live: bool) -> Self {
+        Self {
+            run_id: Some(row.id),
+            project_id: row.project_id,
+            status: Some(row.status),
+            snapshot_size: row.snapshot_size,
+            completed: row.completed,
+            failed: row.failed,
+            skipped: row.skipped,
+            iterations: row.iterations,
+            termination_reason: row.termination_reason,
+            started_at: row.started_at,
+            finished_at: row.finished_at,
+            live,
+        }
+    }
+
+    fn none() -> Self {
+        Self {
+            run_id: None,
+            project_id: None,
+            status: None,
+            snapshot_size: 0,
+            completed: 0,
+            failed: 0,
+            skipped: 0,
+            iterations: 0,
+            termination_reason: None,
+            started_at: None,
+            finished_at: None,
+            live: false,
+        }
+    }
+}
+
+/// Latest auto-run for a project (or globally when `project_id` is `None`),
+/// cross-checked against the live `AUTO_RUN_JOBS` map. The DB row is the
+/// source of truth for identity and tallies; the in-memory map only decides
+/// whether the run is still in flight, so a row left `running` by a hard kill
+/// reports `live: false` rather than a banner that never clears.
+#[tauri::command]
+pub async fn dev_tools_get_auto_run_status(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+) -> Result<AutoRunStatus, AppError> {
+    require_auth(&state).await?;
+
+    let latest = repo::latest_auto_run(&state.db, project_id.as_deref())?;
+    Ok(match latest {
+        Some(row) => {
+            let live = AUTO_RUN_JOBS
+                .get_snapshot(&row.id)
+                .map(|s| s.status == "running")
+                .unwrap_or(false);
+            AutoRunStatus::from_row(row, live)
+        }
+        None => AutoRunStatus::none(),
+    })
 }
 
 #[tauri::command]
@@ -1632,6 +1667,13 @@ pub async fn dev_tools_cancel_auto_run(
     if let Some(token) = AUTO_RUN_JOBS.get_cancel_token(&run_id)? {
         token.cancel();
         AUTO_RUN_JOBS.set_status(&app, &run_id, "cancelled", None);
+        // Mark the durable row immediately: the wave may take a whole task to
+        // notice the token, and a restart in that window must not rehydrate a
+        // banner for a run the user already stopped. The completion arm
+        // overwrites this with the real tallies if it still gets to run.
+        if let Err(e) = repo::set_auto_run_status(&state.db, &run_id, "cancelled") {
+            tracing::warn!(run_id = %run_id, error = %e, "auto-run: failed to mark cancelled run");
+        }
         Ok(true)
     } else {
         Ok(false)

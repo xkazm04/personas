@@ -23,6 +23,9 @@ import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
 import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
+import type { TriagePage } from "@/lib/bindings/TriagePage";
+import type { TasksPage } from "@/lib/bindings/TasksPage";
+import type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 
 // ---------------------------------------------------------------------------
 // Safe invoke helper — hoisted to `@/lib/utils/tauri/safeInvoke` (Wave 5).
@@ -49,6 +52,10 @@ export type { DevScan } from "@/lib/bindings/DevScan";
 export type { DevTask } from "@/lib/bindings/DevTask";
 export type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 export type { TriageRule } from "@/lib/bindings/TriageRule";
+export type { TriagePage } from "@/lib/bindings/TriagePage";
+export type { TriageCounts } from "@/lib/bindings/TriageCounts";
+export type { TasksPage } from "@/lib/bindings/TasksPage";
+export type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 
 // ============================================================================
 // Projects
@@ -864,11 +871,29 @@ export const runStaticScan = (projectId: string, configOverride?: StaticScanConf
 // Triage
 // ============================================================================
 
-const EMPTY_TRIAGE = { ideas: [] as DevIdea[], cursor: null, has_more: false, counts: { total: 0, pending: 0, accepted: 0, rejected: 0 } };
+export interface TriageIdeasFilters {
+  /** Defaults to `pending` backend-side. */
+  status?: string;
+  /** `scanner` is the pseudo-origin for classic scanner ideas (`origin IS NULL`). */
+  origin?: string;
+  category?: string;
+}
 
-export const triageIdeas = (projectId: string, limit?: number, cursor?: string) =>
-  safeInvoke<typeof EMPTY_TRIAGE>(EMPTY_TRIAGE, "dev_tools_triage_ideas", {
-    projectId,
+/** One keyset page of backlog ideas + facet counts.
+ *
+ *  Was a phantom command until the unified-Backlog work: it lived in
+ *  `commandNames.overrides.ts` and `safeInvoke` silently returned an empty
+ *  page, so every triage surface rendered "nothing to review" regardless of
+ *  the backlog's real contents. It is a real registered command now, so this
+ *  is a plain typed invoke — a missing command must surface, not fake empty.
+ *
+ *  `projectId` omitted = cross-project read (the unified Backlog default). */
+export const triageIdeas = (projectId?: string, limit?: number, cursor?: string, filters?: TriageIdeasFilters) =>
+  invoke<TriagePage>("dev_tools_triage_ideas", {
+    projectId: projectId,
+    status: filters?.status,
+    origin: filters?.origin,
+    category: filters?.category,
     limit: limit,
     cursor: cursor,
   });
@@ -884,8 +909,11 @@ export const rejectIdea = (id: string, reason?: string) =>
 export const listPendingIdeas = (limit?: number) =>
   safeInvoke<DevIdea[]>([], "dev_tools_list_pending_ideas", { limit });
 
+/** Deleting a triage row IS deleting the idea — `dev_tools_delete_triage_idea`
+ *  never existed on the Rust side, so this used to no-op and the row came back
+ *  on the next fetch. Points at the real command. */
 export const deleteTriageIdea = (id: string) =>
-  safeInvoke<boolean>(false, "dev_tools_delete_triage_idea", { id });
+  invoke<boolean>("dev_tools_delete_idea", { id });
 
 // ============================================================================
 // Triage Rules
@@ -927,6 +955,21 @@ export const listTasks = (projectId?: string, status?: string, goalId?: string) 
     status: status,
     goalId: goalId,
   });
+
+/** Keyset page of tasks + per-status counts for the Run Desk.
+ *  `listTasks` stays for the callers that want the whole (unpaged) list. */
+export const tasksPage = (projectId?: string, statuses?: string[], limit?: number, cursor?: string) =>
+  invoke<TasksPage>("dev_tools_tasks_page", {
+    projectId: projectId,
+    statuses: statuses,
+    limit: limit,
+    cursor: cursor,
+  });
+
+/** Queue a fresh attempt of a task. The new row copies the original verbatim
+ *  (no `[Retry] ` title prefix); lineage lives in `parent_task_id`/`attempt`. */
+export const retryTask = (taskId: string) =>
+  invoke<DevTask>("dev_tools_retry_task", { taskId });
 
 export const createTask = (title: string, projectId?: string, description?: string, sourceIdeaId?: string, goalId?: string, depth?: string) =>
   invoke<DevTask>("dev_tools_create_task", {
@@ -1082,6 +1125,12 @@ export const startAutoRun = (projectId: string, maxParallel?: number, maxIterati
 
 export const cancelAutoRun = (runId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_auto_run", { runId });
+
+/** Durable auto-run state for the Run Desk banner — the last `dev_auto_runs`
+ *  row for the project, flagged `live` when the in-memory scheduler still owns
+ *  it. Lets the banner rehydrate after a reload instead of forgetting the run. */
+export const getAutoRunStatus = (projectId?: string) =>
+  invoke<AutoRunStatus>("dev_tools_get_auto_run_status", { projectId: projectId ?? null });
 
 // ============================================================================
 // Cross-Project (Codebases connector)

@@ -478,6 +478,33 @@ pub fn dev_tools_reject_idea(
     Ok(idea)
 }
 
+/// One keyset page of backlog ideas + facet counts — the read behind the
+/// unified Backlog (Approvals › Backlog) and its Focus deck.
+///
+/// `project_id: None` is an explicit CROSS-PROJECT read, not "unfiltered by
+/// accident". `status` defaults to `pending`. `origin` accepts the pseudo-value
+/// `scanner` for classic Idea-Scanner rows (`origin IS NULL`).
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_triage_ideas(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+    status: Option<String>,
+    origin: Option<String>,
+    category: Option<String>,
+    limit: Option<i64>,
+    cursor: Option<String>,
+) -> Result<repo::TriagePage, AppError> {
+    require_auth_sync(&state)?;
+    let filter = repo::TriageFilter {
+        project_id,
+        status,
+        origin,
+        category,
+    };
+    repo::triage_ideas(&state.db, &filter, limit, cursor.as_deref())
+}
+
 /// Pending backlog ideas across ALL projects (bounded) — the source for the
 /// unified Human-Review inbox's "Dev Tools backlog" group. Project names are
 /// resolved client-side from the projects store.
@@ -756,6 +783,38 @@ pub fn dev_tools_delete_task(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_task(&state.db, &id)
+}
+
+/// Keyset page of tasks + per-status counts for the Run Desk.
+/// `dev_tools_list_tasks` stays as-is for the unpaginated callers.
+#[tauri::command]
+pub fn dev_tools_tasks_page(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+    statuses: Option<Vec<String>>,
+    limit: Option<i64>,
+    cursor: Option<String>,
+) -> Result<repo::TasksPage, AppError> {
+    require_auth_sync(&state)?;
+    repo::tasks_page(
+        &state.db,
+        project_id.as_deref(),
+        statuses.as_deref(),
+        limit,
+        cursor.as_deref(),
+    )
+}
+
+/// Queue a fresh attempt of a task. The new row copies the original verbatim
+/// (no `[Retry] ` title prefix) and records lineage via `parent_task_id` /
+/// `attempt`.
+#[tauri::command]
+pub fn dev_tools_retry_task(
+    state: State<'_, Arc<AppState>>,
+    task_id: String,
+) -> Result<DevTask, AppError> {
+    require_auth_sync(&state)?;
+    repo::retry_task(&state.db, &task_id)
 }
 
 // ============================================================================
