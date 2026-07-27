@@ -119,7 +119,7 @@ const USAGE_WINDOW_FALLBACK_HOURS: i64 = 5;
 /// Durable via `scheduled_retries` (RetryAt), so it survives app restarts.
 const API_ERROR_BASE_RETRY_MINUTES: i64 = 10;
 /// Maximum timeout in milliseconds — derived from the engine hard ceiling.
-const MAX_TIMEOUT_MS: u64 = super::ENGINE_MAX_EXECUTION_SECS * 1000;
+const MAX_TIMEOUT_MS: u64 = crate::limits::ENGINE_MAX_EXECUTION_SECS * 1000;
 /// Maximum number of retries for a single execution chain.
 pub const MAX_RETRY_COUNT: i64 = 3;
 /// Occurrence count threshold at which the knowledge base triggers preemptive

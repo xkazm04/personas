@@ -59,6 +59,13 @@ pub mod credential_negotiator;
 // `validation`, which sit below the engine, so leaving them here forced the
 // whole engine into the bottom layer of the graph.
 pub use personas_core::{cron, crypto, lifecycle, trace, types, url_safety};
+// Moved to `personas-core` (crate-split step 4a). These six carry no engine
+// dependencies of their own — `healing`, `run_budget`, `topology_graph`,
+// `redact` and `limits` are pure classification/algorithm/constant modules, and
+// `scheduler` needs only `cron` — but `db` reads all of them, which pinned the
+// data layer above the engine. Re-exported so every `crate::engine::<name>`
+// path keeps resolving.
+pub use personas_core::{healing, limits, redact, run_budget, scheduler, topology_graph};
 pub mod curation_scheduler;
 pub mod system_ops;
 pub mod db_query;
@@ -108,7 +115,6 @@ pub mod git_checkpoint;
 pub mod genome;
 pub mod genome_critique;
 pub mod google_oauth;
-pub mod healing;
 pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod healthcheck;
@@ -128,7 +134,6 @@ pub mod kb_ingest;
 #[cfg(feature = "ml")]
 pub mod kb_scan;
 pub mod knowledge;
-pub mod limits;
 pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
@@ -177,20 +182,17 @@ pub mod protocol;
 pub mod provider;
 pub mod quality_gate;
 pub mod queue;
-pub mod run_budget;
 pub mod resource_governor;
 pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
 pub mod recipe_parameters;
 pub mod recipe_seed;
-pub mod redact;
 pub mod render_plan;
 pub mod resource_listing;
 pub mod rotation;
 pub mod runner;
 pub mod safe_json;
-pub mod scheduler;
 pub mod scope_enforcement;
 #[cfg(feature = "scraper")]
 pub mod scraper;
@@ -212,7 +214,6 @@ pub mod test_runner;
 pub mod tier;
 pub mod tool_outcome;
 pub mod tool_runner;
-pub mod topology_graph;
 pub mod topology_heuristic;
 pub mod topology_types;
 #[cfg(feature = "ml")]

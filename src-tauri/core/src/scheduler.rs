@@ -1,11 +1,11 @@
 use chrono::{DateTime, Duration, Utc};
 use chrono_tz::Tz;
 
-use crate::db::models::{PersonaTrigger, TriggerConfig};
+use crate::models::{PersonaTrigger, TriggerConfig};
 
-use super::cron;
+use crate::cron;
 
-pub(crate) fn invalid_schedule_timezone(cfg: &TriggerConfig) -> Option<(String, String, String)> {
+pub fn invalid_schedule_timezone(cfg: &TriggerConfig) -> Option<(String, String, String)> {
     match cfg {
         TriggerConfig::Schedule {
             cron: Some(cron_expr),
@@ -22,7 +22,7 @@ pub(crate) fn invalid_schedule_timezone(cfg: &TriggerConfig) -> Option<(String, 
 /// A schedule's `timezone` string could not be parsed into an IANA zone.
 /// Carries the raw value and the parser's message so callers can log/surface
 /// the same diagnostics the live path always did.
-pub(crate) struct ScheduleTzError {
+pub struct ScheduleTzError {
     pub raw: String,
     pub message: String,
 }
@@ -38,7 +38,7 @@ pub(crate) struct ScheduleTzError {
 ///   and the user-initiated command surfaces a validation error). This replaces
 ///   the old backfill behaviour of `.parse().ok()`-ing into system-local, which
 ///   silently replayed every slot at the wrong wall-clock hour.
-pub(crate) fn resolve_schedule_tz(raw: Option<&str>) -> Result<Option<Tz>, ScheduleTzError> {
+pub fn resolve_schedule_tz(raw: Option<&str>) -> Result<Option<Tz>, ScheduleTzError> {
     match raw {
         None => Ok(None),
         Some(s) => s.parse::<Tz>().map(Some).map_err(|err| ScheduleTzError {
@@ -56,7 +56,7 @@ pub(crate) fn resolve_schedule_tz(raw: Option<&str>) -> Result<Option<Tz>, Sched
 /// tokens in the cron expression — pass [`cron::seed_hash`] of the trigger
 /// id so two personas with the same `H/15` cron land on different minutes.
 /// A zero seed collapses every `H` to its range minimum (top of the hour).
-pub(crate) fn compute_next_from_config(
+pub fn compute_next_from_config(
     cfg: &TriggerConfig,
     now: DateTime<Utc>,
     seed: u64,
@@ -93,7 +93,7 @@ fn next_interval_at(now: DateTime<Utc>, anchor: Option<DateTime<Utc>>, secs: u64
 /// known prior fire time instead of `now`. Re-schedule paths pass the trigger's
 /// previous `next_trigger_at` so the cadence holds steady. Cron triggers are
 /// wall-clock and ignore the anchor.
-pub(crate) fn compute_next_from_config_anchored(
+pub fn compute_next_from_config_anchored(
     cfg: &TriggerConfig,
     now: DateTime<Utc>,
     seed: u64,
@@ -185,7 +185,7 @@ pub fn compute_slots_in_range(
     seed: u64,
     max_slots: usize,
 ) -> Vec<DateTime<Utc>> {
-    let cap = max_slots.min(crate::engine::limits::BACKFILL_HARD_CAP);
+    let cap = max_slots.min(crate::limits::BACKFILL_HARD_CAP);
     let mut slots: Vec<DateTime<Utc>> = Vec::new();
     if end <= start || cap == 0 {
         return slots;
