@@ -29,7 +29,7 @@ target_persona_id: string | null,
 /**
  * Machine token for the reason — resolve to a label via
  * `status_tokens.chain_stop` on the frontend. See
- * [`crate::engine::chain::stop_reason`] for the vocabulary.
+ * [`crate::chain::stop_reason`] for the vocabulary.
  */
 reason_token: string, 
 /**

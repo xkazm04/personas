@@ -11,7 +11,7 @@
 #   db     — data layer
 #   engine — business logic
 #   .      — Tauri commands + companion (what's left)
-members = [".", "macros", "core"]
+members = [".", "macros", "core", "db"]
 
 [package]
 name = "personas-desktop"
@@ -40,6 +40,7 @@ desktop = [
     # Forwards the OS-keychain code path in personas-core::crypto. Without this,
     # that crate compiles its mobile "keychain unavailable" stub instead.
     "personas-core/desktop",
+    "personas-db/desktop",
     "tauri/tray-icon",
     "dep:arboard",
     "dep:notify",
@@ -54,9 +55,9 @@ desktop = [
 # Full desktop = core + ML + P2P. Used by CI and production builds.
 desktop-full = ["desktop", "ml", "p2p"]
 # Vector Knowledge Base: sqlite-vec + local embeddings (ONNX)
-ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml"]
+ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort", "dep:pdf-extract", "personas-core/ml", "personas-db/ml"]
 # P2P / LAN Discovery & Transport (Invisible Apps)
-p2p = ["personas-core/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
+p2p = ["personas-core/p2p", "personas-db/p2p", "dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde", "dep:socket2"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
 # Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing.
@@ -74,7 +75,7 @@ ollama = []
 # Embedded local scraper (Pumper). Phase 0: http tier only, SSRF-safe, exposed
 # as the `fetch_readable` MCP tool + `scraper_fetch_readable` command. Not in any
 # release profile yet — build with `cargo build --features scraper` while iterating.
-scraper = ["dep:pumper-core"]
+scraper = ["dep:pumper-core", "personas-db/scraper"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
@@ -93,6 +94,9 @@ personas-macros = { path = "macros" }
 # Dependency-free foundation crate (see src-tauri/core/). Re-exported from
 # lib.rs so existing `crate::utils::…` paths keep resolving unchanged.
 personas-core = { path = "core" }
+# Data layer (see src-tauri/db/). Re-exported from lib.rs as `db` so existing
+# `crate::db::…` paths keep resolving unchanged.
+personas-db = { path = "db" }
 
 # Embedded local scraper (Pumper) — Phase 0. `default-features = false` drops
 # pumper-core's sqlx/storage tier, so this pulls only the engine traits +
@@ -263,6 +267,9 @@ path = "src/daemon_bin.rs"
 required-features = ["daemon"]
 
 [dev-dependencies]
+# Turns on `personas_db::init_test_db` for this crate's tests. Dev-only, so it
+# never reaches a release build.
+personas-db = { path = "db", features = ["test-support"] }
 # Property-based testing for render_plan invariants. Not pulled into
 # production builds. See tests/render_plan_proptest.rs for usage.
 proptest = "1"

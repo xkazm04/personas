@@ -1,0 +1,216 @@
+use rusqlite::params;
+
+use crate::models::{AppendMessageResult, DesignConversation};
+use crate::repos::utils::collect_rows;
+use crate::DbPool;
+use personas_core::error::AppError;
+
+row_mapper!(row_to_conversation -> DesignConversation {
+    id, persona_id, title, status, messages, last_result, created_at, updated_at,
+});
+
+/// List all conversations for a persona, newest first.
+///
+/// PAYLOAD TRIM: rows are returned with `messages = '[]'` and
+/// `last_result = NULL`. This list backs a title/status/date picker that
+/// re-fetches on every persona switch — `SELECT *` shipped every
+/// conversation's full 500-message history (potentially megabytes) over IPC
+/// just to render labels. Consumers that need the history (resume) fetch the
+/// single conversation via `get_by_id`.
+pub fn list_by_persona(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<DesignConversation>, AppError> {
+    timed_query!(
+        "design_conversations",
+        "design_conversations::list_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT id, persona_id, title, status, '[]' AS messages, NULL AS last_result,
+                        created_at, updated_at
+                 FROM design_conversations WHERE persona_id = ?1 ORDER BY updated_at DESC",
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_conversation)?;
+            Ok(collect_rows(rows, "design_conversations::list_by_persona"))
+        }
+    )
+}
+
+crud_get_by_id!(
+    DesignConversation,
+    "design_conversations",
+    "Design conversation",
+    row_to_conversation
+);
+
+/// Get the active conversation for a persona (if any).
+pub fn get_active(pool: &DbPool, persona_id: &str) -> Result<Option<DesignConversation>, AppError> {
+    timed_query!(
+        "design_conversations",
+        "design_conversations::get_active",
+        {
+            let conn = pool.get()?;
+            let result = conn.query_row(
+            "SELECT * FROM design_conversations WHERE persona_id = ?1 AND status = 'active' ORDER BY updated_at DESC LIMIT 1",
+            params![persona_id],
+            row_to_conversation,
+        );
+            match result {
+                Ok(conv) => Ok(Some(conv)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
+        }
+    )
+}
+
+/// Create a new design conversation.
+pub fn create(
+    pool: &DbPool,
+    id: &str,
+    persona_id: &str,
+    title: &str,
+    messages: &str,
+) -> Result<DesignConversation, AppError> {
+    timed_query!("design_conversations", "design_conversations::create", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO design_conversations (id, persona_id, title, status, messages, created_at, updated_at)
+             VALUES (?1, ?2, ?3, 'active', ?4, ?5, ?6)",
+            params![id, persona_id, title, messages, now, now],
+        )?;
+        get_by_id(pool, id)
+    })
+}
+
+/// Append a message to an existing conversation and update the timestamp.
+pub fn append_message(
+    pool: &DbPool,
+    id: &str,
+    messages_json: &str,
+    last_result: Option<&str>,
+) -> Result<DesignConversation, AppError> {
+    timed_query!(
+        "design_conversations",
+        "design_conversations::append_message",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let rows = conn.execute(
+            "UPDATE design_conversations SET messages = ?2, last_result = COALESCE(?3, last_result), updated_at = ?4 WHERE id = ?1",
+            params![id, messages_json, last_result, now],
+        )?;
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("Design conversation {id}")));
+            }
+            get_by_id(pool, id)
+        }
+    )
+}
+
+/// Append a single message to a conversation server-side using SQL json_insert.
+/// This avoids transferring the full message history over IPC -- only the new
+/// message is sent.  The 500-message cap is enforced atomically.
+pub fn append_single_message(
+    pool: &DbPool,
+    id: &str,
+    message_json: &str,
+    last_result: Option<&str>,
+    max_messages: u32,
+) -> Result<AppendMessageResult, AppError> {
+    timed_query!(
+        "design_conversations",
+        "design_conversations::append_single_message",
+        {
+            let conn = pool.get()?;
+
+            let count_before: u32 = conn
+                .query_row(
+                    "SELECT json_array_length(messages) FROM design_conversations WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("Design conversation {id}"))
+                    }
+                    other => AppError::Database(other),
+                })?;
+            let truncated = count_before >= max_messages;
+
+            let now = chrono::Utc::now().to_rfc3339();
+            // Append the new message, then trim the front if over the cap.
+            conn.execute(
+                "UPDATE design_conversations
+             SET messages = CASE
+                   WHEN json_array_length(messages) >= ?5
+                   THEN json_remove(json_insert(messages, '$[#]', json(?2)), '$[0]')
+                   ELSE json_insert(messages, '$[#]', json(?2))
+                 END,
+                 last_result = COALESCE(?3, last_result),
+                 updated_at = ?4
+             WHERE id = ?1",
+                params![id, message_json, last_result, now, max_messages],
+            )?;
+
+            let message_count: u32 = if truncated {
+                max_messages
+            } else {
+                count_before + 1
+            };
+
+            // Metadata-only echo: re-fetching the whole row here shipped the
+            // entire message history back over IPC on EVERY append — exactly
+            // the O(n) waste this function's inbound path was built to avoid.
+            // The frontend keeps its local copy authoritative.
+            Ok(AppendMessageResult {
+                truncated,
+                message_count,
+                updated_at: now,
+            })
+        }
+    )
+}
+
+const VALID_CONVERSATION_STATUSES: &[&str] = &["active", "completed", "abandoned"];
+
+/// Update the status of a conversation.
+/// Validates the status against the allowed set to prevent silent corruption.
+pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
+    if !VALID_CONVERSATION_STATUSES.contains(&status) {
+        return Err(AppError::Validation(format!(
+            "Invalid conversation status '{status}'. Must be one of: {}",
+            VALID_CONVERSATION_STATUSES.join(", ")
+        )));
+    }
+    timed_query!(
+        "design_conversations",
+        "design_conversations::update_status",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let rows = conn.execute(
+                "UPDATE design_conversations SET status = ?2, updated_at = ?3 WHERE id = ?1",
+                params![id, status, now],
+            )?;
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("Design conversation {id}")));
+            }
+            Ok(())
+        }
+    )
+}
+
+/// Delete a conversation by ID.
+pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
+    timed_query!("design_conversations", "design_conversations::delete", {
+        let conn = pool.get()?;
+        conn.execute(
+            "DELETE FROM design_conversations WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(())
+    })
+}

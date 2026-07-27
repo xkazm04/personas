@@ -5,7 +5,11 @@ mod cloud;
 mod commands;
 mod companion;
 pub mod daemon;
-mod db;
+// The data layer is its own crate (see src-tauri/db/). Re-exported under the
+// old name so every `crate::db::…` path across commands, engine and companion
+// resolves unchanged — the split moved 84k LOC out of this crate without
+// touching a single call site.
+pub use personas_db as db;
 mod engine;
 pub use commands::artist::persistence as artist_persistence;
 pub use commands::eval_runs;

@@ -1,0 +1,71 @@
+[package]
+name = "personas-db"
+version = "1.1.0"
+description = "SQLite data layer for Personas — schema, migrations, repositories"
+authors = ["Personas"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.80.0"
+
+[lib]
+name = "personas_db"
+path = "src/lib.rs"
+
+[features]
+# Vector knowledge base: sqlite-vec + local embeddings. Gates `vector_store`
+# and `embedder`, mirroring the desktop crate's feature of the same name.
+ml = ["dep:sqlite-vec", "dep:fastembed", "personas-core/ml"]
+# Declared so `#[cfg(feature = "p2p")]` inside moved code keeps its meaning.
+p2p = ["personas-core/p2p"]
+# Gates seeding of the example scrape config. Must EXIST here, not just on the
+# desktop crate: a `#[cfg(feature = "...")]` naming a feature the crate does not
+# declare is silently always-false, so without this the seed would quietly stop
+# running in `--features scraper` builds. Same trap as core's `desktop` feature.
+scraper = []
+# Forwarded to core, where `crypto` picks the OS-keychain master-key path
+# behind it. See the note on core's `desktop` feature — without the forward,
+# that gate silently evaluates false.
+desktop = ["personas-core/desktop"]
+# Exposes `init_test_db`, the in-memory fixture builder. It used to be
+# `#[cfg(test)]`, which worked while everything lived in one crate — `cfg(test)`
+# does NOT propagate across a crate boundary, so ~72 test modules in the desktop
+# crate lost it the moment the data layer moved out. A feature is the standard
+# fix; the desktop crate turns it on through its dev-dependency, so it stays out
+# of release builds.
+test-support = []
+
+[dependencies]
+personas-core = { path = "../core" }
+
+# Versions/features are copied verbatim from the desktop crate. Keep them
+# identical: if they drift, cargo stops unifying the dependency and compiles it
+# twice, which costs exactly the build time this crate split exists to reclaim.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
+r2d2 = "0.8"
+r2d2_sqlite = "0.32"
+uuid = { version = "1", features = ["v4", "v5"] }
+chrono = { version = "0.4", features = ["serde"] }
+ts-rs = { version = "10", features = ["serde-compat", "chrono-impl", "serde-json-impl", "no-serde-warnings"] }
+tracing = "0.1"
+sha2 = "0.10"
+rand = "0.8"
+url = "2"
+hex = "0.4"
+# Only reached from the p2p-gated identity repo — but Cargo deps are not
+# feature-gated here, and it is already in the graph.
+base64 = "0.22"
+# ml-gated: f32 embedding vectors -> byte blobs for sqlite-vec.
+bytemuck = "1"
+whoami = "1"
+ammonia = "4"
+tokio = { version = "1", features = [
+    "rt-multi-thread", "macros", "sync", "time",
+    "process", "io-util", "fs", "net", "signal",
+] }
+# `cdc` emits change events to the frontend, so it takes a `tauri::AppHandle`.
+tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+
+sqlite-vec = { version = "0.1", optional = true }
+fastembed = { version = "4", optional = true }
