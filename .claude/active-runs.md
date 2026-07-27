@@ -2,10 +2,11 @@
 
 ## Active
 
-### sidebar-unification — unify L2/L3 sidebar on the Projects grouped pattern — session opus-5[1m]
-- Started: 2026-07-27. Status: started. Worktree `.claude/worktrees/sidebar-unify` (branch `worktree-sidebar-unify`), baseline `203cdc5d5`.
-- Paths: `src/features/shared/chrome/sidebar/**` (new `SidebarGroupNav.tsx`, `sidebarData.ts`, `SidebarLevel2.tsx`, `Sidebar.tsx`, `SidebarLevel1.tsx`, `sections/{AgentsSidebarNav,PluginsSidebarNav}.tsx`), `src/lib/navigation/registry.ts` + `registry.test.ts`, `src/i18n/useSidebarTranslation.ts`, `src/i18n/locales/*.json` (new `sidebar.group_*` keys), `docs/features/**`.
-- **Known overlap:** `exploratory-fix-sweep` also declares `src/i18n/**`. This run only ADDS `sidebar.group_*` keys and runs the translate pipeline once at the end; if that run's en.json merge lands first, re-run `translate-extract`/`merge` rather than resolving by hand.
+### sidebar-unification — unify L2/L3 sidebar on the Projects grouped pattern — session opus-5[1m] — DONE, MERGE PENDING
+- Started/finished: 2026-07-27. Status: **complete on branch `worktree-sidebar-unify`** (worktree `.claude/worktrees/sidebar-unify`), rebased onto `8ce892e31`. Commits `f062fdd75` (feature + i18n) · `2e0081c89` (docs + e2e).
+- Gates green on the branch: `tsc --noEmit` clean · `npm run lint` 0 errors · `vitest` 278 files / 2703 tests pass · `check:i18n:strict` 0 missing / 0 extra · `check-untranslated` clean.
+- **Not fast-forwarded into master:** `exploratory-fix-sweep` has uncommitted edits to `src/features/shared/chrome/sidebar/sidebarData.ts` + `docs/i18n/untranslated-allowlist.json` and staged `src/i18n/locales/*.json`, so `git merge --ff-only` aborts. Nothing was stashed. Once that run commits, `git merge --ff-only worktree-sidebar-unify` from master, then remove the worktree + branch. The two `sidebarData.ts` edits do not overlap (they touch the imports + `twinItems`; this run appended the group descriptors + `groupItems()`).
+- Paths: `src/features/shared/chrome/sidebar/**` (new `SidebarGroupNav.tsx`; `SidebarLevel3.tsx` deleted; `SidebarSubNav.tsx` → `.ts`, types only), `src/lib/navigation/registry.ts` + `registry.test.ts`, `src/i18n/{locales,section-locales,generated}/**`, `docs/features/{navigation.md,README.md,connections,templates}`, `tests/playwright/preset-{team-adoption,questionnaire}.spec.ts`.
 
 ### exploratory-fix-sweep — UI/UX defect bundle from exploratory test (modules A-E) + /promote skill — session opus-5[1m] (orchestrator + 5 Sonnet builders)
 - Started: 2026-07-27. Status: started. Baseline `4e9456ccc` (pushed). Building a `/promote` skill (self-insert a code pattern into the Personas workspace knowledge library, CLI alternative to KnowledgeLibrary's "New practice" button), then 5 parallel module fixes. Cross-cutting theme = the operator's "Text Antipattern" (strong font-weight on non-title/non-label text) + propagating the Home.Roadmap gradient-container and ContextLedger grouped-list patterns.
