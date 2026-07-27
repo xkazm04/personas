@@ -6389,6 +6389,9 @@
       "backlog_risk": "R",
       "knowledge_empty_title": "No workspace yet",
       "knowledge_empty_subtitle": "Group your projects into a workspace to start building a shared practice library.",
+      "knowledge_clear_title": "Nothing to review",
+      "knowledge_clear_subtitle": "Harvested practices waiting on an adopt or reject decision show up here.",
+      "knowledge_full_library_link": "Full library in Workspaces",
       "backlog_effort_title": "Effort",
       "backlog_impact_title": "Impact",
       "backlog_risk_title": "Risk"

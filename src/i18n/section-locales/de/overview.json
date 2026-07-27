@@ -431,7 +431,10 @@
     "mode_switch_label": "Entscheidungstyp",
     "backlog_effort_title": "Aufwand",
     "backlog_impact_title": "Auswirkung",
-    "backlog_risk_title": "Risiko"
+    "backlog_risk_title": "Risiko",
+    "knowledge_clear_subtitle": "Gesammelte Praktiken, die auf eine Entscheidung zur Übernahme oder Ablehnung warten, erscheinen hier.",
+    "knowledge_clear_title": "Nichts zu prüfen",
+    "knowledge_full_library_link": "Vollständige Bibliothek in Arbeitsbereiche"
   },
   "messages_view": {
     "title": "Nachrichten",

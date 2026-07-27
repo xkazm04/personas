@@ -6194,7 +6194,10 @@
       "mode_switch_label": "Typ rozhodnutí",
       "backlog_effort_title": "Úsilí",
       "backlog_impact_title": "Dopad",
-      "backlog_risk_title": "Riziko"
+      "backlog_risk_title": "Riziko",
+      "knowledge_clear_subtitle": "Zde se objeví nasbírané postupy čekající na rozhodnutí o přijetí nebo zamítnutí.",
+      "knowledge_clear_title": "Není co kontrolovat",
+      "knowledge_full_library_link": "Celá knihovna v Pracovních prostorech"
     },
     "messages_view": {
       "title": "Zprávy",

@@ -431,7 +431,10 @@
     "mode_switch_label": "Type de décision",
     "backlog_effort_title": "Effort",
     "backlog_impact_title": "Impact",
-    "backlog_risk_title": "Risque"
+    "backlog_risk_title": "Risque",
+    "knowledge_clear_subtitle": "Les pratiques collectées en attente d'une décision d'adoption ou de rejet apparaissent ici.",
+    "knowledge_clear_title": "Rien à examiner",
+    "knowledge_full_library_link": "Bibliothèque complète dans Espaces de travail"
   },
   "messages_view": {
     "title": "Messages",

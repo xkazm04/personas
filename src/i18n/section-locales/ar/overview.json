@@ -431,7 +431,10 @@
     "mode_switch_label": "نوع القرار",
     "backlog_effort_title": "الجهد",
     "backlog_impact_title": "التأثير",
-    "backlog_risk_title": "الخطر"
+    "backlog_risk_title": "الخطر",
+    "knowledge_clear_subtitle": "تظهر هنا الممارسات المجمَّعة التي تنتظر قرار الاعتماد أو الرفض.",
+    "knowledge_clear_title": "لا شيء للمراجعة",
+    "knowledge_full_library_link": "المكتبة الكاملة في مساحات العمل"
   },
   "messages_view": {
     "title": "الرسائل",

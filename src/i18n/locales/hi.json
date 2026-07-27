@@ -6194,7 +6194,10 @@
       "mode_switch_label": "निर्णय प्रकार",
       "backlog_effort_title": "प्रयास",
       "backlog_impact_title": "प्रभाव",
-      "backlog_risk_title": "जोखिम"
+      "backlog_risk_title": "जोखिम",
+      "knowledge_clear_subtitle": "अपनाने या अस्वीकार करने के निर्णय की प्रतीक्षा कर रही एकत्रित प्रथाएँ यहाँ दिखेंगी।",
+      "knowledge_clear_title": "समीक्षा के लिए कुछ नहीं",
+      "knowledge_full_library_link": "वर्कस्पेस में पूरी लाइब्रेरी"
     },
     "messages_view": {
       "title": "संदेश",

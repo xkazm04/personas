@@ -6194,7 +6194,10 @@
       "mode_switch_label": "決定の種類",
       "backlog_effort_title": "工数",
       "backlog_impact_title": "影響",
-      "backlog_risk_title": "リスク"
+      "backlog_risk_title": "リスク",
+      "knowledge_clear_subtitle": "採用または却下の判断を待っている収集済みプラクティスがここに表示されます。",
+      "knowledge_clear_title": "レビュー対象はありません",
+      "knowledge_full_library_link": "ワークスペースの全ライブラリ"
     },
     "messages_view": {
       "title": "メッセージ",

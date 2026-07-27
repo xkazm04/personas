@@ -431,7 +431,10 @@
     "mode_switch_label": "Tipo de decisión",
     "backlog_effort_title": "Esfuerzo",
     "backlog_impact_title": "Impacto",
-    "backlog_risk_title": "Riesgo"
+    "backlog_risk_title": "Riesgo",
+    "knowledge_clear_subtitle": "Las prácticas recopiladas que esperan una decisión de adopción o rechazo aparecen aquí.",
+    "knowledge_clear_title": "Nada que revisar",
+    "knowledge_full_library_link": "Biblioteca completa en Espacios de trabajo"
   },
   "messages_view": {
     "title": "Mensajes",

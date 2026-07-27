@@ -6194,7 +6194,10 @@
       "mode_switch_label": "Loại quyết định",
       "backlog_effort_title": "Nỗ lực",
       "backlog_impact_title": "Tác động",
-      "backlog_risk_title": "Rủi ro"
+      "backlog_risk_title": "Rủi ro",
+      "knowledge_clear_subtitle": "Các thực hành đã thu thập đang chờ quyết định áp dụng hoặc từ chối sẽ xuất hiện ở đây.",
+      "knowledge_clear_title": "Không có gì để xem xét",
+      "knowledge_full_library_link": "Thư viện đầy đủ trong Không gian làm việc"
     },
     "messages_view": {
       "title": "Tin nhắn",

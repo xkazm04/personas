@@ -6194,7 +6194,10 @@
       "mode_switch_label": "সিদ্ধান্তের ধরন",
       "backlog_effort_title": "প্রচেষ্টা",
       "backlog_impact_title": "প্রভাব",
-      "backlog_risk_title": "ঝুঁকি"
+      "backlog_risk_title": "ঝুঁকি",
+      "knowledge_clear_subtitle": "গ্রহণ বা প্রত্যাখ্যানের সিদ্ধান্তের অপেক্ষায় থাকা সংগৃহীত অনুশীলনগুলি এখানে দেখা যাবে।",
+      "knowledge_clear_title": "পর্যালোচনার কিছু নেই",
+      "knowledge_full_library_link": "ওয়ার্কস্পেসে সম্পূর্ণ লাইব্রেরি"
     },
     "messages_view": {
       "title": "বার্তা",

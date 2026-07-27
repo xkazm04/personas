@@ -6194,7 +6194,10 @@
       "mode_switch_label": "Тип решения",
       "backlog_effort_title": "Усилие",
       "backlog_impact_title": "Влияние",
-      "backlog_risk_title": "Риск"
+      "backlog_risk_title": "Риск",
+      "knowledge_clear_subtitle": "Здесь появляются собранные практики, ожидающие решения о принятии или отклонении.",
+      "knowledge_clear_title": "Нечего рассматривать",
+      "knowledge_full_library_link": "Полная библиотека в Рабочих пространствах"
     },
     "messages_view": {
       "title": "Сообщения",
