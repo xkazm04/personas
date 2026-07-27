@@ -45,7 +45,7 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button onClick={handleClose} className="text-foreground hover:text-foreground transition-colors">
+        <button type="button" onClick={handleClose} className="text-foreground hover:text-foreground transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -108,11 +108,12 @@ export function AutomationSetupModal({
       {s.phase === 'preview' && (
         <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-border/60">
           <button
+            type="button"
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
             className="typo-body text-foreground hover:text-foreground transition-colors"
           >{t.agents.connectors.auto_start_over}</button>
           <div className="flex items-center gap-2">
-            <button onClick={handleClose} className="btn-md border border-border text-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
+            <button type="button" onClick={handleClose} className="btn-md border border-border text-foreground hover:bg-secondary/50 transition-colors">{t.common.cancel}</button>
             <Tooltip
               content={
                 !s.name.trim()
@@ -125,6 +126,7 @@ export function AutomationSetupModal({
               delay={200}
             >
               <button
+                type="button"
                 onClick={() => void s.handleDeploy()}
                 disabled={!s.name.trim() || (!s.hasPlatformCredential && s.needsCredential)}
                 className="btn-md flex items-center gap-1.5 font-medium bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

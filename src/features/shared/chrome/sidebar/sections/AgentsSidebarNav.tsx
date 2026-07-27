@@ -231,6 +231,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         <div className="flex items-center justify-between">
           <span className="typo-label text-foreground/90">{t.shared.sidebar_extra.agents}</span>
           <button
+            type="button"
             onClick={onCreatePersona}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
@@ -244,6 +245,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
       <div className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
         {/* All Agents */}
         <button
+          type="button"
           onClick={() => { selectPersona(null); setAgentTab('all'); useSystemStore.getState().setIsCreatingPersona(false); }}
           aria-current={agentTab === 'all' && !isCreatingPersona ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
@@ -273,6 +275,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               const phaseLabel = tokenLabel(t, 'build', draft.phase);
               return (
                 <button
+                  type="button"
                   key={draft.sessionId}
                   onClick={() => {
                     setActiveBuildSession(draft.sessionId);
@@ -321,6 +324,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {activeProject && activeProjectPersonas.length > 0 && (
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
+              type="button"
               onClick={() => setActiveProjectCollapsed(!activeProjectCollapsed)}
               aria-expanded={!activeProjectCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-indigo-400/70 hover:text-indigo-400/90 transition-colors"
@@ -340,6 +344,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
                   return (
                     <button
+                      type="button"
                       key={p.id}
                       {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
@@ -368,6 +373,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {favoritePersonas.length > 0 && (
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
+              type="button"
               onClick={() => setFavoritesCollapsed(!favoritesCollapsed)}
               aria-expanded={!favoritesCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-amber-400/60 hover:text-amber-400/80 transition-colors"
@@ -385,6 +391,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
                   return (
                     <button
+                      type="button"
                       key={p.id}
                       {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
@@ -415,6 +422,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {recentPersonas.length > 0 && (
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
+              type="button"
               onClick={() => setRecentsCollapsed(!recentsCollapsed)}
               aria-expanded={!recentsCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-blue-400/60 hover:text-blue-400/80 transition-colors"
@@ -433,6 +441,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   const statusTitle = rowStatusTitle(healthGrades[p.id], isRunning);
                   return (
                     <button
+                      type="button"
                       key={p.id}
                       {...getPrefetchProps(p.id)}
                       onClick={() => selectPersona(p.id)}
@@ -474,6 +483,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {progressEntries.length > 0 && (
           <div className="mt-3 pt-3 border-t border-primary/10">
             <button
+              type="button"
               onClick={() => setProgressCollapsed(!progressCollapsed)}
               aria-expanded={!progressCollapsed}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-label text-emerald-400/60 hover:text-emerald-400/80 transition-colors"
@@ -493,6 +503,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   const tooltip = `${entry.personaName}\n${entry.labels.join(' · ')}`;
                   return (
                     <button
+                      type="button"
                       key={entry.personaId}
                       {...getPrefetchProps(entry.personaId)}
                       onClick={() => selectPersona(entry.personaId)}
@@ -542,6 +553,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
             {isDev && (
               <button
+                type="button"
                 onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
                 aria-current={agentTab === 'cloud' ? 'page' : undefined}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
@@ -562,6 +574,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               <div className="ml-4 space-y-0.5">
                 {cloudItems.map((item) => (
                   <button
+                    type="button"
                     key={item.id}
                     onClick={() => setCloudTab(item.id as CloudTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${

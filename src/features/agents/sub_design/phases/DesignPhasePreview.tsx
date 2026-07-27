@@ -126,6 +126,7 @@ export function DesignPhasePreview({
       {/* Action buttons */}
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={actions.onApply}
           className="flex items-center gap-2 px-4 py-2 rounded-modal font-medium typo-body bg-gradient-to-r from-primary to-accent text-foreground hover:from-primary/90 hover:to-accent/90 shadow-elevation-3 shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
         >
@@ -133,6 +134,7 @@ export function DesignPhasePreview({
           {t.agents.design.apply_changes}
         </button>
         <button
+          type="button"
           onClick={actions.onRefine}
           className="flex items-center gap-2 px-3 py-2 rounded-modal font-medium typo-body bg-secondary/50 text-foreground/90 hover:bg-secondary/70 transition-colors"
         >
@@ -140,6 +142,7 @@ export function DesignPhasePreview({
           {t.agents.design.refine}
         </button>
         <button
+          type="button"
           onClick={() => {
             if (confirmDiscard) {
               setConfirmDiscard(false);
@@ -173,6 +176,7 @@ export function DesignPhasePreview({
           }}
         />
         <button
+          type="button"
           onClick={refinement.onSend}
           disabled={!refinement.message.trim()}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-modal typo-body font-medium transition-all ${

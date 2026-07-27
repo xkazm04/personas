@@ -218,6 +218,7 @@ function mountReact(root: HTMLElement) {
               {error instanceof Error ? error.message : copy.generic}
             </p>
             <button
+              type="button"
               onClick={resetError}
               style={{
                 padding: "0.5rem 1.5rem",

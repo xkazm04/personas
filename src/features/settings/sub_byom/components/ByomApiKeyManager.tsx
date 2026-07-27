@@ -319,6 +319,7 @@ function QwenKeyRow() {
         </div>
         {configured && !editing && (
           <button
+            type="button"
             onClick={() => void remove()}
             disabled={busy}
             className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
@@ -347,6 +348,7 @@ function QwenKeyRow() {
             }}
           />
           <button
+            type="button"
             onClick={() => void save()}
             disabled={!value.trim() || busy}
             className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
@@ -407,6 +409,7 @@ function KeyEntryRow({
         <div className="flex items-center gap-1.5">
           {hasValue && !entry.editing && (
             <button
+              type="button"
               onClick={onTest}
               disabled={entry.connectionState === 'testing'}
               className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
@@ -424,6 +427,7 @@ function KeyEntryRow({
           )}
           {hasValue && !entry.editing && (
             <button
+              type="button"
               onClick={onDelete}
               className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
               title={s.remove_key}
@@ -472,6 +476,7 @@ function KeyEntryRow({
             />
           )}
           <button
+            type="button"
             onClick={onSave}
             disabled={!isDirty}
             className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
@@ -480,6 +485,7 @@ function KeyEntryRow({
             <Check className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={onCancel}
             className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
             title={s.cancel_key_title}
@@ -504,6 +510,7 @@ function KeyEntryRow({
           </div>
           {hasValue && !entry.def.isUrl && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleReveal();
@@ -518,6 +525,7 @@ function KeyEntryRow({
           )}
           {hasValue && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 copy('value', entry.savedValue);

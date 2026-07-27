@@ -152,6 +152,7 @@ export default function IdentityAtelier() {
                     const label = t.identity[g.labelKey];
                     return (
                       <button
+                        type="button"
                         key={g.id}
                         onClick={() => { setGender(g.id); markDirty(); }}
                         className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-interactive border transition-all ${
@@ -172,6 +173,7 @@ export default function IdentityAtelier() {
             <Section index="02" label="biography">
               <Field label={t.identity.bio} action={
                 <button
+                  type="button"
                   onClick={() => setShowBioGen(!showBioGen)}
                   className="flex items-center gap-1.5 typo-caption font-medium text-violet-300 hover:text-violet-200 transition-colors"
                 >

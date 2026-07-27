@@ -143,7 +143,7 @@ export default function BrainAtelier() {
                       {allKbs.length === 0 ? (
                         <p className="typo-caption text-foreground">{t.brain.noKbsFound}</p>
                       ) : allKbs.map((kb) => (
-                        <button key={kb.id} onClick={() => handleBind(kb.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-interactive hover:bg-violet-500/10 transition-colors text-left group">
+                        <button type="button" key={kb.id} onClick={() => handleBind(kb.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-interactive hover:bg-violet-500/10 transition-colors text-left group">
                           <div className="flex items-center gap-2">
                             <Database className="w-3.5 h-3.5 text-violet-300" />
                             <span className="typo-body text-foreground group-hover:text-violet-200">{kb.name}</span>
@@ -151,7 +151,7 @@ export default function BrainAtelier() {
                           <span className="typo-caption text-foreground">{kb.document_count} {t.brain.docs}</span>
                         </button>
                       ))}
-                      <button onClick={() => setPickMode(false)} className="typo-caption text-foreground hover:text-foreground mt-1 px-2">{t.profiles.cancel}</button>
+                      <button type="button" onClick={() => setPickMode(false)} className="typo-caption text-foreground hover:text-foreground mt-1 px-2">{t.profiles.cancel}</button>
                     </div>
                   )}
                 </div>

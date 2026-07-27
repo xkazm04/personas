@@ -94,6 +94,7 @@ export default function MonitoringSection() {
           <Shield className="w-3.5 h-3.5 text-red-400" />
           <span className="typo-caption text-foreground truncate">{activeProject?.name ?? '—'}</span>
           <button
+            type="button"
             onClick={() => reload()}
             className="ml-auto p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
             title={dt.mon_refresh}

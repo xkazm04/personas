@@ -103,6 +103,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
       <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/40">
         {recipe.sample_inputs && onQuickTest && (
           <button
+            type="button"
             onClick={() => onQuickTest(recipe.id)}
             className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-card typo-body text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
             title={t.recipes.run_quick_test}
@@ -112,6 +113,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           </button>
         )}
         <button
+          type="button"
           onClick={() => onEdit(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.edit_recipe}
@@ -120,6 +122,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           <Pencil className="w-3.5 h-3.5" />
         </button>
         <button
+          type="button"
           onClick={() => onPlayground(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.open_settings}
@@ -133,6 +136,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
 
         <div className="relative">
           <button
+            type="button"
             onClick={() => setShowDeleteConfirm(true)}
             className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
             title={t.recipes.delete_recipe}
@@ -149,12 +153,14 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
               <p className="typo-body text-foreground mb-3">{t.common.confirm_destructive_cannot_undo}</p>
               <div className="flex items-center gap-2 justify-end">
                 <button
+                  type="button"
                   onClick={() => setShowDeleteConfirm(false)}
                   className="rounded-card px-2.5 py-1 typo-body text-foreground hover:bg-muted/50 transition-colors"
                 >
                   {t.common.cancel}
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setShowDeleteConfirm(false); onDelete(recipe.id); }}
                   className="rounded-card px-2.5 py-1 typo-body font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
                 >

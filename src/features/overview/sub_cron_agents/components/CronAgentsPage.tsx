@@ -40,7 +40,7 @@ export default function CronAgentsPage() {
         actions={
           <div className="flex items-center gap-2 typo-caption text-foreground">
             {import.meta.env.DEV && (
-              <button onClick={handleSeedCron} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.cron.seed_tooltip}>
+              <button type="button" onClick={handleSeedCron} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.cron.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.cron.mock_schedule}
               </button>
             )}

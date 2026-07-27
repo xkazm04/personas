@@ -302,6 +302,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
             const isBlocked = policy.blocked_providers.includes(prov.id);
             return (
               <button
+                type="button"
                 key={prov.id}
                 onClick={() => toggleProvider(prov.id, 'blocked')}
                 className={`p-3 rounded-card border text-left typo-body transition-all ${
@@ -375,6 +376,7 @@ function ProviderCard({
   return (
     <div className="flex flex-col gap-1.5">
       <button
+        type="button"
         onClick={onClick}
         className={`p-3 rounded-card border text-left transition-all flex flex-col gap-2 ${
           enabled

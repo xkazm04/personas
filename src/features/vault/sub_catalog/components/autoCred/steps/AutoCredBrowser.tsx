@@ -161,6 +161,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
       <div className="flex justify-between">
         {import.meta.env.DEV ? <CopyLogButton logs={logs} /> : <div />}
         <button
+          type="button"
           onClick={onCancel}
           data-testid="vault-autocred-cancel"
           className="px-4 py-2 typo-body text-red-400/80 hover:text-red-400 rounded-modal border border-red-500/15 hover:bg-red-500/10 transition-colors"

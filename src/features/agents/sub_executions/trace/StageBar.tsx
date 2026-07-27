@@ -43,7 +43,7 @@ export function StageBar({
         {/* Left: stage label */}
         <div className="flex items-center gap-1.5 min-w-0">
           {hasSubSpans ? (
-            <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
+            <button type="button" onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
               {isExpanded ? (
                 <ChevronDown className="w-3 h-3 text-foreground" />
               ) : (

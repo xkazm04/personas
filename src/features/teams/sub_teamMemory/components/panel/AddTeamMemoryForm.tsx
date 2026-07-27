@@ -43,6 +43,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   if (!expanded) {
     return (
       <button
+        type="button"
         className="w-full flex items-center justify-center gap-1.5 py-1.5 typo-body text-foreground hover:text-foreground/80 border border-dashed border-primary/10 hover:border-primary/20 rounded-card transition-colors"
         onClick={() => setExpanded(true)}
       >
@@ -57,6 +58,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       <div className="flex items-center justify-between">
         <span className="typo-body font-medium text-foreground">{t.pipeline.new_memory}</span>
         <button
+          type="button"
           className="p-0.5 rounded hover:bg-primary/10 text-foreground"
           onClick={() => setExpanded(false)}
         >
@@ -106,6 +108,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <button
+        type="button"
         className="w-full typo-body py-1.5 rounded-card bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
         disabled={!title.trim() || !content.trim()}
         onClick={handleSubmit}

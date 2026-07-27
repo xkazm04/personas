@@ -136,6 +136,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
           {errorMsg || lab.improve_failed}
         </span>
         <button
+          type="button"
           onClick={handleClick}
           className="px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
         >
@@ -158,6 +159,7 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
   return (
     <div className="flex items-center gap-3">
       <button
+        type="button"
         onClick={handleClick}
         disabled={disabled || state === 'loading'}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-gradient-to-r from-violet-500/15 to-primary/15 text-primary border border-primary/15 hover:border-primary/25 hover:from-violet-500/20 hover:to-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"

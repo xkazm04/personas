@@ -67,6 +67,7 @@ export function PromptTabsPreview({
           const isActive = tab.key === activeTab;
           return (
             <button
+              type="button"
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-t-lg border border-b-0 transition-all whitespace-nowrap ${
@@ -98,6 +99,7 @@ export function PromptTabsPreview({
       {designResult.full_prompt_markdown && (
         <div className="border-t border-primary/10">
           <button
+            type="button"
             onClick={() => setShowFullPrompt(!showFullPrompt)}
             className="flex items-center gap-2 px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
           >

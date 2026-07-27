@@ -61,6 +61,7 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
   return (
     <div className={`rounded-card border border-l-2 ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} ${accentLeft} bg-secondary/30 overflow-hidden`}>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/50 transition-colors text-left"
       >
@@ -160,7 +161,7 @@ function SpanRowCompact({
     <div className={`grid grid-cols-[minmax(180px,1fr)_minmax(180px,2fr)] gap-2 items-center px-2 py-0.5 hover:bg-secondary/30 ${span.error ? 'bg-red-500/5' : ''}`}>
       <div className="flex items-center gap-1 min-w-0" style={{ paddingLeft: `${depth * 14}px` }}>
         {hasChildren ? (
-          <button onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 shrink-0">
+          <button type="button" onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 shrink-0">
             {expanded ? <ChevronDown className="w-2.5 h-2.5 text-foreground" /> : <ChevronRight className="w-2.5 h-2.5 text-foreground" />}
           </button>
         ) : (
@@ -253,6 +254,7 @@ export default function SystemTraceViewer() {
           </select>
 
           <button
+            type="button"
             onClick={clear}
             className="p-1.5 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
             title={t.overview.system_trace_extra.clear_completed}

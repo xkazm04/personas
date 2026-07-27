@@ -29,6 +29,7 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
       </p>
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onStart}
           disabled={authDetectLoading}
           data-testid="vault-negotiator-start"
@@ -78,6 +79,7 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
         {tx(neg.fields_captured, { count: capturedValuesCount })}
       </p>
       <button
+        type="button"
         onClick={onFinish}
         data-testid="vault-negotiator-apply"
         className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-modal typo-body font-medium transition-colors mt-1"
@@ -117,6 +119,7 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
           {neg.try_again}
         </Button>
         <button
+          type="button"
           onClick={onClose}
           className="px-4 py-2 rounded-modal text-foreground typo-body hover:text-foreground/95 transition-colors"
         >

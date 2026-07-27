@@ -55,6 +55,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
           </div>
         ) : <div />}
         <button
+          type="button"
           onClick={onRefresh}
           disabled={isLoading}
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"

@@ -74,6 +74,7 @@ export function TableSelector({
         </div>
         {onRefresh && (
           <button
+            type="button"
             onClick={onRefresh}
             disabled={loading}
             className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/40 disabled:opacity-40 transition-colors"

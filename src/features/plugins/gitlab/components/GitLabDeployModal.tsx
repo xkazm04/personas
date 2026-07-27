@@ -210,6 +210,7 @@ export function GitLabDeployModal({
 
       {/* Deploy button */}
       <button
+        type="button"
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
         className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

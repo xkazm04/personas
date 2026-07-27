@@ -65,6 +65,7 @@ export function DonePhase({
         </Button>
         {onViewCredential && (
           <button
+            type="button"
             onClick={onViewCredential}
             className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all"
           >

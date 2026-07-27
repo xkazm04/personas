@@ -354,6 +354,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             {globalExecutionCounts.total > 0 && (
               <>
                 <button
+                  type="button"
                   onClick={() => setShowDashboard(!showDashboard)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
                   title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
@@ -362,6 +363,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   <span className="typo-body font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
@@ -523,7 +525,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
                 {hasMore && (
                   <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-primary/5">
-                    <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
+                    <button type="button" onClick={handleLoadMore} className="px-4 py-2 typo-heading text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
                       {t.overview.activity.load_more}
                     </button>
                   </div>

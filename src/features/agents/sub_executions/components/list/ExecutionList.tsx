@@ -424,6 +424,7 @@ export function ExecutionList() {
         />
         {starredPair && (
           <button
+            type="button"
             onClick={() => { void handleAutoCompareStarred(); }}
             className="flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors text-status-warning hover:bg-status-warning/10 border border-status-warning/20"
             title={e.compare_starred_pair_tooltip}
@@ -458,7 +459,7 @@ export function ExecutionList() {
           </div>
           <p className="typo-heading text-foreground">{e.load_failed_title}</p>
           <p className="typo-body text-foreground mt-1 max-w-[260px]">{e.load_failed_body}</p>
-          <button onClick={() => { void refresh(); }} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+          <button type="button" onClick={() => { void refresh(); }} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             {t.common.retry}
           </button>
         </div>
@@ -470,7 +471,7 @@ export function ExecutionList() {
           </div>
           <p className="typo-heading text-foreground">{e.agent_ready}</p>
           <p className="typo-body text-foreground mt-1 max-w-[260px]">{e.agent_ready_subtitle}</p>
-          <button onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+          <button type="button" onClick={handleTryIt} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             <Play className="w-3.5 h-3.5" />{e.try_it_now}
           </button>
         </div>
@@ -527,6 +528,7 @@ export function ExecutionList() {
             {hasMore && (
               <div className="p-3 border-t border-primary/10">
                 <button
+                  type="button"
                   onClick={() => { void handleLoadMore(); }}
                   disabled={loadingMore}
                   className="w-full flex items-center justify-center gap-2 py-2 typo-heading rounded-modal bg-secondary/30 text-foreground border border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-60 transition-colors"

@@ -148,6 +148,7 @@ export function QuickAddCredentialModal({
           <div className="flex items-center gap-3 min-w-0">
             {phase === 'form' && (
               <button
+                type="button"
                 onClick={handleBackToPicker}
                 className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
                 aria-label={debtText("auto_back_to_picker_2d203d04")}
@@ -169,6 +170,7 @@ export function QuickAddCredentialModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-card hover:bg-secondary/60 transition-colors"
             aria-label="Close"
@@ -200,6 +202,7 @@ export function QuickAddCredentialModal({
                   <DebtText k="auto_you_can_still_add_one_from_the_vault_catal_ac9cc338" />
                 </p>
                 <button
+                  type="button"
                   onClick={handleOpenVaultCatalog}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/20 hover:bg-primary/10 transition-colors typo-body text-foreground"
                 >
@@ -233,6 +236,7 @@ export function QuickAddCredentialModal({
                   <DebtText k="auto_once_the_credential_is_healthy_close_this__e541af46" />
                 </p>
                 <button
+                  type="button"
                   onClick={handleOpenVaultCatalog}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-card bg-primary/15 hover:bg-primary/25 border border-primary/30 transition-colors typo-body text-foreground"
                 >
@@ -328,6 +332,7 @@ function InlineCredentialForm({
 
       <div className="flex justify-end gap-2 pt-1">
         <button
+          type="button"
           disabled={saving}
           onClick={onSubmit}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-card bg-primary/20 hover:bg-primary/30 border border-primary/30 disabled:opacity-50 disabled:cursor-not-allowed typo-body text-foreground transition-colors"

@@ -30,6 +30,7 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
   return (
     <div className="mt-2">
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >
@@ -63,6 +64,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
   return (
     <div className="mt-2">
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >

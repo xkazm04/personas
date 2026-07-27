@@ -303,11 +303,12 @@ export default function EventLogList() {
               </Tooltip>
             )}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
+              <button type="button" onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.events.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.events.mock_event}
               </button>
             )}
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
               className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors"
@@ -333,6 +334,7 @@ export default function EventLogList() {
             />
             {searchText && (
               <button
+                type="button"
                 onClick={() => setSearchText('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70"
               >
@@ -344,6 +346,7 @@ export default function EventLogList() {
           {hasActiveFilters && (
             <>
               <button
+                type="button"
                 onClick={() => setShowSaveDialog(true)}
                 className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
                 title={debtText("auto_save_current_filters_as_a_view_1680b016")}
@@ -351,6 +354,7 @@ export default function EventLogList() {
                 <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
               </button>
               <button
+                type="button"
                 onClick={clearFilters}
                 className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
                 title={debtText("auto_clear_all_filters_7dd6d199")}
@@ -367,6 +371,7 @@ export default function EventLogList() {
             <span className="typo-caption text-foreground">{t.overview.events.views_label}</span>
             {savedViews.map((view) => (
               <button
+                type="button"
                 key={view.id}
                 onClick={() => applySavedView(view)}
                 className={`group flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
@@ -377,6 +382,7 @@ export default function EventLogList() {
                 <Bookmark className="w-2.5 h-2.5" />
                 {view.name}
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); removeSavedView(view.id); }}
                   className="ml-0.5 opacity-0 group-hover:opacity-100 text-foreground hover:text-status-error transition-opacity"
                   title={t.overview.events.delete_view}
@@ -401,6 +407,7 @@ export default function EventLogList() {
               autoFocus
             />
             <button
+              type="button"
               onClick={handleSaveView}
               disabled={!viewName.trim()}
               className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
@@ -408,6 +415,7 @@ export default function EventLogList() {
               {t.common.save}
             </button>
             <button
+              type="button"
               onClick={() => { setShowSaveDialog(false); setViewName(''); }}
               className="px-2 py-1 typo-caption rounded-card text-foreground hover:text-foreground transition-colors"
             >

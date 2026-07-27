@@ -30,6 +30,7 @@ export function ConnectionTestSection({
         </h4>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={onTest}
             disabled={isTesting}
             data-testid="vault-test-connection"

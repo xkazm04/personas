@@ -275,6 +275,7 @@ export function ContactsPanel({ twinId }: Props) {
                           {saving ? t.contacts.saving : t.contacts.save}
                         </Button>
                         <button
+                          type="button"
                           onClick={cancelEdit}
                           aria-label={t.contacts.cancel}
                           className="p-1.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors"
@@ -284,6 +285,7 @@ export function ContactsPanel({ twinId }: Props) {
                       </>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => startEdit(c)}
                         aria-label={t.contacts.editAria}
                         title={t.contacts.editAria}

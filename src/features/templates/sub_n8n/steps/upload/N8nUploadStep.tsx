@@ -56,6 +56,7 @@ export function N8nUploadStep({ fileInputRef, onContentPaste }: N8nUploadStepPro
         {modes.map((m) => (
           <button
             key={m.id}
+            type="button"
             onClick={() => setMode(m.id)}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-modal typo-body font-medium transition-all ${
               mode === m.id
@@ -169,7 +170,7 @@ function FileUploadTab({
       <PreviewCard preview={preview} FileIcon={FileIcon} onClick={preview?.kind === 'valid' ? handleManualProceed : undefined} />
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
@@ -211,6 +212,7 @@ function PasteTab({
         <div className="px-4 py-2.5 border-t border-primary/8 flex items-center justify-between">
           <PlatformLabels />
           <button
+            type="button"
             onClick={handlePasteImport}
             disabled={pastePreview?.kind !== 'valid'}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-modal typo-body font-medium transition-all ${
@@ -264,6 +266,7 @@ function UrlTab({
             data-testid="url-input"
           />
           <button
+            type="button"
             onClick={() => void handleUrlFetch()}
             disabled={urlFetching || !urlValue.trim()}
             className={`flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium transition-all ${
@@ -291,7 +294,7 @@ function UrlTab({
       <PreviewCard preview={urlPreview} FileIcon={FileJson} onClick={urlPreview?.kind === 'valid' ? handleUrlImport : undefined} />
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
-          <button onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
+          <button type="button" onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
             {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>

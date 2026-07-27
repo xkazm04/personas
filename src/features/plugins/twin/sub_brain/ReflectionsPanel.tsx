@@ -209,6 +209,7 @@ Reflection: ${reflection.content}`;
                     <p className="typo-body text-foreground whitespace-pre-wrap leading-relaxed">{r.content}</p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDelete(r.id)}
                     aria-label={t.reflections.deleteAria}
                     className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"

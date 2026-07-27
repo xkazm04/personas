@@ -39,7 +39,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="text-center">
           <AlertTriangle className="w-6 h-6 text-red-400 mx-auto mb-2" />
           <p className="typo-body text-red-400">{m.error}</p>
-          <button onClick={m.load} className="mt-2 typo-body text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
+          <button type="button" onClick={m.load} className="mt-2 typo-body text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
         </div>
       </div>
     );
@@ -81,7 +81,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           )}
         </div>
         {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4" />
           </button>
         )}

@@ -63,7 +63,7 @@ export function MemoryFilterBar({
       </ThemedSelect>
 
       {hasFilters && (
-        <button onClick={onClearFilters} className="flex items-center gap-1 px-2.5 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors">
+        <button type="button" onClick={onClearFilters} className="flex items-center gap-1 px-2.5 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors">
           <X className="w-3 h-3" />
           {t.common.clear}
         </button>

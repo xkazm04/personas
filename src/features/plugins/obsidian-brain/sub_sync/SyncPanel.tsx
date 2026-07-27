@@ -200,6 +200,7 @@ export default function SyncPanel() {
         <div className="space-y-4">
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={pushSync}
               disabled={pushing || pulling || selectedPersonaIds.size === 0}
               className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
@@ -210,6 +211,7 @@ export default function SyncPanel() {
                 : `${t.plugins.obsidian_brain.push_to_vault} (${selectedPersonaIds.size})`}
             </button>
             <button
+              type="button"
               onClick={pullSync}
               disabled={pushing || pulling}
               className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
@@ -227,10 +229,11 @@ export default function SyncPanel() {
                 <span className="typo-caption text-foreground/90 tabular-nums">
                   {tx(t.plugins.obsidian_brain.personas_selected_count, { selected: selectedPersonaIds.size, total: personas.length })}
                 </span>
-                <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
+                <button type="button" onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
                   {t.plugins.obsidian_brain.select_all}
                 </button>
                 <button
+                  type="button"
                   onClick={deselectAll}
                   disabled={selectedPersonaIds.size === 0}
                   className="typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded px-1.5 py-0.5 disabled:opacity-40"
@@ -255,6 +258,7 @@ export default function SyncPanel() {
               {filteredPersonas.map((p) => (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => togglePersona(p.id)}
                   className={`px-3 py-1.5 rounded-card typo-caption transition-colors border focus-ring ${
                     selectedPersonaIds.has(p.id)
@@ -297,13 +301,13 @@ export default function SyncPanel() {
                 </div>
                 <ConflictDiffView appContent={c.appContent} vaultContent={c.vaultContent} />
                 <div className="flex gap-2">
-                  <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
+                  <button type="button" onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
                     {t.plugins.obsidian_brain.keep_app}
                   </button>
-                  <button onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring">
+                  <button type="button" onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring">
                     {t.plugins.obsidian_brain.keep_vault}
                   </button>
-                  <button onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-card typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
+                  <button type="button" onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-card typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
                     {t.plugins.obsidian_brain.skip}
                   </button>
                 </div>

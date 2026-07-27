@@ -132,6 +132,7 @@ export function UseCaseRow({
             {/* Enable/disable toggle (Phase C3) */}
             {onToggleEnabled && (
               <button
+                type="button"
                 onClick={() => onToggleEnabled(useCase.id, !isEnabled)}
                 disabled={toggling}
                 data-testid={`use-case-toggle-${useCase.id}`}
@@ -153,6 +154,7 @@ export function UseCaseRow({
 
             {/* Play button */}
             <button
+              type="button"
               onClick={() => onExecute(useCase.id, useCase.sample_input ?? undefined)}
               disabled={playDisabled}
               data-testid={`use-case-run-${useCase.id}`}
@@ -188,6 +190,7 @@ export function UseCaseRow({
             {/* Simulate button (Phase C3) — bypasses enable gate, suppresses notifications */}
             {onSimulate && (
               <button
+                type="button"
                 onClick={() => onSimulate(useCase.id)}
                 disabled={simulateDisabled}
                 data-testid={`use-case-simulate-${useCase.id}`}
@@ -209,6 +212,7 @@ export function UseCaseRow({
 
             {/* History toggle */}
             <button
+              type="button"
               onClick={() => onToggleHistory(useCase.id)}
               className={`p-1.5 rounded-lg border transition-colors ${
                 historyExpanded
@@ -223,6 +227,7 @@ export function UseCaseRow({
             {/* Config toggle */}
             {onToggleConfig && (
               <button
+                type="button"
                 onClick={() => onToggleConfig(useCase.id)}
                 className={`p-1.5 rounded-lg border transition-colors ${
                   configExpanded

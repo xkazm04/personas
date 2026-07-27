@@ -31,6 +31,7 @@ export function AutomationCardActions({
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setMenuOpen(!menuOpen)}
         className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
       >
@@ -42,6 +43,7 @@ export function AutomationCardActions({
             className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-card border border-border bg-background shadow-elevation-3 py-1"
           >
             <button
+              type="button"
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
             >
@@ -50,6 +52,7 @@ export function AutomationCardActions({
 
             {automation.deploymentStatus === 'active' && (
               <button
+                type="button"
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
                 className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
               >
@@ -59,6 +62,7 @@ export function AutomationCardActions({
 
             {(automation.deploymentStatus === 'paused' || automation.deploymentStatus === 'draft') && (
               <button
+                type="button"
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
                 className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/50"
               >
@@ -69,6 +73,7 @@ export function AutomationCardActions({
             <div className="border-t border-border/40 my-1" />
 
             <button
+              type="button"
               onClick={handleDelete}
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-brand-rose hover:bg-brand-rose/10"
             >

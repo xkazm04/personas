@@ -49,6 +49,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
             {selectedFixtureId === f.id && currentInputs && (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); onUpdate(f.id, currentInputs); }}
                 className="p-1 rounded hover:bg-primary/15 text-foreground hover:text-primary transition-colors"
                 title={uc.update_fixture_title}
@@ -58,6 +59,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
             )}
             {confirmDeleteId === f.id ? (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleDelete(f.id); }}
                 className="px-1.5 py-0.5 typo-caption font-medium text-red-400 bg-red-500/15 rounded hover:bg-red-500/25 transition-colors"
               >
@@ -65,6 +67,7 @@ export function FixtureList({ fixtures, selectedFixtureId, currentInputs, onSele
               </button>
             ) : (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(f.id); }}
                 className="p-1 rounded hover:bg-red-500/15 text-foreground hover:text-red-400 transition-colors"
                 title={uc.delete_fixture_title}
@@ -124,6 +127,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
           />
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleSave}
               disabled={!newName.trim()}
               className="flex items-center gap-1 px-2.5 py-1 rounded-card typo-caption font-medium bg-primary/15 border border-primary/20 text-primary hover:bg-primary/25 disabled:opacity-40 transition-colors"
@@ -131,6 +135,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
               <Save className="w-3 h-3" /> {t.common.save}
             </button>
             <button
+              type="button"
               onClick={() => setShowForm(false)}
               className="px-2.5 py-1 typo-caption text-foreground hover:text-foreground/80 transition-colors"
             >
@@ -140,6 +145,7 @@ export function AddFixtureForm({ currentInputs, onSave }: AddFixtureFormProps) {
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setShowForm(true)}
           className="w-full flex items-center gap-2 px-3 py-2 typo-body text-foreground hover:text-primary/80 hover:bg-secondary/30 transition-colors"
         >

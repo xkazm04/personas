@@ -197,6 +197,7 @@ export default function AssetCard({
             need to re-render on every pointer enter/leave. */}
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setConfirmDelete(true);
@@ -208,6 +209,7 @@ export default function AssetCard({
             <Trash2 className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setEditingTags(true);
@@ -219,6 +221,7 @@ export default function AssetCard({
           </button>
           {isImage && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 pinToMoodBoard();
@@ -231,6 +234,7 @@ export default function AssetCard({
           )}
           {isImage && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 sendToMediaStudio();

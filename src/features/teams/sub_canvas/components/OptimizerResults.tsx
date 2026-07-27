@@ -141,6 +141,7 @@ export default function OptimizerResults({
                   <ConfidenceBar value={s.confidence} />
                   <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       onClick={() => onAcceptSuggestion(s)}
                       className="p-1 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
                       title={pt.accept_suggestion}
@@ -148,6 +149,7 @@ export default function OptimizerResults({
                       <Check className="w-3 h-3" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => onDismissSuggestion(s.id)}
                       className="p-1 rounded-card bg-primary/5 text-foreground border border-primary/15 hover:bg-primary/10 transition-colors"
                       title={t.common.dismiss}

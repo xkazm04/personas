@@ -172,6 +172,7 @@ export default function CustomThemeCreator() {
               const Icon = mode === 'dark' ? Moon : Sun;
               return (
                 <button
+                  type="button"
                   key={mode}
                   onClick={() => setBaseMode(mode)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption font-medium transition-all ${
@@ -210,6 +211,7 @@ export default function CustomThemeCreator() {
       {/* Background gradient (collapsible) */}
       <div className="space-y-2">
         <button
+          type="button"
           onClick={() => { const next = !showGradient; setShowGradient(next); if (!next) setBackgroundEndColor(null); }}
           className="flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground transition-colors"
         >

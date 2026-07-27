@@ -57,7 +57,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
 }) {
   const { t } = useTranslation();
   return (
-    <button id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+    <button type="button" id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
         className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 typo-heading font-bold border ${
           isCompleted
@@ -142,6 +142,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
       data-testid={`negotiator-step-${stepIndex}-help-section`}
     >
       <button
+        type="button"
         onClick={() => setShowHelp(!showHelp)}
         className="inline-flex items-center gap-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors duration-snap"
         data-testid={`negotiator-step-${stepIndex}-help-toggle-btn`}
@@ -169,6 +170,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 data-testid={`negotiator-step-${stepIndex}-help-input`}
               />
               <button
+                type="button"
                 onClick={handleAskHelp}
                 disabled={!helpQuestion.trim() || isLoadingHelp}
                 className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}

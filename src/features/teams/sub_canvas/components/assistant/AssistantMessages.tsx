@@ -70,6 +70,7 @@ export default function AssistantMessages({
           >
             {/* Preview header */}
             <button
+              type="button"
               onClick={onTogglePreview}
               className="w-full flex items-center justify-between px-3 py-2 hover:bg-secondary/30 transition-colors"
             >
@@ -126,6 +127,7 @@ export default function AssistantMessages({
                 )}
 
                 <button
+                  type="button"
                   onClick={onApply}
                   disabled={isApplying}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 typo-body font-medium transition-all disabled:opacity-50"

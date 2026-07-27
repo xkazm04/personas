@@ -318,6 +318,7 @@ export default function LlmOverviewPage() {
                   ariaLabel={dt.llm_aria_window}
                 />
                 <button
+                  type="button"
                   onClick={reload}
                   className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
                   title={dt.llm_refresh}

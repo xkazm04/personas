@@ -45,6 +45,7 @@ export default function EngineSettings() {
       icon: <Cpu className="w-4 h-4 text-cyan-400" />,
       action: (
         <button
+          type="button"
           onClick={resetToDefaults}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-body text-foreground hover:text-muted-foreground hover:bg-secondary/40 transition-colors"
         >

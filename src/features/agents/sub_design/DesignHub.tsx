@@ -74,6 +74,7 @@ export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
             const label = subtabLabels[tab.labelKey] ?? tab.labelKey;
             return (
               <button
+                type="button"
                 key={tab.id}
                 data-testid={`design-subtab-${tab.id}`}
                 onClick={() => setDesignSubTab(tab.id)}

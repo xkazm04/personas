@@ -38,6 +38,7 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
         className="animate-fade-slide-in flex items-center gap-3"
       >
         <button
+          type="button"
           onClick={onRetry}
           className="flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
@@ -45,6 +46,7 @@ export function DesignPhaseError({ error, onRetry, onReset }: DesignPhaseErrorPr
           {t.common.retry}
         </button>
         <button
+          type="button"
           onClick={onReset}
           className="flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors"
         >

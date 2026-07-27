@@ -89,6 +89,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
           </div>
           <h2 className="typo-heading font-semibold text-foreground/90 flex-1">{sh.scan_directory}</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
           >
@@ -109,6 +110,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 )}
               </div>
               <button
+                type="button"
                 onClick={() => void handleBrowse()}
                 disabled={browsing || ingesting}
                 className="px-3 py-2 typo-body font-medium rounded-card bg-secondary/50 hover:bg-secondary/70 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 flex items-center gap-1.5"
@@ -138,7 +140,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 {patterns.map((p) => (
                   <span key={p} className="inline-flex items-center gap-1 typo-caption px-2 py-1 rounded-card bg-violet-500/10 text-violet-400/80 border border-violet-500/15">
                     {p}
-                    <button onClick={() => removePattern(p)} className="hover:text-red-400 transition-colors">
+                    <button type="button" onClick={() => removePattern(p)} className="hover:text-red-400 transition-colors">
                       <Minus className="w-3 h-3" />
                     </button>
                   </span>
@@ -157,6 +159,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
                 className="flex-1 px-2.5 py-1.5 typo-code bg-secondary/30 border border-primary/15 rounded-card text-foreground font-mono placeholder:text-foreground focus-visible:outline-none focus-visible:border-violet-500/40 transition-colors"
               />
               <button
+                type="button"
                 onClick={addPattern}
                 disabled={!customPattern.trim()}
                 className="p-1.5 rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-30"
@@ -176,12 +179,14 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-2 typo-body rounded-card hover:bg-secondary/50 text-foreground transition-colors"
           >
             {t.common.cancel}
           </button>
           <button
+            type="button"
             onClick={() => void handleSubmit()}
             disabled={!canSubmit}
             className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

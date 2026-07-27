@@ -44,6 +44,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
   return (
     <div>
       <button
+        type="button"
         onClick={() => setShowMemories(!showMemories)}
         className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2"
       >

@@ -139,6 +139,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40">
         <button
+          type="button"
           onClick={onCancel}
           className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors"
         >
@@ -147,6 +148,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         </button>
         <div className="flex-1" />
         <button
+          type="button"
           onClick={handleSave}
           disabled={!isValid || saving}
           className="flex items-center gap-1.5 rounded-modal bg-primary px-3 py-1.5 typo-body font-medium text-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"

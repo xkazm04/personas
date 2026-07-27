@@ -38,6 +38,7 @@ export function UseCaseChannelDropdown({ channels, onToggle }: UseCaseChannelDro
             const isEnabled = channels.some((c) => c.type === ct.type);
             return (
               <button
+                type="button"
                 key={ct.type}
                 role="option"
                 aria-selected={isEnabled}

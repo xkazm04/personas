@@ -70,6 +70,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             return (
               <button
                 key={catName}
+                type="button"
                 onClick={() => onSelectCategory(catName)}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-primary/5 transition-colors group/cat"
               >
@@ -92,6 +93,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             {topTemplates.slice(0, 3).map((tmpl) => (
               <button
                 key={tmpl.id}
+                type="button"
                 onClick={() => onSelectTemplate?.(tmpl)}
                 className="w-full flex items-center gap-2 px-1 py-1 typo-body text-foreground rounded-input hover:bg-primary/5 hover:text-foreground/80 transition-colors text-left"
               >

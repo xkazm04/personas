@@ -53,6 +53,7 @@ export default function AdminSettings() {
 
               <div className="flex items-center gap-2 pt-1">
                 <button
+                  type="button"
                   onClick={triggerConsentReset}
                   className={`flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border transition-colors ${
                     confirmConsentReset
@@ -75,6 +76,7 @@ export default function AdminSettings() {
 
                 {!consentStatus && (
                   <button
+                    type="button"
                     onClick={() => window.location.reload()}
                     className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal
                       bg-amber-500/10 text-amber-400 border border-amber-500/20

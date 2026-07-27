@@ -80,6 +80,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
         </div>
         {hasContexts && (
           <button
+            type="button"
             onClick={() => setExpanded((e) => !e)}
             className="text-md text-primary/70 hover:text-primary px-2 py-1 rounded-card hover:bg-primary/10 flex-shrink-0"
           >
@@ -329,6 +330,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               {map ? t.plugins.dev_tools.regenerate : t.plugins.dev_tools.generate}
             </Button>
             <button
+              type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-card hover:bg-primary/10 flex items-center justify-center text-foreground hover:text-foreground transition-colors"
             >

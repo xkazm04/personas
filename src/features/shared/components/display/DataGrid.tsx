@@ -477,6 +477,7 @@ export function DataGrid<T>({
           {totalPages > 1 && (
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={page <= 1}
               className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -491,6 +492,7 @@ export function DataGrid<T>({
               else p = page - 2 + i;
               return (
                 <button
+                  type="button"
                   key={p}
                   onClick={() => setPage(p)}
                   className={`w-7 h-7 rounded-lg typo-code transition-colors ${
@@ -504,6 +506,7 @@ export function DataGrid<T>({
               );
             })}
             <button
+              type="button"
               onClick={() => setPage(Math.min(totalPages, page + 1))}
               disabled={page >= totalPages}
               className="p-1 rounded-lg text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"

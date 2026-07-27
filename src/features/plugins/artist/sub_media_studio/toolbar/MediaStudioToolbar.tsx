@@ -475,6 +475,7 @@ export default function MediaStudioToolbar({
 
         {persistence.restoredFromAutosave && (
           <button
+            type="button"
             onClick={persistence.dismissRestoreHint}
             className="text-[10px] px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20"
             title="Dismiss"

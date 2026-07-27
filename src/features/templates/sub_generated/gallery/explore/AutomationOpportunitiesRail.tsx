@@ -78,6 +78,7 @@ function OpportunityCard({
           <h3 className="typo-heading font-semibold text-foreground/85">{group.label}</h3>
         </div>
         <button
+          type="button"
           onClick={() => onSelectCategory(group.categories[0]!)}
           className="typo-body text-amber-400/60 hover:text-amber-400 transition-colors"
           title={t.templates.opportunities.explore_templates.replace('{label}', group.label)}
@@ -149,6 +150,7 @@ function TemplateRow({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card text-left hover:bg-amber-500/5 transition-colors ${
         dimmed ? 'opacity-60' : ''

@@ -93,6 +93,7 @@ export default function OptimizerPanel({
                   </div>
                   <div className="flex-1" />
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); onRefresh(); }}
                     className="p-1 rounded-card hover:bg-primary/10 transition-colors"
                     title={pt.refresh_analytics}

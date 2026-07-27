@@ -53,6 +53,7 @@ interface PillProps {
 function MetricPill({ icon: Icon, label, value, onClick, pulse, accentColor, iconColor }: PillProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={[
         'group flex items-center gap-2 rounded-interactive',

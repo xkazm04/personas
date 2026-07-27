@@ -47,6 +47,7 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
         <div className="flex items-center gap-2">
           <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
           <button
+            type="button"
             onClick={() => onChange(!value)}
             className={`px-2.5 py-1 rounded-modal typo-heading border transition-all ${
               value

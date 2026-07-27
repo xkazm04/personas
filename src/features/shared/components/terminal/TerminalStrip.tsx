@@ -88,6 +88,7 @@ export function TerminalStrip({
         {/* Expand / collapse */}
         <Tooltip content={isExpanded ? 'Collapse log' : 'Expand log'}>
           <button
+            type="button"
             title={isExpanded ? 'Collapse log' : 'Expand log'}
             onClick={onToggle}
             className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"
@@ -100,6 +101,7 @@ export function TerminalStrip({
         {!isRunning && onClear && lines.length > 0 && (
           <Tooltip content="Dismiss">
             <button
+              type="button"
               title={t.shared.terminal_extra.dismiss}
               onClick={onClear}
               className="p-1 rounded hover:bg-secondary/40 text-foreground hover:text-muted-foreground/60 transition-colors shrink-0"

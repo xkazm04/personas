@@ -60,6 +60,7 @@ export const PeerCard = memo(function PeerCard({
 
       {/* Info */}
       <button
+        type="button"
         onClick={() => onSelect(peer.peer_id)}
         className="min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
       >
@@ -89,6 +90,7 @@ export const PeerCard = memo(function PeerCard({
           </span>
         ) : isConnected ? (
           <button
+            type="button"
             onClick={() => onDisconnect(peer.peer_id)}
             title={st.disconnect}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
@@ -97,6 +99,7 @@ export const PeerCard = memo(function PeerCard({
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => onConnect(peer.peer_id)}
             title={st.connect}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-emerald-500 transition-colors"
@@ -105,6 +108,7 @@ export const PeerCard = memo(function PeerCard({
           </button>
         )}
         <button
+          type="button"
           onClick={() => onSelect(peer.peer_id)}
           title={st.view_details}
           className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"

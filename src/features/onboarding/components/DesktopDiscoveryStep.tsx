@@ -78,6 +78,7 @@ export function DesktopDiscoveryStep({
           {scanState.error ?? t.onboarding.desktop_scan_error_hint}
         </p>
         <button
+          type="button"
           onClick={onRetry}
           className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
         >
@@ -149,6 +150,7 @@ export function DesktopDiscoveryStep({
               </div>
 
               <button
+                type="button"
                 onClick={() => onApprove(app.connector_name)}
                 disabled={isApproved || isApproving}
                 className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-card transition-colors flex-shrink-0 ${

@@ -107,6 +107,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
                 <div className="flex items-center justify-between">
                   <p className="typo-body font-medium text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
+                    type="button"
                     onClick={() => dismissResult(recipe.id)}
                     // eslint-disable-next-line custom/no-hardcoded-jsx-text
                     aria-label="Dismiss result"

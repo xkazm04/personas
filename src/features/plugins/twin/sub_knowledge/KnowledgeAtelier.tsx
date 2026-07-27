@@ -288,7 +288,7 @@ Memory: ${seed}`;
               {(['pending', 'approved', 'rejected'] as const).map((f) => {
                 const labelMap = { pending: t.knowledge.filterPending, approved: t.knowledge.filterApproved, rejected: t.knowledge.filterRejected } as const;
                 return (
-                  <button key={f} onClick={() => setFilter(f)} className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${filter === f ? 'bg-violet-500/20 text-violet-200' : 'text-foreground hover:text-foreground'}`}>
+                  <button type="button" key={f} onClick={() => setFilter(f)} className={`px-2.5 py-0.5 text-[11px] rounded-full transition-colors ${filter === f ? 'bg-violet-500/20 text-violet-200' : 'text-foreground hover:text-foreground'}`}>
                     {labelMap[f]}
                   </button>
                 );
@@ -339,10 +339,11 @@ Memory: ${seed}`;
                           <span className="typo-caption text-foreground">{new Date(mem.created_at).toLocaleDateString()}</span>
                           {isPending && (
                             <div className="ml-auto flex items-center gap-1">
-                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <button type="button" onClick={() => handleReview(mem.id, true)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <CheckCircle2 className="w-3 h-3" /> {t.knowledge.approveAction}
                               </button>
                               <button
+                                type="button"
                                 onClick={() => void handleDigDeeper(mem.id, mem.title, mem.content)}
                                 disabled={isReviewing || rejectingId !== null || digDeeperId !== null}
                                 title={t.knowledge.digDeeperTooltip}
@@ -353,7 +354,7 @@ Memory: ${seed}`;
                                   : <ArrowRightCircle className="w-3 h-3" />}
                                 {digDeeperId === mem.id ? t.knowledge.digDeeperGenerating : t.knowledge.digDeeperCta}
                               </button>
-                              <button onClick={() => openRejectFlow(mem.id)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <button type="button" onClick={() => openRejectFlow(mem.id)} disabled={isReviewing || rejectingId !== null || digDeeperId !== null} className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
                                 <XCircle className="w-3 h-3" /> {t.knowledge.rejectAction}
                               </button>
                             </div>
@@ -375,7 +376,7 @@ Memory: ${seed}`;
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <p className="text-[10px] uppercase tracking-[0.18em] text-red-300/85 font-medium">{t.knowledge.rejectReasonHeading}</p>
-                                <button onClick={cancelRejectFlow} aria-label={t.knowledge.rejectReasonCancel} className="text-foreground hover:text-foreground">
+                                <button type="button" onClick={cancelRejectFlow} aria-label={t.knowledge.rejectReasonCancel} className="text-foreground hover:text-foreground">
                                   <X className="w-3.5 h-3.5" />
                                 </button>
                               </div>
@@ -403,8 +404,9 @@ Memory: ${seed}`;
                                 className="w-full resize-y rounded-interactive border border-primary/15 bg-background px-2.5 py-1.5 typo-caption text-foreground placeholder:text-foreground/50 focus:border-red-500/40 focus:outline-none"
                               />
                               <div className="flex justify-end gap-2 mt-2">
-                                <button onClick={cancelRejectFlow} className="px-2 py-1 rounded-interactive text-[11px] text-foreground hover:bg-secondary/40 transition-colors">{t.knowledge.rejectReasonCancel}</button>
+                                <button type="button" onClick={cancelRejectFlow} className="px-2 py-1 rounded-interactive text-[11px] text-foreground hover:bg-secondary/40 transition-colors">{t.knowledge.rejectReasonCancel}</button>
                                 <button
+                                  type="button"
                                   onClick={() => void confirmRejectFlow(mem.id)}
                                   disabled={isReviewing || (!rejectPreset && !rejectNote.trim())}
                                   className="px-2 py-1 rounded-interactive text-[11px] font-medium text-red-200 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"

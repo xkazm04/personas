@@ -19,6 +19,7 @@ export function ActivityHeader({ itemCount, isLoading, onRefresh }: ActivityHead
       </div>
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onRefresh}
           className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
           title={t.common.refresh}

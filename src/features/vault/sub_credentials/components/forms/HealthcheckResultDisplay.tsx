@@ -38,6 +38,7 @@ export function HealthcheckResultDisplay({ success, message }: { success: boolea
       {hasDifferentRaw && (
         <div className="border-t border-status-error/10">
           <button
+            type="button"
             onClick={() => setShowDetails(!showDetails)}
             className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-body text-status-error/40 hover:text-status-error/60 transition-colors"
           >

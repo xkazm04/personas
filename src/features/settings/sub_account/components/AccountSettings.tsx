@@ -144,6 +144,7 @@ export default function AccountSettings() {
                   {s.updates_history_title}
                 </p>
                 <button
+                  type="button"
                   onClick={() => { clearUpdateHistory(); setHistory([]); }}
                   className="typo-caption text-foreground hover:text-primary transition-colors"
                 >

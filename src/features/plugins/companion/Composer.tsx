@@ -307,6 +307,7 @@ export function Composer({
           </span>
         )}
         <button
+          type="button"
           onClick={submit}
           disabled={disabled || !draft.trim() || paletteOpen}
           data-testid="companion-send"

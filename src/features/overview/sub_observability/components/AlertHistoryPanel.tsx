@@ -46,6 +46,7 @@ function AlertRow({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => vo
       </div>
       {!alert.dismissed && (
         <button
+          type="button"
           onClick={onDismiss}
           className="p-1 text-foreground hover:text-emerald-400 transition-colors shrink-0"
           title={t.common.dismiss}
@@ -82,6 +83,7 @@ export function AlertHistoryPanel() {
         </div>
         {alertHistory.length > 0 && (
           <button
+            type="button"
             onClick={() => { clearAlertHistory().catch(silentCatch('AlertHistoryPanel:clearAlertHistory')); }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:text-red-400 hover:border-red-500/20 transition-colors"
           >

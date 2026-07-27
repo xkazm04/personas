@@ -71,6 +71,7 @@ export default function PlaybackControls({
 
         {playing ? (
           <button
+            type="button"
             onClick={onPause}
             title={t.media_studio.pause}
             className="w-8 h-8 rounded-card bg-rose-500/20 border border-rose-500/30 flex items-center justify-center hover:bg-rose-500/30 transition-colors"
@@ -79,6 +80,7 @@ export default function PlaybackControls({
           </button>
         ) : (
           <button
+            type="button"
             onClick={onPlay}
             title={t.media_studio.play}
             className="w-8 h-8 rounded-card bg-rose-500/20 border border-rose-500/30 flex items-center justify-center hover:bg-rose-500/30 transition-colors"
@@ -98,6 +100,7 @@ export default function PlaybackControls({
 
       {/* Loop toggle */}
       <button
+        type="button"
         onClick={onToggleLoop}
         className={`w-7 h-7 rounded-card flex items-center justify-center transition-colors ${
           looping

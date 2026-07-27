@@ -178,7 +178,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
             <Sparkles className="w-4 h-4 text-violet-400" />
             <h2 id="twin-wizard-title" className="typo-section-title">{t.wizard.title}</h2>
           </div>
-          <button onClick={onClose} aria-label={t.wizard.close} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t.wizard.close} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -221,6 +221,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                 <div className="flex items-center gap-2">
                   {GENDERS.map((g) => (
                     <button
+                      type="button"
                       key={g.id}
                       onClick={() => setGender(g.id)}
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-interactive border transition-colors ${
@@ -332,6 +333,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                     const selected = selectedChannels.has(row.id);
                     return (
                       <button
+                        type="button"
                         key={row.id}
                         onClick={() => toggleChannel(row.id)}
                         className={`flex items-start gap-3 p-3 rounded-card border transition-colors text-left ${
@@ -365,6 +367,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
 
               <div className="grid grid-cols-1 gap-2">
                 <button
+                  type="button"
                   onClick={() => void finish(true)}
                   disabled={submitting}
                   className="flex items-start gap-3 p-4 rounded-card border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/15 transition-colors text-left disabled:opacity-50"
@@ -379,6 +382,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => void finish(false)}
                   disabled={submitting}
                   className="px-4 py-2 rounded-interactive border border-primary/10 bg-card/40 hover:bg-secondary/40 transition-colors text-left disabled:opacity-50"
@@ -427,6 +431,7 @@ interface MethodCardProps {
 function MethodCard({ active, onClick, icon: Icon, title, body }: MethodCardProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`flex items-start gap-3 p-3 rounded-card border transition-colors text-left ${
         active ? 'border-violet-500/30 bg-violet-500/10' : 'border-primary/10 bg-card/40 hover:border-violet-500/20 hover:bg-violet-500/5'

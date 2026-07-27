@@ -48,6 +48,7 @@ export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigS
               <span className="typo-code text-foreground font-mono break-all">{getWebhookUrl(trigger.id)}</span>
             </div>
             <button
+              type="button"
               onClick={detail.copyWebhookUrl}
               className={`flex-shrink-0 p-1.5 rounded-card transition-all ${detail.copiedUrl ? 'bg-emerald-500/15 text-emerald-400' : 'hover:bg-secondary/60 text-foreground hover:text-muted-foreground'}`}
               title={t.triggers.detail.webhook_url}

@@ -69,6 +69,7 @@ export function CloudOAuthPanel({
 
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={onCompleteOAuth}
             disabled={!oauthCode.trim()}
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
@@ -76,6 +77,7 @@ export function CloudOAuthPanel({
             {dt.complete_authorization}
           </button>
           <button
+            type="button"
             onClick={onCancelOAuth}
             className="px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
@@ -163,6 +165,7 @@ export function CloudOAuthPanel({
         {/* Actions */}
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onRefreshOAuth}
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground/90 hover:text-foreground/95 hover:border-primary/25 transition-colors cursor-pointer"
           >
@@ -170,6 +173,7 @@ export function CloudOAuthPanel({
             {dt.refresh_token}
           </button>
           <button
+            type="button"
             onClick={onDisconnectOAuth}
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
           >
@@ -192,6 +196,7 @@ export function CloudOAuthPanel({
       </div>
 
       <button
+        type="button"
         onClick={onStartOAuth}
         className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 transition-colors cursor-pointer"
       >

@@ -42,6 +42,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
         <span className="typo-heading text-foreground">{t.shared.draft_editor.design_context}</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
+            type="button"
             onClick={() => setMode('structured')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'structured'
@@ -53,6 +54,7 @@ export function DesignContextViewer({ value, onChange, disabled }: DesignContext
             View
           </button>
           <button
+            type="button"
             onClick={() => setMode('raw')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'raw'

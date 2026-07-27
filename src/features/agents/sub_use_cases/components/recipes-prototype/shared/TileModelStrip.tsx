@@ -106,6 +106,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
             {t.agents.use_cases.model_persona_default_group}
           </div>
           <button
+            type="button"
             role="option"
             aria-selected={!hasOverride}
             onClick={(e) => { e.stopPropagation(); void handleSelect(MODEL_OPTIONS[0]!); close(); }}
@@ -131,6 +132,7 @@ export function TileModelStrip({ personaId, uc, personaDefaultModelProfile }: Ti
             const isActive = hasOverride && profileToOptionId(uc.raw.model_override) === opt.id;
             return (
               <button
+                type="button"
                 key={opt.id}
                 role="option"
                 aria-selected={isActive}

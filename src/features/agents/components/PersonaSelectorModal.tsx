@@ -87,7 +87,7 @@ export function PersonaSelectorModal({
         <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
           <div className="flex items-center justify-between">
             <h3 id="persona-selector-modal" className="typo-heading font-semibold text-foreground uppercase tracking-wider">{t.shared.persona_modal_title}</h3>
-            <button onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
+            <button type="button" onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

@@ -24,6 +24,7 @@ export function RowActionMenu({
   return (
     <>
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
@@ -50,6 +51,7 @@ export function RowActionMenu({
               {t.templates.row_actions.row_actions_label}
             </h2>
             <button
+              type="button"
               onClick={close}
               className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
               aria-label="Close"
@@ -59,6 +61,7 @@ export function RowActionMenu({
           </div>
           <div className="py-1.5">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 close();
@@ -73,6 +76,7 @@ export function RowActionMenu({
             {import.meta.env.DEV && (
               <>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     close();
@@ -84,6 +88,7 @@ export function RowActionMenu({
                   {t.templates.row_actions.rebuild}
                 </button>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     close();

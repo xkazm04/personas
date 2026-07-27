@@ -189,7 +189,7 @@ function ExecutionListRowImpl({
                 <div>
                   <span className="text-foreground typo-code uppercase">{e.execution_id}</span>
                   <Tooltip content={execution.id} placement="bottom">
-                    <button onClick={(e) => { e.stopPropagation(); onCopyId(execution.id); }} className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onCopyId(execution.id); }} className="flex items-center gap-1.5 mt-0.5 text-foreground/90 hover:text-foreground/95 transition-colors group">
                       <span className="typo-code">#{execution.id.slice(0, 8)}</span>
                       {hasCopied && copiedId === execution.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity" />}
                     </button>
@@ -213,6 +213,7 @@ function ExecutionListRowImpl({
                   <div className="mt-0.5">
                     {parentInList && onOpenParent ? (
                       <button
+                        type="button"
                         onClick={(ev) => { ev.stopPropagation(); onOpenParent(parentId); }}
                         className="inline-flex items-center gap-1.5 typo-code text-primary/80 hover:text-primary transition-colors"
                       >
@@ -245,11 +246,11 @@ function ExecutionListRowImpl({
                 </div>
               )}
               <div className="flex items-center gap-2 pt-1">
-                <button onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data ?? null); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+                <button type="button" onClick={(e) => { e.stopPropagation(); onRerun(execution.input_data ?? null); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
                   <RotateCw className="w-3 h-3" />{e.rerun_with_same_input}
                 </button>
                 {execution.retry_count > 0 && (
-                  <button onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-accent/10 text-accent/80 border border-accent/15 hover:bg-accent/20 hover:text-accent transition-colors">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-accent/10 text-accent/80 border border-accent/15 hover:bg-accent/20 hover:text-accent transition-colors">
                     <ArrowLeftRight className="w-3 h-3" />{e.compare_with_original}
                   </button>
                 )}

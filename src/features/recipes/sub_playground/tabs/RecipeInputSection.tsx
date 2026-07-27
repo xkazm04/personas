@@ -71,6 +71,7 @@ export function RecipeInputSection({
         <div className="flex items-center gap-2">
           {recipe.sample_inputs && fields.length > 0 && (
             <button
+              type="button"
               onClick={handleLoadMockValues}
               className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-primary hover:bg-primary/10 transition-colors"
             >
@@ -79,6 +80,7 @@ export function RecipeInputSection({
           )}
           {fields.length > 0 && (
             <button
+              type="button"
               onClick={handleSaveMockValues}
               className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-foreground hover:bg-muted/50 transition-colors"
             >
@@ -90,6 +92,7 @@ export function RecipeInputSection({
             </button>
           )}
           <button
+            type="button"
             onClick={onExecute}
             disabled={running || executionPhase === 'executing'}
             className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
@@ -132,6 +135,7 @@ export function RecipeInputSection({
                     <div className="flex gap-2">
                       {['true', 'false'].map((v) => (
                         <button
+                          type="button"
                           key={v}
                           onClick={() => onFieldChange(field.key, v)}
                           className={`rounded-modal px-3 py-1 typo-body border transition-colors ${

@@ -47,6 +47,7 @@ export function SubscribeButton({ entryId, subscription, subscribe, unsubscribe 
   const { subscribed, busy, toggle } = useSubscribeToggle(entryId, subscription, subscribe, unsubscribe);
   return (
     <button
+      type="button"
       onClick={(e) => { e.stopPropagation(); void toggle(); }}
       disabled={busy}
       className={`group/sub inline-flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded-input transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${

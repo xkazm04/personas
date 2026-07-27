@@ -73,6 +73,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
         />
         <div className="flex items-center gap-2">
           <button
+            type="button"
             data-testid="dry-run-from-execution-btn"
             onClick={dryRun.run}
             disabled={dryRun.loading}
@@ -149,6 +150,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
                 {t.agents.executions.chain_open} #{chainOpen.id.slice(0, 8)}
               </h3>
               <button
+                type="button"
                 onClick={() => setChainOpen(null)}
                 aria-label={t.common.close}
                 className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"

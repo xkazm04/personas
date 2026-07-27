@@ -51,6 +51,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
   return (
     <div className={`flex items-center ${LIST_ITEM_GAP.dense}`}>
       <button
+        type="button"
         onClick={handleDownloadHtml}
         disabled={downloading}
         data-testid="export-report-html"
@@ -62,6 +63,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
         {lab.export_download_html}
       </button>
       <button
+        type="button"
         onClick={handleCopyMarkdown}
         data-testid="export-report-md"
         className={`inline-flex items-center ${LIST_ITEM_GAP.dense} ${TOOLS_BTN_STANDARD} rounded-interactive typo-caption font-medium text-foreground bg-secondary/60 hover:bg-secondary/80 border border-primary/10 transition-colors`}

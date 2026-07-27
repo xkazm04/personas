@@ -36,6 +36,7 @@ export function RunMarker({
     <div className="relative">
       {/* Run header */}
       <button
+        type="button"
         onClick={onToggle}
         className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-modal border transition-colors text-left ${
           isFiltered
@@ -75,6 +76,7 @@ export function RunMarker({
           ))}
           {!isFiltered && (
             <button
+              type="button"
               onClick={() => onFilterRun(group.runId)}
               className="typo-body text-violet-400/60 hover:text-violet-400 transition-colors pl-1 py-0.5"
             >

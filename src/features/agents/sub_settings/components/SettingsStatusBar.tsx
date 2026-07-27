@@ -43,6 +43,7 @@ export function SettingsStatusBar({
 
       {!showDeleteConfirm ? (
         <button
+          type="button"
           onClick={() => setShowDeleteConfirm(true)}
           data-testid="agent-delete-btn"
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
@@ -57,6 +58,7 @@ export function SettingsStatusBar({
             {t.agents.settings_status.irreversible}
           </span>
           <button
+            type="button"
             onClick={onDelete}
             data-testid="agent-delete-confirm"
             className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body font-medium transition-colors"
@@ -64,6 +66,7 @@ export function SettingsStatusBar({
             {t.common.confirm}
           </button>
           <button
+            type="button"
             onClick={() => setShowDeleteConfirm(false)}
             className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-modal typo-body transition-colors hover:bg-secondary/70"
           >

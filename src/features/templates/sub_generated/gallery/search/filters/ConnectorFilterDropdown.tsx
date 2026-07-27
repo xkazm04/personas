@@ -68,6 +68,7 @@ export function ConnectorFilterDropdown({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
       >
@@ -103,6 +104,7 @@ export function ConnectorFilterDropdown({
               const isSelected = connectorFilter.includes(item.name);
               return (
                 <button
+                  type="button"
                   key={item.name}
                   onClick={() => toggleConnector(item.name)}
                   className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-left hover:bg-primary/5 transition-colors"
@@ -139,6 +141,7 @@ export function ConnectorFilterDropdown({
           {connectorFilter.length > 0 && (
             <div className="border-t border-primary/10 px-1 py-1">
               <button
+                type="button"
                 onClick={() => {
                   setConnectorFilter([]);
                   setIsOpen(false);

@@ -109,6 +109,7 @@ export default function IdentitySettings() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={handleCopyCard}
                   className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
@@ -129,13 +130,14 @@ export default function IdentitySettings() {
                       maxLength={64}
                       autoFocus
                     />
-                    <button onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
-                    <button onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
+                    <button type="button" onClick={handleSaveName} className="px-2 py-1 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90">{st.save}</button>
+                    <button type="button" onClick={() => setEditingName(false)} className="px-2 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50">{st.cancel}</button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground">{localIdentity.display_name}</span>
                     <button
+                      type="button"
                       onClick={() => { setNameInput(localIdentity.display_name); setEditingName(true); }}
                       className="typo-caption text-foreground hover:text-foreground underline"
                     >
@@ -176,6 +178,7 @@ export default function IdentitySettings() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="typo-heading font-semibold text-foreground">{st.trusted_peers}</h3>
           <button
+            type="button"
             onClick={() => setShowImportForm(!showImportForm)}
             className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
           >
@@ -202,6 +205,7 @@ export default function IdentitySettings() {
             />
             <div className="flex gap-2 pt-1">
               <button
+                type="button"
                 onClick={handleImportPeer}
                 disabled={!importInput.trim()}
                 className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -209,6 +213,7 @@ export default function IdentitySettings() {
                 {st.add_trusted_peer}
               </button>
               <button
+                type="button"
                 onClick={() => { setShowImportForm(false); setImportInput(''); setImportNotes(''); }}
                 className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
               >
@@ -260,6 +265,7 @@ export default function IdentitySettings() {
                     >
                       {({ requestConfirm }) => (
                         <button
+                          type="button"
                           onClick={requestConfirm}
                           title={t.sharing.revoke_trust}
                           className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-amber-500 transition-colors"
@@ -275,6 +281,7 @@ export default function IdentitySettings() {
                   >
                     {({ requestConfirm }) => (
                       <button
+                        type="button"
                         onClick={requestConfirm}
                         title={t.sharing.remove_peer}
                         className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors"

@@ -67,6 +67,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
         {AUDIT_FILTERS.map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => handleFilterChange(f)}
             className={`px-2 py-0.5 rounded typo-caption font-medium transition-colors ${
               auditFilter === f
@@ -118,6 +119,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button
+            type="button"
             onClick={() => setAuditPage((p) => Math.max(0, p - 1))}
             disabled={auditPage === 0}
             className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"
@@ -128,6 +130,7 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
             Page {auditPage + 1}/{totalPages}
           </span>
           <button
+            type="button"
             onClick={() => setAuditPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={auditPage >= totalPages - 1}
             className="p-1 rounded hover:bg-secondary/30 disabled:opacity-30 transition-colors"

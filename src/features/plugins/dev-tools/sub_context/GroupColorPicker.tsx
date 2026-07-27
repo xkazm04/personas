@@ -28,6 +28,7 @@ export default function GroupColorPicker({
     <div className="flex gap-1.5">
       {COLOR_PALETTE.map((c) => (
         <button
+          type="button"
           key={c.id}
           onClick={() => onChange(c.id)}
           className={`w-5 h-5 rounded-full ${c.bg} transition-all ${

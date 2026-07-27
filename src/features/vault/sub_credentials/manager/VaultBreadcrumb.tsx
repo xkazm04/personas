@@ -27,6 +27,7 @@ export function VaultBreadcrumb({ segments, dispatch }: VaultBreadcrumbProps) {
             {i > 0 && <ChevronRight className="w-3 h-3 shrink-0 text-foreground" />}
             {seg.action && !isLast ? (
               <button
+                type="button"
                 onClick={() => dispatch(seg.action!)}
                 className="hover:text-foreground/90 transition-colors truncate"
               >

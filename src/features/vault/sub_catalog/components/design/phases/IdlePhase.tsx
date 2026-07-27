@@ -51,6 +51,7 @@ export function IdlePhase({
 
       <div className="flex flex-wrap gap-2">
         <button
+          type="button"
           onClick={onToggleTemplates}
           className="px-2.5 py-1 typo-body rounded-modal border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
         >
@@ -59,6 +60,7 @@ export function IdlePhase({
 
         {onUniversalSetup && (
           <button
+            type="button"
             onClick={onUniversalSetup}
             className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 transition-colors"
           >
@@ -69,6 +71,7 @@ export function IdlePhase({
 
         {onImportFrom && (
           <button
+            type="button"
             onClick={onImportFrom}
             className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 transition-colors"
           >
@@ -80,6 +83,7 @@ export function IdlePhase({
         {QUICK_SERVICE_HINTS.map((hint) => (
           <button
             key={hint}
+            type="button"
             onClick={() => onInstructionChange(hint)}
             className="flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-primary/15 text-foreground/85 hover:bg-secondary/60 transition-colors"
             data-testid={`hint-chip-${hint.split(' ')[0]?.toLowerCase()}`}
@@ -117,6 +121,7 @@ export function IdlePhase({
       <div className="flex justify-end gap-2.5">
         {onAutoSetup && (
           <button
+            type="button"
             onClick={onAutoSetup}
             disabled={!instruction.trim()}
             className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-cyan-600/20"
@@ -126,6 +131,7 @@ export function IdlePhase({
           </button>
         )}
         <button
+          type="button"
           onClick={onStart}
           disabled={!instruction.trim()}
           data-testid="vault-design-submit"

@@ -149,7 +149,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
         <div className="p-3 mb-3 rounded-card border border-violet-500/20 bg-violet-500/5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="typo-caption font-medium text-foreground">{t.distilled.addHeading}</span>
-            <button onClick={resetDraft} aria-label={t.distilled.cancel} className="text-foreground hover:text-foreground">
+            <button type="button" onClick={resetDraft} aria-label={t.distilled.cancel} className="text-foreground hover:text-foreground">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -278,6 +278,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleDelete(fact.id)}
                   aria-label={t.distilled.deleteAria}
                   className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"

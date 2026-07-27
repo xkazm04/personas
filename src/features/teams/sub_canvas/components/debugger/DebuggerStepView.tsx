@@ -26,6 +26,7 @@ export default function DebuggerStepView({
     <div className="flex items-center gap-1 ml-2">
       {timeline.map((item) => (
         <button
+          type="button"
           key={item.id}
           onClick={() => onToggleBreakpoint(item.id)}
           onDoubleClick={() => {

@@ -148,6 +148,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
           }
           trailing={
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onAdd(); }}
               className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body font-medium rounded-card border border-accent/20 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}
             >
@@ -186,6 +187,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
 
               {automations.length === 0 && (
                 <button
+                  type="button"
                   onClick={onAdd}
                   className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-modal border border-dashed border-border typo-body text-foreground hover:border-accent/30 hover:text-foreground/80 transition-colors"
                 >
@@ -222,12 +224,14 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
 
             <div className="flex items-center justify-end gap-2 pt-1">
               <button
+                type="button"
                 onClick={() => setDeleteTarget(null)}
                 className="px-4 py-2 typo-body text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/40 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDelete}
                 className="px-4 py-2 typo-body font-medium rounded-modal bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >

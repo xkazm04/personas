@@ -70,6 +70,7 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
     <div>
       <div className="flex items-center gap-2 mb-2">
         <button
+          type="button"
           onClick={handleToggleLog}
           className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors"
         >

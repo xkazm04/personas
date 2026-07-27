@@ -132,6 +132,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
         </div>
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => setCollapsed((c) => !c)}
             className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
             title={collapsed ? 'Expand' : 'Collapse'}
@@ -140,6 +141,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           </button>
           {isDone && (
             <button
+              type="button"
               onClick={onDismiss}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.common.dismiss}

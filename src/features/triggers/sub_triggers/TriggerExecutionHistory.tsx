@@ -33,6 +33,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
     <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
       {/* Summary row */}
       <button
+        type="button"
         onClick={onToggle}
         className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-secondary/20 transition-colors"
       >
@@ -89,6 +90,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
               {/* Replay + result */}
               <div className="flex items-center gap-2 pt-1">
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
                   className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -145,6 +147,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
   return (
     <>
       <button
+        type="button"
         onClick={toggle}
         className="flex items-center gap-1.5 pt-1 border-t border-primary/5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
       >
@@ -171,6 +174,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_history}
                   <button
+                    type="button"
                     onClick={() => void history.fetch()}
                     className="ml-auto flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
                   >
@@ -198,6 +202,7 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                   ))}
                   {/* Refresh button */}
                   <button
+                    type="button"
                     onClick={() => void history.fetch()}
                     disabled={history.loading}
                     className="flex items-center gap-1.5 w-full justify-center py-1.5 typo-body text-foreground hover:text-muted-foreground/90 transition-colors"

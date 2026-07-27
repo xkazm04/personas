@@ -110,6 +110,7 @@ export function CredentialTypePicker({
           return (
             <button
               key={type.id}
+              type="button"
               data-testid={type.testId}
               onClick={handlers[type.id]}
               className={`group relative text-left border rounded-modal hover:border-primary/25 transition-all overflow-hidden ${isDev ? 'border-amber-400/50 ring-1 ring-amber-400/20' : 'border-primary/15'}`}
@@ -134,6 +135,7 @@ export function CredentialTypePicker({
 
       {/* Workspace Connect -- full width */}
       <button
+        type="button"
         onClick={onWorkspaceConnect}
         data-testid="vault-pick-workspace"
         className="w-full text-left p-4 bg-gradient-to-r from-blue-500/5 to-emerald-500/5 border border-blue-500/15 rounded-modal hover:from-blue-500/10 hover:to-emerald-500/10 hover:border-blue-500/25 transition-all"
@@ -154,6 +156,7 @@ export function CredentialTypePicker({
       {/* Foraging -- full width at bottom (desktop only -- requires filesystem scan) */}
       {!IS_MOBILE && (
         <button
+          type="button"
           onClick={onForage}
           data-testid="vault-pick-foraging"
           className="w-full text-left p-4 bg-gradient-to-r from-violet-500/5 to-cyan-500/5 border border-violet-500/15 rounded-modal hover:from-violet-500/10 hover:to-cyan-500/10 hover:border-violet-500/25 transition-all"

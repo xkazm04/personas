@@ -34,19 +34,21 @@ export function DisconnectDialog({ open, personaName, eventLabel, onConfirm, onC
               <span className="font-medium text-foreground">{eventLabel}</span> {t.triggers.disconnect_events_reconnect}
             </p>
           </div>
-          <button onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-foreground flex-shrink-0">
+          <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-secondary/60 text-foreground flex-shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
           <button
+            type="button"
             onClick={onCancel}
             className="px-3 py-1.5 rounded-card typo-caption font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             className="px-3 py-1.5 rounded-card typo-caption font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/20 transition-colors"
           >

@@ -75,6 +75,7 @@ function AccountFooterIcon() {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => {
           if (!isAuthenticated) {
             loginWithGoogle();
@@ -120,6 +121,7 @@ function AccountFooterIcon() {
               {user?.email && <p className="text-[10px] text-foreground truncate">{user.email}</p>}
             </div>
             <button
+              type="button"
               onClick={() => { logout(); setOpen(false); }}
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg typo-caption text-foreground hover:bg-primary/5 transition-colors"
             >
@@ -157,6 +159,7 @@ function ThemeFooterIcon() {
   return (
     <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         data-testid="footer-theme"
         className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors group"
@@ -185,6 +188,7 @@ function ThemeFooterIcon() {
                 return (
                   <button
                     key={t.id}
+                    type="button"
                     onClick={() => { setTheme(t.id as ThemeId); setOpen(false); }}
                     className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
                       isActive ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/50'
@@ -217,6 +221,7 @@ function ThemeFooterIcon() {
                   return (
                     <button
                       key={t.id}
+                      type="button"
                       onClick={() => { setTheme(t.id as ThemeId); setOpen(false); }}
                       className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all ${
                         isActive ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-secondary/50'
@@ -263,6 +268,7 @@ function NetworkFooterIcon() {
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       data-testid="footer-network"
       className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
@@ -305,6 +311,7 @@ function CollapseFooterIcon() {
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       data-testid="footer-collapse"
       className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
@@ -331,6 +338,7 @@ function ShortcutsFooterIcon() {
   // click opens the cheat-sheet modal with the shortcut hints.
   return (
     <button
+      type="button"
       onClick={() => setNavActive(!navActive)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -386,6 +394,7 @@ function TourResumeFooterIcon() {
   const label = tx(t.onboarding.resume_tour, { completed: done, total });
   return (
     <button
+      type="button"
       onClick={handleClick}
       data-testid="footer-resume-tour"
       className="h-7 px-2 rounded-lg flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
@@ -438,6 +447,7 @@ function OnboardingReplayFooterIcon() {
   const label = canResume ? t.onboarding.resume_setup : t.onboarding.replay_setup;
   return (
     <button
+      type="button"
       onClick={handleClick}
       data-testid="footer-replay-onboarding"
       className="h-7 px-2 rounded-lg flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"

@@ -109,6 +109,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             {selectedReview.status === 'pending' && (
               <div className="flex items-center gap-2 pt-2 border-t border-primary/10">
                 <button
+                  type="button"
                   onClick={() => handleReviewAction('approved')}
                   disabled={reviewProcessing}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
@@ -116,6 +117,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
                   {t.agents.activity.approve}
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleReviewAction('rejected')}
                   disabled={reviewProcessing}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50"

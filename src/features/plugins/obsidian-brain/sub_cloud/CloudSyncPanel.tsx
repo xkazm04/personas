@@ -168,6 +168,7 @@ export default function CloudSyncPanel() {
           {t.plugins.obsidian_brain.sign_in_hint}
         </p>
         <button
+          type="button"
           onClick={loginWithGoogle}
           disabled={authLoading}
           className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
@@ -208,6 +209,7 @@ export default function CloudSyncPanel() {
                 </StatusBadge>
               ) : (
                 <button
+                  type="button"
                   onClick={connectDrive}
                   disabled={connecting}
                   className="flex items-center gap-2 px-4 py-2 rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
@@ -260,6 +262,7 @@ export default function CloudSyncPanel() {
           <div className="space-y-4">
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={pushToDrive}
                 disabled={pushing || pulling}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-40 focus-ring"
@@ -268,6 +271,7 @@ export default function CloudSyncPanel() {
                 {pushing ? t.plugins.obsidian_brain.pushing : t.plugins.obsidian_brain.push_to_drive}
               </button>
               <button
+                type="button"
                 onClick={pullFromDrive}
                 disabled={pushing || pulling}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"

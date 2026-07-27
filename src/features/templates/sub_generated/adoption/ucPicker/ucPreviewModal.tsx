@@ -42,6 +42,7 @@ export function PreviewModal({
           {subtitle && <p className="typo-body text-foreground mt-1 leading-relaxed">{subtitle}</p>}
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="focus-ring p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           aria-label={debtText("auto_close_preview_baa55035")}

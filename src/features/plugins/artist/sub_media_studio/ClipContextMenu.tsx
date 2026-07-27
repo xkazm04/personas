@@ -55,6 +55,7 @@ export default function ClipContextMenu({
         const isDanger = 'danger' in item && item.danger;
         return (
           <button
+            type="button"
             key={item.label}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-md transition-colors ${
               isDanger

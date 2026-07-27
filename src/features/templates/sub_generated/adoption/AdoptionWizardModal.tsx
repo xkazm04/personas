@@ -112,6 +112,7 @@ export default function AdoptionWizardModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={handleCloseAttempt}
             className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/95"
           >

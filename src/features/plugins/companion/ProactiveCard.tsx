@@ -107,6 +107,7 @@ export function ProactiveCard({
       )}
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={() => handle('engage')}
           disabled={busy !== null}
           data-testid="companion-proactive-engage"
@@ -120,6 +121,7 @@ export function ProactiveCard({
           {t.plugins.companion.proactive_engage}
         </button>
         <button
+          type="button"
           onClick={() => handle('dismiss')}
           disabled={busy !== null}
           data-testid="companion-proactive-dismiss"

@@ -100,6 +100,7 @@ export function DesignPhaseAppliedDetails({ result, onReset }: DesignPhaseApplie
             const Icon = step.icon;
             return (
               <button
+                type="button"
                 key={step.id}
                 onClick={step.action}
                 className="animate-fade-slide-in w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 transition-all group text-left"

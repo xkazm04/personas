@@ -203,6 +203,7 @@ export default function ExperimentsPanel() {
                       )}
                       {persona && (
                         <button
+                          type="button"
                           onClick={(e) => handleRun(e, exp)}
                           disabled={isRunning}
                           className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-60 focus-ring"
@@ -214,6 +215,7 @@ export default function ExperimentsPanel() {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); setRunsDrawer(exp); }}
                         className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground transition-colors focus-ring"
                       >
@@ -223,6 +225,7 @@ export default function ExperimentsPanel() {
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => handleDelete(e, exp.id)}
                     className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring flex-shrink-0"
                     title={t.common.delete}

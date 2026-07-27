@@ -210,6 +210,7 @@ export function TemplateDetailModal({
             const isActive = effectiveTab === tab.key;
             return (
               <button
+                type="button"
                 key={tab.key}
                 role="tab"
                 id={`tab-${tab.key}`}

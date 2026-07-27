@@ -23,6 +23,7 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
       ariaLabel={t.agents.connectors.ch_add}
       renderTrigger={({ isOpen, toggle }) => (
         <button
+          type="button"
           onClick={toggle}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
@@ -38,6 +39,7 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
         <>
           {available.map((ct) => (
             <button
+              type="button"
               key={ct.type}
               onClick={() => { onAdd(ct.type); close(); }}
               role="option"

@@ -97,6 +97,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             return (
               <button
                 key={cat}
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleCategoryChange(cat); }}
                 className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-all ${
                   category === cat
@@ -111,6 +112,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
         </div>
         {/* Delete */}
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }}
           className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all"
         >
@@ -133,6 +135,7 @@ function StickyNoteNodeComponent({ id, data, selected }: NodeProps) {
             />
             <div className="flex justify-end">
               <button
+                type="button"
                 onClick={handleSave}
                 className="flex items-center gap-1 px-2 py-0.5 rounded-card bg-primary/15 border border-primary/25 typo-caption font-medium text-primary hover:bg-primary/25 transition-colors"
               >

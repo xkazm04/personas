@@ -72,6 +72,7 @@ export function AutoCredBrowserError({
         <CopyLogButton logs={logs} />
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onCancel}
             className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
           >
@@ -79,6 +80,7 @@ export function AutoCredBrowserError({
           </button>
           {error.retryable && (
             <button
+              type="button"
               onClick={onRetry}
               className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-foreground rounded-modal typo-body font-medium transition-colors"
             >

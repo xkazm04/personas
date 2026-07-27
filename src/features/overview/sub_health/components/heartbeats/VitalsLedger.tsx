@@ -87,6 +87,7 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
         </div>
 
         <button
+          type="button"
           onClick={() => setShowHealthy(v => !v)}
           className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/10 typo-caption text-foreground hover:bg-secondary/40 transition-colors"
         >
@@ -143,6 +144,7 @@ export function VitalsLedger({ model, loading, cascadeLinks, routingRecommendati
 
         {model.healthy.length > 0 && rows.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowHealthy(v => !v)}
             className="w-full flex items-center gap-2 px-4 py-2.5 typo-caption text-foreground hover:bg-secondary/20 border-t border-primary/10 transition-colors"
           >
@@ -186,7 +188,7 @@ function LedgerRow({
       className={`relative ${expanded ? th.soft : ''}`}
     >
       <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${signal.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
-      <button onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary/20 transition-colors">
+      <button type="button" onClick={onToggle} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-secondary/20 transition-colors">
         <div className="flex items-center gap-2 w-44 sm:w-52 shrink-0 min-w-0">
           <GradeDot grade={signal.grade} />
           <PersonaIcon icon={signal.personaIcon} color={signal.personaColor} display="framed" frameSize="xs" />
@@ -296,7 +298,7 @@ function AllClear({ onShowAll }: { onShowAll: () => void }) {
       </div>
       <p className="typo-heading text-foreground/90">{h.all_clear_title}</p>
       <p className="typo-body text-foreground max-w-sm">{h.all_clear_detail}</p>
-      <button onClick={onShowAll} className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/10 typo-caption text-foreground hover:bg-secondary/40 transition-colors">
+      <button type="button" onClick={onShowAll} className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/10 typo-caption text-foreground hover:bg-secondary/40 transition-colors">
         <Eye className="w-3.5 h-3.5" />{h.show_all}
       </button>
     </div>

@@ -37,6 +37,7 @@ export function TopPerformersWidget({ highlightPersonaId }: { highlightPersonaId
           <h3 className="typo-heading font-semibold text-foreground">{t.overview.widgets.top_performers}</h3>
         </div>
         <button
+          type="button"
           onClick={() => setOverviewTab('leaderboard')}
           className="flex items-center gap-0.5 text-[11px] text-primary/70 hover:text-primary transition-colors"
         >

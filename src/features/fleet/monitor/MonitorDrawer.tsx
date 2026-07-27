@@ -85,6 +85,7 @@ export function MonitorDrawer({
           </div>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
           title={t.monitor.close_hint}
@@ -97,6 +98,7 @@ export function MonitorDrawer({
       <div className="flex-shrink-0 flex items-center gap-1 px-4 py-2 border-b border-primary/8 bg-secondary/10">
         {tabs.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             onClick={() => setSection(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading font-medium transition-colors ${
@@ -252,6 +254,7 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
       </div>
       <div className="border-t border-primary/10 px-3 py-2 grid grid-cols-3 gap-2 bg-secondary/10">
         <button
+          type="button"
           onClick={() => act('rejected' as ManualReviewStatus)}
           disabled={isProcessing}
           className="flex items-center justify-center gap-1.5 py-2 rounded-modal border border-red-500/25 bg-red-500/8 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
@@ -260,6 +263,7 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
           <span className="typo-heading font-medium">{t.monitor.reject}</span>
         </button>
         <button
+          type="button"
           onClick={() => setShowNotes((s) => !s)}
           className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${
             showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground hover:text-foreground'
@@ -270,6 +274,7 @@ function DrawerReviewCard({ review, personaName, isProcessing, onAction }: Drawe
           <span className="typo-heading font-medium">{t.monitor.notes}</span>
         </button>
         <button
+          type="button"
           onClick={() => act('approved' as ManualReviewStatus)}
           disabled={isProcessing}
           className="flex items-center justify-center gap-1.5 py-2 rounded-modal border border-emerald-500/25 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"
@@ -309,6 +314,7 @@ function DrawerMessageCard({ message, onMarkRead }: { message: PersonaMessage; o
           <p className="typo-body text-foreground/85 whitespace-pre-wrap leading-relaxed mt-1">{message.content}</p>
         </div>
         <button
+          type="button"
           onClick={() => onMarkRead(message.id)}
           className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/45 transition-colors"
         >
@@ -352,6 +358,7 @@ function MonitorActivityRow({ entry, now, onNavigate }: { entry: ProcessEntry; n
   return (
     <div className="border-b border-primary/8 last:border-b-0">
       <button
+        type="button"
         className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left"
         onClick={handleClick}
       >

@@ -28,6 +28,7 @@ export function DesktopBridgeBlock({ connector, onCancel }: DesktopBridgeBlockPr
       </div>
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={onCancel}
           className="px-4 py-2 typo-body font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
         >
@@ -50,6 +51,7 @@ export function SetupHeader({ connector, mode, phase, onCancel }: SetupHeaderPro
   return (
     <div className="flex items-center gap-3">
       <button
+        type="button"
         onClick={onCancel}
         className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors"
       >

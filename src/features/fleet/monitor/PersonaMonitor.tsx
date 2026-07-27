@@ -241,6 +241,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             {t.monitor.live_toggle}
           </button>
           <button
+            type="button"
             onClick={onClose}
             className="ml-1 p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
             aria-label={t.monitor.close}

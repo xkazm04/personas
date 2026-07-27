@@ -175,6 +175,7 @@ export default function TrainingAtelier() {
 
               {/* Studio entry — batch authoring of both sides in the background */}
               <button
+                type="button"
                 onClick={() => setMode('studio')}
                 className="group w-full mb-6 flex items-center gap-3 rounded-card border border-violet-500/25 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 px-4 py-3 text-left hover:border-violet-500/40 hover:shadow-elevation-1 focus-ring transition-all"
               >
@@ -395,13 +396,13 @@ export default function TrainingAtelier() {
                     onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }}
                   />
                   {isOnFollowup && (
-                    <button onClick={() => void session.handleSkipFollowup()} disabled={session.saving || session.followupLoading || session.drafting}
+                    <button type="button" onClick={() => void session.handleSkipFollowup()} disabled={session.saving || session.followupLoading || session.drafting}
                       className="flex-shrink-0 h-12 px-3 rounded-card border border-primary/15 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30">
                       {t.training.skipFollowup}
                     </button>
                   )}
                   {/* Draft this answer as the twin (twin simulation) */}
-                  <button onClick={() => void session.draftAnswer()} disabled={session.saving || session.followupLoading || session.summarizing || session.drafting}
+                  <button type="button" onClick={() => void session.draftAnswer()} disabled={session.saving || session.followupLoading || session.summarizing || session.drafting}
                     title={t.training.draftAsTwin}
                     className="flex-shrink-0 h-12 px-3 rounded-card border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/15 focus-ring transition-colors disabled:opacity-30 inline-flex items-center gap-1.5 typo-caption font-medium">
                     {session.drafting
@@ -409,7 +410,7 @@ export default function TrainingAtelier() {
                       : <Bot className="w-4 h-4" />}
                     <span className="hidden sm:inline">{t.training.draftAsTwin}</span>
                   </button>
-                  <button onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing || session.drafting}
+                  <button type="button" onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing || session.drafting}
                     className="flex-shrink-0 w-12 h-12 rounded-card bg-gradient-to-br from-violet-500 to-fuchsia-500 text-primary-foreground flex items-center justify-center hover:shadow-elevation-2 transition-shadow disabled:opacity-30 disabled:cursor-not-allowed">
                     {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>

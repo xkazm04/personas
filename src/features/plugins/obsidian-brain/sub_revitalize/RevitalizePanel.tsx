@@ -115,6 +115,7 @@ export default function RevitalizePanel() {
 
             {!running && (
               <button
+                type="button"
                 onClick={handleStart}
                 data-testid="revitalize-start"
                 className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors focus-ring"

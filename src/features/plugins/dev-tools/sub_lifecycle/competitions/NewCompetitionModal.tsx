@@ -102,13 +102,13 @@ export function NewCompetitionModal({
             <label className="typo-caption text-primary uppercase tracking-wider">{t.plugins.dev_tools.competitors_dot}</label>
             <div className="flex items-center gap-2">
               {[2, 3, 4].map((n) => (
-                <button key={n} onClick={() => setSlotCount(n)}
+                <button type="button" key={n} onClick={() => setSlotCount(n)}
                   className={`w-8 h-8 rounded-interactive typo-heading transition-colors ${
                     slotCount === n ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
                     : 'text-foreground hover:bg-secondary/40 border border-transparent'
                   }`}>{n}</button>
               ))}
-              <button onClick={regenerate} title={t.plugins.dev_lifecycle.regenerate_strategies_title}
+              <button type="button" onClick={regenerate} title={t.plugins.dev_lifecycle.regenerate_strategies_title}
                 className="p-1.5 rounded-interactive hover:bg-secondary/40 text-foreground ml-2">
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -120,12 +120,12 @@ export function NewCompetitionModal({
               {dl.worktree_base_ref_label}
             </label>
             <div className="flex items-center gap-2">
-              <button onClick={() => setBaseRef('head')}
+              <button type="button" onClick={() => setBaseRef('head')}
                 className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
                   baseRef === 'head' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                   : 'text-foreground hover:bg-secondary/40 border-transparent'
                 }`}>{dl.worktree_base_ref_head}</button>
-              <button onClick={() => setBaseRef('fresh')}
+              <button type="button" onClick={() => setBaseRef('fresh')}
                 className={`px-3 h-8 rounded-interactive typo-caption transition-colors border ${
                   baseRef === 'fresh' ? 'bg-violet-500/15 text-violet-400 border-violet-500/25'
                   : 'text-foreground hover:bg-secondary/40 border-transparent'

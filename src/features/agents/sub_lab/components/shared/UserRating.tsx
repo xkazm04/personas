@@ -49,6 +49,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           const isActive = selected === opt.value;
           return (
             <button
+              type="button"
               key={opt.value}
               onClick={() => handleSelect(opt.value)}
               title={opt.label}
@@ -65,6 +66,7 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
 
         {selected !== undefined && !saved && (
           <button
+            type="button"
             onClick={handleSave}
             className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption font-medium bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25 transition-colors"
           >

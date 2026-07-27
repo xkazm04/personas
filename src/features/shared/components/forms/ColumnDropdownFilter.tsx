@@ -74,6 +74,7 @@ export function ColumnDropdownFilter({
           {options.map((opt) => (
             <button
               key={opt.value}
+              type="button"
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                 value === opt.value

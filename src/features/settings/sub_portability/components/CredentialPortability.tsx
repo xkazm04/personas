@@ -81,6 +81,7 @@ export function CredentialPortability({
         <div className="space-y-2">
           {!showCredExportInput ? (
             <button
+              type="button"
               onClick={() => setShowCredExportInput(true)}
               disabled={credExportStatus === 'loading'}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
@@ -100,12 +101,12 @@ export function CredentialPortability({
                 inputClassName="w-56 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-amber-500/30"
                 autoFocus
               />
-              <button onClick={onCredExport} disabled={credExportStatus === 'loading'}
+              <button type="button" onClick={onCredExport} disabled={credExportStatus === 'loading'}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors disabled:opacity-50">
                 {credExportStatus === 'loading' ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
                 {s.export}
               </button>
-              <button onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
+              <button type="button" onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
                 className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors">
                 {s.cancel}
               </button>
@@ -117,6 +118,7 @@ export function CredentialPortability({
         <div className="space-y-2">
           {!showCredImportInput ? (
             <button
+              type="button"
               onClick={() => setShowCredImportInput(true)}
               disabled={credImportStatus === 'loading'}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
@@ -136,12 +138,12 @@ export function CredentialPortability({
                 inputClassName="w-56 px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30"
                 autoFocus
               />
-              <button onClick={onCredImport} disabled={credImportStatus === 'loading'}
+              <button type="button" onClick={onCredImport} disabled={credImportStatus === 'loading'}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-50">
                 {credImportStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
                 {s.import_label}
               </button>
-              <button onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
+              <button type="button" onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
                 className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors">
                 {s.cancel}
               </button>
@@ -179,6 +181,7 @@ export function CredentialPortability({
                     return (
                       <button
                         key={action}
+                        type="button"
                         onClick={() => setResolution(c.name, action)}
                         className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
                           isActive ? colors[action] : `${colors[action]} border-transparent hover:border-primary/15`
@@ -193,6 +196,7 @@ export function CredentialPortability({
             ))}
           </div>
           <button
+            type="button"
             onClick={handleApplyResolutions}
             disabled={!allResolved}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

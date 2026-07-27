@@ -152,7 +152,7 @@ export function CliConnectionPanel({
           icon={<AlertCircle className="w-4 h-4 text-red-400" />}
           title={l.error}
           description={state.message}
-          action={<button onClick={runInstallCheck} className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">{l.retry}</button>}
+          action={<button type="button" onClick={runInstallCheck} className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40">{l.retry}</button>}
         />
       )}
 
@@ -170,12 +170,14 @@ export function CliConnectionPanel({
           </pre>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={copyInstallHint}
               className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
               <Copy className="w-3 h-3" /> {l.copy}
             </button>
             <button
+              type="button"
               onClick={runInstallCheck}
               className="typo-caption px-2 py-1 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
@@ -200,6 +202,7 @@ export function CliConnectionPanel({
             {spec.auth_instruction}
           </div>
           <button
+            type="button"
             onClick={runVerify}
             className="typo-caption px-3 py-1.5 rounded bg-amber-500/20 border border-amber-500/30 text-amber-200 hover:bg-amber-500/30 inline-flex items-center gap-1"
           >
@@ -223,6 +226,7 @@ export function CliConnectionPanel({
             </div>
           </div>
           <button
+            type="button"
             onClick={runVerify}
             className="typo-caption px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
           >
@@ -242,6 +246,7 @@ export function CliConnectionPanel({
           </div>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={runVerify}
               className="typo-caption px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40 inline-flex items-center gap-1"
             >
@@ -254,12 +259,14 @@ export function CliConnectionPanel({
       {/* Footer buttons */}
       <div className="flex justify-end gap-2 pt-2 border-t border-primary/10">
         <button
+          type="button"
           onClick={onCancel}
           className="typo-body px-3 py-1.5 rounded border border-primary/15 hover:bg-secondary/40"
         >
           {l.cancel}
         </button>
         <button
+          type="button"
           onClick={handleSave}
           disabled={state.kind !== 'authenticated' || saving || !credentialName.trim()}
           className="typo-body px-3 py-1.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1"

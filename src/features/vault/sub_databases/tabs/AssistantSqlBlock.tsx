@@ -37,6 +37,7 @@ export function AssistantSqlBlock({
           </span>
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => onCopySql(msg.sql!, msg.id)}
               className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-muted-foreground/70 transition-colors"
               title={db.copy_sql}
@@ -61,6 +62,7 @@ export function AssistantSqlBlock({
 
       {(msg.status === 'ready' || msg.status === 'done') && (
         <button
+          type="button"
           data-testid="chat-run-sql"
           onClick={() => onExecuteSql(msg.id, msg.sql!)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"

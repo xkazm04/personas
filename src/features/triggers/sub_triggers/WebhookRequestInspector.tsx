@@ -66,6 +66,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
   return (
     <div className="rounded-modal bg-background/30 border border-primary/5 overflow-hidden">
       <button
+        type="button"
         onClick={onToggle}
         className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-secondary/20 transition-colors"
       >
@@ -116,6 +117,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
 
               <div className="flex items-center gap-2 pt-1 flex-wrap">
                 <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
                   className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-card border border-cyan-500/15 transition-colors disabled:opacity-40"
@@ -225,6 +227,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         className="flex items-center gap-1.5 pt-1 border-t border-primary/5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
       >
@@ -254,6 +257,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_log}
                   <button
+                    type="button"
                     onClick={() => void fetch()}
                     className="ml-auto flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
                   >
@@ -281,6 +285,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                   ))}
                   <div className="flex items-center gap-2 pt-0.5">
                     <button
+                      type="button"
                       onClick={() => void fetch()}
                       disabled={loading}
                       className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-foreground hover:text-muted-foreground/90 transition-colors"
@@ -290,6 +295,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                     </button>
                     <div className="flex-1" />
                     <button
+                      type="button"
                       onClick={() => void handleClear()}
                       disabled={clearing}
                       className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-red-400/60 hover:text-red-400/90 transition-colors"

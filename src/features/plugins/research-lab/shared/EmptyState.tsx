@@ -17,6 +17,7 @@ export function EmptyState({ icon: Icon, title, hint, actionLabel, onAction }: P
       {hint && <p className="typo-body text-foreground max-w-sm text-center">{hint}</p>}
       {actionLabel && onAction && (
         <button
+          type="button"
           onClick={onAction}
           className="flex items-center gap-1.5 px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors focus-ring"
         >
@@ -42,6 +43,7 @@ export function NoActiveProject({ icon: Icon, message, onGoToProjects, goToProje
       <p className="typo-body text-foreground">{message}</p>
       {onGoToProjects && goToProjectsLabel && (
         <button
+          type="button"
           onClick={onGoToProjects}
           className="px-3 py-1.5 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors focus-ring"
         >

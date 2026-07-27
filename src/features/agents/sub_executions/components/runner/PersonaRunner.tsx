@@ -83,7 +83,7 @@ export function PersonaRunner() {
       {/* Input & Execute Card */}
       <div className="bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal p-4 space-y-4">
         <div className="space-y-2">
-          <button data-testid="runner-toggle-input" onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors">
+          <button type="button" data-testid="runner-toggle-input" onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors">
             {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             {t.agents.executions.input_data_optional}
           </button>
@@ -106,6 +106,7 @@ export function PersonaRunner() {
         )}
         {IS_MOBILE ? (
           <button
+            type="button"
             onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch (err) { silentCatch("features/agents/sub_executions/components/runner/PersonaRunner:catch1")(err); } }}
             className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all bg-gradient-to-r from-cyan-500/80 to-blue-500/80 hover:from-cyan-500 hover:to-blue-500 text-foreground shadow-elevation-3 shadow-cyan-500/20"
           >
@@ -113,7 +114,7 @@ export function PersonaRunner() {
             {t.agents.executions.connect_remote}
           </button>
         ) : (
-          <button data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
+          <button type="button" data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
             className={`w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all ${isBudgetBlocked ? 'bg-secondary/40 text-foreground cursor-not-allowed' : isExecuting ? 'bg-red-500/80 hover:bg-red-500 text-foreground shadow-elevation-3 shadow-red-500/20' : 'bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-foreground shadow-elevation-3 shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]'}`}>
             {isExecuting ? (<><Square className="w-5 h-5" />{t.agents.executions.stop_execution}</>) : (<>{cloudConfig?.is_connected ? <Cloud className="w-5 h-5" /> : <Play className="w-5 h-5" />}{cloudConfig?.is_connected ? t.agents.executions.execute_on_cloud : t.agents.executions.execute_persona}</>)}
@@ -121,6 +122,7 @@ export function PersonaRunner() {
         )}
         {!IS_MOBILE && (
           <button
+            type="button"
             data-testid="dry-run-persona-btn"
             onClick={dryRun.run}
             disabled={isExecuting || dryRun.loading}
@@ -141,10 +143,10 @@ export function PersonaRunner() {
           <span className="typo-body text-amber-200/90 flex-1">
             {t.agents.executions.verification_failed}
           </span>
-          <button onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
+          <button type="button" onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-colors">
             <RefreshCw className="w-3 h-3" /> Retry
           </button>
-          <button onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title={t.agents.executions.dismiss_abandon}>
+          <button type="button" onClick={dismissVerificationFailure} className="p-1 rounded hover:bg-amber-500/20 text-amber-400/60 hover:text-amber-400 transition-colors" title={t.agents.executions.dismiss_abandon}>
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

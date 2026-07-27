@@ -195,7 +195,7 @@ export default function ChannelsAtelier() {
                       <Plus className="w-4 h-4 text-violet-300" />
                       <h3 className="typo-section-title">{t.channels.addChannel}</h3>
                     </div>
-                    <button onClick={resetForm} className="text-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                    <button type="button" onClick={resetForm} className="text-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <FieldGroup label={t.channels.channelType}>
@@ -287,10 +287,10 @@ export default function ChannelsAtelier() {
                           </div>
                         </div>
                         <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <button onClick={() => handleToggle(ch)} title={ch.is_active ? t.channels.pause : t.channels.activate} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+                          <button type="button" onClick={() => handleToggle(ch)} title={ch.is_active ? t.channels.pause : t.channels.activate} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
                             {ch.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
                           </button>
-                          <button onClick={() => requestDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                          <button type="button" onClick={() => requestDelete(ch)} title={t.channels.remove} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -309,7 +309,7 @@ export default function ChannelsAtelier() {
                             {hasTone ? (
                               <span className="text-emerald-300 typo-caption">{t.channels.statusConfigured}</span>
                             ) : (
-                              <button onClick={() => setTwinTab('tone')} className="text-amber-300 typo-caption hover:text-amber-200 transition-colors">{t.channels.ctaAddTone}</button>
+                              <button type="button" onClick={() => setTwinTab('tone')} className="text-amber-300 typo-caption hover:text-amber-200 transition-colors">{t.channels.ctaAddTone}</button>
                             )}
                           </dd>
                         </div>

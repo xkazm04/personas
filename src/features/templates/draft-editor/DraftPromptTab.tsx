@@ -54,6 +54,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
             : !!editable[tab.id as keyof Omit<EditableStructuredPrompt, 'customSections'>]?.trim();
           return (
             <button
+              type="button"
               key={tab.id}
               onClick={() => setSubtab(tab.id)}
               className={`w-full flex items-center gap-2 px-2.5 py-2 typo-heading rounded-xl transition-colors text-left ${
@@ -92,6 +93,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
             <div className="flex items-center gap-2 flex-shrink-0">
               <span className="typo-heading text-foreground">{t.shared.draft_editor.custom_sections}</span>
               <button
+                type="button"
                 onClick={() => {
                   const next = {
                     ...editable,
@@ -133,6 +135,7 @@ export function DraftPromptTab({ draft, disabled, updateDraft }: DraftPromptTabP
                         {section.label || section.key || `Section ${index + 1}`}
                       </span>
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           updatePrompt({

@@ -107,6 +107,7 @@ export function HealingIssuesPanel({
           {/* View mode toggle */}
           <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
             <button
+              type="button"
               onClick={() => setViewMode('list')}
               className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
               title={"list_view"}
@@ -114,6 +115,7 @@ export function HealingIssuesPanel({
               <List className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('timeline')}
               className={`p-1.5 transition-colors ${viewMode === 'timeline' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-muted-foreground'}`}
               title={"timeline_view"}
@@ -122,6 +124,7 @@ export function HealingIssuesPanel({
             </button>
           </div>
           <button
+            type="button"
             onClick={handleRunAnalysis}
             disabled={healingRunning}
             aria-label={healingRunning ? 'Analysis in progress' : 'Run healing analysis'}
@@ -154,7 +157,7 @@ export function HealingIssuesPanel({
               {', '}{tx(analysisResult.failures_analyzed !== 1 ? t.overview.analytics_dashboard.executions_scanned : t.overview.analytics_dashboard.executions_scanned_one, { count: analysisResult.failures_analyzed })}
             </span>
           </div>
-          <button onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">
+          <button type="button" onClick={() => setAnalysisResult(null)} className="p-1 rounded hover:bg-cyan-500/20 text-cyan-400/50 hover:text-cyan-300 transition-colors">
             <X className="w-3 h-3" />
           </button>
         </div>
@@ -166,7 +169,7 @@ export function HealingIssuesPanel({
             <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
             <span className="typo-body text-red-300">{analysisError}</span>
           </div>
-          <button onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-300 transition-colors">
+          <button type="button" onClick={() => setAnalysisError(null)} className="p-1 rounded hover:bg-red-500/20 text-red-400/50 hover:text-red-300 transition-colors">
             <X className="w-3 h-3" />
           </button>
         </div>
@@ -185,6 +188,7 @@ export function HealingIssuesPanel({
           ]).map((chip) => (
             <button
               key={chip.key}
+              type="button"
               role="tab"
               aria-selected={issueFilter === chip.key}
               onClick={() => setIssueFilter(chip.key)}
@@ -235,6 +239,7 @@ export function HealingIssuesPanel({
       {/* Healing Audit Log (silent failures) */}
       <div className="border-t border-primary/10">
         <button
+          type="button"
           onClick={() => setAuditExpanded(!auditExpanded)}
           className="flex items-center gap-2 w-full px-4 py-2.5 text-left hover:bg-secondary/30 transition-colors"
         >

@@ -140,6 +140,7 @@ export default function ObservabilityDashboard() {
         actions={
           <>
             <button
+              type="button"
               onClick={() => setShowAlerts(!showAlerts)}
               className={`relative p-1.5 rounded-card border transition-colors ${
                 showAlerts ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-primary/15 text-foreground hover:bg-secondary/50'
@@ -154,6 +155,7 @@ export default function ObservabilityDashboard() {
               )}
             </button>
             <button
+              type="button"
               onClick={d.refreshAll}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
               title={t.overview.observability.refresh_metrics}
@@ -161,6 +163,7 @@ export default function ObservabilityDashboard() {
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => d.setAutoRefresh(!d.autoRefresh)}
               className={`p-1.5 rounded-card border transition-colors ${
                 d.autoRefresh ? 'border-primary/30 bg-primary/10 text-primary' : 'border-primary/15 text-foreground'

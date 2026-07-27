@@ -187,7 +187,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
               <DebtText k="auto_capability_e2d310aa" /> <span className="text-foreground/85">{useCase.title}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/60 text-foreground">
+          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-secondary/60 text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -224,6 +224,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
                       className="flex-1 px-2 py-1.5 rounded border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none focus:border-primary/40"
                     />
                     <button
+                      type="button"
                       onClick={() => removeRow(i)}
                       disabled={rows.length === 1}
                       className="p-1.5 rounded text-foreground hover:text-red-400 disabled:opacity-30"
@@ -251,6 +252,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
               );
             })}
             <button
+              type="button"
               onClick={addRow}
               className="inline-flex items-center gap-1 px-2 py-1 rounded border border-dashed border-primary/20 text-foreground hover:text-primary hover:border-primary/40 typo-caption"
             >
@@ -300,6 +302,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
 
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-secondary/10">
           <button
+            type="button"
             onClick={onClose}
             disabled={saving}
             className="px-3 py-1.5 typo-body rounded border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 disabled:opacity-50"
@@ -307,6 +310,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving}
             className="px-3 py-1.5 typo-body rounded bg-primary/85 text-primary-foreground hover:bg-primary disabled:opacity-50"

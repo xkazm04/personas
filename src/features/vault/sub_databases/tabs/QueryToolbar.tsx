@@ -46,6 +46,7 @@ export function QueryToolbar({
       <ConnectorCapabilityNote serviceType={serviceType} />
 
       <button
+        type="button"
         onClick={onSave}
         disabled={saveState === 'saving'}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all duration-300 ${
@@ -62,6 +63,7 @@ export function QueryToolbar({
 
       {executing ? (
         <button
+          type="button"
           onClick={onCancel}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 transition-all"
         >
@@ -70,6 +72,7 @@ export function QueryToolbar({
         </button>
       ) : (
         <button
+          type="button"
           onClick={onExecute}
           disabled={!editorValue.trim()}
           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -80,6 +83,7 @@ export function QueryToolbar({
       )}
 
       <button
+        type="button"
         onClick={onAiRun}
         disabled={isAiRunning || !editorValue.trim()}
         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-modal typo-body font-medium bg-gradient-to-r from-violet-500/15 to-fuchsia-500/10 text-violet-400 border border-violet-500/20 hover:from-violet-500/25 hover:to-fuchsia-500/20 hover:border-violet-500/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-elevation-1 shadow-violet-500/5"
@@ -89,6 +93,7 @@ export function QueryToolbar({
       </button>
 
       <button
+        type="button"
         onClick={onToggleSafeMode}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-all ${
           safeMode

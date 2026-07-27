@@ -86,6 +86,7 @@ function ResourceExposureCard({
       >
         {({ requestConfirm }) => (
           <button
+            type="button"
             onClick={requestConfirm}
             title={t.sharing.remove_exposure}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-red-500 transition-colors flex-shrink-0"
@@ -195,6 +196,7 @@ function AddExposureForm({
 
       <div className="flex gap-2 pt-1">
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={!resourceId}
           className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -202,6 +204,7 @@ function AddExposureForm({
           {st.expose_resource}
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
         >
@@ -304,6 +307,7 @@ export default function ExposureManager() {
             action={
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setShowExport(true)}
                   data-testid="bundle-export-trigger"
                   className="px-2.5 py-1 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-1.5"
@@ -312,6 +316,7 @@ export default function ExposureManager() {
                   {st.export_share_button}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowAddForm(!showAddForm)}
                   className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >

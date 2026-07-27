@@ -123,6 +123,7 @@ export function EventsSection({
                     </div>
                     {onTriggerEnabledToggle && (
                       <button
+                        type="button"
                         onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}
                         className="flex-shrink-0 p-0.5 rounded transition-colors hover:bg-secondary/50"
                         title={trigger.enabled ? 'Disable' : 'Enable'}

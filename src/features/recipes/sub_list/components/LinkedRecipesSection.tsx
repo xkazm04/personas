@@ -82,6 +82,7 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
           label={`${linkedRecipes.length} linked recipe${linkedRecipes.length !== 1 ? 's' : ''}`}
         />
         <button
+          type="button"
           onClick={() => setPickerOpen(true)}
           className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-primary hover:bg-primary/10 transition-colors"
         >
@@ -118,12 +119,14 @@ export function LinkedRecipesSection({ personaId }: LinkedRecipesSectionProps) {
                 </span>
               )}
               <button
+                type="button"
                 onClick={() => setPlaygroundRecipe(recipe)}
                 className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-emerald-400 hover:bg-emerald-500/10 transition-colors"
               >
                 <Play className="w-3 h-3" /> {t.recipes.run}
               </button>
               <button
+                type="button"
                 onClick={() => handleUnlink(recipe.id)}
                 disabled={unlinkingId === recipe.id}
                 className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"

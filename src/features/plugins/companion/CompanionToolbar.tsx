@@ -133,6 +133,7 @@ export function CompanionToolbar({
           the toolbar's inner edge. Replaces the old header compact button.
           ◀ collapses the panel to compact width; ▶ expands it back. */}
       <button
+        type="button"
         onClick={onToggleCompact}
         data-testid="companion-toggle-compact"
         aria-pressed={compact}
@@ -266,6 +267,7 @@ function ToolbarButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       data-testid={testId}
@@ -305,6 +307,7 @@ function PluginToggleButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       data-testid={testId}
       data-companion-plugin-enabled={enabled ? 'true' : 'false'}
@@ -389,6 +392,7 @@ function ConnectorIconButton({
   return (
     <div ref={wrapRef} className="relative">
       <button
+        type="button"
         onClick={onToggle}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -426,6 +430,7 @@ function ConnectorIconButton({
           role="menu"
         >
           <button
+            type="button"
             onClick={() => {
               setMenuOpen(false);
               onRemove();

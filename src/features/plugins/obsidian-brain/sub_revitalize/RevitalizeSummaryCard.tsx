@@ -120,6 +120,7 @@ export default function RevitalizeSummaryCard({
         {/* Actions */}
         <div className="flex items-center gap-3 pt-1">
           <button
+            type="button"
             onClick={onDismiss}
             className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors focus-ring"
           >
@@ -127,6 +128,7 @@ export default function RevitalizeSummaryCard({
             {ob.revitalize_done}
           </button>
           <button
+            type="button"
             onClick={onRunAgain}
             className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card text-foreground border border-primary/15 hover:bg-secondary/40 transition-colors focus-ring"
           >

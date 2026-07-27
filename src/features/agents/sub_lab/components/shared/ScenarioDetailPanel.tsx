@@ -154,7 +154,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <span className="typo-body font-medium text-foreground/90 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="typo-caption px-1.5 py-0.5 rounded bg-primary/10 text-primary/70">{result.modelId}</span>}
         </div>
-        <button onClick={onClose} aria-label={debtText("auto_close_details_433da6d1")} className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
+        <button type="button" onClick={onClose} aria-label={debtText("auto_close_details_433da6d1")} className="p-1 rounded hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>

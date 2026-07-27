@@ -74,6 +74,7 @@ export default function PipelineControls({
       <div className="flex items-center gap-4">
         {/* Execute button */}
         <button
+          type="button"
           onClick={onExecute}
           disabled={isRunning || isDryRunActive}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${
@@ -97,6 +98,7 @@ export default function PipelineControls({
 
         {/* Dry Run button */}
         <button
+          type="button"
           onClick={onDryRun}
           disabled={isRunning || isDryRunActive}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${

@@ -99,6 +99,7 @@ export function TemplateCardHeader({
       <div ref={menuRef} className="relative flex-shrink-0">
         {menuOpen && <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             setMenuOpen(!menuOpen);
@@ -110,6 +111,7 @@ export function TemplateCardHeader({
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpen(false);
@@ -121,6 +123,7 @@ export function TemplateCardHeader({
               {tMain.templates.actions.view_details}
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpen(false);

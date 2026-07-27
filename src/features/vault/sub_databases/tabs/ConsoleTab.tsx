@@ -65,6 +65,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleExecute}
             disabled={executing || !query.trim()}
             className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -75,6 +76,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
           <span className="typo-body text-foreground">{db.ctrl_enter}</span>
           <div className="ml-auto flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setSafeMode((v) => !v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium border transition-all ${
                 safeMode
@@ -94,6 +96,7 @@ export function ConsoleTab({ credentialId, language }: ConsoleTabProps) {
             <span className="typo-body text-foreground">{db.recent}</span>
             {history.map((h, i) => (
               <button
+                type="button"
                 key={i}
                 onClick={() => handleHistoryClick(h.query)}
                 className="px-2 py-0.5 rounded typo-code font-mono text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/70 transition-colors truncate max-w-[200px]"

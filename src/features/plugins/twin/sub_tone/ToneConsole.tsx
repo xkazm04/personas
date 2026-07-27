@@ -110,6 +110,7 @@ export default function ToneConsole() {
           <Tile label="rules" value={stats.withConstraints} />
         </div>
         <button
+          type="button"
           onClick={() => setFilterConfigured(!filterConfigured)}
           className={`px-2.5 py-1 typo-caption font-medium rounded-interactive border transition-colors ${
             filterConfigured ? 'bg-violet-500/15 text-violet-200 border-violet-500/30' : 'text-foreground border-primary/15 hover:text-foreground hover:bg-secondary/40'
@@ -228,7 +229,7 @@ export default function ToneConsole() {
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-primary/5 mt-3">
                           {exists && c.id !== 'generic' ? (
-                            <button onClick={() => handleDelete(c.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
+                            <button type="button" onClick={() => handleDelete(c.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />{t.tone.removeOverride}
                             </button>
                           ) : <span />}

@@ -57,6 +57,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/40 text-foreground hover:text-foreground transition-colors"
             aria-label={t.common.close}
@@ -198,6 +199,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
                 <div className="flex items-center justify-between">
                   <h4 className="typo-heading text-foreground">{d.section_prompt}</h4>
                   <button
+                    type="button"
                     onClick={handleCopyPrompt}
                     className="flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
                   >
@@ -226,6 +228,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10 bg-secondary/20">
           <button
+            type="button"
             onClick={onClose}
             className="px-4 py-1.5 typo-heading rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
           >

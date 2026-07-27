@@ -61,6 +61,7 @@ export function CredentialPicker({
       {({ close, focusIndex }) => (
         <>
           <button
+            type="button"
             role="option"
             aria-selected={!selectedId}
             onClick={() => { onChange(''); close(); }}
@@ -74,6 +75,7 @@ export function CredentialPicker({
           {creds.map((cred, i) => (
             <button
               key={cred.id}
+              type="button"
               role="option"
               aria-selected={cred.id === selectedId}
               onClick={() => { onChange(cred.id); close(); }}

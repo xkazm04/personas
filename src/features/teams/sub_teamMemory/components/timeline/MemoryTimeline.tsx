@@ -112,7 +112,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
             {tx(totalRuns === 1 ? pt.timeline_runs_one : pt.timeline_runs_other, { count: totalRuns })}
           </span>
           {activeRunFilter && (
-            <button onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
+            <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
               {pt.clear_filter}
             </button>
           )}

@@ -33,6 +33,7 @@ export function RecommendedCarousel({
           const connectors: string[] = parseJsonSafe(tmpl.connectors_used, []);
           return (
             <button
+              type="button"
               key={tmpl.id}
               onClick={() => onSelectTemplate(tmpl)}
               className="flex-shrink-0 w-[220px] p-3 rounded-modal bg-amber-500/5 border border-amber-500/12 hover:border-amber-500/50 hover:bg-amber-500/10 hover:-translate-y-px transition-all text-left group/rec outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"

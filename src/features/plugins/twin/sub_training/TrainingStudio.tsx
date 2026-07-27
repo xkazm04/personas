@@ -181,7 +181,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
       {/* Control strip */}
       <div className="flex-shrink-0 border-b border-primary/10 px-4 md:px-6 py-3 space-y-2.5">
         <div className="flex items-center gap-2">
-          <button onClick={onExit} className="typo-caption text-foreground hover:text-violet-300 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
+          <button type="button" onClick={onExit} className="typo-caption text-foreground hover:text-violet-300 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
             <GraduationCap className="w-3.5 h-3.5" /> {t.training.studioBack}
           </button>
           <span className="w-px h-3.5 bg-primary/15" aria-hidden />
@@ -234,7 +234,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             {t.training.studioDraftAll}
           </Button>
           {busy && (
-            <button onClick={() => void cancelStudio()} className="typo-caption text-foreground hover:text-red-400 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
+            <button type="button" onClick={() => void cancelStudio()} className="typo-caption text-foreground hover:text-red-400 transition-colors inline-flex items-center gap-1 focus-ring rounded-interactive px-1.5 py-0.5">
               <X className="w-3.5 h-3.5" /> {t.training.studioCancel}
             </button>
           )}
@@ -315,6 +315,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                   {/* Per-row controls */}
                   <div className="flex lg:flex-col items-center justify-end gap-1.5">
                     <button
+                      type="button"
                       onClick={() => void handleDraftRow(row)}
                       disabled={!row.question.trim() || isDrafting || busy}
                       title={t.training.studioDraftOne}
@@ -323,6 +324,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       {isDrafting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : row.aiDrafted ? <Wand2 className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
                     </button>
                     <button
+                      type="button"
                       onClick={() => updateRow(row.id, { include: !row.include })}
                       title={t.training.studioSaveApproved.replace('{count}', '')}
                       aria-pressed={row.include}
@@ -333,6 +335,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
                       <Check className="w-3.5 h-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setRows((prev) => prev.filter((r) => r.id !== row.id))}
                       title={t.training.studioRemoveRow}
                       className="inline-flex items-center justify-center w-7 h-7 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors focus-ring"
@@ -346,6 +349,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
           )}
 
           <button
+            type="button"
             onClick={() => setRows((prev) => [...prev, newRow()])}
             disabled={busy}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-card border border-dashed border-primary/15 text-foreground hover:text-violet-300 hover:border-violet-500/30 transition-colors typo-caption focus-ring disabled:opacity-40"
@@ -355,7 +359,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
 
           {rows.some((r) => r.include && r.answer.trim()) && (
             <div className="flex justify-end pt-1">
-              <button onClick={() => setTwinTab('knowledge')} className="typo-caption text-foreground hover:text-violet-300 transition-colors">
+              <button type="button" onClick={() => setTwinTab('knowledge')} className="typo-caption text-foreground hover:text-violet-300 transition-colors">
                 {t.training.reviewMemories}
               </button>
             </div>

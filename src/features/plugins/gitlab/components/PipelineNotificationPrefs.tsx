@@ -20,6 +20,7 @@ function Toggle({ checked, onChange, label, id }: {
         {label}
       </span>
       <button
+        type="button"
         id={id}
         role="switch"
         aria-checked={checked}
@@ -64,6 +65,7 @@ export function PipelineNotificationPrefs() {
           {t.gitlab.pipeline_notifications}
         </h3>
         <button
+          type="button"
           role="switch"
           aria-checked={prefs.enabled}
           aria-label={t.gitlab.enable_pipeline_notifications}
@@ -112,6 +114,7 @@ export function PipelineNotificationPrefs() {
                 {t.gitlab.play_sound}
               </span>
               <button
+                type="button"
                 id="notif-sound"
                 role="switch"
                 aria-checked={prefs.sound}

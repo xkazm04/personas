@@ -60,6 +60,7 @@ export function CronScheduleConfig({
             {cronExpr}
           </code>
           <button
+            type="button"
             onClick={() => { setDraft(cronExpr); setEditing(true); }}
             className="typo-body text-amber-400/80 hover:text-amber-400 transition-colors"
           >
@@ -71,6 +72,7 @@ export function CronScheduleConfig({
           <div className="flex flex-wrap gap-1">
             {presets.map((p) => (
               <button
+                type="button"
                 key={p.value}
                 onClick={() => { setDraft(p.value); onUpdate({ cronExpression: p.value }); setEditing(false); }}
                 className={`px-2 py-0.5 rounded-card typo-body transition-colors ${
@@ -92,6 +94,7 @@ export function CronScheduleConfig({
               className="flex-1 px-2 py-1 bg-background/50 border border-border/30 rounded-card typo-code font-mono text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-500/30"
             />
             <button
+              type="button"
               onClick={() => { onUpdate({ cronExpression: draft }); setEditing(false); }}
               disabled={!draft.trim()}
               className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25 text-amber-400 rounded-card typo-body font-medium transition-colors disabled:opacity-50"
@@ -100,6 +103,7 @@ export function CronScheduleConfig({
             </button>
             {cronExpr && (
               <button
+                type="button"
                 onClick={() => { setDraft(cronExpr); setEditing(false); }}
                 className="px-2 py-1 text-foreground hover:text-foreground/90 typo-body transition-colors"
               >
@@ -131,6 +135,7 @@ export function ExpirationThresholdConfig({
         <div className="flex items-center gap-1">
           {[3, 7, 14, 30].map((d) => (
             <button
+              type="button"
               key={d}
               onClick={() => onUpdate({ thresholdDays: d })}
               className={`px-2 py-0.5 rounded-card typo-code font-mono transition-colors ${

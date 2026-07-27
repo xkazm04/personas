@@ -244,6 +244,7 @@ ${transcript}`;
               const isActive = c.id === active.id;
               return (
                 <button
+                  type="button"
                   key={c.id}
                   onClick={() => setActiveChannel(c.id)}
                   className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-card border transition-all ${
@@ -394,7 +395,7 @@ ${transcript}`;
                 {/* Footer actions */}
                 <div className="flex items-center justify-between pt-2 border-t border-primary/10">
                   {exists && active.id !== 'generic' ? (
-                    <button onClick={() => handleDelete(active.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
+                    <button type="button" onClick={() => handleDelete(active.id)} className="flex items-center gap-1.5 typo-caption text-foreground hover:text-red-400 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />{t.tone.removeOverride}
                     </button>
                   ) : <span />}

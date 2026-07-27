@@ -91,6 +91,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
           </ul>
           {onRetryFailed && (
             <button
+              type="button"
               onClick={async () => {
                 setRetrying(true);
                 try { await onRetryFailed(); } finally { setRetrying(false); }
@@ -126,6 +127,7 @@ export function DesignPhaseApplied({ result, warnings = [], failedOperations = [
 
       {/* Subtle close link */}
       <button
+        type="button"
         onClick={onReset}
         className="animate-fade-slide-in mt-1 typo-body text-foreground hover:text-muted-foreground/80 transition-colors"
       >

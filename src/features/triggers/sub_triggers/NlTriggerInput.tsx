@@ -112,6 +112,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
         />
         {input && (
           <button
+            type="button"
             onClick={handleReset}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-foreground hover:text-muted-foreground transition-colors"
           >
@@ -149,6 +150,7 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
               </p>
             </div>
             <button
+              type="button"
               onClick={handleApply}
               className="flex items-center gap-1 px-2.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 rounded-card typo-caption font-medium transition-colors shrink-0 border border-violet-500/20"
             >

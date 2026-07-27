@@ -280,12 +280,14 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
               <Download className="w-8 h-8 mx-auto mb-1 text-foreground" />
               <div className="flex items-center justify-center gap-2">
                 <button
+                  type="button"
                   onClick={handlePickFile}
                   className="px-4 py-2 typo-body rounded-card bg-primary text-foreground hover:bg-primary/90"
                 >
                   {st.choose_file}
                 </button>
                 <button
+                  type="button"
                   onClick={handlePasteFromClipboard}
                   className="px-4 py-2 typo-body rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
                 >
@@ -306,6 +308,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={() => handleImportShareLink()}
                   disabled={!shareLinkInput.trim()}
                   className="px-3 py-1.5 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
@@ -388,6 +391,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <button
+            type="button"
             onClick={handleClose}
             className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
           >
@@ -396,6 +400,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
           {phase === 'preview' && !isEnclave && preview && (
             preview.signature_valid ? (
               <button
+                type="button"
                 onClick={handleImport}
                 className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 flex items-center gap-1.5"
               >
@@ -410,6 +415,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
               const matchedKind = dangerConfirmed === requiredKind;
               return (
                 <button
+                  type="button"
                   onClick={matchedKind ? handleImport : undefined}
                   disabled={!matchedKind}
                   className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-foreground hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"

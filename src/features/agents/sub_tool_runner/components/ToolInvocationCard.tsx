@@ -72,6 +72,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
     >
       {/* Header */}
       <button
+        type="button"
         data-testid={`tool-card-toggle-${tool.name}`}
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
@@ -146,6 +147,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               {/* Run button */}
               {!isBuiltin && (
               <button
+                type="button"
                 data-testid={`tool-run-${tool.name}`}
                 onClick={handleRun}
                 disabled={!canRun}

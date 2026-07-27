@@ -296,6 +296,7 @@ function ColumnHeader<T>({
       {/* Sort icon */}
       {col.sortable && (
         <button
+          type="button"
           onClick={() => onSort(col.key)}
           className={`p-0.5 rounded transition-colors ${isSorted ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
           title={t.shared.sort_by.replace('{label}', col.label)}
@@ -312,6 +313,7 @@ function ColumnHeader<T>({
       {hasFilter && !col.filterComponent && (
         <div ref={filterRef} className="relative" onBlur={handleBlur}>
           <button
+            type="button"
             onClick={() => { setShowFilter(!showFilter); setShowSearch(false); }}
             className={`p-0.5 rounded transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
             title={t.shared.filter_label.replace('{label}', col.label)}
@@ -323,6 +325,7 @@ function ColumnHeader<T>({
               {col.filterOptions.map((opt) => (
                 <button
                   key={opt.value}
+                  type="button"
                   onClick={() => { col.onFilterChange!(opt.value); setShowFilter(false); }}
                   className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
                     col.filterValue === opt.value ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'
@@ -350,6 +353,7 @@ function ColumnHeader<T>({
                 className="w-24 px-2 py-0.5 rounded-lg typo-body bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/90 outline-none focus-visible:border-primary/25"
               />
               <button
+                type="button"
                 onClick={() => { col.onSearchChange!(''); setShowSearch(false); }}
                 className="p-0.5 text-foreground/90 hover:text-foreground"
               >
@@ -358,6 +362,7 @@ function ColumnHeader<T>({
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => { setShowSearch(true); setShowFilter(false); }}
               className={`p-0.5 rounded transition-colors ${isSearched ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
               title={t.shared.search_label.replace('{label}', col.label)}

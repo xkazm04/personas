@@ -62,6 +62,7 @@ export function FilterBar<T extends string = string>({
 
         return (
           <button
+            type="button"
             key={opt.id}
             onClick={() => onChange(opt.id)}
             data-testid={`filter-btn-${opt.id}`}

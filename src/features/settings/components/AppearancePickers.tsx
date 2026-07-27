@@ -90,6 +90,7 @@ export function TextScalePicker({
         return (
           <button
             key={scale.id}
+            type="button"
             onClick={() => setTextScale(scale.id)}
             aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-textscale-${scale.id}` : undefined}
@@ -149,6 +150,7 @@ export function BrightnessPicker({
         return (
           <button
             key={level.id}
+            type="button"
             onClick={() => setBrightness(level.id)}
             aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-brightness-${level.id}` : undefined}
@@ -206,6 +208,7 @@ export function SimpleThemePicker({
         return (
           <button
             key={theme.id}
+            type="button"
             onClick={() => setTheme(theme.id)}
             aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-theme-${theme.id}` : undefined}

@@ -115,6 +115,7 @@ function SimpleExecutionView({
       )}
       {executionOutput.length > 0 && (
         <button
+          type="button"
           onClick={handleCopy}
           className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground/80 transition-colors"
         >

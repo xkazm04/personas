@@ -33,6 +33,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
           >
             <span className="typo-caption text-foreground truncate">{s.test_case_name}</span>
             <button
+              type="button"
               onClick={() => onRemove(s.id)}
               aria-label={t.templates.compare.remove_from_compare}
               className="p-0.5 rounded text-foreground hover:bg-secondary/60 transition-colors flex-shrink-0"
@@ -48,6 +49,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
           <span className="typo-caption text-foreground whitespace-nowrap">{t.templates.compare.hint_min}</span>
         )}
         <button
+          type="button"
           onClick={onCompare}
           disabled={!canCompare}
           className={`px-3 py-1.5 typo-body rounded-modal border transition-colors inline-flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
@@ -56,6 +58,7 @@ export function CompareTray({ selected, onRemove, onClear, onCompare }: CompareT
           {t.templates.compare.compare}
         </button>
         <button
+          type="button"
           onClick={onClear}
           className="px-2.5 py-1.5 typo-body rounded-modal text-foreground hover:bg-secondary/50 transition-colors"
         >

@@ -226,6 +226,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
               ))}
             </select>
             <button
+              type="button"
               onClick={handleSynthesize}
               disabled={!personaId || synthesizing}
               // eslint-disable-next-line custom/no-hardcoded-jsx-text
@@ -237,12 +238,14 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
             </button>
             <div className="flex items-center rounded-card border border-border/30 overflow-hidden">
               <button
+                type="button"
                 onClick={() => setView('preview')}
                 className={`px-3 py-1.5 typo-caption transition-colors ${view === 'preview' ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-secondary/50'}`}
               >
                 Preview
               </button>
               <button
+                type="button"
                 onClick={() => setView('source')}
                 className={`px-3 py-1.5 typo-caption transition-colors ${view === 'source' ? 'bg-primary/20 text-primary' : 'text-foreground hover:bg-secondary/50'}`}
               >
@@ -250,6 +253,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
               </button>
             </div>
             <button
+              type="button"
               onClick={handleCopy}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-secondary/50 hover:bg-secondary text-foreground transition-colors"
             >
@@ -257,13 +261,14 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
               {t.common.copy}
             </button>
             <button
+              type="button"
               onClick={handleDownload}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <DebtText k="auto_md_a2c73572" />
             </button>
-            <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/50 text-foreground" aria-label={t.common.cancel}>
+            <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-secondary/50 text-foreground" aria-label={t.common.cancel}>
               <X className="w-4 h-4" />
             </button>
           </div>

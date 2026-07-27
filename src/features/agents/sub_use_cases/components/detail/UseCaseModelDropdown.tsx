@@ -67,6 +67,7 @@ export function UseCaseModelDropdown({
             {uc.persona_default}
           </div>
           <button
+            type="button"
             role="option"
             aria-selected={!hasOverride}
             onClick={() => { onSelectModel(MODEL_OPTIONS[0]!); close(); }}
@@ -95,6 +96,7 @@ export function UseCaseModelDropdown({
             return (
               <button
                 key={opt.id}
+                type="button"
                 role="option"
                 aria-selected={isActive}
                 onClick={() => { onSelectModel(opt); close(); }}

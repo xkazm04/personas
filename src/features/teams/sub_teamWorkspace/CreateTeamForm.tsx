@@ -177,12 +177,14 @@ export function CreateTeamForm({
             <span className="typo-caption text-status-error mr-auto">{dp.invalid_repo_url}</span>
           )}
           <button
+            type="button"
             onClick={onCancel}
             className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors"
           >
             {t.common.cancel}
           </button>
           <button
+            type="button"
             onClick={onSubmit}
             disabled={!newName.trim() || !repoUrlValid}
             className="px-4 py-1.5 typo-body font-medium rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"

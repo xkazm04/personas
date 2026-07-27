@@ -101,7 +101,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Added memories */}
       {diff.added.length > 0 && (
         <div className="px-1">
-          <button onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
+          <button type="button" onClick={() => setExpandedSection(expandedSection === 'added' ? null : 'added')} className="flex items-center gap-1 typo-caption font-medium text-emerald-400 mb-1 hover:text-emerald-300 transition-colors">
             <Plus className="w-3 h-3" />{diff.added.length === 1 ? pt.new_memories_one.replace('{count}', '1') : pt.new_memories_other.replace('{count}', String(diff.added.length))}
           </button>
           {expandedSection === 'added' && (
@@ -115,7 +115,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {/* Removed memories */}
       {diff.removed.length > 0 && (
         <div className="px-1">
-          <button onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
+          <button type="button" onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
             <Minus className="w-3 h-3" />{diff.removed.length === 1 ? pt.removed_memories_one.replace('{count}', '1') : pt.removed_memories_other.replace('{count}', String(diff.removed.length))}
           </button>
           {expandedSection === 'removed' && (

@@ -35,6 +35,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
           {onClose ? (
             <Tooltip content="Close">
               <button
+                type="button"
                 onClick={onClose}
                 className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center cursor-pointer transition-colors"
               >
@@ -47,6 +48,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
           {onMinimize ? (
             <Tooltip content="Minimize">
               <button
+                type="button"
                 onClick={onMinimize}
                 className="w-3 h-3 rounded-full bg-amber-500/80 hover:bg-amber-500 flex items-center justify-center cursor-pointer transition-colors"
               >
@@ -59,6 +61,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
           {onToggleFullscreen ? (
             <Tooltip content={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
               <button
+                type="button"
                 onClick={onToggleFullscreen}
                 className="w-3 h-3 rounded-full bg-emerald-500/80 hover:bg-emerald-500 flex items-center justify-center cursor-pointer transition-colors"
               >
@@ -100,6 +103,7 @@ export function TerminalHeader({ isRunning, lineCount, onCopy, copied, onStop, l
 
         {isRunning && onStop && (
           <button
+            type="button"
             onClick={onStop}
             className="flex items-center gap-1.5 px-3 py-1 bg-red-500/15 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-xl typo-heading transition-colors"
           >

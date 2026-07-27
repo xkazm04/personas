@@ -107,6 +107,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
 
       {isNarrowed && (
         <button
+          type="button"
           onClick={() => onChange(OPEN_ONLY_FILTERS)}
           className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
         >

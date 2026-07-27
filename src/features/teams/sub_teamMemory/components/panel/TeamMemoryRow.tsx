@@ -74,6 +74,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             <div className="flex items-center gap-0.5">
               {Array.from({ length: IMPORTANCE_DOTS }).map((_, i) => (
                 <button
+                  type="button"
                   key={i}
                   className={`w-1.5 h-1.5 rounded-full transition-colors ${i < dots ? 'bg-amber-400' : 'bg-primary/10'} hover:bg-amber-300`}
                   onClick={() => onImportanceChange(memory.id, dotsToImportance(i))}
@@ -83,6 +84,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             </div>
             {revisions.length > 0 && (
               <button
+                type="button"
                 onClick={() => setShowHistory(!showHistory)}
                 className="flex items-center gap-0.5 typo-body text-foreground hover:text-violet-400 transition-colors"
                 title={`${revisions.length} revision${revisions.length > 1 ? 's' : ''}`}
@@ -96,7 +98,7 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             <div className="mt-2 space-y-1.5 border-t border-primary/10 pt-2">
               <div className="flex items-center justify-between">
                 <span className="typo-body font-medium text-foreground">{pt.version_history}</span>
-                <button onClick={() => setShowHistory(false)} className="p-0.5 text-foreground hover:text-muted-foreground/60">
+                <button type="button" onClick={() => setShowHistory(false)} className="p-0.5 text-foreground hover:text-muted-foreground/60">
                   <ChevronUp className="w-3 h-3" />
                 </button>
               </div>

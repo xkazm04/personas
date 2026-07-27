@@ -71,6 +71,7 @@ export function RecipeOutputSection({
             </h3>
             {result && (
               <button
+                type="button"
                 onClick={handleCopyPrompt}
                 className="flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
               >
@@ -99,6 +100,7 @@ export function RecipeOutputSection({
             </h3>
             {llmOutput && (
               <button
+                type="button"
                 onClick={handleCopyOutput}
                 className="flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
               >

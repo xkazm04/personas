@@ -39,6 +39,7 @@ export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTab
           {t.recipes.recent_runs} ({history.length})
         </h3>
         <button
+          type="button"
           onClick={onClear}
           className="flex items-center gap-1 typo-body text-foreground hover:text-red-400 transition-colors"
         >

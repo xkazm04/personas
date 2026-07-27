@@ -28,7 +28,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>

@@ -64,6 +64,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
   if (!expanded) {
     return (
       <button
+        type="button"
         onClick={() => setExpanded(true)}
         className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors border-b border-border/10"
       >
@@ -92,6 +93,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
         {LINE_TYPE_CHIPS.map(({ type, label, color, activeColor }) => (
           <button
             key={type}
+            type="button"
             onClick={() => toggleType(type)}
             className={`px-1.5 py-0.5 rounded typo-code border transition-colors ${
               filter.activeTypes.has(type) ? activeColor : color
@@ -103,6 +105,7 @@ export function TerminalSearchBar({ filter, onChange }: TerminalSearchBarProps) 
       </div>
 
       <button
+        type="button"
         onClick={() => {
           onChange({ keyword: '', activeTypes: new Set(ALL_TYPES) });
           setExpanded(false);

@@ -36,6 +36,7 @@ export function PrototypeTabs({
           const isActive = current?.id === v.id;
           return (
             <button
+              type="button"
               key={v.id}
               onClick={() => setActive(v.id)}
               className={`px-3 py-1.5 rounded-interactive typo-caption transition-colors flex flex-col items-start leading-tight ${

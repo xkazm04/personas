@@ -146,6 +146,7 @@ function EnvironmentStatus({
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); onCheck(); }}
             disabled={checking}
             className="flex items-center gap-1 px-2 py-1 rounded text-md bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors disabled:opacity-50"
@@ -180,6 +181,7 @@ function EnvironmentStatus({
                 detail={status.mcpInstalled ? t.plugins.artist.installed : t.plugins.artist.not_installed}
                 action={!status.mcpInstalled && status.installed ? (
                   <button
+                    type="button"
                     onClick={onInstall}
                     disabled={installing}
                     className="flex items-center gap-1 px-2 py-1 rounded text-md bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-50"
@@ -229,6 +231,7 @@ function EnvironmentStatus({
                   </span>
                   {!c.connected && (
                     <button
+                      type="button"
                       onClick={navigateToVault}
                       className="flex items-center gap-1 px-2 py-1 rounded text-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >
@@ -321,6 +324,7 @@ function CreativeSessionChat({
           {output.length > 0 && (
             <>
               <button
+                type="button"
                 onClick={() => {
                   const md = sessionOutputToMarkdown(output);
                   copyText(md)
@@ -338,6 +342,7 @@ function CreativeSessionChat({
                 <Copy className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={clear}
                 disabled={running}
                 className="p-1 rounded hover:bg-secondary/40 text-foreground disabled:opacity-30"
@@ -371,6 +376,7 @@ function CreativeSessionChat({
               ].map((example) => (
                 <button
                   key={example}
+                  type="button"
                   onClick={() => setPrompt(example)}
                   className="px-3 py-1.5 rounded-card text-md bg-secondary/40 text-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                 >
@@ -403,6 +409,7 @@ function CreativeSessionChat({
         />
         {running ? (
           <button
+            type="button"
             onClick={cancel}
             className="px-3 py-2 rounded-card bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
             title={t.plugins.artist.cancel}
@@ -411,6 +418,7 @@ function CreativeSessionChat({
           </button>
         ) : (
           <button
+            type="button"
             onClick={handleSend}
             disabled={!prompt.trim()}
             className="px-3 py-2 rounded-card bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 transition-colors disabled:opacity-30"

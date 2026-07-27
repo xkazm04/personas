@@ -92,6 +92,7 @@ export function TriggerListItem({
           {/* Actions */}
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onToggleEnabled}
               className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
                 trigger.enabled
@@ -102,6 +103,7 @@ export function TriggerListItem({
               {trigger.enabled ? <><Pause className="w-3 h-3" /> Pause</> : <><Play className="w-3 h-3" /> Enable</>}
             </button>
             <button
+              type="button"
               onClick={onDelete}
               className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15 transition-colors"
             >

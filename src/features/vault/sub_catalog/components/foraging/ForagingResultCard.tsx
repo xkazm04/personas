@@ -67,6 +67,7 @@ export function ForagingResultCard({
 
   return (
     <button
+      type="button"
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
       className={`animate-fade-slide-in w-full text-left rounded-modal border p-3 transition-all ${

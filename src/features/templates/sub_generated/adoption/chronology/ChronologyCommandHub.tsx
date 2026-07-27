@@ -253,6 +253,7 @@ function HubTopBar({
       <div className="relative z-10 flex items-center gap-2 flex-shrink-0">
         {onStartTest && buildPhase === 'draft_ready' && (
           <button
+            type="button"
             onClick={onStartTest}
             className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-foreground typo-body font-semibold shadow-elevation-3 shadow-emerald-500/25 cursor-pointer transition-all"
           >
@@ -261,6 +262,7 @@ function HubTopBar({
         )}
         {onViewAgent && (buildPhase === 'completed' || buildPhase === 'promoted') && (
           <button
+            type="button"
             onClick={onViewAgent}
             className="flex items-center gap-1.5 px-4 py-2 rounded-modal bg-primary/15 border border-primary/25 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer transition-all"
           >
@@ -269,6 +271,7 @@ function HubTopBar({
         )}
         {showToggle && (
           <button
+            type="button"
             onClick={onToggleExpand}
             className="p-2 rounded-modal text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent hover:border-primary/15 cursor-pointer transition-colors"
             title={expanded ? t.templates.chronology.hub_details_hide : t.templates.chronology.hub_details_show}

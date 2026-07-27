@@ -84,6 +84,7 @@ export default function MemoryPanel() {
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
+            type="button"
             onClick={() => setView('consolidation')}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium focus-ring transition-colors ${
               view === 'consolidation'
@@ -98,6 +99,7 @@ export default function MemoryPanel() {
             </span>
           </button>
           <button
+            type="button"
             onClick={generateReflection}
             disabled={reflecting}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
@@ -115,6 +117,7 @@ export default function MemoryPanel() {
             </span>
           </button>
           <button
+            type="button"
             onClick={decayFacts}
             disabled={decaying}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground/85 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"

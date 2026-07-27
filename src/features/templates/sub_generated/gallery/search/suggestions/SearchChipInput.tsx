@@ -71,7 +71,7 @@ function SearchChipInputImpl({
             className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 typo-body rounded-full border flex-shrink-0 ${chipBg}`}>
             {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
-            <button onClick={() => removeChip(i)}
+            <button type="button" onClick={() => removeChip(i)}
               aria-label={`Remove ${chip.label} filter`}
               className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
               <X className="w-2.5 h-2.5" aria-hidden="true" />
@@ -110,11 +110,11 @@ function SearchChipInputImpl({
         {aiSearchMode ? (
           <>
             {inputValue && (
-              <button onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
+              <button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
-            <button onClick={() => onAiSearchSubmit?.(inputValue.trim())}
+            <button type="button" onClick={() => onAiSearchSubmit?.(inputValue.trim())}
               disabled={!inputValue.trim() || aiSearchLoading}
               className="p-1.5 rounded-card bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               aria-label={t.templates.search.search_with_ai_aria}>
@@ -123,7 +123,7 @@ function SearchChipInputImpl({
           </>
         ) : (
           (inputValue || chips.length > 0) && (
-            <button onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
+            <button type="button" onClick={clearAll} aria-label={t.templates.search.clear_search_aria} className="p-1 text-foreground hover:text-foreground/70">
               <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           )

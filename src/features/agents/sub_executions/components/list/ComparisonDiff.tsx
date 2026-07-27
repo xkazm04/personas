@@ -83,6 +83,7 @@ export function OutputDiffSection({
   return (
     <div>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
       >
@@ -175,6 +176,7 @@ export function JsonDiffSection({
   return (
     <div>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
       >

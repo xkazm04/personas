@@ -66,6 +66,7 @@ export default function CanvasAssistant({
       {/* Toggle button */}
       {!isOpen && (
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
           className="animate-fade-slide-in absolute top-14 left-3 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 typo-body font-medium transition-all shadow-elevation-3 backdrop-blur-sm"
         >
@@ -88,6 +89,7 @@ export default function CanvasAssistant({
                 <span className="typo-heading font-semibold text-foreground/90">{t.pipeline.canvas_assistant}</span>
               </div>
               <button
+                type="button"
                 onClick={() => setIsOpen(false)}
                 className="p-1 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/95 transition-colors"
               >

@@ -40,7 +40,7 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
         <div className="flex items-center justify-between">
           <span className="text-md font-semibold text-primary uppercase tracking-wider">Effort</span>
           {!rangesEqual(effortRange, allRange) && (
-            <button onClick={() => onEffortChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
+            <button type="button" onClick={() => onEffortChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
           )}
         </div>
         <div className="flex gap-1.5">
@@ -50,6 +50,7 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
             const Icon = p.icon;
             return (
               <button
+                type="button"
                 key={p.label}
                 title={p.label}
                 aria-label={p.label}
@@ -69,7 +70,7 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
         <div className="flex items-center justify-between">
           <span className="text-md font-semibold text-primary uppercase tracking-wider">Risk</span>
           {!rangesEqual(riskRange, allRange) && (
-            <button onClick={() => onRiskChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
+            <button type="button" onClick={() => onRiskChange(allRange)} className="text-md text-foreground hover:text-primary">Clear</button>
           )}
         </div>
         <div className="flex gap-1.5">
@@ -79,6 +80,7 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
             const Icon = p.icon;
             return (
               <button
+                type="button"
                 key={p.label}
                 title={p.label}
                 aria-label={p.label}

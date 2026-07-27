@@ -77,7 +77,7 @@ export function IngestDropZone({ kbId, onIngestStarted, children }: IngestDropZo
       {dropError && (
         <div className="absolute top-2 left-2 right-2 z-10 p-2 rounded-card bg-red-500/10 border border-red-500/20 typo-caption text-red-400 flex items-center gap-2">
           <span className="flex-1">{dropError}</span>
-          <button onClick={() => setDropError(null)} className="text-red-400/60 hover:text-red-400 shrink-0">&times;</button>
+          <button type="button" onClick={() => setDropError(null)} className="text-red-400/60 hover:text-red-400 shrink-0">&times;</button>
         </div>
       )}
 

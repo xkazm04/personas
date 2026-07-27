@@ -121,6 +121,7 @@ export default function GraphPanel() {
         <div className="flex items-center gap-1.5 flex-wrap">
           {toggles.map((tg) => (
             <button
+              type="button"
               key={tg.kind}
               onClick={() => setVisible((v) => ({ ...v, [tg.kind]: !v[tg.kind] }))}
               className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-[11px] transition-colors border ${
@@ -183,6 +184,7 @@ export default function GraphPanel() {
             )}
             {selected.kind !== 'project' && (
               <button
+                type="button"
                 onClick={() => handleEntityJump(selected)}
                 className="w-full px-3 py-2 rounded-card typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
               >

@@ -114,6 +114,7 @@ export function CrashLogsSection() {
         <div className="ml-auto flex items-center gap-2">
           {totalCount > 0 && expanded && (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 void handleClear();
@@ -149,6 +150,7 @@ export function CrashLogsSection() {
                 return (
                 <div key={log.filename} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
+                    type="button"
                     onClick={() => setSelectedLog(selectedLog === log.filename ? null : log.filename)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
@@ -171,6 +173,7 @@ export function CrashLogsSection() {
               {!loadingLogs && frontendDbLogs.map((log) => (
                 <div key={log.id} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
+                    type="button"
                     onClick={() => setSelectedLog(selectedLog === log.id ? null : log.id)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >
@@ -202,6 +205,7 @@ export function CrashLogsSection() {
               {!loadingLogs && uniqueLsLogs.map((log, i) => (
                 <div key={`fe-${i}`} className="rounded-card border border-primary/10 bg-background/40 overflow-hidden">
                   <button
+                    type="button"
                     onClick={() => setSelectedLog(selectedLog === `fe-${i}` ? null : `fe-${i}`)}
                     className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/30 transition-colors"
                   >

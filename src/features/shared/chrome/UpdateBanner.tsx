@@ -89,6 +89,7 @@ export default function UpdateBanner() {
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <button
+            type="button"
             onClick={handleInstallClick}
             disabled={isInstalling}
             className="px-3 py-1 rounded-xl bg-accent text-accent-foreground typo-heading hover:bg-accent/90 disabled:opacity-50 transition-colors"
@@ -96,6 +97,7 @@ export default function UpdateBanner() {
             {installLabel}
           </button>
           <button
+            type="button"
             onClick={dismissUpdate}
             className="p-1 rounded hover:bg-accent/10 text-foreground transition-colors"
             aria-label={t.common.dismiss}
@@ -122,18 +124,21 @@ export default function UpdateBanner() {
           </span>
           <div className="ml-auto flex items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={confirmInstall}
               className="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-200 typo-heading hover:bg-amber-500/30 transition-colors"
             >
               {t.chrome.update_install_anyway}
             </button>
             <button
+              type="button"
               onClick={scheduleInstallWhenIdle}
               className="px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-200 typo-heading hover:bg-amber-500/20 transition-colors"
             >
               {t.chrome.update_install_when_idle}
             </button>
             <button
+              type="button"
               onClick={() => setConfirmPending(false)}
               className="px-2.5 py-1 rounded-xl text-foreground typo-heading hover:bg-accent/10 transition-colors"
             >
@@ -149,6 +154,7 @@ export default function UpdateBanner() {
             {interpolate(t.chrome.update_install_when_idle_status, { count: runningCount })}
           </span>
           <button
+            type="button"
             onClick={() => setInstallWhenIdle(false)}
             className="ml-auto shrink-0 px-2.5 py-1 rounded-xl text-foreground typo-heading hover:bg-accent/10 transition-colors"
           >

@@ -161,6 +161,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
               <div className="flex items-center gap-1">
                 {/* Viewer controls */}
                 <button
+                  type="button"
                   onClick={toggleAutoRotate}
                   className={`p-1.5 rounded-card text-md transition-colors ${
                     autoRotate ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
@@ -170,6 +171,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
                   <RotateCw className="w-3.5 h-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={toggleWireframe}
                   className={`p-1.5 rounded-card text-md transition-colors ${
                     wireframe ? 'bg-rose-500/15 text-rose-400' : 'text-foreground hover:bg-secondary/40'
@@ -188,6 +190,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
                   <option value="soft">{ t.plugins.artist.lighting_soft}</option>
                 </select>
                 <button
+                  type="button"
                   onClick={() => setSelectedIndex(null)}
                   className="p-1.5 rounded-card text-foreground hover:bg-secondary/40 ml-2"
                 >

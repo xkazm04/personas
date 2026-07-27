@@ -11,6 +11,7 @@ interface PipelineRowProps {
 export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) {
   return (
     <button
+      type="button"
       onClick={onSelect}
       className={`w-full text-left p-3 rounded-modal border transition-colors ${
         isActive

@@ -35,6 +35,7 @@ function UseCaseCard({ uc }: { uc: IntentUseCase }) {
   return (
     <div className="border border-border/20 rounded-card bg-secondary/20 overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-secondary/30 transition-colors"
       >
@@ -74,6 +75,7 @@ function TestScenarioRow({ ts }: { ts: IntentTestScenario }) {
   return (
     <div className="border border-border/10 rounded-card overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-secondary/20 transition-colors"
       >

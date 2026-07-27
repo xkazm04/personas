@@ -60,6 +60,7 @@ export function UrlCard({
       </div>
       {safeUrl && (
         <button
+          type="button"
           onClick={() => onUrlClick(safeUrl)}
           className="px-3 py-1 typo-body text-blue-400 hover:text-blue-300 rounded-card border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
         >
@@ -101,6 +102,7 @@ export function RichMessage({
         if (!safe) return <span key={i}>{part.text}</span>;
         return (
           <button
+            type="button"
             key={i}
             onClick={() => onUrlClick(safe)}
             className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors"
@@ -130,6 +132,7 @@ export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-muted-foreground rounded-card hover:bg-secondary/30 transition-colors"
     >

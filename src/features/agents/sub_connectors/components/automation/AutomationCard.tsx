@@ -88,14 +88,14 @@ export function AutomationCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {automation.deploymentStatus === 'active' && (
-            <button onClick={() => onTest(automation.id)} disabled={isTesting}
+            <button type="button" onClick={() => onTest(automation.id)} disabled={isTesting}
               title={isTesting ? 'Test is already running' : undefined}
               className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 hover:text-foreground transition-colors disabled:opacity-40`}>
               {isTesting ? <LoadingSpinner size="xs" /> : <Activity className="w-3 h-3" />} {t.agents.connectors.auto_test}
             </button>
           )}
           {automation.deploymentStatus === 'draft' && (
-            <button onClick={() => onEdit(automation.id)}
+            <button type="button" onClick={() => onEdit(automation.id)}
               className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-foreground bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (

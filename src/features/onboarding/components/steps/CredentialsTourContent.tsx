@@ -62,6 +62,7 @@ export default function CredentialsTourContent({ subStepIndex }: Props) {
             const isBrowsed = interactions.categoriesBrowsed.includes(cat.id);
             return (
               <button
+                type="button"
                 key={cat.id}
                 onClick={() => recordInteraction('category', cat.id)}
                 data-testid={`tour-cred-category-${cat.id}`}

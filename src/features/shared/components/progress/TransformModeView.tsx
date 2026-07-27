@@ -55,6 +55,7 @@ export function TransformModeView({
         {lines.length > 0 && (
           <>
             <button
+              type="button"
               onClick={() => setShowTerminal(!showTerminal)}
               className="flex items-center justify-between w-full px-4 py-2 bg-primary/5 border-t border-primary/10 cursor-pointer hover:bg-secondary/40 transition-colors"
             >

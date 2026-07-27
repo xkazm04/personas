@@ -25,6 +25,7 @@ export function DocToolbar({
         {documentCount} document{documentCount !== 1 ? 's' : ''}
       </h3>
       <button
+        type="button"
         onClick={onRefresh}
         className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         title={t.vault.databases.refresh}
@@ -32,6 +33,7 @@ export function DocToolbar({
         <RefreshCw className="w-3.5 h-3.5" />
       </button>
       <button
+        type="button"
         onClick={onShowTextModal}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors"
       >
@@ -39,6 +41,7 @@ export function DocToolbar({
         {sh.paste_text}
       </button>
       <button
+        type="button"
         onClick={onBrowseFiles}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors"
       >
@@ -46,6 +49,7 @@ export function DocToolbar({
         {sh.browse_files}
       </button>
       <button
+        type="button"
         onClick={onShowDirPicker}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-secondary/40 hover:bg-secondary/60 text-foreground transition-colors"
       >

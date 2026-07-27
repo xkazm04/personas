@@ -223,6 +223,7 @@ export function UnifiedDeploymentDashboard() {
             <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
           </div>
           <button
+            type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"

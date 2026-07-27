@@ -95,6 +95,7 @@ function ConsentSection({ icon, title, tldr, items, color, defaultOpen = false, 
       }`}
     >
       <button
+        type="button"
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/30 transition-colors"
       >
@@ -323,6 +324,7 @@ export function FirstUseConsentModal({ onAccept, isVersionBump }: FirstUseConsen
             {c.source_link}
           </a>
           <button
+            type="button"
             disabled={!acknowledged}
             onClick={handleAccept}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl typo-heading transition-all ${

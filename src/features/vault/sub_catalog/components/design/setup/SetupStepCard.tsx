@@ -34,6 +34,7 @@ export function SetupStepCard({
     >
       {/* Checkmark button */}
       <button
+        type="button"
         onClick={onToggle}
         className="mt-0.5 shrink-0 focus-visible:outline-none"
         title={isCompleted ? t.vault.design_phases.mark_not_done : t.vault.design_phases.mark_done}

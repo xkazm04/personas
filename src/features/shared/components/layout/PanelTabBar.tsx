@@ -62,6 +62,7 @@ export function PanelTabBar<T extends string>({
         const active = activeTab === tab.id;
         return (
           <button
+            type="button"
             key={tab.id}
             role="tab"
             aria-selected={active}

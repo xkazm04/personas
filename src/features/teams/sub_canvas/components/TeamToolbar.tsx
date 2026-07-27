@@ -41,6 +41,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
     <div className="flex items-center justify-between px-3 py-2 bg-secondary/70 backdrop-blur-lg border-b border-border/30">
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={onBack}
           className="p-1.5 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/95 transition-all"
         >
@@ -53,6 +54,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Add Agent Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
+            type="button"
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-500/20 typo-body font-medium transition-all"
           >
@@ -72,6 +74,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
                   availablePersonas.map((p) => (
                     <button
                       key={p.id}
+                      type="button"
                       onClick={() => {
                         onAddMember(p.id);
                         setShowDropdown(false);
@@ -91,6 +94,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
         {/* Add Sticky Note */}
         {onAddNote && (
           <button
+            type="button"
             onClick={onAddNote}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-amber-500/10 border border-amber-500/25 text-amber-300 hover:bg-amber-500/20 typo-body font-medium transition-all"
           >
@@ -101,6 +105,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
 
         {/* Auto Layout */}
         <button
+          type="button"
           onClick={onAutoLayout}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-secondary/60 border border-primary/15 text-foreground hover:text-foreground/95 hover:bg-secondary/80 typo-body font-medium transition-all"
         >
@@ -110,6 +115,7 @@ export default function TeamToolbar({ teamName, onBack, onAutoLayout, onSave, on
 
         {/* Save */}
         <button
+          type="button"
           onClick={onSave}
           disabled={saveStatus === 'saving'}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal border typo-body font-medium transition-all ${

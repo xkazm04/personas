@@ -94,6 +94,7 @@ function ComfortableRowImpl({
       >
         <div className="w-20 px-4 py-4 flex-shrink-0 flex items-center gap-1.5">
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); if (!compareDisabled) onToggleCompare(review); }}
             disabled={compareDisabled}
             aria-pressed={isCompareSelected}

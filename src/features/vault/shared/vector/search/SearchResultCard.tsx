@@ -64,6 +64,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
         {result.content.length > 300 && (
           <button
+            type="button"
             onClick={() => setExpanded(!expanded)}
             className="flex items-center gap-1 typo-caption text-violet-400/70 hover:text-violet-400 mt-2 transition-colors"
           >

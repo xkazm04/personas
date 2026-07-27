@@ -15,6 +15,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
       >

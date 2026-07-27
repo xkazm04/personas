@@ -27,6 +27,7 @@ export function CancelledResumeFooter({ lastTool, onResume }: CancelledResumeFoo
         </div>
       )}
       <button
+        type="button"
         onClick={onResume}
         className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 hover:text-amber-200 transition-colors"
       >

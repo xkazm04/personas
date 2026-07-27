@@ -214,6 +214,7 @@ export function AmbientContextPanel() {
             <div className="flex items-center gap-2 typo-caption text-foreground">
               <span>{tx(s.total_signals, { count: Number(ambientSnapshot.totalSignalsCaptured) })}</span>
               <button
+                type="button"
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
                 className="hover:text-foreground/80 transition-colors"
               >
@@ -266,6 +267,7 @@ export function AmbientContextPanel() {
           <div className="flex items-center justify-between">
             <span className="typo-caption font-medium text-foreground">{s.sensory_policy}</span>
             <button
+              type="button"
               onClick={handleReset}
               className="typo-caption text-foreground hover:text-foreground/80 transition-colors"
             >
@@ -280,6 +282,7 @@ export function AmbientContextPanel() {
               { key: 'appFocus' as const, label: s.app_focus, icon: AppWindow },
             ]).map(({ key, label, icon: Icon }) => (
               <button
+                type="button"
                 key={key}
                 onClick={() => handlePolicyChange(key, !localPolicy[key])}
                 className={`flex flex-col items-center gap-1 p-2 rounded-card border typo-caption transition-colors ${
@@ -309,6 +312,7 @@ export function AmbientContextPanel() {
                 className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
               />
               <button
+                type="button"
                 onClick={handleAddFilter}
                 disabled={!filterInput.trim()}
                 className="px-2 py-1 bg-secondary/40 hover:bg-secondary/60 typo-caption rounded text-foreground disabled:opacity-50"
@@ -325,6 +329,7 @@ export function AmbientContextPanel() {
                   >
                     {app}
                     <button
+                      type="button"
                       onClick={() => handleRemoveFilter(i)}
                       className="text-foreground hover:text-foreground/80"
                     >
@@ -347,6 +352,7 @@ export function AmbientContextPanel() {
               <span className="typo-caption font-medium text-foreground">{s.context_rules}</span>
             </div>
             <button
+              type="button"
               onClick={() => setShowRuleForm(!showRuleForm)}
               className="flex items-center gap-1 typo-caption text-blue-400 hover:text-blue-300 transition-colors"
             >
@@ -378,6 +384,7 @@ export function AmbientContextPanel() {
                     { src: 'app_focus' as const, label: s.app_focus },
                   ]).map(({ src, label }) => (
                     <button
+                      type="button"
                       key={src}
                       onClick={() => toggleSource(src)}
                       className={`px-2 py-0.5 rounded typo-caption border transition-colors ${
@@ -441,12 +448,14 @@ export function AmbientContextPanel() {
 
               <div className="flex justify-end gap-2">
                 <button
+                  type="button"
                   onClick={() => setShowRuleForm(false)}
                   className="px-2.5 py-1 typo-caption text-foreground hover:text-foreground/80 transition-colors"
                 >
                   {s.cancel}
                 </button>
                 <button
+                  type="button"
                   onClick={handleAddRule}
                   disabled={!ruleName.trim()}
                   className="px-2.5 py-1 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 typo-caption rounded-input transition-colors disabled:opacity-50"
@@ -479,6 +488,7 @@ export function AmbientContextPanel() {
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => removeContextRule(rule.id)}
                     className="text-foreground hover:text-red-400 transition-colors shrink-0 ml-2"
                   >

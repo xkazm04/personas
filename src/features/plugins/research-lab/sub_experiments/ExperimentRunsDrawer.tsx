@@ -52,7 +52,7 @@ export default function ExperimentRunsDrawer({ experiment, onClose, refreshToken
             <h2 className="typo-section-title truncate">{t.research_lab.runs_history}</h2>
             <p className="typo-caption text-foreground truncate">{experiment.name}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-secondary/50 text-foreground" aria-label={t.common.cancel}>
+          <button type="button" onClick={onClose} className="p-1.5 rounded hover:bg-secondary/50 text-foreground" aria-label={t.common.cancel}>
             <X className="w-4 h-4" />
           </button>
         </header>

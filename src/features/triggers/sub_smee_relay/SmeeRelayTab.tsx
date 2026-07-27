@@ -172,6 +172,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.triggers.smee_open_new_title}
@@ -181,6 +182,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             </button>
             {onSwitchToLiveStream && activeCount > 0 && (
               <button
+                type="button"
                 onClick={onSwitchToLiveStream}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-cyan-400/80 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
               >
@@ -196,6 +198,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             {t.triggers.smee_relays}
           </h3>
           <button
+            type="button"
             onClick={() => { setShowAdd(!showAdd); if (showAdd) setTouchedFields(new Set()); }}
             className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
           >
@@ -305,6 +308,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={handleCreate}
                 disabled={isCreating || !addLabel.trim() || !addUrl.startsWith('https://smee.io/')}
                 className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-card bg-purple-500/15 text-purple-400 border border-purple-500/25 hover:bg-purple-500/25 disabled:opacity-50 transition-colors"
@@ -313,7 +317,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 {t.triggers.create_relay}
               </button>
               <p className="typo-caption text-foreground">
-                {t.triggers.get_channel_url_prompt} <button onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
+                {t.triggers.get_channel_url_prompt} <button type="button" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-purple-400/60 hover:text-purple-400 underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
               </p>
             </div>
           </div>
@@ -428,6 +432,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <CopyButton text={relay.channelUrl} tooltip={t.triggers.copy_channel_url_title} />
                       <button
+                        type="button"
                         onClick={() => handleToggleStatus(relay)}
                         className={`p-1.5 rounded-card transition-colors ${
                           isActive
@@ -441,12 +446,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                       {confirmDeleteId === relay.id ? (
                         <div className="flex items-center gap-1">
                           <button
+                            type="button"
                             onClick={() => handleDelete(relay.id)}
                             className="px-2 py-1 rounded-card typo-caption font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
                           >
                             {t.common.confirm}
                           </button>
                           <button
+                            type="button"
                             onClick={() => setConfirmDeleteId(null)}
                             className="px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground transition-colors"
                           >
@@ -455,6 +462,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                         </div>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => setConfirmDeleteId(relay.id)}
                           className="p-1.5 rounded-card text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                           title={t.triggers.relay_delete_title}

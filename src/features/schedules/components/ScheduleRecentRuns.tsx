@@ -80,6 +80,7 @@ export default function ScheduleRecentRuns({ filterIds }: { filterIds: Set<strin
           </ul>
           {visible.length > COLLAPSED_LIMIT && (
             <button
+              type="button"
               onClick={() => setExpanded((v) => !v)}
               className="mt-1 text-[10px] text-foreground hover:text-foreground/80 transition-colors"
             >
@@ -130,6 +131,7 @@ function RecentRunRow({ run }: { run: RecentScheduleRun }) {
         </span>
       )}
       <button
+        type="button"
         onClick={() => {
           // Same deep-link as ScheduleRowHistoryPanel: GlobalExecutionList
           // watches pendingExecutionFocus and pops the detail modal.

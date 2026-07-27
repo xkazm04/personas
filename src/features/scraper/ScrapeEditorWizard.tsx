@@ -39,6 +39,7 @@ export function ScrapeEditorWizard({ form, isEdit, saving, onCancel, onSave }: E
             return (
               <li key={s.id}>
                 <button
+                  type="button"
                   onClick={() => setStep(i)}
                   className={`flex w-full items-center gap-2.5 rounded-interactive px-2.5 py-2 text-left transition-colors ${
                     active ? 'bg-primary/10 text-foreground' : 'text-muted-foreground hover:bg-secondary/40'

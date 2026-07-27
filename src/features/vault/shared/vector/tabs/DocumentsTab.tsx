@@ -155,6 +155,7 @@ export function DocumentsTab({ kb, onRefresh }: DocumentsTabProps) {
                   )}
                   <StatusBadge status={doc.status} error={doc.errorMessage} />
                   <button
+                    type="button"
                     onClick={() => void handleDelete(doc.id)}
                     disabled={deletingId === doc.id}
                     className="p-1.5 rounded-card text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"

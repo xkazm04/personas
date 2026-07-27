@@ -77,7 +77,7 @@ export function DomainTable({ templates, recipes, loading, accent, onSelect, onS
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40">
           {([['all', 'All'], ['template', 'Templates'], ['recipe', 'Recipes']] as [TypeFilter, string][]).map(([id, label]) => (
-            <button key={id} onClick={() => setType(id)}
+            <button type="button" key={id} onClick={() => setType(id)}
               className="px-3 py-1 rounded-input typo-caption transition-colors"
               style={type === id ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
               <span className={type === id ? '' : 'text-foreground opacity-70'}>{label}</span>
@@ -141,7 +141,7 @@ function FilterChip({ label, count, active, accent, onClick }: {
   label: string; count: number; active: boolean; accent: string; onClick: () => void;
 }) {
   return (
-    <button onClick={onClick}
+    <button type="button" onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption transition-colors ${active ? '' : 'text-foreground opacity-70 hover:opacity-100'}`}
       style={active ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
       {label}<span className="opacity-60">{count}</span>
@@ -179,7 +179,7 @@ function Th({ col, label, sort, onSort }: {
   const on = sort.col === col;
   return (
     <th className="px-3 py-2 text-left">
-      <button onClick={() => onSort(col)} className={`inline-flex items-center gap-1 typo-label ${on ? 'text-foreground' : 'text-foreground opacity-55 hover:opacity-80'}`}>
+      <button type="button" onClick={() => onSort(col)} className={`inline-flex items-center gap-1 typo-label ${on ? 'text-foreground' : 'text-foreground opacity-55 hover:opacity-80'}`}>
         {label}
         {on && (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
       </button>

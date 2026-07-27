@@ -31,6 +31,7 @@ export function ConfigureStep({
         </div>
         <p className="typo-body text-foreground">{loadingText}</p>
         <button
+          type="button"
           onClick={onSkip}
           className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors mt-2"
         >
@@ -61,6 +62,7 @@ export function ConfigureStep({
           </p>
         </div>
         <button
+          type="button"
           onClick={onSkip}
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-foreground hover:text-muted-foreground border border-primary/10 rounded-xl transition-colors"
         >
@@ -116,6 +118,7 @@ export function ConfigureStep({
                   return (
                     <button
                       key={opt}
+                      type="button"
                       onClick={() => onAnswerUpdated(q.id, opt)}
                       className={`px-4 py-1.5 typo-body rounded-xl border transition-colors ${
                         isSelected

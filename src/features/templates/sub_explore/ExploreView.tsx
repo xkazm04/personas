@@ -36,7 +36,7 @@ export default function ExploreView() {
           <span className="typo-body text-foreground">
             Selected <span className="font-medium template-name-themed">{picked.name}</span> — detail/adopt would open here
           </span>
-          <button onClick={() => setPicked(null)} className="text-foreground opacity-60 hover:opacity-100">
+          <button type="button" onClick={() => setPicked(null)} className="text-foreground opacity-60 hover:opacity-100">
             <X className="w-4 h-4" />
           </button>
         </div>

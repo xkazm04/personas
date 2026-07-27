@@ -121,6 +121,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                   <h4 className="typo-heading font-semibold text-foreground">{persona.name}</h4>
                   {onNavigateToPersona && (
                     <button
+                      type="button"
                       onClick={() => onNavigateToPersona(persona.id)}
                       className="typo-body text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                     >

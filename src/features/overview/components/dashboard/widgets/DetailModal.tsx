@@ -41,6 +41,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, maxWidt
           )}
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/90 transition-colors focus-ring"
           aria-label={t.overview.detail_modal.close}

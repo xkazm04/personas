@@ -25,6 +25,7 @@ export function ChainSpanRow({ trace, index, isCurrent, onOpen }: ChainSpanRowPr
 
   return (
     <button
+      type="button"
       onClick={onOpen}
       disabled={isCurrent}
       className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${

@@ -99,6 +99,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   className="flex-1 min-w-0 typo-heading font-semibold text-foreground/90 bg-background/50 border border-primary/20 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
+                  type="button"
                   onMouseDown={(e) => { e.preventDefault(); saveName(); }}
                   className="p-0.5 rounded text-emerald-400 hover:text-emerald-300 transition-colors shrink-0"
                   title={sh.save_name}
@@ -112,6 +113,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
                   {kb?.name || credential.name}
                 </h2>
                 <button
+                  type="button"
                   onClick={startEditing}
                   className="p-0.5 rounded text-foreground hover:text-muted-foreground/70 opacity-0 group-hover/name:opacity-100 transition-all shrink-0"
                   title={sh.rename_credential}
@@ -131,6 +133,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           </p>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-2 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
@@ -145,6 +148,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
           const isActive = tab.id === activeTab;
           return (
             <button
+              type="button"
               key={tab.id}
               onClick={() => { setVisited((prev) => new Set([...prev, tab.id])); setActiveTab(tab.id); }}
               className={`relative flex items-center gap-1.5 px-4 py-2.5 typo-body font-medium transition-colors ${

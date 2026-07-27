@@ -147,7 +147,7 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>

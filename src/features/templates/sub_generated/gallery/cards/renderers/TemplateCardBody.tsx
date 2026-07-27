@@ -60,6 +60,7 @@ export function TemplateCardBody({
             <div className="space-y-1.5">
               {displayFlows.slice(0, 4).map((flow) => (
                 <button
+                  type="button"
                   key={flow.id}
                   onClick={(e) => {
                     e.stopPropagation();

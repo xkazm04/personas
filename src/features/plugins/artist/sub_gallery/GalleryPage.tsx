@@ -86,6 +86,7 @@ export default function GalleryPage() {
             const isActive = galleryMode === m.id;
             return (
               <button
+                type="button"
                 key={m.id}
                 onClick={() => setGalleryMode(m.id)}
                 aria-pressed={isActive}
@@ -128,6 +129,7 @@ export default function GalleryPage() {
             <option value="size">{t.plugins.artist.sort_size}</option>
           </select>
           <button
+            type="button"
             onClick={toggleSort}
             title={sortDir === 'asc' ? t.plugins.artist.sort_date : t.plugins.artist.sort_date}
             aria-label={`Sort ${sortDir === 'asc' ? 'ascending' : 'descending'}`}
@@ -136,6 +138,7 @@ export default function GalleryPage() {
             {sortDir === 'asc' ? <SortAsc className="w-[18px] h-[18px]" /> : <SortDesc className="w-[18px] h-[18px]" />}
           </button>
           <button
+            type="button"
             onClick={() => setGrouped((g) => !g)}
             aria-pressed={grouped}
             title={grouped ? t.plugins.artist.group_by_day_off : t.plugins.artist.group_by_day_on}
@@ -152,6 +155,7 @@ export default function GalleryPage() {
         {/* Folder actions cluster */}
         <div className="flex items-center gap-0.5 bg-secondary/30 rounded-card border border-primary/10 p-0.5">
           <button
+            type="button"
             onClick={() => artistFolder && openExternal(artistFolder).catch(silentCatch('Open artist folder'))}
             disabled={!artistFolder}
             title={t.plugins.artist.open_folder}
@@ -161,6 +165,7 @@ export default function GalleryPage() {
             <FolderOpen className="w-[18px] h-[18px]" />
           </button>
           <button
+            type="button"
             onClick={() => artistFolder && scanAndImport(artistFolder)}
             disabled={scanning || !artistFolder}
             title={scanning ? t.plugins.artist.scanning : t.plugins.artist.scan_folder}
@@ -197,6 +202,7 @@ export default function GalleryPage() {
           <p className="typo-section-title">Could not load assets</p>
           <p className="typo-body text-foreground max-w-xs text-center">{error}</p>
           <button
+            type="button"
             onClick={() => void loadAssets()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition-colors"
           >

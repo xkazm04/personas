@@ -34,6 +34,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
         <img src={domainArt(d, isDark)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--background) 32%, ${d.color}22)` }} />
         <button
+          type="button"
           onClick={onBack}
           className="relative self-start inline-flex items-center gap-1 typo-caption text-foreground opacity-70 hover:opacity-100 -mt-1"
         >

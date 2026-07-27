@@ -51,6 +51,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
     const isSelected = selectedPath === node.path;
     return (
       <button
+        type="button"
         onClick={() => onSelect(node.path)}
         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card transition-colors group focus-ring ${
           isSelected ? 'bg-violet-500/10 border border-violet-500/20' : 'hover:bg-secondary/30 border border-transparent'
@@ -68,6 +69,7 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
   return (
     <div>
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/30 transition-colors focus-ring"
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -256,6 +258,7 @@ export default function BrowsePanel() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={openInObsidian}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring flex-shrink-0"
               >

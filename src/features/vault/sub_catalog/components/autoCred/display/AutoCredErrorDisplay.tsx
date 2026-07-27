@@ -141,6 +141,7 @@ export function AutoCredErrorDisplay({
       {/* Actions */}
       <div className="flex gap-3 justify-center">
         <button
+          type="button"
           onClick={onCancel}
           className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
@@ -148,6 +149,7 @@ export function AutoCredErrorDisplay({
         </button>
         {error.retryable && (
           <button
+            type="button"
             onClick={onRetry}
             // text-foreground is deliberate on saturated bg-cyan-600 — see
             // AutoCredConsent for the same exception.

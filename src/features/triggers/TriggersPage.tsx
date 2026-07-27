@@ -58,6 +58,7 @@ export function TriggersPage() {
       subtitle: t.triggers.tab_live_stream_subtitle,
       renderActions: () => (
         <button
+          type="button"
           onClick={() => {
             useSystemStore.getState().setSidebarSection('overview');
             void import("@/stores/overviewStore").then(({ useOverviewStore }) =>

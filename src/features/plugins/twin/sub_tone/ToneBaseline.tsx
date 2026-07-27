@@ -99,7 +99,7 @@ export default function ToneBaseline() {
 
               return (
                 <div key={channel} className={`rounded-card border transition-colors ${exists ? 'border-violet-500/20 bg-card/60' : 'border-primary/10 bg-card/30'}`}>
-                  <button onClick={() => toggle(channel)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+                  <button type="button" onClick={() => toggle(channel)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
                     {isExpanded ? <ChevronDown className="w-4 h-4 text-foreground flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-foreground flex-shrink-0" />}
                     <div className={`w-7 h-7 rounded-interactive ${bg} flex items-center justify-center flex-shrink-0`}>
                       <Mic className={`w-3.5 h-3.5 ${color}`} />
@@ -131,7 +131,7 @@ export default function ToneBaseline() {
                       </label>
                       <div className="flex items-center justify-between pt-1">
                         {exists && channel !== 'generic' ? (
-                          <button onClick={() => handleDelete(channel)} className="flex items-center gap-1.5 text-md text-foreground hover:text-red-400 transition-colors">
+                          <button type="button" onClick={() => handleDelete(channel)} className="flex items-center gap-1.5 text-md text-foreground hover:text-red-400 transition-colors">
                             <Trash2 className="w-3.5 h-3.5" />{t.tone.removeOverride}
                           </button>
                         ) : <span />}

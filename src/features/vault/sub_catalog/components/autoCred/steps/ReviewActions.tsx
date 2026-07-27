@@ -27,6 +27,7 @@ export function ReviewHealthcheck({ onHealthcheck, healthResult }: ReviewHealthc
   return (
     <div className="flex items-center gap-3">
       <button
+        type="button"
         onClick={async () => {
           setIsHealthchecking(true);
           try {
@@ -100,12 +101,14 @@ export function ReviewActionButtons({
     <div className="flex items-center justify-between pt-1">
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={onCancel}
           className="px-4 py-2 typo-body text-foreground hover:text-foreground rounded-modal hover:bg-secondary/40 transition-colors"
         >
           {t.vault.auto_cred.discard}
         </button>
         <button
+          type="button"
           onClick={onRetry}
           className="flex items-center gap-1.5 px-4 py-2 typo-body text-cyan-400/80 hover:text-cyan-400 rounded-modal border border-cyan-500/15 hover:bg-cyan-500/10 transition-colors"
         >
@@ -120,6 +123,7 @@ export function ReviewActionButtons({
         {/* Dev-only: Save procedure for future re-use */}
         {isDev && healthResult?.success && extractedValues.__procedure_log && (
           <button
+            type="button"
             onClick={handleSaveProcedure}
             disabled={savingProcedure || procedureSaved}
             className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors ${
@@ -140,6 +144,7 @@ export function ReviewActionButtons({
           </button>
         )}
         <button
+          type="button"
           onClick={onSave}
           disabled={isSaving || !healthResult?.success}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-emerald-600/20"

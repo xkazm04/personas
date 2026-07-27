@@ -148,6 +148,7 @@ export function SearchAutocomplete({
                   id={`search-suggestion-${idx}`}
                   role="option"
                   aria-selected={isFocused}
+                  type="button"
                   onClick={() => onSelect(suggestion.chip)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-card outline-none ${
                     isFocused

@@ -68,6 +68,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors focus-ring"
             aria-label="Close"
@@ -118,6 +119,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
                 <button
+                  type="button"
                   onClick={handleCopy}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium transition-all duration-200 ${
                     copiedPayload

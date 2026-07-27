@@ -35,6 +35,7 @@ export function StuckExecutionGuidance({
     >
       {/* Header row */}
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left"
       >
@@ -90,6 +91,7 @@ export function StuckExecutionGuidance({
             <div className="flex flex-wrap gap-2">
               {isStuck && (
                 <button
+                  type="button"
                   onClick={onCancel}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/20 transition-colors"
                 >
@@ -99,6 +101,7 @@ export function StuckExecutionGuidance({
               )}
               {executionId && onViewLog && (
                 <button
+                  type="button"
                   onClick={onViewLog}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium transition-colors border ${
                     isStuck

@@ -72,7 +72,7 @@ export function RebuildModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -179,12 +179,14 @@ export function RebuildModal({
           {displayPhase === 'input' && (
             <>
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 typo-body rounded-modal text-foreground hover:bg-secondary/50 transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
+                type="button"
                 onClick={() => onStartRebuild(userDirection)}
                 className="px-4 py-2 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2"
               >
@@ -197,6 +199,7 @@ export function RebuildModal({
           {displayPhase === 'processing' && (
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={onCancel}
                 className="px-4 py-2 typo-body rounded-modal text-red-400/70 border border-red-500/20 hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
@@ -204,6 +207,7 @@ export function RebuildModal({
                 {t.templates.rebuild_modal.cancel_rebuild}
               </button>
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
               >
@@ -214,6 +218,7 @@ export function RebuildModal({
 
           {(displayPhase === 'completed' || displayPhase === 'failed') && (
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/70 transition-colors"
             >

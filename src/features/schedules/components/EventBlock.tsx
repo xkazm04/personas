@@ -41,6 +41,7 @@ export function EventBlock({
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`event-block flex items-center gap-1 rounded text-left transition-all hover:scale-[1.02] hover:shadow-elevation-1 cursor-pointer w-full max-w-full min-w-0 overflow-hidden ${compact ? 'px-1 py-px text-[9px]' : 'px-1.5 py-0.5 text-[10px]'
         }`}

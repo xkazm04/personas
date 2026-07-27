@@ -106,6 +106,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
         </span>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={onCancel}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground hover:bg-secondary/40 transition-colors"
           >
@@ -113,6 +114,7 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
             {t.common.cancel}
           </button>
           <button
+            type="button"
             onClick={handleSave}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg typo-caption text-foreground bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/30 transition-colors"
           >

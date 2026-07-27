@@ -193,6 +193,7 @@ export function CircuitBreakerIndicator() {
 
       {/* Summary row */}
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-2 w-full px-3 py-2 text-left"
       >
@@ -324,6 +325,7 @@ export function CircuitBreakerIndicator() {
                   {e.cb_section_transitions}
                 </h4>
                 <button
+                  type="button"
                   onClick={() => setShowHistory((v) => !v)}
                   className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground"
                 >

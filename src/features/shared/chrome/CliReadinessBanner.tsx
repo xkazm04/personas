@@ -27,12 +27,14 @@ export default function CliReadinessBanner() {
         <span className="text-foreground truncate">{t.chrome.cli_not_ready_detail}</span>
         <div className="ml-auto flex items-center gap-2 shrink-0">
           <button
+            type="button"
             onClick={() => void retry()}
             className="px-3 py-1 rounded-interactive bg-amber-500/20 text-amber-200 typo-heading hover:bg-amber-500/30 transition-colors"
           >
             {t.chrome.cli_not_ready_retry}
           </button>
           <button
+            type="button"
             onClick={dismiss}
             className="p-1 rounded hover:bg-amber-500/10 text-foreground transition-colors"
             aria-label={t.common.dismiss}

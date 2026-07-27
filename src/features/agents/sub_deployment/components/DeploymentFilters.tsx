@@ -41,6 +41,7 @@ export function DeploymentFilters({
 
       <div className="relative">
         <button
+          type="button"
           onClick={() => setFilterOpen(!filterOpen)}
           className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors cursor-pointer ${
             targetFilter !== 'all' || statusFilter !== 'all'
@@ -60,6 +61,7 @@ export function DeploymentFilters({
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'cloud', 'gitlab'] as const).map((v) => (
                   <button
+                    type="button"
                     key={v}
                     onClick={() => onTargetFilterChange(v)}
                     className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
@@ -78,6 +80,7 @@ export function DeploymentFilters({
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'active', 'paused', 'failed', 'file-based'] as const).map((v) => (
                   <button
+                    type="button"
                     key={v}
                     onClick={() => onStatusFilterChange(v)}
                     className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${

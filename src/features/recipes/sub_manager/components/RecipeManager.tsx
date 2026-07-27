@@ -91,6 +91,7 @@ export function RecipeManager() {
         actions={
           viewState.view === 'list' ? (
             <button
+              type="button"
               onClick={() => dispatch({ type: 'GO_CREATE' })}
               className="btn-md flex items-center gap-1.5 bg-primary font-medium text-foreground hover:bg-primary/90 transition-colors"
             >
@@ -113,6 +114,7 @@ export function RecipeManager() {
             />
             {search && (
               <button
+                type="button"
                 onClick={() => setSearch('')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground"
               >

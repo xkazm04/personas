@@ -43,6 +43,7 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
           <BarChart3 className="w-5 h-5 text-foreground" />
           <span className="typo-caption text-foreground">{en.overview.chart_error.chart_unavailable}</span>
           <button
+            type="button"
             onClick={this.handleRetry}
             className="flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border border-primary/15 text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
           >

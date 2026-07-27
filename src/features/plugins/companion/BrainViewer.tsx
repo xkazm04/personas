@@ -176,6 +176,7 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-2 min-w-0">
           {(brainView.kind || brainView.id) ? (
             <button
+              type="button"
               onClick={goBack}
               className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
               aria-label={t.common.back}
@@ -192,6 +193,7 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
         </div>
         {onClose && (
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
@@ -280,6 +282,7 @@ function TypesView() {
         const accent = FAMILY_ACCENT[family];
         return (
           <button
+            type="button"
             key={kind}
             onClick={() => setBrainView({ open: true, kind, id: null })}
             className="relative overflow-hidden text-left rounded-card border border-foreground/10 hover:border-primary/30 bg-foreground/[0.02] hover:bg-primary/5 px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-elevation-2 focus-ring"
@@ -357,6 +360,7 @@ function ListView({ kind }: { kind: BrainKind }) {
             markEntered={enter.markEntered}
           >
             <button
+              type="button"
               onClick={() => setBrainView({ open: true, kind, id: item.id })}
               className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] transition-colors focus-ring flex items-start gap-3"
             >
@@ -670,6 +674,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           {editing ? (
             <>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption font-medium disabled:opacity-50 transition-opacity focus-ring"
@@ -678,6 +683,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
                 {saving ? t.plugins.companion.identity_saving : t.plugins.companion.identity_save}
               </button>
               <button
+                type="button"
                 onClick={() => setEditing(false)}
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium disabled:opacity-50 transition-colors focus-ring"
@@ -689,6 +695,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
             </>
           ) : (
             <button
+              type="button"
               onClick={startEdit}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium transition-colors focus-ring"
             >
@@ -701,6 +708,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       {!isIdentity && detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">
           <button
+            type="button"
             onClick={handleDelete}
             disabled={deleting}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"

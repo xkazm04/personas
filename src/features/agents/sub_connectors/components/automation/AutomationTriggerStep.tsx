@@ -81,6 +81,7 @@ export function AutomationTriggerStep({
           <div className="flex items-center gap-1.5">
             {(['n8n', 'github_actions', 'zapier', 'custom'] as AutomationPlatform[]).map((p) => (
               <button
+                type="button"
                 key={p}
                 onClick={() => { setPlatform(p); setGithubRepo(null); }}
                 className={`px-2.5 py-1 typo-body rounded-modal border transition-colors ${
@@ -122,6 +123,7 @@ export function AutomationTriggerStep({
             <p className="typo-body text-foreground mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             {platformConnector && (
               <button
+                type="button"
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body font-medium rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-foreground hover:bg-brand-amber/25 transition-colors"
               >
@@ -232,6 +234,7 @@ export function AutomationTriggerStep({
       <div className="flex items-center justify-between">
         <span className="typo-body text-foreground">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
         <button
+          type="button"
           onClick={onDesign}
           disabled={!canDesign}
           title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}

@@ -66,6 +66,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
           ) : (
             <button
               key="create-btn"
+              type="button"
               onClick={() => setIsCreating(true)}
               className="animate-fade-slide-in w-full flex items-center gap-1.5 px-2.5 py-2 rounded-modal typo-body font-medium text-primary/80 hover:bg-primary/8 border border-dashed border-primary/15 hover:border-primary/25 transition-all"
             >
@@ -93,6 +94,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             )}
 
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); handleToggleFavorite(q.id, q.is_favorite); }}
               className={`p-0.5 transition-colors ${q.is_favorite ? 'text-amber-400' : 'text-foreground hover:text-amber-400/50'}`}
             >
@@ -100,6 +102,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
             </button>
 
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); deleteQuery(q.id); if (selectedId === q.id) onSelect(''); }}
               className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
             >

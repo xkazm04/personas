@@ -29,40 +29,40 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
 
   return (
     <div className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit">
-      <button onClick={() => setActiveTab('detail')} className={tabClass('detail')}>
+      <button type="button" onClick={() => setActiveTab('detail')} className={tabClass('detail')}>
         <ListTree className="w-3.5 h-3.5" />
         {t.agents.executions.tab_detail}
       </button>
       {hasDirectorReview && (
-        <button onClick={() => setActiveTab('director')} className={tabClass('director', true)}>
+        <button type="button" onClick={() => setActiveTab('director')} className={tabClass('director', true)}>
           <Compass className="w-3.5 h-3.5" />
           {t.agents.executions.tab_director}
         </button>
       )}
       {hasToolSteps && (
-        <button onClick={() => setActiveTab('inspector')} className={tabClass('inspector')}>
+        <button type="button" onClick={() => setActiveTab('inspector')} className={tabClass('inspector')}>
           <Search className="w-3.5 h-3.5" />
           {t.agents.executions.tab_inspector}
         </button>
       )}
-      <button onClick={() => setActiveTab('trace')} className={tabClass('trace')}>
+      <button type="button" onClick={() => setActiveTab('trace')} className={tabClass('trace')}>
         <Activity className="w-3.5 h-3.5" />
         {t.agents.executions.tab_trace}
       </button>
       {hasPipeline && (
-        <button onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
+        <button type="button" onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
           <Zap className="w-3.5 h-3.5" />
           {t.agents.executions.tab_pipeline}
         </button>
       )}
       {hasChain && (
-        <button onClick={() => setActiveTab('chain')} className={tabClass('chain')}>
+        <button type="button" onClick={() => setActiveTab('chain')} className={tabClass('chain')}>
           <Link2 className="w-3.5 h-3.5" />
           {t.agents.executions.tab_chain}
         </button>
       )}
       {isTerminalState(executionStatus) && (
-        <button onClick={() => setActiveTab('replay')} className={tabClass('replay', true)}>
+        <button type="button" onClick={() => setActiveTab('replay')} className={tabClass('replay', true)}>
           <Play className="w-3.5 h-3.5" />
           {t.agents.executions.tab_replay}
         </button>

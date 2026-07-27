@@ -29,6 +29,7 @@ export default function RevitalizeProgress({ lines, onCancel }: RevitalizeProgre
           <p className="typo-caption text-foreground/90">{ob.revitalize_running_hint}</p>
         </div>
         <button
+          type="button"
           onClick={onCancel}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card text-foreground border border-primary/15 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/25 transition-colors focus-ring"
         >

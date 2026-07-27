@@ -57,7 +57,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
             </p>
           </div>
         </div>
-        <button onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
+        <button type="button" onClick={onClose} className="w-8 h-8 rounded-card bg-secondary/50 hover:bg-secondary flex items-center justify-center transition-colors" aria-label={t.templates.diagrams.close_dialog}>
           <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
@@ -67,6 +67,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
         <div className={`flex items-center gap-2 ${CARD_PADDING.modalSection} border-b border-primary/10 bg-secondary/20 overflow-x-auto`}>
           {flows.map((flow, index) => (
             <button
+              type="button"
               key={flow.id}
               onClick={() => {
                 setActiveFlowIndex(index);

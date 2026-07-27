@@ -96,6 +96,7 @@ export function PreviewPhase() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowNegotiator(true)}
                 className={`shrink-0 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >

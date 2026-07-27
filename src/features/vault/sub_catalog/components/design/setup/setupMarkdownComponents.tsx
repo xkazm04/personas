@@ -21,6 +21,7 @@ export function CopyButton({ text, className }: { text: string; className?: stri
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       title={t.vault.design_phases.copy_to_clipboard}
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body transition-all ${
@@ -82,6 +83,7 @@ export function buildComponents(onOpenUrl: (url: string) => void): Components {
       return (
         <span className="inline-flex items-center gap-1">
           <button
+            type="button"
             onClick={safeUrl ? () => onOpenUrl(safeUrl) : undefined}
             disabled={!safeUrl}
             className={`text-left inline-flex items-center gap-1 ${

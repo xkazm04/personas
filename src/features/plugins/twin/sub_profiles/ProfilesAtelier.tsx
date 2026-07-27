@@ -500,14 +500,14 @@ function HeroCard(props: HeroCardProps) {
         {/* Action stack */}
         <div className="flex md:flex-col items-end gap-1.5">
           {!isActive && (
-            <button onClick={onSetActive} title={t.profiles.setActive} className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-violet-300 border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
+            <button type="button" onClick={onSetActive} title={t.profiles.setActive} className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium text-violet-300 border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 transition-colors flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5" /> {t.profiles.setActive}
             </button>
           )}
-          <button onClick={onStartEdit} title={t.profiles.edit} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button type="button" onClick={onStartEdit} title={t.profiles.edit} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={onDelete} title={t.profiles.delete} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+          <button type="button" onClick={onDelete} title={t.profiles.delete} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -611,10 +611,10 @@ function SatelliteCard(props: SatelliteCardProps) {
           <ArrowUpRight className="w-3.5 h-3.5" /> {t.profiles.setActive}
         </span>
         <div className="flex items-center gap-0.5">
-          <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onStartEdit(); }} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
             <Pencil className="w-3.5 h-3.5" />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>

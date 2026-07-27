@@ -117,6 +117,7 @@ export function ExecutionStep({
             {t.onboarding.agent_ready_hint}
           </p>
           <button
+            type="button"
             onClick={handleRun}
             className="px-6 py-2.5 typo-heading rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
           >

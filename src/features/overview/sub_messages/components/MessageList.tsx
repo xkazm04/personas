@@ -277,11 +277,12 @@ export default function MessageList() {
               </span>
             )}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
+              <button type="button" onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.messages_view.mock_message}
               </button>
             )}
             <button
+              type="button"
               onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground hover:text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-all"
               title={readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
@@ -289,14 +290,15 @@ export default function MessageList() {
               {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               {readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
             </button>
-            <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
+            <button type="button" onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
-            <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
+            <button type="button" onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
               <CheckCheck className="w-3.5 h-3.5" /> {t.overview.messages_view.mark_all_read}
             </button>
             {messages.length > 0 && (
               <button
+                type="button"
                 onClick={() => setConfirmingDeleteAll(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-red-400 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-all"
                 title={t.overview.messages_view.delete_all}
@@ -372,7 +374,7 @@ export default function MessageList() {
                     );
                   })}
                 </div>
-                {remaining > 0 && (<div className="p-4"><button onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
+                {remaining > 0 && (<div className="p-4"><button type="button" onClick={() => fetchMessages(false)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">{tx(t.overview.messages_view.load_more, { count: remaining })}</button></div>)}
               </div>
             )}
           </div>

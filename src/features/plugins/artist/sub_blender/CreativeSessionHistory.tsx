@@ -61,6 +61,7 @@ export default function CreativeSessionHistory() {
   return (
     <div className="rounded-modal border border-primary/10 bg-card/50 overflow-hidden">
       <button
+        type="button"
         onClick={() => setExpanded((e) => !e)}
         className="w-full flex items-center justify-between px-5 py-3 hover:bg-secondary/20 transition-colors cursor-pointer"
       >
@@ -110,6 +111,7 @@ export default function CreativeSessionHistory() {
                   </div>
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     <button
+                      type="button"
                       onClick={() => replay(sess.id)}
                       className="p-1 rounded hover:bg-rose-500/20 text-rose-400"
                       title={t.plugins.artist.replay_session}
@@ -117,6 +119,7 @@ export default function CreativeSessionHistory() {
                       <Play className="w-3 h-3" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => remove(sess.id)}
                       className="p-1 rounded hover:bg-red-500/20 text-red-400"
                       title={t.plugins.artist.delete_session}

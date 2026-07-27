@@ -108,6 +108,7 @@ export default function ReferenceBoard() {
   if (!referenceBoardOpen) {
     return (
       <button
+        type="button"
         onClick={() => setReferenceBoardOpen(true)}
         className="fixed right-0 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-1 px-2 py-3 rounded-l-modal border border-r-0 border-primary/15 bg-card/80 backdrop-blur hover:bg-card hover:border-rose-500/30 transition-colors"
         title={t.plugins.artist.moodboard_show}
@@ -150,6 +151,7 @@ export default function ReferenceBoard() {
         <div className="flex items-center gap-1 shrink-0">
           {referenceBoard.length > 0 && (
             <button
+              type="button"
               onClick={handleClear}
               className="text-md text-foreground hover:text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/10 transition-colors"
               title={t.plugins.artist.moodboard_clear}
@@ -158,6 +160,7 @@ export default function ReferenceBoard() {
             </button>
           )}
           <button
+            type="button"
             onClick={() => setReferenceBoardOpen(false)}
             className="p-1 rounded hover:bg-secondary/40 text-foreground"
             title={t.plugins.artist.moodboard_hide}
@@ -294,6 +297,7 @@ function ReferenceCard({ item, index, onRemove, onWeightChange, onReorder }: Ref
               {item.fileName}
             </p>
             <button
+              type="button"
               onClick={onRemove}
               className="p-0.5 rounded hover:bg-red-500/15 text-foreground hover:text-red-400 transition-colors shrink-0"
               title={t.plugins.artist.moodboard_unpin}

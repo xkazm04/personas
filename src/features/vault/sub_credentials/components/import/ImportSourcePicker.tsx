@@ -25,6 +25,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
     >
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onBack}
           className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
@@ -42,6 +43,7 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
           return (
             <button
               key={source.id}
+              type="button"
               onClick={() => onSelect(source.id)}
               className="flex items-start gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-all text-left group"
             >

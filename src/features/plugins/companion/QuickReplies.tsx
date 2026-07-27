@@ -41,6 +41,7 @@ export function QuickReplies({
     <div className="border-t border-foreground/10 px-3 py-2 flex flex-wrap gap-1.5 shrink-0">
       {options.map((opt, i) => (
         <button
+          type="button"
           key={`${i}-${opt}`}
           onClick={() => onPick(opt)}
           disabled={disabled}

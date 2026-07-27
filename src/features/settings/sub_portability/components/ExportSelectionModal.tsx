@@ -107,6 +107,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
           </div>
         </div>
         <button
+          type="button"
           onClick={onClose}
           aria-label={s.close}
           className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors flex-shrink-0"
@@ -138,6 +139,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 />
                 {query && (
                   <button
+                    type="button"
                     onClick={() => setQuery('')}
                     aria-label={s.cancel}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-foreground"
@@ -150,6 +152,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                 {scope === 'personas' &&
                   filterChips.map((chip) => (
                     <button
+                      type="button"
                       key={chip.key}
                       onClick={() => setPersonaFilter(chip.key)}
                       className={`px-2.5 py-1 rounded-input typo-caption font-medium border transition-colors ${
@@ -165,6 +168,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                   {tx(p.results_count, { count: shownIds.length })}
                 </span>
                 <button
+                  type="button"
                   onClick={() => picker.setMany(scope, shownIds, !allShownSelected)}
                   disabled={shownIds.length === 0}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input typo-caption font-medium border border-emerald-500/20 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 transition-colors disabled:opacity-40"

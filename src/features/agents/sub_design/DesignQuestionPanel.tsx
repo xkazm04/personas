@@ -80,6 +80,7 @@ export function DesignQuestionPanel({
           <div className="flex flex-wrap gap-2 pt-1">
             {question.options.map((option, i) => (
               <button
+                type="button"
                 key={i}
                 onClick={() => {
                   setQuestionAnswer('');
@@ -122,6 +123,7 @@ export function DesignQuestionPanel({
             }}
           />
           <button
+            type="button"
             onClick={() => {
               if (questionAnswer.trim()) {
                 onAnswerQuestion(questionAnswer.trim());
@@ -144,6 +146,7 @@ export function DesignQuestionPanel({
 
       {/* Cancel */}
       <button
+        type="button"
         onClick={onCancelAnalysis}
         className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-foreground/95 transition-colors"
       >

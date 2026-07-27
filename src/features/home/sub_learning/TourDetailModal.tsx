@@ -62,6 +62,7 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
               </StatusBadge>
             )}
             <button
+              type="button"
               onClick={onClose}
               aria-label={t.common.close}
               className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
@@ -99,6 +100,7 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
         {/* Footer */}
         <div className="relative z-10 flex items-center justify-end px-6 py-4 border-t border-primary/10 flex-shrink-0">
           <button
+            type="button"
             onClick={onStart}
             data-testid={`tour-modal-start-${tour.id}`}
             className={`flex items-center gap-2 px-5 py-2 typo-heading rounded-modal ${colors.btnBg} ${colors.btnText} border ${colors.btnBorder} hover:brightness-125 transition-all`}

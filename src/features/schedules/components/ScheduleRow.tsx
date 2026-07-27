@@ -234,6 +234,7 @@ function ScheduleRow({
           {/* Manual execute + advanced-actions caret (segmented) */}
           <div className="relative inline-flex" ref={advancedRef}>
             <button
+              type="button"
               onClick={() => onManualExecute(agent)}
               disabled={isExecuting || disabled}
               className="p-2 rounded-l-card hover:bg-emerald-500/15 text-foreground hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -246,6 +247,7 @@ function ScheduleRow({
               )}
             </button>
             <button
+              type="button"
               onClick={() => setShowAdvanced((v) => !v)}
               disabled={disabled}
               aria-haspopup="menu"
@@ -264,6 +266,7 @@ function ScheduleRow({
                 className="absolute right-0 top-full mt-1 w-[224px] rounded-card border border-primary/15 bg-background shadow-elevation-3 z-20 overflow-hidden"
               >
                 <button
+                  type="button"
                   role="menuitem"
                   onClick={() => { setShowAdvanced(false); onSkipNextFire(agent); }}
                   disabled={!entry.nextRun || disabled}
@@ -292,6 +295,7 @@ function ScheduleRow({
                     { label: t.schedules.run_in_1h, ms: 60 * 60_000 },
                   ].map((opt) => (
                     <button
+                      type="button"
                       key={opt.ms}
                       role="menuitem"
                       onClick={() => { setShowAdvanced(false); onRunIn(agent, opt.ms); }}
@@ -312,6 +316,7 @@ function ScheduleRow({
           {/* Backfill missed runs */}
           {canBackfill && (
             <button
+              type="button"
               onClick={() => setShowBackfill(true)}
               disabled={isBackfilling || disabled}
               className="p-2 rounded-card hover:bg-amber-500/15 text-foreground hover:text-amber-400 transition-colors disabled:opacity-40"
@@ -327,6 +332,7 @@ function ScheduleRow({
 
           {/* Change frequency */}
           <button
+            type="button"
             onClick={() => setShowFreqEditor(true)}
             disabled={isEditing}
             className="p-2 rounded-card hover:bg-blue-500/15 text-foreground hover:text-blue-400 transition-colors disabled:opacity-40"
@@ -337,6 +343,7 @@ function ScheduleRow({
 
           {/* Toggle enabled */}
           <button
+            type="button"
             onClick={() => onToggleEnabled(agent)}
             className="p-2 rounded-card hover:bg-secondary/60 transition-colors"
             title={agent.trigger_enabled ? t.schedules.pause_schedule : t.schedules.resume_schedule}

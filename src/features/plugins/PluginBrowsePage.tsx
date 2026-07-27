@@ -70,6 +70,7 @@ export default function PluginBrowsePage() {
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="typo-card-label">{plugin.label}</h3>
                       <button
+                        type="button"
                         onClick={() => togglePlugin(plugin.id)}
                         role="switch"
                         aria-checked={enabled}

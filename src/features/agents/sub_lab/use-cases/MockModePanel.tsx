@@ -21,6 +21,7 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
           <span className="typo-body text-amber-400/70">{t.shared.use_cases_extra.example_output}</span>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1 rounded hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-colors"
         >

@@ -245,6 +245,7 @@ export default function GraphPanel() {
                 />
               </div>
               <button
+                type="button"
                 onClick={runSearch}
                 disabled={searching || !query.trim()}
                 className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
@@ -342,6 +343,7 @@ export default function GraphPanel() {
                 className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
               <button
+                type="button"
                 onClick={appendJournal}
                 disabled={journalSaving || !journalBody.trim()}
                 className="ml-auto flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
@@ -388,6 +390,7 @@ export default function GraphPanel() {
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
             <button
+              type="button"
               onClick={writeMeeting}
               disabled={meetingSaving || !meetingTitle.trim() || !meetingBody.trim()}
               className="flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"

@@ -442,6 +442,7 @@ export default function IdeaTriagePage() {
         >
           <SweepButton projectId={activeProjectId} onSwept={() => { if (activeProjectId) void fetchIdeas(activeProjectId); }} />
           <button
+            type="button"
             onClick={() => window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT))}
             className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
             title={dt.shortcuts_open_title}
@@ -473,6 +474,7 @@ export default function IdeaTriagePage() {
                 const active = sortMode === opt.mode;
                 return (
                   <button
+                    type="button"
                     key={opt.mode}
                     onClick={() => setSortMode(opt.mode)}
                     title={opt.tip}
@@ -498,6 +500,7 @@ export default function IdeaTriagePage() {
                 </h3>
                 <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border/15">
                   <button
+                    type="button"
                     onClick={() => setFilterOrigin(null)}
                     className={`px-2 py-1 rounded-card text-md transition-colors ${
                       filterOrigin === null ? 'bg-primary/10 text-foreground font-medium' : 'text-foreground hover:bg-primary/5'
@@ -511,6 +514,7 @@ export default function IdeaTriagePage() {
                     const Icon = meta.icon;
                     return (
                       <button
+                        type="button"
                         key={origin}
                         onClick={() => setFilterOrigin(filterOrigin === origin ? null : origin)}
                         className={`inline-flex items-center gap-1 px-2 py-1 rounded-card text-md transition-colors ${
@@ -531,6 +535,7 @@ export default function IdeaTriagePage() {
               {dt.sidebar_category}
             </h3>
             <button
+              type="button"
               onClick={() => { setFilterCategory('all'); setFilterScanType(null); }}
               className={`w-full text-left px-3 py-2 rounded-card text-md transition-colors ${
                 filterCategory === 'all' && !filterScanType
@@ -545,6 +550,7 @@ export default function IdeaTriagePage() {
               const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
               return (
                 <button
+                  type="button"
                   key={cat.key}
                   onClick={() => { setFilterCategory(cat.key as CategoryKey); setFilterScanType(null); }}
                   className={`w-full text-left px-3 py-2 rounded-card text-md transition-colors flex items-center gap-2 ${
@@ -572,6 +578,7 @@ export default function IdeaTriagePage() {
                 const count = ideas.filter((i) => i.status === 'pending' && storeIdeas.find((si) => si.id === i.id)?.scan_type === agent.key).length;
                 return (
                   <button
+                    type="button"
                     key={agent.key}
                     onClick={() => { setFilterScanType(filterScanType === agent.key ? null : agent.key); setFilterCategory('all'); }}
                     className={`w-full text-left px-3 py-1.5 rounded-card text-md transition-colors flex items-center gap-2 ${

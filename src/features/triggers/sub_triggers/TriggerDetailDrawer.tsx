@@ -66,6 +66,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
         {/* Curl command for webhooks */}
         {trigger.trigger_type === 'webhook' && (
           <button
+            type="button"
             onClick={detail.copyCurlCommand}
             className={`inline-flex items-center gap-1.5 typo-body transition-colors ${
               detail.copiedCurl ? 'text-emerald-400' : 'text-foreground hover:text-muted-foreground'
@@ -81,6 +82,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
           {/* Testing actions group */}
           <div className="flex items-center gap-0.5 rounded-modal bg-secondary/20 p-1">
             <button
+              type="button"
               onClick={detail.handleTestFire}
               disabled={detail.testing}
               className="flex items-center gap-1.5 px-3 py-2 typo-body text-primary/70 hover:text-primary hover:bg-primary/10 rounded-card transition-colors disabled:opacity-50"
@@ -91,6 +93,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
             </button>
 
             <button
+              type="button"
               onClick={detail.handleDryRun}
               disabled={detail.dryRunning || detail.testing}
               className="flex items-center gap-1.5 px-3 py-2 typo-body text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10 rounded-card transition-colors disabled:opacity-50"
@@ -118,7 +121,7 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
                 </Button>
               </div>
             ) : (
-              <button onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-card transition-colors" title={t.triggers.detail.delete_trigger}>
+              <button type="button" onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-card transition-colors" title={t.triggers.detail.delete_trigger}>
                 <Trash2 className="w-4 h-4" />{t.common.delete}
               </button>
             )}

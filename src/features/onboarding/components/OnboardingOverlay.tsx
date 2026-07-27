@@ -115,6 +115,7 @@ export default function OnboardingOverlay() {
           </div>
         </div>
         <button
+          type="button"
           onClick={dismissOnboarding}
           className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
           aria-label={t.onboarding.skip_tooltip}
@@ -184,6 +185,7 @@ export default function OnboardingOverlay() {
       {/* Footer */}
       <div className="flex items-center justify-between px-6 py-3.5 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
         <button
+          type="button"
           onClick={dismissOnboarding}
           className="px-4 py-2 typo-heading rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
         >

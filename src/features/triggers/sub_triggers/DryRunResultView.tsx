@@ -21,7 +21,7 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
               <FlaskConical className="w-3.5 h-3.5" />
               {t.triggers.dry_run_result_title}
             </div>
-            <button onClick={clearDryRunResult} className="p-0.5 hover:bg-amber-500/15 rounded transition-colors">
+            <button type="button" onClick={clearDryRunResult} className="p-0.5 hover:bg-amber-500/15 rounded transition-colors">
               <X className="w-3 h-3 text-amber-400/60" />
             </button>
           </div>

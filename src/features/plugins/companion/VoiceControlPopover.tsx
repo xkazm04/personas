@@ -110,6 +110,7 @@ export function VoiceControlPopover() {
   return (
     <div ref={wrapRef} className="relative">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         data-testid="companion-voice-control"
         className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring ${
@@ -157,6 +158,7 @@ export function VoiceControlPopover() {
 
           {/* Test */}
           <button
+            type="button"
             onClick={() => void runTest()}
             disabled={!voiceConfigured || testState === 'synthesizing'}
             data-testid="companion-voice-test"

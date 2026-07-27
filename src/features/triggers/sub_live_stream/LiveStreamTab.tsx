@@ -328,6 +328,7 @@ export function LiveStreamTab() {
       {/* Stream stats bar */}
       <div className="flex items-center gap-4 px-4 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
         <button
+          type="button"
           onClick={() => isPaused ? handleResume() : setIsPaused(true)}
           disabled={!attached && !isPaused}
           className={`relative inline-flex items-center h-9 pl-3 pr-3.5 rounded-full typo-label font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 disabled:opacity-60 disabled:cursor-not-allowed ${
@@ -414,6 +415,7 @@ export function LiveStreamTab() {
 
         <div className="ml-auto flex items-center gap-1">
           <button
+            type="button"
             onClick={handleClear}
             disabled={events.length === 0}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors"

@@ -525,6 +525,7 @@ export function MessageDetailModal({
         <>
           <div className="flex items-center gap-4 typo-body text-foreground mr-auto">
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); copyId(msgId); }}
               className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
               title={msgId}
@@ -534,6 +535,7 @@ export function MessageDetailModal({
             </button>
             {message.execution_id && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   useAgentStore.getState().selectPersona(message.persona_id);
@@ -558,6 +560,7 @@ export function MessageDetailModal({
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => {
                 setConfirmingDelete(true);
                 if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);

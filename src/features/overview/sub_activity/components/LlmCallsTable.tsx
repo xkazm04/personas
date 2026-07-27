@@ -316,6 +316,7 @@ export default function LlmCallsTable({ headerSwitch }: LlmCallsTableProps) {
             ariaLabel={t.overview.usage_filters.time_range_label}
           />
           <button
+            type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="p-1.5 rounded-interactive text-foreground hover:bg-primary/8 disabled:opacity-60 focus-ring"

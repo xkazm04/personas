@@ -19,6 +19,7 @@ export function AuthMethodTabs({
     <div className="flex gap-1 p-1 bg-secondary/15 border border-primary/8 rounded-card">
       {authMethods.map((method) => (
         <button
+          type="button"
           key={method.id}
           onClick={() => onMethodChange(method)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${

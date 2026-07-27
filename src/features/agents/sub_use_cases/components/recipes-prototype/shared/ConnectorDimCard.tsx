@@ -145,6 +145,7 @@ export function ConnectorDimCard({ uc, personaId, credentials }: ConnectorDimCar
                 : 'Never used';
               return (
                 <button
+                  type="button"
                   key={c.id}
                   role="option"
                   aria-selected={isCurrent}

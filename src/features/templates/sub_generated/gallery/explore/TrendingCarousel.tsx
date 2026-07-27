@@ -36,6 +36,7 @@ export function TrendingCarousel({
           // one hover group.
           <div key={tmpl.id} className="relative flex-shrink-0 group/trend">
             <button
+              type="button"
               onClick={() => onSelectTemplate(tmpl)}
               className="w-[200px] p-3 rounded-modal bg-emerald-500/5 border border-emerald-500/12 hover:border-emerald-500/25 group-hover/trend:bg-emerald-500/10 transition-all text-left"
             >
@@ -53,6 +54,7 @@ export function TrendingCarousel({
             {onAdoptTemplate && (
               <Tooltip content={t.templates.actions.adopt} placement="bottom">
                 <button
+                  type="button"
                   onClick={() => onAdoptTemplate(tmpl)}
                   aria-label={t.templates.actions.adopt}
                   data-testid={`trending-adopt-${tmpl.id}`}

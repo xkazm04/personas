@@ -151,6 +151,7 @@ export function RenameEventDialog({
             </p>
           </div>
           <button
+            type="button"
             onClick={onCancel}
             className="p-1 rounded-card hover:bg-secondary/60 text-foreground flex-shrink-0"
           >
@@ -236,6 +237,7 @@ export function RenameEventDialog({
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 bg-secondary/20">
           <button
+            type="button"
             onClick={onCancel}
             disabled={busy}
             className="px-3 py-1.5 rounded-card typo-caption font-medium text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
@@ -243,6 +245,7 @@ export function RenameEventDialog({
             {t.triggers.builder.cancel}
           </button>
           <button
+            type="button"
             onClick={() => void handleConfirm()}
             disabled={disabled}
             className="px-3 py-1.5 rounded-card typo-caption font-medium bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 border border-cyan-400/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

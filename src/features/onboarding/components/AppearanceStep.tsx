@@ -62,6 +62,7 @@ export function AppearanceStep() {
             const isActive = language === lang.code;
             return (
               <button
+                type="button"
                 key={lang.code}
                 onFocus={() => prefetchWithIntent(lang.code)}
                 onBlur={cancelPrefetch}

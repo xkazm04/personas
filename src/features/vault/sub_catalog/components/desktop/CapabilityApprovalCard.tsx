@@ -82,12 +82,14 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
 
         <div className="flex items-center gap-2 pt-1">
           <button
+            type="button"
             onClick={onCancel}
             className="flex-1 px-3 py-1.5 typo-caption font-medium text-foreground bg-secondary/30 rounded-card hover:bg-secondary/50 transition-colors"
           >
             {t.common.cancel}
           </button>
           <button
+            type="button"
             onClick={onApprove}
             disabled={approving}
             // text-foreground is deliberate: bg-orange-500 is saturated and

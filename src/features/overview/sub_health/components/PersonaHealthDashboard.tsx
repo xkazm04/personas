@@ -87,6 +87,7 @@ export default function PersonaHealthDashboard() {
             {/* View toggle */}
             <div className="flex items-center border border-primary/10 rounded-card overflow-hidden mr-2">
               <button
+                type="button"
                 onClick={() => setHealthView('heartbeats')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'heartbeats'
@@ -98,6 +99,7 @@ export default function PersonaHealthDashboard() {
                 <LayoutGrid className="w-3 h-3" /> {t.overview.health_dashboard.heartbeats_btn}
               </button>
               <button
+                type="button"
                 onClick={() => setHealthView('status-page')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'status-page'
@@ -109,6 +111,7 @@ export default function PersonaHealthDashboard() {
                 <Rows3 className="w-3 h-3" /> {t.overview.health.status_page}
               </button>
               <button
+                type="button"
                 onClick={() => setHealthView('reliability')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption transition-colors ${
                   healthView === 'reliability'
@@ -125,6 +128,7 @@ export default function PersonaHealthDashboard() {
               <span className="typo-caption text-foreground mr-2">Updated {lastRefreshLabel}</span>
             )}
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={healthLoading}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"

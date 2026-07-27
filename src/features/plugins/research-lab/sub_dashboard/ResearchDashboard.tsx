@@ -117,6 +117,7 @@ export default function ResearchDashboard() {
             <Counter label={t.research_lab.completion} value={`${completionPct}%`} accent />
           </div>
           <button
+            type="button"
             onClick={() => setResearchLabTab('projects')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
@@ -265,6 +266,7 @@ function PhaseStation({
         {visible.map((p) => (
           <button
             key={p.id}
+            type="button"
             onClick={() => onOpenProject(p.id)}
             className="w-full text-left px-2 py-1.5 rounded-input bg-secondary/40 border border-border/30 hover:border-primary/40 hover:bg-secondary/70 transition-colors group"
             title={p.thesis ?? p.name}
@@ -365,6 +367,7 @@ function BenchEmptyState({ t, onCreate }: { t: Translations; onCreate: () => voi
           </p>
         </div>
         <button
+          type="button"
           onClick={onCreate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >

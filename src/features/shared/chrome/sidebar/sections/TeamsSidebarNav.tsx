@@ -91,6 +91,7 @@ export function TeamsSidebarNav() {
     <nav className="space-y-1" aria-label={t.sidebar.teams}>
       {/* Workspace header → management table (deselects any open team) */}
       <button
+        type="button"
         data-testid="team-nav"
         onClick={() => { selectTeam(null); go('workspace'); }}
         aria-current={teamsTab === 'workspace' && !selectedTeamId ? 'page' : undefined}
@@ -110,6 +111,7 @@ export function TeamsSidebarNav() {
       {/* Goals hub — view submenu (board/timeline) underneath */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
         <button
+          type="button"
           data-testid="teams-goals-nav"
           onClick={() => go('goals')}
           aria-current={teamsTab === 'goals' ? 'page' : undefined}
@@ -133,6 +135,7 @@ export function TeamsSidebarNav() {
             const active = teamsTab === 'goals' && goalsTab === v.id;
             return (
               <button
+                type="button"
                 key={v.id}
                 data-testid={`goals-view-${v.id}`}
                 onClick={() => { go('goals'); setGoalsTab(v.id); }}
@@ -155,6 +158,7 @@ export function TeamsSidebarNav() {
           context / Proposals) nested underneath, mirroring Goals. */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
         <button
+          type="button"
           data-testid="teams-kpis-nav"
           onClick={() => go('kpis')}
           aria-current={teamsTab === 'kpis' ? 'page' : undefined}
@@ -176,6 +180,7 @@ export function TeamsSidebarNav() {
             const active = teamsTab === 'kpis' && kpisTab === v.id;
             return (
               <button
+                type="button"
                 key={v.id}
                 data-testid={`kpis-view-${v.id}`}
                 onClick={() => { go('kpis'); setKpisTab(v.id); }}
@@ -210,6 +215,7 @@ export function TeamsSidebarNav() {
             const active = teamsTab === item.id;
             return (
               <button
+                type="button"
                 key={item.id}
                 data-testid={item.testId}
                 onClick={() => go(item.id)}

@@ -93,6 +93,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           </select>
         </div>
         <button
+          type="button"
           onClick={loadHistory}
           disabled={loading}
           className="mt-6 flex items-center gap-1.5 px-2.5 py-2 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
@@ -259,6 +260,7 @@ function DeploymentRow({
               {isConfirming ? (
                 <>
                   <button
+                    type="button"
                     onClick={onRollback}
                     disabled={rollingBack}
                     className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
@@ -271,6 +273,7 @@ function DeploymentRow({
                     {t.common.confirm}
                   </button>
                   <button
+                    type="button"
                     onClick={onCancelRollback}
                     disabled={rollingBack}
                     className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground/80 transition-colors"
@@ -280,6 +283,7 @@ function DeploymentRow({
                 </>
               ) : (
                 <button
+                  type="button"
                   onClick={onRollback}
                   className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
                   title={t.gitlab.rollback_to_deployment}

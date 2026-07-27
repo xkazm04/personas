@@ -78,6 +78,7 @@ export function NotificationChannelCard({
           size="sm"
         />
         <button
+          type="button"
           onClick={onRemove}
           className="p-1 text-foreground hover:text-red-400 transition-colors"
         >
@@ -120,6 +121,7 @@ export function NotificationChannelCard({
       {/* Test notification button */}
       <div className="pt-1">
         <button
+          type="button"
           onClick={handleTestNotification}
           disabled={!enabled || testStatus === 'sending'}
           className={`inline-flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} rounded-modal typo-body font-medium transition-all ${

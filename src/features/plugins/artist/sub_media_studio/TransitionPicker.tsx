@@ -42,6 +42,7 @@ export default function TransitionPicker({
           const isActive = value === tr.id;
           return (
             <button
+              type="button"
               key={tr.id}
               onClick={() => onChange(tr.id, tr.id === 'cut' ? 0 : Math.max(duration, 0.5))}
               className={`flex flex-col items-center gap-1 py-2 px-1 rounded-card border transition-all text-center ${

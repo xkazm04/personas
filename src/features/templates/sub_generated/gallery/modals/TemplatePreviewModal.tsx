@@ -111,7 +111,7 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <DimensionRadial designResult={designResult} size={36} />
-            <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+            <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
               <X className="w-5 h-5 text-foreground" />
             </button>
           </div>
@@ -134,6 +134,7 @@ export function TemplatePreviewModal({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={handleRun}
                 disabled={!designResult}
                 className="px-4 py-2.5 typo-body rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
@@ -185,6 +186,7 @@ export function TemplatePreviewModal({
           <div className="flex items-center gap-2">
             {isDone && (
               <button
+                type="button"
                 onClick={handleRetry}
                 className="px-3.5 py-2 typo-body rounded-modal bg-secondary/50 text-foreground hover:bg-secondary/80 transition-colors flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
               >
@@ -198,6 +200,7 @@ export function TemplatePreviewModal({
               </span>
             )}
             <button
+              type="button"
               onClick={onClose}
               className="px-3.5 py-2 typo-body rounded-modal text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
             >

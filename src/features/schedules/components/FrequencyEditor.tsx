@@ -112,6 +112,7 @@ export default function FrequencyEditor({
             </div>
           </div>
           <button
+            type="button"
             onClick={onCancel}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
@@ -132,6 +133,7 @@ export default function FrequencyEditor({
               {CRON_PRESETS.map((preset) => (
                 <button
                   key={preset.cron}
+                  type="button"
                   onClick={() => handlePresetSelect(preset.cron)}
                   className={`px-2.5 py-2 typo-caption rounded-card border transition-all text-center ${
                     cronInput === preset.cron
@@ -148,6 +150,7 @@ export default function FrequencyEditor({
           {/* Mode toggle */}
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => setMode('custom')}
               className={`flex-1 px-3 py-2 typo-caption rounded-card border transition-colors ${
                 mode === 'custom'
@@ -158,6 +161,7 @@ export default function FrequencyEditor({
               {t.schedules.cron_expression} <span className="text-amber-400/60 font-medium">({tzLabel})</span>
             </button>
             <button
+              type="button"
               onClick={() => setMode('preset')}
               className={`flex-1 px-3 py-2 typo-caption rounded-card border transition-colors ${
                 mode === 'preset'
@@ -245,12 +249,14 @@ export default function FrequencyEditor({
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-primary/10 bg-primary/[0.03]">
           <button
+            type="button"
             onClick={onCancel}
             className="px-3 py-1.5 typo-caption rounded-card border border-primary/10 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={!isValid}
             className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-blue-500/30 bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

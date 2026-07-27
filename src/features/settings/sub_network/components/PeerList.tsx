@@ -84,6 +84,7 @@ export function PeerList() {
         </h3>
         <div className="flex flex-col items-end gap-0.5">
           <button
+            type="button"
             onClick={() => doFetch()}
             title={st.refresh_peer_list}
             className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"

@@ -169,6 +169,7 @@ export function CloudWebhooksTab() {
               </span>
             )}
             <button
+              type="button"
               onClick={() => { setIsLoading(true); fetchWebhookTriggers(); }}
               className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               title={t.triggers.refresh_label}
@@ -296,6 +297,7 @@ export function CloudWebhooksTab() {
                       </span>
                     )}
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); handleDelete(row.trigger.id); }}
                       className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       title={t.triggers.delete_webhook_title}

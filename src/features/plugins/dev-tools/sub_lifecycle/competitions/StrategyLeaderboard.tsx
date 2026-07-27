@@ -42,6 +42,7 @@ export function StrategyLeaderboard({ projectId }: { projectId: string }) {
           {t.plugins.dev_tools.strategy_leaderboard}
         </h4>
         <button
+          type="button"
           onClick={load}
           className="ml-auto text-foreground hover:text-primary transition-colors"
           title="Refresh"

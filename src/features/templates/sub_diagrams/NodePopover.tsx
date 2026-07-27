@@ -49,7 +49,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
           <TypeIcon className="w-3.5 h-3.5" style={{ color: typeMeta.color }} />
         </div>
         <span className="typo-code font-mono uppercase tracking-wider text-foreground">{typeMeta.label}</span>
-        <button onClick={onClose} className="ml-auto w-5 h-5 rounded flex items-center justify-center hover:bg-secondary/60 transition-colors">
+        <button type="button" onClick={onClose} className="ml-auto w-5 h-5 rounded flex items-center justify-center hover:bg-secondary/60 transition-colors">
           <X className="w-3 h-3 text-foreground" />
         </button>
       </div>

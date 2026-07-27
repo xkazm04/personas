@@ -249,6 +249,7 @@ export default function ScheduleTimeline() {
             {/* Scheduler engine status */}
             {schedulerStats && (
               <button
+                type="button"
                 onClick={handleToggleScheduler}
                 className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
                   schedulerStats.running
@@ -293,6 +294,7 @@ export default function ScheduleTimeline() {
 
             {/* Refresh */}
             <button
+              type="button"
               onClick={() => fetchCronAgents()}
               disabled={loading}
               className="p-2 rounded-card border border-primary/10 hover:bg-secondary/50 hover:border-primary/20 text-foreground transition-all disabled:opacity-40"
@@ -314,6 +316,7 @@ export default function ScheduleTimeline() {
               {t.schedules.showing_for} <span className="font-semibold">{filter.label}</span>
             </span>
             <button
+              type="button"
               onClick={() => {
                 setFilter(null);
                 window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds: null } }));
@@ -409,6 +412,7 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
         const selected = value === opt.value;
         return (
           <button
+            type="button"
             key={opt.value}
             role="tab"
             aria-selected={selected}

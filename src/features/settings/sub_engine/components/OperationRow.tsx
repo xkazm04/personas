@@ -57,6 +57,7 @@ export function OperationRow({
             ) : (
               <div className="flex justify-center">
                 <button
+                  type="button"
                   onClick={() => onToggle(operation, p.id)}
                   className={`w-6 h-6 rounded border flex items-center justify-center transition-all ${
                     enabled

@@ -220,6 +220,7 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
         )}
       </span>
       <button
+        type="button"
         onClick={() => {
           // The GlobalExecutionList useEffect at ~L140 watches
           // pendingExecutionFocus and pops the ExecutionDetailModal onto

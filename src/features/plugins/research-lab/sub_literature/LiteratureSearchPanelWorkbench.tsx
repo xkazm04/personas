@@ -133,6 +133,7 @@ export default function LiteratureSearchPanelWorkbench() {
               />
             </div>
             <button
+              type="button"
               onClick={() => setShowArxiv(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
             >
@@ -140,6 +141,7 @@ export default function LiteratureSearchPanelWorkbench() {
               arXiv
             </button>
             <button
+              type="button"
               onClick={() => setShowAdd(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
             >
@@ -239,6 +241,7 @@ function TypeChip({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full typo-caption transition-colors ${
         active
@@ -386,6 +389,7 @@ function ReadingDrawer({
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-interactive hover:bg-foreground/[0.06] text-foreground hover:text-foreground transition-colors"
             aria-label="Close"
@@ -416,6 +420,7 @@ function ReadingDrawer({
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/40">
           {source.status === 'pending' && (
             <button
+              type="button"
               onClick={onIngest}
               disabled={ingesting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
@@ -425,6 +430,7 @@ function ReadingDrawer({
             </button>
           )}
           <button
+            type="button"
             onClick={onDelete}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           >
@@ -451,6 +457,7 @@ function WorkbenchEmpty({
       <div className="text-center py-16 space-y-3">
         <p className="typo-body-lg text-foreground">{t.research_lab.no_matching_sources}</p>
         <button
+          type="button"
           onClick={onClearFilters}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-foreground/[0.06] text-foreground/85 hover:bg-foreground/[0.1] transition-colors"
         >
@@ -468,6 +475,7 @@ function WorkbenchEmpty({
       <p className="typo-body text-foreground max-w-md mx-auto">{t.research_lab.no_sources_hint}</p>
       <div className="flex items-center justify-center gap-2">
         <button
+          type="button"
           onClick={onArxiv}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
         >
@@ -475,6 +483,7 @@ function WorkbenchEmpty({
           arXiv
         </button>
         <button
+          type="button"
           onClick={onAdd}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >

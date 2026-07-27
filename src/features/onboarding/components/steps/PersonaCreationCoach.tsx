@@ -220,6 +220,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
       {/* Skip option */}
       {effectiveSubStep < 3 && buildPhase !== 'promoted' && (
         <button
+          type="button"
           onClick={() => {
             useSystemStore.getState().emitTourEvent('tour:persona-promoted');
           }}

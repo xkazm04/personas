@@ -40,7 +40,7 @@ export function RecommendedModal({
             {t.templates.recommended.subtitle}
           </span>
         </div>
-        <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/50 transition-colors">
+        <button type="button" onClick={onClose} className="p-1 rounded-card hover:bg-secondary/50 transition-colors">
           <X className="w-4 h-4 text-foreground" />
         </button>
       </div>
@@ -57,6 +57,7 @@ export function RecommendedModal({
               const connectors: string[] = parseJsonSafe(t.connectors_used, []);
               return (
                 <button
+                  type="button"
                   key={t.id}
                   onClick={() => {
                     onSelectTemplate(t);

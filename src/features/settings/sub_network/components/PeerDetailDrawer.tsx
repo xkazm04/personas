@@ -166,6 +166,7 @@ export function PeerDetailDrawer({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
           >
@@ -187,6 +188,7 @@ export function PeerDetailDrawer({
             </span>
             {isConnected ? (
               <button
+                type="button"
                 onClick={() => onDisconnect(peer.peer_id)}
                 className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
               >
@@ -195,6 +197,7 @@ export function PeerDetailDrawer({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => onConnect(peer.peer_id)}
                 className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 transition-colors flex items-center gap-1.5"
               >
@@ -263,6 +266,7 @@ export function PeerDetailDrawer({
                   )}
                 </h4>
                 <button
+                  type="button"
                   onClick={handleSync}
                   disabled={syncing}
                   title={st.sync_manifest}

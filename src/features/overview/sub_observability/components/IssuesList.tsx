@@ -73,6 +73,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             <HealingIssueStatusBadge issue={issue} variant="compact" />
             <HealingRetryChip issue={issue} variant="compact" />
             <button
+              type="button"
               onClick={() => onSelectIssue(issue)}
               className={`flex-1 text-left typo-body transition-colors line-clamp-2 ${isCircuitBreaker ? 'text-red-400/90 hover:text-red-300 font-medium' : isAutoFixed ? 'text-foreground/90 line-through decoration-emerald-500/30' : 'text-foreground hover:text-foreground'}`}
             >
@@ -100,6 +101,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             <span className="typo-body text-foreground w-16 text-right">{ageLabel}</span>
             {!isAutoFixed && !isAutoFixPending && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onResolve(issue.id);

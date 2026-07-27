@@ -36,6 +36,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
             className="hidden"
           />
           <button
+            type="button"
             onClick={() => batchFileInputRef.current?.click()}
             className="px-4 py-3 rounded-modal border-2 border-dashed border-primary/15 hover:border-violet-500/30 hover:bg-violet-500/5 text-foreground hover:text-violet-300 transition-all flex items-center gap-2"
           >
@@ -56,6 +57,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
       {categories.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           <button
+            type="button"
             onClick={() => onCategoryFilterChange(null)}
             className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
               categoryFilter === null
@@ -69,6 +71,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
             const count = templates.filter((t) => t.category === cat).length;
             return (
               <button
+                type="button"
                 key={cat}
                 onClick={() => onCategoryFilterChange(categoryFilter === cat ? null : cat)}
                 className={`px-2.5 py-1 typo-body rounded-modal border transition-all ${
@@ -113,6 +116,7 @@ export function BatchSourceView({ templates, categoryFilter, onCategoryFilterCha
           {t.templates.generation.batch_count.replace('{count}', String(filtered.length)).replace('{plural}', filtered.length !== 1 ? 's' : '')}
         </p>
         <button
+          type="button"
           onClick={onClear}
           className="px-2 py-1 typo-body rounded-card text-foreground hover:text-red-400 transition-colors"
         >

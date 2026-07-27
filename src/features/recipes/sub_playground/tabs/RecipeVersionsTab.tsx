@@ -133,6 +133,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         {/* Generate button */}
         {(versioning.phase === 'idle' || versioning.phase === 'error') && !versioning.draft && (
           <button
+            type="button"
             onClick={handleGenerate}
             disabled={!requirements.trim()}
             className="flex items-center gap-1.5 rounded-modal bg-primary px-4 py-2 typo-body font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:pointer-events-none transition-colors"
@@ -200,6 +201,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
             <div className="flex items-center gap-2 pt-1">
               <button
+                type="button"
                 onClick={handleAccept}
                 disabled={accepting}
                 className="flex items-center gap-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 typo-body font-medium text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
@@ -208,6 +210,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 {t.recipes.accept_apply}
               </button>
               <button
+                type="button"
                 onClick={() => {
                   versioning.reset();
                   handleGenerate();
@@ -218,6 +221,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 {t.recipes.regenerate}
               </button>
               <button
+                type="button"
                 onClick={() => versioning.reset()}
                 className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
               >
@@ -300,6 +304,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
 
                       {!isLatest && (
                         <button
+                          type="button"
                           onClick={() => handleRevert(version.id)}
                           disabled={isRevertTarget}
                           className="flex items-center gap-1 rounded-card px-2 py-1 typo-body text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"

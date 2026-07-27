@@ -196,6 +196,7 @@ export default function SetupPanel() {
         <div className="space-y-4">
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={detectVaults}
               disabled={detecting}
               data-testid="obsidian-detect-vaults"
@@ -205,6 +206,7 @@ export default function SetupPanel() {
               {detecting ? t.plugins.obsidian_brain.detecting : t.plugins.obsidian_brain.auto_detect}
             </button>
             <button
+              type="button"
               onClick={browseFolder}
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             >
@@ -219,6 +221,7 @@ export default function SetupPanel() {
               <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.detected_vaults}</p>
               {visibleDetectedVaults.map((v) => (
                 <button
+                  type="button"
                   key={v.path}
                   onClick={() => { setVaultPath(v.path); setConnectionResult(null); }}
                   className={`w-full text-left px-3 py-2.5 rounded-modal border transition-colors focus-ring ${
@@ -250,6 +253,7 @@ export default function SetupPanel() {
               className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <button
+              type="button"
               onClick={testConnection}
               disabled={!vaultPath || testing}
               data-testid="obsidian-test-connection"
@@ -367,6 +371,7 @@ export default function SetupPanel() {
 
       {/* Save */}
       <button
+        type="button"
         onClick={saveConfig}
         disabled={saving || !connectionResult?.valid}
         data-testid="obsidian-save-config"

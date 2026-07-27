@@ -137,6 +137,7 @@ export function SensorySignalsModal({
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
@@ -149,6 +150,7 @@ export function SensorySignalsModal({
           {filterChips.map((chip) => (
             <button
               key={chip.id}
+              type="button"
               onClick={() => setFilter(chip.id)}
               className={`px-2.5 py-1 rounded-interactive typo-caption font-medium transition-colors focus-ring ${
                 filter === chip.id
@@ -252,6 +254,7 @@ function SignalRow({
         ) : null}
       </div>
       <button
+        type="button"
         onClick={onDelete}
         className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-ring"
         aria-label={t.plugins.companion.sensory_signals_delete_aria}

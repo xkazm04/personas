@@ -51,6 +51,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
           <div className="flex items-center gap-2 mt-2.5">
             {url && (
               <button
+                type="button"
                 onClick={handleOpenUrl}
                 className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-card border border-blue-500/25 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
               >
@@ -59,6 +60,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
               </button>
             )}
             <button
+              type="button"
               onClick={() => setConfirmed(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-card border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
             >

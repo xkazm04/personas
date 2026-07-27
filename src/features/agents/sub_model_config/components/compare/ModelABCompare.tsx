@@ -176,6 +176,7 @@ export function ModelABCompare() {
               {/* Run / Cancel */}
               {isLabRunning ? (
                 <button
+                  type="button"
                   onClick={() => void handleCancel()}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body
                              bg-red-500/80 hover:bg-red-500 text-foreground transition-all cursor-pointer"
@@ -185,6 +186,7 @@ export function ModelABCompare() {
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={() => void handleStart()}
                   disabled={!canRun}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-modal font-medium typo-body

@@ -118,6 +118,7 @@ export default function SidebarSubNav({
         return (
           <button
             key={item.id}
+            type="button"
             data-testid={`tab-${item.id}`}
             onClick={() => onSelect(item.id)}
             onPointerEnter={onHoverItem ? () => onHoverItem(item.id) : undefined}

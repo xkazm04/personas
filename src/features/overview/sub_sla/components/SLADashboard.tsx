@@ -54,7 +54,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
   const dayPicker = (
     <div className="flex items-center gap-1.5">
       {DAY_OPTIONS.map((d) => (
-        <button key={d} onClick={() => setDays(d)} className={`px-2.5 py-1 typo-caption rounded-modal transition-colors ${days === d ? 'bg-primary/15 text-primary border border-primary/30' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5 border border-transparent'}`}>
+        <button type="button" key={d} onClick={() => setDays(d)} className={`px-2.5 py-1 typo-caption rounded-modal transition-colors ${days === d ? 'bg-primary/15 text-primary border border-primary/30' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5 border border-transparent'}`}>
           {d}d
         </button>
       ))}

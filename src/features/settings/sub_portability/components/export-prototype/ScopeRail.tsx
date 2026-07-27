@@ -38,6 +38,7 @@ export function ScopeRail({
         return (
           <button
             key={key}
+            type="button"
             onClick={() => onScope(key)}
             aria-current={active}
             className={`relative flex items-center gap-2.5 pl-3 pr-2.5 py-2.5 rounded-card text-left transition-colors ${
@@ -60,12 +61,14 @@ export function ScopeRail({
 
       <div className="mt-auto pt-3 space-y-1">
         <button
+          type="button"
           onClick={() => setAll(true)}
           className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
         >
           <Boxes className="w-3.5 h-3.5" /> {p.select_everything}
         </button>
         <button
+          type="button"
           onClick={() => setAll(false)}
           className="w-full inline-flex items-center gap-2 px-2.5 py-1.5 rounded-card typo-caption font-medium text-foreground hover:bg-secondary/25 transition-colors"
         >

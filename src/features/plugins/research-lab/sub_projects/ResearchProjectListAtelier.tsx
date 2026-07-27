@@ -252,6 +252,7 @@ function ProjectHero({
           {project.obsidianVaultPath && (
             <>
               <button
+                type="button"
                 onClick={() => onSync(false)}
                 disabled={syncing}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
@@ -260,6 +261,7 @@ function ProjectHero({
                 {syncing ? t.research_lab.syncing : t.research_lab.sync_to_obsidian}
               </button>
               <button
+                type="button"
                 onClick={() => onSync(true)}
                 disabled={syncing}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
@@ -270,6 +272,7 @@ function ProjectHero({
             </>
           )}
           <button
+            type="button"
             onClick={onEdit}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-foreground/[0.06] text-foreground/85 hover:bg-foreground/[0.1] transition-colors"
           >
@@ -277,6 +280,7 @@ function ProjectHero({
             {t.research_lab.edit_project}
           </button>
           <button
+            type="button"
             onClick={onDelete}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           >
@@ -284,6 +288,7 @@ function ProjectHero({
             {t.common.delete}
           </button>
           <button
+            type="button"
             onClick={onOpen}
             className="flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
@@ -361,6 +366,7 @@ export function AtelierBand({
         <div className="flex-1" />
         {onCreate && (
           <button
+            type="button"
             onClick={onCreate}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
@@ -416,6 +422,7 @@ export function RailItem({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`flex items-center justify-between gap-2 px-3 py-2 rounded-interactive transition-colors text-left ${
         selected ? 'bg-primary/15 text-primary' : 'text-foreground/85 hover:bg-foreground/[0.04]'
@@ -456,6 +463,7 @@ function ChronologyThread({
                 }`}
               />
               <button
+                type="button"
                 onClick={() => onSelect(p.id)}
                 onDoubleClick={() => onOpen(p.id)}
                 className={`w-full text-left rounded-card border p-2.5 transition-colors ${
@@ -524,6 +532,7 @@ function AtelierEmpty({
         <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
         <p className="typo-body text-foreground">{t.research_lab.no_projects_hint}</p>
         <button
+          type="button"
           onClick={onCreate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >

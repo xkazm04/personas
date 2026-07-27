@@ -28,6 +28,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
   return (
     <div className="space-y-2">
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1.5 w-full typo-body text-foreground hover:text-muted-foreground transition-colors"
       >
@@ -155,6 +156,7 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
               {/* Reset button */}
               {active && (
                 <button
+                  type="button"
                   onClick={() => onChange({ ...DEFAULT_RATE_LIMIT })}
                   className="typo-body text-foreground hover:text-muted-foreground/70 transition-colors"
                 >

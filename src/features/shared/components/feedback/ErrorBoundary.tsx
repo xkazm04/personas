@@ -147,6 +147,7 @@ function ErrorFallback({
           {/* Actions */}
           <div className="flex items-center gap-2 mt-4 mb-3">
             <button
+              type="button"
               onClick={onReset}
               className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 hover:bg-amber-500/20 transition-colors"
             >
@@ -155,6 +156,7 @@ function ErrorFallback({
             </button>
             {chunkError && (
               <button
+                type="button"
                 onClick={() => window.location.reload()}
                 className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
               >
@@ -163,6 +165,7 @@ function ErrorFallback({
               </button>
             )}
             <button
+              type="button"
               onClick={handleGoHome}
               className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
             >
@@ -173,6 +176,7 @@ function ErrorFallback({
 
           {/* Report button */}
           <button
+            type="button"
             onClick={handleReport}
             className="flex items-center gap-1.5 typo-body text-foreground hover:text-foreground transition-colors mb-3"
           >
@@ -182,6 +186,7 @@ function ErrorFallback({
 
           {/* Details toggle -- hidden by default, labeled for developers */}
           <button
+            type="button"
             onClick={() => setShowDetails(!showDetails)}
             className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
           >

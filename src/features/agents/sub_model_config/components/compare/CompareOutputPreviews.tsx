@@ -34,6 +34,7 @@ export function OutputPreviews({
         <div className="flex flex-wrap gap-1">
           {scenarios.map((s) => (
             <button
+              type="button"
               key={s}
               onClick={() => setExpandedScenario(expandedScenario === s ? null : s)}
               className={`px-2 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${

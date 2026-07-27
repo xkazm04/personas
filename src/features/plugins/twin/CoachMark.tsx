@@ -57,6 +57,7 @@ export function CoachMark({ id, title, body }: { id: string; title: string; body
         <p className="typo-caption text-foreground mt-0.5">{body}</p>
       </div>
       <button
+        type="button"
         onClick={handleDismiss}
         aria-label={t.coach.dismiss}
         className="flex-shrink-0 px-2 py-1 text-[10px] font-medium rounded-interactive text-violet-400 hover:bg-violet-500/10 transition-colors"

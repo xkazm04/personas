@@ -114,6 +114,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
         <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
           {capabilityStep ? (
             <button
+              type="button"
               onClick={() => setCapabilityStep(null)}
               className="p-1 rounded-card hover:bg-secondary/60 text-foreground"
               aria-label={debtText("auto_back_to_personas_10208a8d")}
@@ -137,7 +138,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                 : `${availableCount} available`}
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-card hover:bg-secondary/60 text-foreground">
+          <button type="button" onClick={onClose} className="p-1 rounded-card hover:bg-secondary/60 text-foreground">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -145,6 +146,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
         {capabilityStep && (
           <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
             <button
+              type="button"
               onClick={() => handleCapabilityPick(null)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card border border-primary/10 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left"
             >
@@ -164,6 +166,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                 <div className="space-y-1">
                   {capabilityOptions.map(uc => (
                     <button
+                      type="button"
                       key={uc.id}
                       onClick={() => handleCapabilityPick(uc.id)}
                       className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card border border-primary/8 hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
@@ -203,6 +206,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
           {groupsWithPersonas.length > 0 && (
             <div className="flex flex-wrap gap-1">
               <button
+                type="button"
                 onClick={() => setSelectedGroupId(null)}
                 className={`px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${!selectedGroupId ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
               >
@@ -210,6 +214,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
               </button>
               {groupsWithPersonas.map(g => (
                 <button
+                  type="button"
                   key={g.id}
                   onClick={() => setSelectedGroupId(selectedGroupId === g.id ? null : g.id)}
                   className={`flex items-center gap-1 px-2 py-0.5 rounded-input text-[10px] font-medium transition-colors ${selectedGroupId === g.id ? 'bg-cyan-500/15 text-cyan-400' : 'text-foreground hover:text-foreground hover:bg-secondary/40'}`}
@@ -261,6 +266,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
               <div className="grid grid-cols-2 gap-1">
                 {ps.map(p => (
                   <button
+                    type="button"
                     key={p.id}
                     onClick={() => handlePersonaPick(p)}
                     className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"

@@ -123,6 +123,7 @@ export function ConnectorCredentialModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-foreground hover:text-foreground/95"
           >
@@ -206,6 +207,7 @@ export function ConnectorCredentialModal({
               {cf.no_fields_defined}
             </p>
             <button
+              type="button"
               onClick={onClose}
               className="mt-3 px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
             >

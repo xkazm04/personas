@@ -157,6 +157,7 @@ function ResearchProjectListBaseline() {
                     {projectStatusLabel(t, project.status)}
                   </span>
                   <button
+                    type="button"
                     onClick={(e) => handleEdit(e, project)}
                     className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-secondary/80 text-foreground hover:text-foreground transition-all focus-ring"
                     title={t.research_lab.edit_project}
@@ -165,6 +166,7 @@ function ResearchProjectListBaseline() {
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => handleDelete(e, project.id)}
                     className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring"
                     title={t.common.delete}
@@ -184,6 +186,7 @@ function ResearchProjectListBaseline() {
                   <>
                     <span className="px-2 py-0.5 rounded-full text-[10px] bg-violet-500/20 text-violet-300">{t.research_lab.vault_connected}</span>
                     <button
+                      type="button"
                       onClick={(e) => handleSync(e, project.id)}
                       disabled={syncing === project.id}
                       className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
@@ -193,6 +196,7 @@ function ResearchProjectListBaseline() {
                       {syncing === project.id ? t.research_lab.syncing : t.research_lab.sync_to_obsidian}
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => handleDailySync(e, project.id)}
                       disabled={syncing === project.id}
                       className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 focus-ring"

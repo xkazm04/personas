@@ -43,7 +43,7 @@ export function LabResultModal({
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="typo-caption text-foreground">{<AbsoluteTime timestamp={run.createdAt} />}</span>
-            <button data-testid="lab-result-modal-close" onClick={onClose} aria-label={debtText("auto_close_results_b9a0e746")} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
+            <button type="button" data-testid="lab-result-modal-close" onClick={onClose} aria-label={debtText("auto_close_results_b9a0e746")} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>

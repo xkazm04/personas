@@ -82,6 +82,7 @@ export function TransformStatusPanels({
 
           {onCancel && (
             <button
+              type="button"
               onClick={onCancel}
               className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-xl border border-red-500/20 text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-colors flex-shrink-0"
               title={t.shared.progress_extra.cancel_transformation}
@@ -127,6 +128,7 @@ export function TransformStatusPanels({
         </div>
         {onRetry && (
           <button
+            type="button"
             onClick={onRetry}
             className="flex items-center gap-2 px-4 py-2 typo-heading rounded-xl border border-violet-500/25 text-violet-300 hover:bg-violet-500/15 transition-colors flex-shrink-0"
           >

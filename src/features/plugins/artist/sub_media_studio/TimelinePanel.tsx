@@ -306,6 +306,7 @@ function TimelinePanelImpl({
     if (collapsed) {
       return (
         <button
+          type="button"
           key={lane}
           onClick={() => toggleLane(lane)}
           className={`h-5 flex items-center gap-2 px-3 border-b border-primary/10 transition-colors ${c.collapsedRail}`}
@@ -324,6 +325,7 @@ function TimelinePanelImpl({
         style={{ height: `${LANE_HEIGHTS[lane]}px` }}
       >
         <button
+          type="button"
           onClick={() => toggleLane(lane)}
           className="flex items-center gap-1.5 flex-1 text-left hover:opacity-80 transition-opacity"
         >
@@ -338,6 +340,7 @@ function TimelinePanelImpl({
           )}
         </button>
         <button
+          type="button"
           onClick={onAdd}
           className={`w-5 h-5 rounded-input border flex items-center justify-center transition-colors ${c.addButton}`}
           aria-label={`add-${lane}`}

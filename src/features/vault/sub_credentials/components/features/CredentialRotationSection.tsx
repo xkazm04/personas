@@ -96,7 +96,7 @@ export function CredentialRotationSection({
         <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20 typo-body text-red-400">
           <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
           <span className="flex-1">{actionError}</span>
-          <button onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-red-500/10 rounded transition-colors">
+          <button type="button" onClick={() => setActionError(null)} className="shrink-0 p-0.5 hover:bg-red-500/10 rounded transition-colors">
             <XCircle className="w-3 h-3" />
           </button>
         </div>

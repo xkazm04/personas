@@ -83,6 +83,7 @@ export default function CertificationCommandCenter() {
               </span>
             )}
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={certLoading}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"

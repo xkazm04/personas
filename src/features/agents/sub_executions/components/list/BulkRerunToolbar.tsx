@@ -56,6 +56,7 @@ export function BulkRerunToolbar({
   if (!bulkMode) {
     return (
       <button
+        type="button"
         onClick={onEnter}
         disabled={!hasExecutions}
         className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-foreground hover:text-muted-foreground/70 border border-transparent transition-colors disabled:opacity-40"
@@ -72,6 +73,7 @@ export function BulkRerunToolbar({
   return (
     <>
       <button
+        type="button"
         onClick={onExit}
         className="flex items-center gap-1 px-2 py-1 typo-body rounded-card bg-primary/15 text-primary/80 border border-primary/20 transition-colors"
       >
@@ -86,6 +88,7 @@ export function BulkRerunToolbar({
         </span>
 
         <button
+          type="button"
           onClick={onSelectAllFailed}
           disabled={failedCount === 0}
           className="px-2 py-0.5 typo-body rounded-card text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40"
@@ -94,6 +97,7 @@ export function BulkRerunToolbar({
         </button>
 
         <button
+          type="button"
           onClick={() => setShowSincePicker((v) => !v)}
           className="flex items-center gap-1 px-2 py-0.5 typo-body rounded-card text-foreground hover:bg-secondary/40 transition-colors"
         >
@@ -103,6 +107,7 @@ export function BulkRerunToolbar({
 
         {selectedCount > 0 && (
           <button
+            type="button"
             onClick={onClear}
             className="px-2 py-0.5 typo-body rounded-card text-foreground hover:bg-secondary/40 transition-colors"
           >
@@ -111,6 +116,7 @@ export function BulkRerunToolbar({
         )}
 
         <button
+          type="button"
           onClick={onStart}
           disabled={selectedCount === 0}
           className="ml-auto flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/90 border border-primary/25 hover:bg-primary/25 transition-colors disabled:opacity-40"
@@ -130,6 +136,7 @@ export function BulkRerunToolbar({
               aria-label={e.bulk_rerun_since_picker_label}
             />
             <button
+              type="button"
               onClick={() => {
                 if (!sinceValue) return;
                 const iso = new Date(sinceValue).toISOString();
@@ -142,6 +149,7 @@ export function BulkRerunToolbar({
             </button>
             {latestAnnotationDate && (
               <button
+                type="button"
                 onClick={() => {
                   const parsed = new Date(latestAnnotationDate);
                   const localValue = new Date(
@@ -159,6 +167,7 @@ export function BulkRerunToolbar({
               </button>
             )}
             <button
+              type="button"
               onClick={() => setShowSincePicker(false)}
               className="px-2 py-1 typo-body rounded-card text-foreground hover:bg-secondary/40 transition-colors"
             >

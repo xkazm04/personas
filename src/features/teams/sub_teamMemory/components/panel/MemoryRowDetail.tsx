@@ -49,10 +49,10 @@ export default function MemoryRowDetail({
       <div className="flex items-center justify-between">
         <span className="typo-body font-medium text-violet-400">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
-          <button onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
+          <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-emerald-500/15 text-emerald-400" title={t.common.save}>
             <Check className="w-3 h-3" />
           </button>
-          <button onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" title={t.common.cancel}>
+          <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" title={t.common.cancel}>
             <X className="w-3 h-3" />
           </button>
         </div>

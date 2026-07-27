@@ -80,6 +80,7 @@ export function CommandPaletteResults({
               const isSelected = selectedIndex === item.globalIndex;
               return (
               <button
+                type="button"
                 key={item.id}
                 data-index={item.globalIndex}
                 onClick={() => onExecute(item)}

@@ -249,6 +249,7 @@ function WhisperConfig() {
                 )}
               </div>
               <button
+                type="button"
                 onClick={() => void refreshStatus()}
                 className="p-2 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring shrink-0"
                 title={t.plugins.companion.stt_refresh}
@@ -312,6 +313,7 @@ function WhisperConfig() {
                       {m.isDownloaded ? (
                         <>
                           <button
+                            type="button"
                             onClick={() => setModelId(m.modelId)}
                             disabled={selected}
                             className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
@@ -319,6 +321,7 @@ function WhisperConfig() {
                             {t.plugins.companion.stt_model_select}
                           </button>
                           <button
+                            type="button"
                             onClick={() => void onDelete(m.modelId)}
                             className="p-1.5 rounded-interactive text-foreground hover:text-rose-300 hover:bg-rose-500/10 transition-colors focus-ring"
                             title={t.plugins.companion.stt_model_delete}
@@ -334,6 +337,7 @@ function WhisperConfig() {
                         </span>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => void onDownload(m.modelId)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-secondary/50 hover:bg-secondary/70 border border-foreground/10 text-foreground transition-colors focus-ring"
                         >

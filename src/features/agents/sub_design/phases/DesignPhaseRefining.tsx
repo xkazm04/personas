@@ -29,6 +29,7 @@ export function DesignPhaseRefining({ outputLines, result, onCancel }: DesignPha
       <TransformProgress mode="analysis" lines={outputLines} isRunning={true} />
 
       <button
+        type="button"
         onClick={onCancel}
         className="flex items-center justify-center gap-2 px-3 py-1.5 rounded-modal typo-body font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
       >

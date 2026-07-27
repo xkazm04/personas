@@ -31,6 +31,7 @@ export function AnomalyBadge({ anomaly, onClickExecution }: AnomalyBadgeProps) {
             {anomaly.execution_ids.map((id) => (
               <button
                 key={id}
+                type="button"
                 onClick={() => onClickExecution?.(id)}
                 className="typo-code font-mono text-blue-400 hover:text-blue-300 underline decoration-blue-400/30"
               >

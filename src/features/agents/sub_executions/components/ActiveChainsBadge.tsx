@@ -63,6 +63,7 @@ export function ActiveChainsBadge() {
       data-testid="active-chains-badge"
     >
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-2 w-full px-3 py-1.5 text-left"
       >

@@ -28,6 +28,7 @@ export function CreateTemplateModalHeader({
       <div className="flex items-center gap-4">
         <WizardStepper steps={wizardSteps} currentIndex={currentIndex} />
         <button
+          type="button"
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
         >

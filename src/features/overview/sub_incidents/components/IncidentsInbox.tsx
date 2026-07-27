@@ -453,6 +453,7 @@ export default function IncidentsInbox() {
         subtitle={t.overview.incidents.subtitle}
         actions={
           <button
+            type="button"
             onClick={() => void refresh()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
             aria-label={t.overview.incidents.refresh}

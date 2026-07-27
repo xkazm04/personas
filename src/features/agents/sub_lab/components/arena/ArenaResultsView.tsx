@@ -320,6 +320,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     return (
                       <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''} ${r.status === 'failed' || r.status === 'error' ? 'bg-red-500/5' : ''}`}>
                         <button
+                          type="button"
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
                           className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5 transition-all ${
                             isSelected

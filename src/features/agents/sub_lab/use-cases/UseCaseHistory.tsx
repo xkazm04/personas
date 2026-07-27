@@ -79,6 +79,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
           {t.shared.use_cases_extra.run_to_see_history}
         </p>
         <button
+          type="button"
           onClick={() => onRerun('')}
           className="mt-1 inline-flex items-center gap-2 px-4 py-2 typo-heading rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
@@ -99,6 +100,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         return (
           <div key={exec.id} className="px-4 py-2">
             <button
+              type="button"
               onClick={() => setExpandedId(isExpanded ? null : exec.id)}
               className="w-full flex items-center gap-3 text-left"
             >
@@ -119,6 +121,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
               )}
               {exec.input_data && (
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRerun(exec.input_data!);

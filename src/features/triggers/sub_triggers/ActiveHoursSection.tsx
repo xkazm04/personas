@@ -118,6 +118,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
   return (
     <div className="space-y-2">
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1.5 w-full typo-body text-foreground hover:text-muted-foreground transition-colors"
       >
@@ -156,6 +157,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                     <div className="flex items-center gap-1">
                       {DAYS.map((d) => (
                         <button
+                          type="button"
                           key={d.key}
                           onClick={() => toggleDay(d.key)}
                           title={d.label}
@@ -171,6 +173,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
+                        type="button"
                         onClick={() => applyPreset(WEEKDAY_PRESET)}
                         className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
                           isWeekdays
@@ -181,6 +184,7 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                         Weekdays
                       </button>
                       <button
+                        type="button"
                         onClick={() => applyPreset(EVERYDAY_PRESET)}
                         className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
                           isEveryday

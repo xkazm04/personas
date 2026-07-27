@@ -33,6 +33,7 @@ export function AdminToolsDropdown({
   return (
     <div ref={ref} className="relative flex-shrink-0">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         className="p-2 rounded-card border border-primary/10 hover:bg-primary/5 text-foreground hover:text-muted-foreground transition-colors"
         title={t.templates.search.admin_tools}
@@ -43,6 +44,7 @@ export function AdminToolsDropdown({
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] py-1.5 bg-background border border-primary/20 rounded-card shadow-elevation-4 backdrop-blur-sm">
           {onCleanupDuplicates && (
             <button
+              type="button"
               onClick={() => { onCleanupDuplicates(); setOpen(false); }}
               disabled={isCleaningUp}
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-amber-400/80 hover:bg-amber-500/10 transition-colors text-left disabled:opacity-50"
@@ -53,6 +55,7 @@ export function AdminToolsDropdown({
           )}
           {onBackfillPipeline && (
             <button
+              type="button"
               onClick={() => { onBackfillPipeline(); setOpen(false); }}
               disabled={isBackfillingPipeline}
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-violet-400/80 hover:bg-violet-500/10 transition-colors text-left disabled:opacity-50"
@@ -63,6 +66,7 @@ export function AdminToolsDropdown({
           )}
           {onBackfillTools && (
             <button
+              type="button"
               onClick={() => { onBackfillTools(); setOpen(false); }}
               disabled={isBackfillingTools}
               className="w-full flex items-center gap-2.5 px-3.5 py-2.5 typo-body text-cyan-400/80 hover:bg-cyan-500/10 transition-colors text-left disabled:opacity-50"

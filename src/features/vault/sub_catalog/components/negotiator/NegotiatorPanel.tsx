@@ -121,6 +121,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             </div>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground transition-colors duration-snap"
           >

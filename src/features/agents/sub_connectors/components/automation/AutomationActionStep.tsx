@@ -71,7 +71,7 @@ export function AutomationActionStep({
       )}
 
       <div className="flex justify-end">
-        <button onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">
           {t.common.cancel}
         </button>
       </div>

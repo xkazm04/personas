@@ -44,6 +44,7 @@ export default function TourLauncher() {
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       data-testid="tour-launcher"
       className="animate-fade-slide-in flex-shrink-0 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal

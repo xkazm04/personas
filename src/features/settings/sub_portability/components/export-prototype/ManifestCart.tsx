@@ -63,6 +63,7 @@ export function ManifestCart({
         <SecretsStatus picker={picker} />
         <ExportButton picker={picker} exporting={exporting} onClick={picker.commit} className="w-full" />
         <button
+          type="button"
           onClick={onCancel}
           disabled={exporting}
           className="w-full py-2 rounded-modal typo-caption font-medium text-foreground hover:text-foreground transition-colors disabled:opacity-50"

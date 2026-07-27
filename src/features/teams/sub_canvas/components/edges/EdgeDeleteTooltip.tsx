@@ -63,6 +63,7 @@ export default function EdgeDeleteTooltip({
           </span>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-0.5 rounded-card text-foreground hover:text-foreground/95 hover:bg-secondary/80 transition-colors"
         >
@@ -79,6 +80,7 @@ export default function EdgeDeleteTooltip({
           const isActive = ct.value === connectionType;
           return (
             <button
+              type="button"
               key={ct.value}
               onClick={() => {
                 if (!isActive) onChangeType(ct.value);
@@ -119,6 +121,7 @@ export default function EdgeDeleteTooltip({
 
       {/* Delete button */}
       <button
+        type="button"
         onClick={onDelete}
         className="flex items-center justify-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal text-red-400 hover:bg-red-500/15 border border-red-500/20 bg-red-500/5 transition-colors"
       >

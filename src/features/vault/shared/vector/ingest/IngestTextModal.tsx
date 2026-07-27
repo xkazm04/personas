@@ -52,6 +52,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
         </div>
         <h2 id="ingest-text-title" className="typo-heading font-semibold text-foreground/90 flex-1">{sh.paste_text}</h2>
         <button
+          type="button"
           onClick={onClose}
           className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
         >
@@ -99,12 +100,14 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       {/* Footer */}
       <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
         <button
+          type="button"
           onClick={onClose}
           className="px-4 py-2 typo-body rounded-card hover:bg-secondary/50 text-foreground transition-colors"
         >
           {t.common.cancel}
         </button>
         <button
+          type="button"
           onClick={() => void handleSubmit()}
           disabled={!canSubmit}
           className="px-4 py-2 typo-body font-medium rounded-card bg-violet-600/80 hover:bg-violet-600 text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

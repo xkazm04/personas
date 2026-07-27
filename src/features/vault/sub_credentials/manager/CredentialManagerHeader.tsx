@@ -107,6 +107,7 @@ export function CredentialToolbar({
           />
           {credentialSearch && (
             <button
+              type="button"
               onClick={() => onSearchChange('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/80 transition-colors"
               title={t.vault.manager.clear_search}

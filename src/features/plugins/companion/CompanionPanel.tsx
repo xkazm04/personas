@@ -530,6 +530,7 @@ function Header({
       </div>
       <div className="flex items-center gap-1">
         <button
+          type="button"
           onClick={onToggleAutonomousMode}
           data-testid="companion-toggle-autonomous"
           aria-pressed={autonomousMode}
@@ -553,6 +554,7 @@ function Header({
         </button>
         {devModeAvailable && (
           <button
+            type="button"
             onClick={onToggleDevMode}
             data-testid="companion-toggle-dev-mode"
             aria-pressed={devMode}
@@ -579,6 +581,7 @@ function Header({
         )}
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
+          type="button"
           onClick={onReset}
           data-testid="companion-reset"
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
@@ -589,6 +592,7 @@ function Header({
         </button>
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
+          type="button"
           onClick={onClose}
           data-testid="companion-close"
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"

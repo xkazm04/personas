@@ -110,6 +110,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
           {/* Environment branches section */}
           <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
             <button
+              type="button"
               onClick={() => setShowBranches(!showBranches)}
               className="w-full flex items-center gap-2 px-3 py-2.5 typo-body font-medium text-foreground hover:bg-secondary/20 transition-colors"
             >
@@ -133,6 +134,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
                       {t.gitlab.no_environment_branches}
                     </p>
                     <button
+                      type="button"
                       onClick={handleSetupBranches}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/15 transition-colors"
                     >
@@ -174,6 +176,7 @@ export function GitOpsVersionHistory({ projectId }: GitOpsVersionHistoryProps) {
               <h3 className="typo-body font-medium text-foreground">{t.gitlab.version_history}</h3>
             </div>
             <button
+              type="button"
               onClick={loadVersions}
               disabled={loading}
               className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
@@ -302,6 +305,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
             {isConfirming ? (
               <>
                 <button
+                  type="button"
                   onClick={onRollback}
                   disabled={rollingBack}
                   className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition-colors disabled:opacity-40"
@@ -314,6 +318,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
                   {t.gitlab.confirm_rollback_version}
                 </button>
                 <button
+                  type="button"
                   onClick={onCancelRollback}
                   disabled={rollingBack}
                   className="px-2 py-1.5 typo-caption rounded-card text-foreground hover:text-foreground/80 transition-colors"
@@ -323,6 +328,7 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               </>
             ) : (
               <button
+                type="button"
                 onClick={onRollback}
                 className="flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium rounded-card hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 text-foreground hover:text-amber-400 transition-colors"
                 title={tx(t.gitlab.rollback_to_version, { version: version.version })}

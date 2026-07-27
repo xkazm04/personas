@@ -28,6 +28,7 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
           title={s.routing_title}
           action={
             <button
+              type="button"
               onClick={onAdd}
               className="flex items-center gap-1 px-3 py-1.5 typo-body rounded-modal border border-primary/20 text-primary hover:bg-primary/10 transition-colors"
             >
@@ -73,13 +74,14 @@ export function ByomRoutingRules({ rules, warnings, onAdd, onUpdate, onRemove }:
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => onUpdate(idx, { enabled: !rule.enabled })} className="typo-body">
+                      <button type="button" onClick={() => onUpdate(idx, { enabled: !rule.enabled })} className="typo-body">
                         {rule.enabled
                           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
                           : <ToggleLeft className="w-5 h-5 text-foreground" />
                         }
                       </button>
                       <button
+                        type="button"
                         onClick={() => onRemove(idx)}
                         className="text-foreground hover:text-red-400 transition-colors"
                       >

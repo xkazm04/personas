@@ -49,6 +49,7 @@ export function FilterChips({
           <ActiveCategoryIcon className="w-3 h-3" style={{ color: activeCategoryMeta.color }} />
           {activeCategoryMeta.label}
           <button
+            type="button"
             onClick={() => onCategoryFilterChange([])}
             className="ml-0.5 hover:text-white transition-colors"
           >
@@ -71,6 +72,7 @@ export function FilterChips({
                 <ConnectorIcon meta={meta} size="w-3 h-3" />
                 {meta.label}
                 <button
+                  type="button"
                   onClick={() => onConnectorFilterChange(connectorFilter.filter((c) => c !== name))}
                   className="ml-0.5 hover:text-white transition-colors"
                 >
@@ -99,6 +101,7 @@ export function FilterChips({
                 <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
                 {cat.label}
                 <button
+                  type="button"
                   onClick={() => onComponentFilterChange(componentFilter.filter((c) => c !== key))}
                   className="ml-0.5 hover:text-white transition-colors"
                 >
@@ -163,6 +166,7 @@ export function FilterChips({
                       : 'bg-amber-500/20 text-amber-300';
               return (
                 <button
+                  type="button"
                   key={opt.value}
                   role="radio"
                   aria-checked={isActive}

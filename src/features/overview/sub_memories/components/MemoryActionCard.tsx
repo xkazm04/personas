@@ -26,6 +26,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
       className={`animate-fade-slide-in group relative rounded-modal border ${meta.borderClass} ${meta.bgClass} p-3 transition-colors hover:border-opacity-40`}
     >
       <button
+        type="button"
         onClick={() => onDismiss(action.id)}
         className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-white/10 text-foreground hover:text-foreground/80 transition-all"
         title={t.overview.memory_actions.dismiss_suggestion}

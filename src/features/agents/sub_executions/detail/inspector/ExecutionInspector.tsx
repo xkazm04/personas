@@ -62,6 +62,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
             const isActive = i === Math.min(selected, steps.length - 1);
             return (
               <button
+                type="button"
                 key={step.step_index}
                 onClick={() => setSelected(i)}
                 className={`w-full flex items-center gap-2 px-3 py-2 text-left border-b border-primary/10 last:border-b-0 transition-colors ${

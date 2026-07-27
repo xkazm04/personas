@@ -189,6 +189,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
               </p>
             </div>
             <button
+              type="button"
               onClick={onComplete}
               className="px-4 py-2 bg-primary/15 hover:bg-primary/25 text-primary rounded-modal typo-body font-medium transition-colors"
             >

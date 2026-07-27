@@ -16,6 +16,7 @@ export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: Vau
       <span className="flex-1">{message}</span>
       {onDismiss && (
         <button
+          type="button"
           onClick={onDismiss}
           className="text-red-400/60 hover:text-red-400 typo-body font-medium shrink-0"
         >

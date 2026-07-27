@@ -499,6 +499,7 @@ export const TriagePane = memo(function TriagePane({
           {personaScoped && <FleetTag />}
           {topItem && (
             <button
+              type="button"
               onClick={topItem.onClick}
               className="typo-caption font-mono uppercase tracking-widest text-primary/80 hover:text-primary transition-colors flex items-center gap-1 focus-ring rounded-interactive"
             >
@@ -518,6 +519,7 @@ export const TriagePane = memo(function TriagePane({
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={item.onClick}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors group focus-ring ${
                   isTop
@@ -730,6 +732,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
         subtitle={personaName ? `${personaName} · ${executions.length}` : tx(t.overview.dashboard.stream_events_count, { count: executions.length })}
       >
         <button
+          type="button"
           onClick={onViewAll}
           className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest focus-ring rounded-interactive"
         >
@@ -740,6 +743,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
         {STREAM_FILTERS.map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => setFilter(f)}
             className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors focus-ring ${
               filter === f ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-primary/[0.06]'
@@ -766,6 +770,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
             return (
               <button
                 key={exec.id}
+                type="button"
                 onClick={onViewAll}
                 className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-primary/[0.04] transition-colors focus-ring"
               >

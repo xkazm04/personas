@@ -64,6 +64,7 @@ export function TimelineEntry({
       {/* Content card */}
       <div className="flex-1 pb-4 min-w-0">
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
           className="w-full text-left group"
         >
@@ -127,6 +128,7 @@ export function TimelineEntry({
                 <div className="flex items-center gap-1.5 pt-1 border-t border-primary/[0.06]">
                   {version.tag !== 'production' && (
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
                     >
@@ -135,6 +137,7 @@ export function TimelineEntry({
                   )}
                   {version.tag !== 'archived' && (
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-zinc-500/10 text-zinc-400 hover:bg-zinc-500/20 transition-colors"
                     >
@@ -143,6 +146,7 @@ export function TimelineEntry({
                   )}
                   {!isFirst && (
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-input bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     >

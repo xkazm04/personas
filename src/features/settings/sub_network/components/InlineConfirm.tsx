@@ -41,12 +41,14 @@ export function InlineConfirm({ message, onConfirm, children }: InlineConfirmPro
           <p className="typo-caption text-foreground mb-2">{message}</p>
           <div className="flex gap-1.5 justify-end">
             <button
+              type="button"
               onClick={() => setOpen(false)}
               className="px-2 py-1 text-[11px] rounded-input border border-border hover:bg-secondary/50 text-foreground"
             >
               {st.cancel}
             </button>
             <button
+              type="button"
               onClick={() => {
                 setOpen(false);
                 onConfirm();

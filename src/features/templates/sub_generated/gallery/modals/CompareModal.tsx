@@ -118,6 +118,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label={t.common.close}
             className="p-1.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors flex-shrink-0"
@@ -138,6 +139,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                       <div className="flex items-center gap-1.5 mt-2">
                         {onAdopt && (
                           <button
+                            type="button"
                             onClick={() => onAdopt(col.id)}
                             data-testid={`compare-adopt-${col.id}`}
                             className="inline-flex items-center gap-1 px-2 py-1 typo-caption font-medium rounded-interactive bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
@@ -148,6 +150,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
                         )}
                         {onTryIt && col.hasDesign && (
                           <button
+                            type="button"
                             onClick={() => onTryIt(col.id)}
                             data-testid={`compare-tryit-${col.id}`}
                             className="inline-flex items-center gap-1 px-2 py-1 typo-caption font-medium rounded-interactive bg-emerald-500/10 text-emerald-400/80 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"

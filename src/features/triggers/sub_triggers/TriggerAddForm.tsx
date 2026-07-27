@@ -242,8 +242,9 @@ export function TriggerAddForm({
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
         <button
+          type="button"
           onClick={handleAddTrigger}
           disabled={isScheduleInvalid || isCreating}
           className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"

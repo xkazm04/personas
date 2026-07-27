@@ -119,6 +119,7 @@ export function DraftEditStep({
       <div className="flex gap-1.5 overflow-x-auto pb-1 flex-shrink-0" role="tablist" aria-label={t.shared.draft_editor.edit_tabs_label}>
         {allTabs.map((tab) => (
           <button
+            type="button"
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             role="tab"
@@ -202,6 +203,7 @@ export function DraftEditStep({
               disabled={disabled || transforming}
             />
             <button
+              type="button"
               onClick={onApplyAdjustment}
               disabled={disabled || transforming || !adjustmentRequest.trim()}
               className="self-end px-4 py-2 typo-heading rounded-xl border border-violet-500/25 text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"

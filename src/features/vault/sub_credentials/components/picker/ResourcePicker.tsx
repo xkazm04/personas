@@ -199,6 +199,7 @@ export function ResourcePicker({
           </p>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="text-foreground hover:text-foreground transition-colors"
           aria-label="Close"
@@ -258,6 +259,7 @@ export function ResourcePicker({
                     </span>
                   )}
                   <button
+                    type="button"
                     onClick={() => fetchSpec(spec, true)}
                     className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground hover:text-foreground transition-colors"
                     title="Refresh"
@@ -300,6 +302,7 @@ export function ResourcePicker({
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={dropStale}
                     data-testid={`resource-drop-stale-${spec.id}`}
                     className="typo-caption px-2 py-1 rounded-interactive bg-status-warning/20 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
@@ -339,6 +342,7 @@ export function ResourcePicker({
                       return (
                         <button
                           key={item.id}
+                          type="button"
                           onClick={() => toggleItem(spec, item)}
                           data-testid={`resource-pick-${spec.id}-${item.id}`}
                           className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-foreground/5 transition-colors ${
@@ -377,6 +381,7 @@ export function ResourcePicker({
 
       <footer className="shrink-0 px-6 py-4 border-t border-primary/10 flex items-center justify-between gap-3">
         <button
+          type="button"
           onClick={handleSkip}
           disabled={saving}
           data-testid="resource-picker-skip"
@@ -386,6 +391,7 @@ export function ResourcePicker({
         </button>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={onClose}
             disabled={saving}
             data-testid="resource-picker-cancel"
@@ -394,6 +400,7 @@ export function ResourcePicker({
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving || requiredMissing}
             data-testid="resource-picker-save"

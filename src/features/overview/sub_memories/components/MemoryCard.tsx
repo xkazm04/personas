@@ -136,6 +136,7 @@ export function MemoryRow({
   const restoreButton = isArchived && onRestore ? (
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       <button
+        type="button"
         onClick={onRestore}
         className="p-1 rounded hover:bg-violet-500/10 text-foreground hover:text-violet-300 transition-colors"
         title={t.overview.memory_card.restore}
@@ -156,11 +157,11 @@ export function MemoryRow({
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
         <div key="confirm" className="animate-fade-slide-in flex items-center gap-1">
-          <button onClick={confirmAndDelete} className="px-2 py-1 typo-heading rounded-card bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
-          <button onClick={cancelDelete} className="px-2 py-1 typo-heading rounded-card bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
+          <button type="button" onClick={confirmAndDelete} className="px-2 py-1 typo-heading rounded-card bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors">{t.overview.memory_card.confirm}</button>
+          <button type="button" onClick={cancelDelete} className="px-2 py-1 typo-heading rounded-card bg-secondary/50 text-foreground hover:text-foreground/95 hover:bg-secondary/70 transition-colors">{t.overview.memory_card.cancel}</button>
         </div>
       ) : (
-        <button key="trash" onClick={armDelete} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors">
+        <button type="button" key="trash" onClick={armDelete} className="animate-fade-slide-in p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       )}

@@ -74,6 +74,7 @@ export function BackgroundBanners({
         <div className="mx-4 mt-3 mb-0">
           <div className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-amber-500/8 border border-amber-500/15">
             <button
+              type="button"
               onClick={() => onResumeDraft(adoptionDraft)}
               className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
             >
@@ -90,6 +91,7 @@ export function BackgroundBanners({
               </div>
             </button>
             <button
+              type="button"
               onClick={onDiscardDraft}
               className="p-1 rounded-card hover:bg-amber-500/15 text-foreground hover:text-amber-400 transition-colors flex-shrink-0"
               title={t.templates.banners.discard_draft}
@@ -104,6 +106,7 @@ export function BackgroundBanners({
       {templateAdoptActive && !adoptModalOpen && (
         <div className="mx-4 mt-3 mb-0">
           <button
+            type="button"
             onClick={onResumeAdoption}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-violet-500/8 border border-violet-500/15 hover:bg-violet-500/12 transition-colors text-left"
           >
@@ -123,6 +126,7 @@ export function BackgroundBanners({
       {rebuildIsActive && !rebuildModalOpen && (
         <div className="mx-4 mt-3 mb-0">
           <button
+            type="button"
             onClick={onResumeRebuild}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-modal bg-blue-500/8 border border-blue-500/15 hover:bg-blue-500/12 transition-colors text-left"
           >
@@ -196,6 +200,7 @@ export function BackgroundBanners({
           <div className="mx-4 mt-3 mb-0">
             <div className={`w-full flex items-center gap-3 px-4 py-3 rounded-modal border ${bgClass}`}>
               <button
+                type="button"
                 onClick={onResumePreview}
                 className="flex-1 flex items-center gap-3 hover:opacity-80 transition-opacity text-left min-w-0"
               >
@@ -212,6 +217,7 @@ export function BackgroundBanners({
               </button>
               {isDone && (
                 <button
+                  type="button"
                   onClick={onDismissPreview}
                   className="p-1 rounded-card hover:bg-secondary/40 text-foreground hover:text-foreground/70 transition-colors flex-shrink-0"
                   title="Dismiss"

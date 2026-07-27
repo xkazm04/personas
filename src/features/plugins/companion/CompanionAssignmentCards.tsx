@@ -71,6 +71,7 @@ function AssignmentCardRow({
 
   return (
     <button
+      type="button"
       onClick={onOpen}
       className="group w-full flex items-start gap-2 px-2 py-1.5 rounded-card border border-primary/10 hover:border-orange-500/30 hover:bg-secondary/30 transition-colors text-left"
     >
@@ -83,6 +84,7 @@ function AssignmentCardRow({
         </p>
       </div>
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onDismiss();

@@ -123,6 +123,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
+          type="button"
           data-testid="vault-desktop-back"
           onClick={onBack}
           aria-label={t.common.back}
@@ -138,6 +139,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           </p>
         </div>
         <button
+          type="button"
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
@@ -152,6 +154,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-secondary/30 rounded-card">
         <button
+          type="button"
           onClick={() => setTab('apps')}
           className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${
             tab === 'apps'
@@ -163,6 +166,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           {tx(dd.detected_apps_tab, { count: installedApps.length })}
         </button>
         <button
+          type="button"
           onClick={() => setTab('mcp-import')}
           data-testid="vault-desktop-import-mcp"
           className={`flex-1 px-3 py-1.5 rounded-input typo-caption font-medium transition-colors ${

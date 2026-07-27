@@ -52,6 +52,7 @@ export default function MemoryPanelList({
       <div className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
         {CATEGORY_FILTERS.map((cat) => (
           <button
+            type="button"
             key={cat}
             className={`typo-body px-2 py-0.5 rounded-full capitalize whitespace-nowrap transition-colors ${
               activeCategory === cat
@@ -83,6 +84,7 @@ export default function MemoryPanelList({
               Run {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
             </span>
             <button
+              type="button"
               onClick={onClearRunFilter}
               className="p-0.5 rounded text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
               title={t.pipeline.clear_run_filter}
@@ -93,6 +95,7 @@ export default function MemoryPanelList({
         )}
         {hasActiveFilters && onClearAll && (
           <button
+            type="button"
             onClick={onClearAll}
             className="flex items-center gap-1 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
           >
@@ -126,6 +129,7 @@ export default function MemoryPanelList({
             ))}
             {hasMore && !activeRunFilter && (
               <button
+                type="button"
                 onClick={onLoadMore}
                 disabled={loadingMore}
                 className="w-full py-1.5 typo-body text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-card transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"

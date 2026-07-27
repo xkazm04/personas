@@ -190,6 +190,7 @@ export function LeaderboardMatrixView({
                 return (
                   <th key={opt.key} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
                     <button
+                      type="button"
                       onClick={() => setSortKey(opt.key)}
                       className={`mx-auto flex items-center justify-center gap-0.5 typo-caption font-semibold transition-colors ${active ? 'text-primary' : 'text-foreground hover:text-primary/80'}`}
                     >
@@ -233,6 +234,7 @@ export function LeaderboardMatrixView({
                 </td>
                 <td className="px-3 py-2 align-middle border-t border-primary/[0.06]">
                   <button
+                    type="button"
                     onClick={() => onNavigateToAgent(entry.personaId)}
                     className="group/agent flex items-center gap-2.5 min-w-0 text-left"
                   >

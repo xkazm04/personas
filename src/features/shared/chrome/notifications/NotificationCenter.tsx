@@ -171,6 +171,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           <p className="typo-caption text-foreground/80 break-words flex-1 min-w-0">{bodyText}</p>
           {redirectSection && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
               className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-primary opacity-0 group-hover:opacity-100 hover:underline transition-opacity"
               title={hasReviewRedirect ? t.gitlab.go_to_approvals : processLabel}
@@ -185,6 +186,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
       {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
       <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
           aria-label="Dismiss"
@@ -192,6 +194,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
           <X className="w-3 h-3" />
         </button>
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); askAthena(); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-violet-400 hover:text-violet-300 transition-all"
           aria-label={t.gitlab.notification_ask_athena}
@@ -264,6 +267,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             {notification.webUrl && (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleViewInGitLab(); }}
                 className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
                 title={t.gitlab.open_in_gitlab}
@@ -273,6 +277,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
             )}
             {notification.status === 'failed' && notification.projectId && (
               <button
+                type="button"
                 onClick={(e) => { e.stopPropagation(); handleRetry(); }}
                 className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
                 title={t.common.retry}
@@ -282,6 +287,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
             )}
             {notification.webUrl && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   const url = sanitizeExternalUrl(notification.webUrl);
@@ -303,6 +309,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
       {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
       <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
           aria-label="Dismiss"
@@ -310,6 +317,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
           <X className="w-3 h-3" />
         </button>
         <button
+          type="button"
           onClick={(e) => { e.stopPropagation(); askAthena(); }}
           className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-violet-400 hover:text-violet-300 transition-all"
           aria-label={t.gitlab.notification_ask_athena}
@@ -369,6 +377,7 @@ export function NotificationCenter() {
               <div className="flex items-center gap-1">
                 {notifications.length > 0 && (
                   <button
+                    type="button"
                     onClick={clearAll}
                     className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 text-foreground transition-colors typo-caption"
                     title={t.gitlab.clear_all}
@@ -378,6 +387,7 @@ export function NotificationCenter() {
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={() => setHeaderOverlay('none')}
                   className="p-1 rounded-card hover:bg-secondary/50 text-foreground transition-colors"
                   aria-label={t.gitlab.close_notification_center}

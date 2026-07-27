@@ -38,6 +38,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
   if (!preview && !loading) {
     return (
       <button
+        type="button"
         onClick={loadPreview}
         className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground hover:text-foreground/80 hover:bg-secondary/60 border border-primary/10 transition-colors"
         title={e.preview}
@@ -78,6 +79,7 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
     <div className="rounded-card border border-primary/10 bg-secondary/20 overflow-hidden">
       {/* Compact summary row */}
       <button
+        type="button"
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-3 px-3 py-2 typo-caption hover:bg-secondary/30 transition-colors"
       >

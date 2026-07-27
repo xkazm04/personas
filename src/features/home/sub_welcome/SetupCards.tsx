@@ -358,7 +358,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <StepIndicator current={step} completed={completed} />
-          <button onClick={onClose} className="p-1.5 rounded-card hover:bg-primary/10 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-primary/10 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -386,6 +386,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
         {/* Footer nav */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-primary/8">
           <button
+            type="button"
             onClick={goBack}
             disabled={step === 0}
             className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-foreground hover:text-foreground hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
@@ -394,6 +395,7 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
             {ss.back}
           </button>
           <button
+            type="button"
             onClick={goNext}
             disabled={!canNext}
             className="flex items-center gap-1.5 px-5 py-2 rounded-modal typo-heading bg-primary/15 border border-primary/20 text-foreground hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"

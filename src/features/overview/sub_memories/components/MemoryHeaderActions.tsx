@@ -21,6 +21,7 @@ export function MemoryHeaderActions({
   return (
     <div className="flex items-center gap-2">
       <button
+        type="button"
         onClick={onReview}
         disabled={isReviewing || memoriesTotal === 0}
         className="flex items-center gap-1.5 px-3 py-2 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40"
@@ -29,6 +30,7 @@ export function MemoryHeaderActions({
         {isReviewing ? 'Reviewing...' : 'Review with AI'}
       </button>
       <button
+        type="button"
         onClick={onToggleAddForm}
         className={`flex items-center gap-1.5 px-3 py-2 typo-heading rounded-modal border transition-all ${
           showAddForm

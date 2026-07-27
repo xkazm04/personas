@@ -11,6 +11,7 @@ export function TestConnectionButton({ credentialId }: { credentialId: string })
   return (
     <div className="flex flex-col items-center gap-3">
       <button
+        type="button"
         onClick={checkStored}
         disabled={isHealthchecking}
         className="flex items-center gap-2 px-4 py-2 rounded-modal typo-body font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"

@@ -261,6 +261,7 @@ function CategoryDropdown({ value, onChange, categoryOptions }: CategoryDropdown
             return (
               <button
                 key={opt.value}
+                type="button"
                 role="option"
                 aria-selected={isActive}
                 onClick={() => { onChange(opt.value); close(); }}

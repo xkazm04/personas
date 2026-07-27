@@ -151,12 +151,14 @@ export function ConfigurationPopup({
         <div className="px-4 py-3 border-t border-primary/10">
           <div className="flex items-center justify-end gap-2">
             <button
+              type="button"
               onClick={onClose}
               className="px-3 py-1.5 typo-body font-medium rounded-modal text-foreground hover:bg-secondary/60 transition-colors"
             >
               {t.common.cancel}
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
               className={`px-3 py-1.5 typo-body font-medium rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}

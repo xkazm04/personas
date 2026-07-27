@@ -42,6 +42,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
         <span className="typo-code text-foreground">{pct}%</span>
         {isDone ? (
           <button
+            type="button"
             onClick={onOpenReport}
             className="px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/90 border border-primary/25 hover:bg-primary/25 transition-colors"
           >
@@ -49,6 +50,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
           </button>
         ) : (
           <button
+            type="button"
             onClick={onCancel}
             className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
             title={e.bulk_rerun_cancel}

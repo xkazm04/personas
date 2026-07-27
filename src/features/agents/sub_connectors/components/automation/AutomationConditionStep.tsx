@@ -132,7 +132,7 @@ export function AutomationConditionStep({
         </div>
       </div>
 
-      <button onClick={() => setShowAdvanced(!showAdvanced)}
+      <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
         className="flex items-center gap-1.5 typo-body font-medium text-foreground hover:text-foreground transition-colors">
         <Pencil className="w-3.5 h-3.5" />
         {showAdvanced ? t.agents.connectors.auto_hide_advanced : t.agents.connectors.auto_show_advanced}

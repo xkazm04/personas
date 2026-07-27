@@ -191,7 +191,7 @@ export default function KnowledgeGraphDashboard() {
               </span>
             )}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
+              <button type="button" onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
               </button>
             )}
@@ -267,7 +267,7 @@ export default function KnowledgeGraphDashboard() {
                 className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
               />
               {search && (
-                <button onClick={() => setSearch('')} aria-label={t.common.clear} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70">
+                <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -289,9 +289,9 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => chooseType(null)} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
+                <button type="button" onClick={() => chooseType(null)} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
-                  <button key={key} onClick={() => chooseType(key)}
+                  <button type="button" key={key} onClick={() => chooseType(key)}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}
@@ -312,9 +312,9 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showScopeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[140px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_scopes_b64efd49" /></button>
+                <button type="button" onClick={() => { setSelectedScope(null); setShowScopeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedScope ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_scopes_b64efd49" /></button>
                 {Object.entries(SCOPE_TYPES).map(([key, val]) => (
-                  <button key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
+                  <button type="button" key={key} onClick={() => { setSelectedScope(key); setShowScopeDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedScope === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}

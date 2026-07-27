@@ -61,6 +61,7 @@ export function IdleSuggestions({
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={async (e) => {
                     e.stopPropagation();
                     setApplyingTemplateId(conn.id);

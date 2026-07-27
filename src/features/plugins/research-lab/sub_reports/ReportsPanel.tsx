@@ -122,6 +122,7 @@ export default function ReportsPanel() {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); setPreviewing(r); }}
                     className="p-1 rounded hover:bg-primary/10 text-primary hover:text-primary transition-colors focus-ring"
                     title={t.research_lab.preview_action}
@@ -130,6 +131,7 @@ export default function ReportsPanel() {
                     <Eye className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(e, r.id); }}
                     className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring"
                     title={t.common.delete}

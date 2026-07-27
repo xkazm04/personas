@@ -131,6 +131,7 @@ export function OverviewTab({
           <div className="flex items-center gap-3 flex-wrap">
             {flows.map((flow) => (
               <button
+                type="button"
                 key={flow.id}
                 onClick={onViewFlows}
                 className="bg-violet-500/5 border border-violet-500/15 rounded-modal px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"

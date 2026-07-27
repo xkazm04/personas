@@ -18,6 +18,7 @@ export function MemoryTableHeader({ sort, onToggleSort }: MemoryTableHeaderProps
       <span className="flex-1 typo-code font-mono uppercase text-foreground">{t.overview.memory_table.title}</span>
       <span className="w-[70px] typo-code font-mono uppercase text-foreground flex-shrink-0">{t.overview.memory_table.category}</span>
       <button
+        type="button"
         onClick={() => onToggleSort('importance')}
         className={`w-[60px] flex items-center gap-0.5 typo-code font-mono uppercase flex-shrink-0 transition-colors rounded-card px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'importance' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-foreground hover:text-muted-foreground'}`}
       >
@@ -30,6 +31,7 @@ export function MemoryTableHeader({ sort, onToggleSort }: MemoryTableHeaderProps
       </button>
       <span className="w-[120px] typo-code font-mono uppercase text-foreground flex-shrink-0">{t.overview.memory_table.tags}</span>
       <button
+        type="button"
         onClick={() => onToggleSort('created_at')}
         className={`w-[60px] flex items-center justify-end gap-0.5 typo-code font-mono uppercase flex-shrink-0 transition-colors rounded-card px-1.5 py-0.5 hover:bg-secondary/30 ${sort.column === 'created_at' ? 'text-foreground/90 font-semibold border-b-2 border-primary/40' : 'text-foreground hover:text-muted-foreground'}`}
       >

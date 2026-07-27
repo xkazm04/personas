@@ -67,6 +67,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         <label className="typo-caption text-foreground">{dt.trigger_type}</label>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setCreateType('schedule')}
             className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
               createType === 'schedule'
@@ -78,6 +79,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             {dt.schedule_cron}
           </button>
           <button
+            type="button"
             onClick={() => setCreateType('webhook')}
             className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
               createType === 'webhook'
@@ -106,6 +108,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
             {CRON_PRESETS.map((preset) => (
               <button
                 key={preset.cron}
+                type="button"
                 onClick={() => setCreateCron(preset.cron)}
                 className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
                   createCron === preset.cron
@@ -130,6 +133,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       {/* Create actions */}
       <div className="flex items-center gap-2 pt-1">
         <button
+          type="button"
           onClick={handleCreate}
           disabled={!createPersonaId || isCreating}
           className="flex items-center gap-1.5 px-4 py-1.5 typo-body font-medium rounded-modal bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors"
@@ -138,6 +142,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           {isCreating ? dt.creating : dt.create_trigger}
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
         >

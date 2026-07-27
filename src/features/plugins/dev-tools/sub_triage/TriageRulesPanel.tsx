@@ -143,6 +143,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   return (
     <div className="border border-border/20 rounded-modal bg-secondary/20 overflow-hidden">
       <button
+        type="button"
         onClick={() => setExpanded(v => !v)}
         className="flex items-center gap-2 w-full px-3 py-2 typo-caption font-medium text-foreground hover:text-foreground transition-colors"
       >
@@ -159,7 +160,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
           {/* Existing rules */}
           {rules.map(rule => (
             <div key={rule.id} className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-secondary/30 typo-caption">
-              <button onClick={() => handleToggle(rule)} className="flex-shrink-0">
+              <button type="button" onClick={() => handleToggle(rule)} className="flex-shrink-0">
                 {rule.enabled
                   ? <ToggleRight className="w-4 h-4 text-primary" />
                   : <ToggleLeft className="w-4 h-4 text-foreground" />
@@ -173,7 +174,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                 }`}>{rule.action}</span>
               </div>
               <span className="text-foreground text-[10px]">{rule.times_fired}x</span>
-              <button onClick={() => deleteTriageRule(rule.id)} className="text-foreground hover:text-red-400 transition-colors">
+              <button type="button" onClick={() => deleteTriageRule(rule.id)} className="text-foreground hover:text-red-400 transition-colors">
                 <Trash2 className="w-3 h-3" />
               </button>
             </div>
@@ -204,6 +205,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                     {tx(t.plugins.dev_triage.suggestion_evidence, { matched: s.matched, total: s.total })}
                   </span>
                   <button
+                    type="button"
                     onClick={() => handleAddSuggestion(s)}
                     className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors shrink-0"
                   >
@@ -243,30 +245,30 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
                     className="w-16 px-1.5 py-1 typo-caption bg-background/50 border border-border/30 rounded text-foreground"
                   />
                   {conditions.length > 1 && (
-                    <button onClick={() => removeCondition(idx)} className="text-foreground hover:text-red-400">
+                    <button type="button" onClick={() => removeCondition(idx)} className="text-foreground hover:text-red-400">
                       <Trash2 className="w-2.5 h-2.5" />
                     </button>
                   )}
                 </div>
               ))}
-              <button onClick={addCondition} className="text-[10px] text-primary/60 hover:text-primary">{t.plugins.dev_triage.add_condition}</button>
+              <button type="button" onClick={addCondition} className="text-[10px] text-primary/60 hover:text-primary">{t.plugins.dev_triage.add_condition}</button>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-foreground">{t.plugins.dev_triage.action_label}</span>
-                <button onClick={() => setAction('accept')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'accept' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-secondary/40 text-foreground'}`}>Accept</button>
-                <button onClick={() => setAction('reject')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'reject' ? 'bg-red-500/20 text-red-400' : 'bg-secondary/40 text-foreground'}`}>Reject</button>
+                <button type="button" onClick={() => setAction('accept')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'accept' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-secondary/40 text-foreground'}`}>Accept</button>
+                <button type="button" onClick={() => setAction('reject')} className={`px-2 py-0.5 text-[10px] rounded ${action === 'reject' ? 'bg-red-500/20 text-red-400' : 'bg-secondary/40 text-foreground'}`}>Reject</button>
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={handleCreate} className="px-3 py-1 typo-caption font-medium rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors">Save</button>
-                <button onClick={() => setCreating(false)} className="px-3 py-1 typo-caption text-foreground hover:text-foreground transition-colors">Cancel</button>
+                <button type="button" onClick={handleCreate} className="px-3 py-1 typo-caption font-medium rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors">Save</button>
+                <button type="button" onClick={() => setCreating(false)} className="px-3 py-1 typo-caption text-foreground hover:text-foreground transition-colors">Cancel</button>
               </div>
             </div>
           ) : (
             <div className="flex gap-2">
-              <button onClick={() => setCreating(true)} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
+              <button type="button" onClick={() => setCreating(true)} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-secondary/40 text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors">
                 <Plus className="w-3 h-3" /> {t.plugins.dev_triage.new_rule}
               </button>
               {rules.length > 0 && (
-                <button onClick={handleRun} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                <button type="button" onClick={handleRun} className="flex items-center gap-1 px-2.5 py-1 typo-caption font-medium rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                   <Zap className="w-3 h-3" /> {t.plugins.dev_triage.run_rules}
                 </button>
               )}

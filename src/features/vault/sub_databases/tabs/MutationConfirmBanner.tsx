@@ -44,6 +44,7 @@ export function MutationConfirmBanner({
       </div>
       <div className="flex items-center gap-2 pl-6">
         <button
+          type="button"
           data-testid="db-mutation-confirm-run"
           onClick={onConfirm}
           className="px-3 py-1.5 rounded-modal typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
@@ -51,6 +52,7 @@ export function MutationConfirmBanner({
           {db.execute_anyway}
         </button>
         <button
+          type="button"
           data-testid="db-mutation-confirm-cancel"
           onClick={onCancel}
           className="px-3 py-1.5 rounded-modal typo-body font-medium text-foreground hover:text-muted-foreground/70 hover:bg-secondary/40 border border-transparent hover:border-primary/10 transition-colors"

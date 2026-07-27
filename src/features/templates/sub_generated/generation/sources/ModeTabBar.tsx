@@ -24,6 +24,7 @@ export function ModeTabBar({ mode, onModeChange, batchCount }: ModeTabBarProps) 
     <div className="flex gap-2">
       {tabs.map(({ id, label, Icon }) => (
         <button
+          type="button"
           key={id}
           onClick={() => onModeChange(id)}
           className={`px-4 py-2 typo-body rounded-modal border transition-all flex items-center gap-2 ${

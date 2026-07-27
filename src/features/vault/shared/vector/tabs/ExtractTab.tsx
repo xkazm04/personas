@@ -98,6 +98,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={() => void handleInfer()}
           disabled={inferring || running}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-violet-500/15 border border-violet-500/25 text-violet-300 hover:bg-violet-500/25 transition-colors disabled:opacity-50 typo-body"
@@ -108,6 +109,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
 
         {schema && (
           <button
+            type="button"
             onClick={() => void handleRun()}
             disabled={running || schema.entities.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 transition-colors disabled:opacity-50 typo-body"

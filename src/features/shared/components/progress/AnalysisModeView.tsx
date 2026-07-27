@@ -33,6 +33,7 @@ export function AnalysisModeView({ lines, isRunning, analysisPhase }: AnalysisMo
         )}
 
       <button
+        type="button"
         onClick={() => setShowTerminal(!showTerminal)}
         className="flex items-center justify-between w-full px-4 py-2 bg-primary/5 border-b border-primary/10 cursor-pointer hover:bg-secondary/50 transition-colors"
       >

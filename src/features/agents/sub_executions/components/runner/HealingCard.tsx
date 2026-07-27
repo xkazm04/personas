@@ -47,7 +47,7 @@ export function HealingCard({
               <span className="typo-code px-1.5 py-0.5 rounded bg-secondary/40 text-foreground border border-primary/10">{tokenLabel(t, 'severity', notification.severity)}</span>
             </div>
           </div>
-          <button onClick={onDismiss} className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
+          <button type="button" onClick={onDismiss} className="text-foreground hover:text-foreground/80 transition-colors flex-shrink-0 p-0.5">
             <span className="typo-body">{e.dismiss}</span>
           </button>
         </div>
@@ -86,7 +86,7 @@ export function HealingCard({
         )}
 
         {isIssue && (
-          <button onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors">
+          <button type="button" onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-red-400/80 hover:text-red-300 transition-colors">
             <ExternalLink className="w-3 h-3" />{e.view_healing_issues}
           </button>
         )}

@@ -32,6 +32,7 @@ export function UuidLabel({ value, label }: UuidLabelProps) {
       </Tooltip>
       <Tooltip content={t.shared.copy_full_id}>
         <button
+          type="button"
           onClick={handleCopy}
           className="opacity-0 group-hover/uuid:opacity-100 p-0.5 rounded hover:bg-secondary/60 transition-opacity text-foreground hover:text-foreground"
         >

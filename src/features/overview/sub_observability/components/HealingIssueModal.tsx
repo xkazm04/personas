@@ -139,7 +139,7 @@ function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBrea
             <span className="typo-body text-foreground">{<AbsoluteTime timestamp={issue.created_at} variant="date" />}</span>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
+        <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -168,7 +168,7 @@ function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBrea
                 <Wrench className="w-3.5 h-3.5 text-emerald-400" />
                 <h4 className="text-sm font-mono uppercase text-emerald-400/80">{t.overview.healing_issue_modal.suggested_fix}</h4>
               </div>
-              <button onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-card transition-colors">
+              <button type="button" onClick={onCopyFix} className="flex items-center gap-1 px-2 py-1 typo-heading text-emerald-400/70 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-card transition-colors">
                 {copied ? <ClipboardCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 {copied ? t.overview.healing_issue_modal.copied : t.overview.healing_issue_modal.copy_fix}
               </button>
@@ -210,11 +210,12 @@ function ModalContent({ issue, cat, isAutoFixed, isAutoFixPending, isCircuitBrea
             <span className="typo-body text-emerald-400/60">{t.overview.healing_issue_modal.auto_resolved}</span>
           </div>
         )}
-        <button onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
+        <button type="button" onClick={onClose} className="px-4 py-2 typo-heading text-foreground hover:text-foreground/95 rounded-modal hover:bg-secondary/60 transition-colors">
           Close
         </button>
         {!isAutoFixed && !isAutoFixPending && (
           <button
+            type="button"
             onClick={onResolve}
             disabled={resolving}
             title={debtText("auto_manual_fix_applied_outside_the_healing_sys_aaac4a33")}

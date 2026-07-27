@@ -53,6 +53,7 @@ export function FormActions({
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={onCancel}
             data-testid="vault-schema-cancel"
             className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
@@ -61,6 +62,7 @@ export function FormActions({
           </button>
           <Tooltip content={saveDisabled && saveDisabledReason ? saveDisabledReason : ''} placement="top" delay={200}>
             <button
+              type="button"
               onClick={onSave}
               disabled={saveDisabled}
               data-testid="vault-schema-save"

@@ -15,6 +15,7 @@ export function ToolsSection({ tools }: ToolsSectionProps) {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden">
       <button
+        type="button"
         onClick={() => setToolsExpanded(!toolsExpanded)}
         aria-expanded={toolsExpanded}
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors focus-ring"

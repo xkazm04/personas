@@ -49,6 +49,7 @@ export function HealthWatchToggle() {
   return (
     <div className="flex items-center justify-end">
       <button
+        type="button"
         data-testid="health-watch-toggle"
         onClick={toggle}
         disabled={loading || !persona}

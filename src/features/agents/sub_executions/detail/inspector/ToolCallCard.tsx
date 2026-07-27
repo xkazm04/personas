@@ -37,6 +37,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
       {step.input_preview && (
         <div className="border-t border-primary/10">
           <button
+            type="button"
             onClick={() => setShowInput(!showInput)}
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-foreground hover:text-foreground/95 transition-colors"
           >
@@ -58,6 +59,7 @@ export function ToolCallCard({ step }: { step: ToolCallStep }) {
       {step.output_preview && (
         <div className="border-t border-primary/10">
           <button
+            type="button"
             onClick={() => setShowOutput(!showOutput)}
             className="flex items-center gap-2 w-full px-4 py-2 typo-body text-foreground hover:text-foreground/95 transition-colors"
           >

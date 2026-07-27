@@ -311,6 +311,7 @@ export function ArenaPanelColosseum({
           <div className="ml-auto flex items-center gap-3">
             {isLabRunning ? (
               <button
+                type="button"
                 onClick={() => void handleCancel()}
                 data-testid="arena-cancel-btn"
                 className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 typo-body-lg font-medium transition-colors"

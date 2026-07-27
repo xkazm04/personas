@@ -40,6 +40,7 @@ export default function TourHandoffOffer() {
         rounded-modal border border-violet-500/25 bg-background p-5 shadow-elevation-4"
     >
       <button
+        type="button"
         onClick={dismissTourHandoff}
         aria-label={t.onboarding.tour_handoff_dismiss}
         title={t.onboarding.tour_handoff_dismiss}

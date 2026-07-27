@@ -140,6 +140,7 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
           />
           {isTestRunning ? (
             <button
+              type="button"
               onClick={handleCancelTest}
               disabled={!canCancel}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-red-500/15 border border-red-500/25 text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -149,6 +150,7 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleRunTest}
               disabled={!hasPrompt || !modelConfig}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -179,6 +181,7 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
             <Rocket className="w-3.5 h-3.5" /> {uc.run_now}
           </button>
           <button
+            type="button"
             onClick={() => setEditorTab('lab')}
             className="flex items-center gap-1 typo-body text-foreground hover:text-primary/70 transition-colors"
             title={uc.view_full_test_history_title}

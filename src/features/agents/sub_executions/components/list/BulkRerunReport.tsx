@@ -49,6 +49,7 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
           <h3 className="typo-heading text-foreground">{e.bulk_rerun_report_title}</h3>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
           aria-label={e.bulk_rerun_close}
@@ -224,6 +225,7 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
             <div className="col-span-2 flex items-center justify-end">
               {canDrill && (
                 <button
+                  type="button"
                   onClick={() => onCompareItem(it.originalId, it.newExecutionId!)}
                   className="flex items-center gap-1 px-2 py-0.5 typo-body rounded-card text-primary/90 hover:bg-primary/10 transition-colors"
                   title={e.bulk_rerun_open_diff}

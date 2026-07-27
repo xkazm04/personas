@@ -51,6 +51,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
           )}
         </div>
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
           className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -67,6 +68,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors ${
                 isActive ? 'text-foreground' : 'text-foreground hover:text-foreground/80'

@@ -61,6 +61,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
         <span className="typo-heading text-foreground">{label}</span>
         <div className="flex gap-0.5 p-0.5 rounded-lg bg-secondary/30 border border-primary/10">
           <button
+            type="button"
             onClick={() => setMode('edit')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'edit'
@@ -72,6 +73,7 @@ export function SectionEditor({ value, onChange, label, placeholder, disabled }:
             Edit
           </button>
           <button
+            type="button"
             onClick={() => setMode('preview')}
             className={`flex items-center gap-1 px-2 py-1 typo-body rounded-lg transition-colors ${
               mode === 'preview'

@@ -53,6 +53,7 @@ export function EventTemplateCard({
 
         {/* Toggle */}
         <button
+          type="button"
           role="switch"
           aria-checked={isEnabled}
           aria-label={`${template.name} event trigger`}

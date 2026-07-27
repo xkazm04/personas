@@ -16,6 +16,7 @@ export function EmptyStateActions({
     <div className="flex items-center gap-3 mt-1">
       {action && (
         <button
+          type="button"
           onClick={action.onClick}
           className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
         >
@@ -25,6 +26,7 @@ export function EmptyStateActions({
       )}
       {secondaryAction && (
         <button
+          type="button"
           onClick={secondaryAction.onClick}
           className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
         >

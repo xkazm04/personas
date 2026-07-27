@@ -40,6 +40,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       <div className="px-1 py-1 border-b border-primary/10">
         {TEAM_ROLES.map((role) => (
           <button
+            type="button"
             key={role.value}
             onClick={() => { onChangeRole(role.value); onClose(); }}
             className={`w-full flex items-center gap-2 px-2.5 py-1.5 typo-body rounded-modal transition-colors ${
@@ -56,6 +57,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
       {/* Actions */}
       <div className="px-1 py-1">
         <button
+          type="button"
           onClick={() => { onConfigure(); onClose(); }}
           className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body text-foreground/90 hover:bg-secondary/60 rounded-modal transition-colors"
         >
@@ -63,6 +65,7 @@ export default function NodeContextMenu({ x, y, memberName, currentRole, onChang
           {t.pipeline.configure}
         </button>
         <button
+          type="button"
           onClick={() => { onRemove(); onClose(); }}
           className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
         >

@@ -53,6 +53,7 @@ export function ExportSection({
 
       <div className="flex flex-wrap gap-3">
         <button
+          type="button"
           onClick={onOpenExportModal}
           disabled={exportStatus === 'loading'}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
@@ -75,6 +76,7 @@ export function ExportSection({
 
         {!showImportInput ? (
           <button
+            type="button"
             onClick={() => setShowImportInput(true)}
             disabled={importStatus === 'loading'}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-modal typo-body font-medium
@@ -95,6 +97,7 @@ export function ExportSection({
               autoFocus
             />
             <button
+              type="button"
               onClick={handleImport}
               disabled={importStatus === 'loading'}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium
@@ -105,6 +108,7 @@ export function ExportSection({
               {s.import_label}
             </button>
             <button
+              type="button"
               onClick={() => { setShowImportInput(false); setImportPassphrase(''); }}
               className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors"
             >

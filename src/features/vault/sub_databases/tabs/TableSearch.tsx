@@ -36,6 +36,7 @@ export function TableSearch({
           />
         </div>
         <button
+          type="button"
           onClick={onRefresh}
           disabled={loading}
           className="p-1.5 rounded-card text-foreground hover:text-foreground/70 hover:bg-secondary/40 disabled:opacity-40 transition-colors"
@@ -57,6 +58,7 @@ export function SidebarTestConnection({ credentialId }: { credentialId: string }
   return (
     <div className="flex flex-col items-center gap-2 mt-2">
       <button
+        type="button"
         onClick={checkStored}
         disabled={isHealthchecking}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption font-medium bg-primary/10 text-primary hover:bg-primary/15 disabled:opacity-50 transition-colors"

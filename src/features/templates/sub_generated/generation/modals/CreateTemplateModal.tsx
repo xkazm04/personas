@@ -88,6 +88,7 @@ export function CreateTemplateModal({
           <div className="flex items-center gap-4">
             <WizardStepper steps={createWizardSteps} currentIndex={createStepIndex} />
             <button
+              type="button"
               onClick={handleClose}
               className="p-1.5 rounded-card hover:bg-secondary/60 transition-colors"
             >
@@ -136,6 +137,7 @@ export function CreateTemplateModal({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
           <button
+            type="button"
             onClick={handleBack}
             disabled={!canGoBack}
             className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal border border-primary/15 text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -153,6 +155,7 @@ export function CreateTemplateModal({
 
             {state.step === 'describe' && (
               <button
+                type="button"
                 onClick={handleStartGenerate}
                 disabled={!state.templateName.trim() || !state.description.trim()}
                 className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -164,6 +167,7 @@ export function CreateTemplateModal({
 
             {state.step === 'generate' && state.generatePhase === 'completed' && (
               <button
+                type="button"
                 onClick={() => reducer.goToStep('review')}
                 disabled={!state.draft}
                 className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-violet-500/15 text-violet-300 border-violet-500/25 hover:bg-violet-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -175,6 +179,7 @@ export function CreateTemplateModal({
 
             {state.step === 'review' && !state.saved && (
               <button
+                type="button"
                 onClick={handleSaveTemplate}
                 disabled={state.saving || !state.draft}
                 className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-emerald-500/15 text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"

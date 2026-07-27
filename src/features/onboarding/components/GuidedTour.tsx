@@ -418,6 +418,7 @@ export default function GuidedTour() {
     });
     return (
       <button
+        type="button"
         // Just expand — don't re-run navigateToStep. Minimizing only collapses
         // the panel (the user stays on the step's screen), so re-navigating on
         // restore needlessly re-fired every step side effect (route changes,

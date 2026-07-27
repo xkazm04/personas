@@ -36,12 +36,14 @@ export default function DebuggerVariables({
         </div>
         <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={onCollapse}
             className="p-1 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/80 transition-colors"
           >
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 rounded-card hover:bg-primary/10 text-foreground hover:text-foreground/80 transition-colors"
           >

@@ -91,6 +91,7 @@ export default function TitleBar() {
       {/* Window controls */}
       <div className="titlebar-controls">
         <button
+          type="button"
           className="titlebar-btn titlebar-btn-minimize"
           data-testid="titlebar-minimize"
           onClick={() => void appWindow?.minimize()}
@@ -99,6 +100,7 @@ export default function TitleBar() {
           <Minus size={18} strokeWidth={1.5} />
         </button>
         <button
+          type="button"
           className="titlebar-btn titlebar-btn-maximize"
           data-testid="titlebar-maximize"
           onClick={() => void appWindow?.toggleMaximize()}
@@ -110,6 +112,7 @@ export default function TitleBar() {
           }
         </button>
         <button
+          type="button"
           className="titlebar-btn titlebar-btn-close"
           data-testid="titlebar-close"
           onClick={() => void appWindow?.close()}

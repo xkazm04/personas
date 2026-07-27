@@ -224,6 +224,7 @@ export function TourPanelBody({
       {/* Footer navigation */}
       <div className="flex items-center justify-between px-4 py-3 border-t border-primary/8 bg-secondary/5">
         <button
+          type="button"
           onClick={onPrev}
           disabled={currentIndex === 0}
           data-testid="tour-btn-prev"
@@ -235,6 +236,7 @@ export function TourPanelBody({
         <div className="flex items-center gap-2">
           {allCompleted ? (
             <button
+              type="button"
               onClick={onComplete}
               data-testid="tour-btn-finish"
               className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
@@ -244,6 +246,7 @@ export function TourPanelBody({
             </button>
           ) : isStepCompleted ? (
             <button
+              type="button"
               onClick={onNext}
               data-testid="tour-btn-next"
               className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}
@@ -256,6 +259,7 @@ export function TourPanelBody({
             // is performing the step's action), so de-emphasize it — a colored
             // accent button here used to make "Skip" look like the main CTA.
             <button
+              type="button"
               onClick={onNext}
               data-testid="tour-btn-next"
               className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 hover:text-foreground/70 transition-all"
@@ -339,6 +343,7 @@ function GenericStepContent({ step, subStepIndex, colors, requiresAcknowledge, i
             {t.onboarding.tour_explore_to_continue}
           </p>
           <button
+            type="button"
             onClick={onAcknowledge}
             data-testid="tour-btn-acknowledge"
             className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}

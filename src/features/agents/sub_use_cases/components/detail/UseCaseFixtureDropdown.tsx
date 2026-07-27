@@ -45,6 +45,7 @@ export function UseCaseFixtureDropdown({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-colors ${
           selectedFixture
@@ -66,6 +67,7 @@ export function UseCaseFixtureDropdown({
           >
             {/* No fixture option */}
             <button
+              type="button"
               onClick={() => { onSelect(null); setIsOpen(false); }}
               className={`w-full flex items-center gap-2 px-3 py-2 typo-body transition-colors ${
                 !selectedFixtureId

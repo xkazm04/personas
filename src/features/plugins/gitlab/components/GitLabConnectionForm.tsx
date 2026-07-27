@@ -61,6 +61,7 @@ export function GitLabConnectionForm({
         <PipelineNotificationPrefs />
 
         <button
+          type="button"
           onClick={onDisconnect}
           className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition-colors"
         >
@@ -107,6 +108,7 @@ export function GitLabConnectionForm({
             </div>
 
             <button
+              type="button"
               onClick={() => onConnect(instanceUrl || undefined)}
               disabled={isConnecting}
               className="mt-3 flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-orange-500/15 border border-orange-500/25 text-orange-400 hover:bg-orange-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -128,6 +130,7 @@ export function GitLabConnectionForm({
               {t.gitlab.no_pat_found}
             </p>
             <button
+              type="button"
               onClick={navigateToCatalog}
               className="flex items-center gap-2 px-3 py-1.5 typo-body rounded-card bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/15 transition-colors"
             >

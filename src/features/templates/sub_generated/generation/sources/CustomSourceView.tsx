@@ -28,6 +28,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
             className="hidden"
           />
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
             title={t.templates.generation.custom_load_file_title}
@@ -36,6 +37,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
             {t.templates.generation.custom_load_file}
           </button>
           <button
+            type="button"
             onClick={onAdd}
             className="px-3 py-1.5 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
           >
@@ -72,6 +74,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
                 />
                 {cases.length > 1 && (
                   <button
+                    type="button"
                     onClick={() => onRemove(index)}
                     className="p-1 rounded hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors flex-shrink-0"
                   >
@@ -139,6 +142,7 @@ export function CustomSourceView({ cases, validCount, onAdd, onRemove, onUpdateC
           {t.templates.generation.custom_detail_hint}
         </p>
         <button
+          type="button"
           onClick={() => setShowExample((v) => !v)}
           className="typo-body text-violet-400/70 hover:text-violet-400 transition-colors flex items-center gap-1"
         >

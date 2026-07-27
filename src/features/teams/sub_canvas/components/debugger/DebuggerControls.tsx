@@ -53,6 +53,7 @@ export default function DebuggerControls({
       <div className="flex items-center gap-1">
         {!isFinished && !paused ? (
           <button
+            type="button"
             onClick={onPause}
             className="p-1.5 rounded-card bg-amber-500/15 border border-amber-500/25 text-amber-300 hover:bg-amber-500/25 transition-colors"
             title={t.pipeline.pause}
@@ -61,6 +62,7 @@ export default function DebuggerControls({
           </button>
         ) : (
           <button
+            type="button"
             onClick={onPlay}
             disabled={isFinished}
             className="p-1.5 rounded-card bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -71,6 +73,7 @@ export default function DebuggerControls({
         )}
 
         <button
+          type="button"
           onClick={onStepForward}
           disabled={isFinished}
           className="p-1.5 rounded-card bg-blue-500/15 border border-blue-500/25 text-blue-300 hover:bg-blue-500/25 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -80,6 +83,7 @@ export default function DebuggerControls({
         </button>
 
         <button
+          type="button"
           onClick={onStop}
           className="p-1.5 rounded-card bg-red-500/15 border border-red-500/25 text-red-300 hover:bg-red-500/25 transition-colors"
           title={t.pipeline.stop_dry_run}
@@ -100,6 +104,7 @@ export default function DebuggerControls({
       {/* Collapse toggle for inspector */}
       {inspectedNode && panelCollapsed && (
         <button
+          type="button"
           onClick={onExpandInspector}
           className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 border border-primary/10 text-foreground hover:text-foreground/80 transition-colors typo-body"
         >

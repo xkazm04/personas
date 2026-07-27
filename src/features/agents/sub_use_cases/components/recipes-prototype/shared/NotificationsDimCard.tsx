@@ -124,6 +124,7 @@ export function NotificationsDimCard({ uc, personaId }: NotificationsDimCardProp
             const isPending = pending === type;
             return (
               <button
+                type="button"
                 key={type}
                 role="option"
                 aria-selected={isOn}

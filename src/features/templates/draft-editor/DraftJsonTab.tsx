@@ -70,6 +70,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
           </p>
         </div>
         <button
+          type="button"
           onClick={handleCopy}
           className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-xl border border-primary/10 text-foreground hover:text-foreground/95 hover:bg-secondary/40 transition-colors"
         >

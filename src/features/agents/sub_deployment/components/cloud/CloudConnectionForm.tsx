@@ -68,6 +68,7 @@ export function CloudConnectionForm({
         </div>
 
         <button
+          type="button"
           onClick={onDisconnect}
           className="px-4 py-2 typo-body font-medium rounded-modal bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
         >
@@ -113,6 +114,7 @@ export function CloudConnectionForm({
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onConnect}
           disabled={isConnecting || !url.trim() || !apiKey.trim()}
           className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-indigo-500 text-foreground hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
@@ -129,6 +131,7 @@ export function CloudConnectionForm({
         </button>
 
         <button
+          type="button"
           onClick={onDiagnose}
           disabled={isDiagnosing || !url.trim() || !apiKey.trim()}
           className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"

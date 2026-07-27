@@ -70,6 +70,7 @@ export function StepExpandedContent({
       {step.url && (
         <motion.div variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }} className="space-y-1">
           <button
+            type="button"
             onClick={handleOpenUrl}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-modal bg-violet-500/10 border border-violet-500/20 text-violet-300 typo-body hover:bg-violet-500/20 transition-colors"
             data-testid={`negotiator-step-${stepIndex}-open-url-btn`}
@@ -121,6 +122,7 @@ export function StepExpandedContent({
       >
         {!isCompleted && (
           <button
+            type="button"
             onClick={onComplete}
             disabled={step.field_fills ? !allFieldsCaptured : false}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-modal bg-emerald-500/15 border border-emerald-500/25 text-emerald-300 typo-body font-medium hover:bg-emerald-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"

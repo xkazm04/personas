@@ -108,6 +108,7 @@ export function ConsolidationReview({
         <div className="flex items-center gap-2 min-w-0">
           {onClose && (
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
               aria-label={t.common.close}
@@ -120,6 +121,7 @@ export function ConsolidationReview({
           </span>
         </div>
         <button
+          type="button"
           onClick={startRun}
           disabled={running}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
@@ -171,6 +173,7 @@ export function ConsolidationReview({
                   markEntered={enterRuns.markEntered}
                 >
                   <button
+                    type="button"
                     onClick={() => setActiveRunId(run.id)}
                     className="w-full text-left px-5 py-3 hover:bg-foreground/[0.04] focus-ring"
                   >
@@ -328,6 +331,7 @@ function RunDetail({
       <header className="flex items-center justify-between gap-2 px-5 py-3 border-b border-foreground/10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <button
+            type="button"
             onClick={onBack}
             className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
             aria-label={t.plugins.companion.consolidation_back_to_runs}
@@ -340,6 +344,7 @@ function RunDetail({
           </span>
         </div>
         <button
+          type="button"
           onClick={refresh}
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 focus-ring"
           aria-label="Refresh"
@@ -571,6 +576,7 @@ function ItemCard({
       {!isResolved && (
         <div className="flex items-center gap-2 pt-1">
           <button
+            type="button"
             onClick={apply}
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 focus-ring"
@@ -585,6 +591,7 @@ function ItemCard({
               : t.plugins.companion.consolidation_apply}
           </button>
           <button
+            type="button"
             onClick={() => setEditing((v) => !v)}
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
@@ -593,6 +600,7 @@ function ItemCard({
             {t.plugins.companion.consolidation_edit}
           </button>
           <button
+            type="button"
             onClick={reject}
             disabled={busy !== null}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground hover:bg-foreground/10 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed focus-ring"

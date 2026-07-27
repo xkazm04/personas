@@ -137,6 +137,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       className={`animate-fade-slide-in rounded-modal border ${config.border} ${config.bg} overflow-hidden`}
     >
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
       >

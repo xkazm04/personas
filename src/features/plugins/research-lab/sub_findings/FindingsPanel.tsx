@@ -110,6 +110,7 @@ export default function FindingsPanel() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={(e) => handleDelete(e, f.id)}
                   className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring flex-shrink-0"
                   title={t.common.delete}

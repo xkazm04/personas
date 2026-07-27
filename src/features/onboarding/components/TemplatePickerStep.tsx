@@ -65,6 +65,7 @@ export function TemplatePickerStep({
           <p className="typo-body text-foreground mt-1">{loadState.error}</p>
         )}
         <button
+          type="button"
           onClick={onRetry}
           className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
         >
@@ -82,6 +83,7 @@ export function TemplatePickerStep({
         <p className="typo-body text-foreground">{t.onboarding.no_templates}</p>
         <p className="typo-body text-foreground mt-1">{t.onboarding.no_templates_hint}</p>
         <button
+          type="button"
           onClick={onRetry}
           className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
         >
@@ -121,6 +123,7 @@ export function TemplatePickerStep({
 
           return (
             <button
+              type="button"
               key={review.id}
               data-testid={`template-card-${review.id}`}
               data-recommended={isRecommended ? 'true' : 'false'}

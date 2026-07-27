@@ -65,7 +65,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -133,6 +133,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
         <div className="px-6 py-3.5 border-t border-primary/10 flex items-center justify-end gap-2">
           {!result ? (
             <button
+              type="button"
               onClick={handleSynthesize}
               disabled={loading || !query.trim() || !teamName.trim()}
               className="px-4 py-2.5 typo-body font-medium rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -151,6 +152,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleClose}
               className="px-4 py-2.5 typo-body font-medium rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors flex items-center gap-2"
             >

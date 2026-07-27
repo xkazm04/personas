@@ -33,6 +33,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
           <h3 className="typo-heading text-foreground">{e.execution_comparison}</h3>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
         >

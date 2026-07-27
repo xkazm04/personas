@@ -61,6 +61,7 @@ export function TableDetailPanel({
             )}
             {!isPinned && (
               <button
+                type="button"
                 onClick={() => onPinTable(selectedTable)}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-modal typo-body font-medium text-blue-400/70 hover:bg-blue-500/10 transition-colors"
                 title={dbt.pin_table}

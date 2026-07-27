@@ -378,6 +378,7 @@ export default function CompanionFooterIcon() {
         )}
       </AnimatePresence>
       <button
+        type="button"
         onClick={() => {
           // A hold ends in a synthetic click — swallow it so releasing a
           // dictation hold doesn't also toggle anything.
@@ -436,6 +437,7 @@ export default function CompanionFooterIcon() {
       </button>
       {voiceConfigured && (
         <button
+          type="button"
           onClick={onPlay}
           disabled={!hasUnreadPlayback}
           data-testid="footer-companion-play"

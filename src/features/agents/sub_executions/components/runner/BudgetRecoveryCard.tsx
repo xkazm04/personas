@@ -67,6 +67,7 @@ export function BudgetRecoveryCard({
         {isBudgetBlocked && (
           <div className="flex flex-wrap items-center gap-2 px-3.5 pb-3 pt-1">
             <button
+              type="button"
               data-testid="runner-budget-override"
               onClick={onOverrideBudget}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-red-500/20 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -75,6 +76,7 @@ export function BudgetRecoveryCard({
               {e.run_anyway_session}
             </button>
             <button
+              type="button"
               onClick={() => setEditorTab('settings')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-border/30 text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
             >
@@ -106,6 +108,7 @@ export function BudgetRecoveryCard({
         {isBudgetBlocked && (
           <div className="flex flex-wrap items-center gap-2 px-3.5 pb-3 pt-1">
             <button
+              type="button"
               onClick={onOverrideStale}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-amber-500/20 text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
             >

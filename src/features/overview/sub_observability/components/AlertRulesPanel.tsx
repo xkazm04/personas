@@ -129,6 +129,7 @@ function RuleForm({
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
         <button
+          type="button"
           onClick={() => {
             if (!form.name.trim() || !form.threshold) return;
             onSubmit(form);
@@ -139,6 +140,7 @@ function RuleForm({
           <Check className="w-3.5 h-3.5" /> Save
         </button>
         <button
+          type="button"
           onClick={onCancel}
           className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors"
         >
@@ -170,7 +172,7 @@ function RuleRow({
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2.5 rounded-modal border transition-colors ${rule.enabled ? 'border-primary/10 bg-secondary/20' : 'border-primary/10 bg-secondary/10 opacity-60'}`}>
-      <button onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
+      <button type="button" onClick={onToggle} aria-pressed={rule.enabled} className="shrink-0 text-foreground hover:text-foreground transition-colors" title={rule.enabled ? 'Disable' : 'Enable'}>
         {rule.enabled
           ? <ToggleRight className="w-5 h-5 text-emerald-400" />
           : <ToggleLeft className="w-5 h-5" />
@@ -190,10 +192,10 @@ function RuleRow({
           {metricInfo?.label ?? rule.metric} {rule.operator} {rule.threshold}{metricInfo?.unit ?? ''} &middot; {scopeName}
         </p>
       </div>
-      <button onClick={onEdit} className="p-1 text-foreground hover:text-muted-foreground transition-colors" title={"edit"}>
+      <button type="button" onClick={onEdit} className="p-1 text-foreground hover:text-muted-foreground transition-colors" title={"edit"}>
         <Pencil className="w-3.5 h-3.5" />
       </button>
-      <button onClick={onDelete} className="p-1 text-foreground hover:text-red-400 transition-colors" title="Delete">
+      <button type="button" onClick={onDelete} className="p-1 text-foreground hover:text-red-400 transition-colors" title="Delete">
         <Trash2 className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -287,6 +289,7 @@ export function AlertRulesPanel() {
           <EvalHealthIndicator health={alertEvalHealth} />
         </div>
         <button
+          type="button"
           onClick={() => { setShowForm(true); setEditingId(null); }}
           className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
         >

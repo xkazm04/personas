@@ -45,6 +45,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
               className="flex-1 typo-body text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-1 focus-visible:outline-none focus-visible:border-primary/40"
             />
             <button
+              type="button"
               onClick={() => setEntities(schema.entities.filter((_, i) => i !== ei))}
               className="p-1.5 rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
               title={sh.extract_remove}
@@ -81,6 +82,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
                   className="flex-1 typo-caption text-foreground bg-background/50 border border-primary/15 rounded-input px-2 py-0.5 focus-visible:outline-none focus-visible:border-primary/40"
                 />
                 <button
+                  type="button"
                   onClick={() => {
                     const next = [...schema.entities];
                     next[ei] = { ...entity, fields: entity.fields.filter((_, i) => i !== fi) };
@@ -94,6 +96,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
               </div>
             ))}
             <button
+              type="button"
               onClick={() => {
                 const next = [...schema.entities];
                 next[ei] = { ...entity, fields: [...entity.fields, { name: '', description: '' }] };
@@ -108,6 +111,7 @@ export function SchemaEditor({ schema, onChange }: SchemaEditorProps) {
       ))}
 
       <button
+        type="button"
         onClick={() => setEntities([...schema.entities, { entityType: '', description: '', fields: [] }])}
         className="inline-flex items-center gap-1.5 typo-body text-violet-400/80 hover:text-violet-400 transition-colors"
       >

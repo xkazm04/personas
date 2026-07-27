@@ -50,6 +50,7 @@ export default function MemoryDetailModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
           >
@@ -133,6 +134,7 @@ export default function MemoryDetailModal({
           {/* Source execution link */}
           {memory.source_execution_id && (
             <button
+              type="button"
               onClick={() => { useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); onClose(); }}
               className="inline-flex items-center gap-1.5 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
               title={`Execution: ${memory.source_execution_id}`}
@@ -146,12 +148,14 @@ export default function MemoryDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/10">
           <button
+            type="button"
             onClick={() => { onDelete(); onClose(); }}
             className="px-3 py-1.5 typo-caption rounded-card border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
           >
             {t.overview.memory_detail.delete_memory}
           </button>
           <button
+            type="button"
             onClick={onClose}
             className="px-3 py-1.5 typo-caption rounded-card border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 transition-colors"
           >

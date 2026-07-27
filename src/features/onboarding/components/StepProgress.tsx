@@ -39,6 +39,7 @@ export function StepProgress({
 
         return (
           <button
+            type="button"
             key={step.id}
             onClick={() => onJump(i)}
             data-testid={`tour-step-${step.id}`}

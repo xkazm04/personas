@@ -256,6 +256,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
         {/* Mode toggle */}
         <div className="flex rounded-card border border-border p-0.5 bg-secondary/20">
           <button
+            type="button"
             onClick={() => setMode('bundle')}
             className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'bundle'
@@ -267,6 +268,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             {st.mode_bundle}
           </button>
           <button
+            type="button"
             onClick={() => setMode('enclave')}
             className={`flex-1 px-3 py-1.5 typo-caption rounded-input transition-colors flex items-center justify-center gap-1.5 ${
               mode === 'enclave'
@@ -295,6 +297,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             <>
               <div className="flex items-center justify-between">
                 <button
+                  type="button"
                   onClick={toggleAll}
                   className="typo-caption text-primary hover:text-primary/80 transition-colors"
                 >
@@ -334,6 +337,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
 
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <button
+            type="button"
             onClick={onClose}
             className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50"
           >
@@ -342,6 +346,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
           {mode === 'bundle' ? (
             <>
               <button
+                type="button"
                 onClick={handleCreateShareLink}
                 disabled={selected.size === 0 || creatingLink || copying || exporting}
                 className="px-3 py-1.5 typo-caption rounded-card border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -351,6 +356,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 {creatingLink ? st.creating_link : linkCopied ? st.link_copied : st.share_link}
               </button>
               <button
+                type="button"
                 onClick={handleCopyToClipboard}
                 disabled={selected.size === 0 || copying || exporting || creatingLink}
                 className="px-3 py-1.5 typo-caption rounded-card border border-border hover:bg-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -360,6 +366,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
                 {copying ? st.copying : copied ? st.copied : st.copy_to_clipboard}
               </button>
               <button
+                type="button"
                 onClick={handleExportBundle}
                 disabled={selected.size === 0 || exporting || copying || creatingLink}
                 className="px-3 py-1.5 typo-caption rounded-card bg-primary text-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -370,6 +377,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
             </>
           ) : (
             <button
+              type="button"
               onClick={handleSealEnclave}
               disabled={!selectedPersonaId || exporting}
               className="px-3 py-1.5 typo-caption rounded-card bg-violet-600 text-foreground hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
@@ -486,6 +494,7 @@ function ResourceCheckItem({
 }) {
   return (
     <button
+      type="button"
       onClick={onToggle}
       className={`w-full rounded-card border p-2.5 flex items-center gap-2.5 text-left transition-colors ${
         checked

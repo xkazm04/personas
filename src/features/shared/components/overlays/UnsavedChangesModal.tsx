@@ -38,6 +38,7 @@ export function UnsavedChangesModal({
 
         <div className="flex flex-col gap-2 pt-2">
           <button
+            type="button"
             onClick={() => onAction('save')}
             disabled={isSaving}
             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-heading rounded-xl bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 transition-colors duration-snap disabled:opacity-50"
@@ -48,6 +49,7 @@ export function UnsavedChangesModal({
           </button>
 
           <button
+            type="button"
             onClick={() => onAction('discard')}
             disabled={isSaving}
             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-heading rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors duration-snap disabled:opacity-50"
@@ -58,6 +60,7 @@ export function UnsavedChangesModal({
           </button>
 
           <button
+            type="button"
             onClick={() => onAction('stay')}
             disabled={isSaving}
             className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-heading rounded-xl bg-secondary/50 text-foreground border border-primary/15 hover:bg-secondary/70 transition-colors duration-snap disabled:opacity-50"

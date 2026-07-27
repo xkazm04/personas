@@ -69,6 +69,7 @@ export function ChatMessages({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>{t.vault.databases.generating_query}</span>
                 <button
+                  type="button"
                   onClick={onCancel}
                   className="ml-2 p-1 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
                   title="Cancel"
@@ -125,6 +126,7 @@ function EmptyState({
         <div className="flex flex-wrap gap-2 max-w-lg justify-center mt-2">
           {suggestions.map((s, i) => (
             <button
+              type="button"
               key={i}
               onClick={() => onSuggestionClick(s)}
               className="px-3 py-1.5 rounded-modal typo-body text-foreground bg-secondary/30 border border-primary/10 hover:bg-secondary/50 hover:text-muted-foreground/80 transition-colors"

@@ -47,6 +47,7 @@ export function GitLabAgentList({
         <p className="typo-body text-foreground">{t.gitlab.no_duo_agents}</p>
         <p className="typo-body text-foreground mt-1">{t.gitlab.deploy_persona_hint}</p>
         <button
+          type="button"
           onClick={() => onFetchAgents(projectId)}
           className="mt-3 flex items-center gap-1.5 mx-auto px-3 py-1.5 typo-body rounded-modal border border-primary/15 text-foreground hover:text-foreground/80 transition-colors"
         >
@@ -62,6 +63,7 @@ export function GitLabAgentList({
       <div className="flex items-center justify-between">
         <p className="typo-body text-foreground">{t.gitlab.agents_deployed.replace('{count}', String(agents.length))}</p>
         <button
+          type="button"
           onClick={() => onFetchAgents(projectId)}
           className="flex items-center gap-1.5 px-2 py-1 typo-body rounded-card text-foreground hover:text-foreground/80 transition-colors"
         >
@@ -87,6 +89,7 @@ export function GitLabAgentList({
           <div className="flex items-center gap-1.5">
             <PipelineStatusBadge projectId={projectId} />
             <button
+              type="button"
               onClick={() => onRedeploy(agent.name)}
               disabled={redeployingAgentId === agent.name}
               className="p-1.5 rounded-card hover:bg-orange-500/10 text-foreground hover:text-orange-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -110,6 +113,7 @@ export function GitLabAgentList({
               </a>
             )}
             <button
+              type="button"
               onClick={() => onUndeploy(projectId, agent.id)}
               className="p-1.5 rounded-card hover:bg-red-500/10 text-foreground hover:text-red-400 transition-colors"
               title={t.gitlab.undeploy_agent}

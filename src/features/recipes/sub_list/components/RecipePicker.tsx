@@ -45,6 +45,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
           <BookOpen className="w-4 h-4 text-primary" />
           <h2 className="typo-heading font-semibold text-foreground flex-1">{t.recipes.link_recipe}</h2>
           <button
+            type="button"
             onClick={onClose}
             className="flex items-center justify-center w-6 h-6 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
@@ -79,6 +80,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
             <div className="space-y-1">
               {available.map((recipe) => (
                 <button
+                  type="button"
                   key={recipe.id}
                   onClick={() => onSelect(recipe)}
                   className="w-full flex items-center gap-3 rounded-modal px-3 py-2.5 text-left hover:bg-primary/10 transition-colors group"

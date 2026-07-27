@@ -31,6 +31,7 @@ export function SortDropdown({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 typo-body rounded-modal border border-primary/15 hover:bg-secondary/50 text-foreground transition-colors flex items-center gap-1.5"
       >
@@ -46,6 +47,7 @@ export function SortDropdown({
             const isSelected = optSort === sortBy && option.dir === sortDir;
             return (
               <button
+                type="button"
                 key={option.value}
                 onClick={() => {
                   onSortChange(optSort, option.dir);

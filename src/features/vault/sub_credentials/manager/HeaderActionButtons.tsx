@@ -18,6 +18,7 @@ export function RotateAllButton({
   const { t, tx } = useTranslation();
   return (
     <button
+      type="button"
       onClick={onRotateAll}
       disabled={isRotatingAll || rotatableCount === 0}
       className={`flex items-center gap-1.5 px-2 py-1.5 rounded-card typo-caption font-medium border transition-colors ${
@@ -63,6 +64,7 @@ export function TestAllButton({
 
   return (
     <button
+      type="button"
       onClick={bulk.isRunning ? bulk.cancel : () => bulk.run(credentials)}
       className={`flex items-center gap-0 rounded-card typo-caption font-medium border transition-colors overflow-hidden ${
         bulk.isRunning

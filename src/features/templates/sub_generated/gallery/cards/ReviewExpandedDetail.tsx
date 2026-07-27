@@ -68,6 +68,7 @@ export function ReviewExpandedDetail({
             {flows.map((flow) => (
               <button
                 key={flow.id}
+                type="button"
                 onClick={onViewDiagram}
                 className="bg-violet-500/5 border border-violet-500/15 rounded-modal px-4 py-3 text-left hover:bg-violet-500/10 hover:border-violet-500/25 transition-all group min-w-[180px]"
               >
@@ -106,6 +107,7 @@ export function ReviewExpandedDetail({
               </h4>
             </div>
             <button
+              type="button"
               onClick={() => onApplyAdjustment(adjustment.suggestion)}
               disabled={isRunning}
               className="px-3 py-1.5 typo-body rounded-modal bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
@@ -143,6 +145,7 @@ export function ReviewExpandedDetail({
       <div className="flex items-center justify-between pt-2 border-t border-primary/[0.08]">
         {onAdopt ? (
           <button
+            type="button"
             onClick={onAdopt}
             disabled={isAdopting}
             className={`px-4 py-2.5 typo-body rounded-modal border disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-2 ${BUTTON_VARIANTS.adopt.bg} ${BUTTON_VARIANTS.adopt.text} ${BUTTON_VARIANTS.adopt.border} ${BUTTON_VARIANTS.adopt.hover}`}
@@ -154,6 +157,7 @@ export function ReviewExpandedDetail({
           <div />
         )}
         <button
+          type="button"
           onClick={() => setShowJson(!showJson)}
           className="typo-body text-violet-400/60 hover:text-violet-400/80 transition-colors"
         >

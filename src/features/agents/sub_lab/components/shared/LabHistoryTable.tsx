@@ -94,6 +94,7 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                 </td>
                 <td className="px-2 py-2.5">
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); onDelete(run.id); }}
                     className="p-1 rounded-card hover:bg-red-500/15 text-foreground hover:text-red-400 transition-colors"
                     title={t.agents.lab.delete_run}

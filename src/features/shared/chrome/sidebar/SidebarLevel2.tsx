@@ -343,6 +343,7 @@ function SchedulesSidebarNav() {
       <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
         {/* All schedules */}
         <button
+          type="button"
           onClick={() => selectFilter(null, null, '')}
           aria-current={selectedGroupId === null ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
@@ -365,6 +366,7 @@ function SchedulesSidebarNav() {
         {groups.map((g) => (
           <button
             key={g.id}
+            type="button"
             onClick={() => selectFilter(g.id, g.personaIds, g.name)}
             aria-current={selectedGroupId === g.id ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${

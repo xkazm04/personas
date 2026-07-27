@@ -32,6 +32,7 @@ export function BentoGrid({ onPick }: { onPick: (domainId: string) => void }) {
         return (
           <button
             key={d.id}
+            type="button"
             onClick={() => onPick(d.id)}
             className={`group relative overflow-hidden rounded-2xl border border-primary/10 hover:border-primary/30 text-left transition-all ${span}`}
           >

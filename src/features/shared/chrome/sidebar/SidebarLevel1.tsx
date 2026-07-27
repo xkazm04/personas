@@ -215,6 +215,7 @@ export default function SidebarLevel1({
 
           return (
             <button
+              type="button"
               key={section.id}
               data-testid={`sidebar-${section.id}`}
               onClick={() => {

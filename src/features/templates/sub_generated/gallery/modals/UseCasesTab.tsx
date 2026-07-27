@@ -95,6 +95,7 @@ export function UseCasesTab({ flows, onViewFlows }: UseCasesTabProps) {
       ))}
 
       <button
+        type="button"
         onClick={onViewFlows}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
       >

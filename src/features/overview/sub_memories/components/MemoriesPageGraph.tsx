@@ -114,11 +114,11 @@ export default function MemoriesPageGraph() {
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+            <button type="button" onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {memoryReviewRunning ? 'Reviewing...' : 'Review'}
             </button>
-            <button onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
+            <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add
             </button>
@@ -148,6 +148,7 @@ export default function MemoriesPageGraph() {
               const active = activeCategory === cat;
               return (
                 <button
+                  type="button"
                   key={cat}
                   onClick={() => { setActiveCategory(cat); setSelected(null); }}
                   className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body font-medium transition-all border ${
@@ -475,7 +476,7 @@ function DetailPanel({
             <p className="typo-caption text-foreground mt-0.5">{personaName}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
+        <button type="button" onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -494,7 +495,7 @@ function DetailPanel({
 
       <div className="flex items-center justify-between typo-caption text-foreground pt-2 border-t border-primary/10">
         <span><DebtText k="auto_last_seen_56462f81" /> {formatRelativeTime(lastSeen)}</span>
-        <button onClick={onDelete} className="text-red-400/80 hover:text-red-400">Delete</button>
+        <button type="button" onClick={onDelete} className="text-red-400/80 hover:text-red-400">Delete</button>
       </div>
     </motion.div>
   );
@@ -511,7 +512,7 @@ function DetailStat({ label, value, tone = 'text-foreground' }: { label: string;
 
 function FilterPill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`rounded-full px-3 py-1 typo-body font-medium transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
+    <button type="button" onClick={onClick} className={`rounded-full px-3 py-1 typo-body font-medium transition-all ${active ? 'bg-primary/15 text-foreground' : 'text-foreground hover:text-foreground hover:bg-secondary/30'}`}>
       {children}
     </button>
   );

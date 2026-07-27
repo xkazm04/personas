@@ -72,6 +72,7 @@ export function JobRow({ job, projectId, isExpanded, onToggle }: JobRowProps) {
   return (
     <div className={`rounded-modal border ${statusBg(job.status)}`}>
       <button
+        type="button"
         onClick={handleToggle}
         className="w-full text-left p-2.5 flex items-center gap-2.5"
       >

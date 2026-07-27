@@ -91,6 +91,7 @@ export function ReplayToolPanel({
               {/* Fork toggle on click */}
               {(isCompleted || isActive) && (
                 <button
+                  type="button"
                   onClick={() => onFork(isFork ? null : step.step_index)}
                   className="absolute inset-0 rounded-card"
                   title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index + 1 })}

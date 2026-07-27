@@ -78,6 +78,7 @@ export default function BackfillModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onCancel}
             disabled={isRunning}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors disabled:opacity-40"
@@ -97,6 +98,7 @@ export default function BackfillModal({
             <div className="flex gap-1.5">
               {QUICK_RANGES.map((r) => (
                 <button
+                  type="button"
                   key={r.id}
                   onClick={() => handleQuickRange(r.hours)}
                   disabled={isRunning}
@@ -188,6 +190,7 @@ export default function BackfillModal({
 
         <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/10 bg-primary/[0.02]">
           <button
+            type="button"
             onClick={onCancel}
             disabled={isRunning}
             className="px-3 py-1.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-40"
@@ -195,6 +198,7 @@ export default function BackfillModal({
             {t.common.close}
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!validRange || isRunning}
             className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card border border-amber-500/30 bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-40"

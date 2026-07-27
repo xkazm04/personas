@@ -66,6 +66,7 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
 
       <div className="flex items-center gap-1 flex-shrink-0">
         <button
+          type="button"
           onClick={(e) => void onDelete(e, session.id)}
           disabled={isBusy}
           className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"

@@ -251,6 +251,7 @@ export default function SetupPanel() {
           />
           <div className="px-1 pt-3">
             <button
+              type="button"
               onClick={() => setSignalsModalOpen(true)}
               className="inline-flex items-center gap-2 typo-caption font-medium text-primary hover:underline focus-ring rounded"
             >

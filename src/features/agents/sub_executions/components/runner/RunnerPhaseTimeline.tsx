@@ -26,6 +26,7 @@ export function RunnerPhaseTimeline({
   return (
     <div className="border-b border-border/20">
       <button
+        type="button"
         onClick={() => setShowPhases(!showPhases)}
         className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-code text-foreground hover:text-muted-foreground transition-colors uppercase tracking-wider"
       >

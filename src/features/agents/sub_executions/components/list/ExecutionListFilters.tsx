@@ -42,6 +42,7 @@ export function ExecutionListFilters({
       {hasSimulations && (
         <Tooltip content={e.simulations_filter_tooltip}>
           <button
+            type="button"
             onClick={() => setShowSimulations(!showSimulations)}
             className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showSimulations
@@ -57,6 +58,7 @@ export function ExecutionListFilters({
       {hasExecutions && (
         <Tooltip content={showRaw ? e.sensitive_visible : e.sensitive_masked}>
           <button
+            type="button"
             onClick={() => setShowRaw(!showRaw)}
             className={`${hasSimulations ? '' : 'ml-auto '}flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showRaw
@@ -71,6 +73,7 @@ export function ExecutionListFilters({
       )}
       {hasEnoughToCompare && (
         <button
+          type="button"
           onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
           className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
             compareMode
@@ -107,6 +110,7 @@ export function ExecutionListFilters({
           )}
           {canCompare && (
             <button
+              type="button"
               onClick={onShowComparison}
               className="ml-2 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >

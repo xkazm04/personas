@@ -199,6 +199,7 @@ function CartoBand({
           <Stat label="complete" value={completed} accent />
         </div>
         <button
+          type="button"
           onClick={onCreate}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
@@ -406,6 +407,7 @@ function DetailPane({
       )}
       <div className="flex flex-col gap-2 pt-2">
         <button
+          type="button"
           onClick={() => onOpen(project.id)}
           className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
         >
@@ -413,6 +415,7 @@ function DetailPane({
         </button>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => onEdit(project)}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-foreground/[0.06] text-foreground/85 hover:bg-foreground/[0.1] transition-colors"
           >
@@ -420,6 +423,7 @@ function DetailPane({
             {t.research_lab.edit_project}
           </button>
           <button
+            type="button"
             onClick={() => onDelete(project.id)}
             className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           >
@@ -441,6 +445,7 @@ function CartoEmpty({ t, onCreate }: { t: Translations; onCreate: () => void }) 
         <p className="typo-body-lg text-foreground">{t.research_lab.no_projects}</p>
         <p className="typo-body text-foreground">{t.research_lab.no_projects_hint}</p>
         <button
+          type="button"
           onClick={onCreate}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
         >

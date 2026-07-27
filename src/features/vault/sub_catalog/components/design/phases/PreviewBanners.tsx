@@ -87,6 +87,7 @@ export function PreviewBanners({ result, fields, requiredCount, optionalCount, o
       {/* Refine request */}
       {onRefine && (
         <button
+          type="button"
           onClick={onRefine}
           className="flex items-center gap-1.5 typo-body text-foreground hover:text-primary/70 transition-colors"
         >

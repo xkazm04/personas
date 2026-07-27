@@ -18,6 +18,7 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
 
   return (
     <button
+      type="button"
       onClick={onSelect}
       disabled={disabled}
       className={`w-full text-left p-3 rounded-modal border transition-all ${

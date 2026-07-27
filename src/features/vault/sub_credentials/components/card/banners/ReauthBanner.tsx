@@ -156,6 +156,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
               </span>
               {isCli ? (
                 <button
+                  type="button"
                   onClick={() => void retryCliCapture(entry)}
                   disabled={retryingId === entry.credentialId}
                   className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 disabled:opacity-50 focus-ring rounded-card`}
@@ -167,6 +168,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
                 </button>
               ) : onNavigate && (
                 <button
+                  type="button"
                   onClick={() => onNavigate(entry.credentialId)}
                   data-testid="reauth-reconnect"
                   className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 focus-ring rounded-card`}
@@ -176,6 +178,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => dismiss(entry.credentialId)}
                 className={`${WARNING.text} opacity-60 hover:opacity-100 shrink-0 focus-ring rounded-card`}
                 aria-label={t.common.dismiss}

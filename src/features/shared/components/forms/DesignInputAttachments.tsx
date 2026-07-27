@@ -20,6 +20,7 @@ export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSele
           const Icon = FILE_TYPE_ICONS[type];
           return (
             <button
+              type="button"
               key={type}
               onClick={() => onConfirm(type)}
               className="flex items-center gap-1.5 px-2.5 py-1 bg-background/50 border border-primary/15 rounded-xl typo-body text-foreground/90 hover:border-primary/30 hover:bg-primary/5 transition-all"
@@ -30,6 +31,7 @@ export function TypeSelectorModal({ pendingFile, onConfirm, onCancel }: TypeSele
           );
         })}
         <button
+          type="button"
           onClick={onCancel}
           className="px-2.5 py-1 typo-body text-foreground hover:text-foreground transition-colors"
         >
@@ -62,6 +64,7 @@ export function AttachedFilesRow({ files, onRemove }: AttachedFilesRowProps) {
             <span className="text-foreground/90 max-w-[120px] truncate">{file.name}</span>
             <span className="text-foreground">{FILE_TYPE_LABELS[file.type]}</span>
             <button
+              type="button"
               onClick={() => onRemove(index)}
               className="ml-0.5 text-foreground hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
               title={t.shared.forms_extra.remove_file}

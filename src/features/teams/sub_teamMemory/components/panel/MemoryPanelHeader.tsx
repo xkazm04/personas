@@ -36,6 +36,7 @@ export default function MemoryPanelHeader({
         {hasRunData && (
           <div className="flex items-center rounded-card border border-primary/10 overflow-hidden mr-1">
             <button
+              type="button"
               onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
               className={`p-1 transition-colors ${
                 viewMode === 'list'
@@ -47,6 +48,7 @@ export default function MemoryPanelHeader({
               <List className="w-3 h-3" />
             </button>
             <button
+              type="button"
               onClick={() => onViewModeChange('timeline')}
               className={`p-1 transition-colors ${
                 viewMode === 'timeline'
@@ -59,6 +61,7 @@ export default function MemoryPanelHeader({
             </button>
             {hasDiffData && (
               <button
+                type="button"
                 onClick={() => onViewModeChange('diff')}
                 className={`p-1 transition-colors ${
                   viewMode === 'diff'
@@ -73,6 +76,7 @@ export default function MemoryPanelHeader({
           </div>
         )}
         <button
+          type="button"
           className="p-1 rounded-card hover:bg-primary/10 text-foreground"
           onClick={onClose}
         >

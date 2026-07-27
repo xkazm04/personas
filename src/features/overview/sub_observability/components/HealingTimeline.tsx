@@ -45,6 +45,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
     <div className="rounded-modal border border-primary/10 bg-secondary/10 overflow-hidden transition-all">
       {/* Chain Header */}
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-foreground/[0.02] transition-colors text-left"
       >
@@ -163,6 +164,7 @@ function KnowledgeCard({ events }: { events: HealingTimelineEvent[] }) {
   return (
     <div className="rounded-modal border border-blue-500/15 bg-blue-500/5 overflow-hidden">
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-500/5 transition-colors text-left"
       >

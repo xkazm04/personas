@@ -34,6 +34,7 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
             </span>
           )}
           <button
+            type="button"
             onClick={() => setViewMode(viewMode === 'raw' ? 'rendered' : 'raw')}
             className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
             title={viewMode === 'raw' ? 'Switch to rendered markdown' : 'Switch to raw log'}

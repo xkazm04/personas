@@ -25,6 +25,7 @@ export function TemplateFormHeader({
     <div className="flex items-center gap-3 mb-4">
       {onBack && (
         <button
+          type="button"
           onClick={onBack}
           className="p-2 -ml-2 rounded-card hover:bg-secondary/50 transition-colors"
           title={cf.back_to_catalog}
@@ -56,6 +57,7 @@ export function TemplateFormHeader({
       {isDesktopBridge(selectedConnector) ? (
         onDesktopDetect && (
           <button
+            type="button"
             onClick={onDesktopDetect}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-orange-500/20 bg-orange-500/8 hover:bg-orange-500/15 text-orange-300 typo-body font-medium transition-colors"
           >
@@ -66,6 +68,7 @@ export function TemplateFormHeader({
       ) : (
         onAutoSetup && activeMethod?.type !== 'mcp' && (
           <button
+            type="button"
             onClick={onAutoSetup}
             data-testid="vault-auto-add-btn"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal border border-cyan-500/20 bg-cyan-500/8 hover:bg-cyan-500/15 text-cyan-300 typo-body font-medium transition-colors"

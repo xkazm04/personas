@@ -15,6 +15,7 @@ export function DatabaseCard({ credential, connector, tableCount, queryCount, on
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className="w-full text-left p-4 rounded-modal border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 transition-all group"
     >

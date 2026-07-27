@@ -12,6 +12,7 @@ export function SaveConfigButton({ onClick, disabled, saved, label }: SaveConfig
   const displayLabel = label ?? t.common.save;
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled || saved}
       className={`px-3 py-1.5 rounded-modal typo-body font-medium transition-all ${

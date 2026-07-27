@@ -195,6 +195,7 @@ export default function MemoriesPageDense() {
         actions={
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => setViewTab('memories')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
@@ -202,6 +203,7 @@ export default function MemoriesPageDense() {
               <span className="typo-body font-medium">Memories</span>
             </button>
             <button
+              type="button"
               onClick={() => setViewTab('conflicts')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
             >
@@ -209,12 +211,13 @@ export default function MemoriesPageDense() {
               <span className="typo-body font-medium">Conflicts</span>
             </button>
             <div className="w-px h-6 bg-primary/10" />
-            <button onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
+            <button type="button" onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {memoryReviewRunning ? 'Reviewing...' : 'Review'}
             </button>
             <div className="relative">
               <button
+                type="button"
                 onClick={() => setReflectMenuOpen((v) => !v)}
                 disabled={memoryReviewRunning || reflectablePersonas.length === 0}
                 title={t.overview.memories.reflect_hint}
@@ -228,6 +231,7 @@ export default function MemoriesPageDense() {
                   <p className="px-2 py-1.5 typo-caption text-muted-foreground">{t.overview.memories.reflect_pick_persona}</p>
                   {reflectablePersonas.map((p) => (
                     <button
+                      type="button"
                       key={p.id}
                       onClick={() => handleReflect(p.id)}
                       className="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded-card typo-body text-foreground/90 hover:bg-secondary/50 transition-colors"
@@ -239,12 +243,12 @@ export default function MemoriesPageDense() {
                 </div>
               )}
             </div>
-            <button onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
+            <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-violet-500/30 text-violet-200 border-violet-500/40' : 'bg-violet-500/20 text-violet-300 border-violet-500/30 hover:bg-violet-500/30'}`}>
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add
             </button>
             {memories.length > 0 && (
-              <button onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
+              <button type="button" onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -301,6 +305,7 @@ export default function MemoriesPageDense() {
             const active = categoryFilters.has(cat);
             return (
               <button
+                type="button"
                 key={cat}
                 onClick={() => toggleCategory(cat)}
                 className={`flex items-center gap-1 rounded-full px-2.5 py-1 typo-body font-medium transition-all border ${
@@ -314,7 +319,7 @@ export default function MemoriesPageDense() {
             );
           })}
           {categoryFilters.size > 0 && (
-            <button onClick={() => setCategoryFilters(new Set())} className="typo-body text-foreground hover:text-foreground px-2 py-1">
+            <button type="button" onClick={() => setCategoryFilters(new Set())} className="typo-body text-foreground hover:text-foreground px-2 py-1">
               Clear
             </button>
           )}
@@ -522,6 +527,7 @@ function SortHeader({
   const active = sortField === field;
   return (
     <button
+      type="button"
       onClick={() => onSort(field)}
       className={`${width} flex items-center gap-1 px-2 py-2 typo-label transition-colors ${align === 'right' ? 'justify-end' : 'justify-start'} ${active ? 'text-foreground' : 'text-foreground hover:text-foreground/80'}`}
     >

@@ -105,6 +105,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
       {/* Action buttons */}
       <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={onStartOver}
           className="flex items-center gap-1.5 px-3 py-2 text-foreground hover:text-foreground/95 typo-body transition-colors"
         >
@@ -112,6 +113,7 @@ export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPh
           {dm.start_over}
         </button>
         <button
+          type="button"
           onClick={onRetry}
           className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground rounded-modal typo-body font-medium transition-colors"
         >

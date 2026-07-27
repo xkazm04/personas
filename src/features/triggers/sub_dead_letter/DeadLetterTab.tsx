@@ -441,6 +441,7 @@ export function DeadLetterTab() {
           <div className="flex items-center gap-1.5">
             <div className="flex items-center rounded-card border border-border/50 overflow-hidden">
               <button
+                type="button"
                 onClick={() => setViewMode('list')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium transition-colors ${
                   viewMode === 'list' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
@@ -450,6 +451,7 @@ export function DeadLetterTab() {
                 {t.triggers.dead_letter_view_list}
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode('grouped')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption font-medium transition-colors ${
                   viewMode === 'grouped' ? 'bg-secondary text-foreground' : 'text-foreground/70 hover:bg-secondary/50'
@@ -460,6 +462,7 @@ export function DeadLetterTab() {
               </button>
             </div>
             <button
+              type="button"
               onClick={() => setFiltersOpen((v) => !v)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
                 filtersOpen || filtersDirty
@@ -471,6 +474,7 @@ export function DeadLetterTab() {
               {t.triggers.dead_letter_filters_title}
             </button>
             <button
+              type="button"
               onClick={() => void loadEvents()}
               className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:bg-secondary/50 transition-colors"
             >
@@ -514,6 +518,7 @@ export function DeadLetterTab() {
                 </span>
                 {(['any', '15m', '1h', '24h', 'old'] as const).map((age) => (
                   <button
+                    type="button"
                     key={age}
                     onClick={() => setFilters((f) => ({ ...f, age }))}
                     className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
@@ -528,6 +533,7 @@ export function DeadLetterTab() {
               </div>
               {filtersDirty && (
                 <button
+                  type="button"
                   onClick={() => setFilters(EMPTY_FILTERS)}
                   className="flex items-center gap-1 px-2 py-0.5 typo-caption text-foreground hover:text-foreground"
                 >
@@ -546,6 +552,7 @@ export function DeadLetterTab() {
             </span>
             <div className="flex items-center gap-1.5">
               <button
+                type="button"
                 onClick={() => void runBulkRetry(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
                 title={t.triggers.dead_letter_bulk_retry_title}
@@ -555,6 +562,7 @@ export function DeadLetterTab() {
                 {tx(t.triggers.dead_letter_bulk_retry, { count: visibleSelectedCount })}
               </button>
               <button
+                type="button"
                 onClick={() => runBulkDiscard(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
                 title={t.triggers.dead_letter_bulk_discard_title}
@@ -564,6 +572,7 @@ export function DeadLetterTab() {
                 {tx(t.triggers.dead_letter_bulk_discard, { count: visibleSelectedCount })}
               </button>
               <button
+                type="button"
                 onClick={clearSelection}
                 className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-foreground hover:bg-secondary/50 transition-colors"
               >
@@ -669,6 +678,7 @@ export function DeadLetterTab() {
                           </span>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => void handleRetry(evt.id)}
                             disabled={actionsInProgress.has(evt.id) || bulkInFlight}
                             className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
@@ -679,6 +689,7 @@ export function DeadLetterTab() {
                           </button>
                         )}
                         <button
+                          type="button"
                           onClick={() => handleDiscard(evt)}
                           disabled={actionsInProgress.has(evt.id) || bulkInFlight}
                           className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
@@ -718,6 +729,7 @@ export function DeadLetterTab() {
                 <div key={group.key} className="rounded-card border border-red-500/20 bg-red-500/5">
                   <div className="flex items-center justify-between gap-3 p-3">
                     <button
+                      type="button"
                       onClick={() => toggleGroup(group.key)}
                       className="flex items-start gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
                       title={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}
@@ -746,6 +758,7 @@ export function DeadLetterTab() {
                     </button>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
+                        type="button"
                         onClick={() => selectGroup(group)}
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary transition-colors"
                       >
@@ -753,6 +766,7 @@ export function DeadLetterTab() {
                         {t.triggers.dead_letter_select_all}
                       </button>
                       <button
+                        type="button"
                         onClick={() => void runBulkRetry(eligibleIds)}
                         disabled={eligibleIds.length === 0 || bulkInFlight}
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 disabled:opacity-50 transition-colors"
@@ -761,6 +775,7 @@ export function DeadLetterTab() {
                         {t.triggers.dead_letter_group_retry}
                       </button>
                       <button
+                        type="button"
                         onClick={() => runBulkDiscard(allEventIds)}
                         disabled={bulkInFlight}
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-secondary/50 text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"
@@ -803,6 +818,7 @@ export function DeadLetterTab() {
                               </span>
                             ) : (
                               <button
+                                type="button"
                                 onClick={() => void handleRetry(evt.id)}
                                 disabled={actionsInProgress.has(evt.id) || bulkInFlight}
                                 className="px-1.5 py-0.5 typo-caption rounded-input text-blue-300 hover:bg-blue-500/20 disabled:opacity-50 transition-colors"
@@ -811,6 +827,7 @@ export function DeadLetterTab() {
                               </button>
                             )}
                             <button
+                              type="button"
                               onClick={() => handleDiscard(evt)}
                               disabled={actionsInProgress.has(evt.id) || bulkInFlight}
                               className="px-1.5 py-0.5 typo-caption rounded-input text-foreground hover:bg-secondary disabled:opacity-50 transition-colors"

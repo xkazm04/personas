@@ -55,7 +55,7 @@ export function PersonaRow({ stats, expanded, onToggle }: {
 
   return (
     <div className={`border-l-2 ${accent}`}>
-      <button onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
+      <button type="button" onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
         <div className="flex-1 min-w-0">
           <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
           <span className="typo-caption text-foreground tabular-nums">{stats.total_executions} executions</span>

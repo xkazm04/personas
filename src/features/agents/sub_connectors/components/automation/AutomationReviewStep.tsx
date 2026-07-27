@@ -75,6 +75,7 @@ export function AutomationReviewStep({
           </a>
         )}
         <button
+          type="button"
           onClick={() => { onComplete(); onClose(); }}
           className="px-4 py-2 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors"
         >
@@ -95,10 +96,10 @@ export function AutomationReviewStep({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
+        <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-border text-foreground hover:bg-secondary/50 transition-colors">
           {t.common.close}
         </button>
-        <button onClick={onReset} className="px-4 py-2 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
+        <button type="button" onClick={onReset} className="px-4 py-2 typo-body font-medium rounded-modal bg-accent/20 border border-accent/30 text-foreground/90 hover:bg-accent/30 transition-colors">
           {t.agents.connectors.auto_try_again}
         </button>
       </div>

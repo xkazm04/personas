@@ -96,10 +96,11 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-4 py-1.5 rounded-modal typo-body text-foreground hover:text-foreground/90 transition-colors">
+        <button type="button" onClick={onClose} className="px-4 py-1.5 rounded-modal typo-body text-foreground hover:text-foreground/90 transition-colors">
           {t.overview.annotate_modal.cancel}
         </button>
         <button
+          type="button"
           onClick={() => { void handleSave(); }}
           disabled={saving || !text.trim()}
           className="px-4 py-1.5 rounded-modal bg-cyan-500/20 border border-cyan-500/30 typo-body font-medium text-cyan-300 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"

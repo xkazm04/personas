@@ -99,6 +99,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
             const label = (editorLabels as Record<string, string>)[tab.labelKey] ?? tab.labelKey;
             return (
               <button
+                type="button"
                 key={tab.id}
                 onClick={() => setEditorTab(tab.id)}
                 data-testid={`editor-tab-${tab.id}`}

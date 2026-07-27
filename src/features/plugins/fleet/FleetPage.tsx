@@ -55,6 +55,7 @@ export default function FleetPage() {
           return (
             <button
               key={tabDef.id}
+              type="button"
               data-testid={`fleet-tab-${tabDef.id}`}
               onClick={() => setTab(tabDef.id)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[14px] transition-colors ${

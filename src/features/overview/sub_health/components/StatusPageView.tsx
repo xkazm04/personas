@@ -81,6 +81,7 @@ export function StatusPageView() {
               <span className="typo-caption text-foreground">{t.overview.health_extra.updated_prefix} {lastRefreshLabel}</span>
             )}
             <button
+              type="button"
               onClick={() => void refresh()}
               disabled={loading}
               className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
@@ -129,7 +130,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
   return (
     <div className={`relative ${expanded ? th.soft : ''}`}>
       <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${entry.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/20 transition-colors">
+      <button type="button" onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/20 transition-colors">
         <div className="flex items-center gap-2 w-44 sm:w-52 shrink-0 min-w-0">
           <GradeDot grade={entry.grade} />
           <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="framed" frameSize="xs" />

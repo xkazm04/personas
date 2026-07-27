@@ -51,7 +51,7 @@ export function ConversationCard({
   return (
     <div className={`rounded-card border transition-colors ${isActive ? 'border-primary/40 bg-primary/5' : 'border-border/50 bg-card/50 hover:border-border'}`} data-testid={`conversation-card-${conversation.id}`}>
       <div className="flex items-center gap-2 px-3 py-2" role="group" aria-label={debtText("auto_design_conversation_controls_ab77f46f")}>
-        <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
+        <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 flex-1 min-w-0 text-left" data-testid={`conversation-expand-${conversation.id}`}>
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
           <MessageSquare className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
           <span className="typo-body font-medium truncate">{conversation.title}</span>
@@ -62,9 +62,9 @@ export function ConversationCard({
           <span className="typo-body text-foreground">·</span>
           <span className="typo-body text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /><RelativeTime timestamp={conversation.updatedAt} fallback="-" /></span>
           {!isActive && conversation.status === 'active' && (
-            <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 typo-body font-medium rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 typo-body font-medium rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-foreground hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="ml-0.5 p-0.5 text-foreground hover:text-red-400 transition-colors" data-testid={`conversation-delete-${conversation.id}`}><Trash2 className="w-3 h-3" /></button>
         </div>
       </div>
       {expanded && messages.length > 0 && (
@@ -83,7 +83,7 @@ export function DriftNotificationCard({ event, onDismiss }: { event: DesignDrift
   const meta = DRIFT_KIND_META[event.kind];
   return (
     <div className={`animate-fade-slide-in group relative rounded-card border ${meta.borderClass} ${meta.bgClass} p-2.5 transition-colors`}>
-      <button onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-foreground/10 text-foreground hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
+      <button type="button" onClick={onDismiss} className="absolute top-1.5 right-1.5 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-foreground/10 text-foreground hover:text-foreground/70 transition-all" title={t.common.dismiss}><X className="w-2.5 h-2.5" /></button>
       <div className="flex items-start gap-2">
         <AlertTriangle className={`w-3.5 h-3.5 ${meta.textClass} flex-shrink-0 mt-0.5`} />
         <div className="min-w-0 flex-1 space-y-0.5">

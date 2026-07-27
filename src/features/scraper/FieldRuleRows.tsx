@@ -50,6 +50,7 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
             </ThemedSelect>
             <div className="flex-1" />
             <button
+              type="button"
               onClick={() => removeField(f.id)}
               className="rounded-interactive p-1 text-muted-foreground hover:bg-status-error/10 hover:text-status-error transition-colors"
               aria-label="Remove field"
@@ -115,6 +116,7 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
       ))}
 
       <button
+        type="button"
         onClick={addField}
         className="flex items-center justify-center gap-1 rounded-interactive border border-dashed border-primary/20 py-2 typo-caption text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
       >

@@ -199,6 +199,7 @@ export default function TeamMemoryPanel({
       {stats && stats.total > 0 && (
         <div className="border-t border-primary/10 px-3 py-2">
           <button
+            type="button"
             className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >

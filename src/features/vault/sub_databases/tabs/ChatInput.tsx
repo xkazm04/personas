@@ -54,6 +54,7 @@ export function ChatInput({
           </div>
         </div>
         <button
+          type="button"
           onClick={generating ? onCancel : onSubmit}
           disabled={!generating && !input.trim()}
           className={`shrink-0 p-2.5 rounded-modal border transition-colors ${

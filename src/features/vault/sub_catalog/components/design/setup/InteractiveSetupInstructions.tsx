@@ -90,6 +90,7 @@ export function InteractiveSetupInstructions({
       {/* Header -- grouped controls with separate buttons */}
       <div className="w-full flex items-center gap-2 px-4 py-3 hover:bg-secondary/30 transition-colors" role="group" aria-label={dp.setup_instructions}>
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 flex-1 text-left rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
         >
@@ -116,6 +117,7 @@ export function InteractiveSetupInstructions({
         {/* Open setup page shortcut */}
         {firstSetupUrl && (
           <button
+            type="button"
             onClick={async () => {
               await handleOpenUrl(firstSetupUrl);
             }}

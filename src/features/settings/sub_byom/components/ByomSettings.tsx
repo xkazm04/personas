@@ -61,6 +61,7 @@ export default function ByomSettings() {
               <span className="typo-caption text-amber-400/80 mr-1">{s.unsaved_changes}</span>
             )}
             <button
+              type="button"
               onClick={bm.handleReset}
               disabled={bm.isSaving}
               className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -68,6 +69,7 @@ export default function ByomSettings() {
               {s.reset}
             </button>
             <button
+              type="button"
               onClick={bm.handleSave}
               disabled={bm.hasBlockingErrors || bm.isSaving}
               aria-busy={bm.isSaving}
@@ -137,6 +139,7 @@ export default function ByomSettings() {
                 <p className="typo-caption text-red-400/60 mt-2 break-all">{bm.corruptPolicyError}</p>
               </div>
               <button
+                type="button"
                 onClick={bm.handleReset}
                 className="shrink-0 px-3 py-1.5 typo-body rounded-modal bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
