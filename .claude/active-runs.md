@@ -2,6 +2,18 @@
 
 ## Active
 
+### app-lib-crate-split-step3plus — build-memory crate split (steps 3-5) — session opus-5[1m]
+- Started: 2026-07-27. Status: started. Continues the split from `project_app_lib_crate_split` (steps 1-2 landed as 41edbb686/dd1e8d936/617e5ee00). Goal: cut peak rustc memory (8.9 GB in ONE process for a 431k-LOC crate) by moving shared types to `personas-core`, then extracting `personas-db` and `personas-engine`.
+- Paths: src-tauri/Cargo.toml, src-tauri/core/**, NEW src-tauri/db/** + src-tauri/engine/**, src-tauri/src/engine/{types,lifecycle,crypto,trace}.rs, src-tauri/src/validation/**, src-tauri/src/{lib.rs,db/**,engine/**}. Validation is `cargo check` ONLY (never `cargo test` — that is the 8.9 GB step). Working on MAIN CHECKOUT (not a worktree) because a worktree forces a full cold rebuild of 1,005 deps under the exact memory pressure we are trying to avoid; per-file staging + atomic per-step commits instead. NOTE: any other session running a cargo build will see rebuilds while this is active.
+
+### prototype-factory-ship-tab — /prototype (Ship tab, Factory L2) — session fable-5
+- Started: 2026-07-26. Status: started. Prototyping a NEW "Ship" tab (milestone / ship-track convergence layer) for Factory L2 — 3 directional content variants behind an internal switcher, mock data only (no schema work yet).
+- Paths: worktree .claude/worktrees/prototype-ship-tab (branch worktree-prototype-ship-tab); files: src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx + NEW src/features/teams/sub_factory/l2/ship/** variant files. Main checkout untouched except .claude/active-runs.md.
+
+### grok-build-fleet-terminal — /research (code) — session opus-5[1m]
+- Started: 2026-07-26. Status: started. Source: https://github.com/xai-org/grok-build (cloned to C:/gb). Analyzing xAI Grok Build's Rust TUI for performance + UI practices worth adopting in the Fleet terminal.
+- SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
+
 ### workspace-approvals-unification — practice-detail /prototype + move Knowledge Library into Overview.Approvals — session opus-5[1m]
 - Started: 2026-07-26. Status: started. Round 1 = 2 directional variants of PracticeDetailModal behind a temp switcher (Dossier / Ledger), focused on typographic hierarchy + divider + component strategy; then consolidation of the three decision surfaces (Manual Review / Dev Tools backlog / Workspace Knowledge) under a 3-mode nav in Overview -> Approvals, unifying toward Manual Review as the superior path.
 - Paths: src/features/plugins/dev-tools/sub_workspaces/{PracticeDetailModal,PracticeDetailVariant1,PracticeDetailVariant2,practiceAreaTheme,KnowledgeLibrary,KnowledgeTree}.tsx, src/features/overview/sub_manual-review/components/** (ManualReviewList, BacklogInboxGroup + new mode switcher), src/i18n/**, docs/features/plugins/dev tools/workspaces.md. NOTE: working on MAIN CHECKOUT not a worktree - the user is live-reviewing the library in the running dev server, and variants in a worktree would be invisible to it; per-file staging + atomic per-round commits instead. No active session overlaps sub_workspaces or sub_manual-review (checked).
@@ -304,6 +316,13 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### react-doctor-scan-ui-refactor — /research (code) — session opus-5[1m] — COMPLETE
+- 2026-07-26/27. Status: completed (commits: `933d560a3` plan + WizardStepper, `4322a1145` transform sweep).
+- React Doctor v0.9.1 scan of the frontend: 4,296 diagnostics / 1,318 files / 745 rules. KEY OPS FINDING: full-repo scan fails twice by default (900s deadline, then a 300s lint cap that still reports ok:true with lint silently skipped) — both raisable via undocumented env vars REACT_DOCTOR_LINT_PHASE_TIMEOUT_MS / REACT_DOCTOR_SCAN_DEADLINE_MS, after which the whole repo scans in 150s. Dead-code timeout is COMPUTED (fileCount x 30ms), not configurable — keep using knip.
+- Shipped: 26 layout-property animations converted to transforms (120 -> 94 errors). Plan + burn-down at docs/refactor/react-doctor-adoption.md.
+- Open: a11y tier (659 findings, ~414 need i18n keys x 14 locales), button-has-type (1,424 raw <button> bypassing the clean shared primitive), LazyMotion (191 files, 0 uses), the 86-site height-collapse decision, SectionCard NOT migratable to Collapse (Collapse never unmounts children; 28 call sites).
+
 
 ### architect-resume-15items — /architect resume orchestration — session fable-5 — COMPLETE
 - 2026-07-26. Status: completed (origin/master pushed at 584f9a042). 14 backlog items executed via 13 subagent worktree branches in 3 waves; architect-devtools branch merged (275f529c1); orphaned pre-restart work committed (2b1e56c9b/efc57998c/0babf5246); origin's 9 commits merged (584f9a042). Gates on final master: cargo 0 err, tsc 0, lint 0 err/908 warn, vitest 2659/2659, i18n strict clean. All run worktrees removed + branches deleted. VISUAL VERIFY PENDING: schedules windowing (>=24 rows), Studio unattended selector, Director defer.

@@ -217,9 +217,34 @@ Three honest options, all design tradeoffs rather than bug fixes:
 3. **Extend `Collapse`** with an `unmountWhenClosed` prop, then migrate. Most work, best
    end state, needs visual verification across 28 call sites.
 
-**Recommendation: (1) for now.** Spend Tier A effort on the 34 mechanically-safe
-transform fixes instead (progress bars and rails across 18 files), which are
-visually identical and carry no regression risk.
+**Recommendation: (1) for now.** Spend Tier A effort on the mechanically-safe transform
+fixes instead — done, see below.
+
+#### ✅ Transform sweep — SHIPPED (`4322a1145`)
+
+Converted **26 sites across 13 files**; verified `120 → 94` errors
+(`width` 23→2, `left` 5→1, `top` 1→0). tsc clean, eslint 0 errors, 2,659 tests passing.
+
+| Shape | Conversion |
+| --- | --- |
+| Progress bars | `width: N%` → `scaleX: N/100` on a `w-full origin-left` child |
+| Indeterminate shimmers | `left` keyframes → `x` keyframes, rebased from track-relative to element-relative |
+| `AthenaOrb` | `left/top` → `x/y`, anchored at origin — the hottest site (spring glide + pointer drag) |
+
+**Not converted, deliberately** (the count was 34, the safely-convertible reality was 26):
+
+- `GlyphCoreContent.tsx:222-223` — pulse ring whose `border-2` would scale with it.
+- `PolaritySlider.tsx:30` — knob `left` is *track*-relative; Framer's `x` percentages are
+  *element*-relative, so there is no equivalent without measuring the track.
+- `KnowledgeAtelier.tsx:371-373`, `DeadLetterTab.tsx:625`, `SmeeRelayTab.tsx:359` — the
+  `marginTop`/`marginBottom` values are bundled with `height: 0`/`auto` in the same
+  keyframe, so they belong to the 86-site height class, not this one.
+
+**Two rendering nuances, accepted rather than overlooked:** a gradient fill now spans the
+whole track and is *revealed* rather than compressed into the fill; and `rounded-full` end
+caps squash slightly at low fill. Both are standard for `scaleX` progress bars and
+imperceptible at these bar heights (1–2 px tall), but they are **not pixel-identical**.
+Revert individually if any bar looks wrong.
 
 ### Tier B — Bundle: adopt `LazyMotion` (1 architectural change + codemod)
 
