@@ -648,8 +648,8 @@ export default function IdeaScannerPage() {
               </div>
               <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-violet-400 rounded-full"
-                  animate={{ width: `${scanProgress}%` }}
+                  className="h-full w-full origin-left bg-violet-400 rounded-full"
+                  animate={{ scaleX: scanProgress / 100 }}
                   transition={{ duration: 0.4 }}
                 />
               </div>

@@ -255,8 +255,8 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             </p>
             {studioPhase === 'answers' && studioTotal > 0 && (
               <div className="h-1 rounded-full bg-secondary/40 overflow-hidden max-w-md">
-                <motion.div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
-                  animate={{ width: `${Math.round((studioCompleted / studioTotal) * 100)}%` }} transition={{ duration: 0.3 }} />
+                <motion.div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                  animate={{ scaleX: studioCompleted / studioTotal }} transition={{ duration: 0.3 }} />
               </div>
             )}
             <p className="text-[10px] text-foreground">{t.training.studioBackgroundNote}</p>

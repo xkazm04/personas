@@ -22,7 +22,7 @@ export function PolaritySlider({
       </div>
       <div className="relative h-6 flex items-center">
         <div className="absolute inset-x-0 h-1.5 rounded-full bg-secondary/80 overflow-hidden">
-          <motion.div className="h-full rounded-full" style={{ background: color }} animate={{ width: `${pct}%` }} transition={tr} />
+          <motion.div className="h-full w-full origin-left rounded-full" style={{ background: color }} animate={{ scaleX: pct / 100 }} transition={tr} />
         </div>
         <motion.div
           className="absolute w-3.5 h-3.5 rounded-full border-2 border-background shadow -translate-x-1/2 pointer-events-none"

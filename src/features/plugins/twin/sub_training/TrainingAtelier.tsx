@@ -267,8 +267,8 @@ export default function TrainingAtelier() {
               </div>
               <div className="h-1 rounded-full bg-secondary/40 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-400"
-                  animate={{ width: `${progressPct}%` }}
+                  className="h-full w-full origin-left rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-violet-400"
+                  animate={{ scaleX: progressPct / 100 }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 />
               </div>

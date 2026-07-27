@@ -36,9 +36,9 @@ export function ProgressBar({ answered, total }: { answered: number; total: numb
     <div className="flex items-center gap-3">
       <div className="flex-1 h-1.5 rounded-full bg-foreground/[0.06] overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary"
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
+          className="h-full w-full origin-left rounded-full bg-gradient-to-r from-primary/80 to-primary"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: pct / 100 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
         />
       </div>

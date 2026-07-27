@@ -347,9 +347,12 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   return (
     <motion.div
       className="group pointer-events-auto absolute select-none touch-none"
-      style={{ width: ORB_SIZE, height: ORB_SIZE }}
+      // Anchored at the origin and moved with a transform: animating left/top
+      // would force a layout pass on every frame of the glide and every drag
+      // move. The px maths above is unchanged — only the channel differs.
+      style={{ width: ORB_SIZE, height: ORB_SIZE, left: 0, top: 0 }}
       initial={false}
-      animate={{ left: renderLeft, top: renderTop }}
+      animate={{ x: renderLeft, y: renderTop }}
       transition={glideTransition}
     >
       {/* Interim-dictation caption, flips to whichever side has room.

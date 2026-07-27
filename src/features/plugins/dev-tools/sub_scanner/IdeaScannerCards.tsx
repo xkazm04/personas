@@ -220,9 +220,9 @@ export function ScanProgress({
       </div>
       <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-amber-400 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
+          className="h-full w-full origin-left bg-amber-400 rounded-full"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress / 100 }}
           transition={{ duration: 0.4 }}
         />
       </div>

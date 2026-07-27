@@ -191,8 +191,8 @@ export function DialogueComposePanel({
                 <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
                 <span className="relative h-1.5 flex-1 rounded-full bg-foreground/10 overflow-hidden">
                   <motion.span
-                    className="absolute inset-y-0 w-1/3 rounded-full bg-primary/70 blur-[1px]"
-                    animate={{ left: ["-33%", "100%"] }}
+                    className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-primary/70 blur-[1px]"
+                    animate={{ x: ["-100%", "300%"] }}
                     transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
                   />
                 </span>

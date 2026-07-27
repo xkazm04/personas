@@ -72,9 +72,9 @@ export default function StudioPlanDrawer({
           {hasPlan && (
             <div className="h-0.5 shrink-0 bg-secondary/50">
               <motion.div
-                className="h-full bg-primary"
+                className="h-full w-full origin-left bg-primary"
                 initial={false}
-                animate={{ width: `${pct}%` }}
+                animate={{ scaleX: pct / 100 }}
                 transition={{ duration: shouldAnimate ? 0.5 : 0, ease: [0.22, 1, 0.36, 1] }}
               />
             </div>

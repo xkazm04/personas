@@ -240,8 +240,8 @@ function CastingBar({ phase }: { phase: CastingPhase }) {
       <div className="relative h-1.5 w-full rounded-full bg-foreground/10 overflow-hidden">
         {phase === "casting" && (
           <motion.span
-            className="block h-full rounded-full bg-primary"
-            initial={{ width: "0%" }} animate={{ width: "88%" }}
+            className="block h-full w-full origin-left rounded-full bg-primary"
+            initial={{ scaleX: 0 }} animate={{ scaleX: 0.88 }}
             transition={{ duration: CASTING_MS / 1000, ease: "linear" }}
           />
         )}
@@ -249,16 +249,16 @@ function CastingBar({ phase }: { phase: CastingPhase }) {
           <>
             <span className="block h-full rounded-full bg-primary/80" style={{ width: "88%" }} />
             <motion.span
-              className="absolute inset-y-0 w-1/4 rounded-full bg-primary/60 blur-[2px]"
-              animate={{ left: ["-25%", "88%"] }}
+              className="absolute inset-y-0 left-0 w-1/4 rounded-full bg-primary/60 blur-[2px]"
+              animate={{ x: ["-100%", "352%"] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             />
           </>
         )}
         {phase === "crowned" && (
           <motion.span
-            className="block h-full rounded-full bg-primary"
-            initial={{ width: "88%" }} animate={{ width: "100%" }}
+            className="block h-full w-full origin-left rounded-full bg-primary"
+            initial={{ scaleX: 0.88 }} animate={{ scaleX: 1 }}
             transition={{ duration: 0.5, ease: EASE }}
           />
         )}
@@ -419,8 +419,8 @@ function SkeletonLine({ width }: { width: number }) {
       aria-hidden
     >
       <motion.span
-        className="absolute inset-y-0 w-1/3 bg-foreground/15 blur-[1px]"
-        animate={{ left: ["-33%", "100%"] }}
+        className="absolute inset-y-0 left-0 w-1/3 bg-foreground/15 blur-[1px]"
+        animate={{ x: ["-100%", "300%"] }}
         transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
       />
     </span>

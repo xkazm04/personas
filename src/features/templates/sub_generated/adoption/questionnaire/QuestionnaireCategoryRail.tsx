@@ -45,15 +45,15 @@ function CategoryNavItem({
       <div className="flex items-center gap-2">
         <div className="flex-1 h-1.5 rounded-full bg-foreground/[0.08] overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${
+            className={`h-full w-full origin-left rounded-full ${
               hasBlocked
                 ? 'bg-status-error/70'
                 : complete
                   ? 'bg-status-success/80'
                   : 'bg-current'
             }`}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress.pct * 100}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: progress.pct }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>

@@ -487,7 +487,7 @@ function DetailPanel({
       </div>
 
       <div className="h-1.5 w-full rounded-full bg-foreground/10 overflow-hidden mb-3">
-        <motion.div className="h-full rounded-full" style={{ backgroundColor: color }} initial={{ width: 0 }} animate={{ width: `${(memory.importance / 5) * 100}%` }} transition={{ duration: 0.4 }} />
+        <motion.div className="h-full w-full origin-left rounded-full" style={{ backgroundColor: color }} initial={{ scaleX: 0 }} animate={{ scaleX: memory.importance / 5 }} transition={{ duration: 0.4 }} />
       </div>
 
       <p className="typo-body text-foreground line-clamp-4 mb-3">{stripHtml(memory.content)}</p>

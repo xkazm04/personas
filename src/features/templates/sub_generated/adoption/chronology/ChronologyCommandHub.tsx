@@ -227,10 +227,10 @@ function HubTopBar({
         </span>
         <div className="flex-1 h-2 rounded-full bg-primary/10 overflow-hidden shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]">
           <motion.div
-            className="h-full rounded-full"
+            className="h-full w-full origin-left rounded-full"
             style={{ background: 'linear-gradient(90deg, color-mix(in srgb, var(--primary) 60%, transparent), color-mix(in srgb, var(--primary) 35%, transparent))' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${pct}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: pct / 100 }}
             transition={{ duration: 0.6, ease: 'easeOut' as const }}
           />
         </div>
