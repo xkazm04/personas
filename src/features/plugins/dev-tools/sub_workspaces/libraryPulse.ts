@@ -41,12 +41,7 @@ function isAfter(iso: string | null, cutoffMs: number): boolean {
   return Number.isFinite(t) && t >= cutoffMs;
 }
 
-/**
- * "What did this workspace decide lately?" — the Arc-3 digest.
- *
- * Demo/mock rows are excluded throughout: a digest that counts the sample
- * corpus reports activity that never happened.
- */
+/** "What did this workspace decide lately?" — the Arc-3 digest. */
 export function computeDigest(
   items: readonly KnowledgeItemView[],
   nowIso: string,
@@ -54,18 +49,17 @@ export function computeDigest(
 ): Digest {
   const now = Date.parse(nowIso);
   const cutoff = now - days * DAY_MS;
-  const real = items.filter((i) => !i.mock);
 
   const decidedIn = (status: KnowledgeItemView['status']) =>
-    real.filter((i) => i.status === status && isAfter(i.decidedAt, cutoff));
+    items.filter((i) => i.status === status && isAfter(i.decidedAt, cutoff));
 
   const adopted = decidedIn('adopted');
   const rejected = decidedIn('rejected');
   const deprecated = decidedIn('deprecated');
-  const harvested = real.filter(
+  const harvested = items.filter(
     (i) => (i.status === 'observed' || i.status === 'proposed') && isAfter(i.createdAt, cutoff),
   );
-  const pending = real.filter((i) => i.status === 'observed' || i.status === 'proposed');
+  const pending = items.filter((i) => i.status === 'observed' || i.status === 'proposed');
 
   return {
     since: new Date(cutoff).toISOString(),
@@ -81,6 +75,26 @@ export function computeDigest(
       deprecated.length === 0 &&
       harvested.length === 0,
   };
+}
+
+// ── execution queue ─────────────────────────────────────────────────────────
+
+/**
+ * Cells sitting at `to_process` — adopted ACTIONABLE practices (pitfall /
+ * pattern) that name work a member repo still owes.
+ *
+ * Adoption used to be a dead end at workspace level: the ladder recorded a
+ * decision and nothing anywhere said which repos had to act on it. Seeding
+ * these cells at adoption time (repos::dev_workspaces::initial_adoption_state)
+ * makes that queue real; this counter is what surfaces it, and it is the hook
+ * a future executor drains.
+ */
+export function countToProcess(
+  items: readonly KnowledgeItemView[],
+  adoptions: readonly WorkspacePracticeAdoption[],
+): number {
+  const canonIds = new Set(items.filter((i) => i.status === 'adopted').map((i) => i.id));
+  return adoptions.filter((a) => a.state === 'to_process' && canonIds.has(a.practice_id)).length;
 }
 
 // ── health pillars ──────────────────────────────────────────────────────────
@@ -142,20 +156,19 @@ export function computeHealth(
   nowIso: string,
   staleAfterDays = STALE_AFTER_DAYS,
 ): LibraryHealth {
-  const real = items.filter((i) => !i.mock);
   const now = Date.parse(nowIso);
   const freshCutoff = now - staleAfterDays * DAY_MS;
 
-  const adjudicated = real.filter(
+  const adjudicated = items.filter(
     (i) => i.status === 'adopted' || i.status === 'rejected' || i.status === 'deprecated',
   );
-  const canon = real.filter((i) => i.status === 'adopted');
+  const canon = items.filter((i) => i.status === 'adopted');
   const fresh = canon.filter((i) => isAfter(i.updatedAt, freshCutoff));
 
   // Consistency is judged over live rows only — rejected items are kept as
   // dedup memory ("rejection is knowledge"), and holding them to the current
   // structure would penalize the library for remembering.
-  const live = real.filter((i) => i.status !== 'rejected');
+  const live = items.filter((i) => i.status !== 'rejected');
   const structured = live.filter(
     (i) => isWellFormedTopic(i.topic) && i.abstraction !== null && i.ftype !== null,
   );
@@ -165,7 +178,7 @@ export function computeHealth(
   const landed = cells.filter((a) => a.state === 'adopted');
 
   const pillars: Pillar[] = [
-    pillar('governance', adjudicated.length, real.length),
+    pillar('governance', adjudicated.length, items.length),
     pillar('currency', fresh.length, canon.length),
     pillar('consistency', structured.length, live.length),
     pillar('liquidity', landed.length, cells.length),

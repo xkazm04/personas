@@ -5,7 +5,7 @@
 // to `dispatched`; the session's own verdict (ADOPTED / DECLINED) is what the
 // human reads before marking it adopted.
 import { useEffect, useState } from 'react';
-import { Play, Check, X, CircleDot, Ban } from 'lucide-react';
+import { Play, Check, X, CircleDot, Ban, ListTodo } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
@@ -25,6 +25,7 @@ import { adoptDispatchKey, buildAdoptPrompt } from './adoptPracticePrompt';
 
 const STATE_ICON: Record<string, typeof Play> = {
   adopted: Check,
+  to_process: ListTodo,
   dispatched: CircleDot,
   diverged: X,
   na: Ban,
@@ -102,6 +103,7 @@ export function PracticeRolloutModal({
 
   const stateLabel: Record<string, string> = {
     adopted: tw.state_adopted,
+    to_process: tw.state_to_process,
     dispatched: tw.state_dispatched,
     diverged: tw.state_diverged,
     proposed: tw.state_proposed,

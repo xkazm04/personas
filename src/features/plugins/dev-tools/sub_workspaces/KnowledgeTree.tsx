@@ -4,11 +4,12 @@
 // pane lists the selected branch through the shared DataGrid — paginated,
 // per-column sortable/filterable, so it stays crisp at hundreds of items. We
 // reuse DataGrid rather than reinventing table mechanics.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Library, Search } from 'lucide-react';
 
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -63,11 +64,40 @@ export default function KnowledgeTree({
   const [statusFilter, setStatusFilter] = useState('all');
   const [kindFilter, setKindFilter] = useState('all');
   const [abstractionFilter] = useState('all');
-  const [hideLint, setHideLint] = useState(true);
+  // Origin filter: which member repo a practice was harvested from. '' is the
+  // workspace itself (hand-authored, no origin project).
+  const [projectFilter, setProjectFilter] = useState('all');
   const [sortKey, setSortKey] = useState('updated');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const tree = useMemo(() => buildTopicTree(items), [items]);
+
+  // Only origins that actually occur in the corpus — a filter that can only
+  // ever produce an empty table is noise, not a control.
+  const projectOptions = useMemo(() => {
+    const ids = new Set<string>();
+    let hasWorkspaceLevel = false;
+    for (const i of items) {
+      if (i.originProjectId) ids.add(i.originProjectId);
+      else hasWorkspaceLevel = true;
+    }
+    const opts = [...ids]
+      .map((id) => ({ value: id, label: projectById.get(id)?.name ?? tw.origin_removed }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return [
+      { value: 'all', label: tw.all_projects },
+      ...(hasWorkspaceLevel ? [{ value: '', label: tw.origin_workspace }] : []),
+      ...opts,
+    ];
+  }, [items, projectById, tw.all_projects, tw.origin_removed, tw.origin_workspace]);
+
+  // A workspace whose corpus loses its last row from the filtered project would
+  // otherwise strand the user on an empty table with no obvious way back.
+  useEffect(() => {
+    if (projectFilter !== 'all' && !projectOptions.some((o) => o.value === projectFilter)) {
+      setProjectFilter('all');
+    }
+  }, [projectOptions, projectFilter]);
 
   const rows = useMemo(() => {
     const branch = itemsUnderTopic(items, selected);
@@ -77,9 +107,7 @@ export default function KnowledgeTree({
         (statusFilter === 'all' || i.status === statusFilter) &&
         (kindFilter === 'all' || i.kind === kindFilter) &&
         (abstractionFilter === 'all' || i.abstraction === abstractionFilter) &&
-        // "Hide lint layer" drops mechanical/micro items (motivate/avoid): a
-        // practice library should surface doctrine, not lint-territory rules.
-        (!hideLint || (i.durability !== 'mechanical' && i.abstraction !== 'micro')),
+        (projectFilter === 'all' || (i.originProjectId ?? '') === projectFilter),
     );
     const dir = sortDir === 'asc' ? 1 : -1;
     const cmp = (a: KnowledgeItemView, b: KnowledgeItemView): number => {
@@ -97,7 +125,7 @@ export default function KnowledgeTree({
     };
     return [...filtered].sort(cmp);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected, query, statusFilter, kindFilter, abstractionFilter, hideLint, sortKey, sortDir, projectById]);
+  }, [items, selected, query, statusFilter, kindFilter, abstractionFilter, projectFilter, sortKey, sortDir, projectById]);
 
   const onSort = (key: string) => {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -147,9 +175,6 @@ export default function KnowledgeTree({
           {r.title}
           {r.evidenceCount != null && r.evidenceCount > 1 && (
             <span className="typo-label text-muted-foreground ml-1.5">×{r.evidenceCount}</span>
-          )}
-          {r.mock && (
-            <span className="typo-label text-muted-foreground ml-1.5 opacity-60">{tw.demo_tag}</span>
           )}
         </span>
       ),
@@ -211,18 +236,17 @@ export default function KnowledgeTree({
               ? tx(tw.branch_summary, { topic: selected, count: rows.length })
               : tx(tw.all_topics_summary, { count: rows.length })}
           </span>
-          <button
-            type="button"
-            onClick={() => setHideLint((v) => !v)}
-            className={`ml-auto typo-label rounded-interactive border px-2 py-1 transition-colors ${
-              hideLint
-                ? 'border-primary/30 bg-primary/10 text-foreground'
-                : 'border-primary/10 text-foreground/70 hover:bg-secondary/40'
-            }`}
-            title={tw.hide_lint_hint}
-          >
-            {tw.hide_lint}
-          </button>
+          <ThemedSelect
+            filterable
+            hideSearch={projectOptions.length < 8}
+            options={projectOptions}
+            value={projectFilter}
+            onValueChange={setProjectFilter}
+            placeholder={tw.all_projects}
+            aria-label={tw.filter_by_project}
+            wrapperClassName="ml-auto"
+            className="typo-label !py-1 w-44"
+          />
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <input
@@ -238,9 +262,7 @@ export default function KnowledgeTree({
           columns={columns}
           data={rows}
           getRowKey={(r) => r.id}
-          // Demo rows have no database row behind them, so there is no detail
-          // to open — everything real is clickable.
-          onRowClick={onRowClick ? (r) => { if (!r.mock) onRowClick(r, rows); } : undefined}
+          onRowClick={onRowClick ? (r) => onRowClick(r, rows) : undefined}
           sortKey={sortKey}
           sortDirection={sortDir}
           onSort={onSort}

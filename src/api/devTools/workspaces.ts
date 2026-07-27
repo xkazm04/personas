@@ -18,7 +18,27 @@ import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePractice
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
 export type KnowledgeStatus = "observed" | "proposed" | "adopted" | "deprecated" | "rejected";
 export type KnowledgeDecision = "propose" | "adopt" | "reject" | "deprecate";
-export type AdoptionState = "na" | "proposed" | "dispatched" | "adopted" | "diverged";
+export type AdoptionState =
+  | "na"
+  | "proposed"
+  | "to_process"
+  | "dispatched"
+  | "adopted"
+  | "diverged";
+
+/**
+ * Kinds whose adoption implies WORK inside a member repo rather than a note to
+ * carry: a `pitfall` names something to remove, a `pattern` names something to
+ * converge on. Adopting one seeds every applicable member repo's adoption cell
+ * at `to_process` — the queue an executor drains — instead of the passive
+ * `proposed`. Mirrors `ACTIONABLE_KINDS` in
+ * src-tauri/src/db/repos/dev_workspaces.rs; keep the two in step.
+ */
+export const ACTIONABLE_KINDS: readonly KnowledgeKind[] = ["pitfall", "pattern"];
+
+export function isActionableKind(kind: string): boolean {
+  return (ACTIONABLE_KINDS as readonly string[]).includes(kind);
+}
 
 /** Parsed shape of `WorkspaceKnowledge.applicability` (stored as JSON text). */
 export interface Applicability {

@@ -13295,8 +13295,6 @@ export type Translations = {
         remove_from_workspace: string;
         empty_hint: string;
         library_title: string;
-        demo_on: string;
-        demo_off: string;
         all_topics: string;
         all_statuses: string;
         all_kinds: string;
@@ -13308,7 +13306,6 @@ export type Translations = {
         col_confidence: string;
         col_updated: string;
         origin_workspace: string;
-        demo_tag: string;
         library_empty_title: string;
         library_empty_desc: string;
         search_practices: string;
@@ -13357,8 +13354,6 @@ export type Translations = {
         abstraction_macro: string;
         abstraction_meso: string;
         abstraction_micro: string;
-        hide_lint: string;
-        hide_lint_hint: string;
         divergence: string;
         divergence_hint: string;
         divergence_started: string;
@@ -13419,6 +13414,11 @@ export type Translations = {
         detail_next: string;
         detail_position: string;
         detail_nav_hint: string;
+        all_projects: string;
+        filter_by_project: string;
+        state_to_process: string;
+        pulse_to_process: string;
+        decide_adopted_queued: string;
       };
     };
     doc_signing: {

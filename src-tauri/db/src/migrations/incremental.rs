@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 use personas_core::error::AppError;
 
@@ -6045,7 +6045,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                     CREATE TABLE IF NOT EXISTS workspace_practice_adoption (
                         practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
                         project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
-                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','dispatched','adopted','diverged')),
+                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
                         fleet_key        TEXT,
                         note             TEXT,
                         last_verified_at TEXT,
@@ -6132,6 +6132,61 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE UNIQUE INDEX IF NOT EXISTS idx_dev_mem_source
             ON dev_memories(project_id, source_kind, source_id)
             WHERE source_id IS NOT NULL;",
+    )?;
+
+    // -- workspace_practice_adoption: the `to_process` execution queue -------
+    // Adopting a practice used to seed every applicable member repo at
+    // `proposed` regardless of what the practice ASKS FOR, so an adopted
+    // pitfall ("stop doing X") looked identical to an adopted fact and nothing
+    // downstream could tell which cells owed work. Actionable kinds now seed
+    // `to_process` (see repos::dev_workspaces::initial_adoption_state) — the
+    // queue a future executor drains. SQLite cannot widen a CHECK in place, so
+    // the table is rebuilt.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_practice_adoption.to_process",
+            description: "Widen workspace_practice_adoption.state CHECK with 'to_process' — the per-repo execution queue seeded when an ACTIONABLE practice (pitfall/pattern) is adopted, distinct from 'proposed' (reference material, distributed not executed).",
+            already_applied: |conn| {
+                let sql: Option<String> = conn
+                    .query_row(
+                        "SELECT sql FROM sqlite_master WHERE type='table' AND name='workspace_practice_adoption'",
+                        [],
+                        |r| r.get(0),
+                    )
+                    .optional()
+                    .map_err(AppError::Database)?;
+                // A missing table is "applied": the CREATE above already ships
+                // the widened CHECK on fresh databases.
+                Ok(sql.map(|s| s.contains("to_process")).unwrap_or(true))
+            },
+            apply: |conn| {
+                // FKs off for the drop/rename: the guard must live OUTSIDE the
+                // ddl_step transaction — `PRAGMA foreign_keys` is a no-op once
+                // a transaction is open.
+                let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+                ddl_step(
+                    conn,
+                    "DROP TABLE IF EXISTS workspace_practice_adoption_new;
+                    CREATE TABLE workspace_practice_adoption_new (
+                        practice_id      TEXT NOT NULL REFERENCES workspace_knowledge(id) ON DELETE CASCADE,
+                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        state            TEXT NOT NULL CHECK(state IN ('na','proposed','to_process','dispatched','adopted','diverged')),
+                        fleet_key        TEXT,
+                        note             TEXT,
+                        last_verified_at TEXT,
+                        updated_at       TEXT NOT NULL,
+                        PRIMARY KEY (practice_id, project_id)
+                    );
+                    INSERT INTO workspace_practice_adoption_new
+                        SELECT practice_id, project_id, state, fleet_key, note, last_verified_at, updated_at
+                        FROM workspace_practice_adoption;
+                    DROP TABLE workspace_practice_adoption;
+                    ALTER TABLE workspace_practice_adoption_new RENAME TO workspace_practice_adoption;",
+                )?;
+                Ok(())
+            },
+        },
     )?;
     Ok(())
 }

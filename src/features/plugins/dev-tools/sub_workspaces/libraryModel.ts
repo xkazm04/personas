@@ -39,8 +39,6 @@ export interface KnowledgeItemView {
   durability: Durability | null;
   governingId: string | null;
   evidenceCount: number | null;
-  /** True for generated demo rows (never written to the DB). */
-  mock?: boolean;
 }
 
 export type Abstraction = 'macro' | 'meso' | 'micro';

@@ -21,7 +21,44 @@ use personas_core::error::AppError;
 pub const KNOWLEDGE_KINDS: [&str; 5] = ["pattern", "pitfall", "decision", "howto", "fact"];
 pub const KNOWLEDGE_STATUSES: [&str; 5] =
     ["observed", "proposed", "adopted", "deprecated", "rejected"];
-pub const ADOPTION_STATES: [&str; 5] = ["na", "proposed", "dispatched", "adopted", "diverged"];
+pub const ADOPTION_STATES: [&str; 6] = [
+    "na",
+    "proposed",
+    "to_process",
+    "dispatched",
+    "adopted",
+    "diverged",
+];
+
+/// Kinds whose adoption implies WORK inside a member repo rather than a note
+/// to carry: a `pitfall` names something to remove, a `pattern` names
+/// something to converge on. `decision` / `howto` / `fact` are reference
+/// material — they reach the repo through the memory projection
+/// (`project_practices`) and need no execution.
+pub const ACTIONABLE_KINDS: [&str; 2] = ["pitfall", "pattern"];
+
+pub fn is_actionable_kind(kind: &str) -> bool {
+    ACTIONABLE_KINDS.contains(&kind)
+}
+
+/// Seed state for a per-project adoption cell the moment a practice becomes
+/// canon. `na` when the practice cannot apply to that stack at all;
+/// `to_process` when it names work that repo owes (the queue a future executor
+/// drains); plain `proposed` for reference material, which is "distributed"
+/// rather than "done".
+pub fn initial_adoption_state(
+    kind: &str,
+    applicability: Option<&str>,
+    tech_stack: Option<&str>,
+) -> &'static str {
+    if !applicability_matches(applicability, tech_stack) {
+        "na"
+    } else if is_actionable_kind(kind) {
+        "to_process"
+    } else {
+        "proposed"
+    }
+}
 
 /// A machine-harvested knowledge candidate (from the `practice-harvest` skill
 /// or a deterministic miner). Distinct from the human `create_knowledge` path:
@@ -342,25 +379,22 @@ pub fn assign_project(
         )?;
 
         if let Some(new_ws) = workspace_id {
-            let adopted: Vec<(String, Option<String>)> = {
+            let adopted: Vec<(String, String, Option<String>)> = {
                 let mut stmt = tx.prepare(
-                    "SELECT id, applicability FROM workspace_knowledge
+                    "SELECT id, kind, applicability FROM workspace_knowledge
                      WHERE workspace_id = ?1 AND status = 'adopted'",
                 )?;
                 let rows = stmt
-                    .query_map(params![new_ws], |r| Ok((r.get(0)?, r.get(1)?)))?
+                    .query_map(params![new_ws], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
                     .collect::<Result<Vec<_>, _>>()?;
                 rows
             };
-            for (practice_id, applicability) in adopted {
-                let state = if applicability_matches(
+            for (practice_id, kind, applicability) in adopted {
+                let state = initial_adoption_state(
+                    &kind,
                     applicability.as_deref(),
                     project.tech_stack.as_deref(),
-                ) {
-                    "proposed"
-                } else {
-                    "na"
-                };
+                );
                 tx.execute(
                     "INSERT OR IGNORE INTO workspace_practice_adoption
                          (practice_id, project_id, state, updated_at)
@@ -683,14 +717,11 @@ pub fn decide_knowledge(
                 rows
             };
             for (project_id, tech_stack) in members {
-                let state = if applicability_matches(
+                let state = initial_adoption_state(
+                    &item.kind,
                     item.applicability.as_deref(),
                     tech_stack.as_deref(),
-                ) {
-                    "proposed"
-                } else {
-                    "na"
-                };
+                );
                 tx.execute(
                     "INSERT OR IGNORE INTO workspace_practice_adoption
                          (practice_id, project_id, state, updated_at)
@@ -1235,6 +1266,27 @@ mod tests {
         ));
         // Malformed JSON fails open (never hides a practice on bad data).
         assert!(applicability_matches(Some("not json"), Some("Rust")));
+    }
+
+    #[test]
+    fn adoption_seed_state_splits_actionable_from_reference() {
+        // Actionable canon owes work in the repo → the execution queue.
+        assert_eq!(initial_adoption_state("pitfall", None, Some("Rust")), "to_process");
+        assert_eq!(initial_adoption_state("pattern", None, Some("Rust")), "to_process");
+        // Reference material is distributed, not executed.
+        assert_eq!(initial_adoption_state("fact", None, Some("Rust")), "proposed");
+        assert_eq!(initial_adoption_state("decision", None, Some("Rust")), "proposed");
+        assert_eq!(initial_adoption_state("howto", None, Some("Rust")), "proposed");
+        // Inapplicable beats actionable — a pitfall about React is not work a
+        // Rust repo owes.
+        assert_eq!(
+            initial_adoption_state("pitfall", Some("{\"frameworks\":[\"react\"]}"), Some("Rust, Axum")),
+            "na"
+        );
+        // Every seed state must survive the column CHECK.
+        for kind in KNOWLEDGE_KINDS {
+            assert!(ADOPTION_STATES.contains(&initial_adoption_state(kind, None, None)));
+        }
     }
 
     #[test]

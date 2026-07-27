@@ -12962,7 +12962,6 @@
       "fitness_ranking": "Fitness Ranking",
       "synthesis_suggestions": "Synthesis Suggestions",
       "potential_duplicates": "Potential Duplicates",
-      "skills_title": "Skills",
       "search_skills": "Search skills...",
       "no_matching_skills": "No matching skills",
       "no_skills_found": "No skills found",
@@ -13290,8 +13289,6 @@
         "remove_from_workspace": "Remove from workspace",
         "empty_hint": "Group your dev projects into a workspace to build a shared best-practice library across them.",
         "library_title": "Knowledge library",
-        "demo_on": "Demo corpus on",
-        "demo_off": "Demo corpus off",
         "all_topics": "All topics",
         "all_statuses": "All statuses",
         "all_kinds": "All kinds",
@@ -13303,7 +13300,6 @@
         "col_confidence": "Conf.",
         "col_updated": "Updated",
         "origin_workspace": "workspace",
-        "demo_tag": "demo",
         "library_empty_title": "No practices here",
         "library_empty_desc": "Nothing matches this topic and filter yet.",
         "search_practices": "Search practices…",
@@ -13352,8 +13348,6 @@
         "abstraction_macro": "macro",
         "abstraction_meso": "meso",
         "abstraction_micro": "micro",
-        "hide_lint": "Hide lint layer",
-        "hide_lint_hint": "Hide mechanical, lint-enforceable items (micro / mechanical) — a practice library should surface doctrine, not lint rules.",
         "divergence": "Find divergences",
         "divergence_hint": "AI: where member projects solve the same problem different ways, propose one practice.",
         "divergence_started": "Divergence pass started — comparing practices across the workspace.",
@@ -13413,7 +13407,12 @@
         "detail_prev": "Previous practice",
         "detail_next": "Next practice",
         "detail_position": "{index} of {total}",
-        "detail_nav_hint": "← → to move"
+        "detail_nav_hint": "← → to move",
+        "all_projects": "All projects",
+        "filter_by_project": "Filter by origin project",
+        "state_to_process": "To process",
+        "pulse_to_process": "{count} repo slot(s) to process",
+        "decide_adopted_queued": "Adopted — queued in every applicable repo to process"
       }
     },
     "doc_signing": {
