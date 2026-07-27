@@ -112,12 +112,26 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                     }`} />
                   </div>
 
-                  {/* Content */}
+                  {/* Content — interactive (opens the issue) only for trigger
+                      events with an attached issue; keyboard-reachable so the
+                      timeline isn't mouse-only. */}
+                  {(() => {
+                    const selectable = Boolean(event.issueId && event.eventType === 'trigger' && onSelectIssue);
+                    const select = selectable ? () => onSelectIssue!(event.issueId!) : undefined;
+                    return (
                   <div className={`flex-1 min-w-0 rounded-card px-3 py-2 ${colors.bg} transition-colors ${
-                    event.issueId && onSelectIssue ? 'cursor-pointer hover:brightness-110' : ''
+                    selectable ? 'cursor-pointer hover:brightness-110 focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:outline-none' : ''
                   }`}
-                    onClick={event.issueId && event.eventType === 'trigger' && onSelectIssue
-                      ? () => onSelectIssue(event.issueId!)
+                    role={selectable ? 'button' : undefined}
+                    tabIndex={selectable ? 0 : undefined}
+                    onClick={select}
+                    onKeyDown={selectable
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            select!();
+                          }
+                        }
                       : undefined
                     }
                   >
@@ -145,6 +159,8 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
                       </span>
                     )}
                   </div>
+                    );
+                  })()}
                 </div>
               );
             })}
