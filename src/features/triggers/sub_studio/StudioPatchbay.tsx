@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Check, Trash2, X, Plus, Unplug, Pencil, Globe, Filter, Eye, EyeOff, GitBranch } from 'lucide-react';
+import { ArrowRight, Check, Trash2, X, Plus, Unplug, Pencil, Globe, Filter, Eye, EyeOff, GitBranch, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -61,6 +61,22 @@ export function StudioPatchbay() {
   const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [showUnconnected, setShowUnconnected] = useState(false);
+  // Both rails are hidden-by-default overlay drawers (not inline flex columns)
+  // so the canvas always owns the full page width — opening a rail never
+  // reflows the ledger, it just paints on top.
+  const [sourceRailOpen, setSourceRailOpen] = useState(false);
+  const [targetRailOpen, setTargetRailOpen] = useState(false);
+
+  useEffect(() => {
+    if (!sourceRailOpen && !targetRailOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setSourceRailOpen(false);
+      setTargetRailOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sourceRailOpen, targetRailOpen]);
 
   useEffect(() => { void fetchTeams(); }, [fetchTeams]);
   useEffect(() => {
@@ -103,11 +119,30 @@ export function StudioPatchbay() {
   return (
     // The testid keeps the historical "switchboard" name — the companion
     // trigger-creation walkthrough highlights it (guidance/walkthroughs.ts).
-    <div className="flex-1 flex min-h-0" data-testid="studio-switchboard">
-      <StudioSourceRail c={c} />
+    <div className="relative flex-1 flex min-h-0 min-w-0 overflow-hidden" data-testid="studio-switchboard">
+      {/* Edge toggle tabs — always visible, never reflow the canvas. Rails
+          themselves render as absolute overlays below, hidden by default. */}
+      <button
+        type="button"
+        onClick={() => setSourceRailOpen((v) => !v)}
+        aria-expanded={sourceRailOpen}
+        aria-label={sourceRailOpen ? st.close_sources_rail : st.open_sources_rail}
+        className="absolute left-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-r-card border border-l-0 border-border bg-card/90 px-1.5 py-3 text-foreground backdrop-blur transition-colors hover:bg-secondary/60"
+      >
+        {sourceRailOpen ? <PanelLeftClose className="w-3.5 h-3.5" /> : <PanelLeft className="w-3.5 h-3.5" />}
+      </button>
+      <button
+        type="button"
+        onClick={() => setTargetRailOpen((v) => !v)}
+        aria-expanded={targetRailOpen}
+        aria-label={targetRailOpen ? st.close_targets_rail : st.open_targets_rail}
+        className="absolute right-0 top-1/2 z-30 -translate-y-1/2 flex items-center gap-1 rounded-l-card border border-r-0 border-border bg-card/90 px-1.5 py-3 text-foreground backdrop-blur transition-colors hover:bg-secondary/60"
+      >
+        {targetRailOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRight className="w-3.5 h-3.5" />}
+      </button>
 
       {/* ── Unified ledger ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
         <div className="px-5 py-3 border-b border-border flex items-center gap-3">
           <h3 className="typo-heading text-foreground">{st.routes_title}</h3>
           <span className="typo-data text-status-success">{connected.length} {st.proto_live}</span>
@@ -228,7 +263,30 @@ export function StudioPatchbay() {
         </div>
       </div>
 
-      <StudioTargetRail c={c} />
+      {/* Rail overlays — absolutely positioned within the relative shell so
+          opening one paints on top of the canvas instead of squeezing it. */}
+      <AnimatePresence>
+        {sourceRailOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-y-0 left-0 z-20 shadow-elevation-4"
+          >
+            <StudioSourceRail c={c} onClose={() => setSourceRailOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {targetRailOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-y-0 right-0 z-20 shadow-elevation-4"
+          >
+            <StudioTargetRail c={c} onClose={() => setTargetRailOpen(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals — composer (signal-source + system-op) + live-route management */}
       <StudioTriggerCommitModal
