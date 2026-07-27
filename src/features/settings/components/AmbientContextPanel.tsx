@@ -226,10 +226,10 @@ export function AmbientContextPanel() {
           {ambientSnapshot.activeApp && (
             <div className="flex items-center gap-1.5 typo-caption">
               <AppWindow className="w-3 h-3 text-purple-400" />
-              <span className="text-foreground">
+              <span className="text-foreground font-medium">
                 {ambientSnapshot.activeApp}
                 {ambientSnapshot.activeWindowTitle && (
-                  <span className="text-foreground"> &mdash; {ambientSnapshot.activeWindowTitle}</span>
+                  <span className="text-foreground font-normal"> &mdash; {ambientSnapshot.activeWindowTitle}</span>
                 )}
               </span>
             </div>
@@ -251,7 +251,7 @@ export function AmbientContextPanel() {
                 return (
                   <div key={i} className="flex items-start gap-1.5 typo-caption">
                     <Icon className="w-3 h-3 text-foreground mt-0.5 shrink-0" />
-                    <span className="text-foreground truncate flex-1">{signal.summary}</span>
+                    <span className="text-foreground font-medium truncate flex-1">{signal.summary}</span>
                     <span className="text-foreground shrink-0">{age}</span>
                   </div>
                 );
@@ -299,7 +299,7 @@ export function AmbientContextPanel() {
 
           {/* Focus App Filter */}
           <div className="space-y-1.5">
-            <span className="typo-caption text-foreground">{s.focus_filter}</span>
+            <span className="typo-caption font-medium text-foreground">{s.focus_filter}</span>
             <p className="typo-caption text-foreground">
               {s.focus_filter_hint}
             </p>
@@ -479,7 +479,7 @@ export function AmbientContextPanel() {
                   <div className="flex items-center gap-2 min-w-0">
                     <Zap className={`w-3 h-3 shrink-0 ${rule.enabled ? 'text-amber-400' : 'text-foreground'}`} />
                     <div className="min-w-0">
-                      <span className="typo-caption text-foreground block truncate">{rule.name}</span>
+                      <span className="typo-caption font-medium text-foreground block truncate">{rule.name}</span>
                       <span className="typo-caption text-foreground block truncate">
                         {rule.pattern.sources.length > 0 ? rule.pattern.sources.join(', ') : s.all_sources}
                         {rule.pattern.summaryContains && ` / "${rule.pattern.summaryContains}"`}

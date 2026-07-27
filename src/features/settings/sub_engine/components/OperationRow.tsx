@@ -27,8 +27,8 @@ export function OperationRow({
     <tr className="group even:bg-secondary/20 hover:bg-primary/[0.06] transition-colors">
       <td className="sticky left-0 z-10 bg-background group-hover:bg-primary/[0.06] py-2.5 pr-4 pl-3 border-b border-primary/5 border-r border-r-primary/10 transition-colors">
         <div className="flex flex-col">
-          <span className="typo-body text-foreground/90">{label}</span>
-          <span className="text-[11px] text-foreground leading-tight">{description}</span>
+          <span className="typo-body font-medium text-foreground">{label}</span>
+          <span className="typo-caption text-foreground leading-tight">{description}</span>
         </div>
       </td>
       {PROVIDERS.map((p) => {

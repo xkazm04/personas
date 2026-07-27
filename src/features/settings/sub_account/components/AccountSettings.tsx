@@ -102,7 +102,7 @@ export default function AccountSettings() {
           <p className="typo-body text-foreground leading-relaxed">{s.updates_description}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {appVersion && (
-              <span className="inline-flex items-center px-2 py-0.5 typo-caption font-medium rounded-full bg-secondary/30 border border-primary/10 text-foreground">
+              <span className="inline-flex items-center px-2 py-0.5 typo-caption rounded-full bg-secondary/30 border border-primary/10 text-foreground">
                 {interpolate(s.updates_current_version, { version: appVersion })}
               </span>
             )}

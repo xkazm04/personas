@@ -255,7 +255,7 @@ export default function CloudSyncCard() {
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-2 typo-caption text-foreground whitespace-nowrap">
-                              <span className="text-foreground inline-flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1">
                                 <Numeric value={Number(tbl.rowsLast)} /> {s.cloud_sync_rows}
                               </span>
                               <span aria-hidden>·</span>
