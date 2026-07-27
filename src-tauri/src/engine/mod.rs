@@ -147,6 +147,69 @@ pub(crate) use self::execution_engine::persist::persist_status_update;
 use self::execution_engine::persist::{persist_status_if_not_final, persist_status_if_running};
 use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
+// ---------------------------------------------------------------------------
+// Host hooks
+// ---------------------------------------------------------------------------
+
+/// Side effects the engine fires into the surrounding application.
+///
+/// Every one of these targets lives ABOVE the engine — the tray, the
+/// notification dispatcher, the companion's proactive lane. Calling them
+/// directly is what kept this module (and, transitively, the 12 others that
+/// depend on it) from being extractable into `personas-engine`.
+///
+/// Registered once at startup via [`set_host_hooks`]. Unset in a test or
+/// headless context, every hook is a no-op — the engine must not require a
+/// desktop shell to run, which is also why this is a struct of plain `fn`
+/// pointers rather than a trait object: there is no state to carry, and a
+/// missing registration degrades to silence rather than a panic.
+#[derive(Clone, Copy)]
+pub struct HostHooks {
+    /// Refresh the OS tray after execution counts change.
+    pub refresh_tray: fn(&AppHandle),
+    /// Notify that an execution finished (short form).
+    pub notify_execution_completed: fn(&AppHandle, &str, &str, u64, Option<&str>),
+    /// Notify that an execution finished, with cost/model/error detail.
+    #[allow(clippy::type_complexity)]
+    pub notify_execution_completed_rich: fn(
+        &AppHandle,
+        &str,
+        &str,
+        u64,
+        Option<&str>,
+        Option<f64>,
+        Option<&str>,
+        Option<&str>,
+    ),
+    /// Notify that a healing issue was raised.
+    pub notify_healing_issue: fn(&AppHandle, &str, &str, &str, Option<&str>, Option<&str>),
+    /// Tell the companion's proactive lane that a run finished.
+    pub signal_execution_finished: fn(),
+}
+
+impl HostHooks {
+    /// All no-ops. The engine stays usable with no shell attached.
+    pub const NOOP: HostHooks = HostHooks {
+        refresh_tray: |_| {},
+        notify_execution_completed: |_, _, _, _, _| {},
+        notify_execution_completed_rich: |_, _, _, _, _, _, _, _| {},
+        notify_healing_issue: |_, _, _, _, _, _| {},
+        signal_execution_finished: || {},
+    };
+}
+
+static HOST_HOOKS: std::sync::OnceLock<HostHooks> = std::sync::OnceLock::new();
+
+/// Install the host hooks. First caller wins; later calls are ignored.
+pub fn set_host_hooks(hooks: HostHooks) {
+    let _ = HOST_HOOKS.set(hooks);
+}
+
+/// The registered hooks, or [`HostHooks::NOOP`] if the host never registered.
+pub fn hooks() -> &'static HostHooks {
+    HOST_HOOKS.get().unwrap_or(&HostHooks::NOOP)
+}
+
 /// Hard engine-level execution ceilings. Defined in `personas-core` (see
 /// `core/src/limits.rs`) because `validation` clamps against them from below
 /// the engine; re-exported here so `crate::engine::ENGINE_MAX_EXECUTION_*`
@@ -194,8 +257,13 @@ async fn run_execution_with_ceiling(
     #[cfg(feature = "desktop")]
     let persona = {
         let mut persona = persona;
-        let state = app.state::<Arc<crate::AppState>>();
-        let ambient_ctx = state.ambient_context.clone();
+        // Pulled directly rather than through `AppState`: this is an
+        // engine-owned handle, and reaching it via the app struct made the
+        // engine depend on the whole application state.
+        let ambient_ctx = app
+            .state::<ambient_context::AmbientContextHandle>()
+            .inner()
+            .clone();
         if let Some(md) =
             ambient_context::format_ambient_for_persona(&ambient_ctx, &persona.id).await
         {
@@ -1942,9 +2010,9 @@ const QUOTA_COOLDOWN_SESSION_SECS: i64 = 900;
 
 /// A queued fix-loop re-entry — plain data, so the producer side (inside the
 /// execution pipeline) never names `execute_persona_inner`'s future type.
-struct FixReentryRequest {
-    persona_id: String,
-    input: String,
+pub struct FixReentryRequest {
+    pub persona_id: String,
+    pub input: String,
 }
 
 /// Sender to the fix-loop worker, installed once at startup by
@@ -1953,36 +2021,22 @@ static FIX_REENTRY_TX: std::sync::OnceLock<
     tokio::sync::mpsc::UnboundedSender<FixReentryRequest>,
 > = std::sync::OnceLock::new();
 
-/// Spawn the fix-loop re-entry worker. Called once at app startup with an
-/// `AppHandle`. The worker lives OUTSIDE the execution pipeline's async-type
-/// graph, so it can drive `execute_persona_inner` without forming the recursive
-/// opaque-type cycle that a direct call from the completion handler would.
-pub fn init_fix_loop_worker(app: AppHandle) {
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<FixReentryRequest>();
+/// Install the fix-loop re-entry channel and hand the receiver to the host.
+///
+/// The draining worker deliberately lives OUTSIDE the execution pipeline's
+/// async-type graph, so it can drive `execute_persona_inner` without forming
+/// the recursive opaque-type cycle a direct call from the completion handler
+/// would. It now lives outside this *module* too, for the same reason expressed
+/// as a layer: draining needs `AppState`, which sits above the engine. The host
+/// owns the loop; the engine owns the channel and the request type.
+///
+/// Returns `None` if already initialised.
+pub fn init_fix_loop_worker() -> Option<tokio::sync::mpsc::UnboundedReceiver<FixReentryRequest>> {
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<FixReentryRequest>();
     if FIX_REENTRY_TX.set(tx).is_err() {
-        return; // already initialized
+        return None; // already initialised
     }
-    tauri::async_runtime::spawn(async move {
-        use tauri::Manager;
-        while let Some(req) = rx.recv().await {
-            let state = app.state::<Arc<crate::AppState>>().inner().clone();
-            if let Err(e) = crate::commands::execution::executions::execute_persona_inner(
-                &state,
-                app.clone(),
-                req.persona_id,
-                None,
-                Some(req.input),
-                None,
-                None,
-                None,
-                false,
-            )
-            .await
-            {
-                tracing::warn!("fix-loop re-entry failed: {e}");
-            }
-        }
-    });
+    Some(rx)
 }
 
 /// Process-level failure-signature breaker shared across fix-loop re-entries so a
@@ -2268,13 +2322,13 @@ async fn handle_execution_result(
     // Session pool: cache successful session for warm reuse on next execution.
     if result.success {
         if let Some(ref session_id) = result.claude_session_id {
-            if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+            if let Some(pool_state) = app.try_state::<Arc<session_pool::SessionPool>>() {
                 // Canonical hash computed at spawn from the persona/tools this
                 // run used. Previously this site hashed execution_config JSON
                 // while take() hashed persona fields — they never matched, so
                 // warm session reuse was a permanent no-op.
                 let config_hash = session_config_hash;
-                let pool_ref = state.session_pool.clone();
+                let pool_ref = pool_state.inner().clone();
                 let pid = persona_id.to_string();
                 let sid = session_id.clone();
                 tokio::spawn(async move {
@@ -2475,7 +2529,7 @@ async fn handle_execution_result(
 
     // Refresh system tray
     #[cfg(feature = "desktop")]
-    crate::tray::refresh_tray(app);
+    (hooks().refresh_tray)(app);
 }
 
 /// Send an OS notification for execution completion.
@@ -2492,7 +2546,7 @@ fn notify_execution(
         .as_ref()
         .and_then(|p| p.notification_channels.as_deref());
     let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
-    crate::notifications::notify_execution_completed(app, name, status, duration_ms, channels);
+    (hooks().notify_execution_completed)(app, name, status, duration_ms, channels);
 }
 
 fn notify_execution_rich(
@@ -2507,7 +2561,7 @@ fn notify_execution_rich(
         .as_ref()
         .and_then(|p| p.notification_channels.as_deref());
     let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
-    crate::notifications::notify_execution_completed_rich(
+    (hooks().notify_execution_completed_rich)(
         app,
         name,
         status,
@@ -2521,7 +2575,7 @@ fn notify_execution_rich(
     // Goal 1: ping Athena's execution-review debouncer. Cheap (a Notify
     // wake); the debouncer coalesces bursts and only acts when autonomous
     // mode is on, so this is a no-op when the feature's off.
-    crate::companion::proactive::execution_review::signal_execution_finished();
+    (hooks().signal_execution_finished)();
 }
 
 /// Check if the persona has exceeded its monthly budget and create an alert.
@@ -3023,7 +3077,7 @@ fn evaluate_healing_and_retry(
     }
 
     // Notify healing issue
-    crate::notifications::notify_healing_issue(
+    (hooks().notify_healing_issue)(
         app,
         &heal_name,
         &diagnosis.title,
@@ -3746,15 +3800,13 @@ fn spawn_healing_chain(
         // Promote queued executions now that a healing slot is free. Fetch
         // the engine via AppState so we don't have to plumb every Arc through
         // the spawn chain.
-        if let Some(state) = app_for_cleanup.try_state::<std::sync::Arc<crate::AppState>>() {
-            state
-                .engine
-                .drain_after_slot_freed(app_for_cleanup.clone(), pool_for_cleanup.clone())
+        if let Some(eng) = app_for_cleanup.try_state::<Arc<ExecutionEngine>>() {
+            eng.drain_after_slot_freed(app_for_cleanup.clone(), pool_for_cleanup.clone())
                 .await;
         }
 
         #[cfg(feature = "desktop")]
-        crate::tray::refresh_tray(&app_for_cleanup);
+        (hooks().refresh_tray)(&app_for_cleanup);
     });
 }
 
@@ -4135,7 +4187,7 @@ fn spawn_delayed_retry(
                     .as_ref()
                     .map(|p| p.name.as_str())
                     .unwrap_or("Agent");
-                crate::notifications::notify_execution_completed_rich(
+                (hooks().notify_execution_completed_rich)(
                     &app,
                     p_name,
                     status.as_str(),
@@ -4195,8 +4247,8 @@ fn spawn_delayed_retry(
             );
             // Best-effort metrics recording — same as the regular path
             // (`handle_execution_result`) does when a scheduler is present.
-            if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
-                state.scheduler.record_chain_cascade(&cascade_metrics);
+            if let Some(sched) = app.try_state::<Arc<background::SchedulerState>>() {
+                sched.record_chain_cascade(&cascade_metrics);
             }
 
             // Direction 1b: back-fill the trace row's chain_trace_id (see
@@ -4225,15 +4277,12 @@ fn spawn_delayed_retry(
         // Promote queued executions now that a retry slot is free. Fetch the
         // engine via AppState so we don't have to plumb every Arc through the
         // spawn chain.
-        if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
-            state
-                .engine
-                .drain_after_slot_freed(app.clone(), pool.clone())
-                .await;
+        if let Some(eng) = app.try_state::<Arc<ExecutionEngine>>() {
+            eng.drain_after_slot_freed(app.clone(), pool.clone()).await;
         }
 
         #[cfg(feature = "desktop")]
-        crate::tray::refresh_tray(&app);
+        (hooks().refresh_tray)(&app);
     });
 }
 

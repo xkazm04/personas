@@ -18,6 +18,10 @@
  *   node scripts/build/crate-split-deps.mjs --closure a,b      # transitive closure
  *   node scripts/build/crate-split-deps.mjs --closure a --exclude engine,lib
  *   node scripts/build/crate-split-deps.mjs --from x --to y    # every x -> y site
+ *   node scripts/build/crate-split-deps.mjs --portable engine --exclude ...
+ *   node scripts/build/crate-split-deps.mjs --portable engine --exclude ...
+ *        --assume-clean engine,notifications
+ *        # what-if: how much LOC would fixing those units unlock?
  *   node scripts/build/crate-split-deps.mjs --folded           # resolver debug
  *
  * `--exclude` is the flag that makes this usable. Without it every closure
@@ -292,6 +296,25 @@ if (flag('--portable')) {
   // unit with an edge to an excluded unit or to an already-dropped one.
   const prefix = flag('--portable');
   const excludeRoots = (flag('--exclude') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  // `--assume-clean a,b` = "pretend these units' UPWARD references are already
+  // fixed". Turns "should we do this refactor?" into a measured number before
+  // writing any of it.
+  //
+  // It drops only edges that leave the prefix — NOT intra-prefix ones. The first
+  // version dropped every outgoing edge, which modelled "this module depends on
+  // nothing at all" and produced a badly optimistic ladder: it predicted that
+  // cleaning `engine/mod.rs` would free 15,494 LOC, when in reality mod.rs also
+  // depends on `engine::background`, which reaches `daemon`. Real answer after
+  // doing the work: 0. A what-if tool that models more than the proposed change
+  // is worse than no tool, because it is believed.
+  const assumeClean = new Set((flag('--assume-clean') ?? '').split(',').map((s) => s.trim()).filter(Boolean));
+  for (const u of assumeClean) {
+    const kept = new Map();
+    for (const [to, n] of edges.get(u) ?? []) {
+      if (to === prefix || to.startsWith(`${prefix}::`)) kept.set(to, n);
+    }
+    edges.set(u, kept);
+  }
   const isExcluded = (u) => excludeRoots.some((e) => u === e || u.startsWith(`${e}::`));
   const inPrefix = (u) => u === prefix || u.startsWith(`${prefix}::`);
 

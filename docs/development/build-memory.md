@@ -62,10 +62,28 @@ needs, implement it for `AppState` in `app_lib` — not another file move.
 Extracting `commands` would put `app_lib` near 142k, which should roughly halve
 the frontend share.
 
-Also unmeasured and worth a look: `tauri::generate_handler!` lists **1,529
-commands** in one macro invocation spanning ~1,800 lines of `lib.rs`. That
-expansion is pure frontend cost concentrated in a single expression. Nobody has
-measured its share.
+### `tauri::generate_handler!` — 10% of the memory, but HALF the time
+
+Measured by temporarily gutting the handler list from 1,827 entries to 8 and
+re-running `cargo check --lib`:
+
+| | peak single rustc | wall |
+|---|---|---|
+| full handler (1,827 entries) | 4,242 MB | 169 s |
+| gutted to 8 entries | 3,803 MB | **86 s** |
+| delta | **−439 MB (−10%)** | **−83 s (−49%)** |
+
+So it is **not** the memory hotspot — 439 MB of a 4,242 MB frontend peak. The
+remaining 3.8 GB is spread across the 265k LOC, which confirms that splitting is
+the only lever for memory.
+
+But it is **half of `cargo check`'s wall time**, in one macro invocation. That
+matters because `check` is the routine gate that runs constantly. Tauri allows
+only one `invoke_handler`, so this cannot simply be split into several calls;
+reducing it means reducing the *number of commands* (1,529 `#[tauri::command]`
+attributes today), e.g. by consolidating families of related commands behind one
+command taking an action enum. That is a design change, not a build flag, and
+worth costing separately.
 
 **Free, today, no code change:**
 
