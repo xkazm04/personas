@@ -21,12 +21,6 @@
 - Started: 2026-07-26. Status: started. Prototyping a NEW "Ship" tab (milestone / ship-track convergence layer) for Factory L2 — 3 directional content variants behind an internal switcher, mock data only (no schema work yet).
 - Paths: MAIN CHECKOUT (master) — round 1 merged as c845c453a; iteration continues on src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx + src/features/teams/sub_factory/l2/ship/**. Worktree removed at user direction ("operate on master").
 
-### grok-build-fleet-terminal — /research (code) — session opus-5[1m]
-- Started: 2026-07-26. Status: started. Source: https://github.com/xai-org/grok-build (cloned to C:/gb). Analyzing xAI Grok Build's Rust TUI for performance + UI practices worth adopting in the Fleet terminal.
-- SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
-
-## Recently completed
-
 ### exploratory-fix-sweep — UI/UX defect bundle (modules A-E) + /promote skill — session opus-5[1m] (orchestrator + 5 Sonnet builders) — COMPLETE, commits 4c621f390..41dbfc6be
 - 2026-07-27. Baseline `4e9456ccc`. 9 commits: `4c621f390` /promote skill (+ gitignore practice-harvest/) → `8ce892e31` **REGRESSION FIX** → `2698f9dc4` i18n 10 keys ×14 → `57ecf65f5` A/Home → `2bb17dfe2` B/Overview → `77aaa81a5` C/Events → `2d6c6bee9` D/Settings → `7b6dc8b79` E/Plugins → `932b5938b` eslint muted-ok → `41dbfc6be` docs. Final gates: tsc clean, vitest 278 files / **2703 tests**, eslint 0 errors, cargo check --features desktop exit 0, i18n strict 0/0 ×13 + untranslated clean.
 - **`/promote` shipped** — third path into the workspace knowledge library (button = human types a form; /practice-harvest = broad ≤15 sweep; /promote = operator names ONE pattern, skill reads the code and writes the evidence). Reuses the existing `practice-harvest/runs/<id>/result.json` contract so it needs NO new Rust — the ingest door already caps/confines/normalizes/dedups (doctrine D8). Reads the closed taxonomy from its Rust source of truth rather than carrying a copy. Run `2026-07-27-1609` holds 2 items awaiting Import (UNINGESTED).
@@ -343,6 +337,11 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### grok-build-fleet-terminal — /research (code) — session opus-5[1m]
+- Completed: 2026-07-27. Status: completed (commits: a8a4c37e1, 368d55d14, 41edbb686+dd1e8d936, 617e5ee00, c7f1e4b54, 0b0a62f41, 360e43579).
+- 5 findings from xai-org/grok-build into the Fleet terminal: event-driven wait/expect + timeout diagnostics, vim key notation for driver plans, relative-invariant perf gates, and a screen-movement work signal (salvaged after the CSI ?2026 premise was refuted). Mid-run the operator halted feature work to fix an 8.9 GB build peak; that produced a build-profile fix + 24 GB of reclaimed target/ and the first two steps of the app_lib crate split (now continuing in its own session).
+- Follow-ups handed off: 0xC0000139 blocks app_lib test binaries locally (NOT machine-wide — personas-core tests run); perf gates + registry-integrated screen deltas are compile-verified only until that is fixed.
 
 ### react-doctor-scan-ui-refactor — /research (code) — session opus-5[1m] — COMPLETE
 - 2026-07-26/27. Status: completed (commits: `933d560a3` plan + WizardStepper, `4322a1145` transform sweep).
