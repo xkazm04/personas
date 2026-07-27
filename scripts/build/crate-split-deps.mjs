@@ -105,9 +105,16 @@ function stripComments(text) {
  *   use crate::a::{b, c::D};        <- grouped
  *   use crate::{\n  a::B,\n  c,\n}; <- grouped AND multi-line
  *   crate::a::b::c(...)             <- inline fully-qualified call
- * `super::` is intentionally ignored — it never crosses a unit boundary here.
+ *   use super::sibling;             <- sibling within engine/, db/, ...
+ *
+ * `super::` matters more than it looks. Files directly under `engine/` refer to
+ * their siblings as `super::provider`, never `crate::engine::provider`, so
+ * ignoring it made every engine module look far more portable than it is —
+ * `eval` appeared to depend only on db+core when it actually pulls in
+ * cli_process, parser and prompt. `unitPrefix` is the unit that `super::`
+ * resolves to for this file, or null when it cannot cross a unit boundary.
  */
-function refsInFile(text) {
+function refsInFile(text, unitPrefix) {
   const src = stripComments(text);
   const lineOf = (idx) => src.slice(0, idx).split('\n').length;
   const found = []; // [unit, line]
@@ -132,6 +139,20 @@ function refsInFile(text) {
     found.push([unitOfPath(m[1]), lineOf(m.index)]);
   }
 
+  // `super::sibling` — resolved against the file's parent module.
+  if (unitPrefix) {
+    for (const m of src.matchAll(/super::([a-zA-Z0-9_]+(?:::[a-zA-Z0-9_]+)*)/g)) {
+      found.push([unitOfPath(`${unitPrefix}::${m[1]}`), lineOf(m.index)]);
+    }
+    for (const m of src.matchAll(/use\s+super::\{([^}]*)\}/gs)) {
+      const line = lineOf(m.index);
+      for (const item of m[1].split(',')) {
+        const head = item.trim();
+        if (head) found.push([unitOfPath(`${unitPrefix}::${head}`), line]);
+      }
+    }
+  }
+
   return found.filter(([u]) => u);
 }
 
@@ -149,7 +170,14 @@ for (const file of files) {
   loc.set(from, (loc.get(from) ?? 0) + text.split('\n').length);
   if (!edges.has(from)) edges.set(from, new Map());
 
-  for (const [to, line] of refsInFile(text)) {
+  // What does `super::` mean in THIS file? Only a file sitting directly under a
+  // split parent (`engine/foo.rs`) reaches a sibling unit through it; deeper
+  // files (`db/repos/core/personas.rs`) resolve `super::` inside their own unit.
+  const parts = relative(SRC, file).split(sep);
+  const superPrefix =
+    parts.length === 2 && SPLIT_PARENTS.has(parts[0]) && parts[1] !== 'mod.rs' ? parts[0] : null;
+
+  for (const [to, line] of refsInFile(text, superPrefix)) {
     if (to === from) continue;
     edges.get(from).set(to, (edges.get(from).get(to) ?? 0) + 1);
     const key = `${from}->${to}`;
