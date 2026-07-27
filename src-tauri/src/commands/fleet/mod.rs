@@ -32,6 +32,7 @@ pub mod process_scan;
 pub mod pty;
 pub mod registry;
 pub mod run;
+pub mod screen_activity;
 pub mod stale;
 #[cfg(feature = "desktop")]
 pub mod transcript;

@@ -460,8 +460,20 @@ fn tick_once(app: &AppHandle) {
             let grew_at = g.get(&s.id).map(|&(_, t)| (now - t) / 1000).unwrap_or(-1);
             let size = g.get(&s.id).map(|&(sz, _)| sz).unwrap_or(0);
             let out_ago = if s.last_pty_output_ms > 0 { (now - s.last_pty_output_ms) / 1000 } else { -1 };
+            // Screen movement since the previous render. `outAgo` only says
+            // bytes arrived — a spinner produces bytes forever — so this is the
+            // column that separates "working" from "animating while stuck".
+            // Free: reports whatever the last render already measured, never
+            // triggers one, so sessions nobody rendered show `-`.
+            let screen = s
+                .output
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .last_screen_delta()
+                .map(|d| d.summary())
+                .unwrap_or_else(|| "-".into());
             lines.push(format!(
-                "{} {:?} cc={} idle={}s grewAgo={}s outAgo={}s size={} proj={}",
+                "{} {:?} cc={} idle={}s grewAgo={}s outAgo={}s size={} screen={} proj={}",
                 &s.id[..8.min(s.id.len())],
                 s.state,
                 s.claude_session_id.is_some(),
@@ -469,6 +481,7 @@ fn tick_once(app: &AppHandle) {
                 grew_at,
                 out_ago,
                 size,
+                screen,
                 s.project_label,
             ));
         }

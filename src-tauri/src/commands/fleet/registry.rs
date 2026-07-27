@@ -21,6 +21,7 @@ use tokio::sync::watch;
 use portable_pty::MasterPty;
 
 use super::types::{state_to_token, FleetSession, FleetSessionMode, FleetSessionState};
+use super::screen_activity;
 
 /// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
 /// app's memory per session regardless of how much a 1M-token run prints: a
@@ -64,6 +65,12 @@ pub struct OutputRing {
     /// than replacing it: the preview poll wants a cheap value to compare, a
     /// waiter wants to be woken.
     gen_tx: watch::Sender<u32>,
+    /// Per-line fingerprints of the last rendered screen. Hashes, not lines:
+    /// a 40-session fleet would otherwise retain 40 screens of the user's code.
+    prev_line_hashes: Vec<u64>,
+    /// Result of the most recent comparison — the "is this session actually
+    /// working, or just animating?" signal. See [`super::screen_activity`].
+    last_delta: Option<screen_activity::ScreenDelta>,
 }
 
 impl OutputRing {
@@ -76,6 +83,8 @@ impl OutputRing {
             parser: None,
             parser_dims: (0, 0),
             gen_tx: watch::channel(0).0,
+            prev_line_hashes: Vec::new(),
+            last_delta: None,
         }
     }
 
@@ -171,7 +180,36 @@ impl OutputRing {
         while lines.last().is_some_and(|l| l.trim().is_empty()) {
             lines.pop();
         }
+        self.record_delta(&lines);
         lines
+    }
+
+    /// Compare this render against the previous one and remember how much moved.
+    ///
+    /// Deliberately a byproduct of `render_screen` rather than its own pass: the
+    /// renders that matter (orchestration wakes, screen-hash dedupes, tile
+    /// previews) already happen, so the work signal costs one hash per line on
+    /// top of work already done and NOTHING on an idle fleet. See
+    /// [`super::screen_activity`] for why byte-presence was not enough.
+    ///
+    /// The very first render has no predecessor; every line reads as new, which
+    /// would classify as `Working` regardless of reality. That measurement is
+    /// therefore recorded but is inherently uninformative — callers should treat
+    /// a single sample as weak and look at how the verdict persists.
+    fn record_delta(&mut self, lines: &[String]) {
+        let next = screen_activity::line_hashes(lines);
+        let changed = screen_activity::changed_count(&self.prev_line_hashes, &next);
+        self.last_delta = Some(screen_activity::ScreenDelta {
+            changed_lines: changed,
+            total_lines: lines.len(),
+            at_ms: now_ms(),
+        });
+        self.prev_line_hashes = next;
+    }
+
+    /// Most recent screen comparison, if any render has happened.
+    pub fn last_screen_delta(&self) -> Option<screen_activity::ScreenDelta> {
+        self.last_delta
     }
 }
 
@@ -586,6 +624,19 @@ impl FleetRegistry {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let session = map.get(session_id)?;
         Some((session.output.clone(), session.rows, session.cols))
+    }
+
+    /// Most recent screen-movement measurement for one session.
+    ///
+    /// Read-only and FREE — it returns whatever the last render already
+    /// computed and never triggers one. A session nobody has rendered (no
+    /// preview, no orchestration wake) simply has no sample yet, which is the
+    /// correct answer rather than a reason to go do work.
+    pub fn screen_delta_for(&self, session_id: &str) -> Option<screen_activity::ScreenDelta> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get(session_id)?;
+        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+        ring.last_screen_delta()
     }
 
     /// Current lifecycle state, or `None` for an unknown session.
