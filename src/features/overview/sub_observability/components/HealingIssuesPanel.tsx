@@ -8,6 +8,8 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { silentCatch } from '@/lib/silentCatch';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
@@ -77,7 +79,8 @@ export function HealingIssuesPanel({
       const entries = await listHealingAuditLog(selectedPersonaId ?? undefined, 50);
       setAuditEntries(entries);
       auditCacheRef.current = { personaId: cacheKey, ts: Date.now() };
-    } catch {
+    } catch (err) {
+      silentCatch('HealingIssuesPanel:fetchAudit')(err);
       setAuditError(t.overview.errorRecovery.audit_fetch_failed);
     } finally {
       setAuditLoading(false);
@@ -132,7 +135,7 @@ export function HealingIssuesPanel({
           >
             {healingRunning ? (
               <>
-                <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                <LoadingSpinner size="sm" className="text-cyan-400" />
                 {t.overview.healing_issues_panel.analyzing}
               </>
             ) : (
@@ -269,7 +272,7 @@ export function HealingIssuesPanel({
               </div>
             ) : auditLoading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                <LoadingSpinner size="sm" className="text-amber-400" />
               </div>
             ) : auditEntries.length === 0 ? (
               <p className="typo-body text-foreground py-3 text-center">{t.overview.healing_issues_panel.no_silent_failures}</p>
