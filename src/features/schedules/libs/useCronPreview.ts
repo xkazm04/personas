@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/triggers';
-import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
@@ -230,11 +229,6 @@ export function generateIntervalFireTimes(
   }
   return out;
 }
-
-// Reference to silence "unused import" warnings until the migration completes.
-// Kept until the `previewConflicts` migration to IPC; deleting CronAgent here
-// would force every consumer to re-import.
-export type { CronAgent };
 
 // -- conflict preview --------------------------------------------------------
 
