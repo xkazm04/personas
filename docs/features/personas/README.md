@@ -354,6 +354,22 @@ locales, and clicking it opens inline credential provisioning (the affordance
 shows for any connector the runnability resolver marks `needs_setup`, not only
 those declaring credential fields).
 
+**The two halves are disjoint.** `DesignConnectorsPanel` owns a single
+`useConnectorStatuses` instance and passes it to `ConnectorVerificationPanel`
+(which takes it as a prop rather than calling the hook itself — two instances
+would run two independent auto-test loops). It also passes the live connector
+names as `hiddenConnectors`, so the recap renders only what the build proposed
+*and no tool requires*; those rows get a **Verify** action wired into the same
+healthcheck, so the recap can act rather than only describe.
+
+**Three-valued health.** `ConnectorTestResult.state` carries the backend's
+`verified` / `unverifiable` / `failed` probe state, and `CredentialMetadata`
+parses the persisted `healthcheck_last_state` token so restored results are
+three-valued too. `unverifiable` (no live probe of any kind exists for that
+connector) gets its own readiness bucket, a neutral chip and header pill — never
+a green check — while remaining execution-ready, matching `credential_is_usable`,
+which only demotes an explicit probe failure.
+
 Wiring:
 
 ```
