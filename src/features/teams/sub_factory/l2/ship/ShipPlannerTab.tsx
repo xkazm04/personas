@@ -5,16 +5,20 @@
 // trusts. Composition opens per milestone (ShipMilestoneComposer).
 import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowUp, Check, PencilRuler, Plus, Rocket, Sparkles, Telescope } from 'lucide-react';
+import { ArrowUp, Check, PencilRuler, Plus, Rocket, Sparkles, SquareTerminal, Telescope, Zap } from 'lucide-react';
 
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
+import {
+  PASSPORT_FLEET_INK, PassportTerminalModal, usePassportFleetSessions,
+} from '../../passport/passportFleet';
 import { INK } from '../../passport/passportInk';
 import type { FactoryL2Data } from '../factoryL2Data';
+import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import {
   BUCKET_META, CRIT_HUE, shipVerdict,
-  type ScopeBucket, type ShipMilestoneVM,
+  type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
 import { LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import { useShipData, type ShipData } from './useShipData';
@@ -195,6 +199,10 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const select = (id: string) => { setSelectedId(id); setComposing(false); };
+  // Criterion resolution — Fleet dispatch through the passport wall's machinery.
+  const fleetSessions = usePassportFleetSessions();
+  const [dispatchCrit, setDispatchCrit] = useState<ExitCriterion | null>(null);
+  const [terminalKey, setTerminalKey] = useState<string | null>(null);
 
   if (ship.loading) {
     return <div className="flex justify-center py-10" data-testid="factory-ship-loading"><LoadingSpinner size="md" /></div>;
@@ -233,11 +241,38 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
         <div className="min-w-0">
           <p className="typo-title-lg">{vm.goal ?? vm.name}</p>
           <div className="flex items-center gap-2 flex-wrap mt-2">
-            {vm.criteria.map((c) => (
-              <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
-                {c.label} {c.done}/{c.total}
-              </span>
-            ))}
+            {vm.criteria.map((c) => {
+              const key = data.project ? shipDispatchKey(c.id, data.project.id) : null;
+              const session = key ? fleetSessions.get(key) : undefined;
+              const dispatchable = c.state !== 'go' && data.project && buildCriterionPrompt(vm, c, data.project) !== null;
+              return (
+                <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
+                  {c.label} {c.done}/{c.total}
+                  {session && key ? (
+                    <button
+                      type="button"
+                      onClick={() => setTerminalKey(key)}
+                      aria-label={`Open the session working "${c.label}"`}
+                      title={`Session ${String(session.state).replace('_', ' ')} — open terminal`}
+                      className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
+                    >
+                      <SquareTerminal className="w-3.5 h-3.5" style={{ color: PASSPORT_FLEET_INK[String(session.state)] ?? 'rgba(148,163,184,.6)' }} aria-hidden />
+                    </button>
+                  ) : dispatchable ? (
+                    <button
+                      type="button"
+                      onClick={() => setDispatchCrit(c)}
+                      aria-label={`Dispatch an agent at "${c.label}"`}
+                      title="Dispatch a Fleet session at this gap"
+                      className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
+                      data-testid={`ship-dispatch-${c.id}`}
+                    >
+                      <Zap className="w-3.5 h-3.5" style={{ color: INK.violet }} aria-hidden />
+                    </button>
+                  ) : null}
+                </span>
+              );
+            })}
           </div>
         </div>
         {editable && !composing && (
@@ -300,6 +335,23 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {dispatchCrit && data.project && (
+        <ShipDispatchModal
+          vm={vm}
+          criterion={dispatchCrit}
+          project={data.project}
+          onDispatched={(key) => { setDispatchCrit(null); setTerminalKey(key); }}
+          onClose={() => setDispatchCrit(null)}
+        />
+      )}
+      {terminalKey && (
+        <PassportTerminalModal
+          sessionId={fleetSessions.get(terminalKey)?.id ?? ''}
+          session={fleetSessions.get(terminalKey) ?? null}
+          onClose={() => setTerminalKey(null)}
+        />
+      )}
     </div>
   );
 }
