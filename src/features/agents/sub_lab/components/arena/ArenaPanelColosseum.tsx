@@ -76,6 +76,14 @@ function heraldryFor(id: string, provider: string): ModelHeraldry {
 
 const ARENA_ROSTER: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_LOCAL_MODELS];
 
+/** Formats a persona's trust score for display — an em dash when there is no
+ *  persona selected (never scored), rather than the fabricated `0` a plain
+ *  `?? 0` fallback used to render as if it were a real, worst-on-scale
+ *  measurement. */
+export function formatTrustScore(score: number | null): string {
+  return score == null ? '—' : String(score);
+}
+
 /* ------------------------------------------------------------------ */
 /* All-time champion derived from past runs                           */
 /* ------------------------------------------------------------------ */
@@ -265,7 +273,7 @@ export function ArenaPanelColosseum({
           <div className="flex justify-center lg:justify-start lg:pt-2">
             <PersonaStandard
               name={selectedPersona?.name ?? null}
-              trustScore={selectedPersona?.trust_score ?? 0}
+              trustScore={selectedPersona?.trust_score ?? null}
               hasPrompt={hasPrompt}
               toolCount={toolCount}
               iconToken={selectedPersona?.icon ?? null}
@@ -295,7 +303,7 @@ export function ArenaPanelColosseum({
             hasPrompt={hasPrompt}
             hasTools={hasTools}
             toolCount={toolCount}
-            trustScore={selectedPersona?.trust_score ?? 0}
+            trustScore={selectedPersona?.trust_score ?? null}
             trustLevel={selectedPersona?.trust_level ?? 'unverified'}
             scenarioCount={scenarioCount}
           />
@@ -670,7 +678,8 @@ function PersonaStandard({
   name, trustScore, hasPrompt, toolCount, iconToken, color,
 }: {
   name: string | null;
-  trustScore: number;
+  /** null when no persona is selected — never scored, not a real 0. */
+  trustScore: number | null;
   hasPrompt: boolean;
   toolCount: number;
   iconToken: string | null;
@@ -717,7 +726,7 @@ function PersonaStandard({
 
       <div className="mt-2 flex items-center gap-1 rounded-full border border-primary/30 bg-background/75 px-3 py-0.5 typo-body text-foreground">
         <Shield className="w-3.5 h-3.5 text-primary" />
-        <span className="font-semibold">{trustScore}</span>
+        <span className="font-semibold">{formatTrustScore(trustScore)}</span>
         <span className="text-foreground/90">trust</span>
       </div>
     </div>
@@ -809,7 +818,8 @@ function ConditionsList({
   hasPrompt: boolean;
   hasTools: boolean;
   toolCount: number;
-  trustScore: number;
+  /** null when no persona is selected — never scored, not a real 0. */
+  trustScore: number | null;
   trustLevel: string;
   scenarioCount: number;
 }) {
@@ -824,7 +834,7 @@ function ConditionsList({
           tone={hasTools ? 'ok' : 'warn'}
           label={hasTools ? `${toolCount} tool${toolCount === 1 ? '' : 's'} equipped` : 'Unarmed'}
         />
-        <ConditionRow tone="neutral" label={`Trust ${trustScore} · ${trustLevel}`} />
+        <ConditionRow tone="neutral" label={`Trust ${formatTrustScore(trustScore)} · ${trustLevel}`} />
         <ConditionRow
           tone={scenarioCount > 0 ? 'ok' : 'warn'}
           label={scenarioCount > 0 ? `${scenarioCount} scenario${scenarioCount === 1 ? '' : 's'} ready` : 'No scenarios'}
