@@ -257,17 +257,86 @@ static ASSESSMENT_TURN_ACTIVE: std::sync::atomic::AtomicBool =
 static ASSESSMENT_TURN_STARTED_MS: std::sync::atomic::AtomicI64 =
     std::sync::atomic::AtomicI64::new(0);
 
-/// Sessions covered by the in-flight batch turn — consumed by
-/// [`finish_assessment_turn`] to route per-session verdicts and flag the
-/// unanswered.
-fn current_batch() -> &'static Mutex<Vec<String>> {
-    static B: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
-    B.get_or_init(|| Mutex::new(Vec::new()))
+// ---------------------------------------------------------------------------
+// Generation tracking (2026-07-28 fix for the ASSESSMENT_TURN_ACTIVE identity
+// bug).
+//
+// Every fleet-orchestration turn shares one conversation lock
+// (`NOTICES_CONVERSATION_ID`), and `send_turn` for that origin *blocks* on the
+// lock instead of skipping (see companion/session.rs). That guarantees a
+// second turn's body — and therefore its call into
+// [`finish_assessment_turn`] — can never start running until the first
+// turn's body has returned. So completions of DISTINCT turns are strictly
+// FIFO... except when `drain_assessment_batch`'s wedge-recovery path force-
+// releases a turn that hasn't actually returned yet (its CLI call is just
+// slow): that installs a NEW generation while the OLD one is still going to
+// call `finish_assessment_turn` for real, later. Without a generation id, that
+// late call's `mem::take` on a single shared batch grabbed whatever the
+// SECOND turn had installed by then — misapplying the first turn's verdicts
+// to the second turn's sessions, then unconditionally clearing the active
+// flag out from under the second (still in-flight) turn.
+//
+// Fix: tag every batch with a monotonic generation when it's installed.
+// `finish_assessment_turn` pops its own entry off the front of the FIFO
+// queue (safe because of the ordering guarantee above) and only releases the
+// active flag if its generation still IS the active one. A generation that
+// was force-released by the wedge-recovery path is recorded as "poisoned";
+// when its real completion eventually arrives it is a pure no-op — logged and
+// discarded, never applied to whatever is active by then.
+static NEXT_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+static ACTIVE_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// FIFO of `(generation, session_ids)` for batches whose turn has been
+/// spawned but not yet finished. Pushed in `drain_assessment_batch`, popped
+/// in `finish_assessment_turn` — never mutated by the wedge-recovery path
+/// (it only peeks), so a poisoned generation's entry stays in place for its
+/// eventual, now-inert, real completion to consume.
+fn batch_queue() -> &'static Mutex<std::collections::VecDeque<(u64, Vec<String>)>> {
+    static Q: OnceLock<Mutex<std::collections::VecDeque<(u64, Vec<String>)>>> = OnceLock::new();
+    Q.get_or_init(|| Mutex::new(std::collections::VecDeque::new()))
 }
 
-/// Snapshot of the in-flight batch's session ids (for approval validation).
+/// Generations force-released by the wedge-recovery path whose real
+/// `finish_assessment_turn` call is still outstanding. Checked (and cleared)
+/// when that call finally arrives, so it can be discarded instead of applied.
+fn poisoned_generations() -> &'static Mutex<std::collections::HashSet<u64>> {
+    static P: OnceLock<Mutex<std::collections::HashSet<u64>>> = OnceLock::new();
+    P.get_or_init(|| Mutex::new(std::collections::HashSet::new()))
+}
+
+/// Snapshot of the *currently active* generation's session ids (for approval
+/// validation while its turn is still running) — not the FIFO's front, which
+/// may hold an older, already-poisoned generation still awaiting its real
+/// (now-inert) completion.
 pub fn current_batch_ids() -> Vec<String> {
-    current_batch().lock().unwrap_or_else(|e| e.into_inner()).clone()
+    use std::sync::atomic::Ordering;
+    let gen = ACTIVE_GENERATION.load(Ordering::SeqCst);
+    if gen == 0 {
+        return Vec::new();
+    }
+    let q = batch_queue().lock().unwrap_or_else(|e| e.into_inner());
+    q.iter()
+        .find(|(g, _)| *g == gen)
+        .map(|(_, ids)| ids.clone())
+        .unwrap_or_default()
+}
+
+/// Pop the oldest queued generation off the FIFO and report whether it was
+/// poisoned (force-released by the wedge-recovery path while its real
+/// completion was still outstanding). Split out from
+/// [`finish_assessment_turn`] so the FIFO/poison mechanics can be pinned by a
+/// unit test without needing an `AppHandle` or a DB pool.
+fn pop_own_generation() -> Option<(u64, Vec<String>, bool)> {
+    let popped = {
+        let mut q = batch_queue().lock().unwrap_or_else(|e| e.into_inner());
+        q.pop_front()
+    };
+    let (generation, ids) = popped?;
+    let is_poisoned = {
+        let mut poisoned = poisoned_generations().lock().unwrap_or_else(|e| e.into_inner());
+        poisoned.remove(&generation)
+    };
+    Some((generation, ids, is_poisoned))
 }
 
 /// Enqueue a gated wake (deduped per session) and try to start the drainer.
@@ -327,10 +396,26 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
         let started = ASSESSMENT_TURN_STARTED_MS.load(Ordering::SeqCst);
         if started != 0 && now - started > 4 * 60 * 1000 {
             tracing::warn!("fleet batch turn wedged >4min — force-releasing");
+            // PEEK (never pop) the front entry: the wedged turn's real
+            // `send_turn` call may not actually be dead — it can still be
+            // mid-flight and will eventually call `finish_assessment_turn`
+            // for real. Removing its queue entry here would let that later,
+            // genuine call fall through to whatever entry is next in line
+            // (a subsequent generation's) and misapply its stale reply.
+            // Instead we mark the generation poisoned so that eventual call
+            // recognizes itself as stale and no-ops.
+            let stranded_gen = ACTIVE_GENERATION.load(Ordering::SeqCst);
             let stranded: Vec<String> = {
-                let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
-                std::mem::take(&mut *b)
+                let q = batch_queue().lock().unwrap_or_else(|e| e.into_inner());
+                q.iter()
+                    .find(|(g, _)| *g == stranded_gen)
+                    .map(|(_, ids)| ids.clone())
+                    .unwrap_or_default()
             };
+            if stranded_gen != 0 {
+                let mut poisoned = poisoned_generations().lock().unwrap_or_else(|e| e.into_inner());
+                poisoned.insert(stranded_gen);
+            }
             for sid in stranded {
                 crate::commands::fleet::debug_log::athena(
                     &sid,
@@ -340,6 +425,7 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
                 clear_pending_assessment(&sid);
             }
             ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
+            ACTIVE_GENERATION.store(0, Ordering::SeqCst);
         } else {
             return;
         }
@@ -396,6 +482,8 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
         return;
     }
     ASSESSMENT_TURN_STARTED_MS.store(now, Ordering::SeqCst);
+    let generation = NEXT_GENERATION.fetch_add(1, Ordering::SeqCst);
+    ACTIVE_GENERATION.store(generation, Ordering::SeqCst);
 
     // Build the combined directive from FRESH screens (a queued session's
     // prompt may have changed since its wake) and record each screen's hash as
@@ -455,8 +543,8 @@ pub fn drain_assessment_batch(app: &tauri::AppHandle, state: &AppState) {
         );
     }
     {
-        let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
-        *b = ids;
+        let mut q = batch_queue().lock().unwrap_or_else(|e| e.into_inner());
+        q.push_back((generation, ids));
     }
 
     let n = batch.len();
@@ -513,10 +601,30 @@ pub fn finish_assessment_turn(
     acted: &std::collections::HashSet<String>,
 ) {
     use std::sync::atomic::Ordering;
-    let batch: Vec<String> = {
-        let mut b = current_batch().lock().unwrap_or_else(|e| e.into_inner());
-        std::mem::take(&mut *b)
+    // Pop OUR generation's entry off the front of the FIFO. This is safe
+    // (not a guess) because every fleet-orchestration turn shares one
+    // conversation lock and `send_turn` blocks on it for this origin instead
+    // of skipping — so a second turn's body, and hence its own call into this
+    // function, cannot even start until the first turn's body (this one, or
+    // an earlier one) has returned. Completions of distinct turns are
+    // therefore strictly FIFO with their spawn order.
+    let Some((generation, batch, is_poisoned)) = pop_own_generation() else {
+        tracing::warn!(turn_ref, "fleet assessment turn finished with no queued batch — stale/duplicate completion, discarding reply");
+        return;
     };
+    // A generation the wedge-recovery path already force-released (and whose
+    // sessions were already reassigned for reassessment) has its real
+    // completion arrive here, later, out of band. Applying its stale verdicts
+    // now would target whatever sessions the CURRENT generation owns — the
+    // exact bug this fix closes. No-op: log and discard.
+    if is_poisoned {
+        tracing::warn!(
+            turn_ref,
+            generation,
+            "stale fleet assessment turn completed after its generation was force-released — discarding reply, not touching the active slot"
+        );
+        return;
+    }
     // Map id prefixes → full ids for line parsing.
     let mut verdicts: HashMap<String, String> = HashMap::new();
     for line in reply_text.lines() {
@@ -577,7 +685,24 @@ pub fn finish_assessment_turn(
             }
         }
     }
-    ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
+    // Release the active flag ONLY if this generation is still the one
+    // holding it. Given the FIFO/poison invariants above this should always
+    // succeed for a non-poisoned completion, but the compare-exchange is the
+    // actual safety net — never blind-clear a slot that may since have been
+    // claimed by a newer generation.
+    let released = ACTIVE_GENERATION
+        .compare_exchange(generation, 0, Ordering::SeqCst, Ordering::SeqCst)
+        .is_ok();
+    if released {
+        ASSESSMENT_TURN_ACTIVE.store(false, Ordering::SeqCst);
+    } else {
+        tracing::warn!(
+            turn_ref,
+            generation,
+            "fleet assessment turn completed but its generation no longer owns the active slot — verdicts applied, but leaving the slot alone"
+        );
+        return;
+    }
     // More wakes may have queued while this turn ran — keep draining. A turn
     // whose ENTIRE batch came back unanswered is the API-failure signature
     // (limit outage: turns die in ~3s with no output) — re-draining instantly
@@ -2106,5 +2231,75 @@ mod fleet_note_tests {
         // sentence about the session being okay to interrupt, etc.
         let (kind, _) = classify_fleet_note("Okay to interrupt? I'd wait for the user here.");
         assert_eq!(kind, FleetNoteKind::NeedsYou);
+    }
+}
+
+#[cfg(test)]
+mod assessment_generation_tests {
+    // Regression pin for the ASSESSMENT_TURN_ACTIVE identity bug: a wedged
+    // turn's real completion must not steal a later generation's batch or
+    // clear its active flag out from under it. Everything here goes through
+    // one #[test] fn to avoid cross-test interference on the shared statics
+    // (batch_queue / poisoned_generations / ACTIVE_GENERATION are
+    // process-global, not test-scoped).
+    use super::*;
+    use std::sync::atomic::Ordering;
+
+    #[test]
+    fn stale_generation_finish_is_a_noop_and_does_not_steal_the_active_batch() {
+        // Turn A (generation 1) is spawned and installed as active.
+        let gen_a = NEXT_GENERATION.fetch_add(1, Ordering::SeqCst);
+        ACTIVE_GENERATION.store(gen_a, Ordering::SeqCst);
+        {
+            let mut q = batch_queue().lock().unwrap();
+            q.push_back((gen_a, vec!["session-a".to_string()]));
+        }
+        assert_eq!(current_batch_ids(), vec!["session-a".to_string()]);
+
+        // Wedge-recovery: A is force-released without popping its FIFO entry
+        // (mirrors drain_assessment_batch's peek-and-poison behaviour).
+        {
+            let mut poisoned = poisoned_generations().lock().unwrap();
+            poisoned.insert(gen_a);
+        }
+        ACTIVE_GENERATION.store(0, Ordering::SeqCst);
+        assert_eq!(current_batch_ids(), Vec::<String>::new());
+
+        // Turn B (generation 2) is spawned and installed as the new active
+        // generation, its entry pushed AFTER A's still-unpopped entry.
+        let gen_b = NEXT_GENERATION.fetch_add(1, Ordering::SeqCst);
+        ACTIVE_GENERATION.store(gen_b, Ordering::SeqCst);
+        {
+            let mut q = batch_queue().lock().unwrap();
+            q.push_back((gen_b, vec!["session-b".to_string()]));
+        }
+        assert_eq!(current_batch_ids(), vec!["session-b".to_string()]);
+
+        // A's real completion finally arrives (it wasn't actually dead, just
+        // slow). It must pop ITS OWN (A's) entry — not B's — and be reported
+        // as poisoned so the caller discards it instead of applying its
+        // verdicts to session-b.
+        let (generation, ids, is_poisoned) = pop_own_generation().expect("A's entry is still queued");
+        assert_eq!(generation, gen_a);
+        assert_eq!(ids, vec!["session-a".to_string()]);
+        assert!(is_poisoned, "A's generation was force-released and must be reported poisoned");
+
+        // B is untouched: still the active generation, its batch still
+        // resolvable — proving A's stale completion did not steal B's slot.
+        assert_eq!(ACTIVE_GENERATION.load(Ordering::SeqCst), gen_b);
+        assert_eq!(current_batch_ids(), vec!["session-b".to_string()]);
+
+        // B's own (non-poisoned) completion pops cleanly and is not flagged
+        // as stale.
+        let (generation2, ids2, is_poisoned2) = pop_own_generation().expect("B's entry is still queued");
+        assert_eq!(generation2, gen_b);
+        assert_eq!(ids2, vec!["session-b".to_string()]);
+        assert!(!is_poisoned2, "B's own completion must not be treated as stale");
+
+        // Queue is now empty; a further pop reflects "no queued batch".
+        assert!(pop_own_generation().is_none());
+
+        // Leave shared statics clean for any other test in this binary.
+        ACTIVE_GENERATION.store(0, Ordering::SeqCst);
     }
 }
