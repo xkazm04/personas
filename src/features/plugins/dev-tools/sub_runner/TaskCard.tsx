@@ -9,7 +9,7 @@ import { openGoalsBoard } from '@/features/plugins/companion/guidance/appActions
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { SCAN_AGENTS } from '../constants/scanAgents';
-import { ValueBadge } from '../sub_scanner/IdeaScannerCards';
+import { ValueBadge } from '../constants/ideaBadges';
 import { TaskOutputPanel } from './TaskOutputPanel';
 import { PrBridge } from './PrBridge';
 import { normalizeStatus, type TaskStatus } from './useTaskQueue';

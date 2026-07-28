@@ -149,7 +149,7 @@ export default function ProjectOverviewPage() {
       setPendingGoalSpotlightId(event.sourceId);
       openGoalsBoard();
     } else if (event.kind === 'scan_run') {
-      setDevToolsTab('idea-scanner');
+      setDevToolsTab('skills');
     }
   };
 

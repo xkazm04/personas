@@ -17,7 +17,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 import { CATEGORY_TW, DEFAULT_CATEGORY_TW } from '@/features/plugins/dev-tools/constants/ideaColors';
 import { FindingBadge, VerdictChip } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
-import { LevelBadge, ValueBadge } from '@/features/plugins/dev-tools/sub_scanner/IdeaScannerCards';
+import { LevelBadge, ValueBadge } from '@/features/plugins/dev-tools/constants/ideaBadges';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { BacklogIdea } from './backlogModel';

@@ -509,7 +509,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     highlightTestId: "dev-tools-page",
     subSteps: [
       { id: "dev-projects", label: "Projects", hint: "Register a local repo so agents can chat with its files, scan for issues, or run scripts." },
-      { id: "dev-idea-scanner", label: "Idea scanner / triage", hint: "Scan a project for backlog candidates, then approve or reject them in Idea Triage. Approved ideas become tasks." },
+      { id: "dev-skills", label: "Skills", hint: "Adopt preset scan skills into a project, dispatch them against contexts, and watch coverage + run history in the Analytics tab. Findings land as backlog ideas." },
       { id: "dev-task-runner", label: "Task runner", hint: "Dispatch tasks to remote workers (or Claude Code sessions). Watch progress with live logs." },
       { id: "dev-llm-overview", label: "LLM Overview", hint: "Wire each project to an LLM-observability tool (Langfuse, LangSmith, Helicone, or LightTrack) to see where it calls an LLM — use case, provider, model, tokens and cost." },
     ],
