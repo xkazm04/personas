@@ -5,7 +5,20 @@ import type { PipelineTrace, PipelineStage, UnifiedSpan } from '@/lib/execution/
 // Synthetic trace builder (for historical executions without live trace)
 // ---------------------------------------------------------------------------
 
-export function buildSyntheticTrace(execution: PersonaExecution): PipelineTrace | null {
+/**
+ * A `PipelineTrace` reconstructed from an execution's start/end timestamps
+ * (via `buildSyntheticTrace`) rather than captured live, per-stage, during
+ * the run. Every span duration below is a proportional ESTIMATE (fixed %
+ * splits of the total wall-clock time) — not a measurement. `isSynthetic`
+ * lets a renderer distinguish this from a real captured trace (the existing
+ * `isLive` signal PipelineWaterfall derives separately) so it can show an
+ * "Estimated" badge instead of presenting ms-precision guesses as fact.
+ */
+export interface SyntheticPipelineTrace extends PipelineTrace {
+  isSynthetic: true;
+}
+
+export function buildSyntheticTrace(execution: PersonaExecution): SyntheticPipelineTrace | null {
   if (!execution.started_at && !execution.created_at) return null;
 
   const startTime = new Date(execution.started_at ?? execution.created_at).getTime();
@@ -82,5 +95,6 @@ export function buildSyntheticTrace(execution: PersonaExecution): PipelineTrace 
     spans,
     startedAt: startTime,
     completedAt: endTime,
+    isSynthetic: true,
   };
 }
