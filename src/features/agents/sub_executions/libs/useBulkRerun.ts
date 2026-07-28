@@ -4,6 +4,7 @@ import { createLogger } from '@/lib/log';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { isFailedExecutionStatus } from './executionStatus';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('bulk-rerun');
 
@@ -131,18 +132,26 @@ export function useBulkRerun(): UseBulkRerun {
   const [items, setItems] = useState<BulkRunItem[]>([]);
   const [cohort, setCohort] = useState<BulkRunCohort>(emptyCohort);
   const cancelledRef = useRef(false);
+  // Only the latest-started batch is allowed to write item results — see
+  // createLatestWins() for why. `cancelledRef` only stops the worker loop
+  // from picking up NEW items; it does not abort in-flight runOne/
+  // executePersona promises from a prior batch. Without a token, a stale
+  // completion (keyed by originalId, which can collide across batches
+  // re-running the same executions) would land in the new cohort's state.
+  const latestWins = useRef(createLatestWins()).current;
 
-  const updateItem = useCallback((originalId: string, patch: Partial<BulkRunItem>) => {
+  const updateItem = useCallback((token: number, originalId: string, patch: Partial<BulkRunItem>) => {
+    if (!latestWins.isCurrent(token)) return; // a newer batch has since started
     setItems((prev) => {
       const next = prev.map((it) => (it.originalId === originalId ? { ...it, ...patch } : it));
       setCohort(deriveCohort(next));
       return next;
     });
-  }, []);
+  }, [latestWins]);
 
-  const runOne = useCallback(async (row: ExecutionListItem, personaId: string) => {
+  const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number) => {
     if (cancelledRef.current) return;
-    updateItem(row.id, { status: 'running' });
+    updateItem(token, row.id, { status: 'running' });
     try {
       let inputData: string | undefined;
       try {
@@ -161,7 +170,7 @@ export function useBulkRerun(): UseBulkRerun {
         idempotencyKey,
       );
       const successful = !isFailedExecutionStatus(result.status);
-      updateItem(row.id, {
+      updateItem(token, row.id, {
         status: successful ? 'success' : 'failed',
         newExecutionId: result.id,
         newStatus: result.status,
@@ -174,13 +183,14 @@ export function useBulkRerun(): UseBulkRerun {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.warn('Bulk-rerun item failed', { id: row.id, error: msg });
-      updateItem(row.id, { status: 'failed', error: msg });
+      updateItem(token, row.id, { status: 'failed', error: msg });
     }
   }, [updateItem]);
 
   const start = useCallback(async (rows: ExecutionListItem[], personaId: string) => {
     if (rows.length === 0) return;
     cancelledRef.current = false;
+    const token = latestWins.next();
     const initial: BulkRunItem[] = rows.map((r) => ({
       originalId: r.id,
       origStatus: r.status,
@@ -209,13 +219,15 @@ export function useBulkRerun(): UseBulkRerun {
           if (cancelledRef.current) return;
           const next = queue.shift();
           if (!next) return;
-          await runOne(next, personaId);
+          await runOne(next, personaId, token);
         }
       })());
     }
     await Promise.all(workers);
-    setPhase('completed');
-  }, [runOne]);
+    // A newer batch may have started while this one's workers were still
+    // draining — don't stomp its 'running' phase back to 'completed'.
+    if (latestWins.isCurrent(token)) setPhase('completed');
+  }, [runOne, latestWins]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
