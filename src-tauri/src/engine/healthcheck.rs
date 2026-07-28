@@ -1020,21 +1020,18 @@ async fn execute_healthcheck_request_with_strategy(
     // SSRF defense-in-depth: `validate_healthcheck_url` above only inspects
     // the URL string — it cannot catch DNS rebinding, where a hostname
     // resolves to a public IP at validate time but to a private IP at
-    // connection time. `SsrfSafeDnsResolver` wraps reqwest's own DNS lookup
-    // and rejects private/loopback/link-local/metadata addresses at the
-    // moment that actually matters.
+    // connection time, nor a redirect-based bypass, where an upstream
+    // response's `Location: http://<private-ip-literal>/...` skips DNS
+    // entirely and would otherwise be auto-followed by reqwest's default
+    // redirect policy (carrying this request's Authorization header along
+    // with it). `build_ssrf_safe_client` installs both the DNS-rebinding
+    // resolver and a redirect policy that re-validates every hop's target.
     let client = if allow_private {
         // Self-hosted connector opted into private-network access — the
         // non-filtered client lets a localhost/LAN healthcheck connect.
         personas_core::http_clients::HTTP_ALLOW_PRIVATE.clone()
     } else {
-        reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
-            .dns_resolver(std::sync::Arc::new(
-                crate::engine::url_safety::SsrfSafeDnsResolver,
-            ))
-            .build()
-            .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?
+        crate::engine::url_safety::build_ssrf_safe_client(std::time::Duration::from_secs(10))
     };
 
     let method = hc_config.method.as_deref().unwrap_or("GET").to_uppercase();
