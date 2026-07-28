@@ -1965,7 +1965,9 @@
       "st_stale": "{count} পুরোনো",
       "test_diff_recovered": "{count} পুনরুদ্ধার হয়েছে",
       "test_diff_regressed": "{count} নতুন ব্যর্থ",
-      "test_diff_failing": "{count} ব্যর্থ"
+      "test_diff_failing": "{count} ব্যর্থ",
+      "status_unverifiable": "যাচাই করা যায় না",
+      "st_unverifiable": "{count} যাচাই করা যায় না"
     },
     "model_config": {
       "model_provider": "মডেল ও প্রোভাইডার",

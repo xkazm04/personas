@@ -1133,7 +1133,9 @@
     "st_stale": "{count} 件が古い",
     "test_diff_recovered": "{count} 件が回復",
     "test_diff_regressed": "{count} 件が新たに失敗",
-    "test_diff_failing": "{count} 件が失敗"
+    "test_diff_failing": "{count} 件が失敗",
+    "status_unverifiable": "検証不可",
+    "st_unverifiable": "{count} 件が検証不可"
   },
   "model_config": {
     "model_provider": "モデル＆プロバイダー",

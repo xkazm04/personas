@@ -1133,7 +1133,9 @@
     "st_stale": "{count} zastaralých",
     "test_diff_recovered": "{count} obnoveno",
     "test_diff_regressed": "{count} nově selhalo",
-    "test_diff_failing": "{count} selhalo"
+    "test_diff_failing": "{count} selhalo",
+    "status_unverifiable": "Nelze ověřit",
+    "st_unverifiable": "{count} nelze ověřit"
   },
   "model_config": {
     "model_provider": "Model a poskytovatel",

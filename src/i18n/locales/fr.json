@@ -1965,7 +1965,9 @@
       "st_stale": "{count} obsolètes",
       "test_diff_recovered": "{count} rétablis",
       "test_diff_regressed": "{count} nouveaux échecs",
-      "test_diff_failing": "{count} en échec"
+      "test_diff_failing": "{count} en échec",
+      "status_unverifiable": "Non vérifiable",
+      "st_unverifiable": "{count} non vérifiables"
     },
     "model_config": {
       "model_provider": "Modèle & Fournisseur",

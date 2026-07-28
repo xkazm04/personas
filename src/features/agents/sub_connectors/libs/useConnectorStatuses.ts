@@ -243,7 +243,7 @@ export function useConnectorStatuses() {
 
   const readinessCounts = useMemo(() => {
     const counts: Record<ConnectorReadiness, number> = {
-      unlinked: 0, linked_untested: 0, healthy: 0, unhealthy: 0,
+      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unhealthy: 0,
     };
     for (const s of statuses) counts[deriveReadiness(s)]++;
     return counts;

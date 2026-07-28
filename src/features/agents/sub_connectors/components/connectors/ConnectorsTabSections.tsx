@@ -1,4 +1,4 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -45,6 +45,8 @@ interface ConnectorsSectionProps {
   healthy: number;
   unhealthy: number;
   unlinked: number;
+  /** Linked, but the connector exposes no live probe — never counted healthy. */
+  unverifiable: number;
   /** Rows whose only evidence is a restored healthcheck past the staleness cutoff. */
   staleCount: number;
   testableCount: number;
@@ -61,7 +63,7 @@ interface ConnectorsSectionProps {
 }
 
 export function ConnectorsSection({
-  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, staleCount,
+  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, unverifiable, staleCount,
   testableCount, testingAll, credentials, linkingConnector,
   onTestAll, onTestConnector, onToggleLinking, onLink,
   onAddCredential, onClearLinkError, onSwap,
@@ -91,6 +93,11 @@ export function ConnectorsSection({
             {unlinked > 0 && (
               <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
                 {tx(t.agents.connectors.st_missing, { count: unlinked })}
+              </StatusBadge>
+            )}
+            {unverifiable > 0 && (
+              <StatusBadge variant="neutral" pill className="px-2 py-0.5 typo-body" icon={<ShieldQuestion className="w-2.5 h-2.5" />}>
+                {tx(t.agents.connectors.st_unverifiable, { count: unverifiable })}
               </StatusBadge>
             )}
             {staleCount > 0 && (

@@ -2053,6 +2053,8 @@ export type Translations = {
       test_diff_recovered: string;
       test_diff_regressed: string;
       test_diff_failing: string;
+      status_unverifiable: string;
+      st_unverifiable: string;
     };
     model_config: {
       model_provider: string;

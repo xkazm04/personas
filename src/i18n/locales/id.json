@@ -1965,7 +1965,9 @@
       "st_stale": "{count} usang",
       "test_diff_recovered": "{count} pulih",
       "test_diff_regressed": "{count} baru gagal",
-      "test_diff_failing": "{count} gagal"
+      "test_diff_failing": "{count} gagal",
+      "status_unverifiable": "Tidak dapat diverifikasi",
+      "st_unverifiable": "{count} tidak dapat diverifikasi"
     },
     "model_config": {
       "model_provider": "Model & Penyedia",

@@ -1133,7 +1133,9 @@
     "st_stale": "устарело: {count}",
     "test_diff_recovered": "восстановлено: {count}",
     "test_diff_regressed": "новых сбоев: {count}",
-    "test_diff_failing": "сбоев: {count}"
+    "test_diff_failing": "сбоев: {count}",
+    "status_unverifiable": "Не проверяется",
+    "st_unverifiable": "не проверяется: {count}"
   },
   "model_config": {
     "model_provider": "Модель и провайдер",

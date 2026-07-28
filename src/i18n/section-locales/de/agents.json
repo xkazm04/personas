@@ -1133,7 +1133,9 @@
     "st_stale": "{count} veraltet",
     "test_diff_recovered": "{count} wiederhergestellt",
     "test_diff_regressed": "{count} neu fehlgeschlagen",
-    "test_diff_failing": "{count} fehlgeschlagen"
+    "test_diff_failing": "{count} fehlgeschlagen",
+    "status_unverifiable": "Nicht prüfbar",
+    "st_unverifiable": "{count} nicht prüfbar"
   },
   "model_config": {
     "model_provider": "Modell & Anbieter",

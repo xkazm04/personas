@@ -2046,7 +2046,9 @@
       "st_stale": "{count} stale",
       "test_diff_recovered": "{count} recovered",
       "test_diff_regressed": "{count} newly failing",
-      "test_diff_failing": "{count} failing"
+      "test_diff_failing": "{count} failing",
+      "status_unverifiable": "Not verifiable",
+      "st_unverifiable": "{count} not verifiable"
     },
     "model_config": {
       "model_provider": "Model & Provider",

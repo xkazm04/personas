@@ -1133,7 +1133,9 @@
     "st_stale": "{count} قديم",
     "test_diff_recovered": "{count} تم استرداده",
     "test_diff_regressed": "{count} فشل جديد",
-    "test_diff_failing": "{count} فاشل"
+    "test_diff_failing": "{count} فاشل",
+    "status_unverifiable": "غير قابل للتحقق",
+    "st_unverifiable": "{count} غير قابل للتحقق"
   },
   "model_config": {
     "model_provider": "النموذج والمزوّد",

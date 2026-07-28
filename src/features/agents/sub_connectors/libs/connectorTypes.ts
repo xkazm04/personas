@@ -1,8 +1,18 @@
 import type { CredentialMetadata } from '@/lib/types/types';
 
+export type HealthProbeState = 'verified' | 'unverifiable' | 'failed';
+
 export interface ConnectorTestResult {
   success: boolean;
   message: string;
+  /**
+   * Three-valued probe outcome from the backend. `unverifiable` means the
+   * connector has no live probe at all (no HTTP healthcheck, no CLI verify, no
+   * desktop-presence check), so the credential is stored but nothing was
+   * actually checked — reporting it as a green "Ready" would be a claim we
+   * cannot support. Null on results predating the token; fall back to `success`.
+   */
+  state?: HealthProbeState | null;
   /** ISO timestamp of the test, when known. Only set for restored results. */
   testedAt?: string | null;
   /**
@@ -56,6 +66,7 @@ export function restoreHealthcheck(cred: CredentialMetadata | null | undefined):
   return {
     success: cred.healthcheck_last_success,
     message: cred.healthcheck_last_message ?? '',
+    state: cred.healthcheck_last_state,
     testedAt: cred.healthcheck_last_tested_at,
     cached: true,
   };
@@ -72,17 +83,28 @@ export type ConnectorReadiness =
   | 'unlinked'        // no credential linked -- blocks execution
   | 'linked_untested' // credential linked, not yet tested
   | 'healthy'         // credential linked, healthcheck passed
+  | 'unverifiable'    // credential linked, but the connector has no live probe
   | 'unhealthy';      // credential linked, healthcheck failed
 
 export function deriveReadiness(status: ConnectorStatus): ConnectorReadiness {
   if (!status.credentialId) return 'unlinked';
   if (!status.result) return 'linked_untested';
+  // `unverifiable` is NOT a failure: `credential_is_usable` only demotes an
+  // explicit probe failure, so these still count as execution-ready. It is
+  // separated from `healthy` purely so the UI stops claiming a green check
+  // nothing earned.
+  if (status.result.state === 'unverifiable') return 'unverifiable';
   return status.result.success ? 'healthy' : 'unhealthy';
 }
 
 /** True if the connector has a linked credential (minimum for execution). */
 export function isExecutionReady(status: ConnectorStatus): boolean {
   return deriveReadiness(status) !== 'unlinked';
+}
+
+/** True when the connector is stored but nothing could actually verify it. */
+export function isUnverifiable(status: ConnectorStatus): boolean {
+  return deriveReadiness(status) === 'unverifiable';
 }
 
 // -- UI status config -------------------------------------------------
@@ -97,6 +119,7 @@ export function isExecutionReady(status: ConnectorStatus): boolean {
 export const STATUS_CONFIG = {
   ready: { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', labelKey: 'status_ready' },
   untested: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_untested' },
+  unverifiable: { color: 'text-foreground', bg: 'bg-secondary/40 border-primary/15', labelKey: 'status_unverifiable' },
   failed: { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', labelKey: 'status_failed' },
   missing: { color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', labelKey: 'status_missing' },
   testing: { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', labelKey: 'status_testing' },
@@ -106,5 +129,6 @@ export function getStatusKey(status: ConnectorStatus): keyof typeof STATUS_CONFI
   if (status.testing) return 'testing';
   if (!status.credentialId) return 'missing';
   if (!status.result) return 'untested';
+  if (status.result.state === 'unverifiable') return 'unverifiable';
   return status.result.success ? 'ready' : 'failed';
 }

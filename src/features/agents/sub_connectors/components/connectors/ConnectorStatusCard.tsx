@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -26,6 +26,8 @@ interface ConnectorStatusCardProps {
 const STATUS_ICON = {
   testing: Loader2,
   ready: CheckCircle2,
+  // Deliberately NOT a check: nothing verified this credential.
+  unverifiable: ShieldQuestion,
   failed: XCircle,
   missing: AlertCircle,
   untested: AlertCircle,

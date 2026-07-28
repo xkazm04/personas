@@ -1133,7 +1133,9 @@
     "st_stale": "{count}개 오래됨",
     "test_diff_recovered": "{count}개 복구됨",
     "test_diff_regressed": "{count}개 새로 실패",
-    "test_diff_failing": "{count}개 실패"
+    "test_diff_failing": "{count}개 실패",
+    "status_unverifiable": "검증 불가",
+    "st_unverifiable": "{count}개 검증 불가"
   },
   "model_config": {
     "model_provider": "모델 & 공급자",
