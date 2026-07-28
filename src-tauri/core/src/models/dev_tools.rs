@@ -383,6 +383,55 @@ pub struct DevUseCase {
 }
 
 // ============================================================================
+// Milestones (Ship layer — the convergence cut between passport scaffolding
+// and post-ship KPI operation; Factory L2 → Ship tab)
+// ============================================================================
+
+/// A **milestone** is a convergence cut: a named deliverable ("v1 — First
+/// Ship") whose scope is a bucketed selection of use cases plus bound goals.
+/// Progress and exit criteria DERIVE from the members' states, KPI coverage
+/// and context health — the schema stores decisions, never percentages.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevMilestone {
+    pub id: String,
+    pub project_id: String,
+    pub name: String,
+    /// The one-sentence core-value statement the cut converges on.
+    pub goal: Option<String>,
+    /// 'planned' | 'active' | 'shipped'
+    pub status: String,
+    pub order_index: i32,
+    pub target_date: Option<String>,
+    /// When the scope was cut (certified) — members added after this stamp
+    /// carry `added_after_cut` and surface as scope creep.
+    pub cut_at: Option<String>,
+    pub shipped_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Scope membership: one row per (milestone, item). `item_kind` 'use_case'
+/// rows are the work (bucketed core/later/never); 'goal' rows are bound
+/// objectives. Contexts are never members — they derive from the bound use
+/// cases' slices at read time.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevMilestoneItem {
+    pub milestone_id: String,
+    /// 'use_case' | 'goal'
+    pub item_kind: String,
+    pub item_id: String,
+    /// 'core' | 'later' | 'never'
+    pub bucket: String,
+    /// Proposed after the cut — scope creep awaiting triage.
+    #[serde(default)]
+    pub added_after_cut: bool,
+    pub order_index: i32,
+    pub created_at: String,
+}
+
+// ============================================================================
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
 // ============================================================================
 

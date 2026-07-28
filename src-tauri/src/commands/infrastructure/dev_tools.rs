@@ -5,6 +5,7 @@ mod competitions;
 pub mod contexts;
 pub mod git_ops;
 pub mod goals;
+pub mod milestones;
 pub mod portfolio;
 mod triage;
 pub mod workspace;
@@ -17,6 +18,7 @@ pub use competitions::*;
 pub use contexts::*;
 pub use git_ops::*;
 pub use goals::*;
+pub use milestones::*;
 pub use portfolio::*;
 
 use crate::db::models::{DevIdea, DevKpi, DevKpiMeasurement, DevPipeline, DevProject, DevScan, DevTask, DevUseCase, TriageRule};

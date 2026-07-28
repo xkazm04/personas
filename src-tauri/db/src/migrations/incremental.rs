@@ -6260,6 +6260,75 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // ---------------------------------------------------------------------
+    // Ship layer: milestones (Factory L2 → Ship tab)
+    //
+    // A milestone is a CONVERGENCE CUT over the primitives the scans already
+    // generate: use cases join with a bucket (core/later/never), goals bind
+    // as measurable objectives, and contexts are never members — they derive
+    // from the bound use cases' slices at read time. Progress is likewise
+    // derived (use-case states + KPI coverage + context health), so the
+    // schema stores decisions, never percentages.
+    // ---------------------------------------------------------------------
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_milestones",
+            description: "Ship layer: milestones as convergence cuts (roadmap spine + scope membership); progress derives, only decisions are stored",
+            already_applied: |conn| has_table(conn, "dev_milestones"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_milestones (
+                        id           TEXT PRIMARY KEY,
+                        project_id   TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        name         TEXT NOT NULL,
+                        goal         TEXT,
+                        status       TEXT NOT NULL DEFAULT 'planned'
+                                     CHECK(status IN ('planned','active','shipped')),
+                        order_index  INTEGER NOT NULL DEFAULT 0,
+                        target_date  TEXT,
+                        cut_at       TEXT,
+                        shipped_at   TEXT,
+                        created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_milestones_project
+                     ON dev_milestones(project_id, status, order_index);",
+                )?;
+                // Scope membership. One row per (milestone, item); an item
+                // belongs to at most one bucket per milestone. `item_kind`
+                // 'use_case' rows reference dev_use_cases (the work), 'goal'
+                // rows reference dev_goals (the objectives). No FK on item_id
+                // because it is polymorphic — orphans are swept at read time,
+                // mirroring how context rescans rebuild slices by name.
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_milestone_items (
+                        milestone_id    TEXT NOT NULL REFERENCES dev_milestones(id) ON DELETE CASCADE,
+                        item_kind       TEXT NOT NULL CHECK(item_kind IN ('use_case','goal')),
+                        item_id         TEXT NOT NULL,
+                        bucket          TEXT NOT NULL DEFAULT 'core'
+                                        CHECK(bucket IN ('core','later','never')),
+                        added_after_cut INTEGER NOT NULL DEFAULT 0,
+                        order_index     INTEGER NOT NULL DEFAULT 0,
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (milestone_id, item_kind, item_id)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_milestone_items_item
+                     ON dev_milestone_items(item_kind, item_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 
@@ -6770,6 +6839,8 @@ mod tests {
             "dev_llm_spend",
             "dev_use_cases",
             "dev_use_case_contexts",
+            "dev_milestones",
+            "dev_milestone_items",
             "dev_workspaces",
             "workspace_knowledge",
             "workspace_practice_adoption",

@@ -3066,6 +3066,14 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- milestones (Ship layer: convergence cuts)
+            commands::infrastructure::dev_tools::dev_tools_list_milestones,
+            commands::infrastructure::dev_tools::dev_tools_create_milestone,
+            commands::infrastructure::dev_tools::dev_tools_update_milestone,
+            commands::infrastructure::dev_tools::dev_tools_delete_milestone,
+            commands::infrastructure::dev_tools::dev_tools_list_milestone_items,
+            commands::infrastructure::dev_tools::dev_tools_set_milestone_item,
+            commands::infrastructure::dev_tools::dev_tools_remove_milestone_item,
             // Dev Tools -- use cases (behavioral slice layer under contexts)
             commands::infrastructure::dev_tools::dev_tools_list_use_cases,
             commands::infrastructure::dev_tools::dev_tools_get_use_case,
