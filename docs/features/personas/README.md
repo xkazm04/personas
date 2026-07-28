@@ -340,6 +340,14 @@ retest; a restored result is marked `cached` and renders a "Last checked
 &lt;when&gt;" provenance line, so stale data is never presented as a fresh test.
 Only connectors that have genuinely never been tested auto-test on load.
 
+A restored result older than `STALE_HEALTHCHECK_MS` (24h) marks the row **stale**
+— amber, clock icon, an inline **Re-test** link — and contributes to a "N stale"
+pill beside the healthy / failed / missing counts. Live results from the current
+session are never stale. **Test all** diffs each outcome against the result it
+replaced (the restored baseline is what makes this possible) and reports
+transitions in its completion notification — recovered / newly failing / failing
+— instead of the old "tested N connectors".
+
 Below the verification panel, the design recap's connector cards are also
 actionable: their status line resolves through `templates.design` in all 14
 locales, and clicking it opens inline credential provisioning (the affordance
