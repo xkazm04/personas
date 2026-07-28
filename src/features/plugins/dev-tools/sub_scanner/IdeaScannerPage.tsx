@@ -20,7 +20,7 @@ import { runStaticScan } from '@/api/devTools/devTools';
 import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
 import type { StaticScanConfig } from '@/lib/bindings/StaticScanConfig';
 import { ScanConfigModal } from './ScanConfigModal';
-import { StaticScanConfigModal } from './StaticScanConfigModal';
+import { StaticScanConfigModal } from '../sub_skills/analytics/StaticScanConfigModal';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
 } from '../constants/scanAgents';

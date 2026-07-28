@@ -21,8 +21,11 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
+import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
@@ -89,6 +92,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const projects = useSystemStore((s) => s.projects);
   const data = useSkillsManagerData(activeId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
+  const [pageTab, setPageTab] = useState<'overview' | 'analytics'>('overview');
 
   const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
 
@@ -167,26 +171,48 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
-      {/* toolbar — the shared active-project picker */}
+      {/* toolbar — page tabs + the shared active-project picker */}
       <div className="flex items-center gap-3 py-3 flex-shrink-0">
         <span className="typo-title">{t.plugins.dev_tools.skills_title}</span>
+        <SegmentedTabs
+          tabs={[
+            { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
+            { id: 'analytics', label: t.plugins.dev_tools.skills_tab_analytics },
+          ]}
+          activeTab={pageTab}
+          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics')}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.plugins.dev_tools.skills_tab_aria}
+        />
         <LifecycleProjectPicker />
       </div>
 
       <div className="flex-1 min-h-0">
-        <SkillsManagerBoard
-          ws={ws}
-          proj={proj}
-          totalContexts={data.totalContexts}
-          busy={busy}
-          projectName={projectName}
-          projectId={activeId}
-          onAdopt={runAdopt}
-          onShare={(name) => { void data.wb?.runShare(name); }}
-          onUse={runUse}
-          onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
-          onOpenContexts={setContextsSkill}
-        />
+        {pageTab === 'analytics' && activeId ? (
+          <SkillsAnalyticsTab
+            projectId={activeId}
+            proj={proj}
+            totalContexts={data.totalContexts}
+            busy={busy}
+            onDispatch={(skill, args) => { void data.wb?.runDispatch(skill, args); }}
+          />
+        ) : (
+          <SkillsManagerBoard
+            ws={ws}
+            proj={proj}
+            totalContexts={data.totalContexts}
+            busy={busy}
+            projectName={projectName}
+            projectId={activeId}
+            onAdopt={runAdopt}
+            onShare={(name) => { void data.wb?.runShare(name); }}
+            onUse={runUse}
+            onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
+            onOpenContexts={setContextsSkill}
+          />
+        )}
       </div>
 
       {contextsSkill && activeId && (
