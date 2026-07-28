@@ -2047,6 +2047,7 @@ export type Translations = {
       platform_github_actions: string;
       platform_zapier: string;
       platform_custom: string;
+      st_last_checked: string;
     };
     model_config: {
       model_provider: string;

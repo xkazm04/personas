@@ -1127,7 +1127,8 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "कस्टम"
+    "platform_custom": "कस्टम",
+    "st_last_checked": "अंतिम जाँच"
   },
   "model_config": {
     "model_provider": "मॉडल और प्रदाता",

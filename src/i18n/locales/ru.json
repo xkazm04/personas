@@ -1959,7 +1959,8 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Пользовательский"
+      "platform_custom": "Пользовательский",
+      "st_last_checked": "Последняя проверка"
     },
     "model_config": {
       "model_provider": "Модель и провайдер",

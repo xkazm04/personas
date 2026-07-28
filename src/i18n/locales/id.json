@@ -1959,7 +1959,8 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Kustom"
+      "platform_custom": "Kustom",
+      "st_last_checked": "Terakhir diperiksa"
     },
     "model_config": {
       "model_provider": "Model & Penyedia",

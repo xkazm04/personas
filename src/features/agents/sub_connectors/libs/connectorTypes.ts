@@ -1,11 +1,45 @@
+import type { CredentialMetadata } from '@/lib/types/types';
+
+export interface ConnectorTestResult {
+  success: boolean;
+  message: string;
+  /** ISO timestamp of the test, when known. Only set for restored results. */
+  testedAt?: string | null;
+  /**
+   * True when the result was restored from the credential's persisted
+   * healthcheck rather than produced by a test in this session — the UI says
+   * "last checked <when>" instead of implying it just ran.
+   */
+  cached?: boolean;
+}
+
 export interface ConnectorStatus {
   name: string;
   credentialId: string | null;
   credentialName: string | null;
   testing: boolean;
-  result: { success: boolean; message: string } | null;
+  result: ConnectorTestResult | null;
   /** Transient error from the last credential link attempt. */
   linkError: string | null;
+}
+
+/**
+ * Restore a connector's last known healthcheck from the credential record.
+ *
+ * Test outcomes used to live only in component state, so every visit to the
+ * connectors surface opened blank and silently re-tested — even though the
+ * backend had already persisted the answer on the credential. Returns null when
+ * the credential has never been tested, which leaves the auto-test path free to
+ * fire for genuinely unknown connectors.
+ */
+export function restoreHealthcheck(cred: CredentialMetadata | null | undefined): ConnectorTestResult | null {
+  if (!cred || typeof cred.healthcheck_last_success !== 'boolean') return null;
+  return {
+    success: cred.healthcheck_last_success,
+    message: cred.healthcheck_last_message ?? '',
+    testedAt: cred.healthcheck_last_tested_at,
+    cached: true,
+  };
 }
 
 // -- Connector readiness ----------------------------------------------

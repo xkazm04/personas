@@ -2,7 +2,8 @@ import { Star, ArrowLeftRight, AlertCircle, X, CheckCircle2, XCircle } from 'luc
 import { useTranslation } from '@/i18n/useTranslation';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { ConnectorStatus } from '../../libs/connectorTypes';
+import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
 interface LinkPickerProps {
   isLinking: boolean;
@@ -92,6 +93,22 @@ export function SwapPicker({ swapOpen, alternatives, statusName, onSwap, onClose
   );
 }
 
+/**
+ * Provenance line for a restored result. Without it a healthcheck persisted
+ * days ago is indistinguishable from one that just ran, which is exactly the
+ * kind of confidence the connectors surface should not manufacture.
+ */
+function LastCheckedNote({ result }: { result: ConnectorTestResult }) {
+  const { t } = useTranslation();
+  if (!result.cached || !result.testedAt) return null;
+  return (
+    <p className="typo-caption text-foreground pl-4.5 flex items-center gap-1">
+      <span>{t.agents.connectors.st_last_checked}</span>
+      <RelativeTime timestamp={result.testedAt} />
+    </p>
+  );
+}
+
 interface StatusResultProps {
   status: ConnectorStatus;
   onClearLinkError?: (connectorName: string) => void;
@@ -128,9 +145,12 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
             : 'bg-red-500/10 border border-red-500/20 text-red-400'
         }`}>
           {status.result.success ? (
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
-              <span>{status.result.message}</span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+                <span>{status.result.message || t.agents.connectors.status_ready}</span>
+              </div>
+              <LastCheckedNote result={status.result} />
             </div>
           ) : (
             <div className="space-y-1">
@@ -141,6 +161,7 @@ export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
               {translated?.suggestion && (
                 <p className="typo-body text-red-400/60 pl-4.5">{translated.suggestion}</p>
               )}
+              <LastCheckedNote result={status.result} />
             </div>
           )}
         </div>

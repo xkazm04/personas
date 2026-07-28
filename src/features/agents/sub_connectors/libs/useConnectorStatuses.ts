@@ -9,7 +9,7 @@ import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutato
 import { useTranslation } from '@/i18n/useTranslation';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
-import { deriveReadiness } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -72,12 +72,16 @@ export function useConnectorStatuses() {
         const existing = prevByName.get(credType);
         const linkedCredId = credentialLinks[credType];
         const linkedCred = linkedCredId ? credentialsByIdMap.get(linkedCredId) ?? null : null;
+        const credentialId = existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null;
+        // Fall back to whatever the backend last recorded on the credential, so
+        // a revisit opens with the known outcome instead of blank-then-retest.
+        const resolvedCred = credentialId ? credentialsByIdMap.get(credentialId) ?? null : null;
         return {
           name: credType,
-          credentialId: existing?.credentialId ?? matchedCred?.id ?? linkedCred?.id ?? null,
+          credentialId,
           credentialName: existing?.credentialName ?? matchedCred?.name ?? linkedCred?.name ?? null,
           testing: existing?.testing ?? false,
-          result: existing?.result ?? null,
+          result: existing?.result ?? restoreHealthcheck(resolvedCred),
           linkError: existing?.linkError ?? null,
         };
       });

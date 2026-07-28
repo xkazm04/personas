@@ -1127,7 +1127,8 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "사용자 지정"
+    "platform_custom": "사용자 지정",
+    "st_last_checked": "마지막 확인"
   },
   "model_config": {
     "model_provider": "모델 & 공급자",

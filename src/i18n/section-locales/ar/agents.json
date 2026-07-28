@@ -1127,7 +1127,8 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "مخصص"
+    "platform_custom": "مخصص",
+    "st_last_checked": "آخر فحص"
   },
   "model_config": {
     "model_provider": "النموذج والمزوّد",

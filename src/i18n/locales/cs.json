@@ -1959,7 +1959,8 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Vlastní"
+      "platform_custom": "Vlastní",
+      "st_last_checked": "Naposledy ověřeno"
     },
     "model_config": {
       "model_provider": "Model a poskytovatel",
