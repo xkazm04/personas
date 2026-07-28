@@ -215,7 +215,33 @@ pub(crate) fn global_skills_dir() -> Option<PathBuf> {
 /// ship with the app — they can't rely on the user's global library — so they
 /// are git-tracked in the repo's `.claude/skills/` AND bundled into the
 /// installer (tauri.conf `bundle.resources` → `<resource_dir>/skills/`).
-const SYSTEM_SKILLS: &[&str] = &["passport-onboard"];
+const SYSTEM_SKILLS: &[&str] = &[
+    "passport-onboard",
+    // Preset scan skills — generated from scan_agents.toml by
+    // scripts/skills/scan-agents-to-skills.mjs (one per Idea Scanner lens).
+    "scan-code-optimizer",
+    "scan-security-auditor",
+    "scan-architecture-analyst",
+    "scan-test-strategist",
+    "scan-dependency-auditor",
+    "scan-ux-reviewer",
+    "scan-accessibility-checker",
+    "scan-mobile-specialist",
+    "scan-error-handler",
+    "scan-onboarding-designer",
+    "scan-feature-scout",
+    "scan-monetization-advisor",
+    "scan-analytics-planner",
+    "scan-documentation-auditor",
+    "scan-growth-hacker",
+    "scan-tech-debt-tracker",
+    "scan-innovation-catalyst",
+    "scan-risk-assessor",
+    "scan-integration-planner",
+    "scan-devops-optimizer",
+    "scan-bounty-hunter",
+    "scan-business-strategist",
+];
 
 /// Is `name` an app-owned system skill (sourced from the bundle/repo, never the
 /// user's global library)?
