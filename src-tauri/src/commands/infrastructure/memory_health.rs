@@ -47,6 +47,11 @@ pub struct MemoryHealthScanSummary {
     pub projects_skipped_fresh: u32,
     /// Projects with no bound team — memory health has no roster to measure.
     pub projects_no_team: u32,
+    /// Projects with a bound team but zero memories in its roster (never
+    /// written, or all decayed out). No snapshot is recorded for these — see
+    /// `pillars()`'s `None` case — mirroring `engine::kpi_eval`'s rule that
+    /// zero activity is insufficient data, not a healthy zero-defect score.
+    pub projects_no_memories: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -118,8 +123,21 @@ fn roster_metrics(
     Ok(RosterMetrics { total, stale, disputed, open_claims, pending_proposals, oldest_pending_days })
 }
 
-fn pillars(m: &RosterMetrics) -> (i64, i64, i64, i64) {
-    let currency = if m.total == 0 { 100 } else { ((m.total - m.stale) * 100 / m.total).max(0) };
+/// Computes the three pillars + composite score, or `None` when the roster
+/// has zero memories at all. A team with no memories yet (never written, or
+/// fully decayed out) has nothing to be "current" about — `currency` used to
+/// default to a fabricated 100 in that case, reading as a perfectly healthy
+/// pillar on the Passport's "Agent memory" row for a team that has never
+/// actually been measured. Mirrors `engine::kpi_eval`'s rule: zero activity
+/// is insufficient data, not a healthy zero-defect score — the caller skips
+/// recording a snapshot entirely when this returns `None`, the same way
+/// `kpi_eval` skips recording a measurement rather than writing a fabricated
+/// one.
+fn pillars(m: &RosterMetrics) -> Option<(i64, i64, i64, i64)> {
+    if m.total == 0 {
+        return None;
+    }
+    let currency = ((m.total - m.stale) * 100 / m.total).max(0);
     let consistency = (100 - 20 * m.disputed).max(0);
     let age_over = (m.oldest_pending_days - GOVERNANCE_SLO_DAYS).max(0.0);
     let governance =
@@ -129,7 +147,7 @@ fn pillars(m: &RosterMetrics) -> (i64, i64, i64, i64) {
     if m.disputed >= DISPUTE_CAP_THRESHOLD {
         score = score.min(DISPUTE_CAP_SCORE);
     }
-    (score, currency, consistency, governance)
+    Some((score, currency, consistency, governance))
 }
 
 #[tauri::command]
@@ -179,7 +197,13 @@ pub fn memory_health_scan(
         }
 
         let metrics = roster_metrics(&conn, team_id)?;
-        let (score, currency, consistency, governance) = pillars(&metrics);
+        let Some((score, currency, consistency, governance)) = pillars(&metrics) else {
+            // Zero memories in the roster — nothing to score. Recording a
+            // fabricated healthy snapshot here is exactly the honesty defect
+            // this module exists to avoid; skip and count it instead.
+            summary.projects_no_memories += 1;
+            continue;
+        };
         conn.execute(
             "INSERT INTO knowledge_health_snapshots
                (id, scope_kind, scope_id, score, currency, consistency, governance,
@@ -274,26 +298,28 @@ mod tests {
     }
 
     #[test]
-    fn empty_corpus_is_healthy_not_zero() {
-        let (score, currency, ..) = pillars(&m(0, 0, 0, 0, 0.0));
-        assert_eq!(currency, 100);
-        assert_eq!(score, 100);
+    fn empty_corpus_is_unknown_not_a_fabricated_perfect_score() {
+        // Regression: this used to assert currency==100 / score==100 for a
+        // roster with zero memories — a dormant/never-populated team read as
+        // "perfectly current" on the Passport. Zero memories is insufficient
+        // data, not a healthy zero-defect measurement.
+        assert_eq!(pillars(&m(0, 0, 0, 0, 0.0)), None);
     }
 
     #[test]
     fn disputes_cap_the_composite_below_healthy() {
         // Perfect currency/governance, but 3 disputed memories → capped.
-        let (score, ..) = pillars(&m(100, 0, 3, 0, 0.0));
+        let (score, ..) = pillars(&m(100, 0, 3, 0, 0.0)).expect("total > 0 always scores");
         assert!(score <= 69, "3 disputes must deny 'healthy', got {score}");
         // ...while 1 dispute only dents consistency.
-        let (score1, ..) = pillars(&m(100, 0, 1, 0, 0.0));
+        let (score1, ..) = pillars(&m(100, 0, 1, 0, 0.0)).expect("total > 0 always scores");
         assert!(score1 > 69);
     }
 
     #[test]
     fn governance_penalizes_backlog_age_past_slo_only() {
-        let (_, _, _, fresh) = pillars(&m(10, 0, 0, 1, 3.0)); // inside 7d SLO
-        let (_, _, _, old) = pillars(&m(10, 0, 0, 1, 20.0)); // 13d over
+        let (_, _, _, fresh) = pillars(&m(10, 0, 0, 1, 3.0)).expect("total > 0 always scores"); // inside 7d SLO
+        let (_, _, _, old) = pillars(&m(10, 0, 0, 1, 20.0)).expect("total > 0 always scores"); // 13d over
         assert!(old < fresh);
         assert_eq!(fresh, 90); // depth penalty only
     }
