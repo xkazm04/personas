@@ -150,10 +150,13 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                     )}
                     {r.lenses.length > 1 && !done ? (
                       <ThemedSelect
+                        filterable
+                        hideSearch
                         options={r.lenses.map((l) => ({ value: l, label: l }))}
                         value={lens}
                         onValueChange={(v) => setLensByContext((prev) => new Map(prev).set(r.context.id, v))}
                         wrapperClassName="w-full"
+                        aria-label={r.context.name}
                       />
                     ) : (
                       <span className="typo-label text-foreground/60 truncate">{lens}</span>
