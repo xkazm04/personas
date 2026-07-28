@@ -1293,7 +1293,22 @@
     "skills_kind_use": "Usar",
     "skills_never_used": "nunca",
     "skills_use": "Usar",
-    "skills_use_hint": "Ejecuta esta habilidad ahora como una sesión Fleet en segundo plano en {name}"
+    "skills_use_hint": "Ejecuta esta habilidad ahora como una sesión Fleet en segundo plano en {name}",
+    "skills_use_all_line": "un despacho por contexto ({n})",
+    "skills_use_batch": "×{n} contextos",
+    "skills_use_cmd_copied": "Comando copiado — ejecútalo en tu terminal externa",
+    "skills_use_context_label": "Contexto",
+    "skills_use_copy_cta": "Copiar para terminal",
+    "skills_use_ctx_all": "Todos",
+    "skills_use_ctx_recommended": "Recomendado",
+    "skills_use_ctx_specific": "Este",
+    "skills_use_finding": "buscando el contexto menos cubierto…",
+    "skills_use_no_contexts": "aún no se ha escaneado ningún contexto",
+    "skills_use_pick_context": "Elige un contexto…",
+    "skills_use_recommended_line": "{name} — menos cubierto (30 d)",
+    "skills_use_run_via": "Ejecutar vía",
+    "skills_use_target_cmd_hint": "terminal externa, fuera de Personas",
+    "skills_use_target_fleet_hint": "sesión en segundo plano en Personas"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

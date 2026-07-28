@@ -9,23 +9,26 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DispatchTarget } from './UseSkillDialog';
 
 export function SkillDescription({ description }: { description: string | null }) {
-  if (!description) return <p className="typo-caption text-foreground/35 italic">No description provided.</p>;
+  const { t } = useTranslation();
+  if (!description) return <p className="typo-caption text-foreground/35 italic">{t.plugins.dev_tools.skills_confirm_no_desc}</p>;
   return <p className="typo-caption text-foreground/70 leading-relaxed" style={{ fontWeight: 400 }}>{description}</p>;
 }
 
 export function ArgsField({ value, onChange, onSubmit }: {
   value: string; onChange: (v: string) => void; onSubmit: () => void;
 }) {
+  const { t } = useTranslation();
+  const d = t.plugins.dev_tools;
   return (
     <div className="space-y-1">
       <label className="typo-label text-foreground/45 block">
-        Arguments <span className="text-foreground/30">(optional)</span>
+        {d.skills_args_label} <span className="text-foreground/30">({d.skills_args_optional})</span>
       </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={2}
-        placeholder="e.g. run --l2"
+        placeholder={d.skills_args_placeholder}
         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') onSubmit(); }}
         className="w-full resize-y px-2.5 py-1.5 typo-caption font-mono rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40 placeholder:text-foreground/35"
         data-testid="use-skill-args"
@@ -68,7 +71,7 @@ export function DialogFooter({ target, busy, onConfirm, onClose }: {
         data-testid="use-skill-confirm"
       >
         <Icon className="w-3 h-3" aria-hidden />
-        {target === 'cmd' ? 'Copy for terminal' : 'Dispatch'}
+        {target === 'cmd' ? t.plugins.dev_tools.skills_use_copy_cta : t.plugins.dev_tools.skills_confirm_use_cta}
       </button>
     </div>
   );

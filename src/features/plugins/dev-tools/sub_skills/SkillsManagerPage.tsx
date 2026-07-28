@@ -129,8 +129,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
     if (choice.target === 'cmd') {
       const cmd = argSets.map((a) => `claude "${skillCommand(name, a)}"`).join(' && ');
       copy(cmd);
-      // Hardcoded pending /prototype consolidation (i18n on winner).
-      addToast('Command copied — run it in your external terminal', 'success');
+      addToast(t.plugins.dev_tools.skills_use_cmd_copied, 'success');
       return;
     }
     for (const a of argSets) void data.wb?.runDispatch(name, a);

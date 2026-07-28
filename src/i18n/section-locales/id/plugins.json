@@ -1293,7 +1293,22 @@
     "skills_kind_use": "Gunakan",
     "skills_never_used": "tidak pernah",
     "skills_use": "Gunakan",
-    "skills_use_hint": "Jalankan skill ini sekarang sebagai sesi Fleet latar belakang di {name}"
+    "skills_use_hint": "Jalankan skill ini sekarang sebagai sesi Fleet latar belakang di {name}",
+    "skills_use_all_line": "satu pengiriman per konteks ({n})",
+    "skills_use_batch": "×{n} konteks",
+    "skills_use_cmd_copied": "Perintah disalin — jalankan di terminal eksternal Anda",
+    "skills_use_context_label": "Konteks",
+    "skills_use_copy_cta": "Salin untuk terminal",
+    "skills_use_ctx_all": "Semua",
+    "skills_use_ctx_recommended": "Direkomendasikan",
+    "skills_use_ctx_specific": "Yang ini",
+    "skills_use_finding": "mencari konteks yang paling sedikit tercakup…",
+    "skills_use_no_contexts": "belum ada konteks yang dipindai",
+    "skills_use_pick_context": "Pilih konteks…",
+    "skills_use_recommended_line": "{name} — paling sedikit tercakup (30 hr)",
+    "skills_use_run_via": "Jalankan melalui",
+    "skills_use_target_cmd_hint": "terminal eksternal, di luar Personas",
+    "skills_use_target_fleet_hint": "sesi latar belakang di Personas"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

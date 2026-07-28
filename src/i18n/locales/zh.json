@@ -13248,7 +13248,22 @@
       "skills_kind_use": "使用",
       "skills_never_used": "从未",
       "skills_use": "使用",
-      "skills_use_hint": "立即在 {name} 中将此技能作为后台 Fleet 会话运行"
+      "skills_use_hint": "立即在 {name} 中将此技能作为后台 Fleet 会话运行",
+      "skills_use_all_line": "每个上下文一次派发（{n}）",
+      "skills_use_batch": "×{n} 个上下文",
+      "skills_use_cmd_copied": "命令已复制 — 在你的外部终端中运行",
+      "skills_use_context_label": "上下文",
+      "skills_use_copy_cta": "复制到终端",
+      "skills_use_ctx_all": "全部",
+      "skills_use_ctx_recommended": "推荐",
+      "skills_use_ctx_specific": "此项",
+      "skills_use_finding": "正在查找覆盖最少的上下文…",
+      "skills_use_no_contexts": "尚未扫描任何上下文",
+      "skills_use_pick_context": "选择一个上下文…",
+      "skills_use_recommended_line": "{name} — 覆盖最少（30天）",
+      "skills_use_run_via": "运行方式",
+      "skills_use_target_cmd_hint": "外部终端，Personas 之外",
+      "skills_use_target_fleet_hint": "Personas 中的后台会话"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

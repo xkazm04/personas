@@ -1293,7 +1293,22 @@
     "skills_kind_use": "使用",
     "skills_never_used": "なし",
     "skills_use": "使用",
-    "skills_use_hint": "このスキルを今すぐ {name} でバックグラウンドの Fleet セッションとして実行します"
+    "skills_use_hint": "このスキルを今すぐ {name} でバックグラウンドの Fleet セッションとして実行します",
+    "skills_use_all_line": "コンテキストごとに1回のディスパッチ ({n})",
+    "skills_use_batch": "×{n} コンテキスト",
+    "skills_use_cmd_copied": "コマンドをコピーしました — 外部ターミナルで実行してください",
+    "skills_use_context_label": "コンテキスト",
+    "skills_use_copy_cta": "ターミナル用にコピー",
+    "skills_use_ctx_all": "すべて",
+    "skills_use_ctx_recommended": "推奨",
+    "skills_use_ctx_specific": "これ",
+    "skills_use_finding": "最もカバーの少ないコンテキストを検索中…",
+    "skills_use_no_contexts": "まだスキャンされたコンテキストはありません",
+    "skills_use_pick_context": "コンテキストを選択…",
+    "skills_use_recommended_line": "{name} — 最もカバーが少ない (30日)",
+    "skills_use_run_via": "実行方法",
+    "skills_use_target_cmd_hint": "Personas 外部の外部ターミナル",
+    "skills_use_target_fleet_hint": "Personas 内のバックグラウンドセッション"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

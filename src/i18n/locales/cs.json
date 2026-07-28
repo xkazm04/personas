@@ -13248,7 +13248,22 @@
       "skills_kind_use": "Použít",
       "skills_never_used": "nikdy",
       "skills_use": "Použít",
-      "skills_use_hint": "Spustit tuto dovednost nyní jako sezení Fleet na pozadí v {name}"
+      "skills_use_hint": "Spustit tuto dovednost nyní jako sezení Fleet na pozadí v {name}",
+      "skills_use_all_line": "jedno spuštění na kontext ({n})",
+      "skills_use_batch": "×{n} kontextů",
+      "skills_use_cmd_copied": "Příkaz zkopírován — spusťte jej v externím terminálu",
+      "skills_use_context_label": "Kontext",
+      "skills_use_copy_cta": "Kopírovat pro terminál",
+      "skills_use_ctx_all": "Vše",
+      "skills_use_ctx_recommended": "Doporučeno",
+      "skills_use_ctx_specific": "Tento",
+      "skills_use_finding": "hledání nejméně pokrytého kontextu…",
+      "skills_use_no_contexts": "zatím nebyl proskenován žádný kontext",
+      "skills_use_pick_context": "Vyberte kontext…",
+      "skills_use_recommended_line": "{name} — nejméně pokrytý (30 d)",
+      "skills_use_run_via": "Spustit přes",
+      "skills_use_target_cmd_hint": "externí terminál, mimo Personas",
+      "skills_use_target_fleet_hint": "sezení na pozadí v Personas"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

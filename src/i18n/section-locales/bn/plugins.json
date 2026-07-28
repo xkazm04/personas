@@ -1293,7 +1293,22 @@
     "skills_kind_use": "ব্যবহার",
     "skills_never_used": "কখনো নয়",
     "skills_use": "ব্যবহার",
-    "skills_use_hint": "এই স্কিলটি এখনই {name}-এ একটি ব্যাকগ্রাউন্ড Fleet সেশন হিসেবে চালান"
+    "skills_use_hint": "এই স্কিলটি এখনই {name}-এ একটি ব্যাকগ্রাউন্ড Fleet সেশন হিসেবে চালান",
+    "skills_use_all_line": "প্রতি কনটেক্সটে একটি ডিসপ্যাচ ({n})",
+    "skills_use_batch": "×{n} কনটেক্সট",
+    "skills_use_cmd_copied": "কমান্ড কপি হয়েছে — আপনার বাহ্যিক টার্মিনালে চালান",
+    "skills_use_context_label": "কনটেক্সট",
+    "skills_use_copy_cta": "টার্মিনালের জন্য কপি করুন",
+    "skills_use_ctx_all": "সব",
+    "skills_use_ctx_recommended": "প্রস্তাবিত",
+    "skills_use_ctx_specific": "এটি",
+    "skills_use_finding": "সবচেয়ে কম কভার হওয়া কনটেক্সট খোঁজা হচ্ছে…",
+    "skills_use_no_contexts": "এখনও কোনো কনটেক্সট স্ক্যান করা হয়নি",
+    "skills_use_pick_context": "একটি কনটেক্সট বেছে নিন…",
+    "skills_use_recommended_line": "{name} — সবচেয়ে কম কভার (৩০ দিন)",
+    "skills_use_run_via": "চালান এর মাধ্যমে",
+    "skills_use_target_cmd_hint": "বাহ্যিক টার্মিনাল, Personas-এর বাইরে",
+    "skills_use_target_fleet_hint": "Personas-এ ব্যাকগ্রাউন্ড সেশন"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

@@ -1293,7 +1293,22 @@
     "skills_kind_use": "उपयोग",
     "skills_never_used": "कभी नहीं",
     "skills_use": "उपयोग",
-    "skills_use_hint": "इस स्किल को अभी {name} में बैकग्राउंड Fleet सत्र के रूप में चलाएँ"
+    "skills_use_hint": "इस स्किल को अभी {name} में बैकग्राउंड Fleet सत्र के रूप में चलाएँ",
+    "skills_use_all_line": "प्रति कॉन्टेक्स्ट एक डिस्पैच ({n})",
+    "skills_use_batch": "×{n} कॉन्टेक्स्ट",
+    "skills_use_cmd_copied": "कमांड कॉपी हो गया — इसे अपने बाहरी टर्मिनल में चलाएँ",
+    "skills_use_context_label": "कॉन्टेक्स्ट",
+    "skills_use_copy_cta": "टर्मिनल के लिए कॉपी करें",
+    "skills_use_ctx_all": "सभी",
+    "skills_use_ctx_recommended": "अनुशंसित",
+    "skills_use_ctx_specific": "यही",
+    "skills_use_finding": "सबसे कम कवर किया गया कॉन्टेक्स्ट खोजा जा रहा है…",
+    "skills_use_no_contexts": "अभी तक कोई कॉन्टेक्स्ट स्कैन नहीं हुआ",
+    "skills_use_pick_context": "एक कॉन्टेक्स्ट चुनें…",
+    "skills_use_recommended_line": "{name} — सबसे कम कवर (30 दिन)",
+    "skills_use_run_via": "इसके ज़रिए चलाएँ",
+    "skills_use_target_cmd_hint": "बाहरी टर्मिनल, Personas के बाहर",
+    "skills_use_target_fleet_hint": "Personas में बैकग्राउंड सेशन"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

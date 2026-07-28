@@ -13248,7 +13248,22 @@
       "skills_kind_use": "사용",
       "skills_never_used": "없음",
       "skills_use": "사용",
-      "skills_use_hint": "이 스킬을 지금 {name}에서 백그라운드 Fleet 세션으로 실행합니다"
+      "skills_use_hint": "이 스킬을 지금 {name}에서 백그라운드 Fleet 세션으로 실행합니다",
+      "skills_use_all_line": "컨텍스트당 한 번의 디스패치 ({n})",
+      "skills_use_batch": "×{n} 컨텍스트",
+      "skills_use_cmd_copied": "명령이 복사됨 — 외부 터미널에서 실행하세요",
+      "skills_use_context_label": "컨텍스트",
+      "skills_use_copy_cta": "터미널용으로 복사",
+      "skills_use_ctx_all": "전체",
+      "skills_use_ctx_recommended": "추천",
+      "skills_use_ctx_specific": "이것",
+      "skills_use_finding": "가장 적게 다뤄진 컨텍스트를 찾는 중…",
+      "skills_use_no_contexts": "아직 스캔된 컨텍스트가 없습니다",
+      "skills_use_pick_context": "컨텍스트 선택…",
+      "skills_use_recommended_line": "{name} — 가장 적게 다뤄짐 (30일)",
+      "skills_use_run_via": "실행 방식",
+      "skills_use_target_cmd_hint": "Personas 외부의 외부 터미널",
+      "skills_use_target_fleet_hint": "Personas의 백그라운드 세션"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

@@ -13248,7 +13248,22 @@
       "skills_kind_use": "Nutzen",
       "skills_never_used": "nie",
       "skills_use": "Nutzen",
-      "skills_use_hint": "Diese Fähigkeit jetzt als Fleet-Sitzung im Hintergrund in {name} ausführen"
+      "skills_use_hint": "Diese Fähigkeit jetzt als Fleet-Sitzung im Hintergrund in {name} ausführen",
+      "skills_use_all_line": "ein Durchlauf pro Kontext ({n})",
+      "skills_use_batch": "×{n} Kontexte",
+      "skills_use_cmd_copied": "Befehl kopiert — im externen Terminal ausführen",
+      "skills_use_context_label": "Kontext",
+      "skills_use_copy_cta": "Für Terminal kopieren",
+      "skills_use_ctx_all": "Alle",
+      "skills_use_ctx_recommended": "Empfohlen",
+      "skills_use_ctx_specific": "Dieser",
+      "skills_use_finding": "am wenigsten abgedeckter Kontext wird ermittelt…",
+      "skills_use_no_contexts": "noch keine Kontexte gescannt",
+      "skills_use_pick_context": "Kontext auswählen…",
+      "skills_use_recommended_line": "{name} — am wenigsten abgedeckt (30 T)",
+      "skills_use_run_via": "Ausführen über",
+      "skills_use_target_cmd_hint": "externes Terminal, außerhalb von Personas",
+      "skills_use_target_fleet_hint": "Hintergrundsitzung in Personas"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

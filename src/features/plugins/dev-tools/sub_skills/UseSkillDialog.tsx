@@ -2,25 +2,23 @@
 // Beyond the description + args of the plain confirm, it lets the operator
 // choose WHERE the run goes (Fleet background session vs an external CMD) and,
 // for context-tracked skills, WHICH context(s) to run against (a specific one,
-// the recommended [least-covered] one, or all of them).
+// the recommended [least-covered] one, or all of them). The chosen context
+// folds into the run as a trailing arg — a "preset terminal input".
 //
-// ── PROTOTYPE SCAFFOLD (/prototype, throwaway) ──────────────────────────────
-// Three directional variants behind a tab switcher — the host owns the shared
-// choice state + data; each variant lays the choices out differently.
-//   · Segmented — compact form, segmented toggles
-//   · Cards     — decision-forward selectable tiles
-//   · Composer  — terminal-centric, the command line is the hero
+// Layout is the "Segmented" form (prototype winner): each choice is a labelled
+// row with a segmented control; the context picker reveals only for "This one".
 import { useEffect, useMemo, useState } from 'react';
+import { Wand2 } from 'lucide-react';
 
 import { listContexts, memorySkillContexts, type DevContext } from '@/api/devTools/devTools';
 import { BaseModal } from '@/features/shared/components/modals';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
-import { UseSkillSegmented } from './UseSkillVariantSegmented';
-import { UseSkillCards } from './UseSkillVariantCards';
-import { UseSkillComposer } from './UseSkillVariantComposer';
+import { ArgsField, DialogFooter, PreviewLine, SkillDescription } from './UseSkillShared';
 
 export type DispatchTarget = 'fleet' | 'cmd';
 export type ContextMode = 'specific' | 'recommended' | 'all';
@@ -35,42 +33,26 @@ export interface UseSkillChoice {
   contexts: string[];
 }
 
-/** Identical props every variant body receives from the host. */
-export interface UseSkillVariantProps {
-  skill: { name: string; description: string | null };
-  projectName: string;
-  tracked: boolean;
-  contexts: DevContext[];
-  /** Least-covered context name (30d) — the "recommended" preset; null when
-   *  the project has no contexts. */
-  recommendedName: string | null;
-  loadingContexts: boolean;
-  // controlled choice state (owned by the host)
-  args: string; setArgs: (s: string) => void;
-  target: DispatchTarget; setTarget: (t: DispatchTarget) => void;
-  mode: ContextMode; setMode: (m: ContextMode) => void;
-  contextId: string | null; setContextId: (id: string | null) => void;
-  busy: boolean;
-  /** The exact `/skill …` the current choice will run (single context, or the
-   *  first of an "all" batch) — variants render it as a live preview. */
-  preview: string;
-  onConfirm: () => void;
-  onClose: () => void;
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="typo-label text-foreground/45 w-16 flex-shrink-0">{label}</span>
+      {children}
+    </div>
+  );
 }
 
-type VariantId = 'segmented' | 'cards' | 'composer';
-
-export function UseSkillDialog({ skill, projectId, projectName, tracked, busy, onConfirm, onClose }: {
+export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onClose }: {
   skill: { name: string; description: string | null };
   projectId: string;
-  projectName: string;
   tracked: boolean;
   busy: boolean;
   /** Fires with the assembled choice; the caller routes Fleet/CMD + contexts. */
   onConfirm: (choice: UseSkillChoice) => void;
   onClose: () => void;
 }) {
-  const [variant, setVariant] = useState<VariantId>('segmented');
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const [args, setArgs] = useState('');
   const [target, setTarget] = useState<DispatchTarget>('fleet');
   const [mode, setMode] = useState<ContextMode>(tracked ? 'recommended' : 'specific');
@@ -91,7 +73,6 @@ export function UseSkillDialog({ skill, projectId, projectName, tracked, busy, o
       if (!alive) return;
       const sorted = [...ctx].sort((a, b) => a.name.localeCompare(b.name));
       setContexts(sorted);
-      // Recommended = the fresh-node-poorest context (most in need of work).
       const rec = [...cov].sort((a, b) => a.freshNodes - b.freshNodes || a.name.localeCompare(b.name))[0];
       setRecommendedName(rec?.name ?? sorted[0]?.name ?? null);
       setContextId(sorted[0]?.id ?? null);
@@ -100,7 +81,7 @@ export function UseSkillDialog({ skill, projectId, projectName, tracked, busy, o
     return () => { alive = false; };
   }, [tracked, projectId, skill.name]);
 
-  // The context term folded into the run, per mode.
+  // The context term(s) folded into the run, per mode.
   const chosenContexts = useMemo((): string[] => {
     if (!tracked) return [];
     if (mode === 'all') return contexts.map((c) => c.name);
@@ -109,39 +90,93 @@ export function UseSkillDialog({ skill, projectId, projectName, tracked, busy, o
     return c ? [c.name] : [];
   }, [tracked, mode, contexts, recommendedName, contextId]);
 
-  // Preview: args plus the context term (skills receive the context as a
-  // trailing argument — a "preset terminal input", not a formal flag).
-  const previewArgs = useMemo(() => {
-    const first = chosenContexts[0];
-    return [args.trim(), first].filter(Boolean).join(' ');
-  }, [args, chosenContexts]);
+  const previewArgs = useMemo(
+    () => [args.trim(), chosenContexts[0]].filter(Boolean).join(' '),
+    [args, chosenContexts],
+  );
   const preview = skillCommand(skill.name, previewArgs);
+  const batchCount = tracked && mode === 'all' ? contexts.length : 0;
 
   const confirm = () => onConfirm({ args: args.trim(), target, contexts: chosenContexts });
 
-  const shared: UseSkillVariantProps = {
-    skill, projectName, tracked, contexts, recommendedName, loadingContexts,
-    args, setArgs, target, setTarget, mode, setMode, contextId, setContextId,
-    busy, preview, onConfirm: confirm, onClose,
-  };
-  const Body = variant === 'segmented' ? UseSkillSegmented : variant === 'cards' ? UseSkillCards : UseSkillComposer;
-
   return (
     <BaseModal isOpen onClose={onClose} titleId="use-skill-title" size="md" portal staggerChildren={false}>
-      <span id="use-skill-title" className="sr-only">{skill.name}</span>
-      {/* throwaway A/B switcher */}
-      <div className="flex justify-center pt-2.5 pb-1">
-        <SegmentedTabs
-          tabs={[{ id: 'segmented', label: 'Segmented' }, { id: 'cards', label: 'Cards' }, { id: 'composer', label: 'Composer' }]}
-          activeTab={variant}
-          onTabChange={setVariant}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel="Use-skill dialog variant"
-        />
+      <div className="flex flex-col" data-testid="use-skill-dialog">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+          <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
+          <span id="use-skill-title" className="typo-title truncate">{skill.name}</span>
+          <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{d.skills_kind_use}</span>
+        </div>
+
+        <div className="px-4 py-3 space-y-3">
+          <SkillDescription description={skill.description} />
+
+          <Row label={d.skills_use_run_via}>
+            <SegmentedTabs
+              tabs={[{ id: 'fleet', label: 'Fleet' }, { id: 'cmd', label: 'CMD' }]}
+              activeTab={target}
+              onTabChange={(v) => setTarget(v as DispatchTarget)}
+              variant="segment"
+              size="sm"
+              fullWidth={false}
+              ariaLabel={d.skills_use_run_via}
+            />
+            <span className="typo-label text-foreground/35 truncate">
+              {target === 'fleet' ? d.skills_use_target_fleet_hint : d.skills_use_target_cmd_hint}
+            </span>
+          </Row>
+
+          {tracked && (
+            <>
+              <Row label={d.skills_use_context_label}>
+                <SegmentedTabs
+                  tabs={[
+                    { id: 'recommended', label: d.skills_use_ctx_recommended },
+                    { id: 'specific', label: d.skills_use_ctx_specific },
+                    { id: 'all', label: d.skills_use_ctx_all },
+                  ]}
+                  activeTab={mode}
+                  onTabChange={(v) => setMode(v as ContextMode)}
+                  variant="segment"
+                  size="sm"
+                  fullWidth={false}
+                  ariaLabel={d.skills_use_context_label}
+                />
+              </Row>
+              {mode === 'recommended' && (
+                <p className="typo-label text-foreground/45 pl-[4.75rem]">
+                  {loadingContexts
+                    ? d.skills_use_finding
+                    : recommendedName
+                      ? <>→ <span className="text-foreground/70">{tx(d.skills_use_recommended_line, { name: recommendedName })}</span></>
+                      : d.skills_use_no_contexts}
+                </p>
+              )}
+              {mode === 'specific' && (
+                <div className="pl-[4.75rem]">
+                  <ThemedSelect
+                    filterable
+                    hideSearch
+                    options={contexts.map((c) => ({ value: c.id, label: c.name }))}
+                    value={contextId ?? ''}
+                    onValueChange={setContextId}
+                    placeholder={d.skills_use_pick_context}
+                    wrapperClassName="w-full"
+                  />
+                </div>
+              )}
+              {mode === 'all' && (
+                <p className="typo-label text-foreground/45 pl-[4.75rem]">→ {tx(d.skills_use_all_line, { n: contexts.length })}</p>
+              )}
+            </>
+          )}
+
+          <ArgsField value={args} onChange={setArgs} onSubmit={confirm} />
+          <PreviewLine preview={preview} extra={batchCount > 1 ? tx(d.skills_use_batch, { n: batchCount }) : undefined} />
+        </div>
+
+        <DialogFooter target={target} busy={busy} onConfirm={confirm} onClose={onClose} />
       </div>
-      <Body {...shared} />
     </BaseModal>
   );
 }

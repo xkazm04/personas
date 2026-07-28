@@ -13248,7 +13248,22 @@
       "skills_kind_use": "Dùng",
       "skills_never_used": "chưa bao giờ",
       "skills_use": "Dùng",
-      "skills_use_hint": "Chạy kỹ năng này ngay bây giờ dưới dạng phiên Fleet chạy nền trong {name}"
+      "skills_use_hint": "Chạy kỹ năng này ngay bây giờ dưới dạng phiên Fleet chạy nền trong {name}",
+      "skills_use_all_line": "một lần gửi cho mỗi ngữ cảnh ({n})",
+      "skills_use_batch": "×{n} ngữ cảnh",
+      "skills_use_cmd_copied": "Đã sao chép lệnh — chạy nó trong terminal bên ngoài của bạn",
+      "skills_use_context_label": "Ngữ cảnh",
+      "skills_use_copy_cta": "Sao chép cho terminal",
+      "skills_use_ctx_all": "Tất cả",
+      "skills_use_ctx_recommended": "Được đề xuất",
+      "skills_use_ctx_specific": "Cái này",
+      "skills_use_finding": "đang tìm ngữ cảnh ít được bao phủ nhất…",
+      "skills_use_no_contexts": "chưa có ngữ cảnh nào được quét",
+      "skills_use_pick_context": "Chọn một ngữ cảnh…",
+      "skills_use_recommended_line": "{name} — ít được bao phủ nhất (30 ngày)",
+      "skills_use_run_via": "Chạy qua",
+      "skills_use_target_cmd_hint": "terminal bên ngoài, ngoài Personas",
+      "skills_use_target_fleet_hint": "phiên nền trong Personas"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

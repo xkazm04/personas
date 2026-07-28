@@ -243,7 +243,6 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         <UseSkillDialog
           skill={pending.skill}
           projectId={projectId}
-          projectName={projectName}
           tracked={pending.tracked}
           busy={busy}
           onConfirm={(choice) => { onUse(pending.skill.name, choice); setPending(null); }}

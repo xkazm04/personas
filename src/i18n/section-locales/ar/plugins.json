@@ -1293,7 +1293,22 @@
     "skills_kind_use": "استخدام",
     "skills_never_used": "أبدًا",
     "skills_use": "استخدام",
-    "skills_use_hint": "شغّل هذه المهارة الآن كجلسة Fleet في الخلفية ضمن {name}"
+    "skills_use_hint": "شغّل هذه المهارة الآن كجلسة Fleet في الخلفية ضمن {name}",
+    "skills_use_all_line": "إرسال واحد لكل سياق ({n})",
+    "skills_use_batch": "×{n} سياقات",
+    "skills_use_cmd_copied": "تم نسخ الأمر — شغّله في الطرفية الخارجية",
+    "skills_use_context_label": "السياق",
+    "skills_use_copy_cta": "نسخ للطرفية",
+    "skills_use_ctx_all": "الكل",
+    "skills_use_ctx_recommended": "موصى به",
+    "skills_use_ctx_specific": "هذا",
+    "skills_use_finding": "جارٍ إيجاد السياق الأقل تغطية…",
+    "skills_use_no_contexts": "لم يتم فحص أي سياق بعد",
+    "skills_use_pick_context": "اختر سياقًا…",
+    "skills_use_recommended_line": "{name} — الأقل تغطية (30 يومًا)",
+    "skills_use_run_via": "التشغيل عبر",
+    "skills_use_target_cmd_hint": "طرفية خارجية، خارج Personas",
+    "skills_use_target_fleet_hint": "جلسة خلفية في Personas"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

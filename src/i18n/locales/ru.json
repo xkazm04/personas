@@ -13248,7 +13248,22 @@
       "skills_kind_use": "Использовать",
       "skills_never_used": "никогда",
       "skills_use": "Использовать",
-      "skills_use_hint": "Запустить этот навык сейчас как фоновую сессию Fleet в {name}"
+      "skills_use_hint": "Запустить этот навык сейчас как фоновую сессию Fleet в {name}",
+      "skills_use_all_line": "один запуск на контекст ({n})",
+      "skills_use_batch": "×{n} контекстов",
+      "skills_use_cmd_copied": "Команда скопирована — выполните её во внешнем терминале",
+      "skills_use_context_label": "Контекст",
+      "skills_use_copy_cta": "Скопировать для терминала",
+      "skills_use_ctx_all": "Все",
+      "skills_use_ctx_recommended": "Рекомендуется",
+      "skills_use_ctx_specific": "Этот",
+      "skills_use_finding": "поиск наименее охваченного контекста…",
+      "skills_use_no_contexts": "контексты ещё не просканированы",
+      "skills_use_pick_context": "Выберите контекст…",
+      "skills_use_recommended_line": "{name} — наименее охвачен (30 дн.)",
+      "skills_use_run_via": "Запуск через",
+      "skills_use_target_cmd_hint": "внешний терминал, вне Personas",
+      "skills_use_target_fleet_hint": "фоновая сессия в Personas"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",
