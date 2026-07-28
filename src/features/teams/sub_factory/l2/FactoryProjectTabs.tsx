@@ -45,7 +45,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
         <InkTabs tabs={TABS} active={tab} onChange={setTab} label="Module" />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
-      {tab === 'ship' && <FactoryShipTab />}
+      {tab === 'ship' && <FactoryShipTab data={data} />}
       {tab === 'matrix' && matrix}
       {tab === 'observability' && <FactoryObservabilityTab data={data} />}
     </div>
