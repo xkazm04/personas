@@ -1372,7 +1372,8 @@
     "skills_static_title": "স্ট্যাটিক স্ক্যান",
     "skills_tab_analytics": "অ্যানালিটিক্স",
     "skills_tab_aria": "স্কিল ভিউ",
-    "skills_tab_overview": "ওভারভিউ"
+    "skills_tab_overview": "ওভারভিউ",
+    "skills_adopt_preset_hint": "অ্যাপ বান্ডেল থেকে সরাসরি {name}-এ ইনস্টল হয় — কোনো কাস্টমাইজেশন রান ছাড়াই"
   },
   "doc_signing": {
     "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

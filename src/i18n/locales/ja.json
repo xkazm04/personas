@@ -13338,7 +13338,8 @@
       "skills_static_title": "静的スキャン",
       "skills_tab_analytics": "Analytics",
       "skills_tab_aria": "スキルビュー",
-      "skills_tab_overview": "Overview"
+      "skills_tab_overview": "Overview",
+      "skills_adopt_preset_hint": "アプリバンドルから {name} に即座にインストールされます — カスタマイズ実行は不要"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",

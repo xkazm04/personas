@@ -12947,6 +12947,7 @@
       "skills_lib_tab_aria": "Skill library group",
       "skills_preset_empty": "No preset skills available.",
       "skills_preset_installed": "{name} installed into the project",
+      "skills_adopt_preset_hint": "Installs instantly into {name} from the app bundle — no customization run",
       "skills_preset_group_technical": "Technical",
       "skills_preset_group_user": "User experience",
       "skills_preset_group_business": "Business",

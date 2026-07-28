@@ -1372,7 +1372,8 @@
     "skills_static_title": "정적 스캔",
     "skills_tab_analytics": "분석",
     "skills_tab_aria": "Skills 보기",
-    "skills_tab_overview": "개요"
+    "skills_tab_overview": "개요",
+    "skills_adopt_preset_hint": "앱 번들에서 {name}에 즉시 설치됩니다 — 커스터마이징 실행 없이"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

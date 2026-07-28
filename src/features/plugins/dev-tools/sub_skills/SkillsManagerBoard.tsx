@@ -299,6 +299,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
           skill={pending.skill}
           projectName={projectName}
           busy={busy}
+          preset={isPresetSkill(pending.skill.name)}
           onConfirm={confirmAdoptShare}
           onClose={() => setPending(null)}
         />

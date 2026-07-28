@@ -1372,7 +1372,8 @@
     "skills_static_title": "Pemindaian statis",
     "skills_tab_analytics": "Analytics",
     "skills_tab_aria": "Tampilan Skills",
-    "skills_tab_overview": "Overview"
+    "skills_tab_overview": "Overview",
+    "skills_adopt_preset_hint": "Terinstal langsung ke {name} dari paket aplikasi — tanpa proses kustomisasi"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

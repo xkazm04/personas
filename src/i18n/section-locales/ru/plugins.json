@@ -1372,7 +1372,8 @@
     "skills_static_title": "Статическое сканирование",
     "skills_tab_analytics": "Аналитика",
     "skills_tab_aria": "Раздел навыков",
-    "skills_tab_overview": "Обзор"
+    "skills_tab_overview": "Обзор",
+    "skills_adopt_preset_hint": "Устанавливается мгновенно в {name} из пакета приложения — без запуска настройки"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

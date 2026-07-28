@@ -8,6 +8,7 @@ import { PlayCircle, Workflow } from 'lucide-react';
 
 import { listContexts, listMemoryNodes, type DevContext } from '@/api/devTools/devTools';
 import { Button } from '@/features/shared/components/buttons';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -18,7 +19,8 @@ const DEFAULT_SELECTED = 5;
 
 interface PipelineRow {
   context: DevContext;
-  skill: string;
+  /** All matched preset lenses for this context, best match first. */
+  lenses: string[];
   /** Fresh Memory-Ledger nodes attributed to this context (30d) — 0 = uncovered. */
   freshNodes: number;
 }
@@ -34,6 +36,8 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
   const [rows, setRows] = useState<PipelineRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [dispatched, setDispatched] = useState<Set<string>>(new Set());
+  // Per-context lens override — defaults to the best keyword match.
+  const [lensByContext, setLensByContext] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,11 +56,14 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
         freshByContext.set(n.contextId, (freshByContext.get(n.contextId) ?? 0) + 1);
       }
       const built: PipelineRow[] = ctx
-        .map((c) => ({
-          context: c,
-          skill: matchSkillsToContext(c)[0] ?? 'scan-architecture-analyst',
-          freshNodes: freshByContext.get(c.id) ?? 0,
-        }))
+        .map((c) => {
+          const lenses = matchSkillsToContext(c);
+          return {
+            context: c,
+            lenses: lenses.length > 0 ? lenses : ['scan-architecture-analyst'],
+            freshNodes: freshByContext.get(c.id) ?? 0,
+          };
+        })
         // Least-covered first — the pipeline's whole point.
         .sort((a, b) => a.freshNodes - b.freshNodes || a.context.name.localeCompare(b.context.name));
       setRows(built);
@@ -79,8 +86,10 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
     [rows, selected, dispatched],
   );
 
+  const lensFor = (r: PipelineRow): string => lensByContext.get(r.context.id) ?? r.lenses[0]!;
+
   const run = () => {
-    for (const r of runnable) onDispatch(r.skill, r.context.name);
+    for (const r of runnable) onDispatch(lensFor(r), r.context.name);
     setDispatched((prev) => new Set([...prev, ...runnable.map((r) => r.context.id)]));
   };
 
@@ -111,7 +120,8 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
         ) : (
           <ul>
             {rows.map((r) => {
-              const visual = presetVisual(r.skill);
+              const lens = lensFor(r);
+              const visual = presetVisual(lens);
               const done = dispatched.has(r.context.id);
               return (
                 <li key={r.context.id} className="flex items-center gap-2.5 py-1.5 border-b border-foreground/[0.08] last:border-b-0">
@@ -127,7 +137,9 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                   <span className="typo-label text-foreground/45 tabular-nums flex-shrink-0">
                     {tx(d.skills_pipeline_fresh_nodes, { n: r.freshNodes })}
                   </span>
-                  <span className="flex items-center gap-1.5 flex-shrink-0 w-52 min-w-0">
+                  {/* Lens picker — best keyword match preselected, every matched
+                      lens for this context switchable. */}
+                  <span className="flex items-center gap-1.5 flex-shrink-0 w-56 min-w-0">
                     {visual && (
                       <span
                         className="inline-flex items-center justify-center w-4.5 h-4.5 rounded-interactive border flex-shrink-0"
@@ -136,7 +148,16 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                         <visual.icon className="w-2.5 h-2.5" aria-hidden strokeWidth={1.75} />
                       </span>
                     )}
-                    <span className="typo-label text-foreground/60 truncate">{r.skill}</span>
+                    {r.lenses.length > 1 && !done ? (
+                      <ThemedSelect
+                        options={r.lenses.map((l) => ({ value: l, label: l }))}
+                        value={lens}
+                        onValueChange={(v) => setLensByContext((prev) => new Map(prev).set(r.context.id, v))}
+                        wrapperClassName="w-full"
+                      />
+                    ) : (
+                      <span className="typo-label text-foreground/60 truncate">{lens}</span>
+                    )}
                   </span>
                   <span className={`typo-label flex-shrink-0 w-16 text-right ${done ? 'text-status-info' : 'text-foreground/35'}`}>
                     {done ? d.skills_pipeline_dispatched : ''}

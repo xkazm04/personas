@@ -13338,7 +13338,8 @@
       "skills_static_title": "Quét tĩnh",
       "skills_tab_analytics": "Phân tích",
       "skills_tab_aria": "Chế độ xem kỹ năng",
-      "skills_tab_overview": "Tổng quan"
+      "skills_tab_overview": "Tổng quan",
+      "skills_adopt_preset_hint": "Cài đặt ngay lập tức vào {name} từ gói ứng dụng — không cần chạy tùy chỉnh"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

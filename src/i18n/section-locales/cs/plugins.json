@@ -1372,7 +1372,8 @@
     "skills_static_title": "Statické skenování",
     "skills_tab_analytics": "Analytika",
     "skills_tab_aria": "Zobrazení skillů",
-    "skills_tab_overview": "Přehled"
+    "skills_tab_overview": "Přehled",
+    "skills_adopt_preset_hint": "Instaluje se okamžitě do {name} z balíčku aplikace — bez spuštění přizpůsobení"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

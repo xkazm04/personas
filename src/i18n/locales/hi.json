@@ -13338,7 +13338,8 @@
       "skills_static_title": "स्टैटिक स्कैन",
       "skills_tab_analytics": "एनालिटिक्स",
       "skills_tab_aria": "स्किल्स व्यू",
-      "skills_tab_overview": "ओवरव्यू"
+      "skills_tab_overview": "ओवरव्यू",
+      "skills_adopt_preset_hint": "ऐप बंडल से सीधे {name} में इंस्टॉल होता है — बिना कोई कस्टमाइज़ेशन रन के"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

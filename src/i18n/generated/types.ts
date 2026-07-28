@@ -12953,6 +12953,7 @@ export type Translations = {
       skills_lib_tab_aria: string;
       skills_preset_empty: string;
       skills_preset_installed: string;
+      skills_adopt_preset_hint: string;
       skills_preset_group_technical: string;
       skills_preset_group_user: string;
       skills_preset_group_business: string;

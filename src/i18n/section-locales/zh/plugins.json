@@ -1372,7 +1372,8 @@
     "skills_static_title": "静态扫描",
     "skills_tab_analytics": "分析",
     "skills_tab_aria": "技能视图",
-    "skills_tab_overview": "概览"
+    "skills_tab_overview": "概览",
+    "skills_adopt_preset_hint": "直接从应用包安装到 {name}——无需运行自定义"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

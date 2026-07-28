@@ -1372,7 +1372,8 @@
     "skills_static_title": "Statischer Scan",
     "skills_tab_analytics": "Analysen",
     "skills_tab_aria": "Skills-Ansicht",
-    "skills_tab_overview": "Übersicht"
+    "skills_tab_overview": "Übersicht",
+    "skills_adopt_preset_hint": "Installiert sofort in {name} aus dem App-Paket — ohne Anpassungslauf"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",
