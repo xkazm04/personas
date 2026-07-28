@@ -4,17 +4,22 @@
 // All mutations go through the dev_tools_*_milestone* commands and refetch —
 // the backend stores decisions, every number on screen derives here.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Event } from '@tauri-apps/api/event';
 
-import { listGoals } from '@/api/devTools/devTools';
+import { listGoals, scanCodebase } from '@/api/devTools/devTools';
 import {
   createMilestone, listMilestoneItems, listMilestones, removeMilestoneItem,
   setMilestoneItem, updateMilestone,
   type MilestoneBucket, type MilestoneItemKind, type MilestoneStatus,
 } from '@/api/devTools/milestones';
+import { createUseCase } from '@/api/devTools/useCases';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import type { DevMilestoneItem } from '@/lib/bindings/DevMilestoneItem';
+import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { FactoryL2Data } from '../factoryL2Data';
 import {
@@ -35,6 +40,11 @@ export interface ShipData {
   setStatus: (id: string, status: MilestoneStatus) => void;
   setItem: (milestoneId: string, kind: MilestoneItemKind, itemId: string, bucket: MilestoneBucket) => void;
   removeItem: (milestoneId: string, kind: MilestoneItemKind, itemId: string) => void;
+  /** Hand-add a use case under a context (the composer's quick-add). */
+  createFeature: (contextId: string, name: string) => void;
+  /** Kick a full context scan (the no-contexts empty state's follow-up). */
+  scanContexts: () => void;
+  ctxScanning: boolean;
 }
 
 const dateLabel = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
@@ -238,5 +248,45 @@ export function useShipData(data: FactoryL2Data): ShipData {
     void removeMilestoneItem(milestoneId, kind, itemId).then(reload).catch(toastCatch('ship remove scope'));
   }, [reload]);
 
-  return { loading: loading || data.loading, roadmap, contexts, features, goals, create, setStatus, setItem, removeItem };
+  const createFeature = useCallback((contextId: string, name: string) => {
+    if (!projectId) return;
+    void createUseCase({ projectId, name, contextIds: [contextId], primaryContextId: contextId, status: 'active' })
+      .then(() => data.useCaseState.reload())
+      .catch(toastCatch('ship create use case'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, data.useCaseState.reload]);
+
+  // Context scan — the no-contexts empty state's follow-up. Registers in the
+  // activity dock and refetches the map when CONTEXT_GEN_COMPLETE lands.
+  const [ctxScanId, setCtxScanId] = useState<string | null>(null);
+  const scanContexts = useCallback(() => {
+    const p = data.project;
+    if (!p) return;
+    void scanCodebase(p.id, p.root_path, false)
+      .then(({ scan_id }) => {
+        setCtxScanId(scan_id);
+        useOverviewStore.getState().processStarted(
+          'factory_scan',
+          scan_id,
+          `Context scan: ${p.name}`,
+          { section: 'plugins', tab: 'context-map' },
+        );
+      })
+      .catch(toastCatch('ship context scan'));
+  }, [data.project]);
+  const onScanComplete = useCallback((event: Event<ContextGenCompletePayload>) => {
+    if (!ctxScanId || event.payload.scan_id !== ctxScanId) return;
+    setCtxScanId(null);
+    data.reloadMap();
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxScanId, data.reloadMap, reload]);
+  useTauriEvent<ContextGenCompletePayload>(EventName.CONTEXT_GEN_COMPLETE, onScanComplete);
+
+  return {
+    loading: loading || data.loading,
+    roadmap, contexts, features, goals,
+    create, setStatus, setItem, removeItem,
+    createFeature, scanContexts, ctxScanning: ctxScanId !== null,
+  };
 }

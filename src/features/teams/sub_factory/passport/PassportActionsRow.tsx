@@ -12,7 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import { listCredentials } from '@/api/vault/credentials';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
@@ -20,6 +20,7 @@ import type { AppPassport } from './passportModel';
 import { INK, anchorTip } from './passportInk';
 import { useImprove } from './improve/ImproveContext';
 import { FindingsPopover } from './improve/StandardsScan';
+import { seedOnboardingMilestone } from '../l2/ship/seedOnboarding';
 import { buildOnboardPrompt, onboardDispatchKey } from './onboardDispatch';
 import { PASSPORT_FLEET_INK } from './passportFleet';
 import { dispatchSkillToRepo } from './skillPlacement';
@@ -126,7 +127,12 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
         dispatchKey: onboardDispatchKey(slug),
         prompt: buildOnboardPrompt(p, raw, creds),
       }))
-      .then(() => setOnboardBusy(false))
+      .then(() => {
+        setOnboardBusy(false);
+        // Ship layer: a fresh project's first milestone IS the onboarding —
+        // seed it (idempotent) so the Ship tab opens with a live deliverable.
+        void seedOnboardingMilestone(raw.project.id).catch(silentCatch('passport onboard milestone seed'));
+      })
       .catch((e) => { setOnboardBusy(false); toastCatch('passport onboard dispatch')(e); });
   };
 

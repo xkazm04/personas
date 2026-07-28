@@ -187,7 +187,13 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
             )}
           />
         ))}
-        {outside.length === 0 && <li className="typo-caption px-3.5 py-2.5">Everything is in the cut — suspiciously disciplined.</li>}
+        {outside.length === 0 && (
+          <li className="typo-caption px-3.5 py-2.5">
+            {ship.features.length === 0
+              ? 'No use cases mapped yet — open Compose scope to chart the project and add the first ones.'
+              : 'Everything is in the cut — suspiciously disciplined.'}
+          </li>
+        )}
       </LedgerList>
     </>
   );
