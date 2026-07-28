@@ -162,6 +162,7 @@ fn row_to_workspace(row: &Row) -> rusqlite::Result<DevWorkspace> {
         name: row.get("name")?,
         color: row.get("color")?,
         description: row.get("description")?,
+        adopt_default_skills: row.get::<_, i64>("adopt_default_skills")? != 0,
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -253,6 +254,7 @@ pub fn create_workspace(
     name: &str,
     color: Option<&str>,
     description: Option<&str>,
+    adopt_default_skills: bool,
 ) -> Result<DevWorkspace, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Workspace name cannot be empty".into()));
@@ -262,9 +264,9 @@ pub fn create_workspace(
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_workspaces (id, name, color, description, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
-            params![id, name.trim(), color, description, now],
+            "INSERT INTO dev_workspaces (id, name, color, description, adopt_default_skills, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
+            params![id, name.trim(), color, description, adopt_default_skills as i64, now],
         )?;
         get_workspace_by_id(pool, &id)
     })
@@ -481,7 +483,7 @@ pub fn import_local(
         };
         let ws = match existing {
             Some(id) => get_workspace_by_id(pool, &id)?,
-            None => create_workspace(pool, &item.name, item.color.as_deref(), None)?,
+            None => create_workspace(pool, &item.name, item.color.as_deref(), None, false)?,
         };
         for project_id in &item.project_ids {
             // Only assign projects that exist and aren't already in a workspace
@@ -2172,7 +2174,7 @@ mod tests {
     /// A workspace with `n` member projects and one proposed actionable
     /// practice. Returns (workspace_id, practice_id, project_ids).
     fn seeded(pool: &DbPool, n: usize, kind: &str) -> (String, String, Vec<String>) {
-        let ws = create_workspace(pool, "WS", None, None).unwrap();
+        let ws = create_workspace(pool, "WS", None, None, false).unwrap();
         let mut projects = Vec::new();
         for i in 0..n {
             let p = crate::repos::dev_tools::create_project(

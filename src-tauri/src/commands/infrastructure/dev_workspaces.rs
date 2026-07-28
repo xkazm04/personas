@@ -35,9 +35,16 @@ pub fn dev_tools_workspace_create(
     name: String,
     color: Option<String>,
     description: Option<String>,
+    adopt_default_skills: Option<bool>,
 ) -> Result<DevWorkspace, AppError> {
     require_auth_sync(&state)?;
-    repo::create_workspace(&state.db, &name, color.as_deref(), description.as_deref())
+    repo::create_workspace(
+        &state.db,
+        &name,
+        color.as_deref(),
+        description.as_deref(),
+        adopt_default_skills.unwrap_or(false),
+    )
 }
 
 #[tauri::command]

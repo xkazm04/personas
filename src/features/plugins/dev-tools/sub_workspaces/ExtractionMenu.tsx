@@ -166,6 +166,7 @@ export function ExtractionMenu({
     name: workspace.name,
     color: workspace.color,
     description: null,
+    adopt_default_skills: workspace.adoptDefaultSkills,
     created_at: '',
     updated_at: '',
   };

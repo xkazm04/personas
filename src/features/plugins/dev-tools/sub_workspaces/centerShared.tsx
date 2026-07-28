@@ -259,33 +259,51 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
   const { t } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
   const [name, setName] = useState('');
+  const [adoptSkills, setAdoptSkills] = useState(false);
   const submit = () => {
     if (!name.trim()) return;
-    createWorkspace(name);
+    createWorkspace(name, undefined, adoptSkills);
     setName('');
+    setAdoptSkills(false);
   };
   return (
     <form
-      className="flex items-center gap-2"
+      className="flex flex-col gap-2 min-w-0 flex-1"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
-      <input
-        className={INPUT_FIELD}
-        placeholder={tw.workspace_name_placeholder}
-        value={name}
-        autoFocus={autoFocus}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <button
-        type="submit"
-        disabled={!name.trim()}
-        className="typo-body shrink-0 rounded-interactive border border-primary/20 bg-primary/10 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
-      >
-        {tw.create}
-      </button>
+      <div className="flex items-center gap-2">
+        <input
+          className={INPUT_FIELD}
+          placeholder={tw.workspace_name_placeholder}
+          value={name}
+          autoFocus={autoFocus}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button
+          type="submit"
+          disabled={!name.trim()}
+          className="typo-body shrink-0 rounded-interactive border border-primary/20 bg-primary/10 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+        >
+          {tw.create}
+        </button>
+      </div>
+      {/* Consent to seed the app's preset scan skills into member projects. */}
+      <label className="flex items-start gap-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={adoptSkills}
+          onChange={(e) => setAdoptSkills(e.target.checked)}
+          className="mt-0.5 accent-[var(--color-primary)] flex-shrink-0"
+          data-testid="workspace-adopt-skills"
+        />
+        <span className="min-w-0">
+          <span className="typo-caption text-foreground block">{tw.adopt_skills_label}</span>
+          <span className="typo-label text-foreground/45 block">{tw.adopt_skills_hint}</span>
+        </span>
+      </label>
     </form>
   );
 }
