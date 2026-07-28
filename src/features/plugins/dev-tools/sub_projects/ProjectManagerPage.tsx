@@ -6,7 +6,6 @@ import { openLocalPath, openExternalUrl } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -318,14 +317,6 @@ export default function ProjectManagerPage() {
       ),
     },
     {
-      key: 'path',
-      label: t.plugins.dev_tools.col_path,
-      width: 'minmax(160px, 1.6fr)',
-      render: (project) => (
-        <span className="typo-caption truncate block">{project.path}</span>
-      ),
-    },
-    {
       key: 'tech',
       label: t.plugins.dev_tools.col_tech_stack,
       width: 'minmax(100px, 0.9fr)',
@@ -419,35 +410,38 @@ export default function ProjectManagerPage() {
       />
 
       <ContentBody>
-        <ActionRow>
-          <Button
-            variant="accent"
-            accentColor="violet"
-            size="sm"
-            icon={<Network className="w-3.5 h-3.5" />}
-            onClick={() => setShowCrossProjectMap(true)}
-            disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
-            disabled={projects.length === 0}
-          >
-            {t.plugins.dev_projects.cross_project_map_btn}
-          </Button>
-          <Button
-            variant="accent"
-            accentColor="amber"
-            size="sm"
-            icon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => { setEditingProject(null); setShowModal(true); }}
-            data-testid="dev-project-new"
-          >
-            {t.plugins.dev_projects.new_project}
-          </Button>
-        </ActionRow>
-
+        {/* One row, not two: the page actions ride in the workspace strip's
+            `actions` slot so there is a single band of chrome above the table. */}
         <WorkspaceTabs
           projects={allProjects}
           workspaces={workspaces}
           activeId={activeWorkspaceId}
           onSelect={setActiveWorkspace}
+          actions={
+            <>
+              <Button
+                variant="accent"
+                accentColor="violet"
+                size="sm"
+                icon={<Network className="w-3.5 h-3.5" />}
+                onClick={() => setShowCrossProjectMap(true)}
+                disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
+                disabled={projects.length === 0}
+              >
+                {t.plugins.dev_projects.cross_project_map_btn}
+              </Button>
+              <Button
+                variant="accent"
+                accentColor="amber"
+                size="sm"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                onClick={() => { setEditingProject(null); setShowModal(true); }}
+                data-testid="dev-project-new"
+              >
+                {t.plugins.dev_projects.new_project}
+              </Button>
+            </>
+          }
         />
 
         <div className="space-y-3">
@@ -558,21 +552,22 @@ export default function ProjectManagerPage() {
 // Each ghost enters via `animate-fade-in` (150ms, fill-mode: both) behind a
 // staggered animation-delay starting at 120ms — `both` holds opacity 0 through
 // the delay, so a fetch that resolves quickly never paints a single ghost.
-// Mirrors the real 7-column grid (select/name/path/tech/status/created/
-// actions) — same width strings as the `columns` memo above — so the
-// ghost-to-content swap moves nothing. No `animate-pulse` — the entrance
-// stagger is the only motion.
+// Mirrors the real 6-column grid (select/name/tech/status/created/actions) —
+// same width strings as the `columns` memo above — so the ghost-to-content
+// swap moves nothing. Keep this list in lockstep with `columns`: it drifting is
+// exactly what makes a ghost jump when the data lands. No `animate-pulse` —
+// the entrance stagger is the only motion.
 // ---------------------------------------------------------------------------
 
 const PROJECT_GHOST_GRID = [
   '40px',
   'minmax(180px, 1.4fr)',
-  'minmax(160px, 1.6fr)',
   'minmax(100px, 0.9fr)',
   '110px',
   '110px',
   '132px',
 ].join(' ');
+const PROJECT_GHOST_COLS = 6;
 
 const GHOST_ROW_HEIGHT = 44;
 const GHOST_BAR = 'rounded bg-primary/[0.06]';
@@ -586,9 +581,10 @@ function ProjectGhostRows() {
         className="grid border-b border-primary/10 bg-primary/5 px-0 py-2.5 animate-fade-in"
         style={{ gridTemplateColumns: PROJECT_GHOST_GRID, animationDelay: '120ms' }}
       >
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({ length: PROJECT_GHOST_COLS }).map((_, i) => (
           <span key={i} className="px-4">
-            <span className={`h-2.5 w-10 block ${GHOST_BAR} ${i >= 4 ? 'ml-auto' : ''}`} />
+            {/* Right-aligned from `status` on — index 3 since `path` was dropped. */}
+            <span className={`h-2.5 w-10 block ${GHOST_BAR} ${i >= 3 ? 'ml-auto' : ''}`} />
           </span>
         ))}
       </div>
@@ -606,9 +602,6 @@ function ProjectGhostRows() {
             </span>
             <span className="px-4">
               <span className={`h-3.5 ${nameW} max-w-full block ${GHOST_BAR}`} />
-            </span>
-            <span className="px-4">
-              <span className={`h-3.5 w-24 block ${GHOST_BAR}`} />
             </span>
             <span className="px-4">
               <span className={`h-3.5 w-16 block ${GHOST_BAR}`} />

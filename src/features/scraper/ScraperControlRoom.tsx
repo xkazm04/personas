@@ -1,11 +1,11 @@
-import { useState, type AnimationEventHandler } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, Database, FlaskConical, Globe, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 
 import { previewScraperExtract, type PreviewRow, type ScraperConfig } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { errMsg } from '@/stores/storeTypes';
 
@@ -109,10 +109,6 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
   );
 }
 
-/** Per-row stagger step (ms) and the cap on how many rows stagger within one wave — mirrors RevealItem. */
-const REVEAL_STEP_MS = 35;
-const REVEAL_MAX_STAGGER = 8;
-
 function Row({
   config,
   order,
@@ -140,19 +136,6 @@ function Row({
   const [testing, setTesting] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
 
-  // One-shot entrance cascade for a fresh result set (docs/design/overview-loading.md
-  // law 4). The table is custom (not UnifiedTable), and RevealItem renders a
-  // `<div>` which can't wrap a `<tr>`, so its stagger/guard logic is replicated
-  // directly on the row element here. Entered ids never replay on poll/refresh.
-  const reducedMotion = useReducedMotion();
-  const animateReveal = !reducedMotion && !hasEntered(config.id);
-  const revealDelay = animateReveal
-    ? Math.min(Math.max(0, order), REVEAL_MAX_STAGGER) * REVEAL_STEP_MS
-    : 0;
-  const handleRevealEnd: AnimationEventHandler<HTMLTableRowElement> = (e) => {
-    if (e.target === e.currentTarget) markEntered(config.id);
-  };
-
   const runTest = async () => {
     const next = !testOpen;
     setTestOpen(next);
@@ -172,10 +155,13 @@ function Row({
 
   return (
     <>
-    <tr
-      className={`group hover:bg-secondary/20 transition-colors${animateReveal ? ' animate-fade-in' : ''}`}
-      style={animateReveal ? { animationDelay: `${revealDelay}ms` } : undefined}
-      onAnimationEnd={handleRevealEnd}
+    <RevealItem
+      as="tr"
+      revealId={config.id}
+      order={order}
+      hasEntered={hasEntered}
+      markEntered={markEntered}
+      className="group hover:bg-secondary/20 transition-colors"
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
@@ -233,7 +219,7 @@ function Row({
           </Button>
         </div>
       </td>
-    </tr>
+    </RevealItem>
     {testOpen && (
       <tr>
         <td colSpan={7} className="bg-background/30 px-4 pb-3">

@@ -15,6 +15,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { categoryMeta } from './kpiMeta';
 import { KPIProposalModal } from './KPIProposalModal';
 import { KPIConnectWizard } from './KPIConnectWizard';
@@ -93,20 +94,18 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
             const cat = categoryMeta(kpi.category);
             const CatIcon = cat.icon;
             // One-shot entrance cascade for a fresh result set. Rows past the
-            // first viewport render plainly, and entered ids never replay on
-            // poll/refresh (RevealItem's guard semantics, applied directly to
-            // <tr> since RevealItem's own div wrapper is invalid inside <tbody>).
-            const animate = index < CASCADE_ROWS && !enter.hasEntered(kpi.id);
-            const delay = animate ? Math.min(index, 8) * 35 : 0;
+            // first viewport render plainly (folded into hasEntered); entered
+            // ids never replay on poll/refresh.
             return (
-              <tr
+              <RevealItem
+                as="tr"
                 key={kpi.id}
+                revealId={kpi.id}
+                order={index}
+                hasEntered={(id) => index >= CASCADE_ROWS || enter.hasEntered(id)}
+                markEntered={enter.markEntered}
                 onClick={() => setOpenId(kpi.id)}
-                className={`border-b border-primary/10 hover:bg-secondary/30 cursor-pointer transition-colors${animate ? ' animate-fade-in' : ''}`}
-                style={animate ? { animationDelay: `${delay}ms` } : undefined}
-                onAnimationEnd={(e) => {
-                  if (e.target === e.currentTarget) enter.markEntered(kpi.id);
-                }}
+                className="border-b border-primary/10 hover:bg-secondary/30 cursor-pointer transition-colors"
                 data-testid={`kpi-proposal-${kpi.id}`}
               >
                 <td className="py-2 pr-3">
@@ -183,7 +182,7 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
                     />
                   </div>
                 </td>
-              </tr>
+              </RevealItem>
             );
           })
           )}

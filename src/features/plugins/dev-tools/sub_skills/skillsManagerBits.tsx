@@ -50,15 +50,23 @@ export function MemoryBindingButton({ binding, onSwitch }: {
   );
 }
 
-/** Terse transcript-mined usage: `12× · 2d ago`. Null usage renders nothing —
- *  no telemetry ≠ unused. */
-export function UsageLine({ invokes30d, lastInvokedAt }: { invokes30d: number; lastInvokedAt: string | null }) {
+/** Usage COUNT column — transcript-mined 30d invokes (`12×`). Empty = `—`; the
+ *  30-day window is stated once in the panel footer. */
+export function UsageCount({ usage }: { usage: { invokes_30d: number } | undefined }) {
   return (
-    <span className="inline-flex items-center gap-1 typo-label text-foreground/40 whitespace-nowrap tabular-nums">
-      {invokes30d}×
-      {lastInvokedAt && <>· <RelativeTime timestamp={lastInvokedAt} className="tabular-nums" /></>}
+    <span className="typo-label text-foreground/45 tabular-nums text-right">
+      {usage ? `${usage.invokes_30d}×` : '—'}
     </span>
   );
+}
+
+/** LAST-USED column — relative time of the last invocation, or `never`. */
+export function LastUsed({ usage }: { usage: { last_invoked_at: string | null } | undefined }) {
+  const { t } = useTranslation();
+  if (!usage?.last_invoked_at) {
+    return <span className="typo-label text-foreground/30 text-right">{t.plugins.dev_tools.skills_never_used}</span>;
+  }
+  return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-foreground/45 tabular-nums text-right" />;
 }
 
 /** Context-coverage bar + percentage for a context-tracked skill. */

@@ -57,6 +57,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const storeGoals = useSystemStore((s) => s.goals);
+  const storeGoalsLoading = useSystemStore((s) => s.goalsLoading);
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
@@ -126,12 +127,14 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
   // undated group is first-class, never a reason to show the empty state.
   const ongoingCount = BUCKET_ORDER.reduce((n, b) => n + grouped[b].length, 0);
   if (ongoingCount === 0) {
-    // allProjects mode fetches directly (above) — while that fetch is in
-    // flight and nothing has landed yet, show a calm delayed ghost of the
-    // bucketed rail instead of the "no goals" empty state (which would
-    // otherwise flash before the real fetch settles). Store-mode has no
-    // fetching signal of its own here — the page shell owns that gate.
-    if (allProjects && isFetchingAll) {
+    // While the goals fetch is in flight and nothing has landed yet, show a calm
+    // delayed ghost of the bucketed rail instead of the "no goals" empty state
+    // (which would otherwise flash before the real fetch settles). allProjects
+    // mode fetches directly here (isFetchingAll); store-mode reads the shell's
+    // fetch signal (goalsLoading) so a cold first-open of the Timeline tab
+    // ghosts rather than flashing empty before the page shell's fetch lands.
+    const showGhost = allProjects ? isFetchingAll : (storeGoalsLoading && storeGoals.length === 0);
+    if (showGhost) {
       return <GoalsTimelineGhost compact={compact} />;
     }
     return (

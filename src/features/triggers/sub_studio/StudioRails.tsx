@@ -77,7 +77,7 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
   );
 
   return (
-    <div className="w-72 h-full border-r border-border flex flex-col min-h-0 bg-card/95 backdrop-blur">
+    <div className="w-72 h-full border-r border-border flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
           <span className="typo-label uppercase tracking-wide text-foreground">{st.sources_title}</span>
@@ -182,7 +182,7 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
   );
 
   return (
-    <div className="w-72 h-full border-l border-border flex flex-col min-h-0 bg-card/95 backdrop-blur">
+    <div className="w-72 h-full border-l border-border flex flex-col min-h-0 bg-background">
       <div className="px-3 pt-2.5 pb-2 space-y-1.5">
         <div className="flex items-center justify-between px-1">
           <span className="typo-label uppercase tracking-wide text-foreground">{st.targets_title}</span>

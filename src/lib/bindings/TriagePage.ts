@@ -5,7 +5,7 @@ import type { TriageCounts } from "./TriageCounts";
 /**
  * One keyset page of triage ideas plus the counts the facet rail renders.
  */
-export type TriagePage = { ideas: Array<DevIdea>,
+export type TriagePage = { ideas: Array<DevIdea>, 
 /**
  * `"{created_at}|{id}"` of the last row, or `None` when the page is last.
  */

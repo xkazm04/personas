@@ -466,6 +466,8 @@ async fn run_divergence(
                 detail.push_str(&format!("**Current approaches**\n\n{}\n", approaches.join("\n")));
             }
             KnowledgeCandidate {
+                // Not produced by a territory scan (miner / divergence pass).
+                harvest_scope: None,
                 kind: p.kind.clone().filter(|k| repo::KNOWLEDGE_KINDS.contains(&k.as_str()))
                     .unwrap_or_else(|| "decision".into()),
                 title: p.title.clone(),

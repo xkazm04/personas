@@ -90,6 +90,26 @@ export function viewFromRow(row: WorkspaceKnowledge): KnowledgeItemView {
   };
 }
 
+// -- review ordering ---------------------------------------------------------
+
+/**
+ * How much a pending item is worth reviewing first.
+ *
+ * A twelve-territory harvest lands a few hundred `observed` items at once, so
+ * the order the reviewer meets them in decides what actually gets adjudicated
+ * before attention runs out. `updatedAt` — the old default — is ingest order,
+ * which is arbitrary. Prevalence x the author's own confidence puts the
+ * best-evidenced practices at the top of the queue.
+ *
+ * Missing metadata is treated as neutral (one site, even odds) rather than
+ * zero, so an item that simply didn't report its evidence isn't buried.
+ */
+export function reviewValue(item: KnowledgeItemView): number {
+  const evidence = item.evidenceCount ?? 1;
+  const confidence = item.confidence ?? 0.5;
+  return evidence * confidence;
+}
+
 // -- ordering ----------------------------------------------------------------
 
 /** Lifecycle order for status sorting — proposal queue first, canon, then

@@ -159,17 +159,138 @@ The library fills itself. From the library header's **Extract** menu:
   **adoption gaps** (a skill heavily used in one member, absent in a sibling →
   a howto). Candidates land `observed`, dedup-gated. Cheap signal before any LLM
   spend. Command: `dev_tools_workspace_run_miners`.
-- **Harvest a project (AI)** — per member repo, dispatches a Fleet Dev-runner
-  session (the `practice-harvest` skill / `practiceHarvestPrompt.ts` engine)
-  that reads the repo's real conventions and writes
-  `practice-harvest/runs/<id>/result.json`. **Results import themselves** — while
-  the Workspaces surface is open, a poll watches each dispatched session and
-  ingests its run once the work settles (an interactive CLI session parks at
-  `idle`, not `exited`); ingest is idempotent via the run-dir `ingested.json`
-  marker, so firing on idle/exit/vanish is safe. **Import** stays as the manual
-  fallback for runs that finished while the surface was closed. Commands:
-  `dev_tools_workspace_harvest_prepare` → (Fleet) →
-  `dev_tools_workspace_knowledge_ingest`.
+- **Harvest a project (AI)** — dispatches Fleet Dev-runner sessions (the
+  `practice-harvest` skill / `practiceHarvestPrompt.ts` engine) that read the
+  repo and write `practice-harvest/runs/<id>-<scope>/result.json`. Harvest fans
+  out **per scope**, not per repo — see *Scopes and coverage* below. **Results
+  import themselves** — while the Workspaces surface is open, a poll watches
+  each project's harvest sessions and ingests once the wave settles (an
+  interactive CLI session parks at `idle`, not `exited`); ingest is idempotent
+  via the run-dir `ingested.json` marker, so firing on idle/exit/vanish is safe,
+  and a no-argument ingest imports **every** un-ingested run, not just the
+  newest. **Import** stays as the manual fallback for runs that finished while
+  the surface was closed. Commands: `dev_tools_workspace_harvest_prepare` →
+  (Fleet) → `dev_tools_workspace_knowledge_ingest`, with
+  `dev_tools_workspace_harvest_coverage` for the per-scope ledger.
+
+### Scopes and coverage — why harvest fans out
+
+The first harvest engine sent **one agent at a whole repository** with a ~15-item
+cap and the instruction *"prefer a small number of high-signal practices over
+volume"*. On a large codebase that brief is satisfiable **without reading the
+codebase**: the cheapest place to find something that looks like a convention is
+the root config files. A measured run on the Personas repo (2026-07-27) spent
+~11 tool calls over 8,568 tracked files, returned 14 items, and every one came
+from `eslint.config.js` / `lefthook.yml` / `scripts/` / `build.rs` — **nothing**
+from the 236 mapped contexts of feature code. The run was not failing; it was
+complying. Worse, it compounded: the snapshot tells each run which practices
+already exist but never told it *where it had already looked*, so run N+1
+re-read the same configs, hit the dedup list and returned less (an earlier run
+returned 2 items).
+
+Three changes fix it, and they only work together:
+
+1. **Territory** — `personas_core::harvest_scopes` derives named scopes from the
+   repo: one per **group** in `context-map.json` when present (12 groups /
+   ~3,700 files here), otherwise a generic walk grouping files by their first
+   two path segments. `repo-global` (root configs, CI, hooks, scripts) is always
+   emitted — it is a legitimate territory, just not the whole repo. Each session
+   owns exactly one scope and is told to stay in it.
+2. **No item cap** — the prompt asks for everything the territory genuinely
+   supports (usually 5–25). The closed taxonomy in `workspace_taxonomy.rs` is
+   what prevents the 154-topics-for-177-items fragmentation the cap was
+   originally introduced for; keeping both meant the library was protected by
+   the taxonomy *and* starved by the cap. The machine guards remain:
+   `MAX_INGEST_PER_RUN` = 120 candidates, 1 MiB of `result.json`.
+3. **Coverage memory** — `workspace_harvest_coverage` holds one row per (member
+   repo, scope). `last_harvested_at IS NULL` means *never read*, and the backend
+   returns never-read scopes first. Each Harvest click dispatches a bounded
+   **wave** of 4 scopes into the stalest ground and reports how many remain, so
+   repeated clicks advance instead of re-reading. The Extract menu shows
+   `3/13 scopes harvested` per project — an unread codebase can no longer look
+   like a complete one.
+
+Coverage is stamped on what was **read**, not on what survived dedup: a
+territory that was harvested and yielded only duplicates has still been read,
+and re-dispatching it ahead of never-read ground is exactly the decay the ledger
+exists to stop. Runs that predate scopes (or omit the `scope` field) are stamped
+`repo-global`, which is honestly what they read.
+
+### What the first full scan changed (2026-07-27)
+
+Twelve territories were harvested in parallel: **330 items**, against 14 from the
+previous whole-repo run. Contract compliance was near-perfect (0 invented areas,
+0 malformed topics, 0 duplicate titles across 12 independent agents), and the
+closed taxonomy held at **5.8 items/topic** — the fragmentation incident that
+originally motivated the item cap was 1.15. Volume rose 23x and topic density
+improved 5x, which settles the question: the taxonomy protects the library, the
+cap only suppressed reading.
+
+The same scan falsified four things in the design, each fixed:
+
+1. **Fragmentation had simply moved to `ftype`** — 90 distinct values for a field
+   designed with 11 (`guard`, `guardrail`, `convention`, `policy`, …). Only
+   `topic` was ever shipped as a closed vocabulary and normalized at ingest.
+   `ftype` is now closed the same way (`FTYPES` + `FTYPE_HINTS` in
+   `workspace_taxonomy.rs`, shipped in `snapshot.json`, aliased and quarantined
+   by `normalize_ftype`). **Lesson: enforcing one axis does not protect its
+   neighbours.**
+2. **`durability` was a dead axis** — 330 of 330 items said `durable`, because
+   the prompt tells authors mechanical items don't belong here. It is gone from
+   the author contract and ignored at ingest; it is a reviewer's call or nothing.
+3. **`to_process` keyed on `kind` captured 91.5% of the library** — see below.
+4. **`governing_id` was set on 0 of 330 items.** A session sees one territory
+   and cannot know what a topic already holds, so the app derives it after
+   ingest (`roll_up_topic_doctrine`): within a topic, the `macro` item with the
+   most evidence governs the rest. No doctrine, no linking.
+
+Coverage also gained **depth**. Every agent volunteered its real read-depth and
+the pockets it never opened ("~11% of 404 files", "teams/ is the real gap") and
+the first ledger discarded all of it. `result.json` now carries a `coverage`
+block (`files_read` / `files_total` / `estimated_pct` / `unread_pockets`), the
+ledger stores it, the Extract menu shows `4/13 scopes · ~26% read`, and the next
+dispatch for a scope receives the previous pass's unread pockets — which is what
+makes a second wave a second *pass* rather than a re-read.
+
+### `to_process` is earned by evidence, not inferred from kind
+
+The original rule seeded `to_process` for actionable kinds (pitfall/pattern) at
+adoption time. On real data that is 302 of 330 items — and tightening on the
+other axes doesn't help (288 are also `durable` and non-`macro`). A queue holding
+90% of the library is a synonym for "adopted".
+
+The error was conceptual: **`kind` describes the shape of a practice, never
+whether *this repo* violates it.** A pattern the repo already follows is not
+work. Only evidence answers that, and the verify pass already gathers it. So:
+
+| Cell before | Verdict | Cell after | Meaning |
+| --- | --- | --- | --- |
+| `adopted` | holds | `adopted` | still true here |
+| `adopted` | fails | `diverged` | **drift** — the code moved away from canon |
+| `proposed` / `to_process` | fails | `to_process` | **work owed** — this repo does not comply |
+| any | holds | `adopted` | already satisfied here, however the cell got there |
+| `na` | — | `na` | a stack judgement; a code verdict does not resurrect it |
+
+Adoption seeds `proposed` (or `na`) and nothing else. `is_actionable_kind`
+survives as the pre-filter deciding *which* practices are worth spending a
+verification on — a `fact` has no work behind it either way — and the verify
+pass now orders its capped run actionable-first, then never-verified-first.
+`materialize_practice_ideas` (the `to_process` → `dev_ideas` bridge) is
+unchanged and still refuses non-actionable kinds, so the backlog guard holds
+regardless of how the queue was filled.
+
+### Reviewing a large library
+
+330 pending items at one modal each is roughly four hours, which makes the
+governance pillar unmovable and the rational response "don't harvest". So the
+library table supports **bulk review**: multi-select (undecided rows only —
+batch-adopting something already rejected is a mistake, not a shortcut), select-all
+across the *current filters*, and Adopt/Reject on the selection via
+`dev_tools_workspace_knowledge_decide_bulk`. Per-item failures are reported, never
+swallowed: a reviewer who thinks they cleared 50 must not silently have cleared 47.
+The default sort is now **review value** (`evidence_count x confidence`, undecided
+first) rather than ingest order — at this volume the order decides what actually
+gets adjudicated before attention runs out.
 - **Find divergences (AI)** — the question only visible in aggregate: *are
   several member projects solving the same problem in different, locally
   reasonable ways?* Runs **in-app** as a headless background job (not a Fleet

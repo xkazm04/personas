@@ -5,20 +5,22 @@
 // they sit on the category node itself rather than under a fake "scanner"
 // child.
 //
-// Columns are deliberately few. Reasoning, evidence and the E/I/R breakdown are
-// review detail — they live in the ledger, not here, or the title column starves.
+// Columns are deliberately few — fewer still after the truncation fix: with
+// select + category + project + value + created all fixed-width, the flexible
+// Idea column collapsed to a few px inside the Approvals panel. Category
+// already lives in the left rail (the group tree IS the category filter) and
+// the value score stays reachable via the sort pills and the ledger, so both
+// columns are gone and the Idea column gets the room the content needs.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Bot, Check, CheckSquare, ScanSearch, Square, X } from 'lucide-react';
 
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
 import type { DataGridBulkAction, DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { CATEGORY_TW, DEFAULT_CATEGORY_TW } from '@/features/plugins/dev-tools/constants/ideaColors';
 // Cross-feature import, precedented: the sensor palette is defined once next to
 // the badge that renders it, and the Backlog must label origins identically to
 // the findings surfaces or the same sensor reads as two different things.
 import { FindingBadge, useOriginLabel } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
-import { ValueBadge } from '@/features/plugins/dev-tools/sub_scanner/IdeaScannerCards';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import {
@@ -30,7 +32,7 @@ import {
   type BacklogSortKey,
   type SortDir,
 } from './backlogModel';
-import { BACKLOG_CATEGORY_KEYS, useCategoryLabel } from './backlogLabels';
+import { useCategoryLabel } from './backlogLabels';
 
 export function BacklogTable({
   rows,
@@ -69,7 +71,6 @@ export function BacklogTable({
   const categoryLabel = useCategoryLabel();
   const originLabel = useOriginLabel();
 
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
   const [sortKey, setSortKey] = useState<BacklogSortKey>(sortHint?.key ?? 'created');
   const [sortDir, setSortDir] = useState<SortDir>(sortHint?.dir ?? 'desc');
@@ -86,10 +87,8 @@ export function BacklogTable({
   }, [hintKey, hintDir]);
 
   const filterRow = useCallback(
-    (i: BacklogIdea) =>
-      (categoryFilter === 'all' || i.category === categoryFilter) &&
-      (projectFilter === 'all' || (i.projectId ?? '') === projectFilter),
-    [categoryFilter, projectFilter],
+    (i: BacklogIdea) => projectFilter === 'all' || (i.projectId ?? '') === projectFilter,
+    [projectFilter],
   );
 
   const compare = useCallback(
@@ -102,7 +101,7 @@ export function BacklogTable({
     else {
       setSortKey(key as BacklogSortKey);
       // Text sorts read best A→Z; scores and dates read best best/newest-first.
-      setSortDir(key === 'title' || key === 'project' || key === 'category' ? 'asc' : 'desc');
+      setSortDir(key === 'title' || key === 'project' ? 'asc' : 'desc');
     }
   };
 
@@ -129,38 +128,28 @@ export function BacklogTable({
       ),
     },
     {
-      key: 'category',
-      label: r.backlog_col_category,
-      width: '132px',
-      sortable: true,
-      filterOptions: [
-        { value: 'all', label: r.backlog_all_categories },
-        ...BACKLOG_CATEGORY_KEYS.map((k) => ({ value: k, label: categoryLabel(k) })),
-      ],
-      filterValue: categoryFilter,
-      onFilterChange: setCategoryFilter,
-      render: (row) => {
-        const tw = CATEGORY_TW[row.category] ?? DEFAULT_CATEGORY_TW;
-        return (
-          <span className={`typo-label rounded-full px-2 py-0.5 border ${tw.bg} ${tw.text} ${tw.border}`}>
-            {categoryLabel(row.category)}
-          </span>
-        );
-      },
-    },
-    {
       key: 'title',
       label: r.backlog_col_title,
       width: 'minmax(0, 1fr)',
       sortable: true,
       render: (row) => (
         <span className="flex items-center gap-2 min-w-0">
-          <span className="typo-body text-foreground truncate" title={row.description || row.title}>
+          <span className="typo-body text-foreground truncate min-w-0" title={row.title}>
             {row.title}
           </span>
           {row.origin && (
             <span onClick={(e) => e.stopPropagation()} className="shrink-0">
               <FindingBadge origin={row.origin} evidence={row.evidence} />
+            </span>
+          )}
+          {/* basis-0 + grow: the snippet only ever fills space the title and
+              badge left over — the headline is the row's identity and wins. */}
+          {row.description && (
+            <span
+              className="typo-caption text-muted-foreground truncate min-w-0 flex-1 basis-0"
+              title={row.description}
+            >
+              {row.description}
             </span>
           )}
         </span>
@@ -184,23 +173,6 @@ export function BacklogTable({
       ),
     },
     {
-      key: 'value',
-      label: r.backlog_col_value,
-      width: '190px',
-      sortable: true,
-      render: (row) => (
-        <span className="flex items-center gap-1.5 min-w-0">
-          <ValueBadge idea={row} />
-          <span
-            className="typo-caption text-muted-foreground tabular-nums whitespace-nowrap"
-            title={`${r.backlog_effort_title} · ${r.backlog_impact_title} · ${r.backlog_risk_title}`}
-          >
-            E{row.effort} I{row.impact} R{row.risk}
-          </span>
-        </span>
-      ),
-    },
-    {
       key: 'created',
       label: r.backlog_col_created,
       width: '96px',
@@ -210,7 +182,7 @@ export function BacklogTable({
         <RelativeTime timestamp={row.createdAt} className="typo-caption text-muted-foreground" />
       ),
     },
-  ], [r, categoryLabel, categoryFilter, projectFilter, projectOptions, selectedIds, onToggleSelect]);
+  ], [r, projectFilter, projectOptions, selectedIds, onToggleSelect]);
 
   const bulkActions: DataGridBulkAction[] = [
     { id: 'accept', label: r.backlog_bulk_accept, icon: Check, onClick: onBulkAccept },

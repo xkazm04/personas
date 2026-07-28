@@ -166,6 +166,172 @@ pub fn normalize_topic(raw: Option<&str>) -> String {
     }
 }
 
+// ============================================================================
+// ftype — the SHAPE axis, closed for the same reason `topic` is
+// ============================================================================
+//
+// `topic` answers WHERE a practice lives; `ftype` answers WHAT SHAPE it is.
+// Only `topic` was ever enforced, and the 2026-07-27 twelve-territory scan
+// showed exactly what that costs: 330 items produced **90 distinct ftypes**
+// for a field designed with 11 — `guardrail`(18), `guard`(17), `convention`
+// (13), `policy`(11), then a tail of singletons (`reliability-honesty`,
+// `user-honesty`, `progressive-rendering`). That is the 154-topics-for-177-
+// items fragmentation reproduced on the axis nobody closed, at 8x the rate,
+// while the closed `topic` axis held at 5.8 items/topic.
+//
+// So: same closed list, same aliasing, same visible shelf. An unrecognized
+// ftype lands on `unsorted` rather than being invented into the vocabulary or
+// silently dropped — a filter over a field where every writer coins their own
+// value is not a filter.
+
+/// Closed shape vocabulary.
+pub const FTYPES: &[&str] = &[
+    "architecture",
+    "module-boundary",
+    "data-flow",
+    "extensibility",
+    "api-design",
+    "state-mgmt",
+    "error-strategy",
+    "concurrency-reliability",
+    "perf-strategy",
+    "testing-strategy",
+    "micro-technique",
+];
+
+/// One-line gloss per shape, shipped to agents so they classify instead of
+/// coining. Written from what the scan's 90 improvised values were reaching
+/// for — `guard`/`guardrail`/`trap`/`anti-pattern` are all error-strategy or
+/// input-hardening in disguise, not new shapes.
+pub const FTYPE_HINTS: &[(&str, &str)] = &[
+    ("architecture", "the system's own skeleton — layering, ownership, what may depend on what"),
+    ("module-boundary", "what one unit exposes and what it refuses to leak"),
+    ("data-flow", "how a value travels and where it is transformed"),
+    ("extensibility", "how a new case is added without editing the core"),
+    ("api-design", "the shape of a call: arguments, return contract, naming"),
+    ("state-mgmt", "who owns mutable state and when it changes"),
+    ("error-strategy", "how failure is represented, guarded, degraded or surfaced (this covers guards, traps and anti-patterns)"),
+    ("concurrency-reliability", "ordering, cancellation, retries, races, idempotency"),
+    ("perf-strategy", "latency, throughput, memory, caching, budgets"),
+    ("testing-strategy", "how the property is verified or pinned"),
+    ("micro-technique", "a local idiom — the smallest useful shape"),
+];
+
+/// Aliases seen in the wild, mapped onto the closed list. Extend from real
+/// drift, not from imagination.
+const FTYPE_ALIASES: &[(&str, &str)] = &[
+    ("guard", "error-strategy"),
+    ("guardrail", "error-strategy"),
+    ("trap", "error-strategy"),
+    ("anti-pattern", "error-strategy"),
+    ("failure-handling", "error-strategy"),
+    ("failure-mode", "error-strategy"),
+    ("fallback-strategy", "error-strategy"),
+    ("resilience", "error-strategy"),
+    ("safety", "error-strategy"),
+    ("correctness", "error-strategy"),
+    ("correctness-rule", "error-strategy"),
+    ("invariant", "error-strategy"),
+    ("concurrency-control", "concurrency-reliability"),
+    ("state-machine", "state-mgmt"),
+    ("state-pattern", "state-mgmt"),
+    ("state-hygiene", "state-mgmt"),
+    ("lifecycle", "state-mgmt"),
+    ("sequencing", "concurrency-reliability"),
+    ("perf-technique", "perf-strategy"),
+    ("performance", "perf-strategy"),
+    ("rendering-performance", "perf-strategy"),
+    ("cache-strategy", "perf-strategy"),
+    ("resource-discipline", "perf-strategy"),
+    ("progressive-rendering", "perf-strategy"),
+    ("contract", "api-design"),
+    ("api-contract", "api-design"),
+    ("data-contract", "api-design"),
+    ("integration-contract", "api-design"),
+    ("protocol", "api-design"),
+    ("ux-contract", "api-design"),
+    ("boundary", "module-boundary"),
+    ("boundary-ownership", "module-boundary"),
+    ("boundary-hardening", "module-boundary"),
+    ("seam", "module-boundary"),
+    ("chokepoint", "module-boundary"),
+    ("structure", "architecture"),
+    ("design-decision", "architecture"),
+    ("decision-record", "architecture"),
+    ("data-modeling", "data-flow"),
+    ("data-pattern", "data-flow"),
+    ("data-integrity", "data-flow"),
+    ("persistence-pattern", "data-flow"),
+    ("event-pattern", "data-flow"),
+    ("test-strategy", "testing-strategy"),
+    ("testability", "testing-strategy"),
+    ("harness", "testing-strategy"),
+    ("instrumentation", "micro-technique"),
+    ("diagnostic", "micro-technique"),
+    ("observability", "micro-technique"),
+    ("recipe", "micro-technique"),
+    ("checklist", "micro-technique"),
+    ("convention", "micro-technique"),
+    ("rule", "micro-technique"),
+    ("design-rule", "micro-technique"),
+    ("pattern", "micro-technique"),
+    ("primitive", "micro-technique"),
+    ("mechanism", "micro-technique"),
+    ("algorithm", "micro-technique"),
+    ("policy", "architecture"),
+    ("config", "architecture"),
+    ("configuration", "architecture"),
+    ("rollout", "architecture"),
+    ("workflow", "architecture"),
+    ("maintainability", "architecture"),
+    ("gate", "error-strategy"),
+    ("consent-gate", "error-strategy"),
+    ("security-control", "error-strategy"),
+    ("denylist", "error-strategy"),
+    ("user-honesty", "error-strategy"),
+    ("reliability-honesty", "error-strategy"),
+    ("ux", "micro-technique"),
+    ("ui-pattern", "micro-technique"),
+    ("a11y", "micro-technique"),
+    ("abstraction", "architecture"),
+    ("prompt-design", "api-design"),
+    ("cross-language-consistency", "api-design"),
+    ("integration-pitfall", "error-strategy"),
+    ("liveness-detection", "concurrency-reliability"),
+];
+
+pub fn is_ftype(s: &str) -> bool {
+    FTYPES.contains(&s)
+}
+
+/// Coerce any writer's ftype onto the closed list. `None`/empty stays `None`
+/// (unset is honest); an unrecognized value lands on [`UNSORTED_LEAF`] so it
+/// shows up as a shelf to be filed rather than a 90th private vocabulary word.
+pub fn normalize_ftype(raw: Option<&str>) -> Option<String> {
+    let raw = raw.unwrap_or("").trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let s = slug(raw);
+    if is_ftype(&s) {
+        return Some(s);
+    }
+    if let Some((_, to)) = FTYPE_ALIASES.iter().find(|(from, _)| *from == s) {
+        return Some((*to).to_string());
+    }
+    Some(UNSORTED_LEAF.to_string())
+}
+
+/// The ftype vocabulary rendered for an agent prompt.
+pub fn ftype_prompt_block() -> String {
+    let mut s = String::new();
+    for (t, hint) in FTYPE_HINTS {
+        s.push_str(&format!("- `{t}` — {hint}
+"));
+    }
+    s
+}
+
 /// The taxonomy rendered for an agent prompt — the closed area list in
 /// precedence order with its starter clusters.
 pub fn prompt_block() -> String {
@@ -188,6 +354,42 @@ pub fn prompt_block() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ftype_closes_the_shape_axis() {
+        // Exact hits and casing/spacing noise.
+        assert_eq!(normalize_ftype(Some("error-strategy")).as_deref(), Some("error-strategy"));
+        assert_eq!(normalize_ftype(Some("Error Strategy")).as_deref(), Some("error-strategy"));
+        // The real drift from the 12-territory scan, mapped not invented.
+        for raw in ["guard", "guardrail", "trap", "anti-pattern", "user-honesty"] {
+            assert_eq!(
+                normalize_ftype(Some(raw)).as_deref(),
+                Some("error-strategy"),
+                "{raw} should land on error-strategy"
+            );
+        }
+        assert_eq!(normalize_ftype(Some("perf-technique")).as_deref(), Some("perf-strategy"));
+        assert_eq!(normalize_ftype(Some("contract")).as_deref(), Some("api-design"));
+        assert_eq!(normalize_ftype(Some("boundary")).as_deref(), Some("module-boundary"));
+        // Unknown lands on a visible shelf, never a 90th private word.
+        assert_eq!(normalize_ftype(Some("bespoke-nonsense")).as_deref(), Some(UNSORTED_LEAF));
+        // Unset stays unset — "no shape given" is not "shape unknown".
+        assert_eq!(normalize_ftype(None), None);
+        assert_eq!(normalize_ftype(Some("   ")), None);
+    }
+
+    #[test]
+    fn every_ftype_alias_targets_a_real_ftype() {
+        // An alias pointing at a typo'd target would silently quarantine.
+        for (from, to) in FTYPE_ALIASES {
+            assert!(is_ftype(to), "alias {from} -> {to} is not a real ftype");
+            assert!(!is_ftype(from), "alias {from} is already a canonical ftype");
+        }
+        for (t, _) in FTYPE_HINTS {
+            assert!(is_ftype(t), "hint for unknown ftype {t}");
+        }
+        assert_eq!(FTYPE_HINTS.len(), FTYPES.len(), "every ftype needs a gloss");
+    }
 
     #[test]
     fn areas_and_clusters_are_unique_and_kebab() {

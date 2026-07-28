@@ -29,29 +29,34 @@ const PROGRESS_COLORS: Record<AgentActivityType, { dot: string; ping: string; te
   lab:   { dot: 'bg-orange-500',  ping: 'bg-orange-500/40',  text: 'text-orange-300',  bg: 'bg-orange-500/5',  border: 'border-orange-500/20' },
 };
 
-// Health status rendered as a colored 3px left border on the persona row
-// instead of a separate icon + dot. Frees the full row width for the
-// persona name. Running state (orange) takes precedence over health so
-// in-flight execution is the dominant signal when both apply. The
-// `border-l-[3px]` width is always reserved so rows align horizontally
-// regardless of whether a status color is present.
-const HEALTH_BORDER: Record<string, string> = {
-  healthy:   'border-l-emerald-400',
-  degraded:  'border-l-amber-400',
-  critical:  'border-l-red-400',
-  unhealthy: 'border-l-red-400',
+// Health status rendered as a dot pinned to the row's right edge. It used to
+// be a 3px colored left border, but every persona row now sits inside a
+// group's left rail — a second colored bar immediately beside that rail read
+// as part of the rail rather than as a per-agent signal. Moving it to the
+// right edge separates the two, and puts agent status in the same place as
+// every other right-edge signal in the sidebar (counts, activity pulses).
+// Running (orange, pulsing) takes precedence over health so in-flight
+// execution is the dominant signal when both apply.
+const HEALTH_DOT: Record<string, string> = {
+  healthy:   'bg-emerald-400',
+  degraded:  'bg-amber-400',
+  critical:  'bg-red-400',
+  unhealthy: 'bg-red-400',
 };
 
-function rowStatusBorder(grade: string | undefined, isRunning: boolean): string {
-  if (isRunning) return 'border-l-[3px] border-l-orange-500';
-  const healthClass = grade ? HEALTH_BORDER[grade] : undefined;
-  return `border-l-[3px] ${healthClass ?? 'border-l-transparent'}`;
-}
-
-function rowStatusTitle(grade: string | undefined, isRunning: boolean): string | undefined {
-  if (isRunning) return 'Running';
-  if (grade) return `Health: ${grade}`;
-  return undefined;
+/** The row's status dot, or null when the agent has neither state. */
+function StatusDot({ grade, isRunning, label }: { grade: string | undefined; isRunning: boolean; label: string | undefined }) {
+  if (isRunning) {
+    return (
+      <span className="relative flex h-2 w-2 flex-shrink-0" aria-label={label} title={label}>
+        <span className="absolute inset-0 rounded-full animate-ping bg-orange-500/40" />
+        <span className="relative h-2 w-2 rounded-full bg-orange-500" />
+      </span>
+    );
+  }
+  const color = grade ? HEALTH_DOT[grade] : undefined;
+  if (!color) return null;
+  return <span className={`h-2 w-2 flex-shrink-0 rounded-full ${color}`} aria-label={label} title={label} />;
 }
 
 export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => void }) {
@@ -223,8 +228,16 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
 
   // ── Row renderers ───────────────────────────────────────────────────
   // Persona rows live inside a group's left rail, so they use the shared
-  // `childRowClass` and only add what's specific to an agent: the health /
-  // running status border and the favorite toggle.
+  // `childRowClass` and only add what's specific to an agent: the favorite
+  // toggle and the right-edge status dot.
+
+  /** Health / running tooltip, built from labels the catalog already carries. */
+  const statusLabel = (grade: string | undefined, isRunning: boolean): string | undefined => {
+    if (isRunning) return tokenLabel(t, 'execution', 'running');
+    if (!grade) return undefined;
+    const health = t.agents.health_score as Record<string, string | undefined>;
+    return health[grade] ?? t.status_tokens.severity.critical;
+  };
 
   const personaRow = (
     p: { id: string; name: string },
@@ -232,7 +245,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   ) => {
     const isRunning = executingPersonaIds.has(p.id);
     const isActive = selectedPersonaId === p.id && !isCreatingPersona;
-    const statusBorder = rowStatusBorder(healthGrades[p.id], isRunning);
+    const grade = healthGrades[p.id];
+    const status = statusLabel(grade, isRunning);
     return (
       <button
         type="button"
@@ -240,8 +254,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         {...getPrefetchProps(p.id)}
         onClick={() => selectPersona(p.id)}
         aria-current={isActive ? 'page' : undefined}
-        title={opts.tooltip ?? rowStatusTitle(healthGrades[p.id], isRunning)}
-        className={`${childRowClass(isActive)} group ${statusBorder} ${isRunning && !isActive ? 'bg-orange-500/5' : ''}`}
+        title={opts.tooltip ?? status}
+        className={`${childRowClass(isActive)} group ${isRunning && !isActive ? 'bg-orange-500/5' : ''}`}
       >
         <span className={`truncate min-w-0 flex-1 text-left ${isRunning && !isActive ? 'text-orange-300/90' : ''}`}>
           {p.name}
@@ -260,6 +274,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             <Star className={`w-3 h-3 ${favorites.has(p.id) ? 'text-amber-400 fill-amber-400' : 'text-foreground/90'}`} aria-hidden="true" />
           </span>
         )}
+        <StatusDot grade={grade} isRunning={isRunning} label={status} />
       </button>
     );
   };

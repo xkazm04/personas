@@ -6329,6 +6329,80 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- workspace_harvest_coverage: which territory has been read ----------
+    // The harvest engine used to send one agent at a whole repository with an
+    // item cap and no map, so it read the root configs and stopped — and had
+    // no way to know that on the next run either. This table is the memory:
+    // one row per (member repo, scope), NULL `last_harvested_at` meaning "never
+    // read". Rows are rebuilt from the derived scope list on every prepare,
+    // preserving harvest history for scopes that survive a re-scan.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS workspace_harvest_coverage (
+            project_id        TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            scope_id          TEXT NOT NULL,
+            scope_label       TEXT NOT NULL,
+            kind              TEXT NOT NULL DEFAULT 'group',
+            file_count        INTEGER NOT NULL DEFAULT 0,
+            last_harvested_at TEXT,
+            last_run_dir      TEXT,
+            items_found       INTEGER NOT NULL DEFAULT 0,
+            run_count         INTEGER NOT NULL DEFAULT 0,
+            updated_at        TEXT NOT NULL,
+            PRIMARY KEY (project_id, scope_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_harvest_coverage_project
+            ON workspace_harvest_coverage(project_id, last_harvested_at);",
+    )?;
+
+    // -- coverage DEPTH, not just visits ------------------------------------
+    // The first coverage ledger recorded WHETHER a territory had been visited.
+    // The 2026-07-27 twelve-territory scan showed that is not enough: every
+    // agent volunteered a real read-depth ("~11% of 404 files", "26% of 508",
+    // "~7% of the command layer") plus the specific pockets it never opened —
+    // and all of it was discarded, leaving a territory read at 11% and one read
+    // exhaustively indistinguishable. That is the same "visited == covered"
+    // error the scoping work exists to remove, one level up.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_harvest_coverage.depth",
+            description: "Record how much of a scope was actually read (files_read / files_total / estimated_pct) and which pockets were left unread, so coverage reports depth instead of a visit and the next wave can resume into the gaps.",
+            already_applied: |conn| has_column(conn, "workspace_harvest_coverage", "estimated_pct"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE workspace_harvest_coverage ADD COLUMN files_read INTEGER;
+                     ALTER TABLE workspace_harvest_coverage ADD COLUMN files_total INTEGER;
+                     ALTER TABLE workspace_harvest_coverage ADD COLUMN estimated_pct INTEGER;
+                     ALTER TABLE workspace_harvest_coverage ADD COLUMN unread_pockets TEXT;
+                     ALTER TABLE workspace_harvest_coverage ADD COLUMN coverage_note TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- workspace_knowledge.harvest_scope ----------------------------------
+    // Which territory produced a practice. Without it the library cannot be
+    // filtered or measured by scope, and yield-per-territory — the number that
+    // tells you whether a scope is worth re-dispatching — is uncomputable.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "workspace_knowledge.harvest_scope",
+            description: "Stamp the harvest scope (territory) that produced each practice, so the library can filter by territory and yield-per-scope is measurable.",
+            already_applied: |conn| has_column(conn, "workspace_knowledge", "harvest_scope"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE workspace_knowledge ADD COLUMN harvest_scope TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 

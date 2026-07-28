@@ -13,6 +13,8 @@ import type { IngestSummary } from "@/lib/bindings/IngestSummary";
 import type { ProjectionResult } from "@/lib/bindings/ProjectionResult";
 import type { WorkspaceImportItem } from "@/lib/bindings/WorkspaceImportItem";
 import type { WorkspaceKnowledge } from "@/lib/bindings/WorkspaceKnowledge";
+import type { BulkDecision } from "@/lib/bindings/BulkDecision";
+import type { WorkspaceHarvestCoverage } from "@/lib/bindings/WorkspaceHarvestCoverage";
 import type { WorkspacePracticeAdoption } from "@/lib/bindings/WorkspacePracticeAdoption";
 
 export type KnowledgeKind = "pattern" | "pitfall" | "decision" | "howto" | "fact";
@@ -154,6 +156,27 @@ export async function decideWorkspaceKnowledge(
   });
 }
 
+/**
+ * Adjudicate many practices at once.
+ *
+ * A twelve-territory harvest lands a few hundred `observed` items; at one modal
+ * per item the review queue is measured in hours and the governance pillar
+ * never moves. Same gate as the single decide — only the batch size changes.
+ * Per-item failures come back in `failed` rather than sinking the batch.
+ */
+export async function decideWorkspaceKnowledgeBulk(
+  ids: string[],
+  decision: KnowledgeDecision,
+): Promise<BulkDecision> {
+  return invoke<BulkDecision>("dev_tools_workspace_knowledge_decide_bulk", { ids, decision });
+}
+
+/** Derive `governing_id` across a workspace: within each topic, the macro
+ *  doctrine adopts its instances. Runs automatically after ingest. */
+export async function rollUpDoctrine(workspaceId: string): Promise<number> {
+  return invoke<number>("dev_tools_workspace_roll_up_doctrine", { workspaceId });
+}
+
 export async function deleteWorkspaceKnowledge(id: string): Promise<boolean> {
   return invoke<boolean>("dev_tools_workspace_knowledge_delete", { id });
 }
@@ -201,7 +224,7 @@ export async function backfillPracticeIdeas(): Promise<number> {
 
 // -- extraction engine (Arc 2) -----------------------------------------------
 
-export type { IngestSummary };
+export type { IngestSummary, WorkspaceHarvestCoverage };
 
 /** Run the deterministic (no-LLM) miners over a workspace and ingest their
  *  candidates as `observed` knowledge with miner provenance. Cheap signal
@@ -218,8 +241,19 @@ export async function prepareWorkspaceHarvest(
   return invoke<HarvestPrepared>("dev_tools_workspace_harvest_prepare", { workspaceId, projectId });
 }
 
-/** Ingest a finished harvest run from a member repo into the workspace library
- *  (newest un-ingested run by default). Items land `observed`, dedup-gated. */
+/** Per-scope harvest coverage for one member repo — which territories have
+ *  ever been read, when, and with what yield. Never-harvested scopes sort
+ *  first, so the caller can dispatch into unread ground without re-deriving
+ *  the order. */
+export async function listHarvestCoverage(
+  projectId: string,
+): Promise<WorkspaceHarvestCoverage[]> {
+  return invoke<WorkspaceHarvestCoverage[]>("dev_tools_workspace_harvest_coverage", { projectId });
+}
+
+/** Ingest finished harvest run(s) from a member repo into the workspace
+ *  library. With no `runDir` EVERY un-ingested run is imported — a scope
+ *  fan-out produces one per territory. Items land `observed`, dedup-gated. */
 export async function ingestWorkspaceHarvest(
   workspaceId: string,
   projectId: string,
@@ -280,6 +314,11 @@ export interface VerifyStatus {
   lines?: string[];
   checked?: number;
   diverged?: number;
+  /** How many practices the run was asked to rule on. */
+  selected?: number;
+  /** Selected minus checked — verdicts that never landed. A run that lost most
+   *  of its work must not read like a clean one. */
+  lost?: number;
 }
 
 /** Verify that a project's adopted practices still hold in its code. A failed

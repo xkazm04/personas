@@ -753,9 +753,11 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
           </button>
         ))}
       </div>
-      <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
+      {/* min-h-0 + flex column so the empty state's flex-1 actually stretches
+          and centers, same contract as the Triage pane above. */}
+      <div className="flex-1 min-h-0 flex flex-col divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
         {filtered.length === 0 ? (
-          <EmptyState variant="stream" dominant className="flex-1 py-8" />
+          <EmptyState variant="stream" dominant className="flex-1 min-h-0 py-6" />
         ) : (
           filtered.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

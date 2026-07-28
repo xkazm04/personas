@@ -50,15 +50,33 @@ fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
 }
 
 const VERIFY_MODEL: &str = "claude-sonnet-4-6";
-const VERIFY_TIMEOUT_SECS: u64 = 900;
+const VERIFY_TIMEOUT_SECS: u64 = 1_200;
 /// Practices checked in one pass. Verification reads real code per item, so a
 /// huge batch is both slow and lower quality than several focused passes.
-const MAX_VERIFY_PER_RUN: usize = 25;
+/// Practices per verification run.
+///
+/// Was 25, which never actually ran: before `to_process` became evidence-driven
+/// this pass only considered cells already at `adopted`, and a project whose
+/// cells were all `proposed` errored out before spawning anything. The first
+/// real run at 25 (2026-07-27, 168 eligible cells) hit the wall timeout with
+/// ZERO verdicts — 25 practices each needing real grep work does not fit a
+/// 15-minute window, and the session emitted nothing until it was killed.
+///
+/// Eight is sized off that measurement: the same window, ~2 minutes per
+/// practice, with margin. Coverage comes from repeated runs — the pass is
+/// resumable by construction, since a verified cell is no longer `proposed`.
+const MAX_VERIFY_PER_RUN: usize = 8;
 
 #[derive(Clone, Default)]
 struct VerifyExtra {
     checked: u32,
     diverged: u32,
+    /// How many practices this run was ASKED to rule on. Without it a run that
+    /// lost most of its verdicts is indistinguishable from a small run.
+    selected: u32,
+    /// Selected minus checked — verdicts the session claimed or should have
+    /// produced that never landed. Surfaced rather than swallowed.
+    lost: u32,
 }
 
 static VERIFY_JOBS: BackgroundJobManager<VerifyExtra> = BackgroundJobManager::new(
@@ -74,14 +92,47 @@ struct Verdict {
     n: usize,
     holds: bool,
     evidence: Option<String>,
+    /// Does the practice apply to this repo AT ALL?
+    ///
+    /// `applicability` is a static envelope of stacks/frameworks, it FAILS OPEN
+    /// (no envelope = applies everywhere), and harvested practices mostly carry
+    /// no envelope. The first real verify run showed what that costs: seven
+    /// Next.js/SaaS practices were queued as work owed by a Tauri desktop app,
+    /// on verdicts that literally read "No Next.js API layer is present; all
+    /// backend communication is via Tauri IPC". A correct observation turned
+    /// into a wrong conclusion, because the only outcomes were holds/doesn't.
+    ///
+    /// The verifier is the one thing that actually reads the repo, so it is the
+    /// right place to make the call the envelope cannot. Defaults true so an
+    /// older session that omits the field behaves exactly as before.
+    #[serde(default = "applies_by_default")]
+    applies: bool,
 }
 
+fn applies_by_default() -> bool {
+    true
+}
+
+/// Pull a verdict out of a line.
+///
+/// Deliberately tolerant about what surrounds the JSON. The strict
+/// `strip_prefix` version required `VERDICT:` at the very start of the line,
+/// and a real run lost SEVEN of eight verdicts to it — the session reported
+/// "SUMMARY: 8 verified" while one landed. A model that writes `- VERDICT: {…}`
+/// or appends a trailing word has still done the work; refusing to read it just
+/// throws away a repo scan. The JSON span itself is still parsed strictly.
 fn parse_verdict(line: &str) -> Option<Verdict> {
-    let rest = line.trim().strip_prefix("VERDICT:")?;
-    match serde_json::from_str::<Verdict>(rest.trim()) {
+    let idx = line.find("VERDICT:")?;
+    let rest = &line[idx + "VERDICT:".len()..];
+    let start = rest.find('{')?;
+    let end = rest.rfind('}')?;
+    if end < start {
+        return None;
+    }
+    match serde_json::from_str::<Verdict>(&rest[start..=end]) {
         Ok(v) => Some(v),
         Err(e) => {
-            tracing::warn!(error = %e, "verify: unparseable verdict line");
+            tracing::warn!(error = %e, line = %line, "verify: unparseable verdict line");
             None
         }
     }
@@ -111,15 +162,18 @@ ADOPTED PRACTICES TO VERIFY
 FOR EACH, decide: does this codebase currently reflect the practice?
 - **holds = true** — the code follows it (allow for reasonable local adaptation; the practice is a doctrine, not a literal template).
 - **holds = false** — the code has drifted, or never actually implemented it, or now contradicts it.
+- **applies = false** — the practice targets a stack, framework or concern **this repository does not have**, so there is nothing here to follow or drift from. This is NOT the same as `holds = false`. A Next.js API-layer practice in a Tauri desktop app, or a Postgres-tenancy practice in a repo with no database, does not apply — saying "the code does not do this" would file real work against a repo that should never do it. When `applies` is false, `holds` is ignored; say in the evidence WHY the practice is out of scope for this stack.
 
 METHOD: check the code, don't guess. Grep for the pattern's real call sites and counter-examples. A practice can be partially applied — if the dominant path follows it and a corner does not, that still holds; if the dominant path has drifted, it does not.
 
 BE CONSERVATIVE ABOUT FAILING. A false "diverged" costs a human an investigation and erodes trust in the matrix. If you cannot find clear evidence either way, report holds = true with evidence saying the check was inconclusive — silence is safer than a false alarm.
 
 OUTPUT CONTRACT — one line per practice, nothing else on that line:
-VERDICT: {{"n":<the number above>,"holds":true|false,"evidence":"what you found, with file:line"}}
+VERDICT: {{"n":<the number above>,"applies":true|false,"holds":true|false,"evidence":"what you found, with file:line"}}
 
-Emit exactly one VERDICT line per practice listed. When finished emit:
+**EMIT EACH VERDICT THE MOMENT YOU DECIDE IT — before you start looking at the next practice.** Do not gather all your findings and print them at the end. Verdicts are consumed as they stream, and a run that is cut short keeps every verdict it has already emitted; one that batches its output to the end loses all of them. (A 25-practice run did exactly that and returned nothing.)
+
+Work through the list in order, one at a time: investigate practice 1, emit its VERDICT line, then move to practice 2. When finished emit:
 SUMMARY: <n> verified
 
 Do not modify any file. Your output lines are the entire deliverable."#
@@ -149,25 +203,44 @@ pub async fn dev_tools_workspace_verify_adoptions(
         )));
     }
 
-    // Only practices this project has actually adopted are verifiable — a
-    // proposed one has nothing to have drifted from.
+    // Verification is no longer only about DRIFT. Since `to_process` became
+    // evidence-driven, this pass answers two questions at once:
+    //   - `adopted` cells: does canon this repo applied still hold? (drift)
+    //   - `proposed`/`to_process` cells: does this repo comply at all? (work)
+    // A cell is verifiable in either state; the verdict's MEANING comes from
+    // the prior state (repo::adoption_state_after_verdict).
     let adoption = repo::list_adoption(&state.db, &workspace_id)?;
-    let adopted_here: std::collections::HashSet<String> = adoption
+    let prior_state: std::collections::HashMap<String, String> = adoption
         .iter()
-        .filter(|a| a.project_id == project_id && a.state == "adopted")
-        .map(|a| a.practice_id.clone())
+        .filter(|a| a.project_id == project_id && a.state != "na")
+        .map(|a| (a.practice_id.clone(), a.state.clone()))
         .collect();
-    if adopted_here.is_empty() {
+    if prior_state.is_empty() {
         return Err(AppError::Validation(
-            "This project has not adopted any practices yet — nothing to verify.".into(),
+            "This project has no applicable adopted practices yet — nothing to verify.".into(),
         ));
     }
     let knowledge = repo::list_knowledge(&state.db, &workspace_id, None)?;
-    let practices: Vec<WorkspaceKnowledge> = knowledge
+    let mut candidates: Vec<WorkspaceKnowledge> = knowledge
         .into_iter()
-        .filter(|k| adopted_here.contains(&k.id))
-        .take(MAX_VERIFY_PER_RUN)
+        .filter(|k| prior_state.contains_key(&k.id))
         .collect();
+    // A run is capped, so ORDER decides what gets verified. Actionable kinds
+    // first: `kind` cannot tell you whether a repo complies, but it is a fine
+    // pre-filter for which practices are worth spending a verification on — a
+    // `fact` has no work behind it either way. Then never-verified cells
+    // (`proposed`) ahead of re-checks, so the queue fills before it refreshes.
+    candidates.sort_by_key(|k| {
+        let actionable = if repo::is_actionable_kind(&k.kind) { 0 } else { 1 };
+        let unseen = match prior_state.get(&k.id).map(String::as_str) {
+            Some("proposed") => 0,
+            Some("to_process") => 1,
+            _ => 2,
+        };
+        (actionable, unseen, k.id.clone())
+    });
+    let practices: Vec<WorkspaceKnowledge> =
+        candidates.into_iter().take(MAX_VERIFY_PER_RUN).collect();
 
     let refs: Vec<&WorkspaceKnowledge> = practices.iter().collect();
     let prompt = build_verify_prompt(&project.name, &refs);
@@ -179,18 +252,21 @@ pub async fn dev_tools_workspace_verify_adoptions(
     VERIFY_JOBS.insert_running(job_id.clone(), token.clone(), VerifyExtra::default())?;
 
     let db = state.db.clone();
+    let priors = prior_state;
     let jid = job_id.clone();
     let pid = project_id.clone();
     let app_for_panic = app.clone();
     let jid_for_panic = jid.clone();
     tauri::async_runtime::spawn(async move {
         let work = AssertUnwindSafe(async move {
-            match run_verify(&app, &jid, &db, &pid, &ids, &titles, prompt, root, token).await {
+            match run_verify(&app, &jid, &db, &pid, &ids, &titles, &priors, prompt, root, token)
+                .await
+            {
                 Ok((checked, diverged)) => {
                     VERIFY_JOBS.emit_line(
                         &app,
                         &jid,
-                        format!("[Complete] {checked} verified · {diverged} diverged"),
+                        format!("[Complete] {checked} verified · {diverged} need work"),
                     );
                     VERIFY_JOBS.set_status(&app, &jid, "completed", None);
                 }
@@ -233,6 +309,8 @@ pub fn dev_tools_workspace_get_verify_status(
             "lines": job.lines,
             "checked": job.extra.checked,
             "diverged": job.extra.diverged,
+            "selected": job.extra.selected,
+            "lost": job.extra.lost,
         }))
     } else {
         Ok(json!({ "job_id": job_id, "status": "not_found" }))
@@ -257,6 +335,9 @@ async fn run_verify(
     project_id: &str,
     ids: &[String],
     titles: &[String],
+    // Cell state BEFORE this pass, per practice id. The verdict is the same
+    // signal either way; what it means depends on where the cell already was.
+    priors: &std::collections::HashMap<String, String>,
     prompt: String,
     root: std::path::PathBuf,
     token: CancellationToken,
@@ -264,7 +345,7 @@ async fn run_verify(
     VERIFY_JOBS.emit_line(
         app,
         job_id,
-        format!("[Milestone] Verifying {} adopted practices…", ids.len()),
+        format!("[Milestone] Verifying {} practices…", ids.len()),
     );
 
     let mut child = crate::engine::cli_process::spawn_headless_claude(
@@ -360,7 +441,11 @@ async fn run_verify(
             continue; // a repeated verdict for one item — first wins
         }
         let practice_id = &ids[v.n - 1];
-        let state = if v.holds { "adopted" } else { "diverged" };
+        let prior = priors
+            .get(practice_id)
+            .map(String::as_str)
+            .unwrap_or("proposed");
+        let state = repo::adoption_state_after_verdict(prior, v.holds, v.applies);
         let note = v.evidence.as_deref().map(|e| {
             let trimmed = e.trim();
             crate::utils::text::truncate_on_char_boundary(trimmed, 600).to_string()
@@ -374,9 +459,25 @@ async fn run_verify(
             diverged += 1;
         }
     }
+    // Reconcile what we were asked to do against what actually landed. A pass
+    // that ruled on 1 of 8 must not read like a clean run: the whole point of
+    // this feature is that a surface never reports more coverage than it has.
+    let selected = ids.len() as u32;
+    let lost = selected.saturating_sub(checked);
+    if lost > 0 {
+        VERIFY_JOBS.emit_line(
+            app,
+            job_id,
+            format!(
+                "[Warning] {lost} of {selected} practices produced no usable verdict — they stay unverified and will be re-selected next run"
+            ),
+        );
+    }
     VERIFY_JOBS.update_extra(job_id, |e| {
         e.checked = checked;
         e.diverged = diverged;
+        e.selected = selected;
+        e.lost = lost;
     });
     Ok((checked, diverged))
 }

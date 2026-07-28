@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**121 reusable components** live under `src/features/shared/components/`.
+**122 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -152,6 +152,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
 | `ReasoningTrace` | _(add a `@catalog` tag)_ |
+| `RouteChunkSkeleton` | RouteChunkSkeleton — the delayed, header-only Suspense fallback for a lazy route/section chunk. Renders nothing for the first ~150 |
 | `SectionCard` | Card with optional header/status-border/collapse. Use for grouped content panels. |
 | `SectionHeader` | Section header (icon + title + badge + trailing actions). |
 | `SectionHeading` | _(add a `@catalog` tag)_ |
@@ -195,4 +196,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_121 components, 43 without a `@catalog` description._
+_122 components, 43 without a `@catalog` description._

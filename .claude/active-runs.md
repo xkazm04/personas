@@ -2,11 +2,14 @@
 
 ## Active
 
-### sidebar-unification — unify L2/L3 sidebar on the Projects grouped pattern — session opus-5[1m] — DONE, MERGE PENDING
-- Started/finished: 2026-07-27. Status: **complete on branch `worktree-sidebar-unify`** (worktree `.claude/worktrees/sidebar-unify`), rebased onto `8ce892e31`. Commits `f062fdd75` (feature + i18n) · `2e0081c89` (docs + e2e).
-- Gates green on the branch: `tsc --noEmit` clean · `npm run lint` 0 errors · `vitest` 278 files / 2703 tests pass · `check:i18n:strict` 0 missing / 0 extra · `check-untranslated` clean.
-- **Not fast-forwarded into master:** `exploratory-fix-sweep` has uncommitted edits to `src/features/shared/chrome/sidebar/sidebarData.ts` + `docs/i18n/untranslated-allowlist.json` and staged `src/i18n/locales/*.json`, so `git merge --ff-only` aborts. Nothing was stashed. Once that run commits, `git merge --ff-only worktree-sidebar-unify` from master, then remove the worktree + branch. The two `sidebarData.ts` edits do not overlap (they touch the imports + `twinItems`; this run appended the group descriptors + `groupItems()`).
-- Paths: `src/features/shared/chrome/sidebar/**` (new `SidebarGroupNav.tsx`; `SidebarLevel3.tsx` deleted; `SidebarSubNav.tsx` → `.ts`, types only), `src/lib/navigation/registry.ts` + `registry.test.ts`, `src/i18n/{locales,section-locales,generated}/**`, `docs/features/{navigation.md,README.md,connections,templates}`, `tests/playwright/preset-{team-adoption,questionnaire}.spec.ts`.
+### explorer-healing-engine — /explorer sweep of the healing-engine context — session fable-5
+- Started: 2026-07-27. Status: started.
+- Paths: healing engine Rust modules (engine/healing*, commands/*/healing.rs, db healing models/repos), `src/api/overview/healing.ts`, `src/features/overview/sub_observability/Healing*`.
+
+### projects-cold-load-opt — Projects submodules cold-load parity with Overview — session opus-4-8[1m] — COMPLETE, commits `5be610c62` + `f49564353`
+- 2026-07-27. Root cause found via 3 Explore scouts: the 7 Projects (teams) chunks were NOT idle-prefetched (Overview's leads that list) and their Suspense fallback was `null`, so a cold first-open flashed a BLANK content area during chunk fetch+eval — before any page-level ghost could render. Per-submodule on-mount ghost-under-chrome was already correct (Phase 2). Fix mirrors Overview's recipe: new shared `RouteChunkSkeleton` (delayed 150ms header-only calm ghost = the reusable `OverviewRouteSkeleton`); PersonasPage teams-tab Suspense fallbacks null→skeleton + all 7 chunks added to idlePrefetch + a delayed shared `fetchProjects()` prewarm; `renderSectionRoute` gained an optional `fallback` param for TeamCanvas; GoalsTimeline store-mode empty-flash fixed (ghost while `goalsLoading && goals.length===0`). Factory internals untouched (parallel `prototype-factory-ship-tab` owns sub_factory/l2) — only its top-level Suspense fallback changed. Gates: tsc clean, eslint 0-err, vitest 2703/2703.
+- **SHARED-INDEX RACE (recovered):** first commit swept in 3 files from a parallel overview/approvals session — they `git add`-ed between my `git diff --cached` verify and my `git commit` (the shared index is repo-global). Fixed forward: `git reset --soft HEAD~1` + `git restore --staged` the 3 foreign files (their content preserved; that session then committed them cleanly as `ffd563e21`/`cce3eb253`), then re-committed with `git commit -- <explicit paths>` (partial-commit mode = race-proof, ignores whatever else is in the shared index). LESSON: under parallel sessions, `git diff --cached --stat` verification is NOT sufficient (the index mutates after you check it) — commit with explicit pathspecs.
+- FOLLOW-UPS (not blockers): Competition + Factory keep fetched data in local component state (no store persistence) → genuinely cold on EVERY mount, not just first; a store cache would fix. Factory's two un-cached multi-IPC fan-outs (FactoryDataProvider + usePassportData) are the heaviest cold path — for the Factory-owning session. No store refetch guards anywhere (every mount refetches) — but that's law-1-safe (warm data stays on screen, ghost only when empty), so left as-is.
 
 ### app-lib-crate-split-step3plus — build-memory crate split — session opus-5[1m] — COMPLETE
 - 2026-07-27. **DONE AND MEASURED.** app_lib **431,422 -> 265,546 LOC (-38.5%)**; peak single rustc **8,872 -> 6,201 MB (-30%)** at matched debuginfo, 5,933 MB with the committed `debug = 0`. Measured via new `scripts/build/sample-build-memory.ps1` on `cargo test --features desktop --lib --no-run` after `cargo clean -p`.
@@ -20,6 +23,22 @@
 ### prototype-factory-ship-tab — /prototype (Ship tab, Factory L2) — session fable-5
 - Started: 2026-07-26. Status: started. Prototyping a NEW "Ship" tab (milestone / ship-track convergence layer) for Factory L2 — 3 directional content variants behind an internal switcher, mock data only (no schema work yet).
 - Paths: MAIN CHECKOUT (master) — round 1 merged as c845c453a; iteration continues on src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx + src/features/teams/sub_factory/l2/ship/**. Worktree removed at user direction ("operate on master").
+
+### grok-build-fleet-terminal — /research (code) — session opus-5[1m]
+- Started: 2026-07-26. Status: started. Source: https://github.com/xai-org/grok-build (cloned to C:/gb). Analyzing xAI Grok Build's Rust TUI for performance + UI practices worth adopting in the Fleet terminal.
+- SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
+
+## Recently completed
+
+### prototype-use-skill-dialog — /prototype: extend Use-skill dialog (dispatch target + context selection) — session opus-4-8[1m] — COMPLETE, winner Segmented, commit `32c8dc832`
+- 2026-07-28. Round 1 (`06dabdf24`) shipped 3 directional variants (Segmented/Cards/Composer) behind a throwaway switcher; operator picked **Segmented**. Consolidation (`32c8dc832`): UseSkillDialog now renders the segmented form directly — switcher removed, Cards + Composer variant files deleted via `git rm`. Choices preserved: dispatch target (Fleet | CMD) + context-run selection (Recommended / This one / All) for context-tracked skills, folded into the run as a trailing "preset terminal input" arg. i18n: 15 `skills_use_*` keys ×13 locales, coverage clean. Gates: tsc clean, eslint 0-err, pre-commit i18n gates green. Concurrent-session ProjectManager work flushed alongside (`781289c92`) per operator "commit all" directive. Paths: src/features/plugins/dev-tools/sub_skills/{UseSkillDialog,UseSkillShared,SkillsManagerBoard,SkillsManagerPage}.tsx (+ deleted UseSkillVariant*), i18n locales.
+
+### sidebar-unification — every L2 nav unified on the Projects grouped pattern — session opus-5[1m] — COMPLETE, commits `fd477f8fe` · `e4632b996` · `da6a4d2cf`
+- 2026-07-27. Merged to master (fast-forward) after rebasing onto `7b6dc8b79`; worktree + branch removed.
+- New `SidebarGroupNav` primitive; Home / Overview / Events / Connections / Settings / Agents / Plugins all regrouped. Templates folded into Connections via a new registry `reachability: 'nested'` + `parent` anchor (`railSection()`); the plugins Level-3 push pane retired (`SidebarLevel3.tsx` deleted, `SidebarSubNav.tsx` → `.ts` types-only). 14 new `sidebar.group_*` keys translated into all 13 locales.
+- **Verified in the running app** (`tauri:dev:test`, harness :17320) — group structure dumped per section, Templates-in-Connections routing confirmed (rail highlights Connections, panel title CONNECTIONS, templates-page renders), and window screenshots reviewed. Gates: tsc clean · lint 0 errors · vitest 278/2703 · i18n strict clean.
+- **Gotcha for the next session:** the `/screenshot` harness endpoint matches windows by title *substring* "Personas", so it captured a WindowsTerminal tab titled "Personas - …" instead of the app. Capture by HWND (`Get-Process personas-desktop` → `PrintWindow`) when a terminal tab shares the name.
+- Side fix (`da6a4d2cf`): the db crate split left `scripts/{events/generate-connector-events,generate-connector-seed}.mjs` writing to the old `src-tauri/src/db/` path — `shared-events` died with ENOENT and `predev` aborted at 10/12, so `tauri:dev` could not start at all. Repointed at `src-tauri/db/src/` and made the connector-seed generator emit `pub` so regeneration is idempotent with the crate split.
 
 ### exploratory-fix-sweep — UI/UX defect bundle (modules A-E) + /promote skill — session opus-5[1m] (orchestrator + 5 Sonnet builders) — COMPLETE, commits 4c621f390..41dbfc6be
 - 2026-07-27. Baseline `4e9456ccc`. 9 commits: `4c621f390` /promote skill (+ gitignore practice-harvest/) → `8ce892e31` **REGRESSION FIX** → `2698f9dc4` i18n 10 keys ×14 → `57ecf65f5` A/Home → `2bb17dfe2` B/Overview → `77aaa81a5` C/Events → `2d6c6bee9` D/Settings → `7b6dc8b79` E/Plugins → `932b5938b` eslint muted-ok → `41dbfc6be` docs. Final gates: tsc clean, vitest 278 files / **2703 tests**, eslint 0 errors, cargo check --features desktop exit 0, i18n strict 0/0 ×13 + untranslated clean.
@@ -1336,6 +1355,10 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### explorer-scheduler — /explorer sweep of the scheduler context — session fable-5
+- 2026-07-27. **COMPLETE** — 10/10 items shipped in 7 commits: d55c0a155 · c855e568e · 1ddca771e · 183a4d1d2 · 85617521e · 2336ec43f · 6f89e884a (33 new i18n keys × 14 locales, strict + untranslated gates clean).
+- Paths touched: `src/features/schedules/**`, `src/features/overview/sub_cron_agents/**`, `src/i18n/**`.
 
 ### workspace-knowledge-center-design — cross-project best-practice center design + Arc 1 plan — session fable-5 — COMPLETED
 - Started+completed 2026-07-24. Commit: **ec876a3fc** (docs/plans/workspace-knowledge-center.md, design-only, no feature code).

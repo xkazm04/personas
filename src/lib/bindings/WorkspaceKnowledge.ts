@@ -88,4 +88,10 @@ superseded_by: string | null, valid_from: string | null, valid_to: string | null
 /**
  * When the user adopted/rejected/deprecated the item.
  */
-decided_at: string | null, created_at: string, updated_at: string, };
+decided_at: string | null, 
+/**
+ * Which harvest territory produced this practice
+ * (`group:execution-orchestration`, `repo-global`, …). NULL for
+ * hand-authored rows and for runs that predate scoping.
+ */
+harvest_scope: string | null, created_at: string, updated_at: string, };

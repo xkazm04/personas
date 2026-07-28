@@ -256,9 +256,9 @@ export const templateGroups: SidebarItemGroupDef[] = [
 /** Settings → General / Connect / LLM / Advanced (dev-only surfaces). */
 export const settingsGroups: SidebarItemGroupDef[] = [
   { id: 'general',  labelKey: 'group_general',  itemIds: ['account', 'appearance', 'portability', 'radio', 'notifications'] },
-  { id: 'connect',  labelKey: 'group_connect',  itemIds: ['api-keys'] },
+  { id: 'connect',  labelKey: 'group_connect',  itemIds: ['api-keys', 'network'] },
   { id: 'llm',      labelKey: 'group_llm',      itemIds: ['engine', 'byom', 'limits'] },
-  { id: 'advanced', labelKey: 'group_advanced', itemIds: ['network', 'history', 'admin'] },
+  { id: 'advanced', labelKey: 'group_advanced', itemIds: ['history', 'admin'] },
 ];
 
 /**

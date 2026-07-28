@@ -518,16 +518,31 @@ async fn run_design_analysis(params: DesignRunParams) {
 pub fn extract_display_text(line: &str) -> Option<String> {
     // Try parsing as stream-json
     if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
-        // Assistant text message
-        if let Some(content) = val.get("content") {
-            if let Some(arr) = content.as_array() {
-                for item in arr {
-                    if item.get("type").and_then(|t| t.as_str()) == Some("text") {
-                        if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
-                            return Some(text.to_string());
-                        }
-                    }
-                }
+        // Assistant text message.
+        //
+        // Claude Code's `--output-format stream-json` nests assistant content
+        // under `message.content`; only some shapes put it at the top level.
+        // Reading only the top level dropped EVERY streamed assistant message
+        // and surfaced nothing but the terminal `result` — measured on the
+        // adoption-verify pass, which lost 7 of 8 verdicts (and 25 of 25 on an
+        // earlier run) because each verdict arrived in its own assistant
+        // message. Every headless consumer of this helper had the same hole.
+        //
+        // All text blocks are joined, not just the first: a message that
+        // interleaves text and tool_use carries meaning in each block.
+        let blocks = val
+            .get("content")
+            .or_else(|| val.get("message").and_then(|m| m.get("content")));
+        if let Some(arr) = blocks.and_then(|c| c.as_array()) {
+            let text = arr
+                .iter()
+                .filter(|item| item.get("type").and_then(|t| t.as_str()) == Some("text"))
+                .filter_map(|item| item.get("text").and_then(|t| t.as_str()))
+                .collect::<Vec<_>>()
+                .join("
+");
+            if !text.is_empty() {
+                return Some(text);
             }
         }
         // Result message with text
@@ -581,4 +596,49 @@ pub fn preview_prompt(
         #[cfg(feature = "desktop")]
         None,
     ))
+}
+
+#[cfg(test)]
+mod display_text_tests {
+    use super::extract_display_text;
+
+    #[test]
+    fn reads_assistant_text_nested_under_message() {
+        // The real Claude Code stream-json shape. Reading only top-level
+        // `content` dropped these entirely — the adoption-verify pass lost 7 of
+        // 8 verdicts to it, each of which arrived in its own assistant message.
+        let line = r#"{"type":"assistant","message":{"content":[{"type":"text","text":"VERDICT: {\"n\":1,\"holds\":true}"}]}}"#;
+        assert_eq!(
+            extract_display_text(line).as_deref(),
+            Some("VERDICT: {\"n\":1,\"holds\":true}")
+        );
+    }
+
+    #[test]
+    fn still_reads_top_level_content() {
+        let line = r#"{"content":[{"type":"text","text":"hello"}]}"#;
+        assert_eq!(extract_display_text(line).as_deref(), Some("hello"));
+    }
+
+    #[test]
+    fn joins_every_text_block_not_just_the_first() {
+        let line = r#"{"message":{"content":[{"type":"text","text":"one"},{"type":"tool_use","name":"Grep"},{"type":"text","text":"two"}]}}"#;
+        assert_eq!(extract_display_text(line).as_deref(), Some("one\ntwo"));
+    }
+
+    #[test]
+    fn result_and_system_shapes_are_unchanged() {
+        assert_eq!(
+            extract_display_text(r#"{"result":"final"}"#).as_deref(),
+            Some("final")
+        );
+        assert!(extract_display_text(r#"{"type":"system","subtype":"other"}"#).is_none());
+        // A tool-only assistant message yields nothing rather than an empty line.
+        assert!(
+            extract_display_text(r#"{"message":{"content":[{"type":"tool_use","name":"Read"}]}}"#)
+                .is_none()
+        );
+        // Plain text passes through.
+        assert_eq!(extract_display_text("raw line").as_deref(), Some("raw line"));
+    }
 }

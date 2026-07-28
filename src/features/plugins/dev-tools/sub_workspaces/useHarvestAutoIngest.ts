@@ -12,6 +12,13 @@
 // Difference from kpi-sim: that control owns ONE session; a workspace harvests
 // N member projects concurrently, so liveness is tracked per dispatch key and
 // each project ingests independently.
+//
+// SCOPE FAN-OUT (2026-07-27): a project no longer has one harvest session, it
+// has one PER SCOPE (`workspace-harvest:<ws>:<project>:<scope>`). Liveness is
+// therefore aggregated per project — the wave is "live" while ANY of its scope
+// sessions is working — and the single ingest that follows imports every
+// un-ingested run at once. Matching session names exactly (the old behaviour)
+// would silently never fire again, since no session carries the bare key.
 import { useCallback, useEffect, useRef } from 'react';
 
 import { listSessions } from '@/api/fleet/fleet';
@@ -47,7 +54,7 @@ export function useHarvestAutoIngest({
   /** project ids with an ingest in flight — prevents a double fire. */
   const ingesting = useRef<Set<string>>(new Set());
 
-  /** Mark a just-dispatched project live, so a fast-settling session still
+  /** Mark a just-dispatched project live, so a fast-settling wave still
    *  produces a running→gone transition even if the first poll misses it. */
   const markLive = useCallback((projectId: string) => {
     wasLive.current.set(harvestDispatchKey(workspaceId, projectId), true);
@@ -89,8 +96,13 @@ export function useHarvestAutoIngest({
           if (!alive) return;
           for (const project of memberProjects) {
             const key = harvestDispatchKey(workspaceId, project.id);
-            const session = snap.sessions.find((s) => s.name === key) ?? null;
-            const active = session !== null && ACTIVE.has(String(session.state));
+            // Every scope session of this project: the bare key (pre-fan-out
+            // runs) plus `<key>:<scope>`.
+            const active = snap.sessions.some(
+              (s) =>
+                (s.name === key || (s.name ?? '').startsWith(`${key}:`)) &&
+                ACTIVE.has(String(s.state)),
+            );
             if (wasLive.current.get(key) && !active) autoIngest(project);
             wasLive.current.set(key, active);
           }
