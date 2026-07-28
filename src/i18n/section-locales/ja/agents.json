@@ -1135,7 +1135,9 @@
     "test_diff_regressed": "{count} 件が新たに失敗",
     "test_diff_failing": "{count} 件が失敗",
     "status_unverifiable": "検証不可",
-    "st_unverifiable": "{count} 件が検証不可"
+    "st_unverifiable": "{count} 件が検証不可",
+    "st_filter_toggle": "これらのみ表示",
+    "st_filter_clear": "すべてのコネクタを表示"
   },
   "model_config": {
     "model_provider": "モデル＆プロバイダー",

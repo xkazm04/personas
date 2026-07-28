@@ -1135,7 +1135,9 @@
     "test_diff_regressed": "{count} neu fehlgeschlagen",
     "test_diff_failing": "{count} fehlgeschlagen",
     "status_unverifiable": "Nicht prüfbar",
-    "st_unverifiable": "{count} nicht prüfbar"
+    "st_unverifiable": "{count} nicht prüfbar",
+    "st_filter_toggle": "Nur diese anzeigen",
+    "st_filter_clear": "Alle Connectors anzeigen"
   },
   "model_config": {
     "model_provider": "Modell & Anbieter",

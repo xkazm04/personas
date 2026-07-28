@@ -2048,7 +2048,9 @@
       "test_diff_regressed": "{count} newly failing",
       "test_diff_failing": "{count} failing",
       "status_unverifiable": "Not verifiable",
-      "st_unverifiable": "{count} not verifiable"
+      "st_unverifiable": "{count} not verifiable",
+      "st_filter_toggle": "Show only these",
+      "st_filter_clear": "Show all connectors"
     },
     "model_config": {
       "model_provider": "Model & Provider",

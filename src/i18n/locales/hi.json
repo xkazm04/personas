@@ -1967,7 +1967,9 @@
       "test_diff_regressed": "{count} नए विफल",
       "test_diff_failing": "{count} विफल",
       "status_unverifiable": "सत्यापन योग्य नहीं",
-      "st_unverifiable": "{count} सत्यापन योग्य नहीं"
+      "st_unverifiable": "{count} सत्यापन योग्य नहीं",
+      "st_filter_toggle": "केवल ये दिखाएँ",
+      "st_filter_clear": "सभी कनेक्टर दिखाएँ"
     },
     "model_config": {
       "model_provider": "मॉडल और प्रदाता",

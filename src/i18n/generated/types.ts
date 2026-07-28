@@ -2055,6 +2055,8 @@ export type Translations = {
       test_diff_failing: string;
       status_unverifiable: string;
       st_unverifiable: string;
+      st_filter_toggle: string;
+      st_filter_clear: string;
     };
     model_config: {
       model_provider: string;

@@ -1967,7 +1967,9 @@
       "test_diff_regressed": "{count} fallos nuevos",
       "test_diff_failing": "{count} con fallo",
       "status_unverifiable": "No verificable",
-      "st_unverifiable": "{count} no verificables"
+      "st_unverifiable": "{count} no verificables",
+      "st_filter_toggle": "Mostrar solo estos",
+      "st_filter_clear": "Mostrar todos los conectores"
     },
     "model_config": {
       "model_provider": "Modelo y proveedor",

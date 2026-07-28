@@ -1135,7 +1135,9 @@
     "test_diff_regressed": "{count} nově selhalo",
     "test_diff_failing": "{count} selhalo",
     "status_unverifiable": "Nelze ověřit",
-    "st_unverifiable": "{count} nelze ověřit"
+    "st_unverifiable": "{count} nelze ověřit",
+    "st_filter_toggle": "Zobrazit jen tyto",
+    "st_filter_clear": "Zobrazit všechny konektory"
   },
   "model_config": {
     "model_provider": "Model a poskytovatel",

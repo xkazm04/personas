@@ -1135,7 +1135,9 @@
     "test_diff_regressed": "{count} lỗi mới",
     "test_diff_failing": "{count} lỗi",
     "status_unverifiable": "Không thể xác minh",
-    "st_unverifiable": "{count} không thể xác minh"
+    "st_unverifiable": "{count} không thể xác minh",
+    "st_filter_toggle": "Chỉ hiển thị các mục này",
+    "st_filter_clear": "Hiển thị tất cả trình kết nối"
   },
   "model_config": {
     "model_provider": "Mô hình & Nhà cung cấp",

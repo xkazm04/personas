@@ -1967,7 +1967,9 @@
       "test_diff_regressed": "{count} baru gagal",
       "test_diff_failing": "{count} gagal",
       "status_unverifiable": "Tidak dapat diverifikasi",
-      "st_unverifiable": "{count} tidak dapat diverifikasi"
+      "st_unverifiable": "{count} tidak dapat diverifikasi",
+      "st_filter_toggle": "Tampilkan ini saja",
+      "st_filter_clear": "Tampilkan semua konektor"
     },
     "model_config": {
       "model_provider": "Model & Penyedia",

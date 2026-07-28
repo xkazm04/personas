@@ -102,6 +102,21 @@ export function isExecutionReady(status: ConnectorStatus): boolean {
   return deriveReadiness(status) !== 'unlinked';
 }
 
+/**
+ * Focusable health states. Mirrors the vault credential list's filter options
+ * (healthy / unverifiable / failing / untested) and adds `stale`, which is
+ * specific to this surface — the vault has no notion of a restored result
+ * ageing out.
+ */
+export type ConnectorHealthFilter = ConnectorReadiness | 'stale';
+
+/** Does a connector belong under the given health filter? */
+export function matchesHealthFilter(status: ConnectorStatus, filter: ConnectorHealthFilter | null): boolean {
+  if (!filter) return true;
+  if (filter === 'stale') return isStaleResult(status.result);
+  return deriveReadiness(status) === filter;
+}
+
 /** True when the connector is stored but nothing could actually verify it. */
 export function isUnverifiable(status: ConnectorStatus): boolean {
   return deriveReadiness(status) === 'unverifiable';

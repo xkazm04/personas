@@ -4,7 +4,8 @@ import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/d
 import { silentCatch } from '@/lib/silentCatch';
 import { getRoleForConnector, resolveRoleLabel } from '@/lib/credentials/connectorRoles';
 import type { useConnectorStatuses } from '../../libs/useConnectorStatuses';
-import type { ConnectorStatus } from '../../libs/connectorTypes';
+import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
+import { matchesHealthFilter } from '../../libs/connectorTypes';
 import { ConnectorsSection, ReadinessWarnings } from './ConnectorsTabSections';
 
 export type ConnectorVerification = ReturnType<typeof useConnectorStatuses>;
@@ -38,6 +39,7 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
   } = verification;
 
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
+  const [healthFilter, setHealthFilter] = useState<ConnectorHealthFilter | null>(null);
   const [designInstruction, setDesignInstruction] = useState<string | null>(null);
 
   const handleAddCredential = useCallback((connectorName: string) => {
@@ -68,6 +70,10 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
   const roleGroups = useMemo(() => {
     const groups: { roleLabel: string; items: ConnectorStatus[] }[] = [];
     const grouped = new Set<string>();
+    // Filter AFTER grouping decisions are made from the full set, so a role's
+    // heading still reflects that the connectors are interchangeable even when
+    // only one member matches the active filter.
+    const visible = (items: ConnectorStatus[]) => items.filter((s) => matchesHealthFilter(s, healthFilter));
 
     for (const status of statuses) {
       if (grouped.has(status.name)) continue;
@@ -75,14 +81,28 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
       if (role) {
         const members = statuses.filter((s) => role.members.includes(s.name));
         for (const m of members) grouped.add(m.name);
-        groups.push({ roleLabel: resolveRoleLabel(role, t), items: members });
+        const shown = visible(members);
+        if (shown.length > 0) groups.push({ roleLabel: resolveRoleLabel(role, t), items: shown });
       } else {
         grouped.add(status.name);
-        groups.push({ roleLabel: '', items: [status] });
+        if (matchesHealthFilter(status, healthFilter)) {
+          groups.push({ roleLabel: '', items: [status] });
+        }
       }
     }
     return groups;
-  }, [statuses, t]);
+  }, [statuses, t, healthFilter]);
+
+  // A pill disappears once its count hits zero, so an active filter that stops
+  // matching would strand the user on an empty list with nothing left to click
+  // to clear it — e.g. filter by "failing", then re-test and it recovers.
+  const filterHasMatches = useMemo(
+    () => statuses.some((s) => matchesHealthFilter(s, healthFilter)),
+    [statuses, healthFilter],
+  );
+  useEffect(() => {
+    if (healthFilter && !filterHasMatches) setHealthFilter(null);
+  }, [healthFilter, filterHasMatches]);
 
   const { unlinked, healthy, unhealthy, unverifiable } = readinessCounts;
   const testableCount = statuses.filter((s) => s.credentialId).length;
@@ -113,6 +133,8 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
         onAddCredential={handleAddCredential}
         onClearLinkError={clearLinkError}
         onSwap={handleSwap}
+        healthFilter={healthFilter}
+        onHealthFilterChange={setHealthFilter}
       />
       {designInstruction !== null && (
         <div className="border border-violet-500/20 rounded-modal overflow-hidden">

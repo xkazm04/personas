@@ -4,7 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
-import type { ConnectorStatus } from '../../libs/connectorTypes';
+import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { getAlternatives } from '@/lib/credentials/connectorRoles';
 
@@ -39,6 +39,50 @@ export function ReadinessWarnings({ unlinked, unhealthy }: ReadinessWarningsProp
   );
 }
 
+/**
+ * A count pill that doubles as a filter toggle. The counts were already the
+ * summary of the list below; making them the control means focusing one health
+ * state needs no second row of chrome — and an agent with a dozen connectors
+ * can finally isolate the two that are broken.
+ */
+function FilterPill({
+  count, variant, icon, label, value, active, onToggle,
+}: {
+  count: number;
+  variant: 'success' | 'error' | 'warning' | 'neutral';
+  icon: React.ReactNode;
+  label: string;
+  value: ConnectorHealthFilter;
+  active: ConnectorHealthFilter | null;
+  onToggle?: (value: ConnectorHealthFilter | null) => void;
+}) {
+  const { t } = useTranslation();
+  if (count === 0) return null;
+  const isActive = active === value;
+  const badge = (
+    <StatusBadge
+      variant={variant}
+      pill
+      className={`px-2 py-0.5 typo-body ${isActive ? 'ring-1 ring-primary/40' : ''}`}
+      icon={icon}
+    >
+      {label}
+    </StatusBadge>
+  );
+  if (!onToggle) return badge;
+  return (
+    <button
+      type="button"
+      aria-pressed={isActive}
+      title={isActive ? t.agents.connectors.st_filter_clear : t.agents.connectors.st_filter_toggle}
+      onClick={() => onToggle(isActive ? null : value)}
+      className={`rounded-full transition-opacity cursor-pointer ${isActive ? '' : 'opacity-80 hover:opacity-100'}`}
+    >
+      {badge}
+    </button>
+  );
+}
+
 interface ConnectorsSectionProps {
   roleGroups: { roleLabel: string; items: ConnectorStatus[] }[];
   requiredCredTypes: string[];
@@ -60,6 +104,9 @@ interface ConnectorsSectionProps {
   onAddCredential: (connectorName: string) => void;
   onClearLinkError: (connectorName: string) => void;
   onSwap: (currentName: string, newName: string) => void;
+  /** Active health filter, or null for "show everything". */
+  healthFilter?: ConnectorHealthFilter | null;
+  onHealthFilterChange?: (value: ConnectorHealthFilter | null) => void;
 }
 
 export function ConnectorsSection({
@@ -67,6 +114,7 @@ export function ConnectorsSection({
   testableCount, testingAll, credentials, linkingConnector,
   onTestAll, onTestConnector, onToggleLinking, onLink,
   onAddCredential, onClearLinkError, onSwap,
+  healthFilter = null, onHealthFilterChange,
 }: ConnectorsSectionProps) {
   const { t, tx } = useTranslation();
 
@@ -80,31 +128,16 @@ export function ConnectorsSection({
         label={tx(t.agents.connectors.st_required, { count: requiredCredTypes.length })}
         badge={(
           <>
-            {healthy > 0 && (
-              <StatusBadge variant="success" pill className="px-2 py-0.5 typo-body" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>
-                {tx(t.agents.connectors.st_healthy, { count: healthy })}
-              </StatusBadge>
-            )}
-            {unhealthy > 0 && (
-              <StatusBadge variant="error" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
-                {tx(t.agents.connectors.st_failed, { count: unhealthy })}
-              </StatusBadge>
-            )}
-            {unlinked > 0 && (
-              <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
-                {tx(t.agents.connectors.st_missing, { count: unlinked })}
-              </StatusBadge>
-            )}
-            {unverifiable > 0 && (
-              <StatusBadge variant="neutral" pill className="px-2 py-0.5 typo-body" icon={<ShieldQuestion className="w-2.5 h-2.5" />}>
-                {tx(t.agents.connectors.st_unverifiable, { count: unverifiable })}
-              </StatusBadge>
-            )}
-            {staleCount > 0 && (
-              <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<Clock className="w-2.5 h-2.5" />}>
-                {tx(t.agents.connectors.st_stale, { count: staleCount })}
-              </StatusBadge>
-            )}
+            <FilterPill count={healthy} variant="success" value="healthy" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<CheckCircle2 className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_healthy, { count: healthy })} />
+            <FilterPill count={unhealthy} variant="error" value="unhealthy" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<AlertCircle className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_failed, { count: unhealthy })} />
+            <FilterPill count={unlinked} variant="warning" value="unlinked" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<AlertCircle className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_missing, { count: unlinked })} />
+            <FilterPill count={unverifiable} variant="neutral" value="unverifiable" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<ShieldQuestion className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_unverifiable, { count: unverifiable })} />
+            <FilterPill count={staleCount} variant="warning" value="stale" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<Clock className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_stale, { count: staleCount })} />
           </>
         )}
         trailing={testableCount > 0 ? (

@@ -1967,7 +1967,9 @@
       "test_diff_regressed": "новых сбоев: {count}",
       "test_diff_failing": "сбоев: {count}",
       "status_unverifiable": "Не проверяется",
-      "st_unverifiable": "не проверяется: {count}"
+      "st_unverifiable": "не проверяется: {count}",
+      "st_filter_toggle": "Показать только эти",
+      "st_filter_clear": "Показать все коннекторы"
     },
     "model_config": {
       "model_provider": "Модель и провайдер",
