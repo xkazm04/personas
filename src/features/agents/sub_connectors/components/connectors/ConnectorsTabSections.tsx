@@ -1,8 +1,9 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -147,6 +148,13 @@ export function ConnectorsSection({
           </button>
         ) : undefined}
       />
+      {roleGroups.length === 0 && healthFilter && onHealthFilterChange ? (
+        <ScenarioEmptyState
+          icon={Filter}
+          title={t.agents.connectors.st_filter_empty}
+          action={{ label: t.agents.connectors.st_filter_clear, onClick: () => onHealthFilterChange(null) }}
+        />
+      ) : (
       <div className="space-y-2">
         {roleGroups.map((group) => (
           <div key={group.items.map((s) => s.name).join(',')} className="space-y-2">
@@ -174,6 +182,7 @@ export function ConnectorsSection({
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

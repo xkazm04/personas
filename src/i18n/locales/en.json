@@ -2050,7 +2050,8 @@
       "status_unverifiable": "Not verifiable",
       "st_unverifiable": "{count} not verifiable",
       "st_filter_toggle": "Show only these",
-      "st_filter_clear": "Show all connectors"
+      "st_filter_clear": "Show all connectors",
+      "st_filter_empty": "No connectors match this filter"
     },
     "model_config": {
       "model_provider": "Model & Provider",

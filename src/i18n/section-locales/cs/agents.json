@@ -1137,7 +1137,8 @@
     "status_unverifiable": "Nelze ověřit",
     "st_unverifiable": "{count} nelze ověřit",
     "st_filter_toggle": "Zobrazit jen tyto",
-    "st_filter_clear": "Zobrazit všechny konektory"
+    "st_filter_clear": "Zobrazit všechny konektory",
+    "st_filter_empty": "Tomuto filtru neodpovídají žádné konektory"
   },
   "model_config": {
     "model_provider": "Model a poskytovatel",

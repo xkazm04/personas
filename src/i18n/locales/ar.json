@@ -1969,7 +1969,8 @@
       "status_unverifiable": "غير قابل للتحقق",
       "st_unverifiable": "{count} غير قابل للتحقق",
       "st_filter_toggle": "إظهار هذه فقط",
-      "st_filter_clear": "إظهار كل الموصلات"
+      "st_filter_clear": "إظهار كل الموصلات",
+      "st_filter_empty": "لا توجد موصلات تطابق هذا الفلتر"
     },
     "model_config": {
       "model_provider": "النموذج والمزوّد",

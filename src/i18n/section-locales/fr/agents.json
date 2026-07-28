@@ -1137,7 +1137,8 @@
     "status_unverifiable": "Non vérifiable",
     "st_unverifiable": "{count} non vérifiables",
     "st_filter_toggle": "Afficher uniquement ceux-ci",
-    "st_filter_clear": "Afficher tous les connecteurs"
+    "st_filter_clear": "Afficher tous les connecteurs",
+    "st_filter_empty": "Aucun connecteur ne correspond à ce filtre"
   },
   "model_config": {
     "model_provider": "Modèle & Fournisseur",

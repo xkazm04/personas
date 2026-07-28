@@ -1969,7 +1969,8 @@
       "status_unverifiable": "검증 불가",
       "st_unverifiable": "{count}개 검증 불가",
       "st_filter_toggle": "이 항목만 표시",
-      "st_filter_clear": "모든 커넥터 표시"
+      "st_filter_clear": "모든 커넥터 표시",
+      "st_filter_empty": "이 필터와 일치하는 커넥터가 없습니다"
     },
     "model_config": {
       "model_provider": "모델 & 공급자",

@@ -1969,7 +1969,8 @@
       "status_unverifiable": "Tidak dapat diverifikasi",
       "st_unverifiable": "{count} tidak dapat diverifikasi",
       "st_filter_toggle": "Tampilkan ini saja",
-      "st_filter_clear": "Tampilkan semua konektor"
+      "st_filter_clear": "Tampilkan semua konektor",
+      "st_filter_empty": "Tidak ada konektor yang cocok dengan filter ini"
     },
     "model_config": {
       "model_provider": "Model & Penyedia",

@@ -1969,7 +1969,8 @@
       "status_unverifiable": "検証不可",
       "st_unverifiable": "{count} 件が検証不可",
       "st_filter_toggle": "これらのみ表示",
-      "st_filter_clear": "すべてのコネクタを表示"
+      "st_filter_clear": "すべてのコネクタを表示",
+      "st_filter_empty": "このフィルターに一致するコネクタはありません"
     },
     "model_config": {
       "model_provider": "モデル＆プロバイダー",

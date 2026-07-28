@@ -1137,7 +1137,8 @@
     "status_unverifiable": "无法验证",
     "st_unverifiable": "{count} 个无法验证",
     "st_filter_toggle": "仅显示这些",
-    "st_filter_clear": "显示所有连接器"
+    "st_filter_clear": "显示所有连接器",
+    "st_filter_empty": "没有连接器符合此筛选条件"
   },
   "model_config": {
     "model_provider": "模型与提供商",

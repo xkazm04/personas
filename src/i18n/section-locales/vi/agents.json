@@ -1137,7 +1137,8 @@
     "status_unverifiable": "Không thể xác minh",
     "st_unverifiable": "{count} không thể xác minh",
     "st_filter_toggle": "Chỉ hiển thị các mục này",
-    "st_filter_clear": "Hiển thị tất cả trình kết nối"
+    "st_filter_clear": "Hiển thị tất cả trình kết nối",
+    "st_filter_empty": "Không có trình kết nối nào khớp với bộ lọc này"
   },
   "model_config": {
     "model_provider": "Mô hình & Nhà cung cấp",

@@ -93,17 +93,6 @@ export function ConnectorVerificationPanel({ verification, onMissingCountChange 
     return groups;
   }, [statuses, t, healthFilter]);
 
-  // A pill disappears once its count hits zero, so an active filter that stops
-  // matching would strand the user on an empty list with nothing left to click
-  // to clear it — e.g. filter by "failing", then re-test and it recovers.
-  const filterHasMatches = useMemo(
-    () => statuses.some((s) => matchesHealthFilter(s, healthFilter)),
-    [statuses, healthFilter],
-  );
-  useEffect(() => {
-    if (healthFilter && !filterHasMatches) setHealthFilter(null);
-  }, [healthFilter, filterHasMatches]);
-
   const { unlinked, healthy, unhealthy, unverifiable } = readinessCounts;
   const testableCount = statuses.filter((s) => s.credentialId).length;
 

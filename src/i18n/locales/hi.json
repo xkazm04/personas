@@ -1969,7 +1969,8 @@
       "status_unverifiable": "सत्यापन योग्य नहीं",
       "st_unverifiable": "{count} सत्यापन योग्य नहीं",
       "st_filter_toggle": "केवल ये दिखाएँ",
-      "st_filter_clear": "सभी कनेक्टर दिखाएँ"
+      "st_filter_clear": "सभी कनेक्टर दिखाएँ",
+      "st_filter_empty": "इस फ़िल्टर से कोई कनेक्टर मेल नहीं खाता"
     },
     "model_config": {
       "model_provider": "मॉडल और प्रदाता",

@@ -1969,7 +1969,8 @@
       "status_unverifiable": "যাচাই করা যায় না",
       "st_unverifiable": "{count} যাচাই করা যায় না",
       "st_filter_toggle": "শুধু এগুলি দেখান",
-      "st_filter_clear": "সব কানেক্টর দেখান"
+      "st_filter_clear": "সব কানেক্টর দেখান",
+      "st_filter_empty": "এই ফিল্টারের সাথে কোনো কানেক্টর মেলে না"
     },
     "model_config": {
       "model_provider": "মডেল ও প্রোভাইডার",

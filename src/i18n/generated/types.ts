@@ -2057,6 +2057,7 @@ export type Translations = {
       st_unverifiable: string;
       st_filter_toggle: string;
       st_filter_clear: string;
+      st_filter_empty: string;
     };
     model_config: {
       model_provider: string;

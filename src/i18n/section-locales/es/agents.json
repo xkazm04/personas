@@ -1137,7 +1137,8 @@
     "status_unverifiable": "No verificable",
     "st_unverifiable": "{count} no verificables",
     "st_filter_toggle": "Mostrar solo estos",
-    "st_filter_clear": "Mostrar todos los conectores"
+    "st_filter_clear": "Mostrar todos los conectores",
+    "st_filter_empty": "Ningún conector coincide con este filtro"
   },
   "model_config": {
     "model_provider": "Modelo y proveedor",
