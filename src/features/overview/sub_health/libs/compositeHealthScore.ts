@@ -34,7 +34,7 @@ export interface CompositeHealthEntry {
   stabilityScore: number;
 
   /** Raw metrics for tooltip display */
-  successRate: number;      // 0-1
+  successRate: number | null;      // 0-1, null when no SLA data exists at all
   p95LatencyMs: number;
   costAnomalyCount: number;
   openHealingIssues: number;
@@ -46,8 +46,17 @@ export interface CompositeHealthEntry {
   /** Trend direction over last 7 days vs prior 7 */
   trend: 'improving' | 'stable' | 'degrading';
 
-  /** Overall uptime percentage over the 30-day window */
-  uptimePercent: number;
+  /** Overall uptime percentage over the 30-day window, null when no day in
+   *  the window has any recorded activity (mirrors `dailyStatuses`' own
+   *  'no-data' day — an untouched persona has no uptime to report, not a
+   *  perfect one). */
+  uptimePercent: number | null;
+
+  /** Whether this persona has ANY SLA stats at all (as opposed to merely
+   *  zero/low success within a real window). A dormant or brand-new persona
+   *  has none — `grade` short-circuits to `'unknown'` in that case rather
+   *  than running the weighted formula against fabricated defaults. */
+  hasSlaData: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -335,15 +344,19 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
     // Cost anomalies are global — attribute evenly to all personas
     const anomalyCount = costAnomalyCount;
 
-    // Raw metrics
-    const successRate = sla ? sla.success_rate : 1;
+    // Raw metrics. `hasSlaData` is false for a persona with no SLA row at all
+    // (dormant / never run) — previously `successRate` defaulted to a
+    // fabricated 1.0 in that case, feeding a perfect success score into the
+    // weighted formula below and painting a dormant persona "Operational".
+    const hasSlaData = !!sla;
+    const successRate = hasSlaData ? sla.success_rate : null;
     const p95LatencyMs = sla?.p95_duration_ms ?? 0;
     const consecutiveFailures = Number(sla?.consecutive_failures ?? 0);
 
     // Component scores. `stabilityScore` reads the consecutive-failure streak —
     // NOT a second copy of `success_rate` (the old `slaComplianceScore` did,
     // double-counting one metric across 55% of the grade).
-    const successRateScore = Math.round(scoreSuccessRate(successRate));
+    const successRateScore = successRate != null ? Math.round(scoreSuccessRate(successRate)) : 0;
     const latencyScore = Math.round(scoreLatency(p95LatencyMs));
     const costAnomalyScore = Math.round(scoreCostAnomalies(anomalyCount));
     const healingScore = Math.round(scoreHealing(issues.length));
@@ -370,10 +383,12 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       dailyStatuses.unshift('no-data');
     }
 
-    // Uptime percent (days operational or degraded / total days with data)
+    // Uptime percent (days operational or degraded / total days with data).
+    // Mirrors the 'no-data' day-status branch above: zero days with activity
+    // means there is no uptime to report, not a fabricated perfect 100%.
     const daysWithData = dailyStatuses.filter(s => s !== 'no-data').length;
     const daysUp = dailyStatuses.filter(s => s === 'operational' || s === 'degraded').length;
-    const uptimePercent = daysWithData > 0 ? daysUp / daysWithData : 1;
+    const uptimePercent = daysWithData > 0 ? daysUp / daysWithData : null;
 
     // Trend: compare last 7 days success to prior 7 days
     const recentDays = last30.slice(-7);
@@ -396,7 +411,10 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       personaIcon: persona.icon,
       personaColor: persona.color,
       score,
-      grade: computeGrade(score),
+      // Short-circuit BEFORE the weighted formula's grade would otherwise
+      // apply: a persona with no SLA data at all is unknown, not whatever
+      // band the fabricated-default score happens to land in.
+      grade: hasSlaData ? computeGrade(score) : 'unknown',
       successRateScore,
       latencyScore,
       costAnomalyScore,
@@ -410,6 +428,7 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       dailyStatuses,
       trend,
       uptimePercent,
+      hasSlaData,
     });
   }
 
