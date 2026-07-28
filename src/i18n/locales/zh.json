@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "永久删除 {count} 个项目？",
       "trash_empty_confirm_body": "这将清空回收站。这些项目将无法恢复。",
       "trash_purges_in_days": "{days} 天后清除",
-      "trash_purges_soon": "即将清除"
+      "trash_purges_soon": "即将清除",
+      "kb_add_to": "添加到知识库",
+      "kb_add_folder": "将此文件夹添加到知识库",
+      "kb_open": "提问与提取",
+      "kb_picker_title_ingest": "添加到知识库",
+      "kb_picker_title_open": "打开知识库",
+      "kb_picker_subtitle": "针对 {target}",
+      "kb_picker_empty": "尚无知识库。创建一个即可开始。",
+      "kb_create_new": "新建知识库",
+      "kb_create_placeholder": "知识库名称",
+      "kb_create": "创建",
+      "kb_docs_n": "{count} 个文档",
+      "kb_ingest_queued_n": "已将 {count} 个项目加入索引队列",
+      "kb_tab_ask": "提问",
+      "kb_tab_extract": "提取"
     },
     "artist": {
       "title": "创作工坊",

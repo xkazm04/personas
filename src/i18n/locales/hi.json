@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "{count} आइटम स्थायी रूप से हटाएं?",
       "trash_empty_confirm_body": "इससे ट्रैश खाली हो जाएगा। ये आइटम पुनर्प्राप्त नहीं किए जा सकेंगे।",
       "trash_purges_in_days": "{days} दिन में हटेगा",
-      "trash_purges_soon": "जल्द हटेगा"
+      "trash_purges_soon": "जल्द हटेगा",
+      "kb_add_to": "ज्ञान आधार में जोड़ें",
+      "kb_add_folder": "इस फ़ोल्डर को ज्ञान आधार में जोड़ें",
+      "kb_open": "पूछें और निकालें",
+      "kb_picker_title_ingest": "ज्ञान आधार में जोड़ें",
+      "kb_picker_title_open": "ज्ञान आधार खोलें",
+      "kb_picker_subtitle": "{target} के लिए",
+      "kb_picker_empty": "अभी कोई ज्ञान आधार नहीं है। शुरू करने के लिए एक बनाएँ।",
+      "kb_create_new": "नया ज्ञान आधार",
+      "kb_create_placeholder": "ज्ञान आधार का नाम",
+      "kb_create": "बनाएँ",
+      "kb_docs_n": "{count} दस्तावेज़",
+      "kb_ingest_queued_n": "{count} आइटम अनुक्रमण के लिए कतारबद्ध",
+      "kb_tab_ask": "पूछें",
+      "kb_tab_extract": "निकालें"
     },
     "artist": {
       "title": "आर्टिस्ट",

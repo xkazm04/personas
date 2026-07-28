@@ -41,6 +41,13 @@ import { DriveVerifyDialog } from "./signing/DriveVerifyDialog";
 import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 import { useOcr } from "./ocr/useOcr";
 import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
+import {
+  useDriveKnowledge,
+  type KnowledgeTarget,
+} from "./knowledge/useDriveKnowledge";
+import { KbPickerDialog } from "./knowledge/KbPickerDialog";
+import { DriveKnowledgeDrawer } from "./knowledge/DriveKnowledgeDrawer";
+import type { KnowledgeBase } from "@/api/vault/database/vectorKb";
 
 // Only the confirmations use a real modal — create + rename went inline in
 // cycles 9/10/24/27. The discriminated union carries each dialog kind.
@@ -59,6 +66,7 @@ export default function DrivePage() {
   const drive = useDrive();
   const signing = useSigning();
   const ocr = useOcr();
+  const knowledge = useDriveKnowledge();
   const addToast = useToastStore((s) => s.addToast);
 
   // Eager-load the signature history on mount so signed files can carry a
@@ -160,6 +168,16 @@ export default function DrivePage() {
   const [verifyEntry, setVerifyEntry] = useState<DriveEntry | null>(null);
   const [ocrEntry, setOcrEntry] = useState<DriveEntry | null>(null);
   const [signaturesOpen, setSignaturesOpen] = useState(false);
+
+  // Knowledge-base bridge. The picker holds what the pick is *for*: an
+  // "ingest" pick sends the targets to the chosen KB and then opens the
+  // drawer on it; an "open" pick goes straight to the drawer.
+  const [kbPicker, setKbPicker] = useState<{
+    mode: "ingest" | "open";
+    targets: KnowledgeTarget[];
+    label: string;
+  } | null>(null);
+  const [knowledgeKb, setKnowledgeKb] = useState<KnowledgeBase | null>(null);
 
   // Path queued by "Reveal in Drive" — selected once the destination folder's
   // entries have actually loaded. Replaces the previous `setTimeout(..., 100)`
@@ -487,6 +505,66 @@ export default function DrivePage() {
     [drive],
   );
 
+  // ---------------------------------------------------------------------
+  // Knowledge base
+  // ---------------------------------------------------------------------
+
+  // A null entry means the open folder (the empty-area context menu), which
+  // is the folder-scoped "ask across these documents" case. Right-clicking a
+  // row that is part of a multi-selection acts on the whole selection, which
+  // matches how delete/copy already behave.
+  const knowledgeTargetsFor = useCallback(
+    (entry: DriveEntry | null): KnowledgeTarget[] => {
+      if (!entry) return [{ path: drive.currentPath, kind: "folder" }];
+      if (drive.selection.size > 1 && drive.selection.has(entry.path)) {
+        return drive.visibleEntries
+          .filter((e) => drive.selection.has(e.path))
+          .map((e) => ({ path: e.path, kind: e.kind }));
+      }
+      return [{ path: entry.path, kind: entry.kind }];
+    },
+    [drive],
+  );
+
+  const handleAddToKnowledge = useCallback(
+    (entry: DriveEntry | null) => {
+      const targets = knowledgeTargetsFor(entry);
+      const label =
+        targets.length > 1
+          ? tx(t.plugins.drive.items_selected, { count: targets.length })
+          : (entry?.name ?? (drive.currentPath || "/"));
+      setKbPicker({ mode: "ingest", targets, label });
+    },
+    [knowledgeTargetsFor, drive.currentPath, t, tx],
+  );
+
+  const handleOpenKnowledge = useCallback(() => {
+    setKbPicker({ mode: "open", targets: [], label: drive.currentPath || "/" });
+  }, [drive.currentPath]);
+
+  const handleKbPicked = useCallback(
+    async (kb: KnowledgeBase) => {
+      const picker = kbPicker;
+      setKbPicker(null);
+      if (picker?.mode === "ingest") {
+        try {
+          const count = await knowledge.ingest(picker.targets, kb.id);
+          // "Queued", not "added" — ingestion runs as a background job and
+          // the documents are not searchable the instant this resolves.
+          addToast(
+            tx(t.plugins.drive.kb_ingest_queued_n, { count }),
+            "success",
+          );
+        } catch (err) {
+          toastCatch("drive:knowledge:ingest")(err);
+          return;
+        }
+      }
+      setKnowledgeKb(kb);
+    },
+    [kbPicker, knowledge, addToast, t, tx],
+  );
+
   const handleSignSelection = useCallback(() => {
     if (drive.selection.size !== 1) return;
     const path = Array.from(drive.selection)[0];
@@ -616,6 +694,8 @@ export default function DrivePage() {
             onVerify={(entry) => setVerifyEntry(entry)}
             onExtractText={(entry) => setOcrEntry(entry)}
             hasGemini={ocr.hasGemini}
+            onKnowledge={handleAddToKnowledge}
+            knowledgeAvailable={knowledge.available === true}
             signedPaths={signing.signedPaths}
           />
         </div>
@@ -662,6 +742,26 @@ export default function DrivePage() {
           onVerifyFile={(entry) => setVerifyEntry(entry)}
           onExtractText={(entry) => setOcrEntry(entry)}
           hasGemini={ocr.hasGemini}
+          onAddToKnowledge={handleAddToKnowledge}
+          onOpenKnowledge={handleOpenKnowledge}
+          knowledgeAvailable={knowledge.available === true}
+        />
+      )}
+
+      {kbPicker && (
+        <KbPickerDialog
+          knowledge={knowledge}
+          mode={kbPicker.mode}
+          targetLabel={kbPicker.label}
+          onPick={(kb) => void handleKbPicked(kb)}
+          onClose={() => setKbPicker(null)}
+        />
+      )}
+
+      {knowledgeKb && (
+        <DriveKnowledgeDrawer
+          kb={knowledgeKb}
+          onClose={() => setKnowledgeKb(null)}
         />
       )}
 

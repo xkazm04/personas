@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "{count}개 항목을 영구 삭제할까요?",
       "trash_empty_confirm_body": "휴지통을 비웁니다. 이 항목들은 복구할 수 없습니다.",
       "trash_purges_in_days": "{days}일 후 삭제",
-      "trash_purges_soon": "곧 삭제됨"
+      "trash_purges_soon": "곧 삭제됨",
+      "kb_add_to": "지식 베이스에 추가",
+      "kb_add_folder": "이 폴더를 지식 베이스에 추가",
+      "kb_open": "질문 및 추출",
+      "kb_picker_title_ingest": "지식 베이스에 추가",
+      "kb_picker_title_open": "지식 베이스 열기",
+      "kb_picker_subtitle": "대상: {target}",
+      "kb_picker_empty": "아직 지식 베이스가 없습니다. 하나 만들어 시작하세요.",
+      "kb_create_new": "새 지식 베이스",
+      "kb_create_placeholder": "지식 베이스 이름",
+      "kb_create": "만들기",
+      "kb_docs_n": "문서 {count}개",
+      "kb_ingest_queued_n": "{count}개 항목을 색인 대기열에 추가했습니다",
+      "kb_tab_ask": "질문",
+      "kb_tab_extract": "추출"
     },
     "artist": {
       "title": "아티스트",

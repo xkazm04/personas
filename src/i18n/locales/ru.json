@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "Навсегда удалить элементов: {count}?",
       "trash_empty_confirm_body": "Корзина будет очищена. Эти элементы нельзя будет восстановить.",
       "trash_purges_in_days": "Удалится через {days} дн.",
-      "trash_purges_soon": "Скоро удалится"
+      "trash_purges_soon": "Скоро удалится",
+      "kb_add_to": "Добавить в базу знаний",
+      "kb_add_folder": "Добавить эту папку в базу знаний",
+      "kb_open": "Спросить и извлечь",
+      "kb_picker_title_ingest": "Добавить в базу знаний",
+      "kb_picker_title_open": "Открыть базу знаний",
+      "kb_picker_subtitle": "Для {target}",
+      "kb_picker_empty": "Баз знаний пока нет. Создайте одну, чтобы начать.",
+      "kb_create_new": "Новая база знаний",
+      "kb_create_placeholder": "Название базы знаний",
+      "kb_create": "Создать",
+      "kb_docs_n": "Документов: {count}",
+      "kb_ingest_queued_n": "В очередь на индексацию: {count}",
+      "kb_tab_ask": "Спросить",
+      "kb_tab_extract": "Извлечь"
     },
     "artist": {
       "title": "Artist",

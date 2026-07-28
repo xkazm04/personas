@@ -20,6 +20,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Kind filter | Chips above the list (list/icons views) narrow the current folder to one resolved kind — Images / Docs / Code / … — alongside the name search; resets on navigation | `components/DriveKindFilterBar.tsx`, `hooks/useDrive.ts` |
 | Icons-view thumbnails | Image tiles in the icons view render real thumbnails, lazy-loaded and freed as they scroll in/out of view (`useLazyImageThumb`, shared with the lightbox filmstrip); other kinds keep their kind icon | `components/DriveFileList.tsx`, `hooks/useLazyImageThumb.ts` |
 | OCR drawer | Gemini OCR through Vault credentials or Claude CLI OCR through local CLI | `ocr/DriveOcrDrawer.tsx`, `ocr/useOcr.ts`, `src/api/drive.ts` |
+| Knowledge base | Send a file, a selection, or a whole folder into a vector knowledge base, then **Ask** across it (semantic search) or **Extract** typed rows from it (infer a schema → review it → run extraction). The picker offers the existing knowledge bases and can create one inline | `knowledge/*`, `src/api/vault/database/vectorKb.ts` |
 | Signing | Generate/attach/verify document signatures and sidecars. The signatures-history panel can re-verify any record in place — "Verify now" re-hashes the live file against the record's exported sidecar and shows valid / modified / invalid inline. Signed files carry a badge in the details pane + a marker on list rows (signature records loaded eagerly on Drive open; their stored absolute paths are mapped back to drive-relative for matching) | `signing/*`, `src/api/signing` |
 
 ## Sandbox and validation
@@ -69,6 +70,32 @@ UI operations emit events through the Drive command path. The execution engine c
 | OS handoff | `drive_open_in_os`, `drive_reveal_in_os` |
 | OCR | `ocr_drive_file_gemini`, `ocr_drive_file_claude`, `cancel_ocr_operation` |
 | Signing | `sign_document`, `verify_document`, `list_document_signatures`, sidecar helpers |
+
+## Knowledge base bridge
+
+Drive owns no retrieval machinery of its own — the Ask and Extract surfaces are
+the **same components** the Vault KB modal renders (`SearchTab` / `ExtractTab`
+from `src/features/vault/shared/vector/tabs/`), so the two entry points cannot
+drift. Drive contributes only the bridge:
+
+- **Path translation.** Drive is sandbox-relative end to end; `kb_ingest_files`
+  and `kb_ingest_directory` want absolute paths. `useDriveKnowledge` resolves
+  the managed root once via `drive_get_root` and joins it with the relative
+  path.
+- **Feature detection.** The entire `vector_kb` command module is
+  `#[cfg(feature = "ml")]`, so the default `desktop` build has no KB commands
+  registered at all. The hook probes `list_knowledge_bases` on mount and treats
+  a rejection as "no KB lane in this build" — every Drive entry point then stays
+  hidden rather than failing on click.
+- **No new persistence.** Nothing binds a folder to a knowledge base; the picker
+  asks each time. Auto-ingest on `drive.document.added` and per-folder
+  extraction agents are deliberately out of scope — see
+  `src/features/plugins/drive/knowledge/DESIGN.md`.
+
+Ingestion is a backgrounded Rust job, so the confirmation toast says *queued*,
+not *added*; progress arrives on the shared `kb:ingest_progress` /
+`kb:ingest_complete` events, and the drawer re-reads the document count when a
+job completes.
 
 ## State model
 

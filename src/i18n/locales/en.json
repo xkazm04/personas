@@ -12710,7 +12710,21 @@
       "search_n_hits": "{count} match(es)",
       "search_back_to_folder": "Back to folder",
       "search_no_drive_hits": "No matches anywhere in the Drive.",
-      "search_reveal_aria": "Reveal in Drive"
+      "search_reveal_aria": "Reveal in Drive",
+      "kb_add_to": "Add to knowledge base",
+      "kb_add_folder": "Add this folder to knowledge base",
+      "kb_open": "Ask & extract",
+      "kb_picker_title_ingest": "Add to knowledge base",
+      "kb_picker_title_open": "Open knowledge base",
+      "kb_picker_subtitle": "For {target}",
+      "kb_picker_empty": "No knowledge bases yet. Create one to get started.",
+      "kb_create_new": "New knowledge base",
+      "kb_create_placeholder": "Knowledge base name",
+      "kb_create": "Create",
+      "kb_docs_n": "{count} documents",
+      "kb_ingest_queued_n": "Queued {count} item(s) for indexing",
+      "kb_tab_ask": "Ask",
+      "kb_tab_extract": "Extract"
     },
     "artist": {
       "title": "Artist",

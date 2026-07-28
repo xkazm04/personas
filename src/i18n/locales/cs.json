@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "Trvale smazat {count} položek?",
       "trash_empty_confirm_body": "Tím se koš vysype. Tyto položky nebude možné obnovit.",
       "trash_purges_in_days": "Smazání za {days} d.",
-      "trash_purges_soon": "Brzy smazáno"
+      "trash_purges_soon": "Brzy smazáno",
+      "kb_add_to": "Přidat do znalostní báze",
+      "kb_add_folder": "Přidat tuto složku do znalostní báze",
+      "kb_open": "Dotaz a extrakce",
+      "kb_picker_title_ingest": "Přidat do znalostní báze",
+      "kb_picker_title_open": "Otevřít znalostní bázi",
+      "kb_picker_subtitle": "Pro {target}",
+      "kb_picker_empty": "Zatím žádné znalostní báze. Vytvořte jednu a začněte.",
+      "kb_create_new": "Nová znalostní báze",
+      "kb_create_placeholder": "Název znalostní báze",
+      "kb_create": "Vytvořit",
+      "kb_docs_n": "Dokumentů: {count}",
+      "kb_ingest_queued_n": "Zařazeno k indexaci: {count}",
+      "kb_tab_ask": "Dotaz",
+      "kb_tab_extract": "Extrakce"
     },
     "artist": {
       "title": "Artist",

@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "حذف {count} عنصر نهائيًا؟",
       "trash_empty_confirm_body": "سيؤدي هذا إلى إفراغ سلة المهملات. لا يمكن استعادة هذه العناصر.",
       "trash_purges_in_days": "يُحذف خلال {days} يوم",
-      "trash_purges_soon": "يُحذف قريبًا"
+      "trash_purges_soon": "يُحذف قريبًا",
+      "kb_add_to": "إضافة إلى قاعدة المعرفة",
+      "kb_add_folder": "إضافة هذا المجلد إلى قاعدة المعرفة",
+      "kb_open": "السؤال والاستخراج",
+      "kb_picker_title_ingest": "إضافة إلى قاعدة المعرفة",
+      "kb_picker_title_open": "فتح قاعدة المعرفة",
+      "kb_picker_subtitle": "لـ {target}",
+      "kb_picker_empty": "لا توجد قواعد معرفة بعد. أنشئ واحدة للبدء.",
+      "kb_create_new": "قاعدة معرفة جديدة",
+      "kb_create_placeholder": "اسم قاعدة المعرفة",
+      "kb_create": "إنشاء",
+      "kb_docs_n": "{count} مستند",
+      "kb_ingest_queued_n": "تمت إضافة {count} عنصر إلى قائمة الفهرسة",
+      "kb_tab_ask": "سؤال",
+      "kb_tab_extract": "استخراج"
     },
     "artist": {
       "title": "الفنان",

@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "Xóa vĩnh viễn {count} mục?",
       "trash_empty_confirm_body": "Thao tác này sẽ dọn sạch thùng rác. Không thể khôi phục các mục này.",
       "trash_purges_in_days": "Xóa sau {days} ngày",
-      "trash_purges_soon": "Sắp bị xóa"
+      "trash_purges_soon": "Sắp bị xóa",
+      "kb_add_to": "Thêm vào cơ sở tri thức",
+      "kb_add_folder": "Thêm thư mục này vào cơ sở tri thức",
+      "kb_open": "Hỏi & trích xuất",
+      "kb_picker_title_ingest": "Thêm vào cơ sở tri thức",
+      "kb_picker_title_open": "Mở cơ sở tri thức",
+      "kb_picker_subtitle": "Cho {target}",
+      "kb_picker_empty": "Chưa có cơ sở tri thức nào. Hãy tạo một cái để bắt đầu.",
+      "kb_create_new": "Cơ sở tri thức mới",
+      "kb_create_placeholder": "Tên cơ sở tri thức",
+      "kb_create": "Tạo",
+      "kb_docs_n": "{count} tài liệu",
+      "kb_ingest_queued_n": "Đã xếp hàng {count} mục để lập chỉ mục",
+      "kb_tab_ask": "Hỏi",
+      "kb_tab_extract": "Trích xuất"
     },
     "artist": {
       "title": "Artist",

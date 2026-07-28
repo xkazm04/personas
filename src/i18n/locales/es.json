@@ -12441,7 +12441,21 @@
       "trash_empty_confirm_title": "¿Eliminar permanentemente {count} elementos?",
       "trash_empty_confirm_body": "Esto vaciará la papelera. Los elementos no se podrán recuperar.",
       "trash_purges_in_days": "Se purga en {days} d",
-      "trash_purges_soon": "Se purga pronto"
+      "trash_purges_soon": "Se purga pronto",
+      "kb_add_to": "Añadir a la base de conocimiento",
+      "kb_add_folder": "Añadir esta carpeta a la base de conocimiento",
+      "kb_open": "Preguntar y extraer",
+      "kb_picker_title_ingest": "Añadir a la base de conocimiento",
+      "kb_picker_title_open": "Abrir base de conocimiento",
+      "kb_picker_subtitle": "Para {target}",
+      "kb_picker_empty": "Aún no hay bases de conocimiento. Crea una para empezar.",
+      "kb_create_new": "Nueva base de conocimiento",
+      "kb_create_placeholder": "Nombre de la base de conocimiento",
+      "kb_create": "Crear",
+      "kb_docs_n": "{count} documentos",
+      "kb_ingest_queued_n": "{count} elemento(s) en cola para indexar",
+      "kb_tab_ask": "Preguntar",
+      "kb_tab_extract": "Extraer"
     },
     "artist": {
       "title": "Artista",

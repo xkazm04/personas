@@ -4,6 +4,7 @@ import {
   Copy,
   ExternalLink,
   FileSignature,
+  Brain,
   FileText,
   FolderOpen,
   Info,
@@ -41,6 +42,10 @@ interface Props {
   onVerify?: (entry: DriveEntry) => void;
   onExtractText?: (entry: DriveEntry) => void;
   hasGemini?: boolean;
+  // Send the entry to a knowledge base (ask across it / extract typed rows).
+  // Hidden entirely when the build has no ML/KB lane.
+  onKnowledge?: (entry: DriveEntry) => void;
+  knowledgeAvailable?: boolean;
   // Drive-relative paths that carry a signature record — used to badge a
   // signed file in the hero.
   signedPaths?: Set<string>;
@@ -59,6 +64,8 @@ export function DriveDetailsPane({
   onVerify,
   onExtractText,
   hasGemini = false,
+  onKnowledge,
+  knowledgeAvailable = false,
   signedPaths,
 }: Props) {
   const { t, tx } = useTranslation();
@@ -142,6 +149,8 @@ export function DriveDetailsPane({
               onVerify={onVerify}
               onExtractText={onExtractText}
               hasGemini={hasGemini}
+              onKnowledge={onKnowledge}
+              knowledgeAvailable={knowledgeAvailable}
             />
           )}
         </div>
@@ -213,6 +222,8 @@ function DetailsActionRow({
   onVerify,
   onExtractText,
   hasGemini = false,
+  onKnowledge,
+  knowledgeAvailable = false,
 }: {
   entry: DriveEntry;
   onOpen?: (entry: DriveEntry) => void;
@@ -221,6 +232,8 @@ function DetailsActionRow({
   onVerify?: (entry: DriveEntry) => void;
   onExtractText?: (entry: DriveEntry) => void;
   hasGemini?: boolean;
+  onKnowledge?: (entry: DriveEntry) => void;
+  knowledgeAvailable?: boolean;
 }) {
   const { t } = useTranslation();
   const isFile = entry.kind === "file";
@@ -274,6 +287,15 @@ function DetailsActionRow({
         : t.plugins.drive.ctx_extract_text_no_gemini,
       onClick: () => onExtractText(entry),
       disabled: !hasGemini,
+    });
+  // Offered for folders too — a folder is the natural scope for "ask across
+  // these documents", which is the whole point of the knowledge surface.
+  if (knowledgeAvailable && onKnowledge)
+    actions.push({
+      key: "knowledge",
+      icon: Brain,
+      label: t.plugins.drive.kb_add_to,
+      onClick: () => onKnowledge(entry),
     });
 
   if (actions.length === 0) return null;

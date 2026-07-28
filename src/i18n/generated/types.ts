@@ -12717,6 +12717,20 @@ export type Translations = {
       search_back_to_folder: string;
       search_no_drive_hits: string;
       search_reveal_aria: string;
+      kb_add_to: string;
+      kb_add_folder: string;
+      kb_open: string;
+      kb_picker_title_ingest: string;
+      kb_picker_title_open: string;
+      kb_picker_subtitle: string;
+      kb_picker_empty: string;
+      kb_create_new: string;
+      kb_create_placeholder: string;
+      kb_create: string;
+      kb_docs_n: string;
+      kb_ingest_queued_n: string;
+      kb_tab_ask: string;
+      kb_tab_extract: string;
     };
     artist: {
       title: string;

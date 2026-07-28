@@ -13,6 +13,8 @@ import {
   FileSignature,
   ShieldCheck,
   ScanLine,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
@@ -41,6 +43,12 @@ interface Props {
   onVerifyFile: (entry: DriveEntry) => void;
   onExtractText: (entry: DriveEntry) => void;
   hasGemini: boolean;
+  /** Send an entry (or, with no entry, the open folder) to a knowledge base. */
+  onAddToKnowledge: (entry: DriveEntry | null) => void;
+  /** Open the ask/extract surface without ingesting anything first. */
+  onOpenKnowledge: () => void;
+  /** False on builds without the ML/KB lane — both items stay hidden. */
+  knowledgeAvailable: boolean;
 }
 
 export function DriveContextMenu({
@@ -58,6 +66,9 @@ export function DriveContextMenu({
   onVerifyFile,
   onExtractText,
   hasGemini,
+  onAddToKnowledge,
+  onOpenKnowledge,
+  knowledgeAvailable,
 }: Props) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
@@ -215,6 +226,21 @@ export function DriveContextMenu({
                 )}
             </>
           )}
+          {knowledgeAvailable && (
+            <>
+              {divider()}
+              {item(
+                <Brain className="w-3.5 h-3.5" />,
+                t.plugins.drive.kb_add_to,
+                () => onAddToKnowledge(entry),
+              )}
+              {item(
+                <Sparkles className="w-3.5 h-3.5" />,
+                t.plugins.drive.kb_open,
+                onOpenKnowledge,
+              )}
+            </>
+          )}
           {divider("danger")}
           {item(
             <Trash2 className="w-3.5 h-3.5" />,
@@ -241,6 +267,23 @@ export function DriveContextMenu({
             t.plugins.drive.ctx_paste,
             () => drive.pasteHere(),
             { shortcut: "Ctrl+V", disabled: !drive.clipboard },
+          )}
+          {knowledgeAvailable && (
+            <>
+              {divider()}
+              {/* Null entry = the open folder, which is the folder-scoped
+                  "ask across these documents" case. */}
+              {item(
+                <Brain className="w-3.5 h-3.5" />,
+                t.plugins.drive.kb_add_folder,
+                () => onAddToKnowledge(null),
+              )}
+              {item(
+                <Sparkles className="w-3.5 h-3.5" />,
+                t.plugins.drive.kb_open,
+                onOpenKnowledge,
+              )}
+            </>
           )}
         </>
       )}
