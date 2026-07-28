@@ -11,6 +11,8 @@ import { ChevronRight, Loader2, Plus, ScanSearch, Search, Sparkles, Target, Zap 
 import { MotionizedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
 import { SCOPE_MAP_GLYPH } from '@/features/shared/glyph/glyphs/scopeMapGlyph';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { INK } from '../../passport/passportInk';
@@ -28,7 +30,10 @@ const addBtn = (hue: string) => ({
   style: { color: hue, borderColor: `${hue}55` },
 } as const);
 
-function QuickAddFeature({ ctx, onAdd }: { ctx: ShipContext; onAdd: (name: string) => void }) {
+function QuickAddFeature({ ctx, onAdd, t, tx }: {
+  ctx: ShipContext; onAdd: (name: string) => void;
+  t: Translations; tx: (s: string, v: Record<string, string | number>) => string;
+}) {
   const [name, setName] = useState('');
   const submit = () => { if (name.trim()) { onAdd(name.trim()); setName(''); } };
   return (
@@ -38,25 +43,23 @@ function QuickAddFeature({ ctx, onAdd }: { ctx: ShipContext; onAdd: (name: strin
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
-        placeholder={`New feature in ${ctx.name}…`}
+        placeholder={tx(t.ship.quickadd_placeholder, { name: ctx.name })}
         className="min-w-0 flex-1 rounded-input border border-foreground/[0.1] bg-transparent px-2 py-1 typo-caption text-foreground/90 placeholder:text-foreground/30 focus-ring"
         data-testid={`ship-quickadd-${ctx.id}`}
       />
-      {name.trim() && <button type="button" onClick={submit} {...addBtn(INK.teal)}>Add</button>}
+      {name.trim() && <button type="button" onClick={submit} {...addBtn(INK.teal)}>{t.ship.add}</button>}
     </li>
   );
 }
 
 /** The unscanned-project empty state — the map is literally uncharted, and
  *  the ONE follow-up is charting it. */
-function UnchartedEmptyState({ ship }: { ship: ShipData }) {
+function UnchartedEmptyState({ ship, t }: { ship: ShipData; t: Translations }) {
   return (
     <div className="flex flex-col items-center text-center px-6 py-8" data-testid="ship-lib-empty">
       <MotionizedGlyph data={SCOPE_MAP_GLYPH.data} viewBox={SCOPE_MAP_GLYPH.viewBox} className="w-36 h-36" glow />
-      <p className="typo-title mt-3">Nothing mapped yet</p>
-      <p className="typo-caption mt-1 max-w-xs">
-        A context scan charts the codebase into areas — features and goals hang off them, and milestones are cut from those.
-      </p>
+      <p className="typo-title mt-3">{t.ship.uncharted_title}</p>
+      <p className="typo-caption mt-1 max-w-xs">{t.ship.uncharted_hint}</p>
       <button
         type="button"
         onClick={ship.scanContexts}
@@ -68,10 +71,10 @@ function UnchartedEmptyState({ ship }: { ship: ShipData }) {
         {ship.ctxScanning
           ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
           : <ScanSearch className="w-3.5 h-3.5" aria-hidden />}
-        {ship.ctxScanning ? 'Charting the codebase…' : 'Run context scan'}
+        {ship.ctxScanning ? t.ship.uncharted_scanning : t.ship.uncharted_scan}
       </button>
       {ship.ctxScanning && (
-        <p className="typo-caption mt-2 text-foreground/40">Tracked in the activity dock — the library fills in when it completes.</p>
+        <p className="typo-caption mt-2 text-foreground/40">{t.ship.uncharted_tracked}</p>
       )}
     </div>
   );
@@ -86,6 +89,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
   /** Open the universal dispatch chooser with the goal-assist brief. */
   onAssistGoal: (goal: ShipGoal) => void;
 }) {
+  const { t, tx } = useTranslation();
   const reduce = useReducedMotion();
   const [query, setQuery] = useState('');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set(ship.groups.slice(0, 1).map((g) => g.id)));
@@ -117,9 +121,9 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
       contexts: (byGroup.get(g.id) ?? []).filter(match),
     }));
     const ungrouped = (byGroup.get(null) ?? []).filter(match);
-    if (ungrouped.length > 0) named.push({ id: '__ungrouped', name: 'Ungrouped', hue: 'rgba(148,163,184,.6)', contexts: ungrouped });
+    if (ungrouped.length > 0) named.push({ id: '__ungrouped', name: t.ship.ungrouped, hue: 'rgba(148,163,184,.6)', contexts: ungrouped });
     return named.filter((b) => b.contexts.length > 0);
-  }, [ship.contexts, ship.groups, ship.features, ship.goals, q]);
+  }, [ship.contexts, ship.groups, ship.features, ship.goals, q, t]);
 
   const toggle = (set: Set<string>, id: string, apply: (n: Set<string>) => void) => {
     const n = new Set(set);
@@ -127,12 +131,12 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
     apply(n);
   };
 
-  if (ship.contexts.length === 0) return <UnchartedEmptyState ship={ship} />;
+  if (ship.contexts.length === 0) return <UnchartedEmptyState ship={ship} t={t} />;
 
   return (
     <>
       <div className="flex items-center gap-2 mb-1">
-        <p className="typo-title min-w-0">Project library</p>
+        <p className="typo-title min-w-0">{t.ship.library_title}</p>
         <button
           type="button"
           onClick={onNewGoal}
@@ -141,22 +145,20 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
           data-testid="ship-new-goal"
         >
           <Target className="w-3 h-3" aria-hidden />
-          New goal
+          {t.ship.new_goal}
         </button>
       </div>
       <p className="typo-caption mb-2">
-        {libraryThin
-          ? 'The scan mapped these areas but no features exist yet — add the first ones right here, or run the feature scan from Overview.'
-          : 'What the scans mapped, grouped by area. Add features into the cut — their contexts follow automatically; goals bind as the objective.'}
+        {libraryThin ? t.ship.library_hint_thin : t.ship.library_hint}
       </p>
       <div className="relative mb-2">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" aria-hidden />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter contexts, features, goals…"
+          placeholder={t.ship.filter_placeholder}
           className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
-          aria-label="Filter the library"
+          aria-label={t.ship.filter_aria}
           data-testid="ship-lib-search"
         />
       </div>
@@ -187,7 +189,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                 return (
                   <div key={ctx.id} className="border-b border-foreground/[0.04] last:border-0">
                     <div className="flex items-center gap-2 py-1.5 px-1 min-w-0">
-                      <button type="button" onClick={() => toggle(openCtx, ctx.id, setOpenCtx)} aria-expanded={isOpen} aria-label={`Expand ${ctx.name}`} className="shrink-0 focus-ring rounded-interactive">
+                      <button type="button" onClick={() => toggle(openCtx, ctx.id, setOpenCtx)} aria-expanded={isOpen} aria-label={tx(t.ship.expand_aria, { name: ctx.name })} className="shrink-0 focus-ring rounded-interactive">
                         <ChevronRight className={`w-3.5 h-3.5 text-foreground/40 transition-transform ${isOpen ? 'rotate-90' : ''}`} aria-hidden />
                       </button>
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hue }} />
@@ -201,8 +203,8 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                       </button>
                       <span className="ml-auto typo-caption shrink-0">
                         {feats.length > 0 && `${feats.length}f`}{goals.length > 0 && ` ${goals.length}g`}
-                        {feats.length === 0 && goals.length === 0 && 'empty'}
-                        {inFp ? ' · in cut' : ''}
+                        {feats.length === 0 && goals.length === 0 && t.ship.ctx_empty}
+                        {inFp ? t.ship.ctx_in_cut : ''}
                       </span>
                     </div>
                     <AnimatePresence initial={false}>
@@ -222,10 +224,10 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                               <span className="typo-caption text-foreground/85 min-w-0">{f.name}</span>
                               <span className="ml-auto">
                                 {inCut
-                                  ? <span className="typo-caption shrink-0">in cut</span>
+                                  ? <span className="typo-caption shrink-0">{t.ship.in_cut}</span>
                                   : (
-                                    <button type="button" onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')} {...addBtn(INK.teal)} aria-label={`Add ${f.name} to the cut`}>
-                                      <Plus className="w-3 h-3" aria-hidden />Cut
+                                    <button type="button" onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')} {...addBtn(INK.teal)} aria-label={tx(t.ship.add_to_cut_aria, { name: f.name })}>
+                                      <Plus className="w-3 h-3" aria-hidden />{t.ship.promote_cut}
                                     </button>
                                   )}
                               </span>
@@ -239,21 +241,21 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                               <Target className="w-3 h-3 shrink-0" style={{ color: INK.teal }} aria-hidden />
                               <span className="typo-caption text-foreground/85 min-w-0">{g.name}</span>
                               <span className="ml-auto inline-flex items-center gap-1">
-                                <button type="button" onClick={() => onAssistGoal(g)} className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring" title="Dispatch an agent to categorize / execute this goal" aria-label={`Dispatch agent for ${g.name}`}>
+                                <button type="button" onClick={() => onAssistGoal(g)} className="p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring" title={t.ship.goal_assist_tooltip} aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
                                   <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
                                 </button>
                                 {bound
-                                  ? <span className="typo-caption shrink-0">bound</span>
+                                  ? <span className="typo-caption shrink-0">{t.ship.bound}</span>
                                   : (
-                                    <button type="button" onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')} {...addBtn(INK.teal)} aria-label={`Bind ${g.name}`}>
-                                      <Plus className="w-3 h-3" aria-hidden />Bind
+                                    <button type="button" onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')} {...addBtn(INK.teal)} aria-label={tx(t.ship.bind_aria, { name: g.name })}>
+                                      <Plus className="w-3 h-3" aria-hidden />{t.ship.bind}
                                     </button>
                                   )}
                               </span>
                             </li>
                           );
                         })}
-                        <QuickAddFeature ctx={ctx} onAdd={(name) => ship.createFeature(ctx.id, name)} />
+                        <QuickAddFeature ctx={ctx} onAdd={(name) => ship.createFeature(ctx.id, name)} t={t} tx={tx} />
                       </motion.ul>
                     )}
                     </AnimatePresence>
@@ -266,7 +268,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
         {q && bands.length === 0 && (
           <li className="flex flex-col items-center gap-1.5 py-6 text-center">
             <Search className="w-5 h-5 text-foreground/30" aria-hidden />
-            <p className="typo-caption">Nothing matches “{query.trim()}”</p>
+            <p className="typo-caption">{tx(t.ship.no_matches, { query: query.trim() })}</p>
           </li>
         )}
       </ul>

@@ -169,5 +169,15 @@
   "selected": "محدد",
   "command_palette_create_agent": "إنشاء وكيل جديد",
   "command_palette_go_to": "الانتقال إلى {label}",
-  "command_palette_leaderboard": "لوحة صدارة الوكلاء"
+  "command_palette_leaderboard": "لوحة صدارة الوكلاء",
+  "dispatch_action": "إرسال",
+  "dispatch_already_running": "جلسة تعمل بالفعل على هذا الإرسال — افتحها في Fleet، أو أوقفها أولاً.",
+  "dispatch_method_aria": "طريقة الإرسال",
+  "dispatch_method_cli": "‏Claude CLI (بدون واجهة)",
+  "dispatch_method_cli_desc": "تشغيل claude -p فوري بلا متابعة — خفيف الموارد؛ الحالة والرؤى في شبكة Fleet.",
+  "dispatch_method_dev_runner": "مُشغّل التطوير",
+  "dispatch_method_dev_runner_desc": "مهمة في قائمة الانتظار ينفّذها المحرك — موجّهة بالنموذج، متتبَّعة في Run Desk. بلا طرفية.",
+  "dispatch_method_fleet": "طرفية Fleet",
+  "dispatch_method_fleet_desc": "جلسة Claude تفاعلية داخل المستودع — راقب عملها ووجّهها من شبكة Fleet.",
+  "dispatch_pick_method": "اختر كيف يعمل الوكيل في «{project}» — يبقى الطلب قابلاً للتعديل حتى الإرسال."
 }

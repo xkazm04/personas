@@ -9,7 +9,9 @@
 //                    to be decided with the dispatch concept).
 //   • Observability— LLM + Monitoring mix: the technical dimension.
 // The Dev Tools / Projects→KPIs originals still exist — dual-run continues.
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { InkTabs } from '../passport/passportInk';
 import { useFactoryL2Data } from './factoryL2Data';
@@ -19,12 +21,7 @@ import { FactoryShipTab } from './ship/FactoryShipTab';
 
 type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
 
-const TABS: Array<{ id: L2Tab; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'ship', label: 'Ship' },
-  { id: 'matrix', label: 'KPI matrix' },
-  { id: 'observability', label: 'Observability' },
-];
+
 
 export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   projectId: string;
@@ -33,7 +30,14 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   /** Fired after a KPI decision so the host can reload the matrix data too. */
   onKpisChanged?: () => void;
 }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<L2Tab>('overview');
+  const tabs = useMemo<Array<{ id: L2Tab; label: string }>>(() => [
+    { id: 'overview', label: 'Overview' },
+    { id: 'ship', label: t.ship.tab_ship },
+    { id: 'matrix', label: 'KPI matrix' },
+    { id: 'observability', label: 'Observability' },
+  ], [t]);
   const raw = useFactoryL2Data(projectId);
   const data = onKpisChanged
     ? { ...raw, reloadKpis: () => { raw.reloadKpis(); onKpisChanged(); } }
@@ -42,7 +46,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   return (
     <div data-testid="factory-l2-tabs">
       <div className="mb-3">
-        <InkTabs tabs={TABS} active={tab} onChange={setTab} label="Module" />
+        <InkTabs tabs={tabs} active={tab} onChange={setTab} label="Module" />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
       {tab === 'ship' && <FactoryShipTab data={data} />}

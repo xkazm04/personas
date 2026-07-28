@@ -20,6 +20,8 @@ import { createTask, executeTask } from '@/api/devTools/devTools';
 import { listSessions, renameSession, spawnHeadlessSession, spawnSession } from '@/api/fleet/fleet';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { BaseModal } from '@/features/shared/components/modals';
+import { getActiveTranslations } from '@/i18n/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 
 export type DispatchMethod = 'dev_runner' | 'fleet' | 'cli';
@@ -36,22 +38,10 @@ export interface DispatchRequest {
   methods?: DispatchMethod[];
 }
 
-const METHOD_META: Record<DispatchMethod, { icon: typeof Bot; label: string; desc: string }> = {
-  dev_runner: {
-    icon: Bot,
-    label: 'Dev runner',
-    desc: 'Queued task executed by the engine — model-routed, tracked in Run Desk. No terminal.',
-  },
-  fleet: {
-    icon: SquareTerminal,
-    label: 'Fleet terminal',
-    desc: 'Interactive Claude session in the repo — watch it work and steer from the Fleet grid.',
-  },
-  cli: {
-    icon: Zap,
-    label: 'Claude CLI (headless)',
-    desc: 'Fire-and-forget claude -p run — resource-light; status and insights in the Fleet grid.',
-  },
+const METHOD_ICON: Record<DispatchMethod, typeof Bot> = {
+  dev_runner: Bot,
+  fleet: SquareTerminal,
+  cli: Zap,
 };
 
 const ALL_METHODS: DispatchMethod[] = ['dev_runner', 'fleet', 'cli'];
@@ -63,7 +53,13 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
    *  (dev_runner) or session id (fleet/cli). */
   onDispatched?: (method: DispatchMethod, ref: string) => void;
 }) {
+  const { t, tx } = useTranslation();
   const methods = request.methods ?? ALL_METHODS;
+  const methodMeta: Record<DispatchMethod, { label: string; desc: string }> = {
+    dev_runner: { label: t.common.dispatch_method_dev_runner, desc: t.common.dispatch_method_dev_runner_desc },
+    fleet: { label: t.common.dispatch_method_fleet, desc: t.common.dispatch_method_fleet_desc },
+    cli: { label: t.common.dispatch_method_cli, desc: t.common.dispatch_method_cli_desc },
+  };
   const [method, setMethod] = useState<DispatchMethod>(methods.includes('fleet') ? 'fleet' : methods[0] ?? 'fleet');
   const [prompt, setPrompt] = useState(request.prompt);
   const [busy, setBusy] = useState(false);
@@ -80,7 +76,7 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
       } else if (method === 'fleet') {
         const snap = await listSessions();
         const running = snap.sessions.find((s) => s.name === fleetKey && s.state !== 'exited');
-        if (running) throw new Error('A session already works this dispatch — open it in Fleet, or kill it first.');
+        if (running) throw new Error(getActiveTranslations().common.dispatch_already_running);
         ref = await spawnSession(request.target.rootPath, [prompt]);
         await renameSession(ref, fleetKey);
       } else {
@@ -100,13 +96,13 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
     <BaseModal isOpen onClose={onClose} titleId="dispatch-chooser-title" portal maxWidthClass="max-w-2xl" staggerChildren={false}>
       <div data-testid="dispatch-chooser">
         <h2 id="dispatch-chooser-title" className="typo-title-lg mb-0.5">{request.title}</h2>
-        <p className="typo-caption mb-3">Pick how the agent runs in “{request.target.projectName}” — the prompt stays editable until you dispatch.</p>
+        <p className="typo-caption mb-3">{tx(t.common.dispatch_pick_method, { project: request.target.projectName })}</p>
 
         {/* the three transports */}
-        <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))` }} role="radiogroup" aria-label="Dispatch method">
+        <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: `repeat(${methods.length}, minmax(0, 1fr))` }} role="radiogroup" aria-label={t.common.dispatch_method_aria}>
           {methods.map((m) => {
-            const meta = METHOD_META[m];
-            const Icon = meta.icon;
+            const meta = methodMeta[m];
+            const Icon = METHOD_ICON[m];
             const on = method === m;
             return (
               <button
@@ -138,7 +134,7 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
 
         <div className="flex items-center justify-end gap-2 mt-3">
           <button type="button" onClick={onClose} className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring">
-            Cancel
+            {t.common.cancel}
           </button>
           <AsyncButton
             isLoading={busy}
@@ -147,7 +143,7 @@ export function DispatchChooserModal({ request, onClose, onDispatched }: {
             icon={<Rocket className="w-3.5 h-3.5" aria-hidden />}
             data-testid="dispatch-confirm"
           >
-            Dispatch
+            {t.common.dispatch_action}
           </AsyncButton>
         </div>
       </div>

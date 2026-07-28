@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Rocket } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
+import { useTranslation } from '@/i18n/useTranslation';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { toastCatch } from '@/lib/silentCatch';
@@ -91,6 +92,7 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
   onDispatched: (key: string) => void;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [prompt, setPrompt] = useState(() => buildCriterionPrompt(vm, criterion, project) ?? '');
   const [busy, setBusy] = useState(false);
   const key = shipDispatchKey(criterion.id, project.id);
@@ -110,11 +112,9 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
   return (
     <BaseModal isOpen onClose={onClose} titleId="ship-dispatch-title" portal maxWidthClass="max-w-2xl" staggerChildren={false}>
       <div data-testid="ship-dispatch-modal">
-        <h2 id="ship-dispatch-title" className="typo-title-lg mb-1">Dispatch Fleet — {criterion.label}</h2>
+        <h2 id="ship-dispatch-title" className="typo-title-lg mb-1">{tx(t.ship.dispatch_crit_title, { label: criterion.label })}</h2>
         <p className="typo-caption mb-3">{criterion.evidence}</p>
-        <p className="typo-caption mb-1.5" style={{ color: INK.blue }}>
-          The brief below spawns a Dev-runner session in the project repo. Edit it before dispatching if needed.
-        </p>
+        <p className="typo-caption mb-1.5" style={{ color: INK.blue }}>{t.ship.dispatch_crit_hint}</p>
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -128,7 +128,7 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
             onClick={onClose}
             className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <AsyncButton
             isLoading={busy}
@@ -137,7 +137,7 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
             icon={<Rocket className="w-3.5 h-3.5" aria-hidden />}
             data-testid="ship-dispatch-confirm"
           >
-            Dispatch
+            {t.common.dispatch_action}
           </AsyncButton>
         </div>
       </div>

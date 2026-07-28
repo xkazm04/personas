@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, File, Gauge, Plus, Sparkles, Target, X } from 'lucide-react';
 
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
 import { TONE_HUE_MAP, type ShipContext, type ShipMilestoneVM } from './shipModel';
@@ -25,6 +26,7 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
   ship: ShipData;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const reduced = useReducedMotion();
   const hue = TONE_HUE_MAP[ctx.tone];
   const feats = ship.features.filter((f) => f.contexts.includes(ctx.name));
@@ -40,7 +42,7 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
       animate={reduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
       exit={reduced ? { opacity: 0 } : { x: 40, opacity: 0 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      aria-label={`Context detail: ${ctx.name}`}
+      aria-label={tx(t.ship.drawer_aria, { name: ctx.name })}
       data-testid="ship-context-drawer"
     >
       <div className="p-4">
@@ -48,7 +50,7 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
         <div className="flex items-center gap-2 mb-1 min-w-0">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: hue, boxShadow: `0 0 6px ${hue}77` }} />
           <h3 className="typo-title-lg truncate">{ctx.name}</h3>
-          <button type="button" onClick={onClose} aria-label="Close" className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/[0.08] transition-colors focus-ring">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/[0.08] transition-colors focus-ring">
             <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
@@ -56,19 +58,21 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
 
         {/* the health record */}
         <div className="flex items-center gap-4 rounded-card border border-foreground/[0.08] px-3 py-2 mb-4" style={{ background: 'rgba(148,163,184,.03)' }}>
-          <span className="inline-flex items-center gap-1.5 typo-caption tabular-nums"><File className="w-3.5 h-3.5 text-foreground/45" aria-hidden />{ctx.files.length} files</span>
+          <span className="inline-flex items-center gap-1.5 typo-caption tabular-nums"><File className="w-3.5 h-3.5 text-foreground/45" aria-hidden />{tx(t.ship.drawer_files_count, { count: ctx.files.length })}</span>
           <span className="inline-flex items-center gap-1.5 typo-caption tabular-nums" style={{ color: ctx.kpis === 0 ? INK.blue : INK.emerald }}>
-            <Gauge className="w-3.5 h-3.5" aria-hidden />{ctx.kpis === 0 ? 'no KPI' : `${ctx.kpis} KPI${ctx.kpis > 1 ? 's' : ''}`}
+            <Gauge className="w-3.5 h-3.5" aria-hidden />{ctx.kpis === 0
+              ? t.ship.no_kpi_short
+              : tx(ctx.kpis === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: ctx.kpis })}
           </span>
           {ctx.errors !== null && (
             <span className="inline-flex items-center gap-1.5 typo-caption tabular-nums" style={{ color: ctx.errors >= 25 ? INK.red : ctx.errors > 0 ? INK.amber : INK.emerald }}>
-              <AlertTriangle className="w-3.5 h-3.5" aria-hidden />{ctx.errors} errors
+              <AlertTriangle className="w-3.5 h-3.5" aria-hidden />{tx(t.ship.drawer_errors_count, { count: ctx.errors })}
             </span>
           )}
         </div>
 
         {/* features slicing this context — same affordances as the tree */}
-        <p className="typo-title mb-1.5">Features here <span className="typo-data text-foreground/40">{feats.length}</span></p>
+        <p className="typo-title mb-1.5">{t.ship.drawer_features} <span className="typo-data text-foreground/40">{feats.length}</span></p>
         <ul className="mb-4">
           {feats.map((f) => {
             const inCut = coreIds.has(f.id);
@@ -78,21 +82,21 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
                 <span className="typo-caption text-foreground/85 min-w-0">{f.name}</span>
                 <span className="ml-auto">
                   {inCut
-                    ? <span className="typo-caption shrink-0">in cut</span>
+                    ? <span className="typo-caption shrink-0">{t.ship.in_cut}</span>
                     : (
-                      <button type="button" onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')} {...addBtn(INK.teal)} aria-label={`Add ${f.name} to the cut`}>
-                        <Plus className="w-3 h-3" aria-hidden />Cut
+                      <button type="button" onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')} {...addBtn(INK.teal)} aria-label={tx(t.ship.add_to_cut_aria, { name: f.name })}>
+                        <Plus className="w-3 h-3" aria-hidden />{t.ship.promote_cut}
                       </button>
                     )}
                 </span>
               </li>
             );
           })}
-          {feats.length === 0 && <li className="typo-caption py-1.5">No features slice this context yet — quick-add one from the library tree.</li>}
+          {feats.length === 0 && <li className="typo-caption py-1.5">{t.ship.drawer_features_empty}</li>}
         </ul>
 
         {/* goals attached here */}
-        <p className="typo-title mb-1.5">Goals here <span className="typo-data text-foreground/40">{goals.length}</span></p>
+        <p className="typo-title mb-1.5">{t.ship.drawer_goals} <span className="typo-data text-foreground/40">{goals.length}</span></p>
         <ul className="mb-4">
           {goals.map((g) => {
             const bound = boundGoalIds.has(g.id);
@@ -102,28 +106,28 @@ export function ShipContextDrawer({ ctx, groupName, vm, ship, onClose }: {
                 <span className="typo-caption text-foreground/85 min-w-0">{g.name}</span>
                 <span className="ml-auto">
                   {bound
-                    ? <span className="typo-caption shrink-0">bound</span>
+                    ? <span className="typo-caption shrink-0">{t.ship.bound}</span>
                     : (
-                      <button type="button" onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')} {...addBtn(INK.teal)} aria-label={`Bind ${g.name}`}>
-                        <Plus className="w-3 h-3" aria-hidden />Bind
+                      <button type="button" onClick={() => ship.setItem(vm.id, 'goal', g.id, 'core')} {...addBtn(INK.teal)} aria-label={tx(t.ship.bind_aria, { name: g.name })}>
+                        <Plus className="w-3 h-3" aria-hidden />{t.ship.bind}
                       </button>
                     )}
                 </span>
               </li>
             );
           })}
-          {goals.length === 0 && <li className="typo-caption py-1.5">No goals attached to this context.</li>}
+          {goals.length === 0 && <li className="typo-caption py-1.5">{t.ship.drawer_goals_empty}</li>}
         </ul>
 
         {/* file sample — the "what actually lives here" record */}
         {ctx.files.length > 0 && (
           <>
-            <p className="typo-title mb-1.5">Files</p>
+            <p className="typo-title mb-1.5">{t.ship.drawer_files}</p>
             <ul className="rounded-card border border-foreground/[0.07] px-2.5 py-1.5" style={{ background: 'rgba(148,163,184,.02)' }}>
               {ctx.files.slice(0, 8).map((p) => (
                 <li key={p} className="typo-code text-foreground/60 truncate py-0.5">{p}</li>
               ))}
-              {ctx.files.length > 8 && <li className="typo-caption py-0.5">+{ctx.files.length - 8} more</li>}
+              {ctx.files.length > 8 && <li className="typo-caption py-0.5">{tx(t.ship.drawer_files_more, { count: ctx.files.length - 8 })}</li>}
             </ul>
           </>
         )}

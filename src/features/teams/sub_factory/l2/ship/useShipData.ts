@@ -17,6 +17,7 @@ import { useTauriEvent } from '@/hooks/useTauriEvent';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import type { DevMilestoneItem } from '@/lib/bindings/DevMilestoneItem';
+import { useTranslation } from '@/i18n/useTranslation';
 import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -57,6 +58,7 @@ export interface ShipData {
 const dateLabel = (iso: string | null) => (iso ? iso.slice(0, 10) : null);
 
 export function useShipData(data: FactoryL2Data): ShipData {
+  const { t, tx } = useTranslation();
   const projectId = data.project?.id ?? null;
   const [milestones, setMilestones] = useState<DevMilestone[]>([]);
   const [itemsByMs, setItemsByMs] = useState<Map<string, DevMilestoneItem[]>>(new Map());
@@ -121,17 +123,17 @@ export function useShipData(data: FactoryL2Data): ShipData {
         (k) => k.status === 'active' && (k.use_case_id === uc.id || (k.context_id && uc.context_ids.includes(k.context_id))),
       ).length;
       const crit = slice.find((c) => c.tone === 'crit') ?? null;
-      const st = featureState(kpiCount, crit?.name ?? null);
+      const st = featureState(t, kpiCount, crit?.name ?? null);
       return {
         id: uc.id,
         name: uc.name,
         contexts: slice.map((c) => c.name),
         kpiCount,
         ...st,
-        blocker: crit ? `${crit.name}: ${crit.errors} errors this week` : null,
+        blocker: crit ? tx(t.ship.blocker_errors, { name: crit.name, count: crit.errors ?? 0 }) : null,
       };
     });
-  }, [data.useCaseState.active, data.kpis, ctxById]);
+  }, [data.useCaseState.active, data.kpis, ctxById, t, tx]);
 
   const goals = useMemo<ShipGoal[]>(
     () => devGoals
@@ -180,10 +182,13 @@ export function useShipData(data: FactoryL2Data): ShipData {
       const criteria: ExitCriterion[] = [
         {
           id: 'contexts',
-          label: 'Core contexts healthy',
+          label: t.ship.crit_contexts,
           evidence: footprint.length === 0
-            ? 'No core scope yet — compose the cut first'
-            : `${healthy} of ${footprint.length} in-scope contexts healthy${footprint.some((c) => c.tone === 'crit') ? ` · critical: ${footprint.filter((c) => c.tone === 'crit').map((c) => c.name).join(', ')}` : ''}`,
+            ? t.ship.crit_contexts_empty
+            : tx(t.ship.crit_contexts_evidence, { healthy, total: footprint.length })
+              + (footprint.some((c) => c.tone === 'crit')
+                ? tx(t.ship.crit_contexts_critical, { names: footprint.filter((c) => c.tone === 'crit').map((c) => c.name).join(', ') })
+                : ''),
           done: healthy,
           total: footprint.length,
           state: footprint.length === 0 ? 'setup'
@@ -192,28 +197,28 @@ export function useShipData(data: FactoryL2Data): ShipData {
         },
         {
           id: 'kpi',
-          label: 'KPI coverage on core scope',
+          label: t.ship.crit_kpi,
           evidence: footprint.length === 0
-            ? 'Coverage derives once the cut has members'
-            : `${covered} of ${footprint.length} core contexts carry an active KPI`,
+            ? t.ship.crit_kpi_empty
+            : tx(t.ship.crit_kpi_evidence, { covered, total: footprint.length }),
           done: covered,
           total: footprint.length,
           state: footprint.length === 0 ? 'setup' : covered === footprint.length ? 'go' : 'warn',
         },
         {
           id: 'objective',
-          label: 'Objective bound',
+          label: t.ship.crit_objective,
           evidence: boundGoals.length > 0
             ? boundGoals.map((g) => g.name).join(' · ')
-            : 'Bind a measurable goal from the composer',
+            : t.ship.crit_objective_empty,
           done: boundGoals.length > 0 ? 1 : 0,
           total: 1,
           state: boundGoals.length > 0 ? 'go' : 'setup',
         },
         {
           id: 'sensors',
-          label: 'Sensors wired',
-          evidence: sensors === 2 ? 'Monitoring + LLM tracking both report' : 'Bind monitoring / LLM connectors in Observability',
+          label: t.ship.crit_sensors,
+          evidence: sensors === 2 ? t.ship.crit_sensors_ok : t.ship.crit_sensors_missing,
           done: sensors,
           total: 2,
           state: sensors === 2 ? 'go' : 'setup',
@@ -232,8 +237,8 @@ export function useShipData(data: FactoryL2Data): ShipData {
         goal: m.goal,
         status: m.status as ShipMilestoneVM['status'],
         targetLabel: m.status === 'shipped'
-          ? `shipped ${dateLabel(m.shipped_at) ?? ''}`.trim()
-          : m.target_date ? `target ${m.target_date}` : null,
+          ? tx(t.ship.target_shipped, { date: dateLabel(m.shipped_at) ?? '' }).trim()
+          : m.target_date ? tx(t.ship.target_date, { date: m.target_date }) : null,
         members,
         boundGoals,
         footprint,
@@ -241,7 +246,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         progress,
       };
     });
-  }, [milestones, itemsByMs, features, goals, contexts, data.monitoringWired, data.llmWired]);
+  }, [milestones, itemsByMs, features, goals, contexts, data.monitoringWired, data.llmWired, t, tx]);
 
   // -- mutations (decision writes; everything else re-derives) ----------------
 

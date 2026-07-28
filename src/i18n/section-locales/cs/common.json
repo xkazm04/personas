@@ -169,5 +169,15 @@
   "selected": "vybráno",
   "command_palette_create_agent": "Vytvořit nového agenta",
   "command_palette_go_to": "Přejít na {label}",
-  "command_palette_leaderboard": "Žebříček agentů"
+  "command_palette_leaderboard": "Žebříček agentů",
+  "dispatch_action": "Odeslat",
+  "dispatch_already_running": "Na tomto zadání už pracuje jiná relace — otevřete ji ve Fleet, nebo ji nejprve ukončete.",
+  "dispatch_method_aria": "Způsob odeslání",
+  "dispatch_method_cli": "Claude CLI (bez terminálu)",
+  "dispatch_method_cli_desc": "Spustí claude -p a nečeká na výsledek — nenáročné na zdroje; stav a přehledy ve mřížce Fleet.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Úloha ve frontě, kterou zpracuje engine — směrováno podle modelu, sledováno v Run Desk. Bez terminálu.",
+  "dispatch_method_fleet": "Fleet terminál",
+  "dispatch_method_fleet_desc": "Interaktivní relace Claude v repozitáři — sledujte práci a řiďte ji z mřížky Fleet.",
+  "dispatch_pick_method": "Vyberte, jak agent poběží v „{project}“ — prompt zůstává upravitelný až do odeslání."
 }

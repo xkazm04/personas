@@ -169,5 +169,15 @@
   "selected": "已选择",
   "command_palette_create_agent": "创建新智能体",
   "command_palette_go_to": "前往 {label}",
-  "command_palette_leaderboard": "智能体排行榜"
+  "command_palette_leaderboard": "智能体排行榜",
+  "dispatch_action": "派发",
+  "dispatch_already_running": "已有会话在处理此派发 — 请在 Fleet 中打开它，或先终止它。",
+  "dispatch_method_aria": "派发方式",
+  "dispatch_method_cli": "Claude CLI（无头模式）",
+  "dispatch_method_cli_desc": "一次性发起 claude -p run — 资源占用低；状态和洞察显示在 Fleet 网格中。",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "由引擎执行的排队任务 — 按模型路由，在 Run Desk 中跟踪。无终端。",
+  "dispatch_method_fleet": "Fleet 终端",
+  "dispatch_method_fleet_desc": "在仓库中的交互式 Claude 会话 — 观察它工作，并从 Fleet 网格中操控。",
+  "dispatch_pick_method": "选择代理在“{project}”中的运行方式 — 提示在派发前保持可编辑。"
 }

@@ -6,19 +6,19 @@
 // skipped the moment the project has any milestone.
 import { createGoal } from '@/api/devTools/devTools';
 import { createMilestone, listMilestones, setMilestoneItem } from '@/api/devTools/milestones';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 export async function seedOnboardingMilestone(projectId: string): Promise<void> {
   const existing = await listMilestones(projectId);
   if (existing.length > 0) return;
-  const goal = await createGoal(
-    projectId,
-    'Passport created — Personas onboarding complete',
-    'Seeded when "Onboard with Fleet" was dispatched. Done when the guided onboarding session has assessed the passport dimensions and bound the first sensors.',
-  );
+  // Seeded content is persisted DATA — resolve it in the user's active
+  // language at creation time (non-React module → getActiveTranslations).
+  const t = getActiveTranslations();
+  const goal = await createGoal(projectId, t.ship.seed_goal_title, t.ship.seed_goal_description);
   const m = await createMilestone({
     projectId,
-    name: 'Onboard to Personas',
-    goal: 'The project is fully onboarded: passport assessed, first sensors bound, scaffolding ready for milestone-driven shipping.',
+    name: t.ship.seed_milestone_name,
+    goal: t.ship.seed_milestone_goal,
     status: 'active',
   });
   await setMilestoneItem(m.id, 'goal', goal.id, 'core');

@@ -12,6 +12,7 @@ import { ArrowLeft, Target, X, Zap } from 'lucide-react';
 
 import { DispatchChooserModal } from '@/features/shared/dispatch/DispatchChooser';
 import { GoalEditorModal } from '@/features/teams/sub_goals/GoalEditorModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { INK } from '../../passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
@@ -31,6 +32,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
   ship: ShipData;
   onBack: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const [drawerCtx, setDrawerCtx] = useState<ShipContext | null>(null);
   const [goalModal, setGoalModal] = useState(false);
   const [assistGoal, setAssistGoal] = useState<ShipGoal | null>(null);
@@ -40,7 +42,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
     <div data-testid="factory-ship-composer">
       <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring rounded-interactive mb-3">
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
-        Back to plan
+        {t.ship.back_to_plan}
       </button>
 
       <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 1.25fr)' }}>
@@ -57,50 +59,50 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
 
         {/* RIGHT — the live cut for THIS milestone */}
         <div className="min-w-0">
-          <p className="typo-title-lg mb-1">{vm.name} — composing the cut</p>
+          <p className="typo-title-lg mb-1">{tx(t.ship.composing_title, { name: vm.name })}</p>
 
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {vm.boundGoals.map((g) => (
               <span key={g.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption" style={{ borderColor: `${INK.teal}55`, color: INK.teal }}>
                 <Target className="w-3 h-3" aria-hidden />
                 {g.name}
-                <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" title="Dispatch an agent to categorize / execute this goal" aria-label={`Dispatch agent for ${g.name}`}>
+                <button type="button" onClick={() => setAssistGoal(g)} className="focus-ring rounded-full" title={t.ship.goal_assist_tooltip} aria-label={tx(t.ship.goal_assist_aria, { name: g.name })}>
                   <Zap className="w-3 h-3" style={{ color: INK.violet }} aria-hidden />
                 </button>
-                <button type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} className="focus-ring rounded-full" aria-label={`Unbind ${g.name}`}>
+                <button type="button" onClick={() => ship.removeItem(vm.id, 'goal', g.id)} className="focus-ring rounded-full" aria-label={tx(t.ship.unbind_aria, { name: g.name })}>
                   <X className="w-3 h-3 opacity-60 hover:opacity-100" aria-hidden />
                 </button>
               </span>
             ))}
             {/* Only point at the library when it can actually deliver. */}
             {vm.boundGoals.length === 0 && ship.goals.length > 0 && (
-              <span className="typo-caption" style={{ color: INK.blue }}>No objective bound yet — bind a goal from the library.</span>
+              <span className="typo-caption" style={{ color: INK.blue }}>{t.ship.no_objective_hint}</span>
             )}
             {vm.boundGoals.length === 0 && ship.goals.length === 0 && (
               <button type="button" onClick={() => setGoalModal(true)} className="typo-caption text-foreground/45 hover:text-foreground/75 transition-colors focus-ring rounded-interactive">
-                No measurable goals yet — write the first one.
+                {t.ship.no_goals_cta}
               </button>
             )}
           </div>
 
           <div className="rounded-card px-3 py-2 mb-3 border border-foreground/[0.07]" style={{ background: 'rgba(148,163,184,.03)' }} data-testid="ship-footprint">
             <span className="typo-caption block mb-1.5">
-              Derived footprint — {vm.footprint.length} contexts
-              {vm.footprint.filter((c) => c.tone === 'crit').length > 0 && <span style={{ color: INK.red }}> · {vm.footprint.filter((c) => c.tone === 'crit').length} critical</span>}
-              {vm.footprint.filter((c) => c.kpis === 0).length > 0 && <span style={{ color: INK.blue }}> · {vm.footprint.filter((c) => c.kpis === 0).length} without a KPI</span>}
+              {tx(t.ship.footprint_label, { count: vm.footprint.length })}
+              {vm.footprint.filter((c) => c.tone === 'crit').length > 0 && <span style={{ color: INK.red }}>{tx(t.ship.footprint_critical, { count: vm.footprint.filter((c) => c.tone === 'crit').length })}</span>}
+              {vm.footprint.filter((c) => c.kpis === 0).length > 0 && <span style={{ color: INK.blue }}>{tx(t.ship.footprint_no_kpi, { count: vm.footprint.filter((c) => c.kpis === 0).length })}</span>}
             </span>
             <span className="flex items-center gap-1.5 flex-wrap">
               {vm.footprint.map((c) => (
                 <span key={c.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs" style={{ borderColor: `${TONE_HUE_MAP[c.tone]}55`, color: TONE_HUE_MAP[c.tone] }} title={`${c.kpis} KPIs`}>
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: TONE_HUE_MAP[c.tone] }} />
-                  {c.name}{c.kpis === 0 ? ' · no KPI' : ''}
+                  {c.name}{c.kpis === 0 ? ` · ${t.ship.no_kpi_short}` : ''}
                 </span>
               ))}
-              {vm.footprint.length === 0 && <span className="typo-caption">empty — add a feature and its contexts follow</span>}
+              {vm.footprint.length === 0 && <span className="typo-caption">{t.ship.footprint_empty}</span>}
             </span>
           </div>
 
-          <LedgerHeader title="The cut" count={cut.length} aside="every row pulled its contexts into the footprint above" />
+          <LedgerHeader title={t.ship.the_cut} count={cut.length} aside={t.ship.the_cut_aside} />
           <LedgerList testid="ship-compose-cut">
             {cut.map((m, i) => (
               <LedgerRow
@@ -108,22 +110,22 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                 index={i}
                 name={m.feature.name}
                 contexts={m.feature.contexts}
-                stateLabel={m.feature.kpiCount > 0 ? `${m.feature.kpiCount} KPI${m.feature.kpiCount > 1 ? 's' : ''}` : 'no KPI yet'}
+                stateLabel={m.feature.kpiCount > 0
+                  ? tx(m.feature.kpiCount === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: m.feature.kpiCount })
+                  : t.ship.state_no_kpi}
                 stateHue={m.feature.kpiCount > 0 ? INK.emerald : INK.blue}
-                meta={m.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>added after the cut</span> : undefined}
+                meta={m.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
                 actions={
-                  <button type="button" onClick={() => ship.removeItem(vm.id, 'use_case', m.feature.id)} {...iconBtn('rgba(148,163,184,.7)')} aria-label={`Remove ${m.feature.name}`}>
+                  <button type="button" onClick={() => ship.removeItem(vm.id, 'use_case', m.feature.id)} {...iconBtn('rgba(148,163,184,.7)')} aria-label={tx(t.ship.remove_aria, { name: m.feature.name })}>
                     <X className="w-3 h-3" aria-hidden />
-                    Remove
+                    {t.ship.remove}
                   </button>
                 }
               />
             ))}
             {cut.length === 0 && (
               <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
-                {ship.contexts.length === 0
-                  ? 'The cut fills from the library — chart the codebase first.'
-                  : 'Empty cut — add features from the library.'}
+                {ship.contexts.length === 0 ? t.ship.cut_empty_unscanned : t.ship.cut_empty_scanned}
               </li>
             )}
           </LedgerList>
@@ -157,7 +159,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
       {assistGoal && ship.project && (
         <DispatchChooserModal
           request={{
-            title: `Goal assist: ${assistGoal.name}`,
+            title: tx(t.ship.goal_assist_title, { name: assistGoal.name }),
             prompt: buildGoalAssistPrompt(assistGoal, vm, ship.project),
             target: { projectId: ship.project.id, projectName: ship.project.name, rootPath: ship.project.root_path },
             fleetKey: `passport:ship-goal-${assistGoal.id.slice(0, 8)}:${ship.project.id}`,

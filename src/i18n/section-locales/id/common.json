@@ -169,5 +169,15 @@
   "selected": "dipilih",
   "command_palette_create_agent": "Buat Agen Baru",
   "command_palette_go_to": "Buka {label}",
-  "command_palette_leaderboard": "Papan Peringkat Agen"
+  "command_palette_leaderboard": "Papan Peringkat Agen",
+  "dispatch_action": "Kirim",
+  "dispatch_already_running": "Sebuah sesi sudah mengerjakan dispatch ini — buka di Fleet, atau hentikan dulu.",
+  "dispatch_method_aria": "Metode dispatch",
+  "dispatch_method_cli": "Claude CLI (tanpa antarmuka)",
+  "dispatch_method_cli_desc": "Jalankan claude -p sekali dan lupakan — hemat sumber daya; status dan insight ada di grid Fleet.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Tugas antrean dieksekusi oleh engine — dirutekan ke model, dilacak di Run Desk. Tanpa terminal.",
+  "dispatch_method_fleet": "Terminal Fleet",
+  "dispatch_method_fleet_desc": "Sesi Claude interaktif di repo — amati prosesnya dan kendalikan dari grid Fleet.",
+  "dispatch_pick_method": "Pilih cara agent berjalan di “{project}” — prompt tetap bisa diedit sampai kamu melakukan dispatch."
 }

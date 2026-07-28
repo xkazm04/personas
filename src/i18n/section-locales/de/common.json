@@ -169,5 +169,15 @@
   "selected": "ausgewählt",
   "command_palette_create_agent": "Neuen Agenten erstellen",
   "command_palette_go_to": "Zu {label} gehen",
-  "command_palette_leaderboard": "Agenten-Bestenliste"
+  "command_palette_leaderboard": "Agenten-Bestenliste",
+  "dispatch_action": "Übermitteln",
+  "dispatch_already_running": "Eine Sitzung bearbeitet diesen Auftrag bereits — öffne sie in Fleet oder beende sie zuerst.",
+  "dispatch_method_aria": "Übermittlungsmethode",
+  "dispatch_method_cli": "Claude CLI (unbeaufsichtigt)",
+  "dispatch_method_cli_desc": "Fire-and-forget claude -p run — ressourcenschonend; Status und Insights im Fleet-Raster.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Von der Engine ausgeführte Aufgabe in der Warteschlange — modellgeroutet, verfolgt im Run Desk. Kein Terminal.",
+  "dispatch_method_fleet": "Fleet-Terminal",
+  "dispatch_method_fleet_desc": "Interaktive Claude-Sitzung im Repo — beobachte die Arbeit und steuere sie über das Fleet-Raster.",
+  "dispatch_pick_method": "Wähle, wie der Agent in „{project}“ läuft — der Prompt bleibt bis zur Übermittlung bearbeitbar."
 }

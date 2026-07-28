@@ -4,6 +4,7 @@
   "*:agents.change_history.fields.model_profile",
   "*:agents.messaging_picker.field_placeholders.to",
   "*:agents.model_config.base_url_example",
+  "*:common.dispatch_method_dev_runner",
   "*:director.healing_source_badge",
   "*:mastermind.score_legend",
   "*:overview.athena.section_title",

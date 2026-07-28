@@ -169,5 +169,15 @@
   "selected": "sélectionné(s)",
   "command_palette_create_agent": "Créer un nouvel agent",
   "command_palette_go_to": "Aller à {label}",
-  "command_palette_leaderboard": "Classement des agents"
+  "command_palette_leaderboard": "Classement des agents",
+  "dispatch_action": "Envoyer",
+  "dispatch_already_running": "Une session traite déjà cet envoi — ouvrez-la dans Fleet, ou arrêtez-la d'abord.",
+  "dispatch_method_aria": "Méthode d'envoi",
+  "dispatch_method_cli": "Claude CLI (sans interface)",
+  "dispatch_method_cli_desc": "Exécution claude -p ponctuelle — légère en ressources ; statut et insights dans la grille Fleet.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Tâche en file traitée par le moteur — routée par modèle, suivie dans Run Desk. Aucun terminal.",
+  "dispatch_method_fleet": "Terminal Fleet",
+  "dispatch_method_fleet_desc": "Session Claude interactive dans le dépôt — regardez-la travailler et pilotez-la depuis la grille Fleet.",
+  "dispatch_pick_method": "Choisissez comment l'agent s'exécute dans « {project} » — le prompt reste modifiable jusqu'à l'envoi."
 }

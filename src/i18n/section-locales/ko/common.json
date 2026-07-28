@@ -169,5 +169,15 @@
   "selected": "선택됨",
   "command_palette_create_agent": "새 에이전트 만들기",
   "command_palette_go_to": "{label}(으)로 이동",
-  "command_palette_leaderboard": "에이전트 리더보드"
+  "command_palette_leaderboard": "에이전트 리더보드",
+  "dispatch_action": "디스패치",
+  "dispatch_already_running": "이미 세션이 이 디스패치를 처리 중입니다 — Fleet에서 열거나 먼저 종료하세요.",
+  "dispatch_method_aria": "디스패치 방식",
+  "dispatch_method_cli": "Claude CLI (헤드리스)",
+  "dispatch_method_cli_desc": "일회성 claude -p 실행 — 자원 소모 적음; 상태와 인사이트는 Fleet 그리드에서 확인.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "엔진이 실행하는 대기열 작업 — 모델 라우팅됨, Run Desk에서 추적. 터미널 없음.",
+  "dispatch_method_fleet": "Fleet 터미널",
+  "dispatch_method_fleet_desc": "저장소 내 대화형 Claude 세션 — 작업 과정을 지켜보고 Fleet 그리드에서 조작 가능.",
+  "dispatch_pick_method": "\"{project}\"에서 에이전트를 실행할 방식을 선택하세요 — 프롬프트는 디스패치 전까지 수정 가능합니다."
 }

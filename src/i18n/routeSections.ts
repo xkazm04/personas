@@ -20,7 +20,8 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   home: ['home', 'onboarding', 'system_health'],
   overview: ['overview', 'director', 'execution', 'execution_status', 'event_types', 'alerts', 'models'],
-  teams: ['plugins', 'pipeline'],
+  // `ship` — the Factory L2 Ship tab (milestone convergence layer).
+  teams: ['plugins', 'pipeline', 'kpis', 'ship'],
   // foundry + recipes_catalog: the Foundry create surface (archetype palette
   // + capability rack) lives on the personas route and reuses the recipe
   // catalog's category labels.

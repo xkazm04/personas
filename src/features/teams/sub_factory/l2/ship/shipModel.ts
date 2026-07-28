@@ -5,6 +5,10 @@
 // factoryData adapter split. Nothing here is typed in by the user: progress,
 // footprint, and exit criteria all derive from signals the Factory already
 // trusts.
+//
+// Note on vocabulary: the UI says "feature"; the schema/identifiers say
+// `use_case` (the db contract). Only the labels were renamed.
+import type { Translations } from '@/i18n/generated/types';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
 import { INK } from '../../passport/passportInk';
@@ -36,7 +40,7 @@ export interface ShipGroup {
   color: string;
 }
 
-/** A use case seen through the Ship lens, with derived readiness. */
+/** A feature (use case) seen through the Ship lens, with derived readiness. */
 export interface ShipFeature {
   id: string;
   name: string;
@@ -59,7 +63,7 @@ export interface ShipGoal {
   contexts: string[];
 }
 
-/** A milestone scope member (use-case kind). */
+/** A milestone scope member (feature kind). */
 export interface ShipMember {
   feature: ShipFeature;
   bucket: ScopeBucket;
@@ -102,18 +106,22 @@ export const CRIT_HUE: Record<CritState, string> = {
   setup: INK.blue,
 };
 
-export const BUCKET_META: Record<ScopeBucket, { label: string; hue: string }> = {
-  core: { label: 'Core', hue: INK.teal },
-  later: { label: 'Later', hue: 'rgba(148,163,184,.7)' },
-  never: { label: 'Never', hue: 'rgba(148,163,184,.4)' },
-};
-
 export const TONE_HUE_MAP: Record<ContextTone, string> = {
   ok: INK.emerald,
   warn: INK.amber,
   crit: INK.red,
   setup: INK.blue,
 };
+
+export const BUCKET_HUE: Record<ScopeBucket, string> = {
+  core: INK.teal,
+  later: 'rgba(148,163,184,.7)',
+  never: 'rgba(148,163,184,.4)',
+};
+
+export function bucketLabel(t: Translations, b: ScopeBucket): string {
+  return b === 'core' ? t.ship.bucket_core : b === 'later' ? t.ship.bucket_later : t.ship.bucket_never;
+}
 
 // -- derivations --------------------------------------------------------------
 
@@ -127,12 +135,12 @@ export function shipVerdict(criteria: ExitCriterion[]): CritState {
 }
 
 /** Feature readiness label from derived signals (the row's right-edge ink). */
-export function featureState(kpiCount: number, critContext: string | null): {
+export function featureState(t: Translations, kpiCount: number, critContext: string | null): {
   ready: boolean;
   stateLabel: string;
   stateHue: string;
 } {
-  if (critContext) return { ready: false, stateLabel: 'Blocked', stateHue: INK.red };
-  if (kpiCount === 0) return { ready: false, stateLabel: 'No KPI yet', stateHue: INK.blue };
-  return { ready: true, stateLabel: 'Ready', stateHue: INK.emerald };
+  if (critContext) return { ready: false, stateLabel: t.ship.state_blocked, stateHue: INK.red };
+  if (kpiCount === 0) return { ready: false, stateLabel: t.ship.state_no_kpi, stateHue: INK.blue };
+  return { ready: true, stateLabel: t.ship.state_ready, stateHue: INK.emerald };
 }

@@ -169,5 +169,15 @@
   "selected": "đã chọn",
   "command_palette_create_agent": "Tạo tác nhân mới",
   "command_palette_go_to": "Đi tới {label}",
-  "command_palette_leaderboard": "Bảng xếp hạng tác nhân"
+  "command_palette_leaderboard": "Bảng xếp hạng tác nhân",
+  "dispatch_action": "Gửi",
+  "dispatch_already_running": "Đã có phiên xử lý dispatch này — mở nó trong Fleet, hoặc dừng nó trước.",
+  "dispatch_method_aria": "Phương thức dispatch",
+  "dispatch_method_cli": "Claude CLI (chạy ngầm)",
+  "dispatch_method_cli_desc": "Chạy claude -p rồi bỏ đó — nhẹ tài nguyên; trạng thái và thông tin hiển thị trong lưới Fleet.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Tác vụ trong hàng đợi do engine thực thi — định tuyến theo model, theo dõi trong Run Desk. Không có terminal.",
+  "dispatch_method_fleet": "Terminal Fleet",
+  "dispatch_method_fleet_desc": "Phiên Claude tương tác trong repo — xem nó làm việc và điều khiển từ lưới Fleet.",
+  "dispatch_pick_method": "Chọn cách agent chạy trong “{project}” — prompt vẫn chỉnh sửa được đến khi bạn dispatch."
 }

@@ -8,6 +8,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowUp, Check, PencilRuler, Plus, Rocket, Sparkles, SquareTerminal, Telescope, Zap } from 'lucide-react';
 
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 
 import {
   PASSPORT_FLEET_INK, PassportTerminalModal, usePassportFleetSessions,
@@ -17,7 +19,7 @@ import type { FactoryL2Data } from '../factoryL2Data';
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import {
-  BUCKET_META, CRIT_HUE, shipVerdict,
+  BUCKET_HUE, CRIT_HUE, bucketLabel, shipVerdict,
   type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
 import { LedgerHeader, LedgerList, LedgerRow } from './shipRows';
@@ -70,7 +72,7 @@ function TimelineCard({ vm, selected, onSelect, index, reduce }: {
   );
 }
 
-function NewMilestoneForm({ onCreate, prominent }: { onCreate: (name: string) => void; prominent?: boolean }) {
+function NewMilestoneForm({ onCreate, prominent, t }: { onCreate: (name: string) => void; prominent?: boolean; t: Translations }) {
   const [name, setName] = useState('');
   const submit = () => { if (name.trim()) { onCreate(name.trim()); setName(''); } };
   return (
@@ -79,7 +81,7 @@ function NewMilestoneForm({ onCreate, prominent }: { onCreate: (name: string) =>
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
-        placeholder="New milestone…"
+        placeholder={t.ship.new_milestone_placeholder}
         className="min-w-0 flex-1 rounded-input border border-foreground/[0.12] bg-transparent px-2.5 py-1.5 typo-caption text-foreground/90 placeholder:text-foreground/35 focus-ring"
         data-testid="ship-new-milestone-name"
       />
@@ -92,7 +94,7 @@ function NewMilestoneForm({ onCreate, prominent }: { onCreate: (name: string) =>
         data-testid="ship-new-milestone-create"
       >
         <Plus className="w-3 h-3" aria-hidden />
-        Add
+        {t.ship.add}
       </button>
     </div>
   );
@@ -111,7 +113,10 @@ function BucketBtn({ label, on, onClick, hue }: { label: string; on?: boolean; o
   );
 }
 
-function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData; editable: boolean }) {
+function Workspace({ vm, ship, editable, t, tx }: {
+  vm: ShipMilestoneVM; ship: ShipData; editable: boolean;
+  t: Translations; tx: (s: string, v: Record<string, string | number>) => string;
+}) {
   const memberIds = new Set(vm.members.map((mm) => mm.feature.id));
   const core = vm.members.filter((mm) => mm.bucket === 'core');
   const outside = [
@@ -122,7 +127,11 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
 
   return (
     <>
-      <LedgerHeader title="In the cut" count={`${coreReady}/${core.length} ready`} aside={`what “${vm.name}” means, nothing more`} />
+      <LedgerHeader
+        title={t.ship.in_the_cut}
+        count={tx(t.ship.in_the_cut_count, { done: coreReady, total: core.length })}
+        aside={tx(t.ship.in_the_cut_aside, { name: vm.name })}
+      />
       <div className="mb-5">
         <LedgerList testid="ship-cut-list">
           {core.map((mm, i) => (
@@ -134,11 +143,11 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
               stateLabel={mm.feature.stateLabel}
               stateHue={mm.feature.stateHue}
               blocker={mm.feature.blocker}
-              meta={mm.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>added after the cut</span> : undefined}
+              meta={mm.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
               actions={editable && (
                 <>
                   {(['later', 'never'] as const).map((b) => (
-                    <BucketBtn key={b} label={BUCKET_META[b].label} onClick={() => ship.setItem(vm.id, 'use_case', mm.feature.id, b)} />
+                    <BucketBtn key={b} label={bucketLabel(t, b)} onClick={() => ship.setItem(vm.id, 'use_case', mm.feature.id, b)} />
                   ))}
                 </>
               )}
@@ -146,13 +155,13 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
           ))}
           {core.length === 0 && (
             <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
-              No cut yet — promote from the ledger below or open the composer.
+              {t.ship.cut_empty_planner}
             </li>
           )}
         </LedgerList>
       </div>
 
-      <LedgerHeader title="Outside the cut" count={outside.length} aside="the row's buttons are the decision" muted />
+      <LedgerHeader title={t.ship.outside_the_cut} count={outside.length} aside={t.ship.outside_the_cut_aside} muted />
       <LedgerList testid="ship-outside-list">
         {outside.map(({ f, bucket, afterCut }, i) => (
           <LedgerRow
@@ -163,9 +172,9 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
             dim={bucket === 'never'}
             marker={afterCut ? <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden /> : undefined}
             meta={afterCut
-              ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>added after the cut</span>
+              ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span>
               : bucket === null
-                ? <span className="typo-caption shrink-0 text-foreground/35">unassigned</span>
+                ? <span className="typo-caption shrink-0 text-foreground/35">{t.ship.unassigned}</span>
                 : undefined}
             actions={editable && (
               <>
@@ -174,13 +183,13 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
                   onClick={() => ship.setItem(vm.id, 'use_case', f.id, 'core')}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption border transition-colors hover:bg-foreground/[0.05] focus-ring"
                   style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
-                  title="Promote into the cut"
+                  title={t.ship.promote_cut_tooltip}
                 >
                   <ArrowUp className="w-3 h-3" aria-hidden />
-                  Cut
+                  {t.ship.promote_cut}
                 </button>
                 {(['later', 'never'] as const).map((b) => (
-                  <BucketBtn key={b} label={BUCKET_META[b].label} on={bucket === b} hue={BUCKET_META[b].hue}
+                  <BucketBtn key={b} label={bucketLabel(t, b)} on={bucket === b} hue={BUCKET_HUE[b]}
                     onClick={() => ship.setItem(vm.id, 'use_case', f.id, b)} />
                 ))}
               </>
@@ -189,9 +198,7 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
         ))}
         {outside.length === 0 && (
           <li className="typo-caption px-3.5 py-2.5">
-            {ship.features.length === 0
-              ? 'No features mapped yet — open Compose scope to chart the project and add the first ones.'
-              : 'Everything is in the cut — suspiciously disciplined.'}
+            {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.outside_empty_all_in}
           </li>
         )}
       </LedgerList>
@@ -200,6 +207,7 @@ function Workspace({ vm, ship, editable }: { vm: ShipMilestoneVM; ship: ShipData
 }
 
 export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
+  const { t, tx } = useTranslation();
   const reduce = useReducedMotion();
   const ship = useShipData(data);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -221,11 +229,9 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
   if (!vm) {
     return (
       <div className="max-w-md mx-auto py-10 text-center" data-testid="factory-ship-empty">
-        <p className="typo-title-lg mb-1">No milestones yet</p>
-        <p className="typo-caption mb-4">
-          A milestone is the cut that turns endless development into a shippable deliverable — name the first one.
-        </p>
-        <NewMilestoneForm onCreate={(name) => ship.create(name)} prominent />
+        <p className="typo-title-lg mb-1">{t.ship.empty_title}</p>
+        <p className="typo-caption mb-4">{t.ship.empty_hint}</p>
+        <NewMilestoneForm onCreate={(name) => ship.create(name)} prominent t={t} />
       </div>
     );
   }
@@ -258,8 +264,8 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
                     <button
                       type="button"
                       onClick={() => setTerminalKey(key)}
-                      aria-label={`Open the session working "${c.label}"`}
-                      title={`Session ${String(session.state).replace('_', ' ')} — open terminal`}
+                      aria-label={tx(t.ship.session_open_aria, { label: c.label })}
+                      title={tx(t.ship.session_open_tooltip, { state: String(session.state).replace('_', ' ') })}
                       className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
                     >
                       <SquareTerminal className="w-3.5 h-3.5" style={{ color: PASSPORT_FLEET_INK[String(session.state)] ?? 'rgba(148,163,184,.6)' }} aria-hidden />
@@ -268,8 +274,8 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
                     <button
                       type="button"
                       onClick={() => setDispatchCrit(c)}
-                      aria-label={`Dispatch an agent at "${c.label}"`}
-                      title="Dispatch a Fleet session at this gap"
+                      aria-label={tx(t.ship.dispatch_gap_aria, { label: c.label })}
+                      title={t.ship.dispatch_gap_tooltip}
                       className="p-0.5 -mr-1 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
                       data-testid={`ship-dispatch-${c.id}`}
                     >
@@ -290,12 +296,12 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring disabled:opacity-40"
               style={{ color: INK.emerald, borderColor: `${INK.emerald}55` }}
               title={vm.status === 'planned'
-                ? 'Certify the cut — stamps the scope-creep baseline'
-                : verdict === 'go' ? 'Every criterion reads GO — ship it' : 'Blocked until every exit criterion reads GO'}
+                ? t.ship.certify_cut_tooltip
+                : verdict === 'go' ? t.ship.certify_ship_tooltip : t.ship.certify_blocked_tooltip}
               data-testid="ship-lifecycle-action"
             >
               <Rocket className="w-3.5 h-3.5" aria-hidden />
-              {vm.status === 'planned' ? 'Certify cut' : 'Certify ship'}
+              {vm.status === 'planned' ? t.ship.certify_cut : t.ship.certify_ship}
             </button>
             <button
               type="button"
@@ -305,7 +311,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               data-testid="ship-compose-open"
             >
               <PencilRuler className="w-3.5 h-3.5" aria-hidden />
-              Compose scope
+              {t.ship.compose_scope}
             </button>
           </span>
         )}
@@ -320,7 +326,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               <TimelineCard key={ms.id} vm={ms} selected={ms.id === vm.id} onSelect={() => select(ms.id)} index={i} reduce={reduce} />
             ))}
           </ul>
-          <NewMilestoneForm onCreate={(name) => ship.create(name)} />
+          <NewMilestoneForm onCreate={(name) => ship.create(name)} t={t} />
         </div>
 
         {/* the workspace — fades between the scope ledgers and the composer */}
@@ -336,7 +342,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
             {composing ? (
               <ShipMilestoneComposer vm={vm} ship={ship} onBack={() => setComposing(false)} />
             ) : (
-              <Workspace vm={vm} ship={ship} editable={editable} />
+              <Workspace vm={vm} ship={ship} editable={editable} t={t} tx={tx} />
             )}
           </motion.div>
         </AnimatePresence>

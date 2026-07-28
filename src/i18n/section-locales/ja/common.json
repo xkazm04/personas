@@ -169,5 +169,15 @@
   "selected": "選択済",
   "command_palette_create_agent": "新しいエージェントを作成",
   "command_palette_go_to": "{label}に移動",
-  "command_palette_leaderboard": "エージェントリーダーボード"
+  "command_palette_leaderboard": "エージェントリーダーボード",
+  "dispatch_action": "ディスパッチ",
+  "dispatch_already_running": "このディスパッチは既にセッションが作業中です — Fleetで開くか、先に終了してください。",
+  "dispatch_method_aria": "ディスパッチ方法",
+  "dispatch_method_cli": "Claude CLI（ヘッドレス）",
+  "dispatch_method_cli_desc": "投げっぱなしの claude -p 実行 — 軽量、状態とインサイトはFleetグリッドに表示。",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "エンジンが実行するキュー済みタスク — モデルルーティング、Run Deskで追跡。ターミナルなし。",
+  "dispatch_method_fleet": "Fleetターミナル",
+  "dispatch_method_fleet_desc": "リポジトリ内の対話型Claudeセッション — 作業を見ながらFleetグリッドから操作可能。",
+  "dispatch_pick_method": "「{project}」でエージェントの実行方法を選択 — プロンプトはディスパッチするまで編集可能です。"
 }

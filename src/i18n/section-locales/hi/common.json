@@ -169,5 +169,15 @@
   "selected": "चयनित",
   "command_palette_create_agent": "नया एजेंट बनाएँ",
   "command_palette_go_to": "{label} पर जाएँ",
-  "command_palette_leaderboard": "एजेंट लीडरबोर्ड"
+  "command_palette_leaderboard": "एजेंट लीडरबोर्ड",
+  "dispatch_action": "डिस्पैच",
+  "dispatch_already_running": "एक सेशन पहले से इस डिस्पैच पर काम कर रहा है — इसे Fleet में खोलें, या पहले उसे रोकें।",
+  "dispatch_method_aria": "डिस्पैच मेथड",
+  "dispatch_method_cli": "Claude CLI (हेडलेस)",
+  "dispatch_method_cli_desc": "फायर-एंड-फॉरगेट claude -p रन — रिसोर्स-लाइट; Fleet ग्रिड में स्टेटस और इनसाइट्स।",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "इंजन द्वारा एक्ज़िक्यूट किया गया क्यूड टास्क — मॉडल-रूटेड, Run Desk में ट्रैक किया गया। कोई टर्मिनल नहीं।",
+  "dispatch_method_fleet": "Fleet टर्मिनल",
+  "dispatch_method_fleet_desc": "रिपो में इंटरैक्टिव Claude सेशन — इसे काम करते देखें और Fleet ग्रिड से नियंत्रित करें।",
+  "dispatch_pick_method": "चुनें कि एजेंट “{project}” में कैसे चलेगा — डिस्पैच होने तक प्रॉम्प्ट संपादन योग्य रहता है।"
 }

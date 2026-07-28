@@ -169,5 +169,15 @@
   "selected": "выбрано",
   "command_palette_create_agent": "Создать нового агента",
   "command_palette_go_to": "Перейти к {label}",
-  "command_palette_leaderboard": "Рейтинг агентов"
+  "command_palette_leaderboard": "Рейтинг агентов",
+  "dispatch_action": "Отправить",
+  "dispatch_already_running": "Эта задача уже выполняется в другой сессии — откройте её во Fleet или сначала завершите.",
+  "dispatch_method_aria": "Способ отправки",
+  "dispatch_method_cli": "Claude CLI (фоновый режим)",
+  "dispatch_method_cli_desc": "Запуск claude -p и забыть — легковесно; статус и выводы в таблице Fleet.",
+  "dispatch_method_dev_runner": "Dev runner",
+  "dispatch_method_dev_runner_desc": "Задача в очереди, выполняется движком — маршрутизация по моделям, отслеживание в Run Desk. Без терминала.",
+  "dispatch_method_fleet": "Терминал Fleet",
+  "dispatch_method_fleet_desc": "Интерактивная сессия Claude в репозитории — наблюдайте за работой и управляйте из таблицы Fleet.",
+  "dispatch_pick_method": "Выберите, как агент будет работать в «{project}» — промпт остаётся редактируемым до отправки."
 }
