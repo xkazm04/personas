@@ -22,17 +22,24 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { FactoryL2Data } from '../factoryL2Data';
+import { parseStringArray } from '../factoryL2Data';
 import {
   featureState, type ContextTone, type ExitCriterion, type ScopeBucket,
-  type ShipContext, type ShipFeature, type ShipGoal, type ShipMember,
-  type ShipMilestoneVM,
+  type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
+  type ShipMember, type ShipMilestoneVM,
 } from './shipModel';
 
 export interface ShipData {
   loading: boolean;
+  /** The raw dev project (root_path for dispatches). Null while loading. */
+  project: FactoryL2Data['project'];
   roadmap: ShipMilestoneVM[];
   /** Every context through the Ship lens (health + KPI coverage). */
   contexts: ShipContext[];
+  /** Context groups (the library's bands). */
+  groups: ShipGroup[];
+  /** Refetch milestones + members + goals. */
+  reload: () => void;
   /** The full active use-case pool through the Ship lens. */
   features: ShipFeature[];
   goals: ShipGoal[];
@@ -96,9 +103,14 @@ export function useShipData(data: FactoryL2Data): ShipData {
         : errors !== null && errors > 0 ? 'warn'
         : kpis === 0 ? 'setup'
         : 'ok';
-      return { id: c.id, name: c.name, tone, kpis, errors };
+      return { id: c.id, name: c.name, tone, groupId: c.group_id, files: parseStringArray(c.file_paths), kpis, errors };
     });
   }, [data.contexts, data.kpis, data.monitoringWired, data.runtime.errorsByContext]);
+
+  const groups = useMemo<ShipGroup[]>(
+    () => data.groups.map((g) => ({ id: g.id, name: g.name, color: g.color })),
+    [data.groups],
+  );
 
   const ctxById = useMemo(() => new Map(contexts.map((c) => [c.id, c])), [contexts]);
 
@@ -127,6 +139,8 @@ export function useShipData(data: FactoryL2Data): ShipData {
       .map((g) => ({
         id: g.id,
         name: g.title,
+        description: g.description,
+        status: g.status,
         contexts: g.context_id ? [ctxById.get(g.context_id)?.name ?? ''].filter(Boolean) : [],
       })),
     [devGoals, ctxById],
@@ -285,7 +299,8 @@ export function useShipData(data: FactoryL2Data): ShipData {
 
   return {
     loading: loading || data.loading,
-    roadmap, contexts, features, goals,
+    project: data.project,
+    roadmap, contexts, groups, features, goals, reload,
     create, setStatus, setItem, removeItem,
     createFeature, scanContexts, ctxScanning: ctxScanId !== null,
   };

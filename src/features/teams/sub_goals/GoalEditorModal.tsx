@@ -34,9 +34,12 @@ interface Props {
   projectId: string;
   /** When set, the modal edits this goal; otherwise it creates a new one. */
   editGoal?: DevGoal | null;
+  /** Fired after a successful create / update / delete — lets surfaces with
+   *  their own local data layer (e.g. the Factory Ship composer) refetch. */
+  onSaved?: () => void;
 }
 
-export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props) {
+export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const isEdit = !!editGoal;
@@ -101,6 +104,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
           await updateGoal(goal.id, { status, kpiId: kpiLink });
         }
       }
+      onSaved?.();
       handleClose();
     } catch (err) {
       toastCatch(isEdit ? 'Failed to update goal' : 'Failed to create goal')(err);
@@ -114,6 +118,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
     setSaving(true);
     try {
       await deleteGoal(editGoal.id);
+      onSaved?.();
       handleClose();
     } catch (err) {
       toastCatch('Failed to delete goal')(err);

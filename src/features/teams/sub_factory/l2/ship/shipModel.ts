@@ -20,10 +20,20 @@ export interface ShipContext {
   id: string;
   name: string;
   tone: ContextTone;
+  /** Owning context group (null = ungrouped). */
+  groupId: string | null;
+  /** Parsed file paths — the drawer's coverage record. */
+  files: string[];
   /** Active KPIs measuring this context — 0 is a coverage gap. */
   kpis: number;
   /** Sentry errors this week; null when monitoring isn't wired. */
   errors: number | null;
+}
+
+export interface ShipGroup {
+  id: string;
+  name: string;
+  color: string;
 }
 
 /** A use case seen through the Ship lens, with derived readiness. */
@@ -44,6 +54,8 @@ export interface ShipFeature {
 export interface ShipGoal {
   id: string;
   name: string;
+  description: string | null;
+  status: string;
   contexts: string[];
 }
 

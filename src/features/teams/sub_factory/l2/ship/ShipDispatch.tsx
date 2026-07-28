@@ -23,6 +23,33 @@ export function shipDispatchKey(critId: string, projectId: string): string {
   return passportDispatchKey(`ship-${critId}`, projectId);
 }
 
+/** The goal-assist brief — the "too many contexts to comprehend" helper. The
+ *  user states an idea/goal; the agent does the categorization and the work:
+ *  assign contexts, execute what's feasible, update the goal's metadata, and
+ *  leave the milestone item flagged for manual review. Dispatched through the
+ *  universal DispatchChooser (Dev runner / Fleet / CLI). */
+export function buildGoalAssistPrompt(
+  goal: { name: string; description: string | null; status: string },
+  vm: ShipMilestoneVM,
+  project: DevProject,
+): string {
+  return [
+    `You are working in the "${project.name}" repository. The operator wrote this goal without categorizing it — do the comprehension work for them.`,
+    '',
+    `GOAL: ${goal.name}`,
+    goal.description ? `DETAIL: ${goal.description}` : null,
+    `STATUS: ${goal.status} · bound to milestone "${vm.name}"${vm.goal ? ` (${vm.goal})` : ''}`,
+    '',
+    'Jobs, in order:',
+    '1. ASSIGN CONTEXTS — study the codebase\'s context map (context-map.json at the repo root if present, otherwise infer from the directory structure) and identify which contexts/areas this goal touches. Record the mapping.',
+    '2. EXECUTE — if the goal is actionable now, implement it (surgical changes, run relevant tests). If it is too large, break it into concrete steps and complete the first one.',
+    '3. UPDATE GOAL METADATA — refine the goal\'s description with what you learned (touched areas, approach, remaining steps) and an honest progress estimate.',
+    '4. FLAG FOR REVIEW — finish with a "MANUAL REVIEW" summary block: what changed, what was assigned where, and what the operator should verify before accepting the milestone item.',
+    '',
+    'If the Personas management API is reachable (http://127.0.0.1:9420), use it to persist the goal updates; otherwise write SHIP_GOAL_REPORT.md at the repo root with the same content — the operator ingests it manually.',
+  ].filter((l): l is string => l !== null).join('\n');
+}
+
 /** The criterion-specific brief. Only criteria with agent-shaped work get
  *  one — objective/sensors are human decisions and return null. */
 export function buildCriterionPrompt(vm: ShipMilestoneVM, c: ExitCriterion, project: DevProject): string | null {
