@@ -36,7 +36,7 @@ export function selectHarvestWave(
   isRunning: (scopeId: string) => boolean,
   waveSize = HARVEST_WAVE,
 ): HarvestWave {
-  const eligible = coverage.filter((c) => !isRunning(c.scope_id));
+  const eligible = coverage.filter((c) => !isRunning(c.scopeId));
   const wave = eligible.slice(0, Math.max(0, waveSize));
   return {
     wave,
@@ -60,7 +60,7 @@ export function coverageRatio(
   rows: readonly WorkspaceHarvestCoverage[] | undefined,
 ): { done: number; total: number; pct: number | null } | null {
   if (!rows || rows.length === 0) return null;
-  const done = rows.filter((r) => r.last_harvested_at !== null).length;
+  const done = rows.filter((r) => r.lastHarvestedAt !== null).length;
 
   // Weight by territory size: 100% of a 73-file scope is not the same evidence
   // as 11% of a 587-file one. Scopes that reported no depth are excluded from
@@ -68,9 +68,9 @@ export function coverageRatio(
   let weighted = 0;
   let weight = 0;
   for (const r of rows) {
-    if (r.estimated_pct === null) continue;
-    const w = Math.max(1, Number(r.file_count));
-    weighted += Number(r.estimated_pct) * w;
+    if (r.estimatedPct === null) continue;
+    const w = Math.max(1, Number(r.fileCount));
+    weighted += Number(r.estimatedPct) * w;
     weight += w;
   }
   return { done, total: rows.length, pct: weight > 0 ? Math.round(weighted / weight) : null };

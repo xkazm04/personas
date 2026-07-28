@@ -261,6 +261,7 @@ pub struct WorkspacePracticeAdoption {
 /// what lets the UI report an unread surface instead of implying completeness.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceHarvestCoverage {
     pub project_id: String,
     /// Stable scope slug (`group:execution-orchestration`, `repo-global`, …).

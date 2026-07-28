@@ -819,6 +819,7 @@ pub fn decide_knowledge_bulk(
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct BulkDecision {
     pub decided: u32,
     pub ids: Vec<String>,

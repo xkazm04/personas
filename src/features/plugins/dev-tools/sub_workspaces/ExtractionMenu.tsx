@@ -256,12 +256,12 @@ export function ExtractionMenu({
       }
 
       for (const scope of wave) {
-        const key = harvestDispatchKey(workspace.id, project.id, scope.scope_id);
+        const key = harvestDispatchKey(workspace.id, project.id, scope.scopeId);
         const sessionId = await spawnSession(prep.root_path, [
           buildHarvestPrompt(wsShim, project, {
-            id: scope.scope_id,
-            label: scope.scope_label,
-            fileCount: Number(scope.file_count),
+            id: scope.scopeId,
+            label: scope.scopeLabel,
+            fileCount: Number(scope.fileCount),
           }),
         ]);
         await renameSession(sessionId, key);
