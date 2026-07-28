@@ -231,6 +231,10 @@ export type Translations = {
     conv_pinned: string;
     conv_working: string;
     conv_new: string;
+    presence_working: string;
+    presence_waiting: string;
+    presence_idle: string;
+    presence_last_seen: string;
     conv_deliberation_active: string;
     conv_composer_placeholder: string;
     conv_composer_send: string;

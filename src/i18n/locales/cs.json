@@ -266,7 +266,11 @@
     "columns_needs_attention": "Vyžaduje pozornost",
     "columns_active_goals": "Aktivní cíle",
     "columns_no_team": "Bez týmu",
-    "columns_all_clear": "Vše v pořádku"
+    "columns_all_clear": "Vše v pořádku",
+    "presence_idle": "Nečinný",
+    "presence_last_seen": "naposledy aktivní {time}",
+    "presence_waiting": "Čeká na kontrolu",
+    "presence_working": "Pracuje"
   },
   "common": {
     "loading": "Načítání...",

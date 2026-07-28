@@ -265,5 +265,9 @@
   "columns_needs_attention": "Erfordert Aufmerksamkeit",
   "columns_active_goals": "Aktive Ziele",
   "columns_no_team": "Kein Team",
-  "columns_all_clear": "Alles in Ordnung"
+  "columns_all_clear": "Alles in Ordnung",
+  "presence_idle": "Inaktiv",
+  "presence_last_seen": "zuletzt aktiv {time}",
+  "presence_waiting": "Wartet auf Review",
+  "presence_working": "Arbeitet"
 }

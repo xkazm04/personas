@@ -266,7 +266,11 @@
     "columns_needs_attention": "মনোযোগ প্রয়োজন",
     "columns_active_goals": "সক্রিয় লক্ষ্য",
     "columns_no_team": "কোনো দল নেই",
-    "columns_all_clear": "সব ঠিক আছে"
+    "columns_all_clear": "সব ঠিক আছে",
+    "presence_idle": "নিষ্ক্রিয়",
+    "presence_last_seen": "শেষ সক্রিয়তা {time}",
+    "presence_waiting": "পর্যালোচনার অপেক্ষায়",
+    "presence_working": "কাজ করছে"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

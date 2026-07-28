@@ -266,7 +266,11 @@
     "columns_needs_attention": "需要关注",
     "columns_active_goals": "进行中的目标",
     "columns_no_team": "无所属团队",
-    "columns_all_clear": "一切正常"
+    "columns_all_clear": "一切正常",
+    "presence_idle": "空闲",
+    "presence_last_seen": "最后活动 {time}",
+    "presence_waiting": "等待审查",
+    "presence_working": "工作中"
   },
   "common": {
     "loading": "加载中...",

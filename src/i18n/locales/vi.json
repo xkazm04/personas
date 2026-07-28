@@ -266,7 +266,11 @@
     "columns_needs_attention": "Cần chú ý",
     "columns_active_goals": "Mục tiêu đang hoạt động",
     "columns_no_team": "Không có nhóm",
-    "columns_all_clear": "Mọi thứ đều ổn"
+    "columns_all_clear": "Mọi thứ đều ổn",
+    "presence_idle": "Không hoạt động",
+    "presence_last_seen": "hoạt động lần cuối {time}",
+    "presence_waiting": "Chờ xem xét",
+    "presence_working": "Đang làm việc"
   },
   "common": {
     "loading": "Đang tải...",

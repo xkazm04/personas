@@ -266,7 +266,11 @@
     "columns_needs_attention": "يحتاج إلى انتباه",
     "columns_active_goals": "الأهداف النشطة",
     "columns_no_team": "بلا فريق",
-    "columns_all_clear": "كل شيء على ما يرام"
+    "columns_all_clear": "كل شيء على ما يرام",
+    "presence_idle": "خامل",
+    "presence_last_seen": "آخر نشاط {time}",
+    "presence_waiting": "بانتظار المراجعة",
+    "presence_working": "يعمل"
   },
   "common": {
     "loading": "جارٍ التحميل...",

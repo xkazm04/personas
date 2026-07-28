@@ -266,7 +266,11 @@
     "columns_needs_attention": "Nécessite une attention",
     "columns_active_goals": "Objectifs actifs",
     "columns_no_team": "Sans équipe",
-    "columns_all_clear": "Tout est en ordre"
+    "columns_all_clear": "Tout est en ordre",
+    "presence_idle": "Inactif",
+    "presence_last_seen": "dernière activité {time}",
+    "presence_waiting": "En attente de revue",
+    "presence_working": "En cours"
   },
   "common": {
     "loading": "Chargement...",

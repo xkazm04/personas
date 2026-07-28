@@ -265,5 +265,9 @@
   "columns_needs_attention": "Требует внимания",
   "columns_active_goals": "Активные цели",
   "columns_no_team": "Нет команды",
-  "columns_all_clear": "Всё в порядке"
+  "columns_all_clear": "Всё в порядке",
+  "presence_idle": "Неактивен",
+  "presence_last_seen": "последняя активность {time}",
+  "presence_waiting": "Ожидает проверки",
+  "presence_working": "Работает"
 }

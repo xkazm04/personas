@@ -265,5 +265,9 @@
   "columns_needs_attention": "Perlu perhatian",
   "columns_active_goals": "Tujuan aktif",
   "columns_no_team": "Tanpa tim",
-  "columns_all_clear": "Semua beres"
+  "columns_all_clear": "Semua beres",
+  "presence_idle": "Tidak aktif",
+  "presence_last_seen": "aktivitas terakhir {time}",
+  "presence_waiting": "Menunggu tinjauan",
+  "presence_working": "Bekerja"
 }
