@@ -11,6 +11,7 @@ import { useSavedDesignResult } from '../libs/designStateHelpers';
 import { allIndices } from '../DesignTabHelpers';
 import { PersonaParametersCard } from './PersonaParametersCard';
 import { TriggerConfig } from '@/features/triggers/sub_triggers/TriggerConfig';
+import { ConnectorVerificationPanel } from '@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel';
 
 /**
  * The Design hub's section sub-tabs. Each renders the same read-only
@@ -38,7 +39,17 @@ export function DesignParametersPanel() {
   return <PersonaParametersCard />;
 }
 
-/** Connectors & Tools — read-only view of the saved design's connectors. */
+/**
+ * Connectors & Tools. Live connector verification (test / link / swap) via
+ * `ConnectorVerificationPanel`, plus a read-only view of the connectors and
+ * tools the original build proposed.
+ *
+ * The read-only design section was previously the whole panel, which meant the
+ * sub-tab a user opens to check their connectors could only ever report what
+ * the *build* suggested — never whether a linked credential actually works, and
+ * nothing at all for a persona that was never designed. Mirrors the shape
+ * `DesignEventsPanel` already uses (live manager first, design recap below).
+ */
 export function DesignConnectorsPanel() {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -48,22 +59,33 @@ export function DesignConnectorsPanel() {
   const saved = useSavedDesignResult(selectedPersona);
   const selectedTools = useMemo(() => new Set(saved?.suggested_tools ?? []), [saved]);
 
-  const isEmpty =
+  // The persona's live connectors come from its tools, not from a saved design,
+  // so the verification panel stands on its own; only the design recap below
+  // needs a saved result. The empty state is reserved for when neither exists.
+  const hasLiveConnectors = selectedPersona?.tools.some((tool) => tool.requires_credential_type) ?? false;
+  const designIsEmpty =
     !saved ||
     ((saved.suggested_connectors?.length ?? 0) === 0 && (saved.suggested_tools?.length ?? 0) === 0);
-  if (isEmpty) return <SectionEmpty icon={Plug} title={t.agents.design_subtabs.connectors} />;
+  if (designIsEmpty && !hasLiveConnectors) {
+    return <SectionEmpty icon={Plug} title={t.agents.design_subtabs.connectors} />;
+  }
 
   return (
-    <ConnectorsSection
-      result={saved}
-      allToolDefs={toolDefinitions}
-      currentToolNames={[]}
-      credentials={credentials}
-      connectorDefinitions={connectorDefinitions}
-      selectedTools={selectedTools}
-      onToolToggle={NOOP}
-      readOnly
-    />
+    <div className="space-y-6">
+      <ConnectorVerificationPanel />
+      {!designIsEmpty && saved && (
+        <ConnectorsSection
+          result={saved}
+          allToolDefs={toolDefinitions}
+          currentToolNames={[]}
+          credentials={credentials}
+          connectorDefinitions={connectorDefinitions}
+          selectedTools={selectedTools}
+          onToolToggle={NOOP}
+          readOnly
+        />
+      )}
+    </div>
   );
 }
 
