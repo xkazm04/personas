@@ -374,9 +374,12 @@ which only demotes an explicit probe failure.
 not verifiable / stale) is a toggle — clicking one shows just those connectors,
 clicking again clears — mirroring the vault credential list's health filter and
 adding `stale`, which the vault has no equivalent for. Role headings still come
-from the unfiltered set so interchangeable groups keep reading as one decision,
-and an active filter clears itself if it stops matching anything (its pill
-disappears at count zero). `matchesHealthFilter()` in `connectorTypes.ts` is the
+from the unfiltered set so interchangeable groups keep reading as one decision.
+A filter matching nothing renders an empty state with an explicit **Show all
+connectors** action rather than silently discarding the user's filter — which
+matters because a pill disappears once its count reaches zero, so recovering the
+last failing connector would otherwise leave a filtered-empty list with no
+control left to clear it. `matchesHealthFilter()` in `connectorTypes.ts` is the
 single predicate.
 
 Wiring:
