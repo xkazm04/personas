@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, scanMemoryHealth, getMemoryHealthOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow, type MemoryHealthRow } from '@/api/devTools/devTools';
 import { listCredentials } from '@/api/vault/credentials';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { derivePassportFromMetadata } from './passportDerive';
@@ -67,28 +68,12 @@ const PROBE_CONCURRENCY = 5;
 /** The evidence probe is local-filesystem IPC (not remote) — wider is fine. */
 const PROBE_FS_CONCURRENCY = 10;
 
-/** Run `fn` over `items` with at most `limit` promises in flight; results keep
- *  input order. Exported — every per-project fan-out in the factory surface
- *  should go through this instead of an unbounded Promise.all. */
-export async function mapWithConcurrency<T, R>(
-  items: readonly T[],
-  limit: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let cursor = 0;
-  const width = Math.max(1, Math.min(limit, items.length));
-  await Promise.all(
-    Array.from({ length: width }, async () => {
-      for (;;) {
-        const i = cursor++;
-        if (i >= items.length) return;
-        results[i] = await fn(items[i]!, i);
-      }
-    }),
-  );
-  return results;
-}
+/** Re-exported for `factoryData.tsx` and other existing importers of this
+ *  module's `mapWithConcurrency` — the canonical implementation now lives in
+ *  `@/lib/concurrency` (hoisted out of here and `sceneStore.ts`, which had an
+ *  independent copy of the exact same limiter). Import `@/lib/concurrency`
+ *  directly in new code. */
+export { mapWithConcurrency };
 
 /** Last successfully published snapshot — module scope so a REMOUNT paints
  *  instantly from cache (stale-while-revalidate) instead of a big-bang reload.
