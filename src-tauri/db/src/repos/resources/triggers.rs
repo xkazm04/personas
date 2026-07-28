@@ -3430,4 +3430,53 @@ mod tests {
         let (_, third_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
         assert!(!third_won, "an already-resolved fire must never win the CAS again");
     }
+
+    /// Regression pin for the manual-backfill double-publish race
+    /// (`commands/execution/scheduler.rs::backfill_schedule`, Finding #2 of the
+    /// 2026-07-28 claim-then-work audit). That command now claims the trigger
+    /// through this CAS BEFORE computing or publishing any slot. Two callers
+    /// racing at the same `expected_version` -- a double-clicked Backfill, or
+    /// the command racing the auto-backfill tick -- must not both win, or both
+    /// publish the same slots and the persona is dispatched twice for one
+    /// schedule slot (duplicate LLM spend, plus whatever side effect the
+    /// persona itself performs).
+    ///
+    /// Lives here rather than beside the command because `test_fixtures` is
+    /// `#[cfg(test)]`-private to this crate and is not reachable from the
+    /// app_lib test build at all.
+    #[test]
+    fn advance_schedule_pointer_cas_rejects_a_second_same_version_claim() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .expect("create schedule trigger");
+
+        let first = advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+        let second = advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+
+        assert!(matches!(first, Ok(true)), "first claim must win: {first:?}");
+        assert!(
+            matches!(second, Ok(false)),
+            "a second claim at the now-stale version must lose the CAS: {second:?}"
+        );
+    }
 }
