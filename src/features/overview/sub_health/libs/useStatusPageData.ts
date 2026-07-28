@@ -15,8 +15,35 @@ interface StatusPageState {
   loading: boolean;
   error: string | null;
   lastRefreshedAt: number | null;
-  globalScore: number;
-  globalUptime: number;
+  /** null when there are no personas at all — a fresh install or fully-filtered
+   *  view has no score to report, not a perfect 100. */
+  globalScore: number | null;
+  /** null when no persona in the set has any day with recorded activity. */
+  globalUptime: number | null;
+}
+
+/**
+ * Average composite score across personas, or null when there are none.
+ * Extracted as a pure function so the "no personas at all" honesty fix is
+ * unit-testable without mounting the hook (store/IPC free).
+ */
+export function computeGlobalScore(entries: CompositeHealthEntry[]): number | null {
+  if (entries.length === 0) return null;
+  return Math.round(entries.reduce((s, e) => s + e.score, 0) / entries.length);
+}
+
+/**
+ * Average uptime across personas that have at least one day of recorded
+ * activity, or null when none do. Personas with `uptimePercent === null`
+ * (no activity in the 30-day window) are excluded from the average rather
+ * than counted as either 0% or 100% uptime.
+ */
+export function computeGlobalUptime(entries: CompositeHealthEntry[]): number | null {
+  const withData = entries.filter(
+    (e): e is CompositeHealthEntry & { uptimePercent: number } => e.uptimePercent != null,
+  );
+  if (withData.length === 0) return null;
+  return withData.reduce((s, e) => s + e.uptimePercent, 0) / withData.length;
 }
 
 export function useStatusPageData() {
@@ -130,15 +157,9 @@ export function useStatusPageData() {
     });
   }, [executionDashboard, slaStats, healingIssues]);
 
-  const globalScore = useMemo(() => {
-    if (entries.length === 0) return 100;
-    return Math.round(entries.reduce((s, e) => s + e.score, 0) / entries.length);
-  }, [entries]);
+  const globalScore = useMemo(() => computeGlobalScore(entries), [entries]);
 
-  const globalUptime = useMemo(() => {
-    if (entries.length === 0) return 1;
-    return entries.reduce((s, e) => s + e.uptimePercent, 0) / entries.length;
-  }, [entries]);
+  const globalUptime = useMemo(() => computeGlobalUptime(entries), [entries]);
 
   return useMemo((): StatusPageState & { refresh: () => Promise<void> } => ({
     entries,
