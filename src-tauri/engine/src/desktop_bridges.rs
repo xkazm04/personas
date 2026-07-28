@@ -797,6 +797,16 @@ pub mod obsidian {
         api_key: &str,
         action: &ObsidianAction,
     ) -> Result<String, AppError> {
+        // Deliberately NOT routed through `personas_core::url_safety::build_ssrf_safe_client`.
+        // `base_url` below is a literal `https://127.0.0.1:{port}` — only `port`
+        // (`DesktopBridgeConfig::obsidian_api_port: Option<u16>`, set via the
+        // Obsidian Local REST API plugin setting) is caller-influenced, the host
+        // is not: there is no config, vault setting, or persisted value anywhere
+        // in this call chain that can substitute a different host string. An
+        // SSRF-safe client's private-IP-blocking DNS resolver would reject this
+        // very loopback target and break every Obsidian bridge call, for no
+        // additional protection since the host can't be redirected off-loopback
+        // by anything this function accepts as input.
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
