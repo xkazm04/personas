@@ -1192,7 +1192,7 @@ const SLOW_TICK_THRESHOLD_NUM: u64 = 4;
 const SLOW_TICK_THRESHOLD_DEN: u64 = 5;
 
 /// Run a single reactive subscription in its own task, respecting initial delay,
-/// interval, and the scheduler's running flag.
+/// interval, and its own captured generation.
 ///
 /// Adaptively switches between `interval()` and `idle_interval()` based on
 /// the scheduler's active flag, reducing CPU/IO when the system is idle.
@@ -1203,10 +1203,23 @@ const SLOW_TICK_THRESHOLD_DEN: u64 = 5;
 /// Registers itself as alive/dead in `SchedulerState` and emits a
 /// `subscription-crashed` Tauri event on every panic so the frontend can
 /// surface dead subscriptions immediately.
+///
+/// `generation` is the scheduler generation active at the moment this task
+/// was spawned (see `SchedulerState::try_begin_start` /
+/// `background::start_loops`). Each tick re-checks it against a fresh
+/// `scheduler.generation()` load instead of the bare `is_running()` bool --
+/// a bare bool can't distinguish "the scheduler is currently running" from
+/// "the scheduler was stopped and restarted since I was spawned": dropping a
+/// `JoinHandle` (all `stop_loops` used to do) doesn't abort this task, so a
+/// stop+restart flips `running` back to `true` while this loop is still
+/// alive, and it would wrongly conclude it's current and keep polling --
+/// producing a second live copy of every trigger/webhook/schedule loop
+/// against the same DB.
 async fn run_single(
     sub: Box<dyn ReactiveSubscription>,
     scheduler: Arc<SchedulerState>,
     app: AppHandle,
+    generation: u64,
 ) {
     let name = sub.name();
     let active_interval = sub.interval();
@@ -1247,7 +1260,16 @@ async fn run_single(
                 interval.tick().await;
             }
         }
-        if !scheduler.is_running() {
+        // Finding #1: compare OUR captured generation against a fresh load,
+        // not the shared `running` bool. See the doc comment above for why
+        // `is_running()` alone is unsafe here.
+        if scheduler.generation() != generation {
+            tracing::debug!(
+                subscription = name,
+                spawned_generation = generation,
+                current_generation = scheduler.generation(),
+                "Subscription loop retiring -- scheduler generation moved on (stop or restart since spawn)"
+            );
             break;
         }
 
@@ -1414,16 +1436,22 @@ async fn run_single(
 ///
 /// Returns the retained `JoinHandle`s so the caller can store them (preventing
 /// silent task drops) and optionally await graceful shutdown.
+///
+/// `generation` is the scheduler generation this batch is being spawned
+/// under (see `SchedulerState::try_begin_start`); every spawned loop
+/// captures it and self-retires when the scheduler's generation moves past
+/// it (see `run_single`).
 pub fn spawn_subscriptions(
     subscriptions: Vec<Box<dyn ReactiveSubscription>>,
     scheduler: Arc<SchedulerState>,
     app: AppHandle,
+    generation: u64,
 ) -> Vec<tokio::task::JoinHandle<()>> {
     let mut handles = Vec::with_capacity(subscriptions.len());
     for sub in subscriptions {
         let sched = scheduler.clone();
         let app_handle = app.clone();
-        handles.push(tokio::spawn(run_single(sub, sched, app_handle)));
+        handles.push(tokio::spawn(run_single(sub, sched, app_handle, generation)));
     }
     handles
 }

@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { getTeamAssignmentDetail } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useCompanionStore, type AthenaAssignmentRef } from './companionStore';
 
 /** Listens to TEAM_ASSIGNMENT_PROGRESS globally and surfaces Athena-
@@ -22,14 +23,34 @@ export function useCompanionAssignmentBridge() {
     // with the engine's own DB load.
     const nonAthena = new Set<string>(); // source verdict cache
     const pending = new Map<string, ReturnType<typeof setTimeout>>(); // per-assignment debounce
+    // Per-assignment latest-wins guard: two TEAM_ASSIGNMENT_PROGRESS events
+    // >300ms apart each schedule their own fetchDetail; the debounce only
+    // coalesces the SCHEDULING, not the in-flight fetches. Without this, an
+    // earlier fetch that resolves after a later one can regress the card's
+    // doneSteps/status. Keyed per assignmentId — unrelated assignments must
+    // not gate each other.
+    const latestWinsByAssignment = new Map<string, ReturnType<typeof createLatestWins>>();
+    const getLatestWins = (assignmentId: string) => {
+      let lw = latestWinsByAssignment.get(assignmentId);
+      if (!lw) {
+        lw = createLatestWins();
+        latestWinsByAssignment.set(assignmentId, lw);
+      }
+      return lw;
+    };
     const fetchDetail = async (assignmentId: string) => {
         if (cancelled) return;
+        const lw = getLatestWins(assignmentId);
+        const token = lw.next();
         try {
           const detail = await getTeamAssignmentDetail(assignmentId);
           if (detail.assignment.source !== 'athena') {
             nonAthena.add(assignmentId);
             return;
           }
+          // Discard a stale response — a newer fetch for this same
+          // assignment has already started (or already resolved).
+          if (!lw.isCurrent(token)) return;
           const ref: AthenaAssignmentRef = {
             assignmentId: detail.assignment.id,
             teamId: detail.assignment.teamId,
