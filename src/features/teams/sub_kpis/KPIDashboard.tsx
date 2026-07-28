@@ -46,6 +46,38 @@ function normValue(kpi: DevKpi, v: number): number | null {
   return clamp((kpi.direction === 'down' ? target / Math.max(v, 1e-9) : v / target) * 100);
 }
 
+/**
+ * Distance rows grouped BY PROJECT (name asc). Exported as a pure function
+ * (rather than inlined in the component's useMemo) so the "skip unmeasured
+ * KPIs" honesty fix is unit-testable without mounting the dashboard.
+ *
+ * A KPI with `track === 'unmeasured'` (no `current_value` at all —
+ * kpiMath.ts's `kpiTrack`) is skipped entirely rather than built into a row.
+ * The old behavior fed `distancePct(kpi) ?? 0` into every row regardless of
+ * track, turning "never measured" into a real 0% bar reading as "stalled",
+ * which is a different (and false) claim than "no reading yet" —
+ * kpiConvergence.ts documents the same 'unmeasured' exclusion rule for the
+ * convergence view.
+ */
+export function buildProjectGroups(
+  paced: Array<{ kpi: DevKpi; d: PaceDescriptor }>,
+  projectName: (id: string) => string,
+  buildRow: (kpi: DevKpi, d: PaceDescriptor) => DistanceRow,
+): DistanceGroup[] {
+  const groups = new Map<string, DistanceGroup>();
+  for (const { kpi, d } of paced) {
+    if (d.track === 'unmeasured') continue;
+    const key = kpi.project_id;
+    let entry = groups.get(key);
+    if (!entry) { entry = { key, label: projectName(key), order: 0, rows: [] }; groups.set(key, entry); }
+    entry.rows.push(buildRow(kpi, d));
+  }
+  const arr = [...groups.values()];
+  for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
+  arr.sort((a, b) => a.label.localeCompare(b.label));
+  return arr;
+}
+
 export function KPIDashboard({
   loading,
   onOpen,
@@ -114,19 +146,10 @@ export function KPIDashboard({
 
   // Distance rows grouped BY PROJECT (name asc), so the off-track alerts can be
   // injected inside each project's own card.
-  const projectGroups = useMemo<DistanceGroup[]>(() => {
-    const groups = new Map<string, DistanceGroup>();
-    for (const { kpi, d } of paced) {
-      const key = kpi.project_id;
-      let entry = groups.get(key);
-      if (!entry) { entry = { key, label: projectName(key), order: 0, rows: [] }; groups.set(key, entry); }
-      entry.rows.push(buildRow(kpi, d));
-    }
-    const arr = [...groups.values()];
-    for (const e of arr) e.rows.sort((a, b) => a.name.localeCompare(b.name));
-    arr.sort((a, b) => a.label.localeCompare(b.label));
-    return arr;
-  }, [paced, projectName, buildRow]);
+  const projectGroups = useMemo<DistanceGroup[]>(
+    () => buildProjectGroups(paced, projectName, buildRow),
+    [paced, projectName, buildRow],
+  );
 
   const trendModel = useMemo(() => {
     const series = filtered
