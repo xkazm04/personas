@@ -306,6 +306,17 @@ pub fn resolve_pending_fire(
         let status = if approved { "approved" } else { "rejected" };
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
+        // CAS semantics (deliberate, differs from healing.rs::confirm_auto_fix
+        // and manual_reviews.rs::update_status): a LOST compare-and-swap here is
+        // NOT an error. The `AND status = 'pending'` predicate means a losing
+        // caller's `rows == 0` only happens because a concurrent caller already
+        // recorded the human's approve/reject decision -- the decision the
+        // caller wanted recorded WAS recorded, just by the other racing call.
+        // Returning success (with the resolved row) here is correct; returning
+        // an error would be a false failure for a decision that in fact went
+        // through. Contrast with healing/manual-review CAS, where a lost race
+        // means a DIFFERENT actor made a conflicting decision and the caller's
+        // own action was genuinely dropped, so those paths must surface `Err`.
         let rows = conn.execute(
             "UPDATE pending_trigger_fires SET status = ?1, resolved_at = ?2 WHERE id = ?3 AND status = 'pending'",
             params![status, now, id],

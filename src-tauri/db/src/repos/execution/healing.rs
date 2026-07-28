@@ -402,6 +402,13 @@ pub fn confirm_auto_fix(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("healing_events", "healing_events::confirm_auto_fix", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
+        // CAS semantics (deliberate, differs from
+        // triggers.rs::resolve_pending_fire): a LOST compare-and-swap here IS an
+        // error. Unlike the trigger-fire case, a 0-row result means the issue
+        // was NOT confirmed by this caller -- there is no other racing call that
+        // recorded this same outcome on the caller's behalf, so returning `Err`
+        // (rather than treating the lost race as a benign no-op) is the only way
+        // to surface that the confirm didn't happen.
         let rows = conn.execute(
             "UPDATE persona_healing_issues SET status = 'resolved', resolved_at = ?1 WHERE id = ?2 AND status = 'auto_fix_pending'",
             params![now, id],
