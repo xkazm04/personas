@@ -20,6 +20,11 @@ export interface BulkSummary {
   total: number;
   passed: number;
   failed: number;
+  /** Credentials with no live probe available at all — neither passed nor
+   *  failed. Forwarded from the backend so the UI can render a neutral third
+   *  badge; folding these into `passed` is what made "N passed, 0 failed" read
+   *  as "every credential verified" when some were never probed. */
+  unverifiable: number;
   results: BulkResult[];
   slowest: BulkResult[];
   needsAttention: BulkResult[];
@@ -92,6 +97,7 @@ export function useBulkHealthcheck() {
         total: result.total,
         passed: result.passed,
         failed: result.failed,
+        unverifiable: result.unverifiable,
         results,
         slowest,
         needsAttention,

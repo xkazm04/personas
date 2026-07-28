@@ -67,14 +67,11 @@ export function TestAllButton({
   // so counting on it alone would show "N passed, 0 failed" even when none of
   // the N were ever actually verified.
   //
-  // The backend (`BulkHealthcheckSummary`, src-tauri/src/engine/healthcheck.rs)
-  // now reports this count, but `useBulkHealthcheck`'s local `BulkSummary`
-  // type (src/features/vault/shared/hooks/health/useBulkHealthcheck.ts:19-27)
-  // does not declare or forward it yet -- that hook is outside this change's
-  // owned files, so this reads via an inline optional-shape cast and resolves
-  // to 0 until `BulkSummary` and its construction (same file, ~line 91-99)
-  // are updated to carry `unverifiable` through from the IPC response.
-  const unverifiable = (bulk.summary as { unverifiable?: number } | null)?.unverifiable ?? 0;
+  // Credentials with no live probe at all: neither passed nor failed. Carried
+  // all the way from `BulkHealthcheckSummary` (src-tauri/src/engine/healthcheck.rs)
+  // through `useBulkHealthcheck`'s `BulkSummary`, so the count is real rather
+  // than defaulted -- a 0 here means "none unverifiable", not "unknown".
+  const unverifiable = bulk.summary?.unverifiable ?? 0;
   // Only claim the "all healthy" emerald treatment when every credential was
   // actually probed and passed. If any were unverifiable (no probe exists at
   // all), the button must NOT read as a clean bill of health even when
