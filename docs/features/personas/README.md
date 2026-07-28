@@ -308,7 +308,7 @@ the inline health badge in `EditorTabBar`):
 | Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). When the persona has assigned tools, the tab-bar actions also expose **Run tool** — a modal (`ToolRunnerModal` wrapping `ToolRunnerPanel`) that invokes a single tool directly via `invoke_tool_direct` (no LLM), rendering the typed outcome contract: failure category, HTTP status when present, a retryable hint, and an output-truncated notice. |
 | Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
 | Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
-| Connectors | `ConnectorsSection` (via `DesignConnectorsPanel`) | read-only view of the saved design's connectors + tools |
+| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Swap alternative — above a read-only view of the saved design's connectors + tools |
 | Events & Triggers | `EventsSection` (via `DesignEventsPanel`) | read-only triggers + event subscriptions |
 | Notifications | `MessagesSection` (via `DesignNotificationsPanel`) | read-only notification channels (was "Messaging") |
 
@@ -320,6 +320,18 @@ state when its dimension is empty. The Properties sub-tab passes
 `hideConnectors`/`hideEvents`/`hideMessages` to `DesignResultPreview` so those
 bodies aren't duplicated. The health badge lives in `EditorTabBar`; clicking it
 re-runs `runHealthCheck()` in-place.
+
+Two of those sub-tabs are no longer read-only. **Events & Triggers** mounts the
+live `TriggerConfig` manager above its design recap, and **Connectors** mounts
+`ConnectorVerificationPanel`
+(`src/features/agents/sub_connectors/components/connectors/`) above its own. The
+verification panel derives its rows from the persona's actual tools via
+`useConnectorStatuses` — not from a saved design — so it renders for personas
+that were never designed, groups interchangeable connectors by their
+`connectorRoles` functional role, auto-tests a connector when it gains a
+credential, and offers Test / Test all / Link existing / Add new / Swap
+alternative per row. The sub-tab's empty state now appears only when the persona
+has neither a live connector demand nor a saved design.
 
 Wiring:
 
