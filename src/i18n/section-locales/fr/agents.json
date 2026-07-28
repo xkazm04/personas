@@ -1128,7 +1128,12 @@
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
     "platform_custom": "Personnalisé",
-    "st_last_checked": "Dernière vérification"
+    "st_last_checked": "Dernière vérification",
+    "st_retest": "Retester",
+    "st_stale": "{count} obsolètes",
+    "test_diff_recovered": "{count} rétablis",
+    "test_diff_regressed": "{count} nouveaux échecs",
+    "test_diff_failing": "{count} en échec"
   },
   "model_config": {
     "model_provider": "Modèle & Fournisseur",

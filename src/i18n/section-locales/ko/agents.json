@@ -1128,7 +1128,12 @@
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
     "platform_custom": "사용자 지정",
-    "st_last_checked": "마지막 확인"
+    "st_last_checked": "마지막 확인",
+    "st_retest": "다시 테스트",
+    "st_stale": "{count}개 오래됨",
+    "test_diff_recovered": "{count}개 복구됨",
+    "test_diff_regressed": "{count}개 새로 실패",
+    "test_diff_failing": "{count}개 실패"
   },
   "model_config": {
     "model_provider": "모델 & 공급자",

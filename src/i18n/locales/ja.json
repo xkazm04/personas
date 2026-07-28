@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "カスタム",
-      "st_last_checked": "最終確認"
+      "st_last_checked": "最終確認",
+      "st_retest": "再テスト",
+      "st_stale": "{count} 件が古い",
+      "test_diff_recovered": "{count} 件が回復",
+      "test_diff_regressed": "{count} 件が新たに失敗",
+      "test_diff_failing": "{count} 件が失敗"
     },
     "model_config": {
       "model_provider": "モデル＆プロバイダー",

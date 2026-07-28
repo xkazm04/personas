@@ -2041,7 +2041,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "Custom",
-      "st_last_checked": "Last checked"
+      "st_last_checked": "Last checked",
+      "st_retest": "Re-test",
+      "st_stale": "{count} stale",
+      "test_diff_recovered": "{count} recovered",
+      "test_diff_regressed": "{count} newly failing",
+      "test_diff_failing": "{count} failing"
     },
     "model_config": {
       "model_provider": "Model & Provider",

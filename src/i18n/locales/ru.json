@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "Пользовательский",
-      "st_last_checked": "Последняя проверка"
+      "st_last_checked": "Последняя проверка",
+      "st_retest": "Проверить снова",
+      "st_stale": "устарело: {count}",
+      "test_diff_recovered": "восстановлено: {count}",
+      "test_diff_regressed": "новых сбоев: {count}",
+      "test_diff_failing": "сбоев: {count}"
     },
     "model_config": {
       "model_provider": "Модель и провайдер",

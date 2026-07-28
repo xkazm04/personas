@@ -1,4 +1,4 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
@@ -45,6 +45,8 @@ interface ConnectorsSectionProps {
   healthy: number;
   unhealthy: number;
   unlinked: number;
+  /** Rows whose only evidence is a restored healthcheck past the staleness cutoff. */
+  staleCount: number;
   testableCount: number;
   testingAll: boolean;
   credentials: CredentialMetadata[];
@@ -59,7 +61,7 @@ interface ConnectorsSectionProps {
 }
 
 export function ConnectorsSection({
-  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked,
+  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, staleCount,
   testableCount, testingAll, credentials, linkingConnector,
   onTestAll, onTestConnector, onToggleLinking, onLink,
   onAddCredential, onClearLinkError, onSwap,
@@ -89,6 +91,11 @@ export function ConnectorsSection({
             {unlinked > 0 && (
               <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
                 {tx(t.agents.connectors.st_missing, { count: unlinked })}
+              </StatusBadge>
+            )}
+            {staleCount > 0 && (
+              <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<Clock className="w-2.5 h-2.5" />}>
+                {tx(t.agents.connectors.st_stale, { count: staleCount })}
               </StatusBadge>
             )}
           </>

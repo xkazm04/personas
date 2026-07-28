@@ -2048,6 +2048,11 @@ export type Translations = {
       platform_zapier: string;
       platform_custom: string;
       st_last_checked: string;
+      st_retest: string;
+      st_stale: string;
+      test_diff_recovered: string;
+      test_diff_regressed: string;
+      test_diff_failing: string;
     };
     model_config: {
       model_provider: string;

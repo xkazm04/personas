@@ -1128,7 +1128,12 @@
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
     "platform_custom": "কাস্টম",
-    "st_last_checked": "সর্বশেষ পরীক্ষা"
+    "st_last_checked": "সর্বশেষ পরীক্ষা",
+    "st_retest": "পুনরায় পরীক্ষা",
+    "st_stale": "{count} পুরোনো",
+    "test_diff_recovered": "{count} পুনরুদ্ধার হয়েছে",
+    "test_diff_regressed": "{count} নতুন ব্যর্থ",
+    "test_diff_failing": "{count} ব্যর্থ"
   },
   "model_config": {
     "model_provider": "মডেল ও প্রোভাইডার",

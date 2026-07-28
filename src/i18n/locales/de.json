@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "Benutzerdefiniert",
-      "st_last_checked": "Zuletzt geprüft"
+      "st_last_checked": "Zuletzt geprüft",
+      "st_retest": "Erneut testen",
+      "st_stale": "{count} veraltet",
+      "test_diff_recovered": "{count} wiederhergestellt",
+      "test_diff_regressed": "{count} neu fehlgeschlagen",
+      "test_diff_failing": "{count} fehlgeschlagen"
     },
     "model_config": {
       "model_provider": "Modell & Anbieter",

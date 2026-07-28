@@ -8,8 +8,8 @@ import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors'
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
-import type { ConnectorStatus, ConnectorReadiness } from './connectorTypes';
-import { deriveReadiness, restoreHealthcheck } from './connectorTypes';
+import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck, isStaleResult } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -101,18 +101,23 @@ export function useConnectorStatuses() {
     );
   }, []);
 
-  const testConnector = useCallback(async (name: string, credentialId: string) => {
-    if (inFlightTestsRef.current.has(name)) return;
+  // Returns the outcome so callers (handleTestAll) can diff a batch against the
+  // results it replaced without re-reading state through a stale closure.
+  const testConnector = useCallback(async (name: string, credentialId: string): Promise<ConnectorTestResult | null> => {
+    if (inFlightTestsRef.current.has(name)) return null;
     inFlightTestsRef.current.add(name);
     updateStatus(name, { testing: true, result: null });
     try {
       const result = await healthcheckCredential(credentialId);
       updateStatus(name, { testing: false, result });
+      return result;
     } catch (err) {
-      updateStatus(name, {
-        testing: false,
-        result: { success: false, message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default },
-      });
+      const result: ConnectorTestResult = {
+        success: false,
+        message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
+      };
+      updateStatus(name, { testing: false, result });
+      return result;
     } finally {
       inFlightTestsRef.current.delete(name);
     }
@@ -158,14 +163,45 @@ export function useConnectorStatuses() {
     setTestingAll(true);
     setConnectorTestActive(true);
     const testable = statuses.filter((s) => s.credentialId);
+    // Snapshot before the batch so the notification can report what actually
+    // CHANGED. Restored healthchecks make this baseline free — before they were
+    // persisted there was nothing to diff against, so the notification could
+    // only ever say "tested N connectors", which tells the user nothing.
+    const baseline = new Map(testable.map((s) => [s.name, s.result?.success ?? null]));
     try {
-      await Promise.allSettled(
-        testable.map((status) => testConnector(status.name, status.credentialId!)),
+      const outcomes = await Promise.all(
+        testable.map(async (status) => ({
+          name: status.name,
+          result: await testConnector(status.name, status.credentialId!),
+        })),
       );
+
+      let recovered = 0;
+      let regressed = 0;
+      let failing = 0;
+      for (const { name, result } of outcomes) {
+        if (!result) continue;
+        const before = baseline.get(name) ?? null;
+        if (result.success) {
+          if (before === false) recovered++;
+        } else if (before === true) {
+          regressed++;
+        } else {
+          failing++;
+        }
+      }
+
       const persona = selectedPersona?.name ?? t.agents.connectors.test_persona_fallback;
+      const parts: string[] = [];
+      if (recovered > 0) parts.push(tx(t.agents.connectors.test_diff_recovered, { count: recovered }));
+      if (regressed > 0) parts.push(tx(t.agents.connectors.test_diff_regressed, { count: regressed }));
+      if (failing > 0) parts.push(tx(t.agents.connectors.test_diff_failing, { count: failing }));
+
       sendAppNotification(
         t.agents.connectors.test_complete_notification_title,
-        tx(t.agents.connectors.test_complete_notification_body, { persona, count: testable.length }),
+        parts.length > 0
+          ? `${persona} — ${parts.join(' · ')}`
+          : tx(t.agents.connectors.test_complete_notification_body, { persona, count: testable.length }),
       ).catch(silentCatch("useConnectorStatuses:sendTestCompleteNotification"));
     } finally {
       testAllActiveRef.current = false;
@@ -213,8 +249,15 @@ export function useConnectorStatuses() {
     return counts;
   }, [statuses]);
 
+  /** Rows whose only evidence is a restored healthcheck older than the cutoff. */
+  const staleCount = useMemo(
+    () => statuses.filter((s) => isStaleResult(s.result)).length,
+    [statuses],
+  );
+
   return {
     statuses,
+    staleCount,
     tools,
     requiredCredTypes,
     credentials,

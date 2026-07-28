@@ -24,7 +24,7 @@ interface ConnectorVerificationPanelProps {
 export function ConnectorVerificationPanel({ onMissingCountChange }: ConnectorVerificationPanelProps) {
   const { t } = useTranslation();
   const {
-    statuses, requiredCredTypes, credentials, testingAll, readinessCounts,
+    statuses, requiredCredTypes, credentials, testingAll, readinessCounts, staleCount,
     fetchCredentials, testConnector, handleTestAll, handleLinkCredential, clearLinkError,
   } = useConnectorStatuses();
 
@@ -91,6 +91,7 @@ export function ConnectorVerificationPanel({ onMissingCountChange }: ConnectorVe
         healthy={healthy}
         unhealthy={unhealthy}
         unlinked={unlinked}
+        staleCount={staleCount}
         testableCount={testableCount}
         testingAll={testingAll}
         credentials={credentials}

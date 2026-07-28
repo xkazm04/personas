@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "自定义",
-      "st_last_checked": "上次检查"
+      "st_last_checked": "上次检查",
+      "st_retest": "重新测试",
+      "st_stale": "{count} 个已过期",
+      "test_diff_recovered": "{count} 个已恢复",
+      "test_diff_regressed": "{count} 个新失败",
+      "test_diff_failing": "{count} 个失败"
     },
     "model_config": {
       "model_provider": "模型与提供商",

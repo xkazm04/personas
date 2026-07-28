@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "कस्टम",
-      "st_last_checked": "अंतिम जाँच"
+      "st_last_checked": "अंतिम जाँच",
+      "st_retest": "फिर जाँचें",
+      "st_stale": "{count} पुराने",
+      "test_diff_recovered": "{count} ठीक हुए",
+      "test_diff_regressed": "{count} नए विफल",
+      "test_diff_failing": "{count} विफल"
     },
     "model_config": {
       "model_provider": "मॉडल और प्रदाता",

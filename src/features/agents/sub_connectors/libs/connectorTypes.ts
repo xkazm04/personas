@@ -13,6 +13,25 @@ export interface ConnectorTestResult {
   cached?: boolean;
 }
 
+/**
+ * How old a restored healthcheck may be before the row nudges for a re-test.
+ * A day is long enough that a working setup isn't nagged every session, short
+ * enough that "it worked yesterday" isn't treated as evidence about today.
+ */
+export const STALE_HEALTHCHECK_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * True when a result was restored from persistence AND is old enough that it
+ * should not be trusted as current. Live results from this session are never
+ * stale — the user just watched them run.
+ */
+export function isStaleResult(result: ConnectorTestResult | null, now = Date.now()): boolean {
+  if (!result?.cached || !result.testedAt) return false;
+  const testedAt = Date.parse(result.testedAt);
+  if (Number.isNaN(testedAt)) return false;
+  return now - testedAt > STALE_HEALTHCHECK_MS;
+}
+
 export interface ConnectorStatus {
   name: string;
   credentialId: string | null;

@@ -97,7 +97,11 @@ export function ConnectorStatusCard({
       {alternatives && onSwap && (
         <SwapPicker swapOpen={swapOpen} alternatives={alternatives} statusName={status.name} onSwap={onSwap} onClose={() => setSwapOpen(false)} />
       )}
-      <StatusResult status={status} onClearLinkError={onClearLinkError} />
+      <StatusResult
+        status={status}
+        onClearLinkError={onClearLinkError}
+        onRetest={status.credentialId ? () => onTest(status.name, status.credentialId!) : undefined}
+      />
     </SectionCard>
   );
 }

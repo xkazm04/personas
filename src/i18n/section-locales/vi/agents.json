@@ -1128,7 +1128,12 @@
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
     "platform_custom": "Tùy chỉnh",
-    "st_last_checked": "Kiểm tra lần cuối"
+    "st_last_checked": "Kiểm tra lần cuối",
+    "st_retest": "Kiểm tra lại",
+    "st_stale": "{count} đã cũ",
+    "test_diff_recovered": "{count} đã khôi phục",
+    "test_diff_regressed": "{count} lỗi mới",
+    "test_diff_failing": "{count} lỗi"
   },
   "model_config": {
     "model_provider": "Mô hình & Nhà cung cấp",

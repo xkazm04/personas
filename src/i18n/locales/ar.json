@@ -1960,7 +1960,12 @@
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
       "platform_custom": "مخصص",
-      "st_last_checked": "آخر فحص"
+      "st_last_checked": "آخر فحص",
+      "st_retest": "إعادة الاختبار",
+      "st_stale": "{count} قديم",
+      "test_diff_recovered": "{count} تم استرداده",
+      "test_diff_regressed": "{count} فشل جديد",
+      "test_diff_failing": "{count} فاشل"
     },
     "model_config": {
       "model_provider": "النموذج والمزوّد",
