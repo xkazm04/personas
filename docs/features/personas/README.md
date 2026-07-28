@@ -370,6 +370,15 @@ connector) gets its own readiness bucket, a neutral chip and header pill — nev
 a green check — while remaining execution-ready, matching `credential_is_usable`,
 which only demotes an explicit probe failure.
 
+**The counts are the filter.** Each header pill (healthy / failing / missing /
+not verifiable / stale) is a toggle — clicking one shows just those connectors,
+clicking again clears — mirroring the vault credential list's health filter and
+adding `stale`, which the vault has no equivalent for. Role headings still come
+from the unfiltered set so interchangeable groups keep reading as one decision,
+and an active filter clears itself if it stops matching anything (its pill
+disappears at count zero). `matchesHealthFilter()` in `connectorTypes.ts` is the
+single predicate.
+
 Wiring:
 
 ```
