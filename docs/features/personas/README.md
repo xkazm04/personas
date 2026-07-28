@@ -333,6 +333,19 @@ credential, and offers Test / Test all / Link existing / Add new / Swap
 alternative per row. The sub-tab's empty state now appears only when the persona
 has neither a live connector demand nor a saved design.
 
+Rows open showing the credential's **persisted** healthcheck
+(`healthcheck_last_success` / `_message` / `_tested_at`, restored by
+`restoreHealthcheck()` in `connectorTypes.ts`) rather than blank-then-silently-
+retest; a restored result is marked `cached` and renders a "Last checked
+&lt;when&gt;" provenance line, so stale data is never presented as a fresh test.
+Only connectors that have genuinely never been tested auto-test on load.
+
+Below the verification panel, the design recap's connector cards are also
+actionable: their status line resolves through `templates.design` in all 14
+locales, and clicking it opens inline credential provisioning (the affordance
+shows for any connector the runnability resolver marks `needs_setup`, not only
+those declaring credential fields).
+
 Wiring:
 
 ```
