@@ -8556,7 +8556,10 @@
         "ready": "준비됨",
         "partial": "부분",
         "blocked": "차단됨"
-      }
+      },
+      "credential_failing": "자격 증명 상태 확인 실패",
+      "credential_ready_named": "준비됨 — {name}",
+      "connector_not_installed": "커넥터가 설치되지 않음"
     },
     "card": {
       "use_cases_label": "사용 사례",

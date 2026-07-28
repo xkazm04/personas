@@ -8556,7 +8556,10 @@
         "ready": "Bereit",
         "partial": "Teilweise",
         "blocked": "Blockiert"
-      }
+      },
+      "credential_failing": "Healthcheck der Zugangsdaten fehlgeschlagen",
+      "credential_ready_named": "Bereit — {name}",
+      "connector_not_installed": "Connector nicht installiert"
     },
     "card": {
       "use_cases_label": "Anwendungsfälle",

@@ -657,7 +657,10 @@
       "ready": "Siap",
       "partial": "Sebagian",
       "blocked": "Terhalang"
-    }
+    },
+    "credential_failing": "Pemeriksaan kredensial gagal",
+    "credential_ready_named": "Siap — {name}",
+    "connector_not_installed": "Konektor belum terpasang"
   },
   "card": {
     "use_cases_label": "Kasus Penggunaan",

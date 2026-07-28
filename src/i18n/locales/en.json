@@ -8800,7 +8800,10 @@
         "ready": "Ready",
         "partial": "Partial",
         "blocked": "Blocked"
-      }
+      },
+      "credential_failing": "Credential failing healthcheck",
+      "credential_ready_named": "Ready — {name}",
+      "connector_not_installed": "Connector not installed"
     },
     "card": {
       "use_cases_label": "Use Cases",

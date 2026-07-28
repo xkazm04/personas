@@ -8556,7 +8556,10 @@
         "ready": "Listo",
         "partial": "Parcial",
         "blocked": "Bloqueado"
-      }
+      },
+      "credential_failing": "La credencial no supera la comprobación",
+      "credential_ready_named": "Listo — {name}",
+      "connector_not_installed": "Conector no instalado"
     },
     "card": {
       "use_cases_label": "Casos de Uso",

@@ -36,7 +36,7 @@ export function ConnectorsSection({
   readOnly,
   anchorId,
 }: ConnectorsSectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // credentialLinks is per-persona { connectorName -> credentialId }, the
   // authoritative source for "is this persona linked to a credential for
   // connector X". The previous logic used the GLOBAL vault — any persona
@@ -131,7 +131,7 @@ export function ConnectorsSection({
                   </div>
                 )}
                 <span className="typo-body font-medium text-foreground flex-1 truncate">
-                  {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
+                  {item.connDef?.label || (isGeneral ? t.templates.design.general_tools : item.connector.name)}
                 </span>
                 {!isGeneral && (
                   isNativeCap ? (
@@ -156,7 +156,7 @@ export function ConnectorsSection({
                     <Sparkles className="w-3 h-3" />
                     <span><DebtText k="auto_native_capability_no_credential_needed_0491f8a9" /></span>
                   </div>
-                ) : (onConnectorClick && requiresFields) || hasCredential ? (
+                ) : (onConnectorClick && (requiresFields || needsSetup)) || hasCredential ? (
                   <button
                     type="button"
                     onClick={() => onConnectorClick?.(item.connector)}
@@ -176,12 +176,12 @@ export function ConnectorsSection({
                       {hasCredential && isHealthy
                         ? t.templates.design.credential_ready
                         : hasCredential && isUnhealthy
-                          ? 'Credential failing healthcheck'
+                          ? t.templates.design.credential_failing
                           : hasCredential
-                            ? `Ready — ${linkedCred?.name}`
+                            ? tx(t.templates.design.credential_ready_named, { name: linkedCred?.name ?? '' })
                             : installed
                               ? t.templates.design.configure_credential
-                              : 'Connector not installed'}
+                              : t.templates.design.connector_not_installed}
                     </span>
                     {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
                   </button>

@@ -8556,7 +8556,10 @@
         "ready": "Připraveno",
         "partial": "Částečné",
         "blocked": "Blokováno"
-      }
+      },
+      "credential_failing": "Kontrola přihlašovacích údajů selhala",
+      "credential_ready_named": "Připraveno — {name}",
+      "connector_not_installed": "Konektor není nainstalován"
     },
     "card": {
       "use_cases_label": "Případy užití",

@@ -8556,7 +8556,10 @@
         "ready": "جاهز",
         "partial": "جزئي",
         "blocked": "محظور"
-      }
+      },
+      "credential_failing": "فشل فحص سلامة بيانات الاعتماد",
+      "credential_ready_named": "جاهز — {name}",
+      "connector_not_installed": "الموصل غير مثبت"
     },
     "card": {
       "use_cases_label": "حالات الاستخدام",

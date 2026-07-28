@@ -8556,7 +8556,10 @@
         "ready": "প্রস্তুত",
         "partial": "আংশিক",
         "blocked": "অবরুদ্ধ"
-      }
+      },
+      "credential_failing": "ক্রেডেনশিয়াল হেলথচেক ব্যর্থ",
+      "credential_ready_named": "প্রস্তুত — {name}",
+      "connector_not_installed": "কানেক্টর ইনস্টল করা নেই"
     },
     "card": {
       "use_cases_label": "ব্যবহারের ক্ষেত্র",

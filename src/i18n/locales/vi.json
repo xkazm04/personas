@@ -8556,7 +8556,10 @@
         "ready": "Sẵn sàng",
         "partial": "Một phần",
         "blocked": "Bị chặn"
-      }
+      },
+      "credential_failing": "Thông tin xác thực không qua kiểm tra",
+      "credential_ready_named": "Sẵn sàng — {name}",
+      "connector_not_installed": "Chưa cài đặt trình kết nối"
     },
     "card": {
       "use_cases_label": "Trường hợp sử dụng",

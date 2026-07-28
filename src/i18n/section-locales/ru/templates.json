@@ -657,7 +657,10 @@
       "ready": "Готово",
       "partial": "Частично",
       "blocked": "Заблокировано"
-    }
+    },
+    "credential_failing": "Проверка учётных данных не пройдена",
+    "credential_ready_named": "Готово — {name}",
+    "connector_not_installed": "Коннектор не установлен"
   },
   "card": {
     "use_cases_label": "Сценарии",

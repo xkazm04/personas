@@ -8807,6 +8807,9 @@ export type Translations = {
         partial: string;
         blocked: string;
       };
+      credential_failing: string;
+      credential_ready_named: string;
+      connector_not_installed: string;
     };
     card: {
       use_cases_label: string;

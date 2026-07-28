@@ -8556,7 +8556,10 @@
         "ready": "準備完了",
         "partial": "一部",
         "blocked": "ブロック"
-      }
+      },
+      "credential_failing": "認証情報のヘルスチェックに失敗",
+      "credential_ready_named": "準備完了 — {name}",
+      "connector_not_installed": "コネクタが未インストール"
     },
     "card": {
       "use_cases_label": "ユースケース",

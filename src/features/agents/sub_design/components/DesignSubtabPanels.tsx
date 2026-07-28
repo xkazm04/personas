@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plug, Bell } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -12,6 +12,8 @@ import { allIndices } from '../DesignTabHelpers';
 import { PersonaParametersCard } from './PersonaParametersCard';
 import { TriggerConfig } from '@/features/triggers/sub_triggers/TriggerConfig';
 import { ConnectorVerificationPanel } from '@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel';
+import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
+import { toastCatch } from '@/lib/silentCatch';
 
 /**
  * The Design hub's section sub-tabs. Each renders the same read-only
@@ -56,8 +58,11 @@ export function DesignConnectorsPanel() {
   const toolDefinitions = useAgentStore((s) => s.toolDefinitions);
   const credentials = useVaultStore((s) => s.credentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const saved = useSavedDesignResult(selectedPersona);
   const selectedTools = useMemo(() => new Set(saved?.suggested_tools ?? []), [saved]);
+  // Connector name whose credential is being provisioned from the recap.
+  const [provisioning, setProvisioning] = useState<string | null>(null);
 
   // The persona's live connectors come from its tools, not from a saved design,
   // so the verification panel stands on its own; only the design recap below
@@ -74,16 +79,35 @@ export function DesignConnectorsPanel() {
     <div className="space-y-6">
       <ConnectorVerificationPanel />
       {!designIsEmpty && saved && (
-        <ConnectorsSection
-          result={saved}
-          allToolDefs={toolDefinitions}
-          currentToolNames={[]}
-          credentials={credentials}
-          connectorDefinitions={connectorDefinitions}
-          selectedTools={selectedTools}
-          onToolToggle={NOOP}
-          readOnly
-        />
+        <>
+          <ConnectorsSection
+            result={saved}
+            allToolDefs={toolDefinitions}
+            currentToolNames={[]}
+            credentials={credentials}
+            connectorDefinitions={connectorDefinitions}
+            selectedTools={selectedTools}
+            onToolToggle={NOOP}
+            onConnectorClick={(connector) => setProvisioning(connector.name)}
+            readOnly
+          />
+          {provisioning !== null && (
+            <div className="border border-violet-500/20 rounded-modal overflow-hidden">
+              <CredentialDesignModal
+                open
+                embedded
+                initialInstruction={`${provisioning} API credential`}
+                onClose={() => setProvisioning(null)}
+                onComplete={() => {
+                  setProvisioning(null);
+                  void fetchCredentials().catch(
+                    toastCatch('DesignConnectorsPanel:fetchCredentialsOnDesignComplete', 'Failed to refresh credentials after setup'),
+                  );
+                }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
