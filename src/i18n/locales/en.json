@@ -213,6 +213,7 @@
     "stream_empty_filtered": "No transmissions match this lens.",
     "stream_empty": "No transmissions in these channels yet.",
     "stream_heard_by": "Heard by {count}",
+    "stream_assignment_filter": "Filter to this assignment",
     "conv_title": "Conversations",
     "conv_projects": "Projects",
     "conv_pick_project": "Pick a project",

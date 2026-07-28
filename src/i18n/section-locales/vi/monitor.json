@@ -269,5 +269,6 @@
   "presence_idle": "Không hoạt động",
   "presence_last_seen": "hoạt động lần cuối {time}",
   "presence_waiting": "Chờ xem xét",
-  "presence_working": "Đang làm việc"
+  "presence_working": "Đang làm việc",
+  "stream_assignment_filter": "Lọc theo phân công này"
 }

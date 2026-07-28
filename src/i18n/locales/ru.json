@@ -270,7 +270,8 @@
     "presence_idle": "Неактивен",
     "presence_last_seen": "последняя активность {time}",
     "presence_waiting": "Ожидает проверки",
-    "presence_working": "Работает"
+    "presence_working": "Работает",
+    "stream_assignment_filter": "Фильтр по этому заданию"
   },
   "common": {
     "loading": "Загрузка...",

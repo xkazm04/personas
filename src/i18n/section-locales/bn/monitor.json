@@ -269,5 +269,6 @@
   "presence_idle": "নিষ্ক্রিয়",
   "presence_last_seen": "শেষ সক্রিয়তা {time}",
   "presence_waiting": "পর্যালোচনার অপেক্ষায়",
-  "presence_working": "কাজ করছে"
+  "presence_working": "কাজ করছে",
+  "stream_assignment_filter": "এই অ্যাসাইনমেন্টে ফিল্টার করুন"
 }

@@ -270,7 +270,8 @@
     "presence_idle": "Nečinný",
     "presence_last_seen": "naposledy aktivní {time}",
     "presence_waiting": "Čeká na kontrolu",
-    "presence_working": "Pracuje"
+    "presence_working": "Pracuje",
+    "stream_assignment_filter": "Filtrovat na toto zadání"
   },
   "common": {
     "loading": "Načítání...",

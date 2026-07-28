@@ -269,5 +269,6 @@
   "presence_idle": "خامل",
   "presence_last_seen": "آخر نشاط {time}",
   "presence_waiting": "بانتظار المراجعة",
-  "presence_working": "يعمل"
+  "presence_working": "يعمل",
+  "stream_assignment_filter": "التصفية حسب هذه المهمة"
 }

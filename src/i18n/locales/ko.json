@@ -270,7 +270,8 @@
     "presence_idle": "유휴",
     "presence_last_seen": "마지막 활동 {time}",
     "presence_waiting": "검토 대기 중",
-    "presence_working": "작업 중"
+    "presence_working": "작업 중",
+    "stream_assignment_filter": "이 할당으로 필터링"
   },
   "common": {
     "loading": "로딩 중...",

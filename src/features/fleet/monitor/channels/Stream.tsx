@@ -350,6 +350,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             <LensStream
               rows={visible}
               onOpen={(r: TaggedItem) => setDetail(r.item)}
+              onAssignment={(id) => setLens((l) => ({ ...l, search: id }))}
               emptyLabel={active > 0 ? t.monitor.stream_empty_filtered : t.monitor.stream_empty}
               hasMore={hasMore}
               onEndReached={loadMore}

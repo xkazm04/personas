@@ -269,5 +269,6 @@
   "presence_idle": "Inactivo",
   "presence_last_seen": "última actividad {time}",
   "presence_waiting": "Pendiente de revisión",
-  "presence_working": "Trabajando"
+  "presence_working": "Trabajando",
+  "stream_assignment_filter": "Filtrar por esta asignación"
 }

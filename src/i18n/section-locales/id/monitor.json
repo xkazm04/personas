@@ -269,5 +269,6 @@
   "presence_idle": "Tidak aktif",
   "presence_last_seen": "aktivitas terakhir {time}",
   "presence_waiting": "Menunggu tinjauan",
-  "presence_working": "Bekerja"
+  "presence_working": "Bekerja",
+  "stream_assignment_filter": "Saring ke penugasan ini"
 }

@@ -219,6 +219,7 @@ export type Translations = {
     stream_empty_filtered: string;
     stream_empty: string;
     stream_heard_by: string;
+    stream_assignment_filter: string;
     conv_title: string;
     conv_projects: string;
     conv_pick_project: string;

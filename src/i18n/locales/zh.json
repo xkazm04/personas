@@ -270,7 +270,8 @@
     "presence_idle": "空闲",
     "presence_last_seen": "最后活动 {time}",
     "presence_waiting": "等待审查",
-    "presence_working": "工作中"
+    "presence_working": "工作中",
+    "stream_assignment_filter": "筛选此任务分配"
   },
   "common": {
     "loading": "加载中...",

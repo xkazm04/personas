@@ -269,5 +269,6 @@
   "presence_idle": "निष्क्रिय",
   "presence_last_seen": "अंतिम गतिविधि {time}",
   "presence_waiting": "समीक्षा की प्रतीक्षा में",
-  "presence_working": "कार्यरत"
+  "presence_working": "कार्यरत",
+  "stream_assignment_filter": "इस असाइनमेंट पर फ़िल्टर करें"
 }
