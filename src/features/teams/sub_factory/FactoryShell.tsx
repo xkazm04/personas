@@ -135,7 +135,6 @@ export function FactoryShell({
             />
           );
         })()}
-        <p className="typo-caption mb-3">{project.stack}</p>
         {/* L2 restructure (2026-07): four ink tabs — KPIs (proposals queue +
             the matrix, keeping the L3/L4 drill) · Context map · Observability ·
             Overview (the Focus health grid on real data). The donor modules in

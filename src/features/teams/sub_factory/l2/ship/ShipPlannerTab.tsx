@@ -4,7 +4,7 @@
 // each row carrying the Board variant's kept Core-card theme via LedgerRow.
 // Horizon and the original Board were retired in this round.
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowUp, Check, PencilRuler, Rocket, Sparkles, Telescope } from 'lucide-react';
 
 import { INK } from '../../passport/passportInk';
@@ -113,7 +113,42 @@ export function ShipPlannerTab() {
   );
 
   return (
-    <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(230px, 270px) minmax(0, 1fr)' }} data-testid="factory-ship-planner">
+    <div data-testid="factory-ship-planner">
+      {/* full-width content header — the selected milestone's goal, its
+          criteria tags beneath, and the compose action on the right */}
+      <motion.div
+        key={`hdr:${m.id}`}
+        className="flex items-start gap-3 mb-4"
+        initial={reduce ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        data-testid="ship-content-header"
+      >
+        <div className="min-w-0">
+          <p className="typo-title-lg">{m.goal}</p>
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            {m.criteria.map((c) => (
+              <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
+                {c.label} {c.done}/{c.total}
+              </span>
+            ))}
+          </div>
+        </div>
+        {m.status !== 'shipped' && !composing && (
+          <button
+            type="button"
+            onClick={() => setComposing(true)}
+            className="ml-auto shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
+            style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+            data-testid="ship-compose-open"
+          >
+            <PencilRuler className="w-3.5 h-3.5" aria-hidden />
+            Compose scope
+          </button>
+        )}
+      </motion.div>
+
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(230px, 270px) minmax(0, 1fr)' }}>
       {/* the roadmap spine */}
       <div className="relative">
         <span className="absolute left-[10px] top-5 bottom-5 w-px" style={{ background: `linear-gradient(${INK.emerald}66, ${INK.teal}66, rgba(148,163,184,.2))` }} aria-hidden />
@@ -124,43 +159,29 @@ export function ShipPlannerTab() {
         </ul>
       </div>
 
-      {/* the workspace — one ledger language for both sections */}
-      <motion.div key={`${m.id}:${composing}`} className="min-w-0" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      {/* the workspace — fades between the scope ledgers and the composer */}
+      <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={`${m.id}:${composing}`}
+        className="min-w-0"
+        initial={reduce ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={reduce ? undefined : { opacity: 0, y: -6 }}
+        transition={{ duration: 0.22 }}
+      >
         {composing ? (
           <ShipMilestoneComposer m={m} onBack={() => setComposing(false)} />
         ) : (
           <>
-        <div className="flex items-start gap-3">
-          <p className="typo-title-lg min-w-0">{m.goal}</p>
-          {m.status !== 'shipped' && (
-            <button
-              type="button"
-              onClick={() => setComposing(true)}
-              className="ml-auto shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
-              style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
-              data-testid="ship-compose-open"
-            >
-              <PencilRuler className="w-3.5 h-3.5" aria-hidden />
-              Compose scope
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap mt-2 mb-4">
-          {m.criteria.map((c) => (
-            <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
-              {c.label} {c.done}/{c.total}
-            </span>
-          ))}
-        </div>
-
         <LedgerHeader title="In the cut" count={`${coreDone}/${triage.buckets.core.length} done`} aside={`what “${m.name}” means, nothing more`} />
         <div className="mb-5">
           <LedgerList testid="ship-cut-list">
-            {triage.buckets.core.map((f) => {
+            {triage.buckets.core.map((f, i) => {
               const st = FEATURE_STATE_META[f.state];
               return (
                 <LedgerRow
                   key={f.id}
+                  index={i}
                   name={f.name}
                   contexts={f.contexts}
                   stateLabel={st.label}
@@ -186,11 +207,12 @@ export function ShipPlannerTab() {
 
         <LedgerHeader title="Outside the cut" count={outside.length} aside="the row's buttons are the decision" muted />
         <LedgerList testid="ship-outside-list">
-          {outside.map(({ f, fresh }) => {
+          {outside.map(({ f, fresh }, i) => {
             const current = fresh ? null : triage.bucketOf(f);
             return (
               <LedgerRow
                 key={f.id}
+                index={i}
                 name={f.name}
                 contexts={f.contexts}
                 dim={current === 'never'}
@@ -205,6 +227,8 @@ export function ShipPlannerTab() {
           </>
         )}
       </motion.div>
+      </AnimatePresence>
+      </div>
     </div>
   );
 }

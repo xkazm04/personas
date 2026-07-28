@@ -4,10 +4,11 @@
 // surface that lists milestone items renders through this, so the cut, the
 // backlog ledger, and the compose variants all read as one system.
 import type { ReactNode } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 import { INK } from '../../passport/passportInk';
 
-export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions }: {
+export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions, index = 0 }: {
   name: string;
   contexts: string[];
   stateLabel?: string | null;
@@ -21,15 +22,21 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
   /** Extra inline info right after the name (e.g. "proposed since the cut"). */
   meta?: ReactNode;
   actions?: ReactNode;
+  /** Position in its list — drives the staggered fade-in. */
+  index?: number;
 }) {
+  const reduce = useReducedMotion();
   const hue = stateHue ?? 'rgba(148,163,184,.5)';
   return (
-    <li
-      className={`rounded-card px-3 py-2 min-w-0 ${dim ? 'opacity-55' : ''}`}
+    <motion.li
+      className="rounded-card px-3 py-2 min-w-0"
       style={{
         background: 'rgba(148,163,184,.045)',
         border: `1px ${dashed ? 'dashed' : 'solid'} ${blocker ? `${INK.amber}44` : dashed ? `${INK.violet}55` : 'rgba(148,163,184,.12)'}`,
       }}
+      initial={reduce ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: dim ? 0.55 : 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.045, 0.4), duration: 0.28 }}
     >
       <span className="flex items-center gap-2 min-w-0">
         {marker ?? <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue, boxShadow: `0 0 5px ${hue}77` }} />}
@@ -46,7 +53,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
         </span>
       )}
       {blocker && <p className="typo-caption mt-1 pl-[15px]" style={{ color: INK.amber }}>{blocker}</p>}
-    </li>
+    </motion.li>
   );
 }
 

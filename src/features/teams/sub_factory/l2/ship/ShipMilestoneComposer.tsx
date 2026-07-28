@@ -6,6 +6,7 @@
 // features bind (pulling contexts into the derived footprint), goals frame,
 // contexts navigate but are never added by hand.
 import { useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, ChevronRight, Plus, Sparkles, Target, X } from 'lucide-react';
 
 import { INK } from '../../passport/passportInk';
@@ -21,6 +22,7 @@ const addBtn = (hue: string) => ({
 } as const);
 
 export function ShipMilestoneComposer({ m, onBack }: { m: ShipMilestone; onBack: () => void }) {
+  const reduce = useReducedMotion();
   // Seed the cut from the milestone's existing core scope (matched by name —
   // mock-land stand-in for the real milestone_id join).
   const [cutIds, setCutIds] = useState<string[]>(() =>
@@ -80,8 +82,15 @@ export function ShipMilestoneComposer({ m, onBack }: { m: ShipMilestone; onBack:
                       {ctx.kpis === 0 ? ' · no KPI' : ` · ${ctx.kpis} KPI`}{inFp ? ' · in cut' : ''}
                     </span>
                   </button>
+                  <AnimatePresence initial={false}>
                   {isOpen && (
-                    <ul className="pb-2">
+                    <motion.ul
+                      className="pb-2 overflow-hidden"
+                      initial={reduce ? false : { opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={reduce ? undefined : { opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       {feats.map((f) => {
                         const inCut = cutIds.includes(f.id);
                         return (
@@ -120,8 +129,9 @@ export function ShipMilestoneComposer({ m, onBack }: { m: ShipMilestone; onBack:
                           </li>
                         );
                       })}
-                    </ul>
+                    </motion.ul>
                   )}
+                  </AnimatePresence>
                 </li>
               );
             })}
@@ -164,9 +174,10 @@ export function ShipMilestoneComposer({ m, onBack }: { m: ShipMilestone; onBack:
 
           <LedgerHeader title="The cut" count={cut.length} aside="every row pulled its contexts into the footprint above" />
           <LedgerList testid="ship-compose-cut">
-            {cut.map((f) => (
+            {cut.map((f, i) => (
               <LedgerRow
                 key={f.id}
+                index={i}
                 name={f.name}
                 contexts={f.contexts}
                 stateLabel={f.kpiCount > 0 ? `${f.kpiCount} KPI${f.kpiCount > 1 ? 's' : ''}` : 'no KPI yet'}
