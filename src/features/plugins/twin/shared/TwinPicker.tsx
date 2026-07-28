@@ -204,7 +204,7 @@ export function TwinPicker({ profiles, activeTwinId, onSelect, onCreateNew }: Pr
 
       {open && (
         <div
-          className="absolute left-0 right-0 top-full mt-1 z-40 rounded-card border border-primary/15 bg-card/95 backdrop-blur shadow-elevation-3 animate-fade-slide-in overflow-hidden"
+          className="absolute left-0 right-0 top-full mt-1 z-40 rounded-card border border-primary/15 bg-background shadow-elevation-3 animate-fade-slide-in overflow-hidden"
           role="listbox"
           aria-label={t.selector.pickerLabel}
         >

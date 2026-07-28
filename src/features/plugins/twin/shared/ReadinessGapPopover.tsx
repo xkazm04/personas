@@ -83,7 +83,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
       {open && (
         <div
           aria-label={t.gaps.dialogLabel}
-          className="absolute right-0 top-full mt-2 z-50 w-80 rounded-card border border-primary/15 bg-card/95 backdrop-blur shadow-elevation-3 animate-fade-slide-in"
+          className="absolute right-0 top-full mt-2 z-50 w-80 rounded-card border border-primary/15 bg-background shadow-elevation-3 animate-fade-slide-in"
         >
           <div className="flex items-start justify-between gap-2 px-3 py-2.5 border-b border-primary/10">
             <div className="min-w-0">

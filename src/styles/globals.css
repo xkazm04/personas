@@ -434,6 +434,16 @@
   --color-muted-dark: var(--muted-dark);
   --color-card-bg: var(--card-bg);
   --color-card-border: var(--card-border);
+  /* `card` is an ALIAS of `card-bg`, not a second surface.
+     Only `--color-card-bg` existed here, so the ~228 places that reached for
+     the shadcn-style `bg-card` / `from-card` / `to-card` compiled to nothing at
+     all — Tailwind emits no rule for an undefined colour, so those surfaces
+     silently rendered with no background rather than the wrong one. That is how
+     a `bg-card/95` popover ended up see-through. Aliasing is deliberate: there
+     is one card surface in this system and it is theme-aware (~2-5% white on
+     dark themes, 72-92% opaque on light ones), so a second token would only
+     re-open the same drift. Prefer `bg-card-bg` in new code. */
+  --color-card: var(--card-bg);
 
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
