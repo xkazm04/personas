@@ -1220,6 +1220,7 @@
       "legend_engine": "Engine",
       "legend_tool_call": "Tool Call",
       "live": "Live",
+      "estimated_no_trace": "Estimated (no trace captured)",
       "stage": "Stage",
       "stage_errors": "Stage Errors",
       "total_duration": "Total Duration",
@@ -4596,7 +4597,9 @@
       "test_all_credentials": "Test all credentials",
       "test_all": "Test All",
       "daily_progress": "Daily {done}/{total}",
-      "testing_progress": "Testing {done}/{total}"
+      "testing_progress": "Testing {done}/{total}",
+      "unverifiable_count": "{count} unverifiable",
+      "unverifiable_tooltip": "This connector has no live probe -- credentials are stored but were never checked against the provider"
     },
     "breadcrumb": {
       "aria_label": "Vault breadcrumb"

@@ -1104,6 +1104,7 @@
       "legend_engine": "Engine",
       "legend_tool_call": "Gọi công cụ",
       "live": "Trực tiếp",
+      "estimated_no_trace": "Ước tính (không ghi được trace)",
       "stage": "Giai đoạn",
       "stage_errors": "Lỗi giai đoạn",
       "total_duration": "Tổng thời lượng",
@@ -4350,6 +4351,8 @@
       "test_all": "Kiểm tra tất cả",
       "daily_progress": "Hàng ngày {done}/{total}",
       "testing_progress": "Đang kiểm tra {done}/{total}",
+      "unverifiable_count": "{count} không thể xác minh",
+      "unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp -- thông tin xác thực được lưu trữ nhưng chưa bao giờ được xác minh với nhà cung cấp",
       "title_catalog": "Danh mục",
       "title_dependencies": "Phụ thuộc",
       "title_databases": "Cơ sở dữ liệu"

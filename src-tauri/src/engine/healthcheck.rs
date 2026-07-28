@@ -591,8 +591,19 @@ pub struct CredentialHealthcheckOutcome {
 #[serde(rename_all = "camelCase")]
 pub struct BulkHealthcheckSummary {
     pub total: u32,
+    /// Count of credentials whose probe actually ran and passed
+    /// (`state == Verified`). Does NOT include `unverifiable` — a connector
+    /// with no live probe was previously folded into this count via the
+    /// legacy `success` boolean (which `HealthcheckResult::unverifiable`
+    /// sets to `true`), so "N passed, 0 failed" read as "every credential
+    /// verified working" even when some were never probed at all.
     pub passed: u32,
     pub failed: u32,
+    /// Count of credentials with no live probe available at all
+    /// (`state == Unverifiable`) — neither passed nor failed. Kept as its
+    /// own bucket so the UI can render a neutral, non-green/non-red badge
+    /// instead of silently crediting these as verified.
+    pub unverifiable: u32,
     pub results: Vec<CredentialHealthcheckOutcome>,
     pub completed_at: String,
 }
@@ -621,6 +632,26 @@ pub(crate) fn persist_probe_state(pool: &DbPool, credential_id: &str, state: Hea
     if let Err(e) = cred_repo::patch_metadata_atomic(pool, credential_id, patch) {
         tracing::warn!(credential_id = %credential_id, error = %e, "failed to persist healthcheck probe state");
     }
+}
+
+/// Tally a sweep's per-credential outcomes into `(passed, failed, unverifiable)`
+/// buckets by typed `state`, NOT by the legacy `success` boolean. `success` is
+/// `true` for both `Verified` and `Unverifiable` outcomes (kept for back-compat
+/// gating), so counting on `success` alone silently folds "never probed" into
+/// "passed" — which is exactly the bug this split fixes: a vault of entirely
+/// unprobed credentials would report "N passed, 0 failed" and read as fully
+/// verified.
+fn summarize_probe_states(results: &[CredentialHealthcheckOutcome]) -> (u32, u32, u32) {
+    let unverifiable = results
+        .iter()
+        .filter(|r| r.state == HealthProbeState::Unverifiable)
+        .count() as u32;
+    let passed = results
+        .iter()
+        .filter(|r| r.state == HealthProbeState::Verified)
+        .count() as u32;
+    let failed = results.len() as u32 - passed - unverifiable;
+    (passed, failed, unverifiable)
 }
 
 /// Run a healthcheck for every credential whose `service_type` maps to a known
@@ -686,13 +717,13 @@ pub async fn run_all_healthchecks(pool: &DbPool) -> Result<BulkHealthcheckSummar
         .collect()
         .await;
 
-    let passed = results.iter().filter(|r| r.success).count() as u32;
-    let failed = results.len() as u32 - passed;
+    let (passed, failed, unverifiable) = summarize_probe_states(&results);
 
     Ok(BulkHealthcheckSummary {
         total: results.len() as u32,
         passed,
         failed,
+        unverifiable,
         results,
         completed_at: chrono::Utc::now().to_rfc3339(),
     })
@@ -1815,6 +1846,36 @@ mod tests {
         );
         assert_eq!(r.state, HealthProbeState::Unverifiable);
         assert!(r.success);
+    }
+
+    #[test]
+    fn bulk_summary_does_not_count_unverifiable_as_passed() {
+        // Regression pin: `summarize_probe_states` must split on typed `state`,
+        // not the legacy `success` boolean (which is `true` for both Verified
+        // and Unverifiable). A vault with zero live-probed credentials should
+        // report passed == 0, not passed == total.
+        fn outcome(state: HealthProbeState) -> CredentialHealthcheckOutcome {
+            CredentialHealthcheckOutcome {
+                credential_id: "c".into(),
+                credential_name: "c".into(),
+                success: state != HealthProbeState::Failed,
+                state,
+                message: "m".into(),
+                duration_ms: 0,
+            }
+        }
+
+        let results = vec![
+            outcome(HealthProbeState::Unverifiable),
+            outcome(HealthProbeState::Unverifiable),
+            outcome(HealthProbeState::Verified),
+            outcome(HealthProbeState::Failed),
+        ];
+        let (passed, failed, unverifiable) = summarize_probe_states(&results);
+        assert_eq!(passed, 1, "only the truly-Verified outcome should count as passed");
+        assert_eq!(failed, 1);
+        assert_eq!(unverifiable, 2);
+        assert_eq!(passed + failed + unverifiable, results.len() as u32);
     }
 
     #[test]

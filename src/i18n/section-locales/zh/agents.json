@@ -272,6 +272,7 @@
     "legend_engine": "引擎",
     "legend_tool_call": "工具调用",
     "live": "实时",
+    "estimated_no_trace": "估算值（未捕获跟踪）",
     "stage": "阶段",
     "stage_errors": "阶段错误",
     "total_duration": "总持续时间",

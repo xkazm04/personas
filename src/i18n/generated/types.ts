@@ -4603,6 +4603,8 @@ export type Translations = {
       test_all: string;
       daily_progress: string;
       testing_progress: string;
+      unverifiable_count: string;
+      unverifiable_tooltip: string;
     };
     breadcrumb: {
       aria_label: string;

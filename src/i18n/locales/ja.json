@@ -1104,6 +1104,7 @@
       "legend_engine": "エンジン",
       "legend_tool_call": "ツール呼び出し",
       "live": "ライブ",
+      "estimated_no_trace": "推定値（トレース未取得）",
       "stage": "ステージ",
       "stage_errors": "ステージエラー",
       "total_duration": "合計時間",
@@ -4350,6 +4351,8 @@
       "test_all": "すべてテスト",
       "daily_progress": "1日 {done}/{total}",
       "testing_progress": "{done}/{total}をテスト中",
+      "unverifiable_count": "{count}件 未検証",
+      "unverifiable_tooltip": "このコネクタにはライブプローブがありません -- 認証情報は保存されていますが、プロバイダーに対して確認されたことはありません",
       "title_catalog": "カタログ",
       "title_dependencies": "依存関係",
       "title_databases": "データベース"

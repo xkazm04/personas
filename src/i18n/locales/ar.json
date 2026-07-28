@@ -1104,6 +1104,7 @@
       "legend_engine": "المحرك",
       "legend_tool_call": "استدعاء أداة",
       "live": "مباشر",
+      "estimated_no_trace": "تقديري (لم يتم التقاط أي تتبع)",
       "stage": "المرحلة",
       "stage_errors": "أخطاء المرحلة",
       "total_duration": "المدة الإجمالية",
@@ -4350,6 +4351,8 @@
       "test_all": "اختبار الكل",
       "daily_progress": "يومي {done}/{total}",
       "testing_progress": "جارٍ الاختبار {done}/{total}",
+      "unverifiable_count": "{count} غير قابل للتحقق",
+      "unverifiable_tooltip": "لا يحتوي هذا الموصل على فحص مباشر -- بيانات الاعتماد مخزنة ولكن لم يتم التحقق منها مع المزود مطلقًا",
       "title_catalog": "الكتالوج",
       "title_dependencies": "التبعيات",
       "title_databases": "قواعد البيانات"

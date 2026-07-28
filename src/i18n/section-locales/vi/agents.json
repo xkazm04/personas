@@ -272,6 +272,7 @@
     "legend_engine": "Engine",
     "legend_tool_call": "Gọi công cụ",
     "live": "Trực tiếp",
+    "estimated_no_trace": "Ước tính (không ghi được trace)",
     "stage": "Giai đoạn",
     "stage_errors": "Lỗi giai đoạn",
     "total_duration": "Tổng thời lượng",

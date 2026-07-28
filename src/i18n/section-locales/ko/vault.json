@@ -691,6 +691,8 @@
     "test_all": "전체 테스트",
     "daily_progress": "일일 {done}/{total}",
     "testing_progress": "테스트 중 {done}/{total}",
+    "unverifiable_count": "{count}개 확인 불가",
+    "unverifiable_tooltip": "이 커넥터에는 실시간 프로브가 없습니다 -- 자격 증명은 저장되어 있지만 공급자에 대해 확인된 적이 없습니다",
     "title_catalog": "카탈로그",
     "title_dependencies": "종속성",
     "title_databases": "데이터베이스"

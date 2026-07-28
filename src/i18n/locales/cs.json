@@ -1104,6 +1104,7 @@
       "legend_engine": "Engine",
       "legend_tool_call": "Volání nástroje",
       "live": "Živě",
+      "estimated_no_trace": "Odhad (trasování nezachyceno)",
       "stage": "Fáze",
       "stage_errors": "Chyby fáze",
       "total_duration": "Celková doba",
@@ -4350,6 +4351,8 @@
       "test_all": "Testovat vše",
       "daily_progress": "Denně {done}/{total}",
       "testing_progress": "Testování {done}/{total}",
+      "unverifiable_count": "{count} neověřitelných",
+      "unverifiable_tooltip": "Tento konektor nemá žádnou živou kontrolu -- přihlašovací údaje jsou uloženy, ale nikdy nebyly ověřeny u poskytovatele",
       "title_catalog": "Katalog",
       "title_dependencies": "Závislosti",
       "title_databases": "Databáze"

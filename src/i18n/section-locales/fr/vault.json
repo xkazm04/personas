@@ -691,6 +691,8 @@
     "test_all": "Tout tester",
     "daily_progress": "Quotidien {done}/{total}",
     "testing_progress": "Test {done}/{total}",
+    "unverifiable_count": "{count} non vérifiable(s)",
+    "unverifiable_tooltip": "Ce connecteur n'a aucune sonde en direct -- les identifiants sont stockés mais n'ont jamais été vérifiés auprès du fournisseur",
     "title_catalog": "Catalogue",
     "title_dependencies": "Dépendances",
     "title_databases": "Bases de données"

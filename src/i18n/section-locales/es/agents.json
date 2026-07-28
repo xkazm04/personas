@@ -272,6 +272,7 @@
     "legend_engine": "Motor",
     "legend_tool_call": "Llamada a herramienta",
     "live": "En vivo",
+    "estimated_no_trace": "Estimado (sin traza capturada)",
     "stage": "Etapa",
     "stage_errors": "Errores de etapa",
     "total_duration": "Duración total",

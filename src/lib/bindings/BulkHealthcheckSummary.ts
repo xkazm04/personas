@@ -4,4 +4,4 @@ import type { CredentialHealthcheckOutcome } from "./CredentialHealthcheckOutcom
 /**
  * Summary of a bulk / daily credential healthcheck sweep.
  */
-export type BulkHealthcheckSummary = { total: number, passed: number, failed: number, results: Array<CredentialHealthcheckOutcome>, completedAt: string, };
+export type BulkHealthcheckSummary = { total: number, passed: number, failed: number, unverifiable: number, results: Array<CredentialHealthcheckOutcome>, completedAt: string, };

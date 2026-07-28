@@ -691,6 +691,8 @@
     "test_all": "اختبار الكل",
     "daily_progress": "يومي {done}/{total}",
     "testing_progress": "جارٍ الاختبار {done}/{total}",
+    "unverifiable_count": "{count} غير قابل للتحقق",
+    "unverifiable_tooltip": "لا يحتوي هذا الموصل على فحص مباشر -- بيانات الاعتماد مخزنة ولكن لم يتم التحقق منها مع المزود مطلقًا",
     "title_catalog": "الكتالوج",
     "title_dependencies": "التبعيات",
     "title_databases": "قواعد البيانات"

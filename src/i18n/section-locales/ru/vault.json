@@ -691,6 +691,8 @@
     "test_all": "Проверить все",
     "daily_progress": "Ежедневно {done}/{total}",
     "testing_progress": "Проверка {done}/{total}",
+    "unverifiable_count": "{count} непроверяемых",
+    "unverifiable_tooltip": "У этого коннектора нет активной проверки -- учётные данные сохранены, но никогда не проверялись у поставщика",
     "title_catalog": "Каталог",
     "title_dependencies": "Зависимости",
     "title_databases": "Базы данных"
