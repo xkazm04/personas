@@ -271,7 +271,11 @@
     "presence_last_seen": "aktivitas terakhir {time}",
     "presence_waiting": "Menunggu tinjauan",
     "presence_working": "Bekerja",
-    "stream_assignment_filter": "Saring ke penugasan ini"
+    "stream_assignment_filter": "Saring ke penugasan ini",
+    "channels_layout_map": "Peta",
+    "channels_layout_map_hint": "Konstelasi langsung satu proyek — siapa yang bekerja dan siapa berbicara dengan siapa",
+    "map_empty": "Belum ada anggota di proyek ini.",
+    "map_legend_traffic": "Lalu lintas terbaru"
   },
   "common": {
     "loading": "Memuat...",

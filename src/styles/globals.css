@@ -1882,6 +1882,36 @@ html[data-motion="reduce"] .animate-channel-row-in {
   animation: none;
 }
 
+/* Constellation Map (fleet monitor channels) — live-route dash march and the
+   core's slow orbit. Dash offset animates one full period (12px) so the loop
+   is seamless at any line length. */
+@keyframes map-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.animate-map-dash {
+  animation: map-dash 1.2s linear infinite;
+}
+
+@keyframes map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-map-spin {
+  animation: map-spin 42s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+html[data-motion="reduce"] .animate-map-dash,
+html[data-motion="reduce"] .animate-map-spin {
+  animation: none;
+}
+
 .animate-shake-error {
   animation: shake-error 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }

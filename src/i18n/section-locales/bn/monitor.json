@@ -270,5 +270,9 @@
   "presence_last_seen": "শেষ সক্রিয়তা {time}",
   "presence_waiting": "পর্যালোচনার অপেক্ষায়",
   "presence_working": "কাজ করছে",
-  "stream_assignment_filter": "এই অ্যাসাইনমেন্টে ফিল্টার করুন"
+  "stream_assignment_filter": "এই অ্যাসাইনমেন্টে ফিল্টার করুন",
+  "channels_layout_map": "মানচিত্র",
+  "channels_layout_map_hint": "একটি প্রকল্পের লাইভ নক্ষত্রমণ্ডল — কে কাজ করছে এবং কে কার সাথে কথা বলছে",
+  "map_empty": "এই প্রকল্পে এখনও কোনও সদস্য নেই।",
+  "map_legend_traffic": "সাম্প্রতিক ট্রাফিক"
 }

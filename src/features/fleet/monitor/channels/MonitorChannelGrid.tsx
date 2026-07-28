@@ -4,15 +4,17 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { Stream } from './Stream';
 import { ConversationBriefing } from './ConversationBriefing';
+import { ChannelMap } from './map/ChannelMap';
 import type { StreamTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
-/** The two Channel surfaces. Stream = the read-only log (many teams, one flat
- *  feed). Conversations = the messenger (one project, and the only place you
- *  write) — plan D5. The old GRID of cramped per-team channel cards is retired:
- *  it was a worse messenger with none of the affordances. */
-type ChannelLayout = 'stream' | 'conversations';
+/** The three Channel surfaces. Stream = the read-only log (many teams, one
+ *  flat feed). Conversations = the messenger (one project, and the only place
+ *  you write) — plan D5. Map = the live constellation (one project, who is
+ *  doing what to whom, no reading). The old GRID of cramped per-team channel
+ *  cards is retired: it was a worse messenger with none of the affordances. */
+type ChannelLayout = 'stream' | 'conversations' | 'map';
 
 /** Transient scope a deep-link can open the workspace with. */
 export interface ChannelPreset {
@@ -82,7 +84,18 @@ function MonitorChannelGridImpl({
   const LAYOUTS: Array<{ id: ChannelLayout; label: string; hint: string }> = [
     { id: 'stream', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint },
     { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
+    { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint },
   ];
+
+  // Map node click → Timeline scoped to that speaker. Stream remounts on a
+  // layout switch, so the callsign lands through its initial-lens prop.
+  const [drillCallsign, setDrillCallsign] = useState<string | null>(null);
+  const drillIn = (teamId: string, personaId: string) => {
+    setTouched(true);
+    setSelected(new Set([teamId]));
+    setDrillCallsign(personaId);
+    setLayout('stream');
+  };
 
   const workspaceTeams: StreamTeam[] = useMemo(
     () =>
@@ -102,7 +115,12 @@ function MonitorChannelGridImpl({
         <button
           key={l.id}
           type="button"
-          onClick={() => setLayout(l.id)}
+          onClick={() => {
+            // Manual switch drops any pending drill scope — only the map's
+            // node click should carry a callsign into the Timeline.
+            setDrillCallsign(null);
+            setLayout(l.id);
+          }}
           title={l.hint}
           aria-pressed={layout === l.id}
           className={`px-2.5 py-0.5 rounded-full typo-caption transition-colors ${
@@ -133,8 +151,10 @@ function MonitorChannelGridImpl({
           allOn={allOn}
           onSetAll={setAll}
           layoutControl={layoutSwitcher}
-          initialCallsign={preset?.personaId ?? undefined}
+          initialCallsign={drillCallsign ?? preset?.personaId ?? undefined}
         />
+      ) : layout === 'map' ? (
+        <ChannelMap teams={workspaceTeams} onDrillIn={drillIn} layoutControl={layoutSwitcher} />
       ) : (
         <ConversationBriefing teams={workspaceTeams} layoutControl={layoutSwitcher} />
       )}

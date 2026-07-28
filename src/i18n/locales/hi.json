@@ -271,7 +271,11 @@
     "presence_last_seen": "अंतिम गतिविधि {time}",
     "presence_waiting": "समीक्षा की प्रतीक्षा में",
     "presence_working": "कार्यरत",
-    "stream_assignment_filter": "इस असाइनमेंट पर फ़िल्टर करें"
+    "stream_assignment_filter": "इस असाइनमेंट पर फ़िल्टर करें",
+    "channels_layout_map": "मानचित्र",
+    "channels_layout_map_hint": "एक प्रोजेक्ट का लाइव तारामंडल — कौन काम कर रहा है और कौन किससे बात कर रहा है",
+    "map_empty": "इस प्रोजेक्ट में अभी कोई सदस्य नहीं है।",
+    "map_legend_traffic": "हाल की गतिविधि"
   },
   "common": {
     "loading": "लोड हो रहा है...",

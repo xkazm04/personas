@@ -271,7 +271,11 @@
     "presence_last_seen": "последняя активность {time}",
     "presence_waiting": "Ожидает проверки",
     "presence_working": "Работает",
-    "stream_assignment_filter": "Фильтр по этому заданию"
+    "stream_assignment_filter": "Фильтр по этому заданию",
+    "channels_layout_map": "Карта",
+    "channels_layout_map_hint": "Живое созвездие одного проекта — кто работает и кто с кем говорит",
+    "map_empty": "В этом проекте пока нет участников.",
+    "map_legend_traffic": "Недавний трафик"
   },
   "common": {
     "loading": "Загрузка...",

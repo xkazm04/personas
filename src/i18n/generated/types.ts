@@ -236,6 +236,10 @@ export type Translations = {
     presence_waiting: string;
     presence_idle: string;
     presence_last_seen: string;
+    channels_layout_map: string;
+    channels_layout_map_hint: string;
+    map_empty: string;
+    map_legend_traffic: string;
     conv_deliberation_active: string;
     conv_composer_placeholder: string;
     conv_composer_send: string;

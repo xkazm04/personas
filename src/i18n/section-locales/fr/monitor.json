@@ -270,5 +270,9 @@
   "presence_last_seen": "dernière activité {time}",
   "presence_waiting": "En attente de revue",
   "presence_working": "En cours",
-  "stream_assignment_filter": "Filtrer sur cette assignation"
+  "stream_assignment_filter": "Filtrer sur cette assignation",
+  "channels_layout_map": "Carte",
+  "channels_layout_map_hint": "Constellation en direct d'un projet — qui travaille et qui parle à qui",
+  "map_empty": "Aucun membre dans ce projet pour l'instant.",
+  "map_legend_traffic": "Trafic récent"
 }

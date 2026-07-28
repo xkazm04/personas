@@ -271,7 +271,11 @@
     "presence_last_seen": "última actividad {time}",
     "presence_waiting": "Pendiente de revisión",
     "presence_working": "Trabajando",
-    "stream_assignment_filter": "Filtrar por esta asignación"
+    "stream_assignment_filter": "Filtrar por esta asignación",
+    "channels_layout_map": "Mapa",
+    "channels_layout_map_hint": "Constelación en vivo de un proyecto — quién trabaja y quién habla con quién",
+    "map_empty": "Aún no hay miembros en este proyecto.",
+    "map_legend_traffic": "Tráfico reciente"
   },
   "common": {
     "loading": "Cargando...",

@@ -270,5 +270,9 @@
   "presence_last_seen": "zuletzt aktiv {time}",
   "presence_waiting": "Wartet auf Review",
   "presence_working": "Arbeitet",
-  "stream_assignment_filter": "Nach diesem Auftrag filtern"
+  "stream_assignment_filter": "Nach diesem Auftrag filtern",
+  "channels_layout_map": "Karte",
+  "channels_layout_map_hint": "Live-Konstellation eines Projekts — wer arbeitet und wer mit wem spricht",
+  "map_empty": "Noch keine Mitglieder in diesem Projekt.",
+  "map_legend_traffic": "Aktueller Verkehr"
 }

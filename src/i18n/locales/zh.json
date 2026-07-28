@@ -271,7 +271,11 @@
     "presence_last_seen": "最后活动 {time}",
     "presence_waiting": "等待审查",
     "presence_working": "工作中",
-    "stream_assignment_filter": "筛选此任务分配"
+    "stream_assignment_filter": "筛选此任务分配",
+    "channels_layout_map": "地图",
+    "channels_layout_map_hint": "单个项目的实时星座图 — 谁在工作、谁在与谁交流",
+    "map_empty": "此项目还没有成员。",
+    "map_legend_traffic": "近期通信"
   },
   "common": {
     "loading": "加载中...",
