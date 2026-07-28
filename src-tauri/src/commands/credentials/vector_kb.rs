@@ -1046,8 +1046,17 @@ pub async fn kb_search(
         }
     }
 
-    // Trim back to the caller's top_k after re-ranking.
-    matches.truncate(top_k);
+    // Trim back to the caller's top_k after re-ranking — but ONLY when no
+    // selector filter is set. `min_score` is a threshold (post-filtering it is
+    // correct), whereas `filter_source` SELECTS a subset: trimming first would
+    // hand the caller "however many of the global top_k happen to live under
+    // that path", which is usually a handful and often zero, rather than the
+    // top_k best matches within that path. When a selector is present we carry
+    // the whole candidate pool (already bounded by MAX_TOP_K) into hydration
+    // and cut to top_k after filtering, in the loop below.
+    if query.filter_source.is_none() {
+        matches.truncate(top_k);
+    }
 
     // Hydrate results with chunk and document metadata in a single batch query.
     // Uses json_each() with a single JSON array parameter so the query shape is
@@ -1085,42 +1094,66 @@ pub async fn kb_search(
     })?;
 
     // Collect hydrated rows keyed by chunk_id
-    #[allow(clippy::type_complexity)]
-    let mut hydrated: std::collections::HashMap<
-        String,
-        (
-            String,
-            String,
-            Option<String>,
-            Option<i32>,
-            f32,
-            String,
-            Option<String>,
-        ),
-    > = std::collections::HashMap::with_capacity(matches.len());
+    let mut hydrated: std::collections::HashMap<String, HydratedChunk> =
+        std::collections::HashMap::with_capacity(matches.len());
     for (cid, doc_id, content, meta_json, source_page, confidence, doc_title, source_path) in
         rows.flatten()
     {
         hydrated.insert(
             cid,
-            (
-                doc_id,
+            HydratedChunk {
+                document_id: doc_id,
                 content,
-                meta_json,
+                metadata_json: meta_json,
                 source_page,
-                confidence,
-                doc_title,
+                extraction_confidence: confidence,
+                document_title: doc_title,
                 source_path,
-            ),
+            },
         );
     }
 
-    // Rebuild results in original vector-search ranking order
-    let mut results = Vec::with_capacity(matches.len());
-    for (chunk_id, distance) in &matches {
-        let Some((doc_id, content, meta_json, source_page, extraction_confidence, doc_title, source_path)) =
-            hydrated.remove(chunk_id)
-        else {
+    let results = select_search_results(&matches, &mut hydrated, top_k, &query);
+
+    Ok(KbSearchResponse {
+        results,
+        floor_filtered,
+    })
+}
+
+/// A `kb_chunks` ⨝ `kb_documents` row, hydrated for one candidate match.
+struct HydratedChunk {
+    document_id: String,
+    content: String,
+    metadata_json: Option<String>,
+    source_page: Option<i32>,
+    extraction_confidence: f32,
+    document_title: String,
+    source_path: Option<String>,
+}
+
+/// Apply the caller's filters over the candidate pool in ranking order and cut
+/// at `top_k`.
+///
+/// The cut happens HERE, after filtering — not before. `filter_source` selects
+/// a subset of the corpus, so trimming the pool to `top_k` first would return
+/// "however many of the global top_k happen to live under that path" (usually a
+/// handful, often zero) instead of the `top_k` best matches within it. When no
+/// selector is set the caller has already trimmed to `top_k`, so this loop is a
+/// straight pass-through.
+fn select_search_results(
+    matches: &[(String, f32)],
+    hydrated: &mut std::collections::HashMap<String, HydratedChunk>,
+    top_k: usize,
+    query: &KbSearchQuery,
+) -> Vec<VectorSearchResult> {
+    let mut results = Vec::with_capacity(top_k.min(matches.len()));
+
+    for (chunk_id, distance) in matches {
+        if results.len() >= top_k {
+            break;
+        }
+        let Some(chunk) = hydrated.remove(chunk_id) else {
             continue;
         };
 
@@ -1136,37 +1169,32 @@ pub async fn kb_search(
 
         // Apply source filter
         if let Some(ref filter) = query.filter_source {
-            if let Some(ref sp) = source_path {
-                if !sp.starts_with(filter) {
-                    continue;
-                }
-            } else {
-                continue;
+            match chunk.source_path {
+                Some(ref sp) if sp.starts_with(filter) => {}
+                _ => continue,
             }
         }
 
-        let metadata = meta_json
+        let metadata = chunk
+            .metadata_json
             .as_deref()
             .and_then(|j| serde_json::from_str(j).ok());
 
         results.push(VectorSearchResult {
             chunk_id: chunk_id.clone(),
-            document_id: doc_id,
-            document_title: doc_title,
-            content,
+            document_id: chunk.document_id,
+            document_title: chunk.document_title,
+            content: chunk.content,
             score,
             distance: *distance,
-            source_path,
-            source_page,
-            extraction_confidence,
+            source_path: chunk.source_path,
+            source_page: chunk.source_page,
+            extraction_confidence: chunk.extraction_confidence,
             metadata,
         });
     }
 
-    Ok(KbSearchResponse {
-        results,
-        floor_filtered,
-    })
+    results
 }
 
 // ============================================================================
@@ -1547,5 +1575,123 @@ mod search_floor_tests {
         // vector-only 1/(60+1) ≈ 0.0164.
         let ranked_ids: Vec<&str> = ranked.iter().map(|(id, _)| id.as_str()).collect();
         assert_eq!(ranked_ids, vec!["near-c", "near-a", "near-b"]);
+    }
+}
+
+#[cfg(test)]
+mod search_filter_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn chunk(source_path: &str) -> HydratedChunk {
+        HydratedChunk {
+            document_id: "doc".into(),
+            content: "body".into(),
+            metadata_json: None,
+            source_page: None,
+            extraction_confidence: 1.0,
+            document_title: "title".into(),
+            source_path: Some(source_path.into()),
+        }
+    }
+
+    /// A pool where only every 5th chunk lives under `/reports/`. The caller
+    /// asks for 3 results scoped to that path.
+    fn sparse_pool() -> (Vec<(String, f32)>, HashMap<String, HydratedChunk>) {
+        let mut matches = Vec::new();
+        let mut hydrated = HashMap::new();
+        for i in 0..30 {
+            let id = format!("c{i}");
+            let path = if i % 5 == 0 { "/reports/q3" } else { "/notes/x" };
+            matches.push((id.clone(), i as f32 * 0.01));
+            hydrated.insert(id, chunk(path));
+        }
+        (matches, hydrated)
+    }
+
+    fn scoped_query() -> KbSearchQuery {
+        KbSearchQuery {
+            kb_id: "kb".into(),
+            query: "q".into(),
+            top_k: Some(3),
+            min_score: None,
+            filter_source: Some("/reports/".into()),
+        }
+    }
+
+    /// The regression: cutting the pool to top_k BEFORE applying `filter_source`
+    /// leaves the caller with only the scoped chunks that happened to land in
+    /// the global top 3 — here exactly one (`c0`), not the three that exist.
+    #[test]
+    fn pre_truncating_the_pool_starves_a_scoped_search() {
+        let (matches, mut hydrated) = sparse_pool();
+        let mut truncated = matches.clone();
+        truncated.truncate(3); // the old ordering
+
+        let results = select_search_results(&truncated, &mut hydrated, 3, &scoped_query());
+        assert_eq!(results.len(), 1, "old ordering under-fills a scoped search");
+    }
+
+    /// The fix: filtering over the whole candidate pool and cutting afterwards
+    /// returns a full top_k of in-scope hits, still in ranking order.
+    #[test]
+    fn filtering_before_the_cut_fills_top_k_in_ranking_order() {
+        let (matches, mut hydrated) = sparse_pool();
+
+        let results = select_search_results(&matches, &mut hydrated, 3, &scoped_query());
+
+        assert_eq!(results.len(), 3);
+        let ids: Vec<&str> = results.iter().map(|r| r.chunk_id.as_str()).collect();
+        assert_eq!(ids, vec!["c0", "c5", "c10"]);
+        assert!(results
+            .iter()
+            .all(|r| r.source_path.as_deref() == Some("/reports/q3")));
+    }
+
+    /// A chunk with no `source_path` can never satisfy a source filter.
+    #[test]
+    fn null_source_path_is_excluded_by_a_source_filter() {
+        let matches = vec![("c0".to_string(), 0.1)];
+        let mut hydrated = HashMap::new();
+        hydrated.insert(
+            "c0".to_string(),
+            HydratedChunk {
+                source_path: None,
+                ..chunk("/reports/q3")
+            },
+        );
+
+        let results = select_search_results(&matches, &mut hydrated, 3, &scoped_query());
+        assert!(results.is_empty());
+    }
+
+    /// `min_score` stays a threshold, not a selector — it trims, and the loop
+    /// never returns more than top_k.
+    #[test]
+    fn min_score_trims_and_top_k_caps() {
+        let (matches, mut hydrated) = sparse_pool();
+        let query = KbSearchQuery {
+            top_k: Some(4),
+            min_score: None,
+            filter_source: None,
+            ..scoped_query()
+        };
+
+        let results = select_search_results(&matches, &mut hydrated, 4, &query);
+        assert_eq!(results.len(), 4, "unscoped search fills top_k");
+
+        // score = 1/(1+distance); distance 0.00..0.29 over the pool, so a 0.99
+        // floor keeps only the first few.
+        let (matches, mut hydrated) = sparse_pool();
+        let strict = KbSearchQuery {
+            min_score: Some(0.99),
+            ..query
+        };
+        let results = select_search_results(&matches, &mut hydrated, 4, &strict);
+        assert!(
+            results.len() < 4 && !results.is_empty(),
+            "min_score trims the result set, got {}",
+            results.len()
+        );
     }
 }
