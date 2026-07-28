@@ -286,20 +286,32 @@ pub fn get_pending_fire(
 }
 
 /// Resolve a pending fire (approve/reject). Only flips a still-`pending` row.
+///
+/// Returns `(row, won_cas)`. `won_cas` is the ONLY signal the caller may use to
+/// decide whether to publish the downstream event: the `AND status = 'pending'`
+/// predicate makes this UPDATE a single-winner compare-and-swap. Two overlapping
+/// callers for the same fire id (UI double-click, IPC timeout retry) both pass a
+/// pre-check that reads `status == "pending"`, then race this UPDATE — only one
+/// actually transitions the row. Without gating on the rows-affected count, both
+/// callers would see `approved == true` (their own stale intent) and both publish,
+/// firing an approval-gated automation twice from a single human click. A 0-row
+/// result here means someone else already resolved this fire; that is a benign
+/// no-op, not an error — the human's approval WAS recorded, just by the other call.
 pub fn resolve_pending_fire(
     pool: &DbPool,
     id: &str,
     approved: bool,
-) -> Result<crate::models::PendingTriggerFire, AppError> {
+) -> Result<(crate::models::PendingTriggerFire, bool), AppError> {
     timed_query!("pending_trigger_fires", "pending_trigger_fires::resolve", {
         let status = if approved { "approved" } else { "rejected" };
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-        conn.execute(
+        let rows = conn.execute(
             "UPDATE pending_trigger_fires SET status = ?1, resolved_at = ?2 WHERE id = ?3 AND status = 'pending'",
             params![status, now, id],
         )?;
-        get_pending_fire(pool, id)
+        let row = get_pending_fire(pool, id)?;
+        Ok((row, rows > 0))
     })
 }
 
@@ -3361,5 +3373,61 @@ mod tests {
     #[allow(dead_code)]
     fn _seed_handler_keeper(pool: &DbPool, persona_id: &str) {
         seed_handler(pool, persona_id, "x", "y");
+    }
+
+    /// Regression pin: an approval-gated pending trigger fire must transition
+    /// exactly once even when resolved twice for the same id (UI double-click,
+    /// IPC timeout retry). Before the fix, `resolve_pending_fire` returned the
+    /// row unconditionally and the caller decided whether to publish purely
+    /// from its own `approved` bool — both racing calls would see `approved`
+    /// and both would publish, firing the gated automation twice from one
+    /// human click. The CAS predicate (`AND status = 'pending'`) means only
+    /// one UPDATE actually flips the row; this test asserts only one call
+    /// reports `won_cas == true`, i.e. only one caller is authorised to publish.
+    #[test]
+    fn test_resolve_pending_fire_is_single_winner_cas() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "manual".into(),
+                config: None,
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        let fire = insert_pending_fire(
+            &pool,
+            &trigger.id,
+            &persona.id,
+            "manual.fire",
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Simulate two overlapping resolutions of the SAME pending fire, both
+        // approving — e.g. a double-click or an IPC retry after a timeout.
+        let (first_row, first_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+        let (second_row, second_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+
+        // Exactly one call wins the CAS — that's the only one allowed to publish.
+        assert_ne!(
+            first_won, second_won,
+            "exactly one of the two racing resolutions must win the compare-and-swap"
+        );
+        assert!(first_won || second_won, "one resolution must win");
+
+        // Both calls observe the same final, single, resolved state.
+        assert_eq!(first_row.status, "approved");
+        assert_eq!(second_row.status, "approved");
+        assert_eq!(first_row.resolved_at, second_row.resolved_at);
+
+        // The row is not left dangling as `pending` and cannot be won a third time.
+        let (_, third_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+        assert!(!third_won, "an already-resolved fire must never win the CAS again");
     }
 }

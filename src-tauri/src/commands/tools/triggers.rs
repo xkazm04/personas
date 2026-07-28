@@ -187,6 +187,10 @@ pub fn resolve_pending_trigger_fire(
     approved: bool,
 ) -> Result<PendingTriggerFire, AppError> {
     require_auth_sync(&state)?;
+    // Cheap early-out for a genuinely stale UI only — this pre-check is NEVER
+    // what authorises the publish below. Two overlapping calls (UI double-click,
+    // IPC timeout retry) can both pass this check while still `pending`; only the
+    // compare-and-swap in `resolve_pending_fire` decides a single winner.
     let pending = repo::get_pending_fire(&state.db, &id)?;
     if pending.status != "pending" {
         return Err(AppError::Validation(format!(
@@ -194,9 +198,12 @@ pub fn resolve_pending_trigger_fire(
             pending.status
         )));
     }
-    let resolved = repo::resolve_pending_fire(&state.db, &id, approved)?;
-    if approved {
+    let (resolved, won_cas) = repo::resolve_pending_fire(&state.db, &id, approved)?;
+    if approved && won_cas {
         // Publish the held event so the normal event-bus flow creates the run.
+        // Gated on `won_cas`, NOT on the caller's `approved` flag alone — without
+        // this gate, a losing concurrent call would still publish from its own
+        // stale intent, firing an approval-gated automation twice from one click.
         event_repo::publish(
             &state.db,
             CreatePersonaEventInput {
@@ -210,6 +217,9 @@ pub fn resolve_pending_trigger_fire(
             },
         )?;
     }
+    // If this call lost the CAS, the row was already resolved by a concurrent
+    // caller — the human's approval WAS recorded (by that other call). Return
+    // the current (already-resolved) row as a success, not an error.
     Ok(resolved)
 }
 
