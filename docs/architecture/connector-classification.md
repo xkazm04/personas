@@ -59,6 +59,11 @@ keyed by `service_type`, not scoped per persona.
 
 Derivation: anything not Class A or Class C.
 
+**Fallback: an authenticated provider CLI.** For hosting / VCS providers
+the vault credential is not the only real capability — see
+[CLI-auth readiness](#cli-auth-readiness-the-credential-class-fallback)
+below.
+
 ### Class C — `GlobalProbe`
 
 A builtin connector that is ready iff a **backing local entity** exists.
@@ -107,7 +112,9 @@ Dispatch:
 
 - **`ZeroConfig`** → `Ready`.
 - **`Credential`** → `persona_credentials` lookup by `service_type`,
-  with a category-synonym fallback.
+  with a category-synonym fallback; then, for the connectors listed
+  under [CLI-auth readiness](#cli-auth-readiness-the-credential-class-fallback),
+  a provider-CLI auth probe.
 - **`GlobalProbe`** → the connector's probe (table / settings check).
 
 `check_persona_runnability` (adoption pre-flight) and the build promote
@@ -121,6 +128,70 @@ The adoption pre-flight keeps two template-payload-specific escape
 hatches (a connector whose template `category` is a native capability;
 a connector whose template entry declares a credential-free `auth_type`)
 because those depend on the raw template JSON the resolver never sees.
+
+## CLI-auth readiness (the `Credential`-class fallback)
+
+Hosting and VCS providers are not normally authenticated by pasting an
+API token anywhere. The user runs the vendor's own CLI once — `vercel
+login`, `gh auth login` — and the CLI stores a token in its own config.
+Demanding a *second*, hand-copied credential in the Vault before the
+connector counts as ready is friction users reliably refuse: they skip
+the connector, and the persona ships unwired. That is a false
+`needs_credentials` of the same family as the `codebase` bug above,
+just with a different backing store.
+
+So for the connectors in `CLI_PROBE_CONNECTORS` (`personas-core`,
+`models/connector.rs`) readiness has a second path. Classification does
+**not** change — these stay Class B:
+
+| Connector | Auth probe | Login command |
+|---|---|---|
+| `vercel` | `vercel whoami` | `vercel login` |
+| `netlify` | `netlify status` | `netlify login` |
+| `cloudflare` | `wrangler whoami` | `wrangler login` |
+| `fly_io` | `flyctl auth whoami` | `flyctl auth login` |
+| `railway` | `railway whoami` | `railway login` |
+| `github` | `gh auth status` | `gh auth login` |
+
+Resolution order inside the `Credential` arm is strict:
+
+1. A uniquely bound, *usable* vault credential → `Ready`. **This always
+   wins.** It is the only mode that survives leaving this machine — CI,
+   a second device, a headless run. The CLI path is a local convenience,
+   not an equal.
+2. No credential resolves → run the (cached) provider-CLI probe:
+   - exit 0 → `Ready`
+   - binary present, probe fails → `NeedsSetup { CliLogin }`
+   - binary absent → `NeedsSetup { VaultCredential }` (unchanged)
+
+`SetupKind::CliLogin` is the new remediation token. Its blocker detail
+names the connector's actual login command, because a generic "run its
+login command" defeats the purpose of having a distinct kind.
+
+### Why the probe is cached and bounded
+
+Readiness is recomputed on every adopt, promote, credential mutation and
+run gate — a single user action can resolve dozens of connectors. A
+naive probe would spawn a process each time. So:
+
+- **TTL cache** (process-wide, 5 minutes). A fresh entry never spawns
+  anything. Five minutes is short enough that a `vercel login` the user
+  just ran is picked up without an app restart.
+- **4-second hard timeout with kill.** A CLI sitting at an interactive
+  prompt can never wedge the UI's critical path; a timeout is reported
+  as "needs login", which is actionable.
+- **Windows goes through `cmd /C`.** The npm-installed provider CLIs are
+  `.cmd` shims that `CreateProcess` — and therefore
+  `Command::new("vercel")` — cannot execute. `CREATE_NO_WINDOW` keeps a
+  console from flashing. Because `cmd` always spawns successfully, the
+  "binary absent" signal is then read from exit code 9009 or the shell's
+  stderr text rather than a spawn error.
+- **The probe function is injectable** (`connector_readiness_with_probe`)
+  so unit tests never touch a real binary and can count invocations.
+
+`connector_cli_probe_status` / `connector_cli_probe_refresh` expose the
+cache to the UI — the latter is what a user hits after authenticating in
+a terminal, instead of waiting out the TTL.
 
 ## Probe registry
 

@@ -98,6 +98,22 @@ Lifecycle of a CLI-sourced credential:
 - **Execution** uses the captured token through the connector strategy. `GcpCloudStrategy` (`engine/connector_strategy.rs`) resolves the raw access token in `service_account_json` as a Bearer token and reports the credential as refresh-eligible, which arms the api_proxy 401 → force-refresh (CLI recapture) → retry path for mid-run expiry. A pasted service-account *key* (JSON shape) is not directly usable as a Bearer token — it would need a signed-JWT grant exchange, which is not implemented.
 - **Dead CLI session** (revocation, password change, org session policy): recapture fails as `Unauthenticated`, which classifies as `OAuthRevoked` — the credential is flagged `needs_reauth`, a `credential-reauth-required` event + OS notification fire, and the Vault `ReauthBanner` shows the CLI login instruction (e.g. "Run `gcloud auth login`") with a **Retry capture** button (`refresh_credential_cli_now`) so the user can recover without recreating the credential.
 
+### CLI-auth readiness (hosting and VCS providers)
+
+Distinct from CLI *capture* above, which still stores a credential: for six hosting / VCS connectors — **Vercel, Netlify, Cloudflare, Fly.io, Railway, GitHub** — an authenticated provider CLI on this machine is by itself enough to mark the connector **Ready**. Nothing is stored in the Vault. The rationale is that these providers are normally authed by running `vercel login` / `gh auth login` once, and demanding a second hand-copied API token before the connector counts as ready is friction users skip — leaving the persona unwired.
+
+How readiness resolves for these connectors:
+
+1. **A bound Vault credential always wins.** It is the only mode that works off this machine (CI, a second device, a headless run), so it is checked first and short-circuits the probe entirely.
+2. **Otherwise the provider CLI is probed** (`vercel whoami`, `gh auth status`, …), with the result cached for 5 minutes:
+   - authenticated → **Ready**
+   - installed but not signed in → **needs setup**, with the `cli_login` remediation naming the exact command to run (e.g. "run `flyctl auth login`") instead of sending the user to Settings → Vault
+   - not installed → **needs setup**, Vault credential (unchanged behaviour)
+
+Probes are bounded at 4 seconds and killed on timeout, so a CLI waiting at an interactive prompt can never stall the UI. `connector_cli_probe_status` lists which provider CLIs are installed and signed in; `connector_cli_probe_refresh` drops the cache and re-probes — that is what to call after authenticating in a terminal rather than waiting out the TTL.
+
+Full design, including the Windows `.cmd`-shim handling: [`docs/architecture/connector-classification.md`](../../architecture/connector-classification.md#cli-auth-readiness-the-credential-class-fallback).
+
 ## Revoked-grant recovery (OAuth + CLI)
 
 When the refresh engine detects a revoked grant it does three durable things, not just fire a dismissable banner:

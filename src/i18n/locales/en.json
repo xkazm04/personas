@@ -4617,6 +4617,15 @@
       "refresh_oauth": "Refresh OAuth token now",
       "refresh": "Refresh"
     },
+    "setup_kind": {
+      "generic": "One or more declared connectors need setup. Open the persona to see what each requires.",
+      "vault_credential": "add the credential in Settings → Vault",
+      "cli_login": "the provider CLI is installed but not signed in — run its login command in a terminal (for example `vercel login` or `gh auth login`)",
+      "dev_project": "register a project in Dev Tools",
+      "obsidian_vault": "configure your vault in the Obsidian Brain plugin",
+      "twin_profile": "create a Twin profile in the Twin plugin",
+      "misconfigured": "this connector is unrecognized or misconfigured — remove it or update the app"
+    },
     "vault_badge": {
       "needs_attention": "Needs attention",
       "secure": "Secure",

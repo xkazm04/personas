@@ -5336,6 +5336,15 @@
       "perm_errors": "Kesalahan permanen terdeteksi -- rotasi dicoba, peringatan dikirim.",
       "degrading": "Degradasi berkelanjutan -- rotasi preventif dipicu.",
       "backoff": "Kegagalan sementara -- exponential backoff aktif."
+    },
+    "setup_kind": {
+      "cli_login": "CLI penyedia sudah terpasang tetapi belum masuk — jalankan perintah login-nya di terminal (misalnya `vercel login` atau `gh auth login`)",
+      "dev_project": "daftarkan sebuah proyek di Dev Tools",
+      "generic": "Satu atau beberapa konektor yang dideklarasikan perlu disiapkan. Buka persona untuk melihat kebutuhan masing-masing.",
+      "misconfigured": "konektor ini tidak dikenali atau salah konfigurasi — hapus atau perbarui aplikasinya",
+      "obsidian_vault": "konfigurasikan vault Anda di plugin Obsidian Brain",
+      "twin_profile": "buat profil Twin di plugin Twin",
+      "vault_credential": "tambahkan kredensial di Settings → Vault"
     }
   },
   "deployment": {

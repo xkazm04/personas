@@ -2676,6 +2676,10 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_dispatch,
             // Connector Explorer -- reverse-engineering CLI factory (v1)
+            commands::design::connector_explorer::connector_explorer_explore,
+            // Provider-CLI auth readiness (vercel/netlify/wrangler/flyctl/railway/gh)
+            commands::design::connector_readiness::connector_cli_probe_status,
+            commands::design::connector_readiness::connector_cli_probe_refresh,
             // Drive -- managed local filesystem plugin
             commands::drive::drive_get_root,
             commands::drive::drive_storage_info,

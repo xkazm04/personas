@@ -5336,6 +5336,15 @@
       "perm_errors": "永続的なエラーが検出されました — ローテーションを試みてアラートを送信中。",
       "degrading": "持続的な低下 — 予防的なローテーションをトリガー中。",
       "backoff": "一時的な失敗 — 指数バックオフが有効です。"
+    },
+    "setup_kind": {
+      "cli_login": "プロバイダーの CLI はインストール済みですがサインインしていません — ターミナルでログインコマンドを実行してください（例: `vercel login` または `gh auth login`）",
+      "dev_project": "Dev Tools でプロジェクトを登録してください",
+      "generic": "宣言されたコネクタの一部にセットアップが必要です。それぞれの要件を確認するにはペルソナを開いてください。",
+      "misconfigured": "このコネクタは認識できないか設定が不正です — 削除するかアプリを更新してください",
+      "obsidian_vault": "Obsidian Brain プラグインで vault を設定してください",
+      "twin_profile": "Twin プラグインで Twin プロファイルを作成してください",
+      "vault_credential": "Settings → Vault で認証情報を追加してください"
     }
   },
   "deployment": {

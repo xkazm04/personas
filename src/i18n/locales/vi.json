@@ -5336,6 +5336,15 @@
       "perm_errors": "Phát hiện lỗi vĩnh viễn -- đã thử xoay vòng, đang cảnh báo.",
       "degrading": "Suy giảm kéo dài -- đã kích hoạt xoay vòng phòng ngừa.",
       "backoff": "Lỗi tạm thời -- đang áp dụng backoff theo cấp số nhân."
+    },
+    "setup_kind": {
+      "cli_login": "CLI của nhà cung cấp đã được cài đặt nhưng chưa đăng nhập — hãy chạy lệnh đăng nhập của nó trong terminal (ví dụ `vercel login` hoặc `gh auth login`)",
+      "dev_project": "đăng ký một dự án trong Dev Tools",
+      "generic": "Một hoặc nhiều connector đã khai báo cần được thiết lập. Mở persona để xem từng cái yêu cầu gì.",
+      "misconfigured": "connector này không được nhận diện hoặc cấu hình sai — hãy xóa nó hoặc cập nhật ứng dụng",
+      "obsidian_vault": "cấu hình vault của bạn trong plugin Obsidian Brain",
+      "twin_profile": "tạo một hồ sơ Twin trong plugin Twin",
+      "vault_credential": "thêm thông tin xác thực trong Settings → Vault"
     }
   },
   "deployment": {

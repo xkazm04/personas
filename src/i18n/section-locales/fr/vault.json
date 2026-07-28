@@ -1677,5 +1677,14 @@
     "perm_errors": "Erreurs permanentes détectées — rotation tentée, alerte envoyée.",
     "degrading": "Dégradation soutenue — rotation préventive déclenchée.",
     "backoff": "Échecs temporaires — backoff exponentiel actif."
+  },
+  "setup_kind": {
+    "cli_login": "La CLI du fournisseur est installée mais vous n'êtes pas connecté — exécutez sa commande de connexion dans un terminal (par exemple `vercel login` ou `gh auth login`)",
+    "dev_project": "enregistrez un projet dans Dev Tools",
+    "generic": "Un ou plusieurs connecteurs déclarés nécessitent une configuration. Ouvrez la persona pour voir ce que chacun exige.",
+    "misconfigured": "ce connecteur est non reconnu ou mal configuré — supprimez-le ou mettez l'application à jour",
+    "obsidian_vault": "configurez votre vault dans le plugin Obsidian Brain",
+    "twin_profile": "créez un profil Twin dans le plugin Twin",
+    "vault_credential": "ajoutez les identifiants dans Settings → Vault"
   }
 }

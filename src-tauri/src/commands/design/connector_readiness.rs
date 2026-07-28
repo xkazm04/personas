@@ -7,24 +7,53 @@
 //! pass adoption and then fail promote.
 //!
 //! Dispatch is driven by `ConnectorClass` (see `db::models::connector`):
-//!   - `ZeroConfig`   → always ready.
-//!   - `Credential`   → uniquely bindable to one concrete vault credential
-//!                      (exact service_type, else a category match). An
-//!                      ambiguous or absent match is NeedsSetup.
-//!   - `GlobalProbe`  → a connector-specific probe against a backing local
-//!                      entity: a Dev Tools project (`codebase`), a Twin
-//!                      profile (`twin`), an Obsidian vault (`obsidian_
-//!                      memory`). Resolved globally — no per-persona binding.
+//! - `ZeroConfig` → always ready.
+//! - `Credential` → uniquely bindable to one concrete vault credential (exact
+//!   service_type, else a category match). An ambiguous or absent match is
+//!   NeedsSetup — EXCEPT for the connectors in `CLI_PROBE_CONNECTORS`, which
+//!   fall back to "is the provider CLI on this machine authenticated?" (see
+//!   below).
+//! - `GlobalProbe` → a connector-specific probe against a backing local entity:
+//!   a Dev Tools project (`codebase`), a Twin profile (`twin`), an Obsidian
+//!   vault (`obsidian_memory`). Resolved globally — no per-persona binding.
+//!
+//! ## The CLI-auth fallback (Credential class only)
+//!
+//! Hosting / VCS providers (Vercel, Netlify, Cloudflare, Fly.io, Railway,
+//! GitHub) are normally authed by running the vendor's own CLI once. Demanding
+//! a second, hand-copied API token in the Vault before the connector counts as
+//! ready is friction users refuse — so they skip the connector entirely. For
+//! the connectors listed in `CLI_PROBE_CONNECTORS` the resolver therefore tries
+//! a second path, strictly ordered:
+//!
+//! 1. A uniquely bound, usable Vault credential → `Ready`. This ALWAYS wins:
+//!    it is the only mode that survives leaving this machine (CI, another
+//!    device, a headless run).
+//! 2. No credential resolves → probe the provider CLI (cached, ~5 min TTL):
+//!    - exit 0 (authenticated) → `Ready`
+//!    - binary present, probe fails → `NeedsSetup { CliLogin }` — the user runs
+//!      e.g. `vercel login`, not a Vault round-trip
+//!    - binary absent → `NeedsSetup { VaultCredential }` (unchanged
+//!      pre-existing behavior)
+//!
+//! Readiness is recomputed often (every adopt, promote, credential mutation
+//! and run gate), so the probe MUST NOT spawn a process per call — it is
+//! memoised in a process-wide TTL cache and each probe carries a hard timeout.
 //!
 //! Full rationale: `docs/architecture/connector-classification.md`.
 
 use std::collections::HashMap;
+use std::process::{Command, Stdio};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{classify_connector, ConnectorClass};
+use crate::db::models::{
+    classify_connector, cli_probe_spec, CliProbeSpec, ConnectorClass, CLI_PROBE_CONNECTORS,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -36,6 +65,11 @@ use crate::error::AppError;
 pub enum SetupKind {
     /// An API credential configured in Settings → Vault.
     VaultCredential,
+    /// The provider's own CLI is installed on this machine but not
+    /// authenticated — the fix is one interactive `<tool> login`, NOT a Vault
+    /// round-trip. Only produced for `CLI_PROBE_CONNECTORS` connectors that
+    /// have no bound credential. See the module header.
+    CliLogin,
     /// A Dev Tools project registered (and, later, bound to the persona).
     DevProject,
     /// The Obsidian Brain vault configured.
@@ -56,6 +90,7 @@ impl SetupKind {
     pub fn as_str(&self) -> &'static str {
         match self {
             SetupKind::VaultCredential => "vault_credential",
+            SetupKind::CliLogin => "cli_login",
             SetupKind::DevProject => "dev_project",
             SetupKind::ObsidianVault => "obsidian_vault",
             SetupKind::TwinProfile => "twin_profile",
@@ -67,6 +102,9 @@ impl SetupKind {
     pub fn remediation(&self) -> &'static str {
         match self {
             SetupKind::VaultCredential => "add the credential in Settings → Vault",
+            SetupKind::CliLogin => {
+                "authenticate the provider CLI on this machine (run its login command)"
+            }
             SetupKind::DevProject => "register a project in Dev Tools",
             SetupKind::ObsidianVault => {
                 "configure your vault in the Obsidian Brain plugin"
@@ -76,6 +114,26 @@ impl SetupKind {
                 "this connector is unrecognized or misconfigured — remove it or update the app"
             }
         }
+    }
+}
+
+/// Remediation text specialized for one concrete connector.
+///
+/// `SetupKind::remediation()` is the generic, connector-agnostic line. For
+/// `CliLogin` a generic "run its login command" is useless — the whole point
+/// of the kind is that a single copy-pasteable command fixes it — so this
+/// substitutes the connector's actual `login_cmd` (`vercel login`,
+/// `gh auth login`, …). All other kinds pass through unchanged.
+pub fn remediation_for(kind: SetupKind, connector: &str) -> String {
+    match kind {
+        SetupKind::CliLogin => match cli_probe_spec(connector) {
+            Some(spec) => format!(
+                "the {} CLI is installed but not signed in — run `{}`",
+                spec.probe_program, spec.login_cmd
+            ),
+            None => kind.remediation().to_string(),
+        },
+        _ => kind.remediation().to_string(),
     }
 }
 
@@ -116,7 +174,7 @@ impl SetupBlocker {
             Readiness::NeedsSetup { connector, kind } => Some(SetupBlocker {
                 connector: connector.clone(),
                 kind: *kind,
-                detail: format!("`{}` — {}", connector, kind.remediation()),
+                detail: format!("`{}` — {}", connector, remediation_for(*kind, connector)),
             }),
         }
     }
@@ -246,12 +304,236 @@ fn has_obsidian_vault(conn: &Connection) -> bool {
         .unwrap_or(false)
 }
 
+// ============================================================================
+// Provider-CLI auth probe (the Credential-class fallback)
+// ============================================================================
+
+/// Hard ceiling on one probe invocation. A provider CLI that hasn't answered
+/// in this long is killed — readiness resolution runs on the UI's critical
+/// path and must never hang on a CLI waiting at an interactive prompt.
+const CLI_PROBE_TIMEOUT: Duration = Duration::from_secs(4);
+
+/// How long a probe verdict is trusted. Long enough that the many readiness
+/// recomputes in a single user action all hit the cache; short enough that a
+/// `vercel login` the user just ran is picked up without restarting the app.
+const CLI_PROBE_TTL: Duration = Duration::from_secs(300);
+
+/// Windows `CREATE_NO_WINDOW` — keeps the probe from flashing a console.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+/// The three distinguishable outcomes of an auth probe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CliProbeResult {
+    /// The binary ran and reported an authenticated session (exit 0).
+    Authed,
+    /// The binary exists but the probe failed / timed out — needs `login`.
+    Unauthed,
+    /// The binary is not installed on this machine.
+    Absent,
+}
+
+impl CliProbeResult {
+    pub fn binary_present(self) -> bool {
+        !matches!(self, CliProbeResult::Absent)
+    }
+    pub fn authed(self) -> bool {
+        matches!(self, CliProbeResult::Authed)
+    }
+}
+
+/// Cache entry: when it was taken (monotonic, for TTL) + wall-clock (for the
+/// UI's `checkedAt`) + the verdict.
+#[derive(Debug, Clone, Copy)]
+struct CachedProbe {
+    at: Instant,
+    checked_at: chrono::DateTime<chrono::Utc>,
+    result: CliProbeResult,
+}
+
+type ProbeCache = HashMap<String, CachedProbe>;
+
+fn probe_cache() -> &'static Mutex<ProbeCache> {
+    static CACHE: OnceLock<Mutex<ProbeCache>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Whether the stderr of a failed probe says the program itself is missing.
+/// On Windows the probe goes through `cmd /C`, which always spawns
+/// successfully — so the "binary absent" signal has to be read out of the
+/// shell's own error text (or its 9009 exit code) rather than a spawn error.
+fn stderr_means_absent(stderr: &str) -> bool {
+    let s = stderr.to_ascii_lowercase();
+    s.contains("is not recognized")
+        || s.contains("not recognized as an internal")
+        || s.contains("command not found")
+        || s.contains("no such file or directory")
+}
+
+/// Build the probe command for this platform.
+///
+/// On Windows the npm-installed provider CLIs are `.cmd` shims, which
+/// `CreateProcess` (and therefore `Command::new("vercel")`) cannot execute —
+/// so the probe is routed through `cmd /C`, with `CREATE_NO_WINDOW` so no
+/// console flashes on the user's screen.
+fn build_probe_command(spec: &CliProbeSpec) -> Command {
+    #[cfg(windows)]
+    let mut cmd = {
+        use std::os::windows::process::CommandExt;
+        let mut c = Command::new("cmd");
+        c.arg("/C").arg(spec.probe_program).args(spec.probe_args);
+        c.creation_flags(CREATE_NO_WINDOW);
+        c
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut c = Command::new(spec.probe_program);
+        c.args(spec.probe_args);
+        c
+    };
+    // stdin closed so a CLI that would prompt fails fast instead of blocking;
+    // stdout discarded (we only need the exit code); stderr kept for the
+    // binary-absent detection above.
+    cmd.stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped());
+    cmd
+}
+
+/// Run one provider-CLI auth probe. Blocking, bounded by `CLI_PROBE_TIMEOUT`.
+///
+/// This is the ONLY function in the resolver that spawns a process, and it is
+/// never called directly by `connector_readiness` — always through
+/// `cached_cli_probe`, so the TTL cache stands between it and the many
+/// readiness recomputes per user action.
+pub fn run_cli_probe(spec: &CliProbeSpec) -> CliProbeResult {
+    let mut child = match build_probe_command(spec).spawn() {
+        Ok(child) => child,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return CliProbeResult::Absent,
+        Err(e) => {
+            tracing::debug!(
+                connector = spec.name,
+                error = %e,
+                "connector-readiness: CLI probe failed to spawn"
+            );
+            return CliProbeResult::Absent;
+        }
+    };
+
+    let deadline = Instant::now() + CLI_PROBE_TIMEOUT;
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    // Present but hanging — almost always an interactive
+                    // prompt. Kill it and report "needs login": actionable,
+                    // and it can never wedge the readiness path.
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    tracing::debug!(
+                        connector = spec.name,
+                        "connector-readiness: CLI probe timed out; treating as unauthenticated"
+                    );
+                    return CliProbeResult::Unauthed;
+                }
+                std::thread::sleep(Duration::from_millis(25));
+            }
+            Err(_) => return CliProbeResult::Unauthed,
+        }
+    };
+
+    if status.success() {
+        return CliProbeResult::Authed;
+    }
+
+    // Non-zero: distinguish "not installed" from "not signed in".
+    let mut stderr = String::new();
+    if let Some(mut pipe) = child.stderr.take() {
+        use std::io::Read;
+        let _ = pipe.read_to_string(&mut stderr);
+    }
+    // cmd.exe's "command not found" exit code.
+    if status.code() == Some(9009) || stderr_means_absent(&stderr) {
+        CliProbeResult::Absent
+    } else {
+        CliProbeResult::Unauthed
+    }
+}
+
+/// TTL-cached `run_cli_probe`. Returns a fresh cache hit without spawning
+/// anything; otherwise probes once and memoises the verdict.
+pub fn cached_cli_probe(spec: &CliProbeSpec) -> CliProbeResult {
+    if let Ok(cache) = probe_cache().lock() {
+        if let Some(entry) = cache.get(spec.name) {
+            if entry.at.elapsed() < CLI_PROBE_TTL {
+                return entry.result;
+            }
+        }
+    }
+    let result = run_cli_probe(spec);
+    if let Ok(mut cache) = probe_cache().lock() {
+        cache.insert(
+            spec.name.to_string(),
+            CachedProbe {
+                at: Instant::now(),
+                checked_at: chrono::Utc::now(),
+                result,
+            },
+        );
+    }
+    result
+}
+
+/// Read the cached verdict for a connector without probing. `None` = no entry
+/// or the entry has aged out.
+fn peek_cli_probe(name: &str) -> Option<CachedProbe> {
+    let cache = probe_cache().lock().ok()?;
+    let entry = cache.get(name)?;
+    if entry.at.elapsed() < CLI_PROBE_TTL {
+        Some(*entry)
+    } else {
+        None
+    }
+}
+
+/// Drop cached probe verdicts — one connector, or (with `None`) all of them.
+/// The next readiness pass re-probes.
+pub fn evict_cli_probe_cache(connector: Option<&str>) {
+    if let Ok(mut cache) = probe_cache().lock() {
+        match connector {
+            Some(name) => {
+                let name_l = name.trim().to_ascii_lowercase();
+                cache.retain(|k, _| !k.eq_ignore_ascii_case(&name_l));
+            }
+            None => cache.clear(),
+        }
+    }
+}
+
 /// Resolve whether `connector_name` is ready.
 ///
 /// All connector classes resolve against global state — the vault, the Dev
-/// Tools project list, the Twin profile list, the Obsidian vault config —
+/// Tools project list, the Twin profile list, the Obsidian vault config, and
+/// (for `CLI_PROBE_CONNECTORS`) the provider CLIs installed on this machine —
 /// so there is no per-persona parameter.
 pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness {
+    connector_readiness_with_probe(conn, connector_name, cached_cli_probe)
+}
+
+/// `connector_readiness` with the CLI probe injected.
+///
+/// Unit tests pass a stub so they never touch a real `vercel` / `gh` binary
+/// (which would make the suite depend on the developer's machine state), and
+/// so they can count invocations to assert the cache is respected.
+pub fn connector_readiness_with_probe<P>(
+    conn: &Connection,
+    connector_name: &str,
+    probe: P,
+) -> Readiness
+where
+    P: Fn(&CliProbeSpec) -> CliProbeResult,
+{
     let name = connector_name.trim();
     if name.is_empty() {
         // A blank/whitespace connector name is a corrupted template
@@ -284,9 +566,20 @@ pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness
             // connector executes blind. `resolve_one_credential` returns
             // Some only for an unambiguous bind.
             if resolve_ready_credential(conn, name).is_some() {
-                Readiness::Ready
-            } else {
-                needs(SetupKind::VaultCredential)
+                return Readiness::Ready;
+            }
+            // No credential resolved. For a hosting / VCS provider whose CLI
+            // can hold the auth (see the module header), an authenticated CLI
+            // on THIS machine is an equally real capability — but strictly a
+            // fallback, because it does not travel to CI or another device.
+            match cli_probe_spec(name) {
+                Some(spec) => match probe(spec) {
+                    CliProbeResult::Authed => Readiness::Ready,
+                    CliProbeResult::Unauthed => needs(SetupKind::CliLogin),
+                    // No CLI installed → the Vault is still the only route.
+                    CliProbeResult::Absent => needs(SetupKind::VaultCredential),
+                },
+                None => needs(SetupKind::VaultCredential),
             }
         }
         ConnectorClass::GlobalProbe => match name.to_ascii_lowercase().as_str() {
@@ -815,6 +1108,85 @@ where
     links
 }
 
+// ============================================================================
+// Tauri command surface — provider-CLI auth visibility
+// ============================================================================
+
+/// One row of "what does this machine's provider-CLI situation look like?".
+/// Purely diagnostic: the readiness resolver reads the same cache directly.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CliProbeStatus {
+    /// The connector name (`vercel`, `github`, …).
+    pub connector: String,
+    /// The command the user runs to authenticate (`vercel login`, …).
+    pub login_command: String,
+    /// Whether the provider CLI is installed on this machine.
+    pub binary_present: bool,
+    /// Whether it reported an authenticated session.
+    pub authed: bool,
+    /// RFC3339 timestamp of the probe this verdict came from.
+    pub checked_at: String,
+}
+
+fn cli_probe_status_row(spec: &CliProbeSpec) -> CliProbeStatus {
+    // Prefer a live cache entry (no spawn); probe only on a cold/stale slot.
+    let (result, checked_at) = match peek_cli_probe(spec.name) {
+        Some(entry) => (entry.result, entry.checked_at),
+        None => {
+            let result = cached_cli_probe(spec);
+            let at = peek_cli_probe(spec.name)
+                .map(|e| e.checked_at)
+                .unwrap_or_else(chrono::Utc::now);
+            (result, at)
+        }
+    };
+    CliProbeStatus {
+        connector: spec.name.to_string(),
+        login_command: spec.login_cmd.to_string(),
+        binary_present: result.binary_present(),
+        authed: result.authed(),
+        checked_at: checked_at.to_rfc3339(),
+    }
+}
+
+/// Report the provider-CLI auth state for every `CLI_PROBE_CONNECTORS` entry.
+/// Served from the TTL cache — a cold entry costs one bounded probe.
+#[tauri::command]
+pub async fn connector_cli_probe_status(
+    state: tauri::State<'_, std::sync::Arc<crate::AppState>>,
+) -> Result<Vec<CliProbeStatus>, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    Ok(CLI_PROBE_CONNECTORS.iter().map(cli_probe_status_row).collect())
+}
+
+/// Drop cached probe verdicts and re-probe. `connector: None` refreshes all.
+/// This is what the user hits after running `vercel login` in a terminal —
+/// without it they would wait out the TTL.
+#[tauri::command]
+pub async fn connector_cli_probe_refresh(
+    state: tauri::State<'_, std::sync::Arc<crate::AppState>>,
+    connector: Option<String>,
+) -> Result<Vec<CliProbeStatus>, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    match connector.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(name) => {
+            let spec = cli_probe_spec(name).ok_or_else(|| {
+                AppError::Validation(format!(
+                    "connector_cli_probe_refresh: `{name}` has no provider-CLI probe"
+                ))
+            })?;
+            evict_cli_probe_cache(Some(spec.name));
+            Ok(vec![cli_probe_status_row(spec)])
+        }
+        None => {
+            evict_cli_probe_cache(None);
+            Ok(CLI_PROBE_CONNECTORS.iter().map(cli_probe_status_row).collect())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1156,6 +1528,190 @@ mod tests {
         let conn = test_db();
         let persona = crate::db::models::Persona::default();
         assert!(persona_live_blockers(&conn, &persona).is_empty());
+    }
+
+    // --- CLI-auth readiness fallback (Credential class) ---
+
+    use std::cell::Cell;
+
+    /// A stub probe: always returns `result`, and counts invocations. Keeps
+    /// the suite off the developer's real `vercel` / `gh` binaries.
+    fn stub_probe(result: CliProbeResult, calls: &Cell<usize>) -> impl Fn(&CliProbeSpec) -> CliProbeResult + '_ {
+        move |_spec| {
+            calls.set(calls.get() + 1);
+            result
+        }
+    }
+
+    /// Register `vercel` as an ordinary API connector definition.
+    fn vercel_def(conn: &Connection) {
+        def(conn, "vercel", r#"{"auth_type":"api_key"}"#);
+    }
+
+    #[test]
+    fn bound_credential_wins_over_the_cli_probe() {
+        // A usable Vault credential is the CI-capable mode and must always be
+        // the first path — the probe must not even run.
+        let conn = test_db();
+        vercel_def(&conn);
+        cred(&conn, "vercel-cred", "vercel");
+        field(&conn, "vercel-cred", "token");
+
+        let calls = Cell::new(0usize);
+        let readiness =
+            connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Unauthed, &calls));
+
+        assert_eq!(readiness, Readiness::Ready);
+        assert_eq!(calls.get(), 0, "a bound credential must short-circuit the CLI probe");
+    }
+
+    #[test]
+    fn authed_cli_makes_a_credential_connector_ready() {
+        let conn = test_db();
+        vercel_def(&conn);
+        let calls = Cell::new(0usize);
+        assert_eq!(
+            connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Authed, &calls)),
+            Readiness::Ready
+        );
+        assert_eq!(calls.get(), 1);
+    }
+
+    #[test]
+    fn installed_but_unauthed_cli_asks_for_login_not_the_vault() {
+        let conn = test_db();
+        vercel_def(&conn);
+        let calls = Cell::new(0usize);
+        match connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Unauthed, &calls)) {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::CliLogin),
+            other => panic!("expected NeedsSetup(CliLogin), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn absent_cli_falls_back_to_the_vault_credential_kind() {
+        // Unchanged pre-existing behavior: no CLI, no credential → Vault.
+        let conn = test_db();
+        vercel_def(&conn);
+        let calls = Cell::new(0usize);
+        match connector_readiness_with_probe(&conn, "vercel", stub_probe(CliProbeResult::Absent, &calls)) {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
+            other => panic!("expected NeedsSetup(VaultCredential), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn non_cli_connectors_never_reach_the_probe() {
+        // `notion` has no CLI-auth path — the probe must not be consulted.
+        let conn = test_db();
+        def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
+        let calls = Cell::new(0usize);
+        match connector_readiness_with_probe(&conn, "notion", stub_probe(CliProbeResult::Authed, &calls)) {
+            Readiness::NeedsSetup { kind, .. } => assert_eq!(kind, SetupKind::VaultCredential),
+            other => panic!("expected NeedsSetup(VaultCredential), got {other:?}"),
+        }
+        assert_eq!(calls.get(), 0);
+    }
+
+    #[test]
+    fn cli_login_blocker_names_the_actual_login_command() {
+        // The generic remediation ("run its login command") is useless; the
+        // blocker detail must carry the copy-pasteable command.
+        let readiness = Readiness::NeedsSetup {
+            connector: "fly_io".to_string(),
+            kind: SetupKind::CliLogin,
+        };
+        let blocker = SetupBlocker::from_readiness(&readiness).unwrap();
+        assert!(
+            blocker.detail.contains("flyctl auth login"),
+            "expected the login command in the blocker detail, got: {}",
+            blocker.detail
+        );
+    }
+
+    #[test]
+    fn probe_cache_is_respected_within_the_ttl() {
+        // The real cache sits in `cached_cli_probe`, which readiness calls per
+        // connector. Two consecutive resolutions must cost ONE probe.
+        evict_cli_probe_cache(None);
+        let spec = cli_probe_spec("railway").unwrap();
+
+        // Prime the cache with `Authed`. No CI machine (and essentially no dev
+        // box) has an authenticated `railway` CLI, so a verdict of `Authed`
+        // coming back can ONLY have come from the cache — that is the real
+        // observation, not a self-incremented counter.
+        {
+            let mut cache = probe_cache().lock().unwrap();
+            cache.insert(
+                spec.name.to_string(),
+                CachedProbe {
+                    at: Instant::now(),
+                    checked_at: chrono::Utc::now(),
+                    result: CliProbeResult::Authed,
+                },
+            );
+        }
+        for _ in 0..3 {
+            assert_eq!(
+                cached_cli_probe(spec),
+                CliProbeResult::Authed,
+                "a fresh cache entry must be served without spawning a process"
+            );
+        }
+
+        // An expired entry is not served.
+        {
+            let mut cache = probe_cache().lock().unwrap();
+            cache.insert(
+                spec.name.to_string(),
+                CachedProbe {
+                    at: Instant::now() - CLI_PROBE_TTL - Duration::from_secs(1),
+                    checked_at: chrono::Utc::now(),
+                    result: CliProbeResult::Authed,
+                },
+            );
+        }
+        assert!(peek_cli_probe(spec.name).is_none(), "an aged-out entry must not be served");
+
+        // Eviction clears it outright.
+        evict_cli_probe_cache(Some("railway"));
+        assert!(peek_cli_probe(spec.name).is_none());
+    }
+
+    #[test]
+    fn stderr_absence_detection_covers_both_shells() {
+        assert!(stderr_means_absent(
+            "'vercel' is not recognized as an internal or external command"
+        ));
+        assert!(stderr_means_absent("bash: gh: command not found"));
+        assert!(!stderr_means_absent(
+            "Error: No existing credentials found. Please run `vercel login`."
+        ));
+    }
+
+    #[test]
+    fn every_cli_probe_connector_produces_a_cli_login_kind() {
+        // The table (connector.rs) and this resolver are hand-synced. Every
+        // entry must actually reach the CliLogin arm — a name that classified
+        // as something other than Credential would silently lose the fallback.
+        let conn = test_db();
+        let calls = Cell::new(0usize);
+        for spec in CLI_PROBE_CONNECTORS {
+            def(&conn, spec.name, r#"{"auth_type":"api_key"}"#);
+            match connector_readiness_with_probe(
+                &conn,
+                spec.name,
+                stub_probe(CliProbeResult::Unauthed, &calls),
+            ) {
+                Readiness::NeedsSetup { kind, .. } => assert_eq!(
+                    kind,
+                    SetupKind::CliLogin,
+                    "`{}` did not reach the CLI-auth fallback",
+                    spec.name
+                ),
+                other => panic!("expected NeedsSetup(CliLogin) for `{}`, got {other:?}", spec.name),
+            }
+        }
     }
 
     #[test]

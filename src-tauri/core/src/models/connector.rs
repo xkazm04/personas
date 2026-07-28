@@ -123,6 +123,86 @@ pub struct UpdateConnectorDefinitionInput {
 /// metadata-derived `ZeroConfig` rule.
 pub const GLOBAL_PROBE_CONNECTORS: &[&str] = &["codebase", "twin", "obsidian_memory"];
 
+/// A provider CLI that can stand in for a Vault credential.
+///
+/// Hosting / VCS providers are normally authed by the user running the
+/// vendor's own CLI once (`vercel login`, `gh auth login`, …), which writes a
+/// token to a vendor-owned config file. Requiring a *second*, hand-copied API
+/// token in the Vault before such a connector counts as ready is friction the
+/// user reliably refuses — so they skip the connector and the persona ships
+/// unwired. `connector_readiness` therefore treats "the provider CLI on this
+/// machine is authenticated" as a valid readiness signal.
+///
+/// This table is DATA ONLY — `personas-core` never spawns a process. The
+/// probe itself (with its timeout, Windows `.cmd`-shim handling and cache)
+/// lives in `commands::design::connector_readiness`, which is the only place
+/// allowed to execute these.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CliProbeSpec {
+    /// The connector name, as `connector_definitions.name` spells it.
+    pub name: &'static str,
+    /// The program to run for the auth probe (a bare tool name; the resolver
+    /// handles PATH / shim lookup per platform).
+    pub probe_program: &'static str,
+    /// Arguments to `probe_program`. Exit code 0 == authenticated.
+    pub probe_args: &'static [&'static str],
+    /// The command the user runs to authenticate, verbatim — shown in the
+    /// `CliLogin` remediation.
+    pub login_cmd: &'static str,
+}
+
+/// Connectors whose readiness may be satisfied by an authenticated provider
+/// CLI. These stay `ConnectorClass::Credential` — a bound Vault credential is
+/// still the FIRST and preferred path (it is the only CI-capable one). The
+/// CLI probe is a fallback consulted only when no credential resolves.
+pub const CLI_PROBE_CONNECTORS: &[CliProbeSpec] = &[
+    CliProbeSpec {
+        name: "vercel",
+        probe_program: "vercel",
+        probe_args: &["whoami"],
+        login_cmd: "vercel login",
+    },
+    CliProbeSpec {
+        name: "netlify",
+        probe_program: "netlify",
+        probe_args: &["status"],
+        login_cmd: "netlify login",
+    },
+    CliProbeSpec {
+        name: "cloudflare",
+        probe_program: "wrangler",
+        probe_args: &["whoami"],
+        login_cmd: "wrangler login",
+    },
+    CliProbeSpec {
+        name: "fly_io",
+        probe_program: "flyctl",
+        probe_args: &["auth", "whoami"],
+        login_cmd: "flyctl auth login",
+    },
+    CliProbeSpec {
+        name: "railway",
+        probe_program: "railway",
+        probe_args: &["whoami"],
+        login_cmd: "railway login",
+    },
+    CliProbeSpec {
+        name: "github",
+        probe_program: "gh",
+        probe_args: &["auth", "status"],
+        login_cmd: "gh auth login",
+    },
+];
+
+/// Look up the CLI probe spec for a connector name (case-insensitive).
+/// `None` = this connector has no CLI-auth fallback.
+pub fn cli_probe_spec(name: &str) -> Option<&'static CliProbeSpec> {
+    let name_l = name.trim().to_ascii_lowercase();
+    CLI_PROBE_CONNECTORS
+        .iter()
+        .find(|spec| spec.name.eq_ignore_ascii_case(&name_l))
+}
+
 /// How a connector's readiness is determined.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -266,5 +346,37 @@ mod classification_tests {
             classify_connector("CodeBase", None),
             ConnectorClass::GlobalProbe
         );
+    }
+
+    #[test]
+    fn cli_probe_connectors_stay_credential_class() {
+        // The CLI-auth fallback is a readiness path INSIDE the Credential
+        // arm, not a new class. If one of these ever classified as something
+        // else the fallback would become unreachable.
+        for spec in CLI_PROBE_CONNECTORS {
+            assert_eq!(
+                classify_connector(spec.name, Some(r#"{"auth_type":"api_key"}"#)),
+                ConnectorClass::Credential,
+                "`{}` must stay Credential-class for the CLI fallback to run",
+                spec.name
+            );
+        }
+    }
+
+    #[test]
+    fn cli_probe_spec_lookup_is_case_insensitive() {
+        assert_eq!(cli_probe_spec("Vercel").map(|s| s.login_cmd), Some("vercel login"));
+        assert_eq!(cli_probe_spec("  GitHub ").map(|s| s.probe_program), Some("gh"));
+        assert!(cli_probe_spec("notion").is_none());
+    }
+
+    #[test]
+    fn cli_probe_specs_are_well_formed() {
+        for spec in CLI_PROBE_CONNECTORS {
+            assert!(!spec.name.trim().is_empty());
+            assert!(!spec.probe_program.trim().is_empty());
+            assert!(!spec.probe_args.is_empty(), "`{}` needs probe args", spec.name);
+            assert!(!spec.login_cmd.trim().is_empty());
+        }
     }
 }

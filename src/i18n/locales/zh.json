@@ -5336,6 +5336,15 @@
       "perm_errors": "检测到永久性错误——已尝试轮换并发出警报。",
       "degrading": "持续性能下降——已触发预防性轮换。",
       "backoff": "瞬时失败——指数退避活跃。"
+    },
+    "setup_kind": {
+      "cli_login": "该提供商的 CLI 已安装但尚未登录 — 请在终端中运行它的登录命令（例如 `vercel login` 或 `gh auth login`）",
+      "dev_project": "在 Dev Tools 中注册一个项目",
+      "generic": "一个或多个已声明的连接器需要设置。打开该角色以查看每个连接器的要求。",
+      "misconfigured": "此连接器无法识别或配置有误 — 请将其移除或更新应用",
+      "obsidian_vault": "在 Obsidian Brain 插件中配置你的 vault",
+      "twin_profile": "在 Twin 插件中创建一个 Twin 配置文件",
+      "vault_credential": "在 Settings → Vault 中添加凭据"
     }
   },
   "deployment": {

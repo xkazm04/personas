@@ -1,6 +1,9 @@
 import { AlertTriangle, Settings, CheckCircle2 } from 'lucide-react';
 import type { PersonaSetup } from '@/lib/bindings/PersonaSetup';
+import type { SetupKind } from '@/lib/bindings/SetupKind';
 import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 
 
 type Status = 'ready' | 'needs_credentials' | 'misconfigured';
@@ -27,14 +30,43 @@ function parseSetup(raw: string | null | undefined): PersonaSetup | null {
   }
 }
 
+/**
+ * Translate a `SetupKind` into its remediation line.
+ *
+ * The backend also ships an English `blocker.detail`, but that string is
+ * assembled in Rust and can never be localized — so the kind token (which IS
+ * language-agnostic) is what the UI renders from. `cli_login` is the newest
+ * kind: the connector is satisfied by an authenticated provider CLI on this
+ * machine, so its fix is a terminal `login`, not a Vault round-trip.
+ */
+function remediationFor(t: Translations, kind: SetupKind): string {
+  const k = t.vault.setup_kind;
+  switch (kind) {
+    case 'vault_credential':
+      return k.vault_credential;
+    case 'cli_login':
+      return k.cli_login;
+    case 'dev_project':
+      return k.dev_project;
+    case 'obsidian_vault':
+      return k.obsidian_vault;
+    case 'twin_profile':
+      return k.twin_profile;
+    case 'misconfigured':
+      return k.misconfigured;
+    default:
+      return k.generic;
+  }
+}
+
 /** Build the tooltip text — the readiness preview plus one line per blocker. */
-function setupTooltip(setup: PersonaSetup | null): string {
+function setupTooltip(t: Translations, setup: PersonaSetup | null): string {
   if (!setup) {
-    return 'One or more declared connectors need setup. Open the persona to see what each requires.';
+    return t.vault.setup_kind.generic;
   }
   const lines = [setup.preview];
   for (const blocker of setup.blockers) {
-    lines.push(`• ${blocker.detail}`);
+    lines.push(`• ${blocker.connector} — ${remediationFor(t, blocker.kind)}`);
   }
   return lines.join('\n');
 }
@@ -45,6 +77,7 @@ export function SetupStatusBadge({
   variant = 'compact',
   className = '',
 }: Props) {
+  const { t } = useTranslation();
   const key = (status ?? 'ready') as Status;
 
   // Don't render anything for the happy path — only surface when attention needed.
@@ -66,7 +99,7 @@ export function SetupStatusBadge({
     return (
       <span
         className={`inline-flex items-center justify-center text-amber-400 ${className}`}
-        title={setupTooltip(parseSetup(setupDetail))}
+        title={setupTooltip(t, parseSetup(setupDetail))}
         aria-label={debtText('auto_setup_required_9fa0e005')}
       >
         <AlertTriangle className="w-4 h-4" />

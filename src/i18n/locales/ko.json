@@ -5336,6 +5336,15 @@
       "perm_errors": "영구 오류 감지됨 -- 교체 시도, 알림 발송 중.",
       "degrading": "지속적인 저하 -- 선제적 교체 트리거됨.",
       "backoff": "일시적 실패 -- 지수 백오프 활성."
+    },
+    "setup_kind": {
+      "cli_login": "제공업체 CLI는 설치되어 있지만 로그인되어 있지 않습니다 — 터미널에서 로그인 명령을 실행하세요 (예: `vercel login` 또는 `gh auth login`)",
+      "dev_project": "Dev Tools에서 프로젝트를 등록하세요",
+      "generic": "선언된 커넥터 중 하나 이상에 설정이 필요합니다. 각각의 요구 사항을 보려면 페르소나를 여세요.",
+      "misconfigured": "이 커넥터는 인식되지 않거나 잘못 구성되었습니다 — 제거하거나 앱을 업데이트하세요",
+      "obsidian_vault": "Obsidian Brain 플러그인에서 vault를 구성하세요",
+      "twin_profile": "Twin 플러그인에서 Twin 프로필을 만드세요",
+      "vault_credential": "Settings → Vault에서 자격 증명을 추가하세요"
     }
   },
   "deployment": {
