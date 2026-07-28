@@ -51,6 +51,8 @@ export interface SkillsManagerData {
   switchMemory: (skillName: string, projectId: string | null, next: MemoryBinding) => Promise<void>;
   /** Bump after a switch so lists re-derive. */
   refreshTick: number;
+  /** Re-fetch all lists (after an external mutation, e.g. a preset install). */
+  refresh: () => void;
 }
 
 /** Patch (or insert) the `memory:` line inside SKILL.md frontmatter. Tries
@@ -153,5 +155,7 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
     }
   }, [addToast, t, tx]);
 
-  return { wb, workspaceSkills, projectSkills, installedNames, coverageBySkill, usageGlobal, usageProject, totalContexts, switchMemory, refreshTick };
+  const refresh = useCallback(() => setRefreshTick((n) => n + 1), []);
+
+  return { wb, workspaceSkills, projectSkills, installedNames, coverageBySkill, usageGlobal, usageProject, totalContexts, switchMemory, refreshTick, refresh };
 }
