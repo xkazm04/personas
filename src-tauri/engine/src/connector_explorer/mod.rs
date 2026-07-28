@@ -96,15 +96,20 @@ pub async fn explore_url(
     let parsed_url = url::Url::parse(url)
         .map_err(|e| AppError::Validation(format!("invalid URL '{url}': {e}")))?;
 
-    let client = reqwest::Client::builder()
-        .timeout(opts.timeout)
-        .user_agent(&opts.user_agent)
-        .redirect(reqwest::redirect::Policy::limited(10))
-        .build()
-        .map_err(|e| AppError::Internal(format!("reqwest client build: {e}")))?;
+    // SSRF-safe client: DNS-rebinding resolver + per-hop redirect
+    // re-validation. `url` here is caller-supplied (that's the whole point
+    // of this explorer), so a bare `redirect::Policy::limited(10)` with no
+    // resolver — the prior shape — would let it reach cloud-metadata
+    // (169.254.169.254), LAN services, or localhost admin ports and return
+    // their bodies, and would also auto-follow a `Location:
+    // http://<private-ip-literal>/...` redirect that skips DNS entirely.
+    // `build_ssrf_safe_client` doesn't expose a builder-level user agent, so
+    // it's set per-request instead of at client construction.
+    let client = personas_core::url_safety::build_ssrf_safe_client(opts.timeout);
 
     let resp = client
         .get(parsed_url.as_str())
+        .header(reqwest::header::USER_AGENT, &opts.user_agent)
         .send()
         .await
         .map_err(|e| AppError::Execution(format!("connector_explorer fetch failed: {e}")))?;
