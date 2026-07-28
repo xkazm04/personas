@@ -113,10 +113,12 @@ export function LiveChannelOverlay() {
       }
     }
   }, []);
-  const onOpenTimeline = useCallback(() => {
-    // Redirect into the Channels → Timeline view (team-scoped filter is a follow-up).
+  const onOpenTimeline = useCallback((teamId?: string) => {
+    // Redirect into the Channels → Timeline view, scoped to the pop-up's team
+    // when the card carries one.
     const s = useSystemStore.getState();
     s.setMonitorInitialView('channels');
+    s.setMonitorChannelPreset(teamId ? { teamId, personaId: null } : null);
     s.setHeaderOverlay('monitor');
   }, []);
 

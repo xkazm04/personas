@@ -14,11 +14,23 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
  *  it was a worse messenger with none of the affordances. */
 type ChannelLayout = 'stream' | 'conversations';
 
+/** Transient scope a deep-link can open the workspace with. */
+export interface ChannelPreset {
+  teamId: string | null;
+  personaId: string | null;
+}
+
 /**
  * Channel mode. Members are derived from personas by `home_team_id`, so no
  * extra fetch is needed.
  */
-function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; personas: Persona[] }) {
+function MonitorChannelGridImpl({
+  teams, personas, preset,
+}: {
+  teams: PersonaTeam[];
+  personas: Persona[];
+  preset?: ChannelPreset | null;
+}) {
   const { t } = useTranslation();
 
   const membersByTeam = useMemo(() => {
@@ -39,8 +51,12 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
 
   // Stream's team filter. Conversations picks ONE project from its sidebar, so
   // it ignores this — but the selection persists across a layout switch.
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [touched, setTouched] = useState(false);
+  // A deep-link preset scopes the initial selection to its team and counts as
+  // a user choice, so the fill-all effect below must not widen it back out.
+  const [selected, setSelected] = useState<Set<string>>(
+    () => (preset?.teamId ? new Set([preset.teamId]) : new Set()),
+  );
+  const [touched, setTouched] = useState(() => !!preset?.teamId);
   useEffect(() => {
     if (!touched && channelTeams.length > 0) {
       setSelected(new Set(channelTeams.map((tm) => tm.id)));
@@ -117,6 +133,7 @@ function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; per
           allOn={allOn}
           onSetAll={setAll}
           layoutControl={layoutSwitcher}
+          initialCallsign={preset?.personaId ?? undefined}
         />
       ) : (
         <ConversationBriefing teams={workspaceTeams} layoutControl={layoutSwitcher} />

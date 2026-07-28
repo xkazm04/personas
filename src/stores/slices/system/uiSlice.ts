@@ -187,6 +187,14 @@ export interface UiSlice {
   monitorInitialView: 'fleet' | 'channels' | null;
 
   /**
+   * Transient lens preset accompanying `monitorInitialView: 'channels'` — the
+   * Timeline opens pre-scoped to a team and/or a speaker instead of the full
+   * blended feed (albert's node→filtered-feed drill-in). Cleared once
+   * consumed. Never persisted.
+   */
+  monitorChannelPreset: { teamId: string | null; personaId: string | null } | null;
+
+  /**
    * Ids of below-the-fold Home (Mission Control) sections the user has hidden
    * via the dashboard Customize popover. Stored as a string[] (not Set) so the
    * persist middleware can JSON-serialize it. Empty = every section visible.
@@ -204,6 +212,7 @@ export interface UiSlice {
   setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
   setMonitorInitialView: (view: 'fleet' | 'channels' | null) => void;
+  setMonitorChannelPreset: (preset: { teamId: string | null; personaId: string | null } | null) => void;
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
@@ -348,6 +357,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   monitorCollapsedGroups: [],
   monitorLiveMode: true,
   monitorInitialView: null,
+  monitorChannelPreset: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
@@ -415,6 +425,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setMonitorLiveMode: (on) => set({ monitorLiveMode: on }),
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),
+  setMonitorChannelPreset: (preset) => set({ monitorChannelPreset: preset }),
   toggleHomeSection: (sectionId) =>
     set((state) => {
       const idx = state.homeHiddenSections.indexOf(sectionId);

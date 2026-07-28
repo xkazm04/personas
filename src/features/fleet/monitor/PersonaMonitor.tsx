@@ -61,6 +61,18 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     setMonitorInitialView(null);
   }, [monitorInitialView, setMonitorInitialView]);
 
+  // The lens preset riding along with a 'channels' deep-link (team/persona
+  // scope). Captured once per mount, then cleared — the same transient
+  // contract as monitorInitialView.
+  const monitorChannelPreset = useSystemStore((s) => s.monitorChannelPreset);
+  const setMonitorChannelPreset = useSystemStore((s) => s.setMonitorChannelPreset);
+  const [channelPreset, setChannelPreset] = useState(monitorChannelPreset);
+  useEffect(() => {
+    if (!monitorChannelPreset) return;
+    setChannelPreset(monitorChannelPreset);
+    setMonitorChannelPreset(null);
+  }, [monitorChannelPreset, setMonitorChannelPreset]);
+
   // Live-mode pop-ups on/off — surfaced in the header so it's always reachable
   // (the Channels -> Timeline toggle requires teams + navigating in).
   const liveMode = useSystemStore((s) => s.monitorLiveMode);
@@ -265,7 +277,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       {/* Channel mode — multiple team channels in parallel */}
       {viewMode === 'channels' ? (
         <div className="relative z-10 flex-1 min-h-0">
-          <MonitorChannelGrid teams={teams} personas={personas} />
+          <MonitorChannelGrid teams={teams} personas={personas} preset={channelPreset} />
         </div>
       ) : (
       /* Body — project columns overview with the drawer layered over it */

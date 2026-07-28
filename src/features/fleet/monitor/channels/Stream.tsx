@@ -112,12 +112,16 @@ export interface StreamProps {
   allOn: boolean;
   onSetAll: (on: boolean) => void;
   layoutControl?: ReactNode;
+  /** Deep-link scope: open with the callsign lens pre-set to this persona. */
+  initialCallsign?: string;
 }
 
-export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: StreamProps) {
+export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl, initialCallsign }: StreamProps) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
-  const [lens, setLens] = useState<LensState>(EMPTY_LENS);
+  const [lens, setLens] = useState<LensState>(() =>
+    initialCallsign ? { ...EMPTY_LENS, callsigns: new Set([initialCallsign]) } : EMPTY_LENS,
+  );
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
 
   const selected = useMemo(() => teams.filter((t) => t.selected), [teams]);
