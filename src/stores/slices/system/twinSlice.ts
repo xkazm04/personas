@@ -12,6 +12,7 @@ import type { TwinStudioBatch } from "@/lib/bindings/TwinStudioBatch";
 import type { TwinStudioSeed } from "@/lib/bindings/TwinStudioSeed";
 import * as twinApi from "@/api/twin/twin";
 import { silentCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "../../util/latestWins";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -38,6 +39,13 @@ let twinProfilesFetchedAt = 0;
 // if A's lands last, the backend's single-active flag and the store diverge.
 // Chaining forces them to run in issue order, so the last selection wins.
 let activeTwinSwitchChain: Promise<void> = Promise.resolve();
+
+// Only the latest in-flight `fetchTwinTones` call is allowed to write its
+// result to state — see createLatestWins() for why. Without this, selecting
+// twin A then twin B in quick succession can let A's slower response resolve
+// after B's, overwriting `twinTones` with the wrong twin's tone profiles in
+// the Training Atelier.
+const twinTonesLatestWins = createLatestWins();
 
 export interface TwinSlice {
   // -- State -----------------------------------------------------------
@@ -417,11 +425,16 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // -- Tone actions (P1) -----------------------------------------------
 
   fetchTwinTones: async (twinId) => {
+    const token = twinTonesLatestWins.next();
     set({ twinTonesLoading: true });
     try {
       const twinTones = await twinApi.listTones(twinId);
+      // Discard stale responses — a newer fetch (a different twin selection)
+      // is already in-flight or has already resolved.
+      if (!twinTonesLatestWins.isCurrent(token)) return;
       set({ twinTones, twinTonesLoading: false, error: null });
     } catch (err) {
+      if (!twinTonesLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch twin tones", set, {
         stateUpdates: { twinTonesLoading: false },
       });
