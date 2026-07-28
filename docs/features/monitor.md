@@ -158,6 +158,39 @@ runner — appears in the **System band** above the grid.
 > by the runner carry the persona name, so live runs land on the right card;
 > genuinely app-level work has no persona and shows in the System band.
 
+## Channels workspace
+
+The header's **Channels** button swaps the grid for the multi-team channel
+workspace — three switchable surfaces over the same shared channel feed:
+
+- **Timeline** — the read-only log: one virtualized cross-team stream with a
+  faceted "tuner" rail (kind · event family · callsign · channel · search,
+  each with live counts). Step rows end with an **assignment chip** (`#a1b2`)
+  linking the line to its unit of work — clicking it filters the log to that
+  assignment.
+- **Conversations** — the messenger, and the only place you write. The
+  projects sidebar carries a **member heartbeat strip**: one dot per persona,
+  pulsing while working, amber while awaiting review, dimmed when idle, with
+  name · status · last-seen in the tooltip.
+- **Map** — the live constellation of one project. The orchestrator sits at
+  the core; other members ring it in role sectors. Presence drives each node
+  (working pulses, waiting holds a dashed amber ring, idle dims) with a
+  last-seen heartbeat under the name. The team's declared connections form
+  the faint permanent geometry; recent event traffic (author → subscribed
+  consumers) draws over it as animated dashes that fade out over ten
+  minutes. Clicking a node jumps to the Timeline pre-filtered to that
+  speaker.
+
+Presence everywhere in the workspace is **staleness-guarded**: a persona
+counts as *working* only while its newest running-step row is under ten
+minutes old, so a crashed or abandoned run can't pin its roster as "working"
+forever. *Awaiting review* has no window — a review gate legitimately holds
+until a human acts.
+
+Live pop-ups (the corner comms stack) deep-link into this workspace: opening
+a pop-up's Timeline lands **pre-scoped to that pop-up's team** rather than
+the full blended feed.
+
 ## Activity view
 
 The header's **Activity** button (next to **Channels**) swaps the card grid
