@@ -173,6 +173,41 @@ pub fn backfill_schedule(
         }
     }
 
+    // Finding #2: claim this trigger via the SAME `trigger_version` CAS the
+    // live scheduler uses for its own backfill claim (see
+    // `engine::background::trigger_scheduler_tick_counted`'s Finding #3 fix)
+    // BEFORE computing or publishing anything below. Without this, the
+    // `already_published` set fetched further down is a point-in-time read
+    // with no re-check before insert and no unique constraint behind it: two
+    // concurrent invocations of this command (double-click), or this command
+    // racing the auto-backfill tick, both compute the same "missing" set and
+    // both publish every slot in it -- duplicate `persona_events` rows, i.e.
+    // the persona gets dispatched (and any external side effects it performs
+    // re-run) twice for one slot. `advance_schedule_pointer` is reused rather
+    // than a bespoke lock because it CASes on `trigger_version` without
+    // moving `last_triggered_at`, so the loser just gets told to retry
+    // instead of silently corrupting the schedule pointer.
+    match trigger_repo::advance_schedule_pointer(
+        &state.db,
+        &trigger.id,
+        trigger.next_trigger_at.clone(),
+        trigger.trigger_version,
+    ) {
+        Ok(true) => {}
+        Ok(false) => {
+            return Err(AppError::Validation(
+                "backfill is already in progress for this trigger (claimed by a concurrent \
+                 backfill request or the auto-catch-up scheduler) -- please retry"
+                    .into(),
+            ));
+        }
+        Err(e) => {
+            return Err(AppError::Validation(format!(
+                "failed to claim trigger for backfill: {e}"
+            )));
+        }
+    }
+
     // Cap to one over the limit so we can detect whether the user's window
     // actually overflowed (`capped == true`) versus fitting exactly.
     let probe_cap = BACKFILL_MAX_SLOTS_PER_REQUEST + 1;
@@ -345,4 +380,70 @@ fn synthesize_user_backfill_payload(
         meta.insert("use_case_id".into(), serde_json::Value::String(uc.clone()));
     }
     serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::CreateTriggerInput;
+    use crate::db::repos::test_fixtures;
+
+    /// Finding #2 regression pin: `backfill_schedule` claims the trigger via
+    /// `trigger_repo::advance_schedule_pointer`'s CAS on `trigger_version`
+    /// BEFORE computing/publishing any slot (see the "Finding #2" comment
+    /// above the claim in `backfill_schedule`). This test exercises the exact
+    /// CAS primitive that claim relies on: two callers racing with the SAME
+    /// `expected_version` (the double-click / racing-the-auto-backfill
+    /// scenario) must not both succeed. If `backfill_schedule` ever regresses
+    /// to computing `already_published` and publishing without first taking
+    /// this claim (the pre-fix shape), this guard is what would be missing --
+    /// the CAS itself failing to reject a second same-version caller is
+    /// exactly the bug this pins against.
+    #[test]
+    fn test_advance_schedule_pointer_cas_rejects_concurrent_same_version_claim() {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let persona = test_fixtures::create_test_persona(
+            &pool,
+            "Backfill Claim Test Persona",
+            "You handle scheduled work.",
+        );
+        let trigger = trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .expect("create test trigger");
+
+        // Two "concurrent" claims at the same expected_version, mirroring a
+        // double-click on backfill_schedule or this command racing the
+        // auto-backfill tick's own claim (Finding #3) for the same trigger.
+        let first = trigger_repo::advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+        let second = trigger_repo::advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+
+        assert!(
+            matches!(first, Ok(true)),
+            "first claim at the current version must succeed: {first:?}"
+        );
+        assert!(
+            matches!(second, Ok(false)),
+            "a second claim at the SAME (now-stale) version must be rejected by the CAS -- \
+             this is what stops a double-click / auto-backfill race from both publishing \
+             the same backfill slots: {second:?}"
+        );
+    }
 }
