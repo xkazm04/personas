@@ -1226,6 +1226,7 @@ export type Translations = {
       legend_engine: string;
       legend_tool_call: string;
       live: string;
+      estimated_no_trace: string;
       stage: string;
       stage_errors: string;
       total_duration: string;
