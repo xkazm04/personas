@@ -2109,7 +2109,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         None
     });
 
-    for trigger in triggers {
+    for mut trigger in triggers {
         // Skip polling triggers -- they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
         // Skip event_listener triggers -- they are event-driven, not time-based.
@@ -2289,8 +2289,60 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             _ => 1,
         };
         if backfill_cap > 1 && backfill_emitted_this_tick < GLOBAL_BACKFILL_PER_TICK {
-            if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
-                if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(last_iso) {
+            if let Some(last_iso) = trigger.last_triggered_at.clone() {
+                if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(&last_iso) {
+                    // Finding #3: claim this trigger's backfill window BEFORE
+                    // computing or publishing any slot. Without this, the
+                    // startup overdue-sweep and this same trigger's first
+                    // subscription tick (spawned with no initial delay) both
+                    // read the identical `last_triggered_at` watermark, both
+                    // compute the identical missed-slot set below, and both
+                    // publish every one of them -- the CAS that's supposed to
+                    // prevent double-fire (`mark_triggered`) only runs AFTER
+                    // this whole loop, by which point both callers already
+                    // published the same backlog once each.
+                    //
+                    // `advance_schedule_pointer` is the right primitive here:
+                    // it CASes on `trigger_version` (same guarantee as
+                    // `mark_triggered`) but does NOT move `last_triggered_at`,
+                    // so the watermark this backfill computation depends on
+                    // stays correct for whichever caller loses the race (it
+                    // just skips its own backlog attempt this tick and
+                    // catches up on the next one). We pass the trigger's
+                    // current `next_trigger_at` back unchanged -- this call's
+                    // only job is to bump the version as a claim, not to
+                    // advance the schedule (step 3 below still owns that).
+                    let claimed = match trigger_repo::advance_schedule_pointer(
+                        pool,
+                        &trigger.id,
+                        trigger.next_trigger_at.clone(),
+                        trigger.trigger_version,
+                    ) {
+                        Ok(true) => {
+                            // Our in-memory version must track the bump so
+                            // the live-fire CAS below (`mark_triggered`)
+                            // still uses the correct expected_version instead
+                            // of one that's now one behind the DB.
+                            trigger.trigger_version += 1;
+                            true
+                        }
+                        Ok(false) => {
+                            tracing::debug!(
+                                trigger_id = %trigger.id,
+                                "Backfill window already claimed by another tick this cycle, skipping backlog"
+                            );
+                            false
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                trigger_id = %trigger.id,
+                                error = %e,
+                                "Backfill claim failed; skipping backlog this tick"
+                            );
+                            false
+                        }
+                    };
+                    if claimed {
                     let last_utc = last_dt.with_timezone(&chrono::Utc);
                     let mut missed = compute_missed_backfill_slots(
                         &cfg,
@@ -2408,6 +2460,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                             }
                         }
                     }
+                    } // end if claimed (Finding #3 backfill claim)
                 }
             }
         }
