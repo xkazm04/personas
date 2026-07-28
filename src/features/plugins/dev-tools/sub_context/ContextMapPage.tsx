@@ -12,7 +12,7 @@ import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { matchAgentsToContext } from '../sub_scanner/ideaScannerHelpers';
+import { matchAgentsToContext } from '../constants/presetSkills';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
@@ -473,7 +473,7 @@ export default function ContextMapPage() {
     setScanningContextId(contextId);
     useOverviewStore.getState().processStarted(
       'idea_scan', undefined, `Idea Scan — ${raw.name}`,
-      { section: 'plugins', tab: 'idea-scanner' },
+      { section: 'plugins', tab: 'skills' },
     );
     addToast(tx(t.plugins.dev_tools.context_scan_ideas_started, { name: raw.name }), 'success');
     runScan(agents, { contextId }).catch((err) => {

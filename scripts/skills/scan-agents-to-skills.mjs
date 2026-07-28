@@ -1,24 +1,25 @@
 #!/usr/bin/env node
 /**
- * scan-agents-to-skills — promote the Idea Scanner's scan lenses into reusable
- * GLOBAL Claude Code skills (`~/.claude/skills/scan-<key>/SKILL.md`).
+ * scan-agents-to-skills — promote the Idea Scanner's scan lenses into PRESET
+ * system skills, git-tracked at `.claude/skills/scan-<key>/SKILL.md` and
+ * bundled into the installer via sync-system-skills.mjs → resources/skills.
  *
- * Source: src-tauri/src/commands/infrastructure/scan_agents.toml (21 agents).
+ * Source: src-tauri/src/commands/infrastructure/scan_agents.toml (22 agents).
  * The interactive scanner (idea_scanner.rs) emits DB-JSON for ingestion; these
  * generated skills are the *interactive* form — explore + report findings in
- * markdown. The scanner + TOML are left untouched (the alternative path).
+ * markdown. They are context-tracked so Fleet runs populate the Memory
+ * Ledger's per-context coverage. The scanner backend lane is left untouched.
  *
  * Idempotent: skips a skill whose SKILL.md already exists unless --force.
  * Usage:  node scripts/skills/scan-agents-to-skills.mjs [--force] [--dry-run]
  */
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TOML = join(REPO, 'src-tauri', 'src', 'commands', 'infrastructure', 'scan_agents.toml');
-const SKILLS_DIR = join(homedir(), '.claude', 'skills');
+const SKILLS_DIR = join(REPO, '.claude', 'skills');
 const force = process.argv.includes('--force');
 const dryRun = process.argv.includes('--dry-run');
 
@@ -36,6 +37,18 @@ function parseAgents(toml) {
   return agents;
 }
 
+/** Skills-manager category per agent — finer than the 4 category groups. */
+const CATEGORY_OVERRIDES = {
+  'test-strategist': 'Testing',
+  'dependency-auditor': 'Maintenance',
+  'tech-debt-tracker': 'Maintenance',
+  'analytics-planner': 'Data',
+};
+function skillCategory(a) {
+  if (CATEGORY_OVERRIDES[a.key]) return CATEGORY_OVERRIDES[a.key];
+  return a.category_group === 'technical' ? 'Development' : 'Other';
+}
+
 /** Build a quality interactive SKILL.md from one scan agent. */
 function skillMarkdown(a) {
   const exampleBullets = (a.examples || '')
@@ -51,8 +64,15 @@ function skillMarkdown(a) {
   return `---
 name: scan-${a.key}
 description: "${desc}"
+category: ${skillCategory(a)}
+contexts: tracked
+memory: project
 ---
 # ${a.label} ${a.emoji || ''}
+
+If a context (feature-area) name is passed as the final argument, scope the
+pass to that context's files — read \`context-map.json\` at the project root to
+resolve the context's \`filePaths\` and stay inside them.
 
 You are a **${a.label}**. Analyze the codebase through this lens and surface concrete, actionable findings — not generic advice.
 

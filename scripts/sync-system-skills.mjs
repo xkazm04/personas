@@ -11,17 +11,25 @@
 // so a checkout that only ever ran `tauri dev` would otherwise die with
 // "resource path `resources\skills` doesn't exist". Idempotent + cheap; on a
 // plain `vite build` (no packaging) it's harmless.
-import { cpSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { cpSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Keep in lockstep with SYSTEM_SKILLS in
-// src-tauri/src/commands/infrastructure/skill_files.rs.
-const SYSTEM_SKILLS = ['passport-onboard'];
-
 const srcRoot = path.join(ROOT, '.claude', 'skills');
+
+// Keep in lockstep with SYSTEM_SKILLS in
+// src-tauri/src/commands/infrastructure/skill_files.rs. The `scan-*` preset
+// dirs are discovered from the repo library so the list can't drift from what
+// scan-agents-to-skills.mjs generated.
+const SYSTEM_SKILLS = [
+  'passport-onboard',
+  ...readdirSync(srcRoot, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && d.name.startsWith('scan-'))
+    .map((d) => d.name)
+    .sort(),
+];
 const dstRoot = path.join(ROOT, 'src-tauri', 'resources', 'skills');
 
 mkdirSync(dstRoot, { recursive: true });

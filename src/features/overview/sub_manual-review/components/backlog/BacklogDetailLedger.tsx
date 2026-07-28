@@ -12,7 +12,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DecisionActions } from '@/features/shared/components/decisions/DecisionActions';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { CATEGORY_TW, DEFAULT_CATEGORY_TW } from '@/features/plugins/dev-tools/constants/ideaColors';
-import { LevelBadge } from '@/features/plugins/dev-tools/sub_scanner/IdeaScannerCards';
+import { LevelBadge } from '@/features/plugins/dev-tools/constants/ideaBadges';
 import { FindingBadge, VerdictChip } from '@/features/plugins/dev-tools/sub_triage/findings/FindingBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 

@@ -47,7 +47,7 @@ Ideas are linked to the agent that proposed them via `DevIdea.scan_type` (a stri
 
 ## User flow
 
-The tabs are sequenced so a new project can walk top-to-bottom exactly once, then loops through **Scanner → Triage → Runner → PR** forever after. Triage itself no longer lives here: the swipe deck moved into **Overview › Approvals › Backlog** (see §4).
+The tabs are sequenced so a new project can walk top-to-bottom exactly once, then loops through **Skills → Triage → Runner → PR** forever after. Triage itself no longer lives here: the swipe deck moved into **Overview › Approvals › Backlog** (see §4).
 
 ### 1. Projects — register a codebase
 
@@ -123,17 +123,47 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 - **On-demand audit** — `dev_tools_audit_contexts` reports referential integrity and freshness: `dangling_file_path` (mapped file gone), `unresolved_cross_ref` (a `cross_refs` entry naming no real context), and `stale_context` (a mapped file whose content changed since the last scan, by content-hash comparison against the cache). It never mutates state.
 - **Canonical pins** — a context can be pinned (`dev_tools_set_context_pinned`; exported as `pinned` in the JSON). A **full re-scan preserves pinned contexts** instead of DELETE-and-recreate, and the re-scan prompt tells the LLM not to re-emit them — so hand-curation survives a rebuild.
 
-### 3. Idea Scanner — run 21 specialized agents
+### 3. Skills — preset scan skills, analytics & the coverage pipeline
 
-1. Open **Idea Scanner**. Agents are grouped into four categories: **Technical, User Experience, Business, Mastermind**. Each agent tile shows its scan-history rollup in the corner: when it last ran and its total run count (derived from the project's scan history).
-2. Pick agents manually (single, multiple, or **Select All**) and press **Run Scan**, or press **Auto-Scan** to iterate every mapped context and pick agents by keyword heuristic (see *Scan Agents → auto-match rules* below).
-2a. **Configure** (gear) opens a full-page scan-configuration modal with two settings, both threaded through `dev_tools_run_scan` → `run_scan_core` → the LLM prompt: **Context scope** — restrict the scan to selected context groups / contexts (selecting a group toggles all its contexts; the prompt then instructs agents to analyze ONLY those areas; the scope section only appears once a codebase has been mapped), and **Target findings** (granularity) — a per-area target count injected as a "Target volume" hint (quality stays the gate, never padding). The button carries a badge when a scope/target is active; the scope resets on project switch. (Previously `context_id` was accepted but ignored — scans were always whole-project.)
-3. A **ScanProgress** card streams live progress while the run is active. Ideas arrive as `DevIdea` rows with category, agent key, effort/impact/risk (1-10 each), and an optional `reasoning` blob.
-4. The **Results** grid shows per-scan idea cards with color-coded level badges. A **Scan History** table below records timestamps, token counts, duration, and the agent set for every past scan.
-5. The **Agent Performance** collapsible panel (see *Agent Scoreboard* below) surfaces per-agent accept / implementation / avg-impact stats aggregated across the whole project; it expands/collapses with a height transition.
-5a. **Static Scan** runs a deterministic static-analysis CLI (`dev_tools_run_static_scan`). With no tool configured for the project, the button now opens a **Static scan tool** config modal (pick the tool — Fallow/Knip/Jscpd — and the argv command, persisted via `dev_tools_set_static_scan_config`) instead of firing a doomed run that surfaced the generic "Some input values are invalid" validation error; saving runs the scan immediately. Failure status now auto-clears so the control never looks stuck.
-7. The **Idea Evolution** panel includes an **Accepted ideas — lifecycle** section at the top — a 3-step Accepted → Tasked → Shipped strip per recently-accepted idea. Each step is tinted by state (emerald for done, amber for running, red for failed, neutral for pending); the Tasked step is clickable and jumps to the Run Desk with the matching task scroll-focused + ring-highlighted via the existing `pendingTaskFocusId` slot. The story of how an idea became code now lives in one strip instead of three tabs.
-6. The **Scan History** table below the results gains an agent-set filter chip row (one chip per agent that has ever scanned, with a count badge — OR-combine semantics; an amber "Clear filter" chip appears when any chip is active) and a per-row **Rerun** button that re-runs the historical agent set against the current code. Rerun is disabled while another scan is in flight.
+> **2026-07-28 consolidation:** the standalone **Idea Scanner** tab was retired. Its
+> 22 scan agents became **preset system skills** (`scan-<key>/SKILL.md`, generated from
+> `scan_agents.toml` by `scripts/skills/scan-agents-to-skills.mjs`, git-tracked in
+> `.claude/skills/` and bundled into the installer via `resources/skills`). The backend
+> scan lane (`idea_scanner.rs`, `dev_tools_run_scan`, `dev_scans`/`dev_ideas`) is
+> **kept** — Context Map, Mastermind and the triage sweeps still drive it.
+
+The **Skills** tab (`sub_skills/`) now has two page tabs:
+
+**Overview (default)** — the workspace library and the active project's skills side by side.
+The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
+`~/.claude/skills`; Preset always shows the full 22-lens catalog (grouped Technical / User
+Experience / Business / Mastermind, each row carrying its lens icon + color). Adopting a
+preset installs from the app bundle (`skill_files_install_system`); adopting a custom skill
+dispatches the Dev-runner customization task. Project rows keep memory bindings, context
+coverage bars, and the **Use** dialog (Fleet | CMD dispatch target + Recommended / This one /
+All context selection folded into the run as a trailing arg).
+
+**Analytics** — the scanner concepts generalized to skills:
+
+1. **Coverage pipeline** (Auto-Scan successor) — every mapped context matched to its best
+   preset lens by the keyword rules (`constants/presetSkills.ts` → `SCAN_MATCH_RULES`),
+   ranked least-covered first (Memory-Ledger node counts), checkbox-bounded; **Run** spawns
+   one Fleet session per selected context (`/scan-<key> <context>`). Coverage populates via
+   the memory-outbox ingest when each session exits.
+2. **Skill performance** (Agent Scoreboard successor) — per installed skill: transcript
+   invokes (30d), context coverage, fleet run outcomes, and — for `scan-*` presets — the
+   ideas accept/impl rates carried over from the agent-keyed history.
+3. **Skill history** (Scan History successor) — a unified run log: Fleet sessions whose
+   argv is a `/skill` command (state, tokens via transcript rollup, duration, per-row rerun)
+   unioned with legacy `dev_scans` rows (agent emoji strips, idea counts).
+4. **Static scan** — the deterministic-tool lane relocated here unchanged (config modal
+   gate for Fallow/Knip/Jscpd, `dev_tools_run_static_scan`).
+
+**Workspace consent:** creating a workspace (Workspaces tab → new-workspace tile) offers an
+**"Adopt default skills"** checkbox (`dev_workspaces.adopt_default_skills`, default off —
+consent is explicit). Projects assigned to a consenting workspace get the preset skills
+installed automatically (skip-existing); consenting workspaces carry a **Presets** badge on
+their Atlas crest card.
 
 ### 4. Triage — now in Overview › Approvals › Backlog
 
@@ -273,7 +303,7 @@ rate** — of the findings that shipped and were judged, how many cleared or imp
 1. A two-column layout shows **Codebase** (GitHub / GitLab) on the left and **Monitoring** (Sentry) on the right.
 2. Each card handles five states: **empty** (no credential) → **unmapped** (credential exists but not linked to this project) → **loading** → **connected** (with stat tiles) → **error** (with retry).
 3. The vital-signs strip (open issues / open PRs / commits / unresolved / events 24h / events 7d) is **drag-to-rearrange**: grab any tile and drop it on another to swap positions. Order persists per project to localStorage under `personas.devtools.overview_tile_order.${projectId}` so each project remembers its "most-watched first" layout. Future tiles added to `DEFAULT_TILE_ORDER` auto-append for users with persisted state.
-4. A **TODAY** activity feed sits between the vital signs strip and the connections rail when the store has anything to show. `buildTodayActivity` (in `overviewHelpers.ts`) selects today's scan runs, task created / completed / failed events, and goal signals from the existing Zustand store slices — no new query — then sorts chronologically (capped at 30 entries). Each row is click-jumpable to its source surface via the established `pendingTaskFocusId` / `pendingGoalSpotlightId` handoffs; scan rows jump to the Idea Scanner tab. The "what happened today" story now lives in one panel instead of five.
+4. A **TODAY** activity feed sits between the vital signs strip and the connections rail when the store has anything to show. `buildTodayActivity` (in `overviewHelpers.ts`) selects today's scan runs, task created / completed / failed events, and goal signals from the existing Zustand store slices — no new query — then sorts chronologically (capped at 30 entries). Each row is click-jumpable to its source surface via the established `pendingTaskFocusId` / `pendingGoalSpotlightId` handoffs; scan rows jump to the Skills tab. The "what happened today" story now lives in one panel instead of five.
 3. Connecting Sentry uses an inline form (`MonitoringLinkForm`) that writes the credential ID + project slug back to `dev_projects.monitoring_*`.
 4. Stat tiles use a static color token table — dynamic Tailwind classes (`bg-${color}-500/15`) are banned here because the JIT can't see them.
 

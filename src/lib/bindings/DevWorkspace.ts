@@ -9,4 +9,9 @@ export type DevWorkspace = { id: string, name: string,
 /**
  * Swatch colour — the workspace's identity at a glance in switchers.
  */
-color: string | null, description: string | null, created_at: string, updated_at: string, };
+color: string | null, description: string | null, 
+/**
+ * Consent (set at creation) to populate the app's preset scan skills
+ * into member projects when they are assigned to this workspace.
+ */
+adopt_default_skills: boolean, created_at: string, updated_at: string, };

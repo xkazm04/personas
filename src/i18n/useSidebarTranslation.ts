@@ -90,7 +90,6 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     // Dev tools sub-items
     ['projects', sb.projects],
     ['context-map', sb.context_map],
-    ['idea-scanner', sb.idea_scanner],
     ['task-runner', sb.task_runner],
   ]);
 }

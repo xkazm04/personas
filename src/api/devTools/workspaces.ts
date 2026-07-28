@@ -60,8 +60,11 @@ export async function createWorkspace(
   name: string,
   color?: string,
   description?: string,
+  adoptDefaultSkills?: boolean,
 ): Promise<DevWorkspace> {
-  return invoke<DevWorkspace>("dev_tools_workspace_create", { name, color, description });
+  return invoke<DevWorkspace>("dev_tools_workspace_create", {
+    name, color, description, adoptDefaultSkills,
+  });
 }
 
 /** Field-wise update. `null` clears a nullable column; `undefined` leaves it unchanged. */

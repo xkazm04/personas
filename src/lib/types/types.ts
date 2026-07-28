@@ -411,7 +411,7 @@ export type SettingsTab = "account" | "appearance" | "notifications" | "radio" |
 /** Approvals' three decision modes — also the deep-link target for handoffs
  *  that want to land the user on a specific Approvals tab. */
 export type ApprovalsMode = "reviews" | "backlog" | "knowledge";
-export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "idea-scanner" | "task-runner" | "fleet" | "workspaces" | "skills";
+export type DevToolsTab = "overview" | "llm-overview" | "context-map" | "task-runner" | "fleet" | "workspaces" | "skills";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "scraper";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
