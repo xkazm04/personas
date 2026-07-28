@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { User, Bot, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kanban/KanbanBoard';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -90,7 +91,15 @@ export default function GoalKanban({
       return;
     }
     let cancelled = false;
-    Promise.all(projectIds.map((pid) => devApi.listGoalItemsForProject(pid)))
+    // Cross-project scope: projectIds spans the whole fleet the visible goals
+    // touch, not just the cards on screen, so this fan-out scales with fleet
+    // size rather than viewport. Local IPC read → width 10 keeps a 30+-project
+    // board's goal-item load off an unbounded burst. Halving this (~5) would
+    // visibly slow the checklist gauges filling in on a big cross-project
+    // board; doubling it buys little since most scopes span well under 20
+    // projects.
+    const GOAL_ITEMS_CONCURRENCY = 10;
+    mapWithConcurrency(projectIds, GOAL_ITEMS_CONCURRENCY, (pid) => devApi.listGoalItemsForProject(pid))
       .then((lists) => {
         if (cancelled) return;
         const grouped = new Map<string, DevGoalItem[]>();
