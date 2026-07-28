@@ -20,6 +20,7 @@ import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
 import { useToastStore } from "@/stores/toastStore";
 import * as Sentry from "@sentry/react";
+import { createLatestWins } from "../../util/latestWins";
 
 const logger = createLogger("lab-slice");
 
@@ -152,12 +153,21 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
   lifecycle?: ReturnType<typeof createRunLifecycle>,
 ): LabCrudActions<TRun> {
   const lc = lifecycle ?? labLifecycle;
+  // Only the latest in-flight `fetchRuns` call for THIS mode is allowed to
+  // write `runsKey` — see createLatestWins() for why. Without this, switching
+  // the selected persona twice in quick succession can let the first
+  // persona's slower response resolve after the second's, showing another
+  // persona's run history.
+  const fetchRunsLatestWins = createLatestWins();
   return {
     fetchRuns: async (personaId) => {
+      const token = fetchRunsLatestWins.next();
       try {
         const runs = await calls.list(personaId, RUN_HISTORY_LIMIT);
+        if (!fetchRunsLatestWins.isCurrent(token)) return;
         set({ [runsKey]: runs } as Partial<AgentStore>);
       } catch (err) {
+        if (!fetchRunsLatestWins.isCurrent(token)) return;
         reportError(err, `Failed to fetch ${label} runs`, set, { action: `lab.${label}.fetchRuns` });
       }
     },
