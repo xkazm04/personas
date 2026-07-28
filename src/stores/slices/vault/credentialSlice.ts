@@ -268,8 +268,34 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   healthcheckCredential: async (credentialId) => {
     try {
       const result = await healthcheckCredential(credentialId);
+      // The backend persists the outcome onto the credential
+      // (`append_healthcheck_metadata`), but nothing refreshed the store, so
+      // every surface reading `credentials` — the vault list, the design
+      // recap's ready/failing icon, the connectors panel's restored result —
+      // kept showing the PREVIOUS outcome until an unrelated full refetch
+      // happened to land. Mirror the same fields the repo writes, rather than
+      // refetching the whole list on every single test.
+      const now = new Date().toISOString();
+      set((state) => ({
+        credentials: state.credentials.map((c) =>
+          c.id === credentialId
+            ? {
+                ...c,
+                healthcheck_last_success: result.success,
+                healthcheck_last_message: result.message,
+                healthcheck_last_tested_at: now,
+                // Only a passing check moves `_success_at`; a failure must not
+                // erase when the credential last actually worked.
+                healthcheck_last_success_at: result.success ? now : c.healthcheck_last_success_at,
+              }
+            : c,
+        ),
+      }));
       return result;
     } catch (err) {
+      // Transport/IPC failure — the probe never ran and the backend wrote
+      // nothing, so leave the stored outcome alone rather than recording a
+      // failure the credential never had.
       return { success: false, message: errMsg(err, "Healthcheck failed") };
     }
   },
