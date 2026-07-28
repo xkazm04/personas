@@ -4,11 +4,12 @@
 // (dev_tools_generate_cross_project_metadata) and re-derives — that scan IS the
 // passport-data gatherer. `reload()` re-derives from the cached scan + fresh
 // project rows (used after a Tier-0 config write — no need to re-scan).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listProjects, getCrossProjectMetadata, generateCrossProjectMetadata, listSkills, listSkillsGlobal, probeRepoEvidence, scanSkillUsage, getSkillUsageOverview, scanDocRot, getDocRotOverview, scanMemoryHealth, getMemoryHealthOverview, type RepoEvidence, type SkillUsageRow, type DocRotRow, type MemoryHealthRow } from '@/api/devTools/devTools';
 import { listCredentials } from '@/api/vault/credentials';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { derivePassportFromMetadata } from './passportDerive';
 import { recordSnapshot } from './passportHistory';
 import { sortByNameAsc, type AppPassport } from './passportModel';
@@ -114,11 +115,20 @@ export function usePassportData(): PassportData {
   );
   const [rescanning, setRescanning] = useState(false);
   const [rescanningProject, setRescanningProject] = useState<string | null>(null);
+  // Five independent callers can invoke `build()` (mount, telemetry sweep,
+  // rescan, rescanProject, the factory-process-complete listener). Without a
+  // generation token, whichever build's publish() lands LAST wins — even if
+  // it started before an explicit user-requested rescan. See
+  // createLatestWins() for the mechanism.
+  const buildLatestWins = useRef(createLatestWins()).current;
 
   const build = useCallback(async (regen: boolean, projectId?: string) => {
+    const token = buildLatestWins.next();
     // Every publish also refreshes the module cache so the NEXT mount paints
-    // from it instantly.
+    // from it instantly. Guarded: if a newer build has since started, this
+    // build's data is stale and must not overwrite the cache or state.
     const publish = (passports: AppPassport[], rawByProject: Map<string, ImproveRaw>, generatedAt: string | null) => {
+      if (!buildLatestWins.isCurrent(token)) return;
       cachedSnapshot = { passports, rawByProject, generatedAt, at: Date.now() };
       setState({ passports, rawByProject, loading: false, error: null, generatedAt });
     };
@@ -296,7 +306,7 @@ export function usePassportData(): PassportData {
     // "since last scan" delta accrue across scans. Best-effort, never blocks.
     recordSnapshot(phase2.passports, Date.now());
     publish(phase2.passports, phase2.rawByProject, map.generated_at);
-  }, []);
+  }, [buildLatestWins]);
 
   useEffect(() => {
     // Stale-while-revalidate: the cached snapshot already painted via the
