@@ -20,7 +20,10 @@ interface PersonaConnectorsTabProps {
 export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectorsTabProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
-  const { tools, requiredCredTypes, fetchCredentials } = useConnectorStatuses();
+  // ONE instance, shared with the verification panel below — it used to call
+  // the hook itself, so this component mounted two auto-test loops.
+  const verification = useConnectorStatuses();
+  const { tools, requiredCredTypes, fetchCredentials } = verification;
 
   const [designOpen, setDesignOpen] = useState(false);
   const [designInstruction, setDesignInstruction] = useState('');
@@ -58,7 +61,7 @@ export function PersonaConnectorsTab({ onMissingCountChange }: PersonaConnectors
         </div>
       )}
       <AgentCredentialDemands />
-      <ConnectorVerificationPanel onMissingCountChange={onMissingCountChange} />
+      <ConnectorVerificationPanel verification={verification} onMissingCountChange={onMissingCountChange} />
       <ToolsSection tools={tools} personaId={selectedPersona?.id} />
       <AutomationsSection automations={selectedPersona?.automations ?? []} onAdd={() => setAutomationModalOpen(true)} onEdit={(id) => { setEditingAutomationId(id); setAutomationModalOpen(true); }} />
       {requiredCredTypes.length === 0 && tools.length === 0 && (selectedPersona?.automations ?? []).length === 0 && (

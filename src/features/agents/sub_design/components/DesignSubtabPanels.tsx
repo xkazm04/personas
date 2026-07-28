@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Plug, Bell } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -12,6 +12,7 @@ import { allIndices } from '../DesignTabHelpers';
 import { PersonaParametersCard } from './PersonaParametersCard';
 import { TriggerConfig } from '@/features/triggers/sub_triggers/TriggerConfig';
 import { ConnectorVerificationPanel } from '@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel';
+import { useConnectorStatuses } from '@/features/agents/sub_connectors/libs/useConnectorStatuses';
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { toastCatch } from '@/lib/silentCatch';
 
@@ -63,6 +64,29 @@ export function DesignConnectorsPanel() {
   const selectedTools = useMemo(() => new Set(saved?.suggested_tools ?? []), [saved]);
   // Connector name whose credential is being provisioned from the recap.
   const [provisioning, setProvisioning] = useState<string | null>(null);
+  // ONE verification instance, shared by the live panel and the recap below, so
+  // the two halves cannot disagree about a connector or double-test it.
+  const verification = useConnectorStatuses();
+  const [testingFromRecap, setTestingFromRecap] = useState<ReadonlySet<string>>(() => new Set());
+  // Connectors the live panel already renders. Showing them again in the recap
+  // would put two different notions of the same connector's health on screen.
+  const liveConnectors = useMemo(
+    () => new Set(verification.requiredCredTypes),
+    [verification.requiredCredTypes],
+  );
+
+  const testFromRecap = useCallback(async (connectorName: string, credentialId: string) => {
+    setTestingFromRecap((prev) => new Set(prev).add(connectorName));
+    try {
+      await verification.testConnector(connectorName, credentialId);
+    } finally {
+      setTestingFromRecap((prev) => {
+        const next = new Set(prev);
+        next.delete(connectorName);
+        return next;
+      });
+    }
+  }, [verification]);
 
   // The persona's live connectors come from its tools, not from a saved design,
   // so the verification panel stands on its own; only the design recap below
@@ -77,7 +101,7 @@ export function DesignConnectorsPanel() {
 
   return (
     <div className="space-y-6">
-      <ConnectorVerificationPanel />
+      <ConnectorVerificationPanel verification={verification} />
       {!designIsEmpty && saved && (
         <>
           <ConnectorsSection
@@ -89,6 +113,9 @@ export function DesignConnectorsPanel() {
             selectedTools={selectedTools}
             onToolToggle={NOOP}
             onConnectorClick={(connector) => setProvisioning(connector.name)}
+            hiddenConnectors={liveConnectors}
+            onTestConnector={(name, credId) => void testFromRecap(name, credId)}
+            testingConnectors={testingFromRecap}
             readOnly
           />
           {provisioning !== null && (

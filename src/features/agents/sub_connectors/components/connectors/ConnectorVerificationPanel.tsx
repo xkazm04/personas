@@ -3,11 +3,20 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { silentCatch } from '@/lib/silentCatch';
 import { getRoleForConnector, resolveRoleLabel } from '@/lib/credentials/connectorRoles';
-import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
+import type { useConnectorStatuses } from '../../libs/useConnectorStatuses';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import { ConnectorsSection, ReadinessWarnings } from './ConnectorsTabSections';
 
+export type ConnectorVerification = ReturnType<typeof useConnectorStatuses>;
+
 interface ConnectorVerificationPanelProps {
+  /**
+   * The `useConnectorStatuses` instance to render. Passed in rather than called
+   * here so a host can share ONE instance with its other connector surfaces —
+   * two instances would run two independent auto-test loops against the same
+   * credentials.
+   */
+  verification: ConnectorVerification;
   /** Reported whenever the count of connectors with no linked credential changes. */
   onMissingCountChange?: (count: number) => void;
 }
@@ -21,12 +30,12 @@ interface ConnectorVerificationPanelProps {
  * so it stays accurate for personas that were never designed and reacts to
  * credentials being linked or going unhealthy after the fact.
  */
-export function ConnectorVerificationPanel({ onMissingCountChange }: ConnectorVerificationPanelProps) {
+export function ConnectorVerificationPanel({ verification, onMissingCountChange }: ConnectorVerificationPanelProps) {
   const { t } = useTranslation();
   const {
     statuses, requiredCredTypes, credentials, testingAll, readinessCounts, staleCount,
     fetchCredentials, testConnector, handleTestAll, handleLinkCredential, clearLinkError,
-  } = useConnectorStatuses();
+  } = verification;
 
   const [linkingConnector, setLinkingConnector] = useState<string | null>(null);
   const [designInstruction, setDesignInstruction] = useState<string | null>(null);
