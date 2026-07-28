@@ -5,9 +5,10 @@
 // Horizon and the original Board were retired in this round.
 import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowUp, Check, Rocket, Sparkles, Telescope } from 'lucide-react';
+import { ArrowUp, Check, PencilRuler, Rocket, Sparkles, Telescope } from 'lucide-react';
 
 import { INK } from '../../passport/passportInk';
+import { ShipMilestoneComposer } from './ShipMilestoneComposer';
 import {
   BUCKET_META, CRIT_HUE, FEATURE_STATE_META, MOCK_MILESTONE, SHIP_ROADMAP, shipProgress,
   type ScopeBucket, type ShipMilestone,
@@ -79,6 +80,10 @@ function BucketBtn({ b, on, onClick, hue }: { b: string; on?: boolean; onClick: 
 export function ShipPlannerTab() {
   const reduce = useReducedMotion();
   const [selectedId, setSelectedId] = useState(() => SHIP_ROADMAP.find((m) => m.status === 'active')?.id ?? '');
+  // Composition is milestone-scoped and opened from here — the workspace pane
+  // swaps to the composer while the roadmap spine stays in view.
+  const [composing, setComposing] = useState(false);
+  const select = (id: string) => { setSelectedId(id); setComposing(false); };
   const m = SHIP_ROADMAP.find((x) => x.id === selectedId) ?? MOCK_MILESTONE;
   const triage = useScopeTriage(m);
   const outside = [
@@ -114,14 +119,32 @@ export function ShipPlannerTab() {
         <span className="absolute left-[10px] top-5 bottom-5 w-px" style={{ background: `linear-gradient(${INK.emerald}66, ${INK.teal}66, rgba(148,163,184,.2))` }} aria-hidden />
         <ul>
           {SHIP_ROADMAP.map((ms, i) => (
-            <TimelineCard key={ms.id} m={ms} selected={ms.id === m.id} onSelect={() => setSelectedId(ms.id)} index={i} reduce={reduce} />
+            <TimelineCard key={ms.id} m={ms} selected={ms.id === m.id} onSelect={() => select(ms.id)} index={i} reduce={reduce} />
           ))}
         </ul>
       </div>
 
       {/* the workspace — one ledger language for both sections */}
-      <motion.div key={m.id} className="min-w-0" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <p className="typo-title-lg">{m.goal}</p>
+      <motion.div key={`${m.id}:${composing}`} className="min-w-0" initial={reduce ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        {composing ? (
+          <ShipMilestoneComposer m={m} onBack={() => setComposing(false)} />
+        ) : (
+          <>
+        <div className="flex items-start gap-3">
+          <p className="typo-title-lg min-w-0">{m.goal}</p>
+          {m.status !== 'shipped' && (
+            <button
+              type="button"
+              onClick={() => setComposing(true)}
+              className="ml-auto shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium border transition-colors hover:bg-foreground/[0.05] focus-ring"
+              style={{ color: INK.teal, borderColor: `${INK.teal}55` }}
+              data-testid="ship-compose-open"
+            >
+              <PencilRuler className="w-3.5 h-3.5" aria-hidden />
+              Compose scope
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-2 flex-wrap mt-2 mb-4">
           {m.criteria.map((c) => (
             <span key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption tabular-nums" style={{ borderColor: `${CRIT_HUE[c.state]}55`, color: CRIT_HUE[c.state] }} title={c.evidence}>
@@ -179,6 +202,8 @@ export function ShipPlannerTab() {
           })}
           {outside.length === 0 && <li className="typo-caption px-3.5 py-2.5">Everything is in the cut — suspiciously disciplined.</li>}
         </LedgerList>
+          </>
+        )}
       </motion.div>
     </div>
   );

@@ -226,9 +226,6 @@ const GROWTH_MILESTONE: ShipMilestone = {
 /** Oldest → newest; exactly one `active` milestone at a time. */
 export const SHIP_ROADMAP: ShipMilestone[] = [ALPHA_MILESTONE, MOCK_MILESTONE, GROWTH_MILESTONE];
 
-/** The milestone the compose prototypes build (the planned one). */
-export const GROWTH_NAME = GROWTH_MILESTONE.name;
-
 // -- composition library (round 4) --------------------------------------------
 // The personas primitives a milestone is composed FROM. Analysis behind the
 // unit choice: USE CASES (features) are the composition unit — users think in
