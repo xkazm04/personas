@@ -13780,6 +13780,27 @@ export type Translations = {
         bulk_rejected: string;
         bulk_failed: string;
         harvest_depth: string;
+        variant_baseline: string;
+        variant_baseline_hint: string;
+        variant_cartogram: string;
+        variant_cartogram_hint: string;
+        variant_handbook: string;
+        variant_handbook_hint: string;
+        variant_switcher_aria: string;
+        map_title: string;
+        map_back: string;
+        map_whole_library: string;
+        map_uncategorized: string;
+        map_legend_adopted: string;
+        map_legend_unreviewed: string;
+        map_cell_aria: string;
+        map_scope_line: string;
+        index_all_areas: string;
+        sort_order: string;
+        sort_value: string;
+        sort_dir_asc: string;
+        sort_dir_desc: string;
+        evidence_sites: string;
       };
     };
     doc_signing: {
