@@ -11,16 +11,33 @@ import { NewCompetitionModal } from './NewCompetitionModal';
 import type { StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
+// Module-scoped cache of the last-fetched competitions, keyed by project.
+// The list lived only in component state, so every remount (a tab away-and-back
+// within the same session) started genuinely cold — losing the data and
+// re-showing the ghost even though it was fetched moments ago. Stashing the
+// last fetch here lets a RETURN visit to the SAME project paint real cards on
+// frame 1 and refresh silently behind them (mirrors LifecyclePage's cache in
+// this same sub_lifecycle family). Keyed by project because competitions are
+// per-project — project A's list must never flash under project B.
+let cachedProjectId: string | null = null;
+let cachedCompetitions: DevCompetition[] = [];
+
 export function CompetitionList() {
   const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const [competitions, setCompetitions] = useState<DevCompetition[]>([]);
-  // True while a (re)fetch is in flight. Starts true (not false) so the very
-  // first render doesn't briefly show the empty state before the effect
-  // below even fires (docs/design/overview-loading.md law 1/2) — it only
-  // ever gates the ghost/empty branch below, never the cards already on
-  // screen, which stay mounted through a refresh.
-  const [loading, setLoading] = useState(true);
+  // Seed from cache when returning to the same project this session, so a
+  // remount paints warm instead of cold-flashing the ghost.
+  const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId;
+  const [competitions, setCompetitions] = useState<DevCompetition[]>(
+    () => (warmForProject ? cachedCompetitions : []),
+  );
+  // True while a (re)fetch is in flight. Starts true ONLY when we have nothing
+  // cached for this project yet, so the very first render doesn't briefly show
+  // the empty state before the effect fires (docs/design/overview-loading.md
+  // law 1/2); a warm return starts false so cards paint immediately. It only
+  // ever gates the ghost/empty branch below, never the cards already on screen,
+  // which stay mounted through a refresh.
+  const [loading, setLoading] = useState(!warmForProject);
   const [showNewModal, setShowNewModal] = useState(false);
   // When the user picks "Rematch with winner" on a resolved competition, seed
   // the New Competition modal with the winner's recovered genes (slot 1 bias).
@@ -37,6 +54,8 @@ export function CompetitionList() {
     try {
       const list = await listCompetitions(activeProjectId);
       setCompetitions(list);
+      cachedProjectId = activeProjectId;
+      cachedCompetitions = list;
     } catch {
       setCompetitions([]);
     } finally {
