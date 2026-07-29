@@ -2,11 +2,6 @@
 
 ## Active
 
-### kpi-value-pillars — value-KPI scan + kpi-sim bridge + skill scoping — session opus-5[1m]
-- Started: 2026-07-29. Status: started. Follow-on from the live project-populate run (8/8 KPI proposals rejected as code-quality, not app value). Four accepted directions: value pillars first with technical capped at 2, doctrine lands IN the scan prompt (all entry points benefit), kpi-sim runs as a gated phase inside project-populate, scope = multi-select of the four lanes.
-- WORKTREE: `.claude/worktrees/kpi-value-pillars` (branch `worktree-kpi-value-pillars`).
-- Paths: `src-tauri/src/commands/infrastructure/{kpi_scan,dev_tools_http}.rs`, `.claude/skills/project-populate/**`, `src/features/teams/sub_factory/passport/{populateDispatch,actionConfirmCatalog,PassportActionsRow}`, `src/api/devTools/**`, `src/i18n/locales/*.json`, `docs/features/**`.
-
 ### explorer-healing-engine — /explorer sweep of the healing-engine context — session fable-5
 - Started: 2026-07-27. Status: started.
 - Paths: healing engine Rust modules (engine/healing*, commands/*/healing.rs, db healing models/repos), `src/api/overview/healing.ts`, `src/features/overview/sub_observability/Healing*`.
@@ -34,6 +29,18 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### kpi-value-pillars — value-KPI scan + scope + simulation lane — session opus-5[1m] — COMPLETE, merged `1e0306c47`, **LIVE-VERIFIED**
+- 2026-07-29. Commits `a34274d2b` (scan prompt + bridge) · `ca7e97fc0` (skill) · `6dd87c0c7` (scope picker UI + i18n ×14) · `9cee795be` (docs). Worktree removed, branch merged.
+- **THE RESULT, measured not assumed.** Re-ran the real KPI scan against the running app after merge — using the bridge's `/kpi-scan-prompt/{id}` route FIRST to confirm the rebuilt binary actually carried the new prompt, otherwise the test would have graded the old one. Before: 8 proposals, all technical/quality (TS errors, coverage, bundle size, incident counts), operator rejected 8/8. After: **8 proposals — 6 `value`, 2 `quality`, ZERO technical**, 7 of them `manual` and phrased as user-journey outcomes ("simulated new user creates a persona, binds a credential, triggers a run, confirms completed — report % across 5 users"), i.e. exactly the shape kpi-sim's Class-2 character walks can measure. The one `connector` KPI is Sentry with `metric_type: open_errors` — a real REST surface, not the SQLite-SQL trap. No `measure_config` contains SQL.
+- The model visibly applied the new rules in its own reasoning: *"i18n is fully clean (0 missing keys) — not a useful KPI"* — that is the "a closed CI gate is not a KPI" rule firing.
+- **Root cause of the original failure was a prompt bias, not model capability**: "RUN the command to confirm it yields a number before proposing it" let *what can I run today* choose the list. Rule 3b now separates verification (HOW) from selection (WHICH). Also capped technical at 2, required value to be the majority, and stated that an unmeasurable value pillar beats a measurable meaningless number.
+- Bridge: `require_project()` → every list route 404s on an unknown id (was `200 []`; hit accidentally with a fabricated UUID during the previous run — live-verified 404 vs 200 after merge). New `/context-groups/{id}` + `/use-cases/{id}` (Phase 1/2 gates were uncomputable standalone) and `/kpi-sim/{prepare,ingest}` (kpi_sim's two command bodies extracted into pool-taking inner fns).
+- Skill: `--scope contexts,features,kpis,simulation`; excluded lanes reported out-of-scope, never silently absent. New Phase 5 spells out the sim sequencing (adopt FIRST — the sim ignores `proposed` KPIs — then prepare, consent, run, ingest) and forbids reporting a simulated number as real. Triage judges value before measurability, with the asymmetry stated.
+- UI: four-lane picker in the consent modal, defaulted from the freshness gates (current project → only KPIs ticked); `ActionConfirmModal` gained `extra` + `confirmDisabled`.
+- Gates: tsc clean, eslint 0 errors, `cargo check --features desktop --lib` clean, vitest 56/56 on sub_factory, i18n strict 0/0 ×14 + untranslated 0, full pre-push suite green.
+- **DEFERRED, deliberately:** a `decision_note` column recording WHY a KPI was rejected. `last_skip_rationale` is taken by measurement skips and `assessment_cons` renders in the UI, so it needs a migration + ts-rs regen. Lower value than it looks — the scan already feeds archived KPI *names* back under "do not re-propose", so the re-proposal harm is prevented; only the reason is lost.
+- **NOTE for the next session:** CLAUDE.md gained `npm run test:rust` (embeds the comctl32 manifest post-link), fixing the machine-wide `0xc0000139` that has blocked `cargo test` and `export_bindings`. The deferral above was decided before that landed and should be revisited.
 
 ### perfect-buildtest-wave — /perfect build (build-test-tooling) — session opus-5[1m] — COMPLETE, commits `7c6f6de3c` `1e831999f` `0cb5e3e01` `ed70064b6`
 - 2026-07-29. Pool 5→1. Worktree `perfect-buildtest` (no node_modules junction — nothing needed it, and the junction is the documented cleanup hazard). Cherry-picked serially onto master, clean index verified first, zero conflicts. Worktree + branch removed.
