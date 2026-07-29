@@ -237,5 +237,12 @@
   "suggest_retire": "Zrušit {name}",
   "suggest_sources": "{count} zdrojů",
   "suggest_title": "Návrhy ze simulace ({count})",
-  "define_kpi": "definovat KPI"
+  "define_kpi": "definovat KPI",
+  "populate_lane_contexts": "Mapa kontextů",
+  "populate_lane_features": "Funkce",
+  "populate_lane_kpis": "Ukazatele KPI",
+  "populate_lane_simulation": "Simulovaná data KPI",
+  "populate_lane_simulation_detail": "Pro produkt, který ještě nebyl vydán: prochází vaše funkce jako reprezentativní uživatelé a odhaduje přijaté ukazatele KPI a zjišťuje cíle z podobných produktů. Nejdelší krok.",
+  "populate_scope_empty": "Vyberte alespoň jednu věc, kterou chcete zahrnout.",
+  "populate_scope_heading": "Co tento běh zahrne"
 }

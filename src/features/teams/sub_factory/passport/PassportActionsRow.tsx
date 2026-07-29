@@ -34,14 +34,17 @@ import { useImprove } from './improve/ImproveContext';
 import { FindingsPopover } from './improve/StandardsScan';
 import { seedOnboardingMilestone } from '../l2/ship/seedOnboarding';
 import { buildOnboardPrompt, onboardDispatchKey } from './onboardDispatch';
+import { PopulateScopePicker } from './PopulateScopePicker';
 import {
   buildPopulateBrief,
   buildPopulatePrompt,
+  defaultLanes,
   describeGates,
   populateDispatchKey,
   readPopulateGates,
   POPULATE_BRIEF_PATH,
   type PopulateGates,
+  type PopulateLane,
 } from './populateDispatch';
 import { PASSPORT_FLEET_INK } from './passportFleet';
 import { dispatchSkillToRepo } from './skillPlacement';
@@ -64,6 +67,7 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
   const [findingsAnchor, setFindingsAnchor] = useState<DOMRect | null>(null);
   const [onboardBusy, setOnboardBusy] = useState(false);
   const [gates, setGates] = useState<PopulateGates | null>(null);
+  const [lanes, setLanes] = useState<PopulateLane[] | null>(null);
   const [populateRequest, setPopulateRequest] = useState<DispatchRequest | null>(null);
 
   const slug = p.identity.slug;
@@ -104,7 +108,12 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
   const loadGates = () => {
     if (!raw || gates) return;
     void readPopulateGates(raw.project.id)
-      .then(setGates)
+      .then((fresh) => {
+        setGates(fresh);
+        // Seed the lane selection from the gates, so the modal opens on the
+        // work this project actually needs.
+        setLanes((current) => current ?? defaultLanes(fresh));
+      })
       .catch(silentCatch('passport populate gates'));
   };
 
@@ -113,10 +122,11 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
     void Promise.all([gates ? Promise.resolve(gates) : readPopulateGates(raw.project.id), listCredentials()])
       .then(([fresh, creds]) => {
         setGates(fresh);
-        const brief = buildPopulateBrief(p, raw, creds, fresh);
+        const picked = lanes ?? defaultLanes(fresh);
+        const brief = buildPopulateBrief(p, raw, creds, fresh, picked);
         setPopulateRequest({
           title: `Populate ${name}'s project data`,
-          prompt: buildPopulatePrompt(),
+          prompt: buildPopulatePrompt(picked),
           target: { projectId: raw.project.id, projectName: name, rootPath: raw.project.root_path },
           fleetKey: populateDispatchKey(slug),
           methods: ['fleet', 'console'],
@@ -185,9 +195,19 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
       {confirm && (() => {
         const spec = ACTIONS.find((a) => a.id === confirm.id);
         if (!spec) return null;
+        const scopePicker =
+          confirm.id === 'populate' && gates ? (
+            <PopulateScopePicker
+              gates={gates}
+              lanes={lanes ?? defaultLanes(gates)}
+              onChange={setLanes}
+            />
+          ) : undefined;
         return (
           <ActionConfirmModal
             spec={spec}
+            extra={scopePicker}
+            confirmDisabled={scopePicker != null && (lanes ?? []).length === 0}
             onConfirm={() => spec.run?.(confirm.anchor)}
             onClose={() => setConfirm(null)}
           />

@@ -18051,7 +18051,14 @@
     "suggest_retire": "Retirar {name}",
     "suggest_sources": "{count} fuentes",
     "suggest_title": "Sugerencias de simulación ({count})",
-    "define_kpi": "definir KPI"
+    "define_kpi": "definir KPI",
+    "populate_lane_contexts": "Mapa de contexto",
+    "populate_lane_features": "Funcionalidades",
+    "populate_lane_kpis": "Indicadores KPI",
+    "populate_lane_simulation": "Datos de KPI simulados",
+    "populate_lane_simulation_detail": "Para un producto que aún no se ha lanzado: recorre tus funcionalidades como usuarios representativos para estimar los KPI adoptados, e investiga objetivos de productos comparables. El paso más largo.",
+    "populate_scope_empty": "Elige al menos un elemento para cubrir.",
+    "populate_scope_heading": "Qué cubrirá esta ejecución"
   },
   "deliberation": {
     "agenda": "Agenda",

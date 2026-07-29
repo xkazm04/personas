@@ -18051,7 +18051,14 @@
     "suggest_retire": "Удалить {name}",
     "suggest_sources": "{count} источников",
     "suggest_title": "Предложения по симуляции ({count})",
-    "define_kpi": "задать KPI"
+    "define_kpi": "задать KPI",
+    "populate_lane_contexts": "Карта контекста",
+    "populate_lane_features": "Функции",
+    "populate_lane_kpis": "Показатели KPI",
+    "populate_lane_simulation": "Смоделированные данные KPI",
+    "populate_lane_simulation_detail": "Для продукта, который еще не выпущен: проходит по вашим функциям от лица типичных пользователей, чтобы оценить принятые показатели KPI, и исследует целевые значения у сопоставимых продуктов. Самый долгий этап.",
+    "populate_scope_empty": "Выберите хотя бы один пункт для охвата.",
+    "populate_scope_heading": "Что охватит этот запуск"
   },
   "deliberation": {
     "agenda": "Повестка",

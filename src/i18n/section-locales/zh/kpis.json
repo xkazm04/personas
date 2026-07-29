@@ -237,5 +237,12 @@
   "suggest_retire": "停用 {name}",
   "suggest_sources": "{count} 个来源",
   "suggest_title": "模拟建议（{count}）",
-  "define_kpi": "定义 KPI"
+  "define_kpi": "定义 KPI",
+  "populate_lane_contexts": "上下文地图",
+  "populate_lane_features": "功能",
+  "populate_lane_kpis": "KPI 指标",
+  "populate_lane_simulation": "模拟的 KPI 数据",
+  "populate_lane_simulation_detail": "适用于尚未发布的产品：以代表性用户的身份遍历您的功能，估算将采用的 KPI 指标，并从同类产品中调研目标值。这是耗时最长的一步。",
+  "populate_scope_empty": "请至少选择一项要覆盖的内容。",
+  "populate_scope_heading": "此次运行将覆盖的内容"
 }

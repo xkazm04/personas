@@ -237,5 +237,12 @@
   "suggest_retire": "Ngừng dùng {name}",
   "suggest_sources": "{count} nguồn",
   "suggest_title": "Đề xuất mô phỏng ({count})",
-  "define_kpi": "xác định KPI"
+  "define_kpi": "xác định KPI",
+  "populate_lane_contexts": "Bản đồ ngữ cảnh",
+  "populate_lane_features": "Tính năng",
+  "populate_lane_kpis": "Chỉ số KPI",
+  "populate_lane_simulation": "Dữ liệu KPI mô phỏng",
+  "populate_lane_simulation_detail": "Đối với sản phẩm chưa ra mắt: chạy qua các tính năng của bạn như những người dùng tiêu biểu để ước tính các chỉ số KPI được áp dụng, và nghiên cứu mục tiêu từ các sản phẩm tương tự. Đây là bước lâu nhất.",
+  "populate_scope_empty": "Chọn ít nhất một mục để bao gồm.",
+  "populate_scope_heading": "Lần chạy này sẽ bao gồm những gì"
 }

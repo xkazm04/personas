@@ -18163,6 +18163,13 @@ export type Translations = {
     evaluate_partial: string;
     evaluate_none_due: string;
     define_kpi: string;
+    populate_scope_heading: string;
+    populate_lane_contexts: string;
+    populate_lane_features: string;
+    populate_lane_kpis: string;
+    populate_lane_simulation: string;
+    populate_lane_simulation_detail: string;
+    populate_scope_empty: string;
   };
   planner: {
     nav_label: string;

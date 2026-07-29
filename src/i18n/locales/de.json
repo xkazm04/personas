@@ -18051,7 +18051,14 @@
     "suggest_retire": "{name} zurückziehen",
     "suggest_sources": "{count} Quellen",
     "suggest_title": "Simulationsvorschläge ({count})",
-    "define_kpi": "KPI festlegen"
+    "define_kpi": "KPI festlegen",
+    "populate_lane_contexts": "Kontextkarte",
+    "populate_lane_features": "Funktionen",
+    "populate_lane_kpis": "KPI-Kennzahlen",
+    "populate_lane_simulation": "Simulierte KPI-Daten",
+    "populate_lane_simulation_detail": "Für ein Produkt, das noch nicht veröffentlicht wurde: durchläuft Ihre Funktionen als repräsentative Nutzer, um die übernommenen KPI-Kennzahlen zu schätzen, und recherchiert Zielwerte aus vergleichbaren Produkten. Der längste Schritt.",
+    "populate_scope_empty": "Wählen Sie mindestens einen Punkt aus, der abgedeckt werden soll.",
+    "populate_scope_heading": "Was dieser Durchlauf abdeckt"
   },
   "deliberation": {
     "agenda": "Tagesordnung",

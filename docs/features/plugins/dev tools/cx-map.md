@@ -132,6 +132,32 @@ five, each decision written the moment it is answered so an interrupted run
 keeps what was already decided. A final phase names the exact monitoring binding
 for each adopted KPI the project has a connector for.
 
+**Scope.** The consent modal carries a four-lane picker — contexts · features ·
+KPIs · simulation — defaulted from the freshness gates, so a project whose
+structure is current opens with only the KPI lane ticked. Excluded lanes are
+named in the brief and reported as out of scope, never silently absent.
+Standalone: `--scope contexts,kpis`.
+
+**Simulation (Phase 5).** For a product that has not shipped, the honest problem
+is that pillars are needed to know what to measure but there is no traffic to
+measure — and a target invented to fill the field looks like evidence. The lane
+hands off to the KPI simulation engine, which walks the KPI-bound journeys with
+representative characters and researches targets from comparable products. The
+sequencing is enforced because it is easy to get wrong: adopt first (the sim
+ignores `proposed` KPIs), `POST /dev-tools/kpi-sim/prepare` to write the
+snapshot only the app may produce, run, then `POST /dev-tools/kpi-sim/ingest`.
+Simulated values stay env-tagged `local`/`test` and are never reported as real.
+
+**The KPI scan measures the product, not the repository.** A live run over this
+repo proposed eight KPIs — coverage, bundle size, compiler errors — and all
+eight were rejected. The cause was a verifiability bias in the scan prompt: an
+instruction to run each command and confirm a number let *what can I run today*
+choose the list. The prompt now separates the two (verification decides HOW a
+KPI is measured, never WHICH get proposed), caps technical proposals at 2,
+excludes anything a CI gate already enforces, and for a pre-production project
+requires the pillars to be phrased as user-journey outcomes so the simulation
+lane can put numbers against them.
+
 Two transports, both interactive because the KPI phase needs an operator: a
 **Fleet** session, or a **new terminal window the user owns** (`console`) that
 outlives the app — the app cannot watch or stop that one, which is why the
