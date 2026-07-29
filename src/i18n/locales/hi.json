@@ -360,7 +360,22 @@
     "triage_fact_priority": "प्राथमिकता",
     "triage_priority_rank": "क्रम {rank}",
     "triage_view_run": "रन देखें",
-    "triage_view_run_hint": "वह एक्ज़ीक्यूशन खोलें जिससे यह समीक्षा उठी"
+    "triage_view_run_hint": "वह एक्ज़ीक्यूशन खोलें जिससे यह समीक्षा उठी",
+    "triage_reason_already_done": "पहले ही हो चुका है",
+    "triage_reason_already_handled": "पहले ही निपटा दिया गया",
+    "triage_reason_aria": "इस निर्णय का कारण",
+    "triage_reason_by_design": "जैसा तय था वैसा ही चल रहा है",
+    "triage_reason_needs_info": "और जानकारी चाहिए",
+    "triage_reason_not_needed": "ज़रूरत नहीं",
+    "triage_reason_not_worth_it": "मेहनत के लायक नहीं",
+    "triage_reason_out_of_scope": "दायरे से बाहर",
+    "triage_reason_pick": "कारण चुनें",
+    "triage_reason_placeholder": "या अपना लिखें…",
+    "triage_reason_skip": "कोई कारण नहीं",
+    "triage_reason_title": "क्यों?",
+    "triage_reason_wrong_approach": "तरीका गलत है",
+    "triage_superseded_skip": "कोई उत्तराधिकारी नहीं",
+    "triage_superseded_title": "इससे बदला गया"
   },
   "common": {
     "loading": "लोड हो रहा है...",

@@ -359,5 +359,20 @@
   "triage_fact_priority": "Priorité",
   "triage_priority_rank": "n° {rank}",
   "triage_view_run": "Voir l’exécution",
-  "triage_view_run_hint": "Ouvrir l’exécution à l’origine de cette revue"
+  "triage_view_run_hint": "Ouvrir l’exécution à l’origine de cette revue",
+  "triage_reason_already_done": "Déjà fait",
+  "triage_reason_already_handled": "Déjà traité",
+  "triage_reason_aria": "Motif de cette décision",
+  "triage_reason_by_design": "Fonctionne comme prévu",
+  "triage_reason_needs_info": "Informations manquantes",
+  "triage_reason_not_needed": "Pas nécessaire",
+  "triage_reason_not_worth_it": "L’effort n’en vaut pas la peine",
+  "triage_reason_out_of_scope": "Hors périmètre",
+  "triage_reason_pick": "choisir un motif",
+  "triage_reason_placeholder": "Ou saisissez le vôtre…",
+  "triage_reason_skip": "Sans motif",
+  "triage_reason_title": "Pourquoi ?",
+  "triage_reason_wrong_approach": "Mauvaise approche",
+  "triage_superseded_skip": "Aucun successeur",
+  "triage_superseded_title": "Remplacé par"
 }

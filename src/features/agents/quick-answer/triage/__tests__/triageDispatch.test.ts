@@ -106,14 +106,65 @@ describe('routeDecision — ideas and practices', () => {
     const ports = makePorts();
 
     await routeDecision({ item, verdict: 'accept' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt');
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
 
     await routeDecision({ item, verdict: 'reject' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject');
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
 
     await routeDecision({ item, verdict: 'accept', branchId: 'deprecate' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate');
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined);
     expect(ports.refreshKnowledge).toHaveBeenCalledTimes(3);
+  });
+
+  it('records what SUPERSEDES a deprecated practice', async () => {
+    const item = makeItem('practice', { sourceId: 'k-1' });
+    const ports = makePorts();
+
+    await routeDecision(
+      { item, verdict: 'accept', branchId: 'deprecate', reason: 'k-2' },
+      ports,
+    );
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2');
+  });
+
+  it('never forwards a successor on a NON-deprecate decision', async () => {
+    // The backend rejects `superseded_by` outright unless the decision is
+    // `deprecate`, so a stale reason riding along would turn an adopt into a
+    // validation error.
+    const item = makeItem('practice', { sourceId: 'k-1' });
+    const ports = makePorts();
+
+    await routeDecision({ item, verdict: 'accept', reason: 'k-2' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
+
+    await routeDecision({ item, verdict: 'reject', reason: 'k-2' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
+  });
+});
+
+describe('routeDecision — rejections carry their reason to the write', () => {
+  it('writes a review rejection reason into reviewer notes', async () => {
+    const ports = makePorts();
+    await routeDecision(
+      { item: makeItem('review', { sourceId: 'rev-9' }), verdict: 'reject', reason: 'Already handled' },
+      ports,
+    );
+    expect(ports.reviewAction).toHaveBeenCalledWith('rev-9', 'rejected', 'Already handled');
+  });
+
+  it('writes an idea rejection reason, which the backend turns into a constraint', async () => {
+    const ports = makePorts();
+    await routeDecision(
+      { item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject', reason: 'Out of scope' },
+      ports,
+    );
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', 'Out of scope');
+  });
+
+  it('still writes the rejection when the reviewer skipped the reason', async () => {
+    const ports = makePorts();
+    await routeDecision({ item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject' }, ports);
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', undefined);
   });
 });
 

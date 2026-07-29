@@ -360,7 +360,22 @@
     "triage_fact_priority": "Prioridad",
     "triage_priority_rank": "n.º {rank}",
     "triage_view_run": "Ver la ejecución",
-    "triage_view_run_hint": "Abrir la ejecución que generó esta revisión"
+    "triage_view_run_hint": "Abrir la ejecución que generó esta revisión",
+    "triage_reason_already_done": "Ya está hecho",
+    "triage_reason_already_handled": "Ya está resuelto",
+    "triage_reason_aria": "Motivo de esta decisión",
+    "triage_reason_by_design": "Funciona como se espera",
+    "triage_reason_needs_info": "Falta información",
+    "triage_reason_not_needed": "No hace falta",
+    "triage_reason_not_worth_it": "No compensa el esfuerzo",
+    "triage_reason_out_of_scope": "Fuera de alcance",
+    "triage_reason_pick": "elegir un motivo",
+    "triage_reason_placeholder": "O escribe el tuyo…",
+    "triage_reason_skip": "Sin motivo",
+    "triage_reason_title": "¿Por qué?",
+    "triage_reason_wrong_approach": "Enfoque equivocado",
+    "triage_superseded_skip": "Sin sucesor",
+    "triage_superseded_title": "Reemplazado por"
   },
   "common": {
     "loading": "Cargando...",

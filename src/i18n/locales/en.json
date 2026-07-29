@@ -360,7 +360,22 @@
     "triage_fact_applies_to": "Applies to",
     "triage_applies_any": "Any stack",
     "triage_fact_adopt_reach": "Adopt reaches",
-    "triage_adopt_reach_value": "{applicable} of {total} repos"
+    "triage_adopt_reach_value": "{applicable} of {total} repos",
+    "triage_reason_aria": "Reason for this decision",
+    "triage_reason_title": "Why?",
+    "triage_reason_pick": "pick a reason",
+    "triage_reason_skip": "No reason",
+    "triage_reason_placeholder": "Or type your own…",
+    "triage_reason_not_needed": "Not needed",
+    "triage_reason_wrong_approach": "Wrong approach",
+    "triage_reason_already_handled": "Already handled",
+    "triage_reason_needs_info": "Needs more information",
+    "triage_reason_out_of_scope": "Out of scope",
+    "triage_reason_by_design": "Working as intended",
+    "triage_reason_not_worth_it": "Not worth the effort",
+    "triage_reason_already_done": "Already done",
+    "triage_superseded_title": "Replaced by",
+    "triage_superseded_skip": "No successor"
   },
   "common": {
     "unknown_error": "Unknown error",

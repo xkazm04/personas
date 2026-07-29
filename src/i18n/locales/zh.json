@@ -360,7 +360,22 @@
     "triage_fact_priority": "优先级",
     "triage_priority_rank": "第 {rank} 名",
     "triage_view_run": "查看运行",
-    "triage_view_run_hint": "打开触发此审核的执行记录"
+    "triage_view_run_hint": "打开触发此审核的执行记录",
+    "triage_reason_already_done": "已经做过了",
+    "triage_reason_already_handled": "已经处理过了",
+    "triage_reason_aria": "本次决定的原因",
+    "triage_reason_by_design": "设计如此",
+    "triage_reason_needs_info": "信息不足",
+    "triage_reason_not_needed": "不需要",
+    "triage_reason_not_worth_it": "不值得投入",
+    "triage_reason_out_of_scope": "超出范围",
+    "triage_reason_pick": "选择原因",
+    "triage_reason_placeholder": "或者自己填写…",
+    "triage_reason_skip": "不填原因",
+    "triage_reason_title": "为什么？",
+    "triage_reason_wrong_approach": "方向不对",
+    "triage_superseded_skip": "没有替代项",
+    "triage_superseded_title": "被替换为"
   },
   "common": {
     "loading": "加载中...",

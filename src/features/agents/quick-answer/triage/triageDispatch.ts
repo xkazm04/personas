@@ -43,7 +43,16 @@ export interface TriagePorts {
   ) => Promise<unknown>;
   acceptIdea: (id: string) => Promise<unknown>;
   rejectIdea: (id: string, reason?: string) => Promise<unknown>;
-  decideKnowledge: (id: string, verdict: 'adopt' | 'reject' | 'deprecate') => Promise<unknown>;
+  /**
+   * `supersededBy` is the id of the practice that REPLACES this one. The backend
+   * rejects it outright for any decision other than `deprecate`, so the router
+   * only ever passes it on that branch.
+   */
+  decideKnowledge: (
+    id: string,
+    verdict: 'adopt' | 'reject' | 'deprecate',
+    supersededBy?: string,
+  ) => Promise<unknown>;
   /** Fired after a practice verdict so the workspace centre re-reads. */
   refreshKnowledge: () => void;
   submitAnswers: (sessionId: string, answers: Record<string, string>) => Promise<void>;
@@ -116,13 +125,21 @@ export async function routeDecision(
       }
       return;
 
-    case 'practice':
+    case 'practice': {
+      const deprecating = branchId === 'deprecate';
       await ports.decideKnowledge(
         item.sourceId,
-        branchId === 'deprecate' ? 'deprecate' : verdict === 'accept' ? 'adopt' : 'reject',
+        deprecating ? 'deprecate' : verdict === 'accept' ? 'adopt' : 'reject',
+        // On the deprecate branch `reason` carries the SUCCESSOR'S ID, not
+        // prose — see the practice adapter's `reasonPrompts`. Anywhere else it
+        // must not be forwarded: the backend treats a `superseded_by` on a
+        // non-deprecate decision as a validation error, which would turn a
+        // stale reason into a failed adopt.
+        deprecating ? reason || undefined : undefined,
       );
       ports.refreshKnowledge();
       return;
+    }
 
     case 'question': {
       // `sourceId` IS the session — the card is the session, not one question.

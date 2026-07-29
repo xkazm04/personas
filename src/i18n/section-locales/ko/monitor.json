@@ -359,5 +359,20 @@
   "triage_fact_priority": "우선순위",
   "triage_priority_rank": "{rank}위",
   "triage_view_run": "실행 보기",
-  "triage_view_run_hint": "이 검토를 발생시킨 실행 열기"
+  "triage_view_run_hint": "이 검토를 발생시킨 실행 열기",
+  "triage_reason_already_done": "이미 완료됨",
+  "triage_reason_already_handled": "이미 처리됨",
+  "triage_reason_aria": "이 결정의 이유",
+  "triage_reason_by_design": "의도된 동작",
+  "triage_reason_needs_info": "정보가 부족함",
+  "triage_reason_not_needed": "필요하지 않음",
+  "triage_reason_not_worth_it": "들이는 노력에 비해 가치 없음",
+  "triage_reason_out_of_scope": "범위 밖",
+  "triage_reason_pick": "이유 선택",
+  "triage_reason_placeholder": "직접 입력하기…",
+  "triage_reason_skip": "이유 없음",
+  "triage_reason_title": "이유는?",
+  "triage_reason_wrong_approach": "접근이 잘못됨",
+  "triage_superseded_skip": "후속 항목 없음",
+  "triage_superseded_title": "대체 항목"
 }

@@ -367,6 +367,21 @@ export type Translations = {
     triage_applies_any: string;
     triage_fact_adopt_reach: string;
     triage_adopt_reach_value: string;
+    triage_reason_aria: string;
+    triage_reason_title: string;
+    triage_reason_pick: string;
+    triage_reason_skip: string;
+    triage_reason_placeholder: string;
+    triage_reason_not_needed: string;
+    triage_reason_wrong_approach: string;
+    triage_reason_already_handled: string;
+    triage_reason_needs_info: string;
+    triage_reason_out_of_scope: string;
+    triage_reason_by_design: string;
+    triage_reason_not_worth_it: string;
+    triage_reason_already_done: string;
+    triage_superseded_title: string;
+    triage_superseded_skip: string;
   };
   common: {
     unknown_error: string;

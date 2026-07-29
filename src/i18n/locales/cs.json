@@ -360,7 +360,22 @@
     "triage_fact_priority": "Priorita",
     "triage_priority_rank": "č. {rank}",
     "triage_view_run": "Zobrazit běh",
-    "triage_view_run_hint": "Otevřít spuštění, které vyvolalo tuto kontrolu"
+    "triage_view_run_hint": "Otevřít spuštění, které vyvolalo tuto kontrolu",
+    "triage_reason_already_done": "Už hotovo",
+    "triage_reason_already_handled": "Už vyřešeno",
+    "triage_reason_aria": "Důvod tohoto rozhodnutí",
+    "triage_reason_by_design": "Funguje podle záměru",
+    "triage_reason_needs_info": "Chybí informace",
+    "triage_reason_not_needed": "Není potřeba",
+    "triage_reason_not_worth_it": "Nestojí to za tu práci",
+    "triage_reason_out_of_scope": "Mimo rozsah",
+    "triage_reason_pick": "vybrat důvod",
+    "triage_reason_placeholder": "Nebo napište vlastní…",
+    "triage_reason_skip": "Bez důvodu",
+    "triage_reason_title": "Proč?",
+    "triage_reason_wrong_approach": "Špatný přístup",
+    "triage_superseded_skip": "Bez nástupce",
+    "triage_superseded_title": "Nahrazeno čím"
   },
   "common": {
     "loading": "Načítání...",

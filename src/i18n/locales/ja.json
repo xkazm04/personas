@@ -360,7 +360,22 @@
     "triage_fact_priority": "優先度",
     "triage_priority_rank": "第 {rank} 位",
     "triage_view_run": "実行を見る",
-    "triage_view_run_hint": "このレビューを発生させた実行を開く"
+    "triage_view_run_hint": "このレビューを発生させた実行を開く",
+    "triage_reason_already_done": "すでに対応済み",
+    "triage_reason_already_handled": "すでに処理済み",
+    "triage_reason_aria": "この判断の理由",
+    "triage_reason_by_design": "仕様どおり",
+    "triage_reason_needs_info": "情報が足りない",
+    "triage_reason_not_needed": "不要",
+    "triage_reason_not_worth_it": "労力に見合わない",
+    "triage_reason_out_of_scope": "対象外",
+    "triage_reason_pick": "理由を選ぶ",
+    "triage_reason_placeholder": "自分で入力する…",
+    "triage_reason_skip": "理由なし",
+    "triage_reason_title": "理由は？",
+    "triage_reason_wrong_approach": "方針が違う",
+    "triage_superseded_skip": "後継なし",
+    "triage_superseded_title": "置き換え先"
   },
   "common": {
     "loading": "読み込み中...",

@@ -21,6 +21,7 @@ import {
   type QuestionSession,
   type TriageReviewRow,
 } from '../triageAdapters';
+import { reasonPromptFor } from '../triageTypes';
 import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
 import type { BacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { makeBuildQuestion } from './triageFixtures';
@@ -420,5 +421,66 @@ describe('practiceToTriage — applicability and blast radius', () => {
   it('claims no blast radius at all when the caller could not resolve one', () => {
     const item = practiceToTriage(practice(), 'Platform', null, copy);
     expect(item.facts.some((f) => f.id === 'reach')).toBe(false);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Rejection reasons                                                           */
+/* -------------------------------------------------------------------------- */
+
+describe('reason prompts — who can record why', () => {
+  it('offers reviews a reject prompt with digit presets and free text', () => {
+    const prompt = reasonPromptFor(reviewToTriage(review(), copy), 'reject');
+    expect(prompt).toBeDefined();
+    expect(prompt!.options.length).toBeGreaterThan(0);
+    expect(prompt!.options.length).toBeLessThanOrEqual(9);
+    expect(prompt!.freeText).toBe(true);
+    expect(prompt!.skipLabel).toBe(copy.reasonSkip);
+  });
+
+  it('offers ideas their own preset set — the two loops learn different things', () => {
+    const reviewPrompt = reasonPromptFor(reviewToTriage(review(), copy), 'reject')!;
+    const ideaPrompt = reasonPromptFor(ideaToTriage(idea(), copy), 'reject')!;
+    expect(ideaPrompt.options.map((o) => o.id)).not.toEqual(
+      reviewPrompt.options.map((o) => o.id),
+    );
+  });
+
+  it('writes canonical English values, not the reviewer locale', () => {
+    // Localised copy would render fine and then poison the `constraint` memory
+    // an English-prompted scanner reads back.
+    const localised = { ...copy, reasonOutOfScope: 'Fuera de alcance' };
+    const prompt = reasonPromptFor(ideaToTriage(idea(), localised), 'reject')!;
+    const option = prompt.options.find((o) => o.id === 'out_of_scope')!;
+    expect(option.label).toBe('Fuera de alcance');
+    expect(option.value).toBe('Out of scope');
+  });
+
+  it('asks nothing when REJECTING a practice — there is no column to write to', () => {
+    const item = practiceToTriage(practice(), 'Platform', null, copy, undefined, [
+      { id: 'k-2', title: 'The newer take' },
+    ]);
+    expect(reasonPromptFor(item, 'reject')).toBeUndefined();
+  });
+
+  it('asks what replaces a practice on the deprecate branch', () => {
+    const item = practiceToTriage(practice(), 'Platform', null, copy, undefined, [
+      { id: 'k-2', title: 'The newer take' },
+    ]);
+    const prompt = reasonPromptFor(item, 'deprecate')!;
+    // The write is an id; the label is the human title.
+    expect(prompt.options).toEqual([{ id: 'k-2', label: 'The newer take', value: 'k-2' }]);
+    expect(prompt.freeText).toBe(false);
+  });
+
+  it('offers no successor prompt when there is nothing to succeed it', () => {
+    const item = practiceToTriage(practice(), 'Platform', null, copy);
+    expect(item.reasonPrompts).toBeUndefined();
+    expect(item.branches.map((b) => b.id)).toEqual(['deprecate']);
+  });
+
+  it('never asks a build question for a reason — its reject is a deferral', () => {
+    const item = questionGroupToTriage(session(), copy)!;
+    expect(reasonPromptFor(item, 'reject')).toBeUndefined();
   });
 });

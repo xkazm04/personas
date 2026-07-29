@@ -359,5 +359,20 @@
   "triage_fact_priority": "Prioritas",
   "triage_priority_rank": "ke-{rank}",
   "triage_view_run": "Lihat eksekusi",
-  "triage_view_run_hint": "Buka eksekusi yang memunculkan tinjauan ini"
+  "triage_view_run_hint": "Buka eksekusi yang memunculkan tinjauan ini",
+  "triage_reason_already_done": "Sudah dikerjakan",
+  "triage_reason_already_handled": "Sudah ditangani",
+  "triage_reason_aria": "Alasan keputusan ini",
+  "triage_reason_by_design": "Sudah sesuai rancangan",
+  "triage_reason_needs_info": "Butuh informasi lebih",
+  "triage_reason_not_needed": "Tidak diperlukan",
+  "triage_reason_not_worth_it": "Tidak sebanding dengan usahanya",
+  "triage_reason_out_of_scope": "Di luar cakupan",
+  "triage_reason_pick": "pilih alasan",
+  "triage_reason_placeholder": "Atau tulis sendiri…",
+  "triage_reason_skip": "Tanpa alasan",
+  "triage_reason_title": "Kenapa?",
+  "triage_reason_wrong_approach": "Pendekatannya salah",
+  "triage_superseded_skip": "Tidak ada penggantinya",
+  "triage_superseded_title": "Digantikan oleh"
 }

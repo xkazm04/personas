@@ -359,5 +359,20 @@
   "triage_fact_priority": "الأولوية",
   "triage_priority_rank": "رقم {rank}",
   "triage_view_run": "عرض التشغيل",
-  "triage_view_run_hint": "فتح عملية التنفيذ التي أنتجت هذه المراجعة"
+  "triage_view_run_hint": "فتح عملية التنفيذ التي أنتجت هذه المراجعة",
+  "triage_reason_already_done": "تم تنفيذه بالفعل",
+  "triage_reason_already_handled": "تمت معالجته بالفعل",
+  "triage_reason_aria": "سبب هذا القرار",
+  "triage_reason_by_design": "يعمل كما هو مقصود",
+  "triage_reason_needs_info": "يحتاج معلومات أكثر",
+  "triage_reason_not_needed": "غير مطلوب",
+  "triage_reason_not_worth_it": "لا يستحق الجهد",
+  "triage_reason_out_of_scope": "خارج النطاق",
+  "triage_reason_pick": "اختر سببًا",
+  "triage_reason_placeholder": "أو اكتب سببك…",
+  "triage_reason_skip": "بدون سبب",
+  "triage_reason_title": "لماذا؟",
+  "triage_reason_wrong_approach": "الأسلوب خاطئ",
+  "triage_superseded_skip": "لا يوجد بديل",
+  "triage_superseded_title": "استُبدل بـ"
 }

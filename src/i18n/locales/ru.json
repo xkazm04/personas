@@ -360,7 +360,22 @@
     "triage_fact_priority": "Приоритет",
     "triage_priority_rank": "№ {rank}",
     "triage_view_run": "Открыть запуск",
-    "triage_view_run_hint": "Открыть выполнение, вызвавшее эту проверку"
+    "triage_view_run_hint": "Открыть выполнение, вызвавшее эту проверку",
+    "triage_reason_already_done": "Уже сделано",
+    "triage_reason_already_handled": "Уже разобрались",
+    "triage_reason_aria": "Причина этого решения",
+    "triage_reason_by_design": "Так и задумано",
+    "triage_reason_needs_info": "Не хватает данных",
+    "triage_reason_not_needed": "Не нужно",
+    "triage_reason_not_worth_it": "Не стоит усилий",
+    "triage_reason_out_of_scope": "Вне области работ",
+    "triage_reason_pick": "выбрать причину",
+    "triage_reason_placeholder": "Или впишите свою…",
+    "triage_reason_skip": "Без причины",
+    "triage_reason_title": "Почему?",
+    "triage_reason_wrong_approach": "Неверный подход",
+    "triage_superseded_skip": "Замены нет",
+    "triage_superseded_title": "Заменено на"
   },
   "common": {
     "loading": "Загрузка...",

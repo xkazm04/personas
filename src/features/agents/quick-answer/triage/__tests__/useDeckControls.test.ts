@@ -92,6 +92,184 @@ describe('useDeckControls — a thrown card that never lands', () => {
   });
 });
 
+describe('useDeckControls — rejections that teach', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const REJECT_PROMPT = {
+    on: 'reject',
+    title: 'Why?',
+    options: [
+      { id: 'out_of_scope', label: 'Out of scope', value: 'Out of scope' },
+      { id: 'by_design', label: 'Working as intended', value: 'Working as intended' },
+    ],
+    skipLabel: 'No reason',
+    freeText: true,
+  } as const;
+
+  const withPrompt = (kind: 'idea' | 'review' = 'idea') =>
+    makeItem(kind, { reasonPrompts: [{ ...REJECT_PROMPT, options: [...REJECT_PROMPT.options] }] });
+
+  it('asks before the card flies, then writes the picked reason', () => {
+    const item = withPrompt();
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    const launch = vi.fn();
+    result.current.cardRef.current = { launch };
+
+    act(() => result.current.decideTop('reject'));
+    // Nothing written and nothing thrown yet — the reviewer can still see what
+    // they are rejecting.
+    expect(result.current.capture?.prompt.on).toBe('reject');
+    expect(decide).not.toHaveBeenCalled();
+    expect(launch).not.toHaveBeenCalled();
+
+    act(() => result.current.resolveReason('Out of scope'));
+    expect(launch).toHaveBeenCalledWith('left');
+    act(() => void vi.advanceTimersByTime(1200));
+    expect(decide).toHaveBeenCalledWith({
+      item,
+      verdict: 'reject',
+      branchId: undefined,
+      reason: 'Out of scope',
+    });
+  });
+
+  it('still writes the rejection when the reason is skipped', () => {
+    const item = withPrompt('review');
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('reject'));
+    act(() => result.current.resolveReason());
+    act(() => void vi.advanceTimersByTime(1200));
+
+    expect(decide).toHaveBeenCalledWith({
+      item,
+      verdict: 'reject',
+      branchId: undefined,
+      reason: undefined,
+    });
+  });
+
+  it('treats a whitespace-only reason as no reason rather than writing blanks', () => {
+    const item = withPrompt();
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('reject'));
+    act(() => result.current.resolveReason('   '));
+    act(() => void vi.advanceTimersByTime(1200));
+
+    expect(decide).toHaveBeenCalledWith(
+      expect.objectContaining({ verdict: 'reject', reason: undefined }),
+    );
+  });
+
+  it('asks AFTER a left flick, and does not throw the card a second time', () => {
+    // The gesture is the point of the surface: catching the card mid-air to
+    // interrogate the reviewer would undo the flick they just made.
+    const item = withPrompt();
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    const launch = vi.fn();
+    result.current.cardRef.current = { launch };
+
+    act(() => result.current.commit('left'));
+    expect(result.current.capture?.thrown).toBe(true);
+    expect(decide).not.toHaveBeenCalled();
+
+    act(() => result.current.resolveReason('Working as intended'));
+    expect(launch).not.toHaveBeenCalled();
+    expect(decide).toHaveBeenCalledWith(
+      expect.objectContaining({ verdict: 'reject', reason: 'Working as intended' }),
+    );
+  });
+
+  it('lets a right flick through untouched — only rejections are asked about', () => {
+    const { queue, decide } = makeQueue([withPrompt()]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+
+    act(() => result.current.commit('right'));
+    expect(result.current.capture).toBeNull();
+    expect(decide).toHaveBeenCalledWith(expect.objectContaining({ verdict: 'accept' }));
+  });
+
+  it('rejects outright when the item has no prompt', () => {
+    const item = makeItem('practice');
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('reject'));
+    expect(result.current.capture).toBeNull();
+    act(() => void vi.advanceTimersByTime(1200));
+    expect(decide).toHaveBeenCalledWith({ item, verdict: 'reject' });
+  });
+
+  it('accepts nothing else while a reason is outstanding', () => {
+    const { queue, decide } = makeQueue([withPrompt()]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.decideTop('reject'));
+    act(() => result.current.decideTop('accept'));
+    act(() => result.current.decideTop('skip'));
+    expect(decide).not.toHaveBeenCalled();
+    expect(result.current.capture).not.toBeNull();
+  });
+
+  it('qualifies a BRANCH with a successor instead of a reason', () => {
+    const item = makeItem('practice', {
+      branches: [{ id: 'deprecate', label: 'Deprecate', tone: 'neutral' }],
+      reasonPrompts: [
+        {
+          on: 'deprecate',
+          title: 'Replaced by',
+          options: [{ id: 'k-2', label: 'The newer take', value: 'k-2' }],
+          skipLabel: 'No successor',
+          freeText: false,
+        },
+      ],
+    });
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+    result.current.cardRef.current = { launch: vi.fn() };
+
+    act(() => result.current.fireBranch('deprecate'));
+    expect(result.current.capture?.branchId).toBe('deprecate');
+
+    act(() => result.current.resolveReason('k-2'));
+    act(() => void vi.advanceTimersByTime(1200));
+    expect(decide).toHaveBeenCalledWith({
+      item,
+      verdict: 'accept',
+      branchId: 'deprecate',
+      reason: 'k-2',
+    });
+  });
+
+  it('drops the capture when the card leaves the queue under it', () => {
+    const item = withPrompt();
+    const decide = vi.fn().mockResolvedValue(undefined);
+    const { rerender, result } = renderHook(
+      ({ items }) => useDeckControls(makeQueue(items, decide).queue, vi.fn()),
+      { initialProps: { items: [item] } },
+    );
+
+    act(() => result.current.decideTop('reject'));
+    expect(result.current.capture).not.toBeNull();
+
+    // Another surface resolved it, or a poll dropped it: there is nothing left
+    // to write, so the strip must not sit there forever.
+    rerender({ items: [] });
+    expect(result.current.capture).toBeNull();
+    expect(decide).not.toHaveBeenCalled();
+  });
+});
+
 describe('useDeckControls — following a link is not deciding', () => {
   it('opens the run without throwing the card or writing a verdict', () => {
     const item = makeItem('review', {

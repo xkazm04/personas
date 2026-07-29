@@ -32,6 +32,7 @@ import type {
   TriageTag,
   TriageFact,
   TriageLink,
+  TriageReasonPrompt,
   TriageTone,
   TriageQuestionField,
 } from './triageTypes';
@@ -101,6 +102,24 @@ export interface TriageCopy {
   adoptReach: string;
   /** Reach display. Carries `{applicable}` and `{total}` placeholders. */
   adoptReachValue: string;
+  /* -- rejection reasons ---------------------------------------------------- */
+  /** Heading of the reason strip. */
+  reasonTitle: string;
+  /** The one-keystroke escape. */
+  reasonSkip: string;
+  /** Free-text placeholder. */
+  reasonPlaceholder: string;
+  reasonNotNeeded: string;
+  reasonWrongApproach: string;
+  reasonAlreadyHandled: string;
+  reasonNeedsInfo: string;
+  reasonOutOfScope: string;
+  reasonByDesign: string;
+  reasonNotWorthIt: string;
+  reasonAlreadyDone: string;
+  /** Heading when the prompt is asking what REPLACES a deprecated practice. */
+  supersededTitle: string;
+  supersededSkip: string;
   /** Title for a session card carrying more than one question. Carries a
    *  `{count}` placeholder — the adapter substitutes, so this stays the one
    *  string in the contract that is a template rather than a label. */
@@ -157,6 +176,19 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   appliesToAny: 'Any stack',
   adoptReach: 'Adopt reaches',
   adoptReachValue: '{applicable} of {total} repos',
+  reasonTitle: 'Why?',
+  reasonSkip: 'No reason',
+  reasonPlaceholder: 'Or type your own…',
+  reasonNotNeeded: 'Not needed',
+  reasonWrongApproach: 'Wrong approach',
+  reasonAlreadyHandled: 'Already handled',
+  reasonNeedsInfo: 'Needs more information',
+  reasonOutOfScope: 'Out of scope',
+  reasonByDesign: 'Working as intended',
+  reasonNotWorthIt: 'Not worth the effort',
+  reasonAlreadyDone: 'Already done',
+  supersededTitle: 'Replaced by',
+  supersededSkip: 'No successor',
   questionsPending: '{count} questions before this build can continue',
   questionsFact: 'Questions',
 };
@@ -198,6 +230,52 @@ const QUESTION_WEIGHT = 90;
  * critical incident nobody is waiting on is still a critical incident.
  */
 const BLOCKING_WEIGHT_BOOST = 40;
+
+/* -------------------------------------------------------------------------- */
+/* Rejection reasons — the presets                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The written values are canonical ENGLISH and live in code, not in `en.json`.
+ *
+ * They are data, not copy: a rejected idea's reason becomes a `constraint`
+ * memory the scanners read back, and a rejected practice-materialised idea
+ * writes it into the adoption matrix as `backlog rejected: <reason>`. Both are
+ * consumed by English-prompted models and by future sessions, so the persisted
+ * string must not drift with the reviewer's locale — the same split the app
+ * already makes for backend status tokens. The reviewer sees `copy.*`.
+ *
+ * Two sets, because the two loops learn different things: a rejected REVIEW is
+ * feedback to a persona about a judgement it asked for, while a rejected IDEA is
+ * a standing constraint that stops a scanner re-raising the same finding.
+ */
+const REVIEW_REJECT_PRESETS = [
+  { id: 'not_needed', value: 'Not needed', copy: (c: TriageCopy) => c.reasonNotNeeded },
+  { id: 'wrong_approach', value: 'Wrong approach', copy: (c: TriageCopy) => c.reasonWrongApproach },
+  { id: 'already_handled', value: 'Already handled', copy: (c: TriageCopy) => c.reasonAlreadyHandled },
+  { id: 'needs_info', value: 'Needs more information', copy: (c: TriageCopy) => c.reasonNeedsInfo },
+] as const;
+
+const IDEA_REJECT_PRESETS = [
+  { id: 'out_of_scope', value: 'Out of scope', copy: (c: TriageCopy) => c.reasonOutOfScope },
+  { id: 'by_design', value: 'Working as intended', copy: (c: TriageCopy) => c.reasonByDesign },
+  { id: 'not_worth_it', value: 'Not worth the effort', copy: (c: TriageCopy) => c.reasonNotWorthIt },
+  { id: 'already_done', value: 'Already done', copy: (c: TriageCopy) => c.reasonAlreadyDone },
+] as const;
+
+type PresetSet = typeof REVIEW_REJECT_PRESETS | typeof IDEA_REJECT_PRESETS;
+
+/** A reject prompt over one preset set. Free text is always also accepted. */
+function rejectPrompt(presets: PresetSet, copy: TriageCopy): TriageReasonPrompt {
+  return {
+    on: 'reject',
+    title: copy.reasonTitle,
+    options: presets.map((p) => ({ id: p.id, label: p.copy(copy), value: p.value })),
+    skipLabel: copy.reasonSkip,
+    freeText: true,
+    placeholder: copy.reasonPlaceholder,
+  };
+}
 
 /* -------------------------------------------------------------------------- */
 /* Reviews                                                                     */
@@ -307,6 +385,9 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
       hint: copy.carryOutHint,
       icon: i === 0 ? Play : undefined,
     })),
+    // A rejected review writes `reviewer_notes` — the column has always been
+    // there and the write path has always forwarded it; nothing ever asked.
+    reasonPrompts: [rejectPrompt(REVIEW_REJECT_PRESETS, copy)],
     verdictLabels: { accept: copy.approve, reject: copy.reject, skip: copy.skip },
     // Machine ids the deck's links and any future follow-up need. Never read
     // back out of a fact row — see `TriageItem.payload`.
@@ -394,6 +475,10 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
     branches: [
       { id: 'build', label: copy.buildNow, tone: 'success', hint: copy.buildNowHint, icon: Hammer },
     ],
+    // The highest-leverage reason in the app: the backend turns a rejected
+    // idea's reason into a `constraint` memory, so a scan that would otherwise
+    // re-raise this finding next week stops raising it at all.
+    reasonPrompts: [rejectPrompt(IDEA_REJECT_PRESETS, copy)],
     verdictLabels: { accept: copy.accept, reject: copy.reject, skip: copy.skip },
     payload: { projectId: idea.projectId },
   };
@@ -415,6 +500,12 @@ export function practiceToTriage(
    * rather than one that claims the wrong one.
    */
   reach?: AdoptReach,
+  /**
+   * Practices this one could be deprecated IN FAVOUR OF — `decide_knowledge`
+   * takes a `superseded_by` id, and nothing has ever supplied one. Empty means
+   * the deprecate branch stays a plain deprecate.
+   */
+  successors: readonly { id: string; title: string }[] = [],
 ): TriageItem {
   const tags: TriageTag[] = [
     { id: 'kind', label: practice.kind, tone: practice.kind === 'pitfall' ? 'warning' : 'accent' },
@@ -491,8 +582,23 @@ export function practiceToTriage(
     branches: [
       { id: 'deprecate', label: copy.deprecate, tone: 'neutral', hint: copy.deprecateHint, icon: Archive },
     ],
-    // No payload: `decideWorkspaceKnowledge` needs only the practice id, which
-    // is already `sourceId`.
+    // Practices have NO reject-reason column, so rejecting one asks nothing —
+    // a prompt whose answer is thrown away is worse than no prompt. Deprecating
+    // one, on the other hand, has always been able to record a successor.
+    reasonPrompts:
+      successors.length > 0
+        ? [
+            {
+              on: 'deprecate',
+              title: copy.supersededTitle,
+              // The write is an id, not prose, so `value` is the successor's id
+              // while the label is its human title.
+              options: successors.map((s) => ({ id: s.id, label: s.title, value: s.id })),
+              skipLabel: copy.supersededSkip,
+              freeText: false,
+            },
+          ]
+        : undefined,
     verdictLabels: { accept: copy.adopt, reject: copy.reject, skip: copy.skip },
   };
 }

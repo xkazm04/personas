@@ -31,6 +31,7 @@ import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { DeckCleared, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
+import { ReasonStrip } from './deck/ReasonStrip';
 import { TriageCard } from './deck/TriageCard';
 import { useDeckControls } from './deck/useDeckControls';
 import { TRIAGE_KINDS } from './triageTypes';
@@ -64,6 +65,10 @@ export function TriageDeckVariant({
     submitAnswers,
     fireBranch,
     followLink,
+    capture,
+    reasonDraft,
+    setReasonDraft,
+    resolveReason,
     canAccept,
   } = useDeckControls(queue, onClose);
 
@@ -100,10 +105,13 @@ export function TriageDeckVariant({
           />
         ) : (
           <>
+            {/* Both flanks go inert while a reason is being asked for: the
+                verdict is already committed and a second one has nowhere to go. */}
             <DeckFlank
               tone="danger"
               icon={ThumbsDown}
               label={top.verdictLabels.reject}
+              disabled={!!capture}
               onClick={() => decideTop('reject')}
             />
 
@@ -138,14 +146,24 @@ export function TriageDeckVariant({
               tone="success"
               icon={ThumbsUp}
               label={top.verdictLabels.accept}
-              disabled={!canAccept}
+              disabled={!canAccept || !!capture}
               onClick={() => decideTop('accept')}
             />
           </>
         )}
       </div>
 
-      {top ? (
+      {/* The reason strip TAKES OVER the action bar rather than layering over
+          it: the verdict is already committed, so leaving the verdict controls
+          live would invite a second one. */}
+      {capture ? (
+        <ReasonStrip
+          prompt={capture.prompt}
+          draft={reasonDraft}
+          onDraft={setReasonDraft}
+          onResolve={resolveReason}
+        />
+      ) : top ? (
         <DeckActionBar
           item={top}
           canAccept={canAccept}

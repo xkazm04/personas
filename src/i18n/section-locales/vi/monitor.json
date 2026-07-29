@@ -359,5 +359,20 @@
   "triage_fact_priority": "Ưu tiên",
   "triage_priority_rank": "hạng {rank}",
   "triage_view_run": "Xem lần chạy",
-  "triage_view_run_hint": "Mở lần thực thi đã tạo ra bản đánh giá này"
+  "triage_view_run_hint": "Mở lần thực thi đã tạo ra bản đánh giá này",
+  "triage_reason_already_done": "Đã làm rồi",
+  "triage_reason_already_handled": "Đã xử lý rồi",
+  "triage_reason_aria": "Lý do của quyết định này",
+  "triage_reason_by_design": "Đúng như thiết kế",
+  "triage_reason_needs_info": "Thiếu thông tin",
+  "triage_reason_not_needed": "Không cần thiết",
+  "triage_reason_not_worth_it": "Không đáng công sức",
+  "triage_reason_out_of_scope": "Ngoài phạm vi",
+  "triage_reason_pick": "chọn lý do",
+  "triage_reason_placeholder": "Hoặc tự nhập…",
+  "triage_reason_skip": "Không có lý do",
+  "triage_reason_title": "Vì sao?",
+  "triage_reason_wrong_approach": "Cách làm chưa đúng",
+  "triage_superseded_skip": "Không có mục thay thế",
+  "triage_superseded_title": "Được thay bởi"
 }

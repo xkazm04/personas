@@ -38,6 +38,7 @@ import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
+import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 import { usePendingInteractions } from '../usePendingInteractions';
 import {
@@ -64,6 +65,33 @@ const PENDING_PRACTICE_STATUSES = new Set(['observed', 'proposed']);
 /** One page of pending ideas is plenty for a triage session; the queue is a
  *  working set, not an archive. */
 const IDEA_PAGE_SIZE = 60;
+
+/** More successor options than this and the reason strip stops being one glance
+ *  and one keypress. Digits only go to 9 anyway. */
+const MAX_SUCCESSORS = 5;
+
+/**
+ * Candidate replacements for a practice being deprecated.
+ *
+ * Same workspace, same topic, not itself — the realistic shape of "we deprecate
+ * the old take because THIS is the one we're adopting", which is exactly the
+ * moment a harvest review produces two rulings on the same topic in a row.
+ *
+ * Scoped to the pending set the deck already holds rather than fetching the
+ * adopted library: a second query per card to populate an optional field on an
+ * optional branch is not a trade this surface should make, and offering the
+ * sibling you are about to adopt is the case that actually comes up.
+ */
+function successorsFor(
+  row: WorkspaceKnowledge,
+  siblings: readonly WorkspaceKnowledge[],
+): { id: string; title: string }[] {
+  if (!row.topic) return [];
+  return siblings
+    .filter((s) => s.id !== row.id && s.topic === row.topic)
+    .slice(0, MAX_SUCCESSORS)
+    .map((s) => ({ id: s.id, title: s.title }));
+}
 
 export interface UnifiedTriageQueue {
   /** Undecided first, skipped last, both in weight order. */
@@ -182,8 +210,8 @@ export function useUnifiedTriage(
       // blast radius is a property of the workspace's membership, not of the
       // practice row. Resolved once per workspace rather than per practice.
       const stacks = workspace.projectIds.map((id) => center.projectById.get(id)?.tech_stack ?? null);
-      for (const row of rows) {
-        if (!PENDING_PRACTICE_STATUSES.has(row.status)) continue;
+      const pending = rows.filter((row) => PENDING_PRACTICE_STATUSES.has(row.status));
+      for (const row of pending) {
         out.push(
           practiceToTriage(
             viewFromRow(row),
@@ -191,6 +219,7 @@ export function useUnifiedTriage(
             row.detail_md,
             copy,
             adoptReach(row.applicability, stacks),
+            successorsFor(row, pending),
           ),
         );
       }
@@ -241,7 +270,8 @@ export function useUnifiedTriage(
         devApi.createTask(title, projectId, body, ideaId),
       acceptIdea: (id) => devApi.acceptIdea(id),
       rejectIdea: (id, reason) => devApi.rejectIdea(id, reason),
-      decideKnowledge: (id, verdict) => decideWorkspaceKnowledge(id, verdict),
+      decideKnowledge: (id, verdict, supersededBy) =>
+        decideWorkspaceKnowledge(id, verdict, supersededBy),
       refreshKnowledge: () => center.refreshKnowledge(),
       submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
       openBuilder: onOpenBuilder,

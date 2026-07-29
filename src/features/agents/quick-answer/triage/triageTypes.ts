@@ -127,6 +127,55 @@ export interface TriageLink {
 }
 
 /**
+ * One digit-picked answer to "why?".
+ *
+ * `label` and `value` are deliberately different things. The label is
+ * pre-translated for the reviewer; the value is what gets WRITTEN, and it stays
+ * canonical English on purpose — a rejected idea's reason becomes a `constraint`
+ * memory the backend feeds back to the scanners, and adoption cells carry it as
+ * "backlog rejected: …". Persisting a locale-shaped sentence into a store that
+ * an English-prompted model reads back is how a Korean reviewer's "범위 밖"
+ * silently stops teaching anything.
+ */
+export interface TriageReasonOption {
+  id: string;
+  /** Pre-translated, shown on the digit key. */
+  label: string;
+  /** What is written. Machine-durable, never localised. */
+  value: string;
+}
+
+/**
+ * What an item can record about WHY, and for which act.
+ *
+ * Every rejection in this app already had a column waiting for it
+ * (`DevIdea.rejection_reason`, `PersonaManualReview.reviewer_notes`) and a whole
+ * loop behind it — the backend turns a rejected idea's reason into a
+ * `constraint` memory so future scans stop re-raising it. Nothing ever wrote
+ * one, because no UI ever asked.
+ *
+ * `on` names the act being qualified: `'reject'`, or a branch id (the practice
+ * `deprecate` branch qualifies with a SUCCESSOR rather than a reason, which is
+ * why this is a prompt shape rather than a fixed reject-reason list).
+ *
+ * The contract the deck upholds: a prompt must be answerable with ONE keystroke
+ * and skippable with ONE keystroke. A triage surface that makes you justify
+ * yourself is a triage surface where everything gets approved instead.
+ */
+export interface TriageReasonPrompt {
+  on: string;
+  /** Heading, pre-translated. */
+  title: string;
+  /** Digit-picked options, in order — mapped to `1..9`. */
+  options: TriageReasonOption[];
+  /** Label of the one-keystroke escape. */
+  skipLabel: string;
+  /** Whether free text is accepted alongside the presets. */
+  freeText: boolean;
+  placeholder?: string;
+}
+
+/**
  * One thing a card asks for. Several of these can sit on one card.
  *
  * `deferred` marks a field that genuinely can't be answered inline — a
@@ -194,6 +243,11 @@ export interface TriageItem {
    */
   weight: number;
   branches: TriageBranch[];
+  /**
+   * What this item can record about WHY, per act. At most one prompt per act;
+   * an act with no prompt is decided outright, exactly as before.
+   */
+  reasonPrompts?: TriageReasonPrompt[];
   input?: TriageInput;
   /**
    * What the three spine verdicts are CALLED for this item — "Adopt" reads
@@ -221,6 +275,20 @@ export interface TriageDecision {
   answers?: Record<string, string>;
   /** Optional free-text reason captured with a rejection. */
   reason?: string;
+}
+
+/**
+ * The prompt qualifying one act on one item, if it has one.
+ *
+ * `act` is `'reject'` or a branch id — the same vocabulary the dispatcher routes
+ * on, so the deck asks the model rather than re-deriving which kinds can record
+ * a reason.
+ */
+export function reasonPromptFor(
+  item: TriageItem,
+  act: string,
+): TriageReasonPrompt | undefined {
+  return item.reasonPrompts?.find((p) => p.on === act);
 }
 
 /** Per-kind queue tallies, for filter chips and progress. */
