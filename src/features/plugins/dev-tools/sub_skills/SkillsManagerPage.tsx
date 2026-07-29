@@ -29,6 +29,7 @@ import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
 import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
+import { RegistryTab } from './registry/RegistryTab';
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
@@ -95,7 +96,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const projects = useSystemStore((s) => s.projects);
   const data = useSkillsManagerData(activeId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
-  const [pageTab, setPageTab] = useState<'overview' | 'analytics'>('overview');
+  const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry'>('overview');
 
   const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
 
@@ -184,9 +185,10 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           tabs={[
             { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
             { id: 'analytics', label: t.plugins.dev_tools.skills_tab_analytics },
+            { id: 'registry', label: 'Registry' },
           ]}
           activeTab={pageTab}
-          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics')}
+          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics' | 'registry')}
           variant="segment"
           size="sm"
           fullWidth={false}
@@ -195,7 +197,9 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
       </DevToolsPageHeader>
 
       <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
-        {pageTab === 'analytics' && activeId ? (
+        {pageTab === 'registry' ? (
+          <RegistryTab activeProjectId={activeId} />
+        ) : pageTab === 'analytics' && activeId ? (
           <SkillsAnalyticsTab
             projectId={activeId}
             proj={proj}

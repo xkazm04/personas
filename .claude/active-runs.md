@@ -2,6 +2,10 @@
 
 ## Active
 
+### prototype-skills-registry — /prototype: new Registry tab (skills × projects coverage matrix) — session opus-4-8[1m]
+- Started: 2026-07-29. Status: started. New third page tab in the Skills module (next to Overview/Analytics): workspace skills in the left column × one-column-per-project coverage matrix. Adopted cell = coverage bar + usage + use icon; unadopted = adopt icon; parallel adoption; block-if-running. 3 directional variants behind a throwaway switcher (Heatmap grid / Coverage rail / Instrument matrix). MAIN CHECKOUT (app on master via tauri:dev:test HMR A/B — same pattern as prototype-use-skill-dialog). No worktree.
+- Paths: src/features/plugins/dev-tools/sub_skills/{SkillsManagerPage.tsx (add tab), registry/** (new: RegistryTab host+switcher, useSkillsRegistry hook, registryTypes, SkillsRegistryVariant{Heatmap,Rail,Matrix}.tsx)}, src/i18n/locales/*.json (skills_registry_* keys), .claude/active-runs.md. No overlap with active entries (agents/sub_factory/healing).
+
 ### persona-overview-table-pass — All-Personas roster UI pass — session opus-5[1m]
 - Started: 2026-07-29. Status: **work complete, UNCOMMITTED in the working tree** (awaiting operator review — the renamed column label in particular).
 - Paths: `src/features/agents/components/allPersonas/{PersonaOverviewPage,PersonaOverviewColumns,PersonaOverviewFilterHeader,PersonaOverviewCells}.tsx`, `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (DELETED), `src/features/shared/components/display/DataGrid.tsx`, `src/i18n/locales/*.json` (+`agents.overview_columns.quality`, −6 Constellation-only keys) + regenerated `generated/` and `section-locales/`, `context-map.json`, `docs/features/personas/README.md`, `CHANGELOG.md`.
