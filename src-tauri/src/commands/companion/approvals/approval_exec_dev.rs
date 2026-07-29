@@ -594,6 +594,7 @@ pub(crate) fn execute_enqueue_dev_job(
         &project,
         &project.root_path,
         delta,
+        None,
     )?;
     Ok(ExecuteResult::message(format!(
         "Context scan started for `{}` (`{}`){}. Claude is mapping its structure — business-domain \

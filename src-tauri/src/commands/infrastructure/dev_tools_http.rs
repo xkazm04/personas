@@ -10,7 +10,7 @@
 //! Endpoints (mounted under `/dev-tools`):
 //!   GET  /projects                          → list dev projects (find the project_id)
 //!   POST /projects                          → register a project { name, root_path, tech_stack? }
-//!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode? } → { scan_id }
+//!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode?, subtree? } → { scan_id }
 //!   GET  /scan-status/{scan_id}             → { status, error, lines }
 //!   POST /scan-kpis                         → start a KPI scan { project_id, context_id? } → { scan_id }
 //!   GET  /kpi-scan-status/{scan_id}         → { status, error, lines }
@@ -133,6 +133,12 @@ struct ScanBody {
     root_path: Option<String>,
     #[serde(default)]
     delta_mode: Option<bool>,
+    /// Scope the scan to ONE directory (repo-relative, e.g. `src/features/agents`).
+    /// Subtree scans run CONCURRENTLY with each other and each emits only its own
+    /// contexts — the mode that makes a large codebase mappable, since one session
+    /// cannot emit a whole map and stops early without saying so.
+    #[serde(default)]
+    subtree: Option<String>,
 }
 
 async fn scan_codebase(
@@ -142,7 +148,7 @@ async fn scan_codebase(
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let root = b.root_path.as_deref().unwrap_or("");
-    let res = launch_context_scan(s.app.clone(), &pool, &project, root, b.delta_mode.unwrap_or(false)).map_err(err)?;
+    let res = launch_context_scan(s.app.clone(), &pool, &project, root, b.delta_mode.unwrap_or(false), b.subtree.as_deref()).map_err(err)?;
     Ok(Json(res))
 }
 

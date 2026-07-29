@@ -294,6 +294,7 @@ fn run_context_scan(
         &project,
         &project.root_path,
         delta,
+        None,
     )?;
     let scan_id = res
         .get("scan_id")
