@@ -71,6 +71,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/dedupe-contexts", post(dedupe_contexts))
         .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
+        .route("/merge-context-groups", post(merge_context_groups))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -275,6 +276,83 @@ async fn list_contexts(
     repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct MergeGroupsBody {
+    project_id: String,
+    /// Explicit `from -> into` group-name pairs. Deliberately NOT inferred:
+    /// the overlaps this repairs are semantic ("Execution & Quality Data" into
+    /// "Execution Engine"), and no string rule distinguishes those from two
+    /// groups that genuinely differ. A human picks; this just applies it.
+    merges: Vec<GroupMerge>,
+    /// Also delete groups left holding no contexts after the merges.
+    #[serde(default)]
+    delete_empty: bool,
+}
+
+#[derive(Deserialize)]
+struct GroupMerge {
+    from: String,
+    into: String,
+}
+
+/// Reassign every context from one group to another, then delete the emptied
+/// source group. Unknown names are reported rather than silently ignored, so a
+/// typo in a merge plan cannot look like a successful no-op.
+async fn merge_context_groups(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<MergeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
+    let by_name: std::collections::HashMap<&str, &str> =
+        groups.iter().map(|g| (g.name.as_str(), g.id.as_str())).collect();
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let (mut moved, mut deleted) = (0usize, 0usize);
+    let mut unknown: Vec<String> = Vec::new();
+
+    for m in &b.merges {
+        let (Some(from_id), Some(into_id)) =
+            (by_name.get(m.from.as_str()), by_name.get(m.into.as_str()))
+        else {
+            unknown.push(format!("{} -> {}", m.from, m.into));
+            continue;
+        };
+        if from_id == into_id {
+            continue;
+        }
+        for c in contexts.iter().filter(|c| c.group_id.as_deref() == Some(*from_id)) {
+            if repo::move_context_to_group(&pool, &c.id, Some(into_id)).is_ok() {
+                moved += 1;
+            }
+        }
+        if repo::delete_context_group(&pool, from_id).unwrap_or(false) {
+            deleted += 1;
+        }
+    }
+
+    if b.delete_empty {
+        let after = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+        let occupied: std::collections::HashSet<&str> =
+            after.iter().filter_map(|c| c.group_id.as_deref()).collect();
+        for g in repo::list_context_groups(&pool, &b.project_id).map_err(err)? {
+            if !occupied.contains(g.id.as_str())
+                && repo::delete_context_group(&pool, &g.id).unwrap_or(false)
+            {
+                deleted += 1;
+            }
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_moved": moved,
+        "groups_deleted": deleted,
+        "unknown_pairs": unknown,
+    })))
 }
 
 /// Strip generated / non-source paths from existing contexts, deleting any
