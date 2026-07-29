@@ -7,6 +7,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevMilestone } from "@/lib/bindings/DevMilestone";
 import type { DevMilestoneItem } from "@/lib/bindings/DevMilestoneItem";
+import type { DevProjectWallSummary } from "@/lib/bindings/DevProjectWallSummary";
 
 export type MilestoneStatus = "planned" | "active" | "shipped";
 export type MilestoneBucket = "core" | "later" | "never";
@@ -71,4 +72,19 @@ export async function removeMilestoneItem(
   itemId: string,
 ): Promise<void> {
   return invoke<void>("dev_tools_remove_milestone_item", { milestoneId, itemKind, itemId });
+}
+
+/**
+ * ONE call for the whole L1 passport wall — contexts count, active KPI rows and
+ * full milestone rows per project. Replaces the three per-project fan-outs
+ * (`listContexts` + `listKpis` + `listMilestones`) the wall used to fire, so
+ * drawing N covers costs 1 IPC round trip instead of 3N.
+ *
+ * Returns one entry per requested id, in request order; unknown ids come back
+ * zeroed rather than erroring, so one deregistered project can't blank the wall.
+ */
+export async function projectWallSummary(
+  projectIds: string[],
+): Promise<DevProjectWallSummary[]> {
+  return invoke<DevProjectWallSummary[]>("dev_tools_project_wall_summary", { projectIds });
 }

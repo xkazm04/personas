@@ -6,7 +6,7 @@ use crate::models::{
     AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
     DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiBinding, DevKpiMeasurement, DevIdea,
     DevMilestone, DevMilestoneItem,
-    DevProject, DevScan, DevStandard, DevTask, DevUseCase, GoalProgressSuggestion, PortfolioProjectSummary,
+    DevProject, DevProjectWallSummary, DevScan, DevStandard, DevTask, DevUseCase, GoalProgressSuggestion, PortfolioProjectSummary,
     PortfolioSummary, TriageRule,
 };
 use crate::query_builder::QueryBuilder;
@@ -6814,6 +6814,107 @@ pub fn update_milestone(
     })
 }
 
+/// ONE grouped read for the WHOLE L1 passport wall.
+///
+/// The wall used to fan three per-project calls out (`list_contexts_by_project`
+/// + `list_kpis` + `list_milestones_by_project`), so drawing N covers cost 3N
+/// IPC round trips and 3N queries. This is one query per table with a single
+/// `WHERE project_id IN (…)`, then a client-side regroup — 1 IPC call and 3
+/// queries regardless of N.
+///
+/// Projects with no contexts / no active KPIs / no milestones still get a row
+/// (zeroed / empty), and rows come back in the caller's `project_ids` order so
+/// the wall never has to reconcile ordering. Unknown ids yield an empty row
+/// rather than an error — the wall must not fail because one project was
+/// deregistered mid-session.
+pub fn project_wall_summaries(
+    pool: &DbPool,
+    project_ids: &[String],
+) -> Result<Vec<DevProjectWallSummary>, AppError> {
+    if project_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    // SQLite's default SQLITE_MAX_VARIABLE_NUMBER is 32766; a wall of that many
+    // projects is not a real shape, but refuse rather than emit invalid SQL.
+    if project_ids.len() > 5_000 {
+        return Err(AppError::Validation(
+            "Too many projects in one wall-summary request (max 5000)".into(),
+        ));
+    }
+
+    timed_query!("dev_projects", "dev_projects::wall_summaries", {
+        let conn = pool.get()?;
+        let placeholders = vec!["?"; project_ids.len()].join(",");
+        let binds: Vec<&dyn rusqlite::ToSql> = project_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::ToSql)
+            .collect();
+
+        let mut contexts_count: HashMap<String, i32> = HashMap::new();
+        {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT project_id, COUNT(*) FROM dev_contexts
+                 WHERE project_id IN ({placeholders}) GROUP BY project_id",
+            ))?;
+            let rows = stmt.query_map(binds.as_slice(), |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i32>(1)?))
+            })?;
+            for row in rows {
+                let (project_id, count) = row.map_err(AppError::Database)?;
+                contexts_count.insert(project_id, count);
+            }
+        }
+
+        let mut active_kpis: HashMap<String, Vec<DevKpi>> = HashMap::new();
+        {
+            // Same ordering as `list_kpis` for the active slice (created_at
+            // DESC) so a cover's KPI set is identical to the detail view's.
+            let mut stmt = conn.prepare(&format!(
+                "SELECT * FROM dev_kpis
+                 WHERE project_id IN ({placeholders}) AND status = 'active'
+                 ORDER BY created_at DESC",
+            ))?;
+            let rows = stmt.query_map(binds.as_slice(), row_to_kpi)?;
+            for row in rows {
+                let kpi = row.map_err(AppError::Database)?;
+                active_kpis
+                    .entry(kpi.project_id.clone())
+                    .or_default()
+                    .push(kpi);
+            }
+        }
+
+        let mut milestones: HashMap<String, Vec<DevMilestone>> = HashMap::new();
+        {
+            // Mirrors `list_milestones_by_project`'s ORDER BY exactly — the
+            // roadmap strip is positional, so a different order is a different
+            // picture.
+            let mut stmt = conn.prepare(&format!(
+                "SELECT * FROM dev_milestones
+                 WHERE project_id IN ({placeholders})
+                 ORDER BY order_index, created_at",
+            ))?;
+            let rows = stmt.query_map(binds.as_slice(), row_to_milestone)?;
+            for row in rows {
+                let m = row.map_err(AppError::Database)?;
+                milestones.entry(m.project_id.clone()).or_default().push(m);
+            }
+        }
+
+        Ok(project_ids
+            .iter()
+            .map(|project_id| DevProjectWallSummary {
+                project_id: project_id.clone(),
+                contexts_count: contexts_count.get(project_id).copied().unwrap_or(0),
+                // `cloned`, not `remove`: a duplicated id in the request must
+                // still answer both slots rather than silently emptying one.
+                active_kpis: active_kpis.get(project_id).cloned().unwrap_or_default(),
+                milestones: milestones.get(project_id).cloned().unwrap_or_default(),
+            })
+            .collect())
+    })
+}
+
 pub fn delete_milestone(pool: &DbPool, id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     let affected = conn.execute("DELETE FROM dev_milestones WHERE id = ?1", params![id])?;
@@ -6951,6 +7052,70 @@ mod milestone_tests {
         let m = create_milestone(&pool, &project.id, "M", None, None, None).unwrap();
         assert!(set_milestone_item(&pool, &m.id, "context", "c-1", "core").is_err(), "contexts are never members");
         assert!(set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday").is_err());
+    }
+
+    /// The batched wall read must answer EVERY requested project — including
+    /// ones with nothing to report and ids that no longer exist — in the
+    /// caller's order, and must return full milestone rows (the roadmap
+    /// builder consumes `DevMilestone[]`, not a projection).
+    #[test]
+    fn wall_summaries_answer_every_requested_project_in_order() {
+        let pool = crate::init_test_db().unwrap();
+        let a = create_project(&pool, "A", "/tmp/wa", None, None, None, None, None).unwrap();
+        let b = create_project(&pool, "B", "/tmp/wb", None, None, None, None, None).unwrap();
+
+        create_context(
+            &pool, &a.id, "ctx-1", None, None, Some(r#"["a.ts"]"#), None, None, None, None, None,
+            None, None, None,
+        )
+        .unwrap();
+        create_context(
+            &pool, &a.id, "ctx-2", None, None, Some(r#"["b.ts"]"#), None, None, None, None, None,
+            None, None, None,
+        )
+        .unwrap();
+        create_milestone(&pool, &a.id, "v1", None, Some("active"), None).unwrap();
+        create_milestone(&pool, &a.id, "v2", None, None, None).unwrap();
+
+        let mk_kpi = |name: &str, status: &str| {
+            create_kpi(
+                &pool, &a.id, name, None, None, "quality", "manual", "{}", "%", "up", Some(0.0),
+                Some(100.0), None, "weekly", Some(status), "user", None, None, None, None, None,
+            )
+            .unwrap()
+        };
+        mk_kpi("live", "active");
+        mk_kpi("shelved", "paused");
+
+        // b has nothing; "ghost" was never registered at all.
+        let rows = project_wall_summaries(
+            &pool,
+            &[b.id.clone(), a.id.clone(), "ghost".to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 3, "every requested id gets a row");
+        assert_eq!(rows[0].project_id, b.id, "order mirrors the request");
+        assert_eq!(rows[0].contexts_count, 0);
+        assert!(rows[0].milestones.is_empty());
+
+        assert_eq!(rows[1].project_id, a.id);
+        assert_eq!(rows[1].contexts_count, 2);
+        assert_eq!(rows[1].milestones.len(), 2);
+        assert_eq!(rows[1].active_kpis.len(), 1, "only ACTIVE KPIs count");
+        assert_eq!(rows[1].active_kpis[0].name, "live");
+        // Full rows, ordered exactly like list_milestones_by_project.
+        let listed = list_milestones_by_project(&pool, &a.id).unwrap();
+        assert_eq!(
+            rows[1].milestones.iter().map(|m| &m.id).collect::<Vec<_>>(),
+            listed.iter().map(|m| &m.id).collect::<Vec<_>>(),
+        );
+        assert!(rows[1].milestones[0].cut_at.is_some(), "cut_at survives the batch read");
+
+        assert_eq!(rows[2].project_id, "ghost", "an unknown id is empty, not an error");
+        assert_eq!(rows[2].contexts_count, 0);
+
+        assert!(project_wall_summaries(&pool, &[]).unwrap().is_empty());
     }
 
     /// A milestone created directly 'active' — the shape `seedOnboarding.ts`

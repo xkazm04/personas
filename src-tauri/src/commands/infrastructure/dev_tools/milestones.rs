@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{DevMilestone, DevMilestoneItem};
+use crate::db::models::{DevMilestone, DevMilestoneItem, DevProjectWallSummary};
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -101,4 +101,18 @@ pub fn dev_tools_remove_milestone_item(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::remove_milestone_item(&state.db, &milestone_id, &item_kind, &item_id)
+}
+
+/// ONE call that answers the whole L1 passport wall (statband volume stats +
+/// the minimized roadmap strip), replacing the three per-project fan-outs
+/// (`dev_tools_list_contexts` + `dev_tools_list_kpis` +
+/// `dev_tools_list_milestones`) the wall used to fire on every mount. 3N IPC
+/// round trips → 1.
+#[tauri::command]
+pub fn dev_tools_project_wall_summary(
+    state: State<'_, Arc<AppState>>,
+    project_ids: Vec<String>,
+) -> Result<Vec<DevProjectWallSummary>, AppError> {
+    require_auth_sync(&state)?;
+    repo::project_wall_summaries(&state.db, &project_ids)
 }

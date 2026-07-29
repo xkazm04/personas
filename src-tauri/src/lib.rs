@@ -3081,6 +3081,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_milestone_items,
             commands::infrastructure::dev_tools::dev_tools_set_milestone_item,
             commands::infrastructure::dev_tools::dev_tools_remove_milestone_item,
+            // Dev Tools -- L1 passport wall (one batched read for N covers)
+            commands::infrastructure::dev_tools::dev_tools_project_wall_summary,
             // Dev Tools -- use cases (behavioral slice layer under contexts)
             commands::infrastructure::dev_tools::dev_tools_list_use_cases,
             commands::infrastructure::dev_tools::dev_tools_get_use_case,

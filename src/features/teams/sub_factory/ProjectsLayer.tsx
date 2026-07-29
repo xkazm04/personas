@@ -8,9 +8,8 @@
 // Cards and the Heat-grid prototype were consolidated out (2026-06-21).
 import { useEffect, useMemo, useState } from 'react';
 
-import { listContexts, getProjectFavicon } from '@/api/devTools/devTools';
-import { listKpis } from '@/api/devTools/kpis';
-import { listMilestones } from '@/api/devTools/milestones';
+import { getProjectFavicon } from '@/api/devTools/devTools';
+import { projectWallSummary } from '@/api/devTools/milestones';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -45,45 +44,39 @@ export function ProjectsLayer({
   // upgrades. Extracted to useImproveEngine (shared with the Mastermind canvas).
   const improve = useImproveEngine(rawByProject, reload);
 
-  // R18 — the Statband cover's volume stats: contexts count + KPI pass rate per
-  // project. Fetched once per passport set (2 light IPC calls per project);
-  // covers render dim placeholders until it lands.
+  // R18 — the Statband cover's volume stats (contexts count + KPI pass rate)
+  // and the cover's minimized roadmap strip. Both come from ONE batched read:
+  // `dev_tools_project_wall_summary` answers the whole wall in a single IPC
+  // call backed by three grouped `WHERE project_id IN (…)` queries. This used
+  // to be three per-project fan-outs (listContexts + listKpis +
+  // listMilestones) through a concurrency pool — 3N round trips, i.e. 90 for a
+  // 30-project wall. Covers render dim placeholders until it lands.
   const [headerStats, setHeaderStats] = useState<Map<string, { contexts: number; kpiPassed: number; kpiTotal: number }>>(new Map());
+  const [roadmapBySlug, setRoadmapBySlug] = useState<Map<string, CoverRoadmapVM>>(new Map());
   // Keyed on the SLUG SET, not the passports array identity — usePassportData
   // publishes multiple phases per load (0/1/2), and keying on identity re-ran
-  // this N×2-IPC fan-out once per phase. Bounded concurrency for 30+ projects.
+  // the whole fetch once per phase.
   const slugsKey = useMemo(() => passports.map((p) => p.identity.slug).sort().join('|'), [passports]);
   useEffect(() => {
     if (slugsKey === '') return;
     const slugs = slugsKey.split('|');
     let alive = true;
-    void mapWithConcurrency(slugs, 5, async (slug) => {
-      const [ctxs, kpis] = await Promise.all([listContexts(slug), listKpis(slug)]);
-      const active = kpis.filter((k) => k.status === 'active');
-      const passed = active.filter((k) => kpiTrack(k) === 'met').length;
-      return [slug, { contexts: ctxs.length, kpiPassed: passed, kpiTotal: active.length }] as const;
-    })
-      .then((entries) => { if (alive) setHeaderStats(new Map(entries)); })
-      .catch(silentCatch('ProjectsLayer:headerStats'));
-    return () => { alive = false; };
-  }, [slugsKey]);
-
-  // The cover's minimized roadmap — one light dev_milestones read per project,
-  // keyed on the same slug set as headerStats (one IPC call each, bounded).
-  const [roadmapBySlug, setRoadmapBySlug] = useState<Map<string, CoverRoadmapVM>>(new Map());
-  useEffect(() => {
-    if (slugsKey === '') return;
-    const slugs = slugsKey.split('|');
-    let alive = true;
-    void mapWithConcurrency(slugs, 5, async (slug) => {
-      const rows = await listMilestones(slug).catch((err) => {
-        silentCatch('ProjectsLayer:listMilestones')(err);
-        return [];
-      });
-      return [slug, buildCoverRoadmap(rows)] as const;
-    })
-      .then((entries) => { if (alive) setRoadmapBySlug(new Map(entries)); })
-      .catch(silentCatch('ProjectsLayer:roadmaps'));
+    void projectWallSummary(slugs)
+      .then((rows) => {
+        if (!alive) return;
+        // KPI "passed" stays a CLIENT computation on the raw active rows —
+        // `kpiTrack` is time-dependent (pace against target_date at now) and
+        // already has one Rust twin in engine/kpi_derivation.rs; a server-side
+        // third copy would drift and would go stale in cache besides.
+        setHeaderStats(new Map(rows.map((r) => [r.project_id, {
+          contexts: r.contexts_count,
+          kpiPassed: r.active_kpis.filter((k) => kpiTrack(k) === 'met').length,
+          kpiTotal: r.active_kpis.length,
+        }])));
+        // Full DevMilestone rows in, unchanged builder contract out.
+        setRoadmapBySlug(new Map(rows.map((r) => [r.project_id, buildCoverRoadmap(r.milestones)])));
+      })
+      .catch(silentCatch('ProjectsLayer:wallSummary'));
     return () => { alive = false; };
   }, [slugsKey]);
 
