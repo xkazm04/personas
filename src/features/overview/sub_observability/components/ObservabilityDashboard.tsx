@@ -123,7 +123,9 @@ export default function ObservabilityDashboard() {
   // Stable callback so MetricsCharts memo isn't defeated by inline arrow
   const handleFailureBarClick = useCallback((date: string) => {
     d.setFailureDrilldownDate(date);
-    d.setOverviewTab('knowledge');
+    // → Overview › Extracted: KnowledgeGraphDashboard is the only consumer of
+    //   failureDrilldownDate (it pre-selects the failure_pattern type filter).
+    d.setOverviewTab('extracted');
   }, [d]);
 
   const handleAnomalyClick = useCallback((anomaly: import('@/lib/bindings/MetricAnomaly').MetricAnomaly) => {

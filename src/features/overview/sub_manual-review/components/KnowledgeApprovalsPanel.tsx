@@ -35,7 +35,6 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
   const [queueIdx, setQueueIdx] = useState(0);
 
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPendingKnowledgeSubtab = useSystemStore((s) => s.setPendingKnowledgeSubtab);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   // Default to the first workspace once they load; keep the user's pick after.
@@ -83,13 +82,11 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
     : null;
 
   // The library used to live in Plugins -> Dev Tools -> Workspaces; it now sits
-  // one module over, as the Patterns subtab of Overview -> Knowledge. Hand the
-  // subtab off through the store so the link lands ON the library, not on
-  // Knowledge's default Memories tab.
+  // one module over, as Overview -> Patterns (its own L2 destination since the
+  // Knowledge hub was dissolved), so this is a plain tab switch.
   const openLibrary = () => {
-    setPendingKnowledgeSubtab('patterns');
     setSidebarSection('overview');
-    setOverviewTab('knowledge');
+    setOverviewTab('patterns');
   };
 
   if (!workspace) {

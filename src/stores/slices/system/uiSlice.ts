@@ -129,9 +129,6 @@ export interface UiSlice {
   /** Pending Approvals decision mode applied when ManualReviewList next mounts
    *  (e.g. the Context Map's idea-coverage badge handing off to the Backlog). */
   pendingApprovalsMode: ApprovalsMode | null;
-  /** Pending Knowledge subtab applied when KnowledgeHub next mounts (e.g. the
-   *  Approvals panel's "Full library" link handing off to Patterns). */
-  pendingKnowledgeSubtab: 'memories' | 'patterns' | 'extracted' | 'graph' | null;
   /** Pending goal ID to seed the Pulse variant of GoalConstellation on next mount (e.g. from a ContextMap goal-coverage badge click). */
   pendingGoalSpotlightId: string | null;
 
@@ -254,7 +251,6 @@ export interface UiSlice {
   setPendingLifecycleSubTab: (tab: 'setup' | 'competitions' | 'tracking' | null) => void;
   setPendingTaskFocusId: (id: string | null) => void;
   setPendingApprovalsMode: (mode: ApprovalsMode | null) => void;
-  setPendingKnowledgeSubtab: (tab: 'memories' | 'patterns' | 'extracted' | 'graph' | null) => void;
   setPendingGoalSpotlightId: (id: string | null) => void;
   setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
   setLiveStreamHighlightEventId: (id: string | null) => void;
@@ -400,7 +396,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingLifecycleSubTab: null,
   pendingTaskFocusId: null,
   pendingApprovalsMode: null,
-  pendingKnowledgeSubtab: null,
   pendingGoalSpotlightId: null,
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
@@ -512,7 +507,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingLifecycleSubTab: (tab) => set({ pendingLifecycleSubTab: tab }),
   setPendingTaskFocusId: (id) => set({ pendingTaskFocusId: id }),
   setPendingApprovalsMode: (mode) => set({ pendingApprovalsMode: mode }),
-  setPendingKnowledgeSubtab: (tab) => set({ pendingKnowledgeSubtab: tab }),
   setPendingGoalSpotlightId: (id) => set({ pendingGoalSpotlightId: id }),
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
