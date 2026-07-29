@@ -275,7 +275,9 @@
     "channels_layout_map": "Mapa",
     "channels_layout_map_hint": "Živé souhvězdí jednoho projektu — kdo pracuje a kdo s kým mluví",
     "map_empty": "V tomto projektu zatím nejsou žádní členové.",
-    "map_legend_traffic": "Nedávný provoz"
+    "map_legend_traffic": "Nedávný provoz",
+    "map_live": "Živě",
+    "map_members": "Členové"
   },
   "common": {
     "loading": "Načítání...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "Analytika",
       "skills_tab_aria": "Zobrazení skillů",
       "skills_tab_overview": "Přehled",
-      "skills_adopt_preset_hint": "Instaluje se okamžitě do {name} z balíčku aplikace — bez spuštění přizpůsobení"
+      "skills_adopt_preset_hint": "Instaluje se okamžitě do {name} z balíčku aplikace — bez spuštění přizpůsobení",
+      "skills_col_coverage": "Pokrytí"
     },
     "doc_signing": {
       "sign_heading": "Podepsat dokument",

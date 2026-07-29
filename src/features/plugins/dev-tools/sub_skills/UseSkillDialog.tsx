@@ -14,6 +14,7 @@ import { listContexts, memorySkillContexts, type DevContext } from '@/api/devToo
 import { BaseModal } from '@/features/shared/components/modals';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -112,8 +113,13 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
           <SkillDescription description={skill.description} />
 
           <Row label={d.skills_use_run_via}>
+            {/* What each target means lives in the variant's tooltip — the row
+                itself stays a clean pair of choices. */}
             <SegmentedTabs
-              tabs={[{ id: 'fleet', label: 'Fleet' }, { id: 'cmd', label: 'CMD' }]}
+              tabs={[
+                { id: 'fleet', label: <Tooltip content={d.skills_use_target_fleet_hint} placement="top"><span>Fleet</span></Tooltip> },
+                { id: 'cmd', label: <Tooltip content={d.skills_use_target_cmd_hint} placement="top"><span>CMD</span></Tooltip> },
+              ]}
               activeTab={target}
               onTabChange={(v) => setTarget(v as DispatchTarget)}
               variant="segment"
@@ -121,19 +127,39 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
               fullWidth={false}
               ariaLabel={d.skills_use_run_via}
             />
-            <span className="typo-label text-foreground/35 truncate">
-              {target === 'fleet' ? d.skills_use_target_fleet_hint : d.skills_use_target_cmd_hint}
-            </span>
           </Row>
 
           {tracked && (
             <>
               <Row label={d.skills_use_context_label}>
+                {/* Each choice explains itself in its tooltip (the recommended
+                    one carries the resolved context name). */}
                 <SegmentedTabs
                   tabs={[
-                    { id: 'recommended', label: d.skills_use_ctx_recommended },
+                    {
+                      id: 'recommended',
+                      label: (
+                        <Tooltip
+                          content={loadingContexts
+                            ? d.skills_use_finding
+                            : recommendedName
+                              ? tx(d.skills_use_recommended_line, { name: recommendedName })
+                              : d.skills_use_no_contexts}
+                          placement="top"
+                        >
+                          <span>{d.skills_use_ctx_recommended}</span>
+                        </Tooltip>
+                      ),
+                    },
                     { id: 'specific', label: d.skills_use_ctx_specific },
-                    { id: 'all', label: d.skills_use_ctx_all },
+                    {
+                      id: 'all',
+                      label: (
+                        <Tooltip content={tx(d.skills_use_all_line, { n: contexts.length })} placement="top">
+                          <span>{d.skills_use_ctx_all}</span>
+                        </Tooltip>
+                      ),
+                    },
                   ]}
                   activeTab={mode}
                   onTabChange={(v) => setMode(v as ContextMode)}
@@ -143,15 +169,6 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                   ariaLabel={d.skills_use_context_label}
                 />
               </Row>
-              {mode === 'recommended' && (
-                <p className="typo-label text-foreground/45 pl-[4.75rem]">
-                  {loadingContexts
-                    ? d.skills_use_finding
-                    : recommendedName
-                      ? <>→ <span className="text-foreground/70">{tx(d.skills_use_recommended_line, { name: recommendedName })}</span></>
-                      : d.skills_use_no_contexts}
-                </p>
-              )}
               {mode === 'specific' && (
                 <div className="pl-[4.75rem]">
                   <ThemedSelect
@@ -164,9 +181,6 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                     wrapperClassName="w-full"
                   />
                 </div>
-              )}
-              {mode === 'all' && (
-                <p className="typo-label text-foreground/45 pl-[4.75rem]">→ {tx(d.skills_use_all_line, { n: contexts.length })}</p>
               )}
             </>
           )}

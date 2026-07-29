@@ -274,5 +274,7 @@
   "channels_layout_map": "Peta",
   "channels_layout_map_hint": "Konstelasi langsung satu proyek — siapa yang bekerja dan siapa berbicara dengan siapa",
   "map_empty": "Belum ada anggota di proyek ini.",
-  "map_legend_traffic": "Lalu lintas terbaru"
+  "map_legend_traffic": "Lalu lintas terbaru",
+  "map_live": "Langsung",
+  "map_members": "Anggota"
 }

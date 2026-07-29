@@ -274,5 +274,7 @@
   "channels_layout_map": "Mapa",
   "channels_layout_map_hint": "Živé souhvězdí jednoho projektu — kdo pracuje a kdo s kým mluví",
   "map_empty": "V tomto projektu zatím nejsou žádní členové.",
-  "map_legend_traffic": "Nedávný provoz"
+  "map_legend_traffic": "Nedávný provoz",
+  "map_live": "Živě",
+  "map_members": "Členové"
 }

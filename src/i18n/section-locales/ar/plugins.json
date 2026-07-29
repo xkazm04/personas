@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "التحليلات",
     "skills_tab_aria": "عرض المهارات",
     "skills_tab_overview": "نظرة عامة",
-    "skills_adopt_preset_hint": "يتم التثبيت فورًا في {name} من حزمة التطبيق — بدون تشغيل تخصيص"
+    "skills_adopt_preset_hint": "يتم التثبيت فورًا في {name} من حزمة التطبيق — بدون تشغيل تخصيص",
+    "skills_col_coverage": "التغطية"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

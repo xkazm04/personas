@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "Analytics",
     "skills_tab_aria": "Tampilan Skills",
     "skills_tab_overview": "Overview",
-    "skills_adopt_preset_hint": "Terinstal langsung ke {name} dari paket aplikasi — tanpa proses kustomisasi"
+    "skills_adopt_preset_hint": "Terinstal langsung ke {name} dari paket aplikasi — tanpa proses kustomisasi",
+    "skills_col_coverage": "Cakupan"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",

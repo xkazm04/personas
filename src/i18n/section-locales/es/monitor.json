@@ -274,5 +274,7 @@
   "channels_layout_map": "Mapa",
   "channels_layout_map_hint": "Constelación en vivo de un proyecto — quién trabaja y quién habla con quién",
   "map_empty": "Aún no hay miembros en este proyecto.",
-  "map_legend_traffic": "Tráfico reciente"
+  "map_legend_traffic": "Tráfico reciente",
+  "map_live": "En vivo",
+  "map_members": "Miembros"
 }

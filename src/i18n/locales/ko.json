@@ -275,7 +275,9 @@
     "channels_layout_map": "맵",
     "channels_layout_map_hint": "한 프로젝트의 라이브 컨스텔레이션 — 누가 일하고 있고 누가 누구와 대화하는지",
     "map_empty": "이 프로젝트에 아직 멤버가 없습니다.",
-    "map_legend_traffic": "최근 트래픽"
+    "map_legend_traffic": "최근 트래픽",
+    "map_live": "라이브",
+    "map_members": "멤버"
   },
   "common": {
     "loading": "로딩 중...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "분석",
       "skills_tab_aria": "Skills 보기",
       "skills_tab_overview": "개요",
-      "skills_adopt_preset_hint": "앱 번들에서 {name}에 즉시 설치됩니다 — 커스터마이징 실행 없이"
+      "skills_adopt_preset_hint": "앱 번들에서 {name}에 즉시 설치됩니다 — 커스터마이징 실행 없이",
+      "skills_col_coverage": "커버리지"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

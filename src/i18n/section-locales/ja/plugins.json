@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "Analytics",
     "skills_tab_aria": "スキルビュー",
     "skills_tab_overview": "Overview",
-    "skills_adopt_preset_hint": "アプリバンドルから {name} に即座にインストールされます — カスタマイズ実行は不要"
+    "skills_adopt_preset_hint": "アプリバンドルから {name} に即座にインストールされます — カスタマイズ実行は不要",
+    "skills_col_coverage": "カバレッジ"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

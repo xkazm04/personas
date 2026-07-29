@@ -274,5 +274,7 @@
   "channels_layout_map": "地图",
   "channels_layout_map_hint": "单个项目的实时星座图 — 谁在工作、谁在与谁交流",
   "map_empty": "此项目还没有成员。",
-  "map_legend_traffic": "近期通信"
+  "map_legend_traffic": "近期通信",
+  "map_live": "实时",
+  "map_members": "成员"
 }

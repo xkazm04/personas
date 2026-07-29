@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "Analysen",
     "skills_tab_aria": "Skills-Ansicht",
     "skills_tab_overview": "Übersicht",
-    "skills_adopt_preset_hint": "Installiert sofort in {name} aus dem App-Paket — ohne Anpassungslauf"
+    "skills_adopt_preset_hint": "Installiert sofort in {name} aus dem App-Paket — ohne Anpassungslauf",
+    "skills_col_coverage": "Abdeckung"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",

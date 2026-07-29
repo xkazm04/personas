@@ -274,5 +274,7 @@
   "channels_layout_map": "মানচিত্র",
   "channels_layout_map_hint": "একটি প্রকল্পের লাইভ নক্ষত্রমণ্ডল — কে কাজ করছে এবং কে কার সাথে কথা বলছে",
   "map_empty": "এই প্রকল্পে এখনও কোনও সদস্য নেই।",
-  "map_legend_traffic": "সাম্প্রতিক ট্রাফিক"
+  "map_legend_traffic": "সাম্প্রতিক ট্রাফিক",
+  "map_live": "লাইভ",
+  "map_members": "সদস্য"
 }

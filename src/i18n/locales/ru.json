@@ -275,7 +275,9 @@
     "channels_layout_map": "Карта",
     "channels_layout_map_hint": "Живое созвездие одного проекта — кто работает и кто с кем говорит",
     "map_empty": "В этом проекте пока нет участников.",
-    "map_legend_traffic": "Недавний трафик"
+    "map_legend_traffic": "Недавний трафик",
+    "map_live": "В эфире",
+    "map_members": "Участники"
   },
   "common": {
     "loading": "Загрузка...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "Аналитика",
       "skills_tab_aria": "Раздел навыков",
       "skills_tab_overview": "Обзор",
-      "skills_adopt_preset_hint": "Устанавливается мгновенно в {name} из пакета приложения — без запуска настройки"
+      "skills_adopt_preset_hint": "Устанавливается мгновенно в {name} из пакета приложения — без запуска настройки",
+      "skills_col_coverage": "Покрытие"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",

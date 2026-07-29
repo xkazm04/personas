@@ -274,5 +274,7 @@
   "channels_layout_map": "Bản đồ",
   "channels_layout_map_hint": "Chòm sao trực tiếp của một dự án — ai đang làm việc và ai nói chuyện với ai",
   "map_empty": "Dự án này chưa có thành viên nào.",
-  "map_legend_traffic": "Lưu lượng gần đây"
+  "map_legend_traffic": "Lưu lượng gần đây",
+  "map_live": "Trực tiếp",
+  "map_members": "Thành viên"
 }

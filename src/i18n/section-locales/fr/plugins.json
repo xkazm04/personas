@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "Analytics",
     "skills_tab_aria": "Vue des skills",
     "skills_tab_overview": "Overview",
-    "skills_adopt_preset_hint": "S'installe instantanément dans {name} depuis le pack de l'appli — sans exécution de personnalisation"
+    "skills_adopt_preset_hint": "S'installe instantanément dans {name} depuis le pack de l'appli — sans exécution de personnalisation",
+    "skills_col_coverage": "Couverture"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",

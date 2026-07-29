@@ -1373,7 +1373,8 @@
     "skills_tab_analytics": "Analytika",
     "skills_tab_aria": "Zobrazení skillů",
     "skills_tab_overview": "Přehled",
-    "skills_adopt_preset_hint": "Instaluje se okamžitě do {name} z balíčku aplikace — bez spuštění přizpůsobení"
+    "skills_adopt_preset_hint": "Instaluje se okamžitě do {name} z balíčku aplikace — bez spuštění přizpůsobení",
+    "skills_col_coverage": "Pokrytí"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

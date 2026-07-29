@@ -275,7 +275,9 @@
     "channels_layout_map": "地图",
     "channels_layout_map_hint": "单个项目的实时星座图 — 谁在工作、谁在与谁交流",
     "map_empty": "此项目还没有成员。",
-    "map_legend_traffic": "近期通信"
+    "map_legend_traffic": "近期通信",
+    "map_live": "实时",
+    "map_members": "成员"
   },
   "common": {
     "loading": "加载中...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "分析",
       "skills_tab_aria": "技能视图",
       "skills_tab_overview": "概览",
-      "skills_adopt_preset_hint": "直接从应用包安装到 {name}——无需运行自定义"
+      "skills_adopt_preset_hint": "直接从应用包安装到 {name}——无需运行自定义",
+      "skills_col_coverage": "覆盖率"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

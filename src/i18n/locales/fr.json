@@ -275,7 +275,9 @@
     "channels_layout_map": "Carte",
     "channels_layout_map_hint": "Constellation en direct d'un projet — qui travaille et qui parle à qui",
     "map_empty": "Aucun membre dans ce projet pour l'instant.",
-    "map_legend_traffic": "Trafic récent"
+    "map_legend_traffic": "Trafic récent",
+    "map_live": "En direct",
+    "map_members": "Membres"
   },
   "common": {
     "loading": "Chargement...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "Analytics",
       "skills_tab_aria": "Vue des skills",
       "skills_tab_overview": "Overview",
-      "skills_adopt_preset_hint": "S'installe instantanément dans {name} depuis le pack de l'appli — sans exécution de personnalisation"
+      "skills_adopt_preset_hint": "S'installe instantanément dans {name} depuis le pack de l'appli — sans exécution de personnalisation",
+      "skills_col_coverage": "Couverture"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

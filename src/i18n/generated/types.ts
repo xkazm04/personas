@@ -240,6 +240,8 @@ export type Translations = {
     channels_layout_map_hint: string;
     map_empty: string;
     map_legend_traffic: string;
+    map_members: string;
+    map_live: string;
     conv_deliberation_active: string;
     conv_composer_placeholder: string;
     conv_composer_send: string;
@@ -12948,6 +12950,7 @@ export type Translations = {
       skills_share: string;
       skills_share_hint: string;
       skills_ws_empty: string;
+      skills_col_coverage: string;
       skills_lib_tab_custom: string;
       skills_lib_tab_preset: string;
       skills_lib_tab_aria: string;

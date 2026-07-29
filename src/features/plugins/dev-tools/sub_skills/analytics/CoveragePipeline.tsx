@@ -102,6 +102,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
         <span className="ml-auto flex-shrink-0">
           <Button
             variant="accent"
+            accentColor="violet"
             size="sm"
             icon={<PlayCircle className="w-3.5 h-3.5" />}
             disabled={busy || runnable.length === 0}
@@ -139,7 +140,7 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                   </span>
                   {/* Lens picker — best keyword match preselected, every matched
                       lens for this context switchable. */}
-                  <span className="flex items-center gap-1.5 flex-shrink-0 w-56 min-w-0">
+                  <span className="flex items-center gap-1.5 flex-shrink-0 w-[16.8rem] min-w-0">
                     {visual && (
                       <span
                         className="inline-flex items-center justify-center w-4.5 h-4.5 rounded-interactive border flex-shrink-0"

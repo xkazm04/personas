@@ -32,11 +32,11 @@ export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDis
   }, [projectId, fetchIdeas, fetchTasks]);
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto min-h-0 pb-4" data-testid="skills-analytics-tab">
-      <CoveragePipeline projectId={projectId} busy={busy} onDispatch={onDispatch} />
+    <div className="h-full flex flex-col gap-4 overflow-y-auto min-h-0 pb-4" data-testid="skills-analytics-tab">
       <SkillScoreboard proj={proj} totalContexts={totalContexts} runs={runs} />
       <SkillHistoryTable runs={runs} onRerun={busy ? undefined : onDispatch} />
       <StaticScanCard projectId={projectId} />
+      <CoveragePipeline projectId={projectId} busy={busy} onDispatch={onDispatch} />
     </div>
   );
 }

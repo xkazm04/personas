@@ -275,7 +275,9 @@
     "channels_layout_map": "মানচিত্র",
     "channels_layout_map_hint": "একটি প্রকল্পের লাইভ নক্ষত্রমণ্ডল — কে কাজ করছে এবং কে কার সাথে কথা বলছে",
     "map_empty": "এই প্রকল্পে এখনও কোনও সদস্য নেই।",
-    "map_legend_traffic": "সাম্প্রতিক ট্রাফিক"
+    "map_legend_traffic": "সাম্প্রতিক ট্রাফিক",
+    "map_live": "লাইভ",
+    "map_members": "সদস্য"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "অ্যানালিটিক্স",
       "skills_tab_aria": "স্কিল ভিউ",
       "skills_tab_overview": "ওভারভিউ",
-      "skills_adopt_preset_hint": "অ্যাপ বান্ডেল থেকে সরাসরি {name}-এ ইনস্টল হয় — কোনো কাস্টমাইজেশন রান ছাড়াই"
+      "skills_adopt_preset_hint": "অ্যাপ বান্ডেল থেকে সরাসরি {name}-এ ইনস্টল হয় — কোনো কাস্টমাইজেশন রান ছাড়াই",
+      "skills_col_coverage": "কভারেজ"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

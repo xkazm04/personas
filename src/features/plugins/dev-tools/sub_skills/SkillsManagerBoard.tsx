@@ -24,6 +24,8 @@ type SortDir = 'asc' | 'desc';
 
 /** Shared 4-column grid template — header and every row align to it. */
 const COLS = 'grid grid-cols-[minmax(0,1fr)_2.5rem_4.5rem_auto] items-center gap-3';
+/** Project-panel template — adds a dedicated Coverage column after the name. */
+const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_4.5rem_auto] items-center gap-3';
 
 function useSort(): { key: SortKey; dir: SortDir; toggle: (k: SortKey) => void } {
   const [key, setKey] = useState<SortKey>('name');
@@ -60,8 +62,9 @@ function Panel({ title, count, header, footer, children }: {
   );
 }
 
-/** Column-header row (matches COLS): sortable Name/Usage, static Last used/Action. */
-function HeaderRow({ sort }: { sort: ReturnType<typeof useSort> }) {
+/** Column-header row (matches COLS/PROJ_COLS): sortable Name/Usage, static
+ *  Coverage (project side) / Last used / Action. */
+function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort>; coverage?: boolean }) {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
   const SortHead = ({ k, label }: { k: SortKey; label: string }) => {
@@ -82,8 +85,9 @@ function HeaderRow({ sort }: { sort: ReturnType<typeof useSort> }) {
     <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{children}</span>
   );
   return (
-    <div className={`${COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
+    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
       <SortHead k="name" label={d.skills_sort_skill} />
+      {coverage && <H>{d.skills_col_coverage}</H>}
       <span className="text-right"><SortHead k="usage" label={d.skills_sort_usage} /></span>
       <H>{d.skills_col_lastused}</H>
       <H>{d.skills_col_action}</H>
@@ -178,23 +182,28 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   };
 
   const renderProjRow = (r: ProjRow) => (
-    <li key={r.entry.name} className={`${COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
-      {/* Name cell: memory icon + name (opens contexts when tracked) + coverage */}
+    <li key={r.entry.name} className={`${PROJ_COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
+      {/* Name cell: memory icon + name (opens contexts when tracked) */}
       <span className="flex items-center gap-2 min-w-0">
         <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
         {r.tracked ? (
           <button
             type="button"
             onClick={() => onOpenContexts(r.entry.name)}
-            className="min-w-0 flex items-center gap-2 text-left hover:text-primary transition-colors"
+            className="min-w-0 text-left hover:text-primary transition-colors"
             data-testid={`skills-manager-proj-${r.entry.name}`}
           >
             <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
-            <CoverageBar row={r.coverage} total={totalContexts} />
           </button>
         ) : (
           <span className="typo-caption font-medium text-foreground truncate" data-testid={`skills-manager-proj-${r.entry.name}`}>{r.entry.name}</span>
         )}
+      </span>
+      {/* Coverage — its own column for scannable visual structure */}
+      <span className="flex justify-end">
+        {r.tracked
+          ? <CoverageBar row={r.coverage} total={totalContexts} />
+          : <span className="typo-label text-foreground/25">—</span>}
       </span>
       <UsageCount usage={r.usage} />
       <LastUsed usage={r.usage} />
@@ -277,7 +286,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         )}
       </Panel>
 
-      <Panel title={projectName || d.skills_project_fallback} count={proj.length} header={<HeaderRow sort={projSort} />} footer={d.skills_footer_usage_coverage}>
+      <Panel title={projectName || d.skills_project_fallback} count={proj.length} header={<HeaderRow sort={projSort} coverage />} footer={d.skills_footer_usage_coverage}>
         {tracked.length > 0 && (
           <>
             <GroupDivider>{d.skills_group_tracked}</GroupDivider>

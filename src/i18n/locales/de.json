@@ -275,7 +275,9 @@
     "channels_layout_map": "Karte",
     "channels_layout_map_hint": "Live-Konstellation eines Projekts — wer arbeitet und wer mit wem spricht",
     "map_empty": "Noch keine Mitglieder in diesem Projekt.",
-    "map_legend_traffic": "Aktueller Verkehr"
+    "map_legend_traffic": "Aktueller Verkehr",
+    "map_live": "Live",
+    "map_members": "Mitglieder"
   },
   "common": {
     "loading": "Laden...",
@@ -13339,7 +13341,8 @@
       "skills_tab_analytics": "Analysen",
       "skills_tab_aria": "Skills-Ansicht",
       "skills_tab_overview": "Übersicht",
-      "skills_adopt_preset_hint": "Installiert sofort in {name} aus dem App-Paket — ohne Anpassungslauf"
+      "skills_adopt_preset_hint": "Installiert sofort in {name} aus dem App-Paket — ohne Anpassungslauf",
+      "skills_col_coverage": "Abdeckung"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

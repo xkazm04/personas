@@ -274,5 +274,7 @@
   "channels_layout_map": "Карта",
   "channels_layout_map_hint": "Живое созвездие одного проекта — кто работает и кто с кем говорит",
   "map_empty": "В этом проекте пока нет участников.",
-  "map_legend_traffic": "Недавний трафик"
+  "map_legend_traffic": "Недавний трафик",
+  "map_live": "В эфире",
+  "map_members": "Участники"
 }

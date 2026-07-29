@@ -274,5 +274,7 @@
   "channels_layout_map": "マップ",
   "channels_layout_map_hint": "1つのプロジェクトのライブ・コンステレーション — 誰が作業中で、誰が誰と話しているか",
   "map_empty": "このプロジェクトにはまだメンバーがいません。",
-  "map_legend_traffic": "最近のトラフィック"
+  "map_legend_traffic": "最近のトラフィック",
+  "map_live": "ライブ",
+  "map_members": "メンバー"
 }
