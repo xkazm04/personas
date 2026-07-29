@@ -163,14 +163,34 @@ jobs:
     env:
       # sccache: shared compilation cache backed by GitHub Actions cache.
       # Skips recompiling unchanged crates — typical speedup: 50-70%.
+      # NOTE: RUSTC_WRAPPER is deliberately NOT set here — see the health-check
+      # step below. Setting it at job level makes it un-overridable.
       SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: "sccache"
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: mozilla-actions/sccache-action@v0.0.7
+
+      - name: Enable sccache only if it actually works
+        shell: bash
+        run: |
+          # A compilation CACHE must never be able to fail the build. When the
+          # GitHub Actions cache backend has an outage, `sccache --start-server`
+          # fails, and because rustc is invoked through it EVERY cargo command
+          # dies before compiling anything:
+          #   sccache: error: Server startup failed: cache storage failed to read
+          # That took the entire Rust gate offline from 2026-07-27 onward — all
+          # three platforms plus binding-drift — and a test-compilation
+          # regression reached master during the blackout. Degrade to a slow
+          # build instead of no build.
+          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "sccache healthy — using it."
+          else
+            echo "::warning title=sccache unavailable::Compiling without sccache. Builds will be slower; the gate still runs."
+          fi
 
       - uses: swatinem/rust-cache@v2
         with:
@@ -232,14 +252,27 @@ jobs:
   binding-drift:
     runs-on: ubuntu-22.04
     env:
+      # RUSTC_WRAPPER intentionally unset here — see the health-check step.
       SCCACHE_GHA_ENABLED: "true"
-      RUSTC_WRAPPER: "sccache"
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: mozilla-actions/sccache-action@v0.0.7
+
+      - name: Enable sccache only if it actually works
+        shell: bash
+        run: |
+          # Same rationale as the rust-tests job: a cache outage must not be
+          # able to take this gate offline. During the 2026-07-27 outage this
+          # job failed at sccache startup without checking a single binding.
+          if sccache --start-server >/dev/null 2>&1 && sccache --show-stats >/dev/null 2>&1; then
+            echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+            echo "sccache healthy — using it."
+          else
+            echo "::warning title=sccache unavailable::Compiling without sccache. Builds will be slower; the gate still runs."
+          fi
 
       - uses: swatinem/rust-cache@v2
         with:
