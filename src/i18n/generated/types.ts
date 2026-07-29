@@ -576,6 +576,10 @@ export type Translations = {
     manual_review: string;
     messages: string;
     knowledge: string;
+    memories: string;
+    patterns: string;
+    extracted: string;
+    memory_graph: string;
     sla: string;
     cron_agents: string;
     schedules: string;
