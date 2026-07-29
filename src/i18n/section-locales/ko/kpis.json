@@ -237,5 +237,12 @@
   "suggest_retire": "{name} 폐기",
   "suggest_sources": "출처 {count}개",
   "suggest_title": "시뮬레이션 제안 ({count})",
-  "define_kpi": "KPI 정의"
+  "define_kpi": "KPI 정의",
+  "populate_lane_contexts": "컨텍스트 맵",
+  "populate_lane_features": "기능",
+  "populate_lane_kpis": "KPI 지표",
+  "populate_lane_simulation": "시뮬레이션된 KPI 데이터",
+  "populate_lane_simulation_detail": "아직 출시되지 않은 제품의 경우: 기능을 대표 사용자로 시뮬레이션하여 채택될 KPI를 추정하고, 유사 제품에서 목표치를 조사합니다. 가장 오래 걸리는 단계입니다.",
+  "populate_scope_empty": "포함할 항목을 하나 이상 선택하세요.",
+  "populate_scope_heading": "이번 실행에서 다룰 내용"
 }

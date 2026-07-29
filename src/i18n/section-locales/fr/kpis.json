@@ -237,5 +237,12 @@
   "suggest_retire": "Retirer {name}",
   "suggest_sources": "{count} sources",
   "suggest_title": "Suggestions de simulation ({count})",
-  "define_kpi": "définir un KPI"
+  "define_kpi": "définir un KPI",
+  "populate_lane_contexts": "Carte des contextes",
+  "populate_lane_features": "Fonctionnalités",
+  "populate_lane_kpis": "Indicateurs KPI",
+  "populate_lane_simulation": "Données KPI simulées",
+  "populate_lane_simulation_detail": "Pour un produit qui n'a pas encore été lancé : parcourt vos fonctionnalités comme des utilisateurs représentatifs pour estimer les KPI adoptés, et recherche des cibles à partir de produits comparables. L'étape la plus longue.",
+  "populate_scope_empty": "Choisissez au moins un élément à couvrir.",
+  "populate_scope_heading": "Ce que cette exécution couvrira"
 }

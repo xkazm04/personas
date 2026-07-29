@@ -31,6 +31,13 @@ export function populateDispatchKey(slug: string): string {
 /** Where the dispatch brief is written inside the target repo. */
 export const POPULATE_BRIEF_PATH = 'project-populate/brief.md';
 
+/** The four lanes a run can cover. The user picks any subset before dispatch;
+ *  a lane left out is not run and not gated, and the skill reports it as out of
+ *  scope rather than silently absent. */
+export type PopulateLane = 'contexts' | 'features' | 'kpis' | 'simulation';
+
+export const POPULATE_LANES: PopulateLane[] = ['contexts', 'features', 'kpis', 'simulation'];
+
 /** `full` = never scanned · `incremental` = stale · `skip` = fresh enough. */
 export type LaneVerdict = 'full' | 'incremental' | 'skip';
 
@@ -92,9 +99,24 @@ export async function readPopulateGates(projectId: string): Promise<PopulateGate
   };
 }
 
+/** Lanes worth running by default: whatever the gates say needs work. A project
+ *  whose contexts and features are current opens with only the KPI lane ticked,
+ *  so the common case is one click rather than four deselections. Simulation
+ *  stays off by default — it is the longest lane and only pays off once value
+ *  KPIs are adopted, which has not happened yet at the moment of this choice. */
+export function defaultLanes(g: PopulateGates): PopulateLane[] {
+  const lanes: PopulateLane[] = [];
+  if (g.contexts.verdict !== 'skip') lanes.push('contexts');
+  if (g.features.verdict !== 'skip') lanes.push('features');
+  if (g.kpis.verdict !== 'skip' || g.kpis.proposed > 0) lanes.push('kpis');
+  // Everything current: default to the KPI lane rather than an empty run, since
+  // triaging or re-proposing KPIs is the one thing always worth doing.
+  return lanes.length > 0 ? lanes : ['kpis'];
+}
+
 /** One-line, user-facing summary of what each lane will do — the sentence that
  *  makes the action's cost predictable before the user confirms it. */
-export function describeGates(g: PopulateGates): string[] {
+export function describeGates(g: PopulateGates): [contexts: string, features: string, kpis: string] {
   const contexts =
     g.contexts.verdict === 'full'
       ? 'Context map: none yet, will run a full scan.'
@@ -128,6 +150,7 @@ export function buildPopulateBrief(
   raw: ImproveRaw,
   creds: PersonaCredential[],
   gates: PopulateGates,
+  lanes: PopulateLane[],
 ): string {
   const proj = raw.project;
   const connectors = creds
@@ -157,6 +180,14 @@ export function buildPopulateBrief(
       ? `- Try \`http://127.0.0.1:${gates.bridgePort}/dev-tools\` first. If it stops answering, probe 17400-17415 — the port is chosen at startup and moves when it is taken.`
       : '- The bridge was NOT bound when this brief was written. Probe 17400-17415; if nothing answers, Personas is not running and this run cannot proceed.',
     '',
+    '## Scope',
+    '',
+    `The operator selected: **${lanes.join(', ')}**.`,
+    '',
+    ...POPULATE_LANES.filter((l) => !lanes.includes(l)).map(
+      (l) => `- \`${l}\` is OUT OF SCOPE — do not run it, do not gate it, report it as out of scope.`,
+    ),
+    '',
     '## Lane verdicts',
     '',
     `- Contexts: ${lane(gates.contexts.verdict, `${gates.contexts.groupCount} group(s)${gates.contexts.newestAt ? `, newest updated ${gates.contexts.newestAt}` : ''}`)}`,
@@ -184,10 +215,10 @@ export function buildPopulateBrief(
 /** The short invocation that travels as the session's first prompt. Kept free
  *  of shell metacharacters — it is passed as a process argument, and prose with
  *  `;` or `%` in it has historically been mangled by terminal wrappers. */
-export function buildPopulatePrompt(): string {
+export function buildPopulatePrompt(lanes: PopulateLane[]): string {
   return (
     'The project-populate skill has just been installed into this repo ' +
     '(.claude/skills/project-populate). Invoke it with /project-populate and run it in ' +
-    `DISPATCHED mode, following the dispatch brief at ${POPULATE_BRIEF_PATH}.`
+    `DISPATCHED mode, scope ${lanes.join(',')}, following the dispatch brief at ${POPULATE_BRIEF_PATH}.`
   );
 }

@@ -18051,7 +18051,14 @@
     "suggest_retire": "إيقاف {name}",
     "suggest_sources": "{count} مصادر",
     "suggest_title": "اقتراحات المحاكاة ({count})",
-    "define_kpi": "حدّد مؤشر أداء"
+    "define_kpi": "حدّد مؤشر أداء",
+    "populate_lane_contexts": "خريطة السياق",
+    "populate_lane_features": "الميزات",
+    "populate_lane_kpis": "مؤشرات الأداء الرئيسية",
+    "populate_lane_simulation": "بيانات محاكاة لمؤشرات الأداء",
+    "populate_lane_simulation_detail": "بالنسبة لمنتج لم يُطلق بعد: يستعرض ميزاتك كمستخدمين نموذجيين لتقدير مؤشرات الأداء المعتمدة، ويبحث عن الأهداف من منتجات مماثلة. هذه هي أطول خطوة.",
+    "populate_scope_empty": "اختر عنصرًا واحدًا على الأقل لتغطيته.",
+    "populate_scope_heading": "ما الذي ستغطيه هذه العملية"
   },
   "deliberation": {
     "agenda": "جدول الأعمال",

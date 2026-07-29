@@ -18156,7 +18156,14 @@
     "evaluate_measured": "Measured {count} KPI(s).",
     "evaluate_partial": "Measured {measured}, {failed} failed",
     "evaluate_none_due": "No KPIs were due for measurement.",
-    "define_kpi": "define KPI"
+    "define_kpi": "define KPI",
+    "populate_scope_heading": "What this run will cover",
+    "populate_lane_contexts": "Context map",
+    "populate_lane_features": "Features",
+    "populate_lane_kpis": "KPIs",
+    "populate_lane_simulation": "Simulated KPI data",
+    "populate_lane_simulation_detail": "For a product that has not shipped: walks your features as representative users to estimate the adopted KPIs, and researches targets from comparable products. The longest step.",
+    "populate_scope_empty": "Pick at least one thing to cover."
   },
   "planner": {
     "nav_label": "Plan",

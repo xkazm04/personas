@@ -237,5 +237,12 @@
   "suggest_retire": "{name} অবসর দিন",
   "suggest_sources": "{count}টি উৎস",
   "suggest_title": "সিমুলেশন পরামর্শ ({count})",
-  "define_kpi": "KPI নির্ধারণ করুন"
+  "define_kpi": "KPI নির্ধারণ করুন",
+  "populate_lane_contexts": "প্রসঙ্গ মানচিত্র",
+  "populate_lane_features": "বৈশিষ্ট্য",
+  "populate_lane_kpis": "কেপিআই সূচক",
+  "populate_lane_simulation": "সিমুলেটেড কেপিআই ডেটা",
+  "populate_lane_simulation_detail": "এমন একটি পণ্যের জন্য যা এখনও চালু হয়নি: এটি আপনার বৈশিষ্ট্যগুলোকে প্রতিনিধিত্বমূলক ব্যবহারকারী হিসেবে চালিয়ে গৃহীত কেপিআই অনুমান করে এবং তুলনীয় পণ্য থেকে লক্ষ্যমাত্রা নিয়ে গবেষণা করে। এটি সবচেয়ে দীর্ঘ ধাপ।",
+  "populate_scope_empty": "কভার করতে অন্তত একটি জিনিস বেছে নিন।",
+  "populate_scope_heading": "এই রান কী কভার করবে"
 }
