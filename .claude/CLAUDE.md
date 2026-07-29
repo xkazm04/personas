@@ -478,6 +478,14 @@ There is no scheduled `/guide-sync` cron — the per-session model is the entire
 ## Context Map
 
 This project has a Vibeman-generated context map at `context-map.json` (repo root). It maps every file to a feature ("context"), grouped by business domain. **Before editing code, read `context-map.json` to find the relevant context and scope your changes to its `filePaths`.** The `index` field is a quick one-line-per-context overview. If you change which files a context owns, update `context-map.json` to match (or run Vibeman's refresh) so it stays accurate.
+
+### ⚠ Two different maps currently claim this file
+
+`context-map.json` as committed today is **Vibeman's** artifact — `$schema: vibeman.dev/…`, `version: "2.0.0"` (string), `projectId f8698d31-…`, and `projectPath C:\Users\mkdol\dolla\personas` (a different machine). It describes **12 groups / 236 contexts**.
+
+The **Personas app writes its own file to the same path** (`context_map_export.rs`, after every context scan) in a different format — no `$schema`, `version: 2` as an integer, and the app's own `projectId`. Its map, which is what the database holds and what every app feature reads, is **8 groups / 49 contexts**. The generated block at the top of the root `CLAUDE.md` reports those numbers.
+
+So the counts in the root `CLAUDE.md` and the contents of `context-map.json` disagree, and both are honest — they come from different tools. **The database is the authority for anything the app does** (context-scoped KPI scans, the improve plan, Ship footprints); the committed file is a stale foreign snapshot until the app's next context scan overwrites it. Read the file for a quick orientation if you like, but size any per-context work off the app's 49, not the file's 236 — a 2026-07-29 session sized a KPI sweep at 236 from this file and was wrong by ~5×.
 <!-- vibeman:context-map:end -->
 
 ## Model & reasoning effort — when to tell the user to change them

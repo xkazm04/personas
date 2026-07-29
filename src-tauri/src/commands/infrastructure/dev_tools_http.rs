@@ -69,6 +69,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
         .route("/use-cases/{project_id}", get(list_use_cases))
+        .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
         .route("/kpi-sim/ingest", post(kpi_sim_ingest))
         .with_state(DevToolsHttp { app })
@@ -284,6 +285,44 @@ async fn list_use_cases(
     repo::list_use_cases(&db(&s), &project_id, q.status.as_deref())
         .map(Json)
         .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct UseCaseDecisionBody {
+    use_case_id: String,
+    /// `active` accepts the proposal, `archived` rejects it (and stops it being
+    /// re-proposed), `proposed` returns it to the queue.
+    status: String,
+}
+
+/// Accept or reject one use-case proposal. The sibling of `/kpi-decision`, and
+/// it exists for the same reason: the feature inventory is the layer KPIs
+/// attach to, so a terminal session that cannot triage it can only ever produce
+/// project-level metrics.
+async fn use_case_decision(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<UseCaseDecisionBody>,
+) -> Result<Json<DevUseCase>, (StatusCode, String)> {
+    const ALLOWED: [&str; 3] = ["proposed", "active", "archived"];
+    if !ALLOWED.contains(&b.status.as_str()) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("status must be one of {ALLOWED:?}, got {:?}", b.status),
+        ));
+    }
+    repo::update_use_case(
+        &db(&s),
+        &b.use_case_id,
+        None,
+        None,
+        None,
+        None,
+        Some(&b.status),
+        None,
+        None,
+    )
+    .map(Json)
+    .map_err(err)
 }
 
 #[derive(Deserialize)]
