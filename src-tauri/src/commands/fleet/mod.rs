@@ -22,6 +22,7 @@
 pub mod bench;
 pub mod commands;
 pub mod debug_log;
+pub mod external;
 pub mod headless;
 pub mod hook_install;
 pub mod hooks;

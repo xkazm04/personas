@@ -3092,6 +3092,7 @@ pub fn run() {
             commands::infrastructure::use_case_scan::dev_tools_scan_use_cases,
             commands::infrastructure::use_case_scan::dev_tools_cancel_use_case_scan,
             commands::infrastructure::use_case_scan::dev_tools_get_use_case_scan_status,
+            commands::infrastructure::dev_tools_http::dev_tools_bridge_port,
             // Dev Tools -- KPIs (outcome layer above goals)
             commands::infrastructure::dev_tools::dev_tools_list_kpis,
             commands::infrastructure::dev_tools::dev_tools_get_kpi,
@@ -3483,6 +3484,7 @@ pub fn run() {
             commands::fleet::commands::fleet_hibernate_session,
             commands::fleet::commands::fleet_wake_session,
             commands::fleet::commands::fleet_spawn_headless_session,
+            commands::fleet::external::fleet_spawn_external_console,
             commands::fleet::commands::fleet_set_auto_hibernate,
             commands::fleet::commands::fleet_set_live_slots,
             commands::fleet::commands::fleet_set_state_cutoffs,
