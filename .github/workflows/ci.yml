@@ -212,7 +212,13 @@ jobs:
             libpipewire-0.3-dev
 
       - name: Run Rust tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        # --features desktop is REQUIRED, not optional. The crate's default
+        # feature set is empty, but capabilities/default.json references
+        # `updater:default`, and tauri-plugin-updater is an optional dep enabled
+        # only by `desktop`. Without it the tauri build script aborts with
+        # "Permission updater:default not found" before compiling anything —
+        # so this step has never actually run a test.
+        run: cargo test --manifest-path src-tauri/Cargo.toml --features desktop
 
       - name: Run Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
