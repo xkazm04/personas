@@ -2,6 +2,12 @@
 
 ## Active
 
+### persona-overview-table-pass — All-Personas roster UI pass — session opus-5[1m]
+- Started: 2026-07-29. Status: **work complete, UNCOMMITTED in the working tree** (awaiting operator review — the renamed column label in particular).
+- Paths: `src/features/agents/components/allPersonas/{PersonaOverviewPage,PersonaOverviewColumns,PersonaOverviewFilterHeader,PersonaOverviewCells}.tsx`, `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (DELETED), `src/features/shared/components/display/DataGrid.tsx`, `src/i18n/locales/*.json` (+`agents.overview_columns.quality`, −6 Constellation-only keys) + regenerated `generated/` and `section-locales/`, `context-map.json`, `docs/features/personas/README.md`, `CHANGELOG.md`.
+- Header typography/x-axis unified in the shared DataGrid, header select-all checkbox now matches the row checkboxes, Verdict→Quality, SetupStatusBadge dropped from the roster Status cell, Constellation layout + switcher removed. Gates: tsc clean, eslint 0-err/0-warn on touched files, vitest 228/228 (agents + shared/display), i18n strict 0/0 ×14 + no-untranslated clean. Live-verified against the operator's running instance via the :17320 harness (DOM measurements, not screenshots — `/screenshot` grabbed the wrong window).
+- **Note for parallel sessions:** `src/i18n/locales/*.json` were clean at HEAD when this ran; the diff there is only the one added key + the six removed dead ones.
+
 ### perfect-factory-ship — /perfect targeted arc (Factory / Ship layer) — session opus-5[1m]
 - Started: 2026-07-29. Status: started. Same session that just shipped the Ship-layer polish (cover roadmap, action consent modal, readability pass, ledger tooltips/empty states, em-dash sweep, ship.md doc). Now running /perfect proposal pass on the Factory/Ship context with a self-sourced brief (no scout: the Director authored this code within the hour).
 - Paths: `src/features/teams/sub_factory/**`, `src/i18n/locales/*.json` (ship + kpis sections), `docs/features/plugins/dev tools/ship.md`, `docs/features/teams/kpis.md`, and on acceptance possibly `src-tauri/db/src/repos/dev_tools.rs` (milestone lifecycle) + `src-tauri/src/commands/**` milestone commands.
