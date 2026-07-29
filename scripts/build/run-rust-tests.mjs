@@ -162,8 +162,19 @@ function buildTestExecutables(cargoArgs) {
   return exes;
 }
 
+// `desktop` is NOT optional for a meaningful run. personas-core selects the
+// OS-keychain master-key path behind it; without it the crate compiles its
+// mobile stub and all ten crypto tests fail with "Keychain not available on
+// this platform" — a configuration artefact, not a defect. Each crate declares
+// its own `desktop`, so the features are package-qualified here. (The same
+// class of mistake had CI's `cargo test` never compiling at all: see
+// .github/workflows/ci.yml.)
 const cargoArgs = cratesLane
-  ? ['test', '--manifest-path', CARGO_TOML, '-p', 'personas-core', '-p', 'personas-db', '-p', 'personas-engine', '--lib']
+  ? [
+      'test', '--manifest-path', CARGO_TOML,
+      '-p', 'personas-core', '-p', 'personas-db', '-p', 'personas-engine', '--lib',
+      '--features', 'personas-core/desktop,personas-db/desktop,personas-engine/desktop',
+    ]
   : ['test', '--manifest-path', CARGO_TOML, '--features', 'desktop', '--lib'];
 
 console.log(`> cargo ${cargoArgs.join(' ')}`);
