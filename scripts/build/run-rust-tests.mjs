@@ -128,8 +128,8 @@ function buildTestExecutables(cargoArgs) {
       stdio: ['inherit', 'pipe', 'inherit'],
     },
   );
-  if (out.status !== 0) process.exit(out.status ?? 1);
   const exes = [];
+  const diagnostics = [];
   for (const line of (out.stdout ?? '').split('\n')) {
     if (!line.startsWith('{')) continue;
     let msg;
@@ -139,6 +139,25 @@ function buildTestExecutables(cargoArgs) {
       continue;
     }
     if (msg.reason === 'compiler-artifact' && msg.executable) exes.push(msg.executable);
+    // `--message-format=json` moves compiler diagnostics OUT of stderr and into
+    // this stdout stream, which we capture -- so without re-emitting them a
+    // failed build prints only cargo's one-line summary and the actual error is
+    // invisible. That cost a debugging round the first time it happened.
+    if (msg.reason === 'compiler-message' && msg.message?.level === 'error') {
+      diagnostics.push(msg.message.rendered ?? msg.message.message ?? '');
+    }
+  }
+
+  if (out.status !== 0) {
+    for (const d of diagnostics) process.stderr.write(d.endsWith('\n') ? d : `${d}\n`);
+    if (diagnostics.length === 0) {
+      process.stderr.write(
+        'Build failed but cargo emitted no error diagnostic. This is usually a LINK\n' +
+          'failure. Re-run without --message-format=json to see it:\n' +
+          `  cargo ${cargoArgs.join(' ')} --no-run\n`,
+      );
+    }
+    process.exit(out.status ?? 1);
   }
   return exes;
 }
