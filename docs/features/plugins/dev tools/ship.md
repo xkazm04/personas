@@ -23,7 +23,7 @@ Nothing on the Ship surface is typed in by a user as a number. The rows record o
 - which goals are bound as its objective,
 - the status of the milestone and the timestamps of its transitions.
 
-Everything else, progress, the context footprint, the four exit criteria and the overall verdict, is **derived at read time** in `useShipData.ts` by joining those decisions against signals the Factory already trusts: context health from Sentry attribution, active KPIs, use-case slices, and whether the project's monitoring / LLM-tracking connectors are bound.
+Everything else, progress, the context footprint, the exit criteria and the overall verdict, is **derived at read time** in `useShipData.ts` by joining those decisions against signals the Factory already trusts: context health from Sentry attribution, active KPIs, use-case slices, and whether the project's monitoring / LLM-tracking connectors are bound.
 
 Contexts are deliberately **never** members of a milestone (`src-tauri/db/src/repos/dev_tools.rs:6923` pins this with a test). They follow from the core use cases' slices, so re-scanning the codebase reshapes the footprint without anyone re-picking anything.
 
@@ -102,7 +102,7 @@ planned  --[Certify cut]-->  active  --[Certify ship]-->  shipped
 
 **planned → active ("Certify cut").** Ungated: the button is always enabled for a planned milestone. `update_milestone` stamps `cut_at` with `CASE WHEN ?2 = 'active' AND cut_at IS NULL` (`dev_tools.rs:6763-6769`), so a milestone that is re-activated after being moved around keeps its original baseline. From this point, every **new** membership is flagged as scope creep.
 
-**active → shipped ("Certify ship").** Gated: the button is disabled while `shipVerdict(vm.criteria) !== 'go'`, that is, while any of the four exit criteria is anything other than met. The tooltip switches between "Every criterion reads GO. Ship it" and "Blocked until every exit criterion reads GO". The transition stamps `shipped_at` unconditionally.
+**active → shipped ("Certify ship").** Gated: the button is disabled while `shipVerdict(vm.criteria) !== 'go'`, that is, while any registered exit criterion is anything other than met. The tooltip switches between "Every criterion reads GO. Ship it" and "Blocked until every exit criterion reads GO". The transition stamps `shipped_at` unconditionally.
 
 **shipped.** `editable` becomes false, so the lifecycle button, the compose button and every bucket / promote / remove action disappear. The milestone becomes a read-only record; its progress reads 100 percent and its target label becomes `shipped <date>`.
 
@@ -110,9 +110,13 @@ The gate is UI-side only. `update_milestone` itself validates the enum but does 
 
 **Not implemented in the UI:** setting or editing `target_date`, reordering milestones (`order_index`), renaming, editing the milestone `goal` sentence after creation, and deleting a milestone. The API wrappers (`updateMilestone` patch fields, `deleteMilestone`) and the Rust commands all exist and are tested, but nothing on the Ship surface calls them. Milestones created here always land at `order_index = MAX+1` with no target date, except the onboarding seed (see §9).
 
-## 5. The four exit criteria
+## 5. The exit criteria
 
-Built per milestone in `useShipData.ts:182-226`. Each one carries a label, a derived evidence string, a `done/total` pair rendered on the chip, and a state.
+Criteria live in a **registry**: `SHIP_CRITERIA` in `shipCriteria.ts` is one table of self-describing `{ id, label, derive }` entries, and `deriveCriteria` runs it per milestone. Adding a criterion is an append to that table, not surgery inside the hook. `useShipData` iterates the registry and knows nothing about individual criteria.
+
+`derive` is pure. It receives the milestone's decisions (the row, its CORE members, its bound goals) plus the signals the Factory already trusts (the derived footprint, sensor wiring) and returns `{ evidence, done, total, state }`. Each criterion carries a label, a derived evidence string, a `done/total` pair rendered on the chip, and a state.
+
+**Every registered criterion is active for every milestone.** Per-milestone opt-in is deliberately not built: it needs a schema column, and a criterion a project can switch off stops meaning anything. That remains the open follow-up if projects ever genuinely need different bars.
 
 State vocabulary (`shipModel.ts:17-18`): `go` = met, `warn` = partial, `nogo` = blocking, `setup` = the sensor or the scope is not wired yet.
 
@@ -122,6 +126,9 @@ State vocabulary (`shipModel.ts:17-18`): `go` = met, `warn` = partial, `nogo` = 
 | **KPI coverage on core scope** (`kpi`) | footprint contexts with at least one active KPI / footprint size | empty footprint → `setup`; full coverage → `go`; otherwise `warn` | "N of M core contexts carry an active KPI" |
 | **Objective bound** (`objective`) | 1 or 0 / 1 | at least one bound goal → `go`, otherwise `setup` | the bound goal names joined with " · ", otherwise "Bind a measurable goal from the composer" |
 | **Sensors wired** (`sensors`) | (monitoring wired ? 1 : 0) + (LLM tracking wired ? 1 : 0) / 2 | both → `go`, otherwise `setup` | "Monitoring + LLM tracking both report" or "Bind monitoring / LLM connectors in Observability" |
+| **Scope frozen** (`scope-frozen`) | core members not flagged `added_after_cut` / core members | `cut_at` null → `setup` (no baseline, so the flag carries no information); no flagged member → `go`; otherwise `warn` | "Nothing joined the cut after certification", or "N added after the cut: <names>" |
+
+`scope-frozen` is `warn` rather than `nogo` on purpose: growing a cut is a legitimate decision, and this layer's job is to make it legible, not to block it. But because `warn` folds into `shipVerdict`, a milestone that kept growing after certification can no longer certify as shipped without the operator seeing the creep first. The per-member `added_after_cut` flag it reads is derived by the backend against `cut_at` (§6).
 
 "Healthy" for the contexts criterion means `tone === 'ok'` specifically, so a context with zero KPIs (`setup` tone) also counts as unhealthy there. That is intentional overlap with the KPI criterion: an unmeasured context fails both.
 
@@ -205,11 +212,11 @@ Evaluation stays derived; **resolution** is a dispatch. Both paths are consent-f
 
 ### Criterion dispatch (`ShipDispatch.tsx`)
 
-A criterion chip whose state is not `go` grows a violet lightning button, but only when `buildCriterionPrompt` returns a brief. Only two of the four criteria have agent-shaped work:
+A criterion chip whose state is not `go` grows a violet lightning button, but only when `buildCriterionPrompt` returns a brief. Only two criteria have agent-shaped work:
 
 - **`contexts`** builds a brief listing every critical and warning context in the footprint with its error count, and asks the agent to investigate recent errors, fix the highest-impact root causes surgically, and run the relevant tests. Returns null when nothing is crit or warn.
 - **`kpi`** builds a brief listing the footprint contexts with zero active KPIs and asks for 1 to 2 concrete measurable KPI proposals each (name, unit, direction, baseline, target, and how to measure), written to a markdown summary for the operator to accept into the KPI module. Returns null when coverage is complete.
-- **`objective`** and **`sensors`** return null by design: binding a goal and binding connectors are human decisions.
+- **`objective`**, **`sensors`** and **`scope-frozen`** return null by design: binding a goal, binding connectors, and accepting or dropping what joined the cut late are human scoping decisions, not work an agent can do on your behalf.
 
 Confirming spawns a Fleet Dev-runner session in the project's `root_path` via `dispatchRowToFleet`, keyed `passport:ship-<criterion>:<projectId>` (`shipDispatchKey`). The `passport:` prefix is load-bearing: it keeps the session inside `usePassportFleetSessions`' watch window, which is the same machinery the passport wall uses. Once a session exists for that key, the chip's lightning is replaced by a terminal icon tinted by session state, and clicking it opens `PassportTerminalModal`.
 
@@ -261,7 +268,8 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `.../ship/ShipContextDrawer.tsx` | Right-side context detail panel with Cut / Bind affordances |
 | `.../ship/ShipDispatch.tsx` | `shipDispatchKey`, `buildCriterionPrompt`, `buildGoalAssistPrompt`, `ShipDispatchModal` |
 | `.../ship/shipModel.ts` | Types, ink maps, `shipVerdict`, `featureState`, `bucketLabel` |
-| `.../ship/shipDerive.ts` | Pure derivations lifted out of the hook: `deriveFootprint`, `deriveCriteria`. Unit-tested in `__tests__/shipDerive.test.ts` |
+| `.../ship/shipDerive.ts` | `deriveFootprint`, the pure id-keyed scope derivation lifted out of the hook |
+| `.../ship/shipCriteria.ts` | The `SHIP_CRITERIA` registry + `deriveCriteria`. Both unit-tested in `__tests__/shipDerive.test.ts` |
 | `.../ship/shipVelocity.ts` | Pure cycle-time forecast from `cut_at` / `shipped_at`. Unit-tested in `__tests__/shipVelocity.test.ts` |
 | `.../ship/ShipVelocityNote.tsx` | The Planner header's cycle-time + forecast line |
 | `.../ship/shipRows.tsx` | `LedgerRow` / `LedgerList` / `LedgerHeader`, the shared ledger language |

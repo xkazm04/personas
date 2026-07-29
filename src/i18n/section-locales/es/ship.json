@@ -115,5 +115,9 @@
   "velocity_forecast_today": "Envío previsto {date}, si se cierra hoy",
   "velocity_no_history": "Aún no hay historial de ciclos. Con dos hitos entregados será posible una previsión.",
   "velocity_past_target": "después del objetivo del {date}",
-  "velocity_typical": "Ciclo típico: {days} días del cierre a la entrega, sobre {count} entregados"
+  "velocity_typical": "Ciclo típico: {days} días del cierre a la entrega, sobre {count} entregados",
+  "crit_scope": "Alcance congelado",
+  "crit_scope_clean": "Nada se sumó al alcance tras la certificación",
+  "crit_scope_crept": "{count} añadidos tras el cierre: {names}",
+  "crit_scope_uncut": "Aún sin cerrar. El seguimiento de desvíos empieza en el cierre"
 }

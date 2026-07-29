@@ -18989,6 +18989,10 @@
     "velocity_forecast_today": "Dự kiến phát hành {date}, nếu chốt hôm nay",
     "velocity_no_history": "Chưa có lịch sử chu kỳ. Hai cột mốc đã phát hành sẽ cho phép dự báo.",
     "velocity_past_target": "sau mốc mục tiêu {date}",
-    "velocity_typical": "Chu kỳ điển hình: {days} ngày từ khi chốt đến khi phát hành, trên {count} đã phát hành"
+    "velocity_typical": "Chu kỳ điển hình: {days} ngày từ khi chốt đến khi phát hành, trên {count} đã phát hành",
+    "crit_scope": "Phạm vi đã chốt",
+    "crit_scope_clean": "Không có gì được thêm sau khi chứng nhận",
+    "crit_scope_crept": "{count} được thêm sau khi chốt: {names}",
+    "crit_scope_uncut": "Chưa chốt. Việc theo dõi phát sinh bắt đầu từ lúc chốt"
   }
 }

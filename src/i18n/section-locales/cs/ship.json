@@ -115,5 +115,9 @@
   "velocity_forecast_today": "Předpokládané dodání {date}, při uzavření dnes",
   "velocity_no_history": "Zatím žádná historie cyklů. Odhad bude možný po dvou dodaných milnících.",
   "velocity_past_target": "po termínu {date}",
-  "velocity_typical": "Typický cyklus: {days} dní od uzavření po dodání, z {count} dodaných"
+  "velocity_typical": "Typický cyklus: {days} dní od uzavření po dodání, z {count} dodaných",
+  "crit_scope": "Rozsah zmrazen",
+  "crit_scope_clean": "Po certifikaci nic nepřibylo",
+  "crit_scope_crept": "{count} přidáno po uzavření: {names}",
+  "crit_scope_uncut": "Zatím neuzavřeno. Sledování rozšiřování začíná uzavřením"
 }

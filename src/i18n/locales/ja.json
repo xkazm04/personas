@@ -18989,6 +18989,10 @@
     "velocity_forecast_today": "リリース予測 {date}（本日確定した場合）",
     "velocity_no_history": "サイクルの履歴がまだありません。2 件リリースすると予測できます。",
     "velocity_past_target": "目標 {date} より後",
-    "velocity_typical": "標準サイクル: 確定からリリースまで {days} 日 ({count} 件のリリースに基づく)"
+    "velocity_typical": "標準サイクル: 確定からリリースまで {days} 日 ({count} 件のリリースに基づく)",
+    "crit_scope": "スコープ確定",
+    "crit_scope_clean": "確定後に追加されたものはありません",
+    "crit_scope_crept": "確定後に {count} 件追加: {names}",
+    "crit_scope_uncut": "未確定です。スコープ増加の追跡は確定時から始まります"
   }
 }

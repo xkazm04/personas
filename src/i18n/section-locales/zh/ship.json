@@ -115,5 +115,9 @@
   "velocity_forecast_today": "预计发布 {date}（若今日定版）",
   "velocity_no_history": "尚无周期历史。完成两个里程碑后即可预测。",
   "velocity_past_target": "晚于 {date} 的目标",
-  "velocity_typical": "典型周期：从定版到发布 {days} 天，基于 {count} 个已发布里程碑"
+  "velocity_typical": "典型周期：从定版到发布 {days} 天，基于 {count} 个已发布里程碑",
+  "crit_scope": "范围已冻结",
+  "crit_scope_clean": "定版后没有新增内容",
+  "crit_scope_crept": "定版后新增 {count} 项：{names}",
+  "crit_scope_uncut": "尚未定版。范围蔓延的追踪从定版开始"
 }

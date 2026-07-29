@@ -52,7 +52,10 @@ export function buildGoalAssistPrompt(
 }
 
 /** The criterion-specific brief. Only criteria with agent-shaped work get
- *  one — objective/sensors are human decisions and return null. */
+ *  one; everything else returns null and the chip grows no lightning.
+ *  `objective` (bind a goal), `sensors` (bind connectors) and `scope-frozen`
+ *  (accept or drop what joined late) are human scoping decisions, not work an
+ *  agent can do on your behalf, so they fall through to the default null. */
 export function buildCriterionPrompt(vm: ShipMilestoneVM, c: ExitCriterion, project: DevProject): string | null {
   if (c.id === 'contexts') {
     const crit = vm.footprint.filter((x) => x.tone === 'crit');

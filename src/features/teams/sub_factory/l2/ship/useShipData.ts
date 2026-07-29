@@ -24,7 +24,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
-import { deriveCriteria, deriveFootprint } from './shipDerive';
+import { deriveCriteria } from './shipCriteria';
+import { deriveFootprint } from './shipDerive';
 import {
   featureState, type ContextTone, type ScopeBucket,
   type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
@@ -175,6 +176,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
       const core = members.filter((mm) => mm.bucket === 'core');
       const footprint = deriveFootprint(core, contexts);
       const criteria = deriveCriteria({
+        row: m,
         core,
         boundGoals,
         footprint,

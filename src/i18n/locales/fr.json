@@ -18989,6 +18989,10 @@
     "velocity_forecast_today": "Livraison prévue {date}, si figé aujourd’hui",
     "velocity_no_history": "Pas encore d’historique de cycle. Deux jalons livrés rendront une prévision possible.",
     "velocity_past_target": "après l’objectif du {date}",
-    "velocity_typical": "Cycle typique : {days} jours du gel à la livraison, sur {count} livrés"
+    "velocity_typical": "Cycle typique : {days} jours du gel à la livraison, sur {count} livrés",
+    "crit_scope": "Périmètre gelé",
+    "crit_scope_clean": "Rien n’a rejoint le périmètre après la certification",
+    "crit_scope_crept": "{count} ajoutés après le gel : {names}",
+    "crit_scope_uncut": "Pas encore figé. Le suivi des ajouts démarre au gel"
   }
 }

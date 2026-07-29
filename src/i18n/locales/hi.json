@@ -18989,6 +18989,10 @@
     "velocity_forecast_today": "अनुमानित रिलीज़ {date}, यदि आज कट हो",
     "velocity_no_history": "अभी कोई साइकल इतिहास नहीं है। दो माइलस्टोन रिलीज़ होने पर अनुमान संभव होगा।",
     "velocity_past_target": "{date} लक्ष्य के बाद",
-    "velocity_typical": "सामान्य साइकल: कट से रिलीज़ तक {days} दिन, {count} रिलीज़ के आधार पर"
+    "velocity_typical": "सामान्य साइकल: कट से रिलीज़ तक {days} दिन, {count} रिलीज़ के आधार पर",
+    "crit_scope": "स्कोप फ़्रोज़न",
+    "crit_scope_clean": "प्रमाणन के बाद कुछ भी नहीं जुड़ा",
+    "crit_scope_crept": "कट के बाद {count} जोड़े गए: {names}",
+    "crit_scope_uncut": "अभी कट नहीं हुआ। स्कोप बढ़ने की ट्रैकिंग कट से शुरू होती है"
   }
 }

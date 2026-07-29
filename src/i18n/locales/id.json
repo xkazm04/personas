@@ -18989,6 +18989,10 @@
     "velocity_forecast_today": "Perkiraan rilis {date}, jika dipotong hari ini",
     "velocity_no_history": "Belum ada riwayat siklus. Dua milestone yang dirilis membuat perkiraan mungkin.",
     "velocity_past_target": "melewati target {date}",
-    "velocity_typical": "Siklus khas: {days} hari dari cut ke rilis, dari {count} yang dirilis"
+    "velocity_typical": "Siklus khas: {days} hari dari cut ke rilis, dari {count} yang dirilis",
+    "crit_scope": "Cakupan dibekukan",
+    "crit_scope_clean": "Tidak ada yang masuk setelah sertifikasi",
+    "crit_scope_crept": "{count} ditambahkan setelah cut: {names}",
+    "crit_scope_uncut": "Belum dipotong. Pelacakan penambahan dimulai saat cut"
   }
 }
