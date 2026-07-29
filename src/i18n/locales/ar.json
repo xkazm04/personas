@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "جارٍ رسم بنية المشروع…",
     "uncharted_title": "لا شيء مرسوم بعد",
     "uncharted_tracked": "متتبَّع في لوحة النشاط — تُملأ المكتبة عند الاكتمال.",
-    "ungrouped": "غير مجمّع"
+    "ungrouped": "غير مجمّع",
+    "cover_forecast": "توقع {date}",
+    "velocity_forecast_cut": "الإطلاق المتوقع {date}",
+    "velocity_forecast_today": "الإطلاق المتوقع {date}، إذا تم التثبيت اليوم",
+    "velocity_no_history": "لا يوجد سجل لدورات التسليم بعد. إطلاق معلمتين يتيح التوقع.",
+    "velocity_past_target": "بعد الموعد المستهدف {date}",
+    "velocity_typical": "الدورة المعتادة: {days} يوماً من التثبيت إلى الإطلاق، استناداً إلى {count} إطلاقاً"
   }
 }

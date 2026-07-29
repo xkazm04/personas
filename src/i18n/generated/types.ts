@@ -18928,6 +18928,12 @@ export type Translations = {
     crit_sensors: string;
     crit_sensors_ok: string;
     crit_sensors_missing: string;
+    velocity_no_history: string;
+    velocity_typical: string;
+    velocity_forecast_cut: string;
+    velocity_forecast_today: string;
+    velocity_past_target: string;
+    cover_forecast: string;
     state_ready: string;
     state_blocked: string;
     state_no_kpi: string;

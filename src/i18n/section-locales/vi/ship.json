@@ -109,5 +109,11 @@
   "uncharted_scanning": "Đang lập bản đồ codebase…",
   "uncharted_title": "Chưa có gì được lập bản đồ",
   "uncharted_tracked": "Được theo dõi trong activity dock — thư viện sẽ điền vào khi hoàn tất.",
-  "ungrouped": "Chưa phân nhóm"
+  "ungrouped": "Chưa phân nhóm",
+  "cover_forecast": "dự báo {date}",
+  "velocity_forecast_cut": "Dự kiến phát hành {date}",
+  "velocity_forecast_today": "Dự kiến phát hành {date}, nếu chốt hôm nay",
+  "velocity_no_history": "Chưa có lịch sử chu kỳ. Hai cột mốc đã phát hành sẽ cho phép dự báo.",
+  "velocity_past_target": "sau mốc mục tiêu {date}",
+  "velocity_typical": "Chu kỳ điển hình: {days} ngày từ khi chốt đến khi phát hành, trên {count} đã phát hành"
 }

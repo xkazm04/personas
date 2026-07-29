@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "कोडबेस चार्ट हो रहा है…",
     "uncharted_title": "अभी तक कुछ भी मैप नहीं हुआ",
     "uncharted_tracked": "गतिविधि डॉक में ट्रैक किया गया — पूरा होने पर लाइब्रेरी भर जाएगी।",
-    "ungrouped": "अवर्गीकृत"
+    "ungrouped": "अवर्गीकृत",
+    "cover_forecast": "अनुमान {date}",
+    "velocity_forecast_cut": "अनुमानित रिलीज़ {date}",
+    "velocity_forecast_today": "अनुमानित रिलीज़ {date}, यदि आज कट हो",
+    "velocity_no_history": "अभी कोई साइकल इतिहास नहीं है। दो माइलस्टोन रिलीज़ होने पर अनुमान संभव होगा।",
+    "velocity_past_target": "{date} लक्ष्य के बाद",
+    "velocity_typical": "सामान्य साइकल: कट से रिलीज़ तक {days} दिन, {count} रिलीज़ के आधार पर"
   }
 }

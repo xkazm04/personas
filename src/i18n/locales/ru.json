@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "Нанесение кодовой базы на карту…",
     "uncharted_title": "Пока ничего не нанесено",
     "uncharted_tracked": "Отслеживается в панели активности — библиотека заполнится по завершении.",
-    "ungrouped": "Без группы"
+    "ungrouped": "Без группы",
+    "cover_forecast": "прогноз {date}",
+    "velocity_forecast_cut": "Прогноз выпуска {date}",
+    "velocity_forecast_today": "Прогноз выпуска {date}, если срез сегодня",
+    "velocity_no_history": "Пока нет истории циклов. Прогноз появится после двух выпущенных вех.",
+    "velocity_past_target": "позже цели {date}",
+    "velocity_typical": "Типичный цикл: {days} дн. от среза до выпуска, по {count} выпущенным"
   }
 }

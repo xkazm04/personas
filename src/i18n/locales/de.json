@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "Codebase wird kartiert…",
     "uncharted_title": "Noch nichts kartiert",
     "uncharted_tracked": "Im Aktivitäts-Dock verfolgt — die Bibliothek füllt sich, sobald es abgeschlossen ist.",
-    "ungrouped": "Nicht gruppiert"
+    "ungrouped": "Nicht gruppiert",
+    "cover_forecast": "Prognose {date}",
+    "velocity_forecast_cut": "Voraussichtliche Auslieferung {date}",
+    "velocity_forecast_today": "Voraussichtliche Auslieferung {date}, bei Schnitt heute",
+    "velocity_no_history": "Noch keine Zyklusdaten. Zwei ausgelieferte Meilensteine ermöglichen eine Prognose.",
+    "velocity_past_target": "nach dem Ziel {date}",
+    "velocity_typical": "Typischer Zyklus: {days} Tage vom Schnitt bis zur Auslieferung, über {count} ausgelieferte"
   }
 }

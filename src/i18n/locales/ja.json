@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "コードベースをチャート中…",
     "uncharted_title": "まだ何もマッピングされていません",
     "uncharted_tracked": "アクティビティドックで追跡中 — 完了するとライブラリが埋まります。",
-    "ungrouped": "未グループ"
+    "ungrouped": "未グループ",
+    "cover_forecast": "予測 {date}",
+    "velocity_forecast_cut": "リリース予測 {date}",
+    "velocity_forecast_today": "リリース予測 {date}（本日確定した場合）",
+    "velocity_no_history": "サイクルの履歴がまだありません。2 件リリースすると予測できます。",
+    "velocity_past_target": "目標 {date} より後",
+    "velocity_typical": "標準サイクル: 確定からリリースまで {days} 日 ({count} 件のリリースに基づく)"
   }
 }

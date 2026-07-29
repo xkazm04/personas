@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "正在图谱化代码库……",
     "uncharted_title": "尚未映射任何内容",
     "uncharted_tracked": "已在活动面板中跟踪 — 完成后库会自动填充。",
-    "ungrouped": "未分组"
+    "ungrouped": "未分组",
+    "cover_forecast": "预计 {date}",
+    "velocity_forecast_cut": "预计发布 {date}",
+    "velocity_forecast_today": "预计发布 {date}（若今日定版）",
+    "velocity_no_history": "尚无周期历史。完成两个里程碑后即可预测。",
+    "velocity_past_target": "晚于 {date} 的目标",
+    "velocity_typical": "典型周期：从定版到发布 {days} 天，基于 {count} 个已发布里程碑"
   }
 }

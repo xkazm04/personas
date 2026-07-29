@@ -131,6 +131,19 @@ The sensor booleans come straight off the project row: `llmWired = Boolean(proje
 
 Criterion chips render in the content header with a border and text in the criterion's hue (emerald / amber / red / blue), the `done/total` figure, and a native tooltip carrying the evidence line.
 
+### Cycle-time forecast
+
+`shipVelocity.ts` is the one consumer of `cut_at` / `shipped_at` beyond the date label. It is pure and takes `DevMilestone[]`:
+
+- **Evidence.** Every `shipped` milestone carrying BOTH stamps is one observed cut-to-ship cycle. Rows whose `shipped_at` precedes their `cut_at` (clock skew, a hand-edited row) are dropped rather than counted as a negative cycle.
+- **Median, not mean.** One milestone that sat for 90 days must not drag the estimate for the well-behaved ones.
+- **The evidence bar.** Below `MIN_SAMPLES` (2) observed cycles, `deriveShipVelocity` returns `null` and both surfaces say plainly that there is no history yet. A forecast is never rendered from one data point.
+- **The subject.** The forecast is about the next unshipped milestone, chosen with the same rule the cover strip uses (the active cut, else the lowest-ordered planned). A shipped milestone never carries a forecast: it has a real date.
+- **The basis.** Counted forward from the milestone's `cut_at` when it is cut (`basis: 'cut'`), otherwise from today, and the copy says "if cut today" (`basis: 'today'`) so the assumption is visible.
+- **Against the target.** Both dates are `yyyy-mm-dd`, so `late` is a plain string compare. A late forecast is stated factually next to the target, not raised as an alarm.
+
+Surfaced in two places: `ShipVelocityNote` under the criteria chips in the Planner's content header, and the cover roadmap strip, where `buildCoverRoadmap` folds `forecast` into its view model beside the next milestone's target date.
+
 ## 6. Scope buckets and the footprint
 
 Every use case in the project sits in one of four states relative to a milestone: **core**, **later**, **never**, or unassigned (no row at all).
@@ -249,6 +262,8 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `.../ship/ShipDispatch.tsx` | `shipDispatchKey`, `buildCriterionPrompt`, `buildGoalAssistPrompt`, `ShipDispatchModal` |
 | `.../ship/shipModel.ts` | Types, ink maps, `shipVerdict`, `featureState`, `bucketLabel` |
 | `.../ship/shipDerive.ts` | Pure derivations lifted out of the hook: `deriveFootprint`, `deriveCriteria`. Unit-tested in `__tests__/shipDerive.test.ts` |
+| `.../ship/shipVelocity.ts` | Pure cycle-time forecast from `cut_at` / `shipped_at`. Unit-tested in `__tests__/shipVelocity.test.ts` |
+| `.../ship/ShipVelocityNote.tsx` | The Planner header's cycle-time + forecast line |
 | `.../ship/shipRows.tsx` | `LedgerRow` / `LedgerList` / `LedgerHeader`, the shared ledger language |
 | `.../ship/useShipData.ts` | The live adapter: fetch, join, derive, and every mutation |
 | `.../ship/seedOnboarding.ts` | Idempotent onboarding seed milestone |

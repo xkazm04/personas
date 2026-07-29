@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "Cartografiando el código…",
     "uncharted_title": "Aún nada cartografiado",
     "uncharted_tracked": "Rastreado en el panel de actividad — la biblioteca se llena cuando termina.",
-    "ungrouped": "Sin agrupar"
+    "ungrouped": "Sin agrupar",
+    "cover_forecast": "previsión {date}",
+    "velocity_forecast_cut": "Envío previsto {date}",
+    "velocity_forecast_today": "Envío previsto {date}, si se cierra hoy",
+    "velocity_no_history": "Aún no hay historial de ciclos. Con dos hitos entregados será posible una previsión.",
+    "velocity_past_target": "después del objetivo del {date}",
+    "velocity_typical": "Ciclo típico: {days} días del cierre a la entrega, sobre {count} entregados"
   }
 }

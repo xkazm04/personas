@@ -109,5 +109,11 @@
   "uncharted_scanning": "Cartographie du code en cours…",
   "uncharted_title": "Rien n'est encore cartographié",
   "uncharted_tracked": "Suivi dans le tableau d'activité — la bibliothèque se remplit une fois terminé.",
-  "ungrouped": "Non groupé"
+  "ungrouped": "Non groupé",
+  "cover_forecast": "prévision {date}",
+  "velocity_forecast_cut": "Livraison prévue {date}",
+  "velocity_forecast_today": "Livraison prévue {date}, si figé aujourd’hui",
+  "velocity_no_history": "Pas encore d’historique de cycle. Deux jalons livrés rendront une prévision possible.",
+  "velocity_past_target": "après l’objectif du {date}",
+  "velocity_typical": "Cycle typique : {days} jours du gel à la livraison, sur {count} livrés"
 }

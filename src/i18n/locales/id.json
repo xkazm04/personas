@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "Memetakan codebase…",
     "uncharted_title": "Belum ada yang dipetakan",
     "uncharted_tracked": "Dilacak di activity dock — library akan terisi saat selesai.",
-    "ungrouped": "Tidak dikelompokkan"
+    "ungrouped": "Tidak dikelompokkan",
+    "cover_forecast": "perkiraan {date}",
+    "velocity_forecast_cut": "Perkiraan rilis {date}",
+    "velocity_forecast_today": "Perkiraan rilis {date}, jika dipotong hari ini",
+    "velocity_no_history": "Belum ada riwayat siklus. Dua milestone yang dirilis membuat perkiraan mungkin.",
+    "velocity_past_target": "melewati target {date}",
+    "velocity_typical": "Siklus khas: {days} hari dari cut ke rilis, dari {count} yang dirilis"
   }
 }

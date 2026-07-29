@@ -12,6 +12,7 @@ import { ChevronRight, Flag } from 'lucide-react';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { deriveShipVelocity } from '../l2/ship/shipVelocity';
 import { INK } from './passportInk';
 
 export type CoverMilestoneStatus = 'planned' | 'active' | 'shipped';
@@ -27,6 +28,12 @@ export interface CoverRoadmapVM {
   shipped: number;
   /** First unshipped milestone (active before planned) — the "next" line. */
   next: { name: string; targetDate: string | null; status: CoverMilestoneStatus } | null;
+  /**
+   * Cycle-time forecast for that next milestone, derived from this project's
+   * own cut-to-ship history. Null below the evidence bar (see shipVelocity),
+   * so the cover shows a date only when the rows actually support one.
+   */
+  forecast: { date: string; late: boolean } | null;
 }
 
 /** dev_milestones rows → the cover's minimized view model. Ordered by
@@ -39,6 +46,8 @@ export function buildCoverRoadmap(rows: DevMilestone[]): CoverRoadmapVM {
     status: (m.status === 'shipped' || m.status === 'active' ? m.status : 'planned') as CoverMilestoneStatus,
   }));
   const nextRow = ordered.find((m) => m.status === 'active') ?? ordered.find((m) => m.status !== 'shipped') ?? null;
+  const velocity = deriveShipVelocity(rows);
+  const f = velocity?.forecast;
   return {
     steps,
     shipped: steps.filter((s) => s.status === 'shipped').length,
@@ -49,6 +58,7 @@ export function buildCoverRoadmap(rows: DevMilestone[]): CoverRoadmapVM {
         status: nextRow.status === 'active' ? 'active' : 'planned',
       }
       : null,
+    forecast: f && nextRow && f.milestoneId === nextRow.id ? { date: f.date, late: f.late } : null,
   };
 }
 
@@ -104,6 +114,15 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
         </span>
         {roadmap.next?.targetDate && (
           <span className="typo-body-lg tabular-nums text-foreground/70 shrink-0">{roadmap.next.targetDate}</span>
+        )}
+        {roadmap.next && roadmap.forecast && (
+          <span
+            className="typo-body-lg tabular-nums shrink-0"
+            style={{ color: roadmap.forecast.late ? INK.amber : INK.teal }}
+            data-testid="cover-roadmap-forecast"
+          >
+            {tx(t.ship.cover_forecast, { date: roadmap.forecast.date })}
+          </span>
         )}
       </span>
     </>

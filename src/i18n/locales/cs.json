@@ -18983,6 +18983,12 @@
     "uncharted_scanning": "Mapování kódové základny…",
     "uncharted_title": "Zatím nic zmapováno",
     "uncharted_tracked": "Sledováno v panelu aktivity — knihovna se doplní po dokončení.",
-    "ungrouped": "Neseskupeno"
+    "ungrouped": "Neseskupeno",
+    "cover_forecast": "odhad {date}",
+    "velocity_forecast_cut": "Předpokládané dodání {date}",
+    "velocity_forecast_today": "Předpokládané dodání {date}, při uzavření dnes",
+    "velocity_no_history": "Zatím žádná historie cyklů. Odhad bude možný po dvou dodaných milnících.",
+    "velocity_past_target": "po termínu {date}",
+    "velocity_typical": "Typický cyklus: {days} dní od uzavření po dodání, z {count} dodaných"
   }
 }

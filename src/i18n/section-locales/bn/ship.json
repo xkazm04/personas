@@ -109,5 +109,11 @@
   "uncharted_scanning": "কোডবেস চার্ট করা হচ্ছে…",
   "uncharted_title": "এখনো কিছু ম্যাপ করা হয়নি",
   "uncharted_tracked": "অ্যাক্টিভিটি ডকে ট্র্যাক করা হচ্ছে — সম্পন্ন হলে লাইব্রেরি পূর্ণ হবে।",
-  "ungrouped": "অগোষ্ঠীভুক্ত"
+  "ungrouped": "অগোষ্ঠীভুক্ত",
+  "cover_forecast": "পূর্বাভাস {date}",
+  "velocity_forecast_cut": "সম্ভাব্য রিলিজ {date}",
+  "velocity_forecast_today": "সম্ভাব্য রিলিজ {date}, আজ কাট হলে",
+  "velocity_no_history": "এখনও কোনো সাইকেল ইতিহাস নেই। দুটি মাইলস্টোন রিলিজ হলে পূর্বাভাস সম্ভব।",
+  "velocity_past_target": "{date} লক্ষ্যমাত্রার পরে",
+  "velocity_typical": "সাধারণ সাইকেল: কাট থেকে রিলিজ পর্যন্ত {days} দিন, {count}টি রিলিজের ভিত্তিতে"
 }

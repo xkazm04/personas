@@ -23,6 +23,7 @@ import {
   type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { ShipVelocityNote } from './ShipVelocityNote';
 import { useShipData, type ShipData } from './useShipData';
 
 const STATUS_META: Record<ShipMilestoneVM['status'], { hue: string; icon: typeof Check }> = {
@@ -290,6 +291,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               );
             })}
           </div>
+          <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
         </div>
         {editable && !composing && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-2">

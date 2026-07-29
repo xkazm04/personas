@@ -109,5 +109,11 @@
   "uncharted_scanning": "코드베이스 차트화 중…",
   "uncharted_title": "아직 매핑된 것이 없습니다",
   "uncharted_tracked": "활동 독에서 추적됨 — 완료되면 라이브러리가 채워집니다.",
-  "ungrouped": "미분류"
+  "ungrouped": "미분류",
+  "cover_forecast": "예상 {date}",
+  "velocity_forecast_cut": "출시 예상 {date}",
+  "velocity_forecast_today": "출시 예상 {date}, 오늘 확정 시",
+  "velocity_no_history": "아직 사이클 기록이 없습니다. 마일스톤 두 개를 출시하면 예측할 수 있습니다.",
+  "velocity_past_target": "목표 {date} 이후",
+  "velocity_typical": "일반 사이클: 확정부터 출시까지 {days}일, 출시 {count}건 기준"
 }
