@@ -7,11 +7,6 @@
 - WORKTREE: `.claude/worktrees/passport-populate` (branch `worktree-passport-populate`) — physical isolation from `perfect-factory-ship`, which declares the same `src/features/teams/sub_factory/**` prefix (same operator, who directed this build).
 - Paths: `src-tauri/src/commands/infrastructure/{dev_tools_http,context_generation}.rs`, external-console spawn command, `.claude/skills/project-populate/**`, `src/features/shared/dispatch/DispatchChooser.tsx`, `src/features/teams/sub_factory/passport/{PassportActionsRow,actionConfirmCatalog,populateDispatch}`, `src/api/devTools/**`, `src/i18n/locales/*.json`, `docs/features/**`.
 
-### perfect-factory-ship — /perfect targeted arc (Factory / Ship layer) — session opus-5[1m]
-- Started: 2026-07-29. Status: started. Same session that just shipped the Ship-layer polish (cover roadmap, action consent modal, readability pass, ledger tooltips/empty states, em-dash sweep, ship.md doc). Now running /perfect proposal pass on the Factory/Ship context with a self-sourced brief (no scout: the Director authored this code within the hour).
-- Paths: `src/features/teams/sub_factory/**`, `src/i18n/locales/*.json` (ship + kpis sections), `docs/features/plugins/dev tools/ship.md`, `docs/features/teams/kpis.md`, and on acceptance possibly `src-tauri/db/src/repos/dev_tools.rs` (milestone lifecycle) + `src-tauri/src/commands/**` milestone commands.
-- NOTE: `prototype-factory-ship-tab` above declares the same sub_factory/l2 paths but is the SAME operator's earlier prototype run that landed on master; treat as continuation, not conflict.
-
 ### explorer-healing-engine — /explorer sweep of the healing-engine context — session fable-5
 - Started: 2026-07-27. Status: started.
 - Paths: healing engine Rust modules (engine/healing*, commands/*/healing.rs, db healing models/repos), `src/api/overview/healing.ts`, `src/features/overview/sub_observability/Healing*`.
@@ -39,6 +34,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### perfect-factory-ship — /perfect targeted arc (Factory / Ship layer) — session opus-5[1m] — COMPLETE, 5 directions + 2 Director commits
+- 2026-07-29. Wave: `abbf61b19` milestone lifecycle integrity (cut_at stamped at INSERT when a milestone is created active + backfill migration + server-side refusal of a direct planned->shipped) · `9d88eeb73` one batched `dev_tools_project_wall_summary` replacing the wall's 3N IPC fan-out · `e1b6ed3bb` milestone footprint joins on context IDs, not display names · `11cbf940f` median cut-to-ship cycle + next-milestone forecast (no forecast below 2 observed cycles) · `36b84eb68` exit-criteria registry + new `scope-frozen` criterion. Director: `2b9f1b8e9` tracks `src-tauri/resources/skills` so a fresh worktree can run a desktop build; `fa375650d` re-syncs ship.md + CHANGELOG.
+- Two builders in isolated worktrees, partitioned by files touched (three directions converging on `useShipData.ts` went to ONE sequenced builder). Zero conflicts across 5 cherry-picks, zero builder deaths, zero nudges, zero DECISION round-trips. Worktrees removed, junctions verified gone before deletion, main `node_modules` intact.
+- Gates on master: tsc 0 · vitest teams 238/238 · i18n strict 0/0 x14 · `cargo check --features desktop` at the 234-warning baseline (unchanged) · `cargo test -p personas-db --lib milestone` 6/6 · `migrations::incremental` 5/5.
+- FOUND, NOT FIXED: pre-existing master test failure `repos::dev_tools::backlog_memory_tests::normalize_collapses_rewordings_and_keeps_verbs` (expects `extract-dim-tile`, gets `extract-dimtile`; zero commits in this wave touch that file) · `create_milestone` still accepts `status: 'shipped'` at creation · the velocity forecast can render a PAST date for a milestone cut longer ago than the median · `ShipLibraryTree`/`ShipContextDrawer` still join features and goals to contexts by display name (display-only).
+- NOT live-verified. Smoke debt: the backfill migration against a real DB, the batched wall on a many-project install, and the forecast surfaces with >= 2 shipped milestones.
 
 ### box-ai-drive-expansion — /research (code, Drive plugin) — session opus-5[1m] — COMPLETE, commit `65e5327b7`
 - 2026-07-28. Source: https://www.box.com/ai (+ Box Extract / `extract_structured` dev docs). 2 findings accepted and shipped in-session; 1 declined (per-folder auto-extract → deferred Hub concept).
