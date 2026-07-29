@@ -344,6 +344,10 @@
     "triage_hint_close": "Close",
     "triage_deferred_note": "This one needs the full picker — it can’t be answered from a card.",
     "triage_pick_one": "Pick one",
+    "triage_questions_pending": "{count} questions before this build can continue",
+    "triage_fact_questions": "Questions",
+    "triage_field_builder_only": "Needs the full picker — answer this one in the builder.",
+    "triage_deferred_some": "Some of these need the full picker. Answer the rest here; the picker ones stay open in the builder.",
     "triage_suggested": "Suggested",
     "triage_why_raised": "Why this was raised",
     "triage_evidence": "Evidence"

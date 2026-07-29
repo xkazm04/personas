@@ -346,7 +346,11 @@
     "triage_source_local": "Local",
     "triage_submit": "Enviar",
     "triage_suggested": "Sugeridas",
-    "triage_why_raised": "Por qué se planteó"
+    "triage_why_raised": "Por qué se planteó",
+    "triage_deferred_some": "Algunas requieren el selector completo. Responde las demás aquí; esas quedan abiertas en el builder.",
+    "triage_fact_questions": "Preguntas",
+    "triage_field_builder_only": "Requiere el selector completo — responde esta en el builder.",
+    "triage_questions_pending": "{count} preguntas antes de que esta compilación pueda continuar"
   },
   "common": {
     "loading": "Cargando...",

@@ -55,13 +55,13 @@ export function TriageDeckVariant({
   const reduced = useReducedMotion();
   const {
     top,
-    answer,
+    answers,
     setAnswer,
     cardRef,
     textareaRef,
     commit,
     decideTop,
-    submitAnswer,
+    submitAnswers,
     fireBranch,
     canAccept,
   } = useDeckControls(queue, onClose);
@@ -121,9 +121,9 @@ export function TriageDeckVariant({
                     i === 0 && item.input ? (
                       <QuestionPanel
                         item={item}
-                        answer={answer}
+                        answers={answers}
                         onAnswer={setAnswer}
-                        onSubmit={submitAnswer}
+                        onSubmit={submitAnswers}
                         onBranch={fireBranch}
                         textareaRef={textareaRef}
                       />

@@ -346,7 +346,11 @@
     "triage_source_local": "স্থানীয়",
     "triage_submit": "সাবমিট করুন",
     "triage_suggested": "প্রস্তাবিত",
-    "triage_why_raised": "কেন এটি উত্থাপিত হয়েছে"
+    "triage_why_raised": "কেন এটি উত্থাপিত হয়েছে",
+    "triage_deferred_some": "এর কিছুর জন্য সম্পূর্ণ পিকার দরকার। বাকিগুলোর উত্তর এখানেই দিন; সেগুলো বিল্ডারে খোলা থাকবে।",
+    "triage_fact_questions": "প্রশ্ন",
+    "triage_field_builder_only": "সম্পূর্ণ পিকার দরকার — এটির উত্তর বিল্ডারে দিন।",
+    "triage_questions_pending": "এই বিল্ড চালিয়ে যাওয়ার আগে {count}টি প্রশ্ন"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

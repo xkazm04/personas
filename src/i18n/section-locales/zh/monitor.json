@@ -345,5 +345,9 @@
   "triage_source_local": "本地",
   "triage_submit": "提交",
   "triage_suggested": "建议",
-  "triage_why_raised": "提出原因"
+  "triage_why_raised": "提出原因",
+  "triage_deferred_some": "其中一些需要完整选择器。请在此回答其余问题；需要选择器的将保留在构建器中待回答。",
+  "triage_fact_questions": "问题",
+  "triage_field_builder_only": "需要完整选择器 — 请在构建器中回答此问题。",
+  "triage_questions_pending": "此构建继续前还有 {count} 个问题"
 }

@@ -44,7 +44,7 @@ import {
   DEFAULT_TRIAGE_COPY,
   ideaToTriage,
   practiceToTriage,
-  questionToTriage,
+  questionGroupToTriage,
   reviewToTriage,
   type TriageCopy,
 } from './triageAdapters';
@@ -140,21 +140,20 @@ export function useUnifiedTriage(
       out.push(reviewToTriage(review, copy));
     }
 
+    // One card per SESSION, not per question — answering it is one batched
+    // `answer_build_question`, which resumes the halted CLI exactly once.
     for (const group of interactions.questionGroups) {
-      for (const question of group.questions) {
-        out.push(
-          questionToTriage(
-            question,
-            {
-              sessionId: group.sessionId,
-              personaId: group.personaId,
-              personaName: group.personaName,
-              personaColor: group.personaColor,
-            },
-            copy,
-          ),
-        );
-      }
+      const card = questionGroupToTriage(
+        {
+          sessionId: group.sessionId,
+          personaId: group.personaId,
+          personaName: group.personaName,
+          personaColor: group.personaColor,
+          questions: group.questions,
+        },
+        copy,
+      );
+      if (card) out.push(card);
     }
 
     for (const idea of ideas) {

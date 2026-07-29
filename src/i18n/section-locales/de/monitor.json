@@ -345,5 +345,9 @@
   "triage_source_local": "Lokal",
   "triage_submit": "Absenden",
   "triage_suggested": "Vorgeschlagen",
-  "triage_why_raised": "Warum das gemeldet wurde"
+  "triage_why_raised": "Warum das gemeldet wurde",
+  "triage_deferred_some": "Einige davon brauchen die vollständige Auswahl. Beantworte die übrigen hier; die anderen bleiben im Builder offen.",
+  "triage_fact_questions": "Fragen",
+  "triage_field_builder_only": "Braucht die vollständige Auswahl — beantworte diese im Builder.",
+  "triage_questions_pending": "{count} Fragen, bevor dieser Build fortgesetzt werden kann"
 }

@@ -21,6 +21,16 @@
  */
 import type { TriageDecision } from './triageTypes';
 
+/** Drop blank fields and trim the rest — what actually gets written. */
+export function filledAnswers(answers: Record<string, string> | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(answers ?? {})) {
+    const trimmed = value.trim();
+    if (trimmed) out[key] = trimmed;
+  }
+  return out;
+}
+
 /** Every write the queue can perform, injected. */
 export interface TriagePorts {
   reviewAction: (id: string, status: 'approved' | 'rejected', notes?: string) => Promise<void>;
@@ -56,15 +66,17 @@ export interface TriagePorts {
  *    reject is therefore read as what it actually means from the reviewer's
  *    hand: *not me, not now*. Same as skip, and the card's own verdict labels
  *    already say "Skip" / "Later" rather than "Reject".
- *  • Accepting a question with nothing to submit is likewise a no-op, not a
- *    resolution — the guard exists because an empty write is silent data loss.
+ *  • Accepting a question card with nothing filled in is likewise a no-op, not
+ *    a resolution — the guard exists because an empty write is silent data loss.
  */
 export function isDeferral(decision: TriageDecision): boolean {
-  const { item, verdict, branchId, answer } = decision;
+  const { item, verdict, branchId, answers } = decision;
   if (verdict === 'skip') return true;
   if (item.kind !== 'question' || branchId) return false;
   if (verdict === 'reject') return true;
-  return !answer?.trim() || !item.payload?.sessionId;
+  return (
+    Object.keys(filledAnswers(answers)).length === 0 || !item.payload?.sessionId
+  );
 }
 
 /**
@@ -79,7 +91,7 @@ export async function routeDecision(
   decision: TriageDecision,
   ports: TriagePorts,
 ): Promise<void> {
-  const { item, verdict, branchId, answer, reason } = decision;
+  const { item, verdict, branchId, answers, reason } = decision;
 
   switch (item.kind) {
     case 'review':
@@ -113,7 +125,8 @@ export async function routeDecision(
       return;
 
     case 'question': {
-      const sessionId = item.payload?.sessionId ?? '';
+      // `sourceId` IS the session — the card is the session, not one question.
+      const sessionId = item.payload?.sessionId ?? item.sourceId;
       if (branchId === 'builder') {
         // A deep-link is not a write, but it IS the only way this card can be
         // honoured — so a missing route is an error, not a quiet dismissal.
@@ -124,11 +137,15 @@ export async function routeDecision(
         ports.openBuilder(personaId);
         return;
       }
-      // `isDeferral` has already excluded these; the guard stays so the
-      // contract holds even for a caller that forgets to ask.
-      const trimmed = answer?.trim();
-      if (!trimmed || !sessionId) throw new Error('This question has no answer to submit');
-      await ports.submitAnswers(sessionId, { [item.sourceId]: trimmed });
+      // ONE call for the whole session. `answer_build_question` resumes the
+      // CLI, so a call per question resumes the same halted build N times.
+      // `isDeferral` has already excluded the empty case; the guard stays so
+      // the contract holds even for a caller that forgets to ask.
+      const filled = filledAnswers(answers);
+      if (Object.keys(filled).length === 0 || !sessionId) {
+        throw new Error('This card has no answers to submit');
+      }
+      await ports.submitAnswers(sessionId, filled);
       return;
     }
   }

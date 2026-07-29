@@ -345,5 +345,9 @@
   "triage_source_local": "로컬",
   "triage_submit": "제출",
   "triage_suggested": "제안됨",
-  "triage_why_raised": "제기된 이유"
+  "triage_why_raised": "제기된 이유",
+  "triage_deferred_some": "일부는 전체 선택기가 필요합니다. 나머지는 여기서 답하세요. 선택기가 필요한 항목은 빌더에 남습니다.",
+  "triage_fact_questions": "질문",
+  "triage_field_builder_only": "전체 선택기가 필요합니다 — 이 질문은 빌더에서 답하세요.",
+  "triage_questions_pending": "이 빌드를 계속하기까지 질문 {count}개"
 }

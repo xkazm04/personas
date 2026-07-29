@@ -346,7 +346,11 @@
     "triage_source_local": "Místní",
     "triage_submit": "Odeslat",
     "triage_suggested": "Navrhované",
-    "triage_why_raised": "Proč to vzniklo"
+    "triage_why_raised": "Proč to vzniklo",
+    "triage_deferred_some": "Některé vyžadují plný výběr. Ostatní odpověz zde; ty s výběrem zůstanou otevřené v builderu.",
+    "triage_fact_questions": "Otázky",
+    "triage_field_builder_only": "Vyžaduje plný výběr — odpověz na tuto v builderu.",
+    "triage_questions_pending": "{count} otázek, než může tento build pokračovat"
   },
   "common": {
     "loading": "Načítání...",

@@ -346,7 +346,11 @@
     "triage_source_local": "Lokal",
     "triage_submit": "Kirim",
     "triage_suggested": "Disarankan",
-    "triage_why_raised": "Mengapa ini diajukan"
+    "triage_why_raised": "Mengapa ini diajukan",
+    "triage_deferred_some": "Beberapa memerlukan pemilih lengkap. Jawab sisanya di sini; yang itu tetap terbuka di builder.",
+    "triage_fact_questions": "Pertanyaan",
+    "triage_field_builder_only": "Memerlukan pemilih lengkap — jawab yang ini di builder.",
+    "triage_questions_pending": "{count} pertanyaan sebelum build ini dapat lanjut"
   },
   "common": {
     "loading": "Memuat...",

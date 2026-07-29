@@ -346,7 +346,11 @@
     "triage_source_local": "Local",
     "triage_submit": "Envoyer",
     "triage_suggested": "Suggestions",
-    "triage_why_raised": "Pourquoi c’est signalé"
+    "triage_why_raised": "Pourquoi c’est signalé",
+    "triage_deferred_some": "Certaines nécessitent le sélecteur complet. Répondez aux autres ici ; celles-là restent ouvertes dans le builder.",
+    "triage_fact_questions": "Questions",
+    "triage_field_builder_only": "Nécessite le sélecteur complet — répondez à celle-ci dans le builder.",
+    "triage_questions_pending": "{count} questions avant que cette construction puisse continuer"
   },
   "common": {
     "loading": "Chargement...",

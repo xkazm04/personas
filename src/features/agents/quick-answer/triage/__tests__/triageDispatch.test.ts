@@ -43,18 +43,23 @@ describe('isDeferral — what must stay in the queue', () => {
     expect(isDeferral({ item: makeQuestion(), verdict: 'reject' })).toBe(true);
   });
 
-  it('treats accepting a question with no answer as a deferral', () => {
+  it('treats accepting a question card with nothing filled in as a deferral', () => {
     expect(isDeferral({ item: makeQuestion(), verdict: 'accept' })).toBe(true);
-    expect(isDeferral({ item: makeQuestion(), verdict: 'accept', answer: '   ' })).toBe(true);
+    expect(isDeferral({ item: makeQuestion(), verdict: 'accept', answers: {} })).toBe(true);
+    expect(isDeferral({ item: makeQuestion(), verdict: 'accept', answers: { tools: '  ' } })).toBe(
+      true,
+    );
   });
 
   it('treats accepting a question with no session as a deferral', () => {
     const orphan = makeQuestion({ payload: { personaId: 'p1' } });
-    expect(isDeferral({ item: orphan, verdict: 'accept', answer: 'yes' })).toBe(true);
+    expect(isDeferral({ item: orphan, verdict: 'accept', answers: { tools: 'yes' } })).toBe(true);
   });
 
   it('does NOT defer a real answer, a branch, or any non-question verdict', () => {
-    expect(isDeferral({ item: makeQuestion(), verdict: 'accept', answer: 'gmail' })).toBe(false);
+    expect(
+      isDeferral({ item: makeQuestion(), verdict: 'accept', answers: { tools: 'gmail' } }),
+    ).toBe(false);
     expect(isDeferral({ item: makeQuestion(), verdict: 'accept', branchId: 'builder' })).toBe(false);
     expect(isDeferral({ item: makeItem('review'), verdict: 'reject' })).toBe(false);
     expect(isDeferral({ item: makeItem('idea'), verdict: 'reject' })).toBe(false);
@@ -113,11 +118,18 @@ describe('routeDecision — ideas and practices', () => {
 });
 
 describe('routeDecision — build questions', () => {
-  it('submits the answer against the session, keyed by cell', async () => {
-    const item = makeQuestion({ sourceId: 'tools' });
+  it('submits EVERY answer against the session in ONE call', async () => {
+    // The whole point of the session card: `answer_build_question` resumes the
+    // halted CLI, so N answers must not mean N resumes.
+    const item = makeQuestion();
     const ports = makePorts();
-    await routeDecision({ item, verdict: 'accept', answer: '  gmail  ' }, ports);
-    expect(ports.submitAnswers).toHaveBeenCalledWith('sess-1', { tools: 'gmail' });
+    await routeDecision(
+      { item, verdict: 'accept', answers: { tools: '  gmail  ', tone: 'formal', skip: '  ' } },
+      ports,
+    );
+
+    expect(ports.submitAnswers).toHaveBeenCalledTimes(1);
+    expect(ports.submitAnswers).toHaveBeenCalledWith('sess-1', { tools: 'gmail', tone: 'formal' });
   });
 
   it('deep-links a deferred question to the builder', async () => {
@@ -133,9 +145,9 @@ describe('routeDecision — build questions', () => {
     ).rejects.toThrow(/builder route/i);
   });
 
-  it('refuses to submit an empty answer', async () => {
+  it('refuses to submit a card with nothing filled in', async () => {
     const ports = makePorts();
-    const decision: TriageDecision = { item: makeQuestion(), verdict: 'accept', answer: ' ' };
+    const decision: TriageDecision = { item: makeQuestion(), verdict: 'accept', answers: { a: ' ' } };
     await expect(routeDecision(decision, ports)).rejects.toThrow();
     expect(ports.submitAnswers).not.toHaveBeenCalled();
   });

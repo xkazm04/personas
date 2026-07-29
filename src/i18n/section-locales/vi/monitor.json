@@ -345,5 +345,9 @@
   "triage_source_local": "Cục bộ",
   "triage_submit": "Gửi",
   "triage_suggested": "Gợi ý",
-  "triage_why_raised": "Lý do được nêu"
+  "triage_why_raised": "Lý do được nêu",
+  "triage_deferred_some": "Một số cần bộ chọn đầy đủ. Hãy trả lời phần còn lại ở đây; những cái đó vẫn mở trong builder.",
+  "triage_fact_questions": "Câu hỏi",
+  "triage_field_builder_only": "Cần bộ chọn đầy đủ — hãy trả lời câu này trong builder.",
+  "triage_questions_pending": "{count} câu hỏi trước khi bản build này có thể tiếp tục"
 }

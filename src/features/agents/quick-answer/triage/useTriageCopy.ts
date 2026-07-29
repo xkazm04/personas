@@ -56,6 +56,8 @@ export function useTriageCopy(): TriageCopy {
       noDescription: m.triage_no_description,
       cloud: m.triage_source_cloud,
       local: m.triage_source_local,
+      questionsPending: m.triage_questions_pending,
+      questionsFact: m.triage_fact_questions,
     }),
     [m],
   );

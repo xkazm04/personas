@@ -26,7 +26,13 @@ import {
   type BacklogIdea,
 } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 
-import type { TriageItem, TriageTag, TriageFact, TriageTone } from './triageTypes';
+import type {
+  TriageItem,
+  TriageTag,
+  TriageFact,
+  TriageTone,
+  TriageQuestionField,
+} from './triageTypes';
 
 /**
  * Every user-facing string the adapters need, injected so the model stays
@@ -74,6 +80,11 @@ export interface TriageCopy {
   noDescription: string;
   cloud: string;
   local: string;
+  /** Title for a session card carrying more than one question. Carries a
+   *  `{count}` placeholder — the adapter substitutes, so this stays the one
+   *  string in the contract that is a template rather than a label. */
+  questionsPending: string;
+  questionsFact: string;
 }
 
 /** Provisional English. Replaced wholesale by translated copy at consolidation. */
@@ -115,6 +126,8 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   noDescription: 'No description was provided.',
   cloud: 'Cloud',
   local: 'Local',
+  questionsPending: '{count} questions before this build can continue',
+  questionsFact: 'Questions',
 };
 
 /* -------------------------------------------------------------------------- */
@@ -340,35 +353,88 @@ export function isDeferredQuestion(q: BuildQuestion): boolean {
   return !!(q.connectorCategory || q.acceptsReference || q.acceptsWebhookSource);
 }
 
-export function questionToTriage(
-  question: BuildQuestion,
-  ctx: { sessionId: string; personaId: string; personaName: string; personaColor: string | null },
-  copy: TriageCopy,
-): TriageItem {
+/** One halted build session and everything it is still waiting on. */
+export interface QuestionSession {
+  sessionId: string;
+  personaId: string;
+  personaName: string;
+  personaColor: string | null;
+  questions: BuildQuestion[];
+}
+
+/** One field per pending question, in ask order. */
+function toField(question: BuildQuestion, copy: TriageCopy): TriageQuestionField {
   const deferred = isDeferredQuestion(question);
+  return {
+    key: question.cellKey,
+    prompt: question.question,
+    kind: !deferred && question.options && question.options.length > 0 ? 'choice' : 'text',
+    options: deferred ? undefined : question.options ?? undefined,
+    suggestions: deferred ? undefined : question.suggested,
+    placeholder: copy.answerPlaceholder,
+    deferred,
+  };
+}
+
+/**
+ * ONE card per build SESSION, carrying every question that session is still
+ * waiting on.
+ *
+ * The granularity is the point. `answer_build_question` RESUMES the halted CLI,
+ * so answering three questions as three cards resumed the same build three
+ * times — three CLI turns, three chances to diverge, and the `_batch` payload
+ * (`lib/build/answerPayload`) reduced to a one-line batch each time. The whole
+ * reason that payload format exists is to resume once with everything.
+ *
+ * The id folds in the pending cell keys, not just the session: when a session's
+ * pending set changes (some answered here, more raised by the CLI) that is a
+ * genuinely different card, and it must not be mistaken for one the session
+ * already resolved.
+ *
+ * Returns null for a session with nothing pending — never an empty card.
+ */
+export function questionGroupToTriage(
+  session: QuestionSession,
+  copy: TriageCopy,
+): TriageItem | null {
+  const questions = session.questions;
+  const [first] = questions;
+  if (!first) return null;
+
+  const fields = questions.map((q) => toField(q, copy));
+  // A card is deferred only when NOT ONE field can be answered here. A mixed
+  // session is answerable: the reviewer fills what they can and the picker-only
+  // ones stay pending, coming back as their own card on the next poll.
+  const allDeferred = fields.every((f) => f.deferred);
+  const anyDeferred = fields.some((f) => f.deferred);
+
+  const keys = questions.map((q) => q.cellKey);
+  const tags: TriageTag[] = questions.map((q) => ({
+    id: `cell:${q.cellKey}`,
+    label: q.cellKey.replace(/_/g, ' '),
+    tone: q.connectorCategory ? 'warning' : 'accent',
+  }));
 
   return {
-    id: `question:${ctx.sessionId}:${question.cellKey}`,
-    sourceId: question.cellKey,
+    id: `question:${session.sessionId}:${[...keys].sort().join('|')}`,
+    sourceId: session.sessionId,
     kind: 'question',
-    title: question.question,
-    // A build question IS its title — there is no separate case to argue, so
-    // the body carries the persona context instead of repeating the question.
+    // A build question IS its title. With several, the title is the ask itself
+    // and the questions render as the card's fields.
+    title:
+      questions.length === 1
+        ? first.question
+        : copy.questionsPending.replace('{count}', String(questions.length)),
     body: '',
-    tags: [
-      { id: 'cell', label: question.cellKey.replace(/_/g, ' '), tone: 'accent' },
-      ...(question.connectorCategory
-        ? [{ id: 'connector', label: question.connectorCategory, tone: 'warning' as const }]
-        : []),
-    ],
+    tags,
     facts: [
-      { id: 'persona', label: copy.persona, value: ctx.personaName },
-      { id: 'cell', label: copy.category, value: question.cellKey.replace(/_/g, ' ') },
+      { id: 'persona', label: copy.persona, value: session.personaName },
+      { id: 'questions', label: copy.questionsFact, value: String(questions.length) },
     ],
-    source: { label: ctx.personaName, color: ctx.personaColor },
+    source: { label: session.personaName, color: session.personaColor },
     createdAt: new Date(0).toISOString(),
     weight: QUESTION_WEIGHT,
-    branches: deferred
+    branches: anyDeferred
       ? [
           {
             id: 'builder',
@@ -379,15 +445,8 @@ export function questionToTriage(
           },
         ]
       : [],
-    input: deferred
-      ? { kind: 'text', deferred: true }
-      : {
-          kind: question.options && question.options.length > 0 ? 'choice' : 'text',
-          options: question.options ?? undefined,
-          suggestions: question.suggested,
-          placeholder: copy.answerPlaceholder,
-        },
+    input: { fields, deferred: allDeferred },
     verdictLabels: { accept: copy.submit, reject: copy.skip, skip: copy.defer },
-    payload: { sessionId: ctx.sessionId, personaId: ctx.personaId },
+    payload: { sessionId: session.sessionId, personaId: session.personaId },
   };
 }

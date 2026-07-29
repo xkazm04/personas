@@ -346,7 +346,11 @@
     "triage_source_local": "Локально",
     "triage_submit": "Отправить",
     "triage_suggested": "Предложено",
-    "triage_why_raised": "Почему это подняли"
+    "triage_why_raised": "Почему это подняли",
+    "triage_deferred_some": "Некоторые требуют полного выбора. Ответьте на остальные здесь; те останутся открытыми в билдере.",
+    "triage_fact_questions": "Вопросы",
+    "triage_field_builder_only": "Требуется полный выбор — ответьте на этот вопрос в билдере.",
+    "triage_questions_pending": "{count} вопросов до продолжения этой сборки"
   },
   "common": {
     "loading": "Загрузка...",

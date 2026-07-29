@@ -88,18 +88,41 @@ export interface TriageBranch {
 }
 
 /**
- * Items that collect an answer rather than a verdict (build questions).
- * `deferred` marks the ones that genuinely can't be answered inline — a
- * connector picker or file attach — so the surface offers the deep-link branch
- * instead of an input it can't honour.
+ * One thing a card asks for. Several of these can sit on one card.
+ *
+ * `deferred` marks a field that genuinely can't be answered inline — a
+ * connector picker or a file attach — so the surface offers the deep-link
+ * branch instead of an input it can't honour.
  */
-export interface TriageInput {
+export interface TriageQuestionField {
+  /** The key the answer is filed under. This is the WRITE key, not a label. */
+  key: string;
+  /** The question itself, pre-translated by whoever raised it. */
+  prompt: string;
   kind: 'choice' | 'text';
   options?: string[];
   /** Model-suggested answers, offered as one-tap chips above a text field. */
   suggestions?: string[];
   placeholder?: string;
   deferred?: boolean;
+}
+
+/**
+ * Items that collect answers rather than a verdict (build questions).
+ *
+ * Plural on purpose. A halted build session usually has SEVERAL questions
+ * outstanding, and the backend resumes the CLI once per
+ * `answer_build_question` call — so one card per question meant resuming the
+ * same session three times for three answers, defeating the batching contract
+ * that `lib/build/answerPayload` exists to uphold. One card carries the whole
+ * session, and accepting it is one batched write.
+ */
+export interface TriageInput {
+  /** Every field this card collects, in ask order. Never empty. */
+  fields: TriageQuestionField[];
+  /** True when NOT ONE field can be answered inline — the card can only
+   *  deep-link. A card with a mix is answerable; see `QuestionPanel`. */
+  deferred: boolean;
 }
 
 /** The unified triage item — what every variant renders. */
@@ -150,8 +173,9 @@ export interface TriageDecision {
   verdict: TriageVerdict;
   /** Set when a branch was fired instead of a plain verdict. */
   branchId?: string;
-  /** Set for question items. */
-  answer?: string;
+  /** Set for question items: every field the reviewer filled in, by field key.
+   *  Submitted as ONE batch — see `TriageInput`. */
+  answers?: Record<string, string>;
   /** Optional free-text reason captured with a rejection. */
   reason?: string;
 }

@@ -345,5 +345,9 @@
   "triage_source_local": "स्थानीय",
   "triage_submit": "सबमिट करें",
   "triage_suggested": "सुझाए गए",
-  "triage_why_raised": "यह क्यों उठाया गया"
+  "triage_why_raised": "यह क्यों उठाया गया",
+  "triage_deferred_some": "इनमें से कुछ के लिए पूरा पिकर चाहिए। बाकी का उत्तर यहीं दें; वे बिल्डर में खुले रहेंगे।",
+  "triage_fact_questions": "प्रश्न",
+  "triage_field_builder_only": "पूरा पिकर चाहिए — इसका उत्तर बिल्डर में दें।",
+  "triage_questions_pending": "यह बिल्ड जारी होने से पहले {count} प्रश्न"
 }

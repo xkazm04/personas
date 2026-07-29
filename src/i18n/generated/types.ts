@@ -350,6 +350,10 @@ export type Translations = {
     triage_hint_close: string;
     triage_deferred_note: string;
     triage_pick_one: string;
+    triage_questions_pending: string;
+    triage_fact_questions: string;
+    triage_field_builder_only: string;
+    triage_deferred_some: string;
     triage_suggested: string;
     triage_why_raised: string;
     triage_evidence: string;

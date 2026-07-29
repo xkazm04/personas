@@ -91,9 +91,8 @@ describe('useDeckControls — question cards', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it('refuses to submit an empty answer and focuses the field instead', () => {
-    const item = makeQuestion({ input: { kind: 'text' } });
-    const { queue, decide } = makeQueue([item]);
+  it('refuses to submit an empty card and focuses the field instead', () => {
+    const { queue, decide } = makeQueue([makeQuestion()]);
     const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
 
     const focus = vi.fn();
@@ -105,11 +104,88 @@ describe('useDeckControls — question cards', () => {
   });
 
   it('still allows a reject — the queue decides it is a deferral, not the deck', () => {
-    const item = makeQuestion({ input: { kind: 'text' } });
+    const item = makeQuestion();
     const { queue, decide } = makeQueue([item]);
     const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
 
     act(() => result.current.decideTop('reject'));
     expect(decide).toHaveBeenCalledWith({ item, verdict: 'reject' });
+  });
+
+  it('collects every field of a session card into ONE decision', () => {
+    const item = makeQuestion({
+      input: {
+        fields: [
+          { key: 'tools', prompt: 'Which tools?', kind: 'text' },
+          { key: 'tone', prompt: 'What tone?', kind: 'text' },
+          { key: 'blank', prompt: 'Anything else?', kind: 'text' },
+        ],
+        deferred: false,
+      },
+    });
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+
+    act(() => result.current.setAnswer('tools', 'gmail'));
+    act(() => result.current.setAnswer('tone', ' formal '));
+    expect(result.current.canAccept).toBe(true);
+
+    act(() => result.current.decideTop('accept'));
+    expect(decide).toHaveBeenCalledTimes(1);
+    expect(decide).toHaveBeenCalledWith({
+      item,
+      verdict: 'accept',
+      answers: { tools: 'gmail', tone: 'formal' },
+    });
+  });
+
+  it('keeps partial answers when a poll re-identifies the card mid-typing', () => {
+    // A poll that changes the session's pending set gives the card a NEW id
+    // (see `questionGroupToTriage`). Drafts are keyed by session, so what the
+    // reviewer already typed survives it — the old code wiped it on every
+    // top-item change.
+    const before = makeQuestion({
+      id: 'question:sess-1:tone|tools',
+      input: {
+        fields: [
+          { key: 'tools', prompt: 'Which tools?', kind: 'text' },
+          { key: 'tone', prompt: 'What tone?', kind: 'text' },
+        ],
+        deferred: false,
+      },
+    });
+    const after = makeQuestion({
+      id: 'question:sess-1:tools',
+      input: { fields: [{ key: 'tools', prompt: 'Which tools?', kind: 'text' }], deferred: false },
+    });
+
+    const decide = vi.fn().mockResolvedValue(undefined);
+    const { rerender, result } = renderHook(({ items }) => useDeckControls(makeQueue(items, decide).queue, vi.fn()), {
+      initialProps: { items: [before] },
+    });
+
+    act(() => result.current.setAnswer('tools', 'half typed'));
+    rerender({ items: [after] });
+
+    expect(result.current.answers.tools).toBe('half typed');
+  });
+
+  it('does not accept a fully deferred card — only its branch is real', () => {
+    const item = makeQuestion({
+      input: {
+        fields: [{ key: 'creds', prompt: 'Which account?', kind: 'text', deferred: true }],
+        deferred: true,
+      },
+      branches: [{ id: 'builder', label: 'Open in builder', tone: 'accent' }],
+    });
+    const { queue, decide } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+
+    expect(result.current.canAccept).toBe(false);
+    act(() => result.current.decideTop('accept'));
+    expect(decide).not.toHaveBeenCalled();
+
+    act(() => result.current.fireBranch('builder'));
+    expect(decide).toHaveBeenCalledWith({ item, verdict: 'accept', branchId: 'builder' });
   });
 });
