@@ -6702,9 +6702,16 @@ pub fn create_milestone(
                 |row| row.get(0),
             )
             .unwrap_or(0);
+        // `cut_at` is stamped in the SAME insert when the milestone is born
+        // 'active'. It is the scope-creep baseline, and a milestone created
+        // directly active (the seeded "Onboard to Personas" one, and any
+        // milestone the management API / a Fleet dispatch creates active)
+        // never passes through `update_milestone`'s → 'active' transition —
+        // so without this its `cut_at` would stay NULL forever and every item
+        // added later would report `added_after_cut = false`.
         conn.execute(
-            "INSERT INTO dev_milestones (id, project_id, name, goal, status, order_index, target_date, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+            "INSERT INTO dev_milestones (id, project_id, name, goal, status, order_index, target_date, cut_at, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END, ?8, ?8)",
             params![id, project_id, name.trim(), goal, status, order_index, target_date, now],
         )?;
         drop(conn);
@@ -6759,6 +6766,28 @@ pub fn update_milestone(
         if let Some(status) = status {
             if !["planned", "active", "shipped"].contains(&status) {
                 return Err(AppError::Validation(format!("Invalid milestone status `{status}`")));
+            }
+            // A milestone must be CUT before it can ship. The exit-criteria
+            // check lives client-side (a `disabled` attribute), which means
+            // the management HTTP API, a Fleet dispatch or the A2A gateway
+            // could otherwise mark a never-cut milestone shipped. Read the
+            // current status on the same connection and refuse the jump.
+            let current: String = conn
+                .query_row(
+                    "SELECT status FROM dev_milestones WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("Milestone {id}"))
+                    }
+                    other => AppError::Database(other),
+                })?;
+            if status == "shipped" && current == "planned" {
+                return Err(AppError::Validation(
+                    "A milestone must be cut (set active) before it can be shipped".into(),
+                ));
             }
             conn.execute(
                 "UPDATE dev_milestones SET status = ?2, updated_at = ?3,
@@ -6922,6 +6951,58 @@ mod milestone_tests {
         let m = create_milestone(&pool, &project.id, "M", None, None, None).unwrap();
         assert!(set_milestone_item(&pool, &m.id, "context", "c-1", "core").is_err(), "contexts are never members");
         assert!(set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday").is_err());
+    }
+
+    /// A milestone created directly 'active' — the shape `seedOnboarding.ts`
+    /// writes for every project — must carry a `cut_at` from birth, otherwise
+    /// the scope-creep baseline never exists on the one milestone most
+    /// projects will ever have.
+    #[test]
+    fn milestone_created_active_is_cut_at_birth() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp3", None, None, None, None, None).unwrap();
+
+        let m = create_milestone(&pool, &project.id, "Onboard to Personas", None, Some("active"), None)
+            .unwrap();
+        assert_eq!(m.status, "active");
+        assert!(m.cut_at.is_some(), "a milestone born active must be cut");
+
+        // …and the creep flag therefore fires on anything joined afterwards.
+        let item = set_milestone_item(&pool, &m.id, "use_case", "uc-late", "core").unwrap();
+        assert!(item.added_after_cut, "items added after the cut are creep");
+
+        // A milestone born 'planned' is still uncut.
+        let p = create_milestone(&pool, &project.id, "Later", None, Some("planned"), None).unwrap();
+        assert!(p.cut_at.is_none());
+    }
+
+    /// Shipping is a server-side gated transition: a milestone must pass
+    /// through 'active' (be cut) first. The client's exit-criteria check is a
+    /// `disabled` attribute — it does not bind the management API, Fleet
+    /// dispatch, or the A2A gateway.
+    #[test]
+    fn milestone_cannot_ship_without_being_cut() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp4", None, None, None, None, None).unwrap();
+
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        assert_eq!(m.status, "planned");
+        let err = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None);
+        assert!(
+            matches!(err, Err(AppError::Validation(_))),
+            "planned → shipped must be rejected, got {err:?}"
+        );
+        // Rejected means UNCHANGED, not partially applied.
+        let still = get_milestone_by_id(&pool, &m.id).unwrap();
+        assert_eq!(still.status, "planned");
+        assert!(still.shipped_at.is_none());
+
+        // The legal path stamps both timestamps.
+        let m = update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
+        assert!(m.cut_at.is_some());
+        let m = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None).unwrap();
+        assert!(m.cut_at.is_some(), "cut_at survives the ship transition");
+        assert!(m.shipped_at.is_some());
     }
 }
 

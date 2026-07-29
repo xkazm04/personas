@@ -6330,6 +6330,44 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- dev_milestones.cut_at backfill -------------------------------------
+    // `cut_at` is the scope-creep baseline: items joined after it carry
+    // `added_after_cut`. It used to be stamped ONLY on a status transition to
+    // 'active' in `update_milestone`, but a milestone created directly active
+    // — the seeded "Onboard to Personas" one every project gets — never makes
+    // that transition, so its `cut_at` stayed NULL forever and the creep
+    // signal never fired on the one milestone most projects will ever have.
+    // `create_milestone` now stamps it in the INSERT; this repairs the rows
+    // already on disk. Runs immediately after the block that creates the
+    // table (has_table guard for the case where that block was skipped), and
+    // is naturally idempotent — after one pass no active row has a NULL cut.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_milestones.backfill_cut_at",
+            description: "Backfill cut_at = created_at for milestones already 'active' with no cut stamp, so the scope-creep baseline exists on milestones that were created directly active.",
+            already_applied: |conn| {
+                if !has_table(conn, "dev_milestones")? {
+                    return Ok(true);
+                }
+                let pending: i64 = conn.query_row(
+                    "SELECT COUNT(*) FROM dev_milestones WHERE status = 'active' AND cut_at IS NULL",
+                    [],
+                    |row| row.get(0),
+                )?;
+                Ok(pending == 0)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "UPDATE dev_milestones SET cut_at = created_at
+                     WHERE status = 'active' AND cut_at IS NULL;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // -- workspace_harvest_coverage: which territory has been read ----------
     // The harvest engine used to send one agent at a whole repository with an
     // item cap and no map, so it read the root configs and stopped — and had
@@ -6849,6 +6887,47 @@ fn research_lab_align_columns(conn: &Connection) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Rows written before `create_milestone` learned to stamp `cut_at` are
+    /// active with no cut — the scope-creep baseline is missing. The backfill
+    /// step must repair them on the next boot, and must not touch 'planned'
+    /// rows (uncut by definition) or an already-stamped `cut_at`.
+    #[test]
+    fn backfill_cut_at_repairs_uncut_active_milestones() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p1', 'P', '/tmp/p1');
+             INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
+                VALUES ('m-active', 'p1', 'Onboard', 'active', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO dev_milestones (id, project_id, name, status, created_at, updated_at)
+                VALUES ('m-planned', 'p1', 'Later', 'planned', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO dev_milestones (id, project_id, name, status, cut_at, created_at, updated_at)
+                VALUES ('m-cut', 'p1', 'Cut', 'active', '2026-02-02T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');",
+        )
+        .unwrap();
+
+        // The backfill lives in the `ensure_composite_fires_table` phase that
+        // `migrations::run` invokes, so replay the whole boot chain.
+        crate::migrations::run(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+
+        let cut_at = |id: &str| -> Option<String> {
+            conn.query_row(
+                "SELECT cut_at FROM dev_milestones WHERE id = ?1",
+                [id],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        assert_eq!(cut_at("m-active").as_deref(), Some("2026-01-01T00:00:00Z"));
+        assert_eq!(cut_at("m-planned"), None, "planned milestones stay uncut");
+        assert_eq!(
+            cut_at("m-cut").as_deref(),
+            Some("2026-02-02T00:00:00Z"),
+            "an existing cut stamp must not be rewritten"
+        );
+    }
 
     /// The boot path (`db::init_db`, db/mod.rs) replays BOTH migration phases
     /// — `migrations::run` + `run_incremental` — on EVERY app launch against
