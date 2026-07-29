@@ -2,7 +2,7 @@
 name: project-populate
 category: Maintenance
 memory: project
-description: Populate a newly managed repository with the data Personas needs to maintain and develop it — a context map, a feature (use-case) inventory, and a triaged KPI set. Contexts and features are assigned autonomously; KPIs are negotiated with the operator wave by wave, and wired to real monitoring tools when the project already has them. Dispatched by the passport wall, or run standalone with /project-populate.
+description: Populate a newly managed repository with the data Personas needs to maintain and develop it — a context map, a feature (use-case) inventory, a triaged KPI set, and optionally simulated KPI data for a product that has not shipped yet. Contexts and features are assigned autonomously; KPIs are negotiated with the operator wave by wave. Scopeable — run all four lanes or just the ones you name. Dispatched by the passport wall, or run standalone with /project-populate.
 ---
 
 # Project Populate
@@ -25,19 +25,35 @@ your own turns on the part no lane can do: deciding with the operator which
 KPIs are worth adopting, and wiring them to whatever monitoring the project
 already has.
 
+## Scope — run only the lanes you were asked for
+
+There are four lanes: **contexts**, **features**, **kpis**, **simulation**.
+
+The dispatch brief names the scope; standalone, `--scope` does (comma-separated
+lane names, e.g. `/project-populate --scope kpis,simulation`). No scope given
+means contexts + features + kpis, with simulation offered at the end.
+
+A lane outside the scope is **not run and not gated** — say it was out of scope
+in the final report and spend no turns on it. Dependencies still hold: features
+need a context map to slice, and simulation needs adopted KPIs. If a scope asks
+for a lane whose input is missing, say what is missing rather than quietly
+widening the scope to fix it.
+
 ## Modes
 
 **Dispatched (passport wall).** The prompt carries a DISPATCH BRIEF — project
-id, repo root, the bridge port, per-lane freshness verdicts already computed
-by the app, and the project's available connector metadata. Trust the brief's
-verdicts; they were derived from the same database you would be querying.
+id, repo root, the bridge port, the scope, per-lane freshness verdicts already
+computed by the app, and the project's available connector metadata. Trust the
+brief's verdicts; they were derived from the same database you would be
+querying.
 
-**Standalone (`/project-populate` in a repo).** No brief. Derive everything
-yourself per [`references/bridge.md`](references/bridge.md): find the bridge
-port, resolve this repo's `project_id` from `GET /dev-tools/projects` by
-matching `root_path`, and compute the freshness gates from the same endpoints.
-If the repo is not registered in Personas at all, say so and stop — registering
-it is the operator's call, not yours.
+**Standalone (`/project-populate [--scope …]` in a repo).** No brief. Derive
+everything yourself per [`references/bridge.md`](references/bridge.md): find the
+bridge port, resolve this repo's `project_id` from `GET /dev-tools/projects` by
+matching `root_path`, and compute the freshness gates from
+`/context-groups/{id}`, `/use-cases/{id}` and `/kpis/{id}`. If the repo is not
+registered in Personas at all, say so and stop — registering it is the
+operator's call, not yours.
 
 ## Before anything else
 
@@ -53,9 +69,11 @@ The bridge is the app. If it does not answer, nothing in this skill works:
 
 ## Phase 1 — Context map
 
-**Gate.** In dispatched mode the brief states the verdict. Standalone, derive
-it: no context groups → `full`; newest group `updated_at` older than 14 days →
-`incremental`; otherwise → `skip`.
+**Gate.** In dispatched mode the brief states the verdict. Standalone, derive it
+from `GET /dev-tools/context-groups/{project_id}`: no groups → `full`; newest
+`updated_at` older than 14 days → `incremental`; otherwise → `skip`. Do NOT use
+`context-map.json`'s file mtime as a proxy — any checkout or merge rewrites it,
+so it reports a fresh scan that never happened.
 
 - `full` — `POST /dev-tools/scan-codebase` with `delta_mode: false`.
 - `incremental` — same call with `delta_mode: true`.
@@ -81,9 +99,9 @@ Features are slices through the context map, so this phase runs **only after**
 Phase 1 has a map. If Phase 1 ended in `skip`, the map is already there and
 this phase proceeds normally.
 
-**Gate.** Same 14-day rule against the use-case list: none → scan; all older
-than 14 days → scan; otherwise skip. There is no delta mode here — a use-case
-scan is always a fresh proposal pass.
+**Gate.** Same 14-day rule against `GET /dev-tools/use-cases/{project_id}`: none
+→ scan; all older than 14 days → scan; otherwise skip. There is no delta mode
+here — a use-case scan is always a fresh proposal pass.
 
 `POST /dev-tools/scan-use-cases`, then poll
 `GET /dev-tools/use-case-scan-status/{scan_id}`.
@@ -109,6 +127,28 @@ nothing does, report the active set and skip to Phase 4.
 Otherwise `POST /dev-tools/scan-kpis` and poll
 `GET /dev-tools/kpi-scan-status/{scan_id}`.
 
+### Judge on value first, measurability second
+
+The most common failure of a KPI set is not that the numbers are wrong — it is
+that they are numbers about the *repository* (coverage, bundle size, compiler
+errors) rather than about whether the *product works for the person using it*.
+Those pass every measurability check and steer nothing.
+
+So apply two filters, in this order:
+
+1. **Would this number change what the team works on?** A metric already
+   enforced by a CI gate cannot; it can only restate a rule. Say so and
+   recommend rejection, however cleanly it measures.
+2. **Can it be measured, and how?** Only now. And note the asymmetry: a *value*
+   KPI that cannot be measured today is often still worth adopting — the pillar
+   has to be named before anything can steer toward it, and Phase 5 can put
+   simulated numbers against it. A *technical* KPI that cannot be measured today
+   is just noise.
+
+If a whole batch comes back as repository metrics, say that plainly and offer to
+reject it and re-scan rather than walking the operator through five variations
+of the same mistake.
+
 ### Triage in waves
 
 Fetch the proposals (`GET /dev-tools/kpis/{project_id}?status=proposed`) and
@@ -116,8 +156,10 @@ walk them **five at a time**. For each wave:
 
 1. Present the five compactly — name, what it measures, the proposed target,
    and the one thing that matters most: **how it would actually be measured in
-   this repo**. A KPI whose measurement you cannot describe concretely is a KPI
-   the operator should reject, and you should say so rather than let it pass.
+   this repo**. A *technical* KPI whose measurement you cannot describe
+   concretely should be rejected, and you should say so rather than let it pass.
+   For a value KPI, say instead what it would take to measure it — a connector,
+   a launch, or a simulated journey.
 2. Ask for a decision per KPI: **adopt** · **adopt with a different target** ·
    **reject** · **defer**. Recommend one, and say why in a clause, not a
    paragraph.
@@ -156,6 +198,45 @@ If the project has no monitoring connectors at all, say that plainly and note
 which single one would unlock the most adopted KPIs. One specific
 recommendation beats a survey.
 
+## Phase 5 — Simulated data for a product that has not shipped
+
+A pre-production project has the honest problem this whole skill exists around:
+you need pillars to know what to measure, but there is no traffic to measure. A
+target invented to fill the field is worse than an empty one, because it looks
+like evidence.
+
+The simulation lane answers it — representative characters walk the KPI-bound
+journeys over the code, producing values tagged as the simulation they are
+(`local`/`test`, never `production`), plus target proposals researched from
+comparable products with citations.
+
+**Offer this when** any adopted KPI is a value/outcome pillar with no
+measurement path today. **Skip it** when every adopted KPI already measures
+cleanly, or when `simulation` is outside the scope — and say which.
+
+The sequence matters and is easy to get wrong:
+
+1. **Adopt first.** The simulation only measures adopted KPIs and deliberately
+   ignores `proposed` ones. Running it before Phase 3's triage produces nothing.
+2. `POST /dev-tools/kpi-sim/prepare` `{project_id}` — writes
+   `kpi-sim/snapshot.json`. The sim refuses to run without it and only the app
+   may produce it, which is why this is a route and not something you write.
+3. **Tell the operator what it will cost before running it** — it walks journeys
+   with several characters and researches comparable products, so it is the
+   longest phase here. Get a yes.
+4. Run `/kpi-sim run` (add `--l2` only if the operator wants the live app driven
+   as well). It writes `kpi-sim/runs/<id>/result.json`.
+5. `POST /dev-tools/kpi-sim/ingest` `{project_id}` — validated and idempotent;
+   a run dir is marked once ingested and refused on a second attempt.
+6. Report what landed: simulated measurements, target proposals, findings. Say
+   **out loud** that the measurements are simulated and which environment they
+   are tagged as. A simulated number reported as a real one is the single worst
+   outcome available in this skill.
+
+If the sim declines to measure something, that is a correct answer, not a
+failure — real traffic and revenue cannot be simulated, only researched into a
+target proposal.
+
 ## Using subagents
 
 Phases 1-3 are conducted, not performed — the lanes do the heavy reading, and
@@ -184,7 +265,10 @@ know costs a turn and buys nothing.
   the one thing in this skill that is theirs.
 - **Report skipped phases as skipped.** A run that skipped two gates because
   the data was fresh is a *good* run. Do not dress it up as work, and do not
-  hide it.
+  hide it. Same for a lane left out of the scope.
+- **Never present a simulated number as a measured one.** Every value that came
+  from the simulation lane carries its environment tag into every sentence you
+  write about it.
 
 ## Coordination — active-runs ledger
 
@@ -197,15 +281,21 @@ the app.
 
 End with a short, honest summary:
 
-- Context map: scanned (full / incremental) or skipped, with counts.
-- Features: scanned or skipped, with the proposal count and where to review.
-- KPIs: how many proposed, adopted, adjusted, rejected, deferred.
+- Scope: which lanes were in it.
+- Context map: scanned (full / incremental), skipped-as-fresh, or out of scope,
+  with counts.
+- Features: scanned, skipped, or out of scope, with the proposal count and where
+  to review.
+- KPIs: how many proposed, adopted, adjusted, rejected, deferred — and how many
+  of the adopted ones can actually be measured today.
+- Simulation: run or not, and if run, what landed and that it is simulated.
 - Monitoring: what got wired, and the single most valuable thing still unwired.
 - What a human should do next, if anything.
 
 Then the machine-readable line, on its own, as the last line of your final
-message:
+message. Use `out_of_scope` for a lane the scope excluded and `unknown` for a
+gate you could not determine — never guess a value to fill the field:
 
 ```
-PROJECT_POPULATE_RESULT: contexts=<full|incremental|skipped|failed> features=<scanned|skipped|failed> kpis_adopted=<n> kpis_rejected=<n> kpis_deferred=<n> wired=<n>
+PROJECT_POPULATE_RESULT: contexts=<full|incremental|skipped|failed|out_of_scope|unknown> features=<scanned|skipped|failed|out_of_scope|unknown> kpis_adopted=<n> kpis_rejected=<n> kpis_deferred=<n> simulation=<run|declined|skipped|out_of_scope> wired=<n>
 ```

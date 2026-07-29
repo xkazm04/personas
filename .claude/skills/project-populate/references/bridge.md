@@ -97,13 +97,44 @@ Anything else is a 400. The route deliberately accepts nothing but a status
 and a target: renaming or redefining a KPI belongs in the app's editor, where
 the operator can see what else references it.
 
-## Reading freshness without the app
+### Simulation
 
-For the 14-day gates in standalone mode, `GET /dev-tools/projects` does not
-carry scan timestamps. Use the scan lanes' own surfaces instead: run the
-context scan gate off whether a map exists at all (a fresh registration has
-none), and when in doubt ask the operator rather than guessing — an
-unnecessary full scan is expensive, and they know when they last scanned.
+```bash
+# write kpi-sim/snapshot.json (the sim refuses to run without it)
+curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/prepare" \
+  -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
+# → {"snapshot_path":"...","root_path":"...","kpi_count":N}
 
-In dispatched mode this problem does not arise: the app computes every verdict
-before composing the brief, from the same tables.
+# after /kpi-sim run has written kpi-sim/runs/<id>/result.json
+curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-sim/ingest" \
+  -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
+# → {"run_dir":"...","measurements_recorded":N,"proposals_created":N,
+#    "findings_created":N,"skipped":[...]}
+```
+
+Omit `run_dir` to ingest the newest un-ingested run. `skipped` is never empty
+by accident — it lists every row the validator refused, so report it rather
+than treating a partial ingest as clean.
+
+## Reading freshness
+
+Every gate is computable over the bridge:
+
+```bash
+curl -s "http://127.0.0.1:$PORT/dev-tools/context-groups/<project_id>"   # Phase 1
+curl -s "http://127.0.0.1:$PORT/dev-tools/use-cases/<project_id>"        # Phase 2
+curl -s "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>"             # Phase 3
+```
+
+Compare `updated_at` against a 14-day window. **Do not substitute
+`context-map.json`'s file mtime** — it is a build artifact in a git repo, so a
+checkout, merge or rebase rewrites it and it will report a scan that never
+happened.
+
+Every one of these 404s when the project id matches nothing. That is
+deliberate: an empty array means the project genuinely has no rows, so if you
+get `[]` you can trust it rather than wondering whether you resolved the wrong
+id.
+
+In dispatched mode the gates arrive pre-computed in the brief, from the same
+tables.
