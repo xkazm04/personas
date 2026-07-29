@@ -1098,6 +1098,7 @@ async fn run_context_generation(
     let mut groups_created = 0i32;
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
+    let mut unique_files: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Lazy clear: only wipe the existing map once the run produces its first real
     // output, so a failed/empty rescan can't destroy the curated map up-front.
     //
@@ -1167,7 +1168,24 @@ async fn run_context_generation(
                                     map_cleared = true;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
                                 }
-                                match repo::create_context_group(pool, &pid, &name, Some(&color), None, None, domain.as_deref()) {
+                                // Groups are shared across concurrent subtree scans, and
+                                // `create_context_group` does not upsert on name — three
+                                // concurrent scans each emitting "Automation & Pipelines"
+                                // produced three groups with that name (observed live,
+                                // 2026-07-29: seven duplicates). Adopt an existing
+                                // same-named group instead; only create when none exists.
+                                let existing = repo::list_context_groups(pool, &pid)
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .find(|g| g.name == name);
+                                let created = match existing {
+                                    Some(g) => {
+                                        CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Reused] Group: {name}"));
+                                        Ok(g)
+                                    }
+                                    None => repo::create_context_group(pool, &pid, &name, Some(&color), None, None, domain.as_deref()),
+                                };
+                                match created {
                                     Ok(group) => {
                                         group_name_to_id.insert(name.clone(), group.id.clone());
                                         groups_created += 1;
@@ -1207,6 +1225,11 @@ async fn run_context_generation(
                                     Ok(_) => {
                                         contexts_created += 1;
                                         files_mapped += file_count;
+                                        // `files_mapped` sums path SLOTS across contexts, and
+                                        // the model routinely files one path under several
+                                        // contexts — live run reported "176 of 88 files (200%)".
+                                        // Coverage must be judged on DISTINCT paths.
+                                        unique_files.extend(file_paths.iter().cloned());
                                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Created] Context: {name} ({file_count} files)"));
                                     }
                                     Err(e) => {
@@ -1360,11 +1383,17 @@ async fn run_context_generation(
     if let Some(total) = count_source_files(root_path, subtree) {
         let scope = subtree.unwrap_or("the repository");
         if total > 0 {
-            let pct = (files_mapped as f64 / total as f64) * 100.0;
+            let distinct = unique_files.len();
+            let pct = (distinct as f64 / total as f64) * 100.0;
             CONTEXT_GEN_JOBS.emit_line(
                 app,
                 scan_id,
-                format!("[Coverage] Mapped {files_mapped} of {total} source files in {scope} ({pct:.0}%)"),
+                format!(
+                    "[Coverage] Mapped {distinct} of {total} source files in {scope} ({pct:.0}%){}",
+                    if files_mapped as usize > distinct {
+                        format!(" — {} path slots across contexts, so {} file(s) sit in more than one context", files_mapped, files_mapped as usize - distinct)
+                    } else { String::new() }
+                ),
             );
             // Two-thirds is the line between "some judgement was applied about
             // what deserves a context" and "this stopped early".
