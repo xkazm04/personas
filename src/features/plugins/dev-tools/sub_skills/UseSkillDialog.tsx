@@ -36,8 +36,8 @@ export interface UseSkillChoice {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="typo-label text-foreground/45 w-16 flex-shrink-0">{label}</span>
+    <div className="flex items-center gap-4">
+      <span className="typo-label text-foreground/55 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       {children}
     </div>
   );
@@ -109,7 +109,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
           <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{d.skills_kind_use}</span>
         </div>
 
-        <div className="px-4 py-3 space-y-3">
+        <div className="px-5 py-4 space-y-4">
           <SkillDescription description={skill.description} />
 
           <Row label={d.skills_use_run_via}>
@@ -170,7 +170,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                 />
               </Row>
               {mode === 'specific' && (
-                <div className="pl-[4.75rem]">
+                <div className="pl-24">
                   <ThemedSelect
                     filterable
                     hideSearch

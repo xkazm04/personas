@@ -20,8 +20,8 @@ export function ArgsField({ value, onChange, onSubmit }: {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
   return (
-    <div className="space-y-1">
-      <label className="typo-label text-foreground/45 block">
+    <div className="space-y-1.5">
+      <label className="typo-label text-foreground/55 block">
         {d.skills_args_label} <span className="text-foreground/30">({d.skills_args_optional})</span>
       </label>
       <textarea

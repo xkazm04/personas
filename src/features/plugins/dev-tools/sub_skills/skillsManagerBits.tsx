@@ -69,18 +69,20 @@ export function LastUsed({ usage }: { usage: { last_invoked_at: string | null } 
   return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-foreground/45 tabular-nums text-right" />;
 }
 
-/** Context-coverage bar + percentage for a context-tracked skill. */
+/** Context-coverage bar + percentage for a context-tracked skill. Fixed widths
+ *  (track + right-aligned percentage slot) so every bar lines up column-wise,
+ *  independent of the skill-name length beside it. */
 export function CoverageBar({ row, total }: { row: SkillCoverageRow | undefined; total: number }) {
   const { t, tx } = useTranslation();
   const covered = row?.coveredContexts ?? 0;
   const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
   const hue = pct >= 65 ? '#34D399' : pct >= 30 ? '#F59E0B' : 'rgba(148,163,184,.7)';
   return (
-    <span className="inline-flex items-center gap-1.5 min-w-0" title={tx(t.plugins.dev_tools.skills_coverage_hint, { covered, total })}>
-      <span className="w-16 h-[4px] rounded-full bg-foreground/10 overflow-hidden flex-shrink-0">
+    <span className="inline-flex items-center justify-end gap-1.5" title={tx(t.plugins.dev_tools.skills_coverage_hint, { covered, total })}>
+      <span className="w-12 h-[4px] rounded-full bg-foreground/10 overflow-hidden flex-shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: hue }} />
       </span>
-      <span className="typo-label tabular-nums" style={{ color: hue }}>{pct}%</span>
+      <span className="typo-label tabular-nums w-8 text-right flex-shrink-0" style={{ color: hue }}>{pct}%</span>
     </span>
   );
 }
