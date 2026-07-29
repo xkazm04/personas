@@ -143,6 +143,35 @@ export const spawnHeadlessSession = (cwd: string, task: string, args?: string[])
   invoke<string>('fleet_spawn_headless_session', { cwd, task, args });
 
 /**
+ * Open an interactive Claude session in a NEW console window the user owns.
+ *
+ * Unlike {@link spawnSession}, the app keeps no handle: Fleet cannot observe,
+ * steer or kill the result, and it outlives the app. That is the point — it is
+ * for work the operator will carry on by hand for many turns — but it means
+ * nothing downstream may assume the session is reconcilable.
+ *
+ * Windows-only; other platforms reject with a message naming Fleet as the
+ * alternative. Resolves to the console's OS process id — informational only,
+ * since the app keeps no handle on it.
+ */
+export const spawnExternalConsole = (opts: {
+  cwd: string;
+  prompt: string;
+  skipPermissions?: boolean;
+}) => invoke<number>('fleet_spawn_external_console', opts);
+
+/**
+ * Write a dispatch brief into a repo and return its absolute path.
+ *
+ * Lets a caller prepare the repo once and then hand the same short prompt to
+ * whichever transport the user picks, instead of composing a long inline
+ * prompt for Fleet and a file-backed one for the console. `path` is relative
+ * to `cwd` and may not escape it.
+ */
+export const writeDispatchBrief = (cwd: string, path: string, contents: string) =>
+  invoke<string>('fleet_write_dispatch_brief', { cwd, path, contents });
+
+/**
  * Configure the always-on auto-hibernate policy (P3.2): the staleness ticker
  * hibernates Idle/Stale sessions inactive longer than `afterMinutes` when
  * `enabled`. The frontend owns the persisted setting and pushes it here on

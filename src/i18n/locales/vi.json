@@ -460,7 +460,9 @@
     "dispatch_method_dev_runner_desc": "Tác vụ trong hàng đợi do engine thực thi — định tuyến theo model, theo dõi trong Run Desk. Không có terminal.",
     "dispatch_method_fleet": "Terminal Fleet",
     "dispatch_method_fleet_desc": "Phiên Claude tương tác trong repo — xem nó làm việc và điều khiển từ lưới Fleet.",
-    "dispatch_pick_method": "Chọn cách agent chạy trong “{project}” — prompt vẫn chỉnh sửa được đến khi bạn dispatch."
+    "dispatch_pick_method": "Chọn cách agent chạy trong “{project}” — prompt vẫn chỉnh sửa được đến khi bạn dispatch.",
+    "dispatch_method_console": "Terminal của bạn",
+    "dispatch_method_console_desc": "Mở một cửa sổ terminal mới do bạn sở hữu. Nó vẫn tiếp tục chạy sau khi Personas đóng lại, nhưng ứng dụng không thể theo dõi hoặc dừng nó."
   },
   "chrome": {
     "app_title": "Personas",

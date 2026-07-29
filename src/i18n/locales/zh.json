@@ -460,7 +460,9 @@
     "dispatch_method_dev_runner_desc": "由引擎执行的排队任务 — 按模型路由，在 Run Desk 中跟踪。无终端。",
     "dispatch_method_fleet": "Fleet 终端",
     "dispatch_method_fleet_desc": "在仓库中的交互式 Claude 会话 — 观察它工作，并从 Fleet 网格中操控。",
-    "dispatch_pick_method": "选择代理在“{project}”中的运行方式 — 提示在派发前保持可编辑。"
+    "dispatch_pick_method": "选择代理在“{project}”中的运行方式 — 提示在派发前保持可编辑。",
+    "dispatch_method_console": "您的终端",
+    "dispatch_method_console_desc": "打开一个由您拥有的新终端窗口。即使关闭 Personas 后它仍会继续运行,但应用无法监控或停止它。"
   },
   "chrome": {
     "app_title": "Personas",

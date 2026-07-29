@@ -460,7 +460,9 @@
     "dispatch_method_dev_runner_desc": "इंजन द्वारा एक्ज़िक्यूट किया गया क्यूड टास्क — मॉडल-रूटेड, Run Desk में ट्रैक किया गया। कोई टर्मिनल नहीं।",
     "dispatch_method_fleet": "Fleet टर्मिनल",
     "dispatch_method_fleet_desc": "रिपो में इंटरैक्टिव Claude सेशन — इसे काम करते देखें और Fleet ग्रिड से नियंत्रित करें।",
-    "dispatch_pick_method": "चुनें कि एजेंट “{project}” में कैसे चलेगा — डिस्पैच होने तक प्रॉम्प्ट संपादन योग्य रहता है।"
+    "dispatch_pick_method": "चुनें कि एजेंट “{project}” में कैसे चलेगा — डिस्पैच होने तक प्रॉम्प्ट संपादन योग्य रहता है।",
+    "dispatch_method_console": "आपका टर्मिनल",
+    "dispatch_method_console_desc": "यह एक नई टर्मिनल विंडो खोलता है जिसका स्वामी आप हैं। Personas बंद होने के बाद भी यह चलता रहता है, लेकिन ऐप इसे न तो देख सकता है और न ही रोक सकता है।"
   },
   "chrome": {
     "app_title": "Personas",

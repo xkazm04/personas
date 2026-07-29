@@ -25,37 +25,24 @@
 //! console honors the user's default-terminal setting, so operators running
 //! Windows Terminal get a WT tab for free without us naming it.
 //!
-//! The long content a session needs never travels as an argument at all: the
-//! caller passes it as `brief_contents`, this module writes it to a file under
-//! the repo, and the prompt just points at that path. That sidesteps the
-//! ~32 KB command-line ceiling as well as the quoting problem.
+//! The long content a session needs travels as a file rather than an argument:
+//! [`fleet_write_dispatch_brief`] drops it under the repo and the prompt just
+//! points at that path. That sidesteps the ~32 KB command-line ceiling, and —
+//! more importantly for a window the app cannot reopen — it means the operator
+//! can re-run the session by hand after closing it. Brief-writing is a separate
+//! command from the spawn so a caller can hand the same short prompt to EITHER
+//! transport, rather than composing one prompt for Fleet and another here.
 
 use std::path::{Component, PathBuf};
 use std::sync::Arc;
 
-use serde::Serialize;
 use tauri::State;
-use ts_rs::TS;
 
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use super::pty::CLAUDE_NESTING_ENV;
-
-/// What a successful external launch produced, for the caller to report.
-#[derive(Serialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase")]
-pub struct ExternalConsoleSpawn {
-    /// Absolute path of the brief written before launch, when one was asked
-    /// for. The prompt references it, so surfacing it lets the UI tell the
-    /// operator where to look if the console is closed by accident.
-    pub brief_path: Option<String>,
-    /// OS process id of the launched console. Informational only — the app
-    /// keeps no handle and will not reap it.
-    pub pid: u32,
-}
 
 /// Resolve `relative` against `root`, refusing anything that escapes it.
 ///
@@ -82,15 +69,42 @@ fn resolve_inside(root: &std::path::Path, relative: &str) -> Result<PathBuf, App
     Ok(root.join(rel))
 }
 
+/// Write a dispatch brief into a repo, returning its absolute path.
+///
+/// Separate from the spawn so a caller can prepare the repo once and then hand
+/// the SAME short prompt to whichever transport the user picks. `path` is
+/// relative to `cwd` and may not escape it.
+#[tauri::command]
+pub async fn fleet_write_dispatch_brief(
+    state: State<'_, Arc<AppState>>,
+    cwd: String,
+    path: String,
+    contents: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let root = PathBuf::from(&cwd);
+    if !root.is_dir() {
+        return Err(AppError::Validation(format!(
+            "project root is not a directory: {cwd}"
+        )));
+    }
+    let target = resolve_inside(&root, &path)?;
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| {
+            AppError::Internal(format!("failed to create {}: {e}", parent.display()))
+        })?;
+    }
+    std::fs::write(&target, contents)
+        .map_err(|e| AppError::Internal(format!("failed to write {}: {e}", target.display())))?;
+    Ok(target.display().to_string())
+}
+
 /// Spawn an interactive Claude session in a new, user-owned console window.
 ///
 /// `prompt` is passed as the positional argument (the same seed a Fleet
 /// session gets), so the session opens mid-conversation and the operator
 /// continues it by hand from the second turn on.
-///
-/// When `brief_contents` is given it is written to `brief_path` (relative to
-/// `cwd`) BEFORE the spawn, so the prompt can reference it as an already
-/// existing file.
 ///
 /// `skip_permissions` mirrors the `--dangerously-skip-permissions` flag Fleet
 /// sessions always carry. It is a parameter rather than a constant because the
@@ -99,15 +113,16 @@ fn resolve_inside(root: &std::path::Path, relative: &str) -> Result<PathBuf, App
 /// the operator sitting in front of it AND is outside the app's kill switch.
 /// Callers that dispatch a skill doing broad repo work pass `true` to match
 /// the Fleet experience; anything narrower should leave it `false`.
+///
+/// Returns the console's OS process id — informational only, since the app
+/// keeps no handle and will not reap it.
 #[tauri::command]
 pub async fn fleet_spawn_external_console(
     state: State<'_, Arc<AppState>>,
     cwd: String,
     prompt: String,
-    brief_path: Option<String>,
-    brief_contents: Option<String>,
     skip_permissions: Option<bool>,
-) -> Result<ExternalConsoleSpawn, AppError> {
+) -> Result<u32, AppError> {
     require_auth(&state).await?;
 
     let root = PathBuf::from(&cwd);
@@ -120,33 +135,9 @@ pub async fn fleet_spawn_external_console(
         return Err(AppError::Validation("prompt must not be empty".into()));
     }
 
-    let written = match (brief_path.as_deref(), brief_contents.as_deref()) {
-        (Some(rel), Some(body)) => {
-            let target = resolve_inside(&root, rel)?;
-            if let Some(parent) = target.parent() {
-                std::fs::create_dir_all(parent).map_err(|e| {
-                    AppError::Internal(format!("failed to create {}: {e}", parent.display()))
-                })?;
-            }
-            std::fs::write(&target, body).map_err(|e| {
-                AppError::Internal(format!("failed to write {}: {e}", target.display()))
-            })?;
-            Some(target.display().to_string())
-        }
-        (None, None) => None,
-        _ => {
-            return Err(AppError::Validation(
-                "brief_path and brief_contents must be provided together".into(),
-            ))
-        }
-    };
-
     let pid = spawn_console(&root, &prompt, skip_permissions.unwrap_or(false))?;
     tracing::info!(pid, cwd = %cwd, "external console session launched");
-    Ok(ExternalConsoleSpawn {
-        brief_path: written,
-        pid,
-    })
+    Ok(pid)
 }
 
 #[cfg(windows)]

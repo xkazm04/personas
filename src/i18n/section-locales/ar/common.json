@@ -179,5 +179,7 @@
   "dispatch_method_dev_runner_desc": "مهمة في قائمة الانتظار ينفّذها المحرك — موجّهة بالنموذج، متتبَّعة في Run Desk. بلا طرفية.",
   "dispatch_method_fleet": "طرفية Fleet",
   "dispatch_method_fleet_desc": "جلسة Claude تفاعلية داخل المستودع — راقب عملها ووجّهها من شبكة Fleet.",
-  "dispatch_pick_method": "اختر كيف يعمل الوكيل في «{project}» — يبقى الطلب قابلاً للتعديل حتى الإرسال."
+  "dispatch_pick_method": "اختر كيف يعمل الوكيل في «{project}» — يبقى الطلب قابلاً للتعديل حتى الإرسال.",
+  "dispatch_method_console": "طرفيتك",
+  "dispatch_method_console_desc": "يفتح نافذة طرفية جديدة تملكها أنت. تستمر في العمل بعد إغلاق Personas، لكن التطبيق لا يمكنه مراقبتها أو إيقافها."
 }

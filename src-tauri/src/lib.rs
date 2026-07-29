@@ -3485,6 +3485,7 @@ pub fn run() {
             commands::fleet::commands::fleet_wake_session,
             commands::fleet::commands::fleet_spawn_headless_session,
             commands::fleet::external::fleet_spawn_external_console,
+            commands::fleet::external::fleet_write_dispatch_brief,
             commands::fleet::commands::fleet_set_auto_hibernate,
             commands::fleet::commands::fleet_set_live_slots,
             commands::fleet::commands::fleet_set_state_cutoffs,

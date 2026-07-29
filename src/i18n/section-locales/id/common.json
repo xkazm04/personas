@@ -179,5 +179,7 @@
   "dispatch_method_dev_runner_desc": "Tugas antrean dieksekusi oleh engine — dirutekan ke model, dilacak di Run Desk. Tanpa terminal.",
   "dispatch_method_fleet": "Terminal Fleet",
   "dispatch_method_fleet_desc": "Sesi Claude interaktif di repo — amati prosesnya dan kendalikan dari grid Fleet.",
-  "dispatch_pick_method": "Pilih cara agent berjalan di “{project}” — prompt tetap bisa diedit sampai kamu melakukan dispatch."
+  "dispatch_pick_method": "Pilih cara agent berjalan di “{project}” — prompt tetap bisa diedit sampai kamu melakukan dispatch.",
+  "dispatch_method_console": "Terminal Anda",
+  "dispatch_method_console_desc": "Membuka jendela terminal baru yang Anda miliki. Terminal ini tetap berjalan setelah Personas ditutup, tetapi aplikasi tidak dapat memantau atau menghentikannya."
 }
