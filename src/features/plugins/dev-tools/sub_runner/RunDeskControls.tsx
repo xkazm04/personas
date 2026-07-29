@@ -6,6 +6,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { toastCatch } from '@/lib/silentCatch';
 import * as devApi from '@/api/devTools/devTools';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
@@ -13,6 +14,15 @@ import type { TaskCounts } from './useTaskQueue';
 
 /** How many rows a bulk action (start/cancel/retry) may pull in one sweep. */
 const BULK_LIMIT = 200;
+
+/** "Cancel all" can target up to BULK_LIMIT rows at once, and each
+ *  cancelTaskExecution IPC call competes with the live task-list channel for
+ *  the same IPC bridge. This bounds the burst so a 200-row cancel doesn't
+ *  starve the UI that's showing the user their tasks disappearing. Halving
+ *  this (~7-8) would make a large cancel-all visibly slower to settle;
+ *  doubling it (~30) risks the exact IPC-bridge contention this exists to
+ *  avoid — most real queues are nowhere near BULK_LIMIT anyway. */
+const CANCEL_ALL_CONCURRENCY = 15;
 
 /** Bounds for the concurrency stepper — mirrors the executor's own clamp. */
 const MIN_PARALLEL = 1;
@@ -137,7 +147,7 @@ export function RunDeskControls({
         'cancel',
         async () => {
           const ids = await fetchIds(['running', 'queued']);
-          await Promise.all(ids.map((id) => devApi.cancelTaskExecution(id)));
+          await mapWithConcurrency(ids, CANCEL_ALL_CONCURRENCY, (id) => devApi.cancelTaskExecution(id));
         },
         dr.cancel_all_error,
       ),

@@ -28,6 +28,9 @@ export interface Workspace {
   color: string;
   /** Project ids assigned to this workspace (1:N — a project lives in one). */
   projectIds: string[];
+  /** Consent (given at creation) to install the preset scan skills into
+   *  member projects when they join. */
+  adoptDefaultSkills: boolean;
 }
 
 /** Sentinel for "no workspace selected" — every project is in scope. */
@@ -106,6 +109,7 @@ export async function refreshWorkspaces(): Promise<void> {
     name: w.name,
     color: w.color ?? WORKSPACE_COLORS[i % WORKSPACE_COLORS.length]!,
     projectIds: projects.filter((p) => p.workspace_id === w.id).map((p) => p.id),
+    adoptDefaultSkills: w.adopt_default_skills,
   }));
   commit({ workspaces, activeId: readActiveId(workspaces) });
 }
@@ -138,14 +142,30 @@ export function useWorkspaces(): Snapshot {
 
 // -- mutations (fire-and-forget: optimistic publish, then backend + refresh) --
 
-export function createWorkspace(name: string, color?: string): void {
+export function createWorkspace(name: string, color?: string, adoptDefaultSkills?: boolean): void {
   const resolved = color ?? WORKSPACE_COLORS[snapshot.workspaces.length % WORKSPACE_COLORS.length]!;
-  void apiCreateWorkspace(name.trim() || 'New workspace', resolved)
+  void apiCreateWorkspace(name.trim() || 'New workspace', resolved, undefined, adoptDefaultSkills)
     .then(async (ws) => {
       await refreshWorkspaces();
       commit({ ...snapshot, activeId: ws.id });
     })
     .catch(toastCatch('workspaceStore:create'));
+}
+
+/** Install the app's preset scan skills into a project (consenting workspace's
+ *  member). Existing skills are left untouched; failures are background-only. */
+async function installPresetSkills(projectId: string): Promise<void> {
+  const [{ PRESET_SKILLS }, { installSystemSkill }] = await Promise.all([
+    import('../constants/presetSkills'),
+    import('@/api/devTools/devTools'),
+  ]);
+  for (const name of PRESET_SKILLS.keys()) {
+    try {
+      await installSystemSkill(name, projectId, false);
+    } catch (e) {
+      silentCatch('workspaceStore:installPresetSkill')(e);
+    }
+  }
 }
 
 export function renameWorkspace(id: string, name: string): void {
@@ -188,8 +208,15 @@ export function assignProject(projectId: string, workspaceId: string | null): vo
       return w.id === workspaceId ? { ...w, projectIds: [...without, projectId] } : { ...w, projectIds: without };
     }),
   });
+  const consented = workspaceId !== null
+    && snapshot.workspaces.find((w) => w.id === workspaceId)?.adoptDefaultSkills === true;
   void assignProjectToWorkspace(projectId, workspaceId)
-    .then(refreshWorkspaces)
+    .then(async () => {
+      // Consent given at workspace creation: joining populates the preset
+      // scan skills into the member project (skip-existing, non-blocking).
+      if (consented) await installPresetSkills(projectId);
+      await refreshWorkspaces();
+    })
     .catch(toastCatch('workspaceStore:assign'));
 }
 

@@ -6,7 +6,7 @@
 // management affordances (rename / recolour / delete) migrated here.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Landmark, Plus, Trash2 } from 'lucide-react';
+import { Landmark, Plus, Trash2, Wand2 } from 'lucide-react';
 
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -55,6 +55,15 @@ export default function WorkspacesAtlas() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ws.color }} />
                 <span className="typo-title text-foreground truncate">{ws.name}</span>
+                {ws.adoptDefaultSkills && (
+                  <span
+                    className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-primary/25 bg-primary/10 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
+                    title={tw.adopt_skills_badge_tip}
+                  >
+                    <Wand2 className="w-3 h-3" aria-hidden />
+                    {tw.adopt_skills_badge}
+                  </span>
+                )}
               </div>
               <div className="flex items-baseline gap-4 mb-3">
                 <Tally value={ws.projectIds.length} label={tw.tally_projects} />

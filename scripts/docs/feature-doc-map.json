@@ -380,6 +380,7 @@
       "doc": "docs/features/monitor.md",
       "sourceGlobs": [
         "src/features/monitor/**",
+        "src/features/fleet/monitor/**",
         "src/features/shared/components/layout/ProcessActivityIndicator.tsx",
         "src/features/shared/components/layout/FleetActivityStrip.tsx",
         "src/features/shared/components/layout/monitor/**"

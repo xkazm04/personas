@@ -7,12 +7,13 @@ import { AnimatePresence } from 'framer-motion';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { getScanCodebaseStatus } from '@/api/devTools/devTools';
 import { EventName } from '@/lib/eventRegistry';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
-import { matchAgentsToContext } from '../sub_scanner/ideaScannerHelpers';
+import { matchAgentsToContext } from '../constants/presetSkills';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
@@ -473,7 +474,7 @@ export default function ContextMapPage() {
     setScanningContextId(contextId);
     useOverviewStore.getState().processStarted(
       'idea_scan', undefined, `Idea Scan — ${raw.name}`,
-      { section: 'plugins', tab: 'idea-scanner' },
+      { section: 'plugins', tab: 'skills' },
     );
     addToast(tx(t.plugins.dev_tools.context_scan_ideas_started, { name: raw.name }), 'success');
     runScan(agents, { contextId }).catch((err) => {
@@ -563,11 +564,9 @@ export default function ContextMapPage() {
 
   return (
     <ContentBox>
-      <ContentHeader
-        icon={<MapIcon className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+      <DevToolsPageHeader
+        icon={MapIcon}
         title={t.plugins.dev_tools.context_map_title}
-        subtitle={activeProject?.root_path ?? t.plugins.dev_tools.context_map_subtitle}
         actions={<LifecycleProjectPicker />}
       />
 

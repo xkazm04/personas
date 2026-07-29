@@ -434,6 +434,16 @@
   --color-muted-dark: var(--muted-dark);
   --color-card-bg: var(--card-bg);
   --color-card-border: var(--card-border);
+  /* `card` is an ALIAS of `card-bg`, not a second surface.
+     Only `--color-card-bg` existed here, so the ~228 places that reached for
+     the shadcn-style `bg-card` / `from-card` / `to-card` compiled to nothing at
+     all — Tailwind emits no rule for an undefined colour, so those surfaces
+     silently rendered with no background rather than the wrong one. That is how
+     a `bg-card/95` popover ended up see-through. Aliasing is deliberate: there
+     is one card surface in this system and it is theme-aware (~2-5% white on
+     dark themes, 72-92% opaque on light ones), so a second token would only
+     re-open the same drift. Prefer `bg-card-bg` in new code. */
+  --color-card: var(--card-bg);
 
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
@@ -1869,6 +1879,123 @@ body[data-drag-active="true"] * {
 }
 
 html[data-motion="reduce"] .animate-channel-row-in {
+  animation: none;
+}
+
+/* ------------------------------------------------------------------------
+   HUD layer (fleet monitor channels) — the "instrument panel" vocabulary the
+   Channels workspace shares: corner brackets, back-lit bloom, a faint
+   grid+vignette atmosphere, `//`-prefixed section titles, and bracketed
+   empty states. Everything derives from --primary via color-mix so all ten
+   themes keep their own hue; light themes drop the glow (back-lighting reads
+   as smudge on white) and keep only the brackets.
+   ------------------------------------------------------------------------ */
+
+.hud-corners {
+  position: relative;
+}
+
+/* Four L-brackets from one pseudo-element: two 1px gradient strokes per
+   corner, positioned/sized via background. No extra DOM, recolors by token. */
+.hud-corners::before {
+  --hud-bracket: color-mix(in srgb, var(--primary) 40%, transparent);
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background-image:
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket)),
+    linear-gradient(var(--hud-bracket), var(--hud-bracket));
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+  background-size: 14px 1px, 1px 14px, 14px 1px, 1px 14px, 14px 1px, 1px 14px, 14px 1px, 1px 14px;
+  background-repeat: no-repeat;
+}
+
+/* Back-lit panel: a tight outer glow + an inset wash. Pair with border. */
+.hud-bloom {
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--primary) 8%, transparent),
+    inset 0 0 26px color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+[data-theme^="light"] .hud-bloom {
+  box-shadow: none;
+}
+
+/* Atmosphere: radial primary vignette + an 88px hairline grid. Sits behind
+   content (z-0); hosts must layer children at z-10+. Dark themes only. */
+.hud-atmosphere {
+  position: relative;
+}
+
+.hud-atmosphere::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 38%, color-mix(in srgb, var(--primary) 6%, transparent), transparent 75%),
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--primary) 4%, transparent) 0 1px, transparent 1px 88px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--primary) 4%, transparent) 0 1px, transparent 1px 88px);
+}
+
+[data-theme^="light"] .hud-atmosphere::before {
+  display: none;
+}
+
+/* `// SECTION` titles — the ticks are drawn, not typed, so i18n strings stay
+   clean and the dimming is consistent. */
+.hud-title::before {
+  content: '// ';
+  opacity: 0.45;
+}
+
+/* [ EMPTY STATE ] — bracketed, primary-tinted punctuation around the label. */
+.hud-empty::before {
+  content: '[ ';
+  color: color-mix(in srgb, var(--primary) 65%, transparent);
+}
+
+.hud-empty::after {
+  content: ' ]';
+  color: color-mix(in srgb, var(--primary) 65%, transparent);
+}
+
+/* Constellation Map (fleet monitor channels) — live-route dash march and the
+   core's slow orbit. Dash offset animates one full period (12px) so the loop
+   is seamless at any line length. */
+@keyframes map-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.animate-map-dash {
+  animation: map-dash 1.2s linear infinite;
+}
+
+@keyframes map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-map-spin {
+  animation: map-spin 42s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+html[data-motion="reduce"] .animate-map-dash,
+html[data-motion="reduce"] .animate-map-spin {
   animation: none;
 }
 

@@ -24,6 +24,12 @@
   listing toolbar that narrows it to one origin repo (or to workspace-level,
   hand-authored practices). Everything shown is real: the deterministic demo
   corpus that once padded an empty library was retired when harvesting shipped.
+  The create-workspace form carries an **"Adopt default skills"** checkbox
+  (`dev_workspaces.adopt_default_skills`, default off — consent is explicit):
+  when on, every project later assigned to the workspace gets the app's preset
+  `scan-*` skills installed automatically (system-skill lane, skip-existing),
+  and the workspace's Atlas crest shows a **Presets** badge. See the Skills
+  section of `dev-tools.md` for the preset catalog itself.
 - **Knowledge item (practice)** — a governed unit of cross-project knowledge:
   `kind` (pattern / pitfall / decision / howto / fact), a distilled `statement`,
   optional evidence (`detail_md`), a slash-path `topic` (`ui/motion/reveals`)

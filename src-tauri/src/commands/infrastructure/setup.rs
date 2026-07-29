@@ -962,15 +962,39 @@ pub async fn start_setup_install(
     };
 
     let install_id = uuid::Uuid::new_v4().to_string();
-    // Use a fixed run key since only one setup install runs at a time.
-    // The guard ensures unregister_run is called even if the task panics.
+
+    // Only one setup install runs at a time. `try_begin` is an atomic
+    // check-and-install ("is a run live?" + "install this id") under one
+    // lock, so a double-click or a retry while an install is already running
+    // is rejected outright instead of silently sharing the "current" slot a
+    // second install used to be registered under — the previous fixed-key
+    // registration let a second start's `RunGuard::drop` delete the FIRST
+    // install's still-live registry entry (making it permanently
+    // uncancelable), and let Cancel target whichever install happened to be
+    // registered rather than the one the user actually meant to stop.
+    if !state
+        .process_registry
+        .try_begin("setup", install_id.clone())
+    {
+        return Err(AppError::Validation(
+            "A setup install is already in progress. Cancel it first or wait for it to complete."
+                .into(),
+        ));
+    }
+
+    // Multi-run registration keyed by THIS install's own id (not a shared
+    // literal) so its cancellation flag / RunGuard cleanup can never collide
+    // with a different install's entry. The guard ensures `unregister_run`
+    // runs even if the task panics.
     let (cancelled, run_guard) = state
         .process_registry
-        .register_run_guarded("setup", "current");
+        .register_run_guarded("setup", &install_id);
 
     let id_clone = install_id.clone();
     let app_for_panic = app.clone();
     let install_id_for_panic = install_id.clone();
+    let install_id_for_cleanup = install_id.clone();
+    let registry_for_cleanup = state.process_registry.clone();
     tokio::spawn(async move {
         let _guard = run_guard;
         let work = AssertUnwindSafe(run_setup_install(SetupRunParams {
@@ -1008,6 +1032,11 @@ pub async fn start_setup_install(
                 None,
             );
         }
+
+        // Release the single-install claim (only if it's still ours — a
+        // fresh install could only have re-claimed "setup" after this one
+        // cleared it, so `clear_id_if` is defensive, not load-bearing here).
+        registry_for_cleanup.clear_id_if("setup", &install_id_for_cleanup);
     });
 
     Ok(serde_json::json!({ "install_id": install_id }))
@@ -1016,6 +1045,66 @@ pub async fn start_setup_install(
 #[tauri::command]
 pub fn cancel_setup_install(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    state.process_registry.cancel_run("setup", "current");
+    // Resolve the CURRENTLY claimed install id rather than a fixed literal —
+    // with the try_begin-guarded single-install claim above, at most one
+    // install can be registered at a time, so this always targets the right
+    // (only) run.
+    if let Some(install_id) = state.process_registry.get_id("setup") {
+        state.process_registry.cancel_run("setup", &install_id);
+    }
     Ok(())
+}
+
+#[cfg(test)]
+mod setup_install_slot_tests {
+    // Regression pin for the fixed-literal-key bug: `start_setup_install`
+    // used to register every install under `("setup", "current")`, so a
+    // second concurrent install (double-click / retry) silently overwrote
+    // the first's registry entry. This exercises the exact sequence the
+    // command now uses — `try_begin` to reject a second concurrent install,
+    // `register_run_guarded` keyed by the install's own id, and
+    // `get_id`/`clear_id_if` for cancel/cleanup — without needing a full
+    // Tauri `AppState`.
+    use crate::ActiveProcessRegistry;
+    use std::sync::Arc;
+
+    #[test]
+    fn second_concurrent_install_is_rejected_not_silently_shared() {
+        let registry = Arc::new(ActiveProcessRegistry::new());
+        let install_a = "install-a".to_string();
+        let install_b = "install-b".to_string();
+
+        // First install claims the "setup" slot.
+        assert!(registry.try_begin("setup", install_a.clone()));
+        // A second concurrent install must be rejected outright, not silently
+        // installed over the first (the old bug: a fixed "current" key let
+        // this succeed and clobber install A's guard).
+        assert!(!registry.try_begin("setup", install_b.clone()));
+
+        // Each install still gets its OWN multi-run guard entry, keyed by its
+        // own id — the actual fix for the shared-slot bug.
+        let (_flag_a, guard_a) = registry.register_run_guarded("setup", &install_a);
+        assert!(registry.is_run_registered("setup", &install_a));
+        assert!(!registry.is_run_registered("setup", &install_b));
+
+        // cancel_setup_install resolves the CURRENT claim (install A) and
+        // cancels precisely that run — not some unrelated "current" slot.
+        let current = registry.get_id("setup");
+        assert_eq!(current.as_deref(), Some(install_a.as_str()));
+        registry.cancel_run("setup", &current.unwrap());
+
+        // Install A's own cleanup (RunGuard drop + clear_id_if) releases the
+        // slot — and ONLY install A's id can clear it; a mismatched id must
+        // be a no-op (guards against a stale/late cleanup call stealing a
+        // slot a different, newer install already claimed).
+        registry.clear_id_if("setup", &install_b); // wrong id: no-op
+        assert_eq!(registry.get_id("setup").as_deref(), Some(install_a.as_str()));
+        drop(guard_a);
+        assert!(!registry.is_run_registered("setup", &install_a));
+        registry.clear_id_if("setup", &install_a); // right id: releases
+        assert_eq!(registry.get_id("setup"), None);
+
+        // The slot is now free for a genuinely new install.
+        assert!(registry.try_begin("setup", "install-c".to_string()));
+    }
 }

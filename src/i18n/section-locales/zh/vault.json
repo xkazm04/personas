@@ -691,6 +691,8 @@
     "test_all": "全部测试",
     "daily_progress": "每日 {done}/{total}",
     "testing_progress": "测试 {done}/{total}",
+    "unverifiable_count": "{count} 个无法验证",
+    "unverifiable_tooltip": "此连接器没有实时探测 -- 凭据已存储，但从未针对提供商进行过验证",
     "title_catalog": "目录",
     "title_dependencies": "依赖项",
     "title_databases": "数据库"

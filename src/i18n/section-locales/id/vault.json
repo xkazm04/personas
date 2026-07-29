@@ -691,6 +691,8 @@
     "test_all": "Uji Semua",
     "daily_progress": "Harian {done}/{total}",
     "testing_progress": "Menguji {done}/{total}",
+    "unverifiable_count": "{count} tidak dapat diverifikasi",
+    "unverifiable_tooltip": "Konektor ini tidak memiliki pemeriksaan langsung -- kredensial disimpan tetapi tidak pernah diverifikasi terhadap penyedia",
     "title_catalog": "Katalog",
     "title_dependencies": "Dependensi",
     "title_databases": "Basis data"

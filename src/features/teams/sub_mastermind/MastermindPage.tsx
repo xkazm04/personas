@@ -618,7 +618,7 @@ function MastermindInner() {
       'idea_scan',
       undefined,
       `Idea Scan (${label})`,
-      { section: 'plugins', tab: 'idea-scanner' },
+      { section: 'plugins', tab: 'skills' },
     );
     try {
       await runScan(slug, agentKeys, {

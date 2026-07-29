@@ -114,6 +114,21 @@ pub struct SchedulerState {
     /// Retained JoinHandles for spawned subscription tasks. Prevents silent
     /// task drops and enables future graceful-shutdown awaits.
     subscription_handles: std::sync::Mutex<Vec<tokio::task::JoinHandle<()>>>,
+    /// Monotonic generation counter, bumped on every `start_loops` AND every
+    /// `stop_loops`. `run_single` captures this at spawn time and compares a
+    /// fresh load against it on every tick instead of checking the bare
+    /// `running` bool. This matters because dropping a `JoinHandle` (which is
+    /// all `stop_loops` used to do) does NOT abort the underlying tokio task —
+    /// a subscription loop spawned before a stop keeps ticking. If liveness
+    /// were still gated on `running` alone, a subsequent `start_loops` flips
+    /// `running` back to `true` and that orphaned old loop's `is_running()`
+    /// check reads `true` again, concluding (wrongly) that it's still current
+    /// and continuing to poll -- two live copies of every trigger/webhook/
+    /// schedule loop hammering the same DB (double-fired schedules, duplicate
+    /// OAuth refresh). Bumping the generation on stop retires every orphan
+    /// even though its handle was never aborted; each loop compares its own
+    /// captured generation, not a shared bool that a restart can flip back.
+    generation: AtomicU64,
 }
 
 impl Default for SchedulerState {
@@ -139,11 +154,41 @@ impl SchedulerState {
             trace_continuity_breaks: AtomicU64::new(0),
             subscription_health: std::sync::Mutex::new(HashMap::new()),
             subscription_handles: std::sync::Mutex::new(Vec::new()),
+            generation: AtomicU64::new(0),
         }
     }
 
     pub fn is_running(&self) -> bool {
         self.running.load(Ordering::Relaxed)
+    }
+
+    /// Current generation. A spawned subscription loop snapshots this once at
+    /// spawn time and must re-load it on every tick (see
+    /// `subscription::run_single`) rather than checking `is_running()` --
+    /// a stop-then-restart cycle flips `running` back to `true` while leaving
+    /// any loop from the previous generation still alive (its `JoinHandle`
+    /// was dropped, not aborted), so a bare bool can't tell "I'm current" from
+    /// "I'm an orphan from before the restart."
+    pub fn generation(&self) -> u64 {
+        self.generation.load(Ordering::SeqCst)
+    }
+
+    /// Atomically transition the scheduler from stopped to running. Returns
+    /// the new generation on success, or `None` if the scheduler was already
+    /// running. Callers MUST NOT spawn a subscription set when this returns
+    /// `None` -- without this CAS, two concurrent `start_scheduler` calls can
+    /// both observe `is_running() == false` (check-then-act race) and both
+    /// spawn a full subscription set, doubling every trigger fire and OAuth
+    /// refresh from that point on.
+    pub fn try_begin_start(&self) -> Option<u64> {
+        if self
+            .running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            return None;
+        }
+        Some(self.generation.fetch_add(1, Ordering::SeqCst) + 1)
     }
 
     /// Whether the system has active work (executions running, events pending).
@@ -393,8 +438,25 @@ pub fn start_loops(
     composite_state: super::composite::CompositeState,
     smee_notifier: super::smee_relay::SmeeRelayNotifier,
 ) -> tokio::sync::watch::Sender<bool> {
-    scheduler.running.store(true, Ordering::Relaxed);
-    tracing::info!("Scheduler starting via unified subscription model");
+    // Finding #1: CAS the start so two concurrent `start_scheduler` calls
+    // can't both spawn a full subscription set (the caller's own
+    // `is_running()` check is only advisory -- this is the authoritative
+    // gate). A losing caller returns a fresh, unconnected shutdown channel;
+    // the webhook server and subscriptions from the winning caller's start
+    // are left untouched.
+    let generation = match scheduler.try_begin_start() {
+        Some(g) => g,
+        None => {
+            tracing::warn!(
+                "start_loops called while the scheduler was already running -- \
+                 ignoring duplicate start so a second subscription set isn't spawned \
+                 (would double-fire every trigger/webhook and duplicate OAuth refresh)"
+            );
+            let (tx, _rx) = tokio::sync::watch::channel(false);
+            return tx;
+        }
+    };
+    tracing::info!(generation, "Scheduler starting via unified subscription model");
 
     // V8: re-attach orchestrator tick tasks to team assignments orphaned by the
     // last shutdown (status running/queued with no task) — their in-flight
@@ -668,8 +730,12 @@ pub fn start_loops(
         }));
     }
 
-    // Spawn all subscriptions through the unified scheduler
-    let handles = subscription::spawn_subscriptions(subscriptions, scheduler.clone(), app.clone());
+    // Spawn all subscriptions through the unified scheduler. Each loop
+    // captures `generation` at spawn and compares it against
+    // `scheduler.generation()` on every tick (see `run_single`) instead of
+    // trusting the bare `running` flag.
+    let handles =
+        subscription::spawn_subscriptions(subscriptions, scheduler.clone(), app.clone(), generation);
     scheduler.store_subscription_handles(handles);
 
     // -- Startup overdue sweep ------------------------------------------------
@@ -813,7 +879,17 @@ pub fn start_loops(
 
 /// Stop all background loops.
 pub fn stop_loops(scheduler: &SchedulerState) {
-    scheduler.running.store(false, Ordering::Relaxed);
+    scheduler.running.store(false, Ordering::SeqCst);
+    // Finding #1: bump the generation too, not just the bool. Dropping
+    // `subscription_handles`' JoinHandles does not abort the underlying
+    // tasks, so any loop spawned under the previous generation is still
+    // alive and ticking. Without this bump, a later `start_loops` flips
+    // `running` back to `true` and an orphaned old-generation loop (still
+    // gating on the shared bool) would conclude it's current and keep
+    // polling -- double-firing every trigger/webhook/schedule against the
+    // same DB. Bumping here retires orphans even though we never abort
+    // their handles.
+    scheduler.generation.fetch_add(1, Ordering::SeqCst);
     tracing::info!("Scheduler stopped");
 }
 
@@ -2033,7 +2109,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         None
     });
 
-    for trigger in triggers {
+    for mut trigger in triggers {
         // Skip polling triggers -- they are handled by the PollingSubscription
         // which does HTTP content-hash diffing before deciding whether to fire.
         // Skip event_listener triggers -- they are event-driven, not time-based.
@@ -2213,8 +2289,60 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             _ => 1,
         };
         if backfill_cap > 1 && backfill_emitted_this_tick < GLOBAL_BACKFILL_PER_TICK {
-            if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
-                if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(last_iso) {
+            if let Some(last_iso) = trigger.last_triggered_at.clone() {
+                if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(&last_iso) {
+                    // Finding #3: claim this trigger's backfill window BEFORE
+                    // computing or publishing any slot. Without this, the
+                    // startup overdue-sweep and this same trigger's first
+                    // subscription tick (spawned with no initial delay) both
+                    // read the identical `last_triggered_at` watermark, both
+                    // compute the identical missed-slot set below, and both
+                    // publish every one of them -- the CAS that's supposed to
+                    // prevent double-fire (`mark_triggered`) only runs AFTER
+                    // this whole loop, by which point both callers already
+                    // published the same backlog once each.
+                    //
+                    // `advance_schedule_pointer` is the right primitive here:
+                    // it CASes on `trigger_version` (same guarantee as
+                    // `mark_triggered`) but does NOT move `last_triggered_at`,
+                    // so the watermark this backfill computation depends on
+                    // stays correct for whichever caller loses the race (it
+                    // just skips its own backlog attempt this tick and
+                    // catches up on the next one). We pass the trigger's
+                    // current `next_trigger_at` back unchanged -- this call's
+                    // only job is to bump the version as a claim, not to
+                    // advance the schedule (step 3 below still owns that).
+                    let claimed = match trigger_repo::advance_schedule_pointer(
+                        pool,
+                        &trigger.id,
+                        trigger.next_trigger_at.clone(),
+                        trigger.trigger_version,
+                    ) {
+                        Ok(true) => {
+                            // Our in-memory version must track the bump so
+                            // the live-fire CAS below (`mark_triggered`)
+                            // still uses the correct expected_version instead
+                            // of one that's now one behind the DB.
+                            trigger.trigger_version += 1;
+                            true
+                        }
+                        Ok(false) => {
+                            tracing::debug!(
+                                trigger_id = %trigger.id,
+                                "Backfill window already claimed by another tick this cycle, skipping backlog"
+                            );
+                            false
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                trigger_id = %trigger.id,
+                                error = %e,
+                                "Backfill claim failed; skipping backlog this tick"
+                            );
+                            false
+                        }
+                    };
+                    if claimed {
                     let last_utc = last_dt.with_timezone(&chrono::Utc);
                     let mut missed = compute_missed_backfill_slots(
                         &cfg,
@@ -2332,6 +2460,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                             }
                         }
                     }
+                    } // end if claimed (Finding #3 backfill claim)
                 }
             }
         }
@@ -3196,6 +3325,69 @@ mod tests {
         assert!(state.is_running());
         state.running.store(false, Ordering::Relaxed);
         assert!(!state.is_running());
+    }
+
+    /// Finding #1 regression pin (double-start CAS): two "concurrent" start
+    /// attempts must not both succeed. Without `try_begin_start`'s CAS, a
+    /// naive check-then-set (mirroring the old `is_running()` then
+    /// `running.store(true, ...)` pattern) lets both callers observe
+    /// `is_running() == false` and both proceed to spawn a full subscription
+    /// set -- doubling every trigger fire and OAuth refresh from then on.
+    #[test]
+    fn test_try_begin_start_rejects_concurrent_double_start() {
+        let state = SchedulerState::new();
+        assert!(!state.is_running());
+
+        let first = state.try_begin_start();
+        assert_eq!(first, Some(1), "first start should succeed and claim generation 1");
+        assert!(state.is_running());
+
+        // A second start attempt while still running (simulating a racing
+        // caller) must be rejected, not silently succeed.
+        let second = state.try_begin_start();
+        assert_eq!(
+            second, None,
+            "a second start while already running must be rejected by the CAS"
+        );
+    }
+
+    /// Finding #1 regression pin (orphaned subscription loop survives a
+    /// restart): `stop_loops` must retire the generation, not just flip the
+    /// `running` bool. If it only flipped the bool, a loop spawned under the
+    /// pre-stop generation and still ticking (its JoinHandle was dropped, not
+    /// aborted) would see `running` flip back to `true` on the next start and
+    /// wrongly conclude it's still current -- this test asserts the
+    /// generation actually changes across a stop+restart cycle so a loop
+    /// comparing its captured generation against a fresh load correctly
+    /// detects it is stale.
+    #[test]
+    fn test_stop_loops_retires_generation_so_orphan_loops_detect_staleness() {
+        let state = SchedulerState::new();
+        let gen1 = state.try_begin_start().expect("first start succeeds");
+        assert_eq!(state.generation(), gen1);
+
+        // Simulate a subscription loop spawned under gen1: it captured gen1
+        // and would keep polling as long as `gen1 == state.generation()`.
+        stop_loops(&state);
+        assert!(!state.is_running());
+        assert_ne!(
+            state.generation(),
+            gen1,
+            "stop_loops must bump the generation so orphaned gen1 loops retire"
+        );
+
+        // A restart must claim a NEW generation distinct from gen1 -- proving
+        // the orphaned loop's captured gen1 can never match again, even
+        // though `running` is now back to true (the exact condition that
+        // previously fooled a bare `is_running()` check).
+        let gen2 = state.try_begin_start().expect("restart succeeds after stop");
+        assert!(state.is_running());
+        assert_ne!(gen2, gen1, "restart must claim a fresh generation");
+        assert_eq!(
+            state.generation(),
+            gen2,
+            "orphan loops comparing captured gen1 against this load correctly see a mismatch"
+        );
     }
 
     #[test]

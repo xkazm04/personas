@@ -691,6 +691,8 @@
     "test_all": "Testovat vše",
     "daily_progress": "Denně {done}/{total}",
     "testing_progress": "Testování {done}/{total}",
+    "unverifiable_count": "{count} neověřitelných",
+    "unverifiable_tooltip": "Tento konektor nemá žádnou živou kontrolu -- přihlašovací údaje jsou uloženy, ale nikdy nebyly ověřeny u poskytovatele",
     "title_catalog": "Katalog",
     "title_dependencies": "Závislosti",
     "title_databases": "Databáze"

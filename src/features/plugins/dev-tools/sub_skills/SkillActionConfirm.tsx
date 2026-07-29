@@ -18,11 +18,14 @@ const ICON: Record<SkillActionKind, typeof Play> = {
   use: Play,
 };
 
-export function SkillActionConfirm({ kind, skill, projectName, busy, onConfirm, onClose }: {
+export function SkillActionConfirm({ kind, skill, projectName, busy, preset = false, onConfirm, onClose }: {
   kind: SkillActionKind;
   skill: { name: string; description: string | null };
   projectName: string;
   busy: boolean;
+  /** App-owned preset: adopt is an instant bundle install, not an LLM
+   *  customization run — the blurb must not promise one. */
+  preset?: boolean;
   onConfirm: (args: string) => void;
   onClose: () => void;
 }) {
@@ -36,7 +39,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, onConfirm, 
     ? tx(d.skills_confirm_adopt_cta, { name: projectName })
     : kind === 'share' ? d.skills_confirm_share_cta : d.skills_confirm_use_cta;
   const blurb = kind === 'adopt'
-    ? tx(d.skills_adopt_hint, { name: projectName })
+    ? (preset ? tx(d.skills_adopt_preset_hint, { name: projectName }) : tx(d.skills_adopt_hint, { name: projectName }))
     : kind === 'share' ? d.skills_share_hint : tx(d.skills_use_hint, { name: projectName });
 
   const hint = kind === 'use' ? usageHint(skill.description) : null;

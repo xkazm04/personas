@@ -726,10 +726,17 @@ async fn run_spec(spec: &'static CaptureSpec) -> Result<CliCaptureResult, CliCap
                 "CLI capture: secret field captured"
             );
         } else {
+            // No `value = %value` here: the only guard against a secret leak
+            // on this branch is `cf.sensitive` on the static `CAPTURE_SPECS`
+            // table, and that guard can regress if a future field is added
+            // without setting `sensitive: true`. Unlike
+            // `db/src/repos/resources/credentials.rs::is_field_sensitive`,
+            // this path has no name-based classifier backstop, so keep the
+            // log audit-only (matching the `sensitive: true` branch's style)
+            // rather than trusting the static table to always be right.
             tracing::debug!(
                 service_type = spec.service_type,
                 field = cf.field_key,
-                value = %value,
                 "CLI capture: context field captured"
             );
         }

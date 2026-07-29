@@ -57,11 +57,16 @@ function ImportanceDots({ value }: { value: number }) {
 }
 
 export const StreamRow = memo(function StreamRow({
-  row, persona, onOpen,
+  row, persona, onOpen, onAssignment, assignmentTitle,
 }: {
   row: TaggedItem;
   persona: Persona | undefined;
   onOpen: (row: TaggedItem) => void;
+  /** Click on the assignment chip — applies the id to the search lens. */
+  onAssignment?: (assignmentId: string) => void;
+  /** Pre-resolved i18n title for the chip (the row is memoized; resolving
+   *  the hook here would defeat that). */
+  assignmentTitle?: string;
 }) {
   const { item, team } = row;
   const kind = itemKind(item);
@@ -89,7 +94,12 @@ export const StreamRow = memo(function StreamRow({
       <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>
         {sign}
       </span>
-      <span className={`typo-caption flex-shrink-0 max-w-[13rem] truncate ${tokenClass}`} title={token}>
+      {/* The machine token wears its family colour as a bordered badge —
+          borrows currentColor so one class string covers all 8 families. */}
+      <span
+        className={`typo-caption flex-shrink-0 max-w-[13rem] truncate px-1.5 rounded-pill border border-current/25 bg-current/10 leading-snug ${tokenClass}`}
+        title={token}
+      >
         {token}
       </span>
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}
@@ -104,6 +114,31 @@ export const StreamRow = memo(function StreamRow({
       {parsed?.artifact && (
         <span className="flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
           <ExternalLink className="w-3 h-3" /> {parsed.artifact.label}
+        </span>
+      )}
+      {/* Assignment chip — links the log line to its unit of work (albert's
+          task-id tag). A span, not a button: the row root is already a button
+          and interactive elements don't nest. Short hash for the eye; the
+          click applies the FULL id to the search lens. */}
+      {item.assignmentId && (
+        <span
+          role="button"
+          tabIndex={-1}
+          title={assignmentTitle}
+          onClick={(e) => {
+            if (!onAssignment) return;
+            e.stopPropagation();
+            onAssignment(item.assignmentId!);
+          }}
+          onKeyDown={(e) => {
+            if (!onAssignment || (e.key !== 'Enter' && e.key !== ' ')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            onAssignment(item.assignmentId!);
+          }}
+          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-caption tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
+        >
+          #{item.assignmentId.slice(0, 4)}
         </span>
       )}
     </button>

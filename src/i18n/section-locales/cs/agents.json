@@ -272,6 +272,7 @@
     "legend_engine": "Engine",
     "legend_tool_call": "Volání nástroje",
     "live": "Živě",
+    "estimated_no_trace": "Odhad (trasování nezachyceno)",
     "stage": "Fáze",
     "stage_errors": "Chyby fáze",
     "total_duration": "Celková doba",

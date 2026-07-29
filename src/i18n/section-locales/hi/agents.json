@@ -272,6 +272,7 @@
     "legend_engine": "इंजन",
     "legend_tool_call": "टूल कॉल",
     "live": "लाइव",
+    "estimated_no_trace": "अनुमानित (कोई ट्रेस कैप्चर नहीं हुआ)",
     "stage": "चरण",
     "stage_errors": "चरण त्रुटियां",
     "total_duration": "कुल अवधि",

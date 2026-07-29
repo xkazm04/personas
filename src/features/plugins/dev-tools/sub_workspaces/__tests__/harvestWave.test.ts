@@ -4,25 +4,25 @@ import { coverageRatio, selectHarvestWave } from '../harvestWave';
 import type { WorkspaceHarvestCoverage } from '@/lib/bindings/WorkspaceHarvestCoverage';
 
 const scope = (
-  scope_id: string,
-  last_harvested_at: string | null = null,
+  scopeId: string,
+  lastHarvestedAt: string | null = null,
   depth: { pct?: number | null; files?: number } = {},
 ): WorkspaceHarvestCoverage => ({
-  project_id: 'p1',
-  scope_id,
-  scope_label: scope_id,
+  projectId: 'p1',
+  scopeId,
+  scopeLabel: scopeId,
   kind: 'group',
-  file_count: BigInt(depth.files ?? 100) as unknown as number,
-  last_harvested_at,
-  last_run_dir: null,
-  items_found: 0,
-  run_count: last_harvested_at ? 1 : 0,
-  files_read: null,
-  files_total: null,
-  estimated_pct: (depth.pct ?? null) as unknown as number | null,
-  unread_pockets: null,
-  coverage_note: null,
-  updated_at: '2026-07-27T00:00:00Z',
+  fileCount: BigInt(depth.files ?? 100) as unknown as number,
+  lastHarvestedAt,
+  lastRunDir: null,
+  itemsFound: 0,
+  runCount: lastHarvestedAt ? 1 : 0,
+  filesRead: null,
+  filesTotal: null,
+  estimatedPct: (depth.pct ?? null) as unknown as number | null,
+  unreadPockets: null,
+  coverageNote: null,
+  updatedAt: '2026-07-27T00:00:00Z',
 });
 
 const none = () => false;
@@ -31,7 +31,7 @@ describe('selectHarvestWave', () => {
   it('dispatches a bounded wave and reports what is left unread', () => {
     const coverage = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => scope(id));
     const { wave, remaining, running } = selectHarvestWave(coverage, none, 4);
-    expect(wave.map((w) => w.scope_id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(wave.map((w) => w.scopeId)).toEqual(['a', 'b', 'c', 'd']);
     // The number that stops a partial pass reading as a complete one.
     expect(remaining).toBe(2);
     expect(running).toBe(0);
@@ -41,13 +41,13 @@ describe('selectHarvestWave', () => {
     // Backend already sorts never-harvested first; two places computing
     // "stalest" independently is how they drift.
     const coverage = [scope('never'), scope('old', '2026-01-01T00:00:00Z')];
-    expect(selectHarvestWave(coverage, none, 1).wave[0]!.scope_id).toBe('never');
+    expect(selectHarvestWave(coverage, none, 1).wave[0]!.scopeId).toBe('never');
   });
 
   it('skips territories already in flight rather than double-dispatching', () => {
     const coverage = ['a', 'b', 'c'].map((id) => scope(id));
     const { wave, running } = selectHarvestWave(coverage, (id) => id === 'a', 4);
-    expect(wave.map((w) => w.scope_id)).toEqual(['b', 'c']);
+    expect(wave.map((w) => w.scopeId)).toEqual(['b', 'c']);
     expect(running).toBe(1);
   });
 

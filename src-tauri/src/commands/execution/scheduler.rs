@@ -173,6 +173,41 @@ pub fn backfill_schedule(
         }
     }
 
+    // Finding #2: claim this trigger via the SAME `trigger_version` CAS the
+    // live scheduler uses for its own backfill claim (see
+    // `engine::background::trigger_scheduler_tick_counted`'s Finding #3 fix)
+    // BEFORE computing or publishing anything below. Without this, the
+    // `already_published` set fetched further down is a point-in-time read
+    // with no re-check before insert and no unique constraint behind it: two
+    // concurrent invocations of this command (double-click), or this command
+    // racing the auto-backfill tick, both compute the same "missing" set and
+    // both publish every slot in it -- duplicate `persona_events` rows, i.e.
+    // the persona gets dispatched (and any external side effects it performs
+    // re-run) twice for one slot. `advance_schedule_pointer` is reused rather
+    // than a bespoke lock because it CASes on `trigger_version` without
+    // moving `last_triggered_at`, so the loser just gets told to retry
+    // instead of silently corrupting the schedule pointer.
+    match trigger_repo::advance_schedule_pointer(
+        &state.db,
+        &trigger.id,
+        trigger.next_trigger_at.clone(),
+        trigger.trigger_version,
+    ) {
+        Ok(true) => {}
+        Ok(false) => {
+            return Err(AppError::Validation(
+                "backfill is already in progress for this trigger (claimed by a concurrent \
+                 backfill request or the auto-catch-up scheduler) -- please retry"
+                    .into(),
+            ));
+        }
+        Err(e) => {
+            return Err(AppError::Validation(format!(
+                "failed to claim trigger for backfill: {e}"
+            )));
+        }
+    }
+
     // Cap to one over the limit so we can detect whether the user's window
     // actually overflowed (`capped == true`) versus fitting exactly.
     let probe_cap = BACKFILL_MAX_SLOTS_PER_REQUEST + 1;

@@ -691,6 +691,8 @@
     "test_all": "Alle testen",
     "daily_progress": "Täglich {done}/{total}",
     "testing_progress": "Testen {done}/{total}",
+    "unverifiable_count": "{count} nicht überprüfbar",
+    "unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung -- Anmeldedaten sind gespeichert, wurden aber nie beim Anbieter überprüft",
     "title_catalog": "Katalog",
     "title_dependencies": "Abhängigkeiten",
     "title_databases": "Datenbanken"

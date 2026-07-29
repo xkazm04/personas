@@ -4,6 +4,8 @@
 // removed when the view went live; this file — formerly goalAcceptanceMock.ts —
 // was renamed once it held only live domain code.)
 import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
+import type { DevKpi } from '@/lib/bindings/DevKpi';
+import { kpiProgressPct } from '../sub_kpis/kpiMath';
 
 export interface PendingTeam {
   id: string;
@@ -24,7 +26,9 @@ export interface PendingKpi {
   name: string;
   unit: string;
   direction: 'up' | 'down';
-  baseline: number;
+  /** null when no baseline was ever recorded — a genuinely unknown starting
+   *  point, not the same as "baseline equals current". */
+  baseline: number | null;
   current: number;
   target: number;
   /** Simple "not met yet" display flag (the gauge tint). */
@@ -46,11 +50,25 @@ export interface PendingGoal {
 
 // -- grouping ----------------------------------------------------------------
 
-/** 0–100 progress from baseline toward target (direction-agnostic, clamped). */
-export function kpiPct(k: PendingKpi): number {
-  if (k.target === k.baseline) return 100;
-  const frac = (k.current - k.baseline) / (k.target - k.baseline);
-  return Math.round(Math.min(1, Math.max(0, frac)) * 100);
+/**
+ * 0–100 progress from baseline toward target, or null when no baseline was
+ * ever recorded. Delegates to kpiMath.ts's `kpiProgressPct` — the single
+ * clamped baseline→target formula the rest of the KPI system uses — instead
+ * of re-deriving it locally. Previously this re-derivation was fed by
+ * `adaptPendingAcceptance` defaulting a missing baseline to `current`, which
+ * forced `frac` to exactly 0 and rendered every never-baselined KPI as a
+ * precise (and fabricated) 0% progress gauge.
+ */
+export function kpiPct(k: PendingKpi): number | null {
+  if (k.baseline == null) return null;
+  // kpiProgressPct only reads current_value/target_value/baseline_value, so
+  // this narrow adapter avoids needing a full DevKpi row for a display-only
+  // view-model type that never carried one.
+  return kpiProgressPct({
+    current_value: k.current,
+    target_value: k.target,
+    baseline_value: k.baseline,
+  } as DevKpi);
 }
 
 export interface KpiGroup {
@@ -180,7 +198,7 @@ export function adaptPendingAcceptance(rows: PendingAcceptanceGoal[]): Acceptanc
         name: r.kpi_name ?? 'KPI',
         unit: r.kpi_unit ?? '',
         direction: dir,
-        baseline: r.kpi_baseline ?? current,
+        baseline: r.kpi_baseline,
         current,
         target,
         offTrack: dir === 'up' ? current < target : current > target,

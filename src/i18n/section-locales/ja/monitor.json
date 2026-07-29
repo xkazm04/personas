@@ -265,5 +265,16 @@
   "columns_needs_attention": "要対応",
   "columns_active_goals": "アクティブな目標",
   "columns_no_team": "チームなし",
-  "columns_all_clear": "問題なし"
+  "columns_all_clear": "問題なし",
+  "presence_idle": "アイドル",
+  "presence_last_seen": "最終アクティビティ {time}",
+  "presence_waiting": "レビュー待ち",
+  "presence_working": "作業中",
+  "stream_assignment_filter": "このアサインメントで絞り込む",
+  "channels_layout_map": "マップ",
+  "channels_layout_map_hint": "1つのプロジェクトのライブ・コンステレーション — 誰が作業中で、誰が誰と話しているか",
+  "map_empty": "このプロジェクトにはまだメンバーがいません。",
+  "map_legend_traffic": "最近のトラフィック",
+  "map_live": "ライブ",
+  "map_members": "メンバー"
 }

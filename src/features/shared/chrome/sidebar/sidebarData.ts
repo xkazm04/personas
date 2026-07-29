@@ -129,7 +129,6 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'llm-overview', label: 'Observability', icon: BarChart3 },
   { id: 'context-map', label: 'Context Map', icon: Map },
-  { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'task-runner', label: 'Task Runner', icon: Play },
   // Fleet — Claude Code session aggregator for the active project.
   // Inherits the active project's root_path as the spawn cwd. Not

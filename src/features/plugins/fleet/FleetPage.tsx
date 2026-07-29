@@ -45,9 +45,9 @@ export default function FleetPage() {
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. Skills
           now live in the left drawer (opened from the grid), not a tab. */}
-      <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-primary/5">
-        <Terminal className="w-4 h-4 text-primary mr-2" />
-        <span className="typo-caption font-semibold text-foreground mr-3">Fleet</span>
+      <div className="flex items-center gap-1 px-6 pt-5 pb-3 border-b border-primary/10">
+        <Terminal className="w-5 h-5 text-primary mr-1" />
+        <h1 className="typo-heading text-foreground mr-3">Fleet</h1>
         {TABS.map((tabDef) => {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;

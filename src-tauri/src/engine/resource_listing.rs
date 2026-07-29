@@ -288,13 +288,12 @@ async fn fetch_all_pages(
     spec: &ResourceSpec,
     values: &HashMap<String, String>,
 ) -> Result<Vec<serde_json::Value>, AppError> {
-    let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .dns_resolver(std::sync::Arc::new(
-            crate::engine::url_safety::SsrfSafeDnsResolver,
-        ))
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    // SSRF-safe client: DNS-rebinding resolver + redirect re-validation. A
+    // bare DNS-resolver-only client (the prior shape here) still lets an
+    // upstream `Location: http://<private-ip-literal>/...` redirect bypass
+    // DNS entirely and get auto-followed by reqwest's default policy,
+    // carrying this request's credential auth header to an internal target.
+    let client = crate::engine::url_safety::build_ssrf_safe_client(Duration::from_secs(15));
 
     let pagination = spec
         .list_endpoint

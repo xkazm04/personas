@@ -160,6 +160,30 @@ describe('computeCompositeHealth — stability replaces the double-counted SLA m
   });
 });
 
+describe('computeCompositeHealth — no SLA data is unknown, not a fabricated perfect score', () => {
+  it('regression: a persona with zero SLA rows grades unknown, not healthy/operational', () => {
+    // No sla row at all for p1 (baseInput([]) supplies an empty slaStats list).
+    const [entry] = computeCompositeHealth(baseInput([]));
+    expect(entry!.hasSlaData).toBe(false);
+    expect(entry!.successRate).toBeNull();
+    expect(entry!.grade).toBe('unknown');
+  });
+
+  it('regression: a persona with no daily activity gets uptimePercent null, not 100%', () => {
+    // dailyPoints is empty in baseInput, so every day pads to 'no-data'.
+    const [entry] = computeCompositeHealth(baseInput([makeSla({ persona_id: 'p1' })]));
+    expect(entry!.dailyStatuses.every((s) => s === 'no-data')).toBe(true);
+    expect(entry!.uptimePercent).toBeNull();
+  });
+
+  it('a persona WITH real SLA data still grades normally (no regression on the happy path)', () => {
+    const [entry] = computeCompositeHealth(baseInput([makeSla({ persona_id: 'p1' })]));
+    expect(entry!.hasSlaData).toBe(true);
+    expect(entry!.successRate).toBe(0.95);
+    expect(entry!.grade).toBe('healthy');
+  });
+});
+
 describe('TREND_NEUTRAL_BAND', () => {
   it('is 2% — the observed daily success-rate noise floor', () => {
     expect(TREND_NEUTRAL_BAND).toBe(0.02);

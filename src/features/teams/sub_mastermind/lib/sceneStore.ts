@@ -23,6 +23,7 @@ import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevScan } from '@/lib/bindings/DevScan';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { loadMonitoringSummaries, type MonitoringSummary } from './liveState';
@@ -40,27 +41,12 @@ export type SceneFamily = 'relations' | 'scans' | 'sentry' | 'goals' | 'llmSpend
  *  the Ideas dimension only reads each project's freshest row. */
 const SCAN_LIMIT = 500;
 
-/** Bound the in-flight count of a per-project fan-out (skills/evidence/sentry)
- *  so opening 30+ projects doesn't launch 30+ simultaneous requests. */
-export async function mapWithConcurrency<T, R>(
-  items: readonly T[],
-  limit: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let cursor = 0;
-  const width = Math.max(1, Math.min(limit, items.length));
-  await Promise.all(
-    Array.from({ length: width }, async () => {
-      for (;;) {
-        const i = cursor++;
-        if (i >= items.length) return;
-        results[i] = await fn(items[i]!, i);
-      }
-    }),
-  );
-  return results;
-}
+/** Re-exported for `ProjectsLayer.tsx` and this module's own test file, which
+ *  import `mapWithConcurrency` from here — the canonical implementation now
+ *  lives in `@/lib/concurrency` (hoisted out of here and `usePassportData.ts`,
+ *  which had an independent copy of the exact same limiter). Import
+ *  `@/lib/concurrency` directly in new code. */
+export { mapWithConcurrency };
 
 /** Group flat DevScan rows by project id (dropping null-project rows), newest
  *  first per project. Island slug === dev-project id, so callers key by slug. */

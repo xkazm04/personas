@@ -63,6 +63,11 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
     trace.spans.reduce((max, e) => Math.max(max, e.start_ms + (e.duration_ms ?? 0)), 0)
   );
   const isLive = liveTrace?.executionId === execution.id;
+  // Reconstructed from execution timestamps, not captured live — every span
+  // below is a proportional estimate, not a measurement. Distinct from
+  // `isLive`: an execution can be neither (a historical trace WAS captured)
+  // nor both (synthetic traces are never the live one).
+  const isSynthetic = 'isSynthetic' in trace && trace.isSynthetic === true;
 
   // Find stream_output entry for sub-span anchoring
   const streamEntry = trace.spans.find(e => e.span_type === 'stream_output');
@@ -89,6 +94,15 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
           <span className="ml-auto flex items-center gap-1 text-status-info">
             <span className="w-1.5 h-1.5 rounded-full bg-status-info animate-pulse" />
             {e.live}
+          </span>
+        )}
+        {!isLive && isSynthetic && (
+          <span
+            className="ml-auto flex items-center gap-1 text-status-warning"
+            data-testid="pipeline-synthetic-badge"
+          >
+            <AlertCircle className="w-3 h-3" />
+            {e.estimated_no_trace}
           </span>
         )}
       </div>
@@ -156,6 +170,7 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
               totalDurationMs={totalDurationMs}
               pipelineStartMs={trace.startedAt}
               totalCostUsd={execution.cost_usd}
+              isSynthetic={isSynthetic}
             />
           </div>
         )}

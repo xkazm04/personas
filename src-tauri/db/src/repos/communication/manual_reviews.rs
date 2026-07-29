@@ -295,6 +295,14 @@ pub fn update_status(
         // row affected and BOTH re-fire react_to_review_decision (re-resume the held
         // step, re-dispatch the follow-up run). With it only the first commits; the
         // loser gets 0 rows and its error short-circuits the duplicate side effects.
+        //
+        // CAS semantics (deliberate, differs from
+        // triggers.rs::resolve_pending_fire): a LOST compare-and-swap here IS an
+        // error, same as healing.rs::confirm_auto_fix. A 0-row result means a
+        // DIFFERENT, possibly conflicting decision already won (e.g. Athena
+        // approved while the user was mid-reject) -- not the caller's own
+        // decision recorded by proxy -- so the caller's action was genuinely
+        // dropped and must be surfaced as `Err`, not treated as a benign no-op.
         let expected = current.status.as_str();
         let rows = conn.execute(
             "UPDATE persona_manual_reviews

@@ -265,5 +265,16 @@
   "columns_needs_attention": "Perlu perhatian",
   "columns_active_goals": "Tujuan aktif",
   "columns_no_team": "Tanpa tim",
-  "columns_all_clear": "Semua beres"
+  "columns_all_clear": "Semua beres",
+  "presence_idle": "Tidak aktif",
+  "presence_last_seen": "aktivitas terakhir {time}",
+  "presence_waiting": "Menunggu tinjauan",
+  "presence_working": "Bekerja",
+  "stream_assignment_filter": "Saring ke penugasan ini",
+  "channels_layout_map": "Peta",
+  "channels_layout_map_hint": "Konstelasi langsung satu proyek — siapa yang bekerja dan siapa berbicara dengan siapa",
+  "map_empty": "Belum ada anggota di proyek ini.",
+  "map_legend_traffic": "Lalu lintas terbaru",
+  "map_live": "Langsung",
+  "map_members": "Anggota"
 }

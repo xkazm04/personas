@@ -10,11 +10,11 @@
  * coverage table is what makes successive runs ADVANCE instead of decay, and
  * what lets the UI report an unread surface instead of implying completeness.
  */
-export type WorkspaceHarvestCoverage = { project_id: string, 
+export type WorkspaceHarvestCoverage = { projectId: string, 
 /**
  * Stable scope slug (`group:execution-orchestration`, `repo-global`, …).
  */
-scope_id: string, scope_label: string, 
+scopeId: string, scopeLabel: string, 
 /**
  * 'group' | 'directory' | 'global'.
  */
@@ -22,25 +22,25 @@ kind: string,
 /**
  * Files in the territory — the denominator behind a coverage claim.
  */
-file_count: bigint, 
+fileCount: bigint, 
 /**
  * NULL means never harvested. That is the point of the row existing.
  */
-last_harvested_at: string | null, last_run_dir: string | null, 
+lastHarvestedAt: string | null, lastRunDir: string | null, 
 /**
  * Items the most recent run produced for this scope.
  */
-items_found: bigint, run_count: bigint, 
+itemsFound: bigint, runCount: bigint, 
 /**
  * How much of the territory the last run actually READ, self-reported by
  * the harvest session. "Visited" and "covered" are different claims and
  * the ledger must not conflate them: a scope read at 11% is a scope that
  * still owes a pass, even though `last_harvested_at` is set.
  */
-files_read: bigint | null, files_total: bigint | null, estimated_pct: bigint | null, 
+filesRead: bigint | null, filesTotal: bigint | null, estimatedPct: bigint | null, 
 /**
  * JSON array of paths the last run named as unread. Fed back into the
  * next dispatch for this scope, which is what turns a re-run into a
  * genuine second pass instead of a re-read of the same ground.
  */
-unread_pockets: string | null, coverage_note: string | null, updated_at: string, };
+unreadPockets: string | null, coverageNote: string | null, updatedAt: string, };

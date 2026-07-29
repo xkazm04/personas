@@ -107,7 +107,9 @@ export function matchesLens(
 
   const q = lens.search.trim().toLowerCase();
   if (q) {
-    const hay = `${item.body ?? ''} ${item.label} ${callsign(nameOf(item.personaId))}`.toLowerCase();
+    // assignmentId is in the haystack so the row's assignment chip can filter
+    // by setting the search to the full id — and so a pasted id just works.
+    const hay = `${item.body ?? ''} ${item.label} ${callsign(nameOf(item.personaId))} ${item.assignmentId ?? ''}`.toLowerCase();
     if (!hay.includes(q)) return false;
   }
 

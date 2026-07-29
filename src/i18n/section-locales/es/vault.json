@@ -691,6 +691,8 @@
     "test_all": "Probar todas",
     "daily_progress": "Diario {done}/{total}",
     "testing_progress": "Probando {done}/{total}",
+    "unverifiable_count": "{count} no verificable(s)",
+    "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor",
     "title_catalog": "Catálogo",
     "title_dependencies": "Dependencias",
     "title_databases": "Bases de datos"

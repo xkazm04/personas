@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { PipelineTraceEntry } from '@/lib/execution/pipeline';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -12,11 +12,18 @@ export function CostAccrualOverlay({
   totalDurationMs,
   pipelineStartMs: _pipelineStartMs,
   totalCostUsd,
+  isSynthetic = false,
 }: {
   entries: PipelineTraceEntry[];
   totalDurationMs: number;
   pipelineStartMs: number;
   totalCostUsd: number;
+  /** True when the entries came from `buildSyntheticTrace` (reconstructed
+   *  proportional estimates, e.g. the "~95% during streaming" split below)
+   *  rather than a captured trace — surfaces the same "Estimated" badge
+   *  PipelineWaterfall shows on the waterfall itself, so the curve isn't
+   *  mistaken for a real per-stage cost measurement. */
+  isSynthetic?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
@@ -73,6 +80,15 @@ export function CostAccrualOverlay({
         <span className="typo-code text-foreground uppercase tracking-wider">
           {tx(e.cost_accrual, { cost: totalCostUsd.toFixed(4) })}
         </span>
+        {isSynthetic && (
+          <span
+            className="flex items-center gap-1 typo-code text-status-warning uppercase tracking-wider"
+            data-testid="cost-accrual-synthetic-badge"
+          >
+            <AlertCircle className="w-3 h-3" />
+            {e.estimated_no_trace}
+          </span>
+        )}
       </div>
       <div className="h-5 bg-primary/5 rounded overflow-hidden">
         <svg

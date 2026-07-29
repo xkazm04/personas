@@ -68,6 +68,23 @@ pub(super) async fn run_post_draft(
     cancel_flag: Arc<AtomicBool>,
     registry: Arc<ActiveProcessRegistry>,
 ) {
+    // NOTE (2026-07-28 audit): this is keyed by `session_id` rather than a
+    // per-attempt id, which is the same shape as the setup.rs bug (a second
+    // concurrent call for the same key would steal the first's cancellation
+    // flag via `RunGuard::drop`'s `unregister_run`). Left as-is deliberately:
+    // `build_session::mod.rs::cancel_session` cancels this run by calling
+    // `registry.cancel_run("build_session_oneshot", session_id)` — cancel-by-
+    // session-id is load-bearing for the one confirmed caller. Only one call
+    // path invokes `run_post_draft` today (the runner, once per session
+    // reaching `DraftReady`), so there is no confirmed double-invocation
+    // exploiting this. If a future resume/retry path re-enters
+    // `run_post_draft` for the SAME session before the prior `RunGuard`
+    // drops, it would silently share this slot exactly like the setup.rs
+    // bug — keying by a per-attempt id here would require `cancel_session`
+    // to look up "the current attempt id for this session" first (e.g. via
+    // `registry.get_id`/a small session→attempt map), which is a real design
+    // change, not a one-line key swap. Do that work if/when such a path is
+    // added; don't force it speculatively.
     let (oneshot_cancel_flag, _oneshot_guard) =
         registry.register_run_guarded("build_session_oneshot", &session_id);
 

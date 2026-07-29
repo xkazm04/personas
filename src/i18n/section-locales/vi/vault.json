@@ -691,6 +691,8 @@
     "test_all": "Kiểm tra tất cả",
     "daily_progress": "Hàng ngày {done}/{total}",
     "testing_progress": "Đang kiểm tra {done}/{total}",
+    "unverifiable_count": "{count} không thể xác minh",
+    "unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp -- thông tin xác thực được lưu trữ nhưng chưa bao giờ được xác minh với nhà cung cấp",
     "title_catalog": "Danh mục",
     "title_dependencies": "Phụ thuộc",
     "title_databases": "Cơ sở dữ liệu"

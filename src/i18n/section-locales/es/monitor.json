@@ -265,5 +265,16 @@
   "columns_needs_attention": "Necesita atención",
   "columns_active_goals": "Objetivos activos",
   "columns_no_team": "Sin equipo",
-  "columns_all_clear": "Todo en orden"
+  "columns_all_clear": "Todo en orden",
+  "presence_idle": "Inactivo",
+  "presence_last_seen": "última actividad {time}",
+  "presence_waiting": "Pendiente de revisión",
+  "presence_working": "Trabajando",
+  "stream_assignment_filter": "Filtrar por esta asignación",
+  "channels_layout_map": "Mapa",
+  "channels_layout_map_hint": "Constelación en vivo de un proyecto — quién trabaja y quién habla con quién",
+  "map_empty": "Aún no hay miembros en este proyecto.",
+  "map_legend_traffic": "Tráfico reciente",
+  "map_live": "En vivo",
+  "map_members": "Miembros"
 }

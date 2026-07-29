@@ -272,6 +272,7 @@
     "legend_engine": "Engine",
     "legend_tool_call": "Tool-Aufruf",
     "live": "Live",
+    "estimated_no_trace": "Geschätzt (keine Trace erfasst)",
     "stage": "Stufe",
     "stage_errors": "Stufenfehler",
     "total_duration": "Gesamtdauer",

@@ -8,8 +8,10 @@ import { useMemo, useState } from 'react';
 import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpFromLine, CheckCircle2, Play } from 'lucide-react';
 
 import type { SkillEntry } from '@/api/devTools/devTools';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { isPresetSkill, presetVisual } from '../constants/presetSkills';
 import type { SkillsManagerVariantProps, ProjRow, WsRow } from './SkillsManagerPage';
 import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skillsManagerBits';
 import { SkillActionConfirm } from './SkillActionConfirm';
@@ -22,6 +24,8 @@ type SortDir = 'asc' | 'desc';
 
 /** Shared 4-column grid template — header and every row align to it. */
 const COLS = 'grid grid-cols-[minmax(0,1fr)_2.5rem_4.5rem_auto] items-center gap-3';
+/** Project-panel template — adds a dedicated Coverage column after the name. */
+const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_4.5rem_auto] items-center gap-3';
 
 function useSort(): { key: SortKey; dir: SortDir; toggle: (k: SortKey) => void } {
   const [key, setKey] = useState<SortKey>('name');
@@ -58,8 +62,9 @@ function Panel({ title, count, header, footer, children }: {
   );
 }
 
-/** Column-header row (matches COLS): sortable Name/Usage, static Last used/Action. */
-function HeaderRow({ sort }: { sort: ReturnType<typeof useSort> }) {
+/** Column-header row (matches COLS/PROJ_COLS): sortable Name/Usage, static
+ *  Coverage (project side) / Last used / Action. */
+function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort>; coverage?: boolean }) {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
   const SortHead = ({ k, label }: { k: SortKey; label: string }) => {
@@ -80,8 +85,9 @@ function HeaderRow({ sort }: { sort: ReturnType<typeof useSort> }) {
     <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{children}</span>
   );
   return (
-    <div className={`${COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
+    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
       <SortHead k="name" label={d.skills_sort_skill} />
+      {coverage && <H>{d.skills_col_coverage}</H>}
       <span className="text-right"><SortHead k="usage" label={d.skills_sort_usage} /></span>
       <H>{d.skills_col_lastused}</H>
       <H>{d.skills_col_action}</H>
@@ -124,19 +130,40 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   const wsSort = useSort();
   const projSort = useSort();
   const [pending, setPending] = useState<Pending | null>(null);
+  // Library group: app-owned presets (icon rows) vs user-authored skills.
+  const [libTab, setLibTab] = useState<'preset' | 'custom'>('custom');
 
-  // Left — category groups (name-asc), sorted within each group.
+  const libRows = useMemo(
+    () => ws.filter((r) => isPresetSkill(r.entry.name) === (libTab === 'preset')),
+    [ws, libTab],
+  );
+
+  // Left — grouped (name-asc), sorted within each group. Custom tab groups by
+  // frontmatter category; Preset tab groups by the lens's category group so
+  // the four scanner families read as one block each.
   const wsGroups = useMemo(() => {
     const byCat = new Map<string, WsRow[]>();
-    for (const r of ws) {
-      const cat = r.entry.category ?? 'Other';
+    for (const r of libRows) {
+      const cat = libTab === 'preset'
+        ? (presetVisual(r.entry.name)?.categoryGroup ?? 'Other')
+        : (r.entry.category ?? 'Other');
       const list = byCat.get(cat);
       if (list) list.push(r); else byCat.set(cat, [r]);
     }
     return [...byCat.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([cat, rows]) => [cat, sortRows(rows, wsSort.key, wsSort.dir, (r) => r.entry.name, (r) => r.usage?.invokes_30d ?? 0)] as const);
-  }, [ws, wsSort.key, wsSort.dir]);
+  }, [libRows, libTab, wsSort.key, wsSort.dir]);
+
+  // Preset-tab divider labels — the four lens families, translated.
+  const groupLabel = (cat: string): string => {
+    if (libTab !== 'preset') return cat;
+    if (cat === 'technical') return d.skills_preset_group_technical;
+    if (cat === 'user') return d.skills_preset_group_user;
+    if (cat === 'business') return d.skills_preset_group_business;
+    if (cat === 'mastermind') return d.skills_preset_group_mastermind;
+    return cat;
+  };
 
   const tracked = useMemo(
     () => sortRows(proj.filter((r) => r.tracked), projSort.key, projSort.dir, (r) => r.entry.name, (r) => r.usage?.invokes_30d ?? 0),
@@ -155,23 +182,28 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   };
 
   const renderProjRow = (r: ProjRow) => (
-    <li key={r.entry.name} className={`${COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
-      {/* Name cell: memory icon + name (opens contexts when tracked) + coverage */}
+    <li key={r.entry.name} className={`${PROJ_COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
+      {/* Name cell: memory icon + name (opens contexts when tracked) */}
       <span className="flex items-center gap-2 min-w-0">
         <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
         {r.tracked ? (
           <button
             type="button"
             onClick={() => onOpenContexts(r.entry.name)}
-            className="min-w-0 flex items-center gap-2 text-left hover:text-primary transition-colors"
+            className="min-w-0 text-left hover:text-primary transition-colors"
             data-testid={`skills-manager-proj-${r.entry.name}`}
           >
             <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
-            <CoverageBar row={r.coverage} total={totalContexts} />
           </button>
         ) : (
           <span className="typo-caption font-medium text-foreground truncate" data-testid={`skills-manager-proj-${r.entry.name}`}>{r.entry.name}</span>
         )}
+      </span>
+      {/* Coverage — its own column for scannable visual structure */}
+      <span className="flex justify-end">
+        {r.tracked
+          ? <CoverageBar row={r.coverage} total={totalContexts} />
+          : <span className="typo-label text-foreground/25">—</span>}
       </span>
       <UsageCount usage={r.usage} />
       <LastUsed usage={r.usage} />
@@ -186,14 +218,50 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
 
   return (
     <div className="grid grid-cols-2 gap-4 h-full min-h-0">
-      <Panel title={d.skills_workspace_library} count={ws.length} header={<HeaderRow sort={wsSort} />} footer={d.skills_footer_usage}>
+      <Panel
+        title={d.skills_workspace_library}
+        count={libRows.length}
+        header={(
+          <>
+            <div className="px-3 pt-2 flex-shrink-0">
+              <SegmentedTabs
+                tabs={[
+                  { id: 'custom', label: d.skills_lib_tab_custom },
+                  { id: 'preset', label: d.skills_lib_tab_preset },
+                ]}
+                activeTab={libTab}
+                onTabChange={(v) => setLibTab(v as 'preset' | 'custom')}
+                variant="segment"
+                size="sm"
+                fullWidth={false}
+                ariaLabel={d.skills_lib_tab_aria}
+              />
+            </div>
+            <HeaderRow sort={wsSort} />
+          </>
+        )}
+        footer={d.skills_footer_usage}
+      >
         {wsGroups.map(([cat, rows]) => (
           <div key={cat}>
-            <GroupDivider>{cat}</GroupDivider>
+            <GroupDivider>{groupLabel(cat)}</GroupDivider>
             <ul>
-              {rows.map(({ entry, usage, installed }) => (
+              {rows.map(({ entry, usage, installed }) => {
+                const visual = presetVisual(entry.name);
+                return (
                 <li key={entry.name} className={`${COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
-                  <span className={`typo-caption font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
+                  <span className="flex items-center gap-2 min-w-0">
+                    {visual && (
+                      <span
+                        className="inline-flex items-center justify-center w-5 h-5 rounded-interactive border flex-shrink-0"
+                        style={{ color: visual.color, borderColor: `${visual.color}40`, backgroundColor: `${visual.color}14` }}
+                        title={visual.label}
+                      >
+                        <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
+                      </span>
+                    )}
+                    <span className={`typo-caption font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
+                  </span>
                   <UsageCount usage={usage} />
                   <LastUsed usage={usage} />
                   <span className="flex items-center justify-end">
@@ -206,14 +274,19 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
                     )}
                   </span>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         ))}
-        {ws.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_ws_empty}</p>}
+        {libRows.length === 0 && (
+          <p className="typo-caption text-foreground/45 py-8 text-center">
+            {libTab === 'preset' ? d.skills_preset_empty : d.skills_ws_empty}
+          </p>
+        )}
       </Panel>
 
-      <Panel title={projectName || d.skills_project_fallback} count={proj.length} header={<HeaderRow sort={projSort} />} footer={d.skills_footer_usage_coverage}>
+      <Panel title={projectName || d.skills_project_fallback} count={proj.length} header={<HeaderRow sort={projSort} coverage />} footer={d.skills_footer_usage_coverage}>
         {tracked.length > 0 && (
           <>
             <GroupDivider>{d.skills_group_tracked}</GroupDivider>
@@ -235,6 +308,7 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
           skill={pending.skill}
           projectName={projectName}
           busy={busy}
+          preset={isPresetSkill(pending.skill.name)}
           onConfirm={confirmAdoptShare}
           onClose={() => setPending(null)}
         />

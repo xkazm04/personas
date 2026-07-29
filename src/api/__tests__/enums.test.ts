@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { TWIN_CHANNEL_KINDS, TWIN_INTERACTION_DIRECTIONS } from "@/api/enums";
+import {
+  TWIN_CHANNEL_KINDS,
+  TWIN_INTERACTION_DIRECTIONS,
+  OBSIDIAN_CONFLICT_RESOLUTIONS,
+  TWIN_PENDING_MEMORY_STATUSES,
+} from "@/api/enums";
 
 /**
  * Enum-drift guards. Each TS `*_KINDS` union below must equal the set the Rust
@@ -40,5 +45,21 @@ describe("api/enums Rust-sync", () => {
     //   const VALID_DIRECTIONS: &[&str] = &["in", "out"];
     const RUST_VALID_DIRECTIONS = ["in", "out"];
     expect([...TWIN_INTERACTION_DIRECTIONS].sort()).toEqual([...RUST_VALID_DIRECTIONS].sort());
+  });
+
+  it("OBSIDIAN_CONFLICT_RESOLUTIONS matches obsidian_brain_resolve_conflict's accepted `resolution` values", () => {
+    // Source of truth: src-tauri/src/commands/obsidian_brain/mod.rs:1268,1316,1387
+    //   match resolution.as_str() { "use_app" => ..., "use_vault" => ..., "skip" => ..., _ => ... }
+    const RUST_RESOLUTIONS = ["use_app", "use_vault", "skip"];
+    expect([...OBSIDIAN_CONFLICT_RESOLUTIONS].sort()).toEqual([...RUST_RESOLUTIONS].sort());
+  });
+
+  it("TWIN_PENDING_MEMORY_STATUSES matches twin_list_pending_memories / twin_review_memory's status values", () => {
+    // Source of truth: src-tauri/src/commands/infrastructure/twin.rs:451-457
+    //   (db/src/repos/twin.rs: status column values "pending" | "approved" | "rejected")
+    const RUST_PENDING_MEMORY_STATUSES = ["pending", "approved", "rejected"];
+    expect([...TWIN_PENDING_MEMORY_STATUSES].sort()).toEqual(
+      [...RUST_PENDING_MEMORY_STATUSES].sort(),
+    );
   });
 });

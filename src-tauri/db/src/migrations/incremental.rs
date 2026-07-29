@@ -6403,6 +6403,27 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- dev_workspaces.adopt_default_skills --------------------------------
+    // Consent flag set at workspace creation: when 1, projects assigned to the
+    // workspace get the app's preset scan-* skills installed (system-skill
+    // lane). Consent is explicit — the checkbox in the create form — never
+    // implied, so the default is 0.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_workspaces.adopt_default_skills",
+            description: "Per-workspace consent to populate the preset scan skills into member projects on assignment.",
+            already_applied: |conn| has_column(conn, "dev_workspaces", "adopt_default_skills"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_workspaces ADD COLUMN adopt_default_skills INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 

@@ -691,6 +691,8 @@
     "test_all": "সব পরীক্ষা করুন",
     "daily_progress": "প্রতিদিন {done}/{total}",
     "testing_progress": "পরীক্ষা করা হচ্ছে {done}/{total}",
+    "unverifiable_count": "{count}টি যাচাইযোগ্য নয়",
+    "unverifiable_tooltip": "এই কানেক্টরের কোনো লাইভ প্রোব নেই -- ক্রেডেনশিয়ালগুলো সংরক্ষিত আছে কিন্তু প্রদানকারীর বিরুদ্ধে কখনো যাচাই করা হয়নি",
     "title_catalog": "ক্যাটালগ",
     "title_dependencies": "নির্ভরতা",
     "title_databases": "ডেটাবেস"

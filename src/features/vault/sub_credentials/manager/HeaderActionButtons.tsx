@@ -1,4 +1,4 @@
-import { RotateCw, CheckCircle2, Play, Square, CircleCheck, CircleX } from 'lucide-react';
+import { RotateCw, CheckCircle2, Play, Square, CircleCheck, CircleX, CircleHelp } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
@@ -61,6 +61,24 @@ export function TestAllButton({
   const hasSummary = !!bulk.summary;
   const passed = bulk.summary?.passed ?? 0;
   const failed = bulk.summary?.failed ?? 0;
+  // Connectors with no live probe at all -- stored but never checked against
+  // the provider. Must render as its own neutral bucket, not folded into
+  // `passed`: the backend's legacy `success` boolean is `true` for these too,
+  // so counting on it alone would show "N passed, 0 failed" even when none of
+  // the N were ever actually verified.
+  //
+  // Credentials with no live probe at all: neither passed nor failed. Carried
+  // all the way from `BulkHealthcheckSummary` (src-tauri/src/engine/healthcheck.rs)
+  // through `useBulkHealthcheck`'s `BulkSummary`, so the count is real rather
+  // than defaulted -- a 0 here means "none unverifiable", not "unknown".
+  const unverifiable = bulk.summary?.unverifiable ?? 0;
+  // Only claim the "all healthy" emerald treatment when every credential was
+  // actually probed and passed. If any were unverifiable (no probe exists at
+  // all), the button must NOT read as a clean bill of health even when
+  // failed === 0 -- that combination previously rendered identically to
+  // "every credential verified working".
+  const allVerified = hasSummary && failed === 0 && unverifiable === 0;
+  const anyFailed = hasSummary && failed > 0;
 
   return (
     <button
@@ -70,9 +88,11 @@ export function TestAllButton({
         bulk.isRunning
           ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400 border-amber-600/25 dark:border-amber-500/20'
           : hasSummary
-            ? failed > 0
+            ? anyFailed
               ? 'bg-red-600/8 text-foreground border-red-600/25 dark:border-red-500/20'
-              : 'bg-emerald-600/8 text-foreground border-emerald-600/25 dark:border-emerald-500/20'
+              : allVerified
+                ? 'bg-emerald-600/8 text-foreground border-emerald-600/25 dark:border-emerald-500/20'
+                : 'bg-foreground/5 text-foreground border-foreground/15'
             : 'border-primary/15 text-foreground hover:bg-primary/5 hover:text-foreground/80'
       }`}
       title={bulk.isRunning ? t.vault.manager.cancel_healthcheck : t.vault.manager.test_all_credentials}
@@ -92,7 +112,7 @@ export function TestAllButton({
         bulk.isRunning
           ? 'bg-amber-600/20'
           : hasSummary
-            ? failed > 0 ? 'bg-red-600/15' : 'bg-emerald-600/15'
+            ? anyFailed ? 'bg-red-600/15' : allVerified ? 'bg-emerald-600/15' : 'bg-foreground/10'
             : 'bg-primary/10'
       }`} />
 
@@ -115,6 +135,15 @@ export function TestAllButton({
               <span className="flex items-center gap-0.5 text-red-600 dark:text-red-400">
                 <CircleX className="w-3 h-3" />
                 <span>{failed}</span>
+              </span>
+            )}
+            {unverifiable > 0 && (
+              <span
+                className="flex items-center gap-0.5 text-foreground/60"
+                title={t.vault.manager.unverifiable_tooltip}
+              >
+                <CircleHelp className="w-3 h-3" />
+                <span>{unverifiable}</span>
               </span>
             )}
           </>

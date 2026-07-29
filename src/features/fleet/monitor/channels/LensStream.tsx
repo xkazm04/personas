@@ -17,10 +17,12 @@ import type { TaggedItem } from './types';
  * an old row back into view must never re-fire it (plan §5.4).
  */
 export function LensStream({
-  rows: data, onOpen, emptyLabel, hasMore, onEndReached,
+  rows: data, onOpen, onAssignment, emptyLabel, hasMore, onEndReached,
 }: {
   rows: TaggedItem[];
   onOpen: (row: TaggedItem) => void;
+  /** Assignment-chip click — applies the id to the search lens. */
+  onAssignment?: (assignmentId: string) => void;
   emptyLabel: string;
   hasMore?: boolean;
   /** Fired once when the tail scrolls into view — pages the merge deeper. */
@@ -80,7 +82,11 @@ export function LensStream({
   });
 
   if (data.length === 0) {
-    return <div className="flex-1 flex items-center justify-center typo-body text-foreground/60">{emptyLabel}</div>;
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <span className="hud-empty typo-label uppercase tracking-wider text-foreground opacity-60">{emptyLabel}</span>
+      </div>
+    );
   }
 
   return (
@@ -127,7 +133,13 @@ export function LensStream({
                 className={fresh ? 'animate-channel-row-in' : undefined}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
               >
-                <StreamRow row={row.item} persona={persona} onOpen={onOpen} />
+                <StreamRow
+                  row={row.item}
+                  persona={persona}
+                  onOpen={onOpen}
+                  onAssignment={onAssignment}
+                  assignmentTitle={t.monitor.stream_assignment_filter}
+                />
               </div>
             );
           })}

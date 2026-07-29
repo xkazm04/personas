@@ -8,6 +8,7 @@ use std::sync::Arc;
 use futures_util::future::join_all;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
+use tokio::sync::Semaphore;
 use tokio::time::Duration;
 use ts_rs::TS;
 
@@ -34,6 +35,27 @@ use crate::error::AppError;
 /// still does, `firings_fetch_hit_cap` below logs a warning so the gap is
 /// at least visible instead of silently stranding older firings forever.
 const FIRING_FETCH_LIMIT: u32 = 200;
+
+/// Max concurrent outbound HTTP calls (per round) against the cloud
+/// orchestrator during one relay tick. Both fan-out rounds below used to be
+/// bounded only by a single 30s timeout around the WHOLE batch — one slow
+/// endpoint stalled every other deployment/trigger's call for the full 30s,
+/// and if the batch then timed out, ALL of them (not just the slow one) were
+/// dropped for that tick, silently losing every trigger's firings until the
+/// next poll. A semaphore now caps the real network fan-out; each call also
+/// gets its own timeout (`WEBHOOK_RELAY_ITEM_TIMEOUT`) so a single slow
+/// deployment can no longer blank the tick for the rest. Halving this (~3)
+/// would make a large fleet's poll cycle noticeably slower per tick (more
+/// waves); doubling it (~12-16) risks hammering the orchestrator with
+/// concurrent connections for what is a background poll, not a
+/// user-triggered burst.
+const WEBHOOK_RELAY_CONCURRENCY: usize = 6;
+
+/// Per-call timeout for each outbound HTTP call in a relay round. Bounds how
+/// long one slow/unresponsive deployment or trigger can occupy a semaphore
+/// permit — without this, a single hung endpoint could starve the whole
+/// round's concurrency budget even with the semaphore in place.
+const WEBHOOK_RELAY_ITEM_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Tracks the last-seen firing timestamp per cloud trigger to avoid
 /// re-processing firings across poll cycles.
@@ -144,15 +166,36 @@ pub async fn cloud_webhook_relay_tick(
         .filter(|d| d.webhook_enabled && d.status == "active")
         .collect();
 
-    // 2. Parallel round 1: fetch triggers for ALL deployments concurrently
+    // 2. Round 1: fetch triggers for ALL deployments, bounded to
+    // WEBHOOK_RELAY_CONCURRENCY in flight at once, each call individually
+    // timed out so one slow deployment cannot consume the whole round's
+    // 30s outer budget (the outer timeout below is now a last-resort guard
+    // against the whole round hanging, not the per-call bound).
+    let round1_semaphore = Arc::new(Semaphore::new(WEBHOOK_RELAY_CONCURRENCY));
     let trigger_futs: Vec<_> = webhook_deployments
         .iter()
         .enumerate()
         .map(|(i, dep)| {
             let client = Arc::clone(client);
             let persona_id = dep.persona_id.clone();
+            let semaphore = Arc::clone(&round1_semaphore);
             async move {
-                let result = client.list_persona_triggers(&persona_id).await;
+                let _permit = semaphore
+                    .acquire_owned()
+                    .await
+                    .expect("relay semaphore is never closed");
+                let result = match tokio::time::timeout(
+                    WEBHOOK_RELAY_ITEM_TIMEOUT,
+                    client.list_persona_triggers(&persona_id),
+                )
+                .await
+                {
+                    Ok(r) => r,
+                    Err(_) => Err(AppError::Cloud(format!(
+                        "Timed out listing triggers for persona {persona_id} ({}s)",
+                        WEBHOOK_RELAY_ITEM_TIMEOUT.as_secs()
+                    ))),
+                };
                 (i, result)
             }
         })
@@ -196,7 +239,11 @@ pub async fn cloud_webhook_relay_tick(
 
     let trigger_count = webhook_triggers_with_deployment.len() as u32;
 
-    // 3. Parallel round 2: fetch firings for ALL triggers concurrently
+    // 3. Round 2: fetch firings for ALL triggers, same bounded-concurrency +
+    // per-item-timeout shape as round 1 (a fresh semaphore — this round's
+    // fan-out is over triggers, a different and typically larger count than
+    // round 1's deployments).
+    let round2_semaphore = Arc::new(Semaphore::new(WEBHOOK_RELAY_CONCURRENCY));
     let firing_futs: Vec<_> = webhook_triggers_with_deployment
         .iter()
         .enumerate()
@@ -204,10 +251,24 @@ pub async fn cloud_webhook_relay_tick(
             let client = Arc::clone(client);
             let trigger_id = trigger.id.clone();
             let dep_idx = *dep_idx;
+            let semaphore = Arc::clone(&round2_semaphore);
             async move {
-                let result = client
-                    .list_trigger_firings(&trigger_id, Some(FIRING_FETCH_LIMIT))
-                    .await;
+                let _permit = semaphore
+                    .acquire_owned()
+                    .await
+                    .expect("relay semaphore is never closed");
+                let result = match tokio::time::timeout(
+                    WEBHOOK_RELAY_ITEM_TIMEOUT,
+                    client.list_trigger_firings(&trigger_id, Some(FIRING_FETCH_LIMIT)),
+                )
+                .await
+                {
+                    Ok(r) => r,
+                    Err(_) => Err(AppError::Cloud(format!(
+                        "Timed out listing firings for trigger {trigger_id} ({}s)",
+                        WEBHOOK_RELAY_ITEM_TIMEOUT.as_secs()
+                    ))),
+                };
                 (i, dep_idx, result)
             }
         })

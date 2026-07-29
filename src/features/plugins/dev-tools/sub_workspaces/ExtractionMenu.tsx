@@ -24,6 +24,7 @@ import {
 } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -113,7 +114,14 @@ export function ExtractionMenu({
         return [id, []] as const;
       }
     };
-    void Promise.all(memberProjects.map((p) => load(p.id)))
+    // Fleet-scale workspaces run 30+ member repos; each load is one local IPC
+    // call (listHarvestCoverage reads a small on-disk ledger, not a remote
+    // fetch), so a moderate width keeps the menu open snappy without a 30-wide
+    // burst hitting the IPC bridge at once. Halving this (~2-3) would make
+    // large workspaces' coverage badges visibly trickle in; doubling it buys
+    // nothing since it already exceeds most workspaces' member count.
+    const COVERAGE_LOAD_CONCURRENCY = 8;
+    void mapWithConcurrency(memberProjects, COVERAGE_LOAD_CONCURRENCY, (p) => load(p.id))
       .then((pairs) => {
         if (live) setCoverage(Object.fromEntries(pairs));
       })
@@ -158,6 +166,7 @@ export function ExtractionMenu({
     name: workspace.name,
     color: workspace.color,
     description: null,
+    adopt_default_skills: workspace.adoptDefaultSkills,
     created_at: '',
     updated_at: '',
   };
@@ -256,12 +265,12 @@ export function ExtractionMenu({
       }
 
       for (const scope of wave) {
-        const key = harvestDispatchKey(workspace.id, project.id, scope.scope_id);
+        const key = harvestDispatchKey(workspace.id, project.id, scope.scopeId);
         const sessionId = await spawnSession(prep.root_path, [
           buildHarvestPrompt(wsShim, project, {
-            id: scope.scope_id,
-            label: scope.scope_label,
-            fileCount: Number(scope.file_count),
+            id: scope.scopeId,
+            label: scope.scopeLabel,
+            fileCount: Number(scope.fileCount),
           }),
         ]);
         await renameSession(sessionId, key);

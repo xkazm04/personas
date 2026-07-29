@@ -95,7 +95,7 @@ export function GroupHeaderRow({
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-4 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/5"
+      className="flex items-center gap-2 px-4 z-10 bg-background/95 backdrop-blur-sm border-b border-foreground/10"
       style={
         pinned
           ? { position: 'sticky', top: 0, left: 0, width: '100%', height }

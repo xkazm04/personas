@@ -5,7 +5,6 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
-const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const RunDeskPage = lazy(() => import('./sub_runner/RunDeskPage'));
 const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
 const WorkspacesPage = lazy(() => import('./sub_workspaces/WorkspacesPage'));
@@ -32,7 +31,6 @@ export default function DevToolsPage() {
           {devToolsTab === 'overview' && <ProjectOverviewPage />}
           {devToolsTab === 'llm-overview' && <LlmOverviewPage />}
           {devToolsTab === 'context-map' && <ContextMapPage />}
-          {devToolsTab === 'idea-scanner' && <IdeaScannerPage />}
           {devToolsTab === 'task-runner' && <RunDeskPage />}
           {devToolsTab === 'fleet' && <FleetPage />}
           {devToolsTab === 'workspaces' && <WorkspacesPage />}

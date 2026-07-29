@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { channelKey, EMPTY_CHANNEL, type ChannelTeamState } from '@/stores/slices/pipeline/channelSlice';
+import { toEpochUtc } from '@/lib/channel/eventModel';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -36,11 +37,24 @@ export function hasUnsentDraft(teamId: string): boolean {
 export type PresenceStatus = 'working' | 'waiting';
 
 /**
- * Presence, derived from the step layer: a persona whose most recent step row
- * is `step_running` is WORKING; one whose latest row is the awaiting-review
- * gate is WAITING. Shared by the channel and the studio roster.
+ * A `step_running` row older than this no longer counts as WORKING. The channel
+ * cache holds paged history, so without a bound a team whose run died (crashed,
+ * was cancelled, machine slept) keeps rendering its roster as "working" forever
+ * — the terminal row that would clear it may simply never arrive. Ten minutes
+ * matches the runner's own liveness horizon: anything genuinely running emits
+ * step traffic well inside it.
  */
-export function derivePresence(items: TeamChannelItem[]): Map<string, PresenceStatus> {
+export const PRESENCE_WORK_WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * Presence, derived from the step layer: a persona whose most recent step row
+ * is `step_running` is WORKING — but only while that row is fresh (see
+ * PRESENCE_WORK_WINDOW_MS); one whose latest row is the awaiting-review gate is
+ * WAITING. WAITING is deliberately unbounded: a review gate legitimately holds
+ * for hours and remains true until a human acts. Shared by the channel and the
+ * studio roster.
+ */
+export function derivePresence(items: TeamChannelItem[], now: number = Date.now()): Map<string, PresenceStatus> {
   const latestByStep = new Map<string, TeamChannelItem>();
   for (const i of items) {
     if (i.kind !== 'step' || !i.stepId) continue;
@@ -49,8 +63,28 @@ export function derivePresence(items: TeamChannelItem[]): Map<string, PresenceSt
   const map = new Map<string, PresenceStatus>();
   for (const i of latestByStep.values()) {
     if (!i.personaId) continue;
-    if (i.label === 'step_running') map.set(i.personaId, 'working');
-    else if (i.label === 'status_awaiting_review' && !map.has(i.personaId)) map.set(i.personaId, 'waiting');
+    if (i.label === 'step_running') {
+      if (now - toEpochUtc(i.at) <= PRESENCE_WORK_WINDOW_MS) map.set(i.personaId, 'working');
+    } else if (i.label === 'status_awaiting_review' && !map.has(i.personaId)) {
+      map.set(i.personaId, 'waiting');
+    }
+  }
+  return map;
+}
+
+/**
+ * Last observed activity per persona — the max `at` over every channel row the
+ * persona authored, as epoch ms. The heartbeat a roster/map surface renders as
+ * "2m ago". Starts at the persona's first visible row of ANY kind (a dispatch
+ * step, a message, a memory), so an agent becomes visible the moment it is spun
+ * up, not only when it completes something.
+ */
+export function deriveLastSeen(items: TeamChannelItem[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const i of items) {
+    if (!i.personaId) continue;
+    const t = toEpochUtc(i.at);
+    if (t > (map.get(i.personaId) ?? 0)) map.set(i.personaId, t);
   }
   return map;
 }

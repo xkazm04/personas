@@ -100,7 +100,7 @@ function FacetRow({
 function FacetGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="pb-2">
-      <p className="px-2 pb-1 typo-label uppercase tracking-wider text-foreground opacity-45">{title}</p>
+      <p className="hud-title px-2 pb-1 typo-label uppercase tracking-wider text-foreground opacity-45">{title}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -112,12 +112,16 @@ export interface StreamProps {
   allOn: boolean;
   onSetAll: (on: boolean) => void;
   layoutControl?: ReactNode;
+  /** Deep-link scope: open with the callsign lens pre-set to this persona. */
+  initialCallsign?: string;
 }
 
-export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: StreamProps) {
+export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl, initialCallsign }: StreamProps) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
-  const [lens, setLens] = useState<LensState>(EMPTY_LENS);
+  const [lens, setLens] = useState<LensState>(() =>
+    initialCallsign ? { ...EMPTY_LENS, callsigns: new Set([initialCallsign]) } : EMPTY_LENS,
+  );
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
 
   const selected = useMemo(() => teams.filter((t) => t.selected), [teams]);
@@ -176,7 +180,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
   }, [selected, counts]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
+    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
       {/* Header — ONLY what's global. No lens chips here, by design. */}
       <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
         <div className="w-6 h-6 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
@@ -350,6 +354,7 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl }: Stre
             <LensStream
               rows={visible}
               onOpen={(r: TaggedItem) => setDetail(r.item)}
+              onAssignment={(id) => setLens((l) => ({ ...l, search: id }))}
               emptyLabel={active > 0 ? t.monitor.stream_empty_filtered : t.monitor.stream_empty}
               hasMore={hasMore}
               onEndReached={loadMore}

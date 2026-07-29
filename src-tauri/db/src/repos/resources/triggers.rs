@@ -286,20 +286,43 @@ pub fn get_pending_fire(
 }
 
 /// Resolve a pending fire (approve/reject). Only flips a still-`pending` row.
+///
+/// Returns `(row, won_cas)`. `won_cas` is the ONLY signal the caller may use to
+/// decide whether to publish the downstream event: the `AND status = 'pending'`
+/// predicate makes this UPDATE a single-winner compare-and-swap. Two overlapping
+/// callers for the same fire id (UI double-click, IPC timeout retry) both pass a
+/// pre-check that reads `status == "pending"`, then race this UPDATE — only one
+/// actually transitions the row. Without gating on the rows-affected count, both
+/// callers would see `approved == true` (their own stale intent) and both publish,
+/// firing an approval-gated automation twice from a single human click. A 0-row
+/// result here means someone else already resolved this fire; that is a benign
+/// no-op, not an error — the human's approval WAS recorded, just by the other call.
 pub fn resolve_pending_fire(
     pool: &DbPool,
     id: &str,
     approved: bool,
-) -> Result<crate::models::PendingTriggerFire, AppError> {
+) -> Result<(crate::models::PendingTriggerFire, bool), AppError> {
     timed_query!("pending_trigger_fires", "pending_trigger_fires::resolve", {
         let status = if approved { "approved" } else { "rejected" };
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
-        conn.execute(
+        // CAS semantics (deliberate, differs from healing.rs::confirm_auto_fix
+        // and manual_reviews.rs::update_status): a LOST compare-and-swap here is
+        // NOT an error. The `AND status = 'pending'` predicate means a losing
+        // caller's `rows == 0` only happens because a concurrent caller already
+        // recorded the human's approve/reject decision -- the decision the
+        // caller wanted recorded WAS recorded, just by the other racing call.
+        // Returning success (with the resolved row) here is correct; returning
+        // an error would be a false failure for a decision that in fact went
+        // through. Contrast with healing/manual-review CAS, where a lost race
+        // means a DIFFERENT actor made a conflicting decision and the caller's
+        // own action was genuinely dropped, so those paths must surface `Err`.
+        let rows = conn.execute(
             "UPDATE pending_trigger_fires SET status = ?1, resolved_at = ?2 WHERE id = ?3 AND status = 'pending'",
             params![status, now, id],
         )?;
-        get_pending_fire(pool, id)
+        let row = get_pending_fire(pool, id)?;
+        Ok((row, rows > 0))
     })
 }
 
@@ -3361,5 +3384,110 @@ mod tests {
     #[allow(dead_code)]
     fn _seed_handler_keeper(pool: &DbPool, persona_id: &str) {
         seed_handler(pool, persona_id, "x", "y");
+    }
+
+    /// Regression pin: an approval-gated pending trigger fire must transition
+    /// exactly once even when resolved twice for the same id (UI double-click,
+    /// IPC timeout retry). Before the fix, `resolve_pending_fire` returned the
+    /// row unconditionally and the caller decided whether to publish purely
+    /// from its own `approved` bool — both racing calls would see `approved`
+    /// and both would publish, firing the gated automation twice from one
+    /// human click. The CAS predicate (`AND status = 'pending'`) means only
+    /// one UPDATE actually flips the row; this test asserts only one call
+    /// reports `won_cas == true`, i.e. only one caller is authorised to publish.
+    #[test]
+    fn test_resolve_pending_fire_is_single_winner_cas() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "manual".into(),
+                config: None,
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        let fire = insert_pending_fire(
+            &pool,
+            &trigger.id,
+            &persona.id,
+            "manual.fire",
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Simulate two overlapping resolutions of the SAME pending fire, both
+        // approving — e.g. a double-click or an IPC retry after a timeout.
+        let (first_row, first_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+        let (second_row, second_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+
+        // Exactly one call wins the CAS — that's the only one allowed to publish.
+        assert_ne!(
+            first_won, second_won,
+            "exactly one of the two racing resolutions must win the compare-and-swap"
+        );
+        assert!(first_won || second_won, "one resolution must win");
+
+        // Both calls observe the same final, single, resolved state.
+        assert_eq!(first_row.status, "approved");
+        assert_eq!(second_row.status, "approved");
+        assert_eq!(first_row.resolved_at, second_row.resolved_at);
+
+        // The row is not left dangling as `pending` and cannot be won a third time.
+        let (_, third_won) = resolve_pending_fire(&pool, &fire.id, true).unwrap();
+        assert!(!third_won, "an already-resolved fire must never win the CAS again");
+    }
+
+    /// Regression pin for the manual-backfill double-publish race
+    /// (`commands/execution/scheduler.rs::backfill_schedule`, Finding #2 of the
+    /// 2026-07-28 claim-then-work audit). That command now claims the trigger
+    /// through this CAS BEFORE computing or publishing any slot. Two callers
+    /// racing at the same `expected_version` -- a double-clicked Backfill, or
+    /// the command racing the auto-backfill tick -- must not both win, or both
+    /// publish the same slots and the persona is dispatched twice for one
+    /// schedule slot (duplicate LLM spend, plus whatever side effect the
+    /// persona itself performs).
+    ///
+    /// Lives here rather than beside the command because `test_fixtures` is
+    /// `#[cfg(test)]`-private to this crate and is not reachable from the
+    /// app_lib test build at all.
+    #[test]
+    fn advance_schedule_pointer_cas_rejects_a_second_same_version_claim() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "schedule".into(),
+                config: Some(r#"{"cron":"0 * * * *"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .expect("create schedule trigger");
+
+        let first = advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+        let second = advance_schedule_pointer(
+            &pool,
+            &trigger.id,
+            trigger.next_trigger_at.clone(),
+            trigger.trigger_version,
+        );
+
+        assert!(matches!(first, Ok(true)), "first claim must win: {first:?}");
+        assert!(
+            matches!(second, Ok(false)),
+            "a second claim at the now-stale version must lose the CAS: {second:?}"
+        );
     }
 }

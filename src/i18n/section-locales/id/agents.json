@@ -272,6 +272,7 @@
     "legend_engine": "Mesin",
     "legend_tool_call": "Panggilan Alat",
     "live": "Langsung",
+    "estimated_no_trace": "Perkiraan (trace tidak terekam)",
     "stage": "Tahap",
     "stage_errors": "Kesalahan Tahap",
     "total_duration": "Total Durasi",

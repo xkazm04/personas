@@ -54,10 +54,15 @@ export function KpiMiniGauge({ kpi, width = 150 }: { kpi: PendingKpi; width?: nu
         </span>
       </div>
       <div className="relative h-1.5 rounded-full overflow-hidden bg-primary/10">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: tint }}
-        />
+        {/* No baseline recorded: progress is genuinely unknown — leave the
+            track empty rather than fabricate a 0%-filled (or invalid-width)
+            bar. */}
+        {pct != null && (
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${pct}%`, background: tint }}
+          />
+        )}
       </div>
     </div>
   );

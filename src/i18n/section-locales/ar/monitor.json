@@ -265,5 +265,16 @@
   "columns_needs_attention": "يحتاج إلى انتباه",
   "columns_active_goals": "الأهداف النشطة",
   "columns_no_team": "بلا فريق",
-  "columns_all_clear": "كل شيء على ما يرام"
+  "columns_all_clear": "كل شيء على ما يرام",
+  "presence_idle": "خامل",
+  "presence_last_seen": "آخر نشاط {time}",
+  "presence_waiting": "بانتظار المراجعة",
+  "presence_working": "يعمل",
+  "stream_assignment_filter": "التصفية حسب هذه المهمة",
+  "channels_layout_map": "الخريطة",
+  "channels_layout_map_hint": "كوكبة حية لمشروع واحد — من يعمل ومن يتحدث مع من",
+  "map_empty": "لا يوجد أعضاء في هذا المشروع بعد.",
+  "map_legend_traffic": "حركة حديثة",
+  "map_live": "مباشر",
+  "map_members": "الأعضاء"
 }

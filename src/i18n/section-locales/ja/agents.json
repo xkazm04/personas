@@ -272,6 +272,7 @@
     "legend_engine": "エンジン",
     "legend_tool_call": "ツール呼び出し",
     "live": "ライブ",
+    "estimated_no_trace": "推定値（トレース未取得）",
     "stage": "ステージ",
     "stage_errors": "ステージエラー",
     "total_duration": "合計時間",

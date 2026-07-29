@@ -131,7 +131,7 @@ export default function ReferenceBoard() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`fixed right-0 top-16 bottom-4 z-30 w-72 flex flex-col rounded-l-modal border border-r-0 border-primary/15 bg-card/95 backdrop-blur shadow-elevation-3 transition-colors ${
+      className={`fixed right-0 top-16 bottom-4 z-30 w-72 flex flex-col rounded-l-modal border border-r-0 border-primary/15 bg-background shadow-elevation-3 transition-colors ${
         dropActive ? 'border-rose-500/60 bg-rose-500/5' : ''
       }`}
     >

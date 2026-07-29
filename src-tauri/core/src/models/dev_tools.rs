@@ -160,6 +160,9 @@ pub struct DevWorkspace {
     /// Swatch colour — the workspace's identity at a glance in switchers.
     pub color: Option<String>,
     pub description: Option<String>,
+    /// Consent (set at creation) to populate the app's preset scan skills
+    /// into member projects when they are assigned to this workspace.
+    pub adopt_default_skills: bool,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -261,6 +264,7 @@ pub struct WorkspacePracticeAdoption {
 /// what lets the UI report an unread surface instead of implying completeness.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceHarvestCoverage {
     pub project_id: String,
     /// Stable scope slug (`group:execution-orchestration`, `repo-global`, …).

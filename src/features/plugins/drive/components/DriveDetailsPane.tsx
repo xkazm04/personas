@@ -623,6 +623,36 @@ function OpenInLightboxCTA({
   );
 }
 
+/**
+ * Reads `path`'s bytes and turns them into an object URL. `isStale` is
+ * checked AFTER the read resolves (and again after the object URL is
+ * created) so a slow read for a since-superseded selection never wins —
+ * it revokes its own URL and resolves `null` instead of handing back a
+ * URL the caller would otherwise be tempted to apply unconditionally.
+ * Exported (with an injectable `readFn`) so the stale-response guard can be
+ * pinned directly, without standing up React effects + a real dynamic
+ * `import()` (the ImagePreviewBlob component below is otherwise the only
+ * caller — the default `readFn` mirrors its original inline dynamic import).
+ */
+export async function loadImagePreviewUrl(
+  path: string,
+  mime: string | null,
+  isStale: () => boolean,
+  readFn: (path: string) => Promise<ArrayBuffer | Uint8Array> = async (p) => (await import("@/api/drive")).driveRead(p),
+): Promise<string | null> {
+  const bytes = await readFn(path);
+  if (isStale()) return null;
+  const blob = new Blob([new Uint8Array(bytes)], {
+    type: mime ?? "application/octet-stream",
+  });
+  const objectUrl = URL.createObjectURL(blob);
+  if (isStale()) {
+    URL.revokeObjectURL(objectUrl);
+    return null;
+  }
+  return objectUrl;
+}
+
 function ImagePreviewBlob({
   entry,
   onPreviewClick,
@@ -634,19 +664,22 @@ function ImagePreviewBlob({
 
   useEffect(() => {
     let current: string | null = null;
-    import("@/api/drive").then(async ({ driveRead }) => {
-      try {
-        const bytes = await driveRead(entry.path);
-        const blob = new Blob([new Uint8Array(bytes)], {
-          type: entry.mime ?? "application/octet-stream",
-        });
-        current = URL.createObjectURL(blob);
+    // Guard against a stale resolve: clicking through files fires a new
+    // effect (new entry.path) before the previous read resolves, and
+    // without this the previous file's blob URL could still land in
+    // `setUrl` after the selection has already moved on.
+    let cancelled = false;
+    loadImagePreviewUrl(entry.path, entry.mime, () => cancelled)
+      .then((objectUrl) => {
+        if (!objectUrl) return;
+        current = objectUrl;
         setUrl(current);
-      } catch (err) {
+      })
+      .catch((err) => {
         silentCatch("drive:image-preview")(err);
-      }
-    });
+      });
     return () => {
+      cancelled = true;
       if (current) URL.revokeObjectURL(current);
     };
   }, [entry.path, entry.mime]);

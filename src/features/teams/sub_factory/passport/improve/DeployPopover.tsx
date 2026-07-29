@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Rocket, X, ScanSearch, ChevronDown, ChevronRight } from 'lucide-react';
 
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 import { derivePassportFromMetadata } from '../passportDerive';
@@ -102,7 +103,15 @@ export function DeployPopover({
     const eligible = batchByAction.get(a.id) ?? eligibleForBatch(a);
     setBusy(a.id);
     try {
-      await Promise.all(eligible.map(({ r, p }) => engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? '')));
+      // "Queue for all N" runs across the whole fleet (30+ projects). Each
+      // call CREATES a queued task row — the narrowest cost class here (a
+      // cheap DB insert, not a live process), but still real writes against
+      // the same task-queue table, so a modest width avoids a burst insert
+      // storm. Halving this (~2) would make a large batch visibly trickle;
+      // doubling it buys nothing since most gaps affect well under 10 projects.
+      const QUEUE_BATCH_CONCURRENCY = 4;
+      await mapWithConcurrency(eligible, QUEUE_BATCH_CONCURRENCY, ({ r, p }) =>
+        engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? ''));
       addToast(`Queued “${a.label}” for ${eligible.length} projects`, 'success');
       onClose();
     } catch {

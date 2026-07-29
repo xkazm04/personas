@@ -272,6 +272,7 @@
     "legend_engine": "엔진",
     "legend_tool_call": "도구 호출",
     "live": "라이브",
+    "estimated_no_trace": "추정값 (트레이스 미캡처)",
     "stage": "단계",
     "stage_errors": "단계 오류",
     "total_duration": "총 소요 시간",

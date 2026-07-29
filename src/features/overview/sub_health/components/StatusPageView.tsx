@@ -46,7 +46,10 @@ export function StatusPageView() {
     return `${Math.round(ago / 60)}m ago`;
   }, [lastRefreshedAt]);
 
-  const globalGrade = useMemo((): HealthGrade => computeGrade(globalScore), [globalScore]);
+  // globalScore is null when there are no personas at all (see
+  // useStatusPageData's computeGlobalScore) — unknown, not whatever band
+  // computeGrade(0) would otherwise land in.
+  const globalGrade = useMemo((): HealthGrade => (globalScore == null ? 'unknown' : computeGrade(globalScore)), [globalScore]);
 
   const meta = GRADE_META[globalGrade];
   const gth = GRADE_THEME[globalGrade];
@@ -68,7 +71,7 @@ export function StatusPageView() {
             </div>
             <div className="flex items-baseline gap-3">
               <span className="typo-body text-foreground">
-                {t.overview.health_extra.score_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore}</span>/100
+                {t.overview.health_extra.score_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore ?? '—'}</span>/100
               </span>
               <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
               <span className="typo-body text-foreground">

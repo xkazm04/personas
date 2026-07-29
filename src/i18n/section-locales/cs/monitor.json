@@ -265,5 +265,16 @@
   "columns_needs_attention": "Vyžaduje pozornost",
   "columns_active_goals": "Aktivní cíle",
   "columns_no_team": "Bez týmu",
-  "columns_all_clear": "Vše v pořádku"
+  "columns_all_clear": "Vše v pořádku",
+  "presence_idle": "Nečinný",
+  "presence_last_seen": "naposledy aktivní {time}",
+  "presence_waiting": "Čeká na kontrolu",
+  "presence_working": "Pracuje",
+  "stream_assignment_filter": "Filtrovat na toto zadání",
+  "channels_layout_map": "Mapa",
+  "channels_layout_map_hint": "Živé souhvězdí jednoho projektu — kdo pracuje a kdo s kým mluví",
+  "map_empty": "V tomto projektu zatím nejsou žádní členové.",
+  "map_legend_traffic": "Nedávný provoz",
+  "map_live": "Živě",
+  "map_members": "Členové"
 }

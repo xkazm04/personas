@@ -17,10 +17,18 @@ import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { Wand2 } from 'lucide-react';
+
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
+
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
+import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
@@ -83,21 +91,33 @@ export default function SkillsManagerPage() {
 }
 
 function SkillsManagerInner({ activeId }: { activeId: string | null }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const data = useSkillsManagerData(activeId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
+  const [pageTab, setPageTab] = useState<'overview' | 'analytics'>('overview');
 
   const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
 
-  const ws: WsRow[] = useMemo(
-    () => data.workspaceSkills.map((entry) => ({
+  const ws: WsRow[] = useMemo(() => {
+    const rows: WsRow[] = data.workspaceSkills.map((entry) => ({
       entry,
       usage: data.usageGlobal.get(entry.name),
       installed: data.installedNames.has(entry.name),
-    })),
-    [data.workspaceSkills, data.usageGlobal, data.installedNames],
-  );
+    }));
+    // The Preset tab always shows the full app-owned catalog — synthesize rows
+    // for presets not materialized in the user's global library.
+    const have = new Set(rows.map((r) => r.entry.name));
+    for (const p of PRESET_SKILLS.values()) {
+      if (have.has(p.name)) continue;
+      rows.push({
+        entry: presetSkillEntry(p),
+        usage: data.usageGlobal.get(p.name),
+        installed: data.installedNames.has(p.name),
+      });
+    }
+    return rows;
+  }, [data.workspaceSkills, data.usageGlobal, data.installedNames]);
 
   const shareableNames = useMemo(
     () => new Set((data.wb?.share.items ?? []).map((s) => s.name)),
@@ -118,6 +138,23 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const addToast = useToastStore((s) => s.addToast);
   const { copy } = useCopyToClipboard();
 
+  // Presets install from the app bundle (system-skill lane) — not via the
+  // Dev-runner adopt task, which sources from the user's global library.
+  const runAdopt = (name: string) => {
+    if (!isPresetSkill(name)) { void data.wb?.runAdopt(name); return; }
+    if (!activeId) return;
+    void (async () => {
+      try {
+        const { installSystemSkill } = await import('@/api/devTools/devTools');
+        await installSystemSkill(name, activeId, false);
+        addToast(tx(t.plugins.dev_tools.skills_preset_installed, { name }), 'success');
+        data.refresh();
+      } catch (err) {
+        toastCatch('SkillsManagerPage:installPreset')(err);
+      }
+    })();
+  };
+
   // Route the operator's Use choice. Context term is folded into the args as a
   // trailing positional (a "preset terminal input"); "all" runs one dispatch
   // per context. Fleet → wb.runDispatch; CMD → copy the command(s) so the
@@ -136,27 +173,51 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
-      {/* toolbar — the shared active-project picker */}
-      <div className="flex items-center gap-3 py-3 flex-shrink-0">
-        <span className="typo-title">{t.plugins.dev_tools.skills_title}</span>
-        <LifecycleProjectPicker />
-      </div>
-
-      <div className="flex-1 min-h-0">
-        <SkillsManagerBoard
-          ws={ws}
-          proj={proj}
-          totalContexts={data.totalContexts}
-          busy={busy}
-          projectName={projectName}
-          projectId={activeId}
-          onAdopt={(name) => { void data.wb?.runAdopt(name); }}
-          onShare={(name) => { void data.wb?.runShare(name); }}
-          onUse={runUse}
-          onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
-          onOpenContexts={setContextsSkill}
+    <div className="flex flex-col h-full min-h-0" data-testid="skills-manager-page">
+      {/* unified module header — icon + title band, tabs inline, picker right */}
+      <DevToolsPageHeader
+        icon={Wand2}
+        title={t.plugins.dev_tools.skills_title}
+        actions={<LifecycleProjectPicker />}
+      >
+        <SegmentedTabs
+          tabs={[
+            { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
+            { id: 'analytics', label: t.plugins.dev_tools.skills_tab_analytics },
+          ]}
+          activeTab={pageTab}
+          onTabChange={(v) => setPageTab(v as 'overview' | 'analytics')}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel={t.plugins.dev_tools.skills_tab_aria}
         />
+      </DevToolsPageHeader>
+
+      <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
+        {pageTab === 'analytics' && activeId ? (
+          <SkillsAnalyticsTab
+            projectId={activeId}
+            proj={proj}
+            totalContexts={data.totalContexts}
+            busy={busy}
+            onDispatch={(skill, args) => { void data.wb?.runDispatch(skill, args); }}
+          />
+        ) : (
+          <SkillsManagerBoard
+            ws={ws}
+            proj={proj}
+            totalContexts={data.totalContexts}
+            busy={busy}
+            projectName={projectName}
+            projectId={activeId}
+            onAdopt={runAdopt}
+            onShare={(name) => { void data.wb?.runShare(name); }}
+            onUse={runUse}
+            onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
+            onOpenContexts={setContextsSkill}
+          />
+        )}
       </div>
 
       {contextsSkill && activeId && (

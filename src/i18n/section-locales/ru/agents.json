@@ -272,6 +272,7 @@
     "legend_engine": "Движок",
     "legend_tool_call": "Вызов инструмента",
     "live": "Прямой",
+    "estimated_no_trace": "Оценка (трассировка не захвачена)",
     "stage": "Стадия",
     "stage_errors": "Ошибки стадии",
     "total_duration": "Общая длительность",

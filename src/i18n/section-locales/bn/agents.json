@@ -272,6 +272,7 @@
     "legend_engine": "ইঞ্জিন",
     "legend_tool_call": "টুল কল",
     "live": "লাইভ",
+    "estimated_no_trace": "আনুমানিক (কোনো ট্রেস ক্যাপচার হয়নি)",
     "stage": "স্তর",
     "stage_errors": "স্তর ত্রুটি",
     "total_duration": "মোট সময়কাল",
