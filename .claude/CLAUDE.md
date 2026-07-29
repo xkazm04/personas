@@ -12,6 +12,8 @@ npm run tauri dev        # Full Tauri desktop dev mode
 npx tsc --noEmit         # TypeScript check (tsc not on PATH on Windows)
 npm run lint             # ESLint
 npm run test             # Vitest (2,400+ tests)
+npm run test:rust        # Rust unit tests (app_lib, --features desktop)
+npm run test:rust:crates # Rust unit tests for the extracted crates only
 npx vite build           # Production frontend build
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
@@ -44,6 +46,7 @@ Quick reference of the most common scripts:
 - **`lld-link: machine type x64 conflicts with arm64`** — host-triple drift. Most common cause is also the well-known one: **pyke's `ort-sys 2.0.0-rc.9` ships a mislabeled aarch64 tarball that's actually x64 inside**. `pretauri:dev`/`pretauri:build` run `scripts/ensure-ort-cache.mjs` automatically before the cargo build, which sniffs the cached `onnxruntime.lib`'s real machine type and swaps it with Microsoft's official ORT release if it doesn't match the host. Idempotent and self-healing — if `clean:ort` ever wipes the cache, the next dev/build re-applies the fix. If you still hit this error: run `npm run ensure:ort-cache` manually and check its output.
 - **`Port 1420 is already in use`** — a previous `tauri dev` failed mid-startup and orphaned Vite. Find it with `netstat -ano | findstr :1420` (or `Get-NetTCPConnection -LocalPort 1420` in PowerShell), then `Stop-Process -Id <PID> -Force`. This recurs often enough that automating the kill in `pretauri:dev` is a tracked follow-up.
 - **`npm run clean:ort` (surgical, ~5 min recompile)** — wipes ort/ort-sys build artifacts + pyke's download cache. Use after switching Rust hosts. The next `npm run tauri:dev` will re-run `ensure-ort-cache.mjs` and repopulate.
+- **`cargo test` exits 127 (`0xc0000139`) with no output on Windows** — this is the *loader* failing, not a test failing. The dependency graph (tauri dialog APIs → rfd) imports `TaskDialogIndirect`, which exists only in the **comctl32 v6** side-by-side assembly; test binaries carry no manifest requesting it, so they die before `main()`. tauri-build embeds the needed manifest into BIN targets only, which is why the app always worked. **Use `npm run test:rust`** — it embeds the manifest post-link (needs the Windows SDK's `mt.exe`; override with `MT_EXE`). Diagnose any binary with `node scripts/build/inspect-pe-imports.mjs <exe>`, which reports imported DLLs and whether a manifest is embedded. This cannot be fixed in `build.rs`: cargo has no directive targeting the *lib unit-test* binary (`rustc-link-arg-tests` reaches only `tests/`), and the catch-all `rustc-link-arg` also hits the app binary (`CVT1100: duplicate resource`) and the cdylib (`LNK1327`).
 - **`npm run clean:rust` (nuclear, ~10+ min)** — full `cargo clean`. Last resort.
 - `predev` auto-detects rustc host-triple drift via `scripts/check-build-cache.mjs`.
 

@@ -20,7 +20,8 @@
 //
 // Zero dependencies. Reads the file; never executes it.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 /** Parsed view of the bits of a PE we care about. */
 export function inspectPe(filePath) {
@@ -181,7 +182,8 @@ function main() {
   }
 }
 
-// Only run the CLI when invoked directly, so the parser stays importable.
-if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/').split('/').pop())) {
+// Only run the CLI when invoked directly, so run-rust-tests.mjs can import
+// inspectPe() without triggering argument parsing.
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   main();
 }
