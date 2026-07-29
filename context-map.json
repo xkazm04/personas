@@ -1446,7 +1446,13 @@
             "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx",
             "src/features/plugins/dev-tools/sub_skills/analytics/SkillsAnalyticsTab.tsx",
             "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanCard.tsx",
-            "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanConfigModal.tsx"
+            "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanConfigModal.tsx",
+            "src/features/plugins/dev-tools/sub_skills/registry/registryTypes.ts",
+            "src/features/plugins/dev-tools/sub_skills/registry/useSkillsRegistry.ts",
+            "src/features/plugins/dev-tools/sub_skills/registry/RegistryTab.tsx",
+            "src/features/plugins/dev-tools/sub_skills/registry/RegistryHeatmap.tsx",
+            "src/features/plugins/dev-tools/sub_skills/SkillInfoModal.tsx",
+            "src/features/plugins/dev-tools/sub_skills/skillMeta.ts"
           ],
           "target": null,
           "apiRoutes": []
@@ -3975,7 +3981,6 @@
           "category": "ui",
           "filePaths": [
             "src/features/agents/components/matrix/UnifiedBuildEntry.tsx",
-            "src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx",
             "src/features/agents/components/allPersonas/PersonaConfigPanel.tsx",
             "src/features/agents/components/matrix/BuildSimulatePanel.tsx",
             "src/features/agents/components/allPersonas/PersonaOverviewPage.tsx",

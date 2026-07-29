@@ -1,6 +1,7 @@
 ---
 name: scan-dependency-auditor
 description: "Analyzes dependencies for updates, vulnerabilities, and bloat. Use for a focused Dependency Auditor pass over a project or a diff."
+argument-hint: "[context]"
 category: Maintenance
 contexts: tracked
 memory: project

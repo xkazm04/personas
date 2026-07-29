@@ -1,6 +1,7 @@
 ---
 name: scan-innovation-catalyst
 description: "Suggests innovative approaches and paradigm shifts. Use for a focused Innovation Catalyst pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

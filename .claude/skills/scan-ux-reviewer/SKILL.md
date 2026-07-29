@@ -1,6 +1,7 @@
 ---
 name: scan-ux-reviewer
 description: "Reviews user experience patterns and suggests improvements. Use for a focused UX Reviewer pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

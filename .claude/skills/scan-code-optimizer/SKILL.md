@@ -1,6 +1,7 @@
 ---
 name: scan-code-optimizer
 description: "Identifies performance bottlenecks and optimization opportunities. Use for a focused Code Optimizer pass over a project or a diff."
+argument-hint: "[context]"
 category: Development
 contexts: tracked
 memory: project

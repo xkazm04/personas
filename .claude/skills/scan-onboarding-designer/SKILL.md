@@ -1,6 +1,7 @@
 ---
 name: scan-onboarding-designer
 description: "Evaluates first-time user experience and onboarding flows. Use for a focused Onboarding Designer pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

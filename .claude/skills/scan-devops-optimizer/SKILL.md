@@ -1,6 +1,7 @@
 ---
 name: scan-devops-optimizer
 description: "Optimizes build, deploy, and operations workflows. Use for a focused DevOps Optimizer pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

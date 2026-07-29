@@ -1,6 +1,7 @@
 ---
 name: scan-tech-debt-tracker
 description: "Catalogs technical debt and prioritizes repayment. Use for a focused Tech Debt Tracker pass over a project or a diff."
+argument-hint: "[context]"
 category: Maintenance
 contexts: tracked
 memory: project

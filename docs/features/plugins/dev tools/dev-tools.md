@@ -183,6 +183,28 @@ All context selection folded into the run as a trailing arg).
    literal is not. On a well-tokenised codebase it under-reports — a clean run
    means "no known slop patterns", never "no design problems".
 
+**Registry** (`sub_skills/registry/`) — a workspace-wide coverage matrix: the library skills
+(rows, grouped by category) × the workspace's projects (columns; the workspace is resolved
+from the active project). It renders as a **heatmap** — each adopted cell fills with the
+skill's lens colour at an intensity proportional to its context coverage, so the *shape* of
+adoption reads at a glance; project headers run vertically to keep columns narrow. An adopted
+cell shows coverage % + 30d usage and clicks through to a Fleet **use** dispatch; an
+un-adopted cell is a dashed **adopt** control. Adoption runs **in parallel** (each cell tracks
+its own in-flight state) and is **blocked while a Fleet dispatch of that skill is still
+running** in that project (`useSkillsRegistry` derives the running set from live Fleet
+sessions by matching `cwd` ↔ `root_path`). Data is a bounded per-project fan-out
+(`mapWithConcurrency`) over `listSkills` / `memorySkillCoverage` / `memoryCoverage`.
+
+**Skill info modal** (`SkillInfoModal`) — clicking a **skill name** anywhere (Overview /
+Analytics / Registry) opens a shared metadata modal: an understandable summary (the standard
+`description` = what + when), **how to invoke** (command + argument variations, copy-on-click),
+and metadata chips (memory binding, context-tracked, `argument-hint`). Preset scan skills are
+described from the in-memory catalogue; custom skills are parsed from their `SKILL.md`
+(`skillMeta.ts`). The `scan-*` skills carry an **`argument-hint: "[context]"`** frontmatter
+field — the [Claude Code / Agent Skills standard](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+for documenting expected arguments; the generator (`scripts/skills/scan-agents-to-skills.mjs`)
+emits it and the bundle is re-synced.
+
 **Workspace consent:** creating a workspace (Workspaces tab → new-workspace tile) offers an
 **"Adopt default skills"** checkbox (`dev_workspaces.adopt_default_skills`, default off —
 consent is explicit). Projects assigned to a consenting workspace get the preset skills

@@ -1,6 +1,7 @@
 ---
 name: scan-growth-hacker
 description: "Identifies growth opportunities and viral mechanics. Use for a focused Growth Hacker pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

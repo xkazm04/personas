@@ -1,6 +1,7 @@
 ---
 name: scan-feature-scout
 description: "Identifies missing features and enhancement opportunities. Use for a focused Feature Scout pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

@@ -82,9 +82,9 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
 
       const per = await mapWithConcurrency(wsProjects, 6, async (p) => {
         const [installed, cov, mc] = await Promise.all([
-          listSkills(p.id).catch(() => [] as SkillEntry[]),
-          memorySkillCoverage(p.id).catch(() => [] as SkillCoverageRow[]),
-          memoryCoverage(p.id).catch(() => ({ contexts: 0 } as { contexts: number })),
+          listSkills(p.id).catch((e) => { silentCatch('registry listSkills')(e); return [] as SkillEntry[]; }),
+          memorySkillCoverage(p.id).catch((e) => { silentCatch('registry coverage')(e); return [] as SkillCoverageRow[]; }),
+          memoryCoverage(p.id).catch((e) => { silentCatch('registry contexts')(e); return { contexts: 0 } as { contexts: number }; }),
         ]);
         return { pid: p.id, installed, cov, contexts: mc.contexts };
       });

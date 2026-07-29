@@ -1,6 +1,7 @@
 ---
 name: scan-risk-assessor
 description: "Identifies project risks and mitigation strategies. Use for a focused Risk Assessor pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

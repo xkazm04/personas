@@ -1,6 +1,7 @@
 ---
 name: scan-monetization-advisor
 description: "Suggests revenue optimization and pricing strategies. Use for a focused Monetization Advisor pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

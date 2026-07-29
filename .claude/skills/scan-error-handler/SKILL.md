@@ -1,6 +1,7 @@
 ---
 name: scan-error-handler
 description: "Reviews error handling, recovery flows, and user messaging. Use for a focused Error Handler pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

@@ -64,6 +64,7 @@ function skillMarkdown(a) {
   return `---
 name: scan-${a.key}
 description: "${desc}"
+argument-hint: "[context]"
 category: ${skillCategory(a)}
 contexts: tracked
 memory: project

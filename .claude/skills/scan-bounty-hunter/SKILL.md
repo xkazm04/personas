@@ -1,6 +1,7 @@
 ---
 name: scan-bounty-hunter
 description: "Scans for exploitable bugs, logic flaws, and edge cases that qualify for bug bounty programs — pricing anomalies, data inconsistencies, rule violations, race conditions, and UI/logic mismatches. Use for a focused Bounty Hunter pass over a project or a diff."
+argument-hint: "[context]"
 category: Development
 contexts: tracked
 memory: project

@@ -1,6 +1,7 @@
 ---
 name: scan-mobile-specialist
 description: "Evaluates mobile experience and responsive design. Use for a focused Mobile Specialist pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

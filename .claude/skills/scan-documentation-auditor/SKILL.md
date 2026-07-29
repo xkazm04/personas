@@ -1,6 +1,7 @@
 ---
 name: scan-documentation-auditor
 description: "Reviews documentation completeness and quality. Use for a focused Documentation Auditor pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

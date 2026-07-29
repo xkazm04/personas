@@ -1,6 +1,7 @@
 ---
 name: scan-analytics-planner
 description: "Plans analytics instrumentation and data collection. Use for a focused Analytics Planner pass over a project or a diff."
+argument-hint: "[context]"
 category: Data
 contexts: tracked
 memory: project

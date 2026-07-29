@@ -30,6 +30,7 @@ import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker'
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
 import { SkillsAnalyticsTab } from './analytics/SkillsAnalyticsTab';
 import { RegistryTab } from './registry/RegistryTab';
+import { SkillInfoModal } from './SkillInfoModal';
 import { useSkillsManagerData, type MemoryBinding } from './skillsManagerData';
 import { SkillsManagerBoard } from './SkillsManagerBoard';
 import { SkillContextsModal } from './SkillContextsModal';
@@ -70,6 +71,8 @@ export interface SkillsManagerVariantProps {
   /** Project-side rows only — the host binds the active project id. */
   onSwitchMemory: (skillName: string, next: MemoryBinding) => void;
   onOpenContexts: (skill: string) => void;
+  /** Skill-name click → the shared metadata modal. */
+  onOpenInfo: (skill: string) => void;
 }
 
 export default function SkillsManagerPage() {
@@ -96,6 +99,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   const projects = useSystemStore((s) => s.projects);
   const data = useSkillsManagerData(activeId);
   const [contextsSkill, setContextsSkill] = useState<string | null>(null);
+  const [infoSkill, setInfoSkill] = useState<string | null>(null);
   const [pageTab, setPageTab] = useState<'overview' | 'analytics' | 'registry'>('overview');
 
   const projectName = projects.find((p) => p.id === activeId)?.name ?? '';
@@ -198,7 +202,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
 
       <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
         {pageTab === 'registry' ? (
-          <RegistryTab activeProjectId={activeId} />
+          <RegistryTab activeProjectId={activeId} onOpenInfo={setInfoSkill} />
         ) : pageTab === 'analytics' && activeId ? (
           <SkillsAnalyticsTab
             projectId={activeId}
@@ -206,6 +210,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
             totalContexts={data.totalContexts}
             busy={busy}
             onDispatch={(skill, args) => { void data.wb?.runDispatch(skill, args); }}
+            onOpenInfo={setInfoSkill}
           />
         ) : (
           <SkillsManagerBoard
@@ -220,6 +225,7 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
             onUse={runUse}
             onSwitchMemory={(skillName, next) => { if (activeId) void data.switchMemory(skillName, activeId, next); }}
             onOpenContexts={setContextsSkill}
+            onOpenInfo={setInfoSkill}
           />
         )}
       </div>
@@ -232,6 +238,9 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           totalContexts={data.totalContexts}
           onClose={() => setContextsSkill(null)}
         />
+      )}
+      {infoSkill && (
+        <SkillInfoModal skillName={infoSkill} projectId={activeId} onClose={() => setInfoSkill(null)} />
       )}
     </div>
   );

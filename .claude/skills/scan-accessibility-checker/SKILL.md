@@ -1,6 +1,7 @@
 ---
 name: scan-accessibility-checker
 description: "Identifies accessibility issues and WCAG compliance gaps. Use for a focused Accessibility Checker pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

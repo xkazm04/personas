@@ -1,6 +1,7 @@
 ---
 name: scan-integration-planner
 description: "Plans system integrations and API design. Use for a focused Integration Planner pass over a project or a diff."
+argument-hint: "[context]"
 category: Other
 contexts: tracked
 memory: project

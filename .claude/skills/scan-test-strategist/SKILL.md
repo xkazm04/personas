@@ -1,6 +1,7 @@
 ---
 name: scan-test-strategist
 description: "Identifies gaps in test coverage and suggests testing strategies. Use for a focused Test Strategist pass over a project or a diff."
+argument-hint: "[context]"
 category: Testing
 contexts: tracked
 memory: project

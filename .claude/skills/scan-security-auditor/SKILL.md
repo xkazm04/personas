@@ -1,6 +1,7 @@
 ---
 name: scan-security-auditor
 description: "Identifies security vulnerabilities and best practice violations. Use for a focused Security Auditor pass over a project or a diff."
+argument-hint: "[context]"
 category: Development
 contexts: tracked
 memory: project

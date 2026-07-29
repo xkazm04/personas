@@ -1,6 +1,7 @@
 ---
 name: scan-architecture-analyst
 description: "Evaluates system architecture and suggests structural improvements. Use for a focused Architecture Analyst pass over a project or a diff."
+argument-hint: "[context]"
 category: Development
 contexts: tracked
 memory: project
