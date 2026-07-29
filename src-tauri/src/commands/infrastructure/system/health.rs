@@ -872,7 +872,10 @@ mod tests {
             all_ok: false,
         };
         let json = serde_json::to_string(&report).unwrap();
-        assert!(json.contains("\"all_ok\":false"));
+        // SystemHealthReport is #[serde(rename_all = "camelCase")], so the wire
+        // key is `allOk`. The frontend binding reads it that way; the test was
+        // asserting the Rust field name and had never run to catch it.
+        assert!(json.contains("\"allOk\":false"));
         assert!(json.contains("\"sections\""));
     }
 }
