@@ -311,7 +311,13 @@ jobs:
         # those types are never regenerated here, so the gate silently stops
         # covering the majority of the binding surface — which is exactly how the
         # six files fixed alongside this change drifted in the first place.
-        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml export_bindings
+        # --features desktop for the same reason as the rust-tests job: without
+        # it the tauri build script aborts on "Permission updater:default not
+        # found" and no binding is ever regenerated, so this gate silently
+        # checked nothing. Verified locally that regenerating WITH the feature
+        # produces zero drift against the committed tree, so enabling it does
+        # not turn this job red by itself.
+        run: cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings
 
       - name: Check for binding drift
         run: |

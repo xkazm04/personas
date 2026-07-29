@@ -57,10 +57,17 @@ const MANIFEST = join(HERE, 'comctl32-v6.manifest');
 const CARGO_TOML = join(REPO_ROOT, 'src-tauri', 'Cargo.toml');
 
 const argv = process.argv.slice(2);
+// `npm run test:rust -- foo` consumes the `--` itself, so by the time argv
+// reaches here the separator is usually gone. Treat anything this script does
+// not recognise as a harness argument, which makes both of these filter:
+//   npm run test:rust -- some::test
+//   node scripts/build/run-rust-tests.mjs -- --nocapture some::test
+const OWN_FLAGS = new Set(['--crates']);
 const sepIdx = argv.indexOf('--');
-const flags = sepIdx >= 0 ? argv.slice(0, sepIdx) : argv;
+const own = sepIdx >= 0 ? argv.slice(0, sepIdx) : argv;
 const harnessArgs = sepIdx >= 0 ? argv.slice(sepIdx + 1) : [];
-const cratesLane = flags.includes('--crates');
+for (const a of own) if (!OWN_FLAGS.has(a)) harnessArgs.push(a);
+const cratesLane = own.includes('--crates');
 
 /** Locate the Windows SDK manifest tool. Highest SDK version wins. */
 function findMtExe() {
