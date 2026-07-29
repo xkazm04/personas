@@ -13,8 +13,57 @@ import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { KnowledgeStatusChip } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
+import type { KnowledgeTreeProps } from './knowledgeTableShared';
+import KnowledgeTreeCartogram from './KnowledgeTreeCartogram';
+import KnowledgeTreeHandbook from './KnowledgeTreeHandbook';
+
+type Variant = 'baseline' | 'cartogram' | 'handbook';
+
+/** THROWAWAY /prototype switcher — deleted at consolidation. Baseline stays the
+ *  default so nothing changes on load. */
+export default function KnowledgeTree(props: KnowledgeTreeProps) {
+  const { t } = useTranslation();
+  const tw = t.plugins.dev_tools.workspaces;
+  const [variant, setVariant] = useState<Variant>('baseline');
+  const tab = (id: Variant, label: string, hint: string) => ({
+    id,
+    ariaLabel: `${label} — ${hint}`,
+    label: (
+      <span className="flex flex-col items-start leading-tight">
+        <span className="typo-body">{label}</span>
+        <span className="typo-caption">{hint}</span>
+      </span>
+    ),
+  });
+  return (
+    <div className="flex flex-col min-h-0 h-full gap-3">
+      <SegmentedTabs
+        tabs={[
+          tab('baseline', tw.variant_baseline, tw.variant_baseline_hint),
+          tab('cartogram', tw.variant_cartogram, tw.variant_cartogram_hint),
+          tab('handbook', tw.variant_handbook, tw.variant_handbook_hint),
+        ]}
+        activeTab={variant}
+        onTabChange={setVariant}
+        ariaLabel={tw.variant_switcher_aria}
+        fullWidth={false}
+        className="self-start"
+      />
+      <div className="flex-1 min-h-0">
+        {variant === 'cartogram' ? (
+          <KnowledgeTreeCartogram {...props} />
+        ) : variant === 'handbook' ? (
+          <KnowledgeTreeHandbook {...props} />
+        ) : (
+          <KnowledgeTreeBaseline {...props} />
+        )}
+      </div>
+    </div>
+  );
+}
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
 const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
@@ -24,7 +73,7 @@ type SortDir = 'asc' | 'desc';
 const groupPath = (i: KnowledgeItemView) => i.topic;
 const haystack = (i: KnowledgeItemView) => [i.title, i.statement, i.topic];
 
-export default function KnowledgeTree({
+export function KnowledgeTreeBaseline({
   items,
   projectById,
   onRowClick,
@@ -196,7 +245,7 @@ export default function KnowledgeTree({
                   aria-label={tw.bulk_select_row}
                   aria-pressed={selected.has(row.id)}
                   title={tw.bulk_select_row}
-                  className="text-foreground/60 hover:text-primary transition-colors"
+                  className="text-foreground hover:text-primary transition-colors"
                 >
                   {selected.has(row.id) ? (
                     <CheckSquare className="w-3.5 h-3.5 text-primary" />
