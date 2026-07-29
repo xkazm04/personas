@@ -17,7 +17,13 @@ const ExecutionsWithSubtabs = lazyRetry(() => import('@/features/overview/compon
 const ManualReviewList = lazyRetry(() => import('@/features/overview/sub_manual-review/components/ManualReviewList'));
 const MessageList = lazyRetry(() => import('@/features/overview/sub_messages/components/MessageList'));
 const EventLogList = lazyRetry(() => import('@/features/overview/sub_events/components/EventLogList'));
-const KnowledgeHub = lazyRetry(() => import('@/features/overview/components/dashboard/cards/KnowledgeHub'));
+// The four former "Knowledge" subtabs. KnowledgeHub (the SegmentedTabs shell
+// that used to wrap them) was deleted on 2026-07-29 — the sidebar is the
+// navigation now, so each view is routed directly.
+const MemoriesPage = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPage'));
+const PatternsPanel = lazyRetry(() => import('@/features/overview/sub_patterns/PatternsPanel'));
+const KnowledgeGraphDashboard = lazyRetry(() => import('@/features/overview/sub_knowledge'));
+const MemoriesPageGraph = lazyRetry(() => import('@/features/overview/sub_memories/components/MemoriesPageGraph'));
 const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
 
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
@@ -75,7 +81,10 @@ function OverviewContent() {
           overviewTab === 'manual-review' ? <ManualReviewList /> :
           overviewTab === 'messages' ? <MessageList /> :
           overviewTab === 'events' ? <EventLogList /> :
-          overviewTab === 'knowledge' ? <KnowledgeHub /> :
+          overviewTab === 'memories' ? <MemoriesPage /> :
+          overviewTab === 'patterns' ? <PatternsPanel /> :
+          overviewTab === 'extracted' ? <KnowledgeGraphDashboard /> :
+          overviewTab === 'memory-graph' ? <MemoriesPageGraph /> :
           overviewTab === 'sla' ? <SLADashboard /> :
 
           overviewTab === 'health' ? <PersonaHealthDashboard /> :
