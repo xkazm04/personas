@@ -4,11 +4,12 @@
 // outbox ingest — no new backend). Bounded + operator-confirmed: rows are
 // checkbox-selected (default: the first few least-covered) before dispatch.
 import { useEffect, useMemo, useState } from 'react';
-import { PlayCircle, Workflow } from 'lucide-react';
+import { Info, PlayCircle, Workflow } from 'lucide-react';
 
 import { listContexts, listMemoryNodes, type DevContext } from '@/api/devTools/devTools';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -97,8 +98,12 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
     <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="coverage-pipeline">
       <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
         <Workflow className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-body font-semibold text-foreground">{d.skills_pipeline_title}</span>
-        <span className="typo-label text-foreground/40 truncate">{d.skills_pipeline_subtitle}</span>
+        <Tooltip content={d.skills_pipeline_subtitle} placement="top">
+          <span className="inline-flex items-center gap-1.5 typo-body font-semibold text-foreground">
+            {d.skills_pipeline_title}
+            <Info className="w-3 h-3 text-foreground/35" aria-hidden />
+          </span>
+        </Tooltip>
         <span className="ml-auto flex-shrink-0">
           <Button
             variant="accent"

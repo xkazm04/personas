@@ -53,10 +53,17 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
           <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{kindLabel}</span>
         </div>
 
-        <div className="px-4 py-3 space-y-3">
-          {skill.description
-            ? <p className="typo-caption text-foreground/70 leading-relaxed" style={{ fontWeight: 400 }}>{skill.description}</p>
-            : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
+        <div className="px-5 py-4 space-y-3.5">
+          {/* Description — contained + relaxed so a dense one-paragraph skill
+              blurb stays readable; scrolls if it runs long. */}
+          <div className="rounded-input bg-background/40 border border-primary/10 px-3 py-2.5 max-h-40 overflow-y-auto">
+            {skill.description
+              ? <p className="typo-caption text-foreground/75 leading-relaxed" style={{ fontWeight: 400 }}>{skill.description}</p>
+              : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
+          </div>
+
+          {/* What confirming does — moved out of the (truncated) footer. */}
+          <p className="typo-label text-foreground/50 leading-snug">{blurb}</p>
 
           {kind === 'use' && (
             <div className="space-y-2">
@@ -86,27 +93,24 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
-          <span className="typo-label text-foreground/40 leading-snug min-w-0 truncate">{blurb}</span>
-          <span className="flex items-center gap-2 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-2.5 py-1 rounded-interactive typo-caption text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors"
-            >
-              {t.common.cancel}
-            </button>
-            <button
-              type="button"
-              onClick={() => onConfirm(args)}
-              disabled={busy}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              data-testid="skill-action-confirm-cta"
-            >
-              <Icon className="w-3 h-3" aria-hidden />
-              {cta}
-            </button>
-          </span>
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2.5 py-1 rounded-interactive typo-caption text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors"
+          >
+            {t.common.cancel}
+          </button>
+          <button
+            type="button"
+            onClick={() => onConfirm(args)}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption font-medium text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="skill-action-confirm-cta"
+          >
+            <Icon className="w-3 h-3" aria-hidden />
+            {cta}
+          </button>
         </div>
       </div>
     </BaseModal>

@@ -6,8 +6,8 @@
  * persists the config and (optionally) runs the scan immediately.
  */
 import { useState } from 'react';
-import { Binary, X } from 'lucide-react';
-import { BaseModal } from '@/lib/ui/BaseModal';
+import { Binary } from 'lucide-react';
+import { BaseModal } from '@/features/shared/components/modals';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -31,6 +31,7 @@ export function StaticScanConfigModal({
 }) {
   const { t } = useTranslation();
   const ds = t.plugins.dev_scanner;
+  const d = t.plugins.dev_tools;
   const addToast = useToastStore((s) => s.addToast);
 
   const [tool, setTool] = useState<StaticScanTool>(initialConfig?.tool ?? 'fallow');
@@ -54,24 +55,22 @@ export function StaticScanConfigModal({
     }
   };
 
-  if (!open) return null;
-
   return (
-    <BaseModal isOpen={open} onClose={onClose} titleId="static-scan-config" size="sm">
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border">
-          <Binary className="w-4 h-4 text-emerald-400" />
-          <h2 id="static-scan-config" className="typo-heading text-foreground flex-1">{ds.static_config_title}</h2>
-          <button type="button" onClick={onClose} aria-label={t.common.cancel} className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+    // Same modal chrome as the sibling skills dialogs (Use / Adopt): tinted
+    // header band with icon + title, spaced body, secondary-tinted footer.
+    <BaseModal isOpen={open} onClose={onClose} titleId="static-scan-config" size="md" portal staggerChildren={false}>
+      <div className="flex flex-col" data-testid="static-scan-config-modal">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+          <Binary className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
+          <span id="static-scan-config" className="typo-title truncate">{ds.static_config_title}</span>
+          <span className="ml-auto typo-label text-foreground/40 uppercase tracking-[0.1em] flex-shrink-0">{d.skills_static_title}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          <p className="typo-caption text-foreground">{ds.static_config_intro}</p>
+          <p className="typo-caption text-foreground/70 leading-relaxed">{ds.static_config_intro}</p>
 
           <div className="space-y-1.5">
-            <label className="typo-caption font-medium text-foreground">{ds.static_config_tool_label}</label>
+            <label className="typo-label text-foreground/55 block">{ds.static_config_tool_label}</label>
             <ThemedSelect value={tool} onValueChange={(v) => setTool(v as StaticScanTool)}>
               {TOOLS.map((tl) => (
                 <option key={tl} value={tl}>{tl}{tl === 'fallow' ? ` (${ds.static_config_recommended})` : ''}</option>
@@ -80,17 +79,17 @@ export function StaticScanConfigModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="typo-caption font-medium text-foreground">{ds.static_config_command_label}</label>
+            <label className="typo-label text-foreground/55 block">{ds.static_config_command_label}</label>
             <input
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              className="w-full px-3 py-2 typo-body font-mono bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring"
+              className="w-full px-3 py-2 typo-body font-mono bg-background/70 border border-primary/15 rounded-input text-foreground placeholder:text-foreground/40 outline-none focus:border-primary/40"
             />
-            <p className="typo-caption text-foreground">{ds.static_config_command_hint}</p>
+            <p className="typo-label text-foreground/45 leading-snug">{ds.static_config_command_hint}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-border">
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <AsyncButton variant="accent" accentColor="emerald" size="sm" onClick={handleSave}>
             {ds.static_config_save_run}

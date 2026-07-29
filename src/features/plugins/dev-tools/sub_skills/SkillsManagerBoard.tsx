@@ -19,29 +19,51 @@ import { UseSkillDialog } from './UseSkillDialog';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
 
-type SortKey = 'name' | 'usage';
+type SortKey = 'name' | 'coverage' | 'usage' | 'lastused';
 type SortDir = 'asc' | 'desc';
 
-/** Shared 4-column grid template — header and every row align to it. */
-const COLS = 'grid grid-cols-[minmax(0,1fr)_2.5rem_4.5rem_auto] items-center gap-3';
+/** Shared column grid — header and every row align to it. */
+const COLS = 'grid grid-cols-[minmax(0,1fr)_3.5rem_5.25rem_auto] items-center gap-3';
 /** Project-panel template — adds a dedicated Coverage column after the name. */
-const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_5rem_2.5rem_4.5rem_auto] items-center gap-3';
+const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_6.5rem_3.5rem_5.25rem_auto] items-center gap-3';
 
 function useSort(): { key: SortKey; dir: SortDir; toggle: (k: SortKey) => void } {
   const [key, setKey] = useState<SortKey>('name');
   const [dir, setDir] = useState<SortDir>('asc');
   const toggle = (k: SortKey) => {
     if (k === key) setDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    else { setKey(k); setDir(k === 'usage' ? 'desc' : 'asc'); }
+    // Names read best A→Z; every data column defaults to highest-first.
+    else { setKey(k); setDir(k === 'name' ? 'asc' : 'desc'); }
   };
   return { key, dir, toggle };
 }
 
-function sortRows<T>(rows: T[], key: SortKey, dir: SortDir, name: (r: T) => string, usage: (r: T) => number): T[] {
-  const sorted = [...rows].sort((a, b) =>
-    key === 'name' ? name(a).localeCompare(name(b)) : usage(a) - usage(b) || name(a).localeCompare(name(b)),
-  );
+/** Per-row value extractors — one per sortable column. `coverage` is optional
+ *  (only the project panel has that column). */
+interface RowAccessors<T> {
+  name: (r: T) => string;
+  usage: (r: T) => number;
+  lastused: (r: T) => number;
+  coverage?: (r: T) => number;
+}
+
+function sortRows<T>(rows: T[], key: SortKey, dir: SortDir, acc: RowAccessors<T>): T[] {
+  const tie = (a: T, b: T) => acc.name(a).localeCompare(acc.name(b));
+  const cmp = (a: T, b: T): number => {
+    switch (key) {
+      case 'name': return tie(a, b);
+      case 'usage': return acc.usage(a) - acc.usage(b) || tie(a, b);
+      case 'lastused': return acc.lastused(a) - acc.lastused(b) || tie(a, b);
+      case 'coverage': return (acc.coverage?.(a) ?? 0) - (acc.coverage?.(b) ?? 0) || tie(a, b);
+    }
+  };
+  const sorted = [...rows].sort(cmp);
   return dir === 'desc' ? sorted.reverse() : sorted;
+}
+
+/** Last-invocation timestamp as a sortable number (0 = never). */
+function lastUsedTs(usage: { last_invoked_at: string | null } | undefined): number {
+  return usage?.last_invoked_at ? new Date(usage.last_invoked_at).getTime() : 0;
 }
 
 function Panel({ title, count, header, footer, children }: {
@@ -62,35 +84,37 @@ function Panel({ title, count, header, footer, children }: {
   );
 }
 
-/** Column-header row (matches COLS/PROJ_COLS): sortable Name/Usage, static
- *  Coverage (project side) / Last used / Action. */
+/** Column-header row (matches COLS/PROJ_COLS): every data column is sortable.
+ *  Right-aligned headers place the sort arrow to the LEFT of the label so the
+ *  label's right edge stays flush with the data cells whether or not the column
+ *  is the active sort — the arrow appearing never nudges the label. */
 function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort>; coverage?: boolean }) {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
-  const SortHead = ({ k, label }: { k: SortKey; label: string }) => {
+  const SortHead = ({ k, label, align = 'right' }: { k: SortKey; label: string; align?: 'left' | 'right' }) => {
     const on = sort.key === k;
     const Icon = sort.dir === 'asc' ? ArrowUp : ArrowDown;
+    const arrow = on ? <Icon className="w-3 h-3 flex-shrink-0" aria-hidden /> : null;
     return (
       <button
         type="button"
         onClick={() => sort.toggle(k)}
-        className={`inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[0.12em] transition-colors focus-ring rounded-interactive ${on ? 'text-foreground/80 font-semibold' : 'text-foreground/40 hover:text-foreground/70'}`}
+        className={`inline-flex items-center gap-1 w-full text-[10.5px] uppercase tracking-[0.12em] transition-colors focus-ring rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-foreground/80 font-semibold' : 'text-foreground/40 hover:text-foreground/70'}`}
         data-testid={`skills-manager-sort-${k}`}
       >
-        {label}{on && <Icon className="w-3 h-3" aria-hidden />}
+        {align === 'right' && arrow}
+        {label}
+        {align === 'left' && arrow}
       </button>
     );
   };
-  const H = ({ children }: { children: React.ReactNode }) => (
-    <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{children}</span>
-  );
   return (
     <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
-      <SortHead k="name" label={d.skills_sort_skill} />
-      {coverage && <H>{d.skills_col_coverage}</H>}
-      <span className="text-right"><SortHead k="usage" label={d.skills_sort_usage} /></span>
-      <H>{d.skills_col_lastused}</H>
-      <H>{d.skills_col_action}</H>
+      <SortHead k="name" label={d.skills_sort_skill} align="left" />
+      {coverage && <SortHead k="coverage" label={d.skills_col_coverage} />}
+      <SortHead k="usage" label={d.skills_sort_usage} />
+      <SortHead k="lastused" label={d.skills_col_lastused} />
+      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{d.skills_col_action}</span>
     </div>
   );
 }
@@ -152,7 +176,11 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     }
     return [...byCat.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([cat, rows]) => [cat, sortRows(rows, wsSort.key, wsSort.dir, (r) => r.entry.name, (r) => r.usage?.invokes_30d ?? 0)] as const);
+      .map(([cat, rows]) => [cat, sortRows(rows, wsSort.key, wsSort.dir, {
+        name: (r) => r.entry.name,
+        usage: (r) => r.usage?.invokes_30d ?? 0,
+        lastused: (r) => lastUsedTs(r.usage),
+      })] as const);
   }, [libRows, libTab, wsSort.key, wsSort.dir]);
 
   // Preset-tab divider labels — the four lens families, translated.
@@ -165,12 +193,20 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     return cat;
   };
 
+  const projAcc: RowAccessors<ProjRow> = {
+    name: (r) => r.entry.name,
+    usage: (r) => r.usage?.invokes_30d ?? 0,
+    lastused: (r) => lastUsedTs(r.usage),
+    coverage: (r) => r.coverage?.coveredContexts ?? 0,
+  };
   const tracked = useMemo(
-    () => sortRows(proj.filter((r) => r.tracked), projSort.key, projSort.dir, (r) => r.entry.name, (r) => r.usage?.invokes_30d ?? 0),
+    () => sortRows(proj.filter((r) => r.tracked), projSort.key, projSort.dir, projAcc),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [proj, projSort.key, projSort.dir],
   );
   const plain = useMemo(
-    () => sortRows(proj.filter((r) => !r.tracked), projSort.key, projSort.dir, (r) => r.entry.name, (r) => r.usage?.invokes_30d ?? 0),
+    () => sortRows(proj.filter((r) => !r.tracked), projSort.key, projSort.dir, projAcc),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [proj, projSort.key, projSort.dir],
   );
 
