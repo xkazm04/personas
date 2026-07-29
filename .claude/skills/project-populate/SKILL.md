@@ -1,7 +1,7 @@
 ---
 name: project-populate
 category: Maintenance
-memory: project
+memory: vault
 description: Populate a newly managed repository with the data Personas needs to maintain and develop it — a context map, a feature (use-case) inventory, a triaged KPI set, and optionally simulated KPI data for a product that has not shipped yet. Contexts and features are assigned autonomously; KPIs are negotiated with the operator wave by wave. Scopeable — run all four lanes or just the ones you name. Dispatched by the passport wall, or run standalone with /project-populate.
 ---
 
@@ -24,6 +24,40 @@ app's loopback bridge, gate them on freshness so a re-run is cheap, and spend
 your own turns on the part no lane can do: deciding with the operator which
 KPIs are worth adopting, and wiring them to whatever monitoring the project
 already has.
+
+## The vault — durable state across sessions
+
+A KPI sweep over a large codebase does not fit in one session, so the loop
+remembers. Resolve the vault root (first hit wins) and use
+`$VAULT/ProjectPopulate/<project-slug>/`:
+
+```
+VAULT="C:/Users/kazda/Documents/Obsidian/personas"
+# Portable fallback if no Obsidian vault exists: <repo>/.project-populate/
+```
+
+```
+ProjectPopulate/<project>/
+  Sweep.md                 # the index: covered / remaining counts, last session, next batch
+  contexts/<slug>.md       # one note per context TOUCHED — verdict, KPIs kept, why zero
+  Decisions.md             # append-only log of adopted/rejected with the reason
+```
+
+**Read `Sweep.md` first, every invocation.** It decides which contexts this
+session takes. A context with a note is done — never re-scan it unless the
+operator asks or its files changed materially.
+
+Three rules, learned the hard way in this vault: it is **not version-controlled
+and Obsidian's file recovery never sees agent writes**, so a clobbered note is
+gone.
+
+1. Re-read a note immediately before writing it; never write from a stale read.
+2. Append rather than rewrite whole files. Only ever replace a section you own.
+3. Update `Sweep.md` after **each context**, not at session end — a killed
+   session must lose nothing.
+
+If the operator says a context is "done", that is a fact about their intent, not
+a guarantee the note still matches what you read earlier. Re-read.
 
 ## Scope — run only the lanes you were asked for
 
@@ -120,12 +154,66 @@ rather than fatal — report them and move to Phase 3:
 This is the phase that needs a human, and the reason both dispatch transports
 are interactive.
 
-**Gate.** If the project already has KPIs in any status other than archived,
-do not scan — go straight to triaging whatever sits in `proposed`, and if
-nothing does, report the active set and skip to Phase 4.
+### Which shape: project pass or context sweep
 
-Otherwise `POST /dev-tools/scan-kpis` and poll
-`GET /dev-tools/kpi-scan-status/{scan_id}`.
+**Project pass** (`POST /dev-tools/scan-kpis` with just `project_id`) proposes
+up to 8 KPIs across the whole product. Right for the handful of KPIs that are
+genuinely global — activation, onboarding speed, overall reliability. Run it
+**once**, early.
+
+**Context sweep** (the same route with `context_id`) proposes up to 4 KPIs for
+ONE subsystem, and is how a codebase becomes navigable per module. Right for
+everything after the global pass. This is the mode that needs the vault, because
+a project with hundreds of contexts takes many sessions.
+
+Do the project pass first if no KPIs exist at all; otherwise go straight to the
+sweep.
+
+### The sweep
+
+1. **Verify the map is current before spending anything.** Fetch
+   `GET /dev-tools/contexts/{project_id}` and compare against
+   `context-map.json` at the repo root. If the counts disagree materially, the
+   database is stale — say so and offer an incremental context scan first. A
+   sweep over a stale list wastes every session it runs.
+2. **Read `Sweep.md`** for what is already covered.
+3. **Rank the uncovered contexts** and take the next batch (default 5 per
+   session; the operator can say otherwise). Rank by what would matter if it
+   broke: number of files owned, whether the context sits on a user-facing path,
+   whether it already carries findings or errors. Say the ranking out loud so
+   the operator can reorder before you spend tokens.
+4. **For each context in the batch:** `POST /dev-tools/scan-kpis` with its
+   `context_id`, poll to completion, then triage.
+5. **Write the context note and update `Sweep.md` before moving to the next
+   one.** Never batch the bookkeeping to the end.
+
+### Triage per context — pick 0 to 4
+
+Each context scan returns at most 4 proposals. Present them as ONE multi-select:
+the operator keeps any subset, **including none**.
+
+**Zero is the expected answer for most contexts**, and recording it matters as
+much as an adoption — a context noted as "no KPI, it is a shared type module"
+is a context the sweep never pays for again. Never nudge toward adopting
+something to make a context look covered.
+
+For each kept KPI, `POST /dev-tools/kpi-decision` with `active` immediately,
+one call per KPI. Anything not kept goes `archived` in the same pass so the
+context's queue is empty and the sweep can move on.
+
+Write the note:
+
+```markdown
+# <context name>
+group: <group> · files: <n> · scanned: <date>
+verdict: <adopted N | none — reason>
+
+## Kept
+- <KPI name> — target <n><unit> — <one line on why>
+
+## Rejected
+- <KPI name> — <the operator's reason, in their words where you have them>
+```
 
 ### Judge on value first, measurability second
 
@@ -149,10 +237,11 @@ If a whole batch comes back as repository metrics, say that plainly and offer to
 reject it and re-scan rather than walking the operator through five variations
 of the same mistake.
 
-### Triage in waves
+### Triage in waves (project pass only)
 
 Fetch the proposals (`GET /dev-tools/kpis/{project_id}?status=proposed`) and
-walk them **five at a time**. For each wave:
+walk them **four at a time** — a wave has to fit whatever select surface the
+session is driving, and four is the safe ceiling. For each wave:
 
 1. Present the five compactly — name, what it measures, the proposed target,
    and the one thing that matters most: **how it would actually be measured in
@@ -292,10 +381,14 @@ End with a short, honest summary:
 - Monitoring: what got wired, and the single most valuable thing still unwired.
 - What a human should do next, if anything.
 
+When a sweep ran, also say **where it stopped**: contexts covered this session,
+contexts remaining, and what the next batch would be. That sentence is what
+makes the next session cheap to start.
+
 Then the machine-readable line, on its own, as the last line of your final
 message. Use `out_of_scope` for a lane the scope excluded and `unknown` for a
 gate you could not determine — never guess a value to fill the field:
 
 ```
-PROJECT_POPULATE_RESULT: contexts=<full|incremental|skipped|failed|out_of_scope|unknown> features=<scanned|skipped|failed|out_of_scope|unknown> kpis_adopted=<n> kpis_rejected=<n> kpis_deferred=<n> simulation=<run|declined|skipped|out_of_scope> wired=<n>
+PROJECT_POPULATE_RESULT: contexts=<full|incremental|skipped|failed|out_of_scope|unknown> features=<scanned|skipped|failed|out_of_scope|unknown> kpis_adopted=<n> kpis_rejected=<n> kpis_deferred=<n> simulation=<run|declined|skipped|out_of_scope> wired=<n> swept=<contexts covered this session> remaining=<uncovered contexts>
 ```

@@ -148,6 +148,25 @@ ignores `proposed` KPIs), `POST /dev-tools/kpi-sim/prepare` to write the
 snapshot only the app may produce, run, then `POST /dev-tools/kpi-sim/ingest`.
 Simulated values stay env-tagged `local`/`test` and are never reported as real.
 
+**KPI scanning has two scopes.** A **project pass** (up to 8 proposals) covers
+the handful of genuinely global metrics — activation, onboarding speed, overall
+reliability — and runs once. A **context pass** (`context_id` on
+`POST /dev-tools/scan-kpis`, up to 4 proposals) covers ONE subsystem and is how
+a large codebase becomes navigable per module: a live project pass over this
+repo produced 8 KPIs for 236 contexts, leaving 3 of 12 groups with nothing.
+A context scan sees only its own context — handing it the full map invites
+proposals scoped elsewhere — and **backpressure is per-scope**, so one
+unreviewed subsystem never blocks a sweep across the other 235.
+
+**The sweep is multi-session and remembers.** State lives in the Obsidian vault
+at `ProjectPopulate/<project>/` (Sweep.md index · one note per context touched ·
+append-only decision log), the same shape `/perfect` uses. Each session ranks
+the uncovered contexts by what would matter if they broke, takes a batch
+(default 5), and writes its bookkeeping after each context rather than at the
+end. **Zero KPIs is the expected verdict for most contexts** — plumbing, type
+barrels, re-export layers — and recording that zero is what stops the sweep
+paying for the same context twice.
+
 **The KPI scan measures the product, not the repository.** A live run over this
 repo proposed eight KPIs — coverage, bundle size, compiler errors — and all
 eight were rejected. The cause was a verifiability bias in the scan prompt: an

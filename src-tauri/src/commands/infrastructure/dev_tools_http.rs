@@ -12,12 +12,13 @@
 //!   POST /projects                          → register a project { name, root_path, tech_stack? }
 //!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode? } → { scan_id }
 //!   GET  /scan-status/{scan_id}             → { status, error, lines }
-//!   POST /scan-kpis                         → start a KPI scan { project_id } → { scan_id }
+//!   POST /scan-kpis                         → start a KPI scan { project_id, context_id? } → { scan_id }
 //!   GET  /kpi-scan-status/{scan_id}         → { status, error, lines }
 //!   GET  /kpi-scan-prompt/{project_id}      → the KPI-scan prompt as plain text
 //!   POST /scan-use-cases                    → start a feature scan { project_id } → { scan_id }
 //!   GET  /use-case-scan-status/{scan_id}    → { status, error, lines }
 //!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
+//!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
@@ -42,7 +43,7 @@ use crate::commands::infrastructure::kpi_sim::{
     ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
 };
 use crate::commands::infrastructure::use_case_scan::{launch_use_case_scan, use_case_scan_status_json};
-use crate::db::models::{DevContextGroup, DevKpi, DevProject, DevUseCase};
+use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -66,6 +67,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpis/{project_id}", get(list_kpis))
         .route("/kpi-decision", post(kpi_decision))
         .route("/context-groups/{project_id}", get(list_context_groups))
+        .route("/contexts/{project_id}", get(list_contexts))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
         .route("/kpi-sim/ingest", post(kpi_sim_ingest))
@@ -150,6 +152,12 @@ async fn scan_status(State(_s): State<DevToolsHttp>, Path(scan_id): Path<String>
 #[derive(Deserialize)]
 struct ScanKpisBody {
     project_id: String,
+    /// Scope the scan to ONE context. Omit for the project-wide pass.
+    /// A context scan proposes at most 4 KPIs, all bound to that context, and
+    /// is gated only on that context's own untriaged queue — so a 236-context
+    /// sweep is never blocked by one unreviewed subsystem.
+    #[serde(default)]
+    context_id: Option<String>,
 }
 
 async fn scan_kpis(
@@ -158,7 +166,7 @@ async fn scan_kpis(
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
-    let res = launch_kpi_scan(s.app.clone(), &pool, &project).map_err(err)?;
+    let res = launch_kpi_scan(s.app.clone(), &pool, &project, b.context_id.as_deref()).map_err(err)?;
     Ok(Json(res))
 }
 
@@ -242,6 +250,19 @@ async fn list_context_groups(
 ) -> Result<Json<Vec<DevContextGroup>>, (StatusCode, String)> {
     require_project(&s, &project_id)?;
     repo::list_context_groups(&db(&s), &project_id)
+        .map(Json)
+        .map_err(err)
+}
+
+/// Every context in the project — the sweep walks this list, one context scan
+/// at a time, and needs `file_paths` to rank which ones are worth covering
+/// first.
+async fn list_contexts(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Vec<DevContext>>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
 }
