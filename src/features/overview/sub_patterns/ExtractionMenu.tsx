@@ -34,7 +34,7 @@ import type { WorkspaceHarvestCoverage } from '@/lib/bindings/WorkspaceHarvestCo
 import { coverageRatio, selectHarvestWave } from './harvestWave';
 import { buildHarvestPrompt, harvestDispatchKey } from './practiceHarvestPrompt';
 import { useHarvestAutoIngest } from './useHarvestAutoIngest';
-import type { Workspace } from './workspaceStore';
+import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 
 /** "3/13 scopes harvested" — the number that makes an unread codebase visible.
  *  Renders nothing until coverage has loaded, rather than flashing a 0/0 that

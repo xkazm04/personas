@@ -16,7 +16,7 @@ import {
   MembershipPanel,
   useWorkspaceCenter,
 } from './centerShared';
-import KnowledgeLibrary from './KnowledgeLibrary';
+import KnowledgeLibrary from '@/features/overview/sub_patterns/KnowledgeLibrary';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {

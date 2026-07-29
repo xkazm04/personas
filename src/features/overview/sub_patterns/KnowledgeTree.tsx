@@ -13,7 +13,7 @@ import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { KnowledgeStatusChip } from './centerShared';
+import { KnowledgeStatusChip } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];

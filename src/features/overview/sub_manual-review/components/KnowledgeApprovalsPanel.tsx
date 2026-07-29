@@ -13,13 +13,13 @@ import { ArrowRight, Library, Sparkles } from 'lucide-react';
 
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import type { WorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
-import KnowledgeTree from '@/features/plugins/dev-tools/sub_workspaces/KnowledgeTree';
+import KnowledgeTree from '@/features/overview/sub_patterns/KnowledgeTree';
 import {
   nextQueueIndex,
   viewFromRow,
   type KnowledgeItemView,
-} from '@/features/plugins/dev-tools/sub_workspaces/libraryModel';
-import { PracticeDetailModal } from '@/features/plugins/dev-tools/sub_workspaces/PracticeDetailModal';
+} from '@/features/overview/sub_patterns/libraryModel';
+import { PracticeDetailModal } from '@/features/overview/sub_patterns/PracticeDetailModal';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
