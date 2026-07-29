@@ -70,6 +70,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/contexts/{project_id}", get(list_contexts))
         .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/dedupe-contexts", post(dedupe_contexts))
+        .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -274,6 +275,60 @@ async fn list_contexts(
     repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
+}
+
+/// Strip generated / non-source paths from existing contexts, deleting any
+/// context left holding nothing.
+///
+/// Repairs maps written before the write-path filter landed. An i18n subtree
+/// scan mapped 807 locale JSON files into 15 contexts (`section-locales-ar`,
+/// `-bn`, …) because the coverage counter excluded those trees but nothing
+/// stopped the scan from claiming them. Contexts that merely *include* a few
+/// non-source paths are trimmed and kept; only the ones that were entirely
+/// non-source disappear. Idempotent.
+async fn prune_nonsource_contexts(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    use crate::commands::infrastructure::context_generation::is_mappable_path;
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let (mut trimmed, mut deleted, mut paths_removed) = (0usize, 0usize, 0usize);
+
+    for c in contexts {
+        let paths: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
+        if paths.is_empty() {
+            continue;
+        }
+        let kept: Vec<String> = paths.iter().filter(|p| is_mappable_path(p)).cloned().collect();
+        if kept.len() == paths.len() {
+            continue;
+        }
+        paths_removed += paths.len() - kept.len();
+        if kept.is_empty() {
+            if repo::delete_context(&pool, &c.id).unwrap_or(false) {
+                deleted += 1;
+            }
+        } else {
+            let json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".into());
+            if repo::update_context(
+                &pool, &c.id, None, None, Some(&json),
+                None, None, None, None, None, None, None, None,
+            )
+            .is_ok()
+            {
+                trimmed += 1;
+            }
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_deleted": deleted,
+        "contexts_trimmed": trimmed,
+        "paths_removed": paths_removed,
+    })))
 }
 
 /// Remove context rows duplicated by the double-delivered protocol stream.

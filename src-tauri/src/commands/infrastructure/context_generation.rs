@@ -83,6 +83,7 @@ fn build_context_generation_prompt(
     existing_context_summary: Option<&str>,
     delta: Option<&DeltaBriefing<'_>>,
     subtree: Option<&str>,
+    group_names: &[String],
 ) -> String {
     let mode_section = if let Some(summary) = existing_context_summary {
         let delta_section = if let Some(d) = delta {
@@ -176,9 +177,29 @@ To update an existing context, use:
     // trying to emit five hundred protocol messages and quietly stopping at
     // fifty. Measured on this repo: one whole-tree session mapped 392 of ~4,400
     // hand-written files (9%); ten scoped passes mapped 82%.
+    let existing_groups = if group_names.is_empty() {
+        "(none yet — you are the first scan; create what the subtree needs)".to_string()
+    } else {
+        group_names
+            .iter()
+            .map(|g| format!("- {g}"))
+            .collect::<Vec<_>>()
+            .join("
+")
+    };
     let subtree_section = match subtree {
         Some(st) => format!(
             r#"
+## GROUPS THAT ALREADY EXIST — reuse these before inventing one
+
+{existing_groups}
+
+Pick the closest fit from that list. Only create a new group when your subtree
+introduces a domain genuinely absent above. Concurrent scans share this
+taxonomy, and each scan inventing its own near-synonym is how a map ends up
+with "Execution Engine" beside "Execution & Quality Data" (measured: 8 groups
+became 50 across one sweep, because this list was not shown).
+
 ## SUBTREE SCOPE — you own `{st}` and nothing else
 
 Map ONLY the files under `{st}`. Other scans own the rest of the repo and are
@@ -193,7 +214,8 @@ running right now, so anything you emit outside your scope collides with theirs.
 - Expect roughly one context per 5-15 files. A subtree of 300 files should
   produce something like 20-50 contexts, not 5. If you find yourself writing a
   context with 40 files in it, split it.
-"#
+"#,
+            existing_groups = existing_groups,
         ),
         None => String::new(),
     };
@@ -816,6 +838,36 @@ pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
 // Core generation logic
 // =============================================================================
 
+/// Trees that are NOT hand-written source and must never become contexts:
+/// generated output, vendored deps, build artifacts, and translation data.
+///
+/// This list is shared by the coverage counter AND the write path on purpose.
+/// They used to disagree — the counter excluded `section-locales` while nothing
+/// stopped the scan from mapping it, so an i18n subtree scan swept 807 locale
+/// JSON files into 15 contexts named `section-locales-ar`, `-bn`, … and the
+/// coverage line read 5871%. One list, one meaning, both sides.
+pub(crate) const NON_SOURCE_DIRS: [&str; 10] = [
+    "node_modules", "target", ".git", "dist", "build",
+    "bindings", "section-locales", "locales", ".claude", "coverage",
+];
+
+/// Extensions a context may legitimately own. Locale JSON, images and lockfiles
+/// describe the product but are not the code a context maps.
+pub(crate) const SOURCE_EXTS: [&str; 5] = ["ts", "tsx", "rs", "js", "jsx"];
+
+/// Is this repo-relative path something a context is allowed to claim?
+pub(crate) fn is_mappable_path(path: &str) -> bool {
+    let norm = path.replace('\\', "/");
+    if norm
+        .split('/')
+        .any(|seg| NON_SOURCE_DIRS.contains(&seg))
+    {
+        return false;
+    }
+    norm.rsplit_once('.')
+        .is_some_and(|(_, ext)| SOURCE_EXTS.contains(&ext))
+}
+
 /// Count hand-written source files under `root`, optionally narrowed to a
 /// subtree, so the completion line can state coverage instead of a bare count.
 ///
@@ -824,11 +876,6 @@ pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
 /// percentage and make the warning meaningless. Returns `None` if the tree
 /// cannot be walked; a missing figure is better than a wrong one.
 fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
-    const SKIP_DIRS: [&str; 9] = [
-        "node_modules", "target", ".git", "dist", "build",
-        "bindings", "section-locales", ".claude", "coverage",
-    ];
-    const EXTS: [&str; 5] = ["ts", "tsx", "rs", "js", "jsx"];
 
     let base = match subtree {
         Some(st) => std::path::Path::new(root).join(st),
@@ -852,13 +899,13 @@ fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
             let name = entry.file_name();
             let name = name.to_string_lossy();
             if path.is_dir() {
-                if !name.starts_with('.') && !SKIP_DIRS.contains(&name.as_ref()) {
+                if !name.starts_with('.') && !NON_SOURCE_DIRS.contains(&name.as_ref()) {
                     stack.push(path);
                 }
             } else if path
                 .extension()
                 .and_then(|e| e.to_str())
-                .is_some_and(|e| EXTS.contains(&e))
+                .is_some_and(|e| SOURCE_EXTS.contains(&e))
             {
                 count += 1;
             }
@@ -1046,6 +1093,11 @@ async fn run_context_generation(
         summary_for_prompt,
         briefing.as_ref(),
         subtree,
+        &repo::list_context_groups(pool, project_id)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|g| g.name)
+            .collect::<Vec<_>>(),
     );
 
     // Spawn CLI in the project root so Claude can explore it. Subscription
@@ -1222,6 +1274,26 @@ async fn run_context_generation(
                                     let _ = repo::clear_project_context_map(pool, project_id);
                                     map_cleared = true;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
+                                }
+                                // Drop anything outside the source surface before it
+                                // is stored — see NON_SOURCE_DIRS. A context whose
+                                // files were ALL non-source (the `section-locales-ar`
+                                // shape) is not a context at all, so skip it entirely
+                                // rather than writing an empty one.
+                                let dropped = file_paths.len();
+                                let file_paths: Vec<String> =
+                                    file_paths.into_iter().filter(|p| is_mappable_path(p)).collect();
+                                let dropped = dropped - file_paths.len();
+                                if file_paths.is_empty() {
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Skipped] Context: {name} — every path was generated or non-source"
+                                    ));
+                                    continue;
+                                }
+                                if dropped > 0 {
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Trimmed] Context: {name} — dropped {dropped} generated/non-source path(s)"
+                                    ));
                                 }
                                 let group_id = group_name_to_id.get(&group_name).cloned();
                                 let file_count = file_paths.len() as i32;
