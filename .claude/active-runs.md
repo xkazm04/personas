@@ -4,8 +4,8 @@
 
 ### kpi-value-pillars — value-KPI scan + kpi-sim bridge + skill scoping — session opus-5[1m]
 - Started: 2026-07-29. Status: started. Follow-on from the live project-populate run (8/8 KPI proposals rejected as code-quality, not app value). Four accepted directions: value pillars first with technical capped at 2, doctrine lands IN the scan prompt (all entry points benefit), kpi-sim runs as a gated phase inside project-populate, scope = multi-select of the four lanes.
-- WORKTREE:  (branch ).
-- Paths: , , , , , .
+- WORKTREE: `.claude/worktrees/kpi-value-pillars` (branch `worktree-kpi-value-pillars`).
+- Paths: `src-tauri/src/commands/infrastructure/{kpi_scan,dev_tools_http}.rs`, `.claude/skills/project-populate/**`, `src/features/teams/sub_factory/passport/{populateDispatch,actionConfirmCatalog,PassportActionsRow}`, `src/api/devTools/**`, `src/i18n/locales/*.json`, `docs/features/**`.
 
 ### explorer-healing-engine — /explorer sweep of the healing-engine context — session fable-5
 - Started: 2026-07-27. Status: started.
