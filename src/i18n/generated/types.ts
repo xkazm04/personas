@@ -466,6 +466,8 @@ export type Translations = {
     dispatch_method_fleet_desc: string;
     dispatch_method_cli: string;
     dispatch_method_cli_desc: string;
+    dispatch_method_console: string;
+    dispatch_method_console_desc: string;
     dispatch_already_running: string;
   };
   chrome: {

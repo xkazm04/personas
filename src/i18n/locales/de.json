@@ -460,7 +460,9 @@
     "dispatch_method_dev_runner_desc": "Von der Engine ausgeführte Aufgabe in der Warteschlange — modellgeroutet, verfolgt im Run Desk. Kein Terminal.",
     "dispatch_method_fleet": "Fleet-Terminal",
     "dispatch_method_fleet_desc": "Interaktive Claude-Sitzung im Repo — beobachte die Arbeit und steuere sie über das Fleet-Raster.",
-    "dispatch_pick_method": "Wähle, wie der Agent in „{project}“ läuft — der Prompt bleibt bis zur Übermittlung bearbeitbar."
+    "dispatch_pick_method": "Wähle, wie der Agent in „{project}“ läuft — der Prompt bleibt bis zur Übermittlung bearbeitbar.",
+    "dispatch_method_console": "Dein Terminal",
+    "dispatch_method_console_desc": "Öffnet ein neues Terminalfenster, das dir gehört. Es läuft weiter, nachdem Personas geschlossen wurde, aber die App kann es weder überwachen noch stoppen."
   },
   "chrome": {
     "app_title": "Personas",

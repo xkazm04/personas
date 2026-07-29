@@ -179,5 +179,7 @@
   "dispatch_method_dev_runner_desc": "Tâche en file traitée par le moteur — routée par modèle, suivie dans Run Desk. Aucun terminal.",
   "dispatch_method_fleet": "Terminal Fleet",
   "dispatch_method_fleet_desc": "Session Claude interactive dans le dépôt — regardez-la travailler et pilotez-la depuis la grille Fleet.",
-  "dispatch_pick_method": "Choisissez comment l'agent s'exécute dans « {project} » — le prompt reste modifiable jusqu'à l'envoi."
+  "dispatch_pick_method": "Choisissez comment l'agent s'exécute dans « {project} » — le prompt reste modifiable jusqu'à l'envoi.",
+  "dispatch_method_console": "Votre terminal",
+  "dispatch_method_console_desc": "Ouvre une nouvelle fenêtre de terminal qui vous appartient. Elle continue de fonctionner après la fermeture de Personas, mais l'application ne peut ni la surveiller ni l'arrêter."
 }

@@ -460,6 +460,8 @@
     "dispatch_method_fleet_desc": "Interactive Claude session in the repo — watch it work and steer from the Fleet grid.",
     "dispatch_method_cli": "Claude CLI (headless)",
     "dispatch_method_cli_desc": "Fire-and-forget claude -p run — resource-light; status and insights in the Fleet grid.",
+    "dispatch_method_console": "Your terminal",
+    "dispatch_method_console_desc": "Opens a new terminal window you own. It keeps running after Personas closes, but the app cannot watch or stop it.",
     "dispatch_already_running": "A session already works this dispatch — open it in Fleet, or kill it first."
   },
   "chrome": {

@@ -460,7 +460,9 @@
     "dispatch_method_dev_runner_desc": "Tarea en cola ejecutada por el motor — enrutada por modelo, rastreada en Run Desk. Sin terminal.",
     "dispatch_method_fleet": "Terminal de Fleet",
     "dispatch_method_fleet_desc": "Sesión interactiva de Claude en el repositorio — obsérvala trabajar y guíala desde la cuadrícula de Fleet.",
-    "dispatch_pick_method": "Elige cómo se ejecuta el agente en “{project}” — el prompt se puede editar hasta que lo envíes."
+    "dispatch_pick_method": "Elige cómo se ejecuta el agente en “{project}” — el prompt se puede editar hasta que lo envíes.",
+    "dispatch_method_console": "Tu terminal",
+    "dispatch_method_console_desc": "Abre una nueva ventana de terminal que te pertenece. Sigue ejecutándose después de cerrar Personas, pero la aplicación no puede supervisarla ni detenerla."
   },
   "chrome": {
     "app_title": "Personas",

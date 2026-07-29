@@ -179,5 +179,7 @@
   "dispatch_method_dev_runner_desc": "Úloha ve frontě, kterou zpracuje engine — směrováno podle modelu, sledováno v Run Desk. Bez terminálu.",
   "dispatch_method_fleet": "Fleet terminál",
   "dispatch_method_fleet_desc": "Interaktivní relace Claude v repozitáři — sledujte práci a řiďte ji z mřížky Fleet.",
-  "dispatch_pick_method": "Vyberte, jak agent poběží v „{project}“ — prompt zůstává upravitelný až do odeslání."
+  "dispatch_pick_method": "Vyberte, jak agent poběží v „{project}“ — prompt zůstává upravitelný až do odeslání.",
+  "dispatch_method_console": "Váš terminál",
+  "dispatch_method_console_desc": "Otevře nové okno terminálu, které vlastníte vy. Po zavření Personas zůstane spuštěné, ale aplikace ho nemůže sledovat ani zastavit."
 }

@@ -217,6 +217,7 @@ pub(crate) fn global_skills_dir() -> Option<PathBuf> {
 /// installer (tauri.conf `bundle.resources` → `<resource_dir>/skills/`).
 const SYSTEM_SKILLS: &[&str] = &[
     "passport-onboard",
+    "project-populate",
     // Preset scan skills — generated from scan_agents.toml by
     // scripts/skills/scan-agents-to-skills.mjs (one per Idea Scanner lens).
     "scan-code-optimizer",

@@ -179,5 +179,7 @@
   "dispatch_method_dev_runner_desc": "エンジンが実行するキュー済みタスク — モデルルーティング、Run Deskで追跡。ターミナルなし。",
   "dispatch_method_fleet": "Fleetターミナル",
   "dispatch_method_fleet_desc": "リポジトリ内の対話型Claudeセッション — 作業を見ながらFleetグリッドから操作可能。",
-  "dispatch_pick_method": "「{project}」でエージェントの実行方法を選択 — プロンプトはディスパッチするまで編集可能です。"
+  "dispatch_pick_method": "「{project}」でエージェントの実行方法を選択 — プロンプトはディスパッチするまで編集可能です。",
+  "dispatch_method_console": "あなたのターミナル",
+  "dispatch_method_console_desc": "あなたが所有する新しいターミナルウィンドウを開きます。Personasを終了した後も動作し続けますが、アプリはそれを監視したり停止したりできません。"
 }

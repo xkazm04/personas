@@ -169,6 +169,34 @@ To update an existing context, use:
         String::new()
     };
 
+    // Whole-tree exploration only. A delta scan already knows its file list, so
+    // fanning out would spend subagent turns re-deriving a briefing it was
+    // handed — and a delta run is meant to stay cheap.
+    let fanout_section = if delta.is_none() {
+        r#"
+## Exploring in parallel
+
+A full scan has to read the whole tree, and reading it one directory at a time
+in this session is the slowest possible way to do it. Fan out instead: partition
+the repo's top-level source directories into batches and dispatch one subagent
+per batch with the Task tool, all in a single message so they run concurrently.
+Give each subagent its batch, this document's context/group definitions, and ask
+it to report back which candidate contexts it found — name, one-paragraph
+description, the concrete file paths, keywords, entry points.
+
+**Subagents recon; only YOU emit protocol messages.** Their output is a report
+to you, not to the harness — nothing they print is read as a protocol message.
+Wait for every batch, reconcile the reports into a single coherent map (merge
+duplicates, split anything over 15 files, resolve files claimed by two contexts
+so each lands in exactly one), and then emit the groups and contexts yourself.
+
+Skip the fan-out for a small repo where one pass is obviously enough; the point
+is coverage and speed, not ceremony.
+"#
+    } else {
+        ""
+    };
+
     format!(
         r#"# Context Map Generator
 
@@ -185,7 +213,7 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 2. **Identify business-feature contexts** — NOT architectural layers. Group by what the code DOES (e.g., "User Authentication", "Payment Processing", "Dashboard Analytics"), not by code structure (e.g., "components", "utils", "hooks").
 3. **Create Context Groups** using the protocol messages below.
 4. **Create Contexts** within each group, listing the relevant files, entry points, keywords, and tech stack.
-
+{fanout_section}
 ## Context Group Guidelines
 - Create 4-10 groups representing major **business domains** (not layers)
 - **Naming**: Use Title Case, domain-oriented names (e.g., "User Authentication", "Payment Processing", "Analytics Dashboard"). Never use technical layer names like "Components", "Hooks", "Utils"

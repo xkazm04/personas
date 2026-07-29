@@ -25,6 +25,7 @@ const srcRoot = path.join(ROOT, '.claude', 'skills');
 // scan-agents-to-skills.mjs generated.
 const SYSTEM_SKILLS = [
   'passport-onboard',
+  'project-populate',
   ...readdirSync(srcRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name.startsWith('scan-'))
     .map((d) => d.name)
