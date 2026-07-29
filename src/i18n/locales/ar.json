@@ -1982,7 +1982,18 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "مخصص"
+      "platform_custom": "مخصص",
+      "st_last_checked": "آخر فحص",
+      "st_retest": "إعادة الاختبار",
+      "st_stale": "{count} قديم",
+      "test_diff_recovered": "{count} تم استرداده",
+      "test_diff_regressed": "{count} فشل جديد",
+      "test_diff_failing": "{count} فاشل",
+      "status_unverifiable": "غير قابل للتحقق",
+      "st_unverifiable": "{count} غير قابل للتحقق",
+      "st_filter_toggle": "إظهار هذه فقط",
+      "st_filter_clear": "إظهار كل الموصلات",
+      "st_filter_empty": "لا توجد موصلات تطابق هذا الفلتر"
     },
     "model_config": {
       "model_provider": "النموذج والمزوّد",
@@ -8580,7 +8591,10 @@
         "ready": "جاهز",
         "partial": "جزئي",
         "blocked": "محظور"
-      }
+      },
+      "credential_failing": "فشل فحص سلامة بيانات الاعتماد",
+      "credential_ready_named": "جاهز — {name}",
+      "connector_not_installed": "الموصل غير مثبت"
     },
     "card": {
       "use_cases_label": "حالات الاستخدام",

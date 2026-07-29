@@ -1128,7 +1128,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "自定义"
+    "platform_custom": "自定义",
+    "st_last_checked": "上次检查",
+    "st_retest": "重新测试",
+    "st_stale": "{count} 个已过期",
+    "test_diff_recovered": "{count} 个已恢复",
+    "test_diff_regressed": "{count} 个新失败",
+    "test_diff_failing": "{count} 个失败",
+    "status_unverifiable": "无法验证",
+    "st_unverifiable": "{count} 个无法验证",
+    "st_filter_toggle": "仅显示这些",
+    "st_filter_clear": "显示所有连接器",
+    "st_filter_empty": "没有连接器符合此筛选条件"
   },
   "model_config": {
     "model_provider": "模型与提供商",

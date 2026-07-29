@@ -2070,6 +2070,17 @@ export type Translations = {
       platform_github_actions: string;
       platform_zapier: string;
       platform_custom: string;
+      st_last_checked: string;
+      st_retest: string;
+      st_stale: string;
+      test_diff_recovered: string;
+      test_diff_regressed: string;
+      test_diff_failing: string;
+      status_unverifiable: string;
+      st_unverifiable: string;
+      st_filter_toggle: string;
+      st_filter_clear: string;
+      st_filter_empty: string;
     };
     model_config: {
       model_provider: string;
@@ -8831,6 +8842,9 @@ export type Translations = {
         partial: string;
         blocked: string;
       };
+      credential_failing: string;
+      credential_ready_named: string;
+      connector_not_installed: string;
     };
     card: {
       use_cases_label: string;

@@ -1982,7 +1982,18 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Benutzerdefiniert"
+      "platform_custom": "Benutzerdefiniert",
+      "st_last_checked": "Zuletzt geprüft",
+      "st_retest": "Erneut testen",
+      "st_stale": "{count} veraltet",
+      "test_diff_recovered": "{count} wiederhergestellt",
+      "test_diff_regressed": "{count} neu fehlgeschlagen",
+      "test_diff_failing": "{count} fehlgeschlagen",
+      "status_unverifiable": "Nicht prüfbar",
+      "st_unverifiable": "{count} nicht prüfbar",
+      "st_filter_toggle": "Nur diese anzeigen",
+      "st_filter_clear": "Alle Connectors anzeigen",
+      "st_filter_empty": "Keine Connectors entsprechen diesem Filter"
     },
     "model_config": {
       "model_provider": "Modell & Anbieter",
@@ -8580,7 +8591,10 @@
         "ready": "Bereit",
         "partial": "Teilweise",
         "blocked": "Blockiert"
-      }
+      },
+      "credential_failing": "Healthcheck der Zugangsdaten fehlgeschlagen",
+      "credential_ready_named": "Bereit — {name}",
+      "connector_not_installed": "Connector nicht installiert"
     },
     "card": {
       "use_cases_label": "Anwendungsfälle",

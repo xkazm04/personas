@@ -1982,7 +1982,18 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Personalizado"
+      "platform_custom": "Personalizado",
+      "st_last_checked": "Última comprobación",
+      "st_retest": "Volver a probar",
+      "st_stale": "{count} obsoletos",
+      "test_diff_recovered": "{count} recuperados",
+      "test_diff_regressed": "{count} fallos nuevos",
+      "test_diff_failing": "{count} con fallo",
+      "status_unverifiable": "No verificable",
+      "st_unverifiable": "{count} no verificables",
+      "st_filter_toggle": "Mostrar solo estos",
+      "st_filter_clear": "Mostrar todos los conectores",
+      "st_filter_empty": "Ningún conector coincide con este filtro"
     },
     "model_config": {
       "model_provider": "Modelo y proveedor",
@@ -8580,7 +8591,10 @@
         "ready": "Listo",
         "partial": "Parcial",
         "blocked": "Bloqueado"
-      }
+      },
+      "credential_failing": "La credencial no supera la comprobación",
+      "credential_ready_named": "Listo — {name}",
+      "connector_not_installed": "Conector no instalado"
     },
     "card": {
       "use_cases_label": "Casos de Uso",

@@ -1982,7 +1982,18 @@
       "platform_n8n": "n8n",
       "platform_github_actions": "GitHub Actions",
       "platform_zapier": "Zapier",
-      "platform_custom": "Kustom"
+      "platform_custom": "Kustom",
+      "st_last_checked": "Terakhir diperiksa",
+      "st_retest": "Uji ulang",
+      "st_stale": "{count} usang",
+      "test_diff_recovered": "{count} pulih",
+      "test_diff_regressed": "{count} baru gagal",
+      "test_diff_failing": "{count} gagal",
+      "status_unverifiable": "Tidak dapat diverifikasi",
+      "st_unverifiable": "{count} tidak dapat diverifikasi",
+      "st_filter_toggle": "Tampilkan ini saja",
+      "st_filter_clear": "Tampilkan semua konektor",
+      "st_filter_empty": "Tidak ada konektor yang cocok dengan filter ini"
     },
     "model_config": {
       "model_provider": "Model & Penyedia",
@@ -8580,7 +8591,10 @@
         "ready": "Siap",
         "partial": "Sebagian",
         "blocked": "Terhalang"
-      }
+      },
+      "credential_failing": "Pemeriksaan kredensial gagal",
+      "credential_ready_named": "Siap — {name}",
+      "connector_not_installed": "Konektor belum terpasang"
     },
     "card": {
       "use_cases_label": "Kasus Penggunaan",

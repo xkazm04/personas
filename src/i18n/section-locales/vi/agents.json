@@ -1128,7 +1128,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "Tùy chỉnh"
+    "platform_custom": "Tùy chỉnh",
+    "st_last_checked": "Kiểm tra lần cuối",
+    "st_retest": "Kiểm tra lại",
+    "st_stale": "{count} đã cũ",
+    "test_diff_recovered": "{count} đã khôi phục",
+    "test_diff_regressed": "{count} lỗi mới",
+    "test_diff_failing": "{count} lỗi",
+    "status_unverifiable": "Không thể xác minh",
+    "st_unverifiable": "{count} không thể xác minh",
+    "st_filter_toggle": "Chỉ hiển thị các mục này",
+    "st_filter_clear": "Hiển thị tất cả trình kết nối",
+    "st_filter_empty": "Không có trình kết nối nào khớp với bộ lọc này"
   },
   "model_config": {
     "model_provider": "Mô hình & Nhà cung cấp",

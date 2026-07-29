@@ -1128,7 +1128,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "कस्टम"
+    "platform_custom": "कस्टम",
+    "st_last_checked": "अंतिम जाँच",
+    "st_retest": "फिर जाँचें",
+    "st_stale": "{count} पुराने",
+    "test_diff_recovered": "{count} ठीक हुए",
+    "test_diff_regressed": "{count} नए विफल",
+    "test_diff_failing": "{count} विफल",
+    "status_unverifiable": "सत्यापन योग्य नहीं",
+    "st_unverifiable": "{count} सत्यापन योग्य नहीं",
+    "st_filter_toggle": "केवल ये दिखाएँ",
+    "st_filter_clear": "सभी कनेक्टर दिखाएँ",
+    "st_filter_empty": "इस फ़िल्टर से कोई कनेक्टर मेल नहीं खाता"
   },
   "model_config": {
     "model_provider": "मॉडल और प्रदाता",
