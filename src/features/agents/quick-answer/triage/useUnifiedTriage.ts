@@ -50,6 +50,7 @@ import {
 } from './triageAdapters';
 import { isDeferral, routeDecision, type TriagePorts } from './triageDispatch';
 import { projectQueue, withSkip, type SkipLedger } from './triageQueue';
+import { adoptReach } from './triageReach';
 import {
   type TriageCounts,
   type TriageDecision,
@@ -86,13 +87,27 @@ export interface UnifiedTriageQueue {
    */
   skips: SkipLedger;
   decide: (decision: TriageDecision) => Promise<void>;
+  /**
+   * Follow one of an item's {@link TriageItem.links}. NOT a decision: nothing is
+   * written and the item stays in the queue, because reading the run that raised
+   * a review is how you decide it, not the deciding.
+   */
+  openLink: (item: TriageItem, linkId: string) => void;
   reload: () => void;
+}
+
+export interface UnifiedTriageHosts {
+  /** Deep-link to the persona builder for questions this surface can't answer. */
+  onOpenBuilder?: (personaId: string) => void;
+  /** Deep-link to the execution behind a review. Absent when the host has no route. */
+  onOpenRun?: (executionId: string) => void;
 }
 
 export function useUnifiedTriage(
   copy: TriageCopy = DEFAULT_TRIAGE_COPY,
-  onOpenBuilder?: (personaId: string) => void,
+  hosts: UnifiedTriageHosts = {},
 ): UnifiedTriageQueue {
+  const { onOpenBuilder, onOpenRun } = hosts;
   const interactions = usePendingInteractions();
   const center = useWorkspaceCenter();
   const projects = useSystemStore((s) => s.projects);
@@ -162,14 +177,36 @@ export function useUnifiedTriage(
 
     for (const workspace of center.workspaces) {
       const rows = center.knowledge[workspace.id] ?? [];
+      if (rows.length === 0) continue;
+      // Adopting fans the practice out to every APPLICABLE member repo, so the
+      // blast radius is a property of the workspace's membership, not of the
+      // practice row. Resolved once per workspace rather than per practice.
+      const stacks = workspace.projectIds.map((id) => center.projectById.get(id)?.tech_stack ?? null);
       for (const row of rows) {
         if (!PENDING_PRACTICE_STATUSES.has(row.status)) continue;
-        out.push(practiceToTriage(viewFromRow(row), workspace.name, row.detail_md, copy));
+        out.push(
+          practiceToTriage(
+            viewFromRow(row),
+            workspace.name,
+            row.detail_md,
+            copy,
+            adoptReach(row.applicability, stacks),
+          ),
+        );
       }
     }
 
     return out;
-  }, [interactions.reviews, interactions.questionGroups, ideas, center.workspaces, center.knowledge, copy, projectName]);
+  }, [
+    interactions.reviews,
+    interactions.questionGroups,
+    ideas,
+    center.workspaces,
+    center.knowledge,
+    center.projectById,
+    copy,
+    projectName,
+  ]);
 
   const projection = useMemo(
     () => projectQueue({ all, resolved, skips, activeKinds }),
@@ -247,6 +284,21 @@ export function useUnifiedTriage(
     [ports],
   );
 
+  /**
+   * Navigation, never a verdict. Guarded on the item actually declaring the
+   * link so a stale keystroke can't open a route the card never offered.
+   */
+  const openLink = useCallback(
+    (item: TriageItem, linkId: string) => {
+      if (!item.links?.some((l) => l.id === linkId)) return;
+      if (linkId === 'run') {
+        const executionId = item.payload?.executionId;
+        if (executionId && onOpenRun) onOpenRun(executionId);
+      }
+    },
+    [onOpenRun],
+  );
+
   return {
     items: projection.items,
     allCounts: projection.allCounts,
@@ -258,6 +310,7 @@ export function useUnifiedTriage(
     deferredCount: projection.deferredCount,
     skips,
     decide,
+    openLink,
     reload,
   };
 }

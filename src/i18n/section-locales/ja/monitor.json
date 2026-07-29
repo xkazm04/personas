@@ -349,5 +349,15 @@
   "triage_deferred_some": "一部は完全なピッカーが必要です。残りはここで回答してください。ピッカーが必要なものはビルダーで未回答のまま残ります。",
   "triage_fact_questions": "質問",
   "triage_field_builder_only": "完全なピッカーが必要です — これはビルダーで回答してください。",
-  "triage_questions_pending": "このビルドを続行するまでに{count}件の質問"
+  "triage_questions_pending": "このビルドを続行するまでに{count}件の質問",
+  "triage_adopt_reach_value": "{total} 件中 {applicable} 件のリポジトリ",
+  "triage_applies_any": "すべてのスタック",
+  "triage_blocking": "チームのステップを停止中",
+  "triage_blocking_detail": "停止中のステップがこれを待っています。承認すると作業が再開します。",
+  "triage_fact_adopt_reach": "採用の影響範囲",
+  "triage_fact_applies_to": "適用対象",
+  "triage_fact_priority": "優先度",
+  "triage_priority_rank": "第 {rank} 位",
+  "triage_view_run": "実行を見る",
+  "triage_view_run_hint": "このレビューを発生させた実行を開く"
 }

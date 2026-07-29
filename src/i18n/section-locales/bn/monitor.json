@@ -349,5 +349,15 @@
   "triage_deferred_some": "এর কিছুর জন্য সম্পূর্ণ পিকার দরকার। বাকিগুলোর উত্তর এখানেই দিন; সেগুলো বিল্ডারে খোলা থাকবে।",
   "triage_fact_questions": "প্রশ্ন",
   "triage_field_builder_only": "সম্পূর্ণ পিকার দরকার — এটির উত্তর বিল্ডারে দিন।",
-  "triage_questions_pending": "এই বিল্ড চালিয়ে যাওয়ার আগে {count}টি প্রশ্ন"
+  "triage_questions_pending": "এই বিল্ড চালিয়ে যাওয়ার আগে {count}টি প্রশ্ন",
+  "triage_adopt_reach_value": "{total}-এর মধ্যে {applicable} রিপোজিটরি",
+  "triage_applies_any": "যেকোনো স্ট্যাক",
+  "triage_blocking": "দলের একটি ধাপ আটকে আছে",
+  "triage_blocking_detail": "একটি থেমে থাকা ধাপ এর জন্য অপেক্ষা করছে — অনুমোদন দিলে কাজ আবার চালু হবে।",
+  "triage_fact_adopt_reach": "গ্রহণের বিস্তার",
+  "triage_fact_applies_to": "প্রযোজ্য",
+  "triage_fact_priority": "অগ্রাধিকার",
+  "triage_priority_rank": "ক্রম {rank}",
+  "triage_view_run": "রান দেখুন",
+  "triage_view_run_hint": "যে এক্সিকিউশন থেকে এই পর্যালোচনা এসেছে তা খুলুন"
 }

@@ -79,13 +79,17 @@ export function DeckActionBar({
   canAccept,
   onVerdict,
   onBranch,
+  onLink,
 }: {
   item: TriageItem;
   canAccept: boolean;
   onVerdict: (verdict: TriageVerdict) => void;
   onBranch: (branchId: string) => void;
+  /** Follow a read-only link. Never resolves the card — see `TriageLink`. */
+  onLink?: (linkId: string) => void;
 }) {
   const { t } = useTranslation();
+  const links = onLink ? item.links ?? [] : [];
 
   return (
     <footer className="shrink-0 border-t border-primary/10 bg-secondary/10 px-4 py-3">
@@ -124,6 +128,27 @@ export function DeckActionBar({
             <Kbd>{String(i + 1)}</Kbd>
             {branch.icon ? <branch.icon className="h-4 w-4 shrink-0" aria-hidden /> : null}
             {branch.label}
+          </button>
+        ))}
+
+        {/* Links sit AFTER a second divider, deliberately separated from the
+            verdict grammar: nothing here resolves the card, so a reviewer must
+            never be able to mistake one for a decision. Ghost-weighted for the
+            same reason. */}
+        {links.length > 0 ? <div className="mx-1 h-7 w-px bg-primary/12" aria-hidden /> : null}
+
+        {links.map((link) => (
+          <button
+            key={link.id}
+            type="button"
+            onClick={() => onLink?.(link.id)}
+            aria-label={link.label}
+            title={link.hint ?? link.label}
+            className="focus-ring inline-flex items-center gap-2 rounded-interactive border border-primary/12 px-3 py-2 typo-body text-foreground transition-colors hover:bg-secondary/40"
+          >
+            <Kbd>O</Kbd>
+            {link.icon ? <link.icon className="h-4 w-4 shrink-0" aria-hidden /> : null}
+            {link.label}
           </button>
         ))}
       </div>

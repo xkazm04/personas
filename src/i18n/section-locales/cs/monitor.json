@@ -349,5 +349,15 @@
   "triage_deferred_some": "Některé vyžadují plný výběr. Ostatní odpověz zde; ty s výběrem zůstanou otevřené v builderu.",
   "triage_fact_questions": "Otázky",
   "triage_field_builder_only": "Vyžaduje plný výběr — odpověz na tuto v builderu.",
-  "triage_questions_pending": "{count} otázek, než může tento build pokračovat"
+  "triage_questions_pending": "{count} otázek, než může tento build pokračovat",
+  "triage_adopt_reach_value": "{applicable} z {total} repozitářů",
+  "triage_applies_any": "Jakýkoli stack",
+  "triage_blocking": "Blokuje krok týmu",
+  "triage_blocking_detail": "Pozastavený krok na to čeká – schválením práce pokračuje.",
+  "triage_fact_adopt_reach": "Přijetí zasáhne",
+  "triage_fact_applies_to": "Platí pro",
+  "triage_fact_priority": "Priorita",
+  "triage_priority_rank": "č. {rank}",
+  "triage_view_run": "Zobrazit běh",
+  "triage_view_run_hint": "Otevřít spuštění, které vyvolalo tuto kontrolu"
 }

@@ -88,6 +88,45 @@ export interface TriageBranch {
 }
 
 /**
+ * The ONE fact that changes what the decision MEANS, promoted out of the ledger.
+ *
+ * The ledger is a list of equals — twelve grey rows, each as loud as the next.
+ * That is the right shape for facts a reviewer weighs, and the wrong shape for a
+ * fact that reframes the whole card: a persona review carrying an
+ * `assignment_id` is BLOCKING A HELD TEAM STEP, and approving it resumes real
+ * work that is currently stopped. Sorting that in beside "Severity: medium" is
+ * how a reviewer skips it.
+ *
+ * At most one per card, deliberately. A surface with three alerts has none.
+ */
+export interface TriageAlert {
+  id: string;
+  /** Short headline, pre-translated. */
+  label: string;
+  /** One line of consequence — what deciding this actually does. */
+  detail?: string;
+  tone: TriageTone;
+  icon?: LucideIcon;
+}
+
+/**
+ * Somewhere to go and LOOK, which is not a decision.
+ *
+ * Distinct from a {@link TriageBranch} on purpose: a branch RESOLVES the item
+ * (dispatch a suggested action, build it now, deprecate it) and is routed
+ * through `triageDispatch`. A link resolves nothing — it opens the execution
+ * that raised a review so the reviewer can read the run before ruling on it,
+ * and the card is still sitting there when they come back. Routing one through
+ * the verdict dispatcher would resolve a row nobody decided.
+ */
+export interface TriageLink {
+  id: string;
+  label: string;
+  hint?: string;
+  icon?: LucideIcon;
+}
+
+/**
  * One thing a card asks for. Several of these can sit on one card.
  *
  * `deferred` marks a field that genuinely can't be answered inline — a
@@ -140,8 +179,12 @@ export interface TriageItem {
   /** Pretty-printed JSON / code. Rendered monospace, never markdown. */
   evidence?: string | null;
   tags: TriageTag[];
+  /** The one fact that reframes the decision, if this item has one. */
+  alert?: TriageAlert;
   /** The metadata ledger, in reading order. */
   facts: TriageFact[];
+  /** Read-only places to go and look. Never a verdict — see {@link TriageLink}. */
+  links?: TriageLink[];
   /** Who raised it — persona, project, workspace. */
   source: { label: string; sublabel?: string; color?: string | null };
   createdAt: string;

@@ -194,8 +194,20 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     [run],
   );
 
-  const live = useRef({ decideTop, fireBranch, onClose });
-  live.current = { decideTop, fireBranch, onClose };
+  /**
+   * Follow the card's first link. Not a verdict: the card stays, nothing is
+   * written, and there is no throw — the reviewer is going to read the run and
+   * come back to a card still waiting for them.
+   */
+  const followLink = useCallback(() => {
+    const item = topRef.current;
+    const link = item?.links?.[0];
+    if (!item || !link) return;
+    queue.openLink(item, link.id);
+  }, [queue]);
+
+  const live = useRef({ decideTop, fireBranch, followLink, onClose });
+  live.current = { decideTop, fireBranch, followLink, onClose };
 
   // One stable listener for the session. Arrows decide, numbers branch.
   useEffect(() => {
@@ -226,6 +238,9 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         live.current.decideTop('skip');
+      } else if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        live.current.followLink();
       } else if (/^[1-9]$/.test(e.key)) {
         const branch = topRef.current?.branches[Number(e.key) - 1];
         if (!branch) return;
@@ -251,6 +266,7 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     decideTop,
     submitAnswers,
     fireBranch,
+    followLink,
     /** False until a question card has at least one field filled in. A session
      *  card submits what the reviewer HAS answered — waiting for all of them
      *  would block a mixed session on a field this surface cannot collect. */

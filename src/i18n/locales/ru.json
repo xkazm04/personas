@@ -350,7 +350,17 @@
     "triage_deferred_some": "Некоторые требуют полного выбора. Ответьте на остальные здесь; те останутся открытыми в билдере.",
     "triage_fact_questions": "Вопросы",
     "triage_field_builder_only": "Требуется полный выбор — ответьте на этот вопрос в билдере.",
-    "triage_questions_pending": "{count} вопросов до продолжения этой сборки"
+    "triage_questions_pending": "{count} вопросов до продолжения этой сборки",
+    "triage_adopt_reach_value": "{applicable} из {total} репозиториев",
+    "triage_applies_any": "Любой стек",
+    "triage_blocking": "Блокирует шаг команды",
+    "triage_blocking_detail": "Приостановленный шаг ждёт этого — одобрение возобновит работу.",
+    "triage_fact_adopt_reach": "Принятие затронет",
+    "triage_fact_applies_to": "Применяется к",
+    "triage_fact_priority": "Приоритет",
+    "triage_priority_rank": "№ {rank}",
+    "triage_view_run": "Открыть запуск",
+    "triage_view_run_hint": "Открыть выполнение, вызвавшее эту проверку"
   },
   "common": {
     "loading": "Загрузка...",

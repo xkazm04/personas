@@ -349,5 +349,15 @@
   "triage_deferred_some": "Einige davon brauchen die vollständige Auswahl. Beantworte die übrigen hier; die anderen bleiben im Builder offen.",
   "triage_fact_questions": "Fragen",
   "triage_field_builder_only": "Braucht die vollständige Auswahl — beantworte diese im Builder.",
-  "triage_questions_pending": "{count} Fragen, bevor dieser Build fortgesetzt werden kann"
+  "triage_questions_pending": "{count} Fragen, bevor dieser Build fortgesetzt werden kann",
+  "triage_adopt_reach_value": "{applicable} von {total} Repos",
+  "triage_applies_any": "Jeder Stack",
+  "triage_blocking": "Blockiert einen Teamschritt",
+  "triage_blocking_detail": "Ein angehaltener Schritt wartet darauf – eine Freigabe setzt die Arbeit fort.",
+  "triage_fact_adopt_reach": "Übernahme erreicht",
+  "triage_fact_applies_to": "Gilt für",
+  "triage_fact_priority": "Priorität",
+  "triage_priority_rank": "Nr. {rank}",
+  "triage_view_run": "Lauf ansehen",
+  "triage_view_run_hint": "Die Ausführung öffnen, die diese Prüfung ausgelöst hat"
 }

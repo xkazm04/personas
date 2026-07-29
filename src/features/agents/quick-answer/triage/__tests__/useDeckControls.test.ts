@@ -17,7 +17,11 @@ import type { UnifiedTriageQueue } from '../useUnifiedTriage';
 import { emptyCounts } from '../triageTypes';
 import { makeItem, makeQuestion } from './triageFixtures';
 
-function makeQueue(items: TriageItem[], decide = vi.fn().mockResolvedValue(undefined)) {
+function makeQueue(
+  items: TriageItem[],
+  decide = vi.fn().mockResolvedValue(undefined),
+  openLink = vi.fn(),
+) {
   const queue: UnifiedTriageQueue = {
     items,
     allCounts: emptyCounts(),
@@ -29,9 +33,10 @@ function makeQueue(items: TriageItem[], decide = vi.fn().mockResolvedValue(undef
     deferredCount: 0,
     skips: new Map(),
     decide,
+    openLink,
     reload: vi.fn(),
   };
-  return { queue, decide };
+  return { queue, decide, openLink };
 }
 
 describe('useDeckControls — a thrown card that never lands', () => {
@@ -84,6 +89,34 @@ describe('useDeckControls — a thrown card that never lands', () => {
 
     act(() => result.current.decideTop('accept'));
     expect(decide).toHaveBeenCalledWith({ item, verdict: 'accept' });
+  });
+});
+
+describe('useDeckControls — following a link is not deciding', () => {
+  it('opens the run without throwing the card or writing a verdict', () => {
+    const item = makeItem('review', {
+      links: [{ id: 'run', label: 'See the run' }],
+      payload: { executionId: 'exec-1' },
+    });
+    const { queue, decide, openLink } = makeQueue([item]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+
+    const launch = vi.fn();
+    result.current.cardRef.current = { launch };
+
+    act(() => result.current.followLink());
+    expect(openLink).toHaveBeenCalledWith(item, 'run');
+    // The card is still there, undecided, and still throwable.
+    expect(decide).not.toHaveBeenCalled();
+    expect(launch).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on a card that offers no link', () => {
+    const { queue, openLink } = makeQueue([makeItem('idea')]);
+    const { result } = renderHook(() => useDeckControls(queue, vi.fn()));
+
+    act(() => result.current.followLink());
+    expect(openLink).not.toHaveBeenCalled();
   });
 });
 

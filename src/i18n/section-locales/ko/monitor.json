@@ -349,5 +349,15 @@
   "triage_deferred_some": "일부는 전체 선택기가 필요합니다. 나머지는 여기서 답하세요. 선택기가 필요한 항목은 빌더에 남습니다.",
   "triage_fact_questions": "질문",
   "triage_field_builder_only": "전체 선택기가 필요합니다 — 이 질문은 빌더에서 답하세요.",
-  "triage_questions_pending": "이 빌드를 계속하기까지 질문 {count}개"
+  "triage_questions_pending": "이 빌드를 계속하기까지 질문 {count}개",
+  "triage_adopt_reach_value": "저장소 {total}개 중 {applicable}개",
+  "triage_applies_any": "모든 스택",
+  "triage_blocking": "팀 단계를 막고 있음",
+  "triage_blocking_detail": "보류된 단계가 이것을 기다리고 있습니다. 승인하면 작업이 다시 시작됩니다.",
+  "triage_fact_adopt_reach": "채택 영향 범위",
+  "triage_fact_applies_to": "적용 대상",
+  "triage_fact_priority": "우선순위",
+  "triage_priority_rank": "{rank}위",
+  "triage_view_run": "실행 보기",
+  "triage_view_run_hint": "이 검토를 발생시킨 실행 열기"
 }

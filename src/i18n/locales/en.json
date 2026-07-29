@@ -350,7 +350,17 @@
     "triage_deferred_some": "Some of these need the full picker. Answer the rest here; the picker ones stay open in the builder.",
     "triage_suggested": "Suggested",
     "triage_why_raised": "Why this was raised",
-    "triage_evidence": "Evidence"
+    "triage_evidence": "Evidence",
+    "triage_blocking": "Blocking a team step",
+    "triage_blocking_detail": "A held step is waiting on this — approving it resumes the work.",
+    "triage_view_run": "See the run",
+    "triage_view_run_hint": "Open the execution that raised this review",
+    "triage_fact_priority": "Priority",
+    "triage_priority_rank": "#{rank}",
+    "triage_fact_applies_to": "Applies to",
+    "triage_applies_any": "Any stack",
+    "triage_fact_adopt_reach": "Adopt reaches",
+    "triage_adopt_reach_value": "{applicable} of {total} repos"
   },
   "common": {
     "unknown_error": "Unknown error",

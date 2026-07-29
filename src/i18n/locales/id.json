@@ -350,7 +350,17 @@
     "triage_deferred_some": "Beberapa memerlukan pemilih lengkap. Jawab sisanya di sini; yang itu tetap terbuka di builder.",
     "triage_fact_questions": "Pertanyaan",
     "triage_field_builder_only": "Memerlukan pemilih lengkap — jawab yang ini di builder.",
-    "triage_questions_pending": "{count} pertanyaan sebelum build ini dapat lanjut"
+    "triage_questions_pending": "{count} pertanyaan sebelum build ini dapat lanjut",
+    "triage_adopt_reach_value": "{applicable} dari {total} repo",
+    "triage_applies_any": "Semua stack",
+    "triage_blocking": "Memblokir langkah tim",
+    "triage_blocking_detail": "Ada langkah tertahan yang menunggu ini — menyetujuinya melanjutkan pekerjaan.",
+    "triage_fact_adopt_reach": "Adopsi menjangkau",
+    "triage_fact_applies_to": "Berlaku untuk",
+    "triage_fact_priority": "Prioritas",
+    "triage_priority_rank": "ke-{rank}",
+    "triage_view_run": "Lihat eksekusi",
+    "triage_view_run_hint": "Buka eksekusi yang memunculkan tinjauan ini"
   },
   "common": {
     "loading": "Memuat...",

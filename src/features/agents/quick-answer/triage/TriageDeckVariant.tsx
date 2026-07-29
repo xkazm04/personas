@@ -63,6 +63,7 @@ export function TriageDeckVariant({
     decideTop,
     submitAnswers,
     fireBranch,
+    followLink,
     canAccept,
   } = useDeckControls(queue, onClose);
 
@@ -145,7 +146,13 @@ export function TriageDeckVariant({
       </div>
 
       {top ? (
-        <DeckActionBar item={top} canAccept={canAccept} onVerdict={decideTop} onBranch={fireBranch} />
+        <DeckActionBar
+          item={top}
+          canAccept={canAccept}
+          onVerdict={decideTop}
+          onBranch={fireBranch}
+          onLink={followLink}
+        />
       ) : null}
     </motion.section>
   );

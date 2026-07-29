@@ -350,7 +350,17 @@
     "triage_deferred_some": "इनमें से कुछ के लिए पूरा पिकर चाहिए। बाकी का उत्तर यहीं दें; वे बिल्डर में खुले रहेंगे।",
     "triage_fact_questions": "प्रश्न",
     "triage_field_builder_only": "पूरा पिकर चाहिए — इसका उत्तर बिल्डर में दें।",
-    "triage_questions_pending": "यह बिल्ड जारी होने से पहले {count} प्रश्न"
+    "triage_questions_pending": "यह बिल्ड जारी होने से पहले {count} प्रश्न",
+    "triage_adopt_reach_value": "{total} में से {applicable} रिपॉज़िटरी",
+    "triage_applies_any": "कोई भी स्टैक",
+    "triage_blocking": "टीम का एक चरण रुका है",
+    "triage_blocking_detail": "एक रुका हुआ चरण इसकी प्रतीक्षा कर रहा है — मंज़ूरी देने पर काम फिर शुरू होगा।",
+    "triage_fact_adopt_reach": "अपनाने का असर",
+    "triage_fact_applies_to": "लागू होता है",
+    "triage_fact_priority": "प्राथमिकता",
+    "triage_priority_rank": "क्रम {rank}",
+    "triage_view_run": "रन देखें",
+    "triage_view_run_hint": "वह एक्ज़ीक्यूशन खोलें जिससे यह समीक्षा उठी"
   },
   "common": {
     "loading": "लोड हो रहा है...",

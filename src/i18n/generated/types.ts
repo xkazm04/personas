@@ -357,6 +357,16 @@ export type Translations = {
     triage_suggested: string;
     triage_why_raised: string;
     triage_evidence: string;
+    triage_blocking: string;
+    triage_blocking_detail: string;
+    triage_view_run: string;
+    triage_view_run_hint: string;
+    triage_fact_priority: string;
+    triage_priority_rank: string;
+    triage_fact_applies_to: string;
+    triage_applies_any: string;
+    triage_fact_adopt_reach: string;
+    triage_adopt_reach_value: string;
   };
   common: {
     unknown_error: string;

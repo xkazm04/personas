@@ -350,7 +350,17 @@
     "triage_deferred_some": "其中一些需要完整选择器。请在此回答其余问题；需要选择器的将保留在构建器中待回答。",
     "triage_fact_questions": "问题",
     "triage_field_builder_only": "需要完整选择器 — 请在构建器中回答此问题。",
-    "triage_questions_pending": "此构建继续前还有 {count} 个问题"
+    "triage_questions_pending": "此构建继续前还有 {count} 个问题",
+    "triage_adopt_reach_value": "{total} 个仓库中的 {applicable} 个",
+    "triage_applies_any": "任意技术栈",
+    "triage_blocking": "正阻塞团队步骤",
+    "triage_blocking_detail": "有一个暂停的步骤在等待它 — 批准后工作即会继续。",
+    "triage_fact_adopt_reach": "采纳影响范围",
+    "triage_fact_applies_to": "适用于",
+    "triage_fact_priority": "优先级",
+    "triage_priority_rank": "第 {rank} 名",
+    "triage_view_run": "查看运行",
+    "triage_view_run_hint": "打开触发此审核的执行记录"
   },
   "common": {
     "loading": "加载中...",

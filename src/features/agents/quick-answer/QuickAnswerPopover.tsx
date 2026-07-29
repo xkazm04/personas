@@ -11,9 +11,10 @@
 // about any of this. `QuickAnswerBody` and its children are deliberately NOT
 // deleted — the channel-timeline rail and the reviews rail still render them.
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 
 import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -37,17 +38,46 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   // Deep-link for questions that need the full builder (connector picker or
   // file attach) — mirrors QuickAnswerBody's openBuilder.
-  const openBuilder = (personaId: string) => {
-    setSidebarSection('personas');
-    setEditorTab('matrix' as Parameters<typeof setEditorTab>[0]);
-    selectPersona(personaId);
-    onClose();
-  };
+  //
+  // Memoised, both of these: they are handed to `useUnifiedTriage`, which puts
+  // them in the injected port bundle every verdict route reads. An unwrapped
+  // arrow here re-created the bundle on every render, which re-created `decide`,
+  // which re-rendered all three stacked cards on every keystroke.
+  const openBuilder = useCallback(
+    (personaId: string) => {
+      setSidebarSection('personas');
+      setEditorTab('matrix' as Parameters<typeof setEditorTab>[0]);
+      selectPersona(personaId);
+      onClose();
+    },
+    [setSidebarSection, setEditorTab, selectPersona, onClose],
+  );
 
-  const queue = useUnifiedTriage(copy, openBuilder);
+  // "See the run that raised this" — `GlobalExecutionList` watches
+  // `pendingExecutionFocus` and pops that execution's detail modal (the same
+  // handoff the notification centre and the schedule history rows use, so there
+  // is nothing new to keep working here).
+  const openRun = useCallback(
+    (executionId: string) => {
+      setPendingExecutionFocus(executionId);
+      setOverviewTab('executions');
+      setSidebarSection('overview');
+      onClose();
+    },
+    [setPendingExecutionFocus, setOverviewTab, setSidebarSection, onClose],
+  );
+
+  const hosts = useMemo(
+    () => ({ onOpenBuilder: openBuilder, onOpenRun: openRun }),
+    [openBuilder, openRun],
+  );
+
+  const queue = useUnifiedTriage(copy, hosts);
 
   return (
     <Suspense fallback={null}>

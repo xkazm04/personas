@@ -13,11 +13,10 @@
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useMonitorData } from '@/features/fleet/monitor/useMonitorData';
+import { useMonitorData, type MonitorReviewItem } from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
-import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 export interface QuestionGroup {
@@ -31,7 +30,9 @@ export interface QuestionGroup {
 
 export interface QuickAnswerData {
   questionGroups: QuestionGroup[];
-  reviews: ManualReviewItem[];
+  /** Carries the resume-loop link (`assignment_id`/`step_id`) the deck needs to
+   *  tell a held team step from an advisory review. */
+  reviews: MonitorReviewItem[];
   questionCount: number;
   reviewCount: number;
   total: number;

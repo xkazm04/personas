@@ -12,6 +12,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listManualReviews, updateManualReviewStatus, dispatchReviewAction } from '@/api/overview/reviews';
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
+import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -25,14 +26,48 @@ const logger = createLogger('persona-monitor');
 /** Most recent messages scanned for unread state — unread skews recent. */
 const MESSAGE_SCAN_LIMIT = 300;
 
-/** Shape a raw `PersonaManualReview` row into the `ManualReviewItem` the UI consumes. */
-function shapeReview(r: PersonaManualReview): ManualReviewItem {
+/**
+ * A review row with the three columns `PersonaManualReview` carries that the
+ * shared {@link ManualReviewItem} shape never had a home for.
+ *
+ * `assignment_id` / `step_id` are the load-bearing pair: a review that has them
+ * was emitted by a persona running as a TEAM STEP, and that step is HELD until
+ * someone rules on it. Approving such a review resumes work that is currently
+ * stopped — a materially different act from approving an advisory review, and
+ * for the whole life of this shaper the surfaces downstream had no way to know
+ * which one they were looking at.
+ */
+export interface MonitorReviewItem extends ManualReviewItem {
+  /** Resume-loop link (`NULL` for standalone, non-team reviews). */
+  assignment_id: string | null;
+  step_id: string | null;
+  /** Capability attribution, inherited from the originating execution. */
+  use_case_id: string | null;
+}
+
+/**
+ * Shape a raw `PersonaManualReview` row into the item the UI consumes.
+ *
+ * Three lossy habits are corrected here, all of which showed up as visible
+ * defects on the triage deck:
+ *
+ *  • `review_type` used to be filled with `severity`, so every card printed the
+ *    same word under two labels ("Severity: high · Type: high"). The DB has no
+ *    review-type column; the honest value is empty, and the adapters render a
+ *    type only when there is one.
+ *  • `content` used to be `title + '\n' + description`, so the headline was
+ *    printed twice — once as the card's `<h2>`, once as the body's first line.
+ *    `content` is now the description alone. (`MonitorDrawer` already rendered
+ *    title and content as separate elements, so it was double-printing too.)
+ *  • The resume-loop and provenance ids were dropped entirely.
+ */
+function shapeReview(r: PersonaManualReview): MonitorReviewItem {
   return {
     id: r.id,
     persona_id: r.persona_id,
     execution_id: r.execution_id,
-    review_type: r.severity,
-    content: r.title + (r.description ? `\n${r.description}` : ''),
+    review_type: '',
+    content: r.description ?? '',
     severity: r.severity,
     status: r.status,
     reviewer_notes: r.reviewer_notes,
@@ -42,13 +77,16 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
     created_at: r.created_at,
     resolved_at: r.resolved_at,
     source: 'local',
+    assignment_id: r.assignment_id,
+    step_id: r.step_id,
+    use_case_id: r.use_case_id,
   };
 }
 
 export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
   healthMap: Record<string, PersonaHealth>;
-  reviews: ManualReviewItem[];
+  reviews: MonitorReviewItem[];
   unreadMessages: PersonaMessage[];
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
@@ -113,10 +151,15 @@ export function useMonitorData(): MonitorData {
   const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
 
-  const [localReviews, setLocalReviews] = useState<ManualReviewItem[]>([]);
+  const [localReviews, setLocalReviews] = useState<MonitorReviewItem[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const { track, busy: isProcessing } = useInFlight();
+  // The app's ONE persona-join helper, already used by ManualReviewList for the
+  // same rows. This shaper populated no identity at all, which is why the deck
+  // rendered "Persona: —" on every review card while two other surfaces showed
+  // the name for the same row.
+  const personaMap = usePersonaMap();
 
   const reloadReviews = useCallback(async () => {
     try {
@@ -157,9 +200,22 @@ export function useMonitorData(): MonitorData {
     maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
   });
 
-  const reviews = useMemo<ManualReviewItem[]>(
-    () => [...localReviews, ...cloudReviews.filter((r) => r.status === 'pending')],
-    [localReviews, cloudReviews],
+  const pendingCloud = useMemo<MonitorReviewItem[]>(
+    // Cloud rows come from the cloud worker and have no resume-loop link — they
+    // are never a held team step. Normalised to null so one shape flows on.
+    () =>
+      cloudReviews
+        .filter((r) => r.status === 'pending')
+        .map((r) => ({ ...r, assignment_id: null, step_id: null, use_case_id: null })),
+    [cloudReviews],
+  );
+
+  const enrichedLocal = useEnrichedRecords(localReviews, personaMap);
+  const enrichedCloud = useEnrichedRecords(pendingCloud, personaMap);
+
+  const reviews = useMemo<MonitorReviewItem[]>(
+    () => [...enrichedLocal, ...enrichedCloud],
+    [enrichedLocal, enrichedCloud],
   );
 
   // Read through a ref so the writers keep a stable identity (they are stored in

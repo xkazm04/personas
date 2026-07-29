@@ -350,7 +350,17 @@
     "triage_deferred_some": "Một số cần bộ chọn đầy đủ. Hãy trả lời phần còn lại ở đây; những cái đó vẫn mở trong builder.",
     "triage_fact_questions": "Câu hỏi",
     "triage_field_builder_only": "Cần bộ chọn đầy đủ — hãy trả lời câu này trong builder.",
-    "triage_questions_pending": "{count} câu hỏi trước khi bản build này có thể tiếp tục"
+    "triage_questions_pending": "{count} câu hỏi trước khi bản build này có thể tiếp tục",
+    "triage_adopt_reach_value": "{applicable} trên {total} repo",
+    "triage_applies_any": "Mọi stack",
+    "triage_blocking": "Đang chặn một bước của nhóm",
+    "triage_blocking_detail": "Một bước đang tạm dừng chờ điều này — phê duyệt sẽ tiếp tục công việc.",
+    "triage_fact_adopt_reach": "Áp dụng sẽ chạm tới",
+    "triage_fact_applies_to": "Áp dụng cho",
+    "triage_fact_priority": "Ưu tiên",
+    "triage_priority_rank": "hạng {rank}",
+    "triage_view_run": "Xem lần chạy",
+    "triage_view_run_hint": "Mở lần thực thi đã tạo ra bản đánh giá này"
   },
   "common": {
     "loading": "Đang tải...",

@@ -350,7 +350,17 @@
     "triage_deferred_some": "Algunas requieren el selector completo. Responde las demás aquí; esas quedan abiertas en el builder.",
     "triage_fact_questions": "Preguntas",
     "triage_field_builder_only": "Requiere el selector completo — responde esta en el builder.",
-    "triage_questions_pending": "{count} preguntas antes de que esta compilación pueda continuar"
+    "triage_questions_pending": "{count} preguntas antes de que esta compilación pueda continuar",
+    "triage_adopt_reach_value": "{applicable} de {total} repos",
+    "triage_applies_any": "Cualquier stack",
+    "triage_blocking": "Bloquea un paso del equipo",
+    "triage_blocking_detail": "Un paso detenido espera esto: aprobarlo reanuda el trabajo.",
+    "triage_fact_adopt_reach": "La adopción alcanza",
+    "triage_fact_applies_to": "Se aplica a",
+    "triage_fact_priority": "Prioridad",
+    "triage_priority_rank": "n.º {rank}",
+    "triage_view_run": "Ver la ejecución",
+    "triage_view_run_hint": "Abrir la ejecución que generó esta revisión"
   },
   "common": {
     "loading": "Cargando...",

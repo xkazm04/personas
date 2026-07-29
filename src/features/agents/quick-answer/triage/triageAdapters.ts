@@ -14,7 +14,7 @@
  *
  * React-free and store-free: callers inject already-loaded rows and copy.
  */
-import { Hammer, ExternalLink, Archive, Play } from 'lucide-react';
+import { Hammer, ExternalLink, Archive, Play, ArrowUpNarrowWide, Terminal, Users } from 'lucide-react';
 
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -26,10 +26,12 @@ import {
   type BacklogIdea,
 } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 
+import type { AdoptReach } from './triageReach';
 import type {
   TriageItem,
   TriageTag,
   TriageFact,
+  TriageLink,
   TriageTone,
   TriageQuestionField,
 } from './triageTypes';
@@ -80,6 +82,25 @@ export interface TriageCopy {
   noDescription: string;
   cloud: string;
   local: string;
+  /** Alert headline for a review that is holding a team step. */
+  blocking: string;
+  /** What approving that review actually does. */
+  blockingDetail: string;
+  /** Link out to the execution that raised a review. */
+  viewRun: string;
+  viewRunHint: string;
+  /** The Strategist's explicit backlog rank. */
+  priority: string;
+  /** Rank display. Carries a `{rank}` placeholder. */
+  priorityRank: string;
+  /** Which stacks a practice can apply to. */
+  appliesTo: string;
+  /** Value of the above when the practice constrains nothing. */
+  appliesToAny: string;
+  /** How many member repos an adopt would touch. */
+  adoptReach: string;
+  /** Reach display. Carries `{applicable}` and `{total}` placeholders. */
+  adoptReachValue: string;
   /** Title for a session card carrying more than one question. Carries a
    *  `{count}` placeholder — the adapter substitutes, so this stays the one
    *  string in the contract that is a template rather than a label. */
@@ -126,6 +147,16 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   noDescription: 'No description was provided.',
   cloud: 'Cloud',
   local: 'Local',
+  blocking: 'Blocking a team step',
+  blockingDetail: 'A held step is waiting on this — approving it resumes the work.',
+  viewRun: 'See the run',
+  viewRunHint: 'Open the execution that raised this review',
+  priority: 'Priority',
+  priorityRank: '#{rank}',
+  appliesTo: 'Applies to',
+  appliesToAny: 'Any stack',
+  adoptReach: 'Adopt reaches',
+  adoptReachValue: '{applicable} of {total} repos',
   questionsPending: '{count} questions before this build can continue',
   questionsFact: 'Questions',
 };
@@ -156,47 +187,116 @@ const SEVERITY_TONE: Record<string, TriageTone> = {
  */
 const QUESTION_WEIGHT = 90;
 
+/**
+ * How much a review that is HOLDING A TEAM STEP outranks the same review
+ * standing alone.
+ *
+ * Enough to lift a `medium` blocker above an unblocked `high` (60 + 40 > 95 is
+ * false — deliberately) but to put it clearly ahead of its own severity band. A
+ * blocked step is work that has stopped; advisory reviews are work that has
+ * finished and wants an opinion. Severity still wins outright, because a
+ * critical incident nobody is waiting on is still a critical incident.
+ */
+const BLOCKING_WEIGHT_BOOST = 40;
+
 /* -------------------------------------------------------------------------- */
 /* Reviews                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export function reviewToTriage(review: ManualReviewItem, copy: TriageCopy): TriageItem {
+/**
+ * A review row as the deck needs it: the shared {@link ManualReviewItem} plus
+ * the three columns `PersonaManualReview` carries that no shaper in the app used
+ * to forward. They are optional so every existing caller still type-checks —
+ * only the Monitor's shaper populates them today.
+ */
+export interface TriageReviewRow extends ManualReviewItem {
+  /** Resume-loop link: set when a team step is HELD on this review. */
+  assignment_id?: string | null;
+  step_id?: string | null;
+  /** Capability attribution, inherited from the originating execution. */
+  use_case_id?: string | null;
+}
+
+/**
+ * The case, with the headline removed from it.
+ *
+ * Every shaper in this repo builds `content` as `title + '\n' + description`,
+ * so a card that renders the title as its `<h2>` AND the body as markdown
+ * printed the same sentence twice — once large, once as the opening line. The
+ * adapter strips it rather than the shaper alone, because three shapers feed
+ * this model and only one of them is in this subsystem's reach.
+ */
+export function bodyWithoutTitle(
+  content: string | null | undefined,
+  title: string,
+): string {
+  const text = (content ?? '').trim();
+  const head = (title ?? '').trim();
+  if (!text || !head) return text;
+  if (text === head) return '';
+  return text.startsWith(`${head}\n`) ? text.slice(head.length).trimStart() : text;
+}
+
+export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): TriageItem {
   const severity = (review.severity || 'medium').toLowerCase();
   const actions = parseSuggestedActions(review.suggested_actions);
+  // `assignment_id` / `step_id` mean a team step is HELD on this verdict.
+  const blocking = !!(review.assignment_id || review.step_id);
+  // Shapers that had nothing better to put here filled `review_type` with the
+  // severity, so the card printed the same word under two labels. Only render a
+  // type that is actually a type.
+  const reviewType = (review.review_type ?? '').trim();
+  const typeLabel =
+    reviewType && reviewType.toLowerCase() !== severity ? reviewType.replace(/_/g, ' ') : '';
 
   const tags: TriageTag[] = [
     { id: 'severity', label: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
   ];
-  if (review.review_type) {
-    tags.push({ id: 'type', label: review.review_type.replace(/_/g, ' '), tone: 'neutral' });
-  }
+  if (typeLabel) tags.push({ id: 'type', label: typeLabel, tone: 'neutral' });
   if (review.source === 'cloud') {
     tags.push({ id: 'source', label: copy.cloud, tone: 'accent' });
   }
 
   const facts: TriageFact[] = [
     { id: 'severity', label: copy.severity, value: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
-    { id: 'type', label: copy.reviewType, value: review.review_type?.replace(/_/g, ' ') || '—' },
+  ];
+  if (typeLabel) facts.push({ id: 'type', label: copy.reviewType, value: typeLabel });
+  facts.push(
     { id: 'persona', label: copy.persona, value: review.persona_name || '—' },
     { id: 'raised', label: copy.raised, value: review.created_at },
-  ];
+  );
+
+  // Reading the run is not deciding it — see `TriageLink`.
+  const links: TriageLink[] = review.execution_id
+    ? [{ id: 'run', label: copy.viewRun, hint: copy.viewRunHint, icon: Terminal }]
+    : [];
 
   return {
     id: `review:${review.id}`,
     sourceId: review.id,
     kind: 'review',
     title: review.title,
-    body: review.content || copy.noDescription,
+    body: bodyWithoutTitle(review.content, review.title) || copy.noDescription,
     evidence: review.context_data,
     tags,
+    alert: blocking
+      ? {
+          id: 'blocking',
+          label: copy.blocking,
+          detail: copy.blockingDetail,
+          tone: 'danger',
+          icon: Users,
+        }
+      : undefined,
     facts,
+    links: links.length > 0 ? links : undefined,
     source: {
       label: review.persona_name || copy.persona,
       sublabel: review.source === 'cloud' ? copy.cloud : copy.local,
       color: review.persona_color ?? null,
     },
     createdAt: review.created_at,
-    weight: SEVERITY_WEIGHT[severity] ?? 50,
+    weight: (SEVERITY_WEIGHT[severity] ?? 50) + (blocking ? BLOCKING_WEIGHT_BOOST : 0),
     // Suggested actions are the review's real branches: choosing one resolves
     // the review AND dispatches a follow-up run, which is a materially
     // different act from a bare approval.
@@ -208,6 +308,14 @@ export function reviewToTriage(review: ManualReviewItem, copy: TriageCopy): Tria
       icon: i === 0 ? Play : undefined,
     })),
     verdictLabels: { accept: copy.approve, reject: copy.reject, skip: copy.skip },
+    // Machine ids the deck's links and any future follow-up need. Never read
+    // back out of a fact row — see `TriageItem.payload`.
+    payload: {
+      executionId: review.execution_id || undefined,
+      assignmentId: review.assignment_id ?? undefined,
+      stepId: review.step_id ?? undefined,
+      useCaseId: review.use_case_id ?? undefined,
+    },
   };
 }
 
@@ -218,11 +326,29 @@ export function reviewToTriage(review: ManualReviewItem, copy: TriageCopy): Tria
 export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
   const value = triageValueScore(idea);
 
-  const tags: TriageTag[] = [{ id: 'category', label: idea.category, tone: 'accent' }];
+  // The Strategist's explicit rank. It has always weighted the queue order and
+  // has never been SHOWN, so a reviewer had no way to know they were looking at
+  // the thing the ranking job said to do next.
+  const rank = idea.priority != null ? copy.priorityRank.replace('{rank}', String(idea.priority)) : null;
+
+  const tags: TriageTag[] = [];
+  if (rank) {
+    tags.push({
+      id: 'priority',
+      label: rank,
+      // Top three is "do this next"; anything further down is context, not a call
+      // to action, and painting all of it red would make none of it mean anything.
+      tone: idea.priority != null && idea.priority <= 3 ? 'danger' : 'accent',
+      icon: ArrowUpNarrowWide,
+    });
+  }
+  tags.push({ id: 'category', label: idea.category, tone: 'accent' });
   if (idea.origin) tags.push({ id: 'origin', label: idea.origin.replace(/_/g, ' '), tone: 'warning' });
   if (idea.verifyState) tags.push({ id: 'verify', label: idea.verifyState, tone: 'neutral' });
 
-  const facts: TriageFact[] = [
+  const facts: TriageFact[] = [];
+  if (rank) facts.push({ id: 'priority', label: copy.priority, value: rank, tone: 'accent' });
+  facts.push(
     { id: 'project', label: copy.project, value: idea.projectName || '—' },
     { id: 'category', label: copy.category, value: idea.category },
     {
@@ -245,7 +371,7 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
     },
     { id: 'value', label: copy.value, value: String(value), tone: value > 0 ? 'success' : 'neutral' },
     { id: 'raised', label: copy.raised, value: idea.createdAt },
-  ];
+  );
 
   // Value score (roughly -18..+18) recentred onto a 12..48 band, then boosted
   // by the Strategist's explicit rank when it set one. An idea therefore never
@@ -282,6 +408,13 @@ export function practiceToTriage(
   workspaceName: string,
   detailMd: string | null,
   copy: TriageCopy,
+  /**
+   * What an adopt would actually touch (see `triageReach`). Optional because
+   * the workspace membership lives in app state and the model layer does not:
+   * callers without it get a card that simply doesn't claim a blast radius,
+   * rather than one that claims the wrong one.
+   */
+  reach?: AdoptReach,
 ): TriageItem {
   const tags: TriageTag[] = [
     { id: 'kind', label: practice.kind, tone: practice.kind === 'pitfall' ? 'warning' : 'accent' },
@@ -314,6 +447,26 @@ export function practiceToTriage(
       label: copy.evidenceSeen,
       value: `${practice.evidenceCount}×`,
       tone: 'success',
+    });
+  }
+  // Applicability was parsed and thrown away (`libraryModel.viewFromRow`), yet
+  // it is precisely what decides whether an adopt reaches a given repo.
+  const appliesTo = [...practice.layers, ...practice.frameworks];
+  facts.push({
+    id: 'applies',
+    label: copy.appliesTo,
+    value: appliesTo.length > 0 ? appliesTo.join(', ') : copy.appliesToAny,
+  });
+  // Adopting is a fan-out, not a note to self: it seeds an adoption cell in
+  // every applicable member repo. The card now says how many that is.
+  if (reach) {
+    facts.push({
+      id: 'reach',
+      label: copy.adoptReach,
+      value: copy.adoptReachValue
+        .replace('{applicable}', String(reach.applicable))
+        .replace('{total}', String(reach.members)),
+      tone: reach.applicable > 0 ? 'accent' : 'neutral',
     });
   }
   facts.push({ id: 'raised', label: copy.raised, value: practice.createdAt });

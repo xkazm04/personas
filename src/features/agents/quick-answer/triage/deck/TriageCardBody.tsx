@@ -27,8 +27,8 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { TriageFact, TriageItem } from '../triageTypes';
-import { Chip, KIND_META, kindCopy } from './DeckChips';
+import type { TriageAlert, TriageFact, TriageItem } from '../triageTypes';
+import { Chip, KIND_META, kindCopy, TONE_BORDER, TONE_FILL, TONE_TEXT } from './DeckChips';
 
 /** Prose measure. Applied to the header too, so the whole card reads as one
  *  centred column rather than a centred body under a full-width header. */
@@ -40,6 +40,40 @@ function Block({ label, children }: { label: string; children: ReactNode }) {
       <h3 className="typo-label mb-2 text-primary">{label}</h3>
       {children}
     </section>
+  );
+}
+
+/**
+ * The alert banner — the one fact that reframes the decision.
+ *
+ * Deliberately NOT a chip. A chip sits in a row of six other chips and reads as
+ * one more label; the fact that a team step is HELD on this verdict has to be
+ * the second thing the eye lands on after the headline. So: full measure, a
+ * solid tone rail down the leading edge, the tone's own tint, and the
+ * consequence spelled out in prose rather than implied by a colour.
+ *
+ * `role="status"` rather than `alert`: the card is already the focus of the
+ * surface, and an assertive live region would interrupt a screen reader
+ * mid-title on every deal.
+ */
+function AlertBanner({ alert }: { alert: TriageAlert }) {
+  const Icon = alert.icon;
+  return (
+    <div
+      role="status"
+      className={`mt-3 flex items-start gap-2.5 overflow-hidden rounded-card border ${TONE_BORDER[alert.tone]} bg-secondary/25`}
+    >
+      <span className={`w-1 shrink-0 self-stretch ${TONE_FILL[alert.tone]}`} aria-hidden />
+      <div className="min-w-0 flex-1 py-2.5 pr-3">
+        <p className={`flex items-center gap-1.5 typo-label uppercase tracking-wide ${TONE_TEXT[alert.tone]}`}>
+          {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
+          {alert.label}
+        </p>
+        {alert.detail ? (
+          <p className="typo-caption mt-0.5 text-foreground">{alert.detail}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -87,6 +121,8 @@ export function TriageCardBody({ item, answerSlot }: { item: TriageItem; answerS
             <span className="typo-caption truncate">{`· ${item.source.sublabel}`}</span>
           ) : null}
         </div>
+
+        {item.alert ? <AlertBanner alert={item.alert} /> : null}
       </header>
 
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto">

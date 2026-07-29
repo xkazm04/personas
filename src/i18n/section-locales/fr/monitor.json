@@ -349,5 +349,15 @@
   "triage_deferred_some": "Certaines nécessitent le sélecteur complet. Répondez aux autres ici ; celles-là restent ouvertes dans le builder.",
   "triage_fact_questions": "Questions",
   "triage_field_builder_only": "Nécessite le sélecteur complet — répondez à celle-ci dans le builder.",
-  "triage_questions_pending": "{count} questions avant que cette construction puisse continuer"
+  "triage_questions_pending": "{count} questions avant que cette construction puisse continuer",
+  "triage_adopt_reach_value": "{applicable} sur {total} dépôts",
+  "triage_applies_any": "Toute stack",
+  "triage_blocking": "Bloque une étape d’équipe",
+  "triage_blocking_detail": "Une étape en attente en dépend : l’approuver relance le travail.",
+  "triage_fact_adopt_reach": "L’adoption touche",
+  "triage_fact_applies_to": "S’applique à",
+  "triage_fact_priority": "Priorité",
+  "triage_priority_rank": "n° {rank}",
+  "triage_view_run": "Voir l’exécution",
+  "triage_view_run_hint": "Ouvrir l’exécution à l’origine de cette revue"
 }
