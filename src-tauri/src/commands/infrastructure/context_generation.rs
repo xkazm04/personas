@@ -1383,15 +1383,34 @@ async fn run_context_generation(
     if let Some(total) = count_source_files(root_path, subtree) {
         let scope = subtree.unwrap_or("the repository");
         if total > 0 {
-            let distinct = unique_files.len();
+            // The numerator must be measured over the SAME scope as the
+            // denominator. A subtree scan legitimately emits a few paths
+            // outside its scope (a preserved straddling context still owns
+            // them), and counting those against a subtree-only total produced
+            // "317 of 311 (102%)" — a number that cannot mean anything.
+            let distinct = match subtree {
+                Some(st) => {
+                    let prefix = format!("{}/", st.trim_end_matches('/').replace('\\', "/"));
+                    unique_files
+                        .iter()
+                        .filter(|p| p.replace('\\', "/").starts_with(&prefix))
+                        .count()
+                }
+                None => unique_files.len(),
+            };
             let pct = (distinct as f64 / total as f64) * 100.0;
             CONTEXT_GEN_JOBS.emit_line(
                 app,
                 scan_id,
                 format!(
                     "[Coverage] Mapped {distinct} of {total} source files in {scope} ({pct:.0}%){}",
-                    if files_mapped as usize > distinct {
-                        format!(" — {} path slots across contexts, so {} file(s) sit in more than one context", files_mapped, files_mapped as usize - distinct)
+                    if files_mapped as usize > unique_files.len() {
+                        format!(
+                            " — {} path slots for {} distinct paths, so the map assigns {} extra slot(s) to files that sit in more than one context",
+                            files_mapped,
+                            unique_files.len(),
+                            files_mapped as usize - unique_files.len()
+                        )
                     } else { String::new() }
                 ),
             );
