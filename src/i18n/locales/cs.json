@@ -6056,7 +6056,11 @@
     },
     "knowledge": {
       "title": "Graf znalostí",
-      "patterns_tab": "Vzory",
+      "patterns_library_tab": "Vzory",
+      "extracted_tab": "Extrahované",
+      "patterns_no_workspace_title": "Zatím žádný pracovní prostor",
+      "patterns_no_workspace_desc": "Postupy se sbírají pro každý pracovní prostor zvlášť. Vytvořte pracovní prostor a přiřaďte mu projekty, abyste mohli budovat sdílenou knihovnu.",
+      "patterns_workspace_picker": "Vybrat pracovní prostor",
       "search_placeholder": "Hledat vzory...",
       "sort_aria": "Seřadit vzory",
       "sort_default": "Hlavní vzory",

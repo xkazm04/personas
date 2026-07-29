@@ -6056,7 +6056,11 @@
     },
     "knowledge": {
       "title": "Wissensgraph",
-      "patterns_tab": "Muster",
+      "patterns_library_tab": "Muster",
+      "extracted_tab": "Extrahiert",
+      "patterns_no_workspace_title": "Noch kein Workspace",
+      "patterns_no_workspace_desc": "Praktiken werden pro Workspace gesammelt. Erstelle einen Workspace und weise ihm Projekte zu, um eine gemeinsame Bibliothek aufzubauen.",
+      "patterns_workspace_picker": "Workspace auswählen",
       "search_placeholder": "Muster suchen...",
       "sort_aria": "Muster sortieren",
       "sort_default": "Top-Muster",

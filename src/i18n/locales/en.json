@@ -6248,7 +6248,11 @@
     },
     "knowledge": {
       "title": "Knowledge",
-      "patterns_tab": "Patterns",
+      "patterns_library_tab": "Patterns",
+      "extracted_tab": "Extracted",
+      "patterns_no_workspace_title": "No workspace yet",
+      "patterns_no_workspace_desc": "Practices are collected per workspace. Create a workspace and assign projects to it to start building a shared library.",
+      "patterns_workspace_picker": "Select workspace",
       "graph_tab": "Graph",
       "search_placeholder": "Search patterns...",
       "sort_aria": "Sort patterns",

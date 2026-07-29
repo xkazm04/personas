@@ -6056,7 +6056,11 @@
     },
     "knowledge": {
       "title": "Graf Pengetahuan",
-      "patterns_tab": "Pola",
+      "patterns_library_tab": "Pola",
+      "extracted_tab": "Terekstrak",
+      "patterns_no_workspace_title": "Belum ada workspace",
+      "patterns_no_workspace_desc": "Praktik dikumpulkan per workspace. Buat workspace dan tetapkan proyek ke dalamnya untuk mulai membangun pustaka bersama.",
+      "patterns_workspace_picker": "Pilih workspace",
       "search_placeholder": "Cari pola...",
       "sort_aria": "Urutkan pola",
       "sort_default": "Pola teratas",

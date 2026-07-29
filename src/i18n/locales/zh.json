@@ -6056,7 +6056,11 @@
     },
     "knowledge": {
       "title": "知识图谱",
-      "patterns_tab": "模式",
+      "patterns_library_tab": "模式",
+      "extracted_tab": "已提取",
+      "patterns_no_workspace_title": "尚无工作区",
+      "patterns_no_workspace_desc": "实践按工作区收集。创建一个工作区并将项目分配给它，即可开始构建共享库。",
+      "patterns_workspace_picker": "选择工作区",
       "search_placeholder": "搜索模式...",
       "sort_aria": "排序模式",
       "sort_default": "热门模式",

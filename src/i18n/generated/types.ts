@@ -6254,7 +6254,11 @@ export type Translations = {
     };
     knowledge: {
       title: string;
-      patterns_tab: string;
+      patterns_library_tab: string;
+      extracted_tab: string;
+      patterns_no_workspace_title: string;
+      patterns_no_workspace_desc: string;
+      patterns_workspace_picker: string;
       graph_tab: string;
       search_placeholder: string;
       sort_aria: string;

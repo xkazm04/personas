@@ -6056,7 +6056,11 @@
     },
     "knowledge": {
       "title": "ナレッジグラフ",
-      "patterns_tab": "パターン",
+      "patterns_library_tab": "パターン",
+      "extracted_tab": "抽出済み",
+      "patterns_no_workspace_title": "ワークスペースがありません",
+      "patterns_no_workspace_desc": "プラクティスはワークスペースごとに集約されます。ワークスペースを作成してプロジェクトを割り当てると、共有ライブラリの構築を開始できます。",
+      "patterns_workspace_picker": "ワークスペースを選択",
       "search_placeholder": "パターンを検索...",
       "sort_aria": "パターンを並べ替え",
       "sort_default": "トップパターン",
