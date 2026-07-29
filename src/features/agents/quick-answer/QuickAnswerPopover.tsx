@@ -1,23 +1,125 @@
-// QuickAnswerPopover — lightweight header surface to answer pending build /
-// adoption questions and human reviews without leaving the current screen.
+// QuickAnswerPopover — the header surface for things waiting on a human.
 //
-// Sibling to the full-screen PersonaMonitor: this is the fast "a question is
-// waiting — answer it and keep working" path. Mounted from the title-bar
-// dock's TrayOverlays when headerOverlay === 'quick-answer'.
+// ⚠️ PROTOTYPE SCAFFOLD (/prototype round 1, 2026-07-29). This file currently
+// hosts an A/B switcher between three surfaces:
+//   • Baseline  — the shipped 576px anchored popover (build questions + reviews)
+//   • Deck      — app-size swipe deck over the UNIFIED triage queue
+//   • Cockpit   — app-size 3-pane keyboard-first surface over the same queue
+// The switcher and the losing variants are deleted at consolidation; consumers
+// (TrayOverlays) never see any of it — the exported name and props are unchanged.
+//
+// The variants triage FOUR queues at once (persona reviews · backlog ideas ·
+// workspace practices · build questions) through `triage/useUnifiedTriage`.
+//
+// Hook mounting is deliberately split across component boundaries: the baseline
+// mounts `usePendingInteractions`, the variants mount `useUnifiedTriage` (which
+// mounts it internally). Only ONE is ever rendered, so we never double-mount the
+// polling loops — the mistake this file's history already records once.
 
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { usePendingInteractions } from './usePendingInteractions';
 import { QuickAnswerBodyView } from './QuickAnswerBody';
+import { useUnifiedTriage } from './triage/useUnifiedTriage';
+
+const TriageDeckVariant = lazy(() =>
+  import('./triage/TriageDeckVariant').then((m) => ({ default: m.TriageDeckVariant })),
+);
+const TriageCockpitVariant = lazy(() =>
+  import('./triage/TriageCockpitVariant').then((m) => ({ default: m.TriageCockpitVariant })),
+);
 
 interface QuickAnswerPopoverProps {
   onClose: () => void;
   onOpenMonitor: () => void;
 }
 
-export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopoverProps) {
+/* -- throwaway switcher ---------------------------------------------------- */
+
+type QuickAnswerVariant = 'baseline' | 'deck' | 'cockpit';
+
+const VARIANTS: { id: QuickAnswerVariant; label: string; hint: string }[] = [
+  { id: 'baseline', label: 'Baseline', hint: 'Shipped popover' },
+  { id: 'deck', label: 'Deck', hint: 'Swipe one at a time' },
+  { id: 'cockpit', label: 'Cockpit', hint: 'Read the whole queue' },
+];
+
+function VariantSwitcher({
+  value,
+  onChange,
+}: {
+  value: QuickAnswerVariant;
+  onChange: (v: QuickAnswerVariant) => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 p-0.5 rounded-interactive border border-primary/15 bg-secondary/30">
+      {VARIANTS.map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          onClick={() => onChange(v.id)}
+          title={v.hint}
+          aria-pressed={value === v.id}
+          className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors ${
+            value === v.id
+              ? 'bg-primary/15 text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+          }`}
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* -- variant host ---------------------------------------------------------- */
+
+/** Mounts the unified queue and renders whichever app-size variant is active.
+ *  Separate component so the queue hook only exists while a variant is shown. */
+function TriageVariantHost({
+  variant,
+  onClose,
+  switcher,
+}: {
+  variant: Exclude<QuickAnswerVariant, 'baseline'>;
+  onClose: () => void;
+  switcher: React.ReactNode;
+}) {
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+
+  // Deep-link for questions that need the full builder (connector picker /
+  // file attach) — mirrors QuickAnswerBody's openBuilder.
+  const openBuilder = (personaId: string) => {
+    setSidebarSection('personas');
+    setEditorTab('matrix' as Parameters<typeof setEditorTab>[0]);
+    selectPersona(personaId);
+    onClose();
+  };
+
+  const queue = useUnifiedTriage(undefined, openBuilder);
+  const Variant = variant === 'deck' ? TriageDeckVariant : TriageCockpitVariant;
+
+  return (
+    <Suspense fallback={null}>
+      <Variant queue={queue} onClose={onClose} switcher={switcher} />
+    </Suspense>
+  );
+}
+
+/* -- baseline (shipped surface, unchanged behaviour) ----------------------- */
+
+function QuickAnswerBaseline({
+  onClose,
+  onOpenMonitor,
+  switcher,
+}: QuickAnswerPopoverProps & { switcher: React.ReactNode }) {
   const { t, tx } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   // Single data mount for the whole popover: header chip AND body share this
@@ -66,6 +168,7 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
           {total > 0 && <span className="typo-caption text-foreground tabular-nums">{total}</span>}
         </div>
         <div className="flex items-center gap-1">
+          {switcher}
           <button
             type="button"
             onClick={onOpenMonitor}
@@ -92,6 +195,18 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
       </div>
     </motion.div>
   );
+}
+
+/* -- exported surface ------------------------------------------------------ */
+
+export function QuickAnswerPopover(props: QuickAnswerPopoverProps) {
+  const [variant, setVariant] = useState<QuickAnswerVariant>('baseline');
+  const switcher = <VariantSwitcher value={variant} onChange={setVariant} />;
+
+  if (variant === 'baseline') {
+    return <QuickAnswerBaseline {...props} switcher={switcher} />;
+  }
+  return <TriageVariantHost variant={variant} onClose={props.onClose} switcher={switcher} />;
 }
 
 export default QuickAnswerPopover;
