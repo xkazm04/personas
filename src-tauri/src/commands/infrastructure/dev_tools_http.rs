@@ -68,6 +68,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/kpi-decision", post(kpi_decision))
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
+        .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -272,6 +273,79 @@ async fn list_contexts(
     repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct DedupeGroupsBody {
+    project_id: String,
+}
+
+/// Merge context groups that share a name into the oldest one, then delete the
+/// emptied duplicates.
+///
+/// Concurrent subtree scans could each create a group with the same name before
+/// the reuse-by-name fix landed (observed: seven "Automation & Pipelines" rows).
+/// The scan no longer produces this, but existing maps still carry it, and any
+/// future path that creates groups without checking could reintroduce it.
+///
+/// Keeps the OLDEST row of each name because that is the one existing
+/// `context_group_id` references and any hand-curated colour/domain live on.
+/// Idempotent: running it on a clean map moves nothing and deletes nothing.
+async fn dedupe_context_groups(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    repo::get_project_by_id(&pool, &b.project_id).map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("No project registered with id {}", b.project_id),
+        )
+    })?;
+
+    let mut groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
+    // Oldest first, so the first occurrence of each name is the keeper.
+    groups.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let mut keeper: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut merged_away: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    for g in &groups {
+        match keeper.get(&g.name) {
+            None => {
+                keeper.insert(g.name.clone(), g.id.clone());
+            }
+            Some(keep_id) => {
+                merged_away.insert(g.id.clone(), keep_id.clone());
+            }
+        }
+    }
+
+    let mut contexts_moved = 0usize;
+    for c in contexts {
+        let Some(gid) = c.group_id.as_deref() else { continue };
+        if let Some(keep_id) = merged_away.get(gid) {
+            if repo::move_context_to_group(&pool, &c.id, Some(keep_id)).is_ok() {
+                contexts_moved += 1;
+            }
+        }
+    }
+
+    // Delete only after every context has been reassigned — a group deleted
+    // while it still owns contexts would orphan them.
+    let mut groups_deleted = 0usize;
+    for dup_id in merged_away.keys() {
+        if repo::delete_context_group(&pool, dup_id).unwrap_or(false) {
+            groups_deleted += 1;
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "groups_before": groups.len(),
+        "groups_after": groups.len() - groups_deleted,
+        "groups_deleted": groups_deleted,
+        "contexts_moved": contexts_moved,
+    })))
 }
 
 #[derive(Deserialize)]
