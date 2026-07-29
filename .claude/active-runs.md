@@ -3,9 +3,9 @@
 ## Active
 
 ### passport-populate — "Populate project data" passport action — session opus-5[1m]
-- Started: 2026-07-29. Status: started. New per-project passport action (sibling of "Onboard with Fleet") that populates contexts / features / KPIs for a new project via a new  system skill driven over the loopback /dev-tools bridge. Two transports: Fleet, and a NEW external-CMD console spawn (no headless — both paths are interactive by design, KPI triage needs the operator).
-- WORKTREE:  (branch ) — physical isolation from , which declares the same  prefix (same operator, who directed this build).
-- Paths: , external-console spawn command, , , , , , .
+- Started: 2026-07-29. Status: started. New per-project passport action (sibling of "Onboard with Fleet") that populates contexts / features / KPIs for a new project via a new `project-populate` system skill driven over the loopback /dev-tools bridge. Two transports: Fleet, and a NEW external-CMD console spawn (no headless — both paths are interactive by design, KPI triage needs the operator).
+- WORKTREE: `.claude/worktrees/passport-populate` (branch `worktree-passport-populate`) — physical isolation from `perfect-factory-ship`, which declares the same `src/features/teams/sub_factory/**` prefix (same operator, who directed this build).
+- Paths: `src-tauri/src/commands/infrastructure/{dev_tools_http,context_generation}.rs`, external-console spawn command, `.claude/skills/project-populate/**`, `src/features/shared/dispatch/DispatchChooser.tsx`, `src/features/teams/sub_factory/passport/{PassportActionsRow,actionConfirmCatalog,populateDispatch}`, `src/api/devTools/**`, `src/i18n/locales/*.json`, `docs/features/**`.
 
 ### perfect-factory-ship — /perfect targeted arc (Factory / Ship layer) — session opus-5[1m]
 - Started: 2026-07-29. Status: started. Same session that just shipped the Ship-layer polish (cover roadmap, action consent modal, readability pass, ledger tooltips/empty states, em-dash sweep, ship.md doc). Now running /perfect proposal pass on the Factory/Ship context with a self-sourced brief (no scout: the Director authored this code within the hour).
