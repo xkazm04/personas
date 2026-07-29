@@ -75,10 +75,19 @@ Two 500s are expected rather than exceptional:
 ### KPIs
 
 ```bash
-# scan
+# project-wide pass — up to 8 KPIs across the whole product
 curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
   -H 'Content-Type: application/json' -d '{"project_id":"<id>"}'
+
+# context-scoped pass — up to 4 KPIs, all bound to that one context
+curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-kpis" \
+  -H 'Content-Type: application/json' \
+  -d '{"project_id":"<id>","context_id":"<ctx>"}'
+
 curl -s "http://127.0.0.1:$PORT/dev-tools/kpi-scan-status/<scan_id>"
+
+# the sweep's worklist — every context, with file_paths for ranking
+curl -s "http://127.0.0.1:$PORT/dev-tools/contexts/<project_id>"
 
 # read (omit ?status= for all statuses)
 curl -s "http://127.0.0.1:$PORT/dev-tools/kpis/<project_id>?status=proposed"
@@ -92,6 +101,12 @@ curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/kpi-decision" \
 `status` is one of `active` (adopted), `archived` (rejected), `paused`
 (deferred), `proposed` (back to the queue). `target_value` is optional and
 applied in the same write, so "adopt, but at 95 not 99" is one call.
+
+**Backpressure is per-scope.** A project pass is refused while the whole review
+queue is at its cap; a context pass is refused only while THAT context has 4
+untriaged proposals. So one unreviewed subsystem never blocks a sweep across
+the rest — but a context you scanned and walked away from will refuse a rescan
+until its queue is cleared.
 
 Anything else is a 400. The route deliberately accepts nothing but a status
 and a target: renaming or redefining a KPI belongs in the app's editor, where
