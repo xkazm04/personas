@@ -157,7 +157,16 @@ jobs:
             label: windows
           - os: macos-latest
             label: macos
-          - os: ubuntu-22.04
+          # 24.04, NOT 22.04. Building with `--features desktop` pulls xcap ->
+          # pipewire -> libspa, and libspa bindgens against the SYSTEM libspa
+          # headers. On 22.04 those are too old: `struct spa_video_info_raw` has
+          # no `flags` field, which libspa reads unconditionally
+          # (libspa-0.8.0/src/param/video/raw.rs:261), so the crate cannot
+          # compile:
+          #   error[E0560]: struct `spa_video_info_raw` has no field named `flags`
+          # xcap has no feature to skip pipewire on Linux, so a newer runner is
+          # the fix. Do not downgrade this without checking that first.
+          - os: ubuntu-24.04
             label: linux
     runs-on: ${{ matrix.os }}
     env:
@@ -198,12 +207,12 @@ jobs:
           key: ${{ matrix.label }}
 
       - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
             libgtk-3-dev \
@@ -256,7 +265,10 @@ jobs:
 
   # ─── Job D: Check TypeScript bindings are up to date ────────
   binding-drift:
-    runs-on: ubuntu-22.04
+    # 24.04 for the same reason as the rust-tests matrix: this job now compiles
+    # with `--features desktop`, which pulls xcap -> pipewire -> libspa, and
+    # libspa does not build against 22.04's system headers.
+    runs-on: ubuntu-24.04
     env:
       # RUSTC_WRAPPER intentionally unset here — see the health-check step.
       SCCACHE_GHA_ENABLED: "true"
@@ -290,7 +302,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
             libgtk-3-dev \
