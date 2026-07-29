@@ -37,7 +37,32 @@ jobs:
           # long-lived feature branch) are conventionally exempt from commit
           # message linting for the same reason: their message isn't a
           # deliberate description of a change, it's structural.
-          COMMITS=$(git log --oneline --no-merges origin/${{ github.base_ref }}..HEAD --format="%s")
+          #
+          # The range has to be derived per event type. `github.base_ref` is
+          # EMPTY on push events, so the old unconditional
+          # `origin/${{ github.base_ref }}..HEAD` expanded to `origin/..HEAD`
+          # and this step died with
+          #   fatal: ambiguous argument 'origin/..HEAD': unknown revision
+          #   ##[error]Process completed with exit code 128
+          # on every single push. Since push:master is this workflow's PRIMARY
+          # trigger (see the top of the file), that meant commit-lint had never
+          # actually linted anything — it failed with a git error, not a verdict.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}..HEAD"
+          else
+            BEFORE="${{ github.event.before }}"
+            # `before` is all-zeros for a branch's first push, and can point at
+            # a commit that no longer exists after a force-push.
+            if [ -z "$BEFORE" ] \
+              || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+              || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              RANGE="HEAD~1..HEAD"
+            else
+              RANGE="${BEFORE}..HEAD"
+            fi
+          fi
+          echo "Linting commits in range: $RANGE"
+          COMMITS=$(git log --oneline --no-merges "$RANGE" --format="%s")
 
           FAILED=0
           while IFS= read -r MSG; do
