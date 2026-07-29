@@ -2,6 +2,11 @@
 
 ## Active
 
+### passport-populate — "Populate project data" passport action — session opus-5[1m]
+- Started: 2026-07-29. Status: started. New per-project passport action (sibling of "Onboard with Fleet") that populates contexts / features / KPIs for a new project via a new  system skill driven over the loopback /dev-tools bridge. Two transports: Fleet, and a NEW external-CMD console spawn (no headless — both paths are interactive by design, KPI triage needs the operator).
+- WORKTREE:  (branch ) — physical isolation from , which declares the same  prefix (same operator, who directed this build).
+- Paths: , external-console spawn command, , , , , , .
+
 ### perfect-factory-ship — /perfect targeted arc (Factory / Ship layer) — session opus-5[1m]
 - Started: 2026-07-29. Status: started. Same session that just shipped the Ship-layer polish (cover roadmap, action consent modal, readability pass, ledger tooltips/empty states, em-dash sweep, ship.md doc). Now running /perfect proposal pass on the Factory/Ship context with a self-sourced brief (no scout: the Director authored this code within the hour).
 - Paths: `src/features/teams/sub_factory/**`, `src/i18n/locales/*.json` (ship + kpis sections), `docs/features/plugins/dev tools/ship.md`, `docs/features/teams/kpis.md`, and on acceptance possibly `src-tauri/db/src/repos/dev_tools.rs` (milestone lifecycle) + `src-tauri/src/commands/**` milestone commands.
