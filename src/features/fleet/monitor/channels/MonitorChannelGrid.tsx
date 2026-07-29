@@ -143,7 +143,7 @@ function MonitorChannelGridImpl({
   }
 
   return (
-    <div className="h-full p-2">
+    <div className="h-full p-2 hud-atmosphere">
       {layout === 'stream' ? (
         <Stream
           teams={workspaceTeams}

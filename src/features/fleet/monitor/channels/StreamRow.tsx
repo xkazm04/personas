@@ -94,7 +94,12 @@ export const StreamRow = memo(function StreamRow({
       <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>
         {sign}
       </span>
-      <span className={`typo-caption flex-shrink-0 max-w-[13rem] truncate ${tokenClass}`} title={token}>
+      {/* The machine token wears its family colour as a bordered badge —
+          borrows currentColor so one class string covers all 8 families. */}
+      <span
+        className={`typo-caption flex-shrink-0 max-w-[13rem] truncate px-1.5 rounded-pill border border-current/25 bg-current/10 leading-snug ${tokenClass}`}
+        title={token}
+      >
         {token}
       </span>
       {kind === 'memory' && item.importance != null && <ImportanceDots value={item.importance} />}

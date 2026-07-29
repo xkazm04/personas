@@ -48,10 +48,20 @@ export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i
 
   return (
     <div className={`py-1 flex ${mine ? 'justify-end' : 'justify-start'}`}>
-      <button
-        type="button"
+      {/* A div-with-role, not a <button>: the body renders markdown whose
+          links must stay valid, clickable anchors (nested interactives are
+          not). Bubble click still opens the detail modal. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onOpen(item)}
-        className={`max-w-[78%] text-left px-3 py-2 rounded-card border transition-colors ${
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          if ((e.target as HTMLElement).tagName === 'A') return;
+          e.preventDefault();
+          onOpen(item);
+        }}
+        className={`max-w-[78%] cursor-pointer text-left px-3 py-2 rounded-card border transition-colors focus-ring ${
           mine
             ? 'bg-primary/12 border-primary/20 hover:bg-primary/18'
             : 'bg-secondary/30 border-border hover:bg-secondary/45'
@@ -72,8 +82,14 @@ export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i
             </span>
           </span>
         )}
-        <span className="block typo-body text-foreground whitespace-pre-wrap break-words">{item.body}</span>
-      </button>
+        {/* Markdown, tightened for chat: paragraph/list rhythm compressed so
+            a two-line remark doesn't inherit document spacing. The detail
+            modal keeps the full document layout. */}
+        <MarkdownRenderer
+          content={item.body ?? ''}
+          className="typo-body text-foreground break-words [&_p]:mb-1.5 [&_p]:leading-normal [&_p:last-child]:mb-0 [&_ul]:mb-1.5 [&_ul:last-child]:mb-0 [&_ol]:mb-1.5 [&_ol:last-child]:mb-0 [&_pre]:mb-1.5 [&_table]:my-2 [&_h1]:mt-2 [&_h2]:mt-2 [&_h3]:mt-1.5"
+        />
+      </div>
     </div>
   );
 }

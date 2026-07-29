@@ -19,6 +19,7 @@ import {
   buildConstellation, trafficEdges, hashUnit,
   type MapMemberInput, type MapNode,
 } from './mapModel';
+import { hexPath, hasRoleGlyph, CoreReactor, RoleGlyph } from './mapGlyphs';
 
 /* ----------------------------------------------------------------------------
  * CONSTELLATION MAP — the Channels' third surface. The Stream answers "what
@@ -134,8 +135,11 @@ export function ChannelMap({
     { key: 'idle', label: t.monitor.presence_idle, cls: 'bg-foreground/25' },
   ];
 
+  const workingCount = [...presence.values()].filter((p) => p === 'working').length;
+  const isLive = workingCount > 0 || traffic.length > 0;
+
   return (
-    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
+    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
       <div className="flex-shrink-0 h-11 px-3 flex items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
         <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
           <Orbit className="w-3.5 h-3.5 text-foreground" />
@@ -168,8 +172,8 @@ export function ChannelMap({
 
       <div className="relative flex-1 min-h-0">
         {nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center typo-body text-foreground opacity-50">
-            {t.monitor.map_empty}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="hud-empty typo-label uppercase tracking-wider text-foreground opacity-60">{t.monitor.map_empty}</span>
           </div>
         ) : (
           <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
@@ -180,6 +184,14 @@ export function ChannelMap({
               <marker id="map-arrow-hot" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
                 <path d="M0,0.8 L7.2,4 L0,7.2 Z" className="fill-status-warning/70" />
               </marker>
+              {/* Soft glow for the reactor heart — blur + merge, no libs. */}
+              <filter id="map-glow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="4.5" result="b" />
+                <feMerge>
+                  <feMergeNode in="b" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
             </defs>
 
             {/* Structural geometry — the team's declared shape, always faint. */}
@@ -241,45 +253,52 @@ export function ChannelMap({
                     if (team) onDrillIn(team.teamId, n.personaId);
                   }}
                 >
-                  {/* Core decoration — a dashed orbit ring. */}
-                  {n.core && (
-                    <circle r={r + 8} className="fill-none stroke-foreground/20 animate-map-spin" strokeDasharray="3 6" />
-                  )}
                   {/* Presence ring. */}
                   {p === 'working' && (
-                    <circle r={r + 4} className="fill-none stroke-status-warning animate-pulse" strokeWidth={1.5} />
+                    <circle r={r + 5} className="fill-none stroke-status-warning animate-pulse" strokeWidth={1.5} />
                   )}
                   {p === 'waiting' && (
-                    <circle r={r + 4} className="fill-none stroke-status-warning/45" strokeWidth={1.5} strokeDasharray="4 3" />
+                    <circle r={r + 5} className="fill-none stroke-status-warning/45" strokeWidth={1.5} strokeDasharray="4 3" />
                   )}
-                  <circle
-                    r={r}
-                    fill={n.color}
-                    fillOpacity={dim ? 0.16 : 0.32}
-                    stroke={n.color}
-                    strokeOpacity={dim ? 0.4 : 0.9}
-                    strokeWidth={1.5}
-                  />
+                  {n.core ? (
+                    <CoreReactor r={r} color={n.color} working={p === 'working'} spin={!reducedMotion} />
+                  ) : (
+                    <>
+                      <path
+                        d={hexPath(r)}
+                        fill={n.color}
+                        fillOpacity={dim ? 0.1 : 0.22}
+                        stroke={p === 'working' ? 'var(--status-warning)' : n.color}
+                        strokeOpacity={dim ? 0.45 : 0.9}
+                        strokeWidth={1.5}
+                      />
+                      <g style={{ color: n.color }} opacity={dim ? 0.5 : 0.95}>
+                        <RoleGlyph role={n.role} />
+                      </g>
+                      {!hasRoleGlyph(n.role) && (
+                        <text
+                          y={4}
+                          textAnchor="middle"
+                          className="fill-foreground pointer-events-none select-none"
+                          style={{ fontSize: 11, fontWeight: 600, opacity: dim ? 0.55 : 0.95 }}
+                        >
+                          {n.name.slice(0, 2).toUpperCase()}
+                        </text>
+                      )}
+                    </>
+                  )}
                   <text
-                    y={4}
+                    y={r + (n.core ? 24 : 16)}
                     textAnchor="middle"
-                    className="fill-foreground pointer-events-none select-none"
-                    style={{ fontSize: n.core ? 13 : 11, fontWeight: 600, opacity: dim ? 0.55 : 0.95 }}
+                    className="fill-foreground pointer-events-none select-none font-mono"
+                    style={{ fontSize: 10.5, letterSpacing: '0.08em', opacity: dim ? 0.55 : 0.9 }}
                   >
-                    {n.name.slice(0, 2).toUpperCase()}
-                  </text>
-                  <text
-                    y={r + 14}
-                    textAnchor="middle"
-                    className="fill-foreground pointer-events-none select-none"
-                    style={{ fontSize: 10.5, opacity: dim ? 0.5 : 0.85 }}
-                  >
-                    {n.name.length > 20 ? `${n.name.slice(0, 19)}…` : n.name}
+                    {(n.name.length > 20 ? `${n.name.slice(0, 19)}…` : n.name).toUpperCase()}
                   </text>
                   {/* Heartbeat — dispatch-anchored last activity. */}
                   {seen != null && (
                     <text
-                      y={r + 26}
+                      y={r + (n.core ? 36 : 28)}
                       textAnchor="middle"
                       className="pointer-events-none select-none fill-foreground"
                       style={{ fontSize: 9, opacity: 0.45 }}
@@ -306,9 +325,39 @@ export function ChannelMap({
           </svg>
         )}
 
+        {/* Corner telemetry — the four HUD readouts. Labels and values are
+            written together so the corners can never disagree. */}
+        {nodes.length > 0 && team && (
+          <>
+            <div className="absolute top-2 left-3 z-10 font-mono pointer-events-none">
+              <p className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.stream_group_channel}</p>
+              <p className="typo-caption font-mono uppercase tracking-wider text-foreground opacity-85">{cleanName(team.teamName)}</p>
+            </div>
+            <div className="absolute top-2 right-3 z-10 font-mono text-right pointer-events-none">
+              <p className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.map_members}</p>
+              <p className="typo-data tabular-nums text-foreground opacity-85">{nodes.length}</p>
+            </div>
+            <div className="absolute bottom-2 right-3 z-10 font-mono text-right pointer-events-none flex items-center gap-2">
+              <span className="typo-label uppercase tracking-wider text-foreground opacity-45">{t.monitor.presence_working}</span>
+              <span className={`typo-data tabular-nums ${workingCount > 0 ? 'text-status-warning' : 'text-foreground opacity-85'}`}>
+                {workingCount}
+              </span>
+              <span
+                className={`px-1.5 rounded-pill border typo-label uppercase tracking-wider ${
+                  isLive
+                    ? 'border-status-success/40 text-status-success animate-pulse'
+                    : 'border-border text-foreground opacity-50'
+                }`}
+              >
+                {isLive ? t.monitor.map_live : t.monitor.presence_idle}
+              </span>
+            </div>
+          </>
+        )}
+
         {/* Legend — presence states + the live-route mark. */}
         {nodes.length > 0 && (
-          <div className="absolute bottom-2 left-3 flex items-center gap-3 px-2.5 py-1 rounded-full border border-border bg-background/70 backdrop-blur-sm">
+          <div className="absolute bottom-2 left-3 z-10 flex items-center gap-3 px-2.5 py-1 rounded-full border border-border bg-background/70 backdrop-blur-sm">
             {legend.map((l) => (
               <span key={l.key} className="inline-flex items-center gap-1.5 typo-caption text-foreground opacity-75">
                 <span className={`w-2 h-2 rounded-full ${l.cls}`} />

@@ -73,7 +73,7 @@ export const ConversationSidebar = memo(function ConversationSidebar({
   return (
     <div className="h-full flex flex-col min-h-0 border-r border-border bg-foreground/[0.012]">
       <div className="flex-shrink-0 h-9 px-3 flex items-center border-b border-border">
-        <span className="typo-label uppercase tracking-wider text-foreground opacity-60">{t.monitor.conv_projects}</span>
+        <span className="hud-title typo-label uppercase tracking-wider text-foreground opacity-60">{t.monitor.conv_projects}</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-0.5">
         {teams.map((tm) => {
