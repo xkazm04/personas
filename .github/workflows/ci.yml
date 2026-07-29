@@ -243,7 +243,10 @@ jobs:
             libgtk-3-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
-            libpipewire-0.3-dev
+            libpipewire-0.3-dev \
+            libgbm-dev \
+            libwayland-dev \
+            libdbus-1-dev
 
       - name: Run Rust tests
         # --features desktop is REQUIRED, not optional. The crate's default
@@ -333,7 +336,10 @@ jobs:
             libgtk-3-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
-            libpipewire-0.3-dev
+            libpipewire-0.3-dev \
+            libgbm-dev \
+            libwayland-dev \
+            libdbus-1-dev
 
       - name: Regenerate TypeScript bindings
         # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR, emitted by each
