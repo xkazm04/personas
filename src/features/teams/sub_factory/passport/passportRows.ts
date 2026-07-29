@@ -6,9 +6,9 @@
 import {
   CI_LABEL, TESTS_LABEL, SECURITY_LABEL,
   OBSERVABILITY_LABEL, GRAPH_LABEL, EVALS_LABEL, MIGRATIONS_LABEL, INTEGRATION_KIND_LABEL,
-  MEMORY_LABEL, DOCS_LABEL,
+  MEMORY_LABEL, DOCS_LABEL, DESIGN_SYSTEM_LABEL,
   CI_SCALE, TESTS_SCALE, SECURITY_SCALE, OBSERVABILITY_SCALE, GRAPH_SCALE, EVALS_SCALE, MIGRATIONS_SCALE,
-  MEMORY_SCALE, DOCS_SCALE,
+  MEMORY_SCALE, DOCS_SCALE, DESIGN_SYSTEM_SCALE,
   scalePos,
   ENV_KEYS, APP_COST_FILENAME,
   type AppPassport, type AutomationLevel, type ProdBand,
@@ -157,6 +157,13 @@ export const SECTIONS: SectionSpec[] = [
         if (rot && rot.dirty > 0) bits.push(`${rot.dirty} dirty`);
         if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
         return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
+      } },
+      { key: 'design-system', label: 'Design system', info: 'Whether an agent can read this repo’s visual rules before it writes UI. Informal = guidance exists somewhere the project chose; Documented = a root DESIGN.md at the portable spec location; Machine-readable = that file also carries the YAML token frontmatter (colors / typography / rounded / spacing / components), so a linter or generator can consume it, not just a human. Does not feed the automation score yet.', get: (p) => {
+        const lvl = p.automationReadiness.artifacts.designSystem;
+        // Absent on passports derived before this probe existed — report the gap
+        // rather than rendering a confident 'none' the scan never established.
+        if (!lvl) return { kind: 'present', label: null };
+        return ordinalCell(DESIGN_SYSTEM_SCALE, lvl, DESIGN_SYSTEM_LABEL[lvl]);
       } },
       { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo: learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries; Governed = the team memory engine’s review/claims/health loop is running (the sub-line is its latest health score and open disputes).', get: (p) => {
         const h = p.automationReadiness.artifacts.memoryHealth;

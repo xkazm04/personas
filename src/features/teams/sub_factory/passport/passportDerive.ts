@@ -14,7 +14,7 @@ import {
   type AppPassport, type AutomationLevel, type ProdBand,
   type GraphLevel, type CiLevel, type IntegrationKind, type PassportIntegration,
   type PassportLanguage, type TestsLevel, type EvalsLevel, type MigrationsLevel,
-  type SecurityLevel, type MemoryLevel, type DocsLevel,
+  type SecurityLevel, type MemoryLevel, type DocsLevel, type DesignSystemLevel,
   type AppCost, type EnvSlot, type PassportEnvironments,
 } from './passportModel';
 import { parseStandards } from './improve/standards';
@@ -190,6 +190,19 @@ export function derivePassportFromMetadata(
     : ev?.has_readme ? 'readme'
     : 'none';
 
+  // Design-system readability — "can an agent read this repo's visual rules
+  // before it writes UI?". `spec` requires the token frontmatter, because only
+  // that rung is consumable by a tool rather than only by a human.
+  //
+  // Deliberately NOT in autoScore below. Every sibling artifact contributes,
+  // but folding a new term in retroactively would step-change every project's
+  // score at once, and `passportHistory` would render that as real movement.
+  // Ship the dimension first; weight it in a change that says so.
+  const designSystem: DesignSystemLevel = ev?.design_md_has_tokens ? 'spec'
+    : ev?.has_design_md ? 'documented'
+    : ev?.has_informal_design_doc ? 'informal'
+    : 'none';
+
   const autoScore = Math.min(100,
     (contextGraph === 'full' ? 35 : contextGraph === 'partial' ? 18 : 0)
     + Object.values(selfVerify).filter(Boolean).length * 7
@@ -331,6 +344,7 @@ export function derivePassportFromMetadata(
         contextGraph,
         memory: memoryLevel,
         docs: docsLevel,
+        designSystem,
         manifest: hasManifest,
         evals: evalsLevel,
         skills: hasSkills,

@@ -61,6 +61,7 @@ recordings/
 .claude/*
 !.claude/CLAUDE.md
 !.claude/Design.md
+!.claude/conventions.json
 !.claude/active-runs.md
 !.claude/skills/
 !.claude/agents/

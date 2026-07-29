@@ -17,7 +17,17 @@ import { setStaticScanConfig } from '@/api/devTools/devTools';
 import type { StaticScanConfig } from '@/lib/bindings/StaticScanConfig';
 import type { StaticScanTool } from '@/lib/bindings/StaticScanTool';
 
-const TOOLS: StaticScanTool[] = ['fallow', 'knip', 'jscpd'];
+const TOOLS: StaticScanTool[] = ['fallow', 'knip', 'jscpd', 'impeccable'];
+
+/** Argv that makes each tool emit the JSON its parser expects. Only the tools
+ *  with a real parser get one; the rest keep the generic placeholder. */
+const DEFAULT_COMMAND: Partial<Record<StaticScanTool, string>> = {
+  fallow: 'npx fallow scan --json',
+  // The detector needs no install and no API key, so `npx` on demand is the
+  // whole setup. `--no-advisory` drops the rules the tool itself refuses to
+  // count as failures, which have no place in a backlog.
+  impeccable: 'npx impeccable detect --json --no-advisory src',
+};
 
 export function StaticScanConfigModal({
   open, onClose, projectId, initialConfig, onSaved,
@@ -35,7 +45,17 @@ export function StaticScanConfigModal({
   const addToast = useToastStore((s) => s.addToast);
 
   const [tool, setTool] = useState<StaticScanTool>(initialConfig?.tool ?? 'fallow');
-  const [command, setCommand] = useState(initialConfig?.command?.join(' ') ?? 'npx fallow scan --json');
+  const [command, setCommand] = useState(initialConfig?.command?.join(' ') ?? DEFAULT_COMMAND.fallow!);
+
+  /** Switching tool swaps in that tool's default argv — but never clobbers a
+   *  command the user has edited away from the outgoing tool's default. */
+  const handleToolChange = (next: StaticScanTool) => {
+    const outgoingDefault = DEFAULT_COMMAND[tool];
+    setTool(next);
+    if (command.trim() === (outgoingDefault ?? '').trim() && DEFAULT_COMMAND[next]) {
+      setCommand(DEFAULT_COMMAND[next]!);
+    }
+  };
 
   const handleSave = async () => {
     if (!projectId) return;
@@ -71,7 +91,7 @@ export function StaticScanConfigModal({
 
           <div className="space-y-1.5">
             <label className="typo-label text-foreground/55 block">{ds.static_config_tool_label}</label>
-            <ThemedSelect value={tool} onValueChange={(v) => setTool(v as StaticScanTool)}>
+            <ThemedSelect value={tool} onValueChange={(v) => handleToolChange(v as StaticScanTool)}>
               {TOOLS.map((tl) => (
                 <option key={tl} value={tl}>{tl}{tl === 'fallow' ? ` (${ds.static_config_recommended})` : ''}</option>
               ))}

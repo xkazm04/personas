@@ -37,6 +37,10 @@ pub enum StaticScanTool {
     Fallow,
     Knip,
     Jscpd,
+    /// Impeccable's design anti-pattern detector (`npx impeccable detect --json`).
+    /// The only *design* sensor in this lane — every other tool here reports code
+    /// hygiene. Zero-LLM, zero-dependency, ~5s over a 1200-component tree.
+    Impeccable,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -215,6 +219,7 @@ fn tool_slug(tool: StaticScanTool) -> &'static str {
         StaticScanTool::Fallow => "fallow",
         StaticScanTool::Knip => "knip",
         StaticScanTool::Jscpd => "jscpd",
+        StaticScanTool::Impeccable => "impeccable",
     }
 }
 
@@ -247,11 +252,93 @@ struct Finding {
 fn parse_tool_output(tool: StaticScanTool, stdout: &str) -> Result<Vec<Finding>, AppError> {
     match tool {
         StaticScanTool::Fallow => Ok(parse_fallow(stdout)),
+        StaticScanTool::Impeccable => Ok(parse_impeccable(stdout)),
         StaticScanTool::Knip | StaticScanTool::Jscpd => Err(AppError::Internal(format!(
             "Parser for tool {} is not yet implemented.",
             tool_slug(tool)
         ))),
     }
+}
+
+/// Anti-pattern families this lane deliberately DROPS.
+///
+/// `design-system-*` compares every literal colour / size / radius / font
+/// against a root `DESIGN.md` token ramp. On a real codebase that is thousands
+/// of rows — a field trial over ~1200 components produced **69 findings without
+/// a DESIGN.md and 1038 with one**, of which 965 were this family. That is a
+/// token-drift *report*, not a backlog: dumping it into `dev_ideas` would bury
+/// every genuine finding under arbitrary-value noise the repo's own ESLint
+/// design-token rules already track.
+///
+/// The remaining rules are the "slop" family — recognizable generated-UI tells
+/// (side-tab accent borders, bounce easing, AI palettes, broken images). Those
+/// are low-volume, high-signal, and nothing else in the app detects them.
+const IMPECCABLE_DROPPED_PREFIXES: [&str; 1] = ["design-system-"];
+
+/// Parser for `impeccable detect --json`: a flat array of
+/// `{antipattern, name, description, severity, category, file, line, snippet}`.
+///
+/// Known limitation worth recording where the parser lives: the detector reads
+/// *styling syntax*, not token indirection. `font-family: 'Inter'` is caught;
+/// `--font-sans: 'Inter'` is not, and a hex sitting in a token map object is
+/// not. On a well-tokenised codebase it therefore under-reports — treat a clean
+/// run as "no known slop patterns", never as "no design problems".
+fn parse_impeccable(stdout: &str) -> Vec<Finding> {
+    let value: Value = serde_json::from_str(stdout.trim()).unwrap_or(Value::Null);
+    let Some(arr) = value.as_array() else {
+        return Vec::new();
+    };
+    arr.iter()
+        .filter(|item| {
+            let id = item
+                .get("antipattern")
+                .and_then(|x| x.as_str())
+                .unwrap_or_default();
+            !IMPECCABLE_DROPPED_PREFIXES
+                .iter()
+                .any(|p| id.starts_with(p))
+        })
+        .map(|item| {
+            let name = item
+                .get("name")
+                .and_then(|x| x.as_str())
+                .unwrap_or("Design anti-pattern");
+            let id = item
+                .get("antipattern")
+                .and_then(|x| x.as_str())
+                .unwrap_or("impeccable");
+            let file = item.get("file").and_then(|x| x.as_str()).unwrap_or("");
+            let line = item.get("line").and_then(|x| x.as_i64());
+            let title = match (file.is_empty(), line) {
+                (false, Some(l)) => format!("[{id}] {name} ({file}:{l})"),
+                (false, None) => format!("[{id}] {name} ({file})"),
+                (true, _) => format!("[{id}] {name}"),
+            };
+            // `snippet` is the matched text — the single most useful thing when
+            // triaging, so it leads the description with the rule's rationale
+            // (`description`) as the reasoning behind it.
+            let snippet = item.get("snippet").and_then(|x| x.as_str());
+            let description = item
+                .get("description")
+                .and_then(|x| x.as_str())
+                .map(str::to_string);
+            // `warning` is the detector's own severity for every non-advisory
+            // rule; these are visual-polish findings, so impact stays modest and
+            // effort low — they are usually a one-line change.
+            let impact = match item.get("severity").and_then(|x| x.as_str()) {
+                Some("error") => 6,
+                _ => 4,
+            };
+            Finding {
+                title,
+                description: snippet.map(|s| format!("Matched: `{s}`")),
+                reasoning: description,
+                effort: Some(2),
+                impact: Some(impact),
+                risk: Some(1),
+            }
+        })
+        .collect()
 }
 
 /// Permissive parser for Fallow's JSON output. Looks at multiple known shapes:
@@ -410,5 +497,66 @@ mod tests {
         let f = item_to_finding(&v, "findings");
         assert!(f.impact.unwrap() <= 10);
         assert!(f.impact.unwrap() >= 1);
+    }
+
+    #[test]
+    fn impeccable_parses_flat_array_and_builds_located_titles() {
+        let out = r#"[
+          {"antipattern":"side-tab","name":"Side-tab accent border","description":"Thick colored border.","severity":"warning","category":"slop","file":"src/a.tsx","line":147,"snippet":"border-l-2"}
+        ]"#;
+        let f = parse_impeccable(out);
+        assert_eq!(f.len(), 1);
+        assert_eq!(f[0].title, "[side-tab] Side-tab accent border (src/a.tsx:147)");
+        assert_eq!(f[0].description.as_deref(), Some("Matched: `border-l-2`"));
+        assert_eq!(f[0].reasoning.as_deref(), Some("Thick colored border."));
+    }
+
+    #[test]
+    fn impeccable_drops_the_design_system_family() {
+        // The noisy family: 965 of 1038 findings in the field trial. Dropping it
+        // is the whole reason this lane is scoped to slop rules.
+        // NOTE: `r##"…"##` — the payload contains `"#` (a hex colour right after
+        // a quote), which would close an ordinary `r#"…"#` literal mid-string.
+        let out = r##"[
+          {"antipattern":"design-system-font-size","name":"Font size outside DESIGN.md","file":"src/a.tsx","line":1,"snippet":"text-[10px]"},
+          {"antipattern":"design-system-color","name":"Color outside DESIGN.md","file":"src/b.tsx","line":2,"snippet":"#6366f1"},
+          {"antipattern":"bounce-easing","name":"Bounce or elastic easing","file":"src/c.css","line":3,"snippet":"cubic-bezier(0.34, 1.56, 0.64, 1)"}
+        ]"##;
+        let f = parse_impeccable(out);
+        assert_eq!(f.len(), 1, "only the non design-system finding survives");
+        assert!(f[0].title.starts_with("[bounce-easing]"));
+    }
+
+    #[test]
+    fn impeccable_tolerates_empty_and_malformed_output() {
+        // A clean run is the common case; a schema change must not break the
+        // runner. Both yield zero findings rather than an error.
+        assert!(parse_impeccable("[]").is_empty());
+        assert!(parse_impeccable("").is_empty());
+        assert!(parse_impeccable("not json").is_empty());
+        assert!(parse_impeccable(r#"{"findings":[]}"#).is_empty());
+    }
+
+    #[test]
+    fn impeccable_handles_a_finding_with_no_file() {
+        let out = r#"[{"antipattern":"marquee","name":"Marquee"}]"#;
+        let f = parse_impeccable(out);
+        assert_eq!(f[0].title, "[marquee] Marquee");
+        assert_eq!(f[0].description, None);
+    }
+
+    #[test]
+    fn impeccable_scores_stay_in_range() {
+        let out = r#"[{"antipattern":"x","name":"X","severity":"error","file":"a","line":1}]"#;
+        let f = parse_impeccable(out);
+        for v in [f[0].effort, f[0].impact, f[0].risk] {
+            let v = v.unwrap();
+            assert!((1..=10).contains(&v), "score {v} out of range");
+        }
+    }
+
+    #[test]
+    fn impeccable_tool_slug_round_trips() {
+        assert_eq!(tool_slug(StaticScanTool::Impeccable), "impeccable");
     }
 }

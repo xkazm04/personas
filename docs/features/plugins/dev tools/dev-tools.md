@@ -156,8 +156,32 @@ All context selection folded into the run as a trailing arg).
 3. **Skill history** (Scan History successor) — a unified run log: Fleet sessions whose
    argv is a `/skill` command (state, tokens via transcript rollup, duration, per-row rerun)
    unioned with legacy `dev_scans` rows (agent emoji strips, idea counts).
-4. **Static scan** — the deterministic-tool lane relocated here unchanged (config modal
-   gate for Fallow/Knip/Jscpd, `dev_tools_run_static_scan`).
+4. **Static scan** — the deterministic-tool lane (config modal gate,
+   `dev_tools_run_static_scan`). Tools: **Fallow** (parser wired), **Knip** /
+   **Jscpd** (variants reserved, parsers not implemented), and **Impeccable**
+   (parser wired, 2026-07-29).
+
+   **Impeccable** (`npx impeccable detect --json --no-advisory src`) is the
+   lane's only *design* sensor — every other tool here reports code hygiene
+   (dead code, duplication, unused deps). Zero-LLM, zero-dependency, ~5s over a
+   1200-component tree. Findings land as `dev_ideas` with the matched snippet
+   as the description and the rule's rationale as the reasoning.
+
+   **Scoped to the slop rules on purpose.** `parse_impeccable` drops the
+   `design-system-*` family (`IMPECCABLE_DROPPED_PREFIXES`). Those rules compare
+   every literal colour / size / radius / font against a root `DESIGN.md` token
+   ramp; a field trial over this repo's `src/features` produced **69 findings
+   without a DESIGN.md and 1038 with one — 969 of them that single family**.
+   That is a token-drift report, not a backlog, and the repo's own
+   `custom/no-raw-*-classes` ESLint rules already track it. What survives
+   (side-tab accent borders, bounce easing, AI palettes, broken images,
+   layout-property animation) is low-volume and high-signal.
+
+   **Known limitation, recorded at the parser:** the detector reads *styling
+   syntax*, not token indirection. `font-family: 'Inter'` is caught;
+   `--font-sans: 'Inter'` is not, and a hex sitting in a token-map object
+   literal is not. On a well-tokenised codebase it under-reports — a clean run
+   means "no known slop patterns", never "no design problems".
 
 **Workspace consent:** creating a workspace (Workspaces tab → new-workspace tile) offers an
 **"Adopt default skills"** checkbox (`dev_workspaces.adopt_default_skills`, default off —

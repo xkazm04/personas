@@ -183,6 +183,43 @@ persona-*less*: `team_id` binding exists, dispatch targets are runner/Fleet (not
 bound teams yet), and the Workspace tab's collab surfaces don't see findings at
 all. (Deferred E — Athena — will press on exactly this.)
 
+### 5.9 A repo's conventions were unreadable to the tools that write in it
+
+Added 2026-07-29, from an evaluation of a third-party design skill against this
+codebase. The skill produced correct, idiomatic work and still broke two
+blocking gates — it added English UI strings without the 13 translations the
+pre-commit hook requires, and it matched the incumbent `text-foreground/55`
+contrast pattern that `custom/no-low-contrast-text-classes` rejects. Neither
+was a failure of the skill: **there was no machine-readable place for a tool to
+learn this repo's gates before writing.** `CLAUDE.md` is prose for humans.
+
+Two things came out of that, and they pair:
+
+- **`.claude/conventions.json`** — the parseable statement of blocking gates,
+  codegen triggers (which script must run after which edit), UI token rules, and
+  git discipline. Verified against `package.json` / `lefthook.yml` /
+  `eslint.config.js` rather than transcribed from prose.
+- **The passport's `design-system` row** (below) — the same question asked
+  *outward*, per managed project: can an agent read this repo's visual rules
+  before it writes UI?
+
+The generalization worth keeping: for an agent-operated codebase, "are the
+conventions machine-readable?" is a readiness property, not a documentation
+nicety — and it is one the app can now measure across every project it manages.
+
+**Passport row — `design-system`** (`passportRows.ts`, fed by
+`probe_design_system` in `dev_tools.rs`). Four rungs:
+`none` → `informal` (guidance exists somewhere the project chose, e.g. this
+repo's own `.claude/Design.md`) → `documented` (a root `DESIGN.md` at the
+portable spec location) → `spec` (that file also carries the YAML token
+frontmatter, so a linter or generator can consume it, not only a human). Only
+the top rung is machine-checkable, which is why it is the top.
+
+It is **deliberately excluded from `autoScore`** for now. Every sibling artifact
+contributes, but folding a new term in retroactively would step-change every
+project's score at once and `passportHistory` would render that as real
+movement. Ship the dimension first; weight it in a change that says so.
+
 ## 6. Questions a unification has to answer
 
 *(Framing only — the direction is yours to pick.)*
