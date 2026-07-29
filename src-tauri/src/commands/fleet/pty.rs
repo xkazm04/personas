@@ -294,7 +294,12 @@ pub fn spawn_session(
     // layout, then PATH. ONE source of truth — Fleet must NOT keep a separate
     // lookup. Its old npm-only `claude.cmd` search stranded native-installer
     // machines (where the npm global was removed), so no session could spawn.
-    let mut cmd = if cfg!(windows) {
+    // `#[cfg(windows)]` on the binding, NOT `if cfg!(windows)`: the macro form
+    // is a runtime bool, so this branch would still be compiled and
+    // type-checked on macOS and Linux, where `resolve_claude_exe_windows` does
+    // not exist (it is `#[cfg(windows)]`). That produced E0425 on both.
+    #[cfg(windows)]
+    let mut cmd = {
         // Invoke the resolved `.exe` directly (never via `cmd.exe /c`): a real PE
         // binary lets portable-pty's CommandBuilder hand each arg to
         // CreateProcessW as its own argv entry with standard CRT quoting, so a
@@ -351,7 +356,10 @@ pub fn spawn_session(
             "fleet spawn: direct claude.exe invocation"
         );
         c
-    } else {
+    };
+
+    #[cfg(not(windows))]
+    let mut cmd = {
         let mut c = CommandBuilder::new("claude");
         c.arg("--dangerously-skip-permissions");
         if let Some(sid) = assigned_claude_session_id.as_deref() {

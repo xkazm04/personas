@@ -103,20 +103,23 @@ pub fn spawn_headless_session(
     let claude_session_id = uuid::Uuid::new_v4().to_string();
     let mcp = build_mcp_spawn(&id);
 
-    let program: PathBuf = if cfg!(windows) {
-        match crate::engine::cli_process::resolve_claude_exe_windows() {
-            Some(p) => PathBuf::from(p),
-            None => {
-                return Err(
-                    "fleet headless spawn: claude executable not found (checked the native \
-                     installer %USERPROFILE%\\.local\\bin, the npm-global layout, and PATH)"
-                        .to_string(),
-                )
-            }
+    // `#[cfg(windows)]`, NOT `if cfg!(windows)`: the macro form is a runtime
+    // bool, so the Windows branch still gets compiled and type-checked on every
+    // platform — and `resolve_claude_exe_windows` only exists under
+    // `#[cfg(windows)]`. That produced E0425 on macOS and Linux.
+    #[cfg(windows)]
+    let program: PathBuf = match crate::engine::cli_process::resolve_claude_exe_windows() {
+        Some(p) => PathBuf::from(p),
+        None => {
+            return Err(
+                "fleet headless spawn: claude executable not found (checked the native \
+                 installer %USERPROFILE%\\.local\\bin, the npm-global layout, and PATH)"
+                    .to_string(),
+            )
         }
-    } else {
-        PathBuf::from("claude")
     };
+    #[cfg(not(windows))]
+    let program: PathBuf = PathBuf::from("claude");
 
     let mut cmd = Command::new(&program);
     cmd.arg("--print")
