@@ -9,7 +9,7 @@ import {
   User, Mic, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard, MoonStar, Landmark,
+  Clapperboard, MoonStar, Landmark, Library, GitFork,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -78,7 +78,15 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },
   { id: 'events', icon: Zap, label: 'Events', minTier: TIERS.TEAM },
-  { id: 'knowledge', icon: Brain, label: 'Knowledge', minTier: TIERS.TEAM },
+  // The former single "Knowledge" tab was dissolved on 2026-07-29: its four
+  // in-page subtabs are now first-class L2 destinations, so the sidebar IS the
+  // navigation (no SegmentedTabs switcher). NOTE the graph id is `memory-graph`,
+  // not `graph` — `graph` is already a sidebar id meaning "Dependencies" under
+  // Connections, and the shared label map is keyed by id.
+  { id: 'memories', icon: Brain, label: 'Memories', minTier: TIERS.TEAM },
+  { id: 'patterns', icon: Library, label: 'Patterns', minTier: TIERS.TEAM },
+  { id: 'extracted', icon: Network, label: 'Extracted', minTier: TIERS.TEAM },
+  { id: 'memory-graph', icon: GitFork, label: 'Graph', minTier: TIERS.TEAM },
   // Reliability (SLA) dashboard — has a live OverviewPage router case
   // (`overviewTab === 'sla'` → SLADashboard) and real content; surfaced in the
   // rail alongside its TEAM-tier analytics neighbors.
@@ -225,7 +233,7 @@ export interface SidebarItemGroupDef {
 export const overviewGroups: SidebarItemGroupDef[] = [
   { id: 'monitoring', labelKey: 'group_monitoring', itemIds: ['executions', 'events', 'health', 'leaderboard', 'home', 'sla'] },
   { id: 'operations', labelKey: 'group_operations', itemIds: ['manual-review', 'certification', 'director', 'incidents', 'messages'] },
-  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['knowledge'] },
+  { id: 'memory',     labelKey: 'group_memory',     itemIds: ['memories', 'patterns', 'extracted', 'memory-graph'] },
 ];
 
 /** Home → a single group holding every home tab. */
