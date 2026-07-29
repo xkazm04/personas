@@ -20,7 +20,8 @@ import { slugifyUseCase } from '@/lib/useCaseSlug';
 import { silentCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -290,11 +291,9 @@ export default function LlmOverviewPage() {
 
   return (
     <ContentBox data-testid="llm-overview-page">
-      <ContentHeader
-        icon={<BarChart3 className="w-5 h-5 text-primary" />}
-        iconColor="primary"
+      <DevToolsPageHeader
+        icon={BarChart3}
         title={dt.obs_title}
-        fitWidth
         actions={
           <>
             <SegmentedTabs

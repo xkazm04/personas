@@ -8,7 +8,8 @@ import {
   Code2, AlertCircle, CheckCircle2, ExternalLink, LayoutDashboard,
   Settings, ScanSearch, Sparkles, XCircle, Target,
 } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { Button } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -178,11 +179,9 @@ export default function ProjectOverviewPage() {
   if (!activeProjectId || !activeProject) {
     return (
       <ContentBox>
-        <ContentHeader
-          icon={<LayoutDashboard className="w-5 h-5 text-primary" />}
-          iconColor="primary"
+        <DevToolsPageHeader
+          icon={LayoutDashboard}
           title={po.codebase}
-          fitWidth
           actions={<LifecycleProjectPicker />}
         />
         <ContentBody centered>
@@ -253,16 +252,14 @@ export default function ProjectOverviewPage() {
 
   return (
     <ContentBox>
-      <ContentHeader
-        icon={
-          <div className="relative">
+      <DevToolsPageHeader
+        iconNode={
+          <div className="relative flex-shrink-0">
             <LayoutDashboard className="w-5 h-5 text-primary" />
             <PulseDot tone={overallTone} />
           </div>
         }
-        iconColor="primary"
         title={activeProject.name}
-        fitWidth
         actions={<LifecycleProjectPicker />}
       />
 

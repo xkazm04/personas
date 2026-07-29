@@ -22,6 +22,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { Wand2 } from 'lucide-react';
+
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
 
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { isPresetSkill, presetSkillEntry, PRESET_SKILLS } from '../constants/presetSkills';
@@ -170,10 +173,13 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 px-4 pb-4" data-testid="skills-manager-page">
-      {/* toolbar — page tabs + the shared active-project picker */}
-      <div className="flex items-center gap-3 py-3 flex-shrink-0">
-        <span className="typo-title">{t.plugins.dev_tools.skills_title}</span>
+    <div className="flex flex-col h-full min-h-0" data-testid="skills-manager-page">
+      {/* unified module header — icon + title band, tabs inline, picker right */}
+      <DevToolsPageHeader
+        icon={Wand2}
+        title={t.plugins.dev_tools.skills_title}
+        actions={<LifecycleProjectPicker />}
+      >
         <SegmentedTabs
           tabs={[
             { id: 'overview', label: t.plugins.dev_tools.skills_tab_overview },
@@ -186,10 +192,9 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
           fullWidth={false}
           ariaLabel={t.plugins.dev_tools.skills_tab_aria}
         />
-        <LifecycleProjectPicker />
-      </div>
+      </DevToolsPageHeader>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 px-4 pb-4 pt-3">
         {pageTab === 'analytics' && activeId ? (
           <SkillsAnalyticsTab
             projectId={activeId}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Play, Plus, ListChecks } from 'lucide-react';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
@@ -131,11 +132,9 @@ export default function RunDeskPage() {
 
   return (
     <ContentBox>
-      <ContentHeader
-        icon={<Play className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+      <DevToolsPageHeader
+        icon={Play}
         title={dr.run_desk_title}
-        subtitle={dr.run_desk_subtitle}
         actions={<LifecycleProjectPicker />}
       />
 
