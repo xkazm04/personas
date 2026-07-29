@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "Preset",
         "adopt_skills_badge_tip": "Proyek yang bergabung dengan workspace ini mengadopsi preset scan skill.",
         "adopt_skills_hint": "Pasang preset scan skill ke setiap proyek yang bergabung dengan workspace ini.",
-        "adopt_skills_label": "Adopsi skill default"
+        "adopt_skills_label": "Adopsi skill default",
+        "col_evidence": "Lokasi",
+        "evidence_hint": "Ditemukan di {count} lokasi dalam kode",
+        "filter_adopted": "Diadopsi",
+        "filter_archived": "Diarsipkan",
+        "filter_pending": "Perlu ditinjau"
       },
       "skills_adopt": "Adopsi",
       "skills_adopt_hint": "Adopsi ke {name} — Claude menyesuaikannya untuk repo",

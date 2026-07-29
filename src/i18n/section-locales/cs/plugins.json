@@ -1267,7 +1267,12 @@
       "adopt_skills_badge": "Přednastavené",
       "adopt_skills_badge_tip": "Projekty připojující se k tomuto pracovnímu prostoru přebírají přednastavené skenovací skilly.",
       "adopt_skills_hint": "Nainstalovat přednastavené skenovací skilly do každého projektu, který se připojí k tomuto pracovnímu prostoru.",
-      "adopt_skills_label": "Přijmout výchozí skilly"
+      "adopt_skills_label": "Přijmout výchozí skilly",
+      "col_evidence": "Výskyty",
+      "evidence_hint": "Nalezeno na {count} místech v kódu",
+      "filter_adopted": "Přijato",
+      "filter_archived": "Archivováno",
+      "filter_pending": "Ke kontrole"
     },
     "skills_adopt": "Převzít",
     "skills_adopt_hint": "Převzít do {name} — Claude ji přizpůsobí repozitáři",

@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "Preestablecidos",
         "adopt_skills_badge_tip": "Los proyectos que se unan a este workspace adoptan los skills de escaneo preestablecidos.",
         "adopt_skills_hint": "Instala los skills de escaneo preestablecidos en cada proyecto que se una a este workspace.",
-        "adopt_skills_label": "Adoptar skills predeterminados"
+        "adopt_skills_label": "Adoptar skills predeterminados",
+        "col_evidence": "Ubicaciones",
+        "evidence_hint": "Encontrado en {count} lugares del código",
+        "filter_adopted": "Adoptada",
+        "filter_archived": "Archivada",
+        "filter_pending": "Por revisar"
       },
       "skills_adopt": "Adoptar",
       "skills_adopt_hint": "Adoptar en {name} — Claude la adapta al repositorio",

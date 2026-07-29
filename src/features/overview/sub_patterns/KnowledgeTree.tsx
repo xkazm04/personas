@@ -8,6 +8,7 @@ import { Check, CheckSquare, Library, Square, X } from 'lucide-react';
 import { FacetedDecisionTable } from '@/features/shared/components/display/FacetedDecisionTable';
 import type { DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { KnowledgeKind, KnowledgeStatus } from '@/api/devTools/workspaces';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -17,7 +18,20 @@ import { KnowledgeStatusChip } from '@/features/plugins/dev-tools/sub_workspaces
 import { reviewValue, STATUS_RANK, type KnowledgeItemView } from './libraryModel';
 
 const KIND_VALUES: KnowledgeKind[] = ['pattern', 'pitfall', 'decision', 'howto', 'fact'];
-const STATUS_VALUES: KnowledgeStatus[] = ['proposed', 'observed', 'adopted', 'deprecated', 'rejected'];
+/**
+ * The status filter's real axis is REVIEWED vs NOT — not the five-value
+ * lifecycle. Measured on the live library: 349 `observed`, 168 `adopted`, 5
+ * `rejected`, 1 `deprecated`, 0 `proposed`. Offering five options meant four of
+ * them filtered to almost nothing, so the control looked useful and wasn't.
+ * These three buckets each hold a real population and together cover every row.
+ */
+const STATUS_BUCKETS = {
+  pending: ['observed', 'proposed'],
+  adopted: ['adopted'],
+  archived: ['rejected', 'deprecated'],
+} as const satisfies Record<string, readonly KnowledgeStatus[]>;
+
+type StatusBucket = keyof typeof STATUS_BUCKETS;
 
 type SortDir = 'asc' | 'desc';
 
@@ -96,9 +110,50 @@ export default function KnowledgeTree({
     }
   }, [projectOptions, projectFilter]);
 
+  // FIX 4: the rail encoded depth as indentation and nothing else, so a
+  // 66-item area and a 10-item area were the same row with a different number.
+  // `share` is the branch's size relative to its largest sibling at that depth
+  // (drawn as a bar), `pending` is how much of it still needs a decision.
+  // Computed once over the whole corpus, not per render of a node.
+  const railMeta = useMemo(() => {
+    const total = new Map<string, number>();
+    const pending = new Map<string, number>();
+    const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+    for (const i of items) {
+      const undecided = i.status === 'observed' || i.status === 'proposed';
+      const segs = String(i.topic ?? '').split('/').filter(Boolean);
+      // Every ancestor path plus the root, so a parent's bar reflects its whole
+      // subtree rather than only the rows filed directly on it.
+      for (let n = 0; n <= segs.length; n += 1) {
+        const path = segs.slice(0, n).join('/');
+        bump(total, path);
+        if (undecided) bump(pending, path);
+      }
+    }
+    // Largest sibling per depth is the bar's denominator: comparing a cluster
+    // against the whole corpus would make every cluster look like a sliver.
+    const maxAtDepth = new Map<number, number>();
+    for (const [path, n] of total) {
+      if (path === '') continue;
+      const d = path.split('/').length;
+      maxAtDepth.set(d, Math.max(maxAtDepth.get(d) ?? 0, n));
+    }
+    return (path: string, count: number) => {
+      if (path === '') return { share: 1, pending: pending.get('') ?? 0 };
+      const peak = maxAtDepth.get(path.split('/').length) ?? count;
+      return {
+        share: peak > 0 ? count / peak : 0,
+        pending: pending.get(path) ?? 0,
+      };
+    };
+  }, [items]);
+
   const filterRow = useCallback(
     (i: KnowledgeItemView) =>
-      (statusFilter === 'all' || i.status === statusFilter) &&
+      (statusFilter === 'all' ||
+        (STATUS_BUCKETS[statusFilter as StatusBucket] as readonly string[] | undefined)?.includes(
+          i.status,
+        ) === true) &&
       (kindFilter === 'all' || i.kind === kindFilter) &&
       (projectFilter === 'all' || (i.originProjectId ?? '') === projectFilter),
     [statusFilter, kindFilter, projectFilter],
@@ -215,7 +270,9 @@ export default function KnowledgeTree({
       sortable: true,
       filterOptions: [
         { value: 'all', label: tw.all_statuses },
-        ...STATUS_VALUES.map((s) => ({ value: s, label: statusLabel[s] })),
+        { value: 'pending', label: tw.filter_pending },
+        { value: 'adopted', label: tw.filter_adopted },
+        { value: 'archived', label: tw.filter_archived },
       ],
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
@@ -239,14 +296,35 @@ export default function KnowledgeTree({
       label: tw.col_practice,
       width: 'minmax(0, 1fr)',
       sortable: true,
+      // The STATEMENT is the practice. It used to live in `title={r.statement}`
+      // — a native browser tooltip — so recognising a row meant hovering it one
+      // at a time. Rendering it as a second line is the whole difference
+      // between scanning a list of labels and reading a list of claims.
       render: (r) => (
-        <span className="typo-body text-foreground" title={r.statement}>
-          {r.title}
-          {r.evidenceCount != null && r.evidenceCount > 1 && (
-            <span className="typo-label text-muted-foreground ml-1.5">×{r.evidenceCount}</span>
-          )}
+        <span className="flex flex-col gap-0.5 min-w-0">
+          <span className="typo-body text-foreground truncate">{r.title}</span>
+          <span className="typo-caption text-foreground/70 line-clamp-2">{r.statement}</span>
         </span>
       ),
+    },
+    {
+      // Prevalence was a 12px suffix glued to a truncating title, so the most
+      // decision-relevant number in the row was the first thing to get cut off.
+      // Its own sortable column means "which practices are everywhere?" is one
+      // click rather than a read-every-row exercise.
+      key: 'evidence',
+      label: tw.col_evidence,
+      width: '72px',
+      sortable: true,
+      align: 'right',
+      render: (r) =>
+        r.evidenceCount != null && r.evidenceCount > 0 ? (
+          <Tooltip content={tx(tw.evidence_hint, { count: r.evidenceCount })}>
+            <span className="typo-body text-foreground/80 tabular-nums">×{r.evidenceCount}</span>
+          </Tooltip>
+        ) : (
+          <span className="typo-caption text-muted-foreground">—</span>
+        ),
     },
     {
       key: 'updated',
@@ -265,6 +343,7 @@ export default function KnowledgeTree({
       items={items}
       getRowKey={(r) => r.id}
       getGroupPath={groupPath}
+      nodeMeta={railMeta}
       columns={columns}
       filterRow={filterRow}
       searchHaystack={haystack}

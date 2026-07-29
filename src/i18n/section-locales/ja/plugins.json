@@ -1267,7 +1267,12 @@
       "adopt_skills_badge": "プリセット",
       "adopt_skills_badge_tip": "このワークスペースに参加するプロジェクトはプリセットのスキャンスキルを採用します。",
       "adopt_skills_hint": "このワークスペースに参加するすべてのプロジェクトにプリセットのスキャンスキルをインストールします。",
-      "adopt_skills_label": "デフォルトスキルを採用"
+      "adopt_skills_label": "デフォルトスキルを採用",
+      "col_evidence": "箇所",
+      "evidence_hint": "コード内の {count} 箇所で検出",
+      "filter_adopted": "採用済み",
+      "filter_archived": "アーカイブ済み",
+      "filter_pending": "レビュー待ち"
     },
     "skills_adopt": "採用",
     "skills_adopt_hint": "{name} に採用 — Claude がリポジトリ向けにカスタマイズします",

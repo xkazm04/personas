@@ -13784,6 +13784,11 @@ export type Translations = {
         bulk_rejected: string;
         bulk_failed: string;
         harvest_depth: string;
+        col_evidence: string;
+        evidence_hint: string;
+        filter_pending: string;
+        filter_adopted: string;
+        filter_archived: string;
       };
     };
     doc_signing: {

@@ -13777,7 +13777,12 @@
         "bulk_adopted": "Adopted {count} practice(s).",
         "bulk_rejected": "Rejected {count} practice(s).",
         "bulk_failed": "{count} could not be decided.",
-        "harvest_depth": "{done}/{total} scopes · ~{pct}% read"
+        "harvest_depth": "{done}/{total} scopes · ~{pct}% read",
+        "col_evidence": "Sites",
+        "evidence_hint": "Found at {count} site(s) in the codebase",
+        "filter_pending": "Needs review",
+        "filter_adopted": "Adopted",
+        "filter_archived": "Archived"
       }
     },
     "doc_signing": {

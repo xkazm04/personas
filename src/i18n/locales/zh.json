@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "预设",
         "adopt_skills_badge_tip": "加入此工作区的项目将采用预设扫描技能。",
         "adopt_skills_hint": "为加入此工作区的每个项目安装预设扫描技能。",
-        "adopt_skills_label": "采用默认技能"
+        "adopt_skills_label": "采用默认技能",
+        "col_evidence": "出现处",
+        "evidence_hint": "在代码中发现 {count} 处",
+        "filter_adopted": "已采纳",
+        "filter_archived": "已归档",
+        "filter_pending": "待审阅"
       },
       "skills_adopt": "采用",
       "skills_adopt_hint": "采用到 {name} — Claude 会为该仓库定制它",

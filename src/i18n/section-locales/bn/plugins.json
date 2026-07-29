@@ -1267,7 +1267,12 @@
       "adopt_skills_badge": "প্রিসেট",
       "adopt_skills_badge_tip": "এই ওয়ার্কস্পেসে যোগ দেওয়া প্রকল্পগুলো প্রিসেট স্ক্যান স্কিল গ্রহণ করে।",
       "adopt_skills_hint": "এই ওয়ার্কস্পেসে যোগ দেওয়া প্রতিটি প্রকল্পে প্রিসেট স্ক্যান স্কিল ইনস্টল করুন।",
-      "adopt_skills_label": "ডিফল্ট স্কিল গ্রহণ করুন"
+      "adopt_skills_label": "ডিফল্ট স্কিল গ্রহণ করুন",
+      "col_evidence": "স্থান",
+      "evidence_hint": "কোডবেসে {count}টি স্থানে পাওয়া গেছে",
+      "filter_adopted": "গৃহীত",
+      "filter_archived": "সংরক্ষিত",
+      "filter_pending": "পর্যালোচনা দরকার"
     },
     "skills_adopt": "গ্রহণ করুন",
     "skills_adopt_hint": "{name}-এ গ্রহণ করুন — Claude রিপোর জন্য এটি কাস্টমাইজ করে",

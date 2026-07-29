@@ -1267,7 +1267,12 @@
       "adopt_skills_badge": "Presets",
       "adopt_skills_badge_tip": "Les projets rejoignant cet espace de travail adoptent les skills de scan preset.",
       "adopt_skills_hint": "Installer les skills de scan preset dans chaque projet qui rejoint cet espace de travail.",
-      "adopt_skills_label": "Adopter les skills par défaut"
+      "adopt_skills_label": "Adopter les skills par défaut",
+      "col_evidence": "Occurrences",
+      "evidence_hint": "Trouvé à {count} endroits du code",
+      "filter_adopted": "Adoptée",
+      "filter_archived": "Archivée",
+      "filter_pending": "À relire"
     },
     "skills_adopt": "Adopter",
     "skills_adopt_hint": "Adopter dans {name} — Claude l’adapte au dépôt",

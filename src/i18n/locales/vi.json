@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "Thiết lập sẵn",
         "adopt_skills_badge_tip": "Các dự án tham gia workspace này sẽ áp dụng các kỹ năng quét thiết lập sẵn.",
         "adopt_skills_hint": "Cài các kỹ năng quét thiết lập sẵn vào mọi dự án tham gia workspace này.",
-        "adopt_skills_label": "Áp dụng kỹ năng mặc định"
+        "adopt_skills_label": "Áp dụng kỹ năng mặc định",
+        "col_evidence": "Vị trí",
+        "evidence_hint": "Tìm thấy ở {count} vị trí trong mã",
+        "filter_adopted": "Đã áp dụng",
+        "filter_archived": "Đã lưu trữ",
+        "filter_pending": "Cần duyệt"
       },
       "skills_adopt": "Áp dụng",
       "skills_adopt_hint": "Áp dụng vào {name} — Claude tùy chỉnh cho kho mã",

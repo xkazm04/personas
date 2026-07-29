@@ -1267,7 +1267,12 @@
       "adopt_skills_badge": "الجاهزة",
       "adopt_skills_badge_tip": "المشاريع المنضمة إلى مساحة العمل هذه تتبنى مهارات الفحص الجاهزة.",
       "adopt_skills_hint": "تثبيت مهارات الفحص الجاهزة في كل مشروع ينضم إلى مساحة العمل هذه.",
-      "adopt_skills_label": "تبني المهارات الافتراضية"
+      "adopt_skills_label": "تبني المهارات الافتراضية",
+      "col_evidence": "المواضع",
+      "evidence_hint": "تم العثور عليه في {count} موضع بالكود",
+      "filter_adopted": "مُعتمد",
+      "filter_archived": "مؤرشف",
+      "filter_pending": "يحتاج مراجعة"
     },
     "skills_adopt": "اعتماد",
     "skills_adopt_hint": "اعتمادها في {name} — يخصّصها Claude للمستودع",

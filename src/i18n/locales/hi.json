@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "प्रीसेट्स",
         "adopt_skills_badge_tip": "इस वर्कस्पेस में शामिल होने वाले प्रोजेक्ट प्रीसेट स्कैन स्किल्स अपनाते हैं।",
         "adopt_skills_hint": "इस वर्कस्पेस में शामिल होने वाले हर प्रोजेक्ट में प्रीसेट स्कैन स्किल्स इंस्टॉल करें।",
-        "adopt_skills_label": "डिफ़ॉल्ट स्किल्स अपनाएं"
+        "adopt_skills_label": "डिफ़ॉल्ट स्किल्स अपनाएं",
+        "col_evidence": "स्थान",
+        "evidence_hint": "कोडबेस में {count} स्थानों पर मिला",
+        "filter_adopted": "अपनाया गया",
+        "filter_archived": "संग्रहित",
+        "filter_pending": "समीक्षा आवश्यक"
       },
       "skills_adopt": "अपनाएँ",
       "skills_adopt_hint": "{name} में अपनाएँ — Claude इसे रिपॉज़िटरी के लिए अनुकूलित करता है",

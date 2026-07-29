@@ -59,6 +59,16 @@ export interface FacetedDecisionTableProps<T> {
   density?: Density;
   /** Display transform for a rail node's segment (e.g. token → translated label). */
   formatSegment?: (segment: string, path: string) => string;
+  /**
+   * Optional per-node encoding for the rail. Depth alone is a weak signal: a
+   * 66-item branch and a 10-item branch render as identical rows differing only
+   * by a number you have to read. `share` (0..1 of the largest sibling) draws a
+   * proportional bar so the corpus's shape is visible at a glance, and
+   * `pending` surfaces how much of the branch still needs a decision.
+   *
+   * Opt-in — consumers that don't pass it get exactly the previous rail.
+   */
+  nodeMeta?: (path: string, count: number) => { share: number; pending: number } | null;
   labels: FacetedDecisionTableLabels;
   /* -- DataGrid selection / bulk pass-throughs ------------------------------ */
   isRowSelected?: (row: T) => boolean;
@@ -86,6 +96,7 @@ export function FacetedDecisionTable<T>({
   pageSize = 25,
   density = 'compact',
   formatSegment,
+  nodeMeta,
   labels,
   isRowSelected,
   selectAll,
@@ -127,6 +138,7 @@ export function FacetedDecisionTable<T>({
           expanded
           expandLabel={labels.expand}
           collapseLabel={labels.collapse}
+          meta={nodeMeta?.('', tree.total) ?? null}
           onSelect={() => setSelected('')}
           onToggle={() => {}}
         />
@@ -140,6 +152,7 @@ export function FacetedDecisionTable<T>({
             expandLabel={labels.expand}
             collapseLabel={labels.collapse}
             formatSegment={formatSegment}
+            nodeMeta={nodeMeta}
             onSelect={setSelected}
             onToggle={toggle}
           />
@@ -199,6 +212,7 @@ function TreeBranch({
   expandLabel,
   collapseLabel,
   formatSegment,
+  nodeMeta,
   onSelect,
   onToggle,
 }: {
@@ -209,6 +223,7 @@ function TreeBranch({
   expandLabel: string;
   collapseLabel: string;
   formatSegment?: (segment: string, path: string) => string;
+  nodeMeta?: (path: string, count: number) => { share: number; pending: number } | null;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
 }) {
@@ -216,6 +231,7 @@ function TreeBranch({
   return (
     <>
       <NodeButton
+        meta={nodeMeta?.(node.path, node.total) ?? null}
         label={formatSegment ? formatSegment(node.segment, node.path) : node.segment}
         count={node.total}
         depth={depth}
@@ -238,6 +254,7 @@ function TreeBranch({
             expandLabel={expandLabel}
             collapseLabel={collapseLabel}
             formatSegment={formatSegment}
+            nodeMeta={nodeMeta}
             onSelect={onSelect}
             onToggle={onToggle}
           />
@@ -255,6 +272,7 @@ function NodeButton({
   expanded,
   expandLabel,
   collapseLabel,
+  meta,
   onSelect,
   onToggle,
 }: {
@@ -266,6 +284,7 @@ function NodeButton({
   expanded: boolean;
   expandLabel: string;
   collapseLabel: string;
+  meta?: { share: number; pending: number } | null;
   onSelect: () => void;
   onToggle: () => void;
 }) {
@@ -293,10 +312,31 @@ function NodeButton({
       <button
         type="button"
         onClick={onSelect}
-        className="flex-1 min-w-0 flex items-center justify-between gap-2 py-1 text-left"
+        className="flex-1 min-w-0 flex flex-col gap-0.5 py-1 text-left"
       >
-        <span className="typo-body text-foreground truncate">{label}</span>
-        <span className="typo-caption text-muted-foreground shrink-0">{count}</span>
+        <span className="flex items-center justify-between gap-2">
+          <span className="typo-body text-foreground truncate">{label}</span>
+          <span className="shrink-0 flex items-baseline gap-1">
+            {/* Undecided count leads: it is the number that asks something of
+                the reader. Suppressed when zero so a fully-reviewed branch
+                reads as quiet rather than as a zero to parse. */}
+            {meta && meta.pending > 0 && (
+              <span className="typo-caption text-status-warning tabular-nums">{meta.pending}</span>
+            )}
+            <span className="typo-caption text-muted-foreground tabular-nums">{count}</span>
+          </span>
+        </span>
+        {/* Proportional bar — width is the branch's share of its largest
+            sibling, so relative mass is visible without reading any number.
+            Only drawn when the consumer opts in via `nodeMeta`. */}
+        {meta && (
+          <span aria-hidden="true" className="h-px w-full bg-primary/10 overflow-hidden rounded-full">
+            <span
+              className="block h-full bg-primary/40"
+              style={{ width: `${Math.max(2, Math.round(meta.share * 100))}%` }}
+            />
+          </span>
+        )}
       </button>
     </div>
   );

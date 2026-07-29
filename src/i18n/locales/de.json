@@ -13371,7 +13371,12 @@
         "adopt_skills_badge": "Vorlagen",
         "adopt_skills_badge_tip": "Projekte, die diesem Workspace beitreten, übernehmen die voreingestellten Scan-Skills.",
         "adopt_skills_hint": "Installiere die voreingestellten Scan-Skills in jedem Projekt, das diesem Workspace beitritt.",
-        "adopt_skills_label": "Standard-Skills übernehmen"
+        "adopt_skills_label": "Standard-Skills übernehmen",
+        "col_evidence": "Stellen",
+        "evidence_hint": "An {count} Stellen im Code gefunden",
+        "filter_adopted": "Übernommen",
+        "filter_archived": "Archiviert",
+        "filter_pending": "Prüfung nötig"
       },
       "skills_adopt": "Übernehmen",
       "skills_adopt_hint": "In {name} übernehmen — Claude passt sie an das Repository an",
