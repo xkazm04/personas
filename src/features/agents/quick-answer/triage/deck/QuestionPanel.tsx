@@ -13,6 +13,7 @@
 import type { RefObject } from 'react';
 
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import type { TriageItem } from '../triageTypes';
 import { Kbd, TONE_CHIP, TONE_HOVER } from './DeckChips';
@@ -28,15 +29,14 @@ interface QuestionPanelProps {
 }
 
 export function QuestionPanel({ item, answer, onAnswer, onSubmit, onBranch, textareaRef }: QuestionPanelProps) {
+  const { t } = useTranslation();
   const input = item.input;
   if (!input) return null;
 
   if (input.deferred) {
     return (
       <div className="space-y-3 rounded-card border border-status-warning/25 bg-status-warning/5 p-4">
-        <p className="typo-body text-foreground">
-          This one needs the full picker — it can&apos;t be answered from a card.
-        </p>
+        <p className="typo-body text-foreground">{t.monitor.triage_deferred_note}</p>
         <div className="flex flex-wrap gap-2">
           {item.branches.map((branch) => (
             <button
@@ -59,7 +59,7 @@ export function QuestionPanel({ item, answer, onAnswer, onSubmit, onBranch, text
   if (input.kind === 'choice' && input.options?.length) {
     return (
       <div className="space-y-2">
-        <p className="typo-label text-primary">Pick one</p>
+        <p className="typo-label text-primary">{t.monitor.triage_pick_one}</p>
         {input.options.map((option) => (
           <button
             key={option}
@@ -80,7 +80,7 @@ export function QuestionPanel({ item, answer, onAnswer, onSubmit, onBranch, text
     <div className="space-y-3">
       {input.suggestions?.length ? (
         <div className="space-y-1.5">
-          <p className="typo-label text-primary">Suggested</p>
+          <p className="typo-label text-primary">{t.monitor.triage_suggested}</p>
           <div className="flex flex-wrap gap-1.5">
             {input.suggestions.map((suggestion) => (
               <button

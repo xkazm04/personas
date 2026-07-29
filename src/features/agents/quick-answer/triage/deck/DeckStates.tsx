@@ -14,13 +14,16 @@ import { Filter, PartyPopper } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const GHOSTS = [0, 1, 2];
 
 export function DeckLoading({ reduced }: { reduced: boolean }) {
+  const { t } = useTranslation();
+
   return (
     <div className="relative h-full max-h-[34rem] min-h-[19rem] w-full max-w-[42rem]">
-      <LoadingSpinner label="Loading the triage queue" />
+      <LoadingSpinner label={t.monitor.triage_loading} />
       {GHOSTS.map((i) => (
         <motion.div
           key={i}
@@ -61,7 +64,16 @@ export function DeckCleared({
   reduced: boolean;
   onReload: () => void;
 }) {
+  const { t, tx } = useTranslation();
   const Icon = filtered ? Filter : PartyPopper;
+  const body = filtered
+    ? t.monitor.triage_filtered_body
+    : decided > 0
+      ? tx(
+          decided === 1 ? t.monitor.triage_cleared_body_one : t.monitor.triage_cleared_body_other,
+          { count: decided },
+        )
+      : t.monitor.triage_cleared_body_none;
 
   return (
     <motion.div
@@ -84,19 +96,20 @@ export function DeckCleared({
         />
       </motion.div>
 
-      <h2 className="typo-hero text-foreground">{filtered ? 'Nothing in this filter' : 'Deck cleared'}</h2>
+      <h2 className="typo-hero text-foreground">
+        {filtered ? t.monitor.triage_filtered_title : t.monitor.triage_cleared_title}
+      </h2>
 
-      <p className="typo-body-lg text-foreground">
-        {filtered
-          ? 'Everything left is a kind you switched off. Turn one back on to keep going.'
-          : decided > 0
-            ? `${decided} ${decided === 1 ? 'decision' : 'decisions'} this session. The queue is empty — nothing is waiting on you.`
-            : 'Nothing is waiting on you. Come back when a persona raises something.'}
-      </p>
+      <p className="typo-body-lg text-foreground">{body}</p>
 
       {!filtered ? (
-        <Button variant="secondary" onClick={onReload} aria-label="Check for more" title="Check for more">
-          {'Check for more'}
+        <Button
+          variant="secondary"
+          onClick={onReload}
+          aria-label={t.monitor.triage_check_more}
+          title={t.monitor.triage_check_more}
+        >
+          {t.monitor.triage_check_more}
         </Button>
       ) : null}
     </motion.div>

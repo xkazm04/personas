@@ -16,19 +16,16 @@
  * Question items are the interesting exception: they collect an answer rather
  * than a verdict, so their cards are undraggable — see `deck/QuestionPanel`.
  *
- * ── PROTOTYPE NOTE (sanctioned i18n exception) ────────────────────────────
- * Every user-facing string in this file and in `./deck/*` is a provisional
- * English literal, NOT a `t.section.key`. This is a throwaway round-1 variant
- * being A/B'd against a sibling; a parallel session owns the locale files, and
- * extraction happens at consolidation once a winner is picked. This is the one
- * place in the repo where hardcoded JSX copy is intentional — do not copy the
- * pattern anywhere else.
+ * This surface REPLACED the 576px anchored Quick Answer popover: the same
+ * title-bar button now opens the deck over the whole app. `QuickAnswerBody` and
+ * its children survive because two other surfaces still render them (the
+ * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
-import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
 import { DeckCleared, DeckLoading } from './deck/DeckStates';
@@ -45,12 +42,16 @@ const STACK_DEPTH = 3;
 export function TriageDeckVariant({
   queue,
   onClose,
-  switcher,
+  onOpenMonitor,
+  title,
 }: {
   queue: UnifiedTriageQueue;
   onClose: () => void;
-  switcher?: ReactNode;
+  onOpenMonitor?: () => void;
+  /** Surface title — supplied translated by the host. */
+  title: string;
 }) {
+  const { t } = useTranslation();
   const reduced = useReducedMotion();
   const {
     top,
@@ -76,10 +77,10 @@ export function TriageDeckVariant({
       initial={reduced ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18 }}
-      aria-label="Triage deck"
+      aria-label={t.monitor.triage_deck_aria}
       data-testid="triage-deck-variant"
     >
-      <DeckTopBar queue={queue} switcher={switcher} onClose={onClose} />
+      <DeckTopBar queue={queue} title={title} onOpenMonitor={onOpenMonitor} onClose={onClose} />
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
         <div

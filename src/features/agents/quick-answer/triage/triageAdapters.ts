@@ -32,9 +32,9 @@ import type { TriageItem, TriageTag, TriageFact, TriageTone } from './triageType
  * Every user-facing string the adapters need, injected so the model stays
  * i18n-agnostic.
  *
- * Prototype note: {@link DEFAULT_TRIAGE_COPY} below supplies provisional
- * English. When a variant wins, that constant is the ONLY thing that has to be
- * rewired to `t.*` — no adapter changes.
+ * `useTriageCopy` is the React binding that fills this from the translation
+ * tree; {@link DEFAULT_TRIAGE_COPY} below is the English fallback for callers
+ * outside a component (and the source of truth for the `en.json` wording).
  */
 export interface TriageCopy {
   accept: string;

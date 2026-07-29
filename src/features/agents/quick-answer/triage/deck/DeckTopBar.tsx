@@ -9,13 +9,14 @@
 // have switched off still shows how much of it is waiting. A kind with nothing
 // in it is rendered inert rather than hidden, because a chip that disappears
 // makes the reviewer wonder what else vanished.
-import { X } from 'lucide-react';
+import { Activity, X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
+import { useTranslation } from '@/i18n/useTranslation';
 
 import { TRIAGE_KINDS, type TriageKind } from '../triageTypes';
 import type { UnifiedTriageQueue } from '../useUnifiedTriage';
-import { KIND_META, TONE_CHIP } from './DeckChips';
+import { KIND_META, kindCopy, TONE_CHIP } from './DeckChips';
 
 function KindFilterChip({
   kind,
@@ -28,10 +29,12 @@ function KindFilterChip({
   active: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = KIND_META[kind];
+  const copy = kindCopy(t, kind);
   const Icon = meta.icon;
   const inert = count === 0;
-  const label = `${meta.label} (${count})`;
+  const label = `${copy.label} (${count})`;
 
   return (
     <button
@@ -40,7 +43,7 @@ function KindFilterChip({
       onClick={onToggle}
       aria-pressed={active}
       aria-label={label}
-      title={inert ? `No ${meta.label.toLowerCase()} waiting` : label}
+      title={inert ? copy.empty : label}
       className={`focus-ring inline-flex items-center gap-1.5 rounded-pill border px-3 py-1 typo-caption transition-colors disabled:is-disabled ${
         active && !inert
           ? TONE_CHIP[meta.tone]
@@ -48,7 +51,7 @@ function KindFilterChip({
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span>{meta.label}</span>
+      <span>{copy.label}</span>
       <span className="typo-data tabular-nums">{count}</span>
     </button>
   );
@@ -56,20 +59,25 @@ function KindFilterChip({
 
 export function DeckTopBar({
   queue,
-  switcher,
+  title,
+  onOpenMonitor,
   onClose,
 }: {
   queue: UnifiedTriageQueue;
-  switcher?: React.ReactNode;
+  title: string;
+  /** Preserved from the popover this surface replaced — the deck is the fast
+   *  lane, the Monitor is where you go when a decision needs the whole story. */
+  onOpenMonitor?: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const total = queue.sessionTotal;
   const pct = total > 0 ? Math.min(100, (queue.decidedCount / total) * 100) : 0;
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-primary/10 bg-secondary/15 px-4">
-      {switcher ? <div className="shrink-0">{switcher}</div> : null}
-      {switcher ? <div className="h-6 w-px shrink-0 bg-primary/12" aria-hidden /> : null}
+      <span className="typo-heading shrink-0 text-foreground">{title}</span>
+      <div className="h-6 w-px shrink-0 bg-primary/12" aria-hidden />
 
       <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
         {TRIAGE_KINDS.map((kind) => (
@@ -91,7 +99,7 @@ export function DeckTopBar({
           <span
             className="block h-1.5 w-28 overflow-hidden rounded-pill bg-primary/12"
             role="progressbar"
-            aria-label="Session progress"
+            aria-label={t.monitor.triage_progress_aria}
             aria-valuenow={queue.decidedCount}
             aria-valuemin={0}
             aria-valuemax={total}
@@ -103,12 +111,23 @@ export function DeckTopBar({
           </span>
         </div>
 
+        {onOpenMonitor ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onOpenMonitor}
+            aria-label={t.monitor.triage_open_monitor}
+            title={t.monitor.triage_open_monitor}
+            icon={<Activity className="h-4 w-4" />}
+          />
+        ) : null}
+
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={onClose}
-          aria-label="Close triage"
-          title="Close triage (Esc)"
+          aria-label={t.monitor.triage_close}
+          title={t.monitor.triage_close_hint}
           icon={<X className="h-4 w-4" />}
         />
       </div>

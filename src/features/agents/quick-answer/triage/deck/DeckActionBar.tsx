@@ -12,6 +12,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, SkipForward, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import type { TriageItem, TriageTone, TriageVerdict } from '../triageTypes';
 import { Kbd, TONE_CHIP, TONE_HOVER } from './DeckChips';
 
@@ -83,6 +85,8 @@ export function DeckActionBar({
   onVerdict: (verdict: TriageVerdict) => void;
   onBranch: (branchId: string) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <footer className="shrink-0 border-t border-primary/10 bg-secondary/10 px-4 py-3">
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -145,12 +149,12 @@ export function DeckActionBar({
           <span className="inline-flex items-center gap-1.5">
             <Kbd>1</Kbd>
             {item.branches.length > 1 ? <Kbd>{String(item.branches.length)}</Kbd> : null}
-            {'Branch'}
+            {t.monitor.triage_hint_branch}
           </span>
         ) : null}
         <span className="inline-flex items-center gap-1.5">
           <Kbd>Esc</Kbd>
-          {'Close'}
+          {t.monitor.triage_hint_close}
         </span>
       </p>
     </footer>

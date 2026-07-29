@@ -5,11 +5,10 @@
 // other. Keeping the map here (rather than inline in three components) is what
 // stops the card, the filter chips and the metric badges from drifting into
 // three slightly different reds.
-//
-// PROTOTYPE NOTE: strings here are provisional English literals, not `t.*`.
-// See the header of `../TriageDeckVariant.tsx` for why.
 import type { LucideIcon } from 'lucide-react';
 import { BookOpen, ClipboardCheck, HelpCircle, Lightbulb } from 'lucide-react';
+
+import type { Translations } from '@/i18n/en';
 
 import type { TriageKind, TriageTone } from '../triageTypes';
 
@@ -58,12 +57,38 @@ export const TONE_HOVER: Record<TriageTone, string> = {
   danger: 'hover:bg-status-error/20',
 };
 
-export const KIND_META: Record<TriageKind, { label: string; one: string; icon: LucideIcon; tone: TriageTone }> = {
-  review: { label: 'Reviews', one: 'Review', icon: ClipboardCheck, tone: 'danger' },
-  idea: { label: 'Ideas', one: 'Idea', icon: Lightbulb, tone: 'accent' },
-  practice: { label: 'Practices', one: 'Practice', icon: BookOpen, tone: 'success' },
-  question: { label: 'Questions', one: 'Question', icon: HelpCircle, tone: 'warning' },
+/** Everything about a kind that a translation can't carry. */
+export const KIND_META: Record<TriageKind, { icon: LucideIcon; tone: TriageTone }> = {
+  review: { icon: ClipboardCheck, tone: 'danger' },
+  idea: { icon: Lightbulb, tone: 'accent' },
+  practice: { icon: BookOpen, tone: 'success' },
+  question: { icon: HelpCircle, tone: 'warning' },
 };
+
+/**
+ * The translated half of the same map: plural (filter chips), singular (the
+ * card's kind chip) and the "none of this kind is waiting" tooltip.
+ *
+ * A `switch` rather than a key lookup on purpose — it is what makes the
+ * generated `Translations` type check every kind at compile time, so adding a
+ * fifth `TriageKind` fails the build instead of rendering `undefined`.
+ */
+export function kindCopy(
+  t: Translations,
+  kind: TriageKind,
+): { label: string; one: string; empty: string } {
+  const m = t.monitor;
+  switch (kind) {
+    case 'review':
+      return { label: m.triage_kind_reviews, one: m.triage_kind_review, empty: m.triage_none_reviews };
+    case 'idea':
+      return { label: m.triage_kind_ideas, one: m.triage_kind_idea, empty: m.triage_none_ideas };
+    case 'practice':
+      return { label: m.triage_kind_practices, one: m.triage_kind_practice, empty: m.triage_none_practices };
+    case 'question':
+      return { label: m.triage_kind_questions, one: m.triage_kind_question, empty: m.triage_none_questions };
+  }
+}
 
 /**
  * Band a 0..max score onto a tone.

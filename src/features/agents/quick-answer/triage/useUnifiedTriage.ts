@@ -117,7 +117,6 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reloadGen]);
 
   /** Everything, before resolution/skip/kind filtering. */
