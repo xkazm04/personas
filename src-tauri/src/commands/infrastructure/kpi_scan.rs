@@ -163,19 +163,40 @@ fn build_kpi_scan_prompt(
 {connectors}
 
 ## Your job
-Explore the repository (you are in its root) to ground your proposals: which test runner / coverage tooling / lint / build exists, what the README claims the product does, what is plausibly measurable TODAY vs needs a connector. Then propose AT MOST {max} KPIs, prioritizing the few that would genuinely change what the team works on.
+Explore the repository (you are in its root) to answer ONE question first: **what is this product FOR, and what would tell its owner it is working?** Read the README, the use cases above, the onboarding copy, the landing page if there is one. Only then look at tooling (test runner, coverage, lint, build).
+
+Propose AT MOST {max} KPIs, prioritizing the few that would genuinely change what the team works on.
+
+### Measure the product, not the repository
+
+The failure mode this scan keeps hitting: a repo is easy to measure and a product is not, so the proposals come back as test coverage, bundle size and compiler errors — numbers that are already enforced by CI gates and that no one would change a roadmap over. **A KPI set that would look identical for any other codebase in this language is a failed scan.**
+
+So:
+
+- **Lead with value and outcome KPIs** — does the product do its job for the person using it. Activation, task completion, time-to-value, time saved versus the manual alternative, repeat use, the specific outcome each use case above exists to deliver.
+- **At most 2 technical KPIs total**, and only where the number is genuinely at risk (an unbounded budget, a known regression surface). Anything a pre-push hook or CI already blocks — compiler errors, lint, formatting — is NOT a KPI: it is a gate that is already closed. Do not propose it.
+- **Not measurable today is not a reason to skip a value KPI.** It is the single most common mistake here. If the product has no production traffic yet, the pillars still have to be named — you cannot steer toward a number nobody wrote down. Propose it per rule 4 (`manual` + `needed_connector`), or as a user-journey outcome that can be simulated before launch (see below). A named pillar with no data beats a measurable number that means nothing.
+
+### Pre-production projects
+
+If there is no production telemetry — no analytics/monitoring connector in the vault list, no traffic KPIs, an app that has not shipped — do NOT fall back to code metrics. Instead propose the outcome pillars as **user-journey outcomes**: name the journey, the completion signal, and the value it delivers ("a new user reaches their first successful persona run", "a run replaces N minutes of manual work"). State the journey plainly in `description`, set `measure_kind: "manual"` and `cadence: "manual"`.
+
+These are exactly what the KPI simulation lane can put numbers against before launch, by walking the journey with representative characters. A pillar phrased as a journey outcome becomes simulatable; the same pillar phrased as an abstraction ("user satisfaction") does not. Prefer the journey.
 
 Rules:
 1. Per-group KPIs use the EXACT group name from the context map; cross-cutting KPIs use an empty group_name (project-level).
 1b. To scope a KPI to a SINGLE context (one subsystem) within a group, set `context_name` to the EXACT context name from the map AND set its `group_name`. Use this only when one specific context clearly owns the outcome (e.g. p95 latency for a `checkout-api` context). Leave `context_name` empty for group-level or project-level KPIs.
 1c. PREFER a USE CASE when one is listed above and the outcome is behavioral — a use case is a slice through several contexts and is the most honest owner of an outcome like "checkout conversion" or "search latency". Set `use_case_name` to the EXACT use-case name; leave `group_name` and `context_name` empty (they are inferred from the use case). Use `context_name` only when the outcome belongs to code in exactly ONE context.
-2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention — connector-gated).
+2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention, activation, task completion, time saved — connector-gated or simulated).
+2b. **Mix, enforced.** Of the proposals you emit: `value` (and `traffic` where the product has users) must be the MAJORITY, and `technical` must be AT MOST 2. If you find yourself with more technical proposals than value ones, you measured the repository instead of the product — go back and re-read what the product does for whoever uses it.
 3. `measure_kind` + `measure_config` must be a REAL, executable procedure:
    - codebase: {{"cmd": "<command runnable in repo root>", "parse": "coverage_pct" | "count_lines" | "regex:<pattern with one capture group>" | "json_path:<dot.path>"}}
    - derived: {{"metric": "<one of: qa_bounce_rate | exec_failure_rate | incident_rate | parked_review_age_days>"}} (measured from the orchestrator's own DB)
-   - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}}
+   - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}} — `instruction` is a HUMAN-READABLE hint for the review queue. It is never executed. At measurement time the binding is composed as an HTTPS request against the connector's public REST API and the number is extracted from the JSON response, driven by `metric_type` (rule 4b). So: never put SQL here and expect it to run, and never propose a connector KPI against a LOCAL database (e.g. the orchestrator's own SQLite) — it has no REST surface and the binding can only be declined. Local-database numbers belong to `derived` (rule 3c) or `codebase`.
    - manual: {{"instruction": "<what the human should check/enter>"}}
-   Prefer codebase for technical KPIs, connector for traffic/value, codebase or derived for quality, and manual only for value/business signals a human must judge. For any codebase KPI, RUN the command from the repo root to confirm it actually yields a number before proposing it, and set baseline_hint from that real value.
+   Prefer codebase for technical KPIs, connector for traffic/value, codebase or derived for quality, and manual for value signals a human must judge or that only a simulated journey can estimate before launch. For any codebase KPI, RUN the command from the repo root to confirm it actually yields a number before proposing it, and set baseline_hint from that real value.
+3b. **Verification decides HOW a KPI is measured, never WHICH KPIs you propose.** Pick the metrics that matter first; only then work out each one's procedure. Letting "what can I run right now" choose the list is what produces a scan full of build metrics.
+3c. `derived` metrics are scoped to the project's linked TEAM. If the project has no team, a derived KPI cannot produce a number — prefer `codebase` or `manual` unless you can see the project is team-linked. Only the four metric names listed are valid; there is no way to add one from here, so do not invent a metric name.
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
 4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".
