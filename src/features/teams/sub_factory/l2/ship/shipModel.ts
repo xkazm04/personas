@@ -46,6 +46,13 @@ export interface ShipFeature {
   name: string;
   /** Context NAMES the feature slices (display-ready). */
   contexts: string[];
+  /**
+   * Context IDs the feature slices, positionally aligned with `contexts`.
+   * The footprint joins on THESE: display names collide (the generated map
+   * emits "area [1/3]" / "[2/3]") and every rescan can rename a context, so a
+   * name join silently shrinks the scope the exit criteria are computed on.
+   */
+  contextIds: string[];
   kpiCount: number;
   /** ready = measurable (≥1 KPI) and no critical context in the slice. */
   ready: boolean;

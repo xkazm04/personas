@@ -150,12 +150,12 @@ This exists so that scope growth after certification is a visible, permanent fac
 
 ### The derived footprint
 
-`useShipData.ts:173-177`: take the CORE members only, flatten their features' context names, dedupe, and resolve back to `ShipContext` records. Later and never members contribute nothing.
+`deriveFootprint` in `shipDerive.ts`: take the CORE members only, flatten their features' context **ids**, dedupe, and resolve back to `ShipContext` records. Later and never members contribute nothing.
 
 Consequences worth knowing:
 
 - Adding a feature to the cut automatically pulls in every context it slices. The composer's footprint strip is labelled to say so ("every row pulled its contexts into the footprint above").
-- The footprint is matched **by context name**, not id, because features carry display-ready context names. A context rename between a scan and a read reshapes the footprint accordingly.
+- The footprint is matched **by context id**. `ShipFeature` carries both `contexts` (display names) and `contextIds` (positionally aligned), and the join uses the ids. It used to join on names, which was a silent correctness hole: the generated context map emits near-identical names (`teams/factory [1/3]`, `[2/3]`) and every rescan can rename a context, so a collision or a rename dropped contexts out of the footprint. Since the footprint feeds both the `contexts` and `kpi` criteria, a milestone could read GO because a critical context had quietly vanished from its own scope. Renames are now free; only a deleted context leaves the footprint.
 - An empty core cut yields an empty footprint, which is why both derived criteria read `setup` rather than a false `go`.
 
 The composer renders the footprint as a chip row tinted by tone, with a summary line counting the critical and KPI-less contexts inside it.
@@ -248,6 +248,7 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `.../ship/ShipContextDrawer.tsx` | Right-side context detail panel with Cut / Bind affordances |
 | `.../ship/ShipDispatch.tsx` | `shipDispatchKey`, `buildCriterionPrompt`, `buildGoalAssistPrompt`, `ShipDispatchModal` |
 | `.../ship/shipModel.ts` | Types, ink maps, `shipVerdict`, `featureState`, `bucketLabel` |
+| `.../ship/shipDerive.ts` | Pure derivations lifted out of the hook: `deriveFootprint`, `deriveCriteria`. Unit-tested in `__tests__/shipDerive.test.ts` |
 | `.../ship/shipRows.tsx` | `LedgerRow` / `LedgerList` / `LedgerHeader`, the shared ledger language |
 | `.../ship/useShipData.ts` | The live adapter: fetch, join, derive, and every mutation |
 | `.../ship/seedOnboarding.ts` | Idempotent onboarding seed milestone |
