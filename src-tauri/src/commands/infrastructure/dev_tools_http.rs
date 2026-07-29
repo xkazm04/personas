@@ -69,6 +69,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
         .route("/dedupe-context-groups", post(dedupe_context_groups))
+        .route("/dedupe-contexts", post(dedupe_contexts))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -273,6 +274,62 @@ async fn list_contexts(
     repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
+}
+
+/// Remove context rows duplicated by the double-delivered protocol stream.
+///
+/// The CLI runs with `--verbose`, which emits each assistant turn as BOTH a
+/// JSON event and a plain-text line, so every `context_map_context` was parsed
+/// and inserted twice (250 duplicate names on this repo before the scan-side
+/// dedupe landed). This repairs maps written before that fix.
+///
+/// Keeps the OLDEST row of each name — the one any `context_id` reference in
+/// dev_goals / dev_kpis / milestones already points at. A PINNED duplicate wins
+/// over an unpinned one regardless of age, because pinning is a human decision
+/// and the pinned row is the curated copy. Idempotent.
+async fn dedupe_contexts(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let mut contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    contexts.sort_by(|a, c| a.created_at.cmp(&c.created_at));
+
+    let mut keeper: std::collections::HashMap<String, (String, bool)> =
+        std::collections::HashMap::new();
+    let mut to_delete: Vec<String> = Vec::new();
+    for c in &contexts {
+        match keeper.get(&c.name) {
+            None => {
+                keeper.insert(c.name.clone(), (c.id.clone(), c.pinned));
+            }
+            Some((keep_id, keep_pinned)) => {
+                if c.pinned && !keep_pinned {
+                    // The pinned copy is the curated one — keep it instead.
+                    to_delete.push(keep_id.clone());
+                    keeper.insert(c.name.clone(), (c.id.clone(), true));
+                } else {
+                    to_delete.push(c.id.clone());
+                }
+            }
+        }
+    }
+
+    let mut deleted = 0usize;
+    for id in &to_delete {
+        if repo::delete_context(&pool, id).unwrap_or(false) {
+            deleted += 1;
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_before": contexts.len(),
+        "contexts_after": contexts.len() - deleted,
+        "duplicates_deleted": deleted,
+        "distinct_names": keeper.len(),
+    })))
 }
 
 #[derive(Deserialize)]

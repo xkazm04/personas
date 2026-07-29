@@ -1099,6 +1099,15 @@ async fn run_context_generation(
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
     let mut unique_files: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Protocol messages arrive TWICE. The CLI runs with `--verbose`, which makes
+    // it emit each assistant turn both as a JSON event and as a plain-text line
+    // (documented in CLAUDE.md for output display); `extract_display_text`
+    // returns text for both, so every `context_map_context` was parsed and
+    // INSERTed twice. Live result: 250 duplicate context names with identical
+    // file lists, and a slot count that was exactly 2.0x distinct on every scan
+    // — that suspicious precision is what exposed it. Dedupe by name within the
+    // scan; a context emitted twice is one context either way.
+    let mut seen_contexts: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Lazy clear: only wipe the existing map once the run produces its first real
     // output, so a failed/empty rescan can't destroy the curated map up-front.
     //
@@ -1203,6 +1212,12 @@ async fn run_context_generation(
                                 api_surface, cross_refs, tech_stack,
                                 category, business_feature,
                             } => {
+                                // See `seen_contexts`: every protocol message is
+                                // delivered twice, so the second sighting must not
+                                // become a second row.
+                                if !seen_contexts.insert(name.clone()) {
+                                    continue;
+                                }
                                 if needs_lazy_clear && !map_cleared {
                                     let _ = repo::clear_project_context_map(pool, project_id);
                                     map_cleared = true;
