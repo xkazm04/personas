@@ -434,7 +434,21 @@
     "trash_empty_confirm_title": "{count} Elemente endgültig löschen?",
     "trash_empty_confirm_body": "Dadurch wird der Papierkorb geleert. Diese Elemente können nicht wiederhergestellt werden.",
     "trash_purges_in_days": "Löschung in {days} T.",
-    "trash_purges_soon": "Wird bald gelöscht"
+    "trash_purges_soon": "Wird bald gelöscht",
+    "kb_add_to": "Zur Wissensdatenbank hinzufügen",
+    "kb_add_folder": "Diesen Ordner zur Wissensdatenbank hinzufügen",
+    "kb_open": "Fragen & extrahieren",
+    "kb_picker_title_ingest": "Zur Wissensdatenbank hinzufügen",
+    "kb_picker_title_open": "Wissensdatenbank öffnen",
+    "kb_picker_subtitle": "Für {target}",
+    "kb_picker_empty": "Noch keine Wissensdatenbanken. Erstellen Sie eine, um zu beginnen.",
+    "kb_create_new": "Neue Wissensdatenbank",
+    "kb_create_placeholder": "Name der Wissensdatenbank",
+    "kb_create": "Erstellen",
+    "kb_docs_n": "{count} Dokumente",
+    "kb_ingest_queued_n": "{count} Element(e) zur Indizierung eingereiht",
+    "kb_tab_ask": "Fragen",
+    "kb_tab_extract": "Extrahieren"
   },
   "artist": {
     "title": "Künstler",

@@ -4,6 +4,8 @@
 // deficiencies are the only things standing; an unwired/absent value is a blue
 // INVITATION ("set up →"), not a grey gap. Owned by the Factory — the cockpit
 // bench keeps its own copies until it is consolidated.
+import type { LucideIcon } from 'lucide-react';
+
 import { resolveTechIcon } from './techIcons';
 import type { CellValue } from './passportRows';
 
@@ -126,16 +128,28 @@ export function anchorTip(rect: DOMRect, w: number, h: number): { left: number; 
   return { left, top };
 }
 
-/** Editorial tab row — quiet uppercase labels, active = teal underline. */
-export function InkTabs<T extends string>({ tabs, active, onChange, label }: {
+/** Editorial tab row — quiet uppercase labels, active = teal underline. The
+ *  row's own name (View / Sort / Module) is a GLYPH, not a word: it labels the
+ *  control group, so it costs the tabs horizontal room it never earned back.
+ *  The word survives as the tablist's accessible name + the icon's tooltip. */
+export function InkTabs<T extends string>({ tabs, active, onChange, label, icon: Icon }: {
   tabs: Array<{ id: T; label: string }>;
   active: T;
   onChange: (id: T) => void;
+  /** Accessible name for the row — rendered as text only when no icon is given. */
   label: string;
+  /** Glyph standing in for `label`. */
+  icon?: LucideIcon;
 }) {
   return (
     <div className="inline-flex items-center gap-3" role="tablist" aria-label={label}>
-      <span className="text-[10px] uppercase tracking-[0.14em] text-foreground/35">{label}</span>
+      {Icon ? (
+        <span title={label} className="inline-flex shrink-0 text-foreground/40">
+          <Icon className="w-5 h-5" aria-hidden />
+        </span>
+      ) : (
+        <span className="typo-body-lg uppercase tracking-[0.08em] font-medium text-foreground/40">{label}</span>
+      )}
       {tabs.map((t) => {
         const on = t.id === active;
         return (
@@ -145,7 +159,7 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label }: {
             role="tab"
             aria-selected={on}
             onClick={() => onChange(t.id)}
-            className={`text-[10.5px] uppercase tracking-[0.1em] pb-0.5 border-b transition-colors focus-ring ${
+            className={`typo-body-lg uppercase tracking-[0.06em] pb-0.5 border-b transition-colors focus-ring ${
               on ? 'text-foreground font-semibold' : 'text-foreground/45 hover:text-foreground/75 border-transparent'
             }`}
             style={on ? { borderColor: INK.teal } : undefined}

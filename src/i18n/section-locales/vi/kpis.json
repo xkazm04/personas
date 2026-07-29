@@ -236,5 +236,6 @@
   "suggest_dismiss": "Bỏ qua",
   "suggest_retire": "Ngừng dùng {name}",
   "suggest_sources": "{count} nguồn",
-  "suggest_title": "Đề xuất mô phỏng ({count})"
+  "suggest_title": "Đề xuất mô phỏng ({count})",
+  "define_kpi": "xác định KPI"
 }

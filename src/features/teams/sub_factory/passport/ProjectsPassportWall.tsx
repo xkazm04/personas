@@ -14,11 +14,12 @@
 // morphs between its grid tile and its table column.
 import { useMemo, useRef, useState } from 'react';
 import { LayoutGroup, useReducedMotion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
 
 import { sortByNameAsc, type AppPassport } from './passportModel';
 import { InkTabs } from './passportInk';
 import type { CoverBodyProps } from './CoverBody';
+import type { CoverRoadmapVM } from './CoverRoadmap';
 import type { WarningItem } from './WarningBadge';
 import { onboardDispatchKey } from './onboardDispatch';
 import { ImprovePlanPanel } from './improve/ImprovePlanPanel';
@@ -43,12 +44,18 @@ export function ProjectsPassportWall({
   onJumpKpi,
   headerStats,
   faviconBySlug,
+  roadmapBySlug,
+  onOpenShip,
   rescanningProject,
   onRescanProject,
 }: {
   passports: AppPassport[];
   openSlugs?: Set<string>;
   onOpen?: (slug: string) => void;
+  /** Minimized roadmap per slug (dev_milestones) — the cover's Ship strip. */
+  roadmapBySlug?: Map<string, CoverRoadmapVM>;
+  /** Opens the project's L2 directly on its Ship tab (the roadmap strip). */
+  onOpenShip?: (slug: string) => void;
   /** Off-track KPIs per project id — surfaced as a warning badge on the cover. */
   attentionByProject?: Map<string, WarningItem[]>;
   /** Deep-link from a warning into that KPI's console. */
@@ -107,6 +114,8 @@ export function ProjectsPassportWall({
     onJumpKpi,
     stats: headerStats?.get(p.identity.slug) ?? null,
     favicon: faviconBySlug?.get(p.identity.slug) ?? null,
+    roadmap: roadmapBySlug?.get(p.identity.slug) ?? null,
+    onOpenShip: openSlugs?.has(p.identity.slug) ? onOpenShip : undefined,
   });
 
   // The per-project actions row (Compare view, "Stack" group header line) —
@@ -130,7 +139,7 @@ export function ProjectsPassportWall({
       {/* toolbar — view toggle + (compare-only) scroll arrows + column sort */}
       <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
         <div className="inline-flex items-center gap-4">
-          <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label={COPY.view} />
+          <InkTabs tabs={VIEW_TABS} active={view} onChange={setView} label={COPY.view} icon={LayoutGrid} />
           {view === 'compare' && (
             <div className="inline-flex items-center gap-1.5">
               <button type="button" onClick={() => nudge(-1)} aria-label="Scroll columns left" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
@@ -139,11 +148,11 @@ export function ProjectsPassportWall({
               <button type="button" onClick={() => nudge(1)} aria-label="Scroll columns right" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <span className="typo-caption text-foreground/45 ml-1">{COPY.scrollHint}</span>
+              <span className="typo-body-lg text-foreground/45 ml-1">{COPY.scrollHint}</span>
             </div>
           )}
         </div>
-        <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label={COPY.sort} />
+        <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label={COPY.sort} icon={ArrowUpDown} />
       </div>
 
       <LayoutGroup>

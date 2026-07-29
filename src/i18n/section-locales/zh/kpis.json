@@ -236,5 +236,6 @@
   "suggest_dismiss": "忽略",
   "suggest_retire": "停用 {name}",
   "suggest_sources": "{count} 个来源",
-  "suggest_title": "模拟建议（{count}）"
+  "suggest_title": "模拟建议（{count}）",
+  "define_kpi": "定义 KPI"
 }

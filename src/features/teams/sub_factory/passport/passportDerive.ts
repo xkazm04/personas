@@ -245,7 +245,7 @@ export function derivePassportFromMetadata(
 
   // -- honest blockers (feed the Wall's "Why it's not ready" band) ------------
   const autoBlockers: string[] = [];
-  if (contextGraph !== 'full') autoBlockers.push('Context coverage incomplete — rescan to map the whole repo');
+  if (contextGraph !== 'full') autoBlockers.push('Context coverage incomplete. Rescan to map the whole repo');
   if (!selfVerify.test) autoBlockers.push('No automated test signal an agent can self-verify against');
   if (!aiInWorkflow) autoBlockers.push('No automated PR / team pipeline wired');
   if (!hasManifest) autoBlockers.push('No standards & branching policy set');

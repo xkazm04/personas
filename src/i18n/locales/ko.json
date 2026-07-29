@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "닫기",
     "suggest_retire": "{name} 폐기",
     "suggest_sources": "출처 {count}개",
-    "suggest_title": "시뮬레이션 제안 ({count})"
+    "suggest_title": "시뮬레이션 제안 ({count})",
+    "define_kpi": "KPI 정의"
   },
   "deliberation": {
     "agenda": "안건",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "아직 KPI 없음",
     "state_ready": "준비됨",
     "tab_ship": "출시",
+    "cover_next": "다음",
+    "cover_all_shipped": "모든 마일스톤 출시 완료",
+    "cover_empty": "마일스톤 없음 — 첫 컷을 계획하세요",
+    "cover_shipped_count": "{shipped}/{total} 출시됨",
+    "cover_open_aria": "{name}의 Ship 로드맵 열기",
     "target_date": "목표 {date}",
     "target_shipped": "출시됨 {date}",
     "the_cut": "더 컷",

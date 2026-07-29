@@ -89,7 +89,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
             <span key={s.env} className={`flex flex-col gap-1 min-w-0 flex-1 ${i > 0 ? 'pl-2 ml-2 border-l border-foreground/10' : ''}`}>
               <span className={`text-[8.5px] uppercase tracking-[0.14em] leading-none ${s.label ? 'text-foreground/45' : 'text-foreground/25'}`}>{ENV_LABEL[s.env]}</span>
               {s.label ? (
-                <span title={s.sub ? `${s.label} — ${s.sub}` : undefined} className="min-w-0"><TechInk label={s.label} /></span>
+                <span title={s.sub ? `${s.label}: ${s.sub}` : undefined} className="min-w-0"><TechInk label={s.label} /></span>
               ) : (
                 <span className="typo-caption text-foreground/25 leading-none" title={`${ENV_LABEL[s.env]}: no source or config known in the codebase`}>—</span>
               )}
@@ -101,7 +101,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
     case 'cost': {
       if (value.state === 'missing') {
         return (
-          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo — the gear dispatches an agent to create it`} data-testid="app-cost-missing">
+          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo. The gear dispatches an agent to create it`} data-testid="app-cost-missing">
             <span className="typo-caption font-medium text-foreground/45">NA</span>
             <span className="typo-label text-foreground/35">no cost file</span>
           </span>
@@ -112,7 +112,7 @@ export function InkWallCell({ value }: { value: CellValue }) {
           <span
             className="typo-caption font-medium"
             style={{ color: INK.blue }}
-            title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON — fix it by hand` : `${APP_COST_FILENAME} exists — add your services and monthly costs by hand`}
+            title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON. Fix it by hand` : `${APP_COST_FILENAME} exists. Add your services and monthly costs by hand`}
           >
             {value.invalid ? 'invalid cost file' : 'add services →'}
           </span>

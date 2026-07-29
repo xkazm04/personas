@@ -10,6 +10,7 @@
 //   • Observability— LLM + Monitoring mix: the technical dimension.
 // The Dev Tools / Projects→KPIs originals still exist — dual-run continues.
 import { useMemo, useState, type ReactNode } from 'react';
+import { Boxes } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -19,19 +20,21 @@ import { FactoryOverviewTab } from './FactoryOverviewTab';
 import { FactoryObservabilityTab } from './FactoryObservabilityTab';
 import { FactoryShipTab } from './ship/FactoryShipTab';
 
-type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
+export type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
 
-
-
-export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
+export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, initialTab = 'overview' }: {
   projectId: string;
   /** The legacy context×KPI matrix (renderGroups) — hosts the L3/L4 drill. */
   matrix: ReactNode;
   /** Fired after a KPI decision so the host can reload the matrix data too. */
   onKpisChanged?: () => void;
+  /** Which tab the project opens on. The wall's cover roadmap strip enters
+   *  straight on 'ship'; every other door keeps the Overview default. Read at
+   *  mount only — the shell remounts this subtree per opened project. */
+  initialTab?: L2Tab;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<L2Tab>('overview');
+  const [tab, setTab] = useState<L2Tab>(initialTab);
   const tabs = useMemo<Array<{ id: L2Tab; label: string }>>(() => [
     { id: 'overview', label: 'Overview' },
     { id: 'ship', label: t.ship.tab_ship },
@@ -46,7 +49,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged }: {
   return (
     <div data-testid="factory-l2-tabs">
       <div className="mb-3">
-        <InkTabs tabs={tabs} active={tab} onChange={setTab} label="Module" />
+        <InkTabs tabs={tabs} active={tab} onChange={setTab} label="Module" icon={Boxes} />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
       {tab === 'ship' && <FactoryShipTab data={data} />}

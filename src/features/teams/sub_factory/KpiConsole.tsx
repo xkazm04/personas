@@ -39,7 +39,7 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
     setMeasureMsg(null);
     try {
       const m = await evaluateKpi(kpi.id);
-      setMeasureMsg(`Measured ${fmtUnit(m.value, kpi.unit)} — saved`);
+      setMeasureMsg(`Measured ${fmtUnit(m.value, kpi.unit)} saved`);
     } catch (e) {
       setMeasureMsg(errMsg(e));
     } finally {
@@ -126,8 +126,8 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
         <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
           <h3 className="typo-label text-foreground mb-3 flex items-center gap-1.5"><SlidersHorizontal className="w-3.5 h-3.5" /> Calibrate thresholds</h3>
           <div className="space-y-5">
-            <ThresholdSlider label="Yellow — at risk" color={TRAFFIC_COLOR.yellow} value={kpi.warnAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
-            <ThresholdSlider label="Red — off track" color={TRAFFIC_COLOR.red} value={kpi.critAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
+            <ThresholdSlider label="Yellow, at risk" color={TRAFFIC_COLOR.yellow} value={kpi.warnAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
+            <ThresholdSlider label="Red, off track" color={TRAFFIC_COLOR.red} value={kpi.critAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
           </div>
           <ConsequencePreview st={st} kpi={kpi} />
         </section>
@@ -161,14 +161,14 @@ function ConsequencePreview({ st, kpi }: { st: KpiStatus; kpi: MockKpi }) {
   const cur = kpi.current != null ? fmtUnit(kpi.current, kpi.unit) : null;
   const text =
     st === 'crit'
-      ? `${cur} is past your red line — the system derives a goal to fix this now.`
+      ? `${cur} is past your red line. The system derives a goal to fix this now.`
       : st === 'warn'
-        ? `${cur} is in the watch zone — the team gets a nudge, no goal yet.`
+        ? `${cur} is in the watch zone. The team gets a nudge, no goal yet.`
         : st === 'met'
-          ? `Target met at ${cur} — nothing to steer.`
+          ? `Target met at ${cur}. Nothing to steer.`
           : st === 'unmeasured'
-            ? 'Not measured yet — your lines take effect on the next measurement.'
-            : `${cur} is clear of both lines — nothing triggers.`;
+            ? 'Not measured yet. Your lines take effect on the next measurement.'
+            : `${cur} is clear of both lines. Nothing triggers.`;
   return (
     <div className="mt-3">
       <p className="typo-caption flex items-start gap-1.5" style={{ color: STATUS_COLOR[st] }}>

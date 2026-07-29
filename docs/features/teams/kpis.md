@@ -62,6 +62,35 @@ same live `dev_kpis` data. Two cockpit moves land here first:
   Teams › KPIs queue. Accepting reloads the matrix; the matrix itself now shows
   only **managed** (active/paused) KPIs, so proposals don't masquerade as live.
 
+- **Cover roadmap → Ship (L1 shortcut)** (`CoverRoadmap`, on every passport
+  cover in the wall's Overview grid): a minimized roadmap strip — one pip per
+  `dev_milestones` row (filled = shipped, ringed = the active cut, hollow =
+  planned), a `shipped/total` tally, and a line naming the **next milestone**
+  with its target date. Clicking the strip opens that project's L2 directly on
+  the **Ship** tab instead of the default Overview, so the roadmap is one click
+  from the wall. Projects with no milestones show a blue setup invitation
+  ("plan the first cut") and still open Ship. The strip only reads milestone
+  rows; every derivation (progress, exit criteria, footprint) stays in the Ship
+  tab's `useShipData`.
+  The tile's old footer digest is gone: the **blockers badge** (warning glyph +
+  count, full list in the tooltip; a green check when there are none) was
+  promoted onto the cover's identity line next to the project name, so it rides
+  along wherever a cover renders — grid tile, Compare column, Mastermind
+  sidebar. The wall's View / Sort control groups and the L2 Module tab row are
+  labelled by a glyph rather than a word (the word survives as the tablist's
+  accessible name and the glyph's tooltip).
+- **Action consent gate** (`ActionConfirmModal` + `actionConfirmCatalog`): the
+  five per-project actions on the Compare table's actions row (Onboard ·
+  Standards scan · Copy report · Rescan · Improve plan) each open a full modal
+  before running, not a one-paragraph popover. It states the action's **impact
+  class** (read-only / writes when you confirm / runs an agent session), a fact
+  strip (scope, engine, duration, what it writes, where it runs), the **ordered
+  steps** the click sets off, and the **boundaries** that hold regardless
+  (credential values never leave the vault, queued Claude tasks wait for
+  review, read-only passes never touch the repo). The copy lives in
+  `actionConfirmCatalog.ts` next to the flows it describes — change a flow,
+  change its steps in the same edit.
+
 The Factory renders every enum (category, measurement kind, cadence, tier,
 status, domain) through human labels — **no raw tokens** (`codebase`, `weekly`,
 `supporting`) reach the user, and no raw measurement JSON is shown (it's parsed

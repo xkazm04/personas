@@ -22,7 +22,7 @@ import {
   BUCKET_HUE, CRIT_HUE, bucketLabel, shipVerdict,
   type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
-import { LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import { useShipData, type ShipData } from './useShipData';
 
 const STATUS_META: Record<ShipMilestoneVM['status'], { hue: string; icon: typeof Check }> = {
@@ -154,9 +154,7 @@ function Workspace({ vm, ship, editable, t, tx }: {
             />
           ))}
           {core.length === 0 && (
-            <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
-              {t.ship.cut_empty_planner}
-            </li>
+            <LedgerEmpty testid="ship-cut-empty">{t.ship.cut_empty_planner}</LedgerEmpty>
           )}
         </LedgerList>
       </div>
@@ -197,9 +195,15 @@ function Workspace({ vm, ship, editable, t, tx }: {
           />
         ))}
         {outside.length === 0 && (
-          <li className="typo-caption px-3.5 py-2.5">
+          // Same dashed card as the cut's empty slot. Blue when there is nothing
+          // to pull from yet (an invitation), grey when everything is already in
+          // the cut (nothing is wrong, there is simply nothing left).
+          <LedgerEmpty
+            tone={ship.features.length === 0 ? 'setup' : 'neutral'}
+            testid="ship-outside-empty"
+          >
             {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.outside_empty_all_in}
-          </li>
+          </LedgerEmpty>
         )}
       </LedgerList>
     </>

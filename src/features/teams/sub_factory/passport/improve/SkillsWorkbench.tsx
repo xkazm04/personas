@@ -58,7 +58,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
               <ChoiceCard
                 icon={Rocket}
                 title="Dispatch a skill"
-                body="Run an installed skill now as a background Fleet session in the project root — you stay where you are."
+                body="Run an installed skill now as a background Fleet session in the project root. You stay where you are."
                 meta={wb.dispatch.loading ? 'loading…' : `${wb.dispatch.items.length} installed`}
                 onClick={() => setMode('dispatch')}
                 testid="skills-workbench-choose-dispatch"

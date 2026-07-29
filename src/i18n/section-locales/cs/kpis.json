@@ -236,5 +236,6 @@
   "suggest_dismiss": "Zamítnout",
   "suggest_retire": "Zrušit {name}",
   "suggest_sources": "{count} zdrojů",
-  "suggest_title": "Návrhy ze simulace ({count})"
+  "suggest_title": "Návrhy ze simulace ({count})",
+  "define_kpi": "definovat KPI"
 }

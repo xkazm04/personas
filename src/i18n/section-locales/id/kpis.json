@@ -236,5 +236,6 @@
   "suggest_dismiss": "Abaikan",
   "suggest_retire": "Pensiunkan {name}",
   "suggest_sources": "{count} sumber",
-  "suggest_title": "Saran simulasi ({count})"
+  "suggest_title": "Saran simulasi ({count})",
+  "define_kpi": "tentukan KPI"
 }

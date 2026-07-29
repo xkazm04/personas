@@ -236,5 +236,6 @@
   "suggest_dismiss": "Ignorer",
   "suggest_retire": "Retirer {name}",
   "suggest_sources": "{count} sources",
-  "suggest_title": "Suggestions de simulation ({count})"
+  "suggest_title": "Suggestions de simulation ({count})",
+  "define_kpi": "définir un KPI"
 }

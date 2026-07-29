@@ -236,5 +236,6 @@
   "suggest_dismiss": "खारिज करें",
   "suggest_retire": "{name} रिटायर करें",
   "suggest_sources": "{count} स्रोत",
-  "suggest_title": "सिमुलेशन सुझाव ({count})"
+  "suggest_title": "सिमुलेशन सुझाव ({count})",
+  "define_kpi": "KPI तय करें"
 }

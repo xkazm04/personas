@@ -131,9 +131,9 @@ export const SECTIONS: SectionSpec[] = [
     rows: [
       { key: 'languages', label: 'Languages', info: 'Programming languages detected in the repo by the cross-project scan.', get: (p) => ({ kind: 'chips', items: p.stack.languages.map((l) => l.name) }) },
       { key: 'runtime', label: 'Runtime', info: 'The runtime the app executes on (node, rust, …), detected from the repo.', get: (p) => ({ kind: 'present', label: p.stack.runtime ?? null }) },
-      { key: 'frameworks', label: 'Frameworks', info: 'Application frameworks read from the dependency manifests (package.json / Cargo.toml) with their versions — meta-frameworks like Next.js included.', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
-      { key: 'persistence', label: 'Database', info: 'The database per environment — local / test / production. An empty slot means no source or config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.db, { local: persistenceChips(p).join(' · ') || null }) },
-      { key: 'hosting', label: 'Hosting', info: 'Where the app runs per environment — local / test / production. An empty slot means no hosting config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.hosting, { test: p.stack.hosting ?? null }) },
+      { key: 'frameworks', label: 'Frameworks', info: 'Application frameworks read from the dependency manifests (package.json / Cargo.toml) with their versions, meta-frameworks like Next.js included.', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
+      { key: 'persistence', label: 'Database', info: 'The database per environment: local, test, production. An empty slot means no source or config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.db, { local: persistenceChips(p).join(' · ') || null }) },
+      { key: 'hosting', label: 'Hosting', info: 'Where the app runs per environment: local, test, production. An empty slot means no hosting config for that environment is known in the codebase.', get: (p) => envCell(p.stack.environments?.hosting, { test: p.stack.hosting ?? null }) },
       { key: 'auth', label: 'Auth', info: 'The auth method (Clerk / Auth.js / Supabase / …) detected from the repo’s dependencies.', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
     ],
   },
@@ -143,29 +143,29 @@ export const SECTIONS: SectionSpec[] = [
     icon: 'bot',
     rows: [
       { key: 'auto', label: 'Automation level', info: 'Headline score (L1–L5): how ready this repo is for coding agents to work in it autonomously.', headline: true, get: (p) => ({ kind: 'level', level: p.automationReadiness.level, score: p.automationReadiness.score }) },
-      { key: 'selfverify', label: 'Self-verify locally', info: 'Whether an agent can check its own work without a human — build, test, lint and type-check signals detected in the repo.', get: (p) => ({ kind: 'pips', items: [
+      { key: 'selfverify', label: 'Self-verify locally', info: 'Whether an agent can check its own work without a human: build, test, lint and type-check signals detected in the repo.', get: (p) => ({ kind: 'pips', items: [
         { label: 'build', on: p.automationReadiness.selfVerify.build },
         { label: 'test', on: p.automationReadiness.selfVerify.test },
         { label: 'lint', on: p.automationReadiness.selfVerify.lint },
         { label: 'types', on: p.automationReadiness.selfVerify.typecheck },
       ] }) },
-      { key: 'context', label: 'Context coverage', info: 'How much of the codebase is mapped into the contexts agents navigate. Graded from the project context scan — none / partial / full.', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
-      { key: 'instructions', label: 'Agent instructions', info: 'Guidance coding agents read before touching the repo — a CLAUDE.md file and/or an assigned team policy.', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
-      { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in — from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map. The sub-line is the git rot scan: dirty = coupled sources changed after the doc’s last update; unread = no session has opened it since telemetry began.', get: (p) => {
+      { key: 'context', label: 'Context coverage', info: 'How much of the codebase is mapped into the contexts agents navigate. Graded from the project context scan: none, partial or full.', get: (p) => (ordinalCell(GRAPH_SCALE, p.automationReadiness.artifacts.contextGraph, GRAPH_LABEL[p.automationReadiness.artifacts.contextGraph])) },
+      { key: 'instructions', label: 'Agent instructions', info: 'Guidance coding agents read before touching the repo: a CLAUDE.md file and/or an assigned team policy.', get: (p) => ({ kind: 'chips', items: p.automationReadiness.artifacts.agentInstructions }) },
+      { key: 'docs', label: 'Documentation', info: 'Documentation agents (and humans) can ground in, from a bare README, through a structured docs/ tree, to docs coupled to source via a doc-map. The sub-line is the git rot scan: dirty = coupled sources changed after the doc’s last update; unread = no session has opened it since telemetry began.', get: (p) => {
         const rot = p.automationReadiness.artifacts.docRot;
         const bits: string[] = [];
         if (rot && rot.dirty > 0) bits.push(`${rot.dirty} dirty`);
         if (rot && rot.neverRead > 0) bits.push(`${rot.neverRead} unread`);
         return ordinalCell(DOCS_SCALE, p.automationReadiness.artifacts.docs, DOCS_LABEL[p.automationReadiness.artifacts.docs], bits.length ? bits.join(' · ') : undefined);
       } },
-      { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo — learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries; Governed = the team memory engine’s review/claims/health loop is running (the sub-line is its latest health score and open disputes).', get: (p) => {
+      { key: 'memory', label: 'Agent memory', info: 'Persistent agent memory for this repo: learnings that survive across sessions (Claude Code auto-memory or an in-repo MEMORY.md). Curated = an indexed store with recent entries; Governed = the team memory engine’s review/claims/health loop is running (the sub-line is its latest health score and open disputes).', get: (p) => {
         const h = p.automationReadiness.artifacts.memoryHealth;
         const bits: string[] = [];
         if (h) bits.push(`health ${h.score}`);
         if (h && h.disputed > 0) bits.push(`${h.disputed} disputed`);
         return ordinalCell(MEMORY_SCALE, p.automationReadiness.artifacts.memory, MEMORY_LABEL[p.automationReadiness.artifacts.memory], bits.length ? bits.join(' · ') : undefined);
       } },
-      { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills — shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
+      { key: 'skills', label: 'Reusable skills', info: 'Claude skills in .claude/skills, shared with your library or other projects vs specific to this codebase. Dormant = installed 30+ days with zero observed invocations (mined from Claude Code session transcripts).', get: (p) => {
         const c = p.automationReadiness.artifacts.skillCounts;
         if (!c) return { kind: 'bool', on: p.automationReadiness.artifacts.skills };
         const items: Array<{ label: string; count: number; warn?: boolean }> = [
@@ -176,7 +176,7 @@ export const SECTIONS: SectionSpec[] = [
         return { kind: 'counts', items };
       } },
       { key: 'evals', label: 'Evals', info: 'Runnable, scored evaluation cases that regression-check the product’s core behaviour.', get: (p) => (ordinalCell(EVALS_SCALE, p.automationReadiness.artifacts.evals, EVALS_LABEL[p.automationReadiness.artifacts.evals])) },
-      { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery — auto-PR on green, a team pipeline, or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
+      { key: 'aiflow', label: 'AI in workflow', info: 'Whether AI is wired into delivery: auto-PR on green, a team pipeline, or a PR connector.', get: (p) => ({ kind: 'bool', on: p.automationReadiness.aiInWorkflow }) },
     ],
   },
   {
@@ -185,11 +185,11 @@ export const SECTIONS: SectionSpec[] = [
     icon: 'shield-check',
     rows: [
       { key: 'band', label: 'Production band', info: 'Headline band (prototype → hardened), scored from CI, security, observability, tests and delivery.', headline: true, get: (p) => ({ kind: 'band', band: p.productionReadiness.band, score: p.productionReadiness.score }) },
-      { key: 'ci', label: 'CI', info: 'How merges are protected — from no checks, through pre-commit checks and gated PRs, to automated delivery.', get: (p) => (ordinalCell(CI_SCALE, p.productionReadiness.ci.level, CI_LABEL[p.productionReadiness.ci.level], p.productionReadiness.ci.provider ?? undefined)) },
+      { key: 'ci', label: 'CI', info: 'How merges are protected, from no checks, through pre-commit checks and gated PRs, to automated delivery.', get: (p) => (ordinalCell(CI_SCALE, p.productionReadiness.ci.level, CI_LABEL[p.productionReadiness.ci.level], p.productionReadiness.ci.provider ?? undefined)) },
       { key: 'tests', label: 'Tests', info: 'The automated test suite detected in the repo, graded by how much it covers.', get: (p) => (ordinalCell(TESTS_SCALE, p.productionReadiness.tests.level, TESTS_LABEL[p.productionReadiness.tests.level], testsSub(p))) },
-      { key: 'security', label: 'Security', info: 'Security posture — a written policy first, then dependency + code scanning (Dependabot / CodeQL), then CI-gated scans.', get: (p) => (ordinalCell(SECURITY_SCALE, p.productionReadiness.security.level, SECURITY_LABEL[p.productionReadiness.security.level], p.productionReadiness.security.tools?.join(' · '))) },
-      { key: 'observability', label: 'Observability', info: 'Whether the running app reports back — error tracking first, then logs, metrics and tracing.', get: (p) => (ordinalCell(OBSERVABILITY_SCALE, p.productionReadiness.observability.level, OBSERVABILITY_LABEL[p.productionReadiness.observability.level])) },
-      { key: 'migrations', label: 'Migrations', info: 'How database schema changes ship — ad-hoc, scripted, or versioned and repeatable.', get: (p) => (ordinalCell(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations, MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations])) },
+      { key: 'security', label: 'Security', info: 'Security posture: a written policy first, then dependency + code scanning (Dependabot / CodeQL), then CI-gated scans.', get: (p) => (ordinalCell(SECURITY_SCALE, p.productionReadiness.security.level, SECURITY_LABEL[p.productionReadiness.security.level], p.productionReadiness.security.tools?.join(' · '))) },
+      { key: 'observability', label: 'Observability', info: 'Whether the running app reports back: error tracking first, then logs, metrics and tracing.', get: (p) => (ordinalCell(OBSERVABILITY_SCALE, p.productionReadiness.observability.level, OBSERVABILITY_LABEL[p.productionReadiness.observability.level])) },
+      { key: 'migrations', label: 'Migrations', info: 'How database schema changes ship: ad-hoc, scripted, or versioned and repeatable.', get: (p) => (ordinalCell(MIGRATIONS_SCALE, p.productionReadiness.delivery.migrations, MIGRATIONS_LABEL[p.productionReadiness.delivery.migrations])) },
     ],
   },
   {
@@ -198,15 +198,15 @@ export const SECTIONS: SectionSpec[] = [
     icon: 'plug',
     rows: [
       { key: 'integrations', label: 'Integrations', info: 'External services the app talks to (VCS, payments, LLM APIs, …), detected from config and keywords.', get: (p) => ({ kind: 'chips', items: p.stack.integrations.map((i) => i.name) }) },
-      { key: 'monitoring', label: 'Monitoring', info: 'Which environments have a monitoring source wired — local / test / production. A bound connector watches the deployed app, so it fills the production slot; empty slots mean no source is known in the codebase.', get: (p) => envCell(p.stack.environments?.monitoring, { production: p.stack.monitoring.errorTracking }) },
-      { key: 'errors', label: 'Error tracking', info: 'An error-tracking connector bound to this project — collects crashes and exceptions from the running app.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.errorTracking }) },
+      { key: 'monitoring', label: 'Monitoring', info: 'Which environments have a monitoring source wired: local, test, production. A bound connector watches the deployed app, so it fills the production slot; empty slots mean no source is known in the codebase.', get: (p) => envCell(p.stack.environments?.monitoring, { production: p.stack.monitoring.errorTracking }) },
+      { key: 'errors', label: 'Error tracking', info: 'An error-tracking connector bound to this project. It collects crashes and exceptions from the running app.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.errorTracking }) },
       { key: 'logs', label: 'Logs', info: 'Log aggregation, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.logs }) },
       { key: 'metrics', label: 'Metrics', info: 'Runtime metrics, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.metrics }) },
       { key: 'tracing', label: 'Tracing', info: 'Distributed tracing, covered by the bound monitoring connector.', get: (p) => ({ kind: 'present', label: p.stack.monitoring.tracing }) },
-      { key: 'llmtracking', label: 'LLM tracking', info: 'An LLM-observability connector — tracks this project’s model calls and 30-day spend.', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
-      { key: 'appcost', label: 'App cost', info: `Monthly running cost of the app's known services, read from ${APP_COST_FILENAME} at the repo root (user-maintained, gitignored). NA until the file exists — the cell can dispatch an agent to create it.`, get: (p) => appCostCell(p.stack.appCost) },
-      { key: 'datalinks', label: 'Data analysis', info: 'Related projects whose tooling post-processes this app’s internal data (declared by hand for now — click the cell to link projects; a future scan may propose them).', get: (p) => ({ kind: 'chips', items: p.stack.dataLinks ?? [] }) },
-      { key: 'support', label: 'Support', info: 'Incoming customer-support channels (Email, Discord, …) — wired by binding a support connector from your vault; deeper support metrics come later.', get: (p) => ({ kind: 'chips', items: p.stack.supportChannels ?? [] }) },
+      { key: 'llmtracking', label: 'LLM tracking', info: 'An LLM-observability connector. It tracks this project’s model calls and 30-day spend.', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
+      { key: 'appcost', label: 'App cost', info: `Monthly running cost of the app's known services, read from ${APP_COST_FILENAME} at the repo root (user-maintained, gitignored). NA until the file exists; the cell can dispatch an agent to create it.`, get: (p) => appCostCell(p.stack.appCost) },
+      { key: 'datalinks', label: 'Data analysis', info: 'Related projects whose tooling post-processes this app’s internal data (declared by hand for now: click the cell to link projects; a future scan may propose them).', get: (p) => ({ kind: 'chips', items: p.stack.dataLinks ?? [] }) },
+      { key: 'support', label: 'Support', info: 'Incoming customer-support channels (Email, Discord, …), wired by binding a support connector from your vault; deeper support metrics come later.', get: (p) => ({ kind: 'chips', items: p.stack.supportChannels ?? [] }) },
     ],
   },
 ];

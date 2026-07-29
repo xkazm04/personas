@@ -434,7 +434,21 @@
     "trash_empty_confirm_title": "Hapus permanen {count} item?",
     "trash_empty_confirm_body": "Ini akan mengosongkan sampah. Item tidak dapat dipulihkan.",
     "trash_purges_in_days": "Dihapus dalam {days} hari",
-    "trash_purges_soon": "Segera dihapus"
+    "trash_purges_soon": "Segera dihapus",
+    "kb_add_to": "Tambahkan ke basis pengetahuan",
+    "kb_add_folder": "Tambahkan folder ini ke basis pengetahuan",
+    "kb_open": "Tanya & ekstrak",
+    "kb_picker_title_ingest": "Tambahkan ke basis pengetahuan",
+    "kb_picker_title_open": "Buka basis pengetahuan",
+    "kb_picker_subtitle": "Untuk {target}",
+    "kb_picker_empty": "Belum ada basis pengetahuan. Buat satu untuk memulai.",
+    "kb_create_new": "Basis pengetahuan baru",
+    "kb_create_placeholder": "Nama basis pengetahuan",
+    "kb_create": "Buat",
+    "kb_docs_n": "{count} dokumen",
+    "kb_ingest_queued_n": "{count} item diantrekan untuk pengindeksan",
+    "kb_tab_ask": "Tanya",
+    "kb_tab_extract": "Ekstrak"
   },
   "artist": {
     "title": "Artist",

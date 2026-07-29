@@ -19,7 +19,7 @@ import { buildGoalAssistPrompt } from './ShipDispatch';
 import { ShipContextDrawer } from './ShipContextDrawer';
 import { ShipLibraryTree } from './ShipLibraryTree';
 import { TONE_HUE_MAP, type ShipContext, type ShipGoal, type ShipMilestoneVM } from './shipModel';
-import { LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
 import type { ShipData } from './useShipData';
 
 const iconBtn = (hue: string) => ({
@@ -124,9 +124,9 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
               />
             ))}
             {cut.length === 0 && (
-              <li className="rounded-card border border-dashed px-3 py-4 typo-caption text-center" style={{ borderColor: `${INK.blue}55`, color: INK.blue }}>
+              <LedgerEmpty testid="ship-compose-cut-empty">
                 {ship.contexts.length === 0 ? t.ship.cut_empty_unscanned : t.ship.cut_empty_scanned}
-              </li>
+              </LedgerEmpty>
             )}
           </LedgerList>
         </div>

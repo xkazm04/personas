@@ -109,7 +109,7 @@ export function FindingsPopover({ slug, projectName, anchor, onClose }: { slug: 
     <div
       ref={panelRef}
       role="dialog"
-      aria-label={`Standards — ${projectName}`}
+      aria-label={`Standards: ${projectName}`}
       style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
       className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
     >

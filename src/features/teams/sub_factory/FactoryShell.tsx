@@ -16,7 +16,7 @@ import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
 import { useFactoryData } from './factoryData';
-import { FactoryProjectTabs } from './l2/FactoryProjectTabs';
+import { FactoryProjectTabs, type L2Tab } from './l2/FactoryProjectTabs';
 
 export interface GroupsRenderArgs {
   project: MockProject;
@@ -42,6 +42,9 @@ export function FactoryShell({
   const [groupId, setGroupId] = useState<string | null>(null);
   const [contextFilter, setContextFilter] = useState<string | null>(null);
   const [kpiId, setKpiId] = useState<string | null>(null);
+  // Which L2 tab the next opened project lands on — the wall's cover roadmap
+  // strip is a direct door into Ship; every other door keeps Overview.
+  const [l2Tab, setL2Tab] = useState<L2Tab>('overview');
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
 
@@ -143,11 +146,18 @@ export function FactoryShell({
           projectId={project.id}
           matrix={renderGroups({ project, ed, openGroup, openKpi })}
           onKpisChanged={reload}
+          initialTab={l2Tab}
         />
       </>
     );
   } else {
-    content = <ProjectsLayer onOpen={setProjectId} onJumpKpi={jumpToKpi} />;
+    content = (
+      <ProjectsLayer
+        onOpen={(id) => { setL2Tab('overview'); setProjectId(id); }}
+        onOpenShip={(id) => { setL2Tab('ship'); setProjectId(id); }}
+        onJumpKpi={jumpToKpi}
+      />
+    );
   }
 
   return (

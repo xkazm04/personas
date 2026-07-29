@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "Bỏ qua",
     "suggest_retire": "Ngừng dùng {name}",
     "suggest_sources": "{count} nguồn",
-    "suggest_title": "Đề xuất mô phỏng ({count})"
+    "suggest_title": "Đề xuất mô phỏng ({count})",
+    "define_kpi": "xác định KPI"
   },
   "deliberation": {
     "agenda": "Chương trình nghị sự",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "Chưa có KPI",
     "state_ready": "Sẵn sàng",
     "tab_ship": "Phát hành",
+    "cover_next": "Tiếp theo",
+    "cover_all_shipped": "Đã phát hành mọi cột mốc",
+    "cover_empty": "Chưa có cột mốc — lên kế hoạch lát cắt đầu tiên",
+    "cover_shipped_count": "{shipped}/{total} đã phát hành",
+    "cover_open_aria": "Mở lộ trình Ship của {name}",
     "target_date": "mục tiêu {date}",
     "target_shipped": "đã ship {date}",
     "the_cut": "Phạm vi đã chọn",

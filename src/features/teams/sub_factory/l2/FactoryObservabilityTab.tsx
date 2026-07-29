@@ -103,7 +103,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
 
   return (
     <div className="grid gap-3 items-start" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }} data-testid="factory-observability-tab">
-      <Panel title="LLM — spend by feature · 30d" icon={<CircleDollarSign className="w-4 h-4" aria-hidden />} hue={INK.teal}>
+      <Panel title="LLM spend by feature · 30d" icon={<CircleDollarSign className="w-4 h-4" aria-hidden />} hue={INK.teal}>
         {!data.llmWired || !llmServiceType ? (
           <WireAsk what="LLM tracking" />
         ) : pinpoints === null ? (
@@ -139,7 +139,7 @@ export function FactoryObservabilityTab({ data }: { data: FactoryL2Data }) {
         )}
       </Panel>
 
-      <Panel title="Monitoring — unresolved errors" icon={<Activity className="w-4 h-4" aria-hidden />} hue={INK.red}>
+      <Panel title="Monitoring: unresolved errors" icon={<Activity className="w-4 h-4" aria-hidden />} hue={INK.red}>
         {!data.monitoringWired ? (
           <WireAsk what="Monitoring" />
         ) : issues === null ? (

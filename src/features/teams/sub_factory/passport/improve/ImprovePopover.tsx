@@ -76,7 +76,7 @@ export function ImprovePopover({
     setSaving(true);
     try {
       await engine.applyStandards(slug, serializeStandards(projectedStandards));
-      addToast(`Upgraded ${raw.project.name} — ${picked.length} ${picked.length === 1 ? 'practice' : 'practices'} enabled`, 'success');
+      addToast(`Upgraded ${raw.project.name}: ${picked.length} ${picked.length === 1 ? 'practice' : 'practices'} enabled`, 'success');
       onClose();
     } catch {
       addToast('Couldn’t apply standards', 'error');

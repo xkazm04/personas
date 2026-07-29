@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "Descartar",
     "suggest_retire": "Retirar {name}",
     "suggest_sources": "{count} fuentes",
-    "suggest_title": "Sugerencias de simulación ({count})"
+    "suggest_title": "Sugerencias de simulación ({count})",
+    "define_kpi": "definir KPI"
   },
   "deliberation": {
     "agenda": "Agenda",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "Aún sin KPI",
     "state_ready": "Listo",
     "tab_ship": "Enviar",
+    "cover_next": "Siguiente",
+    "cover_all_shipped": "Todos los hitos entregados",
+    "cover_empty": "Aún no hay hitos — planifica el primer corte",
+    "cover_shipped_count": "{shipped}/{total} entregados",
+    "cover_open_aria": "Abrir la hoja de ruta de Ship de {name}",
     "target_date": "objetivo {date}",
     "target_shipped": "enviado {date}",
     "the_cut": "El recorte",

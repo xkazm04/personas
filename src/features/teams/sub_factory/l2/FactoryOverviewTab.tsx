@@ -26,6 +26,7 @@ import type { DevContext } from '@/lib/bindings/DevContext';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
+import { useTranslation } from '@/i18n/useTranslation';
 import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { toastCatch } from '@/lib/silentCatch';
@@ -144,14 +145,14 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
       onMouseLeave={onLeave}
     >
       <div className="px-3.5 pt-2.5 pb-1.5">
-        <span className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">Proposed KPIs — {tip.ctx.name}</span>
+        <span className="typo-caption uppercase tracking-[0.1em] text-foreground/40">Proposed KPIs: {tip.ctx.name}</span>
       </div>
       <table className="w-full border-collapse mb-1.5">
         <thead>
           <tr className="text-left border-b border-foreground/10">
-            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-3.5 py-1">KPI</th>
-            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-2 py-1 text-right">Baseline</th>
-            <th className="text-[9.5px] uppercase tracking-[0.12em] text-foreground/45 font-medium px-2 py-1 text-right">Target</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-3.5 py-1">KPI</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-2 py-1 text-right">Baseline</th>
+            <th className="typo-caption uppercase tracking-[0.08em] text-foreground/45 font-medium px-2 py-1 text-right">Target</th>
             <th className="w-px px-2 py-1" aria-label="Actions" />
           </tr>
         </thead>
@@ -163,8 +164,8 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: CATEGORY_HUE[k.category] ?? INK.teal }} />
                   <span className="typo-caption text-foreground/90 truncate" title={k.name}>{k.name}</span>
                   {k.needed_connector && (
-                    <span className="inline-flex items-center gap-0.5 text-[9.5px] shrink-0" style={{ color: INK.blue }}>
-                      <Cable className="w-2.5 h-2.5" aria-hidden />
+                    <span className="inline-flex items-center gap-1 typo-caption shrink-0" style={{ color: INK.blue }}>
+                      <Cable className="w-3.5 h-3.5" aria-hidden />
                       {k.needed_connector}
                     </span>
                   )}
@@ -182,7 +183,7 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
                     className="p-0.5 rounded-interactive hover:bg-red-400/15 transition-colors focus-ring"
                     data-testid={`factory-tip-reject-${k.id}`}
                   >
-                    <X className="w-3 h-3" style={{ color: INK.red }} aria-hidden />
+                    <X className="w-3.5 h-3.5" style={{ color: INK.red }} aria-hidden />
                   </button>
                   <button
                     type="button"
@@ -192,7 +193,7 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
                     className="p-0.5 rounded-interactive hover:bg-emerald-400/15 transition-colors focus-ring"
                     data-testid={`factory-tip-accept-${k.id}`}
                   >
-                    <Check className="w-3 h-3" style={{ color: INK.emerald }} aria-hidden />
+                    <Check className="w-3.5 h-3.5" style={{ color: INK.emerald }} aria-hidden />
                   </button>
                 </span>
               </td>
@@ -210,8 +211,8 @@ function KpiProposalsTooltip({ tip, onDecide, onEnter, onLeave }: {
 function Indicator({ icon: Icon, n, hue, title }: { icon: typeof Layers; n: number; hue: string; title: string }) {
   const dim = n === 0;
   return (
-    <span className="inline-flex items-center gap-0.5 tabular-nums text-[9.5px]" style={{ color: dim ? 'rgba(148,163,184,.35)' : hue }} title={title}>
-      <Icon className="w-2.5 h-2.5 shrink-0" aria-hidden />
+    <span className="inline-flex items-center gap-1 tabular-nums typo-caption" style={{ color: dim ? 'rgba(148,163,184,.35)' : hue }} title={title}>
+      <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
       {n}
     </span>
   );
@@ -224,6 +225,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
   onKpiLeave: () => void;
   onNote: (s: string) => void;
 }) {
+  const { t } = useTranslation();
   const hue = KIND_HUE[cell.kind];
   const receded = cell.kind === 'ok';
   const features = data.featureCountByContext.get(cell.ctx.id) ?? 0;
@@ -233,8 +235,8 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
 
   const stat = (Icon: typeof AlertTriangle, v: string | null, statHue: string) => (
     <span className="flex items-center gap-1 min-w-0" style={{ color: v === null ? INK.blue : statHue }}>
-      <Icon className="w-3 h-3 shrink-0" aria-hidden />
-      <span className="text-[10.5px] font-medium tabular-nums truncate">{v ?? '·'}</span>
+      <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden />
+      <span className="typo-caption font-medium tabular-nums truncate">{v ?? '·'}</span>
     </span>
   );
 
@@ -245,25 +247,18 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
         ? { background: 'rgba(52,211,153,.05)', border: '1px solid rgba(52,211,153,.10)' }
         : { background: 'rgba(148,163,184,.045)', border: `1px solid ${hue}${cell.kind === 'crit' ? '66' : '3d'}` };
 
-  const setupAsk =
-    cell.dims.kpi === 'unmeasured' && (cell.errs === null || cell.costUsd === null)
-      ? 'define KPI · wire sensors →'
-      : cell.dims.kpi === 'unmeasured'
-        ? (cell.kpiCount > 0 ? 'measure KPI →' : 'define KPI →')
-        : 'wire sensors →';
-
   return (
     <div className="min-w-0 px-2.5 pt-1.5 pb-2 rounded-card transition-all hover:-translate-y-[1px]" style={frame} data-testid={`factory-cons-card-${cell.ctx.id}`}>
       <span className="flex items-center gap-1.5 min-w-0">
         {cell.kind === 'setup'
-          ? <Wrench className="w-3 h-3 shrink-0" style={{ color: INK.blue }} aria-hidden />
-          : <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: hue, boxShadow: receded ? undefined : `0 0 5px ${hue}88` }} />}
+          ? <Wrench className="w-3.5 h-3.5 shrink-0" style={{ color: INK.blue }} aria-hidden />
+          : <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hue, boxShadow: receded ? undefined : `0 0 5px ${hue}88` }} />}
         <span className="typo-caption font-medium text-foreground/90 truncate">{cell.ctx.name}</span>
         <span className="ml-auto shrink-0 flex items-center gap-1.5">
           <Indicator icon={Layers} n={features} hue="rgba(148,163,184,.8)" title={`${features} features slice this context`} />
           <Indicator icon={Target} n={goals} hue="#38BDF8" title={`${goals} goals attached`} />
           <span
-            className="inline-flex items-center gap-0.5 text-[9.5px] tabular-nums cursor-default"
+            className="inline-flex items-center gap-1 typo-caption tabular-nums cursor-default"
             style={{ color: dimKpi ? 'rgba(148,163,184,.35)' : INK.teal }}
             title={dimKpi ? 'No proposed KPIs' : undefined}
             onMouseEnter={(e) => {
@@ -272,7 +267,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
             onMouseLeave={onKpiLeave}
             data-testid={dimKpi ? undefined : `factory-kpi-ind-${cell.ctx.id}`}
           >
-            <Gauge className="w-2.5 h-2.5 shrink-0" aria-hidden />
+            <Gauge className="w-3.5 h-3.5 shrink-0" aria-hidden />
             {proposals.length}
           </span>
         </span>
@@ -281,7 +276,7 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
         <KpiLine c={cell} />
         <span className="flex items-center gap-2.5 min-w-0">
           {cell.kind === 'setup' ? (
-            <span className="text-[10.5px] font-medium truncate" style={{ color: INK.blue }}>{setupAsk}</span>
+            <span className="typo-caption font-medium italic truncate" style={{ color: INK.blue }}>{t.kpis.define_kpi}</span>
           ) : (
             <>
               {stat(AlertTriangle, cell.errs === null ? null : String(cell.errs), TONE_HUE[cell.dims.errors])}
@@ -290,12 +285,12 @@ function Card({ cell, data, onKpiHover, onKpiLeave, onNote }: {
           )}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onNote(`Per-context scan for "${cell.ctx.name}" arrives with the unified dispatch concept — use Dev Tools → Idea Scanner meanwhile.`); }}
+            onClick={(e) => { e.stopPropagation(); onNote(`Per-context scan for "${cell.ctx.name}" arrives with the unified dispatch concept. Use Dev Tools → Idea Scanner meanwhile.`); }}
             title={`Scan this context (${cell.ctx.name})`}
             className="ml-auto inline-flex items-center p-0.5 rounded-interactive transition-colors hover:bg-foreground/[0.08] focus-ring"
             style={{ color: INK.violet }}
           >
-            <Sparkles className="w-2.5 h-2.5" aria-hidden />
+            <Sparkles className="w-3.5 h-3.5" aria-hidden />
           </button>
         </span>
       </span>
@@ -318,7 +313,7 @@ function Toolbar({ data, summary, onNote }: { data: FactoryL2Data; summary: stri
         await sleep(2000);
         const st = await getKpiScanStatus(scan_id);
         if (st.status === 'completed' || st.status === 'failed') {
-          onNote(st.status === 'completed' ? 'KPI scan complete — fresh proposals on the cards' : st.error ?? 'KPI scan failed');
+          onNote(st.status === 'completed' ? 'KPI scan complete. Fresh proposals on the cards' : st.error ?? 'KPI scan failed');
           break;
         }
       }
@@ -352,7 +347,7 @@ function Toolbar({ data, summary, onNote }: { data: FactoryL2Data; summary: stri
       setCtxScanId(null);
       onNote(
         event.payload.status === 'completed'
-          ? `Scan complete — ${event.payload.groups_created} groups · ${event.payload.contexts_created} contexts · ${event.payload.files_mapped} files mapped`
+          ? `Scan complete: ${event.payload.groups_created} groups · ${event.payload.contexts_created} contexts · ${event.payload.files_mapped} files mapped`
           : event.payload.error ?? 'Scan failed',
       );
       data.reloadMap();
@@ -522,7 +517,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
         <Toolbar data={data} summary={summary} onNote={setNote} />
         {note && <p className="typo-caption text-foreground/45 mt-1.5">{note}</p>}
       </div>
-      <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+      <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
         {groups.map((g) => {
           const kinds = g.cells.map((c) => c.kind);
           const crit = kinds.filter((k) => k === 'crit').length;
@@ -532,16 +527,16 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
           return (
             <div key={g.id} className="rounded-modal p-3" style={{ border: `1px solid ${KIND_HUE[worst]}2e`, background: 'rgba(148,163,184,.025)' }}>
               <div className="flex items-baseline gap-2 mb-2 min-w-0">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0 self-center" style={{ background: KIND_HUE[worst], boxShadow: `0 0 5px ${KIND_HUE[worst]}88` }} />
-                <h3 className="typo-caption font-semibold tracking-tight text-foreground/85 truncate">{g.name}</h3>
-                <span className="ml-auto text-[10px] tabular-nums shrink-0 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full shrink-0 self-center" style={{ background: KIND_HUE[worst], boxShadow: `0 0 5px ${KIND_HUE[worst]}88` }} />
+                <h3 className="typo-title font-semibold tracking-tight truncate">{g.name}</h3>
+                <span className="ml-auto typo-caption tabular-nums shrink-0 flex items-center gap-2">
                   {crit > 0 && <span style={{ color: INK.red }}>{crit} critical</span>}
                   {warn > 0 && <span style={{ color: INK.amber }}>{warn} warning</span>}
                   {setup > 0 && <span style={{ color: INK.blue }}>{setup} setup</span>}
                   <span className="text-foreground/30">{g.cells.length}</span>
                 </span>
               </div>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
                 {g.cells.map((c) => (
                   <Card key={c.ctx.id} cell={c} data={data} onKpiHover={openTip} onKpiLeave={scheduleClose} onNote={setNote} />
                 ))}

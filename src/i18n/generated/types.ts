@@ -12708,15 +12708,6 @@ export type Translations = {
       drop_added_n: string;
       drop_too_large_n: string;
       drop_failed_n: string;
-      search_no_local_hits: string;
-      search_escalate_hint: string;
-      search_all_drive_cta: string;
-      search_running: string;
-      search_results_for: string;
-      search_n_hits: string;
-      search_back_to_folder: string;
-      search_no_drive_hits: string;
-      search_reveal_aria: string;
       kb_add_to: string;
       kb_add_folder: string;
       kb_open: string;
@@ -12731,6 +12722,15 @@ export type Translations = {
       kb_ingest_queued_n: string;
       kb_tab_ask: string;
       kb_tab_extract: string;
+      search_no_local_hits: string;
+      search_escalate_hint: string;
+      search_all_drive_cta: string;
+      search_running: string;
+      search_results_for: string;
+      search_n_hits: string;
+      search_back_to_folder: string;
+      search_no_drive_hits: string;
+      search_reveal_aria: string;
     };
     artist: {
       title: string;
@@ -18154,6 +18154,7 @@ export type Translations = {
     evaluate_measured: string;
     evaluate_partial: string;
     evaluate_none_due: string;
+    define_kpi: string;
   };
   planner: {
     nav_label: string;
@@ -18873,6 +18874,11 @@ export type Translations = {
   };
   ship: {
     tab_ship: string;
+    cover_next: string;
+    cover_all_shipped: string;
+    cover_empty: string;
+    cover_shipped_count: string;
+    cover_open_aria: string;
     empty_title: string;
     empty_hint: string;
     new_milestone_placeholder: string;

@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "忽略",
     "suggest_retire": "停用 {name}",
     "suggest_sources": "{count} 个来源",
-    "suggest_title": "模拟建议（{count}）"
+    "suggest_title": "模拟建议（{count}）",
+    "define_kpi": "定义 KPI"
   },
   "deliberation": {
     "agenda": "议程",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "尚无 KPI",
     "state_ready": "就绪",
     "tab_ship": "发布",
+    "cover_next": "下一个",
+    "cover_all_shipped": "所有里程碑均已发布",
+    "cover_empty": "尚无里程碑 — 规划第一次切分",
+    "cover_shipped_count": "已发布 {shipped}/{total}",
+    "cover_open_aria": "打开 {name} 的 Ship 路线图",
     "target_date": "目标 {date}",
     "target_shipped": "已于 {date} 发布",
     "the_cut": "定案范围",

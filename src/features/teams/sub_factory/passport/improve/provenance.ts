@@ -11,7 +11,7 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
   const tables = meta.db_tables?.length ?? 0;
   switch (rowKey) {
     case 'context':
-      return `${meta.context_count} contexts mapped${meta.context_count >= 20 ? ' — full graph' : meta.context_count >= 5 ? ' — partial' : ' — sparse'}. Re-scan to map more of the repo.`;
+      return `${meta.context_count} contexts mapped${meta.context_count >= 20 ? ', full graph' : meta.context_count >= 5 ? ', partial' : ', sparse'}. Re-scan to map more of the repo.`;
     case 'ci': {
       const gates = [
         std.precommit.lint && 'lint',
@@ -22,7 +22,7 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       return gates.length ? `From the standards policy: ${gates.join(', ')}.` : 'No branching or check policy is set.';
     }
     case 'tests':
-      return 'No automated test signal detected — wire a suite an agent can self-verify against.';
+      return 'No automated test signal detected. Wire a suite an agent can self-verify against.';
     case 'security':
       return project.standards_config
         ? 'Standards policy present, but no dependency/code scanning detected.'
@@ -50,9 +50,9 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
       const rotBit = rot && rot.dirty > 0
         ? ` Rot scan: ${rot.dirty} of ${rot.tracked} tracked docs are stale vs their coupled sources.`
         : rot ? ` Rot scan: all ${rot.tracked} tracked docs are current.` : '';
-      if (ev?.has_doc_map) return `${n} docs pages + a doc-map manifest — source→doc coupling is managed.${rotBit}`;
+      if (ev?.has_doc_map) return `${n} docs pages + a doc-map manifest; source→doc coupling is managed.${rotBit}`;
       if (n >= 3) return `${n} markdown pages under docs/, but no doc-map coupling them to source.${rotBit}`;
-      return (ev?.has_readme ? 'README only — no docs/ tree detected.' : 'No README or docs/ detected.') + rotBit;
+      return (ev?.has_readme ? 'README only, no docs/ tree detected.' : 'No README or docs/ detected.') + rotBit;
     }
     case 'memory': {
       const ev = raw.evidence;

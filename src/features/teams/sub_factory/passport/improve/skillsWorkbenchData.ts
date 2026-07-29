@@ -90,14 +90,14 @@ export function resolveLane(wb: SkillsWorkbench, mode: WorkbenchMode, direction:
     return {
       kind: 'adopt', items: wb.adopt.items, loading: false, busy: wb.managing,
       run: wb.runAdopt,
-      emptyList: 'Nothing to adopt — this project already has every skill in your library.',
+      emptyList: 'Nothing to adopt: this project already has every skill in your library.',
       emptyDetail: 'Pick a skill to install and customize it for this repo.',
     };
   }
   return {
     kind: 'share', items: wb.share.items, loading: false, busy: wb.managing,
     run: wb.runShare,
-    emptyList: 'Nothing to share — every skill here is already in your library.',
+    emptyList: 'Nothing to share: every skill here is already in your library.',
     emptyDetail: 'Pick a skill to generalize and publish to your library.',
   };
 }
@@ -180,7 +180,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       const taskId = await engine.deployNow(slug, adoptTaskTitle(items), adoptTaskPrompt(items, sourceRootOf), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
-      addToast(`Claude is adopting “${name}” into ${raw.project.name} — customized for its codebase`, 'success');
+      addToast(`Claude is adopting “${name}” into ${raw.project.name}, customized for its codebase`, 'success');
     } catch (e) {
       addToast('Couldn’t start the skill task', 'error');
       throw e;

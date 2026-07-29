@@ -62,7 +62,7 @@ export function usePassportFleetSessions(): Map<string, FleetSession> {
 export async function dispatchRowToFleet(key: string, cwd: string, prompt: string): Promise<string> {
   const snap = await listSessions();
   const running = snap.sessions.find((s) => s.name === key && s.state !== 'exited');
-  if (running) throw new Error('A terminal is already working this row — open it from the cell icon, or kill it in Fleet first.');
+  if (running) throw new Error('A terminal is already working this row. Open it from the cell icon, or kill it in Fleet first.');
   const sessionId = await spawnSession(cwd, [prompt]);
   await renameSession(sessionId, key);
   return sessionId;
@@ -70,7 +70,7 @@ export async function dispatchRowToFleet(key: string, cwd: string, prompt: strin
 
 const COPY = {
   gone: 'Session is no longer running.',
-  headless: 'Headless session — no terminal window. State and insights live in the Fleet grid.',
+  headless: 'Headless session, no terminal window. State and insights live in the Fleet grid.',
   placeholder: 'Reply to this session…',
   send: 'Send',
 };

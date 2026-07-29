@@ -434,7 +434,21 @@
     "trash_empty_confirm_title": "{count}টি আইটেম স্থায়ীভাবে মুছবেন?",
     "trash_empty_confirm_body": "এটি ট্র্যাশ খালি করবে। এই আইটেমগুলি পুনরুদ্ধার করা যাবে না।",
     "trash_purges_in_days": "{days} দিনে মুছে যাবে",
-    "trash_purges_soon": "শীঘ্রই মুছে যাবে"
+    "trash_purges_soon": "শীঘ্রই মুছে যাবে",
+    "kb_add_to": "নলেজ বেসে যোগ করুন",
+    "kb_add_folder": "এই ফোল্ডারটি নলেজ বেসে যোগ করুন",
+    "kb_open": "জিজ্ঞাসা ও নিষ্কাশন",
+    "kb_picker_title_ingest": "নলেজ বেসে যোগ করুন",
+    "kb_picker_title_open": "নলেজ বেস খুলুন",
+    "kb_picker_subtitle": "{target}-এর জন্য",
+    "kb_picker_empty": "এখনও কোনো নলেজ বেস নেই। শুরু করতে একটি তৈরি করুন।",
+    "kb_create_new": "নতুন নলেজ বেস",
+    "kb_create_placeholder": "নলেজ বেসের নাম",
+    "kb_create": "তৈরি করুন",
+    "kb_docs_n": "{count}টি নথি",
+    "kb_ingest_queued_n": "{count}টি আইটেম ইনডেক্সিংয়ের জন্য সারিবদ্ধ",
+    "kb_tab_ask": "জিজ্ঞাসা",
+    "kb_tab_extract": "নিষ্কাশন"
   },
   "artist": {
     "title": "আর্টিস্ট",

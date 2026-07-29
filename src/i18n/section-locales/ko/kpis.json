@@ -236,5 +236,6 @@
   "suggest_dismiss": "닫기",
   "suggest_retire": "{name} 폐기",
   "suggest_sources": "출처 {count}개",
-  "suggest_title": "시뮬레이션 제안 ({count})"
+  "suggest_title": "시뮬레이션 제안 ({count})",
+  "define_kpi": "KPI 정의"
 }

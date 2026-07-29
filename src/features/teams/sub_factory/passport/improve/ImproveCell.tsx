@@ -85,7 +85,7 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
         <button
           type="button"
           onClick={trigger}
-          title="Improve — golden-standard upgrades"
+          title="Improve: golden-standard upgrades"
           className="group/imp inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.06] transition-colors cursor-pointer"
         >
           {children}

@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "却下",
     "suggest_retire": "{name} を廃止",
     "suggest_sources": "{count} 件のソース",
-    "suggest_title": "シミュレーション提案 ({count})"
+    "suggest_title": "シミュレーション提案 ({count})",
+    "define_kpi": "KPI を定義"
   },
   "deliberation": {
     "agenda": "議題",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "KPIなし",
     "state_ready": "準備完了",
     "tab_ship": "リリース",
+    "cover_next": "次",
+    "cover_all_shipped": "すべてのマイルストーンを出荷済み",
+    "cover_empty": "マイルストーンなし — 最初のカットを計画",
+    "cover_shipped_count": "{shipped}/{total} 出荷済み",
+    "cover_open_aria": "{name} の Ship ロードマップを開く",
     "target_date": "目標 {date}",
     "target_shipped": "{date}に出荷済み",
     "the_cut": "カット",

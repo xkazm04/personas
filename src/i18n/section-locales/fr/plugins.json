@@ -434,7 +434,21 @@
     "trash_empty_confirm_title": "Supprimer définitivement {count} éléments ?",
     "trash_empty_confirm_body": "Cela videra la corbeille. Ces éléments ne pourront pas être récupérés.",
     "trash_purges_in_days": "Purge dans {days} j",
-    "trash_purges_soon": "Purge imminente"
+    "trash_purges_soon": "Purge imminente",
+    "kb_add_to": "Ajouter à la base de connaissances",
+    "kb_add_folder": "Ajouter ce dossier à la base de connaissances",
+    "kb_open": "Interroger et extraire",
+    "kb_picker_title_ingest": "Ajouter à la base de connaissances",
+    "kb_picker_title_open": "Ouvrir la base de connaissances",
+    "kb_picker_subtitle": "Pour {target}",
+    "kb_picker_empty": "Aucune base de connaissances pour l'instant. Créez-en une pour commencer.",
+    "kb_create_new": "Nouvelle base de connaissances",
+    "kb_create_placeholder": "Nom de la base de connaissances",
+    "kb_create": "Créer",
+    "kb_docs_n": "Documents : {count}",
+    "kb_ingest_queued_n": "{count} élément(s) en file d'attente pour l'indexation",
+    "kb_tab_ask": "Interroger",
+    "kb_tab_extract": "Extraire"
   },
   "artist": {
     "title": "Studio artistique",

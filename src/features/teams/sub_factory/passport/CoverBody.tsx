@@ -11,9 +11,12 @@ import type { LucideIcon } from 'lucide-react';
 
 import { AUTOMATION_LABEL, PROD_BAND_LABEL, type AppPassport } from './passportModel';
 import { INK, scoreInk } from './passportInk';
+import { CoverRoadmap, type CoverRoadmapVM } from './CoverRoadmap';
 import { trendDelta } from './passportHistory';
 import { resolveTechIcon } from './techIcons';
+import { BlockersBadge } from './passportWidgets';
 import { WarningBadge, type WarningItem } from './WarningBadge';
+import { COPY } from './wallConfig';
 
 const BAND_CODE: Record<string, string> = {
   prototype: 'PT', internal: 'IN', beta: 'BE', production: 'PR', hardened: 'HD',
@@ -30,9 +33,13 @@ export interface CoverBodyProps {
   stats: HeaderStatsShape | null;
   /** Real app favicon (data URL); null → the worst-state dot stays. */
   favicon?: string | null;
+  /** Minimized roadmap strip (dev_milestones). Null/absent → not rendered. */
+  roadmap?: CoverRoadmapVM | null;
+  /** Direct door into the project's Ship tab, from the roadmap strip. */
+  onOpenShip?: (slug: string) => void;
 }
 
-function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
+function StackStrip({ p, size = 20 }: { p: AppPassport; size?: number }) {
   const slots: Array<{ key: string; category: string; label: string | null; fallback: LucideIcon }> = [
     { key: 'framework', category: 'Framework', label: p.stack.frameworks[0] ?? null, fallback: Boxes },
     { key: 'persistence', category: 'Persistence', label: p.stack.persistence[0]?.engine ?? null, fallback: Database },
@@ -62,7 +69,7 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
           );
         }
         return (
-          <span key={slot.key} title={`${slot.category} — not wired`} className="inline-flex shrink-0 text-foreground/20" data-testid={`passport-unwired-${slot.key}`}>
+          <span key={slot.key} title={`${slot.category}: not wired`} className="inline-flex shrink-0 text-foreground/20" data-testid={`passport-unwired-${slot.key}`}>
             <Fallback style={{ width: size, height: size }} aria-hidden />
           </span>
         );
@@ -73,39 +80,45 @@ function StackStrip({ p, size = 13 }: { p: AppPassport; size?: number }) {
 
 export function CoverBody({
   p, openable, onOpen, attention, onJumpKpi, stats, favicon = null,
+  roadmap = null, onOpenShip,
 }: CoverBodyProps) {
   const worst = scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score));
+  const blockers = [...p.productionReadiness.blockers, ...p.automationReadiness.blockers];
   const trend = trendDelta(p.identity.slug)?.golden ?? 0;
   const kpiHue =
     !stats || stats.kpiTotal === 0 ? 'rgba(148,163,184,.35)'
     : stats.kpiPassed === stats.kpiTotal ? INK.emerald
     : stats.kpiPassed / stats.kpiTotal >= 0.5 ? INK.amber : INK.red;
 
+  // Readability pass (2026-07-28): nothing on the cover renders below text-base
+  // — the statband's micro-labels keep their hierarchy through weight, tracking
+  // and opacity instead of size.
   const cell = (value: React.ReactNode, label: string, title: string) => (
-    <span className="flex flex-col items-center gap-0.5 min-w-0" title={title}>
-      <span className="text-[11.5px] font-semibold tabular-nums leading-none">{value}</span>
-      <span className="text-[8.5px] uppercase tracking-[0.14em] text-foreground/35 leading-none">{label}</span>
+    <span className="flex flex-col items-center gap-1 min-w-0" title={title}>
+      <span className="typo-body-lg font-semibold tabular-nums leading-none">{value}</span>
+      <span className="typo-body-lg uppercase tracking-[0.06em] font-medium text-foreground/40 leading-none">{label}</span>
     </span>
   );
 
   return (
     <>
       {/* identity + production affordances + stack strip */}
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
         {favicon ? (
-          <img src={favicon} alt="" className="w-4 h-4 rounded-[3px] shrink-0" data-testid="cover-favicon" aria-hidden />
+          <img src={favicon} alt="" className="w-6 h-6 rounded-[4px] shrink-0" data-testid="cover-favicon" aria-hidden />
         ) : (
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+          <span className="w-3 h-3 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
         )}
         {openable ? (
           <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
-            <span className="typo-body font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
-            <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
+            <span className="typo-body-lg font-semibold tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
+            <ArrowUpRight className="w-5 h-5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
           </button>
         ) : (
-          <span title={p.identity.purpose} className="typo-body font-semibold tracking-tight truncate block">{p.identity.name}</span>
+          <span title={p.identity.purpose} className="typo-body-lg font-semibold tracking-tight truncate block">{p.identity.name}</span>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
+        <BlockersBadge blockers={blockers} clearLabel={COPY.clear} />
         <span className="ml-auto shrink-0"><StackStrip p={p} /></span>
       </div>
 
@@ -118,12 +131,12 @@ export function CoverBody({
         {cell(
           <span style={{ color: scoreInk(p.automationReadiness.score) }}>{p.automationReadiness.level}</span>,
           'Auto',
-          `Automation: ${AUTOMATION_LABEL[p.automationReadiness.level]} — ${p.automationReadiness.score}/100`,
+          `Automation: ${AUTOMATION_LABEL[p.automationReadiness.level]}, ${p.automationReadiness.score}/100`,
         )}
         {cell(
           <span style={{ color: scoreInk(p.productionReadiness.score) }}>{BAND_CODE[p.productionReadiness.band]}</span>,
           'Prod',
-          `Production: ${PROD_BAND_LABEL[p.productionReadiness.band]} — ${p.productionReadiness.score}/100`,
+          `Production: ${PROD_BAND_LABEL[p.productionReadiness.band]}, ${p.productionReadiness.score}/100`,
         )}
         {cell(
           trend === 0
@@ -143,6 +156,16 @@ export function CoverBody({
           `${stats?.kpiPassed ?? 0} of ${stats?.kpiTotal ?? 0} KPIs meeting target`,
         )}
       </div>
+
+      {/* minimized roadmap → the Ship layer (skipped where the host doesn't
+          carry milestone data, e.g. the Mastermind project sidebar) */}
+      {roadmap && (
+        <CoverRoadmap
+          roadmap={roadmap}
+          projectName={p.identity.name}
+          onOpenShip={onOpenShip ? () => onOpenShip(p.identity.slug) : undefined}
+        />
+      )}
     </>
   );
 }

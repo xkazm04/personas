@@ -236,5 +236,6 @@
   "suggest_dismiss": "Verwerfen",
   "suggest_retire": "{name} zurückziehen",
   "suggest_sources": "{count} Quellen",
-  "suggest_title": "Simulationsvorschläge ({count})"
+  "suggest_title": "Simulationsvorschläge ({count})",
+  "define_kpi": "KPI festlegen"
 }

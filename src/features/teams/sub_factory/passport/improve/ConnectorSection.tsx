@@ -96,15 +96,15 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
               const color = tool.color ?? meta.color;
               const Fallback = meta.Icon;
               const status = enabled
-                ? (h === true ? 'Connected · healthy' : h === false ? 'Connected · unhealthy — check in Vault' : 'Connected · checking…')
-                : 'Not connected — add in the Vault';
+                ? (h === true ? 'Connected · healthy' : h === false ? 'Connected · unhealthy, check in Vault' : 'Connected · checking…')
+                : 'Not connected, add in the Vault';
               return (
-                <Tooltip key={tool.name} content={`${tool.label} — ${status}`}>
+                <Tooltip key={tool.name} content={`${tool.label}: ${status}`}>
                   <button
                     type="button"
                     onClick={() => (enabled && cred ? connect(cred) : openVault())}
                     disabled={enabled && cred ? binding === cred.id : false}
-                    aria-label={`${tool.label} — ${status}`}
+                    aria-label={`${tool.label}: ${status}`}
                     className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:opacity-50 ${
                       enabled
                         ? 'border-primary/25 bg-primary/[0.07] hover:bg-primary/[0.14]'

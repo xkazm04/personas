@@ -130,7 +130,7 @@ export function WallCompareTable({
                                 <button
                                   type="button"
                                   onClick={() => onOpenTerminal(dk)}
-                                  title={`Fleet is working this row — ${String(fl.state).replace('_', ' ')} (click to open the terminal)`}
+                                  title={`Fleet is working this row: ${String(fl.state).replace('_', ' ')} (click to open the terminal)`}
                                   className="shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-primary/10 focus-ring"
                                   data-testid={`unified-fleet-${row.key}-${p.identity.slug}`}
                                 >

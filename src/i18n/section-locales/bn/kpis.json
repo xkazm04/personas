@@ -236,5 +236,6 @@
   "suggest_dismiss": "বাতিল করুন",
   "suggest_retire": "{name} অবসর দিন",
   "suggest_sources": "{count}টি উৎস",
-  "suggest_title": "সিমুলেশন পরামর্শ ({count})"
+  "suggest_title": "সিমুলেশন পরামর্শ ({count})",
+  "define_kpi": "KPI নির্ধারণ করুন"
 }

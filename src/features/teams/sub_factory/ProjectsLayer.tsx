@@ -10,10 +10,12 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { listContexts, getProjectFavicon } from '@/api/devTools/devTools';
 import { listKpis } from '@/api/devTools/kpis';
+import { listMilestones } from '@/api/devTools/milestones';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ProjectsPassportWall } from './passport';
+import { buildCoverRoadmap, type CoverRoadmapVM } from './passport/CoverRoadmap';
 import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
 import { useImproveEngine } from './passport/improve/useImproveEngine';
@@ -27,9 +29,12 @@ const FAVICON_CACHE = new Map<string, string | null>();
 
 export function ProjectsLayer({
   onOpen,
+  onOpenShip,
   onJumpKpi,
 }: {
   onOpen: (id: string) => void;
+  /** Opens a project on its Ship tab — the cover's minimized roadmap strip. */
+  onOpenShip?: (id: string) => void;
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {
   const { passports, rawByProject, loading, error, generatedAt, rescanningProject, rescanProject, reload } = usePassportData();
@@ -60,6 +65,25 @@ export function ProjectsLayer({
     })
       .then((entries) => { if (alive) setHeaderStats(new Map(entries)); })
       .catch(silentCatch('ProjectsLayer:headerStats'));
+    return () => { alive = false; };
+  }, [slugsKey]);
+
+  // The cover's minimized roadmap — one light dev_milestones read per project,
+  // keyed on the same slug set as headerStats (one IPC call each, bounded).
+  const [roadmapBySlug, setRoadmapBySlug] = useState<Map<string, CoverRoadmapVM>>(new Map());
+  useEffect(() => {
+    if (slugsKey === '') return;
+    const slugs = slugsKey.split('|');
+    let alive = true;
+    void mapWithConcurrency(slugs, 5, async (slug) => {
+      const rows = await listMilestones(slug).catch((err) => {
+        silentCatch('ProjectsLayer:listMilestones')(err);
+        return [];
+      });
+      return [slug, buildCoverRoadmap(rows)] as const;
+    })
+      .then((entries) => { if (alive) setRoadmapBySlug(new Map(entries)); })
+      .catch(silentCatch('ProjectsLayer:roadmaps'));
     return () => { alive = false; };
   }, [slugsKey]);
 
@@ -112,9 +136,9 @@ export function ProjectsLayer({
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <h2 className="typo-section-title">Project readiness</h2>
-          {passports.length > 0 && <span className="typo-caption">{passports.length} projects</span>}
+          {passports.length > 0 && <span className="typo-body-lg text-foreground/55">{passports.length} projects</span>}
           {generatedAt && (
-            <span className="typo-caption inline-flex items-center gap-1">
+            <span className="typo-body-lg text-foreground/55 inline-flex items-center gap-1">
               · scanned <RelativeTime timestamp={generatedAt} className="tabular-nums" />
             </span>
           )}
@@ -127,13 +151,13 @@ export function ProjectsLayer({
         <PassportWallGhost />
       ) : error ? (
         <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
-          <p className="typo-title mb-1">Couldn't build project passports</p>
-          <p className="typo-caption">{error}</p>
+          <p className="typo-title-lg mb-1">Couldn't build project passports</p>
+          <p className="typo-body-lg text-foreground/60">{error}</p>
         </div>
       ) : passports.length === 0 ? (
         <div className="rounded-card border border-primary/15 bg-secondary/10 p-8 text-center">
           <p className="typo-title-lg mb-1">No projects to compare yet</p>
-          <p className="typo-caption">Register a project in Dev-Tools and scan its context map, then Rescan to build its readiness passport.</p>
+          <p className="typo-body-lg text-foreground/60">Register a project in Dev-Tools and scan its context map, then Rescan to build its readiness passport.</p>
         </div>
       ) : (
         <ImproveProvider value={improve}>
@@ -145,6 +169,8 @@ export function ProjectsLayer({
             onJumpKpi={onJumpKpi}
             headerStats={headerStats}
             faviconBySlug={faviconBySlug}
+            roadmapBySlug={roadmapBySlug}
+            onOpenShip={onOpenShip}
             rescanningProject={rescanningProject}
             onRescanProject={rescanProject}
           />

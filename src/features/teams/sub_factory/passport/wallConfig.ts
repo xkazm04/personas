@@ -23,7 +23,7 @@ export const UNIFIED_ROWS = new Set(['evals', 'security', 'tests', 'migrations']
 
 export const COPY = {
   blockersTitle: 'Why it’s not ready',
-  clear: 'Ready — no blockers',
+  clear: 'Ready, no blockers',
   compare: 'Passport',
   scrollHint: 'scroll to compare →',
   automation: 'Automation',

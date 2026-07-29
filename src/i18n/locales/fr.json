@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "Ignorer",
     "suggest_retire": "Retirer {name}",
     "suggest_sources": "{count} sources",
-    "suggest_title": "Suggestions de simulation ({count})"
+    "suggest_title": "Suggestions de simulation ({count})",
+    "define_kpi": "définir un KPI"
   },
   "deliberation": {
     "agenda": "Ordre du jour",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "Pas encore de KPI",
     "state_ready": "Prêt",
     "tab_ship": "Publier",
+    "cover_next": "Suivant",
+    "cover_all_shipped": "Tous les jalons livrés",
+    "cover_empty": "Aucun jalon — planifiez la première coupe",
+    "cover_shipped_count": "{shipped}/{total} livrés",
+    "cover_open_aria": "Ouvrir la feuille de route Ship de {name}",
     "target_date": "cible {date}",
     "target_shipped": "livré {date}",
     "the_cut": "La coupe",

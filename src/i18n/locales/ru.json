@@ -18042,7 +18042,8 @@
     "suggest_dismiss": "Отклонить",
     "suggest_retire": "Удалить {name}",
     "suggest_sources": "{count} источников",
-    "suggest_title": "Предложения по симуляции ({count})"
+    "suggest_title": "Предложения по симуляции ({count})",
+    "define_kpi": "задать KPI"
   },
   "deliberation": {
     "agenda": "Повестка",
@@ -18960,6 +18961,11 @@
     "state_no_kpi": "Пока нет KPI",
     "state_ready": "Готово",
     "tab_ship": "Отгрузка",
+    "cover_next": "Далее",
+    "cover_all_shipped": "Все вехи выпущены",
+    "cover_empty": "Вех пока нет — спланируйте первый срез",
+    "cover_shipped_count": "{shipped}/{total} выпущено",
+    "cover_open_aria": "Открыть дорожную карту Ship для {name}",
     "target_date": "цель {date}",
     "target_shipped": "отгружено {date}",
     "the_cut": "Срез",

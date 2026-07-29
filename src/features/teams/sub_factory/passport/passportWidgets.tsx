@@ -4,10 +4,10 @@
 // metaphor, but a "readiness seal" should read the same wherever it appears.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Bot, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, Bot, CheckCircle2, ShieldCheck, Layers, Plug, Check, Minus, Info, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { scoreTint, AUTOMATION_LABEL, PROD_BAND_LABEL, type AutomationLevel, type ProdBand } from './passportModel';
-import { anchorTip } from './passportInk';
+import { INK, anchorTip } from './passportInk';
 
 const SECTION_ICONS: Record<string, LucideIcon> = {
   bot: Bot, 'shield-check': ShieldCheck, layers: Layers, plug: Plug,
@@ -39,7 +39,7 @@ export function ReadinessSeal({
   const pad = size === 'lg' ? 'px-2.5 py-1.5' : 'px-2 py-1';
   const codeCls = size === 'lg' ? 'typo-title-lg' : 'typo-data';
   return (
-    <Tooltip content={`${name} — ${score}/100`}>
+    <Tooltip content={`${name}: ${score}/100`}>
       <span
         className={`inline-flex items-center gap-1.5 rounded-card border ${pad} ${tint.bg} ${seal ? 'ring-1 ' + tint.ring + ' shadow-elevation-1' : ''} cursor-default`}
         style={{ borderColor: `color-mix(in srgb, ${tint.hex} 40%, transparent)` }}
@@ -78,7 +78,7 @@ export function ScoreBar({
     <div className="w-full">
       <div className="flex items-baseline justify-between gap-2 mb-1">
         <span className="typo-label text-foreground/45">{label}</span>
-        <Tooltip content={`${name} — ${score}/100`}>
+        <Tooltip content={`${name}: ${score}/100`}>
           <span className="inline-flex items-baseline gap-1 cursor-default">
             <span className={`typo-caption font-bold tabular-nums leading-none ${tint.text}`}>{code}</span>
             <span className={`typo-caption tabular-nums leading-none ${tint.text} opacity-70`}>{score}</span>
@@ -185,7 +185,7 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
         <div
           ref={panelRef}
           role="dialog"
-          aria-label={`${label} — meaning`}
+          aria-label={`${label}: meaning`}
           style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
           className="fixed z-[9996] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
         >
@@ -212,6 +212,35 @@ export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutr
       }`}
     >
       {label}
+    </span>
+  );
+}
+
+/**
+ * The blockers digest, promoted from the Overview tile's footer onto the cover's
+ * identity row (2026-07-28): "why it isn't ready" belongs next to the project's
+ * NAME, not buried under the statband. Icon + count only — the full list stays
+ * in the tooltip, so the badge costs one glyph of width wherever a cover renders
+ * (grid tile, Compare column, Mastermind sidebar).
+ */
+export function BlockersBadge({ blockers, clearLabel }: { blockers: string[]; clearLabel: string }) {
+  if (blockers.length === 0) {
+    return (
+      <span title={clearLabel} className="inline-flex items-center shrink-0" data-testid="cover-blockers-clear">
+        <CheckCircle2 className="w-5 h-5" style={{ color: INK.emerald }} aria-hidden />
+        <span className="sr-only">{clearLabel}</span>
+      </span>
+    );
+  }
+  return (
+    <span
+      title={blockers.join(' · ')}
+      className="inline-flex items-center gap-1 rounded-input border px-1.5 py-0.5 shrink-0"
+      style={{ borderColor: `${INK.red}66`, background: `${INK.red}1f` }}
+      data-testid="cover-blockers-badge"
+    >
+      <AlertTriangle className="w-5 h-5" style={{ color: INK.red }} aria-hidden />
+      <span className="typo-body-lg font-semibold tabular-nums" style={{ color: INK.red }}>{blockers.length}</span>
     </span>
   );
 }

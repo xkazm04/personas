@@ -135,8 +135,12 @@ pub fn verify_healing_owner(
 // Healing analysis
 // ---------------------------------------------------------------------------
 
-/// Result of a healing analysis scan.
-#[derive(Debug, Clone, serde::Serialize)]
+/// Result of a healing analysis scan. Exported to TS — the
+/// `run_healing_analysis` command returns this struct directly (it used to
+/// rebuild an untyped `serde_json::json!` copy, which let the binding drift
+/// into an orphan the CI binding-drift check cannot see).
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
 pub struct HealingAnalysisResult {
     pub failures_analyzed: usize,
     pub issues_created: u32,
