@@ -1,0 +1,55 @@
+# Context names registered in the Personas app for THIS project.
+# This is the authority for the "context" field in memory-outbox.jsonl.
+# An unmatched name is NOT an error: the node stores a null context and is
+# silently excluded from coverage. Copy names from here verbatim.
+# Source: dev_contexts, project 'personas'. Regenerate after a context scan.
+#
+agent-connectors
+agent-design-wizard
+agent-editor
+agent-lab
+app-layout-navigation
+artist-plugin
+build-test-tooling
+cloud-deployment
+companion-brain
+credential-negotiator
+credential-vault
+database-connector
+database-layer
+dev-inspector
+director-meta-persona
+error-analytics
+execution-chaining
+execution-monitoring
+execution-runner
+fleet-management
+gallery-sharing-growth
+gitlab-integration
+goals-kpi
+healing-engine
+health-checks
+home-dashboard
+i18n-system
+knowledge-base
+mcp-protocol
+memory-messages
+oauth-gateway
+onboarding-tours
+overview-analytics
+overview-events
+p2p-networking
+persona-management
+recipe-engine
+scheduler
+settings-preferences
+shared-ui-components
+skills-system
+sla-tracking
+state-management
+tauri-ipc-bridge
+teams-management
+template-system
+tool-runner
+trigger-system
+workflow-automation
