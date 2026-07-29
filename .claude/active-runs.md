@@ -2,12 +2,6 @@
 
 ## Active
 
-### prototype-knowledge-browser — /prototype: KnowledgeTree → information-architecture variants — session opus-5[1m]
-- Started: 2026-07-29. Status: started. Problem is IA, not decoration: 523 items / 15 areas / 69 topics, 349 unreviewed vs 168 canon, and the baseline rail shows no proportion and no review state. Two directional variants behind a throwaway 3-tab switcher (Baseline default): **Cartogram** (squarified treemap rail — territory area ∝ item count, fill ∝ adopted share, drill area→cluster) vs **Handbook** (typographic editorial index + statement-led entries with citation-style evidence markers).
-- MAIN CHECKOUT (no worktree — operator iterates via HMR against their running instance).
-- Paths: `src/features/overview/sub_patterns/{KnowledgeTree,KnowledgeTreeCartogram,KnowledgeTreeHandbook,knowledgeTableShared}.tsx`, `src/i18n/locales/*.json` (+ regenerated `generated/` & `section-locales/`), `.claude/active-runs.md`.
-- NOT touching: `src/features/shared/components/display/DataGrid.tsx` (uncommitted work from `persona-overview-table-pass`), `FacetedDecisionTable.tsx`, `KnowledgeLibrary.tsx`, `KnowledgeApprovalsPanel.tsx` (props contract unchanged so both consumers stay untouched).
-
 ### prototype-unified-triage — /prototype: QuickAnswerPopover → app-size unified triage layer — session fable-5/opus-5[1m]
 - Started: 2026-07-29. Status: started. Phase 1 confirmed QuickAnswerPopover IS the rendered component (mounted `useTitleBarTray.tsx:141`). Unifies FOUR decide-queues (persona manual reviews · backlog ideas · workspace practices · build questions) behind one `TriageItem` model + `useUnifiedTriage` queue, then 2 directional variants behind a throwaway switcher: **Deck** (tinder-like, ported from vibeman/src/app/features/tinder) vs **Cockpit** (3-pane keyboard-first). MAIN CHECKOUT, no worktree — same live-HMR A/B pattern as the other two prototype sessions on master.
 - **i18n deliberately deferred to consolidation**: `persona-overview-table-pass` has UNCOMMITTED edits in `src/i18n/locales/*.json`, so touching locales during prototyping would sweep their pending work into my commit. Variants carry provisional English via a single `DEFAULT_TRIAGE_COPY` constant (one-file swap at Phase 5).
