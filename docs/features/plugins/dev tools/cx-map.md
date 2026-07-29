@@ -52,7 +52,7 @@ lifecycle · competition`.
 | Workspace | "what is the team doing/saying?" | Flight Deck / Red Room / collab chat | per-team |
 | Goals | "what are we trying to achieve?" | goal constellation / progress board (+ advancement loop, default-OFF tick) | per-project |
 | KPIs | "are the numbers on target?" | KPI console, per-use-case scoping, needs-attention rows | per-project |
-| Factory | "can agents develop this? can I ship it?" | **passport wall** — readiness certificates as comparison columns, improve-cell ladders, golden gauge, plus the per-project **actions row** on the Compare view's Stack band: Onboard (Fleet-dispatched guided onboarding via the passport-onboard skill; live session = tinted terminal icon; writes the public-safe `app-passport.json` manifest) · Standards scan & fixes · Copy readiness report · Rescan (project-scoped) · Improve plan (project-scoped) — every action behind a consent popover that introduces it first | **fleet** (cross-project) |
+| Factory | "can agents develop this? can I ship it?" | **passport wall** — readiness certificates as comparison columns, improve-cell ladders, golden gauge, plus the per-project **actions row** on the Compare view's Stack band: Onboard (Fleet-dispatched guided onboarding via the passport-onboard skill; live session = tinted terminal icon; writes the public-safe `app-passport.json` manifest) · **Populate project data** · Standards scan & fixes · Copy readiness report · Rescan (project-scoped) · Improve plan (project-scoped) — every action behind a consent popover that introduces it first | **fleet** (cross-project) |
 | Manage (`projects`) | project CRUD, bindings, archive | table + modals | fleet |
 | Lifecycle | Dev Clone setup | setup flow | per-project |
 | Competition | competitions on projects | boards | per-project |
@@ -111,6 +111,33 @@ Goal *(Projects)* → advancement tick → tasks *(DT Runner)* → progress *(Pr
 
 **L5 — the structure loop:**
 Context scan *(DT)* → features/use-cases proposed *(DT ledger)* ← telemetry proposes more *(DT Observability)* → KPIs scoped to them *(Projects)* → KPI findings feed L2.
+
+**L5-bootstrap — "Populate project data"** *(Projects → Factory → Compare → actions row)*:
+A newly adopted repo cannot enter L5 at all — with no context map nothing can be
+scoped, and with no KPIs nothing can be measured. The populate action starts the
+loop in one dispatched session, conducted by the **`project-populate`** system
+skill.
+
+The skill does not scan anything itself. It drives the app's own three lanes
+over the loopback `/dev-tools` bridge (`scan-codebase` → `scan-use-cases` →
+`scan-kpis`, plus `kpis/{project_id}` and `kpi-decision` for triage), so results
+are identical to scanning from the Factory toolbar and land through the same
+repo functions. Each lane is gated on freshness — missing, or older than 14
+days, or skipped — and **the verdicts are computed in the UI, not the skill**,
+so the consent modal states what this particular run will do before the user
+confirms it.
+
+Contexts and features are assigned autonomously; KPIs are negotiated in waves of
+five, each decision written the moment it is answered so an interrupted run
+keeps what was already decided. A final phase names the exact monitoring binding
+for each adopted KPI the project has a connector for.
+
+Two transports, both interactive because the KPI phase needs an operator: a
+**Fleet** session, or a **new terminal window the user owns** (`console`) that
+outlives the app — the app cannot watch or stop that one, which is why the
+briefing is written to `project-populate/brief.md` in the repo and the session
+can be re-run by hand. There is deliberately no headless option: a run that
+cannot ask a question cannot finish this work.
 
 ## 4. Deep-link web (the seams users actually cross)
 
