@@ -5,7 +5,7 @@
 // process activity. Self-contained — the Monitor can mount this from the
 // titlebar without depending on the Overview dashboard pipeline.
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -52,11 +52,53 @@ export interface MonitorData {
   unreadMessages: PersonaMessage[];
   activeProcesses: Record<string, ActiveProcess>;
   loading: boolean;
+  /** True while ANY review write is in flight. Presentational only — the write
+   *  guard is per-review (see `useInFlight`), never this flag. */
   isProcessing: boolean;
+  /**
+   * Both verdict writers REJECT when the write fails. Callers that show the
+   * decision as done before the round-trip (the triage deck resolves
+   * optimistically) depend on that rejection to put the row back; swallowing it
+   * here is how a card leaves the queue while SQLite still says `pending`.
+   */
   handleReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
   /** Phase 4 — choose a suggested action: resolves + dispatches a follow-up run. */
   handleDispatchAction: (id: string, action: string) => Promise<void>;
   handleMarkRead: (id: string) => Promise<void>;
+}
+
+/**
+ * Per-key in-flight ledger.
+ *
+ * The previous guard was a single `if (isProcessing) return;` — which meant a
+ * second verdict issued while the first was still in flight was **dropped on
+ * the floor**: no write, no error, and (for the triage deck) a card that had
+ * already left the queue. A reviewer clearing a stack at one card per second
+ * hits that window constantly.
+ *
+ * So the guard is keyed. Different reviews proceed in parallel; a repeat call
+ * for the SAME review joins the in-flight promise instead of racing a duplicate
+ * write. Either way no caller is ever told "done" without a write having
+ * happened.
+ */
+function useInFlight() {
+  const inFlight = useRef(new Map<string, Promise<void>>());
+  const [busyKeys, setBusyKeys] = useState<readonly string[]>([]);
+
+  const track = useCallback((key: string, run: () => Promise<void>): Promise<void> => {
+    const joined = inFlight.current.get(key);
+    if (joined) return joined;
+
+    const promise = run().finally(() => {
+      inFlight.current.delete(key);
+      setBusyKeys((prev) => prev.filter((k) => k !== key));
+    });
+    inFlight.current.set(key, promise);
+    setBusyKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    return promise;
+  }, []);
+
+  return { track, busy: busyKeys.length > 0 };
 }
 
 export function useMonitorData(): MonitorData {
@@ -74,7 +116,7 @@ export function useMonitorData(): MonitorData {
   const [localReviews, setLocalReviews] = useState<ManualReviewItem[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<PersonaMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { track, busy: isProcessing } = useInFlight();
 
   const reloadReviews = useCallback(async () => {
     try {
@@ -120,60 +162,71 @@ export function useMonitorData(): MonitorData {
     [localReviews, cloudReviews],
   );
 
+  // Read through a ref so the writers keep a stable identity (they are stored in
+  // refs by the triage deck's keyboard layer) while still seeing the newest poll.
+  const reviewsRef = useRef(reviews);
+  reviewsRef.current = reviews;
+
+  /** The row a verdict is about, or an error — never a silent no-op. */
+  const requireReview = useCallback((id: string): ManualReviewItem => {
+    const review = reviewsRef.current.find((r) => r.id === id);
+    if (!review) throw new Error(`Review ${id} is no longer in the pending queue`);
+    return review;
+  }, []);
+
+  /** Re-read every surface a resolved review appears on. */
+  const refreshAfterWrite = useCallback(async () => {
+    await reloadReviews();
+    if (isCloudConnected) await fetchCloudReviews();
+    void fetchPendingReviewCount();
+  }, [reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount]);
+
   const handleReviewAction = useCallback(
-    async (id: string, status: ManualReviewStatus, notes?: string) => {
-      if (isProcessing) return;
-      const review = reviews.find((r) => r.id === id);
-      if (!review) return;
-      setIsProcessing(true);
-      try {
-        if (review.source === 'cloud') {
-          await respondToCloudReview(
-            review.id,
-            review.execution_id,
-            status === 'approved' ? 'approve' : 'reject',
-            notes ?? '',
-          );
-        } else {
-          await updateManualReviewStatus(id, status, notes);
+    (id: string, status: ManualReviewStatus, notes?: string) =>
+      track(`review:${id}`, async () => {
+        try {
+          const review = requireReview(id);
+          if (review.source === 'cloud') {
+            await respondToCloudReview(
+              review.id,
+              review.execution_id,
+              status === 'approved' ? 'approve' : 'reject',
+              notes ?? '',
+            );
+          } else {
+            await updateManualReviewStatus(id, status, notes);
+          }
+          await refreshAfterWrite();
+        } catch (err) {
+          logger.error('Failed to action review', { error: err });
+          // Rethrow: the caller decides how to surface it. Swallowing here is
+          // what let an optimistic queue report a decision that never landed.
+          throw err;
         }
-        await reloadReviews();
-        if (isCloudConnected) await fetchCloudReviews();
-        void fetchPendingReviewCount();
-      } catch (err) {
-        logger.error('Failed to action review', { error: err });
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [isProcessing, reviews, respondToCloudReview, reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
+      }),
+    [track, requireReview, respondToCloudReview, refreshAfterWrite],
   );
 
   // Phase 4 — resolve a review by CHOOSING a suggested action, which records the
   // branch AND dispatches a follow-up persona run to carry it out. Cloud reviews
   // have no dispatch path, so the choice is recorded as an approval.
   const handleDispatchAction = useCallback(
-    async (id: string, action: string) => {
-      if (isProcessing) return;
-      const review = reviews.find((r) => r.id === id);
-      if (!review) return;
-      setIsProcessing(true);
-      try {
-        if (review.source === 'cloud') {
-          await respondToCloudReview(review.id, review.execution_id, 'approve', action);
-        } else {
-          await dispatchReviewAction(id, action);
+    (id: string, action: string) =>
+      track(`review:${id}`, async () => {
+        try {
+          const review = requireReview(id);
+          if (review.source === 'cloud') {
+            await respondToCloudReview(review.id, review.execution_id, 'approve', action);
+          } else {
+            await dispatchReviewAction(id, action);
+          }
+          await refreshAfterWrite();
+        } catch (err) {
+          logger.error('Failed to dispatch review action', { error: err });
+          throw err;
         }
-        await reloadReviews();
-        if (isCloudConnected) await fetchCloudReviews();
-        void fetchPendingReviewCount();
-      } catch (err) {
-        logger.error('Failed to dispatch review action', { error: err });
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [isProcessing, reviews, respondToCloudReview, reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
+      }),
+    [track, requireReview, respondToCloudReview, refreshAfterWrite],
   );
 
   const handleMarkRead = useCallback(

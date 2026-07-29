@@ -47,13 +47,33 @@ interface TriageCardProps {
    */
   draggable: boolean;
   reduced: boolean;
+  /**
+   * How many times this item has been thrown and re-dealt (its skip count).
+   *
+   * Load-bearing, not decoration: `launchedRef` latches on throw, and the reset
+   * below is the only thing that unlatches it. When the LAST card in the deck
+   * is skipped it is immediately the top card again with the same id and the
+   * same rank — nothing in the old dep list changed, the latch stayed shut, and
+   * every later verdict was swallowed with the deck's input dead until it was
+   * closed and reopened. The cycle number is what changes.
+   */
+  cycle?: number;
   cardRef?: Ref<TriageCardHandle>;
   onCommit: (dir: FlingDirection) => void;
   /** Replaces the prose body for items with an `input`. */
   answerSlot?: ReactNode;
 }
 
-export function TriageCard({ item, index, draggable, reduced, cardRef, onCommit, answerSlot }: TriageCardProps) {
+export function TriageCard({
+  item,
+  index,
+  draggable,
+  reduced,
+  cycle = 0,
+  cardRef,
+  onCommit,
+  answerSlot,
+}: TriageCardProps) {
   const isTop = index === 0;
 
   const x = useMotionValue(0);
@@ -110,14 +130,19 @@ export function TriageCard({ item, index, draggable, reduced, cardRef, onCommit,
 
   // A skipped item sorts to the BACK of the queue rather than leaving it, so
   // this component instance can be reused at a deeper stack position. Reset the
-  // thrown state whenever the card's identity or rank changes, or the skipped
-  // card would reappear behind the stack still invisible and 260px low.
+  // thrown state whenever the card's identity, rank OR cycle changes, or the
+  // skipped card reappears still invisible, 260px low, and unable to be thrown
+  // again (see `cycle` above — the last-card case changes only the cycle).
   useEffect(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     launchedRef.current = false;
     x.set(0);
     dropY.set(0);
     cardOpacity.set(1);
-  }, [item.id, isTop, x, dropY, cardOpacity]);
+  }, [item.id, isTop, cycle, x, dropY, cardOpacity]);
 
   const depthScale = 1 - index * 0.05;
   const depthY = index * 10;

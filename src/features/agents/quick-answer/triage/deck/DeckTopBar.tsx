@@ -71,8 +71,12 @@ export function DeckTopBar({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  // `sessionTotal` is decided + still-pending, so it can never be outrun by the
+  // numerator. Clamping anyway: a progress readout that can print "5 / 2" is a
+  // readout nobody trusts again, and this is one `min` away from impossible.
   const total = queue.sessionTotal;
-  const pct = total > 0 ? Math.min(100, (queue.decidedCount / total) * 100) : 0;
+  const decided = Math.min(queue.decidedCount, total);
+  const pct = total > 0 ? Math.min(100, (decided / total) * 100) : 0;
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-primary/10 bg-secondary/15 px-4">
@@ -94,13 +98,13 @@ export function DeckTopBar({
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <div className="hidden items-center gap-2 sm:flex">
           <span className="typo-data tabular-nums text-foreground">
-            {`${queue.decidedCount} / ${total}`}
+            {`${decided} / ${total}`}
           </span>
           <span
             className="block h-1.5 w-28 overflow-hidden rounded-pill bg-primary/12"
             role="progressbar"
             aria-label={t.monitor.triage_progress_aria}
-            aria-valuenow={queue.decidedCount}
+            aria-valuenow={decided}
             aria-valuemin={0}
             aria-valuemax={total}
           >

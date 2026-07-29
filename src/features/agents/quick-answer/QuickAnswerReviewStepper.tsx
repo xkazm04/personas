@@ -8,6 +8,7 @@ import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { severityBucket, SEVERITY_META, severityLabel } from '@/features/fleet/monitor/monitorModel';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
+import { toastCatch } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -74,9 +75,13 @@ export function QuickAnswerReviewStepper({
   const actions = parseSuggestedActions(review.suggested_actions);
 
   // Resolve with an optional chosen action; the typed note augments it.
+  // The writers reject when the write fails (they used to swallow), so this
+  // leaf turns that into the user-visible toast.
   const act = async (status: ManualReviewStatus, chosen?: string) => {
     const parts = [chosen, note.trim()].filter(Boolean);
-    await onAction(review.id, status, parts.length ? parts.join(' — ') : undefined);
+    await onAction(review.id, status, parts.length ? parts.join(' — ') : undefined).catch(
+      toastCatch('QuickAnswerReviewStepper:act'),
+    );
   };
 
   // Phase 4 — choosing a suggested action resolves the review AND dispatches a
@@ -86,7 +91,9 @@ export function QuickAnswerReviewStepper({
     if (onDispatchAction) {
       useToastStore.getState().addToast(tx(t.monitor.quick_carrying_out, { action }), 'success', 4000);
       const combined = note.trim() ? `${action} — ${note.trim()}` : action;
-      await onDispatchAction(review.id, combined);
+      await onDispatchAction(review.id, combined).catch(
+        toastCatch('QuickAnswerReviewStepper:chooseAction'),
+      );
     } else {
       await act('approved', action);
     }

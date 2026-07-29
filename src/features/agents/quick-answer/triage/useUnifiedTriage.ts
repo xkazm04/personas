@@ -20,7 +20,13 @@
  * 2. **Skip sorts last, it does not hide.** A skipped item stays in the queue
  *    behind everything undecided, so a reviewer who defers ten things still
  *    ends the session having seen them again — instead of a queue that
- *    silently shrinks every time someone says "not now".
+ *    silently shrinks every time someone says "not now". It is offered a
+ *    BOUNDED number of times (`MAX_SKIP_PASSES`), because a skip that
+ *    re-presents forever is a deck that can never be cleared.
+ *
+ * The two parts worth testing live next door and are React-free: `triageQueue`
+ * (what the reviewer sees and what the counters say) and `triageDispatch`
+ * (which backend a verdict writes to). This file is the wiring.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -42,9 +48,9 @@ import {
   reviewToTriage,
   type TriageCopy,
 } from './triageAdapters';
+import { isDeferral, routeDecision, type TriagePorts } from './triageDispatch';
+import { projectQueue, withSkip, type SkipLedger } from './triageQueue';
 import {
-  compareTriage,
-  countByKind,
   type TriageCounts,
   type TriageDecision,
   type TriageItem,
@@ -61,16 +67,24 @@ const IDEA_PAGE_SIZE = 60;
 export interface UnifiedTriageQueue {
   /** Undecided first, skipped last, both in weight order. */
   items: TriageItem[];
-  counts: TriageCounts;
-  /** Tally of every kind before filtering — drives the filter chips. */
+  /** Tally of everything still awaiting a decision, before the kind filter —
+   *  drives the filter chips. */
   allCounts: TriageCounts;
   loading: boolean;
-  busyId: string | null;
   activeKinds: Set<TriageKind>;
   toggleKind: (kind: TriageKind) => void;
-  /** How many this session has resolved — the progress denominator's numerator. */
+  /** How many this session has resolved — the progress readout's numerator. */
   decidedCount: number;
+  /** Decided + still-pending. Never less than `decidedCount`. */
   sessionTotal: number;
+  /** Seen, skipped to exhaustion, and no longer offered this session. */
+  deferredCount: number;
+  /**
+   * How many times each item has been skipped. The deck reads it to know a
+   * card is being RE-presented — a card thrown once must have its thrown state
+   * reset before it can be thrown again.
+   */
+  skips: SkipLedger;
   decide: (decision: TriageDecision) => Promise<void>;
   reload: () => void;
 }
@@ -86,8 +100,7 @@ export function useUnifiedTriage(
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
   const [resolved, setResolved] = useState<Set<string>>(() => new Set());
-  const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [skips, setSkips] = useState<SkipLedger>(() => new Map<string, number>());
   const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(
     () => new Set<TriageKind>(['review', 'idea', 'practice', 'question']),
   );
@@ -159,19 +172,10 @@ export function useUnifiedTriage(
     return out;
   }, [interactions.reviews, interactions.questionGroups, ideas, center.workspaces, center.knowledge, copy, projectName]);
 
-  const allCounts = useMemo(() => countByKind(all), [all]);
-
-  const items = useMemo(() => {
-    const live = all.filter((i) => !resolved.has(i.id) && activeKinds.has(i.kind));
-    // Skipped sort last — deferred, never dropped.
-    return live.sort((a, b) => {
-      const aSkip = skipped.has(a.id) ? 1 : 0;
-      const bSkip = skipped.has(b.id) ? 1 : 0;
-      return aSkip - bSkip || compareTriage(a, b);
-    });
-  }, [all, resolved, skipped, activeKinds]);
-
-  const counts = useMemo(() => countByKind(items), [items]);
+  const projection = useMemo(
+    () => projectQueue({ all, resolved, skips, activeKinds }),
+    [all, resolved, skips, activeKinds],
+  );
 
   const toggleKind = useCallback((kind: TriageKind) => {
     setActiveKinds((prev) => {
@@ -186,75 +190,51 @@ export function useUnifiedTriage(
 
   const reload = useCallback(() => {
     setResolved(new Set());
-    setSkipped(new Set());
+    setSkips(new Map());
     setReloadGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
 
+  /** Every write a verdict can reach, in one injected bundle — see
+   *  `triageDispatch`, which owns the routing itself. */
+  const ports = useMemo<TriagePorts>(
+    () => ({
+      reviewAction: (id, status, notes) => interactions.handleReviewAction(id, status, notes),
+      dispatchReviewAction: (id, action) => interactions.handleDispatchAction(id, action),
+      createTask: (title, projectId, body, ideaId) =>
+        devApi.createTask(title, projectId, body, ideaId),
+      acceptIdea: (id) => devApi.acceptIdea(id),
+      rejectIdea: (id, reason) => devApi.rejectIdea(id, reason),
+      decideKnowledge: (id, verdict) => decideWorkspaceKnowledge(id, verdict),
+      refreshKnowledge: () => center.refreshKnowledge(),
+      submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
+      openBuilder: onOpenBuilder,
+    }),
+    [interactions, center, onOpenBuilder],
+  );
+
   /**
-   * Route one verdict to the right backend. Every branch resolves optimistically
-   * — the row leaves the queue as soon as the write is issued — because a
-   * triage surface that pauses after each decision is a triage surface nobody
-   * finishes.
+   * Route one verdict to the right backend. Writes resolve optimistically —
+   * the row leaves the queue as soon as the write is issued — because a triage
+   * surface that pauses after each decision is a triage surface nobody
+   * finishes. The safety that makes that honest is the restore below: a
+   * rejected write puts the row straight back.
    */
   const decide = useCallback(
     async (decision: TriageDecision) => {
-      const { item, verdict, branchId, answer, reason } = decision;
+      const { item } = decision;
 
-      if (verdict === 'skip') {
-        setSkipped((prev) => new Set(prev).add(item.id));
+      // A deferral writes nothing, so it must not resolve anything either.
+      if (isDeferral(decision)) {
+        setSkips((prev) => withSkip(prev, item.id));
         return;
       }
 
-      setBusyId(item.id);
       // Optimistic: drop it now, restore only if the write actually fails.
       setResolved((prev) => new Set(prev).add(item.id));
 
       try {
-        switch (item.kind) {
-          case 'review':
-            if (branchId) await interactions.handleDispatchAction(item.sourceId, branchId);
-            else if (verdict === 'accept') await interactions.handleReviewAction(item.sourceId, 'approved');
-            else await interactions.handleReviewAction(item.sourceId, 'rejected', reason);
-            break;
-
-          case 'idea':
-            if (branchId === 'build') {
-              await devApi.createTask(
-                item.title,
-                item.payload?.projectId ?? undefined,
-                item.body,
-                item.sourceId,
-              );
-              await devApi.acceptIdea(item.sourceId);
-            } else if (verdict === 'accept') {
-              await devApi.acceptIdea(item.sourceId);
-            } else {
-              await devApi.rejectIdea(item.sourceId, reason);
-            }
-            break;
-
-          case 'practice':
-            await decideWorkspaceKnowledge(
-              item.sourceId,
-              branchId === 'deprecate' ? 'deprecate' : verdict === 'accept' ? 'adopt' : 'reject',
-            );
-            center.refreshKnowledge();
-            break;
-
-          case 'question': {
-            // The session is the write target; `sourceId` is the cell key the
-            // answer is filed under.
-            const sessionId = item.payload?.sessionId ?? '';
-            if (branchId === 'builder') {
-              const personaId = item.payload?.personaId;
-              if (onOpenBuilder && personaId) onOpenBuilder(personaId);
-            } else if (verdict === 'accept' && answer && sessionId) {
-              await interactions.submitQuestionAnswers(sessionId, { [item.sourceId]: answer });
-            }
-            break;
-          }
-        }
+        await routeDecision(decision, ports);
       } catch (error) {
         // Put it back: a failed write must not look like a completed decision.
         setResolved((prev) => {
@@ -263,23 +243,21 @@ export function useUnifiedTriage(
           return next;
         });
         toastCatch('Could not record that decision')(error);
-      } finally {
-        setBusyId(null);
       }
     },
-    [interactions, center, onOpenBuilder],
+    [ports],
   );
 
   return {
-    items,
-    counts,
-    allCounts,
+    items: projection.items,
+    allCounts: projection.allCounts,
     loading: interactions.loading || ideasLoading,
-    busyId,
     activeKinds,
     toggleKind,
     decidedCount: resolved.size,
-    sessionTotal: all.length,
+    sessionTotal: projection.sessionTotal,
+    deferredCount: projection.deferredCount,
+    skips,
     decide,
     reload,
   };

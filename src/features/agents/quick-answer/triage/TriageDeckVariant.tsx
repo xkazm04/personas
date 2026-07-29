@@ -114,6 +114,7 @@ export function TriageDeckVariant({
                   index={i}
                   draggable={!item.input}
                   reduced={reduced}
+                  cycle={queue.skips.get(item.id) ?? 0}
                   cardRef={i === 0 ? cardRef : undefined}
                   onCommit={commit}
                   answerSlot={

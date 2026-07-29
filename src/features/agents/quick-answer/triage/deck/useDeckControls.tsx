@@ -17,16 +17,29 @@
 //     callbacks are read through refs, because an effect that tears down and
 //     re-registers on every verdict will eventually swallow the second half of
 //     a rapid double-tap.
+//  4. `pendingRef` being both the queue and the lock is efficient and sharp: if
+//     a card is thrown and never reports back, the lock never opens and the
+//     WHOLE surface goes dead — keyboard, flanks and action bar. So every throw
+//     also arms a watchdog. The card fixing its own reset is the real fix; this
+//     is the guarantee that no future regression there can wedge the deck.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { TriageDecision, TriageItem, TriageVerdict } from '../triageTypes';
 import type { UnifiedTriageQueue } from '../useUnifiedTriage';
 import type { FlingDirection, TriageCardHandle } from './TriageCard';
 
+/**
+ * How long a thrown card has to report its flight before the decision is landed
+ * without it. Comfortably longer than the card's own 200ms verdict delay — this
+ * is a stuck-detector, not a second animation clock.
+ */
+const FLIGHT_TIMEOUT_MS = 1200;
+
 export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) {
   const cardRef = useRef<TriageCardHandle | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const pendingRef = useRef<TriageDecision | null>(null);
+  const watchdogRef = useRef<number | null>(null);
 
   const [answer, setAnswer] = useState('');
 
@@ -42,9 +55,19 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     setAnswer('');
   }, [topId]);
 
+  const disarm = useCallback(() => {
+    if (watchdogRef.current !== null) {
+      window.clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => disarm, [disarm]);
+
   /** Fired by the card once its flight has been seen. */
   const commit = useCallback(
     (dir: FlingDirection) => {
+      disarm();
       const queued = pendingRef.current;
       pendingRef.current = null;
       if (queued) {
@@ -57,7 +80,7 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       const verdict: TriageVerdict = dir === 'right' ? 'accept' : dir === 'left' ? 'reject' : 'skip';
       void queue.decide({ item, verdict });
     },
-    [queue],
+    [queue, disarm],
   );
 
   /** Throw the card, then decide. Decides outright if there is no card to throw. */
@@ -68,9 +91,19 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
         return;
       }
       pendingRef.current = decision;
+      // Land it anyway if the flight is never reported — a card that unmounts
+      // mid-throw, or is re-dealt without resetting, must not take the deck's
+      // input with it.
+      disarm();
+      watchdogRef.current = window.setTimeout(() => {
+        watchdogRef.current = null;
+        if (pendingRef.current !== decision) return;
+        pendingRef.current = null;
+        void queue.decide(decision);
+      }, FLIGHT_TIMEOUT_MS);
       cardRef.current.launch(dir);
     },
-    [queue],
+    [queue, disarm],
   );
 
   const decideTop = useCallback(

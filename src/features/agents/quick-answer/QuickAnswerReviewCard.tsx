@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { severityBucket, SEVERITY_META } from '@/features/fleet/monitor/monitorModel';
+import { toastCatch } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -22,7 +23,10 @@ export function QuickAnswerReviewCard({ review, busy, onAction }: QuickAnswerRev
   const sev = SEVERITY_META[severityBucket(review.severity)];
 
   const act = (status: ManualReviewStatus) => {
-    void onAction(review.id, status, note.trim() || undefined);
+    // `onAction` rejects on a failed write — surface it rather than floating it.
+    void onAction(review.id, status, note.trim() || undefined).catch(
+      toastCatch('QuickAnswerReviewCard:act'),
+    );
   };
 
   return (
