@@ -375,7 +375,12 @@
     "triage_reason_title": "Warum?",
     "triage_reason_wrong_approach": "Falscher Ansatz",
     "triage_superseded_skip": "Kein Nachfolger",
-    "triage_superseded_title": "Ersetzt durch"
+    "triage_superseded_title": "Ersetzt durch",
+    "triage_backlog_capped": "{loaded} von {pending} offenen Ideen in Arbeit – nächsten Stapel laden",
+    "triage_batch_body_one": "Hinter diesem Stapel wartet noch 1 Idee.",
+    "triage_batch_body_other": "Hinter diesem Stapel warten noch {count} Ideen.",
+    "triage_batch_next": "Nächsten Stapel austeilen",
+    "triage_batch_title": "Stapel geschafft"
   },
   "common": {
     "loading": "Laden...",

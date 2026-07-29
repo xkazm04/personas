@@ -374,5 +374,10 @@
   "triage_reason_title": "Vì sao?",
   "triage_reason_wrong_approach": "Cách làm chưa đúng",
   "triage_superseded_skip": "Không có mục thay thế",
-  "triage_superseded_title": "Được thay bởi"
+  "triage_superseded_title": "Được thay bởi",
+  "triage_backlog_capped": "Đang xử lý {loaded} trong {pending} ý tưởng đang chờ — tải lô tiếp theo",
+  "triage_batch_body_one": "Còn 1 ý tưởng nữa đang chờ sau lô này.",
+  "triage_batch_body_other": "Còn {count} ý tưởng nữa đang chờ sau lô này.",
+  "triage_batch_next": "Chia lô tiếp theo",
+  "triage_batch_title": "Xong lô này"
 }

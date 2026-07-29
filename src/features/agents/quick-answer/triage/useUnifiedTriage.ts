@@ -28,7 +28,7 @@
  * (what the reviewer sees and what the counters say) and `triageDispatch`
  * (which backend a verdict writes to). This file is the wiring.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as devApi from '@/api/devTools/devTools';
 import { decideWorkspaceKnowledge } from '@/api/devTools/workspaces';
@@ -62,6 +62,21 @@ import {
 /** Statuses that still owe a human decision. */
 const PENDING_PRACTICE_STATUSES = new Set(['observed', 'proposed']);
 
+/**
+ * The same two statuses, pushed into the QUERY rather than applied after it.
+ *
+ * `useWorkspaceCenter` fetched every status and this hook then discarded
+ * everything but these two — in a mature workspace `adopted` is the largest
+ * bucket, so most of the payload was read and thrown away on every refresh. The
+ * client-side filter below stays as a correctness backstop: this hook must
+ * behave identically for a caller that (or a future centre that) hands it
+ * unfiltered rows.
+ */
+const PRACTICE_FETCH_STATUSES = ['observed', 'proposed'] as const;
+
+/** Module constant so the hook argument keeps a stable identity. */
+const PRACTICE_CENTER_OPTIONS = { statuses: PRACTICE_FETCH_STATUSES } as const;
+
 /** One page of pending ideas is plenty for a triage session; the queue is a
  *  working set, not an archive. */
 const IDEA_PAGE_SIZE = 60;
@@ -93,6 +108,15 @@ function successorsFor(
     .map((s) => ({ id: s.id, title: s.title }));
 }
 
+export interface IdeaBacklog {
+  /** Ideas this session has pulled into the deck. */
+  loaded: number;
+  /** Ideas pending in SQLite, whatever the deck happens to hold. */
+  pending: number;
+  /** Whether another page exists. Drives "you cleared the batch, not the queue". */
+  hasMore: boolean;
+}
+
 export interface UnifiedTriageQueue {
   /** Undecided first, skipped last, both in weight order. */
   items: TriageItem[];
@@ -114,6 +138,18 @@ export interface UnifiedTriageQueue {
    * reset before it can be thrown again.
    */
   skips: SkipLedger;
+  /**
+   * The TRUE size of the backlog behind the capped working set.
+   *
+   * `triageIdeas` returns a keyset page plus `counts`, and this hook used to keep
+   * `page.ideas` and drop `cursor`, `hasMore` and `counts` on the floor. With 400
+   * ideas pending, the deck dealt 60 and its cleared state was word-for-word the
+   * one it shows when there is genuinely nothing left — the single most
+   * misleading thing this surface could say.
+   */
+  backlog: IdeaBacklog;
+  /** Pull the next page of ideas into the working set. No-op when there is none. */
+  loadMore: () => void;
   decide: (decision: TriageDecision) => Promise<void>;
   /**
    * Follow one of an item's {@link TriageItem.links}. NOT a decision: nothing is
@@ -137,17 +173,24 @@ export function useUnifiedTriage(
 ): UnifiedTriageQueue {
   const { onOpenBuilder, onOpenRun } = hosts;
   const interactions = usePendingInteractions();
-  const center = useWorkspaceCenter();
+  const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
   const projects = useSystemStore((s) => s.projects);
 
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
+  /**
+   * Which page to fetch. `cursor` undefined = start over (a reload); set = append
+   * the next page. `gen` makes a repeat request with the SAME cursor a distinct
+   * state, so "load more" twice in a row is two fetches rather than one.
+   */
+  const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
+  const [backlog, setBacklog] = useState<IdeaBacklog>({ loaded: 0, pending: 0, hasMore: false });
+  const cursorRef = useRef<string | null>(null);
   const [resolved, setResolved] = useState<Set<string>>(() => new Set());
   const [skips, setSkips] = useState<SkipLedger>(() => new Map<string, number>());
   const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(
     () => new Set<TriageKind>(['review', 'idea', 'practice', 'question']),
   );
-  const [reloadGen, setReloadGen] = useState(0);
 
   const projectName = useCallback(
     (projectId: string | null) =>
@@ -156,15 +199,24 @@ export function useUnifiedTriage(
   );
 
   // Ideas are the one source with no existing hook to borrow, so this owns the
-  // fetch. Guarded by a generation counter rather than a ref so `reload()` is
-  // a plain state bump.
+  // fetch. Guarded by a generation counter rather than a ref so `reload()` and
+  // `loadMore()` are plain state bumps.
   useEffect(() => {
     let cancelled = false;
+    const appending = !!ideaFetch.cursor;
     setIdeasLoading(true);
     void devApi
-      .triageIdeas(undefined, IDEA_PAGE_SIZE, undefined, { status: 'pending' })
+      .triageIdeas(undefined, IDEA_PAGE_SIZE, ideaFetch.cursor, { status: 'pending' })
       .then((page) => {
-        if (!cancelled) setIdeas(page.ideas);
+        if (cancelled) return;
+        cursorRef.current = page.cursor;
+        setIdeas((prev) => {
+          const next = appending ? [...prev, ...page.ideas] : page.ideas;
+          // `counts` is scoped to the non-status filters, so `pending` is the
+          // whole pending backlog rather than this page's slice.
+          setBacklog({ loaded: next.length, pending: page.counts.pending, hasMore: page.hasMore });
+          return next;
+        });
       })
       .catch(toastCatch('Could not load backlog ideas'))
       .finally(() => {
@@ -173,7 +225,7 @@ export function useUnifiedTriage(
     return () => {
       cancelled = true;
     };
-  }, [reloadGen]);
+  }, [ideaFetch]);
 
   /** Everything, before resolution/skip/kind filtering. */
   const all = useMemo<TriageItem[]>(() => {
@@ -256,9 +308,23 @@ export function useUnifiedTriage(
   const reload = useCallback(() => {
     setResolved(new Set());
     setSkips(new Map());
-    setReloadGen((g) => g + 1);
+    setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     center.refreshKnowledge();
   }, [center]);
+
+  /**
+   * Deal the next page instead of starting over.
+   *
+   * Distinct from `reload` on purpose: reload forgets what this session decided
+   * (it is "show me the world again"), while this keeps the session's progress
+   * and extends the working set — which is what someone who just cleared 60 of
+   * 400 actually wants.
+   */
+  const loadMore = useCallback(() => {
+    const cursor = cursorRef.current;
+    if (!cursor) return;
+    setIdeaFetch((f) => ({ cursor, gen: f.gen + 1 }));
+  }, []);
 
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
@@ -329,18 +395,40 @@ export function useUnifiedTriage(
     [onOpenRun],
   );
 
-  return {
-    items: projection.items,
-    allCounts: projection.allCounts,
-    loading: interactions.loading || ideasLoading,
-    activeKinds,
-    toggleKind,
-    decidedCount: resolved.size,
-    sessionTotal: projection.sessionTotal,
-    deferredCount: projection.deferredCount,
-    skips,
-    decide,
-    openLink,
-    reload,
-  };
+  // Memoised for the same reason as its three inputs: the deck's stacked cards
+  // are memoised components whose `onCommit` closes over `queue`, so a fresh
+  // queue object per render re-rendered (and re-parsed the markdown of) every
+  // card on every keystroke in the answer box.
+  return useMemo(
+    () => ({
+      items: projection.items,
+      allCounts: projection.allCounts,
+      loading: interactions.loading || ideasLoading,
+      activeKinds,
+      toggleKind,
+      decidedCount: resolved.size,
+      sessionTotal: projection.sessionTotal,
+      deferredCount: projection.deferredCount,
+      skips,
+      backlog,
+      loadMore,
+      decide,
+      openLink,
+      reload,
+    }),
+    [
+      projection,
+      interactions.loading,
+      ideasLoading,
+      activeKinds,
+      toggleKind,
+      resolved.size,
+      skips,
+      backlog,
+      loadMore,
+      decide,
+      openLink,
+      reload,
+    ],
+  );
 }

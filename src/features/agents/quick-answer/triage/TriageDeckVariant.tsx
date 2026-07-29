@@ -100,8 +100,12 @@ export function TriageDeckVariant({
           <DeckCleared
             decided={queue.decidedCount}
             filtered={filteredOut}
+            // "You cleared the batch" and "you cleared the queue" are different
+            // endings, and until now the deck told the same story for both.
+            remaining={queue.backlog.hasMore ? queue.backlog.pending - queue.backlog.loaded : 0}
             reduced={reduced}
             onReload={queue.reload}
+            onLoadMore={queue.loadMore}
           />
         ) : (
           <>

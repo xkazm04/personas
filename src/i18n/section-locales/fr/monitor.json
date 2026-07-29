@@ -374,5 +374,10 @@
   "triage_reason_title": "Pourquoi ?",
   "triage_reason_wrong_approach": "Mauvaise approche",
   "triage_superseded_skip": "Aucun successeur",
-  "triage_superseded_title": "Remplacé par"
+  "triage_superseded_title": "Remplacé par",
+  "triage_backlog_capped": "{loaded} idées en cours sur {pending} en attente — charger le lot suivant",
+  "triage_batch_body_one": "Il reste 1 idée derrière ce lot.",
+  "triage_batch_body_other": "Il reste {count} idées derrière ce lot.",
+  "triage_batch_next": "Distribuer le lot suivant",
+  "triage_batch_title": "Lot terminé"
 }

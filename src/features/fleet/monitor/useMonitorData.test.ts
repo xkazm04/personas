@@ -28,8 +28,13 @@ vi.mock('@/api/overview/messages', () => ({
   markMessageRead: vi.fn().mockResolvedValue(undefined),
 }));
 
+/** Every poller registered this mount, by `name`, with its `enabled` flag. */
+const registeredPollers: { name?: string; enabled: boolean }[] = [];
+
 vi.mock('@/hooks/utility/timing/usePolling', () => ({
-  usePolling: () => {},
+  usePolling: (_fn: unknown, opts: { enabled: boolean; name?: string }) => {
+    registeredPollers.push({ name: opts.name, enabled: opts.enabled });
+  },
   POLLING_CONFIG: {
     dashboardRefresh: { interval: 60_000 },
     cloudReviews: { interval: 60_000, maxBackoff: 60_000 },
@@ -87,14 +92,19 @@ function row(id: string) {
 }
 
 /** Mount and wait for the initial review load to land. */
-async function mount() {
-  const hook = renderHook(() => useMonitorData());
+async function mount(feeds?: Parameters<typeof useMonitorData>[0]) {
+  const hook = renderHook(() => useMonitorData(feeds));
   await waitFor(() => expect(hook.result.current.reviews.length).toBeGreaterThan(0));
   return hook;
 }
 
+/** The `enabled` flag of one named poller. */
+const pollerEnabled = (name: string) =>
+  registeredPollers.filter((p) => p.name === name).some((p) => p.enabled);
+
 beforeEach(() => {
   vi.clearAllMocks();
+  registeredPollers.length = 0;
   mockListReviews.mockResolvedValue([row('r1'), row('r2')]);
   mockUpdateStatus.mockResolvedValue(undefined);
   mockDispatchAction.mockResolvedValue(undefined);
@@ -167,6 +177,41 @@ describe('useMonitorData — concurrent verdicts', () => {
 
     await act(async () => { release(); await pending; });
     expect(result.current.isProcessing).toBe(false);
+  });
+});
+
+describe('useMonitorData — no poller for data the surface cannot render', () => {
+  it('polls all four feeds by default, so the Monitor is unchanged', async () => {
+    await mount();
+    expect(pollerEnabled('monitor:reviews')).toBe(true);
+    expect(pollerEnabled('monitor:messages')).toBe(true);
+    expect(pollerEnabled('monitor:personaHealth')).toBe(true);
+    // Cloud is gated on the connection, not on the feed set.
+    expect(registeredPollers.some((p) => p.name === 'monitor:cloudReviews')).toBe(true);
+  });
+
+  it('starts NO message or health poller for a surface that renders neither', async () => {
+    // The triage deck: `usePendingInteractions` does not even return
+    // `unreadMessages`, yet opening the deck used to run a list_messages(300)
+    // query and a fetchPersonaSummaries() every 30 seconds for its whole life.
+    await mount({ messages: false, personaHealth: false });
+    expect(pollerEnabled('monitor:reviews')).toBe(true);
+    expect(pollerEnabled('monitor:messages')).toBe(false);
+    expect(pollerEnabled('monitor:personaHealth')).toBe(false);
+  });
+
+  it('never even fetches messages once when they are not wanted', async () => {
+    const { listMessages } = await import('@/api/overview/messages');
+    await mount({ messages: false, personaHealth: false });
+    expect(listMessages).not.toHaveBeenCalled();
+  });
+
+  it('still fills a COLD persona roster once — the review cards need the names', async () => {
+    // Skipping the poll must not cost the deck persona identity: with an empty
+    // store there would be no name to join onto a review at all.
+    expect(agentState.personas).toHaveLength(0);
+    await mount({ messages: false, personaHealth: false });
+    expect(agentState.fetchPersonaSummaries).toHaveBeenCalledTimes(1);
   });
 });
 

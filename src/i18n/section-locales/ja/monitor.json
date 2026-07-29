@@ -374,5 +374,10 @@
   "triage_reason_title": "理由は？",
   "triage_reason_wrong_approach": "方針が違う",
   "triage_superseded_skip": "後継なし",
-  "triage_superseded_title": "置き換え先"
+  "triage_superseded_title": "置き換え先",
+  "triage_backlog_capped": "保留中 {pending} 件のうち {loaded} 件を処理中 — 次のバッチを読み込む",
+  "triage_batch_body_one": "このバッチの後ろにあと 1 件のアイデアが残っています。",
+  "triage_batch_body_other": "このバッチの後ろにあと {count} 件のアイデアが残っています。",
+  "triage_batch_next": "次のバッチを配る",
+  "triage_batch_title": "このバッチは完了"
 }

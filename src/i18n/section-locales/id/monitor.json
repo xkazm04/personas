@@ -374,5 +374,10 @@
   "triage_reason_title": "Kenapa?",
   "triage_reason_wrong_approach": "Pendekatannya salah",
   "triage_superseded_skip": "Tidak ada penggantinya",
-  "triage_superseded_title": "Digantikan oleh"
+  "triage_superseded_title": "Digantikan oleh",
+  "triage_backlog_capped": "Menangani {loaded} dari {pending} ide yang menunggu — muat batch berikutnya",
+  "triage_batch_body_one": "Masih ada 1 ide lagi menunggu di belakang batch ini.",
+  "triage_batch_body_other": "Masih ada {count} ide lagi menunggu di belakang batch ini.",
+  "triage_batch_next": "Bagikan batch berikutnya",
+  "triage_batch_title": "Batch selesai"
 }

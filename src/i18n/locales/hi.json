@@ -375,7 +375,12 @@
     "triage_reason_title": "क्यों?",
     "triage_reason_wrong_approach": "तरीका गलत है",
     "triage_superseded_skip": "कोई उत्तराधिकारी नहीं",
-    "triage_superseded_title": "इससे बदला गया"
+    "triage_superseded_title": "इससे बदला गया",
+    "triage_backlog_capped": "{pending} लंबित विचारों में से {loaded} पर काम चल रहा है — अगला बैच लोड करें",
+    "triage_batch_body_one": "इस बैच के पीछे 1 और विचार इंतज़ार कर रहा है।",
+    "triage_batch_body_other": "इस बैच के पीछे {count} और विचार इंतज़ार कर रहे हैं।",
+    "triage_batch_next": "अगला बैच बाँटें",
+    "triage_batch_title": "बैच निपट गया"
   },
   "common": {
     "loading": "लोड हो रहा है...",

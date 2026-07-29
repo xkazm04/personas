@@ -83,6 +83,28 @@ function shapeReview(r: PersonaManualReview): MonitorReviewItem {
   };
 }
 
+/**
+ * Which feeds the mounting surface actually RENDERS.
+ *
+ * This hook fuses four independent feeds and used to start four pollers
+ * unconditionally, which was right for the Monitor and wrong for everyone else.
+ * The triage deck reaches this hook through `usePendingInteractions`, which does
+ * not even return `unreadMessages` — so opening the deck was paying for a
+ * `list_messages(300)` query and a `fetchPersonaSummaries()` every 30 seconds
+ * for data no pixel on that surface could show.
+ *
+ * Defaults are ALL ON, so `useMonitorData()` behaves exactly as before and the
+ * Monitor — which legitimately needs all four — needs no change.
+ */
+export interface MonitorFeeds {
+  /** Unread persona messages. */
+  messages?: boolean;
+  /** Persona roster + health summaries, on the dashboard cadence. */
+  personaHealth?: boolean;
+}
+
+const ALL_FEEDS: Required<MonitorFeeds> = { messages: true, personaHealth: true };
+
 export interface MonitorData {
   personas: ReturnType<typeof useAgentStore.getState>['personas'];
   healthMap: Record<string, PersonaHealth>;
@@ -139,7 +161,9 @@ function useInFlight() {
   return { track, busy: busyKeys.length > 0 };
 }
 
-export function useMonitorData(): MonitorData {
+export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
+  const wantsMessages = feeds.messages ?? ALL_FEEDS.messages;
+  const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
   const personas = useAgentStore((s) => s.personas);
   const healthMap = useAgentStore((s) => s.personaHealthMap);
   const fetchPersonaSummaries = useAgentStore((s) => s.fetchPersonaSummaries);
@@ -161,43 +185,85 @@ export function useMonitorData(): MonitorData {
   // the name for the same row.
   const personaMap = usePersonaMap();
 
+  /**
+   * A poll that lands after unmount must not set state.
+   *
+   * This is a GUARD, not an abort: `invokeWithTimeout` documents that Tauri
+   * `invoke` has no cancellation, so the Rust side runs to completion whatever
+   * we do here. `usePolling`'s dispose kills the ticker, not the request already
+   * in flight — closing the deck one tick into a `list_manual_reviews` left that
+   * promise resolving into a dead component.
+   */
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+
   const reloadReviews = useCallback(async () => {
     try {
       const raw = await listManualReviews(undefined, 'pending');
-      setLocalReviews(raw.map(shapeReview));
+      if (mounted.current) setLocalReviews(raw.map(shapeReview));
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, []);
 
   const reloadMessages = useCallback(async () => {
     try {
       const raw = await listMessages(MESSAGE_SCAN_LIMIT);
-      setUnreadMessages(raw.filter((m) => !m.is_read));
+      if (mounted.current) setUnreadMessages(raw.filter((m) => !m.is_read));
     } catch (err) {
       logger.error('Failed to load messages', { error: err });
     }
   }, []);
 
+  // Read through a ref: whether the roster is cold is a one-shot question at
+  // mount, and putting `personas.length` in the dep list would re-run the whole
+  // initial fetch the moment the roster landed.
+  const personaCountRef = useRef(personas.length);
+  personaCountRef.current = personas.length;
+
   useEffect(() => {
     void reloadReviews();
-    void reloadMessages();
-    void fetchPersonaSummaries();
-  }, [reloadReviews, reloadMessages, fetchPersonaSummaries]);
+    if (wantsMessages) void reloadMessages();
+    // Even a surface that does not want the health POLL needs a roster: the
+    // review cards resolve persona name/colour through it (see `personaMap`
+    // above). So a cold store is filled once, and only once.
+    if (wantsPersonaHealth || personaCountRef.current === 0) void fetchPersonaSummaries();
+  }, [wantsMessages, wantsPersonaHealth, reloadReviews, reloadMessages, fetchPersonaSummaries]);
   useEffect(() => { if (isCloudConnected) void fetchCloudReviews(); }, [isCloudConnected, fetchCloudReviews]);
 
   // Reviews/messages aren't event-driven — poll to catch ones created while
   // the Monitor is open. Process activity is already live via the
   // PROCESS_ACTIVITY event bridge.
-  usePolling(reloadReviews, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
-  usePolling(reloadMessages, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
-  usePolling(fetchPersonaSummaries, { interval: POLLING_CONFIG.dashboardRefresh.interval, enabled: true });
+  //
+  // Named per call site so the shared PollingCoordinator's stats can say which
+  // surface is paying for what.
+  usePolling(reloadReviews, {
+    interval: POLLING_CONFIG.dashboardRefresh.interval,
+    enabled: true,
+    name: 'monitor:reviews',
+  });
+  usePolling(reloadMessages, {
+    interval: POLLING_CONFIG.dashboardRefresh.interval,
+    enabled: wantsMessages,
+    name: 'monitor:messages',
+  });
+  usePolling(fetchPersonaSummaries, {
+    interval: POLLING_CONFIG.dashboardRefresh.interval,
+    enabled: wantsPersonaHealth,
+    name: 'monitor:personaHealth',
+  });
   usePolling(fetchCloudReviews, {
     interval: POLLING_CONFIG.cloudReviews.interval,
     enabled: isCloudConnected,
     maxBackoff: POLLING_CONFIG.cloudReviews.maxBackoff,
+    name: 'monitor:cloudReviews',
   });
 
   const pendingCloud = useMemo<MonitorReviewItem[]>(
@@ -300,8 +366,19 @@ export function useMonitorData(): MonitorData {
     [fetchUnreadMessageCount, reloadMessages],
   );
 
-  return {
-    personas, healthMap, reviews, unreadMessages, activeProcesses,
-    loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
-  };
+  // Memoised because this object is the ROOT of the triage deck's prop graph:
+  // `usePendingInteractions` spreads it, `useUnifiedTriage` builds its injected
+  // port bundle from it, `queue.decide` closes over that bundle, and the deck's
+  // three stacked cards take `onCommit` from it. A fresh object here invalidated
+  // that whole chain on every keystroke in the answer box.
+  return useMemo(
+    () => ({
+      personas, healthMap, reviews, unreadMessages, activeProcesses,
+      loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
+    }),
+    [
+      personas, healthMap, reviews, unreadMessages, activeProcesses,
+      loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
+    ],
+  );
 }

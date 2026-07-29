@@ -375,7 +375,12 @@
     "triage_reason_title": "Proč?",
     "triage_reason_wrong_approach": "Špatný přístup",
     "triage_superseded_skip": "Bez nástupce",
-    "triage_superseded_title": "Nahrazeno čím"
+    "triage_superseded_title": "Nahrazeno čím",
+    "triage_backlog_capped": "Rozpracováno {loaded} z {pending} čekajících nápadů – načíst další dávku",
+    "triage_batch_body_one": "Za touto dávkou čeká ještě 1 nápad.",
+    "triage_batch_body_other": "Za touto dávkou čeká ještě {count} nápadů.",
+    "triage_batch_next": "Rozdat další dávku",
+    "triage_batch_title": "Dávka hotová"
   },
   "common": {
     "loading": "Načítání...",

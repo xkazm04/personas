@@ -375,7 +375,12 @@
     "triage_reason_not_worth_it": "Not worth the effort",
     "triage_reason_already_done": "Already done",
     "triage_superseded_title": "Replaced by",
-    "triage_superseded_skip": "No successor"
+    "triage_superseded_skip": "No successor",
+    "triage_backlog_capped": "Working on {loaded} of {pending} pending ideas — load the next batch",
+    "triage_batch_title": "Batch cleared",
+    "triage_batch_next": "Deal the next batch",
+    "triage_batch_body_one": "1 more idea is still waiting behind this batch.",
+    "triage_batch_body_other": "{count} more ideas are still waiting behind this batch."
   },
   "common": {
     "unknown_error": "Unknown error",

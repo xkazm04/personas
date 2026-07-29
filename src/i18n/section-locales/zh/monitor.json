@@ -374,5 +374,10 @@
   "triage_reason_title": "为什么？",
   "triage_reason_wrong_approach": "方向不对",
   "triage_superseded_skip": "没有替代项",
-  "triage_superseded_title": "被替换为"
+  "triage_superseded_title": "被替换为",
+  "triage_backlog_capped": "正在处理 {pending} 条待办想法中的 {loaded} 条 — 加载下一批",
+  "triage_batch_body_one": "这一批之后还有 1 条想法在等待。",
+  "triage_batch_body_other": "这一批之后还有 {count} 条想法在等待。",
+  "triage_batch_next": "发下一批",
+  "triage_batch_title": "这一批已清完"
 }

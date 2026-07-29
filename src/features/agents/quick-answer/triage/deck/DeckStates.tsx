@@ -10,7 +10,7 @@
 // Neither loops. The entry choreography is one-shot and gated on reduced
 // motion; there is no ambient pulse anywhere in this file.
 import { motion } from 'framer-motion';
-import { Filter, PartyPopper } from 'lucide-react';
+import { Filter, Layers, PartyPopper } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -55,25 +55,41 @@ export function DeckLoading({ reduced }: { reduced: boolean }) {
 export function DeckCleared({
   decided,
   filtered,
+  remaining,
   reduced,
   onReload,
+  onLoadMore,
 }: {
   decided: number;
   /** True when the queue still holds items, just none of the active kinds. */
   filtered: boolean;
+  /**
+   * Ideas still pending in SQLite behind the capped working set. Above zero, the
+   * deck did NOT reach the end of the queue — it reached the end of a batch, and
+   * saying "you're all caught up" there is the most misleading thing this
+   * surface can do. Three endings, not two.
+   */
+  remaining: number;
   reduced: boolean;
   onReload: () => void;
+  onLoadMore: () => void;
 }) {
   const { t, tx } = useTranslation();
-  const Icon = filtered ? Filter : PartyPopper;
+  const batched = !filtered && remaining > 0;
+  const Icon = filtered ? Filter : batched ? Layers : PartyPopper;
   const body = filtered
     ? t.monitor.triage_filtered_body
-    : decided > 0
+    : batched
       ? tx(
-          decided === 1 ? t.monitor.triage_cleared_body_one : t.monitor.triage_cleared_body_other,
-          { count: decided },
+          remaining === 1 ? t.monitor.triage_batch_body_one : t.monitor.triage_batch_body_other,
+          { count: remaining },
         )
-      : t.monitor.triage_cleared_body_none;
+      : decided > 0
+        ? tx(
+            decided === 1 ? t.monitor.triage_cleared_body_one : t.monitor.triage_cleared_body_other,
+            { count: decided },
+          )
+        : t.monitor.triage_cleared_body_none;
 
   return (
     <motion.div
@@ -82,27 +98,46 @@ export function DeckCleared({
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 220, damping: 24 }}
     >
+      {/* The party popper is EARNED. A batch boundary is a neutral waypoint, so
+          it gets the queue's own accent rather than the success colour — the
+          reviewer has not finished, and the surface must not congratulate them
+          for it. */}
       <motion.div
         className={`flex h-20 w-20 items-center justify-center rounded-full border ${
-          filtered ? 'border-primary/25 bg-primary/10' : 'border-status-success/30 bg-status-success/10'
+          filtered || batched
+            ? 'border-primary/25 bg-primary/10'
+            : 'border-status-success/30 bg-status-success/10'
         }`}
         initial={reduced ? false : { scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 18, delay: reduced ? 0 : 0.06 }}
       >
         <Icon
-          className={`h-9 w-9 ${filtered ? 'text-primary' : 'text-status-success'}`}
+          className={`h-9 w-9 ${filtered || batched ? 'text-primary' : 'text-status-success'}`}
           aria-hidden
         />
       </motion.div>
 
       <h2 className="typo-hero text-foreground">
-        {filtered ? t.monitor.triage_filtered_title : t.monitor.triage_cleared_title}
+        {filtered
+          ? t.monitor.triage_filtered_title
+          : batched
+            ? t.monitor.triage_batch_title
+            : t.monitor.triage_cleared_title}
       </h2>
 
       <p className="typo-body-lg text-foreground">{body}</p>
 
-      {!filtered ? (
+      {batched ? (
+        <Button
+          variant="primary"
+          onClick={onLoadMore}
+          aria-label={t.monitor.triage_batch_next}
+          title={t.monitor.triage_batch_next}
+        >
+          {t.monitor.triage_batch_next}
+        </Button>
+      ) : !filtered ? (
         <Button
           variant="secondary"
           onClick={onReload}

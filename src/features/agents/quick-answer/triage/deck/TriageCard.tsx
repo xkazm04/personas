@@ -13,7 +13,15 @@
 //    silently swallows the string — the reference implementation has that bug.
 //  • Drag lives on an INNER layer. Separating depth from drag is what lets the
 //    two animate independently without fighting over one transform.
-import { useCallback, useEffect, useImperativeHandle, useRef, type ReactNode, type Ref } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { animate, motion, useMotionTemplate, useMotionValue, useTransform } from 'framer-motion';
 
 import type { TriageItem } from '../triageTypes';
@@ -64,7 +72,7 @@ interface TriageCardProps {
   answerSlot?: ReactNode;
 }
 
-export function TriageCard({
+function TriageCardImpl({
   item,
   index,
   draggable,
@@ -214,3 +222,21 @@ export function TriageCard({
     </motion.div>
   );
 }
+
+/**
+ * Memoised, and the reason is the answer box.
+ *
+ * The deck keeps THREE of these mounted for depth, and the draft answer lives in
+ * `useDeckControls` one level up — so every keystroke re-rendered all three
+ * cards, and each one re-ran up to two `MarkdownRenderer`s (react-markdown +
+ * remark-gfm + rehype-highlight) over unchanged prose. The two cards behind the
+ * top one cannot possibly have changed: their `answerSlot` is `undefined` and
+ * their item, index and cycle are the same objects.
+ *
+ * This only pays off while the props above it are stable, which is why
+ * `useMonitorData`, `usePendingInteractions`, `useWorkspaceCenter` and
+ * `useUnifiedTriage` all memoise their returns and `QuickAnswerPopover` wraps
+ * its deep-link handlers — `onCommit` closes over the queue object, so one fresh
+ * object anywhere up that chain silently undoes this.
+ */
+export const TriageCard = memo(TriageCardImpl);

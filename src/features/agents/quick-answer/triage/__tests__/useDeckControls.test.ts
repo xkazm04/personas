@@ -32,6 +32,8 @@ function makeQueue(
     sessionTotal: items.length,
     deferredCount: 0,
     skips: new Map(),
+    backlog: { loaded: items.length, pending: items.length, hasMore: false },
+    loadMore: vi.fn(),
     decide,
     openLink,
     reload: vi.fn(),

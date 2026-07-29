@@ -9,14 +9,14 @@
 // have switched off still shows how much of it is waiting. A kind with nothing
 // in it is rendered inert rather than hidden, because a chip that disappears
 // makes the reviewer wonder what else vanished.
-import { Activity, X } from 'lucide-react';
+import { Activity, Layers, X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TRIAGE_KINDS, type TriageKind } from '../triageTypes';
 import type { UnifiedTriageQueue } from '../useUnifiedTriage';
-import { KIND_META, kindCopy, TONE_CHIP } from './DeckChips';
+import { KIND_META, kindCopy, TONE_CHIP, TONE_HOVER } from './DeckChips';
 
 function KindFilterChip({
   kind,
@@ -53,6 +53,41 @@ function KindFilterChip({
       <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>{copy.label}</span>
       <span className="typo-data tabular-nums">{count}</span>
+    </button>
+  );
+}
+
+/**
+ * "You are looking at a batch, not the queue."
+ *
+ * The deck deals one keyset page of ideas, and it used to show that page's size
+ * as though it were the whole backlog — 60 pending looked identical to 60 total.
+ * This is the readout that makes a capped working set legible, and clicking it
+ * extends the set rather than reloading (which would forget the session).
+ * Rendered only when there IS more, so a queue that fits shows nothing extra.
+ */
+function BacklogChip({
+  loaded,
+  pending,
+  onLoadMore,
+}: {
+  loaded: number;
+  pending: number;
+  onLoadMore: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const label = tx(t.monitor.triage_backlog_capped, { loaded, pending });
+
+  return (
+    <button
+      type="button"
+      onClick={onLoadMore}
+      aria-label={label}
+      title={label}
+      className={`focus-ring hidden shrink-0 items-center gap-1.5 rounded-pill border px-2.5 py-1 typo-caption transition-colors sm:inline-flex ${TONE_CHIP.warning} ${TONE_HOVER.warning}`}
+    >
+      <Layers className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span className="typo-data tabular-nums">{`${loaded} / ${pending}`}</span>
     </button>
   );
 }
@@ -96,6 +131,14 @@ export function DeckTopBar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        {queue.backlog.hasMore ? (
+          <BacklogChip
+            loaded={queue.backlog.loaded}
+            pending={queue.backlog.pending}
+            onLoadMore={queue.loadMore}
+          />
+        ) : null}
+
         <div className="hidden items-center gap-2 sm:flex">
           <span className="typo-data tabular-nums text-foreground">
             {`${decided} / ${total}`}

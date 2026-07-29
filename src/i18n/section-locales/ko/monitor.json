@@ -374,5 +374,10 @@
   "triage_reason_title": "이유는?",
   "triage_reason_wrong_approach": "접근이 잘못됨",
   "triage_superseded_skip": "후속 항목 없음",
-  "triage_superseded_title": "대체 항목"
+  "triage_superseded_title": "대체 항목",
+  "triage_backlog_capped": "대기 중인 아이디어 {pending}개 중 {loaded}개 처리 중 — 다음 묶음 불러오기",
+  "triage_batch_body_one": "이 묶음 뒤에 아이디어 1개가 더 기다리고 있습니다.",
+  "triage_batch_body_other": "이 묶음 뒤에 아이디어 {count}개가 더 기다리고 있습니다.",
+  "triage_batch_next": "다음 묶음 받기",
+  "triage_batch_title": "이 묶음 완료"
 }

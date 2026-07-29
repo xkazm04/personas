@@ -375,7 +375,12 @@
     "triage_reason_title": "Почему?",
     "triage_reason_wrong_approach": "Неверный подход",
     "triage_superseded_skip": "Замены нет",
-    "triage_superseded_title": "Заменено на"
+    "triage_superseded_title": "Заменено на",
+    "triage_backlog_capped": "В работе {loaded} из {pending} ожидающих идей — загрузить следующую партию",
+    "triage_batch_body_one": "За этой партией ждёт ещё 1 идея.",
+    "triage_batch_body_other": "За этой партией ждёт ещё {count} идей.",
+    "triage_batch_next": "Раздать следующую партию",
+    "triage_batch_title": "Партия разобрана"
   },
   "common": {
     "loading": "Загрузка...",

@@ -382,6 +382,11 @@ export type Translations = {
     triage_reason_already_done: string;
     triage_superseded_title: string;
     triage_superseded_skip: string;
+    triage_backlog_capped: string;
+    triage_batch_title: string;
+    triage_batch_next: string;
+    triage_batch_body_one: string;
+    triage_batch_body_other: string;
   };
   common: {
     unknown_error: string;

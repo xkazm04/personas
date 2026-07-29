@@ -375,7 +375,12 @@
     "triage_reason_title": "لماذا؟",
     "triage_reason_wrong_approach": "الأسلوب خاطئ",
     "triage_superseded_skip": "لا يوجد بديل",
-    "triage_superseded_title": "استُبدل بـ"
+    "triage_superseded_title": "استُبدل بـ",
+    "triage_backlog_capped": "العمل على {loaded} من {pending} فكرة معلّقة — حمّل الدفعة التالية",
+    "triage_batch_body_one": "خلف هذه الدفعة تنتظر فكرة واحدة أخرى.",
+    "triage_batch_body_other": "خلف هذه الدفعة تنتظر {count} فكرة أخرى.",
+    "triage_batch_next": "وزّع الدفعة التالية",
+    "triage_batch_title": "انتهت الدفعة"
   },
   "common": {
     "loading": "جارٍ التحميل...",
