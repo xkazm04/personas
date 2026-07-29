@@ -74,7 +74,6 @@
   "no_kpi_short": "aucun KPI",
   "no_matches": "Rien ne correspond à « {query} »",
   "no_objective_hint": "Aucun objectif lié pour l'instant — liez un objectif depuis la bibliothèque.",
-  "outside_empty_all_in": "Tout est dans la coupe — d'une discipline suspecte.",
   "outside_empty_no_features": "Aucune fonctionnalité cartographiée pour l'instant — ouvrez Composer le scope pour cartographier le projet et ajouter les premières.",
   "outside_the_cut": "Hors de la coupe",
   "outside_the_cut_aside": "les boutons de la ligne sont la décision",

@@ -9,7 +9,7 @@
 //                    to be decided with the dispatch concept).
 //   • Observability— LLM + Monitoring mix: the technical dimension.
 // The Dev Tools / Projects→KPIs originals still exist — dual-run continues.
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Boxes } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -22,19 +22,21 @@ import { FactoryShipTab } from './ship/FactoryShipTab';
 
 export type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
 
-export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, initialTab = 'overview' }: {
+export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, tab, onTabChange }: {
   projectId: string;
   /** The legacy context×KPI matrix (renderGroups) — hosts the L3/L4 drill. */
   matrix: ReactNode;
   /** Fired after a KPI decision so the host can reload the matrix data too. */
   onKpisChanged?: () => void;
-  /** Which tab the project opens on. The wall's cover roadmap strip enters
-   *  straight on 'ship'; every other door keeps the Overview default. Read at
-   *  mount only — the shell remounts this subtree per opened project. */
-  initialTab?: L2Tab;
+  /** CONTROLLED by the shell. The shell keys this subtree on the project id, so
+   *  owning the tab locally would reset it to a default every time the
+   *  breadcrumb switched project. Lifting it means the tab you are reading
+   *  survives a project switch; only an explicit door (the wall's cover roadmap
+   *  strip → 'ship', a plain open → 'overview') chooses it for you. */
+  tab: L2Tab;
+  onTabChange: (tab: L2Tab) => void;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<L2Tab>(initialTab);
   const tabs = useMemo<Array<{ id: L2Tab; label: string }>>(() => [
     { id: 'overview', label: 'Overview' },
     { id: 'ship', label: t.ship.tab_ship },
@@ -49,7 +51,7 @@ export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, initialTa
   return (
     <div data-testid="factory-l2-tabs">
       <div className="mb-3">
-        <InkTabs tabs={tabs} active={tab} onChange={setTab} label="Module" icon={Boxes} />
+        <InkTabs tabs={tabs} active={tab} onChange={onTabChange} label="Module" icon={Boxes} />
       </div>
       {tab === 'overview' && <FactoryOverviewTab data={data} />}
       {tab === 'ship' && <FactoryShipTab data={data} />}

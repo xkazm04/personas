@@ -74,7 +74,6 @@
   "no_kpi_short": "بلا KPI",
   "no_matches": "لا شيء يطابق «{query}»",
   "no_objective_hint": "لم يُربط أي هدف رئيسي بعد — اربط هدفاً من المكتبة.",
-  "outside_empty_all_in": "كل شيء ضمن النطاق — انضباط مثير للريبة.",
   "outside_empty_no_features": "لا توجد ميزات مرسومة بعد — افتح تركيب النطاق لمسح المشروع وإضافة الأولى.",
   "outside_the_cut": "خارج النطاق",
   "outside_the_cut_aside": "أزرار الصف هي القرار",

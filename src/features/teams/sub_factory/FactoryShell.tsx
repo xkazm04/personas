@@ -42,8 +42,12 @@ export function FactoryShell({
   const [groupId, setGroupId] = useState<string | null>(null);
   const [contextFilter, setContextFilter] = useState<string | null>(null);
   const [kpiId, setKpiId] = useState<string | null>(null);
-  // Which L2 tab the next opened project lands on — the wall's cover roadmap
-  // strip is a direct door into Ship; every other door keeps Overview.
+  // The L2 tab, owned HERE rather than inside FactoryProjectTabs. That subtree
+  // is keyed on the project id, so local tab state would be thrown away every
+  // time the breadcrumb switched project and the user would be dropped back on
+  // Overview mid-task. Lifting it keeps the tab you are reading across a
+  // project switch; only an explicit door sets it (the wall's cover roadmap
+  // strip opens Ship, a plain open resets to Overview).
   const [l2Tab, setL2Tab] = useState<L2Tab>('overview');
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
@@ -146,7 +150,8 @@ export function FactoryShell({
           projectId={project.id}
           matrix={renderGroups({ project, ed, openGroup, openKpi })}
           onKpisChanged={reload}
-          initialTab={l2Tab}
+          tab={l2Tab}
+          onTabChange={setL2Tab}
         />
       </>
     );

@@ -18950,7 +18950,6 @@
     "no_kpi_short": "KPIなし",
     "no_matches": "「{query}」に一致するものがありません",
     "no_objective_hint": "目標がまだバインドされていません — ライブラリから目標をバインドしてください。",
-    "outside_empty_all_in": "すべてがカット内です — 見事な規律ですね。",
     "outside_empty_no_features": "機能がまだマッピングされていません — Compose scopeを開いてプロジェクトをチャートし、最初の機能を追加してください。",
     "outside_the_cut": "カット外",
     "outside_the_cut_aside": "行のボタンがそのまま決定になります",
