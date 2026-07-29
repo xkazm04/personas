@@ -54,7 +54,7 @@ The strip is inert when no `onOpenShip` handler is supplied.
 | `status` | CHECK-constrained to `planned` / `active` / `shipped` |
 | `order_index` | roadmap ordering; assigned as `MAX+1` at create |
 | `target_date` | optional; rendered by the cover strip and the timeline card |
-| `cut_at` | stamped once, on the first transition to `active`. **The scope-creep baseline** |
+| `cut_at` | stamped once: at INSERT when the milestone is created `active`, otherwise on the first transition to `active`. **The scope-creep baseline** |
 | `shipped_at` | stamped on transition to `shipped` |
 | `created_at`, `updated_at` | |
 
@@ -100,13 +100,17 @@ planned  --[Certify cut]-->  active  --[Certify ship]-->  shipped
              (first time only)
 ```
 
-**planned → active ("Certify cut").** Ungated: the button is always enabled for a planned milestone. `update_milestone` stamps `cut_at` with `CASE WHEN ?2 = 'active' AND cut_at IS NULL` (`dev_tools.rs:6763-6769`), so a milestone that is re-activated after being moved around keeps its original baseline. From this point, every **new** membership is flagged as scope creep.
+**planned → active ("Certify cut").** Ungated: the button is always enabled for a planned milestone. `update_milestone` stamps `cut_at` with `CASE WHEN ?2 = 'active' AND cut_at IS NULL`, so a milestone that is re-activated after being moved around keeps its original baseline. From this point, every **new** membership is flagged as scope creep.
+
+A milestone can also be BORN cut. `create_milestone` stamps `cut_at` in the same INSERT when it is created with `status = 'active'` (`CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END`), because such a milestone never passes through the transition above. This closes a real hole: the seeded onboarding milestone (§9) is created directly active, so before this its baseline stayed NULL forever and the creep flag never fired on the one milestone most projects will ever have. A migration (`dev_milestones.backfill_cut_at`) repairs rows already on disk by setting `cut_at = created_at` for active milestones with no stamp.
 
 **active → shipped ("Certify ship").** Gated: the button is disabled while `shipVerdict(vm.criteria) !== 'go'`, that is, while any registered exit criterion is anything other than met. The tooltip switches between "Every criterion reads GO. Ship it" and "Blocked until every exit criterion reads GO". The transition stamps `shipped_at` unconditionally.
 
 **shipped.** `editable` becomes false, so the lifecycle button, the compose button and every bucket / promote / remove action disappear. The milestone becomes a read-only record; its progress reads 100 percent and its target label becomes `shipped <date>`.
 
-The gate is UI-side only. `update_milestone` itself validates the enum but does not refuse a `shipped` transition on an unmet criterion, because criteria are derived client-side and the backend has no view of them.
+The CRITERIA gate is UI-side only: `update_milestone` has no view of client-derived criteria, so it cannot refuse a `shipped` transition on an unmet one. It does enforce the LIFECYCLE, though. A direct `planned → shipped` jump is rejected with an `AppError::Validation` ("A milestone must be cut (set active) before it can be shipped"), so no caller outside the UI, the management HTTP API, a Fleet dispatch or the A2A gateway, can ship a milestone that was never cut. The row is left unchanged on refusal.
+
+Still open by design: `create_milestone` accepts `status: 'shipped'` at creation, producing a milestone with neither stamp. Same class of hole, not yet closed.
 
 **Not implemented in the UI:** setting or editing `target_date`, reordering milestones (`order_index`), renaming, editing the milestone `goal` sentence after creation, and deleting a milestone. The API wrappers (`updateMilestone` patch fields, `deleteMilestone`) and the Rust commands all exist and are tested, but nothing on the Ship surface calls them. Milestones created here always land at `order_index = MAX+1` with no target date, except the onboarding seed (see §9).
 
@@ -255,7 +259,7 @@ The layer has four distinct empty states, each with exactly one follow-up.
 
 The seeded strings are resolved through `getActiveTranslations()` at creation time, not at render time, because seeded content is persisted data and should read in the language the user was using when it was written.
 
-The result is a project whose first deliverable is the Personas onboarding itself: one active milestone, one bound objective (so the `objective` criterion already reads `go`), and an empty cut. Note that because the milestone is created directly as `active`, its `cut_at` is **not** stamped (only an `update_milestone` status transition stamps it), so items added to the seed milestone are not flagged as creep.
+The result is a project whose first deliverable is the Personas onboarding itself: one active milestone, one bound objective (so the `objective` criterion already reads `go`), and an empty cut. Because the milestone is created directly as `active`, its `cut_at` is stamped at INSERT (§4), so items added to the seed milestone are flagged as creep exactly like anywhere else.
 
 ## 10. Where the code lives
 
