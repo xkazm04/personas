@@ -525,7 +525,10 @@
     "active_chains_one": "{count} rantai berjalan",
     "active_chains_other": "{count} rantai berjalan",
     "active_chains_title": "Rantai berjalan",
-    "copy_log_failed": "Gagal menyalin log ke papan klip"
+    "copy_log_failed": "Gagal menyalin log ke papan klip",
+    "lines_counter": "{visible}/{total} baris",
+    "timeline_scrubber_label": "Linimasa eksekusi",
+    "timeline_scrubber_value": "{current} dari {total}"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1649,7 +1652,8 @@
     "connectors": "Konektor",
     "triggers": "Pemicu",
     "all_connectors": "Semua Konektor",
-    "active_triggers": "{count} pemicu aktif"
+    "active_triggers": "{count} pemicu aktif",
+    "quality": "Kualitas"
   },
   "health_indicator": {
     "last": "terakhir {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "Tanpa grup",
     "batch_moved_success": "Memindahkan {count} persona ke {group}",
     "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal",
-    "render_cap_notice": "Menampilkan {shown} dari {total} — persempit dengan pencarian atau filter untuk melihat sisanya.",
     "star_director_add": "Beri bintang untuk menambahkan ke cakupan pembinaan Director",
     "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus.",
     "badge_archived": "Diarsipkan",

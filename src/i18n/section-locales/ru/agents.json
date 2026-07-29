@@ -525,7 +525,10 @@
     "active_chains_one": "{count} цепочка в работе",
     "active_chains_other": "{count} цепочек в работе",
     "active_chains_title": "Цепочки в работе",
-    "copy_log_failed": "Не удалось скопировать журнал"
+    "copy_log_failed": "Не удалось скопировать журнал",
+    "lines_counter": "{visible}/{total} строк",
+    "timeline_scrubber_label": "Хронология выполнения",
+    "timeline_scrubber_value": "{current} из {total}"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -1649,7 +1652,8 @@
     "connectors": "Коннекторы",
     "triggers": "Триггеры",
     "all_connectors": "Все коннекторы",
-    "active_triggers": "{count} активный триггер(ов)"
+    "active_triggers": "{count} активный триггер(ов)",
+    "quality": "Качество"
   },
   "health_indicator": {
     "last": "последние {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "Без группы",
     "batch_moved_success": "Перемещено {count} персон в {group}",
     "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
-    "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
     "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
     "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
     "badge_archived": "В архиве",

@@ -246,7 +246,11 @@
   },
   "knowledge": {
     "title": "Граф знаний",
-    "patterns_tab": "Паттерны",
+    "patterns_library_tab": "Паттерны",
+    "extracted_tab": "Извлечённое",
+    "patterns_no_workspace_title": "Рабочих пространств пока нет",
+    "patterns_no_workspace_desc": "Практики собираются по рабочим пространствам. Создайте рабочее пространство и добавьте в него проекты, чтобы начать собирать общую библиотеку.",
+    "patterns_workspace_picker": "Выбрать рабочее пространство",
     "search_placeholder": "Поиск паттернов...",
     "sort_aria": "Сортировать паттерны",
     "sort_default": "Топ паттернов",

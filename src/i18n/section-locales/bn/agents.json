@@ -525,7 +525,10 @@
     "active_chains_one": "{count}টি চেইন চলমান",
     "active_chains_other": "{count}টি চেইন চলমান",
     "active_chains_title": "চলমান চেইন",
-    "copy_log_failed": "লগ ক্লিপবোর্ডে কপি করা যায়নি"
+    "copy_log_failed": "লগ ক্লিপবোর্ডে কপি করা যায়নি",
+    "lines_counter": "{visible}/{total} লাইন",
+    "timeline_scrubber_label": "এক্সিকিউশন টাইমলাইন",
+    "timeline_scrubber_value": "{total}-এর মধ্যে {current}"
   },
   "lab": {
     "mode_arena": "আরেনা",
@@ -1649,7 +1652,8 @@
     "connectors": "কানেক্টরসমূহ",
     "triggers": "ট্রিগারসমূহ",
     "all_connectors": "সব কানেক্টর",
-    "active_triggers": "{count}টি সক্রিয় ট্রিগার"
+    "active_triggers": "{count}টি সক্রিয় ট্রিগার",
+    "quality": "গুণমান"
   },
   "health_indicator": {
     "last": "শেষ {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "গ্রুপবিহীন",
     "batch_moved_success": "{count}টি পার্সোনা {group}-এ সরানো হয়েছে",
     "batch_moved_partial": "{ok}টি {group}-এ সরানো হয়েছে; {failed}টি ব্যর্থ",
-    "render_cap_notice": "{total}-এর মধ্যে {shown}টি দেখানো হচ্ছে — বাকিগুলি দেখতে অনুসন্ধান বা ফিল্টার দিয়ে সংকুচিত করুন।",
     "star_director_add": "Director-এর কোচিং স্কোপে যোগ করতে তারকা চিহ্নিত করুন",
     "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।",
     "badge_archived": "আর্কাইভ করা",

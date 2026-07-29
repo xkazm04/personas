@@ -525,7 +525,10 @@
     "active_chains_one": "실행 중인 체인 {count}개",
     "active_chains_other": "실행 중인 체인 {count}개",
     "active_chains_title": "실행 중인 체인",
-    "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다"
+    "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다",
+    "lines_counter": "{visible}/{total} 줄",
+    "timeline_scrubber_label": "실행 타임라인",
+    "timeline_scrubber_value": "{total} 중 {current}"
   },
   "lab": {
     "mode_arena": "아레나",
@@ -1649,7 +1652,8 @@
     "connectors": "커넥터",
     "triggers": "트리거",
     "all_connectors": "전체 커넥터",
-    "active_triggers": "{count}개 활성 트리거"
+    "active_triggers": "{count}개 활성 트리거",
+    "quality": "품질"
   },
   "health_indicator": {
     "last": "최근 {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "그룹 없음",
     "batch_moved_success": "{count}개 페르소나를 {group}(으)로 이동했습니다",
     "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패",
-    "render_cap_notice": "{total}개 중 {shown}개 표시 — 검색이나 필터로 좁혀 나머지를 확인하세요.",
     "star_director_add": "별표를 눌러 Director의 코칭 범위에 추가",
     "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거.",
     "badge_archived": "보관됨",

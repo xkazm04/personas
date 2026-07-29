@@ -525,7 +525,10 @@
     "active_chains_one": "{count} řetězec běží",
     "active_chains_other": "{count} řetězců běží",
     "active_chains_title": "Běžící řetězce",
-    "copy_log_failed": "Log se nepodařilo zkopírovat do schránky"
+    "copy_log_failed": "Log se nepodařilo zkopírovat do schránky",
+    "lines_counter": "{visible}/{total} řádků",
+    "timeline_scrubber_label": "Časová osa spuštění",
+    "timeline_scrubber_value": "{current} z {total}"
   },
   "lab": {
     "mode_arena": "Aréna",
@@ -1649,7 +1652,8 @@
     "connectors": "Konektory",
     "triggers": "Spouštěče",
     "all_connectors": "Všechny konektory",
-    "active_triggers": "{count} aktivních spouštěčů"
+    "active_triggers": "{count} aktivních spouštěčů",
+    "quality": "Kvalita"
   },
   "health_indicator": {
     "last": "posledních {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "Bez skupiny",
     "batch_moved_success": "{count} person přesunuto do {group}",
     "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo",
-    "render_cap_notice": "Zobrazeno {shown} z {total} — upřesněte vyhledáváním nebo filtry pro zobrazení zbytku.",
     "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
     "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete.",
     "badge_archived": "Archivováno",

@@ -525,7 +525,10 @@
     "active_chains_one": "実行中のチェーン {count} 件",
     "active_chains_other": "実行中のチェーン {count} 件",
     "active_chains_title": "実行中のチェーン",
-    "copy_log_failed": "ログをクリップボードにコピーできませんでした"
+    "copy_log_failed": "ログをクリップボードにコピーできませんでした",
+    "lines_counter": "{visible}/{total} 行",
+    "timeline_scrubber_label": "実行タイムライン",
+    "timeline_scrubber_value": "{total} 件中 {current} 件目"
   },
   "lab": {
     "mode_arena": "アリーナ",
@@ -1649,7 +1652,8 @@
     "connectors": "コネクタ",
     "triggers": "トリガー",
     "all_connectors": "すべてのコネクタ",
-    "active_triggers": "{count} 件のアクティブなトリガー"
+    "active_triggers": "{count} 件のアクティブなトリガー",
+    "quality": "品質"
   },
   "health_indicator": {
     "last": "最後の {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "グループなし",
     "batch_moved_success": "{count} 件のペルソナを {group} に移動しました",
     "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗",
-    "render_cap_notice": "{total} 件中 {shown} 件を表示中 — 検索またはフィルタで絞り込んでください。",
     "star_director_add": "スターを付けて Director のコーチング対象に追加",
     "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。",
     "badge_archived": "アーカイブ済み",

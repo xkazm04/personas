@@ -525,7 +525,10 @@
     "active_chains_one": "سلسلة {count} قيد التنفيذ",
     "active_chains_other": "{count} سلاسل قيد التنفيذ",
     "active_chains_title": "سلاسل قيد التنفيذ",
-    "copy_log_failed": "تعذر نسخ السجل إلى الحافظة"
+    "copy_log_failed": "تعذر نسخ السجل إلى الحافظة",
+    "lines_counter": "{visible}/{total} سطر",
+    "timeline_scrubber_label": "الجدول الزمني للتنفيذ",
+    "timeline_scrubber_value": "{current} من {total}"
   },
   "lab": {
     "mode_arena": "الساحة",
@@ -1649,7 +1652,8 @@
     "connectors": "الموصّلات",
     "triggers": "المشغّلات",
     "all_connectors": "جميع الموصّلات",
-    "active_triggers": "{count} مشغّل نشط"
+    "active_triggers": "{count} مشغّل نشط",
+    "quality": "الجودة"
   },
   "health_indicator": {
     "last": "آخر {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "بدون مجموعة",
     "batch_moved_success": "تم نقل {count} شخصية إلى {group}",
     "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل",
-    "render_cap_notice": "عرض {shown} من {total} — قلّص النطاق بالبحث أو الفلاتر لرؤية الباقي.",
     "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
     "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة.",
     "badge_archived": "مؤرشفة",

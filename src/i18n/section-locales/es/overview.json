@@ -246,7 +246,11 @@
   },
   "knowledge": {
     "title": "Grafo de conocimiento",
-    "patterns_tab": "Patrones",
+    "patterns_library_tab": "Patrones",
+    "extracted_tab": "Extraídos",
+    "patterns_no_workspace_title": "Aún no hay espacio de trabajo",
+    "patterns_no_workspace_desc": "Las prácticas se recopilan por espacio de trabajo. Crea uno y asígnale proyectos para empezar a construir una biblioteca compartida.",
+    "patterns_workspace_picker": "Seleccionar espacio de trabajo",
     "search_placeholder": "Buscar patrones...",
     "sort_aria": "Ordenar patrones",
     "sort_default": "Patrones principales",

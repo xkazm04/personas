@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
 import type { PipelineStage } from '@/lib/execution/pipeline';
 import { isPipelineStage, STAGE_META } from '@/lib/execution/pipeline';
@@ -27,6 +27,10 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
   const e = t.agents.executions;
   const liveTrace = useAgentStore((s) => s.pipelineTrace);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setExpandedStages(new Set());
+  }, [execution.id]);
 
   // Use live trace if it matches this execution, otherwise build synthetic
   const trace = useMemo(() => {
@@ -168,7 +172,6 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
             <CostAccrualOverlay
               entries={trace.spans.filter(s => isPipelineStage(s.span_type))}
               totalDurationMs={totalDurationMs}
-              pipelineStartMs={trace.startedAt}
               totalCostUsd={execution.cost_usd}
               isSynthetic={isSynthetic}
             />
@@ -177,22 +180,27 @@ export function PipelineWaterfall({ execution }: PipelineWaterfallProps) {
       </div>
 
       {/* Error details */}
-      {trace.spans.some(e => e.error) && (
+      {trace.spans.some(s => s.error) && (
         <div className="space-y-2">
           <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" /> {e.stage_errors}
           </div>
           {trace.spans
-            .filter(e => e.error)
+            .filter(s => s.error)
             .map((entry) => {
-              const sk = entry.span_type as PipelineStage;
-              const config = STAGE_COLORS[sk];
-              const meta = STAGE_META[sk];
+              const isStage = isPipelineStage(entry.span_type);
+              const config = isStage ? STAGE_COLORS[entry.span_type as PipelineStage] : null;
+              const meta = isStage ? STAGE_META[entry.span_type as PipelineStage] : null;
+              const label = meta?.label ?? entry.name ?? entry.span_type;
               return (
-                <div key={entry.span_type} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
+                <div key={entry.span_id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-card">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${config.bg} ${config.text} ${config.border}`}>
-                      {meta.label}
+                    <span className={`inline-flex px-1.5 py-0.5 typo-code uppercase rounded border ${
+                      config
+                        ? `${config.bg} ${config.text} ${config.border}`
+                        : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    }`}>
+                      {label}
                     </span>
                   </div>
                   <pre className="typo-code text-red-300/80 whitespace-pre-wrap break-words">

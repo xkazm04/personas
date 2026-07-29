@@ -10,13 +10,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 export function CostAccrualOverlay({
   entries,
   totalDurationMs,
-  pipelineStartMs: _pipelineStartMs,
   totalCostUsd,
   isSynthetic = false,
 }: {
   entries: PipelineTraceEntry[];
   totalDurationMs: number;
-  pipelineStartMs: number;
   totalCostUsd: number;
   /** True when the entries came from `buildSyntheticTrace` (reconstructed
    *  proportional estimates, e.g. the "~95% during streaming" split below)
@@ -28,7 +26,6 @@ export function CostAccrualOverlay({
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
 
-  // Build cost accrual points: cost accrues during stream_output and finalize_status
   const points = useMemo(() => {
     if (totalCostUsd <= 0 || totalDurationMs <= 0) return [];
 
@@ -44,9 +41,8 @@ export function CostAccrualOverlay({
       const endPct = (endMs / totalDurationMs) * 100;
 
       if (entry.span_type === 'stream_output') {
-        // Bulk of cost accrues here
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
-        accrued += totalCostUsd * 0.95; // ~95% of cost in streaming
+        accrued += totalCostUsd * 0.95;
         pts.push({ pct: endPct, costPct: (accrued / totalCostUsd) * 100 });
       } else if (entry.span_type === 'finalize_status') {
         pts.push({ pct: startPct, costPct: (accrued / totalCostUsd) * 100 });
@@ -55,7 +51,6 @@ export function CostAccrualOverlay({
       }
     }
 
-    // Ensure we end at 100%
     const lastPt = pts[pts.length - 1];
     if (pts.length > 0 && lastPt && lastPt.costPct < 100) {
       pts.push({ pct: 100, costPct: 100 });

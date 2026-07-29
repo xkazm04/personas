@@ -525,7 +525,10 @@
     "active_chains_one": "{count} cadena en curso",
     "active_chains_other": "{count} cadenas en curso",
     "active_chains_title": "Cadenas en curso",
-    "copy_log_failed": "No se pudo copiar el registro al portapapeles"
+    "copy_log_failed": "No se pudo copiar el registro al portapapeles",
+    "lines_counter": "{visible}/{total} líneas",
+    "timeline_scrubber_label": "Cronología de ejecución",
+    "timeline_scrubber_value": "{current} de {total}"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1649,7 +1652,8 @@
     "connectors": "Conectores",
     "triggers": "Disparadores",
     "all_connectors": "Todos los conectores",
-    "active_triggers": "{count} disparador(es) activo(s)"
+    "active_triggers": "{count} disparador(es) activo(s)",
+    "quality": "Calidad"
   },
   "health_indicator": {
     "last": "último {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "Sin grupo",
     "batch_moved_success": "Movidas {count} personas a {group}",
     "batch_moved_partial": "Movidas {ok} a {group}; {failed} fallidas",
-    "render_cap_notice": "Mostrando {shown} de {total} — filtra con búsqueda o filtros para ver el resto.",
     "star_director_add": "Marcar como favorito para añadir al ámbito de coaching del Director",
     "star_director_remove": "Marcado como favorito — en el ámbito de coaching del Director. Haz clic para quitar.",
     "badge_archived": "Archivada",

@@ -246,7 +246,11 @@
   },
   "knowledge": {
     "title": "رسم المعرفة البياني",
-    "patterns_tab": "الأنماط",
+    "patterns_library_tab": "الأنماط",
+    "extracted_tab": "مستخلصة",
+    "patterns_no_workspace_title": "لا توجد مساحة عمل بعد",
+    "patterns_no_workspace_desc": "تُجمع الممارسات لكل مساحة عمل. أنشئ مساحة عمل وعيّن مشاريع إليها لبدء بناء مكتبة مشتركة.",
+    "patterns_workspace_picker": "اختر مساحة العمل",
     "search_placeholder": "البحث عن الأنماط...",
     "sort_aria": "فرز الأنماط",
     "sort_default": "أهم الأنماط",

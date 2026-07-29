@@ -525,7 +525,10 @@
     "active_chains_one": "{count} चेन चल रही है",
     "active_chains_other": "{count} चेन चल रही हैं",
     "active_chains_title": "चल रही चेन",
-    "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका"
+    "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका",
+    "lines_counter": "{visible}/{total} पंक्तियाँ",
+    "timeline_scrubber_label": "निष्पादन टाइमलाइन",
+    "timeline_scrubber_value": "{total} में से {current}"
   },
   "lab": {
     "mode_arena": "एरेना",
@@ -1649,7 +1652,8 @@
     "connectors": "कनेक्टर",
     "triggers": "ट्रिगर",
     "all_connectors": "सभी कनेक्टर",
-    "active_triggers": "{count} सक्रिय ट्रिगर"
+    "active_triggers": "{count} सक्रिय ट्रिगर",
+    "quality": "गुणवत्ता"
   },
   "health_indicator": {
     "last": "अंतिम {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "बिना समूह",
     "batch_moved_success": "{count} पर्सोना {group} में स्थानांतरित",
     "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल",
-    "render_cap_notice": "{total} में से {shown} दिखाए जा रहे हैं — बाकी देखने के लिए खोज या फ़िल्टर का उपयोग करें।",
     "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
     "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।",
     "badge_archived": "आर्काइव किया गया",

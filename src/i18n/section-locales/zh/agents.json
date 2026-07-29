@@ -525,7 +525,10 @@
     "active_chains_one": "{count} 条链运行中",
     "active_chains_other": "{count} 条链运行中",
     "active_chains_title": "运行中的链",
-    "copy_log_failed": "无法将日志复制到剪贴板"
+    "copy_log_failed": "无法将日志复制到剪贴板",
+    "lines_counter": "{visible}/{total} 行",
+    "timeline_scrubber_label": "执行时间线",
+    "timeline_scrubber_value": "{current} / {total}"
   },
   "lab": {
     "mode_arena": "竞技场",
@@ -1649,7 +1652,8 @@
     "connectors": "连接器",
     "triggers": "触发器",
     "all_connectors": "所有连接器",
-    "active_triggers": "{count} 个活跃触发器"
+    "active_triggers": "{count} 个活跃触发器",
+    "quality": "质量"
   },
   "health_indicator": {
     "last": "最近 {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "未分组",
     "batch_moved_success": "已将 {count} 个人格移至 {group}",
     "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
-    "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
     "star_director_add": "收藏以加入 Director 的辅导范围",
     "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
     "badge_archived": "已归档",

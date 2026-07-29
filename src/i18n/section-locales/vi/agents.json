@@ -525,7 +525,10 @@
     "active_chains_one": "{count} chuỗi đang chạy",
     "active_chains_other": "{count} chuỗi đang chạy",
     "active_chains_title": "Chuỗi đang chạy",
-    "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm"
+    "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm",
+    "lines_counter": "{visible}/{total} dòng",
+    "timeline_scrubber_label": "Dòng thời gian thực thi",
+    "timeline_scrubber_value": "{current} trên {total}"
   },
   "lab": {
     "mode_arena": "Đấu trường",
@@ -1649,7 +1652,8 @@
     "connectors": "Trình kết nối",
     "triggers": "Trình kích hoạt",
     "all_connectors": "Tất cả trình kết nối",
-    "active_triggers": "{count} trình kích hoạt đang hoạt động"
+    "active_triggers": "{count} trình kích hoạt đang hoạt động",
+    "quality": "Chất lượng"
   },
   "health_indicator": {
     "last": "cuối {count}"
@@ -1894,7 +1898,6 @@
     "batch_move_to_ungrouped": "Không nhóm",
     "batch_moved_success": "Đã chuyển {count} persona sang {group}",
     "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại",
-    "render_cap_notice": "Đang hiển thị {shown} trong {total} — thu hẹp bằng tìm kiếm hoặc bộ lọc để xem phần còn lại.",
     "star_director_add": "Gắn sao để thêm vào phạm vi huấn luyện của Director",
     "star_director_remove": "Đã gắn sao — trong phạm vi huấn luyện của Director. Nhấn để xóa.",
     "badge_archived": "Đã lưu trữ",
