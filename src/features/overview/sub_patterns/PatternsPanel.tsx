@@ -121,7 +121,7 @@ export default function PatternsPanel() {
               label: (
                 <>
                   <span
-                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                    className="w-2.5 h-2.5 rounded-interactive flex-shrink-0"
                     style={{ background: w.color }}
                     aria-hidden
                   />

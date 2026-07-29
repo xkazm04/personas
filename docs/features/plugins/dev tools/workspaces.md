@@ -6,7 +6,14 @@
 > quality, UI and performance patterns discovered in one project lift all of them.
 
 **Design & full arc:** [`docs/plans/workspace-knowledge-center.md`](../../../plans/workspace-knowledge-center.md)
-**UI:** Plugins → Dev Tools → **Workspaces** (`src/features/plugins/dev-tools/sub_workspaces/`)
+**UI:** the feature spans two places since 2026-07-29 —
+- **Workspaces themselves** (create / rename / recolour / membership / delete): Plugins → Dev Tools → **Workspaces** (`src/features/plugins/dev-tools/sub_workspaces/`)
+- **The practice library**: Overview → **Knowledge → Patterns** (`src/features/overview/sub_patterns/`, hosted by `PatternsPanel`)
+
+The library was promoted out of the plugin because it is a first-class knowledge
+surface, not a dev-tooling detail. `PatternsPanel` reads the active workspace from
+the same `workspaceStore` and offers a workspace picker when more than one exists.
+
 **Backend:** `src-tauri/src/commands/infrastructure/dev_workspaces.rs` → `db/repos/dev_workspaces.rs`
 **Tables:** `dev_workspaces`, `workspace_knowledge`, `workspace_practice_adoption`, plus nullable `dev_projects.workspace_id`
 
@@ -17,7 +24,9 @@
   localStorage prototype (`devtools.workspaces.v1`) is imported automatically on
   first open (idempotent by name), and the footer workspace switcher + Project
   Manager tabs now read the database. The UI is the **Atlas** shell (a crest-card
-  grid; the selected workspace unfolds a detail band with membership + library).
+  grid; the selected workspace unfolds a detail band with identity + membership).
+  The crest still reports the workspace's adopted/proposed practice tallies, but
+  the library itself moved to Overview → Knowledge → Patterns.
   The library listing is the shared **DataGrid** (paginated, per-column
   sortable/filterable) beside an emergent slash-path **topic tree** derived from
   the items — crisp at hundreds of practices, with a **project filter** on the

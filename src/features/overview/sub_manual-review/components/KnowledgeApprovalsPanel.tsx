@@ -21,6 +21,7 @@ import {
 } from '@/features/overview/sub_patterns/libraryModel';
 import { PracticeDetailModal } from '@/features/overview/sub_patterns/PracticeDetailModal';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter }) {
@@ -34,8 +35,8 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
   const [queueIdx, setQueueIdx] = useState(0);
 
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setPendingKnowledgeSubtab = useSystemStore((s) => s.setPendingKnowledgeSubtab);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   // Default to the first workspace once they load; keep the user's pick after.
   useEffect(() => {
@@ -81,10 +82,14 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
     ? rows.find((row) => row.id === queue[queueIdx]) ?? null
     : null;
 
+  // The library used to live in Plugins -> Dev Tools -> Workspaces; it now sits
+  // one module over, as the Patterns subtab of Overview -> Knowledge. Hand the
+  // subtab off through the store so the link lands ON the library, not on
+  // Knowledge's default Memories tab.
   const openLibrary = () => {
-    setSidebarSection('plugins');
-    setPluginTab('dev-tools');
-    setDevToolsTab('workspaces');
+    setPendingKnowledgeSubtab('patterns');
+    setSidebarSection('overview');
+    setOverviewTab('knowledge');
   };
 
   if (!workspace) {

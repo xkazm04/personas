@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Brain, Library, Network, GitFork } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -6,6 +6,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { ContentHeaderSkeleton } from '@/features/shared/components/layout/ContentHeaderSkeleton';
 import MemoriesPage from '@/features/overview/sub_memories/components/MemoriesPage';
+import { useSystemStore } from '@/stores/systemStore';
 
 // Patterns (the curated workspace practice library), Extracted (the
 // execution-derived knowledge graph — this tab used to be called "Patterns",
@@ -44,6 +45,16 @@ function KnowledgeLazyFallback() {
 export default function KnowledgeHub() {
   const { t } = useTranslation();
   const [subtab, setSubtab] = useState<KnowledgeSubtab>('memories');
+
+  // Deep-link handoff (mirror of `pendingApprovalsMode`): another surface can
+  // ask Knowledge to open on a specific subtab. Consumed once on mount and
+  // cleared, so a later manual tab change isn't reverted on the next remount.
+  useEffect(() => {
+    const pending = useSystemStore.getState().pendingKnowledgeSubtab;
+    if (!pending) return;
+    setSubtab(pending);
+    useSystemStore.getState().setPendingKnowledgeSubtab(null);
+  }, []);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
