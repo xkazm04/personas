@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { GraduationCap, Compass, Check, ChevronRight } from 'lucide-react';
+import { GraduationCap, Compass, Check, ChevronRight, Sparkles } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TOUR_REGISTRY, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TOUR_ICONS, getColors } from './data';
 import { TourDetailModal } from './TourDetailModal';
 import { PowerMovesPanel } from './powerMoves/PowerMovesPanel';
+import { useComposedTours, type ComposedTourEntry } from './useComposedTours';
 
 // -- Timeline node ------------------------------------------------------
 
@@ -66,12 +68,77 @@ function TourCard({ tour, isCompleted, onClick }: { tour: TourDef; isCompleted: 
   );
 }
 
+// -- Athena-composed tour card ------------------------------------------
+
+function ComposedTourCard({
+  entry,
+  isCompleted,
+  onClick,
+}: {
+  entry: ComposedTourEntry;
+  isCompleted: boolean;
+  onClick: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const ht = t.home.learning;
+  const colors = getColors('violet');
+  const playable = entry.def !== null;
+  const stepCount = entry.def?.steps.length ?? 0;
+
+  const body = (
+    <>
+      <div className={`w-8 h-8 rounded-card ${colors.bg} border ${colors.border} flex items-center justify-center flex-shrink-0`}>
+        <Sparkles className={`w-4 h-4 ${colors.text}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <h4 className="typo-body font-medium text-foreground truncate">{entry.record.title}</h4>
+          <AthenaComposedBadge variant="composed" label={ht.composed_badge} title={entry.record.topic} />
+        </div>
+        <span className="text-[11px] text-foreground">
+          {playable ? tx(ht.steps_count, { count: stepCount }) : ht.composed_stale}
+        </span>
+      </div>
+      {isCompleted && (
+        <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />} className="flex-shrink-0">
+          {ht.done}
+        </StatusBadge>
+      )}
+      {playable && <ChevronRight className="w-4 h-4 text-foreground group-hover:text-primary transition-colors flex-shrink-0" />}
+    </>
+  );
+
+  if (!playable) {
+    // Stale (anchor manifest drifted and re-validation failed): visible but
+    // not startable — playing it would spotlight elements that no longer exist.
+    return (
+      <div
+        data-testid={`learning-composed-tour-${entry.record.id}`}
+        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-modal border ${colors.border} ${colors.bg} opacity-60`}
+      >
+        {body}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={`learning-composed-tour-${entry.record.id}`}
+      className={`group w-full text-left flex items-center gap-3 px-3.5 py-2.5 rounded-modal border ${colors.border} ${colors.bg} transition-all hover:shadow-elevation-2 hover:brightness-110`}
+    >
+      {body}
+    </button>
+  );
+}
+
 // -- Component ----------------------------------------------------------
 
 export default function HomeLearning() {
   const tourCompletionMap = useSystemStore((s) => s.tourCompletionMap);
   const startTour = useSystemStore((s) => s.startTour);
   const [activeTour, setActiveTour] = useState<TourDef | null>(null);
+  const { entries: composedTours, loading: composedLoading } = useComposedTours();
   const { t, tx } = useTranslation();
   const ht = t.home.learning;
 
@@ -112,6 +179,32 @@ export default function HomeLearning() {
                 );
               })}
             </div>
+
+            {/* Athena-composed tours (Generative Tours). Rendered beside the
+                built-in registry; skeleton while loading, honest hint when
+                nothing has been composed yet. */}
+            {!composedLoading && (
+              <>
+                <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+                  <Sparkles className="w-4 h-4 text-violet-400" />
+                  <h3 className="typo-heading text-foreground">{ht.composed_tours}</h3>
+                </div>
+                {composedTours.length === 0 ? (
+                  <p className="typo-caption text-foreground">{ht.composed_empty}</p>
+                ) : (
+                  <div className="flex flex-col gap-1.5" data-testid="learning-composed-tours">
+                    {composedTours.map((entry) => (
+                      <ComposedTourCard
+                        key={entry.record.id}
+                        entry={entry}
+                        isCompleted={tourCompletionMap[entry.record.id as TourDef['id']] ?? false}
+                        onClick={() => entry.def && setActiveTour(entry.def)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Right column: Power Moves quest board */}

@@ -967,10 +967,16 @@ whether he wants the hands-on tour or a plain explanation — offer both with
 **Show me** (starts the guided walkthrough) and **Just tell me** (he gets a
 chat explanation instead). `topic` must be one of the real walkthrough topics
 (`persona_creation`, `connector_setup`, `trigger_creation`, `template_adoption`,
-`incident_triage`, `goal_kpi_setup`); invalid topics are dropped. Use this
+`incident_triage`, `goal_kpi_setup`). Use this
 as the default response to "how do I X" for a covered topic; reach straight
 for `start_guided_walkthrough` only when he's already said he wants to be
 shown.
+
+Topics OUTSIDE that list are allowed too (Generative Tours): the card still
+shows both buttons, and **Show me** has the app compose a full spotlight
+walkthrough for that topic on the spot (every step validated against the
+app's anchor manifest). Use a short, human topic phrase (≤120 chars, e.g.
+"scheduling a weekly digest") — it seeds the composition.
 
 OP: {"op": "propose_action", "action": "show_walkthrough_offer", "params": {"topic": "connector_setup", "summary": "<one short line on what the tour covers>"}, "rationale": "<user asked how to do something a walkthrough covers>"}
 
