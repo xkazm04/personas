@@ -126,14 +126,30 @@ pub fn create_cdc_channel(capacity: usize) -> (CdcSender, CdcReceiver) {
 
 /// Wraps an existing connection customizer and additionally registers the
 /// CDC update hook on every acquired connection.
+///
+/// When constructed [`with_journal`](Self::with_journal), it also registers
+/// the change-journal `preupdate_hook` (see [`crate::journal`]) — the durable
+/// second CDC consumer that captures before-images for the Reversible Agent.
 #[derive(Debug)]
 pub struct CdcCustomizer {
     sender: CdcSender,
+    journal_sender: Option<crate::journal::JournalSender>,
 }
 
 impl CdcCustomizer {
     pub fn new(sender: CdcSender) -> Self {
-        Self { sender }
+        Self {
+            sender,
+            journal_sender: None,
+        }
+    }
+
+    /// CDC + durable change-journal capture on every acquired connection.
+    pub fn with_journal(sender: CdcSender, journal_sender: crate::journal::JournalSender) -> Self {
+        Self {
+            sender,
+            journal_sender: Some(journal_sender),
+        }
     }
 }
 
@@ -170,6 +186,15 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for CdcCustomize
                 }
             },
         ))?;
+
+        // Reversible Agent: register the durable change-journal capture
+        // (preupdate hook — before-images + attribution). Independent of the
+        // update hook above; both fire per write. Journal writes themselves
+        // are excluded inside the hook (allowlist + explicit guard), so the
+        // journal writer thread's inserts cannot recurse.
+        if let Some(journal_sender) = &self.journal_sender {
+            crate::journal::register_preupdate_capture(conn, journal_sender.clone())?;
+        }
 
         Ok(())
     }

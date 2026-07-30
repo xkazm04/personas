@@ -11,6 +11,7 @@ pub mod executions;
 pub mod genome;
 pub mod healing;
 pub mod incident_diagnosis;
+pub mod journal;
 pub mod knowledge;
 pub mod lab;
 pub mod policy_events;

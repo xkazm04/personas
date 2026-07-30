@@ -14,6 +14,7 @@ import { ExecutionLogViewer } from '@/features/agents/sub_executions/detail/view
 import { extractSurfaceSpec } from '@/features/shared/components/surface/surfaceSpec';
 import { SurfaceRenderer } from '@/features/shared/components/surface/SurfaceRenderer';
 import { parseOutputData, type OutputSection } from './outputParser';
+import { DataDiffSection } from './DataDiffSection';
 import { UserMessageCard, FlowSteps, ReviewsList, MemoriesList, EventsList, KnowledgeSection, OutcomeSection } from './OutputSections';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -171,6 +172,8 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       )}
 
       <ExecutionMemories executionId={execution.id} executionStatus={execution.status} />
+      {/* Reversible Agent: the run's exact row-level data changes + consent-gated undo */}
+      {isTerminalState(execution.status) && <DataDiffSection executionId={execution.id} />}
       {execution.log_file_path && <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} logTruncated={execution.log_truncated} />}
     </div>
   );
