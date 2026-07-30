@@ -8,7 +8,6 @@ import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
-import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';
@@ -66,10 +65,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
 
   const connectorOptions = useMemo<FilterOption[]>(
     () => [
-      { value: 'all', label: 'All Connectors' },
+      { value: 'all', label: t.agents.overview_columns.all_connectors },
       ...allConnectorNames.map((n) => ({ value: n, label: n })),
     ],
-    [allConnectorNames],
+    [allConnectorNames, t.agents.overview_columns.all_connectors],
   );
 
   return useMemo<DataGridColumn<Persona>[]>(
@@ -94,7 +93,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'connectors', label: t.common.connectors, width: 'minmax(120px, 0.8fr)',
         filterComponent: (
           <PersonaOverviewFilterHeader
-            label="Connectors"
+            label={t.common.connectors}
             value={view.connectorFilter}
             options={connectorOptions}
             onChange={(v) => setView({ ...view, connectorFilter: v })}
@@ -106,27 +105,27 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         key: 'status', label: t.agents.overview_columns.status, width: 'minmax(120px, 0.9fr)',
         filterComponent: (
           <PersonaOverviewFilterHeader
-            label="Status"
+            label={t.agents.overview_columns.status}
             value={view.statusFilter}
             options={STATUS_FILTER_OPTIONS}
             onChange={(v) => setView({ ...view, statusFilter: v })}
           />
         ),
+        // Lifecycle/health only. The setup-readiness warning that used to ride
+        // alongside it (SetupStatusBadge) still lives on the persona editor
+        // header and the mobile card list — the roster row keeps one signal.
         render: (p) =>
           isBuilding(p.id) ? (
             <BuildingBadge />
           ) : (
-            <span className="inline-flex items-center gap-1.5 flex-wrap">
-              <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} isArchived={p.lifecycle === 'archived'} />
-              <SetupStatusBadge status={p.setup_status} setupDetail={p.setup_detail} />
-            </span>
+            <StatusBadge enabled={p.enabled} health={healthMap[p.id]} isDraft={isDraft(p)} isArchived={p.lifecycle === 'archived'} />
           ),
       },
       {
         key: 'trust', label: t.agents.overview_columns.trust, width: '110px', sortable: true,
         filterComponent: (
           <PersonaOverviewFilterHeader
-            label="Trust"
+            label={t.agents.overview_columns.trust}
             value={view.healthFilter}
             options={HEALTH_FILTER_OPTIONS}
             onChange={(v) => setView({ ...view, healthFilter: v })}
@@ -138,7 +137,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             : <TrustScoreBar score={p.trust_score ?? 0} />,
       },
       {
-        key: 'verdict', label: t.director.col_verdict, width: '88px', align: 'center',
+        key: 'verdict', label: t.agents.overview_columns.quality, width: '88px', align: 'center',
         render: (p) => <VerdictTrendCell scores={scoreTrendsMap[p.id]} />,
       },
       {
@@ -167,6 +166,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         },
       },
     ],
-    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.common.connectors, t.common.triggers, t.director.col_verdict, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
+    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.quality, t.common.connectors, t.common.triggers, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
   );
 }

@@ -140,7 +140,12 @@ export function DataGrid<T>({
   onClearSelection,
 }: DataGridProps<T>) {
   const densityTokens = DENSITY_TOKENS[density];
-  const headerPadCls = `px-4 ${densityTokens.headerPaddingY}`;
+  // Headers share the rows' horizontal padding so every column label sits on
+  // the same x-axis as its cell content. The old fixed `px-4` drifted 4px off
+  // the `px-3` compact rows and left the 40px select column only 8px of inner
+  // width — enough to visibly squash the select-all checkbox against the row
+  // checkboxes below it.
+  const headerPadCls = `${densityTokens.rowPaddingX} ${densityTokens.headerPaddingY}`;
   const rowPadCls = `${densityTokens.rowPaddingX} ${densityTokens.rowPaddingY}`;
   const { t, tx } = useTranslation();
   const [page, setPage] = useState(1);
@@ -207,7 +212,10 @@ export function DataGrid<T>({
     <div className={`relative flex flex-col min-h-0 ${className ?? ''}`}>
       {/* Header — always visible so filter controls remain accessible */}
       <div
-        className="grid gap-0 border-b border-primary/10 bg-background sticky top-0 z-20"
+        // The transparent 2px left border mirrors the rows' accent gutter, so
+        // header labels sit exactly above their cell content instead of 2px to
+        // the left of it.
+        className="grid gap-0 border-b border-primary/10 border-l-2 border-l-transparent bg-background sticky top-0 z-20"
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col) => {
@@ -215,16 +223,18 @@ export function DataGrid<T>({
           if (col.key === 'select' && onSelectAll) {
             return (
               <div key={col.key} className={`${headerPadCls} flex items-center justify-center`}>
+                {/* Geometry and treatment mirror the per-row select cell so the
+                    header box reads as the same control, not a clipped one. */}
                 <div
                   onClick={onSelectAll}
-                  className={`w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center cursor-pointer ${
+                  className={`w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center cursor-pointer ${
                     selectAll
                       ? 'bg-primary/80 border-primary/60'
-                      : 'border-primary/30 hover:border-primary/50'
+                      : 'border-primary/25 hover:border-primary/50'
                   }`}
                 >
                   {selectAll && (
-                    <svg className="w-3 h-3 text-btn-primary-fg" viewBox="0 0 12 12" fill="none">
+                    <svg className="w-3 h-3 text-foreground" viewBox="0 0 12 12" fill="none">
                       <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
@@ -236,7 +246,7 @@ export function DataGrid<T>({
           /* Custom filter component takes precedence */
           if (!simplified && col.filterComponent) {
             return (
-              <div key={col.key} className={`px-2 ${densityTokens.headerPaddingY} flex items-center`}>
+              <div key={col.key} className={`${headerPadCls} flex items-center`}>
                 {col.filterComponent}
               </div>
             );
@@ -245,14 +255,17 @@ export function DataGrid<T>({
           /* Filterable header (hidden in simplified mode) */
           if (!simplified && col.filterOptions && col.onFilterChange) {
             return (
-              <div key={col.key} className={`px-2 ${densityTokens.headerPaddingY} flex items-center`}>
+              <div key={col.key} className={`${headerPadCls} flex items-center`}>
                 <ThemedSelect
                   filterable
                   options={col.filterOptions}
                   value={col.filterValue ?? ''}
                   onValueChange={col.onFilterChange}
                   placeholder={col.label}
-                  className="!px-2 !py-0 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
+                  // -mx-2 cancels the select's own !px-2 so its label starts on
+                  // the same x as a plain/sortable header, while the hover
+                  // background still bleeds into the cell padding.
+                  className="!px-2 !py-0 -mx-2 !rounded-lg !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground typo-label"
                 />
               </div>
             );
@@ -300,7 +313,7 @@ export function DataGrid<T>({
             {Array.from({ length: 6 }).map((_, r) => (
               <div
                 key={r}
-                className={`grid gap-0 border-b border-primary/5 animate-fade-in ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                className={`grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent animate-fade-in ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                 style={{ gridTemplateColumns: gridTemplate, animationDelay: `${120 + r * 35}ms` }}
               >
                 {columns.map((col, ci) => (

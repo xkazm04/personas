@@ -29,7 +29,7 @@ export function SelectCell({
       className="w-full h-full flex items-center justify-center transition-colors rounded-card hover:bg-primary/[0.04] cursor-pointer"
     >
       <div
-        className={`w-4 h-4 rounded border transition-all flex items-center justify-center ${
+        className={`w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center ${
           selected ? 'bg-primary/80 border-primary/60' : 'border-primary/25 hover:border-primary/50'
         }`}
       >
