@@ -15,10 +15,6 @@
   "manual_review": "Revisión manual",
   "messages": "Mensajes",
   "knowledge": "Conocimiento",
-  "memories": "Memorias",
-  "patterns": "Patrones",
-  "extracted": "Extraídos",
-  "memory_graph": "Grafo",
   "sla": "SLA",
   "cron_agents": "Agentes cron",
   "schedules": "Programaciones",
@@ -95,5 +91,9 @@
   "group_monitoring": "Monitoreo",
   "group_operations": "Operaciones",
   "group_plugins": "Plugins",
-  "group_templates": "Plantillas"
+  "group_templates": "Plantillas",
+  "extracted": "Extraídos",
+  "memories": "Memorias",
+  "memory_graph": "Grafo",
+  "patterns": "Patrones"
 }

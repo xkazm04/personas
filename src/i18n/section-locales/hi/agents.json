@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "कस्टम"
+    "platform_custom": "कस्टम",
+    "st_last_checked": "अंतिम जाँच",
+    "st_retest": "फिर जाँचें",
+    "st_stale": "{count} पुराने",
+    "test_diff_recovered": "{count} ठीक हुए",
+    "test_diff_regressed": "{count} नए विफल",
+    "test_diff_failing": "{count} विफल",
+    "status_unverifiable": "सत्यापन योग्य नहीं",
+    "st_unverifiable": "{count} सत्यापन योग्य नहीं",
+    "st_filter_toggle": "केवल ये दिखाएँ",
+    "st_filter_clear": "सभी कनेक्टर दिखाएँ",
+    "st_filter_empty": "इस फ़िल्टर से कोई कनेक्टर मेल नहीं खाता"
   },
   "model_config": {
     "model_provider": "मॉडल और प्रदाता",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "बिना समूह",
     "batch_moved_success": "{count} पर्सोना {group} में स्थानांतरित",
     "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल",
+    "render_cap_notice": "{total} में से {shown} दिखाए जा रहे हैं — बाकी देखने के लिए खोज या फ़िल्टर का उपयोग करें।",
     "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
     "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।",
     "badge_archived": "आर्काइव किया गया",

@@ -1252,3 +1252,37 @@ pub struct ContextHealthSnapshot {
     pub recommendations: Option<String>,
     pub scanned_at: String,
 }
+
+// ============================================================================
+// Passport-wall summary (Factory L1)
+// ============================================================================
+
+/// Everything the L1 passport wall needs to draw ONE project cover: the
+/// statband's volume numbers and the minimized roadmap strip.
+///
+/// The wall used to fan three per-project IPC calls out (`list_contexts` +
+/// `list_kpis` + `list_milestones`) — 3N round trips to draw N covers. This is
+/// the batched answer for the whole wall: `project_wall_summaries` reads one
+/// grouped query per table with a single `WHERE project_id IN (…)`.
+///
+/// `active_kpis` carries the RAW active KPI rows rather than a precomputed
+/// pass/total pair on purpose. "Passed" is `kpiTrack()` in
+/// `sub_kpis/kpiMath.ts`, which is time-dependent (linear pace against
+/// `target_date` evaluated at `Date.now()`) and already has one Rust twin in
+/// `engine/kpi_derivation.rs`. A third implementation here would be a third
+/// thing to keep in sync, and a server-computed verdict would additionally go
+/// stale in the client's cache. `milestones` likewise carries full
+/// `DevMilestone` rows so the roadmap builder keeps its existing input shape.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevProjectWallSummary {
+    pub project_id: String,
+    /// Rows in `dev_contexts` for this project — the statband's volume stat.
+    pub contexts_count: i32,
+    /// KPI rows with `status = 'active'`; the client folds these through
+    /// `kpiTrack()` for the pass/total pair.
+    pub active_kpis: Vec<DevKpi>,
+    /// Full milestone rows, ordered exactly as `list_milestones_by_project`
+    /// returns them (order_index, created_at).
+    pub milestones: Vec<DevMilestone>,
+}

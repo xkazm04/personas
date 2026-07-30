@@ -74,6 +74,14 @@ export interface CredentialMetadata {
   healthcheck_last_message: string | null;
   healthcheck_last_tested_at: string | null;
   healthcheck_last_success_at: string | null;
+  /**
+   * Typed probe state persisted by `persist_probe_state` (engine/healthcheck.rs).
+   * `unverifiable` means no live probe of any kind exists for this connector, so
+   * a green "healthy" would be a claim nothing actually checked. Null on
+   * credentials last tested before the token was introduced — fall back to
+   * `healthcheck_last_success`.
+   */
+  healthcheck_last_state: 'verified' | 'unverifiable' | 'failed' | null;
   oauth_refresh_count: number;
   oauth_last_refresh_at: string | null;
   oauth_token_expires_at: string | null;
@@ -111,6 +119,11 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
   const lastSuccessAt = typeof parsedMetadata?.healthcheck_last_success_at === "string"
     ? parsedMetadata.healthcheck_last_success_at
     : null;
+  const lastState = parsedMetadata?.healthcheck_last_state === "verified"
+    || parsedMetadata?.healthcheck_last_state === "unverifiable"
+    || parsedMetadata?.healthcheck_last_state === "failed"
+    ? parsedMetadata.healthcheck_last_state
+    : null;
   const oauthRefreshCount = typeof parsedMetadata?.oauth_refresh_count === "number"
     ? parsedMetadata.oauth_refresh_count
     : 0;
@@ -138,6 +151,7 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     healthcheck_last_message: lastMessage,
     healthcheck_last_tested_at: lastTestedAt,
     healthcheck_last_success_at: lastSuccessAt,
+    healthcheck_last_state: lastState,
     oauth_refresh_count: oauthRefreshCount,
     oauth_last_refresh_at: oauthLastRefreshAt,
     oauth_token_expires_at: oauthTokenExpiresAt,

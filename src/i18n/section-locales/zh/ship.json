@@ -74,7 +74,6 @@
   "no_kpi_short": "无 KPI",
   "no_matches": "没有匹配“{query}”的内容",
   "no_objective_hint": "尚未绑定目标 — 从库中绑定一个目标。",
-  "outside_empty_all_in": "一切都已纳入定案范围 — 严谨得可疑。",
   "outside_empty_no_features": "尚未映射任何功能 — 打开“编排范围”来图谱化项目并添加第一批。",
   "outside_the_cut": "定案范围外",
   "outside_the_cut_aside": "该行的按钮就是决定",
@@ -109,5 +108,15 @@
   "uncharted_scanning": "正在图谱化代码库……",
   "uncharted_title": "尚未映射任何内容",
   "uncharted_tracked": "已在活动面板中跟踪 — 完成后库会自动填充。",
-  "ungrouped": "未分组"
+  "ungrouped": "未分组",
+  "cover_forecast": "预计 {date}",
+  "velocity_forecast_cut": "预计发布 {date}",
+  "velocity_forecast_today": "预计发布 {date}（若今日定版）",
+  "velocity_no_history": "尚无周期历史。完成两个里程碑后即可预测。",
+  "velocity_past_target": "晚于 {date} 的目标",
+  "velocity_typical": "典型周期：从定版到发布 {days} 天，基于 {count} 个已发布里程碑",
+  "crit_scope": "范围已冻结",
+  "crit_scope_clean": "定版后没有新增内容",
+  "crit_scope_crept": "定版后新增 {count} 项：{names}",
+  "crit_scope_uncut": "尚未定版。范围蔓延的追踪从定版开始"
 }

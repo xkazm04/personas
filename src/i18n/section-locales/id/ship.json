@@ -74,7 +74,6 @@
   "no_kpi_short": "tanpa KPI",
   "no_matches": "Tidak ada yang cocok dengan “{query}”",
   "no_objective_hint": "Belum ada objective yang terikat — ikat sebuah tujuan dari library.",
-  "outside_empty_all_in": "Semuanya ada dalam cut — mencurigakan sekali kedisiplinannya.",
   "outside_empty_no_features": "Belum ada fitur yang dipetakan — buka Compose scope untuk memetakan proyek dan tambahkan yang pertama.",
   "outside_the_cut": "Di luar the cut",
   "outside_the_cut_aside": "tombol-tombol baris ini adalah keputusannya",
@@ -109,5 +108,15 @@
   "uncharted_scanning": "Memetakan codebase…",
   "uncharted_title": "Belum ada yang dipetakan",
   "uncharted_tracked": "Dilacak di activity dock — library akan terisi saat selesai.",
-  "ungrouped": "Tidak dikelompokkan"
+  "ungrouped": "Tidak dikelompokkan",
+  "cover_forecast": "perkiraan {date}",
+  "velocity_forecast_cut": "Perkiraan rilis {date}",
+  "velocity_forecast_today": "Perkiraan rilis {date}, jika dipotong hari ini",
+  "velocity_no_history": "Belum ada riwayat siklus. Dua milestone yang dirilis membuat perkiraan mungkin.",
+  "velocity_past_target": "melewati target {date}",
+  "velocity_typical": "Siklus khas: {days} hari dari cut ke rilis, dari {count} yang dirilis",
+  "crit_scope": "Cakupan dibekukan",
+  "crit_scope_clean": "Tidak ada yang masuk setelah sertifikasi",
+  "crit_scope_crept": "{count} ditambahkan setelah cut: {names}",
+  "crit_scope_uncut": "Belum dipotong. Pelacakan penambahan dimulai saat cut"
 }

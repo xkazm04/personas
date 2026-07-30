@@ -1175,6 +1175,7 @@ pub(crate) fn execute_register_project(
                 &project,
                 path,
                 false,
+                None,
             ) {
                 Ok(_) => "(context scan started — its structure will be mapped in the background)"
                     .to_string(),

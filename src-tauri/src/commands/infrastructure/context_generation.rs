@@ -82,6 +82,8 @@ fn build_context_generation_prompt(
     root_path: &str,
     existing_context_summary: Option<&str>,
     delta: Option<&DeltaBriefing<'_>>,
+    subtree: Option<&str>,
+    group_names: &[String],
 ) -> String {
     let mode_section = if let Some(summary) = existing_context_summary {
         let delta_section = if let Some(d) = delta {
@@ -169,6 +171,85 @@ To update an existing context, use:
         String::new()
     };
 
+    // Subtree mode: the scan owns ONE directory and emits only its contexts.
+    // This is what makes a large codebase mappable at all — ten of these run
+    // concurrently, each with its own output stream, instead of one session
+    // trying to emit five hundred protocol messages and quietly stopping at
+    // fifty. Measured on this repo: one whole-tree session mapped 392 of ~4,400
+    // hand-written files (9%); ten scoped passes mapped 82%.
+    let existing_groups = if group_names.is_empty() {
+        "(none yet — you are the first scan; create what the subtree needs)".to_string()
+    } else {
+        group_names
+            .iter()
+            .map(|g| format!("- {g}"))
+            .collect::<Vec<_>>()
+            .join("
+")
+    };
+    let subtree_section = match subtree {
+        Some(st) => format!(
+            r#"
+## GROUPS THAT ALREADY EXIST — reuse these before inventing one
+
+{existing_groups}
+
+Pick the closest fit from that list. Only create a new group when your subtree
+introduces a domain genuinely absent above. Concurrent scans share this
+taxonomy, and each scan inventing its own near-synonym is how a map ends up
+with "Execution Engine" beside "Execution & Quality Data" (measured: 8 groups
+became 50 across one sweep, because this list was not shown).
+
+## SUBTREE SCOPE — you own `{st}` and nothing else
+
+Map ONLY the files under `{st}`. Other scans own the rest of the repo and are
+running right now, so anything you emit outside your scope collides with theirs.
+
+- Every `file_paths` entry MUST start with `{st}/`. No exceptions.
+- Do NOT emit a context for code outside `{st}`, however tempting the connection.
+- Read outside your subtree freely to UNDERSTAND it — just never map it.
+- Groups are shared across scans. Reuse an existing group name when one fits;
+  create a new one only when your subtree genuinely introduces a domain no other
+  scope would own.
+- Expect roughly one context per 5-15 files. A subtree of 300 files should
+  produce something like 20-50 contexts, not 5. If you find yourself writing a
+  context with 40 files in it, split it.
+"#,
+            existing_groups = existing_groups,
+        ),
+        None => String::new(),
+    };
+
+    // Whole-tree exploration only. A delta scan already knows its file list, so
+    // fanning out would spend subagent turns re-deriving a briefing it was
+    // handed — and a delta run is meant to stay cheap. Subtree scans skip it too:
+    // the scope is already small, and the parallelism now lives ABOVE this
+    // session (many scoped scans) rather than inside it.
+    let fanout_section = if delta.is_none() && subtree.is_none() {
+        r#"
+## Exploring in parallel
+
+A full scan has to read the whole tree, and reading it one directory at a time
+in this session is the slowest possible way to do it. Fan out instead: partition
+the repo's top-level source directories into batches and dispatch one subagent
+per batch with the Task tool, all in a single message so they run concurrently.
+Give each subagent its batch, this document's context/group definitions, and ask
+it to report back which candidate contexts it found — name, one-paragraph
+description, the concrete file paths, keywords, entry points.
+
+**Subagents recon; only YOU emit protocol messages.** Their output is a report
+to you, not to the harness — nothing they print is read as a protocol message.
+Wait for every batch, reconcile the reports into a single coherent map (merge
+duplicates, split anything over 15 files, resolve files claimed by two contexts
+so each lands in exactly one), and then emit the groups and contexts yourself.
+
+Skip the fan-out for a small repo where one pass is obviously enough; the point
+is coverage and speed, not ceremony.
+"#
+    } else {
+        ""
+    };
+
     format!(
         r#"# Context Map Generator
 
@@ -179,13 +260,14 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 - **Project Name**: {project_name}
 - **Root Path**: {root_path}
 {mode_section}
+{subtree_section}
 ## Your Task
 
 1. **Explore the codebase** at the root path using the file system tools available to you.
 2. **Identify business-feature contexts** — NOT architectural layers. Group by what the code DOES (e.g., "User Authentication", "Payment Processing", "Dashboard Analytics"), not by code structure (e.g., "components", "utils", "hooks").
 3. **Create Context Groups** using the protocol messages below.
 4. **Create Contexts** within each group, listing the relevant files, entry points, keywords, and tech stack.
-
+{fanout_section}
 ## Context Group Guidelines
 - Create 4-10 groups representing major **business domains** (not layers)
 - **Naming**: Use Title Case, domain-oriented names (e.g., "User Authentication", "Payment Processing", "Analytics Dashboard"). Never use technical layer names like "Components", "Hooks", "Utils"
@@ -483,10 +565,11 @@ pub async fn dev_tools_scan_codebase(
     project_id: String,
     root_path: String,
     delta_mode: Option<bool>,
+    subtree: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    launch_context_scan(app, &state.db, &project, &root_path, delta_mode.unwrap_or(false))
+    launch_context_scan(app, &state.db, &project, &root_path, delta_mode.unwrap_or(false), subtree.as_deref())
 }
 
 /// Launch a context-map scan for `project` as a background task. Shared by the
@@ -500,19 +583,26 @@ pub(crate) fn launch_context_scan(
     project: &crate::db::models::DevProject,
     root_path: &str,
     delta_mode: bool,
+    subtree: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = project.id.clone();
 
-    // Refuse a second concurrent scan of the same project (manual re-scan
-    // double-click, weekly system-op scan overlapping a manual one, or Athena's
-    // register_project auto-scan racing a user scan). The RAII handle is moved
-    // into the spawned task below so it stays held for the scan's full lifetime
-    // and releases on completion/cancellation; early-return paths here drop it
-    // and release immediately. Without it the lazy-clear corrupts the map.
-    let scan_guard = CONTEXT_GEN_INFLIGHT.guard(&project_id).ok_or_else(|| {
-        AppError::Validation(format!(
-            "A context scan is already running for project {project_id}"
-        ))
+    // Subtree scans must be able to run CONCURRENTLY — that is the entire point
+    // of the mode. One session cannot emit a map for a large codebase: it runs
+    // out of room and stops, and a scan that returns 49 valid contexts looks
+    // exactly like a successful one. So the guard is keyed per SCOPE, not per
+    // project: `src/features/agents` and `src-tauri/src/commands` hold separate
+    // keys and never block each other, while a second scan of the SAME scope is
+    // still refused (that one really would corrupt its own lazy clear).
+    let guard_key = match subtree {
+        Some(s) => format!("{project_id}::{s}"),
+        None => project_id.clone(),
+    };
+    let scan_guard = CONTEXT_GEN_INFLIGHT.guard(&guard_key).ok_or_else(|| {
+        AppError::Validation(match subtree {
+            Some(s) => format!("A context scan is already running for {s} in project {project_id}"),
+            None => format!("A context scan is already running for project {project_id}"),
+        })
     })?;
 
     let scan_id = uuid::Uuid::new_v4().to_string();
@@ -562,6 +652,7 @@ pub(crate) fn launch_context_scan(
     let token_for_task = cancel_token;
     let project_name = project.name.clone();
 
+    let subtree_owned = subtree.map(str::to_string);
     let app_handle_for_panic = app_handle.clone();
     let scan_id_for_panic = scan_id_for_task.clone();
     let pool_for_panic = pool.clone();
@@ -586,6 +677,7 @@ pub(crate) fn launch_context_scan(
                 &resolved_root,
                 existing_summary.as_deref(),
                 delta_mode,
+                subtree_owned.as_deref(),
             ) => res
         };
 
@@ -746,6 +838,122 @@ pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
 // Core generation logic
 // =============================================================================
 
+/// Trees that are NOT hand-written source and must never become contexts:
+/// generated output, vendored deps, build artifacts, and translation data.
+///
+/// This list is shared by the coverage counter AND the write path on purpose.
+/// They used to disagree — the counter excluded `section-locales` while nothing
+/// stopped the scan from mapping it, so an i18n subtree scan swept 807 locale
+/// JSON files into 15 contexts named `section-locales-ar`, `-bn`, … and the
+/// coverage line read 5871%. One list, one meaning, both sides.
+pub(crate) const NON_SOURCE_DIRS: [&str; 10] = [
+    "node_modules", "target", ".git", "dist", "build",
+    "bindings", "section-locales", "locales", ".claude", "coverage",
+];
+
+/// Extensions a context may legitimately own. Locale JSON, images and lockfiles
+/// describe the product but are not the code a context maps.
+pub(crate) const SOURCE_EXTS: [&str; 5] = ["ts", "tsx", "rs", "js", "jsx"];
+
+/// Is this repo-relative path something a context is allowed to claim?
+pub(crate) fn is_mappable_path(path: &str) -> bool {
+    let norm = path.replace('\\', "/");
+    if norm
+        .split('/')
+        .any(|seg| NON_SOURCE_DIRS.contains(&seg))
+    {
+        return false;
+    }
+    norm.rsplit_once('.')
+        .is_some_and(|(_, ext)| SOURCE_EXTS.contains(&ext))
+}
+
+/// Count hand-written source files under `root`, optionally narrowed to a
+/// subtree, so the completion line can state coverage instead of a bare count.
+///
+/// Deliberately excludes generated output (`src/lib/bindings` is ~950 ts-rs
+/// files on this repo) and vendored trees — counting those would depress the
+/// percentage and make the warning meaningless. Returns `None` if the tree
+/// cannot be walked; a missing figure is better than a wrong one.
+fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
+
+    let base = match subtree {
+        Some(st) => std::path::Path::new(root).join(st),
+        None => std::path::PathBuf::from(root),
+    };
+    if !base.is_dir() {
+        return None;
+    }
+    let mut count = 0usize;
+    let mut stack = vec![base];
+    // Bound the walk so a pathological tree cannot stall the completion line.
+    let mut budget = 200_000usize;
+    while let Some(dir) = stack.pop() {
+        let entries = std::fs::read_dir(&dir).ok()?;
+        for entry in entries.flatten() {
+            if budget == 0 {
+                return Some(count);
+            }
+            budget -= 1;
+            let path = entry.path();
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if path.is_dir() {
+                if !name.starts_with('.') && !NON_SOURCE_DIRS.contains(&name.as_ref()) {
+                    stack.push(path);
+                }
+            } else if path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| SOURCE_EXTS.contains(&e))
+            {
+                count += 1;
+            }
+        }
+    }
+    Some(count)
+}
+
+/// Delete only the contexts that live ENTIRELY inside `subtree`, so a
+/// subtree rescan replaces its own scope without touching anything else.
+///
+/// "Entirely" is the safety property that matters: a context spanning the
+/// boundary (some files inside the subtree, some outside) is LEFT ALONE. Deleting
+/// it would silently drop the outside files from the map, and the scanning
+/// session — which was only shown its own subtree — has no way to recreate them.
+/// Such a context is reported instead, because a boundary-spanning context is a
+/// signal the subtree split was drawn in the wrong place.
+///
+/// Groups are never deleted: they are shared across subtrees, and an empty group
+/// is harmless where a missing one breaks every context that referenced it.
+fn stale_subtree_contexts(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    subtree: &str,
+) -> (Vec<String>, usize) {
+    let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
+    // Compare with forward slashes both sides — file_paths are stored
+    // repo-relative with `/` regardless of host platform.
+    let prefix = format!("{}/", subtree.trim_end_matches('/').replace('\\', "/"));
+    let (mut stale, mut straddling) = (Vec::new(), 0usize);
+    for c in contexts {
+        let paths: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
+        if paths.is_empty() {
+            continue;
+        }
+        let inside = paths
+            .iter()
+            .filter(|p| p.replace('\\', "/").starts_with(&prefix))
+            .count();
+        if inside == paths.len() {
+            stale.push(c.id.clone());
+        } else if inside > 0 {
+            straddling += 1;
+        }
+    }
+    (stale, straddling)
+}
+
 async fn run_context_generation(
     app: &tauri::AppHandle,
     scan_id: &str,
@@ -755,6 +963,7 @@ async fn run_context_generation(
     root_path: &str,
     existing_summary: Option<&str>,
     delta_mode: bool,
+    subtree: Option<&str>,
 ) -> Result<ContextGenSummary, AppError> {
     let is_rescan = existing_summary.is_some();
 
@@ -881,6 +1090,12 @@ async fn run_context_generation(
         root_path,
         summary_for_prompt,
         briefing.as_ref(),
+        subtree,
+        &repo::list_context_groups(pool, project_id)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|g| g.name)
+            .collect::<Vec<_>>(),
     );
 
     // Spawn CLI in the project root so Claude can explore it. Subscription
@@ -933,10 +1148,29 @@ async fn run_context_generation(
     let mut groups_created = 0i32;
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
+    let mut unique_files: std::collections::HashSet<String> = std::collections::HashSet::new();
+    // Protocol messages arrive TWICE. The CLI runs with `--verbose`, which makes
+    // it emit each assistant turn both as a JSON event and as a plain-text line
+    // (documented in CLAUDE.md for output display); `extract_display_text`
+    // returns text for both, so every `context_map_context` was parsed and
+    // INSERTed twice. Live result: 250 duplicate context names with identical
+    // file lists, and a slot count that was exactly 2.0x distinct on every scan
+    // — that suspicious precision is what exposed it. Dedupe by name within the
+    // scan; a context emitted twice is one context either way.
+    let mut seen_contexts: std::collections::HashSet<String> = std::collections::HashSet::new();
     // Lazy clear: only wipe the existing map once the run produces its first real
     // output, so a failed/empty rescan can't destroy the curated map up-front.
-    let needs_lazy_clear = is_rescan && delta_for_prompt.is_none();
+    //
+    // A SUBTREE scan must never take this path. `clear_project_context_map`
+    // deletes the whole project's contexts and groups — run concurrently across
+    // ten subtrees, the first one to emit would wipe the nine others' work while
+    // still reporting success. Subtree scans clear only their own scope instead
+    // (see `clear_subtree_contexts` below), and never touch groups, which are
+    // shared across scopes by design.
+    let needs_lazy_clear = is_rescan && delta_for_prompt.is_none() && subtree.is_none();
     let mut map_cleared = false;
+    let mut subtree_cleared = false;
+    let mut subtree_stale_ids: Vec<String> = Vec::new();
 
     // Extended to 30 minutes to handle large codebases.
     // If timeout fires but contexts were already committed, the scan is treated
@@ -977,12 +1211,46 @@ async fn run_context_generation(
                     if let Some(protocol) = parse_context_map_protocol(proto_trimmed) {
                         match protocol {
                             ContextMapProtocol::Group { project_id: pid, name, color, domain } => {
+                                if let (Some(st), false) = (subtree, subtree_cleared) {
+                                    subtree_cleared = true;
+                                    // Mark, do NOT delete. The old rows stay until this
+                                    // scan has actually produced a map worth swapping in
+                                    // — see the retire step after the stream loop.
+                                    let (stale, straddling) = stale_subtree_contexts(pool, project_id, st);
+                                    let gone = stale.len();
+                                    subtree_stale_ids = stale;
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Milestone] Subtree {st}: {gone} existing context(s) marked for replacement."
+                                    ));
+                                    if straddling > 0 {
+                                        CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                            "[Warning] {straddling} context(s) span the {st} boundary and were left untouched —                                              they hold files this scan cannot see, so the subtree split may be drawn wrong."
+                                        ));
+                                    }
+                                }
                                 if needs_lazy_clear && !map_cleared {
                                     let _ = repo::clear_project_context_map(pool, project_id);
                                     map_cleared = true;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
                                 }
-                                match repo::create_context_group(pool, &pid, &name, Some(&color), None, None, domain.as_deref()) {
+                                // Groups are shared across concurrent subtree scans, and
+                                // `create_context_group` does not upsert on name — three
+                                // concurrent scans each emitting "Automation & Pipelines"
+                                // produced three groups with that name (observed live,
+                                // 2026-07-29: seven duplicates). Adopt an existing
+                                // same-named group instead; only create when none exists.
+                                let existing = repo::list_context_groups(pool, &pid)
+                                    .unwrap_or_default()
+                                    .into_iter()
+                                    .find(|g| g.name == name);
+                                let created = match existing {
+                                    Some(g) => {
+                                        CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Reused] Group: {name}"));
+                                        Ok(g)
+                                    }
+                                    None => repo::create_context_group(pool, &pid, &name, Some(&color), None, None, domain.as_deref()),
+                                };
+                                match created {
                                     Ok(group) => {
                                         group_name_to_id.insert(name.clone(), group.id.clone());
                                         groups_created += 1;
@@ -1000,10 +1268,36 @@ async fn run_context_generation(
                                 api_surface, cross_refs, tech_stack,
                                 category, business_feature,
                             } => {
+                                // See `seen_contexts`: every protocol message is
+                                // delivered twice, so the second sighting must not
+                                // become a second row.
+                                if !seen_contexts.insert(name.clone()) {
+                                    continue;
+                                }
                                 if needs_lazy_clear && !map_cleared {
                                     let _ = repo::clear_project_context_map(pool, project_id);
                                     map_cleared = true;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
+                                }
+                                // Drop anything outside the source surface before it
+                                // is stored — see NON_SOURCE_DIRS. A context whose
+                                // files were ALL non-source (the `section-locales-ar`
+                                // shape) is not a context at all, so skip it entirely
+                                // rather than writing an empty one.
+                                let dropped = file_paths.len();
+                                let file_paths: Vec<String> =
+                                    file_paths.into_iter().filter(|p| is_mappable_path(p)).collect();
+                                let dropped = dropped - file_paths.len();
+                                if file_paths.is_empty() {
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Skipped] Context: {name} — every path was generated or non-source"
+                                    ));
+                                    continue;
+                                }
+                                if dropped > 0 {
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                                        "[Trimmed] Context: {name} — dropped {dropped} generated/non-source path(s)"
+                                    ));
                                 }
                                 let group_id = group_name_to_id.get(&group_name).cloned();
                                 let file_count = file_paths.len() as i32;
@@ -1022,6 +1316,11 @@ async fn run_context_generation(
                                     Ok(_) => {
                                         contexts_created += 1;
                                         files_mapped += file_count;
+                                        // `files_mapped` sums path SLOTS across contexts, and
+                                        // the model routinely files one path under several
+                                        // contexts — live run reported "176 of 88 files (200%)".
+                                        // Coverage must be judged on DISTINCT paths.
+                                        unique_files.extend(file_paths.iter().cloned());
                                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Created] Context: {name} ({file_count} files)"));
                                     }
                                     Err(e) => {
@@ -1158,6 +1457,32 @@ async fn run_context_generation(
         }
     }
 
+    // Retire the previous generation ONLY now, with the new map already written.
+    // The clear used to fire the moment the first group arrived, so a scan that
+    // then died left the subtree gutted — measured: `src/features/agents` went
+    // from 442 mapped files to 5 when its CLI child was killed and the run hit
+    // the 30-minute timeout having created 0 contexts. Deleting last means the
+    // worst case is a duplicate generation (repairable) instead of an empty one
+    // (not).
+    if !subtree_stale_ids.is_empty() {
+        if contexts_created == 0 {
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
+                subtree_stale_ids.len()
+            ));
+        } else {
+            let mut retired = 0usize;
+            for id in &subtree_stale_ids {
+                if repo::delete_context(pool, id).unwrap_or(false) {
+                    retired += 1;
+                }
+            }
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                "[Replaced] Retired {retired} superseded context(s) after writing {contexts_created} new one(s)."
+            ));
+        }
+    }
+
     CONTEXT_GEN_JOBS.emit_line(
         app,
         scan_id,
@@ -1165,6 +1490,66 @@ async fn run_context_generation(
             "[Complete] Created {groups_created} groups, {contexts_created} contexts, {files_mapped} files mapped"
         ),
     );
+
+    // Coverage assertion. `files_mapped` has always been reported and never
+    // checked against anything, which is how this project ran for months on a
+    // map covering 9% of its own source while every surface treated it as
+    // complete. A scan that maps a fraction of the tree is not a successful
+    // scan; it is a scan that ran out of room. Say so, in the line the operator
+    // actually reads.
+    if let Some(total) = count_source_files(root_path, subtree) {
+        let scope = subtree.unwrap_or("the repository");
+        if total > 0 {
+            // The numerator must be measured over the SAME scope as the
+            // denominator. A subtree scan legitimately emits a few paths
+            // outside its scope (a preserved straddling context still owns
+            // them), and counting those against a subtree-only total produced
+            // "317 of 311 (102%)" — a number that cannot mean anything.
+            let distinct = match subtree {
+                Some(st) => {
+                    let prefix = format!("{}/", st.trim_end_matches('/').replace('\\', "/"));
+                    unique_files
+                        .iter()
+                        .filter(|p| p.replace('\\', "/").starts_with(&prefix))
+                        .count()
+                }
+                None => unique_files.len(),
+            };
+            let pct = (distinct as f64 / total as f64) * 100.0;
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!(
+                    "[Coverage] Mapped {distinct} of {total} source files in {scope} ({pct:.0}%){}",
+                    if files_mapped as usize > unique_files.len() {
+                        format!(
+                            " — {} path slots for {} distinct paths, so the map assigns {} extra slot(s) to files that sit in more than one context",
+                            files_mapped,
+                            unique_files.len(),
+                            files_mapped as usize - unique_files.len()
+                        )
+                    } else { String::new() }
+                ),
+            );
+            // Two-thirds is the line between "some judgement was applied about
+            // what deserves a context" and "this stopped early".
+            if pct < 66.0 {
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    format!(
+                        "[Warning] Coverage is low ({pct:.0}%). {} Re-run scoped to smaller subtrees \
+                         so each scan has room to emit its whole map.",
+                        if subtree.is_some() {
+                            "This subtree still did not finish."
+                        } else {
+                            "One session cannot emit a map for a codebase this size."
+                        }
+                    ),
+                );
+            }
+        }
+    }
 
     // Snapshot the live source tree into the per-file hash cache so the next
     // scan can run in delta mode. Always overwrites — anything missing from

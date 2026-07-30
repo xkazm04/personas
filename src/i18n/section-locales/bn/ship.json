@@ -74,7 +74,6 @@
   "no_kpi_short": "KPI নেই",
   "no_matches": "“{query}” এর সাথে কিছু মেলে না",
   "no_objective_hint": "এখনো কোনো উদ্দেশ্য বাইন্ড করা হয়নি — লাইব্রেরি থেকে একটি লক্ষ্য বাইন্ড করুন।",
-  "outside_empty_all_in": "সবকিছু কাটের মধ্যে আছে — সন্দেহজনকভাবে সুশৃঙ্খল।",
   "outside_empty_no_features": "এখনো কোনো ফিচার ম্যাপ করা হয়নি — প্রজেক্ট চার্ট করতে ও প্রথমগুলো যোগ করতে Compose scope খুলুন।",
   "outside_the_cut": "কাটের বাইরে",
   "outside_the_cut_aside": "সারির বোতামগুলোই সিদ্ধান্ত",
@@ -109,5 +108,15 @@
   "uncharted_scanning": "কোডবেস চার্ট করা হচ্ছে…",
   "uncharted_title": "এখনো কিছু ম্যাপ করা হয়নি",
   "uncharted_tracked": "অ্যাক্টিভিটি ডকে ট্র্যাক করা হচ্ছে — সম্পন্ন হলে লাইব্রেরি পূর্ণ হবে।",
-  "ungrouped": "অগোষ্ঠীভুক্ত"
+  "ungrouped": "অগোষ্ঠীভুক্ত",
+  "cover_forecast": "পূর্বাভাস {date}",
+  "velocity_forecast_cut": "সম্ভাব্য রিলিজ {date}",
+  "velocity_forecast_today": "সম্ভাব্য রিলিজ {date}, আজ কাট হলে",
+  "velocity_no_history": "এখনও কোনো সাইকেল ইতিহাস নেই। দুটি মাইলস্টোন রিলিজ হলে পূর্বাভাস সম্ভব।",
+  "velocity_past_target": "{date} লক্ষ্যমাত্রার পরে",
+  "velocity_typical": "সাধারণ সাইকেল: কাট থেকে রিলিজ পর্যন্ত {days} দিন, {count}টি রিলিজের ভিত্তিতে",
+  "crit_scope": "স্কোপ স্থির",
+  "crit_scope_clean": "সার্টিফিকেশনের পরে কিছু যোগ হয়নি",
+  "crit_scope_crept": "কাটের পরে {count}টি যোগ হয়েছে: {names}",
+  "crit_scope_uncut": "এখনও কাট হয়নি। স্কোপ বৃদ্ধির ট্র্যাকিং কাট থেকে শুরু হয়"
 }

@@ -308,7 +308,7 @@ the inline health badge in `EditorTabBar`):
 | Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). When the persona has assigned tools, the tab-bar actions also expose **Run tool** — a modal (`ToolRunnerModal` wrapping `ToolRunnerPanel`) that invokes a single tool directly via `invoke_tool_direct` (no LLM), rendering the typed outcome contract: failure category, HTTP status when present, a retryable hint, and an output-truncated notice. |
 | Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
 | Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
-| Connectors | `ConnectorsSection` (via `DesignConnectorsPanel`) | read-only view of the saved design's connectors + tools |
+| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Swap alternative — above a read-only view of the saved design's connectors + tools |
 | Events & Triggers | `EventsSection` (via `DesignEventsPanel`) | read-only triggers + event subscriptions |
 | Notifications | `MessagesSection` (via `DesignNotificationsPanel`) | read-only notification channels (was "Messaging") |
 
@@ -320,6 +320,67 @@ state when its dimension is empty. The Properties sub-tab passes
 `hideConnectors`/`hideEvents`/`hideMessages` to `DesignResultPreview` so those
 bodies aren't duplicated. The health badge lives in `EditorTabBar`; clicking it
 re-runs `runHealthCheck()` in-place.
+
+Two of those sub-tabs are no longer read-only. **Events & Triggers** mounts the
+live `TriggerConfig` manager above its design recap, and **Connectors** mounts
+`ConnectorVerificationPanel`
+(`src/features/agents/sub_connectors/components/connectors/`) above its own. The
+verification panel derives its rows from the persona's actual tools via
+`useConnectorStatuses` — not from a saved design — so it renders for personas
+that were never designed, groups interchangeable connectors by their
+`connectorRoles` functional role, auto-tests a connector when it gains a
+credential, and offers Test / Test all / Link existing / Add new / Swap
+alternative per row. The sub-tab's empty state now appears only when the persona
+has neither a live connector demand nor a saved design.
+
+Rows open showing the credential's **persisted** healthcheck
+(`healthcheck_last_success` / `_message` / `_tested_at`, restored by
+`restoreHealthcheck()` in `connectorTypes.ts`) rather than blank-then-silently-
+retest; a restored result is marked `cached` and renders a "Last checked
+&lt;when&gt;" provenance line, so stale data is never presented as a fresh test.
+Only connectors that have genuinely never been tested auto-test on load.
+
+A restored result older than `STALE_HEALTHCHECK_MS` (24h) marks the row **stale**
+— amber, clock icon, an inline **Re-test** link — and contributes to a "N stale"
+pill beside the healthy / failed / missing counts. Live results from the current
+session are never stale. **Test all** diffs each outcome against the result it
+replaced (the restored baseline is what makes this possible) and reports
+transitions in its completion notification — recovered / newly failing / failing
+— instead of the old "tested N connectors".
+
+Below the verification panel, the design recap's connector cards are also
+actionable: their status line resolves through `templates.design` in all 14
+locales, and clicking it opens inline credential provisioning (the affordance
+shows for any connector the runnability resolver marks `needs_setup`, not only
+those declaring credential fields).
+
+**The two halves are disjoint.** `DesignConnectorsPanel` owns a single
+`useConnectorStatuses` instance and passes it to `ConnectorVerificationPanel`
+(which takes it as a prop rather than calling the hook itself — two instances
+would run two independent auto-test loops). It also passes the live connector
+names as `hiddenConnectors`, so the recap renders only what the build proposed
+*and no tool requires*; those rows get a **Verify** action wired into the same
+healthcheck, so the recap can act rather than only describe.
+
+**Three-valued health.** `ConnectorTestResult.state` carries the backend's
+`verified` / `unverifiable` / `failed` probe state, and `CredentialMetadata`
+parses the persisted `healthcheck_last_state` token so restored results are
+three-valued too. `unverifiable` (no live probe of any kind exists for that
+connector) gets its own readiness bucket, a neutral chip and header pill — never
+a green check — while remaining execution-ready, matching `credential_is_usable`,
+which only demotes an explicit probe failure.
+
+**The counts are the filter.** Each header pill (healthy / failing / missing /
+not verifiable / stale) is a toggle — clicking one shows just those connectors,
+clicking again clears — mirroring the vault credential list's health filter and
+adding `stale`, which the vault has no equivalent for. Role headings still come
+from the unfiltered set so interchangeable groups keep reading as one decision.
+A filter matching nothing renders an empty state with an explicit **Show all
+connectors** action rather than silently discarding the user's filter — which
+matters because a pill disappears once its count reaches zero, so recovering the
+last failing connector would otherwise leave a filtered-empty list with no
+control left to clear it. `matchesHealthFilter()` in `connectorTypes.ts` is the
+single predicate.
 
 Wiring:
 

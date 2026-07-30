@@ -37,7 +37,7 @@ function QuickAddFeature({ ctx, onAdd, t, tx }: {
   const [name, setName] = useState('');
   const submit = () => { if (name.trim()) { onAdd(name.trim()); setName(''); } };
   return (
-    <li className="flex items-center gap-1.5 py-1 pl-8 pr-1">
+    <li className="flex items-center gap-1.5 py-1 pl-1 pr-1">
       <Plus className="w-3 h-3 shrink-0 text-foreground/35" aria-hidden />
       <input
         value={name}
@@ -180,7 +180,11 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                 <span className="typo-title truncate">{band.name}</span>
                 <span className="ml-auto typo-caption tabular-nums shrink-0">{band.contexts.length}</span>
               </button>
-              {bandOpen && band.contexts.map((ctx) => {
+              {/* Level 2. Contexts used to sit at the SAME left edge as their
+                  band, so the three levels read as two. Each level now steps in
+                  and carries a hairline rail, so depth is legible without
+                  reading the row. */}
+              {bandOpen && <div className="ml-2 pl-2 border-l border-foreground/[0.09]">{band.contexts.map((ctx) => {
                 const feats = ship.features.filter((f) => f.contexts.includes(ctx.name));
                 const goals = ship.goals.filter((g) => g.contexts.includes(ctx.name));
                 const isOpen = Boolean(q) || openCtx.has(ctx.id);
@@ -210,7 +214,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                     <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.ul
-                        className="pb-1.5 overflow-hidden"
+                        className="pb-1.5 overflow-hidden ml-2 pl-2 border-l border-foreground/[0.07]"
                         initial={reduce ? false : { opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={reduce ? undefined : { opacity: 0, height: 0 }}
@@ -219,7 +223,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                         {feats.map((f) => {
                           const inCut = coreIds.has(f.id);
                           return (
-                            <li key={f.id} className={`flex items-center gap-2 py-1 pl-8 pr-1 min-w-0 ${inCut ? 'opacity-45' : ''}`}>
+                            <li key={f.id} className={`flex items-center gap-2 py-1 pl-1 pr-1 min-w-0 ${inCut ? 'opacity-45' : ''}`}>
                               <Sparkles className="w-3 h-3 shrink-0" style={{ color: INK.violet }} aria-hidden />
                               <span className="typo-caption text-foreground/85 min-w-0">{f.name}</span>
                               <span className="ml-auto">
@@ -237,7 +241,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                         {goals.map((g) => {
                           const bound = boundGoalIds.has(g.id);
                           return (
-                            <li key={g.id} className={`flex items-center gap-2 py-1 pl-8 pr-1 min-w-0 ${bound ? 'opacity-45' : ''}`}>
+                            <li key={g.id} className={`flex items-center gap-2 py-1 pl-1 pr-1 min-w-0 ${bound ? 'opacity-45' : ''}`}>
                               <Target className="w-3 h-3 shrink-0" style={{ color: INK.teal }} aria-hidden />
                               <span className="typo-caption text-foreground/85 min-w-0">{g.name}</span>
                               <span className="ml-auto inline-flex items-center gap-1">
@@ -261,7 +265,7 @@ export function ShipLibraryTree({ ship, vm, onOpenContext, onNewGoal, onAssistGo
                     </AnimatePresence>
                   </div>
                 );
-              })}
+              })}</div>}
             </li>
           );
         })}

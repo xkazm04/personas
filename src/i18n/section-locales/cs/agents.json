@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "Vlastní"
+    "platform_custom": "Vlastní",
+    "st_last_checked": "Naposledy ověřeno",
+    "st_retest": "Otestovat znovu",
+    "st_stale": "{count} zastaralých",
+    "test_diff_recovered": "{count} obnoveno",
+    "test_diff_regressed": "{count} nově selhalo",
+    "test_diff_failing": "{count} selhalo",
+    "status_unverifiable": "Nelze ověřit",
+    "st_unverifiable": "{count} nelze ověřit",
+    "st_filter_toggle": "Zobrazit jen tyto",
+    "st_filter_clear": "Zobrazit všechny konektory",
+    "st_filter_empty": "Tomuto filtru neodpovídají žádné konektory"
   },
   "model_config": {
     "model_provider": "Model a poskytovatel",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "Bez skupiny",
     "batch_moved_success": "{count} person přesunuto do {group}",
     "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo",
+    "render_cap_notice": "Zobrazeno {shown} z {total} — upřesněte vyhledáváním nebo filtry pro zobrazení zbytku.",
     "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
     "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete.",
     "badge_archived": "Archivováno",

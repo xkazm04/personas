@@ -15,10 +15,6 @@
   "manual_review": "المراجعة اليدوية",
   "messages": "الرسائل",
   "knowledge": "المعرفة",
-  "memories": "الذكريات",
-  "patterns": "الأنماط",
-  "extracted": "مستخلصة",
-  "memory_graph": "الرسم البياني",
   "sla": "SLA",
   "cron_agents": "وكلاء cron",
   "schedules": "الجداول الزمنية",
@@ -95,5 +91,9 @@
   "group_monitoring": "المراقبة",
   "group_operations": "العمليات",
   "group_plugins": "الإضافات",
-  "group_templates": "القوالب"
+  "group_templates": "القوالب",
+  "extracted": "مستخلصة",
+  "memories": "الذكريات",
+  "memory_graph": "الرسم البياني",
+  "patterns": "الأنماط"
 }

@@ -246,11 +246,7 @@
   },
   "knowledge": {
     "title": "Graphe de connaissances",
-    "patterns_library_tab": "Motifs",
-    "extracted_tab": "Extraits",
-    "patterns_no_workspace_title": "Aucun espace de travail",
-    "patterns_no_workspace_desc": "Les pratiques sont collectées par espace de travail. Créez-en un et affectez-lui des projets pour commencer à constituer une bibliothèque partagée.",
-    "patterns_workspace_picker": "Sélectionner un espace de travail",
+    "patterns_tab": "Motifs",
     "search_placeholder": "Rechercher des motifs...",
     "sort_aria": "Trier les motifs",
     "sort_default": "Meilleurs motifs",
@@ -281,7 +277,12 @@
     "failures": "Échecs",
     "avg_cost": "Coût moyen",
     "avg_duration": "Durée moyenne",
-    "pattern_data": "Données du modèle"
+    "pattern_data": "Données du modèle",
+    "extracted_tab": "Extraits",
+    "patterns_library_tab": "Motifs",
+    "patterns_no_workspace_desc": "Les pratiques sont collectées par espace de travail. Créez-en un et affectez-lui des projets pour commencer à constituer une bibliothèque partagée.",
+    "patterns_no_workspace_title": "Aucun espace de travail",
+    "patterns_workspace_picker": "Sélectionner un espace de travail"
   },
   "dashboard": {
     "greeting_morning": "Bonjour",

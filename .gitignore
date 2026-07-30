@@ -15,6 +15,11 @@ src-tauri/src-tauri/
 # while a dev app instance holds target/debug/personas-desktop.exe locked
 .personas-e2e-target/
 
+# Transient skill → Memory Ledger handoff. Context-tracked skills append
+# progress nodes here; the app ingests and deletes the file. The .personas/
+# dir itself IS committed (it marks the repo as Personas-managed).
+.personas/memory-outbox.jsonl
+
 # Local SQLite databases (per-machine app state — never committed)
 *.sqlite3
 *.sqlite3-shm
@@ -126,3 +131,8 @@ docs/plans/
 # member repo and agents write runs/<id>/result.json back; the ingest door then
 # stamps ingested.json. All of it is machine-local ingest state, never source.
 practice-harvest/
+
+# ts-rs default export dir. Bindings belong in src/lib/bindings/ (set via
+# src-tauri/build.rs TS_RS_EXPORT_DIR); a cargo invocation that misses that env
+# drops a duplicate tree here. Ignored so it never dirties the tree or drifts.
+/bindings/

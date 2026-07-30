@@ -260,7 +260,7 @@ pub(crate) fn execute_scan_kpis(
     };
     let project = dt::get_project_by_id(&state.db, &project_id)?;
     let stale_note = stale_project_note(matched);
-    crate::commands::infrastructure::kpi_scan::launch_kpi_scan(app.clone(), &state.db, &project)?;
+    crate::commands::infrastructure::kpi_scan::launch_kpi_scan(app.clone(), &state.db, &project, None)?;
     Ok(ExecuteResult::message(format!(
         "KPI proposal scan started for `{}`{stale_note} — Claude is reading its context map and \
          proposing measurable KPIs across technical, quality, traffic, and value. They'll land in \
@@ -594,6 +594,7 @@ pub(crate) fn execute_enqueue_dev_job(
         &project,
         &project.root_path,
         delta,
+        None,
     )?;
     Ok(ExecuteResult::message(format!(
         "Context scan started for `{}` (`{}`){}. Claude is mapping its structure — business-domain \

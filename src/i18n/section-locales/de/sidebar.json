@@ -15,10 +15,6 @@
   "manual_review": "Manuelle Prüfung",
   "messages": "Nachrichten",
   "knowledge": "Wissen",
-  "memories": "Erinnerungen",
-  "patterns": "Muster",
-  "extracted": "Extrahiert",
-  "memory_graph": "Graph",
   "sla": "SLA",
   "cron_agents": "Cron-Agenten",
   "schedules": "Zeitpläne",
@@ -95,5 +91,9 @@
   "group_monitoring": "Überwachung",
   "group_operations": "Betrieb",
   "group_plugins": "Plugins",
-  "group_templates": "Vorlagen"
+  "group_templates": "Vorlagen",
+  "extracted": "Extrahiert",
+  "memories": "Erinnerungen",
+  "memory_graph": "Graph",
+  "patterns": "Muster"
 }

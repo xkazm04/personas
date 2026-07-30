@@ -654,4 +654,15 @@ Ledger nodes) from standard ones. Context-tracked rows show **coverage %**
 click through to a per-context progress modal. Attribution contract: outbox
 node lines carry `"skill":"<name>"` (baked into the dispatch MEMORY BLOCK).
 
+**Two ingest doors** (2026-07-29). A skill only reports coverage when the repo
+looks Personas-managed — the gate is a **`.personas/` directory at the repo
+root**, which is why the marker dir is committed rather than generated. The
+outbox it leaves behind is swept into the ledger by (a) the Fleet session-exit
+listener, for sessions the app itself spawned, and (b) **opening this panel**,
+which calls `ingestMemoryOutbox` for the active project before reading
+coverage. Door (b) exists because a skill run manually in a terminal
+(`/perfect`, `/explorer`, `/architect`, …) is not a Fleet session — without it
+those runs write an outbox nothing ever reads, and their coverage stays at 0%
+forever. A missing outbox is a no-op, so the sweep-on-view is free.
+
 All copy lives under `t.plugins.dev_tools.*` in `src/i18n/locales/en.json` (≈180 keys, including the `pr_bridge_*` and `scoreboard_*` blocks). Color tokens are static maps in `constants/ideaColors.ts` — dynamic Tailwind classes (`bg-${color}-500/15`) are banned because the JIT cannot see them. Tauri IPC uses `invokeWithTimeout` from `@/lib/tauriInvoke`; raw `invoke` is blocked by ESLint. Store slices live under `src/stores/slices/system/devTools*Slice.ts` and are composed into the single `useSystemStore`.

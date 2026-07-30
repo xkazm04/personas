@@ -71,6 +71,14 @@ proposed: <date>  accepted: <date|—>  shipped: <date|—>  commit: <sha|—>
 
 Vault hygiene: slugs are stable; **update notes, never duplicate**. Subagents may fail to write files in some harnesses — after any parallel phase the Director MUST `ls` the target dir and **backfill missing notes from the agents' returned content** before trusting "written".
 
+**The vault is NOT version-controlled and Obsidian's file-recovery never sees agent writes** (it only snapshots edits made in the app). A clobbered note is gone. Therefore, every write obeys these three rules — learned 2026-07-29, when this session destroyed a sibling session's note:
+
+1. **Never `open(path,'w')` a session note.** `sessions/<date>.md` is NOT unique — two `/perfect` sessions on one day collide. Check existence first and take the next free `-2`, `-3` suffix. Same for any note you did not create this session.
+2. **Re-read `Perfect.md` immediately before writing it, never patch the Phase-0 copy from memory.** A sibling session that wraps mid-run rewrites the cursor, `pool`, `shipped_total`, and `last_session` — a regex written against the Phase-0 text silently no-ops against the new text while your other replacements land, producing a self-contradicting header (this is exactly how the 2026-07-29 damage went unnoticed for several minutes).
+3. **An operator's "that session is finished" means it finished — including its wrap.** It does NOT mean the vault still matches what you read before it wrapped. Re-read; do not assume.
+
+When you do clobber something: say so immediately, stop, attempt recovery from the surviving derived sources (`Perfect.md`'s cursor, `directions/*` frontmatter, `git log`, the active-runs ledger), and leave the reconstruction **labelled as a reconstruction** with what is lost stated explicitly. Never quietly write over the gap.
+
 ## The loop — a vault-driven state machine
 
 Every invocation starts the same way; the vault decides which phase runs.
@@ -216,7 +224,13 @@ per direction → status (done|blocked|decision-needed), commits, files, verific
 This skill declares `contexts: tracked` — the Personas app measures per-context memory coverage for it. When run inside a Personas-managed repo (a `.personas/` dir exists, or the app dispatched this run), before finishing append JSON lines to `.personas/memory-outbox.jsonl` at the repo root (append, never rewrite) — one node per context you meaningfully worked on:
 
 ```json
-{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from context-map.json>","skill":"perfect"}
+{"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from .claude/codebase-context.md>","skill":"perfect"}
 ```
 
-Always set both `"skill":"perfect"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). The app ingests and deletes the file when the session ends. Skip silently when not Personas-managed.
+**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use the **product-level context names in `.claude/codebase-context.md`** (49 names under 8 groups) — the same names as this loop's own queue in `Perfect.md`. Do NOT use repo-root `context-map.json`: it is a stale (2026-07-10) Vibeman auto-map with 236 mechanical names like `tauri:engine [3/10]`, none of which the app knows. Perfect.md's own 2026-07-14 remap note already records this divergence for the queue; it applies to the outbox too.
+
+Always set both `"skill":"perfect"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). Skip silently when not Personas-managed.
+
+**Append incrementally, not at the end** — same rule as the vault: one line the moment a context's proposal pass closes, one more when a direction from it ships. "Before finishing" loses everything when a session is killed, and this loop's sessions get killed.
+
+**Who ingests it:** the app sweeps the outbox into the Memory Ledger and deletes the file when a *Fleet-spawned* session exits, and whenever the Skills Manager panel (Dev Tools → Skills) is opened for the project. A `/perfect` run in a plain terminal is neither, so its lines sit on disk until the user next opens that panel — that is expected, not a failure. Never hand-write into the ledger DB; the outbox is the only door.

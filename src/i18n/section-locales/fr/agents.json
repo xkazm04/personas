@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "Personnalisé"
+    "platform_custom": "Personnalisé",
+    "st_last_checked": "Dernière vérification",
+    "st_retest": "Retester",
+    "st_stale": "{count} obsolètes",
+    "test_diff_recovered": "{count} rétablis",
+    "test_diff_regressed": "{count} nouveaux échecs",
+    "test_diff_failing": "{count} en échec",
+    "status_unverifiable": "Non vérifiable",
+    "st_unverifiable": "{count} non vérifiables",
+    "st_filter_toggle": "Afficher uniquement ceux-ci",
+    "st_filter_clear": "Afficher tous les connecteurs",
+    "st_filter_empty": "Aucun connecteur ne correspond à ce filtre"
   },
   "model_config": {
     "model_provider": "Modèle & Fournisseur",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "Sans groupe",
     "batch_moved_success": "{count} personas déplacées vers {group}",
     "batch_moved_partial": "{ok} déplacées vers {group} ; {failed} échouées",
+    "render_cap_notice": "Affichage de {shown} sur {total} — affinez avec la recherche ou les filtres pour voir le reste.",
     "star_director_add": "Marquer pour ajouter au périmètre de coaching du Director",
     "star_director_remove": "Marqué — dans le périmètre de coaching du Director. Cliquez pour retirer.",
     "badge_archived": "Archivée",

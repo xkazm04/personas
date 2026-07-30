@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
-  getSkillUsageOverview, listSkills, listSkillsGlobal, memoryCoverage, memorySkillCoverage,
-  readSkillFile, writeSkillFile,
+  getSkillUsageOverview, ingestMemoryOutbox, listSkills, listSkillsGlobal,
+  memoryCoverage, memorySkillCoverage, readSkillFile, writeSkillFile,
   type SkillCoverageRow, type SkillEntry, type SkillUsageRow,
 } from '@/api/devTools/devTools';
 import { useSkillsWorkbench, type SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
@@ -111,12 +111,16 @@ export function useSkillsManagerData(activeProjectId: string | null): SkillsMana
     listSkills(activeProjectId)
       .then((rows) => { if (alive) setProjectSkills([...rows].sort((a, b) => a.name.localeCompare(b.name))); })
       .catch(silentCatch('skillsManager project list'));
-    memorySkillCoverage(activeProjectId)
-      .then((rows) => { if (alive) setCoverage(rows); })
+    // Sweep the repo's memory outbox BEFORE reading coverage. The Fleet
+    // session-exit listener only covers sessions the app itself spawned — a
+    // skill run manually in a terminal (`/perfect`, `/explorer`, …) leaves its
+    // outbox on disk with nothing to ingest it, so its coverage never moves.
+    // Missing outbox is a cheap no-op, so viewing this panel is a safe sweep.
+    ingestMemoryOutbox(activeProjectId)
+      .catch(silentCatch('skillsManager outbox ingest'))
+      .then(() => Promise.all([memorySkillCoverage(activeProjectId), memoryCoverage(activeProjectId)]))
+      .then(([rows, c]) => { if (alive) { setCoverage(rows); setTotalContexts(c.contexts); } })
       .catch(silentCatch('skillsManager coverage'));
-    memoryCoverage(activeProjectId)
-      .then((c) => { if (alive) setTotalContexts(c.contexts); })
-      .catch(silentCatch('skillsManager contexts total'));
     return () => { alive = false; };
   }, [activeProjectId, refreshTick]);
 

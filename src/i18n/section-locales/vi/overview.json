@@ -246,11 +246,7 @@
   },
   "knowledge": {
     "title": "Đồ thị tri thức",
-    "patterns_library_tab": "Mẫu",
-    "extracted_tab": "Đã trích xuất",
-    "patterns_no_workspace_title": "Chưa có workspace",
-    "patterns_no_workspace_desc": "Các thực hành được thu thập theo từng workspace. Hãy tạo một workspace và gán dự án vào đó để bắt đầu xây dựng thư viện dùng chung.",
-    "patterns_workspace_picker": "Chọn workspace",
+    "patterns_tab": "Mẫu",
     "search_placeholder": "Tìm mẫu...",
     "sort_aria": "Sắp xếp mẫu",
     "sort_default": "Mẫu hàng đầu",
@@ -281,7 +277,12 @@
     "failures": "Thất bại",
     "avg_cost": "Chi phí TB",
     "avg_duration": "Thời lượng TB",
-    "pattern_data": "Dữ liệu mẫu"
+    "pattern_data": "Dữ liệu mẫu",
+    "extracted_tab": "Đã trích xuất",
+    "patterns_library_tab": "Mẫu",
+    "patterns_no_workspace_desc": "Các thực hành được thu thập theo từng workspace. Hãy tạo một workspace và gán dự án vào đó để bắt đầu xây dựng thư viện dùng chung.",
+    "patterns_no_workspace_title": "Chưa có workspace",
+    "patterns_workspace_picker": "Chọn workspace"
   },
   "dashboard": {
     "greeting_morning": "Chào buổi sáng",

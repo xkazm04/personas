@@ -85,6 +85,14 @@ sentry = { version = "0.34", default-features = false, features = [
 # from the desktop crate.
 keyring = { version = "3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 
+# crypto derives a machine-bound key from the real uid, and validation opens
+# files with O_NOFOLLOW — both behind #[cfg(unix)], so this is unix-only.
+# Missing since the crate split: the extraction was validated with `cargo check`
+# on Windows, where those cfg blocks compile out, so `libc` was never needed
+# locally and every Linux/macOS build failed with E0433.
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 # crypto uses DPAPI (CryptProtectData) and validation opens files with explicit
 # share flags. Feature list is the desktop crate's, trimmed to what core uses.
 [target.'cfg(windows)'.dependencies]

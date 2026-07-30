@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "사용자 지정"
+    "platform_custom": "사용자 지정",
+    "st_last_checked": "마지막 확인",
+    "st_retest": "다시 테스트",
+    "st_stale": "{count}개 오래됨",
+    "test_diff_recovered": "{count}개 복구됨",
+    "test_diff_regressed": "{count}개 새로 실패",
+    "test_diff_failing": "{count}개 실패",
+    "status_unverifiable": "검증 불가",
+    "st_unverifiable": "{count}개 검증 불가",
+    "st_filter_toggle": "이 항목만 표시",
+    "st_filter_clear": "모든 커넥터 표시",
+    "st_filter_empty": "이 필터와 일치하는 커넥터가 없습니다"
   },
   "model_config": {
     "model_provider": "모델 & 공급자",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "그룹 없음",
     "batch_moved_success": "{count}개 페르소나를 {group}(으)로 이동했습니다",
     "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패",
+    "render_cap_notice": "{total}개 중 {shown}개 표시 — 검색이나 필터로 좁혀 나머지를 확인하세요.",
     "star_director_add": "별표를 눌러 Director의 코칭 범위에 추가",
     "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거.",
     "badge_archived": "보관됨",

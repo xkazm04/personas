@@ -15,10 +15,6 @@
   "manual_review": "Ручная проверка",
   "messages": "Сообщения",
   "knowledge": "Знания",
-  "memories": "Воспоминания",
-  "patterns": "Паттерны",
-  "extracted": "Извлечённое",
-  "memory_graph": "Граф",
   "sla": "SLA",
   "cron_agents": "Cron-агенты",
   "schedules": "Расписания",
@@ -95,5 +91,9 @@
   "group_monitoring": "Мониторинг",
   "group_operations": "Операции",
   "group_plugins": "Плагины",
-  "group_templates": "Шаблоны"
+  "group_templates": "Шаблоны",
+  "extracted": "Извлечённое",
+  "memories": "Воспоминания",
+  "memory_graph": "Граф",
+  "patterns": "Паттерны"
 }

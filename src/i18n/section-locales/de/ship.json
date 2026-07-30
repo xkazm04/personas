@@ -74,7 +74,6 @@
   "no_kpi_short": "keine KPI",
   "no_matches": "Nichts entspricht „{query}“",
   "no_objective_hint": "Noch kein Ziel gebunden — ein Ziel aus der Bibliothek binden.",
-  "outside_empty_all_in": "Alles ist im Zuschnitt — verdächtig diszipliniert.",
   "outside_empty_no_features": "Noch keine Features kartiert — öffne Scope zusammenstellen, um das Projekt zu kartieren und die ersten hinzuzufügen.",
   "outside_the_cut": "Außerhalb des Zuschnitts",
   "outside_the_cut_aside": "die Schaltflächen der Zeile sind die Entscheidung",
@@ -109,5 +108,15 @@
   "uncharted_scanning": "Codebase wird kartiert…",
   "uncharted_title": "Noch nichts kartiert",
   "uncharted_tracked": "Im Aktivitäts-Dock verfolgt — die Bibliothek füllt sich, sobald es abgeschlossen ist.",
-  "ungrouped": "Nicht gruppiert"
+  "ungrouped": "Nicht gruppiert",
+  "cover_forecast": "Prognose {date}",
+  "velocity_forecast_cut": "Voraussichtliche Auslieferung {date}",
+  "velocity_forecast_today": "Voraussichtliche Auslieferung {date}, bei Schnitt heute",
+  "velocity_no_history": "Noch keine Zyklusdaten. Zwei ausgelieferte Meilensteine ermöglichen eine Prognose.",
+  "velocity_past_target": "nach dem Ziel {date}",
+  "velocity_typical": "Typischer Zyklus: {days} Tage vom Schnitt bis zur Auslieferung, über {count} ausgelieferte",
+  "crit_scope": "Umfang eingefroren",
+  "crit_scope_clean": "Nach der Zertifizierung kam nichts hinzu",
+  "crit_scope_crept": "{count} nach dem Schnitt hinzugefügt: {names}",
+  "crit_scope_uncut": "Noch nicht geschnitten. Die Erfassung beginnt beim Schnitt"
 }

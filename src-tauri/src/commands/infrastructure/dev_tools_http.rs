@@ -8,14 +8,28 @@
 //! this exposes nothing the running app's frontend can't already do.
 //!
 //! Endpoints (mounted under `/dev-tools`):
-//!   GET  /projects                 → list dev projects (find the project_id)
-//!   POST /projects                 → register a project { name, root_path, tech_stack? }
-//!   POST /scan-codebase            → start a scan { project_id, root_path?, delta_mode? } → { scan_id }
-//!   GET  /scan-status/{scan_id}    → { status, error, lines }
+//!   GET  /projects                          → list dev projects (find the project_id)
+//!   POST /projects                          → register a project { name, root_path, tech_stack? }
+//!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode?, subtree? } → { scan_id }
+//!   GET  /scan-status/{scan_id}             → { status, error, lines }
+//!   POST /scan-kpis                         → start a KPI scan { project_id, context_id? } → { scan_id }
+//!   GET  /kpi-scan-status/{scan_id}         → { status, error, lines }
+//!   GET  /kpi-scan-prompt/{project_id}      → the KPI-scan prompt as plain text
+//!   POST /scan-use-cases                    → start a feature scan { project_id } → { scan_id }
+//!   GET  /use-case-scan-status/{scan_id}    → { status, error, lines }
+//!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
+//!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
+//!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
+//!
+//! The last four exist for the `project-populate` skill, which conducts the
+//! app's own scan lanes from a terminal: it gates each lane on freshness, then
+//! walks the KPI proposals through the operator in waves. Everything it writes
+//! lands through the same repo functions the UI uses, so a triaged proposal is
+//! indistinguishable from one accepted on the Factory Overview cards.
 
 use std::sync::Arc;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -25,7 +39,11 @@ use tauri::{AppHandle, Manager};
 
 use crate::commands::infrastructure::context_generation::{launch_context_scan, scan_status_json};
 use crate::commands::infrastructure::kpi_scan::{kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan};
-use crate::db::models::DevProject;
+use crate::commands::infrastructure::kpi_sim::{
+    ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
+};
+use crate::commands::infrastructure::use_case_scan::{launch_use_case_scan, use_case_scan_status_json};
+use crate::db::models::{DevContext, DevContextGroup, DevKpi, DevProject, DevUseCase};
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -44,7 +62,32 @@ pub fn router(app: AppHandle) -> Router {
         .route("/scan-kpis", post(scan_kpis))
         .route("/kpi-scan-status/{scan_id}", get(kpi_scan_status))
         .route("/kpi-scan-prompt/{project_id}", get(kpi_scan_prompt_route))
+        .route("/scan-use-cases", post(scan_use_cases))
+        .route("/use-case-scan-status/{scan_id}", get(use_case_scan_status))
+        .route("/kpis/{project_id}", get(list_kpis))
+        .route("/kpi-decision", post(kpi_decision))
+        .route("/context-groups/{project_id}", get(list_context_groups))
+        .route("/contexts/{project_id}", get(list_contexts))
+        .route("/dedupe-context-groups", post(dedupe_context_groups))
+        .route("/dedupe-contexts", post(dedupe_contexts))
+        .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
+        .route("/merge-context-groups", post(merge_context_groups))
+        .route("/use-cases/{project_id}", get(list_use_cases))
+        .route("/use-case-decision", post(use_case_decision))
+        .route("/kpi-sim/prepare", post(kpi_sim_prepare))
+        .route("/kpi-sim/ingest", post(kpi_sim_ingest))
         .with_state(DevToolsHttp { app })
+}
+
+/// The port this bridge is reachable on, or `None` before `local_http` has
+/// bound. Dispatched sessions need it to reach the routes above, and it is not
+/// a constant: `local_http` takes the first free port at or above its preferred
+/// one, so it can differ between app launches. Surfacing it lets a dispatch
+/// brief name the CURRENT port as a hint while still telling the session to
+/// re-probe the range if that port stops answering.
+#[tauri::command]
+pub fn dev_tools_bridge_port() -> Option<u16> {
+    crate::local_http::port()
 }
 
 fn db(s: &DevToolsHttp) -> DbPool {
@@ -94,6 +137,12 @@ struct ScanBody {
     root_path: Option<String>,
     #[serde(default)]
     delta_mode: Option<bool>,
+    /// Scope the scan to ONE directory (repo-relative, e.g. `src/features/agents`).
+    /// Subtree scans run CONCURRENTLY with each other and each emits only its own
+    /// contexts — the mode that makes a large codebase mappable, since one session
+    /// cannot emit a whole map and stops early without saying so.
+    #[serde(default)]
+    subtree: Option<String>,
 }
 
 async fn scan_codebase(
@@ -103,7 +152,7 @@ async fn scan_codebase(
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
     let root = b.root_path.as_deref().unwrap_or("");
-    let res = launch_context_scan(s.app.clone(), &pool, &project, root, b.delta_mode.unwrap_or(false)).map_err(err)?;
+    let res = launch_context_scan(s.app.clone(), &pool, &project, root, b.delta_mode.unwrap_or(false), b.subtree.as_deref()).map_err(err)?;
     Ok(Json(res))
 }
 
@@ -114,6 +163,12 @@ async fn scan_status(State(_s): State<DevToolsHttp>, Path(scan_id): Path<String>
 #[derive(Deserialize)]
 struct ScanKpisBody {
     project_id: String,
+    /// Scope the scan to ONE context. Omit for the project-wide pass.
+    /// A context scan proposes at most 4 KPIs, all bound to that context, and
+    /// is gated only on that context's own untriaged queue — so a 236-context
+    /// sweep is never blocked by one unreviewed subsystem.
+    #[serde(default)]
+    context_id: Option<String>,
 }
 
 async fn scan_kpis(
@@ -122,7 +177,7 @@ async fn scan_kpis(
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let pool = db(&s);
     let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
-    let res = launch_kpi_scan(s.app.clone(), &pool, &project).map_err(err)?;
+    let res = launch_kpi_scan(s.app.clone(), &pool, &project, b.context_id.as_deref()).map_err(err)?;
     Ok(Json(res))
 }
 
@@ -136,4 +191,486 @@ async fn kpi_scan_prompt_route(
     Path(project_id): Path<String>,
 ) -> Result<String, (StatusCode, String)> {
     kpi_scan_prompt(&db(&s), &project_id).map_err(err)
+}
+
+#[derive(Deserialize)]
+struct ScanUseCasesBody {
+    project_id: String,
+}
+
+/// Start a feature (use-case) proposal scan. Rejects with 500 + the launcher's
+/// own message when the project has no context map yet — features are slices
+/// through the map, so the caller must scan the codebase first.
+async fn scan_use_cases(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<ScanUseCasesBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    let project = repo::get_project_by_id(&pool, &b.project_id).map_err(err)?;
+    let res = launch_use_case_scan(s.app.clone(), &pool, &project).map_err(err)?;
+    Ok(Json(res))
+}
+
+async fn use_case_scan_status(
+    State(_s): State<DevToolsHttp>,
+    Path(scan_id): Path<String>,
+) -> Json<Value> {
+    Json(use_case_scan_status_json(&scan_id))
+}
+
+#[derive(Deserialize)]
+struct KpiListQuery {
+    /// `active` · `proposed` · `paused` · `archived`. Omit for every status.
+    #[serde(default)]
+    status: Option<String>,
+}
+
+/// 404 when `project_id` matches no registered project.
+///
+/// Every list route below goes through this first. Without it a mistyped or
+/// mis-resolved id returns `200 []`, which reads as "this project has no data"
+/// — and a caller acting on that would populate the wrong project, or report an
+/// empty project as scanned. An empty collection must mean empty, not absent.
+fn require_project(s: &DevToolsHttp, project_id: &str) -> Result<DevProject, (StatusCode, String)> {
+    repo::get_project_by_id(&db(s), project_id).map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("No project registered with id {project_id}"),
+        )
+    })
+}
+
+async fn list_kpis(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Query(q): Query<KpiListQuery>,
+) -> Result<Json<Vec<DevKpi>>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    repo::list_kpis(&db(&s), &project_id, q.status.as_deref())
+        .map(Json)
+        .map_err(err)
+}
+
+/// The context map's groups — the Phase-1 freshness gate reads `updated_at`
+/// from these. Without this route a standalone run cannot tell a never-scanned
+/// project from a current one, and `context-map.json`'s mtime is no substitute
+/// (any git checkout or merge rewrites it).
+async fn list_context_groups(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Vec<DevContextGroup>>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    repo::list_context_groups(&db(&s), &project_id)
+        .map(Json)
+        .map_err(err)
+}
+
+/// Every context in the project — the sweep walks this list, one context scan
+/// at a time, and needs `file_paths` to rank which ones are worth covering
+/// first.
+async fn list_contexts(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Vec<DevContext>>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    repo::list_contexts_by_project(&db(&s), &project_id, None)
+        .map(Json)
+        .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct MergeGroupsBody {
+    project_id: String,
+    /// Explicit `from -> into` group-name pairs. Deliberately NOT inferred:
+    /// the overlaps this repairs are semantic ("Execution & Quality Data" into
+    /// "Execution Engine"), and no string rule distinguishes those from two
+    /// groups that genuinely differ. A human picks; this just applies it.
+    merges: Vec<GroupMerge>,
+    /// Also delete groups left holding no contexts after the merges.
+    #[serde(default)]
+    delete_empty: bool,
+}
+
+#[derive(Deserialize)]
+struct GroupMerge {
+    from: String,
+    into: String,
+}
+
+/// Reassign every context from one group to another, then delete the emptied
+/// source group. Unknown names are reported rather than silently ignored, so a
+/// typo in a merge plan cannot look like a successful no-op.
+async fn merge_context_groups(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<MergeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
+    let by_name: std::collections::HashMap<&str, &str> =
+        groups.iter().map(|g| (g.name.as_str(), g.id.as_str())).collect();
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let (mut moved, mut deleted) = (0usize, 0usize);
+    let mut unknown: Vec<String> = Vec::new();
+
+    for m in &b.merges {
+        let (Some(from_id), Some(into_id)) =
+            (by_name.get(m.from.as_str()), by_name.get(m.into.as_str()))
+        else {
+            unknown.push(format!("{} -> {}", m.from, m.into));
+            continue;
+        };
+        if from_id == into_id {
+            continue;
+        }
+        for c in contexts.iter().filter(|c| c.group_id.as_deref() == Some(*from_id)) {
+            if repo::move_context_to_group(&pool, &c.id, Some(into_id)).is_ok() {
+                moved += 1;
+            }
+        }
+        if repo::delete_context_group(&pool, from_id).unwrap_or(false) {
+            deleted += 1;
+        }
+    }
+
+    if b.delete_empty {
+        let after = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+        let occupied: std::collections::HashSet<&str> =
+            after.iter().filter_map(|c| c.group_id.as_deref()).collect();
+        for g in repo::list_context_groups(&pool, &b.project_id).map_err(err)? {
+            if !occupied.contains(g.id.as_str())
+                && repo::delete_context_group(&pool, &g.id).unwrap_or(false)
+            {
+                deleted += 1;
+            }
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_moved": moved,
+        "groups_deleted": deleted,
+        "unknown_pairs": unknown,
+    })))
+}
+
+/// Strip generated / non-source paths from existing contexts, deleting any
+/// context left holding nothing.
+///
+/// Repairs maps written before the write-path filter landed. An i18n subtree
+/// scan mapped 807 locale JSON files into 15 contexts (`section-locales-ar`,
+/// `-bn`, …) because the coverage counter excluded those trees but nothing
+/// stopped the scan from claiming them. Contexts that merely *include* a few
+/// non-source paths are trimmed and kept; only the ones that were entirely
+/// non-source disappear. Idempotent.
+async fn prune_nonsource_contexts(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    use crate::commands::infrastructure::context_generation::is_mappable_path;
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let (mut trimmed, mut deleted, mut paths_removed) = (0usize, 0usize, 0usize);
+
+    for c in contexts {
+        let paths: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
+        if paths.is_empty() {
+            continue;
+        }
+        let kept: Vec<String> = paths.iter().filter(|p| is_mappable_path(p)).cloned().collect();
+        if kept.len() == paths.len() {
+            continue;
+        }
+        paths_removed += paths.len() - kept.len();
+        if kept.is_empty() {
+            if repo::delete_context(&pool, &c.id).unwrap_or(false) {
+                deleted += 1;
+            }
+        } else {
+            let json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".into());
+            if repo::update_context(
+                &pool, &c.id, None, None, Some(&json),
+                None, None, None, None, None, None, None, None,
+            )
+            .is_ok()
+            {
+                trimmed += 1;
+            }
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_deleted": deleted,
+        "contexts_trimmed": trimmed,
+        "paths_removed": paths_removed,
+    })))
+}
+
+/// Remove context rows duplicated by the double-delivered protocol stream.
+///
+/// The CLI runs with `--verbose`, which emits each assistant turn as BOTH a
+/// JSON event and a plain-text line, so every `context_map_context` was parsed
+/// and inserted twice (250 duplicate names on this repo before the scan-side
+/// dedupe landed). This repairs maps written before that fix.
+///
+/// Keeps the OLDEST row of each name — the one any `context_id` reference in
+/// dev_goals / dev_kpis / milestones already points at. A PINNED duplicate wins
+/// over an unpinned one regardless of age, because pinning is a human decision
+/// and the pinned row is the curated copy. Idempotent.
+async fn dedupe_contexts(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+
+    let mut contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    contexts.sort_by(|a, c| a.created_at.cmp(&c.created_at));
+
+    let mut keeper: std::collections::HashMap<String, (String, bool)> =
+        std::collections::HashMap::new();
+    let mut to_delete: Vec<String> = Vec::new();
+    for c in &contexts {
+        match keeper.get(&c.name) {
+            None => {
+                keeper.insert(c.name.clone(), (c.id.clone(), c.pinned));
+            }
+            Some((keep_id, keep_pinned)) => {
+                if c.pinned && !keep_pinned {
+                    // The pinned copy is the curated one — keep it instead.
+                    to_delete.push(keep_id.clone());
+                    keeper.insert(c.name.clone(), (c.id.clone(), true));
+                } else {
+                    to_delete.push(c.id.clone());
+                }
+            }
+        }
+    }
+
+    let mut deleted = 0usize;
+    for id in &to_delete {
+        if repo::delete_context(&pool, id).unwrap_or(false) {
+            deleted += 1;
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "contexts_before": contexts.len(),
+        "contexts_after": contexts.len() - deleted,
+        "duplicates_deleted": deleted,
+        "distinct_names": keeper.len(),
+    })))
+}
+
+#[derive(Deserialize)]
+struct DedupeGroupsBody {
+    project_id: String,
+}
+
+/// Merge context groups that share a name into the oldest one, then delete the
+/// emptied duplicates.
+///
+/// Concurrent subtree scans could each create a group with the same name before
+/// the reuse-by-name fix landed (observed: seven "Automation & Pipelines" rows).
+/// The scan no longer produces this, but existing maps still carry it, and any
+/// future path that creates groups without checking could reintroduce it.
+///
+/// Keeps the OLDEST row of each name because that is the one existing
+/// `context_group_id` references and any hand-curated colour/domain live on.
+/// Idempotent: running it on a clean map moves nothing and deletes nothing.
+async fn dedupe_context_groups(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<DedupeGroupsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    repo::get_project_by_id(&pool, &b.project_id).map_err(|_| {
+        (
+            StatusCode::NOT_FOUND,
+            format!("No project registered with id {}", b.project_id),
+        )
+    })?;
+
+    let mut groups = repo::list_context_groups(&pool, &b.project_id).map_err(err)?;
+    // Oldest first, so the first occurrence of each name is the keeper.
+    groups.sort_by(|a, b| a.created_at.cmp(&b.created_at));
+
+    let contexts = repo::list_contexts_by_project(&pool, &b.project_id, None).map_err(err)?;
+    let mut keeper: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut merged_away: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    for g in &groups {
+        match keeper.get(&g.name) {
+            None => {
+                keeper.insert(g.name.clone(), g.id.clone());
+            }
+            Some(keep_id) => {
+                merged_away.insert(g.id.clone(), keep_id.clone());
+            }
+        }
+    }
+
+    let mut contexts_moved = 0usize;
+    for c in contexts {
+        let Some(gid) = c.group_id.as_deref() else { continue };
+        if let Some(keep_id) = merged_away.get(gid) {
+            if repo::move_context_to_group(&pool, &c.id, Some(keep_id)).is_ok() {
+                contexts_moved += 1;
+            }
+        }
+    }
+
+    // Delete only after every context has been reassigned — a group deleted
+    // while it still owns contexts would orphan them.
+    let mut groups_deleted = 0usize;
+    for dup_id in merged_away.keys() {
+        if repo::delete_context_group(&pool, dup_id).unwrap_or(false) {
+            groups_deleted += 1;
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "groups_before": groups.len(),
+        "groups_after": groups.len() - groups_deleted,
+        "groups_deleted": groups_deleted,
+        "contexts_moved": contexts_moved,
+    })))
+}
+
+#[derive(Deserialize)]
+struct UseCaseListQuery {
+    #[serde(default)]
+    status: Option<String>,
+}
+
+/// The feature inventory — the Phase-2 freshness gate, and the way a caller
+/// sees how many proposals already await review before starting another scan.
+async fn list_use_cases(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+    Query(q): Query<UseCaseListQuery>,
+) -> Result<Json<Vec<DevUseCase>>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    repo::list_use_cases(&db(&s), &project_id, q.status.as_deref())
+        .map(Json)
+        .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct UseCaseDecisionBody {
+    use_case_id: String,
+    /// `active` accepts the proposal, `archived` rejects it (and stops it being
+    /// re-proposed), `proposed` returns it to the queue.
+    status: String,
+}
+
+/// Accept or reject one use-case proposal. The sibling of `/kpi-decision`, and
+/// it exists for the same reason: the feature inventory is the layer KPIs
+/// attach to, so a terminal session that cannot triage it can only ever produce
+/// project-level metrics.
+async fn use_case_decision(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<UseCaseDecisionBody>,
+) -> Result<Json<DevUseCase>, (StatusCode, String)> {
+    const ALLOWED: [&str; 3] = ["proposed", "active", "archived"];
+    if !ALLOWED.contains(&b.status.as_str()) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("status must be one of {ALLOWED:?}, got {:?}", b.status),
+        ));
+    }
+    repo::update_use_case(
+        &db(&s),
+        &b.use_case_id,
+        None,
+        None,
+        None,
+        None,
+        Some(&b.status),
+        None,
+        None,
+    )
+    .map(Json)
+    .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct KpiSimBody {
+    project_id: String,
+    /// Ingest only — defaults to the newest un-ingested run.
+    #[serde(default)]
+    run_dir: Option<String>,
+}
+
+/// Write `<repo>/kpi-sim/snapshot.json`. The simulation skill refuses to run
+/// without it and only the app may produce it, so a dispatched session needs
+/// this route to open its own simulation phase.
+async fn kpi_sim_prepare(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<KpiSimBody>,
+) -> Result<Json<KpiSimPrepared>, (StatusCode, String)> {
+    prepare_kpi_sim(&db(&s), &b.project_id).map(Json).map_err(err)
+}
+
+/// Ingest a finished simulation run. Same validation and idempotency as the IPC
+/// command — a run dir is marked once ingested and refused on a second attempt.
+async fn kpi_sim_ingest(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<KpiSimBody>,
+) -> Result<Json<KpiSimIngestSummary>, (StatusCode, String)> {
+    ingest_kpi_sim(&db(&s), &b.project_id, b.run_dir)
+        .map(Json)
+        .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct KpiDecisionBody {
+    kpi_id: String,
+    /// `active` adopts the proposal, `archived` rejects it, `paused` defers it.
+    status: String,
+    /// Optional operator-adjusted target, applied in the same write as the
+    /// status so an "adopt with a different number" decision is one row change.
+    #[serde(default)]
+    target_value: Option<f64>,
+}
+
+/// Record one triage decision on a KPI. The skill calls this once per proposal
+/// as the operator answers, rather than batching, so an interrupted run leaves
+/// every already-answered proposal correctly filed.
+async fn kpi_decision(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<KpiDecisionBody>,
+) -> Result<Json<DevKpi>, (StatusCode, String)> {
+    const ALLOWED: [&str; 4] = ["active", "proposed", "paused", "archived"];
+    if !ALLOWED.contains(&b.status.as_str()) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!("status must be one of {ALLOWED:?}, got {:?}", b.status),
+        ));
+    }
+    repo::update_kpi(
+        &db(&s),
+        &b.kpi_id,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        b.target_value.map(Some),
+        None,
+        None,
+        Some(&b.status),
+        None,
+        None,
+        None,
+        None,
+    )
+    .map(Json)
+    .map_err(err)
 }

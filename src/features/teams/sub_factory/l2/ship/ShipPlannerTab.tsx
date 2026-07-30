@@ -23,6 +23,7 @@ import {
   type ExitCriterion, type ScopeBucket, type ShipMilestoneVM,
 } from './shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
+import { ShipVelocityNote } from './ShipVelocityNote';
 import { useShipData, type ShipData } from './useShipData';
 
 const STATUS_META: Record<ShipMilestoneVM['status'], { hue: string; icon: typeof Check }> = {
@@ -124,9 +125,18 @@ function Workspace({ vm, ship, editable, t, tx }: {
     ...ship.features.filter((f) => !memberIds.has(f.id)).map((f) => ({ f, bucket: null, afterCut: false })),
   ];
   const coreReady = core.filter((mm) => mm.feature.ready).length;
+  // An empty ledger is not worth a panel: a header, a count of zero and a card
+  // saying nothing is there costs more attention than it returns. Each side
+  // hides when it holds nothing. The one exception is a milestone with NOTHING
+  // on either side, where hiding both would leave a workspace with no way
+  // forward: there, the cut keeps its empty state as the single call to action.
+  const showCut = core.length > 0 || outside.length === 0;
+  const showOutside = outside.length > 0;
 
   return (
     <>
+      {showCut && (
+      <>
       <LedgerHeader
         title={t.ship.in_the_cut}
         count={tx(t.ship.in_the_cut_count, { done: coreReady, total: core.length })}
@@ -154,11 +164,17 @@ function Workspace({ vm, ship, editable, t, tx }: {
             />
           ))}
           {core.length === 0 && (
-            <LedgerEmpty testid="ship-cut-empty">{t.ship.cut_empty_planner}</LedgerEmpty>
+            <LedgerEmpty testid="ship-cut-empty">
+              {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.cut_empty_planner}
+            </LedgerEmpty>
           )}
         </LedgerList>
       </div>
+      </>
+      )}
 
+      {showOutside && (
+      <>
       <LedgerHeader title={t.ship.outside_the_cut} count={outside.length} aside={t.ship.outside_the_cut_aside} muted />
       <LedgerList testid="ship-outside-list">
         {outside.map(({ f, bucket, afterCut }, i) => (
@@ -194,18 +210,9 @@ function Workspace({ vm, ship, editable, t, tx }: {
             )}
           />
         ))}
-        {outside.length === 0 && (
-          // Same dashed card as the cut's empty slot. Blue when there is nothing
-          // to pull from yet (an invitation), grey when everything is already in
-          // the cut (nothing is wrong, there is simply nothing left).
-          <LedgerEmpty
-            tone={ship.features.length === 0 ? 'setup' : 'neutral'}
-            testid="ship-outside-empty"
-          >
-            {ship.features.length === 0 ? t.ship.outside_empty_no_features : t.ship.outside_empty_all_in}
-          </LedgerEmpty>
-        )}
       </LedgerList>
+      </>
+      )}
     </>
   );
 }
@@ -290,6 +297,7 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
               );
             })}
           </div>
+          <ShipVelocityNote rows={ship.roadmap.map((ms) => ms.row)} vm={vm} />
         </div>
         {editable && !composing && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-2">

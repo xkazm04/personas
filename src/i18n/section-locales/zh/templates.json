@@ -657,7 +657,10 @@
       "ready": "就绪",
       "partial": "部分",
       "blocked": "受阻"
-    }
+    },
+    "credential_failing": "凭据健康检查失败",
+    "credential_ready_named": "就绪 — {name}",
+    "connector_not_installed": "连接器未安装"
   },
   "card": {
     "use_cases_label": "用例",

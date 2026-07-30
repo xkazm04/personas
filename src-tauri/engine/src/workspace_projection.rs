@@ -310,6 +310,7 @@ mod tests {
             valid_from: None,
             valid_to: None,
             decided_at: None,
+            harvest_scope: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
         }

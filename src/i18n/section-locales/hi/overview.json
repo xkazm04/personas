@@ -246,11 +246,7 @@
   },
   "knowledge": {
     "title": "ज्ञान ग्राफ़",
-    "patterns_library_tab": "पैटर्न",
-    "extracted_tab": "निकाले गए",
-    "patterns_no_workspace_title": "अभी कोई वर्कस्पेस नहीं",
-    "patterns_no_workspace_desc": "प्रथाएँ प्रति वर्कस्पेस एकत्र की जाती हैं। साझा लाइब्रेरी बनाना शुरू करने के लिए एक वर्कस्पेस बनाएँ और उसमें प्रोजेक्ट जोड़ें।",
-    "patterns_workspace_picker": "वर्कस्पेस चुनें",
+    "patterns_tab": "पैटर्न",
     "search_placeholder": "पैटर्न खोजें...",
     "sort_aria": "पैटर्न क्रमबद्ध करें",
     "sort_default": "शीर्ष पैटर्न",
@@ -281,7 +277,12 @@
     "failures": "विफलताएँ",
     "avg_cost": "औसत लागत",
     "avg_duration": "औसत अवधि",
-    "pattern_data": "पैटर्न डेटा"
+    "pattern_data": "पैटर्न डेटा",
+    "extracted_tab": "निकाले गए",
+    "patterns_library_tab": "पैटर्न",
+    "patterns_no_workspace_desc": "प्रथाएँ प्रति वर्कस्पेस एकत्र की जाती हैं। साझा लाइब्रेरी बनाना शुरू करने के लिए एक वर्कस्पेस बनाएँ और उसमें प्रोजेक्ट जोड़ें।",
+    "patterns_no_workspace_title": "अभी कोई वर्कस्पेस नहीं",
+    "patterns_workspace_picker": "वर्कस्पेस चुनें"
   },
   "dashboard": {
     "greeting_morning": "सुप्रभात",

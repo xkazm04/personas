@@ -153,3 +153,68 @@ describe("credentialSlice — delete vs. in-flight fetch race", () => {
     expect(h.get().recentlyDeletedCredentialIds.size).toBe(0);
   });
 });
+
+describe("credentialSlice — healthcheck result sync", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    clockBase += 200_000;
+    vi.setSystemTime(clockBase);
+    vi.mocked(credApi.listCredentials).mockReset();
+    vi.mocked(credApi.healthcheckCredential).mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("writes the outcome back onto the stored credential", async () => {
+    const h = makeHarness();
+    vi.mocked(credApi.listCredentials).mockResolvedValue([cred("A")]);
+    await h.get().fetchCredentials();
+    expect(h.get().credentials[0]?.healthcheck_last_success).toBeNull();
+
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success: true, message: "ok", state: "verified" });
+    await h.get().healthcheckCredential("A");
+
+    const stored = h.get().credentials[0];
+    expect(stored?.healthcheck_last_success).toBe(true);
+    expect(stored?.healthcheck_last_message).toBe("ok");
+    expect(stored?.healthcheck_last_tested_at).toBe(new Date(clockBase).toISOString());
+    expect(stored?.healthcheck_last_success_at).toBe(new Date(clockBase).toISOString());
+  });
+
+  it("a failure records the failure without erasing when it last worked", async () => {
+    const h = makeHarness();
+    vi.mocked(credApi.listCredentials).mockResolvedValue([cred("A")]);
+    await h.get().fetchCredentials();
+
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success: true, message: "ok", state: "verified" });
+    await h.get().healthcheckCredential("A");
+    const successAt = h.get().credentials[0]?.healthcheck_last_success_at;
+
+    vi.setSystemTime(clockBase + 60_000);
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success: false, message: "401", state: "failed" });
+    await h.get().healthcheckCredential("A");
+
+    const stored = h.get().credentials[0];
+    expect(stored?.healthcheck_last_success).toBe(false);
+    expect(stored?.healthcheck_last_message).toBe("401");
+    expect(stored?.healthcheck_last_success_at).toBe(successAt);
+  });
+
+  it("leaves the stored outcome alone when the probe never ran", async () => {
+    const h = makeHarness();
+    vi.mocked(credApi.listCredentials).mockResolvedValue([cred("A")]);
+    await h.get().fetchCredentials();
+
+    vi.mocked(credApi.healthcheckCredential).mockResolvedValue({ success: true, message: "ok", state: "verified" });
+    await h.get().healthcheckCredential("A");
+
+    vi.mocked(credApi.healthcheckCredential).mockRejectedValue(new Error("ipc down"));
+    const result = await h.get().healthcheckCredential("A");
+
+    expect(result.success).toBe(false);
+    // The transport failed; the credential's real last-known state is untouched.
+    expect(h.get().credentials[0]?.healthcheck_last_success).toBe(true);
+  });
+});

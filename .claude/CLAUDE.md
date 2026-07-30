@@ -12,6 +12,8 @@ npm run tauri dev        # Full Tauri desktop dev mode
 npx tsc --noEmit         # TypeScript check (tsc not on PATH on Windows)
 npm run lint             # ESLint
 npm run test             # Vitest (2,400+ tests)
+npm run test:rust        # Rust unit tests (app_lib, --features desktop)
+npm run test:rust:crates # Rust unit tests for the extracted crates only
 npx vite build           # Production frontend build
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
@@ -44,6 +46,7 @@ Quick reference of the most common scripts:
 - **`lld-link: machine type x64 conflicts with arm64`** — host-triple drift. Most common cause is also the well-known one: **pyke's `ort-sys 2.0.0-rc.9` ships a mislabeled aarch64 tarball that's actually x64 inside**. `pretauri:dev`/`pretauri:build` run `scripts/ensure-ort-cache.mjs` automatically before the cargo build, which sniffs the cached `onnxruntime.lib`'s real machine type and swaps it with Microsoft's official ORT release if it doesn't match the host. Idempotent and self-healing — if `clean:ort` ever wipes the cache, the next dev/build re-applies the fix. If you still hit this error: run `npm run ensure:ort-cache` manually and check its output.
 - **`Port 1420 is already in use`** — a previous `tauri dev` failed mid-startup and orphaned Vite. Find it with `netstat -ano | findstr :1420` (or `Get-NetTCPConnection -LocalPort 1420` in PowerShell), then `Stop-Process -Id <PID> -Force`. This recurs often enough that automating the kill in `pretauri:dev` is a tracked follow-up.
 - **`npm run clean:ort` (surgical, ~5 min recompile)** — wipes ort/ort-sys build artifacts + pyke's download cache. Use after switching Rust hosts. The next `npm run tauri:dev` will re-run `ensure-ort-cache.mjs` and repopulate.
+- **`cargo test` exits 127 (`0xc0000139`) with no output on Windows** — this is the *loader* failing, not a test failing. The dependency graph (tauri dialog APIs → rfd) imports `TaskDialogIndirect`, which exists only in the **comctl32 v6** side-by-side assembly; test binaries carry no manifest requesting it, so they die before `main()`. tauri-build embeds the needed manifest into BIN targets only, which is why the app always worked. **Use `npm run test:rust`** — it embeds the manifest post-link (needs the Windows SDK's `mt.exe`; override with `MT_EXE`). Diagnose any binary with `node scripts/build/inspect-pe-imports.mjs <exe>`, which reports imported DLLs and whether a manifest is embedded. This cannot be fixed in `build.rs`: cargo has no directive targeting the *lib unit-test* binary (`rustc-link-arg-tests` reaches only `tests/`), and the catch-all `rustc-link-arg` also hits the app binary (`CVT1100: duplicate resource`) and the cdylib (`LNK1327`).
 - **`npm run clean:rust` (nuclear, ~10+ min)** — full `cargo clean`. Last resort.
 - `predev` auto-detects rustc host-triple drift via `scripts/check-build-cache.mjs`.
 
@@ -475,6 +478,14 @@ There is no scheduled `/guide-sync` cron — the per-session model is the entire
 ## Context Map
 
 This project has a Vibeman-generated context map at `context-map.json` (repo root). It maps every file to a feature ("context"), grouped by business domain. **Before editing code, read `context-map.json` to find the relevant context and scope your changes to its `filePaths`.** The `index` field is a quick one-line-per-context overview. If you change which files a context owns, update `context-map.json` to match (or run Vibeman's refresh) so it stays accurate.
+
+### ⚠ Two different maps currently claim this file
+
+`context-map.json` as committed today is **Vibeman's** artifact — `$schema: vibeman.dev/…`, `version: "2.0.0"` (string), `projectId f8698d31-…`, and `projectPath C:\Users\mkdol\dolla\personas` (a different machine). It describes **12 groups / 236 contexts**.
+
+The **Personas app writes its own file to the same path** (`context_map_export.rs`, after every context scan) in a different format — no `$schema`, `version: 2` as an integer, and the app's own `projectId`. Its map, which is what the database holds and what every app feature reads, is **8 groups / 49 contexts**. The generated block at the top of the root `CLAUDE.md` reports those numbers.
+
+So the counts in the root `CLAUDE.md` and the contents of `context-map.json` disagree, and both are honest — they come from different tools. **The database is the authority for anything the app does** (context-scoped KPI scans, the improve plan, Ship footprints); the committed file is a stale foreign snapshot until the app's next context scan overwrites it. Read the file for a quick orientation if you like, but size any per-context work off the app's 49, not the file's 236 — a 2026-07-29 session sized a KPI sweep at 236 from this file and was wrong by ~5×.
 <!-- vibeman:context-map:end -->
 
 ## Model & reasoning effort — when to tell the user to change them

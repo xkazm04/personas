@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "Пользовательский"
+    "platform_custom": "Пользовательский",
+    "st_last_checked": "Последняя проверка",
+    "st_retest": "Проверить снова",
+    "st_stale": "устарело: {count}",
+    "test_diff_recovered": "восстановлено: {count}",
+    "test_diff_regressed": "новых сбоев: {count}",
+    "test_diff_failing": "сбоев: {count}",
+    "status_unverifiable": "Не проверяется",
+    "st_unverifiable": "не проверяется: {count}",
+    "st_filter_toggle": "Показать только эти",
+    "st_filter_clear": "Показать все коннекторы",
+    "st_filter_empty": "Нет коннекторов, соответствующих фильтру"
   },
   "model_config": {
     "model_provider": "Модель и провайдер",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "Без группы",
     "batch_moved_success": "Перемещено {count} персон в {group}",
     "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
+    "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
     "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
     "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать.",
     "badge_archived": "В архиве",

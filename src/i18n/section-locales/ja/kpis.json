@@ -237,5 +237,12 @@
   "suggest_retire": "{name} を廃止",
   "suggest_sources": "{count} 件のソース",
   "suggest_title": "シミュレーション提案 ({count})",
-  "define_kpi": "KPI を定義"
+  "define_kpi": "KPI を定義",
+  "populate_lane_contexts": "コンテキストマップ",
+  "populate_lane_features": "機能",
+  "populate_lane_kpis": "KPI指標",
+  "populate_lane_simulation": "シミュレートされたKPIデータ",
+  "populate_lane_simulation_detail": "まだリリースされていない製品向け: 機能を代表的なユーザーとして歩かせて採用されるKPIを推定し、比較可能な製品から目標値を調査します。最も時間のかかるステップです。",
+  "populate_scope_empty": "カバーする項目を少なくとも1つ選択してください。",
+  "populate_scope_heading": "この実行でカバーする内容"
 }

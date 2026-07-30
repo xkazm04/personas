@@ -246,11 +246,7 @@
   },
   "knowledge": {
     "title": "ナレッジグラフ",
-    "patterns_library_tab": "パターン",
-    "extracted_tab": "抽出済み",
-    "patterns_no_workspace_title": "ワークスペースがありません",
-    "patterns_no_workspace_desc": "プラクティスはワークスペースごとに集約されます。ワークスペースを作成してプロジェクトを割り当てると、共有ライブラリの構築を開始できます。",
-    "patterns_workspace_picker": "ワークスペースを選択",
+    "patterns_tab": "パターン",
     "search_placeholder": "パターンを検索...",
     "sort_aria": "パターンを並べ替え",
     "sort_default": "トップパターン",
@@ -281,7 +277,12 @@
     "failures": "失敗",
     "avg_cost": "平均コスト",
     "avg_duration": "平均所要時間",
-    "pattern_data": "パターンデータ"
+    "pattern_data": "パターンデータ",
+    "extracted_tab": "抽出済み",
+    "patterns_library_tab": "パターン",
+    "patterns_no_workspace_desc": "プラクティスはワークスペースごとに集約されます。ワークスペースを作成してプロジェクトを割り当てると、共有ライブラリの構築を開始できます。",
+    "patterns_no_workspace_title": "ワークスペースがありません",
+    "patterns_workspace_picker": "ワークスペースを選択"
   },
   "dashboard": {
     "greeting_morning": "おはようございます",

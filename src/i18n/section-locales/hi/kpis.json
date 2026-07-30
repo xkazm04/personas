@@ -237,5 +237,12 @@
   "suggest_retire": "{name} रिटायर करें",
   "suggest_sources": "{count} स्रोत",
   "suggest_title": "सिमुलेशन सुझाव ({count})",
-  "define_kpi": "KPI तय करें"
+  "define_kpi": "KPI तय करें",
+  "populate_lane_contexts": "संदर्भ मानचित्र",
+  "populate_lane_features": "सुविधाएं",
+  "populate_lane_kpis": "केपीआई",
+  "populate_lane_simulation": "अनुरूपित केपीआई डेटा",
+  "populate_lane_simulation_detail": "उस उत्पाद के लिए जो अभी लॉन्च नहीं हुआ है: यह आपकी सुविधाओं को प्रतिनिधि उपयोगकर्ताओं के रूप में चलाकर अपनाए गए केपीआई का अनुमान लगाता है, और तुलनीय उत्पादों से लक्ष्यों पर शोध करता है। यह सबसे लंबा चरण है।",
+  "populate_scope_empty": "कवर करने के लिए कम से कम एक चीज़ चुनें।",
+  "populate_scope_heading": "यह रन क्या कवर करेगा"
 }

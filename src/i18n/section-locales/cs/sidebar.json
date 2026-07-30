@@ -15,10 +15,6 @@
   "manual_review": "Ruční kontrola",
   "messages": "Zprávy",
   "knowledge": "Znalosti",
-  "memories": "Vzpomínky",
-  "patterns": "Vzory",
-  "extracted": "Extrahované",
-  "memory_graph": "Graf",
   "sla": "SLA",
   "cron_agents": "Cron agenti",
   "schedules": "Plány",
@@ -95,5 +91,9 @@
   "group_monitoring": "Monitorování",
   "group_operations": "Provoz",
   "group_plugins": "Pluginy",
-  "group_templates": "Šablony"
+  "group_templates": "Šablony",
+  "extracted": "Extrahované",
+  "memories": "Vzpomínky",
+  "memory_graph": "Graf",
+  "patterns": "Vzory"
 }

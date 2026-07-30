@@ -13,10 +13,16 @@ import { IMPACT_META, type ActionSpec } from './actionConfirmCatalog';
 
 const TITLE_ID = 'passport-action-confirm-title';
 
-export function ActionConfirmModal({ spec, onConfirm, onClose }: {
+export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDisabled }: {
   spec: ActionSpec;
   onConfirm: () => void;
   onClose: () => void;
+  /** Controls that change what confirming actually does (the populate action's
+   *  lane picker is the first). Actions without a choice to make pass nothing. */
+  extra?: React.ReactNode;
+  /** Block confirmation while `extra`'s choice is incomplete — e.g. a scope
+   *  with every lane unticked, where confirming would run nothing. */
+  confirmDisabled?: boolean;
 }) {
   const { t } = useTranslation();
   const Icon = spec.icon;
@@ -65,6 +71,11 @@ export function ActionConfirmModal({ spec, onConfirm, onClose }: {
             ))}
           </dl>
 
+          {/* Optional per-action controls that change what confirming DOES —
+              rendered above "What happens" because the steps below describe
+              the choice made here. */}
+          {extra ? <div className="mt-4">{extra}</div> : null}
+
           <div className="mt-4 grid md:grid-cols-2 gap-4">
             {/* what happens, in order */}
             <section className="min-w-0">
@@ -111,8 +122,9 @@ export function ActionConfirmModal({ spec, onConfirm, onClose }: {
           </button>
           <button
             type="button"
+            disabled={confirmDisabled}
             onClick={() => { onClose(); onConfirm(); }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-interactive typo-body-lg font-semibold transition-colors focus-ring"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-interactive typo-body-lg font-semibold transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ color: impact.hue, background: `${impact.hue}22`, border: `1px solid ${impact.hue}55` }}
             data-testid="passport-action-confirm-yes"
           >

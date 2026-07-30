@@ -657,7 +657,10 @@
       "ready": "Prêt",
       "partial": "Partiel",
       "blocked": "Bloqué"
-    }
+    },
+    "credential_failing": "Échec du contrôle d'intégrité",
+    "credential_ready_named": "Prêt — {name}",
+    "connector_not_installed": "Connecteur non installé"
   },
   "card": {
     "use_cases_label": "Cas d'usage",

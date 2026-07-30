@@ -657,7 +657,10 @@
       "ready": "तैयार",
       "partial": "आंशिक",
       "blocked": "अवरुद्ध"
-    }
+    },
+    "credential_failing": "क्रेडेंशियल हेल्थचेक विफल",
+    "credential_ready_named": "तैयार — {name}",
+    "connector_not_installed": "कनेक्टर इंस्टॉल नहीं है"
   },
   "card": {
     "use_cases_label": "उपयोग मामले",

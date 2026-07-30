@@ -111,7 +111,11 @@ mod tests {
         assert_eq!(slugify("   ", "fallback", None), "fallback");
         assert_eq!(
             slugify("a very long title that exceeds forty characters for sure", "goal", Some(10)),
-            "averylongt"
+            // Separators are kept and the result is truncated to `max` AFTER
+            // slugification — consistent with the "hello-world" case above.
+            // The old expectation ("averylongt") assumed hyphens were stripped,
+            // which the first assertion in this same test contradicts.
+            "a-very-lon"
         );
     }
 

@@ -23,7 +23,7 @@ Nothing on the Ship surface is typed in by a user as a number. The rows record o
 - which goals are bound as its objective,
 - the status of the milestone and the timestamps of its transitions.
 
-Everything else, progress, the context footprint, the four exit criteria and the overall verdict, is **derived at read time** in `useShipData.ts` by joining those decisions against signals the Factory already trusts: context health from Sentry attribution, active KPIs, use-case slices, and whether the project's monitoring / LLM-tracking connectors are bound.
+Everything else, progress, the context footprint, the exit criteria and the overall verdict, is **derived at read time** in `useShipData.ts` by joining those decisions against signals the Factory already trusts: context health from Sentry attribution, active KPIs, use-case slices, and whether the project's monitoring / LLM-tracking connectors are bound.
 
 Contexts are deliberately **never** members of a milestone (`src-tauri/db/src/repos/dev_tools.rs:6923` pins this with a test). They follow from the core use cases' slices, so re-scanning the codebase reshapes the footprint without anyone re-picking anything.
 
@@ -54,7 +54,7 @@ The strip is inert when no `onOpenShip` handler is supplied.
 | `status` | CHECK-constrained to `planned` / `active` / `shipped` |
 | `order_index` | roadmap ordering; assigned as `MAX+1` at create |
 | `target_date` | optional; rendered by the cover strip and the timeline card |
-| `cut_at` | stamped once, on the first transition to `active`. **The scope-creep baseline** |
+| `cut_at` | stamped once: at INSERT when the milestone is created `active`, otherwise on the first transition to `active`. **The scope-creep baseline** |
 | `shipped_at` | stamped on transition to `shipped` |
 | `created_at`, `updated_at` | |
 
@@ -100,19 +100,27 @@ planned  --[Certify cut]-->  active  --[Certify ship]-->  shipped
              (first time only)
 ```
 
-**planned → active ("Certify cut").** Ungated: the button is always enabled for a planned milestone. `update_milestone` stamps `cut_at` with `CASE WHEN ?2 = 'active' AND cut_at IS NULL` (`dev_tools.rs:6763-6769`), so a milestone that is re-activated after being moved around keeps its original baseline. From this point, every **new** membership is flagged as scope creep.
+**planned → active ("Certify cut").** Ungated: the button is always enabled for a planned milestone. `update_milestone` stamps `cut_at` with `CASE WHEN ?2 = 'active' AND cut_at IS NULL`, so a milestone that is re-activated after being moved around keeps its original baseline. From this point, every **new** membership is flagged as scope creep.
 
-**active → shipped ("Certify ship").** Gated: the button is disabled while `shipVerdict(vm.criteria) !== 'go'`, that is, while any of the four exit criteria is anything other than met. The tooltip switches between "Every criterion reads GO. Ship it" and "Blocked until every exit criterion reads GO". The transition stamps `shipped_at` unconditionally.
+A milestone can also be BORN cut. `create_milestone` stamps `cut_at` in the same INSERT when it is created with `status = 'active'` (`CASE WHEN ?5 = 'active' THEN ?8 ELSE NULL END`), because such a milestone never passes through the transition above. This closes a real hole: the seeded onboarding milestone (§9) is created directly active, so before this its baseline stayed NULL forever and the creep flag never fired on the one milestone most projects will ever have. A migration (`dev_milestones.backfill_cut_at`) repairs rows already on disk by setting `cut_at = created_at` for active milestones with no stamp.
+
+**active → shipped ("Certify ship").** Gated: the button is disabled while `shipVerdict(vm.criteria) !== 'go'`, that is, while any registered exit criterion is anything other than met. The tooltip switches between "Every criterion reads GO. Ship it" and "Blocked until every exit criterion reads GO". The transition stamps `shipped_at` unconditionally.
 
 **shipped.** `editable` becomes false, so the lifecycle button, the compose button and every bucket / promote / remove action disappear. The milestone becomes a read-only record; its progress reads 100 percent and its target label becomes `shipped <date>`.
 
-The gate is UI-side only. `update_milestone` itself validates the enum but does not refuse a `shipped` transition on an unmet criterion, because criteria are derived client-side and the backend has no view of them.
+The CRITERIA gate is UI-side only: `update_milestone` has no view of client-derived criteria, so it cannot refuse a `shipped` transition on an unmet one. It does enforce the LIFECYCLE, though. A direct `planned → shipped` jump is rejected with an `AppError::Validation` ("A milestone must be cut (set active) before it can be shipped"), so no caller outside the UI, the management HTTP API, a Fleet dispatch or the A2A gateway, can ship a milestone that was never cut. The row is left unchanged on refusal.
+
+Still open by design: `create_milestone` accepts `status: 'shipped'` at creation, producing a milestone with neither stamp. Same class of hole, not yet closed.
 
 **Not implemented in the UI:** setting or editing `target_date`, reordering milestones (`order_index`), renaming, editing the milestone `goal` sentence after creation, and deleting a milestone. The API wrappers (`updateMilestone` patch fields, `deleteMilestone`) and the Rust commands all exist and are tested, but nothing on the Ship surface calls them. Milestones created here always land at `order_index = MAX+1` with no target date, except the onboarding seed (see §9).
 
-## 5. The four exit criteria
+## 5. The exit criteria
 
-Built per milestone in `useShipData.ts:182-226`. Each one carries a label, a derived evidence string, a `done/total` pair rendered on the chip, and a state.
+Criteria live in a **registry**: `SHIP_CRITERIA` in `shipCriteria.ts` is one table of self-describing `{ id, label, derive }` entries, and `deriveCriteria` runs it per milestone. Adding a criterion is an append to that table, not surgery inside the hook. `useShipData` iterates the registry and knows nothing about individual criteria.
+
+`derive` is pure. It receives the milestone's decisions (the row, its CORE members, its bound goals) plus the signals the Factory already trusts (the derived footprint, sensor wiring) and returns `{ evidence, done, total, state }`. Each criterion carries a label, a derived evidence string, a `done/total` pair rendered on the chip, and a state.
+
+**Every registered criterion is active for every milestone.** Per-milestone opt-in is deliberately not built: it needs a schema column, and a criterion a project can switch off stops meaning anything. That remains the open follow-up if projects ever genuinely need different bars.
 
 State vocabulary (`shipModel.ts:17-18`): `go` = met, `warn` = partial, `nogo` = blocking, `setup` = the sensor or the scope is not wired yet.
 
@@ -122,6 +130,9 @@ State vocabulary (`shipModel.ts:17-18`): `go` = met, `warn` = partial, `nogo` = 
 | **KPI coverage on core scope** (`kpi`) | footprint contexts with at least one active KPI / footprint size | empty footprint → `setup`; full coverage → `go`; otherwise `warn` | "N of M core contexts carry an active KPI" |
 | **Objective bound** (`objective`) | 1 or 0 / 1 | at least one bound goal → `go`, otherwise `setup` | the bound goal names joined with " · ", otherwise "Bind a measurable goal from the composer" |
 | **Sensors wired** (`sensors`) | (monitoring wired ? 1 : 0) + (LLM tracking wired ? 1 : 0) / 2 | both → `go`, otherwise `setup` | "Monitoring + LLM tracking both report" or "Bind monitoring / LLM connectors in Observability" |
+| **Scope frozen** (`scope-frozen`) | core members not flagged `added_after_cut` / core members | `cut_at` null → `setup` (no baseline, so the flag carries no information); no flagged member → `go`; otherwise `warn` | "Nothing joined the cut after certification", or "N added after the cut: <names>" |
+
+`scope-frozen` is `warn` rather than `nogo` on purpose: growing a cut is a legitimate decision, and this layer's job is to make it legible, not to block it. But because `warn` folds into `shipVerdict`, a milestone that kept growing after certification can no longer certify as shipped without the operator seeing the creep first. The per-member `added_after_cut` flag it reads is derived by the backend against `cut_at` (§6).
 
 "Healthy" for the contexts criterion means `tone === 'ok'` specifically, so a context with zero KPIs (`setup` tone) also counts as unhealthy there. That is intentional overlap with the KPI criterion: an unmeasured context fails both.
 
@@ -130,6 +141,19 @@ The sensor booleans come straight off the project row: `llmWired = Boolean(proje
 **The verdict.** `shipVerdict` (`shipModel.ts:129-135`) folds the four states with a fixed precedence: `nogo` > `setup` > `warn` > `go`. Anything short of all-four-`go` blocks the ship certification. Note that `setup` outranks `warn`, so an unwired sensor is treated as more urgent than partial coverage: you cannot judge what you cannot measure.
 
 Criterion chips render in the content header with a border and text in the criterion's hue (emerald / amber / red / blue), the `done/total` figure, and a native tooltip carrying the evidence line.
+
+### Cycle-time forecast
+
+`shipVelocity.ts` is the one consumer of `cut_at` / `shipped_at` beyond the date label. It is pure and takes `DevMilestone[]`:
+
+- **Evidence.** Every `shipped` milestone carrying BOTH stamps is one observed cut-to-ship cycle. Rows whose `shipped_at` precedes their `cut_at` (clock skew, a hand-edited row) are dropped rather than counted as a negative cycle.
+- **Median, not mean.** One milestone that sat for 90 days must not drag the estimate for the well-behaved ones.
+- **The evidence bar.** Below `MIN_SAMPLES` (2) observed cycles, `deriveShipVelocity` returns `null` and both surfaces say plainly that there is no history yet. A forecast is never rendered from one data point.
+- **The subject.** The forecast is about the next unshipped milestone, chosen with the same rule the cover strip uses (the active cut, else the lowest-ordered planned). A shipped milestone never carries a forecast: it has a real date.
+- **The basis.** Counted forward from the milestone's `cut_at` when it is cut (`basis: 'cut'`), otherwise from today, and the copy says "if cut today" (`basis: 'today'`) so the assumption is visible.
+- **Against the target.** Both dates are `yyyy-mm-dd`, so `late` is a plain string compare. A late forecast is stated factually next to the target, not raised as an alarm.
+
+Surfaced in two places: `ShipVelocityNote` under the criteria chips in the Planner's content header, and the cover roadmap strip, where `buildCoverRoadmap` folds `forecast` into its view model beside the next milestone's target date.
 
 ## 6. Scope buckets and the footprint
 
@@ -150,12 +174,12 @@ This exists so that scope growth after certification is a visible, permanent fac
 
 ### The derived footprint
 
-`useShipData.ts:173-177`: take the CORE members only, flatten their features' context names, dedupe, and resolve back to `ShipContext` records. Later and never members contribute nothing.
+`deriveFootprint` in `shipDerive.ts`: take the CORE members only, flatten their features' context **ids**, dedupe, and resolve back to `ShipContext` records. Later and never members contribute nothing.
 
 Consequences worth knowing:
 
 - Adding a feature to the cut automatically pulls in every context it slices. The composer's footprint strip is labelled to say so ("every row pulled its contexts into the footprint above").
-- The footprint is matched **by context name**, not id, because features carry display-ready context names. A context rename between a scan and a read reshapes the footprint accordingly.
+- The footprint is matched **by context id**. `ShipFeature` carries both `contexts` (display names) and `contextIds` (positionally aligned), and the join uses the ids. It used to join on names, which was a silent correctness hole: the generated context map emits near-identical names (`teams/factory [1/3]`, `[2/3]`) and every rescan can rename a context, so a collision or a rename dropped contexts out of the footprint. Since the footprint feeds both the `contexts` and `kpi` criteria, a milestone could read GO because a critical context had quietly vanished from its own scope. Renames are now free; only a deleted context leaves the footprint.
 - An empty core cut yields an empty footprint, which is why both derived criteria read `setup` rather than a false `go`.
 
 The composer renders the footprint as a chip row tinted by tone, with a summary line counting the critical and KPI-less contexts inside it.
@@ -192,11 +216,11 @@ Evaluation stays derived; **resolution** is a dispatch. Both paths are consent-f
 
 ### Criterion dispatch (`ShipDispatch.tsx`)
 
-A criterion chip whose state is not `go` grows a violet lightning button, but only when `buildCriterionPrompt` returns a brief. Only two of the four criteria have agent-shaped work:
+A criterion chip whose state is not `go` grows a violet lightning button, but only when `buildCriterionPrompt` returns a brief. Only two criteria have agent-shaped work:
 
 - **`contexts`** builds a brief listing every critical and warning context in the footprint with its error count, and asks the agent to investigate recent errors, fix the highest-impact root causes surgically, and run the relevant tests. Returns null when nothing is crit or warn.
 - **`kpi`** builds a brief listing the footprint contexts with zero active KPIs and asks for 1 to 2 concrete measurable KPI proposals each (name, unit, direction, baseline, target, and how to measure), written to a markdown summary for the operator to accept into the KPI module. Returns null when coverage is complete.
-- **`objective`** and **`sensors`** return null by design: binding a goal and binding connectors are human decisions.
+- **`objective`**, **`sensors`** and **`scope-frozen`** return null by design: binding a goal, binding connectors, and accepting or dropping what joined the cut late are human scoping decisions, not work an agent can do on your behalf.
 
 Confirming spawns a Fleet Dev-runner session in the project's `root_path` via `dispatchRowToFleet`, keyed `passport:ship-<criterion>:<projectId>` (`shipDispatchKey`). The `passport:` prefix is load-bearing: it keeps the session inside `usePassportFleetSessions`' watch window, which is the same machinery the passport wall uses. Once a session exists for that key, the chip's lightning is replaced by a terminal icon tinted by session state, and clicking it opens `PassportTerminalModal`.
 
@@ -235,7 +259,7 @@ The layer has four distinct empty states, each with exactly one follow-up.
 
 The seeded strings are resolved through `getActiveTranslations()` at creation time, not at render time, because seeded content is persisted data and should read in the language the user was using when it was written.
 
-The result is a project whose first deliverable is the Personas onboarding itself: one active milestone, one bound objective (so the `objective` criterion already reads `go`), and an empty cut. Note that because the milestone is created directly as `active`, its `cut_at` is **not** stamped (only an `update_milestone` status transition stamps it), so items added to the seed milestone are not flagged as creep.
+The result is a project whose first deliverable is the Personas onboarding itself: one active milestone, one bound objective (so the `objective` criterion already reads `go`), and an empty cut. Because the milestone is created directly as `active`, its `cut_at` is stamped at INSERT (§4), so items added to the seed milestone are flagged as creep exactly like anywhere else.
 
 ## 10. Where the code lives
 
@@ -248,6 +272,10 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 | `.../ship/ShipContextDrawer.tsx` | Right-side context detail panel with Cut / Bind affordances |
 | `.../ship/ShipDispatch.tsx` | `shipDispatchKey`, `buildCriterionPrompt`, `buildGoalAssistPrompt`, `ShipDispatchModal` |
 | `.../ship/shipModel.ts` | Types, ink maps, `shipVerdict`, `featureState`, `bucketLabel` |
+| `.../ship/shipDerive.ts` | `deriveFootprint`, the pure id-keyed scope derivation lifted out of the hook |
+| `.../ship/shipCriteria.ts` | The `SHIP_CRITERIA` registry + `deriveCriteria`. Both unit-tested in `__tests__/shipDerive.test.ts` |
+| `.../ship/shipVelocity.ts` | Pure cycle-time forecast from `cut_at` / `shipped_at`. Unit-tested in `__tests__/shipVelocity.test.ts` |
+| `.../ship/ShipVelocityNote.tsx` | The Planner header's cycle-time + forecast line |
 | `.../ship/shipRows.tsx` | `LedgerRow` / `LedgerList` / `LedgerHeader`, the shared ledger language |
 | `.../ship/useShipData.ts` | The live adapter: fetch, join, derive, and every mutation |
 | `.../ship/seedOnboarding.ts` | Idempotent onboarding seed milestone |

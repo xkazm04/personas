@@ -627,6 +627,16 @@ export const cancelScanCodebase = (scanId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_scan_codebase", { scanId });
 
 /**
+ * Port the loopback `/dev-tools` bridge is listening on, or null before the
+ * server has bound. Not a constant — it is the first free port at or above the
+ * preferred one, so it can differ between launches. Dispatches that hand work
+ * to a terminal session name it as a starting hint; the session re-probes the
+ * range if that port stops answering.
+ */
+export const bridgePort = () =>
+  safeInvoke<number | null>(null, "dev_tools_bridge_port", {});
+
+/**
  * Status of a background scan job (context generation or idea scan).
  *
  * `error` and `lines` are OPTIONAL on purpose: the Rust handlers only include

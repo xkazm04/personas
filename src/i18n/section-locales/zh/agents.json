@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "自定义"
+    "platform_custom": "自定义",
+    "st_last_checked": "上次检查",
+    "st_retest": "重新测试",
+    "st_stale": "{count} 个已过期",
+    "test_diff_recovered": "{count} 个已恢复",
+    "test_diff_regressed": "{count} 个新失败",
+    "test_diff_failing": "{count} 个失败",
+    "status_unverifiable": "无法验证",
+    "st_unverifiable": "{count} 个无法验证",
+    "st_filter_toggle": "仅显示这些",
+    "st_filter_clear": "显示所有连接器",
+    "st_filter_empty": "没有连接器符合此筛选条件"
   },
   "model_config": {
     "model_provider": "模型与提供商",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "未分组",
     "batch_moved_success": "已将 {count} 个人格移至 {group}",
     "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
+    "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
     "star_director_add": "收藏以加入 Director 的辅导范围",
     "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。",
     "badge_archived": "已归档",

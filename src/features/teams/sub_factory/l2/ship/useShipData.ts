@@ -24,8 +24,10 @@ import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
+import { deriveCriteria } from './shipCriteria';
+import { deriveFootprint } from './shipDerive';
 import {
-  featureState, type ContextTone, type ExitCriterion, type ScopeBucket,
+  featureState, type ContextTone, type ScopeBucket,
   type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
   type ShipMember, type ShipMilestoneVM,
 } from './shipModel';
@@ -128,6 +130,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
         id: uc.id,
         name: uc.name,
         contexts: slice.map((c) => c.name),
+        contextIds: slice.map((c) => c.id),
         kpiCount,
         ...st,
         blocker: crit ? tx(t.ship.blocker_errors, { name: crit.name, count: crit.errors ?? 0 }) : null,
@@ -171,59 +174,17 @@ export function useShipData(data: FactoryL2Data): ShipData {
         .filter((g): g is ShipGoal => Boolean(g));
 
       const core = members.filter((mm) => mm.bucket === 'core');
-      const fpNames = [...new Set(core.flatMap((mm) => mm.feature.contexts))];
-      const footprint = fpNames
-        .map((name) => contexts.find((c) => c.name === name))
-        .filter((c): c is ShipContext => Boolean(c));
-
-      const healthy = footprint.filter((c) => c.tone === 'ok').length;
-      const covered = footprint.filter((c) => c.kpis > 0).length;
-      const sensors = (data.monitoringWired ? 1 : 0) + (data.llmWired ? 1 : 0);
-      const criteria: ExitCriterion[] = [
-        {
-          id: 'contexts',
-          label: t.ship.crit_contexts,
-          evidence: footprint.length === 0
-            ? t.ship.crit_contexts_empty
-            : tx(t.ship.crit_contexts_evidence, { healthy, total: footprint.length })
-              + (footprint.some((c) => c.tone === 'crit')
-                ? tx(t.ship.crit_contexts_critical, { names: footprint.filter((c) => c.tone === 'crit').map((c) => c.name).join(', ') })
-                : ''),
-          done: healthy,
-          total: footprint.length,
-          state: footprint.length === 0 ? 'setup'
-            : footprint.some((c) => c.tone === 'crit') ? 'nogo'
-            : healthy < footprint.length ? 'warn' : 'go',
-        },
-        {
-          id: 'kpi',
-          label: t.ship.crit_kpi,
-          evidence: footprint.length === 0
-            ? t.ship.crit_kpi_empty
-            : tx(t.ship.crit_kpi_evidence, { covered, total: footprint.length }),
-          done: covered,
-          total: footprint.length,
-          state: footprint.length === 0 ? 'setup' : covered === footprint.length ? 'go' : 'warn',
-        },
-        {
-          id: 'objective',
-          label: t.ship.crit_objective,
-          evidence: boundGoals.length > 0
-            ? boundGoals.map((g) => g.name).join(' · ')
-            : t.ship.crit_objective_empty,
-          done: boundGoals.length > 0 ? 1 : 0,
-          total: 1,
-          state: boundGoals.length > 0 ? 'go' : 'setup',
-        },
-        {
-          id: 'sensors',
-          label: t.ship.crit_sensors,
-          evidence: sensors === 2 ? t.ship.crit_sensors_ok : t.ship.crit_sensors_missing,
-          done: sensors,
-          total: 2,
-          state: sensors === 2 ? 'go' : 'setup',
-        },
-      ];
+      const footprint = deriveFootprint(core, contexts);
+      const criteria = deriveCriteria({
+        row: m,
+        core,
+        boundGoals,
+        footprint,
+        monitoringWired: data.monitoringWired,
+        llmWired: data.llmWired,
+        t,
+        tx,
+      });
 
       const ready = core.filter((mm) => mm.feature.ready).length;
       const progress = m.status === 'shipped'

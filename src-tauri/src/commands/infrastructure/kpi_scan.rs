@@ -60,6 +60,10 @@ static KPI_SCAN_JOBS: BackgroundJobManager<KpiScanExtra> = BackgroundJobManager:
 /// Review-queue backpressure: a scan is refused while this many proposals are
 /// already awaiting the user — proposing into an undrained queue just buries it.
 const MAX_PENDING_PROPOSALS: i64 = 10;
+/// Ceiling for one CONTEXT-scoped scan. Four is the number the review UI can
+/// show as a single multi-select, and a context that genuinely needs more than
+/// four metrics is a context that should have been split.
+const MAX_PROPOSALS_PER_CONTEXT_SCAN: usize = 4;
 /// Hard cap on proposals applied from one scan (the prompt also states it).
 const MAX_PROPOSALS_PER_SCAN: usize = 8;
 
@@ -163,19 +167,40 @@ fn build_kpi_scan_prompt(
 {connectors}
 
 ## Your job
-Explore the repository (you are in its root) to ground your proposals: which test runner / coverage tooling / lint / build exists, what the README claims the product does, what is plausibly measurable TODAY vs needs a connector. Then propose AT MOST {max} KPIs, prioritizing the few that would genuinely change what the team works on.
+Explore the repository (you are in its root) to answer ONE question first: **what is this product FOR, and what would tell its owner it is working?** Read the README, the use cases above, the onboarding copy, the landing page if there is one. Only then look at tooling (test runner, coverage, lint, build).
+
+Propose AT MOST {max} KPIs, prioritizing the few that would genuinely change what the team works on.
+
+### Measure the product, not the repository
+
+The failure mode this scan keeps hitting: a repo is easy to measure and a product is not, so the proposals come back as test coverage, bundle size and compiler errors — numbers that are already enforced by CI gates and that no one would change a roadmap over. **A KPI set that would look identical for any other codebase in this language is a failed scan.**
+
+So:
+
+- **Lead with value and outcome KPIs** — does the product do its job for the person using it. Activation, task completion, time-to-value, time saved versus the manual alternative, repeat use, the specific outcome each use case above exists to deliver.
+- **At most 2 technical KPIs total**, and only where the number is genuinely at risk (an unbounded budget, a known regression surface). Anything a pre-push hook or CI already blocks — compiler errors, lint, formatting — is NOT a KPI: it is a gate that is already closed. Do not propose it.
+- **Not measurable today is not a reason to skip a value KPI.** It is the single most common mistake here. If the product has no production traffic yet, the pillars still have to be named — you cannot steer toward a number nobody wrote down. Propose it per rule 4 (`manual` + `needed_connector`), or as a user-journey outcome that can be simulated before launch (see below). A named pillar with no data beats a measurable number that means nothing.
+
+### Pre-production projects
+
+If there is no production telemetry — no analytics/monitoring connector in the vault list, no traffic KPIs, an app that has not shipped — do NOT fall back to code metrics. Instead propose the outcome pillars as **user-journey outcomes**: name the journey, the completion signal, and the value it delivers ("a new user reaches their first successful persona run", "a run replaces N minutes of manual work"). State the journey plainly in `description`, set `measure_kind: "manual"` and `cadence: "manual"`.
+
+These are exactly what the KPI simulation lane can put numbers against before launch, by walking the journey with representative characters. A pillar phrased as a journey outcome becomes simulatable; the same pillar phrased as an abstraction ("user satisfaction") does not. Prefer the journey.
 
 Rules:
 1. Per-group KPIs use the EXACT group name from the context map; cross-cutting KPIs use an empty group_name (project-level).
 1b. To scope a KPI to a SINGLE context (one subsystem) within a group, set `context_name` to the EXACT context name from the map AND set its `group_name`. Use this only when one specific context clearly owns the outcome (e.g. p95 latency for a `checkout-api` context). Leave `context_name` empty for group-level or project-level KPIs.
 1c. PREFER a USE CASE when one is listed above and the outcome is behavioral — a use case is a slice through several contexts and is the most honest owner of an outcome like "checkout conversion" or "search latency". Set `use_case_name` to the EXACT use-case name; leave `group_name` and `context_name` empty (they are inferred from the use case). Use `context_name` only when the outcome belongs to code in exactly ONE context.
-2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention — connector-gated).
+2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention, activation, task completion, time saved — connector-gated or simulated).
+2b. **Mix, enforced.** Of the proposals you emit: `value` (and `traffic` where the product has users) must be the MAJORITY, and `technical` must be AT MOST 2. If you find yourself with more technical proposals than value ones, you measured the repository instead of the product — go back and re-read what the product does for whoever uses it.
 3. `measure_kind` + `measure_config` must be a REAL, executable procedure:
    - codebase: {{"cmd": "<command runnable in repo root>", "parse": "coverage_pct" | "count_lines" | "regex:<pattern with one capture group>" | "json_path:<dot.path>"}}
    - derived: {{"metric": "<one of: qa_bounce_rate | exec_failure_rate | incident_rate | parked_review_age_days>"}} (measured from the orchestrator's own DB)
-   - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}}
+   - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}} — `instruction` is a HUMAN-READABLE hint for the review queue. It is never executed. At measurement time the binding is composed as an HTTPS request against the connector's public REST API and the number is extracted from the JSON response, driven by `metric_type` (rule 4b). So: never put SQL here and expect it to run, and never propose a connector KPI against a LOCAL database (e.g. the orchestrator's own SQLite) — it has no REST surface and the binding can only be declined. Local-database numbers belong to `derived` (rule 3c) or `codebase`.
    - manual: {{"instruction": "<what the human should check/enter>"}}
-   Prefer codebase for technical KPIs, connector for traffic/value, codebase or derived for quality, and manual only for value/business signals a human must judge. For any codebase KPI, RUN the command from the repo root to confirm it actually yields a number before proposing it, and set baseline_hint from that real value.
+   Prefer codebase for technical KPIs, connector for traffic/value, codebase or derived for quality, and manual for value signals a human must judge or that only a simulated journey can estimate before launch. For any codebase KPI, RUN the command from the repo root to confirm it actually yields a number before proposing it, and set baseline_hint from that real value.
+3b. **Verification decides HOW a KPI is measured, never WHICH KPIs you propose.** Pick the metrics that matter first; only then work out each one's procedure. Letting "what can I run right now" choose the list is what produces a scan full of build metrics.
+3c. `derived` metrics are scoped to the project's linked TEAM. If the project has no team, a derived KPI cannot produce a number — prefer `codebase` or `manual` unless you can see the project is team-linked. Only the four metric names listed are valid; there is no way to add one from here, so do not invent a metric name.
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
 4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".
@@ -227,6 +252,126 @@ fn use_cases_block(pool: &crate::db::DbPool, project_id: &str) -> String {
 }
 
 /// Markdown digest of the context map for the prompt.
+/// Everything the model needs about ONE context: its group, description and the
+/// actual files it owns. Errors when the id does not belong to this project —
+/// scanning the wrong context would file KPIs under a module nobody asked about.
+fn scoped_context_block(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    context_id: &str,
+) -> Result<String, AppError> {
+    let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
+    let ctx = contexts
+        .iter()
+        .find(|c| c.id == context_id)
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Context {context_id} does not belong to project {project_id}"
+            ))
+        })?;
+    let group = ctx.group_id.as_deref().and_then(|gid| {
+        repo::list_context_groups(pool, project_id)
+            .unwrap_or_default()
+            .into_iter()
+            .find(|g| g.id == gid)
+            .map(|g| g.name)
+    });
+    let files: Vec<String> = serde_json::from_str(&ctx.file_paths).unwrap_or_default();
+    // Enough files to recognise what the context does, not so many that the
+    // prompt is mostly paths.
+    const FILE_SAMPLE: usize = 40;
+    let shown: Vec<&String> = files.iter().take(FILE_SAMPLE).collect();
+    let more = files.len().saturating_sub(shown.len());
+
+    Ok(format!(
+        "### {name}{group_suffix}\n{description}\n\nOwns {total} file(s):\n{file_list}{more_line}",
+        name = ctx.name,
+        group_suffix = group.map(|g| format!("  (group: {g})")).unwrap_or_default(),
+        description = ctx
+            .description
+            .as_deref()
+            .filter(|d| !d.trim().is_empty())
+            .unwrap_or("(no description recorded)"),
+        total = files.len(),
+        file_list = shown
+            .iter()
+            .map(|f| format!("- {f}\n"))
+            .collect::<String>(),
+        more_line = if more > 0 {
+            format!("- …and {more} more\n")
+        } else {
+            String::new()
+        },
+    ))
+}
+
+/// The per-context prompt. Deliberately NOT a variant of the project prompt:
+/// that one's job is choosing which few metrics matter across a whole product,
+/// while this one already knows its subject and only has to decide whether this
+/// particular context deserves a KPI at all — and "no" is a real answer.
+fn build_context_kpi_scan_prompt(
+    project_name: &str,
+    context_block: &str,
+    active_kpis: &str,
+    archived_kpis: &str,
+    connectors: &str,
+) -> String {
+    format!(
+        r#"You are a pragmatic engineering-metrics analyst. Propose KPIs for ONE context (subsystem) of the project "{project_name}".
+
+## The context you are scanning
+{context_block}
+
+## Existing KPIs — do NOT propose duplicates or near-duplicates
+{active_kpis}
+
+## Previously REJECTED KPIs — the user does not want these; do not re-propose
+{archived_kpis}
+
+## Connectors available in the vault (credential service types)
+{connectors}
+
+## Your job
+
+Read this context's files (you are in the repo root) and decide what would tell its owner whether it is doing its job.
+
+Propose **AT MOST {max}** KPIs, every one scoped to THIS context. Fewer is better.
+
+**Zero is a correct and common answer.** Most contexts in a large codebase are plumbing — a shared util module, a type barrel, a thin re-export layer. They have no outcome of their own, and inventing a metric for them produces a dashboard nobody reads. Propose nothing and say why in one line. Only propose where the context owns something a user or operator would actually notice going wrong.
+
+**Measure what this context is FOR, not that it exists.** Line count, file count, and "number of exported functions" describe the code; they steer nothing. Ask instead: when this subsystem fails, what does the person on the other end experience — and what number would have warned someone first?
+
+Same rules as the project-level scan otherwise:
+- Prefer outcome/value metrics; at most ONE technical KPI here, and never something CI already blocks.
+- `measure_kind` + `measure_config` must be a REAL procedure: codebase (`{{"cmd","parse"}}`, and RUN it to confirm), derived (only the four catalog metrics, and only if the project is team-linked), connector (HTTPS/REST against a real API — never SQL, never a local database), or manual (a human or simulated journey check).
+- Every connector-shaped KPI sets `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors.
+- `rationale` is ONE sentence the user reads while triaging.
+
+For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
+{{"kpi_proposal": {{"group_name": "", "name": "...", "description": "...", "category": "value", "measure_kind": "manual", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 80, "target_date": null, "cadence": "manual", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": "{ctx_name_hint}", "use_case_name": ""}}}}
+
+`context_name` MUST be the exact context name from the heading above, on every proposal.
+
+Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
+"#,
+        project_name = project_name,
+        context_block = context_block,
+        active_kpis = active_kpis,
+        archived_kpis = archived_kpis,
+        connectors = connectors,
+        max = MAX_PROPOSALS_PER_CONTEXT_SCAN,
+        ctx_name_hint = context_block
+            .lines()
+            .next()
+            .unwrap_or("")
+            .trim_start_matches("### ")
+            .split("  (group:")
+            .next()
+            .unwrap_or("")
+            .trim(),
+    )
+}
+
 fn context_map_block(pool: &crate::db::DbPool, project_id: &str) -> String {
     let groups = repo::list_context_groups(pool, project_id).unwrap_or_default();
     let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
@@ -302,10 +447,11 @@ pub async fn dev_tools_scan_kpis(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     project_id: String,
+    context_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
-    launch_kpi_scan(app, &state.db, &project)
+    launch_kpi_scan(app, &state.db, &project, context_id.as_deref())
 }
 
 /// Launch a KPI proposal scan as a background task. Shared by the
@@ -315,33 +461,69 @@ pub(crate) fn launch_kpi_scan(
     app: tauri::AppHandle,
     pool: &crate::db::DbPool,
     project: &crate::db::models::DevProject,
+    context_id: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = project.id.clone();
 
-    // Review-queue backpressure — same doctrine as the idea-backlog cap.
-    let pending: i64 = pool
-        .get()?
-        .query_row(
-            "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND status = 'proposed'",
-            rusqlite::params![project_id],
-            |r| r.get(0),
-        )
-        .unwrap_or(0);
-    if pending >= MAX_PENDING_PROPOSALS {
+    // Backpressure is per-SCOPE. A project-wide scan is gated on the whole
+    // review queue; a context scan is gated only on ITS OWN context, so one
+    // untriaged context can never block a sweep across the other 200.
+    let (pending, cap, scope_label) = match context_id {
+        Some(cid) => {
+            let n: i64 = pool
+                .get()?
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_kpis
+                     WHERE project_id = ?1 AND context_id = ?2 AND status = 'proposed'",
+                    rusqlite::params![project_id, cid],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            (n, MAX_PROPOSALS_PER_CONTEXT_SCAN as i64, "this context")
+        }
+        None => {
+            let n: i64 = pool
+                .get()?
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND status = 'proposed'",
+                    rusqlite::params![project_id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            (n, MAX_PENDING_PROPOSALS, "this project")
+        }
+    };
+    if pending >= cap {
         return Err(AppError::Validation(format!(
-            "KPI scan skipped: {pending} proposals already await review (cap {MAX_PENDING_PROPOSALS}). \
-             Accept or reject the existing queue first."
+            "KPI scan skipped: {pending} proposals already await review for {scope_label} (cap {cap}). \
+             Accept or reject them first."
         )));
     }
 
-    let prompt_text = build_kpi_scan_prompt(
-        &project.name,
-        &context_map_block(pool, &project_id),
-        &use_cases_block(pool, &project_id),
-        &kpi_list_block(pool, &project_id, false),
-        &kpi_list_block(pool, &project_id, true),
-        &connectors_block(pool),
-    );
+    // A context scan sees ONLY its own context — the full map would invite
+    // proposals scoped elsewhere, which is the whole failure this mode exists
+    // to fix.
+    let scoped = context_id
+        .map(|cid| scoped_context_block(pool, &project_id, cid))
+        .transpose()?;
+
+    let prompt_text = match scoped.as_ref() {
+        Some(block) => build_context_kpi_scan_prompt(
+            &project.name,
+            block,
+            &kpi_list_block(pool, &project_id, false),
+            &kpi_list_block(pool, &project_id, true),
+            &connectors_block(pool),
+        ),
+        None => build_kpi_scan_prompt(
+            &project.name,
+            &context_map_block(pool, &project_id),
+            &use_cases_block(pool, &project_id),
+            &kpi_list_block(pool, &project_id, false),
+            &kpi_list_block(pool, &project_id, true),
+            &connectors_block(pool),
+        ),
+    };
 
     let scan = repo::create_scan(pool, Some(&project_id), "kpi-scan", Some("running"))?;
     let scan_id = scan.id.clone();

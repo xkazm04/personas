@@ -15,10 +15,6 @@
   "manual_review": "Duyệt thủ công",
   "messages": "Tin nhắn",
   "knowledge": "Tri thức",
-  "memories": "Bộ nhớ",
-  "patterns": "Mẫu",
-  "extracted": "Đã trích xuất",
-  "memory_graph": "Đồ thị",
   "sla": "SLA",
   "cron_agents": "Tác tử cron",
   "schedules": "Lịch trình",
@@ -95,5 +91,9 @@
   "group_monitoring": "Giám sát",
   "group_operations": "Vận hành",
   "group_plugins": "Plugin",
-  "group_templates": "Mẫu"
+  "group_templates": "Mẫu",
+  "extracted": "Đã trích xuất",
+  "memories": "Bộ nhớ",
+  "memory_graph": "Đồ thị",
+  "patterns": "Mẫu"
 }

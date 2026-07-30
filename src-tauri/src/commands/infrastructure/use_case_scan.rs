@@ -354,16 +354,29 @@ pub fn dev_tools_get_use_case_scan_status(
     scan_id: String,
 ) -> Result<serde_json::Value, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    let jobs = USE_CASE_SCAN_JOBS.lock()?;
-    if let Some(job) = jobs.get(&scan_id) {
-        Ok(json!({
+    Ok(use_case_scan_status_json(&scan_id))
+}
+
+/// Status snapshot for one use-case scan, shaped like the context-scan and
+/// KPI-scan equivalents (`context_generation::scan_status_json`,
+/// `kpi_scan::kpi_scan_status_json`). Shared by the IPC command above and the
+/// loopback `/dev-tools` bridge, so a terminal polls exactly what the UI does.
+pub(crate) fn use_case_scan_status_json(scan_id: &str) -> serde_json::Value {
+    match USE_CASE_SCAN_JOBS.lock() {
+        Ok(jobs) => match jobs.get(scan_id) {
+            Some(job) => json!({
+                "scan_id": scan_id,
+                "status": job.status,
+                "error": job.error,
+                "lines": job.lines,
+            }),
+            None => json!({ "scan_id": scan_id, "status": "not_found" }),
+        },
+        Err(_) => json!({
             "scan_id": scan_id,
-            "status": job.status,
-            "error": job.error,
-            "lines": job.lines,
-        }))
-    } else {
-        Ok(json!({ "scan_id": scan_id, "status": "not_found" }))
+            "status": "error",
+            "error": "use-case scan registry lock poisoned",
+        }),
     }
 }
 

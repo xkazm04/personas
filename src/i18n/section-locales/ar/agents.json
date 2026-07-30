@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "مخصص"
+    "platform_custom": "مخصص",
+    "st_last_checked": "آخر فحص",
+    "st_retest": "إعادة الاختبار",
+    "st_stale": "{count} قديم",
+    "test_diff_recovered": "{count} تم استرداده",
+    "test_diff_regressed": "{count} فشل جديد",
+    "test_diff_failing": "{count} فاشل",
+    "status_unverifiable": "غير قابل للتحقق",
+    "st_unverifiable": "{count} غير قابل للتحقق",
+    "st_filter_toggle": "إظهار هذه فقط",
+    "st_filter_clear": "إظهار كل الموصلات",
+    "st_filter_empty": "لا توجد موصلات تطابق هذا الفلتر"
   },
   "model_config": {
     "model_provider": "النموذج والمزوّد",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "بدون مجموعة",
     "batch_moved_success": "تم نقل {count} شخصية إلى {group}",
     "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل",
+    "render_cap_notice": "عرض {shown} من {total} — قلّص النطاق بالبحث أو الفلاتر لرؤية الباقي.",
     "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
     "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة.",
     "badge_archived": "مؤرشفة",

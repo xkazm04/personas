@@ -9,7 +9,7 @@
 // FindingsPopover (standards), passportExport (copy), usePassportData's
 // rescanProject (rescan), and ImprovePlanPanel (plan). If a flow changes,
 // change its steps in the same edit.
-import { Compass, FileDown, RefreshCw, ShieldCheck, Target } from 'lucide-react';
+import { Compass, Database, FileDown, RefreshCw, ShieldCheck, Target } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 /** read = nothing is written · write = touches the repo or config ·
@@ -52,8 +52,18 @@ function shortRoot(root: string | null | undefined): string {
   return parts.length <= 2 ? root : `…/${parts.slice(-2).join('/')}`;
 }
 
-/** The five per-project actions, with the target's own name/root folded in. */
-export function buildActionSpecs(name: string, root: string | null | undefined): ActionSpec[] {
+/** The six per-project actions, with the target's own name/root folded in.
+ *
+ *  `populateLanes` is the per-lane verdict summary from `describeGates` — the
+ *  populate action's steps are only honest if they say what THIS project's run
+ *  would actually do, and that depends on data the catalog cannot read. Passing
+ *  it late keeps the copy truthful; omitting it falls back to the generic
+ *  description used before the gates have loaded. */
+export function buildActionSpecs(
+  name: string,
+  root: string | null | undefined,
+  populateLanes?: string[],
+): ActionSpec[] {
   const where = shortRoot(root);
   return [
     {
@@ -84,6 +94,37 @@ export function buildActionSpecs(name: string, root: string | null | undefined):
         { label: 'Cost', value: 'LLM tokens' },
       ],
       confirmLabel: 'Start session',
+    },
+    {
+      id: 'populate',
+      icon: Database,
+      tooltip: 'Populate project data',
+      title: `Populate ${name}'s project data`,
+      impact: 'agent',
+      summary:
+        `Fills in the three things Personas needs to work with ${name} at all: a context map, a feature inventory, and a KPI set you approve one by one.`,
+      steps: [
+        'Copies the app’s `project-populate` skill into the repo and writes a briefing next to it, both deterministic file writes with no model and no tokens.',
+        ...(populateLanes ?? [
+          'Reads what already exists and re-scans only the parts that are missing or stale.',
+        ]),
+        'Runs each needed scan through the app’s own engine, so the results are identical to scanning from the Factory toolbar.',
+        'Walks the KPI proposals with you five at a time, and records each adopt / adjust / reject the moment you answer it.',
+        'Names the exact monitoring binding for each adopted KPI when the project already has a connector that could feed it.',
+      ],
+      boundaries: [
+        'Anything already scanned and current is left alone, not re-scanned.',
+        'Contexts and features are assigned by the app’s scans; no KPI is adopted without you saying so.',
+        'Credential VALUES never leave the vault. Only connector names and service types are sent.',
+        'The session writes to the project database only through the app; it never edits it directly.',
+      ],
+      facts: [
+        { label: 'Runs in', value: where },
+        { label: 'Engine', value: 'Your choice of terminal' },
+        { label: 'Duration', value: 'Interactive, 10-30 min' },
+        { label: 'Cost', value: 'LLM tokens' },
+      ],
+      confirmLabel: 'Choose where to run it',
     },
     {
       id: 'standards',

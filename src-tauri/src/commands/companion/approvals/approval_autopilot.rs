@@ -620,7 +620,9 @@ mod confidence_gate_tests {
     fn matrix_low_and_missing_never_fire() {
         use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
-        for b in [FleetBoldness::Cautious, FleetBoldness::Balanced, FleetBoldness::Bold] {
+        // Cautious/Balanced keep the pre-2026-07-24 gate: low, missing and
+        // unparseable confidence all go to consult.
+        for b in [FleetBoldness::Cautious, FleetBoldness::Balanced] {
             assert!(!fleet_action_auto_fires(
                 r#"{"confidence":"low","decision_class":"drive_forward"}"#,
                 b
@@ -629,6 +631,26 @@ mod confidence_gate_tests {
             assert!(!fleet_action_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
             assert!(!fleet_action_auto_fires("not json", b));
         }
+    }
+
+    /// Bold is deliberately FULL-AUTO since 2026-07-24 (see the rationale on
+    /// `fleet_action_auto_fires`): every proposal fires, low and missing
+    /// confidence included. This test previously asserted the opposite for Bold
+    /// and had simply never been run — the suite could not execute on Windows
+    /// and CI's Rust job never compiled. Pinning the ratified behaviour so a
+    /// future silent change to the autonomy boundary is caught.
+    #[test]
+    fn matrix_bold_is_full_auto() {
+        use super::fleet_action_auto_fires;
+        use crate::commands::companion::chat::FleetBoldness;
+        let b = FleetBoldness::Bold;
+        assert!(fleet_action_auto_fires(
+            r#"{"confidence":"low","decision_class":"drive_forward"}"#,
+            b
+        ));
+        assert!(fleet_action_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
+        // Unparseable params still never fire, at any dial.
+        assert!(!fleet_action_auto_fires("not json", b));
     }
 
     #[test]

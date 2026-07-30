@@ -15,10 +15,6 @@
   "manual_review": "手動レビュー",
   "messages": "メッセージ",
   "knowledge": "ナレッジ",
-  "memories": "メモリ",
-  "patterns": "パターン",
-  "extracted": "抽出済み",
-  "memory_graph": "グラフ",
   "sla": "SLA",
   "cron_agents": "Cronエージェント",
   "schedules": "スケジュール",
@@ -95,5 +91,9 @@
   "group_monitoring": "モニタリング",
   "group_operations": "運用",
   "group_plugins": "プラグイン",
-  "group_templates": "テンプレート"
+  "group_templates": "テンプレート",
+  "extracted": "抽出済み",
+  "memories": "メモリ",
+  "memory_graph": "グラフ",
+  "patterns": "パターン"
 }

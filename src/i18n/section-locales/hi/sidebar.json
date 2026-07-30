@@ -15,10 +15,6 @@
   "manual_review": "मैनुअल समीक्षा",
   "messages": "संदेश",
   "knowledge": "ज्ञान",
-  "memories": "स्मृतियाँ",
-  "patterns": "पैटर्न",
-  "extracted": "निकाले गए",
-  "memory_graph": "ग्राफ",
   "sla": "SLA",
   "cron_agents": "Cron एजेंट",
   "schedules": "शेड्यूल",
@@ -95,5 +91,9 @@
   "group_monitoring": "मॉनिटरिंग",
   "group_operations": "संचालन",
   "group_plugins": "प्लगइन",
-  "group_templates": "टेम्पलेट"
+  "group_templates": "टेम्पलेट",
+  "extracted": "निकाले गए",
+  "memories": "स्मृतियाँ",
+  "memory_graph": "ग्राफ",
+  "patterns": "पैटर्न"
 }

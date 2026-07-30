@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench, Sparkles } from 'lucide-react';
+import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench, Sparkles, Activity } from 'lucide-react';
 import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { resolveConnectorRunnability } from '@/features/shared/components/display/connectorRunnability';
 import { DesignCheckbox } from './DesignCheckbox';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -20,6 +21,16 @@ interface ConnectorsSectionProps {
   selectedTools: Set<string>;
   onToolToggle: (toolName: string) => void;
   onConnectorClick?: (connector: SuggestedConnector) => void;
+  /**
+   * Connector names to omit — used when a host renders a live verification
+   * surface alongside this recap, so a connector never appears twice with two
+   * different notions of its health.
+   */
+  hiddenConnectors?: ReadonlySet<string>;
+  /** Run a healthcheck for a recap connector that resolved to a credential. */
+  onTestConnector?: (connectorName: string, credentialId: string) => void;
+  /** Connector names with a test currently in flight. */
+  testingConnectors?: ReadonlySet<string>;
   readOnly: boolean;
   anchorId?: string;
 }
@@ -33,10 +44,13 @@ export function ConnectorsSection({
   selectedTools,
   onToolToggle,
   onConnectorClick,
+  hiddenConnectors,
+  onTestConnector,
+  testingConnectors,
   readOnly,
   anchorId,
 }: ConnectorsSectionProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // credentialLinks is per-persona { connectorName -> credentialId }, the
   // authoritative source for "is this persona linked to a credential for
   // connector X". The previous logic used the GLOBAL vault — any persona
@@ -44,7 +58,10 @@ export function ConnectorsSection({
   // credential of that service_type, regardless of link state.
   const credentialLinks = useSelectedCredentialLinks();
   const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
-  const suggestedConnectors = useMemo(() => result.suggested_connectors ?? [], [result.suggested_connectors]);
+  const suggestedConnectors = useMemo(
+    () => (result.suggested_connectors ?? []).filter((c) => !hiddenConnectors?.has(c.name)),
+    [result.suggested_connectors, hiddenConnectors],
+  );
 
   const suggestedTools = useMemo(() => result.suggested_tools ?? [], [result.suggested_tools]);
 
@@ -131,7 +148,7 @@ export function ConnectorsSection({
                   </div>
                 )}
                 <span className="typo-body font-medium text-foreground flex-1 truncate">
-                  {item.connDef?.label || (isGeneral ? 'General Tools' : item.connector.name)}
+                  {item.connDef?.label || (isGeneral ? t.templates.design.general_tools : item.connector.name)}
                 </span>
                 {!isGeneral && (
                   isNativeCap ? (
@@ -156,7 +173,7 @@ export function ConnectorsSection({
                     <Sparkles className="w-3 h-3" />
                     <span><DebtText k="auto_native_capability_no_credential_needed_0491f8a9" /></span>
                   </div>
-                ) : (onConnectorClick && requiresFields) || hasCredential ? (
+                ) : (onConnectorClick && (requiresFields || needsSetup)) || hasCredential ? (
                   <button
                     type="button"
                     onClick={() => onConnectorClick?.(item.connector)}
@@ -176,16 +193,31 @@ export function ConnectorsSection({
                       {hasCredential && isHealthy
                         ? t.templates.design.credential_ready
                         : hasCredential && isUnhealthy
-                          ? 'Credential failing healthcheck'
+                          ? t.templates.design.credential_failing
                           : hasCredential
-                            ? `Ready — ${linkedCred?.name}`
+                            ? tx(t.templates.design.credential_ready_named, { name: linkedCred?.name ?? '' })
                             : installed
                               ? t.templates.design.configure_credential
-                              : 'Connector not installed'}
+                              : t.templates.design.connector_not_installed}
                     </span>
                     {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
                   </button>
                 ) : null
+              )}
+
+              {/* Verify — only offered when there is actually something to probe. */}
+              {!isGeneral && onTestConnector && linkedCred && (
+                <button
+                  type="button"
+                  onClick={() => onTestConnector(item.connector.name, linkedCred.id)}
+                  disabled={testingConnectors?.has(item.connector.name)}
+                  className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {testingConnectors?.has(item.connector.name)
+                    ? <LoadingSpinner size="xs" />
+                    : <Activity className="w-3 h-3" />}
+                  <span>{t.agents.connectors.st_test}</span>
+                </button>
               )}
 
               {/* Tools */}

@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "カスタム"
+    "platform_custom": "カスタム",
+    "st_last_checked": "最終確認",
+    "st_retest": "再テスト",
+    "st_stale": "{count} 件が古い",
+    "test_diff_recovered": "{count} 件が回復",
+    "test_diff_regressed": "{count} 件が新たに失敗",
+    "test_diff_failing": "{count} 件が失敗",
+    "status_unverifiable": "検証不可",
+    "st_unverifiable": "{count} 件が検証不可",
+    "st_filter_toggle": "これらのみ表示",
+    "st_filter_clear": "すべてのコネクタを表示",
+    "st_filter_empty": "このフィルターに一致するコネクタはありません"
   },
   "model_config": {
     "model_provider": "モデル＆プロバイダー",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "グループなし",
     "batch_moved_success": "{count} 件のペルソナを {group} に移動しました",
     "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗",
+    "render_cap_notice": "{total} 件中 {shown} 件を表示中 — 検索またはフィルタで絞り込んでください。",
     "star_director_add": "スターを付けて Director のコーチング対象に追加",
     "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。",
     "badge_archived": "アーカイブ済み",

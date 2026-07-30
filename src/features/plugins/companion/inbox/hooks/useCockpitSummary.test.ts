@@ -42,6 +42,7 @@ function credentialRecord(o: Partial<CredentialMetadata> = {}): CredentialMetada
     metadata: null,
     healthcheck_last_success: true,
     healthcheck_last_message: null,
+    healthcheck_last_state: null,
     healthcheck_last_tested_at: null,
     healthcheck_last_success_at: null,
     oauth_refresh_count: 0,

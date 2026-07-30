@@ -160,7 +160,18 @@ pub async fn dev_tools_kpi_sim_prepare(
     project_id: String,
 ) -> Result<KpiSimPrepared, AppError> {
     require_auth(&state).await?;
-    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    prepare_kpi_sim(&state.db, &project_id)
+}
+
+/// Body of [`dev_tools_kpi_sim_prepare`], minus the IPC envelope. Shared with
+/// the loopback `/dev-tools` bridge so a dispatched terminal session can write
+/// the snapshot itself — the sim skill refuses to run without one, and only
+/// the app is allowed to produce it.
+pub(crate) fn prepare_kpi_sim(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+) -> Result<KpiSimPrepared, AppError> {
+    let project = repo::get_project_by_id(pool, project_id)?;
     let root = PathBuf::from(&project.root_path);
     if !root.is_dir() {
         return Err(AppError::Validation(format!(
@@ -169,7 +180,7 @@ pub async fn dev_tools_kpi_sim_prepare(
         )));
     }
 
-    let kpis = repo::list_kpis(&state.db, &project_id, None)?;
+    let kpis = repo::list_kpis(pool, project_id, None)?;
     // Proposed KPIs ride along (status distinguishes them) so a repeat run
     // KNOWS what already awaits review and never re-proposes it — the first
     // L1→L2 comparison produced duplicate new-KPI proposals without this.
@@ -249,7 +260,18 @@ pub async fn dev_tools_kpi_sim_ingest(
     run_dir: Option<String>,
 ) -> Result<KpiSimIngestSummary, AppError> {
     require_auth(&state).await?;
-    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    ingest_kpi_sim(&state.db, &project_id, run_dir)
+}
+
+/// Body of [`dev_tools_kpi_sim_ingest`], minus the IPC envelope. Shared with
+/// the loopback `/dev-tools` bridge so a dispatched session can close its own
+/// simulation loop instead of leaving the results for a later manual import.
+pub(crate) fn ingest_kpi_sim(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    run_dir: Option<String>,
+) -> Result<KpiSimIngestSummary, AppError> {
+    let project = repo::get_project_by_id(pool, project_id)?;
     let root = PathBuf::from(&project.root_path);
 
     let dir = match run_dir {
@@ -309,7 +331,7 @@ pub async fn dev_tools_kpi_sim_ingest(
     };
 
     // Project KPI ids — every kpi_id in the result must belong to THIS project.
-    let kpis = repo::list_kpis(&state.db, &project_id, None)?;
+    let kpis = repo::list_kpis(pool, project_id, None)?;
     let kpi_name = |id: &str| kpis.iter().find(|k| k.id == id).map(|k| k.name.clone());
 
     // ── measurements (class 2) ──
@@ -344,7 +366,7 @@ pub async fn dev_tools_kpi_sim_ingest(
             }
         }
         match repo::record_kpi_simulation_measurement(
-            &state.db,
+            pool,
             &m.kpi_id,
             m.value,
             &m.env,
@@ -358,7 +380,7 @@ pub async fn dev_tools_kpi_sim_ingest(
 
     // ── proposals ──
     let pending: i64 = {
-        let conn = state.db.get()?;
+        let conn = pool.get()?;
         conn.query_row(
             "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND status = 'proposed'",
             rusqlite::params![project_id],
@@ -409,8 +431,8 @@ pub async fn dev_tools_kpi_sim_ingest(
                     }
                 );
                 match repo::create_kpi(
-                    &state.db,
-                    &project_id,
+                    pool,
+                    project_id,
                     &np.name,
                     np.description.as_deref(),
                     None,
@@ -466,8 +488,8 @@ pub async fn dev_tools_kpi_sim_ingest(
                 })
                 .to_string();
                 match repo::create_finding(
-                    &state.db,
-                    &project_id,
+                    pool,
+                    project_id,
                     "kpi_sim",
                     &title,
                     p.rationale.as_deref(),
@@ -508,8 +530,8 @@ pub async fn dev_tools_kpi_sim_ingest(
             .take(60)
             .collect();
         match repo::create_finding(
-            &state.db,
-            &project_id,
+            pool,
+            project_id,
             "kpi_sim",
             &f.title,
             f.description.as_deref(),

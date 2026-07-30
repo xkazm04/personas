@@ -1131,7 +1131,18 @@
     "platform_n8n": "n8n",
     "platform_github_actions": "GitHub Actions",
     "platform_zapier": "Zapier",
-    "platform_custom": "Kustom"
+    "platform_custom": "Kustom",
+    "st_last_checked": "Terakhir diperiksa",
+    "st_retest": "Uji ulang",
+    "st_stale": "{count} usang",
+    "test_diff_recovered": "{count} pulih",
+    "test_diff_regressed": "{count} baru gagal",
+    "test_diff_failing": "{count} gagal",
+    "status_unverifiable": "Tidak dapat diverifikasi",
+    "st_unverifiable": "{count} tidak dapat diverifikasi",
+    "st_filter_toggle": "Tampilkan ini saja",
+    "st_filter_clear": "Tampilkan semua konektor",
+    "st_filter_empty": "Tidak ada konektor yang cocok dengan filter ini"
   },
   "model_config": {
     "model_provider": "Model & Penyedia",
@@ -1898,6 +1909,7 @@
     "batch_move_to_ungrouped": "Tanpa grup",
     "batch_moved_success": "Memindahkan {count} persona ke {group}",
     "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal",
+    "render_cap_notice": "Menampilkan {shown} dari {total} — persempit dengan pencarian atau filter untuk melihat sisanya.",
     "star_director_add": "Beri bintang untuk menambahkan ke cakupan pembinaan Director",
     "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus.",
     "badge_archived": "Diarsipkan",
