@@ -37,6 +37,22 @@ pub struct RoutingMatch {
     pub category: Option<String>,
 }
 
+/// Provenance stamp for a rule written by an applied Self-Tuning proposal
+/// (batch-3 learning grammar: every learned rule is auditable back to the
+/// evidence that produced it). Hand-authored rules carry `None`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RuleProvenance {
+    /// `policy_proposals.id` the operator approved.
+    pub proposal_id: String,
+    /// `PolicyEvidenceSnapshot.id` the proposal was derived from.
+    pub evidence_snapshot_id: String,
+    pub applied_at: String,
+    /// Human-readable one-line claim recorded at apply time.
+    pub claim: String,
+}
+
 /// One routing rule: a selector + the model/effort it resolves to.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -48,6 +64,10 @@ pub struct ModelRoutingRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub effort: Option<String>,
+    /// Present iff this rule was written by an applied Self-Tuning proposal.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub provenance: Option<RuleProvenance>,
 }
 
 /// The result of resolving the cascade for a persona.
@@ -164,6 +184,7 @@ mod tests {
             },
             model: model.to_string(),
             effort: effort.map(str::to_string),
+            provenance: None,
         }
     }
 
