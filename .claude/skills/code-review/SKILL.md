@@ -1,6 +1,7 @@
 ---
 name: code-review
 description: Production-readiness code review for Rust backend and React frontend changes
+argument-hint: "[file-or-glob]"
 allowed-tools: Read, Grep, Glob, Bash, Agent
 ---
 

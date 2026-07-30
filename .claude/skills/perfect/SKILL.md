@@ -4,6 +4,7 @@ contexts: tracked
 memory: vault
 category: Development
 description: Session-after-session product perfection loop. The strongest available model at xhigh reasoning (currently Fable 5) directs — it walks the repo's context map context-by-context, proposes 5 challenged, high-value directions per context (features, design elevations, significant optimizations), gates them with the user until 10 are accepted, then orchestrates one Opus-class builder subagent per context in isolated worktrees while making every review/merge decision itself. All state lives in a linked Obsidian vault so any future session resumes the loop exactly where the last one stopped. Invoke with `/perfect [init|propose|build|status|reflect] [context-name]`.
+argument-hint: "[init|propose|build|status|reflect] [context]"
 ---
 
 # Perfect — the direction-and-delivery loop
