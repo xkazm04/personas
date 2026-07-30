@@ -19,7 +19,9 @@
 //!   GET  /use-case-scan-status/{scan_id}    → { status, error, lines }
 //!   GET  /kpis/{project_id}?status=proposed → the project's KPIs (triage source)
 //!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
+//!   POST /retire-contexts                   → delete contexts by explicit id { project_id, context_ids }
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
+//!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -66,10 +68,12 @@ pub fn router(app: AppHandle) -> Router {
         .route("/use-case-scan-status/{scan_id}", get(use_case_scan_status))
         .route("/kpis/{project_id}", get(list_kpis))
         .route("/kpi-decision", post(kpi_decision))
+        .route("/kpi-rebind", post(kpi_rebind))
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
         .route("/dedupe-context-groups", post(dedupe_context_groups))
         .route("/dedupe-contexts", post(dedupe_contexts))
+        .route("/retire-contexts", post(retire_contexts))
         .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
         .route("/merge-context-groups", post(merge_context_groups))
         .route("/use-cases/{project_id}", get(list_use_cases))
@@ -470,6 +474,54 @@ struct DedupeGroupsBody {
     project_id: String,
 }
 
+#[derive(Deserialize)]
+struct RetireContextsBody {
+    project_id: String,
+    context_ids: Vec<String>,
+}
+
+/// Delete contexts by EXPLICIT id — the surgical counterpart to the pattern
+/// repairs above. Exists for retiring superseded rows a heuristic can't safely
+/// pick (e.g. the original coarse map's straddler husks after a subtree sweep
+/// claimed their files). Every id must belong to `project_id`; ids that don't
+/// (or don't exist) are reported back rather than silently skipped, so a caller
+/// working from a stale context list finds out. Never infers — no name
+/// matching, no emptiness heuristics, just the ids it was handed.
+async fn retire_contexts(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<RetireContextsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let pool = db(&s);
+    require_project(&s, &b.project_id)?;
+    if b.context_ids.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "context_ids is empty".into()));
+    }
+
+    let owned: std::collections::HashMap<String, String> =
+        repo::list_contexts_by_project(&pool, &b.project_id, None)
+            .map_err(err)?
+            .into_iter()
+            .map(|c| (c.id, c.name))
+            .collect();
+
+    let mut deleted: Vec<Value> = Vec::new();
+    let mut rejected: Vec<String> = Vec::new();
+    for id in &b.context_ids {
+        match owned.get(id) {
+            Some(name) if repo::delete_context(&pool, id).unwrap_or(false) => {
+                deleted.push(serde_json::json!({ "id": id, "name": name }));
+            }
+            _ => rejected.push(id.clone()),
+        }
+    }
+
+    Ok(Json(serde_json::json!({
+        "deleted": deleted,
+        "deleted_count": deleted.len(),
+        "rejected_ids": rejected,
+    })))
+}
+
 /// Merge context groups that share a name into the oldest one, then delete the
 /// emptied duplicates.
 ///
@@ -666,6 +718,65 @@ async fn kpi_decision(
         None,
         None,
         Some(&b.status),
+        None,
+        None,
+        None,
+        None,
+    )
+    .map(Json)
+    .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct KpiRebindBody {
+    kpi_id: String,
+    /// The context this KPI should measure. Must belong to the KPI's own
+    /// project — a KPI silently bound across projects would corrupt every
+    /// context-scoped surface that joins through it.
+    context_id: String,
+}
+
+/// Re-point a KPI at a different context. Needed when map maintenance retires a
+/// context that adopted KPIs still reference (`dev_kpis.context_id` is
+/// ON DELETE SET NULL, so retiring first would strand them as project-level
+/// rows). Only the binding moves; status, targets and measurements stay put.
+async fn kpi_rebind(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<KpiRebindBody>,
+) -> Result<Json<DevKpi>, (StatusCode, String)> {
+    let pool = db(&s);
+    let kpi = repo::get_kpi(&pool, &b.kpi_id)
+        .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
+    let ctx = repo::get_context_by_id(&pool, &b.context_id)
+        .map_err(|e| (StatusCode::NOT_FOUND, e.to_string()))?;
+    if ctx.project_id != kpi.project_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "context {} belongs to project {}, but KPI {} belongs to project {}",
+                ctx.id, ctx.project_id, kpi.id, kpi.project_id
+            ),
+        ));
+    }
+    repo::update_kpi(
+        &pool,
+        &b.kpi_id,
+        None,
+        None,
+        // Keep group coherent with the new context rather than leaving the old
+        // group dangling next to the new binding.
+        Some(ctx.group_id.as_deref()),
+        Some(Some(&b.context_id)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
         None,
         None,
         None,
