@@ -2,18 +2,46 @@
 
 How Personas Desktop packages are built, signed, and delivered to users across Windows, macOS, and Linux.
 
+> ### ⚠ Current state (verified 2026-07-30): the pipeline has never published a release
+>
+> `gh api repos/xkazm04/personas/releases` returns **0 releases**. Tags `v0.1.6`,
+> `v0.2.0`, `v0.4.0`, `v1.0.0`, `v1.1.0` exist on origin, but **every** Release
+> workflow run to date has failed — the bump/tag job succeeds and pushes the tag,
+> then the platform builds fail, so no GitHub Release is ever created.
+>
+> Consequences to be aware of before reading the rest of this document as
+> operational truth:
+>
+> - The updater endpoint `.../releases/latest/download/latest.json` **404s**. Every
+>   installed app's update check fails silently (`useAutoUpdater` swallows errors by
+>   design), so no user has ever received an update.
+> - Version files on master are at `1.1.0` and a `v1.1.0` tag already exists, so the
+>   next release run bumps past it normally — but see the tag-collision guard.
+> - A junk tag **`v0.1.NaN.1`** is on origin, left by the pre-fix bump bug (now
+>   guarded by the `Number.isNaN` check in `bump-version.mjs`). It sorts oddly in
+>   `git tag --sort=-v:refname` and should be deleted.
+> - The most recent failure (2026-07-16, run `29533053634`) was a genuine Rust
+>   compile error on a feature branch — ``&Arc<Vec<NoteEntry>>` is not an iterator``
+>   in `commands::obsidian_brain::graph` — not a pipeline defect.
+>
+> Before trusting a release run, build locally first (see **Ad-Hoc Local Builds**) so
+> a compile error is caught in minutes rather than after 45 minutes × 4 runners.
+
 ---
 
 ## Architecture
 
 ```
-Developer merges PR to master
+Maintainer runs the Release workflow (workflow_dispatch on master)
          |
          v
-  [bump-version]  ── bumps 0.1.x patch in 3 files, commits, tags vX.Y.Z
+  [bump-version]  ── conventional-commit bump in 4 files, tags vX.Y.Z
+         |          (also: tag-collision guard, changelog generation)
+         v
+  [frontend]  ── builds dist/ ONCE, uploads as a shared artifact
          |
          v
-  [build]  ── 4 parallel GitHub Actions runners
+  [build]  ── 4 parallel GitHub Actions runners (download dist/)
     ├── Windows x64     -->  .msi, .nsis.exe
     ├── Windows ARM64   -->  .msi, .nsis.exe
     ├── macOS universal -->  .dmg
@@ -36,9 +64,11 @@ Developer merges PR to master
 
 ## Trigger
 
-The release pipeline runs when a pull request is **merged** to the `master` branch.
-
-The bump-version job only runs when `github.event.pull_request.merged == true`, preventing accidental triggers on closed-but-not-merged PRs.
+**`workflow_dispatch` is the primary release path.** Development lands directly on
+`master` without PRs, so the `pull_request: [closed]` trigger — which is still wired
+and still gated on `github.event.pull_request.merged == true` — effectively never
+fires on the real workflow. Releasing is a deliberate manual act: run the **Release**
+workflow from the Actions tab (or `gh workflow run release.yml`).
 
 ---
 
@@ -46,17 +76,44 @@ The bump-version job only runs when `github.event.pull_request.merged == true`, 
 
 **Script**: `scripts/bump-version.mjs`
 
+The bump is **driven by conventional commits since the last tag**, not a fixed patch
+increment:
+
+| Commit since last tag | Bump |
+|---|---|
+| `BREAKING CHANGE:` or `type(scope)!:` | major |
+| `feat:` / `feat(scope):` | minor |
+| anything else (`fix:`, `chore:`, …) | patch |
+
 On each triggered run, the pipeline:
 
-1. Reads the current version from `package.json` (source of truth)
-2. Increments the patch number: `0.1.0` -> `0.1.1` -> `0.1.2`
-3. Writes the new version to all three files:
+1. Reads the current version from `package.json` (source of truth), stripping any
+   pre-release suffix before parsing
+2. Computes the bump type from `getCommitsSinceLastTag()`
+3. Writes the new version to **four** files:
    - `package.json`
    - `src-tauri/tauri.conf.json`
    - `src-tauri/Cargo.toml`
-4. Commits with message `chore: bump version to X.Y.Z`
-5. Creates git tag `vX.Y.Z`
-6. Pushes commit + tag to origin
+   - `src-tauri/Cargo.lock` (the `personas-desktop` package entry — a targeted regex
+     bump, since the bump job has no Rust toolchain. Skipping it would permanently
+     lag master's lockfile and break `--locked` builds.)
+4. **Guards against tag collision** — fails in seconds with an actionable message if
+   `vX.Y.Z` already exists locally or on origin, instead of failing after 45 minutes
+   of platform builds. A collision means the version files on master lag the tag
+   history; fix by aligning them to `git tag --sort=-v:refname | head -1`.
+5. Generates release notes via `scripts/generate-changelog.mjs` (groups commits;
+   `chore/ci/test/style/build` are filtered out of user-facing notes)
+6. Commits `chore: bump version to X.Y.Z`, tags `vX.Y.Z`, pushes commit + tag
+
+---
+
+## Frontend Job
+
+Before the platform matrix runs, a single `frontend` job on `ubuntu-latest` runs
+`npm run build` once and uploads `dist/` as a 1-day artifact. Each of the four
+platform runners downloads it and passes `beforeBuildCommand: ""` to `tauri-action`,
+so the web bundle is built once rather than four times. `SENTRY_DSN` /
+`VITE_SENTRY_DSN` are injected here.
 
 ---
 
@@ -79,6 +136,25 @@ Each runner uses the official `tauri-apps/tauri-action@v0` action which:
 
 - **Linux**: installs `libwebkit2gtk-4.1-dev`, `libappindicator3-dev`, `librsvg2-dev`, `patchelf`, `libgtk-3-dev`, `libsoup-3.0-dev`, `libjavascriptcoregtk-4.1-dev`
 - **macOS**: adds both `aarch64-apple-darwin` and `x86_64-apple-darwin` Rust targets for universal binary
+
+### Build caching
+
+Every matrix leg runs `sccache` (`RUSTC_WRAPPER=sccache`, GHA backend) plus
+`swatinem/rust-cache@v2` scoped to `src-tauri -> target`.
+
+> The rust-cache **`key` is set to the Rust target triple, and must stay that way.**
+> Both Windows legs run on `windows-latest`; without a per-target key whichever arch
+> builds first poisons `target/debug/deps/` with arch-specific rlibs (e.g. `ort-sys`
+> x64 objects) and the second arch dies at link time with
+> `machine type x64 conflicts with arm64`.
+
+### Post-build verification steps
+
+| Step | Runs on | What it guards |
+|---|---|---|
+| `verify-onnxruntime-bundling.mjs --target <triple>` | both Windows legs | Linking-aware ORT check — reads the exe's PE import table; iff the exe imports `onnxruntime.dll`, that DLL must be bundled beside it. Catches a silent switch to `load-dynamic` that would boot-crash users with "ONNX Runtime binary not found". |
+| `binary-size-report.mjs --target <triple> --budget 100` | windows-x64 only | Fails the release if any installer exceeds 100 MB. |
+| Sentry source-map upload | linux-x64 only | Creates/finalizes the Sentry release and uploads `dist/` source maps. Skipped silently if `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT` are unset. |
 
 ---
 
@@ -259,9 +335,16 @@ Then update the `tauri-action` step in `release.yml` to pass these as environmen
 | `scripts/bump-version.mjs` | Patch version bumper (3 files) |
 | `src-tauri/tauri.conf.json` | Updater pubkey, bundle config, endpoints |
 | `src-tauri/capabilities/default.json` | Tauri permissions (includes `core:app:default`) |
+| `.github/workflows/installer-test.yml` | Post-release installer acceptance (Windows x64/arm64, macOS, Linux) |
+| `scripts/generate-changelog.mjs` | Release-notes generator (conventional commits since last tag) |
+| `scripts/verify-onnxruntime-bundling.mjs` | Linking-aware ORT bundling gate (Windows) |
+| `scripts/binary-size-report.mjs` | Installer size report + 100 MB CI budget |
+| `scripts/check-tauri-configs.mjs` | Validates the three Tauri config files agree |
+| `scripts/ensure-ort-cache.mjs` | Pre-build ORT cache arch guard (`pretauri:build`/`pretauri:dev`) |
+| `scripts/test-installer.ps1` | Local/CI installer acceptance test (**destructive — see below**) |
 | `src/hooks/utility/data/useAutoUpdater.ts` | Frontend update checking logic |
-| `src/features/shared/components/feedback/UpdateBanner.tsx` | Update notification UI |
-| `src/features/shared/components/layout/sidebar/Sidebar.tsx` | Version display |
+| `src/features/shared/chrome/UpdateBanner.tsx` | Update notification UI |
+| `src/features/shared/chrome/sidebar/Sidebar.tsx` | Version display |
 | `.env.example` | Environment variable documentation |
 
 ---
@@ -276,10 +359,16 @@ The project supports multiple build configurations via Cargo profiles and Tauri 
 
 | Command | Features | Bundles | Build Time | Use Case |
 |---------|----------|---------|------------|----------|
-| `npm run tauri:build` | `desktop-full` (ml + p2p) | NSIS + MSI | ~15 min | CI / production release |
-| `npm run tauri:build:lite` | `desktop` (no ml/p2p) | NSIS only | ~10 min | Quick local testing, UI work |
-| `npm run tauri:build:stable` | `desktop-full` | NSIS + MSI | ~15 min | Milestone builds (explicit config) |
-| `npx tauri build` | `desktop-full` (from tauri.conf.json) | NSIS + MSI | ~15 min | Default, same as CI |
+| `npm run tauri:build` | `desktop-full` (ml + p2p) | NSIS + MSI | ~27 min | CI / production release |
+| `npm run tauri:build:lite` | `desktop` (no ml/p2p) | NSIS only | ~20 min | Quick local testing, UI work |
+| `npm run tauri:build:stable` | `desktop-full` | NSIS + MSI | ~30 min | Milestone builds (explicit config) |
+| `npx tauri build` | `desktop-full` (from tauri.conf.json) | NSIS + MSI | ~27 min | Default, same as CI |
+
+> Build times measured 2026-07-30 on a warm cache (Windows 11, `npm run tauri:build`,
+> v1.1.0): **24m40s** for the Rust release profile plus ~2 min for WiX + makensis
+> bundling. The older "~10-15 min" figures in this doc were stale. A cold cache is
+> considerably slower. `pretauri:build` also runs `ensure-ort-cache.mjs` first
+> (seconds when the cache is already correct).
 
 ### Feature Flag Architecture
 
@@ -346,11 +435,63 @@ On Windows, a successful build produces:
 - **MSI**: `src-tauri/target/release/bundle/msi/Personas_<version>_x64_en-US.msi`
 - **Binary**: `src-tauri/target/release/personas-desktop.exe`
 
+Note that a local build has **no `--target` flag**, so output lands in
+`target/release/bundle/...`. CI passes `--target <triple>`, which shifts everything
+to `target/<triple>/release/bundle/...` — this is why `binary-size-report.mjs` and
+`verify-onnxruntime-bundling.mjs` take a `--target` argument in the workflow.
+
+### `tauri build` exits 1 locally without a signing key — this is expected
+
+`bundle.createUpdaterArtifacts` is `true` in `tauri.conf.json`. After both installers
+are written, Tauri tries to produce the signed updater bundles and fails:
+
+```
+Finished 2 bundles at:
+    .../bundle/msi/Personas_1.1.0_x64_en-US.msi
+    .../bundle/nsis/Personas_1.1.0_x64-setup.exe
+
+Error A public key has been found, but no private key. Make sure to set
+`TAURI_SIGNING_PRIVATE_KEY` environment variable.
+```
+
+**The installers are complete and usable** — only the `.nsis.zip` / `.msi.zip` +
+`.sig` updater artifacts are missing. But the command's exit code is **1**, so any
+script or CI step that gates on it will treat the build as failed. Two options:
+
+- Accept the non-zero exit and check for the bundle files instead of `$?`.
+- Set `TAURI_SIGNING_PRIVATE_KEY` (+ `..._PASSWORD`) from `~/.tauri/personas.key`
+  before building to get a clean exit and real updater artifacts.
+
+Do **not** "fix" this by piping through `tee` — the pipe reports its own exit code
+and masks the failure.
+
 ### What to expect
 
-- The frontend build takes ~5s, the Rust release build takes **10-15 minutes** on a typical machine (first build is slower due to no incremental cache).
-- Lite builds skip ML (ONNX/fastembed) and P2P (quinn/mdns) crate compilation, saving ~5 minutes.
-- No signing occurs locally unless `TAURI_SIGNING_PRIVATE_KEY` is set in the environment. Unsigned builds work fine for local testing but cannot be used with the auto-updater.
+- The frontend build (`beforeBuildCommand: npm run build`, which runs the full
+  `prebuild` codegen: command names, i18n types + section split, connector seed,
+  template checksums, sprites, catalog, system skills) takes ~30s.
+- The Rust release build takes **~25 minutes** on a warm cache; a cold cache is
+  substantially slower.
+- Lite builds skip ML (ONNX/fastembed) and P2P (quinn/mdns) crate compilation.
+- The release build is memory-hungry — a single `rustc` process peaks around 1 GB+
+  during the final crate. It coexists safely with a running `tauri dev` session,
+  which uses `target/debug` (a separate profile directory with its own cargo lock).
+
+### Verifying a local build
+
+```bash
+# Smoke-test the binary (runs before any Tauri/single-instance setup,
+# so it cannot disturb a running dev instance)
+./src-tauri/target/release/personas-desktop.exe --health-check
+
+# Linking-aware ORT gate — locally you must pass --dir (CI passes --target)
+node scripts/verify-onnxruntime-bundling.mjs --dir src-tauri/target/release
+
+# Size report. NOTE: this scans the whole bundle directory, so stale installers
+# from previous versions are listed too. Clear them out before trusting a
+# --budget run locally; CI runs on a clean runner and doesn't have this problem.
+node scripts/binary-size-report.mjs --budget 100
+```
 
 ### Build Size Report
 
@@ -408,28 +549,55 @@ Exits with code 0 on success, non-zero on failure. Used by the installer accepta
 
 Automated installer testing runs via `.github/workflows/installer-test.yml`.
 
-### What it tests
+### What the Windows script tests (`scripts/test-installer.ps1`)
 
-1. **Silent install** — NSIS installer runs with `/S` flag
+1. **Silent install** — NSIS installer runs with `/S` flag into `%LOCALAPPDATA%\Personas`
 2. **File verification** — binary exists, correct size (>20 MB), uninstaller present
 3. **Registry** — uninstall registry key created, deep link protocol registered
 4. **Health check** — binary launches with `--health-check` and exits cleanly
 5. **Silent uninstall** — uninstaller removes files
 
+### Jobs in the workflow
+
+| Job | Trigger | What it does |
+|---|---|---|
+| `test-release` | after a **successful** Release run | Downloads the release NSIS installer and runs the acceptance script on a `windows-latest` **and** a `windows-11-arm` runner (`fail-fast: false`, so an arm64-runner outage doesn't mask a passing x64 leg) |
+| `test-build` | `workflow_dispatch` with empty `tag` | Builds `--bundles nsis` from HEAD, then runs the acceptance script |
+| `test-build-macos` | `workflow_dispatch` with empty `tag` | Builds `--bundles dmg` (host arch, not universal), mounts it, asserts binary-exists + an adhoc-or-real code signature, then *attempts* `--health-check`. `continue-on-error: true` during the soak period. |
+| `test-build-linux` | `workflow_dispatch` with empty `tag` | Builds `--bundles deb,appimage`, `apt-get install`s the deb and health-checks it under `xvfb`, then health-checks the AppImage. `continue-on-error: true` during the soak period. |
+| `test-tag` | `workflow_dispatch` with a `tag` | Downloads that tag's x64 installer and runs the acceptance script |
+
+The macOS and Linux jobs are non-blocking gates today. Promotion bar: flip
+`continue-on-error` to `false` once each has been green — or failed only on the
+expected "headless launch didn't come up" degraded path, never on
+build/mount/binary/sign — for 5 consecutive runs. (ADR
+`2026-05-01-installer-test-cross-platform`.)
+
 ### Running locally
 
+> **⚠ Destructive on a developer machine.** `test-installer.ps1` silently installs
+> into `%LOCALAPPDATA%\Personas` (Phase 1) and then silently **uninstalls** it
+> (Phase 5). If you have a real Personas install there, this script replaces it and
+> then removes it — including the install directory. It does not touch the app's
+> SQLite data directory, and it does not affect a `tauri dev` session (that runs out
+> of `target/debug`), but do not run it casually on a machine whose installed
+> Personas you care about. Prefer the CI job, or run it on a throwaway box.
+
 ```powershell
-# After building
+# After building — auto-discovers the newest matching installer
 .\scripts\test-installer.ps1
 
-# Or with a specific installer path
-.\scripts\test-installer.ps1 -Installer "path\to\Personas_0.0.1_x64-setup.exe"
+# Or with an explicit installer path / architecture
+.\scripts\test-installer.ps1 -Installer "path\to\Personas_1.1.0_x64-setup.exe" -Arch x64
 ```
 
 ### CI triggers
 
-- **Automatic**: runs after every successful Release workflow
-- **Manual**: `workflow_dispatch` — test from HEAD or a specific tag
+- **Automatic**: `workflow_run` after the Release workflow completes — but the
+  `test-release` job is gated on `conclusion == 'success'`, so it silently does
+  nothing when Release fails.
+- **Manual**: `workflow_dispatch` — test from HEAD (all platforms) or a specific tag
+  (Windows x64 only)
 
 ---
 
