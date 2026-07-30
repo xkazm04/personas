@@ -122,7 +122,13 @@ The skill does not scan anything itself. It drives the app's own three lanes
 over the loopback `/dev-tools` bridge (`scan-codebase` → `scan-use-cases` →
 `scan-kpis`, plus `kpis/{project_id}` and `kpi-decision` for triage), so results
 are identical to scanning from the Factory toolbar and land through the same
-repo functions. Each lane is gated on freshness — missing, or older than 14
+repo functions. The bridge also carries map-maintenance routes for a conducted
+session: idempotent repairs (`dedupe-contexts`, `dedupe-context-groups`,
+`prune-nonsource-contexts`, explicit-pair `merge-context-groups`) plus two
+surgical ones — `retire-contexts` deletes contexts by explicit id (for rows no
+heuristic can pick, e.g. superseded husks after a subtree sweep), and
+`kpi-rebind` re-points a KPI at a different context first, since retiring a
+context would otherwise strand its adopted KPIs as unbound project-level rows. Each lane is gated on freshness — missing, or older than 14
 days, or skipped — and **the verdicts are computed in the UI, not the skill**,
 so the consent modal states what this particular run will do before the user
 confirms it.

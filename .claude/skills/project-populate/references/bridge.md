@@ -117,7 +117,26 @@ curl -s -X POST "$B/dev-tools/prune-nonsource-contexts" -d '{"project_id":"<id>"
 curl -s -X POST "$B/dev-tools/merge-context-groups" -H 'Content-Type: application/json' \
   -d '{"project_id":"<id>","delete_empty":true,
        "merges":[{"from":"Execution & Quality Data","into":"Execution Engine"}]}'
+# delete contexts by EXPLICIT id (NOT idempotent in effect — rows are gone).
+# For rows no heuristic can pick: e.g. the old coarse map's husks after a
+# subtree sweep claimed their files. Ids not owned by the project come back
+# in rejected_ids instead of being skipped silently.
+curl -s -X POST "$B/dev-tools/retire-contexts" -H 'Content-Type: application/json' \
+  -d '{"project_id":"<id>","context_ids":["<ctx>", "..."]}'
 ```
+
+**Before retiring a context, check what points at it.** `dev_kpis.context_id`
+is ON DELETE SET NULL, so deleting a context strands its adopted KPIs as
+unbound project-level rows. Re-point them FIRST:
+
+```bash
+curl -s -X POST "$B/dev-tools/kpi-rebind" -H 'Content-Type: application/json' \
+  -d '{"kpi_id":"<kpi>","context_id":"<new ctx>"}'
+```
+
+The natural successor for a KPI is whichever new context now owns the old
+context's files. And if a doomed context's files have NO new owner, that
+context is not superseded — keep it rather than retiring on age alone.
 
 Expect **group sprawl** after a sweep: each scan sees the existing group list
 and is told to reuse it, but a large sweep still tends to add some. Consolidate
