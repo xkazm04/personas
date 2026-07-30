@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { IconObsidianBrain } from '@/features/plugins/PluginIcons';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -57,7 +57,7 @@ export default function ObsidianBrainPage() {
             OBSIDIAN_PANEL_TESTID above for why it's a literal map. */}
         <div key={obsidianBrainTab} className="animate-fade-slide-in" data-testid={OBSIDIAN_PANEL_TESTID[obsidianBrainTab]}>
           <ErrorBoundary name="Obsidian Brain">
-            <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
+            <Suspense fallback={<RouteChunkSkeleton showIcon />}>
               {obsidianBrainTab === 'setup' && <SetupPanel />}
               {obsidianBrainTab === 'sync' && <SyncPanel />}
               {obsidianBrainTab === 'browse' && <BrowsePanel />}
