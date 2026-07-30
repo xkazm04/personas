@@ -228,6 +228,18 @@
     "link_goal_none": "কোনো লক্ষ্যের সাথে সংযুক্ত নয়"
   },
   "team_studio": {
+    "learning_heading": "দলের শেখা",
+    "learning_empty": "কোনো শেখার রেকর্ড নেই — দল ফলাফল থেকে শেখা শুরু করার আগেই এই মিশন শেষ হয়েছে।",
+    "learning_steps_summary": "{done} সম্পন্ন · {failed} ব্যর্থ · {skipped} বাদ",
+    "learning_interventions": "হস্তক্ষেপ: {count}",
+    "learning_trust_heading": "আস্থা আপডেট",
+    "learning_retro_held": "রেট্রোস্পেক্টিভ অনুষ্ঠিত হয়েছে",
+    "learning_retro_skipped_trivial": "রেট্রোস্পেক্টিভ বাদ — সাধারণ রান",
+    "learning_retro_skipped_aborted": "রেট্রোস্পেক্টিভ বাদ — মিশন বাতিল",
+    "learning_retro_skipped_busy": "রেট্রোস্পেক্টিভ বাদ — অন্য একটি আলোচনা চলছিল",
+    "learning_retro_none": "কোনো রেট্রোস্পেক্টিভ নেই",
+    "learning_lessons_heading": "দলের শিক্ষা",
+    "learning_no_lessons": "এখনও কোনো শিক্ষা নেই — রেট্রোস্পেক্টিভ এখানে সেগুলি লিখবে।",
     "header_label": "দল",
     "teams_header_label": "দলসমূহ",
     "teams_count_one": "{count} দল",

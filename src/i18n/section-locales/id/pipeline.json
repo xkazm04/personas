@@ -228,6 +228,18 @@
     "link_goal_none": "Tidak terhubung ke tujuan"
   },
   "team_studio": {
+    "learning_heading": "Pembelajaran tim",
+    "learning_empty": "Tidak ada catatan pembelajaran — misi ini selesai sebelum tim mulai belajar dari hasil.",
+    "learning_steps_summary": "{done} selesai · {failed} gagal · {skipped} dilewati",
+    "learning_interventions": "Intervensi: {count}",
+    "learning_trust_heading": "Pembaruan kepercayaan",
+    "learning_retro_held": "Retrospektif diadakan",
+    "learning_retro_skipped_trivial": "Retrospektif dilewati — eksekusi sederhana",
+    "learning_retro_skipped_aborted": "Retrospektif dilewati — misi dibatalkan",
+    "learning_retro_skipped_busy": "Retrospektif dilewati — deliberasi lain sedang aktif",
+    "learning_retro_none": "Tanpa retrospektif",
+    "learning_lessons_heading": "Pelajaran tim",
+    "learning_no_lessons": "Belum ada pelajaran — retrospektif akan menuliskannya di sini.",
     "header_label": "Tim",
     "teams_header_label": "Tim",
     "teams_count_one": "{count} tim",

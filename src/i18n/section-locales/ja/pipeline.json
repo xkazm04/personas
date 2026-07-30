@@ -228,6 +228,18 @@
     "link_goal_none": "ゴールに紐付けなし"
   },
   "team_studio": {
+    "learning_heading": "チームの学習",
+    "learning_empty": "学習記録はありません — このミッションはチームが成果から学び始める前に終了しました。",
+    "learning_steps_summary": "{done} 完了 · {failed} 失敗 · {skipped} スキップ",
+    "learning_interventions": "介入: {count}",
+    "learning_trust_heading": "信頼度の更新",
+    "learning_retro_held": "レトロスペクティブ実施済み",
+    "learning_retro_skipped_trivial": "レトロスペクティブをスキップ — 軽微な実行",
+    "learning_retro_skipped_aborted": "レトロスペクティブをスキップ — ミッション中止",
+    "learning_retro_skipped_busy": "レトロスペクティブをスキップ — 別の審議が進行中でした",
+    "learning_retro_none": "レトロスペクティブなし",
+    "learning_lessons_heading": "チームの教訓",
+    "learning_no_lessons": "まだ教訓はありません — レトロスペクティブがここに記録します。",
     "header_label": "チーム",
     "teams_header_label": "チーム",
     "teams_count_one": "{count} チーム",

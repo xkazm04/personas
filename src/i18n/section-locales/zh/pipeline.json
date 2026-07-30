@@ -228,6 +228,18 @@
     "link_goal_none": "未关联目标"
   },
   "team_studio": {
+    "learning_heading": "团队学习",
+    "learning_empty": "暂无学习记录 — 此任务在团队开始从结果中学习之前就已结束。",
+    "learning_steps_summary": "{done} 已完成 · {failed} 失败 · {skipped} 已跳过",
+    "learning_interventions": "干预次数:{count}",
+    "learning_trust_heading": "信任度更新",
+    "learning_retro_held": "已举行回顾会",
+    "learning_retro_skipped_trivial": "已跳过回顾 — 运行过于简单",
+    "learning_retro_skipped_aborted": "已跳过回顾 — 任务已中止",
+    "learning_retro_skipped_busy": "已跳过回顾 — 另一场审议正在进行",
+    "learning_retro_none": "无回顾",
+    "learning_lessons_heading": "团队经验",
+    "learning_no_lessons": "暂无经验 — 回顾会将在此记录经验。",
     "header_label": "团队",
     "teams_header_label": "团队",
     "teams_count_one": "{count} 团队",

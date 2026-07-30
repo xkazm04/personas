@@ -228,6 +228,18 @@
     "link_goal_none": "목표에 연결되지 않음"
   },
   "team_studio": {
+    "learning_heading": "팀 학습",
+    "learning_empty": "학습 기록 없음 — 이 미션은 팀이 결과에서 학습을 시작하기 전에 종료되었습니다.",
+    "learning_steps_summary": "{done} 완료 · {failed} 실패 · {skipped} 건너뜀",
+    "learning_interventions": "개입: {count}",
+    "learning_trust_heading": "신뢰도 업데이트",
+    "learning_retro_held": "회고 진행됨",
+    "learning_retro_skipped_trivial": "회고 건너뜀 — 단순 실행",
+    "learning_retro_skipped_aborted": "회고 건너뜀 — 미션 중단",
+    "learning_retro_skipped_busy": "회고 건너뜀 — 다른 심의가 진행 중이었음",
+    "learning_retro_none": "회고 없음",
+    "learning_lessons_heading": "팀 교훈",
+    "learning_no_lessons": "아직 교훈이 없습니다 — 회고가 여기에 기록합니다.",
     "header_label": "팀",
     "teams_header_label": "팀",
     "teams_count_one": "{count} 팀",

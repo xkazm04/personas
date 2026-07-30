@@ -228,6 +228,18 @@
     "link_goal_none": "غير مرتبط بهدف"
   },
   "team_studio": {
+    "learning_heading": "تعلم الفريق",
+    "learning_empty": "لا يوجد سجل تعلم — انتهت هذه المهمة قبل أن يبدأ الفريق التعلم من النتائج.",
+    "learning_steps_summary": "{done} مكتمل · {failed} فشل · {skipped} تم تخطيه",
+    "learning_interventions": "التدخلات: {count}",
+    "learning_trust_heading": "تحديثات الثقة",
+    "learning_retro_held": "عُقدت الجلسة الاسترجاعية",
+    "learning_retro_skipped_trivial": "تم تخطي الجلسة الاسترجاعية — تشغيل بسيط",
+    "learning_retro_skipped_aborted": "تم تخطي الجلسة الاسترجاعية — أُلغيت المهمة",
+    "learning_retro_skipped_busy": "تم تخطي الجلسة الاسترجاعية — كانت مداولة أخرى نشطة",
+    "learning_retro_none": "لا جلسة استرجاعية",
+    "learning_lessons_heading": "دروس الفريق",
+    "learning_no_lessons": "لا دروس بعد — ستكتبها الجلسات الاسترجاعية هنا.",
     "header_label": "الفريق",
     "teams_header_label": "الفرق",
     "teams_count_one": "{count} فريق",

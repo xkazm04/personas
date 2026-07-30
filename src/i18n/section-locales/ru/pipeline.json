@@ -228,6 +228,18 @@
     "link_goal_none": "Не привязано к цели"
   },
   "team_studio": {
+    "learning_heading": "Обучение команды",
+    "learning_empty": "Нет записи об обучении — эта миссия завершилась до того, как команда начала учиться на результатах.",
+    "learning_steps_summary": "{done} готово · {failed} с ошибкой · {skipped} пропущено",
+    "learning_interventions": "Вмешательства: {count}",
+    "learning_trust_heading": "Обновления доверия",
+    "learning_retro_held": "Ретроспектива проведена",
+    "learning_retro_skipped_trivial": "Ретроспектива пропущена — тривиальный запуск",
+    "learning_retro_skipped_aborted": "Ретроспектива пропущена — миссия прервана",
+    "learning_retro_skipped_busy": "Ретроспектива пропущена — шло другое обсуждение",
+    "learning_retro_none": "Без ретроспективы",
+    "learning_lessons_heading": "Уроки команды",
+    "learning_no_lessons": "Уроков пока нет — ретроспективы будут записывать их сюда.",
     "header_label": "Команда",
     "teams_header_label": "Команды",
     "teams_count_one": "{count} команда",

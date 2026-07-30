@@ -6739,6 +6739,250 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- Self-Evolving Team v1: assignment outcomes + team-scoped trust ------
+    // `assignment_outcomes` — one learning record per terminal assignment
+    // (UNIQUE(assignment_id) makes the first terminal transition the writer).
+    // `team_member_trust` — Brier-updated, floored per-(team, persona) trust
+    // the matcher overlays on the persona's global trust_score. Soft refs
+    // (no FK) so the learning ledger survives assignment/team deletion audits.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "assignment_outcomes",
+            description: "Create assignment_outcomes + team_member_trust (Self-Evolving Team v1)",
+            already_applied: |conn| has_table(conn, "assignment_outcomes"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS assignment_outcomes (
+                        id                    TEXT PRIMARY KEY,
+                        assignment_id         TEXT NOT NULL UNIQUE,
+                        team_id               TEXT NOT NULL,
+                        status                TEXT NOT NULL,
+                        steps_total           INTEGER NOT NULL DEFAULT 0,
+                        steps_done            INTEGER NOT NULL DEFAULT 0,
+                        steps_failed          INTEGER NOT NULL DEFAULT 0,
+                        steps_skipped         INTEGER NOT NULL DEFAULT 0,
+                        review_interventions  INTEGER NOT NULL DEFAULT 0,
+                        duration_secs         INTEGER,
+                        outcome_json          TEXT NOT NULL DEFAULT '{}',
+                        retro_deliberation_id TEXT,
+                        retro_skipped_reason  TEXT,
+                        created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_assignment_outcomes_team
+                        ON assignment_outcomes(team_id, created_at DESC);
+                    CREATE TABLE IF NOT EXISTS team_member_trust (
+                        team_id    TEXT NOT NULL,
+                        persona_id TEXT NOT NULL,
+                        trust      REAL NOT NULL,
+                        samples    INTEGER NOT NULL DEFAULT 0,
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (team_id, persona_id)
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- Darwin Mode v1: measured-fitness provenance marker ------------------
+    // `fitness_source` distinguishes an offspring's mid-parent PREDICTION
+    // ("inherited") from a fixture-replay EVALUATION ("measured"). Legacy rows
+    // stay NULL (all inherited by construction).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "genome_results_fitness_source",
+            description: "Add fitness_source (measured|inherited) to genome_breeding_results",
+            already_applied: |conn| has_column(conn, "genome_breeding_results", "fitness_source"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE genome_breeding_results ADD COLUMN fitness_source TEXT;",
+                )
+            },
+        },
+    )?;
+
+    // -- Darwin Mode v1: human-gated promotion queue -------------------------
+    // An evolution cycle whose challenger beats the incumbent FILES a row here;
+    // nothing is applied until a human approves (see
+    // db/src/repos/lab/evolution_proposals.rs). Soft refs to evolution_cycles /
+    // personas (no FK): the audit trail survives cycle/persona deletion.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "evolution_promotion_proposals",
+            description: "Create evolution_promotion_proposals (Darwin Mode review-gated promotion)",
+            already_applied: |conn| has_table(conn, "evolution_promotion_proposals"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS evolution_promotion_proposals (
+                        id                 TEXT PRIMARY KEY,
+                        cycle_id           TEXT NOT NULL,
+                        persona_id         TEXT NOT NULL,
+                        status             TEXT NOT NULL DEFAULT 'pending',
+                        winner_genome_json TEXT NOT NULL,
+                        new_prompt         TEXT NOT NULL,
+                        incumbent_score    REAL NOT NULL,
+                        winner_score       REAL NOT NULL,
+                        improvement        REAL NOT NULL,
+                        threshold          REAL NOT NULL,
+                        fitness_source     TEXT NOT NULL DEFAULT 'measured',
+                        evidence_json      TEXT,
+                        base_updated_at    TEXT NOT NULL,
+                        decision_note      TEXT,
+                        created_at         TEXT NOT NULL,
+                        decided_at         TEXT
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_evo_proposals_persona
+                        ON evolution_promotion_proposals(persona_id, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- Self-Wiring Fabric v1: mined automation suggestions -----------------
+    // Written by `engine::pattern_miner` (event→manual-run co-occurrence),
+    // rendered as ghost cables in the Studio patchbay. UNIQUE(event_type,
+    // persona_id) makes the miner's upsert idempotent; `committed_trigger_id`
+    // is the mined-route tag that excludes an accepted suggestion's own
+    // trigger traffic from future evidence.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "automation_suggestions",
+            description: "Create automation_suggestions (Self-Wiring Fabric mined ghost cables)",
+            already_applied: |conn| has_table(conn, "automation_suggestions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS automation_suggestions (
+                        id                   TEXT PRIMARY KEY,
+                        event_type           TEXT NOT NULL,
+                        persona_id           TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+                        status               TEXT NOT NULL DEFAULT 'proposed'
+                                             CHECK(status IN ('proposed','accepted','rejected')),
+                        occurrence_count     INTEGER NOT NULL DEFAULT 0,
+                        manual_run_count     INTEGER NOT NULL DEFAULT 0,
+                        support              REAL NOT NULL DEFAULT 0,
+                        window_seconds       INTEGER NOT NULL,
+                        lookback_days        INTEGER NOT NULL,
+                        evidence_json        TEXT NOT NULL DEFAULT '[]',
+                        committed_trigger_id TEXT,
+                        first_seen_at        TEXT,
+                        last_seen_at         TEXT,
+                        decided_at           TEXT,
+                        created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at           TEXT NOT NULL DEFAULT (datetime('now')),
+                        UNIQUE(event_type, persona_id)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_autosuggest_status
+                        ON automation_suggestions(status, updated_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- lab_ab_experiments: Director's Lab experiment registry --------------
+    // One row per commissioned verdict→hypothesis experiment (batch-3
+    // Director's Lab v1). Provenance-first: review_id soft-refs the approved
+    // Director verdict (persona_manual_reviews, no FK — the audit trail
+    // survives review pruning), hypothesis_json is the typed hypothesis
+    // block, provenance_json snapshots the verdict evidence. status:
+    // awaiting_variant | variant_ready | declined_budget | running |
+    // concluded (running/concluded reserved for the deferred canary loop).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "lab_ab_experiments",
+            description: "Create lab_ab_experiments (Director's Lab verdict→experiment registry)",
+            already_applied: |conn| has_table(conn, "lab_ab_experiments"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS lab_ab_experiments (
+                        id              TEXT PRIMARY KEY,
+                        persona_id      TEXT NOT NULL,
+                        review_id       TEXT,
+                        hypothesis_json TEXT NOT NULL,
+                        provenance_json TEXT,
+                        status          TEXT NOT NULL DEFAULT 'awaiting_variant'
+                                        CHECK(status IN ('awaiting_variant','variant_ready',
+                                                         'declined_budget','running','concluded')),
+                        status_detail   TEXT,
+                        variant_prompt  TEXT,
+                        variant_source  TEXT,
+                        spend_usd       REAL NOT NULL DEFAULT 0,
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_lab_ab_experiments_persona
+                        ON lab_ab_experiments(persona_id, created_at DESC);",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_ab_experiments_review
+                        ON lab_ab_experiments(review_id) WHERE review_id IS NOT NULL;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- policy_proposals: Self-Tuning Fabric review-each ledger -------------
+    // One row per proposed policy change (routing-rule diff / budget ceiling)
+    // with its typed payload+claim and the evidence-snapshot slice it was
+    // derived from. Written by policy_tuning_generate; transitioned by the
+    // apply/decline commands. Declined rows are kept as feedback — the
+    // generator will not re-propose an answered question.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "policy_proposals",
+            description: "Create policy_proposals (Self-Tuning Fabric proposal ledger)",
+            already_applied: |conn| has_table(conn, "policy_proposals"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS policy_proposals (
+                        id                   TEXT PRIMARY KEY,
+                        kind                 TEXT NOT NULL
+                            CHECK(kind IN ('routing_rule', 'budget_ceiling', 'healing_strategy')),
+                        category             TEXT,
+                        payload_json         TEXT NOT NULL,
+                        evidence_snapshot_id TEXT NOT NULL,
+                        evidence_json        TEXT NOT NULL,
+                        status               TEXT NOT NULL DEFAULT 'pending'
+                            CHECK(status IN ('pending', 'applied', 'declined')),
+                        decline_reason       TEXT,
+                        created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+                        decided_at           TEXT
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_policy_proposals_status
+                        ON policy_proposals(status, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 

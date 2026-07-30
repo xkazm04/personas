@@ -228,6 +228,18 @@
     "link_goal_none": "Nepropojeno s cílem"
   },
   "team_studio": {
+    "learning_heading": "Týmové učení",
+    "learning_empty": "Žádný záznam učení — tato mise skončila dřív, než se tým začal učit z výsledků.",
+    "learning_steps_summary": "{done} hotovo · {failed} selhalo · {skipped} přeskočeno",
+    "learning_interventions": "Zásahy: {count}",
+    "learning_trust_heading": "Aktualizace důvěry",
+    "learning_retro_held": "Retrospektiva proběhla",
+    "learning_retro_skipped_trivial": "Retrospektiva vynechána — triviální běh",
+    "learning_retro_skipped_aborted": "Retrospektiva vynechána — mise zrušena",
+    "learning_retro_skipped_busy": "Retrospektiva vynechána — probíhala jiná porada",
+    "learning_retro_none": "Bez retrospektivy",
+    "learning_lessons_heading": "Týmové lekce",
+    "learning_no_lessons": "Zatím žádné lekce — retrospektivy je sem budou zapisovat.",
     "header_label": "Tým",
     "teams_header_label": "Týmy",
     "teams_count_one": "{count} tým",

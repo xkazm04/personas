@@ -695,10 +695,38 @@
     "unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung -- Anmeldedaten sind gespeichert, wurden aber nie beim Anbieter überprüft",
     "title_catalog": "Katalog",
     "title_dependencies": "Abhängigkeiten",
-    "title_databases": "Datenbanken"
+    "title_databases": "Datenbanken",
+    "title_broker": "Broker"
   },
   "breadcrumb": {
     "aria_label": "Tresor-Breadcrumb"
+  },
+  "broker": {
+    "title": "Zugangsdaten-Broker",
+    "subtitle": "Externe Konsumenten halten nur widerrufbare Handles — Geheimnisse verlassen den Tresor nie. Jeder weitergeleitete Aufruf wird auditiert und speist den Live-Graphen des Wirkungsradius.",
+    "exclusion_note": "Vorerst nur Bearer- und API-Key-Konnektoren. SDKs, die Anfragen selbst signieren (z. B. AWS SigV4) oder Websockets benötigen, lassen sich noch nicht weiterleiten — diese Zugangsdaten müssen weiterhin beim Konsumenten liegen.",
+    "consumers_header": "Konsumenten",
+    "loading": "Konsumenten werden geladen",
+    "load_error": "Broker-Konsumenten konnten nicht geladen werden.",
+    "empty_title": "Noch keine Konsumenten",
+    "empty_body": "Bisher hat kein externer Prozess Zugangsdaten über den Broker verwendet. Erstellen Sie ein Handle für Zugangsdaten und richten Sie Ihr Skript oder Ihren Agenten auf den lokalen Proxy — die Aktivität erscheint dann hier.",
+    "status_active": "Aktiv",
+    "status_revoked": "Widerrufen",
+    "status_inactive": "Inaktiv",
+    "calls_one": "{count} Aufruf",
+    "calls_other": "{count} Aufrufe",
+    "last_used": "Zuletzt verwendet",
+    "expires": "Läuft ab",
+    "credentials_used": "Verwendete Zugangsdaten",
+    "kill_switch": "Zugriff widerrufen",
+    "kill_switch_confirm": "Widerrufen?",
+    "kill_switch_hint": "Kill-Switch: Das Handle des Konsumenten funktioniert schon bei der nächsten Anfrage nicht mehr.",
+    "revoking": "Wird widerrufen...",
+    "revoke_error": "Dieser Konsument konnte nicht widerrufen werden.",
+    "activity_show": "Aktivität anzeigen",
+    "activity_hide": "Aktivität ausblenden",
+    "activity_empty": "Für diesen Konsumenten wurden noch keine Anfragen aufgezeichnet.",
+    "activity_loading": "Aktivität wird geladen"
   },
   "credential_card": {
     "delete_credential": "Zugangsdaten löschen",

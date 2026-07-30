@@ -3943,7 +3943,32 @@
     "roster_unscored": "Unscored",
     "roster_unscored_hint": "The Director reviewed this agent but did not return a score; open the review to see its coaching.",
     "healing_source_badge": "Director",
-    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue."
+    "healing_source_hint": "Raised by the Director's coaching review — approve or resolve it like any other issue.",
+    "lab_title": "Campaign report",
+    "lab_subtitle": "Approved verdicts with a testable hypothesis compile into registered experiments under a weekly budget.",
+    "lab_empty_title": "No experiments yet",
+    "lab_empty_subtitle": "I haven't commissioned any experiments. When a coaching verdict carries a testable hypothesis and you approve it, it will appear here ready to compile.",
+    "lab_kpi_hypotheses": "Hypotheses emitted",
+    "lab_kpi_experiments": "Experiments",
+    "lab_kpi_variant_ready": "Variant ready",
+    "lab_kpi_awaiting": "Awaiting variant",
+    "lab_kpi_declined": "Declined (budget)",
+    "lab_ledger_title": "Weekly ledger",
+    "lab_ledger_summary": "${spent} spent of ${budget} this week",
+    "lab_ledger_dry": "The weekly ledger is dry — I will decline new experiments until it resets on Monday.",
+    "lab_pending_title": "Ready to compile",
+    "lab_pending_hint": "Approved verdicts with a hypothesis, not yet compiled into an experiment.",
+    "lab_commission": "Compile experiment",
+    "lab_commissioning": "Compiling…",
+    "lab_status_variant_ready": "Variant ready",
+    "lab_status_awaiting_variant": "Awaiting variant",
+    "lab_status_declined_budget": "Declined — budget",
+    "lab_status_running": "Running",
+    "lab_status_concluded": "Concluded",
+    "lab_hypothesis_metric": "Success metric",
+    "lab_hypothesis_change": "Proposed change",
+    "lab_experiments_title": "Commissioned experiments",
+    "lab_deferred_note": "Canary fitness and promotion ride the evolution proposal path — not part of this report yet."
   },
   "vault": {
     "workspace_connect": "Workspace Connect",
@@ -9692,7 +9717,41 @@
       "open_sources_rail": "Show sources panel",
       "close_sources_rail": "Hide sources panel",
       "open_targets_rail": "Show targets panel",
-      "close_targets_rail": "Hide targets panel"
+      "close_targets_rail": "Hide targets panel",
+
+      "ghost_section_title": "Suggested routes",
+
+      "ghost_suggested": "suggested",
+
+      "ghost_observed_count": "observed {count}×",
+
+      "ghost_evidence_hint": "Show the observations behind this suggestion",
+
+      "ghost_evidence_summary": "I paired {matched} of your {total} manual runs with this event over the last {days} days.",
+
+      "ghost_evidence_ran": "you ran it {gap} later",
+
+      "ghost_accept": "Wire it",
+
+      "ghost_accept_hint": "Create this trigger — dry-run first, nothing fires until it passes",
+
+      "ghost_reject": "Dismiss suggestion",
+
+      "ghost_reject_hint": "Dismiss — I won't suggest this route again",
+
+      "ghost_accepted_toast": "Route wired. Its own runs won't count as evidence for new suggestions.",
+
+      "ghost_accept_failed": "Couldn't wire the suggested route",
+
+      "ghost_rejected_toast": "Dismissed — I won't suggest this route again.",
+
+      "ghost_reject_failed": "Couldn't dismiss the suggestion",
+
+      "ghost_dry_run_failed": "Dry-run failed — nothing was wired. {error}",
+
+      "ghost_not_enough_signal": "Not enough signal yet — I only suggest a route after seeing the same event followed by the same manual run at least {count} times.",
+
+      "ghost_miner_off": "Route suggestions are off — set a project's autopilot to Suggest or Full and I'll start watching for patterns."
     },
     "subscription_list": {
       "active": "Active",
@@ -10627,6 +10686,46 @@
       "routing_add": "Add rule",
       "routing_save": "Save rules",
       "routing_remove": "Remove rule",
+      "tuning_title": "Self-Tuning Proposals",
+      "tuning_subtitle": "I watch every run's cost, quality and reliability. When the evidence says a category could run cheaper without losing quality, I propose a routing change here — you review each one, nothing applies itself.",
+      "tuning_generate": "Generate proposals",
+      "tuning_empty": "No proposals yet. Run a pass over recent evidence and I'll show you what I would change — or tell you honestly that there isn't enough signal.",
+      "tuning_generated_none": "This pass produced no new proposals.",
+      "tuning_skipped_existing": "{count} already-answered candidates skipped",
+      "tuning_floor_note": "Evidence floor: {runs} runs per category-model pair, {lab} lab samples for quality claims, {spend} spend records for budget proposals.",
+      "tuning_declined_title": "Where I declined to propose",
+      "tuning_reason_below_evidence_floor": "Not enough signal yet — {category} has {runs} of {floor} required runs on {model}.",
+      "tuning_reason_no_qualified_challenger": "No alternative model has reached the {floor}-run evidence floor in {category} yet.",
+      "tuning_reason_saving_below_threshold": "Cheaper options exist in {category}, but the saving is below the threshold I require before proposing a switch.",
+      "tuning_reason_quality_regression": "The cheaper model in {category} loses too much quality — I will not trade that away.",
+      "tuning_reason_already_routed": "{category} already routes to the best-evidenced model.",
+      "tuning_claim_routing": "Route {category}: {from} → {to}, −{savingPct}% cost (~${saving}/mo projected)",
+      "tuning_claim_quality": "Quality {delta}% by {basis} · {incRuns}+{chRuns} runs behind this claim",
+      "tuning_basis_lab": "lab score",
+      "tuning_basis_success_rate": "success rate",
+      "tuning_budget_introduce": "Introduce a monthly cost ceiling of ${proposed} — observed spend ${observed} across {rows} calls this month",
+      "tuning_budget_raise": "Raise the monthly ceiling ${current} → ${proposed} — spend ${observed} is pressing against it",
+      "tuning_budget_lower": "Lower the monthly ceiling ${current} → ${proposed} — spend ${observed} runs far below it",
+      "tuning_apply": "Apply",
+      "tuning_decline": "Decline",
+      "tuning_decline_reason_ph": "Why not? (optional — I learn from this)",
+      "tuning_decline_confirm": "Confirm decline",
+      "tuning_evidence_show": "Show evidence",
+      "tuning_evidence_hide": "Hide evidence",
+      "tuning_evidence_snapshot": "Evidence snapshot {id} · {days}-day window · generated {date}",
+      "tuning_evidence_model": "Model",
+      "tuning_evidence_runs": "Runs",
+      "tuning_evidence_success": "Success",
+      "tuning_evidence_cost": "Avg cost",
+      "tuning_evidence_lab": "Lab quality",
+      "tuning_evidence_lab_none": "no lab data",
+      "tuning_healing_note": "Healing context: {rate}% of auto-fixes held across {attempted} attempts in the window.",
+      "tuning_history_title": "Decisions",
+      "tuning_status_pending": "Pending",
+      "tuning_status_applied": "Applied",
+      "tuning_status_declined": "Declined",
+      "tuning_learned_badge": "Learned rule",
+      "tuning_decline_reason_label": "Feedback: {reason}",
       "detecting_providers": "Detecting installed providers...",
       "subtitle": "Configure which CLI providers handle each operation",
       "capability_map": "Operation Capability Map",
@@ -16668,6 +16767,18 @@
     "no_teams_yet": "No teams yet",
     "no_teams_hint": "Create a team to start assembling its roster",
     "team_studio": {
+      "learning_heading": "Team learning",
+      "learning_empty": "No learning record — this mission finished before the team started learning from outcomes.",
+      "learning_steps_summary": "{done} done · {failed} failed · {skipped} skipped",
+      "learning_interventions": "Interventions: {count}",
+      "learning_trust_heading": "Trust updates",
+      "learning_retro_held": "Retrospective held",
+      "learning_retro_skipped_trivial": "Retrospective skipped — trivial run",
+      "learning_retro_skipped_aborted": "Retrospective skipped — mission aborted",
+      "learning_retro_skipped_busy": "Retrospective skipped — another deliberation was active",
+      "learning_retro_none": "No retrospective",
+      "learning_lessons_heading": "Team lessons",
+      "learning_no_lessons": "No lessons yet — retrospectives will write them here.",
       "header_label": "Team",
       "teams_header_label": "Teams",
       "teams_count_one": "{count} team",

@@ -2,6 +2,7 @@ pub mod api_key_audit;
 pub mod artist;
 pub mod audit_log;
 pub mod broker_edges;
+pub mod automation_suggestions;
 pub mod automations;
 pub mod cloud_webhook_watermarks;
 pub mod connectors;

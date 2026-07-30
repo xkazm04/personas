@@ -695,10 +695,38 @@
     "unverifiable_tooltip": "Tento konektor nemá žádnou živou kontrolu -- přihlašovací údaje jsou uloženy, ale nikdy nebyly ověřeny u poskytovatele",
     "title_catalog": "Katalog",
     "title_dependencies": "Závislosti",
-    "title_databases": "Databáze"
+    "title_databases": "Databáze",
+    "title_broker": "Broker"
   },
   "breadcrumb": {
     "aria_label": "Navigační drobečky Trezoru"
+  },
+  "broker": {
+    "title": "Broker přihlašovacích údajů",
+    "subtitle": "Externí konzumenti drží jen odvolatelné handly — tajemství nikdy neopustí trezor. Každé zprostředkované volání se audituje a plní živý graf rozsahu dopadu.",
+    "exclusion_note": "Zatím jen konektory typu Bearer a API klíč. SDK, která si požadavky podepisují sama (např. AWS SigV4) nebo potřebují websockety, zatím proxovat nejde — takové údaje musí dál zůstat u konzumenta.",
+    "consumers_header": "Konzumenti",
+    "loading": "Načítání konzumentů",
+    "load_error": "Konzumenty brokeru se nepodařilo načíst.",
+    "empty_title": "Zatím žádní konzumenti",
+    "empty_body": "Žádný externí proces zatím přes broker žádný údaj nepoužil. Vytvoř pro údaj handle a nasměruj svůj skript nebo agenta na lokální proxy — jeho aktivita se objeví tady.",
+    "status_active": "Aktivní",
+    "status_revoked": "Odvoláno",
+    "status_inactive": "Neaktivní",
+    "calls_one": "{count} volání",
+    "calls_other": "{count} volání",
+    "last_used": "Naposledy použito",
+    "expires": "Vyprší",
+    "credentials_used": "Použité údaje",
+    "kill_switch": "Odvolat přístup",
+    "kill_switch_confirm": "Odvolat?",
+    "kill_switch_hint": "Kill-switch: handle konzumenta přestane fungovat hned při jeho dalším požadavku.",
+    "revoking": "Odvolávání...",
+    "revoke_error": "Tohoto konzumenta se nepodařilo odvolat.",
+    "activity_show": "Zobrazit aktivitu",
+    "activity_hide": "Skrýt aktivitu",
+    "activity_empty": "Pro tohoto konzumenta zatím nejsou zaznamenané žádné požadavky.",
+    "activity_loading": "Načítání aktivity"
   },
   "credential_card": {
     "delete_credential": "Smazat údaje",

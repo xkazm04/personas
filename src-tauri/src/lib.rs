@@ -1941,6 +1941,11 @@ pub fn run() {
             commands::execution::assertions::get_assertion_results_for_execution,
             commands::execution::assertions::get_assertion_result_history,
             commands::execution::policy_events::get_policy_events_for_execution,
+            // Execution -- Self-Tuning Fabric (policy proposals, review-each)
+            commands::execution::policy_tuning::policy_tuning_generate,
+            commands::execution::policy_tuning::policy_tuning_list,
+            commands::execution::policy_tuning::policy_tuning_apply,
+            commands::execution::policy_tuning::policy_tuning_decline,
             // Execution -- Audit Incidents inbox (cross-source triage)
             commands::execution::audit_incidents::list_audit_incidents,
             commands::execution::audit_incidents::get_audit_incidents_summary,
@@ -2008,6 +2013,8 @@ pub fn run() {
             commands::execution::evolution::evolution_list_cycles,
             commands::execution::evolution::evolution_trigger_cycle,
             commands::execution::evolution::evolution_check_eligibility,
+            commands::execution::evolution::evolution_list_promotion_proposals,
+            commands::execution::evolution::evolution_resolve_promotion_proposal,
             commands::execution::evolution::get_run_budget_state,
             commands::execution::evolution::probe_cli_capabilities,
             // Execution -- Healing
@@ -2542,6 +2549,10 @@ pub fn run() {
             commands::teams::deliberations::split_team_deliberation,
             commands::teams::deliberations::list_deliberation_tracks,
             commands::teams::deliberations::merge_deliberation_tracks,
+            commands::teams::learning::get_assignment_outcome,
+            commands::teams::learning::list_assignment_outcomes,
+            commands::teams::learning::list_team_member_trust,
+            commands::teams::learning::list_team_lessons,
             commands::teams::deliberations::approve_deliberation_proposal,
             commands::teams::deliberations::dismiss_deliberation_proposal,
             commands::teams::assignments::advance_team_goal,
@@ -2618,6 +2629,10 @@ pub fn run() {
             commands::tools::triggers::webhook_request_to_curl,
             commands::tools::triggers::get_persona_config_warnings,
             commands::tools::triggers::get_composite_partial_matches,
+            // Tools -- Self-Wiring Fabric (mined automation suggestions)
+            commands::tools::automation_suggestions::list_automation_suggestions,
+            commands::tools::automation_suggestions::accept_automation_suggestion,
+            commands::tools::automation_suggestions::reject_automation_suggestion,
             commands::tools::triggers::get_composite_partial_match,
             // Signing -- Document Signatures
             #[cfg(feature = "p2p")]
@@ -3065,6 +3080,9 @@ pub fn run() {
             commands::infrastructure::director::get_director_brain_enabled,
             commands::infrastructure::director::set_director_brain_enabled,
             commands::infrastructure::director::get_director_brain_history,
+            commands::infrastructure::director::commission_director_experiment,
+            commands::infrastructure::director::list_director_experiments,
+            commands::infrastructure::director::get_director_campaign_report,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_create_project,

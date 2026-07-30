@@ -228,6 +228,18 @@
     "link_goal_none": "No vinculado a ningún objetivo"
   },
   "team_studio": {
+    "learning_heading": "Aprendizaje del equipo",
+    "learning_empty": "Sin registro de aprendizaje — esta misión terminó antes de que el equipo empezara a aprender de los resultados.",
+    "learning_steps_summary": "{done} completados · {failed} fallidos · {skipped} omitidos",
+    "learning_interventions": "Intervenciones: {count}",
+    "learning_trust_heading": "Actualizaciones de confianza",
+    "learning_retro_held": "Retrospectiva realizada",
+    "learning_retro_skipped_trivial": "Retrospectiva omitida — ejecución trivial",
+    "learning_retro_skipped_aborted": "Retrospectiva omitida — misión abortada",
+    "learning_retro_skipped_busy": "Retrospectiva omitida — otra deliberación estaba activa",
+    "learning_retro_none": "Sin retrospectiva",
+    "learning_lessons_heading": "Lecciones del equipo",
+    "learning_no_lessons": "Aún no hay lecciones — las retrospectivas las escribirán aquí.",
     "header_label": "Equipo",
     "teams_header_label": "Equipos",
     "teams_count_one": "{count} equipo",

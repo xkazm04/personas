@@ -1,4 +1,5 @@
 pub mod automation_design;
+pub mod automation_suggestions;
 pub mod automations;
 pub mod deploy_automation;
 pub mod github_platform;

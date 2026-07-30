@@ -505,6 +505,7 @@ pub fn start_loops(
             pool: pool.clone(),
             composite_state,
         }),
+        Box::new(super::pattern_miner::PatternMinerSubscription { pool: pool.clone() }),
         Box::new(subscription::AutoRollbackSubscription {
             pool: pool.clone(),
             app: app.clone(),

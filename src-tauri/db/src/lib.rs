@@ -57,6 +57,7 @@ pub mod chain;
 pub mod embedder;
 pub mod memory_recall;
 pub mod model_routing;
+pub mod policy_tuning;
 pub mod quality_gate;
 #[cfg(feature = "ml")]
 pub mod vector_store;

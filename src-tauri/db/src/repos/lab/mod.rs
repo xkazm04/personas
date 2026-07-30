@@ -4,6 +4,7 @@ pub mod consensus;
 pub mod eval;
 pub mod events;
 pub mod evolution;
+pub mod evolution_proposals;
 pub mod genome;
 pub mod matrix;
 pub mod ratings;

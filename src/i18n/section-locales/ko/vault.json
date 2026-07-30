@@ -695,10 +695,38 @@
     "unverifiable_tooltip": "이 커넥터에는 실시간 프로브가 없습니다 -- 자격 증명은 저장되어 있지만 공급자에 대해 확인된 적이 없습니다",
     "title_catalog": "카탈로그",
     "title_dependencies": "종속성",
-    "title_databases": "데이터베이스"
+    "title_databases": "데이터베이스",
+    "title_broker": "브로커"
   },
   "breadcrumb": {
     "aria_label": "볼트 탐색"
+  },
+  "broker": {
+    "title": "자격 증명 브로커",
+    "subtitle": "외부 컨슈머는 취소 가능한 핸들만 보유하며, 시크릿은 보관함 밖으로 나가지 않습니다. 프록시를 거치는 모든 호출은 감사되어 실시간 영향 범위 그래프에 반영됩니다.",
+    "exclusion_note": "현재는 Bearer 및 API 키 커넥터만 지원합니다. 요청에 직접 서명하는 SDK(예: AWS SigV4)나 websocket이 필요한 경우 아직 프록시할 수 없으며, 해당 자격 증명은 컨슈머 측에 있어야 합니다.",
+    "consumers_header": "컨슈머",
+    "loading": "컨슈머 로딩 중",
+    "load_error": "브로커 컨슈머를 불러오지 못했습니다.",
+    "empty_title": "아직 컨슈머가 없습니다",
+    "empty_body": "아직 브로커를 통해 자격 증명을 사용한 외부 프로세스가 없습니다. 자격 증명에 대한 핸들을 발급하고 스크립트나 에이전트를 로컬 프록시로 연결하면 해당 활동이 여기에 표시됩니다.",
+    "status_active": "활성",
+    "status_revoked": "취소됨",
+    "status_inactive": "비활성",
+    "calls_one": "{count}회 호출",
+    "calls_other": "{count}회 호출",
+    "last_used": "마지막 사용",
+    "expires": "만료",
+    "credentials_used": "사용된 자격 증명",
+    "kill_switch": "액세스 취소",
+    "kill_switch_confirm": "취소할까요?",
+    "kill_switch_hint": "킬 스위치: 컨슈머의 핸들은 바로 다음 요청부터 작동하지 않습니다.",
+    "revoking": "취소 중...",
+    "revoke_error": "이 컨슈머를 취소하지 못했습니다.",
+    "activity_show": "활동 표시",
+    "activity_hide": "활동 숨기기",
+    "activity_empty": "이 컨슈머에 대해 기록된 요청이 아직 없습니다.",
+    "activity_loading": "활동 로딩 중"
   },
   "credential_card": {
     "delete_credential": "자격 증명 삭제",

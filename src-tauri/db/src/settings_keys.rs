@@ -323,6 +323,16 @@ pub const COMPANION_EXEC_REVIEW_RETRY: &str = "companion_exec_review_retry";
 /// Additionally gated on the vault being configured. Stored `"true"`/`"false"`.
 pub const DIRECTOR_BRAIN_ENABLED: &str = "director_brain_enabled";
 
+/// Weekly USD budget for Director-commissioned experiments (Director's Lab).
+/// The Director declines to commission a verdict→experiment compile when the
+/// running week's evolution spend (genome-critique ledger rows) has consumed
+/// it. Stored as a decimal string; unset falls back to
+/// [`DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT`].
+pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD: &str = "director_weekly_experiment_budget_usd";
+/// Default weekly Director's Lab budget — mirrors the per-cycle evolution
+/// ceiling (`personas_core::run_budget::DEFAULT_EVOLUTION_CEILING_USD`).
+pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT: f64 = 2.0;
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -733,6 +743,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_MESSAGE_TRIAGE,
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
+    DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     COMPANION_DAILY_ROLLUP,
@@ -1157,6 +1168,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FILE_WATCHER_DEBOUNCE_MS => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
+        | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD
         | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
