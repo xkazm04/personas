@@ -24,8 +24,10 @@
 //! ```text
 //!   off      → nothing
 //!   measure  → KpiEvaluation
-//!   suggest  → KpiEvaluation, KpiGoalDerivation, ScanAndTriage   (finds + triages, never spends on fixes)
+//!   suggest  → KpiEvaluation, KpiGoalDerivation, ScanAndTriage,
+//!              AutomationSuggestion                              (finds + triages + proposes, never spends on fixes)
 //!   full     → all of the above + GoalAdvancement + DispatchFixes
+//!              (+ AutomationCommit, reserved — exercised by nothing in v1)
 //! ```
 //!
 //! `ScanAndTriage`/`DispatchFixes` power the Overnight Portfolio Engine
@@ -66,6 +68,18 @@ pub enum Capability {
     /// Overnight tick: dispatch auto-accepted backlog ideas to unattended
     /// fleet fix sessions (branch-only writes; budget-governed pre-dispatch).
     DispatchFixes,
+    /// Self-Wiring Fabric: the pattern miner may surface mined event→persona
+    /// co-occurrence candidates as ghost patch-cables in the Studio. Pure
+    /// read-side proposals — the user reviews and commits each one by hand.
+    /// Granted at `suggest` and above.
+    AutomationSuggestion,
+    /// Self-Wiring Fabric, RESERVED (v1): auto-commit a mined suggestion that
+    /// passes dry-run, under a conservative rate limit with an undo window.
+    /// Granted at `full` by the matrix but exercised by NOTHING in this batch
+    /// — v1 is review-each everywhere; no code path consults this capability
+    /// yet. Kept in the enum so the ladder position is fixed before the
+    /// auto-commit follow-up ships.
+    AutomationCommit,
 }
 
 impl AutopilotMode {
@@ -95,7 +109,10 @@ impl AutopilotMode {
         match self {
             Self::Off => false,
             Self::Measure => matches!(cap, KpiEvaluation),
-            Self::Suggest => matches!(cap, KpiEvaluation | KpiGoalDerivation | ScanAndTriage),
+            Self::Suggest => matches!(
+                cap,
+                KpiEvaluation | KpiGoalDerivation | ScanAndTriage | AutomationSuggestion
+            ),
             Self::Full => true,
         }
     }
@@ -170,6 +187,14 @@ mod tests {
         assert!(!AutopilotMode::Suggest.allows(DispatchFixes));
         assert!(AutopilotMode::Full.allows(ScanAndTriage));
         assert!(AutopilotMode::Full.allows(DispatchFixes));
+        // Self-Wiring Fabric: suggestions surface at `suggest`; auto-commit is
+        // reserved at `full` (granted by the matrix, exercised by nothing in
+        // v1 — proposed-not-imposed is the batch-3 learning grammar).
+        assert!(!AutopilotMode::Measure.allows(AutomationSuggestion));
+        assert!(AutopilotMode::Suggest.allows(AutomationSuggestion));
+        assert!(!AutopilotMode::Suggest.allows(AutomationCommit));
+        assert!(AutopilotMode::Full.allows(AutomationSuggestion));
+        assert!(AutopilotMode::Full.allows(AutomationCommit));
     }
 
     #[test]

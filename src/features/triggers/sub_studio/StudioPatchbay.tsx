@@ -37,6 +37,8 @@ import { StudioTriggerCommitModal } from './StudioTriggerCommitModal';
 import { conditionLabel } from './libs/studioLabels';
 import { useRoutingState } from './routing/layouts/useRoutingState';
 import { resolveIcon, type EventRow, type Connection } from './routing/layouts/routingHelpers';
+import { GhostCables } from './suggestions/GhostCables';
+import { useAutomationSuggestions } from './suggestions/useAutomationSuggestions';
 import { SystemEventAutomationsPanel } from './system_ops/SystemEventAutomationsPanel';
 import { SystemEventCommitModal } from './system_ops/SystemEventCommitModal';
 import { AddPersonaModal } from './routing/layouts/AddPersonaModal';
@@ -93,6 +95,9 @@ export function StudioPatchbay() {
   const routing = useRoutingState({ initialTriggers: triggers, initialEvents: events, personas, teams });
   const c = useStudioComposer(routing.reload);
   const { t, tx, st } = c;
+  // Self-Wiring Fabric: mined ghost cables — accepting one commits a real
+  // trigger (dry-run first), so reload the live routing inventory after.
+  const sug = useAutomationSuggestions(routing.reload);
 
   const openRename = useCallback((row: EventRow) => routing.setRenameTarget({
     eventType: row.eventType,
@@ -114,7 +119,8 @@ export function StudioPatchbay() {
   }, [routing.rows]);
 
   const isEmpty = c.draft.links.length === 0 && connected.length === 0
-    && c.automations.length === 0 && !c.armedSource && !c.armedTarget && !c.armedSystemOp;
+    && c.automations.length === 0 && !c.armedSource && !c.armedTarget && !c.armedSystemOp
+    && sug.proposed.length === 0;
 
   return (
     // The testid keeps the historical "switchboard" name — the companion
@@ -147,6 +153,7 @@ export function StudioPatchbay() {
           <h3 className="typo-heading text-foreground">{st.routes_title}</h3>
           <span className="typo-data text-status-success">{connected.length} {st.proto_live}</span>
           {c.draft.links.length > 0 && <span className="typo-data text-status-warning">{c.draft.links.length} {st.proto_pending}</span>}
+          {sug.proposed.length > 0 && <span className="typo-data text-primary">{sug.proposed.length} {st.ghost_suggested}</span>}
           <div className="ml-auto flex items-center gap-2">
             {unconnected.length > 0 && (
               <button type="button" onClick={() => setShowUnconnected((v) => !v)}
@@ -238,6 +245,10 @@ export function StudioPatchbay() {
               </div>
             );
           })}
+
+          {/* Ghost cables — mined suggestions (Self-Wiring Fabric), with the
+              honest not-enough-signal / miner-off line when none qualify */}
+          <GhostCables sug={sug} personas={personas} />
 
           {/* Live cables — complete edges (a real source→listener route) */}
           {connected.map((cb, i) => (
