@@ -55,6 +55,24 @@ export type ViewMode = "list" | "icons" | "columns";
 export type SortKey = "name" | "size" | "modified" | "kind";
 export type SortDir = "asc" | "desc";
 
+// ---------------------------------------------------------------------------
+// Module-scope warm cache (docs/design/overview-loading.md, law 1: "data on
+// screen is sacred"). DrivePage is behind a lazyRetry + Suspense route
+// (PersonasPage's sectionRouter) that fully unmounts on nav-away, so a plain
+// component-local cache (pathCacheRef below) resets every time the user
+// leaves and returns to Drive — the folder listing/tree/storage/recent rail
+// would ghost again on every revisit even though nothing actually changed.
+// These module-level vars survive the unmount and seed the next mount's
+// initial state, so a folder the user has already seen paints instantly
+// while a background refresh settles silently behind it. Keyed per-path for
+// entries (a Drive listing is per-folder); tree/storage/recent are
+// single-account-scoped so one slot each is enough.
+// ---------------------------------------------------------------------------
+const driveEntriesCache = new Map<string, DriveEntry[]>();
+let driveTreeCache: DriveTreeNode | null = null;
+let driveStorageCache: DriveStorageInfo | null = null;
+let driveRecentCache: DriveEntry[] = [];
+
 /**
  * Run async tasks with a fixed concurrency cap. Each Tauri invoke crosses an
  * IPC boundary (~5–10ms minimum), so a sequential await loop on N items
@@ -222,12 +240,21 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const [historyIndex, setHistoryIndex] = useState(0);
   const currentPath = history[historyIndex] ?? "";
 
-  const [entries, setEntries] = useState<DriveEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Seed from the module-level warm cache (see above): a remembered folder
+  // paints on the first frame instead of an empty region. `loading` starts
+  // true only when this path is genuinely cold (never listed this session)
+  // — previously it started `false` unconditionally, so the very first
+  // render (before the mount effect below had a chance to flip it) briefly
+  // rendered the *empty-folder* state ahead of the ghost/content, on every
+  // single mount.
+  const [entries, setEntries] = useState<DriveEntry[]>(
+    () => driveEntriesCache.get(initialPath) ?? [],
+  );
+  const [loading, setLoading] = useState(() => !driveEntriesCache.has(initialPath));
   const [error, setError] = useState<string | null>(null);
-  const [tree, setTree] = useState<DriveTreeNode | null>(null);
-  const [storage, setStorage] = useState<DriveStorageInfo | null>(null);
-  const [recent, setRecent] = useState<DriveEntry[]>([]);
+  const [tree, setTree] = useState<DriveTreeNode | null>(() => driveTreeCache);
+  const [storage, setStorage] = useState<DriveStorageInfo | null>(() => driveStorageCache);
+  const [recent, setRecent] = useState<DriveEntry[]>(() => driveRecentCache);
 
   const [selection, setSelection] = useState<Set<string>>(new Set());
   // viewMode / sortKey / sortDir hydrate from localStorage on first
@@ -279,15 +306,25 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   const refresh = useCallback(() => {
     setLoading(true);
     setError(null);
+    // Warm nav: this path was already listed this session (or a prior
+    // mount of the Drive page) — paint its last-known entries immediately
+    // so the folder doesn't ghost on a revisit, then let the fetch below
+    // settle silently behind it (law 1).
+    const cached = driveEntriesCache.get(currentPath);
+    if (cached) {
+      setEntries(cached);
+      pathCacheRef.current.set(currentPath, cached);
+    }
     driveList(currentPath)
       .then((list) => {
         setEntries(list);
         pathCacheRef.current.set(currentPath, list);
+        driveEntriesCache.set(currentPath, list);
       })
       .catch((e) => {
         silentCatch("useDrive:refresh")(e);
         setError(e instanceof Error ? e.message : String(e));
-        setEntries([]);
+        if (!cached) setEntries([]);
       })
       .finally(() => setLoading(false));
   }, [currentPath]);
@@ -308,17 +345,28 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const refreshTree = useCallback(() => {
     driveListTree("", 4)
-      .then(setTree)
+      .then((t) => {
+        setTree(t);
+        driveTreeCache = t;
+      })
       .catch(toastCatch("drive:listTree"));
   }, []);
 
   const refreshStorage = useCallback(() => {
-    driveStorageInfo().then(setStorage).catch(toastCatch("drive:storageInfo"));
+    driveStorageInfo()
+      .then((s) => {
+        setStorage(s);
+        driveStorageCache = s;
+      })
+      .catch(toastCatch("drive:storageInfo"));
   }, []);
 
   const refreshRecent = useCallback(() => {
     driveRecent(5)
-      .then(setRecent)
+      .then((r) => {
+        setRecent(r);
+        driveRecentCache = r;
+      })
       .catch(toastCatch("drive:recent"));
   }, []);
 

@@ -195,9 +195,7 @@ export function DriveSidebar({
             onExternalFolderDragOver={onExternalFolderDragOver}
           />
         ) : (
-          <div className="px-3 py-2 typo-body text-foreground">
-            {t.plugins.drive.loading}
-          </div>
+          <TreeGhostNodes />
         )}
 
         {/* Trash — recoverable deletes live here for 7 days. Always visible
@@ -322,6 +320,36 @@ function RecentRail({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tree ghost — the folder tree's cold-fetch placeholder (first-ever mount
+// with no warm cache; see the module-level cache in useDrive.ts). Same row
+// geometry as a depth-0 TreeNode (chevron gutter + folder icon + name bar),
+// delayed entrance per docs/design/overview-loading.md §C so a fast fetch
+// never paints a single ghost.
+// ---------------------------------------------------------------------------
+const TREE_GHOST_WIDTHS = ["w-24", "w-16", "w-20"];
+
+function TreeGhostNodes() {
+  const { t } = useTranslation();
+  return (
+    <div aria-hidden="true">
+      <span className="sr-only">{t.plugins.drive.loading}</span>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-1.5 py-1.5 px-2.5 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="w-3.5 h-3.5 rounded bg-primary/[0.06] flex-shrink-0" />
+          <span
+            className={`h-3 ${TREE_GHOST_WIDTHS[i % TREE_GHOST_WIDTHS.length]} rounded bg-primary/[0.06]`}
+          />
+        </div>
+      ))}
     </div>
   );
 }

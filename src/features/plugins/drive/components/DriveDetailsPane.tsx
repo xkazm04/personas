@@ -513,11 +513,7 @@ function FilePreview({
   }, [entry.path, entry.mime, entry.size]);
 
   if (state === "loading") {
-    return (
-      <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-4 text-center typo-body text-foreground">
-        {t.plugins.drive.loading}
-      </div>
-    );
+    return <FilePreviewGhost />;
   }
   if (state === "error") {
     return (
@@ -575,6 +571,31 @@ function FilePreview({
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-3 typo-body text-foreground">
       {t.plugins.drive.preview_unavailable}
+    </div>
+  );
+}
+
+/**
+ * Cold-fetch placeholder for the preview panel (text-file read / decode
+ * pending). Same box geometry as the ready states (rounded card, ~4 lines)
+ * so the swap to real content doesn't shift the pane; delayed entrance per
+ * docs/design/overview-loading.md §C so a fast read never paints a ghost.
+ */
+function FilePreviewGhost() {
+  const { t } = useTranslation();
+  return (
+    <div
+      aria-hidden="true"
+      className="rounded-card border border-primary/10 bg-background/70 p-3 space-y-2"
+    >
+      <span className="sr-only">{t.plugins.drive.loading}</span>
+      {["w-full", "w-5/6", "w-2/3", "w-4/6"].map((w, i) => (
+        <span
+          key={i}
+          className={`block h-3 ${w} rounded bg-primary/[0.06] animate-fade-in`}
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        />
+      ))}
     </div>
   );
 }
