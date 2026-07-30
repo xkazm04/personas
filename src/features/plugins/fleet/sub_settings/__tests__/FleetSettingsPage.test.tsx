@@ -27,6 +27,13 @@ vi.mock('@/api/fleet/fleet', () => ({
   detectProcesses: vi.fn().mockResolvedValue([]),
   killPid: vi.fn().mockResolvedValue(undefined),
   resumeOrphan: vi.fn().mockResolvedValue(undefined),
+  // <FleetPairDevice/> loads the paired-device list on mount; resolve empty
+  // so its mount-effect doesn't throw. Pairing behaviour has its own module.
+  pairDevice: vi.fn(),
+  companionDevices: vi
+    .fn()
+    .mockResolvedValue({ devices: [], serverRunning: false, port: null, url: null }),
+  revokeCompanionDevice: vi.fn().mockResolvedValue(true),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';

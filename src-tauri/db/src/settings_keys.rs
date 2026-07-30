@@ -645,6 +645,12 @@ pub const SCRATCHPAD_ENABLED: &str = "scratchpad_enabled";
 /// Default for [`SCRATCHPAD_ENABLED`] — ON (the scratchpad ships enabled).
 pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
 
+/// Fleet mobile-companion paired devices — JSON array of device records
+/// (id, name, SHA-256 token fingerprint, timestamps, revoked flag). Contains
+/// fingerprints only, NEVER a plaintext token. Owned by
+/// `commands::fleet::pairing`.
+pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -727,6 +733,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CHAIN_MAX_LINKS,
     SCRATCHPAD_ENABLED,
     SKILLS_SIDECAR_ENABLED,
+    FLEET_COMPANION_DEVICES,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).

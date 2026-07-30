@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0e14" />
+  <title>Personas Fleet</title>
+  <link rel="manifest" href="/m/manifest.webmanifest" />
+  <link rel="icon" href="/m/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/m/icon.svg" />
+  <link rel="stylesheet" href="/m/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-kicker">Personas</span>
+      <h1 class="brand-title">Fleet</h1>
+    </div>
+    <div class="conn" id="conn" title="Connection">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span class="conn-label" id="conn-label">connecting</span>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- No-token gate -->
+    <section id="gate" class="gate hidden">
+      <p class="gate-title">Not paired</p>
+      <p class="gate-body">
+        Open <strong>Fleet&nbsp;Settings → Pair a device</strong> on your desktop
+        and scan the QR with this phone. The pairing link carries your device
+        token; it stays on this phone.
+      </p>
+    </section>
+
+    <!-- Attention inbox -->
+    <section id="inbox" class="hidden">
+      <div id="offline" class="offline hidden">Desktop unreachable — retrying…</div>
+
+      <h2 class="section-h" id="needs-h">Needs you</h2>
+      <div id="needs-list"></div>
+
+      <h2 class="section-h" id="approvals-h">Athena proposals</h2>
+      <div id="approvals-list"></div>
+
+      <div id="all-clear" class="all-clear hidden">
+        <p class="all-clear-big">All clear</p>
+        <p class="all-clear-sub">Quiet fleet — nothing needs you.</p>
+      </div>
+
+      <h2 class="section-h">Sessions</h2>
+      <div id="sessions-list"></div>
+      <p id="no-sessions" class="empty hidden">No active sessions.</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>LAN only · projections only — no terminal output or credentials leave the desktop.</span>
+  </footer>
+
+  <script src="/m/app.js"></script>
+</body>
+</html>
