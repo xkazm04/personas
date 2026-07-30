@@ -6523,6 +6523,76 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+
+    // -- companion_tours: Athena-composed guided tours (Generative Tours) ----
+    // One row per composed tour; steps stored as validated JSON in the
+    // frontend `TourStepDef` shape. `manifest_hash` records which anchor
+    // manifest the tour was proven against so upgrades can re-prove and mark
+    // drifted tours 'stale' instead of letting them break mid-play.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "companion_tours.table",
+            description: "Persist Athena-composed guided tours (Generative Tours) with manifest-hash staleness tracking.",
+            already_applied: |conn| has_table(conn, "companion_tours"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS companion_tours (
+                        id            TEXT PRIMARY KEY,
+                        topic         TEXT NOT NULL,
+                        title         TEXT NOT NULL,
+                        description   TEXT NOT NULL DEFAULT '',
+                        icon          TEXT NOT NULL DEFAULT 'Sparkles',
+                        color         TEXT NOT NULL DEFAULT 'violet',
+                        steps_json    TEXT NOT NULL,
+                        status        TEXT NOT NULL DEFAULT 'ready',
+                        manifest_hash TEXT,
+                        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_companion_tours_created
+                        ON companion_tours(created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- incident_diagnoses: Autonomous NOC v1 root-cause diagnoses ----------
+    // One row per audit incident (UNIQUE incident_id). Written by the
+    // server-side alert evaluator's auto-diagnosis pass and by the manual
+    // "Diagnose" action in the incident detail modal. `approval_id` records
+    // the (at most one) pending companion-approval proposal — the
+    // remediation-loop cap for v1.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "incident_diagnoses",
+            description: "Create incident_diagnoses (NOC auto-diagnosis attached to audit_incidents)",
+            already_applied: |conn| has_table(conn, "incident_diagnoses"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS incident_diagnoses (
+                        id                 TEXT PRIMARY KEY,
+                        incident_id        TEXT NOT NULL UNIQUE REFERENCES audit_incidents(id) ON DELETE CASCADE,
+                        summary            TEXT NOT NULL,
+                        evidence           TEXT,
+                        proposed_action    TEXT,
+                        proposed_rationale TEXT,
+                        approval_id        TEXT,
+                        confidence         REAL NOT NULL DEFAULT 0,
+                        diagnosed_at       TEXT NOT NULL DEFAULT (datetime('now'))
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     Ok(())
 }
 

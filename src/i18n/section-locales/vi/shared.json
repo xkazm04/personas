@@ -177,6 +177,18 @@
     "importance_prefix": "độ quan trọng:",
     "confidence_suffix": "% tin cậy"
   },
+  "surface": {
+    "section_label": "Bề mặt",
+    "composed_badge": "Do tác tử tạo",
+    "composed_tip": "Bề mặt này được khai báo từ đầu ra của tác tử và hiển thị từ danh mục thành phần dùng chung. Hành động không bao giờ chạy khi chưa có xác nhận của bạn.",
+    "dropped_blocks": "{count} khối không hợp lệ đã bị loại khỏi bề mặt này.",
+    "no_target": "Không khả dụng ở đây — chế độ xem này không có dự án hay persona để thao tác.",
+    "confirm_run_title": "Chạy hành động tác tử này?",
+    "confirm_run_body": "\"{label}\" sẽ bắt đầu một lần chạy persona với đầu vào này: {prompt}",
+    "confirm_run_action": "Chạy",
+    "table_empty": "Bảng này không có hàng nào.",
+    "terminal_empty": "Không có dòng đầu ra."
+  },
   "progress_extra": {
     "taking_longer": "Đang mất nhiều thời gian hơn dự kiến",
     "complete": "Hoàn thành",

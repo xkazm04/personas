@@ -177,6 +177,18 @@
     "importance_prefix": "重要度:",
     "confidence_suffix": "% 信頼度"
   },
+  "surface": {
+    "section_label": "サーフェス",
+    "composed_badge": "エージェント生成",
+    "composed_tip": "このサーフェスはエージェントの出力で宣言され、共有コンポーネントカタログから描画されています。アクションは確認なしには実行されません。",
+    "dropped_blocks": "無効なブロック {count} 件をこのサーフェスから除外しました。",
+    "no_target": "ここでは利用できません — このビューには対象となるプロジェクトやペルソナがありません。",
+    "confirm_run_title": "このエージェントアクションを実行しますか？",
+    "confirm_run_body": "「{label}」は次の入力でペルソナ実行を開始します: {prompt}",
+    "confirm_run_action": "実行",
+    "table_empty": "このテーブルには行がありません。",
+    "terminal_empty": "出力行はありません。"
+  },
   "progress_extra": {
     "taking_longer": "予想より時間がかかっています",
     "complete": "完了",

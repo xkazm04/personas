@@ -177,6 +177,18 @@
     "importance_prefix": "重要性：",
     "confidence_suffix": "% 置信度"
   },
+  "surface": {
+    "section_label": "界面",
+    "composed_badge": "智能体生成",
+    "composed_tip": "此界面由智能体输出声明，并使用共享组件目录渲染。未经您确认，操作绝不会执行。",
+    "dropped_blocks": "已从此界面中排除 {count} 个无效区块。",
+    "no_target": "此处不可用 — 该视图没有可操作的项目或角色。",
+    "confirm_run_title": "运行此智能体操作？",
+    "confirm_run_body": "“{label}”将使用以下输入启动角色运行：{prompt}",
+    "confirm_run_action": "运行",
+    "table_empty": "此表格没有行。",
+    "terminal_empty": "没有输出行。"
+  },
   "progress_extra": {
     "taking_longer": "耗时比预期更长",
     "complete": "完成",

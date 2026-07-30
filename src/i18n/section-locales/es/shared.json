@@ -177,6 +177,18 @@
     "importance_prefix": "importancia:",
     "confidence_suffix": "% de confianza"
   },
+  "surface": {
+    "section_label": "Superficie",
+    "composed_badge": "Compuesto por el agente",
+    "composed_tip": "Esta superficie fue declarada por la salida del agente y renderizada desde el catálogo compartido de componentes. Las acciones nunca se ejecutan sin tu confirmación.",
+    "dropped_blocks": "{count} bloque(s) no válidos se omitieron de esta superficie.",
+    "no_target": "No disponible aquí — esta vista no tiene proyecto ni persona sobre los que actuar.",
+    "confirm_run_title": "¿Ejecutar esta acción del agente?",
+    "confirm_run_body": "«{label}» iniciará una ejecución de la persona con esta entrada: {prompt}",
+    "confirm_run_action": "Ejecutar",
+    "table_empty": "No hay filas en esta tabla.",
+    "terminal_empty": "No hay líneas de salida."
+  },
   "progress_extra": {
     "taking_longer": "Tomando más tiempo de lo esperado",
     "complete": "Completado",

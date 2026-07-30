@@ -177,6 +177,18 @@
     "importance_prefix": "중요도:",
     "confidence_suffix": "% 신뢰도"
   },
+  "surface": {
+    "section_label": "서피스",
+    "composed_badge": "에이전트 생성",
+    "composed_tip": "이 서피스는 에이전트 출력으로 선언되었으며 공유 컴포넌트 카탈로그로 렌더링되었습니다. 작업은 확인 없이는 절대 실행되지 않습니다.",
+    "dropped_blocks": "유효하지 않은 블록 {count}개가 이 서피스에서 제외되었습니다.",
+    "no_target": "여기서는 사용할 수 없습니다 — 이 화면에는 대상 프로젝트나 페르소나가 없습니다.",
+    "confirm_run_title": "이 에이전트 작업을 실행할까요?",
+    "confirm_run_body": "\"{label}\"이(가) 다음 입력으로 페르소나 실행을 시작합니다: {prompt}",
+    "confirm_run_action": "실행",
+    "table_empty": "이 테이블에 행이 없습니다.",
+    "terminal_empty": "출력 줄이 없습니다."
+  },
   "progress_extra": {
     "taking_longer": "예상보다 오래 걸리고 있습니다",
     "complete": "완료",

@@ -177,6 +177,18 @@
     "importance_prefix": "Wichtigkeit:",
     "confidence_suffix": "% Konfidenz"
   },
+  "surface": {
+    "section_label": "Oberfläche",
+    "composed_badge": "Vom Agenten erstellt",
+    "composed_tip": "Diese Oberfläche wurde von der Agentenausgabe deklariert und aus dem gemeinsamen Komponentenkatalog gerendert. Aktionen laufen nie ohne Ihre Bestätigung.",
+    "dropped_blocks": "{count} ungültige Blöcke wurden aus dieser Oberfläche weggelassen.",
+    "no_target": "Hier nicht verfügbar — diese Ansicht hat kein Projekt und keine Persona als Ziel.",
+    "confirm_run_title": "Diese Agentenaktion ausführen?",
+    "confirm_run_body": "„{label}“ startet einen Persona-Lauf mit dieser Eingabe: {prompt}",
+    "confirm_run_action": "Ausführen",
+    "table_empty": "Keine Zeilen in dieser Tabelle.",
+    "terminal_empty": "Keine Ausgabezeilen."
+  },
   "progress_extra": {
     "taking_longer": "Dauert länger als erwartet",
     "complete": "Abgeschlossen",

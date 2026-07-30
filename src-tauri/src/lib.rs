@@ -970,6 +970,9 @@ pub fn run() {
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.
             commands::fleet::stale::spawn_ticker(app.handle().clone());
+            // Fleet mobile companion — LAN server restarts only when a live
+            // device pairing already exists (fleet_pair_device starts it fresh).
+            commands::fleet::companion_api::start_if_paired(app.handle().clone());
             #[cfg(feature = "desktop")]
             commands::fleet::transcript::spawn_watcher(app.handle().clone());
             match local_http::start() {
@@ -1372,6 +1375,12 @@ pub fn run() {
             // prompts. Never auto-executes; leader-gated + sync-enabled-gated.
             cloud::remote_commands::spawn_poll_loop(app.handle().clone(), state_arc.clone());
             st.checkpoint("cloud_remote_commands");
+
+            // Autonomous NOC v1: server-side alert evaluator — the authority
+            // for alert firing (fires with the UI closed), auto-opens
+            // incidents and runs the capped auto-diagnosis pass.
+            commands::execution::alert_evaluator::spawn_evaluator(app.handle().clone(), state_arc.clone());
+            st.checkpoint("alert_evaluator");
 
             // F-CRON: scheduled-curation worker. Ticks every 60s,
             // reads `persona_curation_schedule` rows, evaluates the
@@ -1933,6 +1942,10 @@ pub fn run() {
             commands::execution::audit_incidents::reopen_audit_incident,
             commands::execution::audit_incidents::bulk_acknowledge_audit_incidents,
             commands::execution::audit_incidents::bulk_resolve_audit_incidents,
+            // Execution -- Autonomous NOC v1 (incident diagnosis + handled lane)
+            commands::execution::incident_diagnosis::get_incident_diagnosis,
+            commands::execution::incident_diagnosis::diagnose_audit_incident,
+            commands::execution::incident_diagnosis::list_autonomously_handled_incidents,
             // Execution -- Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,
@@ -2747,6 +2760,8 @@ pub fn run() {
             // Companion (Athena)
             commands::companion::companion_init,
             commands::companion::companion_reingest_doctrine,
+            commands::companion::tours::companion_compose_tour,
+            commands::companion::tours::companion_list_composed_tours,
             commands::companion::chat::companion_send_message,
             commands::companion::chat::companion_list_recent_messages,
             commands::companion::chat::companion_reset_conversation,
@@ -2813,6 +2828,8 @@ pub fn run() {
             commands::companion::consolidate::companion_get_reflection,
             commands::companion::consolidate::companion_get_dashboard,
             commands::companion::consolidate::companion_get_cockpit,
+            commands::companion::briefing::companion_compose_briefing,
+            commands::companion::briefing::companion_record_briefing_action,
             commands::companion::consolidate::companion_pin_widget_to_cockpit,
             commands::companion::consolidate::companion_unpin_widget_from_cockpit,
             commands::companion::observability::companion_get_usage_dashboard,
@@ -3506,6 +3523,9 @@ pub fn run() {
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,
+            commands::fleet::pairing::fleet_pair_device,
+            commands::fleet::pairing::fleet_companion_devices,
+            commands::fleet::pairing::fleet_companion_revoke,
             // Web-build runtime (Athena web-dev companion, P0)
             commands::infrastructure::webbuild::webbuild_scaffold,
             commands::infrastructure::webbuild::webbuild_register_existing,

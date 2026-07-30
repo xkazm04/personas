@@ -177,6 +177,18 @@
     "importance_prefix": "الأهمية:",
     "confidence_suffix": "% ثقة"
   },
+  "surface": {
+    "section_label": "الواجهة",
+    "composed_badge": "من إنشاء الوكيل",
+    "composed_tip": "تم تعريف هذه الواجهة من مخرجات الوكيل وعُرضت من كتالوج المكوّنات المشترك. لا تُنفَّذ الإجراءات أبدًا دون تأكيدك.",
+    "dropped_blocks": "تم استبعاد {count} من الكتل غير الصالحة من هذه الواجهة.",
+    "no_target": "غير متاح هنا — لا يحتوي هذا العرض على مشروع أو شخصية للتنفيذ عليها.",
+    "confirm_run_title": "تشغيل إجراء الوكيل هذا؟",
+    "confirm_run_body": "سيبدأ \"{label}\" تشغيل الشخصية بهذه المدخلات: {prompt}",
+    "confirm_run_action": "تشغيل",
+    "table_empty": "لا توجد صفوف في هذا الجدول.",
+    "terminal_empty": "لا توجد أسطر إخراج."
+  },
   "progress_extra": {
     "taking_longer": "يستغرق وقتاً أطول من المتوقع",
     "complete": "مكتمل",

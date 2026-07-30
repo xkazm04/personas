@@ -852,6 +852,10 @@ export type Translations = {
       pm_event_chain_title: string;
       pm_live_stream_title: string;
       pm_athena_fleet_title: string;
+      composed_tours: string;
+      composed_badge: string;
+      composed_stale: string;
+      composed_empty: string;
     };
     setup_stepper: {
       your_profile: string;
@@ -6278,6 +6282,20 @@ export type Translations = {
       source_healing_issue: string;
       source_execution_error: string;
       source_mcp_sidecar: string;
+      noc_diagnosis_title: string;
+      noc_diagnosed_by: string;
+      noc_handled_by: string;
+      noc_handled_title: string;
+      noc_handled_empty: string;
+      noc_handled_continued: string;
+      noc_evidence_label: string;
+      noc_proposed_label: string;
+      noc_proposal_pending: string;
+      noc_confidence: string;
+      noc_diagnose_action: string;
+      noc_diagnosing: string;
+      noc_no_diagnosis: string;
+      noc_diagnose_failed: string;
     };
     observability: {
       title: string;
@@ -6798,6 +6816,32 @@ export type Translations = {
       default_attention_setup: string;
       default_attention_paused: string;
       default_attention_low_trust: string;
+      briefing_title: string;
+      briefing_composed_by: string;
+      briefing_subtitle_athena: string;
+      briefing_subtitle_fallback: string;
+      briefing_quiet_title: string;
+      briefing_quiet_body: string;
+      briefing_fallback_callout_title: string;
+      briefing_stat_runs: string;
+      briefing_stat_failed: string;
+      briefing_stat_alerts: string;
+      briefing_stat_approvals: string;
+      briefing_stat_incidents: string;
+      briefing_attention_title: string;
+      briefing_failed_sublabel: string;
+      briefing_approval_title: string;
+      briefing_approval_headline: string;
+      action_rerun: string;
+      action_pause: string;
+      action_approve: string;
+      action_decline: string;
+      action_done: string;
+      action_failed: string;
+      action_confirm_rerun_title: string;
+      action_confirm_rerun_body: string;
+      action_confirm_pause_title: string;
+      action_confirm_pause_body: string;
     };
     events: {
       title: string;
@@ -12441,6 +12485,19 @@ export type Translations = {
       pair_copied: string;
       pair_credentials_note: string;
       pair_preview_note: string;
+      pair_lan_badge: string;
+      pair_generate: string;
+      pair_generating: string;
+      pair_scan_hint: string;
+      pair_token_once: string;
+      pair_url_label: string;
+      pair_qr_alt: string;
+      pair_devices_title: string;
+      pair_no_devices: string;
+      pair_revoke: string;
+      pair_revoked_badge: string;
+      pair_never_connected: string;
+      pair_error_generic: string;
       approvals_pending_one: string;
       approvals_pending_other: string;
       approve: string;
@@ -14189,6 +14246,9 @@ export type Translations = {
       walkthrough_offer_tell: string;
       walkthrough_offer_tell_hint: string;
       walkthrough_offer_tell_prompt: string;
+      walkthrough_composing: string;
+      walkthrough_composing_hint: string;
+      walkthrough_compose_failed: string;
       stt_title: string;
       stt_desc: string;
       stt_engine_browser: string;
@@ -17090,6 +17150,18 @@ export type Translations = {
       retry_prefix: string;
       importance_prefix: string;
       confidence_suffix: string;
+    };
+    surface: {
+      section_label: string;
+      composed_badge: string;
+      composed_tip: string;
+      dropped_blocks: string;
+      no_target: string;
+      confirm_run_title: string;
+      confirm_run_body: string;
+      confirm_run_action: string;
+      table_empty: string;
+      terminal_empty: string;
     };
     progress_extra: {
       taking_longer: string;

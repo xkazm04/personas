@@ -28,6 +28,8 @@ pub mod prompt;
 pub mod session;
 pub mod stt;
 pub mod templates;
+pub mod generated_tour_anchors;
+pub mod tours;
 pub mod tts;
 pub mod turn_ledger;
 pub mod util;

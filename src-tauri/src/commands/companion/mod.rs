@@ -7,6 +7,7 @@
 pub mod approvals;
 pub mod backlog_triage;
 pub mod brain;
+pub mod briefing;
 pub mod browser_test;
 pub mod chat;
 pub mod connectors;
@@ -25,6 +26,7 @@ pub mod project_tracking;
 pub mod sensory;
 pub mod stt;
 pub mod templates;
+pub mod tours;
 pub mod voice;
 
 use std::panic::AssertUnwindSafe;
