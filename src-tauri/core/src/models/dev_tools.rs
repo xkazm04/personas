@@ -759,6 +759,51 @@ pub struct DevContext {
 }
 
 // ============================================================================
+// Dev Context Fingerprints — the cached, deterministic structural facts
+// ============================================================================
+
+/// One row of `dev_context_fingerprints`: cheap, deterministic, LLM-free facts
+/// about a context's files, cached so repeat questions become SQL instead of
+/// file reads.
+///
+/// `content_hash` covers the context's file LIST *and* each file's sha256, so
+/// any membership or content change invalidates the row. A refresh that finds
+/// an unchanged hash skips reading the context's files entirely.
+///
+/// Everything here is a FACT, not a verdict — see
+/// `personas_core::context_fingerprint` for what each counter does and does not
+/// mean (notably `set_state_after_await_count`, which is a coarse proxy).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DevContextFingerprint {
+    pub project_id: String,
+    pub context_id: String,
+    pub content_hash: String,
+    pub file_count: i32,
+    /// Mapped `file_paths` entries that no longer exist on disk. Non-zero means
+    /// the fingerprint is derived from a partially stale map — surfaced rather
+    /// than silently skipped.
+    pub missing_file_count: i32,
+    /// JSON array of detected third-party/framework dependencies.
+    pub imports: Option<String>,
+    /// JSON array of in-repo primitives present.
+    pub primitives: Option<String>,
+    pub promise_all_count: i32,
+    pub join_all_count: i32,
+    pub await_count: i32,
+    pub sql_write_count: i32,
+    pub spawn_count: i32,
+    pub use_effect_count: i32,
+    pub set_state_after_await_count: i32,
+    pub exports_components: bool,
+    pub exports_hooks: bool,
+    pub exports_commands: bool,
+    pub exports_repo_fns: bool,
+    pub computed_at: String,
+}
+
+// ============================================================================
 // Dev Context Group Relationships
 // ============================================================================
 

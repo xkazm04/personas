@@ -4268,6 +4268,67 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             ON dev_auto_runs(project_id, started_at DESC);",
     )?;
 
+    // -- Dev Tools: per-context deterministic structural fingerprint ------------
+    // The scan-efficiency keystone. Every scan (context map, skills coverage,
+    // engineering-pattern compliance) used to re-read files to answer ONE
+    // question and then throw the reading away: a probe over this repo read
+    // 13,622 files to answer 6 questions, because the only narrowing metadata
+    // was `dev_contexts.category` (4 values) — all 236 `description` fields are
+    // the literal placeholder "Pending LLM description".
+    //
+    // This table caches CHEAP DETERMINISTIC FACTS (no LLM, no network) per
+    // context, keyed by `content_hash` — a hash over the context's file LIST
+    // and each file's sha256, so any membership OR content change invalidates
+    // it. Future questions become SQL instead of file reads.
+    //
+    // MUST stay INSIDE `run_incremental` — the file's tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE this function.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_context_fingerprints",
+            description: "Per-context deterministic structural fingerprint cache (imports/primitives/shape counters/surface flags)",
+            already_applied: |conn| has_table(conn, "dev_context_fingerprints"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_context_fingerprints (
+                        project_id                  TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        context_id                  TEXT NOT NULL,
+                        -- Hash over the file list AND every file's sha256.
+                        content_hash                TEXT NOT NULL,
+                        file_count                  INTEGER NOT NULL DEFAULT 0,
+                        -- Mapped paths that no longer exist on disk. 13% of the
+                        -- live map is dangling; per-context staleness must be
+                        -- VISIBLE rather than silently skipped.
+                        missing_file_count          INTEGER NOT NULL DEFAULT 0,
+                        -- JSON arrays.
+                        imports                     TEXT,
+                        primitives                  TEXT,
+                        -- Shape counters.
+                        promise_all_count           INTEGER NOT NULL DEFAULT 0,
+                        join_all_count              INTEGER NOT NULL DEFAULT 0,
+                        await_count                 INTEGER NOT NULL DEFAULT 0,
+                        sql_write_count             INTEGER NOT NULL DEFAULT 0,
+                        spawn_count                 INTEGER NOT NULL DEFAULT 0,
+                        use_effect_count            INTEGER NOT NULL DEFAULT 0,
+                        set_state_after_await_count INTEGER NOT NULL DEFAULT 0,
+                        -- Surface flags (0/1).
+                        exports_components          INTEGER NOT NULL DEFAULT 0,
+                        exports_hooks               INTEGER NOT NULL DEFAULT 0,
+                        exports_commands            INTEGER NOT NULL DEFAULT 0,
+                        exports_repo_fns            INTEGER NOT NULL DEFAULT 0,
+                        computed_at                 TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (project_id, context_id)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_context_fingerprints_hash
+                        ON dev_context_fingerprints(project_id, content_hash);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -6939,6 +7000,7 @@ mod tests {
             "dev_workspaces",
             "workspace_knowledge",
             "workspace_practice_adoption",
+            "dev_context_fingerprints",
         ] {
             assert!(
                 has_table(&conn, table).unwrap(),
@@ -6991,6 +7053,7 @@ mod tests {
             "idx_dev_use_cases_project",
             "idx_workspace_knowledge_ws_status",
             "idx_workspace_knowledge_dedup",
+            "idx_dev_context_fingerprints_hash",
         ] {
             assert!(
                 has_index(&conn, index).unwrap(),
