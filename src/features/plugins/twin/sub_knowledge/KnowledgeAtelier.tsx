@@ -297,8 +297,8 @@ Memory: ${seed}`;
             </div>
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
-            {pendingLoading ? (
-              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground animate-spin" /></div>
+            {pendingLoading && pendingMemories.length === 0 ? (
+              <MemoryTimelineGhost />
             ) : pendingMemories.length === 0 ? (
               <div className="py-12 text-center">
                 <Inbox className="w-10 h-10 text-foreground mx-auto mb-3" />
@@ -437,8 +437,8 @@ Memory: ${seed}`;
             <span className="text-[10px] uppercase tracking-wider text-foreground ml-auto">{tx(communications.length === 1 ? t.knowledge.entriesCount_one : t.knowledge.entriesCount_other, { count: communications.length })}</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
-            {commsLoading ? (
-              <div className="flex items-center justify-center py-12"><Clock className="w-5 h-5 text-foreground animate-spin" /></div>
+            {commsLoading && communications.length === 0 ? (
+              <ConversationGhost />
             ) : communications.length === 0 ? (
               <div className="py-12 text-center">
                 <MessageSquare className="w-10 h-10 text-foreground mx-auto mb-3" />
@@ -497,6 +497,54 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
       <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Calm, geometry-matched ghosts for the memory timeline / conversation panes
+// — the only moment either list has nothing to show while a fetch is in
+// flight (docs/design/overview-loading.md). Each bar fades in behind a
+// ≥120ms delay (fill-mode both) so a fast fetch never paints one; no
+// animate-pulse, no spinner.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function MemoryTimelineGhost() {
+  return (
+    <ol className="relative space-y-4 max-w-2xl" aria-hidden="true">
+      <div className="absolute left-3 top-2 bottom-2 w-px bg-primary/5" />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <li key={i} className="relative pl-10 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <span className={`absolute left-0.5 top-2 w-5 h-5 rounded-full ${GHOST_BAR}`} />
+          <div className="rounded-card border border-primary/10 bg-card/40 p-3.5 space-y-2">
+            <span className={`block h-3.5 w-2/3 ${GHOST_BAR}`} />
+            <span className={`block h-3 w-full ${GHOST_BAR}`} />
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary/5">
+              <span className={`h-4 w-16 rounded-full ${GHOST_BAR}`} />
+              <span className={`h-3 w-20 ${GHOST_BAR}`} />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ConversationGhost() {
+  return (
+    <div className="space-y-2 max-w-2xl" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className={`flex gap-3 animate-fade-in ${i % 2 === 1 ? 'flex-row-reverse' : ''}`} style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <span className={`flex-shrink-0 w-7 h-7 rounded-full ${GHOST_BAR}`} />
+          <div className="flex-1 max-w-[88%] p-3 rounded-card border border-primary/10 bg-card/40 space-y-1.5">
+            <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
+            <span className={`block h-3 w-full ${GHOST_BAR}`} />
+            <span className={`block h-3 w-2/3 ${GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

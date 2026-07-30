@@ -269,10 +269,8 @@ ${transcript}`;
 
         {/* RIGHT — stage */}
         <div className="overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="typo-body text-foreground">{t.tone.loading}</p>
-            </div>
+          {isLoading && twinTones.length === 0 ? (
+            <ToneStageGhost />
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
@@ -430,6 +428,37 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
       <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ToneStageGhost — calm, geometry-matched ghost for the active-channel stage,
+// the only moment it has nothing to show while the first tones fetch is in
+// flight (docs/design/overview-loading.md). No animate-pulse; each block
+// fades in behind a ≥120ms delay (fill-mode both).
+// ---------------------------------------------------------------------------
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ToneStageGhost() {
+  return (
+    <div className="px-4 md:px-6 xl:px-8 py-6 max-w-[1100px] mx-auto space-y-5" aria-hidden="true">
+      <div className="rounded-card border border-primary/10 bg-card/40 p-5 animate-fade-in" style={{ animationDelay: '120ms' }}>
+        <div className="flex items-center gap-3">
+          <span className={`w-10 h-10 ${GHOST_BAR}`} />
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <span className={`block h-2.5 w-20 ${GHOST_BAR}`} />
+            <span className={`block h-4 w-32 ${GHOST_BAR}`} />
+          </div>
+        </div>
+      </div>
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="rounded-card border border-primary/10 bg-card/40 p-4 space-y-2.5 animate-fade-in" style={{ animationDelay: `${155 + i * 35}ms` }}>
+          <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
+          <span className={`block h-3.5 w-full ${GHOST_BAR}`} />
+          <span className={`block h-3.5 w-2/3 ${GHOST_BAR}`} />
+        </div>
+      ))}
     </div>
   );
 }

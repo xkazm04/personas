@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TwinTab } from '@/lib/types/types';
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
 import { useReadinessCelebration } from './useReadinessCelebration';
@@ -77,7 +77,7 @@ export default function TwinPage() {
         key={twinTab}
         className={`animate-fade-slide-in flex-1 min-h-0 flex flex-col w-full overflow-hidden ${TWIN_PAGE_MIN_WIDTH}`}
       >
-        <Suspense fallback={<SuspenseFallback />}>
+        <Suspense fallback={<RouteChunkSkeleton />}>
           {twinTab === 'profiles' && <ProfilesPage />}
           {twinTab === 'identity' && <IdentityPage />}
           {twinTab === 'tone' && <TonePage />}

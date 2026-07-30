@@ -86,8 +86,8 @@ export default function ToneBaseline() {
     <ContentBox>
       <ContentHeader icon={<Mic className="w-5 h-5 text-violet-400" />} iconColor="violet" title={t.tone.title} subtitle={t.tone.subtitle} />
       <ContentBody centered>
-        {isLoading ? (
-          <p className="typo-body text-foreground text-center py-12">{t.tone.loading}</p>
+        {isLoading && twinTones.length === 0 ? (
+          <ToneBaselineGhost />
         ) : (
           <div className="max-w-2xl mx-auto space-y-3 pb-8">
             <CoachMark id="tone" title={t.coach.toneTitle} body={t.coach.toneBody} />
@@ -148,5 +148,27 @@ export default function ToneBaseline() {
         )}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ToneBaselineGhost — calm, geometry-matched ghost for the collapsed channel
+// list, the only moment it has nothing to show while the first tones fetch
+// is in flight (docs/design/overview-loading.md). No animate-pulse; each row
+// fades in behind a ≥120ms delay (fill-mode both).
+// ---------------------------------------------------------------------------
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ToneBaselineGhost() {
+  return (
+    <div className="max-w-2xl mx-auto space-y-3 pb-8" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="rounded-card border border-primary/10 bg-card/30 px-4 py-3 flex items-center gap-3 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <span className={`w-4 h-4 flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`w-7 h-7 flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`h-3.5 flex-1 max-w-[140px] ${GHOST_BAR}`} />
+        </div>
+      ))}
+    </div>
   );
 }
