@@ -44,6 +44,14 @@ export function isMonitoringCred(c: PersonaCredential): boolean {
   return MONITORING_SERVICE_TYPES.has(c.serviceType.toLowerCase());
 }
 
+// Module-scoped warm cache (docs/design/overview-loading.md, law 1) — mirrors
+// useLlmPinpoints's cache. Local useState, not store-backed, and the page
+// unmounts on every DevTools tab switch, so a return visit within the same
+// session would otherwise cold-start the stat tiles every time.
+let cachedProjectId: string | null = null;
+let cachedStats: MonitoringStats | null = null;
+let cachedCred: PersonaCredential | null = null;
+
 /**
  * Data layer for the Monitoring Overview tab. Resolves the active project's
  * `monitoring_credential_id` + `monitoring_project_slug`, fetches the summary
@@ -58,10 +66,11 @@ export function useMonitoringPinpoints() {
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [credLoaded, setCredLoaded] = useState(false);
 
-  const [state, setState] = useState<MonConnState>('loading');
-  const [stats, setStats] = useState<MonitoringStats | null>(null);
+  const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId && cachedStats !== null;
+  const [state, setState] = useState<MonConnState>(warmForProject ? 'connected' : 'loading');
+  const [stats, setStats] = useState<MonitoringStats | null>(warmForProject ? cachedStats : null);
   const [error, setError] = useState<string | null>(null);
-  const [cred, setCred] = useState<PersonaCredential | null>(null);
+  const [cred, setCred] = useState<PersonaCredential | null>(warmForProject ? cachedCred : null);
 
   useEffect(() => {
     listCredentials()
@@ -124,11 +133,14 @@ export function useMonitoringPinpoints() {
       const s = await fetchSentryStats(credId, orgSlug, projectSlug);
       setStats(s);
       setState('connected');
+      cachedProjectId = activeProjectId;
+      cachedStats = s;
+      cachedCred = c;
     } catch (e) {
       setState('error');
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [activeProject, credentials, credLoaded, monCreds.length]);
+  }, [activeProject, activeProjectId, credentials, credLoaded, monCreds.length]);
 
   useEffect(() => {
     load();

@@ -218,6 +218,7 @@ export default function ContextMapPage() {
     return map;
   }, [storeKpis]);
 
+  const contextMapLoading = useSystemStore((s) => s.contextMapLoading);
   const codebaseScanPhase = useSystemStore((s) => s.codebaseScanPhase);
   const scanning = codebaseScanPhase === 'scanning';
 
@@ -553,6 +554,7 @@ export default function ContextMapPage() {
     costByContext: runtime.costByContext,
     errorsByContext: runtime.errorsByContext,
     hasMap: hasContexts,
+    mapLoading: contextMapLoading,
     onScanContext: handleScanContext,
     scanningContextId,
     scanBusy: scanPhase === 'running',

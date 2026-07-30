@@ -105,6 +105,30 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
   );
 }
 
+// Geometry-matched ghost for the pinpoints table's cold-load state — same
+// header band + row height (40px, matching UnifiedTable's `rowHeight={40}`
+// below) as the real table, so the swap to real rows doesn't shift layout.
+// Calm bars, no animate-pulse, delayed fade-in per §C of the loading doctrine.
+const GHOST_ROW_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'];
+function LlmPinpointsGhost() {
+  return (
+    <div className="flex-1 min-h-0 flex flex-col" aria-hidden="true">
+      <div className="h-8 border-b border-primary/10 bg-secondary/20 shrink-0" />
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 border-b border-primary/5 animate-fade-in"
+          style={{ height: 40, animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`h-2.5 rounded bg-primary/[0.06] ${GHOST_ROW_WIDTHS[i % GHOST_ROW_WIDTHS.length]}`} />
+          <span className="h-2.5 w-16 rounded bg-primary/[0.06] ml-auto" />
+          <span className="h-2.5 w-20 rounded bg-primary/[0.06]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -360,11 +384,13 @@ export default function LlmOverviewPage() {
             title={tx(dt.llm_unsupported_title, { tool: cred?.serviceType ?? dt.llm_this_tool })}
             subtitle={dt.llm_unsupported_sub}
           />
-        ) : state === 'loading' ? (
-          <div className="flex-1 flex items-center justify-center">
-            <LoadingSpinner />
-          </div>
-        ) : state === 'error' ? (
+        ) : /* `state` flips back to 'loading' on every reload/window-switch too —
+               gate on `pinpoints.length === 0` so a refresh never wipes an
+               already-rendered table (law 1: "data on screen is sacred"). Only a
+               genuinely cold load (no rows yet) shows the ghost. */
+        state === 'loading' && pinpoints.length === 0 ? (
+          <LlmPinpointsGhost />
+        ) : state === 'error' && pinpoints.length === 0 ? (
           <StateMessage
             icon={<AlertCircle className="w-8 h-8 text-red-400/70" />}
             title={dt.llm_error_title}

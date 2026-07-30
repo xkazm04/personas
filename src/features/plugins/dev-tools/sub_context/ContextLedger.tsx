@@ -47,6 +47,7 @@ export default function ContextLedger(props: ContextLedgerProps) {
     costByContext,
     errorsByContext,
     hasMap,
+    mapLoading,
     onScanContext,
     scanningContextId,
     scanBusy,
@@ -166,8 +167,14 @@ export default function ContextLedger(props: ContextLedgerProps) {
         </div>
       )}
 
-      {/* nothing mapped yet — scan, or hand-author a group */}
-      {groups.length === 0 && !showNewGroup ? (
+      {/* nothing mapped yet — scan, or hand-author a group. Gated on
+          `!mapLoading` (docs/design/overview-loading.md): without this a cold
+          visit (store empty, fetch in flight) briefly flashed "no context
+          groups yet" before the real data landed. A still-loading first visit
+          shows a calm ghost of the ledger shell instead. */}
+      {groups.length === 0 && !showNewGroup && mapLoading ? (
+        <ContextLedgerGhost />
+      ) : groups.length === 0 && !showNewGroup ? (
         <div className="flex flex-col items-center text-center py-16">
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-3">
             <FolderTree className="w-7 h-7 text-amber-400/50" />
@@ -327,6 +334,38 @@ export default function ContextLedger(props: ContextLedgerProps) {
         )}
       </div>
       )}
+    </div>
+  );
+}
+
+// Calm, delayed ghost of the group-band + context-row shell for a genuinely
+// cold context-map load (fetch in flight, store still empty). Geometry-only —
+// no animate-pulse, staggered fade-in per §C of the loading doctrine.
+function ContextLedgerGhost() {
+  return (
+    <div className="rounded-card border border-primary/10 overflow-hidden" aria-hidden="true">
+      {[0, 1].map((g) => (
+        <div key={g}>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5 animate-fade-in" style={{ animationDelay: `${120 + g * 70}ms` }}>
+            <span className="w-2.5 h-2.5 rounded-full bg-primary/[0.08]" />
+            <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+          </div>
+          <div className="divide-y divide-primary/5">
+            {[0, 1, 2].map((r) => {
+              const i = g * 3 + r;
+              return (
+                <div
+                  key={r}
+                  className="flex items-center gap-2.5 px-3 py-1.5 animate-fade-in"
+                  style={{ animationDelay: `${120 + i * 35}ms` }}
+                >
+                  <span className={`h-2.5 rounded bg-primary/[0.06] ${['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'][i % 6]}`} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
