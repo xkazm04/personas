@@ -1,9 +1,28 @@
 /**
+ * @catalog UnifiedTable — the canonical list/table primitive: sorting, dropdown filters, virtual list, grouping, column resize, keyboard nav, and a built-in loading-pattern-v2 cold-load contract (ghost-under-chrome → rippling reveal, empty-flash-safe). Prefer it over hand-rolled tables; pass `isLoading` + `data` and the cold-load choreography is automatic.
+ *
  * UnifiedTable — golden standard table component for all list views.
  *
  * Design baseline: Activity table's visual quality (rounded borders, clean rows).
- * Features: column sorting, dropdown filters, search, virtual list, row click.
- * Column headers show distinct action icons: ArrowUpDown (sort), Filter (dropdown), Search.
+ * Features: column sorting, dropdown filters, search, virtual list, row click,
+ * grouping, column resize, keyboard row nav, infinite scroll, sort persistence.
+ *
+ * ── Cold-load contract (loading pattern v2 — docs/design/overview-loading.md) ──
+ * The permanent column header always renders (law 5), and the body is a strict
+ * three-state machine so a page gets the whole doctrine from two props
+ * (`isLoading` + `data`), never a hand-rolled skeleton:
+ *   1. `isLoading && data.length === 0` → calm, geometry-matched delayed ghost
+ *      rows (`TableGhostRows`; ≥120ms fade-in, no `animate-pulse`) — a fast
+ *      fetch never paints one, and a refetch WITH rows on screen never reaches
+ *      this branch, so data on screen is never hidden (law 1).
+ *   2. `!isLoading && data.length === 0` → the settled empty state (never
+ *      flashes before the first fetch resolves — law 2/empty-flash-safe).
+ *   3. `data.length > 0` → rows, rippling in once via the id-guarded entrance
+ *      cascade (law 4) that is COUPLED to `isLoading` by default (see
+ *      `rowReveal`) — first-viewport rows only, capped, reduced-motion-aware,
+ *      one-shot so poll/scroll/refetch never replay.
+ * The net rule for callers: **don't build a table skeleton or an entrance
+ * animation — pass `isLoading` and `data` to UnifiedTable and get all five laws.**
  */
 import { useState, useMemo, useRef, useCallback, useEffect, type AnimationEvent, type CSSProperties, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
@@ -150,16 +169,29 @@ export interface UnifiedTableProps<T> {
   /** Distance from the bottom (px) at which `onEndReached` fires. Default 240. */
   endReachedThreshold?: number;
   /**
-   * Opt-in one-shot row entrance cascade (loading pattern v2, law 4 — see
+   * One-shot row entrance cascade (loading pattern v2, law 4 — see
    * docs/design/overview-loading.md). First-viewport rows ripple in with a
    * 35ms stagger on their FIRST appearance; entered row keys are remembered so
    * polling/refetch/scrolling never replay the animation, and a genuinely new
-   * row fades in alone. Set `resetKey` to the filter/scope context so a
-   * context switch replays the cascade on its new result set. Honors
-   * prefers-reduced-motion. Omit for the default (no-entrance) behavior —
-   * the default render path is unchanged.
+   * row fades in alone. Honors prefers-reduced-motion.
+   *
+   * **Coupled to `isLoading` by default:** a table that shows a load ghost
+   * (`isLoading` provided) automatically ripples its rows in on the settle, so
+   * the full cold-load choreography (ghost → rippling reveal) comes from the
+   * single `isLoading` prop — no need to wire this separately. This closes the
+   * gap where Unified-backed tables showed the ghost but then big-banged their
+   * rows. The id-guard makes the auto-mode safe with no `resetKey`: same ids
+   * (refetch) never replay; new ids (filter change) ripple on their own.
+   *
+   * Overrides:
+   * - `rowReveal` / `rowReveal={true}` — force the cascade on even without
+   *   `isLoading` (a table whose data arrives via a store it doesn't own).
+   * - `rowReveal={false}` — force it off even when `isLoading` is passed.
+   * - `rowReveal={{ resetKey }}` — set `resetKey` to the filter/scope context so
+   *   a context switch re-ripples the SAME ids (rarely needed; id-guard already
+   *   handles genuinely-new rows).
    */
-  rowReveal?: { resetKey?: string | number };
+  rowReveal?: boolean | { resetKey?: string | number };
 }
 
 // ---------------------------------------------------------------------------
@@ -204,6 +236,25 @@ export function useRowRevealEntrance(rowReveal?: { resetKey?: string | number })
     },
     [enabled, hasEntered, markEntered],
   );
+}
+
+/**
+ * Resolve the `rowReveal` prop (bool | config | undefined) into the entrance
+ * config `useRowRevealEntrance` consumes, applying the `isLoading` coupling:
+ * a table that shows a load ghost also ripples its rows in on the settle
+ * unless the caller explicitly opts out with `rowReveal={false}`. Exported so
+ * sibling table primitives (DataGrid) share the exact same resolution.
+ */
+export function resolveRowReveal(
+  rowReveal: boolean | { resetKey?: string | number } | undefined,
+  isLoading: boolean | undefined,
+): { resetKey?: string | number } | undefined {
+  if (rowReveal === false) return undefined;
+  if (rowReveal === true) return {};
+  if (rowReveal) return rowReveal;
+  // Unset: couple to the load — showing a ghost implies the full cold-load
+  // choreography (ghost → rippling reveal). id-guard keeps it one-shot.
+  return isLoading !== undefined ? {} : undefined;
 }
 
 /** Deterministic ghost-bar width variety so ghosts read as rows, not a barcode. */
@@ -407,7 +458,10 @@ export function UnifiedTable<T>({
   endReachedThreshold = 240,
   rowReveal,
 }: UnifiedTableProps<T>) {
-  const rowEntrance = useRowRevealEntrance(rowReveal);
+  // Couple the row cascade to the load ghost: passing `isLoading` gives the
+  // whole cold-load choreography from one prop (opt out with rowReveal={false}).
+  const resolvedReveal = resolveRowReveal(rowReveal, isLoading);
+  const rowEntrance = useRowRevealEntrance(resolvedReveal);
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
   // A persisted sort (keyed by tableId) wins over defaultSortKey on first
@@ -571,7 +625,7 @@ export function UnifiedTable<T>({
           scrollRestoreKey={scrollRestoreKey}
           onEndReached={onEndReached}
           endReachedThreshold={endReachedThreshold}
-          rowReveal={rowReveal}
+          rowReveal={resolvedReveal}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
