@@ -926,16 +926,16 @@ fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
 ///
 /// Groups are never deleted: they are shared across subtrees, and an empty group
 /// is harmless where a missing one breaks every context that referenced it.
-fn clear_subtree_contexts(
+fn stale_subtree_contexts(
     pool: &crate::db::DbPool,
     project_id: &str,
     subtree: &str,
-) -> (usize, usize) {
+) -> (Vec<String>, usize) {
     let contexts = repo::list_contexts_by_project(pool, project_id, None).unwrap_or_default();
     // Compare with forward slashes both sides — file_paths are stored
     // repo-relative with `/` regardless of host platform.
     let prefix = format!("{}/", subtree.trim_end_matches('/').replace('\\', "/"));
-    let (mut deleted, mut straddling) = (0usize, 0usize);
+    let (mut stale, mut straddling) = (Vec::new(), 0usize);
     for c in contexts {
         let paths: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
         if paths.is_empty() {
@@ -946,14 +946,12 @@ fn clear_subtree_contexts(
             .filter(|p| p.replace('\\', "/").starts_with(&prefix))
             .count();
         if inside == paths.len() {
-            if repo::delete_context(pool, &c.id).unwrap_or(false) {
-                deleted += 1;
-            }
+            stale.push(c.id.clone());
         } else if inside > 0 {
             straddling += 1;
         }
     }
-    (deleted, straddling)
+    (stale, straddling)
 }
 
 async fn run_context_generation(
@@ -1172,6 +1170,7 @@ async fn run_context_generation(
     let needs_lazy_clear = is_rescan && delta_for_prompt.is_none() && subtree.is_none();
     let mut map_cleared = false;
     let mut subtree_cleared = false;
+    let mut subtree_stale_ids: Vec<String> = Vec::new();
 
     // Extended to 30 minutes to handle large codebases.
     // If timeout fires but contexts were already committed, the scan is treated
@@ -1214,9 +1213,14 @@ async fn run_context_generation(
                             ContextMapProtocol::Group { project_id: pid, name, color, domain } => {
                                 if let (Some(st), false) = (subtree, subtree_cleared) {
                                     subtree_cleared = true;
-                                    let (gone, straddling) = clear_subtree_contexts(pool, project_id, st);
+                                    // Mark, do NOT delete. The old rows stay until this
+                                    // scan has actually produced a map worth swapping in
+                                    // — see the retire step after the stream loop.
+                                    let (stale, straddling) = stale_subtree_contexts(pool, project_id, st);
+                                    let gone = stale.len();
+                                    subtree_stale_ids = stale;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
-                                        "[Milestone] Subtree {st}: replaced {gone} existing context(s)."
+                                        "[Milestone] Subtree {st}: {gone} existing context(s) marked for replacement."
                                     ));
                                     if straddling > 0 {
                                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
@@ -1450,6 +1454,32 @@ async fn run_context_generation(
             };
             CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Error] {detail}"));
             return Err(AppError::Internal(detail));
+        }
+    }
+
+    // Retire the previous generation ONLY now, with the new map already written.
+    // The clear used to fire the moment the first group arrived, so a scan that
+    // then died left the subtree gutted — measured: `src/features/agents` went
+    // from 442 mapped files to 5 when its CLI child was killed and the run hit
+    // the 30-minute timeout having created 0 contexts. Deleting last means the
+    // worst case is a duplicate generation (repairable) instead of an empty one
+    // (not).
+    if !subtree_stale_ids.is_empty() {
+        if contexts_created == 0 {
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                "[Kept] Scan produced no contexts — left all {} existing context(s) in place.",
+                subtree_stale_ids.len()
+            ));
+        } else {
+            let mut retired = 0usize;
+            for id in &subtree_stale_ids {
+                if repo::delete_context(pool, id).unwrap_or(false) {
+                    retired += 1;
+                }
+            }
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!(
+                "[Replaced] Retired {retired} superseded context(s) after writing {contexts_created} new one(s)."
+            ));
         }
     }
 
