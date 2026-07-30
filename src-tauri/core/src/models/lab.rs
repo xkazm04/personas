@@ -252,6 +252,44 @@ pub struct CreateAbResultInput {
     pub base: CreateLabResultBaseInput,
 }
 
+/// A Director-commissioned experiment: an approved coaching verdict whose typed
+/// hypothesis was compiled into a registered Lab experiment (batch-3 Director's
+/// Lab v1). Every row carries its provenance — the verdict it came from and the
+/// evidence snapshot — so the experiment is auditable back to the observation
+/// that motivated it.
+///
+/// `status` vocabulary:
+/// - `awaiting_variant` — registered, but the existing genome/critique surface
+///   could not materialize a variant yet (`status_detail` says why).
+/// - `variant_ready` — a candidate variant prompt is stored on the row.
+/// - `declined_budget` — the Director refused to commission because the weekly
+///   evolution ledger (or this persona's attention share of it) was dry.
+/// - `running` / `concluded` — reserved for the deferred canary-fitness loop.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabAbExperiment {
+    pub id: String,
+    pub persona_id: String,
+    /// Provenance: the approved Director verdict (persona_manual_reviews.id).
+    pub review_id: Option<String>,
+    /// The typed hypothesis block, JSON (camelCase keys).
+    pub hypothesis_json: String,
+    /// Provenance snapshot: verdict title/category/rationale + ledger state at
+    /// commission time.
+    pub provenance_json: Option<String>,
+    pub status: String,
+    pub status_detail: Option<String>,
+    /// Materialized candidate prompt (when `status == variant_ready`).
+    pub variant_prompt: Option<String>,
+    /// How the variant was produced (e.g. `genome_critique`).
+    pub variant_source: Option<String>,
+    /// Spend attributed to materializing this experiment (USD, best-effort).
+    pub spend_usd: f64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 // ============================================================================
 // Lab: Consensus (multi-sample consistency testing)
 // ============================================================================

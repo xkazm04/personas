@@ -25,6 +25,14 @@ export interface DirectorReport {
   generatedAt: string;
 }
 
+/** Typed, testable hypothesis attached to a verdict (Director's Lab). */
+export interface DirectorHypothesis {
+  segmentTarget: string;
+  proposedChange: string;
+  successMetric: string;
+  metricSource: string;
+}
+
 export interface DirectorVerdictRow {
   reviewId: string;
   personaId: string;
@@ -37,6 +45,8 @@ export interface DirectorVerdictRow {
   status: string;
   createdAt: string;
   executionId: string;
+  /** Present only on verdicts the Director judged testable. */
+  hypothesis: DirectorHypothesis | null;
 }
 
 // Portfolio analytics (command center). Mirrors the Rust structs in
@@ -203,4 +213,77 @@ export async function getDirectorBrainHistory(personaId: string): Promise<string
 /** Toggle the Director's Brain long-term memory (gated on a configured vault). */
 export async function setDirectorBrainEnabled(enabled: boolean): Promise<void> {
   return invoke<void>('set_director_brain_enabled', { enabled });
+}
+
+// ---------------------------------------------------------------------------
+// Director's Lab (batch-3): verdict → experiment compiler + campaign report
+// ---------------------------------------------------------------------------
+
+/** Weekly experiment ledger (mirrors engine/director_lab.rs). */
+export interface DirectorLabLedger {
+  weekStart: string;
+  budgetUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
+}
+
+/** A Director-commissioned experiment row (mirrors core LabAbExperiment). */
+export interface LabAbExperiment {
+  id: string;
+  personaId: string;
+  reviewId: string | null;
+  hypothesisJson: string;
+  provenanceJson: string | null;
+  status: string; // awaiting_variant | variant_ready | declined_budget | running | concluded
+  statusDetail: string | null;
+  variantPrompt: string | null;
+  variantSource: string | null;
+  spendUsd: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Campaign report (mirrors engine/director_lab.rs DirectorCampaignReport). */
+export interface DirectorCampaignReport {
+  hypothesesEmitted: number;
+  experimentsTotal: number;
+  variantReady: number;
+  awaitingVariant: number;
+  declinedBudget: number;
+  running: number;
+  ledger: DirectorLabLedger;
+  generatedAt: string;
+}
+
+// Variant materialization is one bounded genome-critique CLI call (180s
+// backend ceiling) + queue/finalize latency.
+const COMMISSION_TIMEOUT_MS = 300_000;
+
+/**
+ * Compile an APPROVED, hypothesis-bearing Director verdict into a registered
+ * experiment. A dry weekly ledger returns a visible `declined_budget` row —
+ * the honest refusal, not an error.
+ */
+export async function commissionDirectorExperiment(
+  reviewId: string,
+): Promise<LabAbExperiment> {
+  return invoke<LabAbExperiment>(
+    'commission_director_experiment',
+    { reviewId },
+    { timeoutMs: COMMISSION_TIMEOUT_MS },
+  );
+}
+
+export async function listDirectorExperiments(
+  personaId?: string,
+  limit?: number,
+): Promise<LabAbExperiment[]> {
+  return invoke<LabAbExperiment[]>('list_director_experiments', {
+    personaId: personaId ?? null,
+    limit: limit ?? null,
+  });
+}
+
+export async function getDirectorCampaignReport(): Promise<DirectorCampaignReport> {
+  return invoke<DirectorCampaignReport>('get_director_campaign_report');
 }
