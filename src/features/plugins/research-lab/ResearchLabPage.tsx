@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 import { FlaskConical } from 'lucide-react';
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -37,7 +37,7 @@ export default function ResearchLabPage() {
       />
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <ErrorBoundary name="Research Lab">
-          <Suspense fallback={<SuspenseFallback />}>
+          <Suspense fallback={<RouteChunkSkeleton />}>
             <Active />
           </Suspense>
         </ErrorBoundary>

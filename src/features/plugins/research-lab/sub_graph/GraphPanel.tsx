@@ -32,6 +32,7 @@ export default function GraphPanel() {
   const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeResearchProjectId);
   const projects = useSystemStore((s) => s.researchProjects);
+  const projectsLoading = useSystemStore((s) => s.researchProjectsLoading);
   const sources = useSystemStore((s) => s.researchSources);
   const hypotheses = useSystemStore((s) => s.researchHypotheses);
   const experiments = useSystemStore((s) => s.researchExperiments);
@@ -79,7 +80,22 @@ export default function GraphPanel() {
     });
   }, [project, sources, hypotheses, experiments, findings, reports, visible]);
 
-  if (!activeProjectId || !project) {
+  if (!activeProjectId) {
+    return (
+      <NoActiveProject
+        icon={Waypoints}
+        message={t.research_lab.select_project_first}
+        onGoToProjects={() => setResearchLabTab('projects')}
+        goToProjectsLabel={t.research_lab.projects}
+      />
+    );
+  }
+
+  // An active project id is set but the projects list hasn't resolved yet
+  // (cold mount landing directly on Graph) — show the delayed canvas ghost
+  // rather than flashing "select a project" for a project that does exist.
+  if (!project) {
+    if (projectsLoading) return <GraphGhost />;
     return (
       <NoActiveProject
         icon={Waypoints}
@@ -193,6 +209,44 @@ export default function GraphPanel() {
             )}
           </aside>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GraphGhost — calm ghost of the toolbar + canvas for the ONLY moment the
+// graph has nothing to show (the active project hasn't resolved from the
+// store yet). Same toolbar/canvas geometry as the real panel so the swap to
+// the real ReactFlow canvas is shift-free. Delayed `animate-fade-in`
+// entrance (120ms+ stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function GraphGhost() {
+  return (
+    <div className="flex flex-col h-full" aria-hidden="true">
+      <div className="flex items-center justify-between gap-4 p-4 border-b border-border/20">
+        <div className="flex items-center gap-2 min-w-0 animate-fade-in" style={{ animationDelay: '120ms' }}>
+          <span className={`w-4 h-4 flex-shrink-0 ${GHOST_BAR}`} />
+          <span className={`h-3.5 w-32 ${GHOST_BAR}`} />
+        </div>
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-6 w-16 rounded-card ${GHOST_BAR} animate-fade-in`}
+              style={{ animationDelay: `${155 + i * 35}ms` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="flex-1 relative bg-background">
+        <div
+          className="absolute inset-6 rounded-modal border border-border/20 bg-primary/[0.03] animate-fade-in"
+          style={{ animationDelay: '155ms' }}
+        />
       </div>
     </div>
   );
