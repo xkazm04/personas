@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { storeBus } from '@/lib/storeBus';
 
-export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases' | 'graph';
+export type CredentialNavKey = 'credentials' | 'from-template' | 'add-new' | 'databases' | 'graph' | 'broker';
 
 type NavigateHandler = ((key: CredentialNavKey) => void) | null;
 

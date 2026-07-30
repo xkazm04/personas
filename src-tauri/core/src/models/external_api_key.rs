@@ -84,3 +84,51 @@ pub struct ApiKeyAuditEntry {
     /// Request `Origin` header, if any (browser callers).
     pub origin: Option<String>,
 }
+
+// ============================================================================
+// Zero-Plaintext Broker (per-consumer credential usage)
+// ============================================================================
+
+/// One observed (credential, consumer) usage edge, refreshed on every proxied
+/// call through the management API's `/api/proxy/{credential_id}` route. The
+/// consumer is the `external_api_keys` row that authenticated the call, so the
+/// blast-radius graph reflects live reality rather than declared bindings.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BrokerConsumerEdge {
+    pub id: String,
+    pub credential_id: String,
+    pub consumer_key_id: String,
+    pub consumer_name: String,
+    pub call_count: i64,
+    /// HTTP status of the most recent proxied call, if recorded.
+    pub last_status: Option<i64>,
+    pub first_used_at: String,
+    pub last_used_at: String,
+}
+
+/// A broker consumer row for the vault Broker surface: the consumer edge
+/// joined with the live state of its API key so the UI can render an honest
+/// kill-switch (active vs already revoked/expired) without a second fetch.
+/// Never carries secret material — only the display prefix.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BrokerConsumerView {
+    pub consumer_key_id: String,
+    pub consumer_name: String,
+    /// Safe display prefix of the consumer's key (e.g. "pk_a1b2c3");
+    /// `None` when the key row was hard-deleted.
+    pub key_prefix: Option<String>,
+    /// True when the key still authenticates (enabled, not revoked).
+    pub active: bool,
+    pub revoked_at: Option<String>,
+    pub expires_at: Option<String>,
+    /// Credentials this consumer has actually used through the proxy.
+    pub credential_ids: Vec<String>,
+    pub credential_names: Vec<String>,
+    pub total_calls: i64,
+    pub last_status: Option<i64>,
+    pub last_used_at: Option<String>,
+}

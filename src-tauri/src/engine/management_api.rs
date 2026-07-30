@@ -16,7 +16,7 @@ use tauri::Manager;
 use std::time::Duration;
 
 use axum::{
-    extract::{Path, Query, Request, State as AxumState},
+    extract::{Extension, Path, Query, Request, State as AxumState},
     http::{header, HeaderValue, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -106,6 +106,10 @@ pub fn management_router(state: ManagementState) -> Router {
         )
         // Credential proxy -- route HTTP calls through stored credentials
         .route("/api/proxy/{credential_id}", post(proxy_request))
+        // Zero-Plaintext Broker -- mint a short-lived derived handle for one
+        // credential (never the secret). Gated on the broad `proxy` scope in
+        // `authorize`, so only trusted keys (system key) can mint consumers.
+        .route("/api/broker/mint/{credential_id}", post(mint_broker_handle))
         // Local scraper (embedded Pumper) -- the personas-mcp `fetch_readable`
         // tool forwards here so the SSRF-safe fetch runs in the main app where
         // the engine lives (the mcp binary has no engine module).
@@ -341,9 +345,31 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
             Err("api key lacks the personas:build scope")
         };
     }
+    if path.starts_with("/api/broker/mint/") {
+        // Minting consumer identities is a trust operation: broad `proxy`
+        // only. A derived handle must never be able to mint further handles
+        // (its scopes are `proxy:credential:<id>` + `cred:<connector>:use`).
+        return if has(SCOPE_PROXY) {
+            Ok(())
+        } else {
+            Err("api key lacks the proxy scope required to mint broker handles")
+        };
+    }
     if let Some(credential_id) = path.strip_prefix("/api/proxy/") {
         let specific = format!("{SCOPE_PROXY_CREDENTIAL_PREFIX}{credential_id}");
-        return if has(SCOPE_PROXY) || has(&specific) {
+        // Broad `proxy`, exact per-credential grant, or ANY per-connector
+        // `cred:<connector>:use` grant passes this coarse gate. The connector
+        // grant cannot be verified here (matching it against the credential's
+        // connector needs a DB read), so the proxy handler re-checks with
+        // `credential_broker::authorize_credential_use` — default-deny — before
+        // any secret is resolved. A key with no credential grant at all is
+        // still rejected right here.
+        return if has(SCOPE_PROXY)
+            || has(&specific)
+            || scopes
+                .iter()
+                .any(|s| super::credential_broker::is_cred_use_scope(s))
+        {
             Ok(())
         } else {
             Err("api key lacks proxy scope for this credential")
@@ -374,9 +400,20 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
 /// rejected with 403 — authentication alone never authorizes mutating or
 /// credential-bearing routes. The middleware never logs token plaintext — only
 /// the prefix when a match succeeds, for traceability.
+/// Consumer identity of the authenticated API key, inserted into request
+/// extensions by [`require_api_key`] so credential-bearing handlers (the
+/// broker proxy) can attribute + exactly authorize the call. Never carries
+/// token material — id, display name, and parsed scopes only.
+#[derive(Clone, Debug)]
+pub struct AuthedApiKey {
+    pub id: String,
+    pub name: String,
+    pub scopes: Vec<String>,
+}
+
 async fn require_api_key(
     AxumState(state): AxumState<Arc<ManagementState>>,
-    req: Request,
+    mut req: Request,
     next: Next,
 ) -> Result<Response, (StatusCode, Json<ApiResult>)> {
     let token = req
@@ -434,6 +471,13 @@ async fn require_api_key(
             }
 
             tracing::debug!(prefix = %key.key_prefix, "external api key accepted");
+            // Expose the consumer identity to handlers (broker proxy uses it
+            // for exact grant checks + per-consumer attribution).
+            req.extensions_mut().insert(AuthedApiKey {
+                id: key.id.clone(),
+                name: key.name.clone(),
+                scopes: scopes.clone(),
+            });
             let resp = next.run(req).await;
             record_audit(
                 &state.pool,
@@ -653,14 +697,69 @@ struct ProxyRequestBody {
 
 /// Proxy an HTTP request through a stored credential's auth strategy.
 ///
-/// Credential secrets never leave the server — the CLI subprocess sends requests
+/// Credential secrets never leave the server — external consumers send requests
 /// here with a credential ID, and auth headers are injected server-side.
+///
+/// Zero-Plaintext Broker enforcement (default-deny):
+/// 1. The middleware already required SOME credential grant on the key.
+/// 2. Here the exact intersection is checked: broad `proxy`, exact
+///    `proxy:credential:<id>`, or `cred:<connector>:use` matching THIS
+///    credential's connector — before any secret is resolved.
+/// 3. The credential's own `scoped_resources` pins are enforced inside
+///    `execute_api_request` (scope_enforcement), completing
+///    caller-key scopes ∩ credential scoped_resources.
+/// 4. Every call — allowed or denied — is written to the credential audit log
+///    with the consumer identity, and allowed calls refresh the live
+///    `credential_consumer_edges` blast-radius edge.
 async fn proxy_request(
     AxumState(state): AxumState<Arc<ManagementState>>,
     Path(credential_id): Path<String>,
+    Extension(consumer): Extension<AuthedApiKey>,
     Json(input): Json<ProxyRequestBody>,
 ) -> impl IntoResponse {
-    match crate::engine::api_proxy::execute_api_request(
+    use crate::db::repos::resources::audit_log;
+    use crate::db::repos::resources::broker_edges;
+    use crate::db::repos::resources::credentials as cred_repo;
+    use crate::engine::credential_broker;
+
+    // Resolve the credential row (metadata only — no secret fields yet).
+    let credential = match cred_repo::get_by_id(&state.pool, &credential_id) {
+        Ok(c) => c,
+        Err(AppError::NotFound(_)) => {
+            return err_json(StatusCode::NOT_FOUND, "Credential not found").into_response()
+        }
+        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    };
+
+    // Exact grant check: caller-key scopes ∩ this credential. Default-deny.
+    let grant = match credential_broker::authorize_credential_use(
+        &consumer.scopes,
+        &credential.id,
+        &credential.service_type,
+    ) {
+        Ok(g) => g,
+        Err(reason) => {
+            tracing::warn!(
+                credential_id = %credential.id,
+                consumer_key = %consumer.id,
+                consumer = %consumer.name,
+                "broker: denied credential use — {reason}"
+            );
+            audit_log::insert_warn(
+                &state.pool,
+                &credential.id,
+                &credential.name,
+                "broker_proxy_denied",
+                Some(&format!(
+                    "consumer={} key_id={} method={} path={}",
+                    consumer.name, consumer.id, input.method, input.path
+                )),
+            );
+            return err_json(StatusCode::FORBIDDEN, &reason).into_response();
+        }
+    };
+
+    let result = crate::engine::api_proxy::execute_api_request(
         &state.pool,
         &credential_id,
         &input.method,
@@ -668,13 +767,83 @@ async fn proxy_request(
         input.headers,
         input.body,
     )
-    .await
-    {
+    .await;
+
+    // Attributed audit + live blast-radius edge, on success AND upstream error
+    // (an errored call still proves the consumer exercised the credential).
+    let status = result.as_ref().ok().map(|r| r.status as i64);
+    audit_log::insert_warn(
+        &state.pool,
+        &credential.id,
+        &credential.name,
+        "broker_proxy_call",
+        Some(&format!(
+            "consumer={} key_id={} grant={} method={} path={} status={}",
+            consumer.name,
+            consumer.id,
+            grant.as_str(),
+            input.method,
+            input.path,
+            status.map_or_else(|| "error".to_string(), |s| s.to_string()),
+        )),
+    );
+    if let Err(e) = broker_edges::upsert_edge(
+        &state.pool,
+        &credential.id,
+        &consumer.id,
+        &consumer.name,
+        status,
+    ) {
+        tracing::warn!(error = %e, "broker: consumer-edge upsert failed (non-fatal)");
+    }
+
+    match result {
         Ok(resp) => ok_json(resp).into_response(),
         Err(e) => {
             let msg = format!("{e}");
             err_json(StatusCode::BAD_GATEWAY, &msg).into_response()
         }
+    }
+}
+
+#[derive(Deserialize)]
+struct MintHandleBody {
+    consumer_name: String,
+    #[serde(default)]
+    ttl_minutes: Option<u32>,
+}
+
+/// `POST /api/broker/mint/{credential_id}` — mint a short-lived derived handle
+/// for one credential. Returns the handle plaintext ONCE; never the secret.
+/// Gated on the broad `proxy` scope in `authorize`, so external MCP/CLI
+/// clients holding the system-level key can programmatically obtain
+/// per-consumer identities ("give me a handle for Sentry").
+async fn mint_broker_handle(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(credential_id): Path<String>,
+    Extension(consumer): Extension<AuthedApiKey>,
+    Json(body): Json<MintHandleBody>,
+) -> impl IntoResponse {
+    match crate::engine::credential_broker::mint_derived_handle(
+        &state.pool,
+        &credential_id,
+        &body.consumer_name,
+        body.ttl_minutes,
+    ) {
+        Ok(resp) => {
+            tracing::info!(
+                credential_id = %credential_id,
+                minted_prefix = %resp.record.key_prefix,
+                minted_by_key = %consumer.id,
+                "broker: handle minted via management API"
+            );
+            ok_json(resp).into_response()
+        }
+        Err(AppError::NotFound(_)) => {
+            err_json(StatusCode::NOT_FOUND, "Credential not found").into_response()
+        }
+        Err(AppError::Validation(msg)) => err_json(StatusCode::BAD_REQUEST, &msg).into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
 }
 
@@ -2329,6 +2498,32 @@ mod tests {
         // Per-credential grant works only for the matching credential.
         assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["proxy:credential:cred-1"])).is_ok());
         assert!(authorize(&Method::POST, "/api/proxy/cred-2", &scopes(&["proxy:credential:cred-1"])).is_err());
+    }
+
+    #[test]
+    fn authorize_broker_mint_requires_broad_proxy() {
+        // Minting is a trust operation: broad `proxy` only.
+        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &scopes(&["proxy"])).is_ok());
+        // A derived handle's own scopes must NOT be able to mint further handles.
+        assert!(authorize(
+            &Method::POST,
+            "/api/broker/mint/cred-1",
+            &scopes(&["proxy:credential:cred-1", "cred:github:use"])
+        )
+        .is_err());
+        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &scopes(&["personas:execute"])).is_err());
+        assert!(authorize(&Method::POST, "/api/broker/mint/cred-1", &[]).is_err());
+    }
+
+    #[test]
+    fn authorize_proxy_passes_connector_grants_to_handler() {
+        // A per-connector grant passes the coarse middleware gate; the exact
+        // connector match is enforced in the handler via credential_broker
+        // (default-deny once the credential row is known).
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred:github:use"])).is_ok());
+        // Malformed / non-use cred scopes do NOT pass the gate.
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred:github:read"])).is_err());
+        assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["cred::use"])).is_err());
     }
 
     #[test]
