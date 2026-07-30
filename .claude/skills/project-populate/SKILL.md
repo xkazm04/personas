@@ -109,8 +109,8 @@ from `GET /dev-tools/context-groups/{project_id}`: no groups → `full`; newest
 `context-map.json`'s file mtime as a proxy — any checkout or merge rewrites it,
 so it reports a fresh scan that never happened.
 
-- `full` — `POST /dev-tools/scan-codebase` with `delta_mode: false`.
-- `incremental` — same call with `delta_mode: true`.
+- `full` — see **Sweep, do not single-shot** below.
+- `incremental` — `POST /dev-tools/scan-codebase` with `delta_mode: true`.
 - `skip` — say what the map already holds (group and context counts, age) and
   move on. Do not rescan a fresh map to feel thorough; it costs the operator
   tokens and can only churn a map that was already right.
@@ -119,6 +119,36 @@ Poll `GET /dev-tools/scan-status/{scan_id}` until the status leaves `running`.
 These scans take minutes — poll at a human pace (~10s), and relay the
 milestone lines as they arrive so the operator can see progress rather than a
 frozen cursor.
+
+### Sweep, do not single-shot
+
+**A whole-tree scan silently under-maps anything non-trivial.** Contexts reach
+the database only as protocol messages parsed from ONE session's stdout, so that
+session must emit the entire map; on a large repo it runs out of room and stops,
+and the result looks exactly like success. Measured on a ~4,400-file repo: one
+whole-tree pass mapped **9%** and reported completion; the same tree swept
+subtree-by-subtree reached **~89%**.
+
+So for a `full` verdict on anything beyond a few hundred files:
+
+1. Partition into subtrees of roughly **50-500 source files** (top-level
+   feature/module directories are usually the seam). Show the operator the
+   partition before spending tokens on it.
+2. Run **3-4 concurrently** via `subtree` on `/dev-tools/scan-codebase` — the
+   guard is per-scope, so they do not block each other.
+3. **Read the `[Coverage]` line on every scan.** Below ~90% means that subtree
+   did not finish; split it and re-run. Slightly over 100% is normal.
+4. Consolidate group sprawl at the end with explicit merge pairs, and run the
+   idempotent repair routes once.
+
+Full command reference and the failure modes in
+[`references/bridge.md`](references/bridge.md).
+
+Two rules learned the hard way: **do not edit the app's Rust while a sweep is
+running** (the dev watcher restarts the app and kills in-flight scans), and
+**verify in aggregate** — count distinct mapped paths across all contexts
+against the repo's real file count, because several bugs in this pipeline were
+invisible per-scan and obvious only in the total.
 
 The scan lane fans out over subagents internally. You do not need to explore
 the codebase to help it, and you should not: two agents mapping the same tree

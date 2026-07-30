@@ -42,11 +42,15 @@ repo behind their back is not this skill's job).
 ### Context map
 
 ```bash
-# start — delta_mode false = full re-exploration, true = incremental
+# whole-tree — delta_mode false = full re-exploration, true = incremental
 curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
   -H 'Content-Type: application/json' \
-  -d '{"project_id":"<id>","root_path":"<abs path>","delta_mode":false}'
-# → {"scan_id":"..."}
+  -d '{"project_id":"<id>","root_path":".","delta_mode":false}'
+
+# SUBTREE-scoped — the mode that actually maps a large codebase
+curl -s -X POST "http://127.0.0.1:$PORT/dev-tools/scan-codebase" \
+  -H 'Content-Type: application/json' \
+  -d '{"project_id":"<id>","root_path":".","subtree":"src/features/agents"}'
 
 curl -s "http://127.0.0.1:$PORT/dev-tools/scan-status/<scan_id>"
 # → {"scan_id":..., "status":"running|completed|failed|not_found", "error":..., "lines":[...]}
@@ -54,6 +58,84 @@ curl -s "http://127.0.0.1:$PORT/dev-tools/scan-status/<scan_id>"
 
 `lines` carries the lane's milestone output. Relay it while polling — these
 scans run for minutes and silence reads as a hang.
+
+### Use the subtree sweep on anything non-trivial
+
+**A whole-tree scan does not scale, and it fails silently.** Contexts reach the
+database only as protocol messages parsed from ONE session's stdout, so that
+session has to emit the entire map. On a large repo it runs out of room and
+stops, and a scan that returns 49 valid contexts looks exactly like a scan that
+finished. Measured on the personas repo: one whole-tree pass mapped 392 of
+~4,400 hand-written files (**9%**) and reported success; sweeping the same tree
+subtree-by-subtree reached **~89%**.
+
+The sweep:
+
+1. Partition the repo into subtrees of roughly **50-500 source files** each —
+   top-level feature/module directories are usually the right seam. A 460-file
+   subtree fits one session comfortably; the ceiling is the whole tree, not a
+   big directory. Split anything much past ~600.
+2. Launch **3-4 concurrently**. The single-flight guard is keyed per scope, so
+   different subtrees never block each other (a second scan of the SAME subtree
+   is still refused, correctly).
+3. Poll each to completion, then start the next batch.
+
+**Read the `[Coverage]` line on every scan.** It reports
+`Mapped N of M source files in <scope> (P%)` and warns below two thirds. Below
+~90% means that subtree did not finish and should be split smaller. Slightly
+over 100% is normal — the denominator walks the filesystem while your own
+comparison probably uses `git ls-files`, so untracked-but-real files land in the
+numerator.
+
+**Keep the partition disjoint — `subtree` is a path PREFIX.** Scanning
+`src/lib` covers `src/lib/db` too. So never scan a parent after scanning its
+children: a scoped scan retires the existing contexts inside its scope and
+replaces them, so the parent pass would delete the fine-grained child contexts
+and substitute one coarser map. Prefer a single slightly-oversized scan over a
+parent/child pair. Where splitting leaves a leftover tail (loose files and small
+sibling dirs under an already-split parent), scan those directories
+individually or leave them unmapped and say so — do not reach for the parent
+prefix to sweep them up.
+
+**Do not edit the app's Rust while a sweep runs.** The dev watcher rebuilds and
+restarts the app, which kills every in-flight scan (job state is in-memory) and
+leaves partial data with no completion signal. Treat a sweep as a code-freeze
+window.
+
+### Repairing a map
+
+All four are idempotent, so running them on a clean map is free:
+
+```bash
+# same-named context rows (older writes could duplicate them)
+curl -s -X POST "$B/dev-tools/dedupe-contexts"          -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+# same-named groups (concurrent scans could each create one)
+curl -s -X POST "$B/dev-tools/dedupe-context-groups"    -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+# strip generated / locale / non-source paths, dropping contexts left empty
+curl -s -X POST "$B/dev-tools/prune-nonsource-contexts" -d '{"project_id":"<id>"}' -H 'Content-Type: application/json'
+# merge semantically-overlapping groups — pairs are EXPLICIT, never inferred
+curl -s -X POST "$B/dev-tools/merge-context-groups" -H 'Content-Type: application/json' \
+  -d '{"project_id":"<id>","delete_empty":true,
+       "merges":[{"from":"Execution & Quality Data","into":"Execution Engine"}]}'
+```
+
+Expect **group sprawl** after a sweep: each scan sees the existing group list
+and is told to reuse it, but a large sweep still tends to add some. Consolidate
+at the END with explicit merge pairs — the overlaps are semantic ("Execution
+Engine" vs "Execution & Quality Data") and no string rule separates those from
+groups that genuinely differ.
+
+### Reading the map back
+
+```bash
+curl -s "$B/dev-tools/contexts/<project_id>"        # every context + file_paths
+curl -s "$B/dev-tools/context-groups/<project_id>"  # the group taxonomy
+curl -s "$B/dev-tools/use-cases/<project_id>"       # the feature inventory
+```
+
+Verify a sweep by counting DISTINCT paths across all contexts and comparing
+against the repo's real source-file count. Do not trust a per-scan number alone;
+several of this pipeline's bugs were visible only in the aggregate.
 
 ### Features (use cases)
 
