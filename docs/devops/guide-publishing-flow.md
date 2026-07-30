@@ -16,10 +16,11 @@ How Personas Desktop packages are built, signed, and delivered to users across W
 >   installed app's update check fails silently (`useAutoUpdater` swallows errors by
 >   design), so no user has ever received an update.
 > - Version files on master are at `1.1.0` and a `v1.1.0` tag already exists, so the
->   next release run bumps past it normally — but see the tag-collision guard.
-> - A junk tag **`v0.1.NaN.1`** is on origin, left by the pre-fix bump bug (now
->   guarded by the `Number.isNaN` check in `bump-version.mjs`). It sorts oddly in
->   `git tag --sort=-v:refname` and should be deleted.
+>   next publish run bumps past it normally — but see the tag-collision guard.
+> - **Fixed 2026-07-30:** publishing is now opt-in (see **Trigger**), so runs no
+>   longer mint tags for releases that never ship. The junk `v0.1.NaN.1` tag left by
+>   the pre-fix bump bug has been deleted from origin; the bug itself was already
+>   guarded by the `Number.isNaN` check in `bump-version.mjs`.
 > - The most recent failure (2026-07-16, run `29533053634`) was a genuine Rust
 >   compile error on a feature branch — ``&Arc<Vec<NoteEntry>>` is not an iterator``
 >   in `commands::obsidian_brain::graph` — not a pipeline defect.
@@ -35,13 +36,17 @@ How Personas Desktop packages are built, signed, and delivered to users across W
 Maintainer runs the Release workflow (workflow_dispatch on master)
          |
          v
-  [bump-version]  ── conventional-commit bump in 4 files, tags vX.Y.Z
-         |          (also: tag-collision guard, changelog generation)
+  [version]  ── publish=false (DEFAULT): resolve current version, build this commit
+         |     publish=true: conventional-commit bump in 4 files, tag vX.Y.Z, push
+         |                   (also: tag-collision guard, changelog generation)
          v
   [frontend]  ── builds dist/ ONCE, uploads as a shared artifact
          |
          v
   [build]  ── 4 parallel GitHub Actions runners (download dist/)
+         |
+         |     publish=false: installers -> workflow artifacts, STOP HERE
+         |     publish=true:  installers -> GitHub Release, continue
     ├── Windows x64     -->  .msi, .nsis.exe
     ├── Windows ARM64   -->  .msi, .nsis.exe
     ├── macOS universal -->  .dmg
@@ -67,14 +72,47 @@ Maintainer runs the Release workflow (workflow_dispatch on master)
 **`workflow_dispatch` is the primary release path.** Development lands directly on
 `master` without PRs, so the `pull_request: [closed]` trigger — which is still wired
 and still gated on `github.event.pull_request.merged == true` — effectively never
-fires on the real workflow. Releasing is a deliberate manual act: run the **Release**
-workflow from the Actions tab (or `gh workflow run release.yml`).
+fires on the real workflow.
+
+### Publishing is opt-in
+
+The workflow has two modes, selected by the `publish` boolean input:
+
+| `publish` | Mode | What happens |
+|---|---|---|
+| `false` **(default)** | **Build validation** | Builds all four platforms from the triggering commit and uploads each platform's installers as a **workflow artifact** (7-day retention). No version bump, no commit, no tag, no GitHub Release, no `latest.json`, no Sentry release. |
+| `true` | **Publish** | The full pipeline: bump → tag → push → build → GitHub Release → `latest.json`. |
+
+A merged PR **never** publishes regardless — only an explicit manual dispatch with
+`publish: true` does.
+
+```bash
+# Build validation (safe, default)
+gh workflow run release.yml
+
+# Actually ship
+gh workflow run release.yml -f publish=true
+```
+
+> **Why this is opt-in.** The workflow used to bump and push a tag on every run,
+> before the platform builds ran. Every run then failed in the builds — leaving five
+> tags on origin (`v0.1.6` … `v1.1.0`) with zero releases behind them, and version
+> files marching forward for releases that never existed. While the app is
+> pre-production, the default run proves the code builds without minting a version
+> number for it. Flip `publish` on when you actually intend to ship.
+>
+> The tag-push-before-build ordering is still there on the publish path. It's a real
+> (if narrow) hazard — a failed publish run strands a tag — but it's contained now
+> that publish runs are deliberate and rare. Build locally first (see **Ad-Hoc Local
+> Builds**), then run a validation dispatch, and only then publish.
 
 ---
 
 ## Version Bumping
 
-**Script**: `scripts/bump-version.mjs`
+**Script**: `scripts/bump-version.mjs` — **publish-path only.** A build-validation run
+skips this job's bump/tag/push steps entirely and builds the triggering commit at
+whatever version `package.json` already holds.
 
 The bump is **driven by conventional commits since the last tag**, not a fixed patch
 increment:
@@ -561,7 +599,7 @@ Automated installer testing runs via `.github/workflows/installer-test.yml`.
 
 | Job | Trigger | What it does |
 |---|---|---|
-| `test-release` | after a **successful** Release run | Downloads the release NSIS installer and runs the acceptance script on a `windows-latest` **and** a `windows-11-arm` runner (`fail-fast: false`, so an arm64-runner outage doesn't mask a passing x64 leg) |
+| `test-release` | after a **successful** Release run | Downloads the release NSIS installer and runs the acceptance script on a `windows-latest` **and** a `windows-11-arm` runner (`fail-fast: false`, so an arm64-runner outage doesn't mask a passing x64 leg). Build-validation Release runs also succeed but publish nothing, so the job first resolves whether a release exists and no-ops with a notice when it doesn't. |
 | `test-build` | `workflow_dispatch` with empty `tag` | Builds `--bundles nsis` from HEAD, then runs the acceptance script |
 | `test-build-macos` | `workflow_dispatch` with empty `tag` | Builds `--bundles dmg` (host arch, not universal), mounts it, asserts binary-exists + an adhoc-or-real code signature, then *attempts* `--health-check`. `continue-on-error: true` during the soak period. |
 | `test-build-linux` | `workflow_dispatch` with empty `tag` | Builds `--bundles deb,appimage`, `apt-get install`s the deb and health-checks it under `xvfb`, then health-checks the AppImage. `continue-on-error: true` during the soak period. |

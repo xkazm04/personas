@@ -42,19 +42,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download latest NSIS installer from release
+      # The Release workflow succeeds for BUILD-VALIDATION runs too (publishing
+      # is opt-in — see release.yml's `publish` input), and those create no
+      # GitHub Release. Without this guard `gh release view` errors and the job
+      # fails on every validation run. Resolve the release first and no-op
+      # cleanly when there isn't one.
+      - name: Resolve published release
+        id: rel
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = gh release view --json tagName --jq '.tagName'
-          Write-Host "Testing release (${{ matrix.arch }}): $tag"
+          $tag = gh release view --json tagName --jq '.tagName' 2>$null
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            Write-Host "::notice::No published release found — skipping installer test. The triggering Release run was a build-validation run (or no release has ever been published)."
+            "found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          } else {
+            Write-Host "Testing release (${{ matrix.arch }}): $tag"
+            "found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+            "tag=$tag"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          }
+
+      - name: Download NSIS installer from release
+        if: steps.rel.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
-          gh release download $tag --pattern "*${{ matrix.arch }}-setup.exe" --dir artifacts
+          gh release download "${{ steps.rel.outputs.tag }}" --pattern "*${{ matrix.arch }}-setup.exe" --dir artifacts
           $installer = Get-ChildItem artifacts\*${{ matrix.arch }}-setup.exe | Select-Object -First 1
           Write-Host "Downloaded: $($installer.FullName)"
           echo "INSTALLER=$($installer.FullName)" >> $env:GITHUB_ENV
 
       - name: Run installer acceptance test
+        if: steps.rel.outputs.found == 'true'
         run: powershell -ExecutionPolicy Bypass -File scripts\test-installer.ps1 -Installer $env:INSTALLER -Arch ${{ matrix.arch }}
 
   # ─── Option B: Build + test from HEAD ────────────────────────
