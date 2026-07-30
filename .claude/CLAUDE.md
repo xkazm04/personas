@@ -160,6 +160,17 @@ src-tauri/
 | `<select>` / custom dropdown | `forms/Listbox` |
 | label+input+error | `forms/FormField` |
 | custom tab strip | `layout/PanelTabBar` / `layout/SegmentedTabs` |
+| a table + its loading skeleton / empty state / row animation | `display/UnifiedTable` — pass `columns` + `data` + `isLoading`; you get ghost-under-chrome, empty-flash safety, and the id-guarded row-entrance cascade for free (see below) |
+| a loading skeleton for a lazy route/section chunk | `layout/RouteChunkSkeleton` as the `Suspense fallback` (delayed header-only ghost, invisible when warm — never `fallback={null}` or a centered spinner) |
+| a per-row/tile entrance stagger | `display/RevealItem` (polymorphic `as="tr"\|"li"\|"div"`) + `useRevealTracker` |
+
+### Cold-load / loading UX — the standard (loading pattern v2)
+
+**Never hand-roll a skeleton, spinner branch, or big-bang reveal for an async surface.** The single source of truth is [`docs/design/overview-loading.md`](../docs/design/overview-loading.md) (the five laws; reference impl `overview/sub_activity/components/GlobalExecutionList.tsx`). Compose the four shared mechanics:
+1. **Lazy route/section** → wrap in `<Suspense fallback={<RouteChunkSkeleton/>}>` (kills the blank chunk-load gap; invisible once the chunk is warm/idle-prefetched).
+2. **A list/table** → use `UnifiedTable` with `isLoading` + `data`. Its three-state body (ghost-under-header while `isLoading && empty` → settled-only empty → rows rippling in via a cascade **coupled to `isLoading`**) is the whole doctrine from two props.
+3. **A non-table data region** → static chrome always renders; ghost **under** it only when `isLoading && items.length===0` (a fetch never hides rendered rows — law 1); rows via `RevealItem` + `useRevealTracker`.
+4. **A view that fully unmounts on nav-away** (lazy routes do) → keep last fetch in a **module-scoped cache** keyed by entity so a remount paints warm, not a re-ghost (precedent: `sub_lifecycle/LifecyclePage.tsx`, `.../competitions/CompetitionList.tsx`).
 
 Import as `@/features/shared/components/<category>/<Name>`. If a genuinely new
 reusable pattern is needed, **add it to `shared/components/` (not a feature folder)**
