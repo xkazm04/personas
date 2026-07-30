@@ -135,10 +135,12 @@ mod approval_autopilot;
 mod approval_exec_core;
 mod approval_exec_dev;
 mod approval_exec_fleet;
+mod approval_exec_night;
 mod approval_lifecycle;
 
 pub use approval_autopilot::*;
 pub(crate) use approval_exec_core::*;
 pub(crate) use approval_exec_dev::*;
 pub use approval_exec_fleet::*;
+pub(crate) use approval_exec_night::*;
 pub use approval_lifecycle::*;

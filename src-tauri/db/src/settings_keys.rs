@@ -367,6 +367,39 @@ pub const COMPANION_DAILY_ROLLUP_HOUR_DEFAULT: u32 = 18;
 /// Free-form date value (no typed validation).
 pub const COMPANION_DAILY_ROLLUP_LAST: &str = "companion_daily_rollup_last";
 
+/// Night Shift v1 (moonshot batch-2) — whether Athena proposes an overnight
+/// fleet plan each evening (approval-gated; nothing runs unapproved), answers
+/// unattended `request_guidance` during an approved night window, parks
+/// destructive approvals, reviews exited sessions, and delivers the morning
+/// report. Default OFF — the most autonomous surface in the app is strictly
+/// opt-in. Read by `companion::night_shift`. Stored `"true"` / `"false"`.
+pub const COMPANION_NIGHT_SHIFT: &str = "companion_night_shift";
+/// Default for [`COMPANION_NIGHT_SHIFT`] — off (opt-in autonomy).
+pub const COMPANION_NIGHT_SHIFT_DEFAULT: bool = false;
+/// Local hour (0–23) at/after which the evening night-plan job may be
+/// enqueued. Default 21 (9pm).
+pub const COMPANION_NIGHT_SHIFT_PLAN_HOUR: &str = "companion_night_shift_plan_hour";
+/// Default for [`COMPANION_NIGHT_SHIFT_PLAN_HOUR`].
+pub const COMPANION_NIGHT_SHIFT_PLAN_HOUR_DEFAULT: u32 = 21;
+/// Local hour (0–23) that ends an approved plan's night window (wake time —
+/// when the morning report is delivered). Default 7.
+pub const COMPANION_NIGHT_SHIFT_WAKE_HOUR: &str = "companion_night_shift_wake_hour";
+/// Default for [`COMPANION_NIGHT_SHIFT_WAKE_HOUR`].
+pub const COMPANION_NIGHT_SHIFT_WAKE_HOUR_DEFAULT: u32 = 7;
+/// Minutes an unresolved `request_guidance` waits for a human during the
+/// night window before Athena answers unattended (clamped 1–8 by the reader
+/// so it undershoots the 10-minute MCP TTL). Default 5.
+pub const COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES: &str = "companion_night_shift_guidance_minutes";
+/// Default for [`COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES`].
+pub const COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES_DEFAULT: u32 = 5;
+/// Max fleet sessions a night plan may dispatch (reader clamps 1–6). Default 3.
+pub const COMPANION_NIGHT_SHIFT_MAX_SESSIONS: &str = "companion_night_shift_max_sessions";
+/// Default for [`COMPANION_NIGHT_SHIFT_MAX_SESSIONS`].
+pub const COMPANION_NIGHT_SHIFT_MAX_SESSIONS_DEFAULT: u32 = 3;
+/// The local `YYYY-MM-DD` the night-plan job was last enqueued — once a day.
+/// Free-form date value (no typed validation; audit-excluded bookkeeping).
+pub const COMPANION_NIGHT_SHIFT_PLAN_LAST: &str = "companion_night_shift_plan_last";
+
 /// Whether Athena runs the weekly behavioral profile-synthesis pass (F3) —
 /// learns how the user works from engage/dismiss / refine-chip / approval stats
 /// and proposes evidence-cited identity diffs (always approval-gated). Default
@@ -705,6 +738,12 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_NIGHT_SHIFT,
+    COMPANION_NIGHT_SHIFT_PLAN_HOUR,
+    COMPANION_NIGHT_SHIFT_WAKE_HOUR,
+    COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES,
+    COMPANION_NIGHT_SHIFT_MAX_SESSIONS,
+    COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS,
     COMPANION_PROFILE_SYNTHESIS_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
@@ -861,6 +900,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | COMPANION_DAILY_ROLLUP
+        | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
@@ -894,12 +934,22 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         CHAIN_MAX_LINKS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (max links per chain), got {value:?}")
         }),
-        COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
+        COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_NIGHT_SHIFT_PLAN_HOUR
+        | COMPANION_NIGHT_SHIFT_WAKE_HOUR => match value.parse::<u32>() {
             Ok(h) if h <= 23 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
+        COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES | COMPANION_NIGHT_SHIFT_MAX_SESSIONS => {
+            match value.parse::<u32>() {
+                Ok(n) if n > 0 => Ok(()),
+                _ => Err(format!(
+                    "value for '{key}' must be a positive integer, got {value:?}"
+                )),
+            }
+        }
         APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
         // -------------------------------------------------------------------
         // JSON-blob keys (Direction 2): validate against the ACTUAL consumer
@@ -1034,6 +1084,7 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     HEALTH_DIGEST_LAST_RUN,
     CREDENTIAL_HEALTHCHECK_LAST,
     COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS_LAST,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
@@ -1131,6 +1182,11 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | AUTONOMOUS_DELIBERATION
         | COMPANION_DAILY_ROLLUP
         | COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_NIGHT_SHIFT
+        | COMPANION_NIGHT_SHIFT_PLAN_HOUR
+        | COMPANION_NIGHT_SHIFT_WAKE_HOUR
+        | COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES
+        | COMPANION_NIGHT_SHIFT_MAX_SESSIONS
         | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE

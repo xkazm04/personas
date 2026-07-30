@@ -461,6 +461,9 @@ async fn run_proactive_tick(
     proactive_engine::rollup::maybe_emit_daily_rollup(pool, &app_state.db, app);
     // F3: run the weekly behavioral profile-synthesis pass if due (gated).
     crate::companion::brain::profile_synthesis::maybe_run_synthesis(pool, &app_state.db, app).await;
+    // Night Shift v1 (gated, default off): evening plan-job enqueue, exited-
+    // session review sweep, and the morning report at wake.
+    crate::companion::night_shift::tick(pool, &app_state.db, app);
     extra.extend(proactive_engine::triggers::dev_goal_nudges(&app_state.db));
     // Incidents inbox: surface OPEN high/critical audit incidents (main app DB)
     // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an
