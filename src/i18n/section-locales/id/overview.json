@@ -277,7 +277,12 @@
     "failures": "Gagal",
     "avg_cost": "Biaya Rata-rata",
     "avg_duration": "Durasi Rata-rata",
-    "pattern_data": "Data Pola"
+    "pattern_data": "Data Pola",
+    "extracted_tab": "Terekstrak",
+    "patterns_library_tab": "Pola",
+    "patterns_no_workspace_desc": "Praktik dikumpulkan per workspace. Buat workspace dan tetapkan proyek ke dalamnya untuk mulai membangun pustaka bersama.",
+    "patterns_no_workspace_title": "Belum ada workspace",
+    "patterns_workspace_picker": "Pilih workspace"
   },
   "dashboard": {
     "greeting_morning": "Selamat Pagi",

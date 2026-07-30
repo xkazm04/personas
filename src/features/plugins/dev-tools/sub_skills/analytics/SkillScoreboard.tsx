@@ -28,10 +28,11 @@ type SortKey = 'invokes' | 'coverage' | 'runs' | 'accept';
 const TERMINAL_OK = new Set(['finished', 'idle']);
 const LIVE = new Set(['spawning', 'running', 'awaiting_input']);
 
-export function SkillScoreboard({ proj, totalContexts, runs }: {
+export function SkillScoreboard({ proj, totalContexts, runs, onOpenInfo }: {
   proj: ProjRow[];
   totalContexts: number;
   runs: SkillRunRow[];
+  onOpenInfo: (skill: string) => void;
 }) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
@@ -158,7 +159,7 @@ export function SkillScoreboard({ proj, totalContexts, runs }: {
                       <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
                     </span>
                   )}
-                  <span className="typo-caption font-medium text-foreground truncate">{row.name}</span>
+                  <button type="button" onClick={() => onOpenInfo(row.name)} className="typo-caption font-medium text-foreground truncate text-left hover:text-primary transition-colors" data-testid={`skill-scoreboard-name-${row.name}`}>{row.name}</button>
                 </span>
                 <span className="typo-caption text-foreground/70 tabular-nums text-right">{row.invokes30d || '—'}</span>
                 <span className="typo-caption text-foreground/70 tabular-nums text-right">

@@ -21,7 +21,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { KnowledgeStatusChip } from './centerShared';
+import { KnowledgeStatusChip } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { areaTheme } from './practiceAreaTheme';
 import type { PracticeViewProps } from './practiceViewTypes';
 

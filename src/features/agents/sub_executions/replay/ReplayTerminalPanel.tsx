@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, memo } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { RunningIcon } from '../components/ExecutionLifecycleIcons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -113,13 +113,26 @@ export function ReplayTerminalPanel({
   visibleLines: Array<{ index: number; text: string; timestamp_ms: number }>;
   totalLines: number;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const containerRef = useRef<HTMLDivElement>(null);
+  const stuckToBottomRef = useRef(true);
+  const prevLengthRef = useRef(visibleLines.length);
+
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stuckToBottomRef.current = distanceFromBottom <= 16;
+  }, []);
 
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    const el = containerRef.current;
+    if (!el) return;
+    const grew = visibleLines.length > prevLengthRef.current;
+    prevLengthRef.current = visibleLines.length;
+    if (grew && stuckToBottomRef.current) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [visibleLines.length]);
 
@@ -129,11 +142,12 @@ export function ReplayTerminalPanel({
         <RunningIcon size={14} className="opacity-60" />
         <span className="typo-heading text-foreground">{e.output_panel}</span>
         <span className="ml-auto typo-body tabular-nums text-foreground">
-          {visibleLines.length}/{totalLines} lines
+          {tx(e.lines_counter, { visible: visibleLines.length, total: totalLines })}
         </span>
       </div>
       <div
         ref={containerRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 typo-code leading-relaxed"
       >
         {visibleLines.map((line) => (

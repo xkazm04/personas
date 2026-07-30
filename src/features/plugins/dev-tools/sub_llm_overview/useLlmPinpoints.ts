@@ -43,6 +43,16 @@ export function isLlmTrackingCred(c: PersonaCredential): boolean {
   return LLM_TRACKING_SERVICE_TYPES.has(c.serviceType.toLowerCase());
 }
 
+// Module-scoped warm cache (docs/design/overview-loading.md, law 1). This is
+// local useState, not store-backed, and DevToolsPage unmounts the page on
+// every tab switch — so returning to LLM Overview within the same session
+// cold-started the pinpoints table every time. Cache the last-fetched rows
+// keyed by project + window so a return visit paints on frame 1.
+let cachedProjectId: string | null = null;
+let cachedWindow: LlmWindow | null = null;
+let cachedPinpoints: LlmPinpoint[] = [];
+let cachedCred: PersonaCredential | null = null;
+
 /**
  * Data layer for the LLM Overview tab. Resolves the active project's assigned
  * LLM-observability credential (`dev_projects.llm_tracking_credential_id`),
@@ -59,10 +69,11 @@ export function useLlmPinpoints() {
   const [credLoaded, setCredLoaded] = useState(false);
   const [timeWindow, setTimeWindow] = useState<LlmWindow>('30d');
 
-  const [state, setState] = useState<LlmConnState>('loading');
-  const [pinpoints, setPinpoints] = useState<LlmPinpoint[]>([]);
+  const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId && cachedWindow === '30d';
+  const [state, setState] = useState<LlmConnState>(warmForProject ? 'connected' : 'loading');
+  const [pinpoints, setPinpoints] = useState<LlmPinpoint[]>(warmForProject ? cachedPinpoints : []);
   const [error, setError] = useState<string | null>(null);
-  const [cred, setCred] = useState<PersonaCredential | null>(null);
+  const [cred, setCred] = useState<PersonaCredential | null>(warmForProject ? cachedCred : null);
 
   useEffect(() => {
     listCredentials()
@@ -108,11 +119,15 @@ export function useLlmPinpoints() {
       const rows = await fetchLlmPinpoints(serviceType, c.id, timeWindow);
       setPinpoints(rows);
       setState('connected');
+      cachedProjectId = activeProjectId;
+      cachedWindow = timeWindow;
+      cachedPinpoints = rows;
+      cachedCred = c;
     } catch (e) {
       setState('error');
       setError(e instanceof Error ? e.message : String(e));
     }
-  }, [activeProject, credentials, credLoaded, llmCreds.length, timeWindow]);
+  }, [activeProject, activeProjectId, credentials, credLoaded, llmCreds.length, timeWindow]);
 
   useEffect(() => {
     load();

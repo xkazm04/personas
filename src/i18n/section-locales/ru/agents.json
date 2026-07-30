@@ -525,7 +525,10 @@
     "active_chains_one": "{count} цепочка в работе",
     "active_chains_other": "{count} цепочек в работе",
     "active_chains_title": "Цепочки в работе",
-    "copy_log_failed": "Не удалось скопировать журнал"
+    "copy_log_failed": "Не удалось скопировать журнал",
+    "lines_counter": "{visible}/{total} строк",
+    "timeline_scrubber_label": "Хронология выполнения",
+    "timeline_scrubber_value": "{current} из {total}"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -1660,7 +1663,8 @@
     "connectors": "Коннекторы",
     "triggers": "Триггеры",
     "all_connectors": "Все коннекторы",
-    "active_triggers": "{count} активный триггер(ов)"
+    "active_triggers": "{count} активный триггер(ов)",
+    "quality": "Качество"
   },
   "health_indicator": {
     "last": "последние {count}"

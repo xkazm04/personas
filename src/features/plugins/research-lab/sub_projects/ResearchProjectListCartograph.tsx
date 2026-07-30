@@ -43,6 +43,7 @@ const PHASE_SHORT: Record<ProjectStatus, string> = {
 export default function ResearchProjectListCartograph() {
   const { t } = useTranslation();
   const projects = useSystemStore((s) => s.researchProjects);
+  const loading = useSystemStore((s) => s.researchProjectsLoading);
   const fetchProjects = useSystemStore((s) => s.fetchResearchProjects);
   const deleteProject = useSystemStore((s) => s.deleteResearchProject);
   const setActiveProject = useSystemStore((s) => s.setActiveResearchProject);
@@ -123,7 +124,9 @@ export default function ResearchProjectListCartograph() {
       />
 
       <div className="flex-1 min-h-0 overflow-auto">
-        {projects.length === 0 ? (
+        {loading && projects.length === 0 ? (
+          <CartoGhost />
+        ) : projects.length === 0 ? (
           <CartoEmpty t={t} onCreate={() => setShowForm(true)} />
         ) : activeDomains.length === 0 ? (
           <CartoEmpty t={t} onCreate={() => setShowForm(true)} />
@@ -430,6 +433,37 @@ function DetailPane({
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CartoGhost — calm ghost of the chart + detail-pane shell for the ONLY
+// moment this variant has nothing to show (a cold fetch with an empty
+// store). Delayed `animate-fade-in` entrance (120ms+ stagger); no
+// `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const CARTO_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function CartoGhost() {
+  return (
+    <div className="flex" aria-hidden="true">
+      <div className="flex-1 min-w-0 p-6">
+        <div
+          className="rounded-card border border-border/40 bg-foreground/[0.015] h-64 animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        />
+      </div>
+      <div className="hidden xl:block w-80 flex-shrink-0 border-l border-border/40 p-6 space-y-2.5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <span
+            key={i}
+            className={`block h-3.5 w-3/4 ${CARTO_GHOST_BAR} animate-fade-in`}
+            style={{ animationDelay: `${155 + i * 35}ms` }}
+          />
+        ))}
       </div>
     </div>
   );

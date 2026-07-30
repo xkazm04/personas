@@ -15,7 +15,6 @@ import { updateProject } from '@/api/devTools/devTools';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatCard } from '@/features/shared/components/display/StatCard';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SentryProjectPicker } from '../sub_overview/OverviewParts';
 import AssignmentMatrix from './AssignmentMatrix';
 import { useMonitoringPinpoints } from './useMonitoringPinpoints';
@@ -80,6 +79,25 @@ function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: strin
   );
 }
 
+// Geometry-matched ghost for the 3-tile StatCard grid's cold-load state.
+// Calm bars, no animate-pulse, delayed staggered fade-in per §C.
+function MonitoringStatsGhost() {
+  return (
+    <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="rounded-card border border-primary/10 bg-card/40 px-3 py-2.5 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="block h-3 w-20 rounded bg-primary/[0.06] mb-2" />
+          <span className="block h-6 w-12 rounded bg-primary/[0.06]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function MonitoringSection() {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
@@ -126,11 +144,12 @@ export default function MonitoringSection() {
             title={tx(dt.mon_unsupported_title, { tool: cred?.serviceType ?? dt.llm_this_tool })}
             subtitle={dt.mon_unsupported_sub}
           />
-        ) : state === 'loading' ? (
-          <div className="flex-1 flex items-center justify-center">
-            <LoadingSpinner />
-          </div>
-        ) : state === 'error' ? (
+        ) : /* `state` flips back to 'loading' on every reload too — gate on
+               `!stats` so a refresh never wipes the already-rendered tiles
+               (law 1: "data on screen is sacred"). */
+        state === 'loading' && !stats ? (
+          <MonitoringStatsGhost />
+        ) : state === 'error' && !stats ? (
           <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">

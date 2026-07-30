@@ -375,6 +375,13 @@ export interface RepoEvidence {
   memory_age_days?: number | null;
   docs_file_count?: number;
   has_doc_map?: boolean;
+  /** Design-system probe (passport "Design system" row). A root DESIGN.md at
+   *  the portable spec location, whether it carries the YAML token
+   *  frontmatter, and whether design guidance exists somewhere non-standard.
+   *  Optional for the same older-backend reason as the fields above. */
+  has_design_md?: boolean;
+  design_md_has_tokens?: boolean;
+  has_informal_design_doc?: boolean;
   /** Raw `app-cost.json` contents (user-maintained monthly-cost ledger at the
    *  repo root), null when the file doesn't exist. Optional for the same
    *  older-backend reason as the fields above. */

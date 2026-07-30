@@ -91,5 +91,9 @@
   "group_monitoring": "Giám sát",
   "group_operations": "Vận hành",
   "group_plugins": "Plugin",
-  "group_templates": "Mẫu"
+  "group_templates": "Mẫu",
+  "extracted": "Đã trích xuất",
+  "memories": "Bộ nhớ",
+  "memory_graph": "Đồ thị",
+  "patterns": "Mẫu"
 }

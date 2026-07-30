@@ -91,5 +91,9 @@
   "group_monitoring": "모니터링",
   "group_operations": "운영",
   "group_plugins": "플러그인",
-  "group_templates": "템플릿"
+  "group_templates": "템플릿",
+  "extracted": "추출됨",
+  "memories": "메모리",
+  "memory_graph": "그래프",
+  "patterns": "패턴"
 }

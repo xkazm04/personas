@@ -7,7 +7,7 @@ import {
   DecisionsEmpty,
   DecisionsErrorRow,
   DecisionsFilterInput,
-  DecisionsLoadingRow,
+  DecisionsGhostRows,
   ScopeBanner,
 } from './sharedBlocks';
 
@@ -67,17 +67,27 @@ export default function DecisionsPanel() {
 
       <DecisionsFilterInput value={d.filter} onChange={d.setFilter} />
 
-      {d.loading && <DecisionsLoadingRow />}
-      {!d.loading && d.error && <DecisionsErrorRow message={d.error} />}
-      {!d.loading && !d.error && d.rows.length === 0 && (
-        <DecisionsEmpty
-          filtered={d.filter.trim().length > 0}
-          onClearFilter={d.handleClearFilter}
-          onAskAthena={d.askAthenaToLogDecision}
-        />
+      {/* Data on screen is sacred (docs/design/overview-loading.md law 1): a
+          filter refetch never hides rows already rendered — the ghost only
+          ever covers a truly cold, empty first load. An error during a
+          background refetch surfaces as a banner above the still-visible
+          stale rows rather than replacing them. */}
+      {d.error && <DecisionsErrorRow message={d.error} />}
+      {d.loading && d.rows.length === 0 ? (
+        <DecisionsGhostRows />
+      ) : (
+        !d.loading &&
+        !d.error &&
+        d.rows.length === 0 && (
+          <DecisionsEmpty
+            filtered={d.filter.trim().length > 0}
+            onClearFilter={d.handleClearFilter}
+            onAskAthena={d.askAthenaToLogDecision}
+          />
+        )
       )}
 
-      {!d.loading && d.rows.length > 0 && (
+      {d.rows.length > 0 && (
         <div className="flex items-start gap-6">
           {/* Context rail */}
           <nav

@@ -13,13 +13,15 @@ import { StaticScanCard } from './StaticScanCard';
 import { useSkillsAnalytics } from './useSkillsAnalytics';
 import type { ProjRow } from '../SkillsManagerPage';
 
-export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDispatch }: {
+export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDispatch, onOpenInfo }: {
   projectId: string;
   proj: ProjRow[];
   totalContexts: number;
   busy: boolean;
   /** Fleet-dispatch a skill with args (context name folded by callers). */
   onDispatch: (skill: string, args: string) => void;
+  /** Skill-name click → the shared metadata modal. */
+  onOpenInfo: (skill: string) => void;
 }) {
   const { runs } = useSkillsAnalytics(projectId);
 
@@ -33,8 +35,8 @@ export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDis
 
   return (
     <div className="h-full flex flex-col gap-4 overflow-y-auto min-h-0 pb-4" data-testid="skills-analytics-tab">
-      <SkillScoreboard proj={proj} totalContexts={totalContexts} runs={runs} />
-      <SkillHistoryTable runs={runs} onRerun={busy ? undefined : onDispatch} />
+      <SkillScoreboard proj={proj} totalContexts={totalContexts} runs={runs} onOpenInfo={onOpenInfo} />
+      <SkillHistoryTable runs={runs} onRerun={busy ? undefined : onDispatch} onOpenInfo={onOpenInfo} />
       <StaticScanCard projectId={projectId} />
       <CoveragePipeline projectId={projectId} busy={busy} onDispatch={onDispatch} />
     </div>

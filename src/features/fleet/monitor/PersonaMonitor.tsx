@@ -16,6 +16,7 @@ import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import { MonitorChannelGrid } from './channels';
@@ -328,7 +329,11 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   designContext={selectedPersona?.design_context ?? null}
                   isProcessing={isProcessing}
                   now={now}
-                  onReviewAction={(id, status, notes) => void handleReviewAction(id, status, notes)}
+                  onReviewAction={(id, status, notes) =>
+                    void handleReviewAction(id, status, notes).catch(
+                      toastCatch('PersonaMonitor:handleReviewAction'),
+                    )
+                  }
                   onMarkRead={(id) => void handleMarkRead(id)}
                   onClose={() => setSelection(null)}
                 />

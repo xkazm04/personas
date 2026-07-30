@@ -277,7 +277,12 @@
     "failures": "Fehler",
     "avg_cost": "Durchschn. Kosten",
     "avg_duration": "Durchschn. Dauer",
-    "pattern_data": "Musterdaten"
+    "pattern_data": "Musterdaten",
+    "extracted_tab": "Extrahiert",
+    "patterns_library_tab": "Muster",
+    "patterns_no_workspace_desc": "Praktiken werden pro Workspace gesammelt. Erstelle einen Workspace und weise ihm Projekte zu, um eine gemeinsame Bibliothek aufzubauen.",
+    "patterns_no_workspace_title": "Noch kein Workspace",
+    "patterns_workspace_picker": "Workspace auswählen"
   },
   "dashboard": {
     "greeting_morning": "Guten Morgen",

@@ -277,7 +277,12 @@
     "failures": "Fallos",
     "avg_cost": "Costo promedio",
     "avg_duration": "Duración promedio",
-    "pattern_data": "Datos del patrón"
+    "pattern_data": "Datos del patrón",
+    "extracted_tab": "Extraídos",
+    "patterns_library_tab": "Patrones",
+    "patterns_no_workspace_desc": "Las prácticas se recopilan por espacio de trabajo. Crea uno y asígnale proyectos para empezar a construir una biblioteca compartida.",
+    "patterns_no_workspace_title": "Aún no hay espacio de trabajo",
+    "patterns_workspace_picker": "Seleccionar espacio de trabajo"
   },
   "dashboard": {
     "greeting_morning": "Buenos días",

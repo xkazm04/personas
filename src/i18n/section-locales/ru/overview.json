@@ -277,7 +277,12 @@
     "failures": "Сбоев",
     "avg_cost": "Средняя стоимость",
     "avg_duration": "Средняя длительность",
-    "pattern_data": "Данные паттерна"
+    "pattern_data": "Данные паттерна",
+    "extracted_tab": "Извлечённое",
+    "patterns_library_tab": "Паттерны",
+    "patterns_no_workspace_desc": "Практики собираются по рабочим пространствам. Создайте рабочее пространство и добавьте в него проекты, чтобы начать собирать общую библиотеку.",
+    "patterns_no_workspace_title": "Рабочих пространств пока нет",
+    "patterns_workspace_picker": "Выбрать рабочее пространство"
   },
   "dashboard": {
     "greeting_morning": "Доброе утро",

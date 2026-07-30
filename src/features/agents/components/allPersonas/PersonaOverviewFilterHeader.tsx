@@ -82,7 +82,11 @@ export function PersonaOverviewFilterHeader({
         type="button"
         onClick={() => setOpen((v) => !v)}
         title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() })}
-        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input text-md font-semibold uppercase tracking-wider transition-colors ${
+        // `typo-label` (not a bespoke text-md/font-semibold/tracking-wider mix)
+        // so a filterable column header is typographically identical to the
+        // plain and sortable headers it sits beside. `-mx-1.5` cancels the
+        // button's own padding, keeping the label on the cell's text x-axis.
+        className={`group inline-flex items-center gap-1.5 px-1.5 py-1 -mx-1.5 rounded-input typo-label transition-colors ${
           isFiltered
             ? 'text-primary bg-primary/8 hover:bg-primary/12'
             : 'text-foreground hover:text-foreground hover:bg-secondary/40'

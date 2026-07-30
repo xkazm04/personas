@@ -4,4 +4,4 @@
  * Tools the runner knows how to spawn and parse. Adding a variant requires a
  * matching arm in `tool_slug` and `parse_tool_output`.
  */
-export type StaticScanTool = "fallow" | "knip" | "jscpd";
+export type StaticScanTool = "fallow" | "knip" | "jscpd" | "impeccable";

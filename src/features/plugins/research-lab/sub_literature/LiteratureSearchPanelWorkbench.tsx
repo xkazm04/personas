@@ -43,6 +43,7 @@ export default function LiteratureSearchPanelWorkbench() {
   const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeResearchProjectId);
   const sources = useSystemStore((s) => s.researchSources);
+  const sourcesLoading = useSystemStore((s) => s.researchSourcesLoading);
   const fetchSources = useSystemStore((s) => s.fetchResearchSources);
   const deleteSource = useSystemStore((s) => s.deleteResearchSource);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
@@ -79,6 +80,11 @@ export default function LiteratureSearchPanelWorkbench() {
   }, [sources]);
 
   const openCard = openCardId ? sources.find((s) => s.id === openCardId) ?? null : null;
+
+  // Loading choreography (docs/design/overview-loading.md): the corkboard
+  // ghost only ever covers a cold fetch with nothing in the store yet — the
+  // empty state renders only once the fetch settles.
+  const showGhost = sourcesLoading && sources.length === 0;
 
   const handleIngest = (id: string) => {
     void ingest(id);
@@ -179,7 +185,9 @@ export default function LiteratureSearchPanelWorkbench() {
       <div className="relative flex-1 min-h-0 overflow-auto">
         <CorkboardBackground />
         <div className="relative px-6 py-8">
-          {filtered.length === 0 ? (
+          {showGhost ? (
+            <CorkboardGhost />
+          ) : filtered.length === 0 ? (
             <WorkbenchEmpty
               t={t}
               hasFilter={!!typeFilter || !!query.trim()}
@@ -440,6 +448,35 @@ function ReadingDrawer({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CorkboardGhost — calm ghost of the index-card grid for the ONLY moment the
+// corkboard has nothing to show (a cold fetch with an empty store). Same
+// grid geometry as the real cards. Delayed `animate-fade-in` entrance
+// (120ms+ stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const CORKBOARD_GHOST_BAR = 'rounded bg-white/[0.06]';
+
+function CorkboardGhost() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-card bg-black/10 border border-white/5 animate-fade-in"
+          style={{ aspectRatio: '5 / 3', animationDelay: `${120 + i * 35}ms` }}
+        >
+          <div className="p-4 h-full flex flex-col">
+            <span className={`h-2.5 w-10 ${CORKBOARD_GHOST_BAR} mb-3`} />
+            <span className={`h-3 w-full ${CORKBOARD_GHOST_BAR} mb-1.5`} />
+            <span className={`h-3 w-3/4 ${CORKBOARD_GHOST_BAR}`} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

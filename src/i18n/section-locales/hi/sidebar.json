@@ -91,5 +91,9 @@
   "group_monitoring": "मॉनिटरिंग",
   "group_operations": "संचालन",
   "group_plugins": "प्लगइन",
-  "group_templates": "टेम्पलेट"
+  "group_templates": "टेम्पलेट",
+  "extracted": "निकाले गए",
+  "memories": "स्मृतियाँ",
+  "memory_graph": "ग्राफ",
+  "patterns": "पैटर्न"
 }

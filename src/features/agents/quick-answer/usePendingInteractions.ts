@@ -9,15 +9,14 @@
 //     (handles local + cloud + inline action), mounted only while the popover
 //     is open.
 //
-// Mount only when the popover is open — useMonitorData polls reviews/messages.
+// Mount only when the popover is open — useMonitorData polls reviews.
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useMonitorData } from '@/features/fleet/monitor/useMonitorData';
+import { useMonitorData, type MonitorReviewItem } from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
-import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 export interface QuestionGroup {
@@ -31,7 +30,9 @@ export interface QuestionGroup {
 
 export interface QuickAnswerData {
   questionGroups: QuestionGroup[];
-  reviews: ManualReviewItem[];
+  /** Carries the resume-loop link (`assignment_id`/`step_id`) the deck needs to
+   *  tell a held team step from an advisory review. */
+  reviews: MonitorReviewItem[];
   questionCount: number;
   reviewCount: number;
   total: number;
@@ -51,12 +52,26 @@ export function isComplexQuestion(q: BuildQuestion): boolean {
   return !!(q.connectorCategory || q.acceptsReference || q.acceptsWebhookSource);
 }
 
+/**
+ * What this surface can actually render.
+ *
+ * Neither unread messages nor persona health summaries appear anywhere in this
+ * hook's return type, so neither gets a poller. Before this, opening Quick
+ * Answer started a `list_messages(300)` query and a `fetchPersonaSummaries()`
+ * every 30 seconds for the entire time it was open, and threw both away.
+ *
+ * A module constant, not an inline literal: it is a hook argument, and a fresh
+ * object per render is exactly the kind of churn the rest of this pass removes.
+ */
+const DECK_FEEDS = { messages: false, personaHealth: false } as const;
+
 export function usePendingInteractions(): QuickAnswerData {
   const buildSessions = useAgentStore((s) => s.buildSessions);
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
 
-  const { reviews, loading, isProcessing, handleReviewAction, handleDispatchAction } = useMonitorData();
+  const { reviews, loading, isProcessing, handleReviewAction, handleDispatchAction } =
+    useMonitorData(DECK_FEEDS);
 
   const questionGroups = useMemo<QuestionGroup[]>(() => {
     const personaById = new Map(personas.map((p) => [p.id, p]));
@@ -95,16 +110,32 @@ export function usePendingInteractions(): QuickAnswerData {
     [questionGroups],
   );
 
-  return {
-    questionGroups,
-    reviews,
-    questionCount,
-    reviewCount: reviews.length,
-    total: questionCount + reviews.length,
-    loading,
-    isProcessing,
-    submitQuestionAnswers,
-    handleReviewAction,
-    handleDispatchAction,
-  };
+  // Memoised: `useUnifiedTriage` derives its injected write ports from this
+  // object, and every card in the deck ultimately takes its `onCommit` from
+  // those. A fresh object per render made all three stacked cards re-render (and
+  // re-parse their markdown) on every keystroke in the answer box.
+  return useMemo(
+    () => ({
+      questionGroups,
+      reviews,
+      questionCount,
+      reviewCount: reviews.length,
+      total: questionCount + reviews.length,
+      loading,
+      isProcessing,
+      submitQuestionAnswers,
+      handleReviewAction,
+      handleDispatchAction,
+    }),
+    [
+      questionGroups,
+      reviews,
+      questionCount,
+      loading,
+      isProcessing,
+      submitQuestionAnswers,
+      handleReviewAction,
+      handleDispatchAction,
+    ],
+  );
 }

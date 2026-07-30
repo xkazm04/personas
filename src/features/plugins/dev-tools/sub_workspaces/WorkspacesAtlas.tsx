@@ -1,9 +1,14 @@
 // Atlas — the WINNING shell (round A): the portfolio map. Workspaces are
 // territories seen from above: a crest card grid (colour wash, watermark,
 // live tallies, member chips), with the selected workspace unfolding a full
-// detail band beneath — identity management, membership editor, and the
-// knowledge library. Round-A siblings (Rail, Cockpit) were deleted; Rail's
-// management affordances (rename / recolour / delete) migrated here.
+// detail band beneath — identity management and the membership editor.
+// Round-A siblings (Rail, Cockpit) were deleted; Rail's management
+// affordances (rename / recolour / delete) migrated here.
+//
+// The knowledge library used to hang off that same detail band; it now lives
+// in Overview → Knowledge → Patterns. The Atlas keeps the workspace's practice
+// TALLIES (adopted / proposed, from `center.stats`), so a workspace crest
+// still reports how much canon it holds — it just isn't where you review it.
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Landmark, Plus, Trash2, Wand2 } from 'lucide-react';
@@ -16,7 +21,6 @@ import {
   MembershipPanel,
   useWorkspaceCenter,
 } from './centerShared';
-import KnowledgeLibrary from './KnowledgeLibrary';
 import { deleteWorkspace, recolorWorkspace, renameWorkspace, WORKSPACE_COLORS } from './workspaceStore';
 
 export default function WorkspacesAtlas() {
@@ -153,15 +157,6 @@ export default function WorkspacesAtlas() {
             </header>
 
             <MembershipPanel workspace={open} projects={center.projects} />
-
-            <div className="min-h-[480px] flex flex-col">
-              <KnowledgeLibrary
-                workspace={open}
-                rows={center.knowledge[open.id] ?? []}
-                projectById={center.projectById}
-                onChanged={center.refreshKnowledge}
-              />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -414,8 +414,12 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           </button>
         )}
         {state === "loading" && (
-          <div className="typo-body text-foreground italic">
-            {t.plugins.drive.lightbox_loading}
+          <div
+            aria-hidden="true"
+            className="w-full max-w-2xl h-[60vh] max-h-[560px] rounded-card bg-primary/[0.06] animate-fade-in"
+            style={{ animationDelay: "120ms" }}
+          >
+            <span className="sr-only">{t.plugins.drive.lightbox_loading}</span>
           </div>
         )}
         {state === "failed" && (

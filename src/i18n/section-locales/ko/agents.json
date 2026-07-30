@@ -525,7 +525,10 @@
     "active_chains_one": "실행 중인 체인 {count}개",
     "active_chains_other": "실행 중인 체인 {count}개",
     "active_chains_title": "실행 중인 체인",
-    "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다"
+    "copy_log_failed": "로그를 클립보드에 복사하지 못했습니다",
+    "lines_counter": "{visible}/{total} 줄",
+    "timeline_scrubber_label": "실행 타임라인",
+    "timeline_scrubber_value": "{total} 중 {current}"
   },
   "lab": {
     "mode_arena": "아레나",
@@ -1660,7 +1663,8 @@
     "connectors": "커넥터",
     "triggers": "트리거",
     "all_connectors": "전체 커넥터",
-    "active_triggers": "{count}개 활성 트리거"
+    "active_triggers": "{count}개 활성 트리거",
+    "quality": "품질"
   },
   "health_indicator": {
     "last": "최근 {count}"

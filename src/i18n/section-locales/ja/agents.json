@@ -525,7 +525,10 @@
     "active_chains_one": "実行中のチェーン {count} 件",
     "active_chains_other": "実行中のチェーン {count} 件",
     "active_chains_title": "実行中のチェーン",
-    "copy_log_failed": "ログをクリップボードにコピーできませんでした"
+    "copy_log_failed": "ログをクリップボードにコピーできませんでした",
+    "lines_counter": "{visible}/{total} 行",
+    "timeline_scrubber_label": "実行タイムライン",
+    "timeline_scrubber_value": "{total} 件中 {current} 件目"
   },
   "lab": {
     "mode_arena": "アリーナ",
@@ -1660,7 +1663,8 @@
     "connectors": "コネクタ",
     "triggers": "トリガー",
     "all_connectors": "すべてのコネクタ",
-    "active_triggers": "{count} 件のアクティブなトリガー"
+    "active_triggers": "{count} 件のアクティブなトリガー",
+    "quality": "品質"
   },
   "health_indicator": {
     "last": "最後の {count}"

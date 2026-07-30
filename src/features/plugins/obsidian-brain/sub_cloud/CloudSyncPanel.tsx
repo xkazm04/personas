@@ -18,6 +18,15 @@ import {
 } from '@/api/obsidianBrain';
 import { silentCatch } from '@/lib/silentCatch';
 
+// Module-scoped flag (docs/design/overview-loading.md, law 1 / "warm-cache-
+// on-remount"). Drive connection status itself is store-backed and survives
+// unmount, but the local `loading` gate below reset to `true` on every mount
+// — so switching to the Cloud tab a second time in the same session replayed
+// the full "Checking Drive connection..." spinner even though the store
+// already knew the answer. Once the check has completed once this session,
+// later mounts skip the gate and paint the (already-known) branch instantly.
+let hasCheckedDriveConnectionOnce = false;
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -52,10 +61,14 @@ export default function CloudSyncPanel() {
   const [pushing, setPushing] = useState(false);
   const [pulling, setPulling] = useState(false);
   const [lastResult, setLastResult] = useState<DriveSyncResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasCheckedDriveConnectionOnce);
 
-  // Check Drive connection on mount
+  // Check Drive connection on mount. Skipped on a return visit within the
+  // same session — the store already holds the answer from the first check
+  // (see hasCheckedDriveConnectionOnce above), so re-running it here would
+  // only replay the loading gate, not change anything the user sees.
   useEffect(() => {
+    if (hasCheckedDriveConnectionOnce) return;
     if (!isAuthenticated) {
       setLoading(false);
       return;
@@ -74,7 +87,10 @@ export default function CloudSyncPanel() {
         }
       })
       .catch(silentCatch('CloudSyncPanel:checkDriveConnection'))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        hasCheckedDriveConnectionOnce = true;
+        setLoading(false);
+      });
   }, [isAuthenticated, setDriveConnected, setDriveEmail, setDriveFileCount, setDriveStorage, setLastDriveSyncAt]);
 
   const connectDrive = useCallback(async () => {

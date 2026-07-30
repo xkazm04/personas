@@ -277,7 +277,12 @@
     "failures": "失敗",
     "avg_cost": "平均コスト",
     "avg_duration": "平均所要時間",
-    "pattern_data": "パターンデータ"
+    "pattern_data": "パターンデータ",
+    "extracted_tab": "抽出済み",
+    "patterns_library_tab": "パターン",
+    "patterns_no_workspace_desc": "プラクティスはワークスペースごとに集約されます。ワークスペースを作成してプロジェクトを割り当てると、共有ライブラリの構築を開始できます。",
+    "patterns_no_workspace_title": "ワークスペースがありません",
+    "patterns_workspace_picker": "ワークスペースを選択"
   },
   "dashboard": {
     "greeting_morning": "おはようございます",

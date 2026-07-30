@@ -20,6 +20,18 @@ import { silentCatch } from '@/lib/silentCatch';
 
 export type ConnectionState = 'empty' | 'unmapped' | 'connected' | 'loading' | 'error';
 
+// Module-scoped warm cache (docs/design/overview-loading.md, law 1: "data on
+// screen is sacred"). repoStats/monitorStats are local useState, not
+// store-backed, and DevToolsPage renders each tab via `{tab === 'x' && <X/>}`
+// — a genuine unmount/remount on every tab switch. Without this, returning to
+// Overview within the same session cold-started the vital-signs tiles and
+// connections rail every time. Stashing the last-fetched stats keyed by
+// project lets a return visit paint real numbers on frame 1 and refresh
+// silently behind them; only a truly first-ever visit sees the loading ghost.
+let cachedProjectId: string | null = null;
+let cachedRepoStats: RepoStats | null = null;
+let cachedMonitorStats: MonitoringStats | null = null;
+
 export function isGitHubCred(c: PersonaCredential): boolean {
   if (c.serviceType === 'github' || c.serviceType === 'github_actions') return true;
   if (!c.metadata) return false;
@@ -54,14 +66,15 @@ export function useOverviewData() {
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [credLoaded, setCredLoaded] = useState(false);
 
-  const [repoState, setRepoState] = useState<ConnectionState>('loading');
+  const warmForProject = !!activeProjectId && activeProjectId === cachedProjectId;
+  const [repoState, setRepoState] = useState<ConnectionState>(warmForProject && cachedRepoStats ? 'connected' : 'loading');
   const [repoProvider, setRepoProvider] = useState<RepoProvider | null>(null);
-  const [repoStats, setRepoStats] = useState<RepoStats | null>(null);
+  const [repoStats, setRepoStats] = useState<RepoStats | null>(warmForProject ? cachedRepoStats : null);
   const [repoError, setRepoError] = useState<string | null>(null);
   const [activeRepoCredId, setActiveRepoCredId] = useState<string | null>(null);
 
-  const [monitorState, setMonitorState] = useState<ConnectionState>('loading');
-  const [monitorStats, setMonitorStats] = useState<MonitoringStats | null>(null);
+  const [monitorState, setMonitorState] = useState<ConnectionState>(warmForProject && cachedMonitorStats ? 'connected' : 'loading');
+  const [monitorStats, setMonitorStats] = useState<MonitoringStats | null>(warmForProject ? cachedMonitorStats : null);
   const [monitorError, setMonitorError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -116,11 +129,13 @@ export function useOverviewData() {
       }
       setRepoStats(stats);
       setRepoState('connected');
+      cachedProjectId = activeProjectId;
+      cachedRepoStats = stats;
     } catch (err) {
       setRepoState('error');
       setRepoError(`${formatErr(err)} — using credential "${cred.name}" (${cred.serviceType})`);
     }
-  }, [activeProject?.github_url, credentials, credLoaded, activeRepoCredId]);
+  }, [activeProject?.github_url, activeProjectId, credentials, credLoaded, activeRepoCredId]);
 
   const loadMonitorStats = useCallback(async () => {
     if (!activeProject || !credLoaded) return;
@@ -159,11 +174,13 @@ export function useOverviewData() {
       const stats = await fetchSentryStats(credId, orgSlug, projectSlug);
       setMonitorStats(stats);
       setMonitorState('connected');
+      cachedProjectId = activeProjectId;
+      cachedMonitorStats = stats;
     } catch (err) {
       setMonitorState('error');
       setMonitorError(formatErr(err));
     }
-  }, [activeProject, credentials, credLoaded, sentryCreds.length]);
+  }, [activeProject, activeProjectId, credentials, credLoaded, sentryCreds.length]);
 
   useEffect(() => {
     if (!credLoaded || !activeProject) return;

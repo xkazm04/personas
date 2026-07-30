@@ -91,5 +91,9 @@
   "group_monitoring": "Monitorování",
   "group_operations": "Provoz",
   "group_plugins": "Pluginy",
-  "group_templates": "Šablony"
+  "group_templates": "Šablony",
+  "extracted": "Extrahované",
+  "memories": "Vzpomínky",
+  "memory_graph": "Graf",
+  "patterns": "Vzory"
 }

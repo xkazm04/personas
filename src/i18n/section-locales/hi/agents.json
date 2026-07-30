@@ -525,7 +525,10 @@
     "active_chains_one": "{count} चेन चल रही है",
     "active_chains_other": "{count} चेन चल रही हैं",
     "active_chains_title": "चल रही चेन",
-    "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका"
+    "copy_log_failed": "लॉग क्लिपबोर्ड पर कॉपी नहीं हो सका",
+    "lines_counter": "{visible}/{total} पंक्तियाँ",
+    "timeline_scrubber_label": "निष्पादन टाइमलाइन",
+    "timeline_scrubber_value": "{total} में से {current}"
   },
   "lab": {
     "mode_arena": "एरेना",
@@ -1660,7 +1663,8 @@
     "connectors": "कनेक्टर",
     "triggers": "ट्रिगर",
     "all_connectors": "सभी कनेक्टर",
-    "active_triggers": "{count} सक्रिय ट्रिगर"
+    "active_triggers": "{count} सक्रिय ट्रिगर",
+    "quality": "गुणवत्ता"
   },
   "health_indicator": {
     "last": "अंतिम {count}"

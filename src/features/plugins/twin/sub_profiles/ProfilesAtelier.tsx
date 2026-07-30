@@ -141,8 +141,19 @@ export default function ProfilesAtelier() {
   const [editDraft, setEditDraft] = useState<DraftForm>(EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  // True once the first fetchTwinProfiles() this mount has settled (store is
+  // deduped/shared, so this resolves as soon as ANY caller's in-flight fetch
+  // does). Gates the cold-load ghost so the settled-empty CTA (TwinHero) never
+  // flashes before the very first fetch has actually run — twinProfilesLoading
+  // starts `false` in the store, so without this a cold mount would paint the
+  // "no twins yet" empty state for one frame before the fetch even begins.
+  const [hasFetched, setHasFetched] = useState(false);
 
-  useEffect(() => { fetchTwinProfiles(); }, [fetchTwinProfiles]);
+  useEffect(() => {
+    let active = true;
+    void fetchTwinProfiles().finally(() => { if (active) setHasFetched(true); });
+    return () => { active = false; };
+  }, [fetchTwinProfiles]);
 
   const sorted = useMemo(() => [...twinProfiles].sort((a, b) => a.name.localeCompare(b.name)), [twinProfiles]);
   const dashboards = useProfileDashboards(sorted);
@@ -193,7 +204,13 @@ export default function ProfilesAtelier() {
     setConfirmDelete(null);
   };
 
-  if (!isLoading && sorted.length === 0) {
+  // Loading choreography (docs/design/overview-loading.md): the settled-empty
+  // CTA only ever shows once the first fetch has genuinely resolved with
+  // nothing. While that first fetch is still in flight, showGhost takes over
+  // below instead — data on screen (or a warm-cached roster) is never hidden.
+  const showGhost = !hasFetched && sorted.length === 0;
+
+  if (!showGhost && !isLoading && sorted.length === 0) {
     return (
       <>
         <TwinHero onCreate={() => setWizardOpen(true)} />
@@ -229,6 +246,9 @@ export default function ProfilesAtelier() {
 
       {/* ── Body — hero card + satellite grid ──────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {showGhost ? (
+          <ProfilesAtelierGhost />
+        ) : (
         <div className="max-w-[1500px] mx-auto px-4 md:px-6 xl:px-8 py-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
           <div className="space-y-6 min-w-0">
             {heroTwin && (
@@ -318,6 +338,7 @@ export default function ProfilesAtelier() {
             </div>
           </aside>
         </div>
+        )}
       </div>
 
       {wizardOpen && <CreateTwinWizard onClose={() => setWizardOpen(false)} />}
@@ -619,6 +640,82 @@ function SatelliteCard(props: SatelliteCardProps) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Cold-load ghost ──────────────────────────────────────────────────
+ * Calm, geometry-matched placeholder for the ONLY moment the roster region
+ * has nothing to show while the very first fetch this session is in flight
+ * (docs/design/overview-loading.md). Mirrors the hero-card + satellite-grid
+ * layout so the swap to real content moves nothing. Each bar fades in behind
+ * a ≥120ms delay (fill-mode both) so a fast fetch never paints one.
+ * ------------------------------------------------------------------ */
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ProfilesAtelierGhost() {
+  return (
+    <div className="max-w-[1500px] mx-auto px-4 md:px-6 xl:px-8 py-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6" aria-hidden="true">
+      <div className="space-y-6 min-w-0">
+        {/* Hero card ghost */}
+        <div
+          className="rounded-card border border-primary/10 bg-card/40 p-5 md:p-6 grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-5 items-start animate-fade-in"
+          style={{ animationDelay: '120ms' }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <span className={`w-16 h-16 ${GHOST_BAR}`} />
+            <span className={`w-[84px] h-[84px] rounded-full ${GHOST_BAR}`} />
+          </div>
+          <div className="min-w-0 space-y-2.5">
+            <span className={`block h-4 w-40 ${GHOST_BAR}`} />
+            <span className={`block h-3 w-full max-w-md ${GHOST_BAR}`} />
+            <span className={`block h-3 w-3/4 max-w-sm ${GHOST_BAR}`} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span key={i} className={`h-7 ${GHOST_BAR}`} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Satellite grid ghost */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-card border border-primary/10 bg-card/40 p-3.5 animate-fade-in"
+              style={{ animationDelay: `${155 + i * 35}ms` }}
+            >
+              <div className="flex items-start gap-3">
+                <span className={`w-10 h-10 flex-shrink-0 ${GHOST_BAR}`} />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <span className={`block h-3.5 w-28 ${GHOST_BAR}`} />
+                  <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <aside className="hidden xl:block">
+        <div className="sticky top-4 space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-card border border-primary/10 bg-card/40 p-4 animate-fade-in"
+              style={{ animationDelay: `${190 + i * 35}ms` }}
+            >
+              <span className={`block h-2.5 w-24 mb-3 ${GHOST_BAR}`} />
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <span key={j} className={`block h-3.5 w-full ${GHOST_BAR}`} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
     </div>
   );
 }

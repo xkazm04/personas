@@ -525,7 +525,10 @@
     "active_chains_one": "{count} chuỗi đang chạy",
     "active_chains_other": "{count} chuỗi đang chạy",
     "active_chains_title": "Chuỗi đang chạy",
-    "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm"
+    "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm",
+    "lines_counter": "{visible}/{total} dòng",
+    "timeline_scrubber_label": "Dòng thời gian thực thi",
+    "timeline_scrubber_value": "{current} trên {total}"
   },
   "lab": {
     "mode_arena": "Đấu trường",
@@ -1660,7 +1663,8 @@
     "connectors": "Trình kết nối",
     "triggers": "Trình kích hoạt",
     "all_connectors": "Tất cả trình kết nối",
-    "active_triggers": "{count} trình kích hoạt đang hoạt động"
+    "active_triggers": "{count} trình kích hoạt đang hoạt động",
+    "quality": "Chất lượng"
   },
   "health_indicator": {
     "last": "cuối {count}"

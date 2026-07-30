@@ -36,6 +36,7 @@
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::should_implement_trait)]
 
+pub mod context_fingerprint;
 pub mod cron;
 pub mod crypto;
 pub mod digest_config;

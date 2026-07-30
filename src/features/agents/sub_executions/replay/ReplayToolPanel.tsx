@@ -48,7 +48,7 @@ export function ReplayToolPanel({
                     ? 'border-blue-400/40 bg-blue-500/10 ring-1 ring-blue-400/20'
                     : isCompleted
                       ? 'border-emerald-500/20 bg-emerald-500/5'
-                      : 'border-primary/10 bg-secondary/20 opacity-40'
+                      : 'border-primary/10 bg-secondary/20 opacity-60'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export function ReplayToolPanel({
 
                 {/* Tool name */}
                 <span className={`typo-code truncate ${
-                  isPending ? 'text-foreground' : 'text-foreground'
+                  isPending ? 'text-muted-foreground' : 'text-foreground'
                 }`}>
                   {step.tool_name}
                 </span>

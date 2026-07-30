@@ -525,7 +525,10 @@
     "active_chains_one": "{count} cadena en curso",
     "active_chains_other": "{count} cadenas en curso",
     "active_chains_title": "Cadenas en curso",
-    "copy_log_failed": "No se pudo copiar el registro al portapapeles"
+    "copy_log_failed": "No se pudo copiar el registro al portapapeles",
+    "lines_counter": "{visible}/{total} líneas",
+    "timeline_scrubber_label": "Cronología de ejecución",
+    "timeline_scrubber_value": "{current} de {total}"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1660,7 +1663,8 @@
     "connectors": "Conectores",
     "triggers": "Disparadores",
     "all_connectors": "Todos los conectores",
-    "active_triggers": "{count} disparador(es) activo(s)"
+    "active_triggers": "{count} disparador(es) activo(s)",
+    "quality": "Calidad"
   },
   "health_indicator": {
     "last": "último {count}"

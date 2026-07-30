@@ -311,29 +311,34 @@ export default function PersonasPage() {
       return renderSectionRoute('teams', goHome, <RouteChunkSkeleton />);
     }
     if (sidebarSection === 'plugins') {
+      // Each plugin primary is a separate lazy chunk that was NOT idle-prefetched
+      // and rendered under a `null` fallback — a cold first-open flashed a blank
+      // content area during chunk fetch+eval. The delayed header-only
+      // `RouteChunkSkeleton` shows calm chrome instead (invisible via its 150ms
+      // CSS delay once the chunk is warm), matching Overview/Projects cold-load.
       if (pluginTab === 'dev-tools') {
-        return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={<RouteChunkSkeleton />}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'artist' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Artist"><Suspense fallback={<RouteChunkSkeleton />}><ArtistPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'obsidian-brain') {
-        return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={<RouteChunkSkeleton />}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'research-lab' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="ResearchLab"><Suspense fallback={<RouteChunkSkeleton />}><ResearchLabPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'drive') {
-        return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={SectionFallback}><DrivePage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={<RouteChunkSkeleton />}><DrivePage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'twin') {
-        return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={SectionFallback}><TwinPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={<RouteChunkSkeleton />}><TwinPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'companion') {
-        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={<RouteChunkSkeleton />}><CompanionPluginPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'scraper' && import.meta.env.DEV) {
-        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={<RouteChunkSkeleton />}><ScraperPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return renderSectionRoute('plugins', goHome);

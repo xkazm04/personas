@@ -91,5 +91,9 @@
   "group_monitoring": "Überwachung",
   "group_operations": "Betrieb",
   "group_plugins": "Plugins",
-  "group_templates": "Vorlagen"
+  "group_templates": "Vorlagen",
+  "extracted": "Extrahiert",
+  "memories": "Erinnerungen",
+  "memory_graph": "Graph",
+  "patterns": "Muster"
 }

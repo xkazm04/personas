@@ -26,6 +26,12 @@ export type MemoryLevel = 'none' | 'adhoc' | 'curated' | 'governed';
 /** Documentation: none → README only → structured docs/ → source-synced (a
  *  doc-map couples docs to code; 'fresh' rot-scan rung arrives in P2). */
 export type DocsLevel = 'none' | 'readme' | 'structured' | 'synced';
+/** Can an agent read this repo's design system before it writes UI?
+ *  `informal` = guidance exists somewhere the project chose; `documented` = a
+ *  root DESIGN.md at the portable spec location; `spec` = that file also
+ *  carries the YAML token frontmatter, so a tool — not just a human — can
+ *  consume it. Only the top rung is machine-checkable, which is the point. */
+export type DesignSystemLevel = 'none' | 'informal' | 'documented' | 'spec';
 export type IntegrationKind =
   | 'llm' | 'vcs' | 'auth' | 'payments' | 'email' | 'storage'
   | 'queue' | 'analytics' | 'search' | 'comms' | 'ci-cd' | 'infra' | 'other';
@@ -139,6 +145,9 @@ export interface PassportArtifacts {
   memory: MemoryLevel;
   /** Documentation posture, graded from the evidence probe (P0). */
   docs: DocsLevel;
+  /** Design-system readability — see DesignSystemLevel. Optional so a passport
+   *  derived before this probe existed doesn't render a false 'none'. */
+  designSystem?: DesignSystemLevel;
   /** Doc-rot rollup (P2 git scan): dirty = coupled sources newer than the doc;
    *  neverRead = tracked docs no session has read since telemetry began.
    *  Absent when the rot scan hasn't run — the row omits its health sub-label
@@ -213,6 +222,7 @@ export const EVALS_SCALE: EvalsLevel[] = ['none', 'partial', 'full'];
 export const MIGRATIONS_SCALE: MigrationsLevel[] = ['none', 'scripted', 'versioned'];
 export const MEMORY_SCALE: MemoryLevel[] = ['none', 'adhoc', 'curated', 'governed'];
 export const DOCS_SCALE: DocsLevel[] = ['none', 'readme', 'structured', 'synced'];
+export const DESIGN_SYSTEM_SCALE: DesignSystemLevel[] = ['none', 'informal', 'documented', 'spec'];
 
 /** Position of an ordinal value within its scale, as 0..1 (for heatmap tinting). */
 export function scalePos<T extends string>(scale: T[], value: T): number {
@@ -245,6 +255,9 @@ export const EVALS_LABEL: Record<EvalsLevel, string> = { none: 'None', partial: 
 export const MIGRATIONS_LABEL: Record<MigrationsLevel, string> = { none: 'None', scripted: 'Scripted', versioned: 'Versioned' };
 export const MEMORY_LABEL: Record<MemoryLevel, string> = { none: 'None', adhoc: 'Ad-hoc', curated: 'Curated', governed: 'Governed' };
 export const DOCS_LABEL: Record<DocsLevel, string> = { none: 'None', readme: 'README only', structured: 'Structured', synced: 'Source-synced' };
+export const DESIGN_SYSTEM_LABEL: Record<DesignSystemLevel, string> = {
+  none: 'None', informal: 'Informal', documented: 'Documented', spec: 'Machine-readable',
+};
 export const ARCHETYPE_LABEL: Record<Archetype, string> = { solo: 'Solo', team: 'Team', org: 'Org' };
 export const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
   prototype: 'Prototype', alpha: 'Alpha', beta: 'Beta', ga: 'GA', maintenance: 'Maintenance', deprecated: 'Deprecated',

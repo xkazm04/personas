@@ -91,5 +91,9 @@
   "group_monitoring": "মনিটরিং",
   "group_operations": "পরিচালনা",
   "group_plugins": "প্লাগিন",
-  "group_templates": "টেমপ্লেট"
+  "group_templates": "টেমপ্লেট",
+  "extracted": "নিষ্কাশিত",
+  "memories": "স্মৃতি",
+  "memory_graph": "গ্রাফ",
+  "patterns": "প্যাটার্ন"
 }

@@ -26,6 +26,7 @@ export function RejectionPatternsPanel({ twinId }: Props) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin;
   const pendingMemories = useSystemStore((s) => s.twinPendingMemories);
+  const pendingLoading = useSystemStore((s) => s.twinPendingLoading);
   const fetchPending = useSystemStore((s) => s.fetchTwinPendingMemories);
 
   // The Knowledge tab also calls fetchPending — this is idempotent against the
@@ -82,7 +83,17 @@ export function RejectionPatternsPanel({ twinId }: Props) {
       </div>
       <p className="typo-caption text-foreground mb-3">{t.rejectionPatterns.subtitle}</p>
 
-      {total === 0 ? (
+      {pendingLoading && total === 0 ? (
+        <ul className="space-y-1.5" aria-hidden="true">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <li key={i} className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+              <span className="flex-shrink-0 h-4 w-20 rounded-full bg-primary/[0.06]" />
+              <span className="flex-1 h-1.5 rounded-full bg-primary/[0.06]" />
+              <span className="flex-shrink-0 h-2.5 w-5 rounded bg-primary/[0.06]" />
+            </li>
+          ))}
+        </ul>
+      ) : total === 0 ? (
         <div className="py-4 text-center">
           <XCircle className="w-6 h-6 text-foreground mx-auto mb-1.5 opacity-50" />
           <p className="typo-caption text-foreground">{t.rejectionPatterns.empty}</p>

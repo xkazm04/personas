@@ -91,5 +91,9 @@
   "group_monitoring": "المراقبة",
   "group_operations": "العمليات",
   "group_plugins": "الإضافات",
-  "group_templates": "القوالب"
+  "group_templates": "القوالب",
+  "extracted": "مستخلصة",
+  "memories": "الذكريات",
+  "memory_graph": "الرسم البياني",
+  "patterns": "الأنماط"
 }

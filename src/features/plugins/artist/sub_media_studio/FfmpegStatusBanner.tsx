@@ -17,7 +17,11 @@ export default function FfmpegStatusBanner({
 }: FfmpegStatusBannerProps) {
   const { t } = useTranslation();
 
-  if (checking) {
+  // Data on screen is sacred (docs/design/overview-loading.md law 1): a
+  // background recheck (e.g. the warm-remount refresh in useFfmpegDetect)
+  // must never blank out an already-known status — the spinner banner is
+  // only for the true first check, before any status has ever landed.
+  if (checking && !status) {
     return (
       <div className="flex items-center gap-2 px-4 py-3 rounded-modal bg-card border border-primary/10">
         <LoadingSpinner size="sm" />

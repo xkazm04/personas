@@ -1,7 +1,7 @@
 // Shared data hook + leaf components for the Workspaces module (Atlas shell).
 // Hoisted so every refinement is made once. Strings hardcoded-EN until
 // consolidation.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 
 import { listWorkspaceKnowledge, type KnowledgeStatus } from '@/api/devTools/workspaces';
@@ -33,20 +33,41 @@ export interface WorkspaceCenter {
   workspaces: Workspace[];
   activeId: string | null;
   projects: DevProject[];
-  /** Knowledge rows per workspace id (all statuses, newest first). */
+  /** Knowledge rows per workspace id, newest first. Every status unless the
+   *  caller narrowed it — see {@link WorkspaceCenterOptions.statuses}. */
   knowledge: Record<string, WorkspaceKnowledge[]>;
+  /** Per-status tallies over whatever `knowledge` holds. A caller that narrowed
+   *  the fetch gets zeroes for the statuses it did not ask for — by
+   *  construction, since the rows were never read. */
   stats: Record<string, WorkspaceStats>;
   projectById: Map<string, DevProject>;
   /** Re-fetch knowledge after a mutation (adopt/reject/create). */
   refreshKnowledge: () => void;
 }
 
+export interface WorkspaceCenterOptions {
+  /**
+   * Narrow the fetch to these statuses.
+   *
+   * The Tauri command has always taken a status filter and this hook never
+   * passed one, so the triage deck was reading every workspace's ENTIRE library
+   * — adopted, rejected, deprecated and all — to keep the `observed`/`proposed`
+   * slice and discard the rest. Adopted is the biggest bucket in a mature
+   * workspace, so that is most of the payload thrown away on every refresh.
+   *
+   * Omit for every status. The library shell and the Approvals knowledge tab
+   * both legitimately need all of them, which is why this is opt-in rather than
+   * a new default.
+   */
+  statuses?: readonly KnowledgeStatus[];
+}
+
 const byName = (a: { name: string }, b: { name: string }) =>
   a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
 /** One hook feeding the shell: store snapshot + projects + a per-workspace
- *  knowledge fetch (small N — one query per workspace). */
-export function useWorkspaceCenter(): WorkspaceCenter {
+ *  knowledge fetch (small N — one query per workspace per requested status). */
+export function useWorkspaceCenter(options: WorkspaceCenterOptions = {}): WorkspaceCenter {
   const { workspaces, activeId } = useWorkspaces();
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
@@ -58,19 +79,29 @@ export function useWorkspaceCenter(): WorkspaceCenter {
   }, [projects.length, fetchProjects]);
 
   const wsKey = workspaces.map((w) => w.id).join(',');
+  // Joined into a string so a caller passing a fresh array literal every render
+  // does not re-fire the fetch on every render.
+  const statusKey = options.statuses?.join(',') ?? '';
   useEffect(() => {
     if (!wsKey) return;
     void fetchGen; // re-run on manual refresh
     let cancelled = false;
+    // `undefined` is the "every status" query the command already supported.
+    const statuses: (KnowledgeStatus | undefined)[] = statusKey
+      ? (statusKey.split(',') as KnowledgeStatus[])
+      : [undefined];
     void Promise.all(
-      wsKey.split(',').map(async (id) => [id, await listWorkspaceKnowledge(id)] as const),
+      wsKey.split(',').map(async (id) => {
+        const pages = await Promise.all(statuses.map((status) => listWorkspaceKnowledge(id, status)));
+        return [id, pages.flat()] as const;
+      }),
     )
       .then((pairs) => {
         if (!cancelled) setKnowledge(Object.fromEntries(pairs));
       })
       .catch(silentCatch('workspaces:knowledgeFetch'));
     return () => { cancelled = true; };
-  }, [wsKey, fetchGen]);
+  }, [wsKey, fetchGen, statusKey]);
 
   const stats = useMemo(() => {
     const out: Record<string, WorkspaceStats> = {};
@@ -87,15 +118,24 @@ export function useWorkspaceCenter(): WorkspaceCenter {
   const sortedProjects = useMemo(() => [...projects].sort(byName), [projects]);
   const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
 
-  return {
-    workspaces,
-    activeId,
-    projects: sortedProjects,
-    knowledge,
-    stats,
-    projectById,
-    refreshKnowledge: () => setFetchGen((g) => g + 1),
-  };
+  const refreshKnowledge = useCallback(() => setFetchGen((g) => g + 1), []);
+
+  // Memoised, and `refreshKnowledge` with it: the triage deck folds this object
+  // into the injected write ports behind `queue.decide`, which every card's
+  // `onCommit` closes over. A new object (or a new arrow) each render defeated
+  // the memoisation of all three stacked cards.
+  return useMemo(
+    () => ({
+      workspaces,
+      activeId,
+      projects: sortedProjects,
+      knowledge,
+      stats,
+      projectById,
+      refreshKnowledge,
+    }),
+    [workspaces, activeId, sortedProjects, knowledge, stats, projectById, refreshKnowledge],
+  );
 }
 
 // -- leaf components ---------------------------------------------------------

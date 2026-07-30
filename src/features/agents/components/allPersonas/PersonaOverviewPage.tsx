@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Bot, Orbit, Rows3, Trash2 } from 'lucide-react';
+import { Bot, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -16,7 +16,6 @@ import { PersonaOverviewCardList } from './PersonaOverviewCardList';
 import { PersonaGroupDropRail } from './PersonaGroupDropRail';
 import { DirectorPanel } from './DirectorPanel';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
-import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
 import { PersonaConfigPanel } from './PersonaConfigPanel';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { usePersonaColumns } from './PersonaOverviewColumns';
@@ -26,31 +25,11 @@ import { useIsCompact } from '@/hooks/utility/interaction/useIsCompact';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { debtText } from '@/i18n/DebtText';
 import { listDirectorScoreTrends } from '@/api/director';
-
-
-
-type LayoutVariant = 'baseline' | 'constellation';
 
 /** Top-level view of the All-Personas page: the persona list, or the
  *  effective-config resolution table (migrated from Settings → Config). */
 type PageTab = 'personas' | 'config';
-
-const LAYOUT_TABS: { id: LayoutVariant; label: string; sub: string; Icon: typeof Rows3 }[] = [
-  { id: 'baseline', label: 'Table', sub: 'data-dense rows with sortable columns', Icon: Rows3 },
-  { id: 'constellation', label: 'Constellation', sub: 'spatial fleet map by last run', Icon: Orbit },
-];
-
-const LAYOUT_STORAGE_KEY = 'persona-overview:layout';
-
-function readPersistedLayout(): LayoutVariant {
-  try {
-    const v = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (v === 'baseline' || v === 'constellation') return v;
-  } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch1")(err); }
-  return 'baseline';
-}
 
 export default function PersonaOverviewPage() {
   const { t, tx } = useTranslation();
@@ -68,7 +47,6 @@ export default function PersonaOverviewPage() {
   const [view, setView] = useState<AgentListViewConfig>(DEFAULT_VIEW_CONFIG);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
   const [pageTab, setPageTab] = useState<PageTab>('personas');
   // Home-team filter from PersonaGroupDropRail (cycle 19; repointed to home
   // teams in the Groups→Teams consolidation). null = unfiltered; a team id
@@ -82,13 +60,12 @@ export default function PersonaOverviewPage() {
   // Batched fetch of Director score trends keyed by persona id. Sample is
   // every visible persona — one round-trip, refreshes when the id set
   // changes (persona created/deleted). Empty arrays for unscored personas
-  // mean the cell collapses cleanly to a "—". The verdict-trend sparkline
-  // this powers only ever renders as a DataGrid column in the baseline
-  // desktop table (see the layout branch below) — the card-list (mobile),
-  // constellation, and config-table views never read `scoreTrendsMap` — so
-  // gate the fetch on that same condition instead of firing it on every
-  // personas-page mount regardless of which layout/tab is actually showing.
-  const scoreTrendsVisible = pageTab === 'personas' && !isMobile && layout === 'baseline';
+  // mean the cell collapses cleanly to a "—". The quality-trend sparkline
+  // this powers only ever renders as a DataGrid column in the desktop table
+  // — the card-list (mobile) and config-table views never read
+  // `scoreTrendsMap` — so gate the fetch on that same condition instead of
+  // firing it on every personas-page mount regardless of what's showing.
+  const scoreTrendsVisible = pageTab === 'personas' && !isMobile;
   const personaIdsKey = useMemo(
     () => personas.map((p) => p.id).sort().join(','),
     [personas],
@@ -110,10 +87,6 @@ export default function PersonaOverviewPage() {
       active = false;
     };
   }, [personaIdsKey, scoreTrendsVisible]);
-
-  useEffect(() => {
-    try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch2")(err); }
-  }, [layout]);
 
   // Draft / archived are now first-class lifecycle columns (the old
   // prompt-string heuristic is gone). A `draft` persona re-opens the build
@@ -274,35 +247,29 @@ export default function PersonaOverviewPage() {
         ) : undefined}
       />
       <ContentBody>
-        <div className="px-3 py-2 border-b border-primary/5 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3 flex-wrap">
-            <SegmentedTabs<PageTab>
-              variant="segment"
-              ariaLabel={t.agents.persona_list.all_personas}
-              activeTab={pageTab}
-              onTabChange={setPageTab}
-              tabs={[
-                { id: 'personas', ariaLabel: t.agents.persona_list.all_personas, label: t.agents.persona_list.all_personas },
-                { id: 'config', ariaLabel: t.settings.config.title, label: t.settings.config.title },
-              ]}
-            />
-            {pageTab === 'personas' && (
-              <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
-            )}
-          </div>
-          {pageTab === 'personas' && !isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
+        <div className="px-3 py-2 border-b border-primary/5 flex items-center gap-3 flex-wrap">
+          <SegmentedTabs<PageTab>
+            variant="segment"
+            ariaLabel={t.agents.persona_list.all_personas}
+            activeTab={pageTab}
+            onTabChange={setPageTab}
+            tabs={[
+              { id: 'personas', ariaLabel: t.agents.persona_list.all_personas, label: t.agents.persona_list.all_personas },
+              { id: 'config', ariaLabel: t.settings.config.title, label: t.settings.config.title },
+            ]}
+          />
+          {pageTab === 'personas' && (
+            <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
+          )}
         </div>
 
         {pageTab === 'config' ? (
           <PersonaConfigPanel />
         ) : (
           <>
-        {/* Drop rail now renders in every layout (cycle 22 added
-            pointer-event DnD to constellation). Chips serve three roles:
-            click → filter, HTML5 drop (grid/baseline/card-list), and
-            pointer-event drop via elementFromPoint (constellation). The
-            data-persona-drop-target attr on each chip is how the
-            constellation drag locates them on pointerup. */}
+        {/* Drop rail renders for both the table and the mobile card list.
+            Chips serve two roles: click → filter, and HTML5 drop target
+            (the `data-persona-drop-target` attr on each chip). */}
         <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
 
         <DirectorPanel />
@@ -320,17 +287,6 @@ export default function PersonaOverviewPage() {
             isDraft={isDraft}
             connectorNamesMap={connectorNamesMap}
           />
-        ) : layout === 'constellation' ? (
-          <PersonaOverviewVariantConstellation
-            data={filteredData}
-            triggerCounts={triggerCounts}
-            lastRunMap={lastRunMap}
-            healthMap={healthMap}
-            connectorNamesMap={connectorNamesMap}
-            isBuilding={isBuilding}
-            isDraft={isDraft}
-            onRowClick={handleRowClick}
-          />
         ) : (
           <DataGrid
             columns={columns}
@@ -346,9 +302,9 @@ export default function PersonaOverviewPage() {
                 : 'border-l-emerald-400/40'
             }
             getRowProps={(p) => ({
-              // Drag source for persona → group rail (cycle 16; baseline
-              // DataGrid layout). Identical contract to grid + card-list
-              // layouts: same MIME, same 'move' effect, same drop targets.
+              // Drag source for persona → group rail. Identical contract to
+              // the card-list layout: same MIME, same 'move' effect, same
+              // drop targets.
               draggable: true,
               onDragStart: (e) => {
                 e.dataTransfer.setData('application/x-personas-persona-id', p.id);
@@ -370,47 +326,5 @@ export default function PersonaOverviewPage() {
 
       <ConfirmDestructiveModal {...modal} />
     </ContentBox>
-  );
-}
-
-/* Segmented control that switches the persona list between its three
- * production layouts: Table (data-dense default), Grid (icon-first
- * cards), Constellation (spatial fleet map). User choice persists to
- * localStorage so the selection survives reloads. */
-function LayoutModeTabs({
-  value,
-  onChange,
-}: {
-  value: LayoutVariant;
-  onChange: (v: LayoutVariant) => void;
-}) {
-  return (
-    <div
-      role="tablist"
-      aria-label={debtText("auto_persona_list_layout_f3abe698")}
-      className="inline-flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10"
-    >
-      {LAYOUT_TABS.map(({ id, label, sub, Icon }) => {
-        const active = value === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            onClick={() => onChange(id)}
-            title={sub}
-            aria-selected={active}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-input text-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
-              active
-                ? 'bg-primary/15 text-primary shadow-sm'
-                : 'text-foreground hover:text-foreground hover:bg-secondary/60'
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-          </button>
-        );
-      })}
-    </div>
   );
 }

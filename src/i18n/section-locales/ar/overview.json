@@ -277,7 +277,12 @@
     "failures": "إخفاقات",
     "avg_cost": "متوسط التكلفة",
     "avg_duration": "متوسط المدة",
-    "pattern_data": "بيانات النمط"
+    "pattern_data": "بيانات النمط",
+    "extracted_tab": "مستخلصة",
+    "patterns_library_tab": "الأنماط",
+    "patterns_no_workspace_desc": "تُجمع الممارسات لكل مساحة عمل. أنشئ مساحة عمل وعيّن مشاريع إليها لبدء بناء مكتبة مشتركة.",
+    "patterns_no_workspace_title": "لا توجد مساحة عمل بعد",
+    "patterns_workspace_picker": "اختر مساحة العمل"
   },
   "dashboard": {
     "greeting_morning": "صباح الخير",

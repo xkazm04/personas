@@ -91,5 +91,9 @@
   "group_monitoring": "Мониторинг",
   "group_operations": "Операции",
   "group_plugins": "Плагины",
-  "group_templates": "Шаблоны"
+  "group_templates": "Шаблоны",
+  "extracted": "Извлечённое",
+  "memories": "Воспоминания",
+  "memory_graph": "Граф",
+  "patterns": "Паттерны"
 }

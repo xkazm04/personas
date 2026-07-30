@@ -13,14 +13,15 @@ import { ArrowRight, Library, Sparkles } from 'lucide-react';
 
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import type { WorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
-import KnowledgeTree from '@/features/plugins/dev-tools/sub_workspaces/KnowledgeTree';
+import KnowledgeTree from '@/features/overview/sub_patterns/KnowledgeTree';
 import {
   nextQueueIndex,
   viewFromRow,
   type KnowledgeItemView,
-} from '@/features/plugins/dev-tools/sub_workspaces/libraryModel';
-import { PracticeDetailModal } from '@/features/plugins/dev-tools/sub_workspaces/PracticeDetailModal';
+} from '@/features/overview/sub_patterns/libraryModel';
+import { PracticeDetailModal } from '@/features/overview/sub_patterns/PracticeDetailModal';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter }) {
@@ -34,8 +35,7 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
   const [queueIdx, setQueueIdx] = useState(0);
 
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setPluginTab = useSystemStore((s) => s.setPluginTab);
-  const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   // Default to the first workspace once they load; keep the user's pick after.
   useEffect(() => {
@@ -81,10 +81,12 @@ export function KnowledgeApprovalsPanel({ center }: { center: WorkspaceCenter })
     ? rows.find((row) => row.id === queue[queueIdx]) ?? null
     : null;
 
+  // The library used to live in Plugins -> Dev Tools -> Workspaces; it now sits
+  // one module over, as Overview -> Patterns (its own L2 destination since the
+  // Knowledge hub was dissolved), so this is a plain tab switch.
   const openLibrary = () => {
-    setSidebarSection('plugins');
-    setPluginTab('dev-tools');
-    setDevToolsTab('workspaces');
+    setSidebarSection('overview');
+    setOverviewTab('patterns');
   };
 
   if (!workspace) {

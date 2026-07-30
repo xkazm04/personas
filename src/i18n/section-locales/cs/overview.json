@@ -277,7 +277,12 @@
     "failures": "Selhání",
     "avg_cost": "Průměrné náklady",
     "avg_duration": "Průměrná doba",
-    "pattern_data": "Data vzoru"
+    "pattern_data": "Data vzoru",
+    "extracted_tab": "Extrahované",
+    "patterns_library_tab": "Vzory",
+    "patterns_no_workspace_desc": "Postupy se sbírají pro každý pracovní prostor zvlášť. Vytvořte pracovní prostor a přiřaďte mu projekty, abyste mohli budovat sdílenou knihovnu.",
+    "patterns_no_workspace_title": "Zatím žádný pracovní prostor",
+    "patterns_workspace_picker": "Vybrat pracovní prostor"
   },
   "dashboard": {
     "greeting_morning": "Dobré ráno",

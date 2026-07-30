@@ -64,13 +64,51 @@ export function TimelineScrubber({
 
   const pct = totalMs > 0 ? (currentMs / totalMs) * 100 : 0;
 
+  const handleKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLDivElement>) => {
+      if (totalMs <= 0) return;
+      const big = Math.max(totalMs * 0.05, 1000);
+      const small = 500;
+      switch (ev.key) {
+        case 'ArrowLeft':
+          ev.preventDefault();
+          onScrub(currentMs - (ev.shiftKey ? big : small));
+          break;
+        case 'ArrowRight':
+          ev.preventDefault();
+          onScrub(currentMs + (ev.shiftKey ? big : small));
+          break;
+        case 'Home':
+          ev.preventDefault();
+          onScrub(0);
+          break;
+        case 'End':
+          ev.preventDefault();
+          onScrub(totalMs);
+          break;
+      }
+    },
+    [currentMs, totalMs, onScrub],
+  );
+
   return (
     <div className="space-y-1">
       {/* Track */}
       <div
         ref={trackRef}
+        role="slider"
+        tabIndex={0}
+        aria-label={t.agents.executions.timeline_scrubber_label}
+        aria-valuemin={0}
+        aria-valuemax={totalMs > 0 ? totalMs : 0}
+        aria-valuenow={currentMs}
+        aria-valuetext={tx(t.agents.executions.timeline_scrubber_value, {
+          current: formatMs(currentMs),
+          total: formatMs(totalMs),
+        })}
         onPointerDown={handlePointerDown}
-        className="relative h-3 bg-secondary/50 rounded-full cursor-pointer border border-primary/10 overflow-hidden select-none"
+        onKeyDown={handleKeyDown}
+        className="relative h-3 bg-secondary/50 rounded-full cursor-pointer border border-primary/10 overflow-hidden select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
       >
         {/* Progress fill */}
         <div
@@ -108,6 +146,7 @@ export function TimelineScrubber({
 
         {/* Playhead -- branded diamond marker */}
         <div
+          aria-hidden="true"
           className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rotate-45 bg-secondary border-2 border-violet-500 transition-[left] duration-75 z-20"
           style={{
             left: `calc(${pct}% - 7px)`,

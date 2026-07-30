@@ -25,7 +25,7 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
   const { t } = useTranslation();
   return (
     <div
-      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 p-1 rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm"
+      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex flex-wrap justify-center items-center gap-1 p-1 max-w-[calc(100vw-6.5rem)] rounded-interactive bg-secondary/70 border border-primary/12 shadow-elevation-2 backdrop-blur-sm"
       role="group"
       aria-label={t.mastermind.toolbar_label}
     >
@@ -49,7 +49,13 @@ export function CanvasToolbar({ mode, onModeChange }: { mode: CanvasMode; onMode
           </button>
         );
       })}
-      <span className="hidden sm:inline typo-caption text-foreground/55 border-l border-primary/15 pl-2.5 pr-1.5 ml-1 whitespace-nowrap">
+      {/* The hint is the only thing on screen that says what the mouse does in
+          the current (sticky, global) mode — so it survives every width. It
+          used to be `hidden sm:inline`, which dropped the one affordance that
+          recovers a lost user exactly when space got tight. Now it wraps onto
+          its own row instead: full-width and centred when the modes no longer
+          fit beside it, inline with a divider once they do. */}
+      <span className="basis-full order-last text-center pt-1 sm:basis-auto sm:order-none sm:text-left sm:pt-0 sm:border-l sm:border-primary/15 sm:pl-2.5 sm:ml-1 pr-1.5 min-w-0 truncate typo-caption text-foreground/55">
         {modeHint(t, mode)}
       </span>
     </div>

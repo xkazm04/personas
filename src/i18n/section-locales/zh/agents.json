@@ -525,7 +525,10 @@
     "active_chains_one": "{count} 条链运行中",
     "active_chains_other": "{count} 条链运行中",
     "active_chains_title": "运行中的链",
-    "copy_log_failed": "无法将日志复制到剪贴板"
+    "copy_log_failed": "无法将日志复制到剪贴板",
+    "lines_counter": "{visible}/{total} 行",
+    "timeline_scrubber_label": "执行时间线",
+    "timeline_scrubber_value": "{current} / {total}"
   },
   "lab": {
     "mode_arena": "竞技场",
@@ -1660,7 +1663,8 @@
     "connectors": "连接器",
     "triggers": "触发器",
     "all_connectors": "所有连接器",
-    "active_triggers": "{count} 个活跃触发器"
+    "active_triggers": "{count} 个活跃触发器",
+    "quality": "质量"
   },
   "health_indicator": {
     "last": "最近 {count}"

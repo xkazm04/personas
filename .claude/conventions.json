@@ -1,0 +1,145 @@
+{
+  "$comment": [
+    "Machine-readable statement of this repo's hard gates, for agents and skills",
+    "that write code here. CLAUDE.md is the prose version and stays authoritative",
+    "for humans; this file is the part a tool can parse BEFORE editing.",
+    "",
+    "Why it exists: a portable third-party skill knows design, or testing, or",
+    "security — it cannot know that adding one English string here without also",
+    "translating it into 13 locales and regenerating the type tree blocks the",
+    "commit. That gap produced two blocking violations in a single evaluation",
+    "run. Everything below was verified against package.json / lefthook.yml /",
+    "eslint.config.js rather than transcribed from prose.",
+    "",
+    "Keep in sync when a gate changes. `npm run check` is the umbrella."
+  ],
+  "schemaVersion": 1,
+  "project": "personas-desktop",
+  "readBeforeEditing": [
+    ".claude/CLAUDE.md",
+    ".claude/Design.md",
+    "src/features/shared/components/CATALOG.md",
+    "context-map.json"
+  ],
+
+  "blockingGates": [
+    {
+      "id": "typecheck",
+      "run": "npx tsc --noEmit",
+      "blocks": "pre-push",
+      "note": "Clean on master. Errors on a branch are regressions from that branch."
+    },
+    {
+      "id": "lint",
+      "run": "npm run lint",
+      "blocks": "pre-commit (staged files, errors only)",
+      "note": "0 errors required. ~10k warnings are a known, deliberate migration baseline — do not bulk-fix, but do not add to them either."
+    },
+    {
+      "id": "i18n-no-gaps",
+      "run": "npm run check:i18n:strict",
+      "blocks": "pre-commit, whenever src/i18n/locales/*.json is staged",
+      "note": "THE most common trip-up for tools that add UI strings. Adding a key to en.json without translating all 13 other locales fails the commit."
+    },
+    {
+      "id": "untranslated-scan",
+      "run": "node scripts/i18n/check-untranslated.mjs --strict",
+      "blocks": "pre-commit"
+    },
+    { "id": "secret-scan", "run": "node scripts/secret-scan.mjs", "blocks": "pre-commit" },
+    { "id": "tests", "run": "npm run test -- --run", "blocks": "CI" },
+    { "id": "umbrella", "run": "npm run check", "blocks": "CI", "note": "contracts + tiers + typecheck + lint + themes + tauri-configs + error-registry" },
+    { "id": "ai-conformance", "run": "node .ai/doctor.mjs", "blocks": "pre-push", "note": "no hard FAILs" }
+  ],
+
+  "codegenTriggers": [
+    {
+      "when": "you add or change any key in src/i18n/locales/en.json",
+      "run": ["node scripts/i18n/gen-types.mjs", "node scripts/i18n/split-locales.mjs"],
+      "note": "Without this, t.section.key does not exist on the generated type and tsc fails. predev/prebuild do it automatically; a mid-session edit does not."
+    },
+    {
+      "when": "you add #[derive(TS)] #[ts(export)] to a Rust struct/enum",
+      "run": ["cargo test --manifest-path src-tauri/Cargo.toml export_bindings"],
+      "commit": ["src/lib/bindings/"],
+      "note": "CI fails on `git diff --quiet src/lib/bindings/`. On a box where the test binary cannot launch (STATUS_ENTRYPOINT_NOT_FOUND), hand-edit the binding and say so in the PR."
+    },
+    {
+      "when": "you add a new Tauri command",
+      "run": ["node scripts/generate-command-names.mjs"]
+    },
+    {
+      "when": "you add or remove a component in src/features/shared/components/",
+      "run": ["npm run gen:catalog"],
+      "note": "Convenience, not a gate — a stale catalog no longer fails npm run check."
+    }
+  ],
+
+  "uiRules": {
+    "strings": {
+      "rule": "Every user-facing string goes through `const { t, tx } = useTranslation()` and `t.<section>.<key>`. Never hardcode English in JSX, placeholder, title, or aria-label.",
+      "source": "src/i18n/locales/en.json",
+      "enforcedBy": "custom/no-hardcoded-jsx-text (warn) + the i18n-no-gaps commit gate (blocking)",
+      "addKeyWorkflow": [
+        "add the key to src/i18n/locales/en.json",
+        "node scripts/i18n/gen-types.mjs && node scripts/i18n/split-locales.mjs",
+        "node scripts/i18n/translate-extract.mjs",
+        "write .i18n-work/missing-<locale>.json for all 13 non-English locales, preserving {placeholders}",
+        "node scripts/i18n/translate-merge.mjs"
+      ],
+      "plurals": "Suffix `_one` / `_other` and select the variant at the call site; both must carry {count}.",
+      "doNotTranslate": ["brand names", "technical identifiers", "user-generated content", "log messages"]
+    },
+    "color": {
+      "rule": "Paint only through semantic tokens. No raw hex, no `text-white/*`, no `bg-white/*`.",
+      "tokens": ["--status-{success,warning,error,info,pending,processing,neutral}", "--primary", "--accent", "--foreground", "--background", "--secondary"],
+      "enforcedBy": ["custom/no-direct-white-colors", "custom/no-raw-text-classes"]
+    },
+    "contrast": {
+      "rule": "Body text uses bare `text-foreground`. Opacity below ~85% (`text-foreground/55`) and `text-muted-foreground` are both rejected — for hierarchy use `text-primary`, not lower opacity.",
+      "enforcedBy": "custom/no-low-contrast-text-classes",
+      "note": "Matching neighbouring files is NOT sufficient here: ~10k existing warnings mean the incumbent code often violates this. New code must not inherit it."
+    },
+    "radius": { "rule": "Use semantic radii: rounded-{interactive,input,card,modal}. The numeric scale defines them; do not use it directly.", "enforcedBy": "custom/no-raw-radius-classes" },
+    "elevation": { "rule": "shadow-elevation-1..4.", "enforcedBy": "custom/no-raw-shadow-classes" },
+    "spacing": { "rule": "Spacing tokens — hard-coded padding/gap opts the surface out of the user's density setting (data-density on <html>).", "enforcedBy": "custom/no-raw-spacing-classes" },
+    "typography": { "rule": "typo-* classes, not raw text-* sizes. Arbitrary values like text-[10px] are drift.", "enforcedBy": "custom/no-raw-text-classes" },
+    "themes": { "rule": "Every surface must survive a runtime theme switch. Light overrides go through [data-theme^=\"light\"].", "verify": "npm run check:themes" },
+    "rtl": { "rule": "Arabic ships. Do not assume English string lengths or left-to-right layout." },
+    "modals": { "rule": "Use modals/BaseModal or feedback/ConfirmDialog. Never hand-roll a `fixed inset-0` backdrop.", "enforcedBy": "custom/enforce-base-modal" },
+    "reuse": {
+      "rule": "Check src/features/shared/components/CATALOG.md before building any UI primitive. ~115 exist.",
+      "doNotHandRoll": ["spinner", "empty state", "button", "copy button", "tooltip", "relative time", "number formatting", "toggle", "select", "form field", "tab strip"]
+    }
+  },
+
+  "codeRules": {
+    "ipc": { "rule": "Always `invokeWithTimeout` from @/lib/tauriInvoke — never raw `invoke`.", "enforcedBy": "no-restricted-imports" },
+    "errors": { "rule": "`toastCatch()` for user-facing, `silentCatch()` for background. Never an empty catch {}.", "enforcedBy": "custom/no-silent-catch" },
+    "state": { "rule": "Zustand slices with `useShallow` for selective subscriptions.", "enforcedBy": "custom/no-whole-store-subscription" },
+    "effects": { "rule": "Clean up listeners, timers and subscriptions.", "enforcedBy": "custom/no-unmanaged-effect-resources" }
+  },
+
+  "gitDiscipline": {
+    "rule": "Multiple CLI sessions share this checkout concurrently.",
+    "never": [
+      "git stash — it sweeps other sessions' in-flight work, including untracked files",
+      "git add -A / git add . / git add -u — stage explicit paths only"
+    ],
+    "always": [
+      "read .claude/active-runs.md at session start; append your entry",
+      "classify every line of `git status --porcelain` as yours / pre-existing / another session's",
+      "after `git add` and BEFORE `git commit`, run `git diff --cached --stat` and confirm the file count matches what you staged",
+      "use `git worktree` for multi-file work",
+      "commit atomically per task; never hold >30 minutes of uncommitted work"
+    ]
+  },
+
+  "docsSync": {
+    "rule": "A turn that changes user-visible behaviour must update every coupled surface in the same turn.",
+    "map": "scripts/docs/feature-doc-map.json",
+    "surfaces": ["docs/features/", "src/features/onboarding/", "../personas-web/src/data/guide/content/"],
+    "enforcedBy": "Stop hook — scripts/docs/check-doc-sync.mjs",
+    "dismissal": "If the change is internal-only, say so in one sentence. Do not ignore silently."
+  }
+}

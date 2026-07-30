@@ -91,5 +91,9 @@
   "group_monitoring": "モニタリング",
   "group_operations": "運用",
   "group_plugins": "プラグイン",
-  "group_templates": "テンプレート"
+  "group_templates": "テンプレート",
+  "extracted": "抽出済み",
+  "memories": "メモリ",
+  "memory_graph": "グラフ",
+  "patterns": "パターン"
 }

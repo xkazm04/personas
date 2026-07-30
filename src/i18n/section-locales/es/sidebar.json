@@ -91,5 +91,9 @@
   "group_monitoring": "Monitoreo",
   "group_operations": "Operaciones",
   "group_plugins": "Plugins",
-  "group_templates": "Plantillas"
+  "group_templates": "Plantillas",
+  "extracted": "Extraídos",
+  "memories": "Memorias",
+  "memory_graph": "Grafo",
+  "patterns": "Patrones"
 }

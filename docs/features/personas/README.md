@@ -614,16 +614,22 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    includes a `team` impact ("Member of team(s): … — will be removed from
    them") so removing an agent that belongs to a team warns first. The
    `persona_team_members` rows cascade on delete; the warning is informational.
-8. **The Constellation list layout caps at 200 rendered personas.**
-   This All-Personas layout is unvirtualized — each node is an SVG subtree — so
-   very large fleets are capped at `PERSONA_RENDER_CAP = 200` with a "Showing
-   200 of N — narrow with search or filters" notice. The default **table**
-   layout (DataGrid) is virtualized and shows all sizes; users with 200+
-   personas should use it or filter. True windowing for the Constellation layout
-   is a tracked follow-up — see the architect perf scan (Phase E render-cap
-   guardrail). _(The uniform-card **Grid** layout was retired 2026-06-20.)_
+8. **The All-Personas roster has one layout: the table.**
+   The desktop roster is the paginated `DataGrid` (`PersonaOverviewColumns.tsx`),
+   with `PersonaOverviewCardList` standing in below the compact breakpoint.
+   There is no layout switcher — the alternative layouts and their render caps
+   are gone. _(The uniform-card **Grid** layout was retired 2026-06-20; the
+   spatial **Constellation** map — unvirtualized SVG, capped at 200 nodes —
+   was retired 2026-07-29 along with the switcher and its persisted
+   `persona-overview:layout` preference.)_
+   Table columns: select · favourite · Persona · Connectors · Status · Trust ·
+   Quality · Triggers · Last Run. **Status** carries lifecycle + health only
+   (the setup-readiness warning still shows on the persona editor header and
+   the mobile card, not in the roster row). **Quality** — renamed from
+   _Verdict_ — is the Director's 0–5 score trend
+   (`VerdictTrendCell`, fed by `listDirectorScoreTrends`).
 9. **The All-Personas page has a top-level view switcher: _Personas_ vs _Configuration_.**
-   _Personas_ is the list (the Table / Constellation layouts above).
+   _Personas_ is the roster table above.
    _Configuration_ (`allPersonas/PersonaConfigPanel.tsx`, migrated out of the old
    Settings → Config Resolution tab) is the per-persona **effective model-config**
    table: for every persona it resolves model / provider / budget / turns / cache

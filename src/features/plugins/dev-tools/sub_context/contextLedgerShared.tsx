@@ -48,6 +48,11 @@ export interface ContextLedgerProps {
    *  group-row variants' tinting. */
   kpiStatusByContext: Map<string, ContextKpiStatus>;
   hasMap: boolean;
+  /** A `fetchContextGroups`/`fetchContexts` request is in flight
+   *  (`systemStore.contextMapLoading`). Gates the zero-groups empty state so a
+   *  cold visit doesn't flash "no context groups" before the fetch resolves
+   *  (docs/design/overview-loading.md — empty state only renders once settled). */
+  mapLoading: boolean;
   /** Run the idea scanner scoped to one context (the per-row ✨ action). */
   onScanContext: (contextId: string) => void;
   /** The context whose per-row scan is currently running, if any. */

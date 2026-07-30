@@ -33,8 +33,10 @@ const STATUS_TONE: Record<string, string> = {
   error: 'text-status-error', failed: 'text-status-error', exited: 'text-foreground/60',
 };
 
-/** Skill cell: preset icon chip / legacy emoji strip + name. */
-function SkillCell({ row }: { row: SkillRunRow }) {
+/** Skill cell: preset icon chip / legacy emoji strip + name. Fleet-run names
+ *  open the info modal; legacy scan rows carry a CSV of agent keys, not a
+ *  single skill, so they stay static. */
+function SkillCell({ row, onOpenInfo }: { row: SkillRunRow; onOpenInfo: (skill: string) => void }) {
   if (row.kind === 'scan') {
     const keys = row.skill.split(',').map((s) => s.trim()).filter(Boolean);
     const emojis = keys
@@ -60,17 +62,18 @@ function SkillCell({ row }: { row: SkillRunRow }) {
         </span>
       )}
       <span className="min-w-0">
-        <span className="typo-caption font-medium text-foreground truncate block">{row.skill}</span>
+        <button type="button" onClick={() => onOpenInfo(row.skill)} className="typo-caption font-medium text-foreground truncate block text-left hover:text-primary transition-colors" data-testid={`skill-history-name-${row.skill}`}>{row.skill}</button>
         {row.args && <span className="typo-label text-foreground/45 truncate block">{row.args}</span>}
       </span>
     </span>
   );
 }
 
-export function SkillHistoryTable({ runs, onRerun }: {
+export function SkillHistoryTable({ runs, onRerun, onOpenInfo }: {
   runs: SkillRunRow[];
   /** Re-dispatch a fleet skill run (skill, args). Omitted while busy. */
   onRerun?: (skill: string, args: string) => void;
+  onOpenInfo: (skill: string) => void;
 }) {
   const { t } = useTranslation();
   const d = t.plugins.dev_tools;
@@ -106,7 +109,7 @@ export function SkillHistoryTable({ runs, onRerun }: {
         <ul>
           {runs.map((row) => (
             <li key={`${row.kind}-${row.id}`} className={`${GRID} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
-              <SkillCell row={row} />
+              <SkillCell row={row} onOpenInfo={onOpenInfo} />
               <span
                 className={`typo-label truncate ${STATUS_TONE[row.status] ?? 'text-foreground/60'}`}
                 title={row.statusReason ?? undefined}

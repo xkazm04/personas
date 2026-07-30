@@ -33,6 +33,7 @@ export default function LiteratureSearchPanelAtelier() {
   const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeResearchProjectId);
   const sources = useSystemStore((s) => s.researchSources);
+  const sourcesLoading = useSystemStore((s) => s.researchSourcesLoading);
   const fetchSources = useSystemStore((s) => s.fetchResearchSources);
   const deleteSource = useSystemStore((s) => s.deleteResearchSource);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
@@ -70,6 +71,11 @@ export default function LiteratureSearchPanelAtelier() {
 
   const indexedCount = sources.filter((s) => s.status === 'indexed').length;
   const pendingCount = sources.filter((s) => s.status === 'pending').length;
+
+  // Loading choreography (docs/design/overview-loading.md): the hero-area
+  // ghost only ever covers a cold fetch with nothing in the store yet — the
+  // empty state renders only once the fetch settles.
+  const showGhost = sourcesLoading && sources.length === 0;
 
   const handleIngest = (id: string) => {
     void ingest(id);
@@ -135,6 +141,8 @@ export default function LiteratureSearchPanelAtelier() {
                       onDelete={() => handleDelete(heroSource.id)}
                     />
                   </motion.div>
+                ) : showGhost ? (
+                  <SourceHeroGhost />
                 ) : (
                   <AtelierEmpty
                     t={t}
@@ -451,6 +459,26 @@ function BackgroundGrid() {
       <rect width="100%" height="100%" fill="url(#atelier-grid-lit)" className="text-foreground" />
       <rect width="100%" height="100%" fill="url(#atelier-glow-lit)" />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SourceHeroGhost — calm ghost of the hero-source shell for the ONLY moment
+// this variant has nothing to show (a cold fetch with an empty store).
+// Delayed `animate-fade-in` entrance (120ms+ stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const ATELIER_LIT_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function SourceHeroGhost() {
+  return (
+    <div className="space-y-7" aria-hidden="true">
+      <span className={`block h-4 w-24 rounded-full ${ATELIER_LIT_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '120ms' }} />
+      <span className={`block h-9 w-2/3 ${ATELIER_LIT_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '155ms' }} />
+      <span className={`block h-4 w-1/3 ${ATELIER_LIT_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
+      <span className={`block h-4 w-full ${ATELIER_LIT_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '225ms' }} />
+      <span className={`block h-4 w-5/6 ${ATELIER_LIT_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '260ms' }} />
+    </div>
   );
 }
 

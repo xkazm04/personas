@@ -27,7 +27,7 @@ import { ExtractionMenu } from './ExtractionMenu';
 import KnowledgeTree from './KnowledgeTree';
 import { nextQueueIndex, viewFromRow, type KnowledgeItemView } from './libraryModel';
 import { WorkspacePulse } from './WorkspacePulse';
-import type { Workspace } from './workspaceStore';
+import type { Workspace } from '@/features/plugins/dev-tools/sub_workspaces/workspaceStore';
 
 export default function KnowledgeLibrary({
   workspace,

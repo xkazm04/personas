@@ -525,7 +525,10 @@
     "active_chains_one": "{count} chaîne en cours",
     "active_chains_other": "{count} chaînes en cours",
     "active_chains_title": "Chaînes en cours",
-    "copy_log_failed": "Impossible de copier le journal"
+    "copy_log_failed": "Impossible de copier le journal",
+    "lines_counter": "{visible}/{total} lignes",
+    "timeline_scrubber_label": "Chronologie d’exécution",
+    "timeline_scrubber_value": "{current} sur {total}"
   },
   "lab": {
     "mode_arena": "Arène",
@@ -1660,7 +1663,8 @@
     "connectors": "Connecteurs",
     "triggers": "Déclencheurs",
     "all_connectors": "Tous les connecteurs",
-    "active_triggers": "{count} déclencheur(s) actif(s)"
+    "active_triggers": "{count} déclencheur(s) actif(s)",
+    "quality": "Qualité"
   },
   "health_indicator": {
     "last": "dernier {count}"

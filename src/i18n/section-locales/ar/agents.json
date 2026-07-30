@@ -525,7 +525,10 @@
     "active_chains_one": "سلسلة {count} قيد التنفيذ",
     "active_chains_other": "{count} سلاسل قيد التنفيذ",
     "active_chains_title": "سلاسل قيد التنفيذ",
-    "copy_log_failed": "تعذر نسخ السجل إلى الحافظة"
+    "copy_log_failed": "تعذر نسخ السجل إلى الحافظة",
+    "lines_counter": "{visible}/{total} سطر",
+    "timeline_scrubber_label": "الجدول الزمني للتنفيذ",
+    "timeline_scrubber_value": "{current} من {total}"
   },
   "lab": {
     "mode_arena": "الساحة",
@@ -1660,7 +1663,8 @@
     "connectors": "الموصّلات",
     "triggers": "المشغّلات",
     "all_connectors": "جميع الموصّلات",
-    "active_triggers": "{count} مشغّل نشط"
+    "active_triggers": "{count} مشغّل نشط",
+    "quality": "الجودة"
   },
   "health_indicator": {
     "last": "آخر {count}"

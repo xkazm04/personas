@@ -45,6 +45,10 @@ export default function SyncPanel() {
   // just a toast) so the user can review what changed at their own pace.
   const [syncResults, setSyncResults] = useState<SyncResultSummary[]>([]);
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
+  // True only while the initial log fetch is in flight — gates the empty
+  // state so "No sync activity" never flashes before the first fetch settles
+  // (docs/design/overview-loading.md law: empty state only when !isFetching).
+  const [syncLogLoading, setSyncLogLoading] = useState(true);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
 
   const filteredPersonas = useMemo(() => {
@@ -57,9 +61,12 @@ export default function SyncPanel() {
   }, []);
 
   useEffect(() => {
-    if (connected) {
-      obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:loadSyncLog'));
-    }
+    if (!connected) return;
+    setSyncLogLoading(true);
+    obsidianBrainGetSyncLog(50)
+      .then(setSyncLog)
+      .catch(silentCatch('SyncPanel:loadSyncLog'))
+      .finally(() => setSyncLogLoading(false));
   }, [connected, activeVaultPath]);
 
   const togglePersona = useCallback((id: string) => {
@@ -320,7 +327,9 @@ export default function SyncPanel() {
       {/* Sync Log */}
       <SectionCard collapsible title={t.plugins.obsidian_brain.sync_log} storageKey="obsidian-sync-log" defaultCollapsed={syncLog.length === 0}>
         {syncLog.length === 0 ? (
-          <p className="typo-body text-foreground py-4">{t.plugins.obsidian_brain.no_sync_activity}</p>
+          /* Settled-only empty state — the initial log fetch is async, so
+             don't claim "no activity" before it resolves. */
+          !syncLogLoading && <p className="typo-body text-foreground py-4">{t.plugins.obsidian_brain.no_sync_activity}</p>
         ) : (
           <div className="space-y-1 max-h-80 overflow-y-auto">
             {syncLog.map((entry) => (

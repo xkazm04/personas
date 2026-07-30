@@ -32,7 +32,9 @@ describe('DecisionsPanel', () => {
   it('shows loading state then empty state when no decisions', async () => {
     companionListDesignDecisions.mockResolvedValueOnce([]);
     render(<DecisionsPanel />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    // Cold load paints a calm ghost (aria-hidden, no spinner/text) per the
+    // loading doctrine, then settles to the empty state once the fetch resolves.
+    expect(screen.getByTestId('companion-decisions-loading')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText(/hasn't logged/i)).toBeInTheDocument();
     });

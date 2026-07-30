@@ -197,9 +197,11 @@ export default function GraphPanel() {
         {/* Stats */}
         <SectionCard title={t.plugins.obsidian_brain.vault_stats} subtitle={t.plugins.obsidian_brain.vault_stats_subtitle}>
           {statsLoading && !stats ? (
-            <div className="flex items-center justify-center py-6">
-              <LoadingSpinner size="md" label={t.plugins.obsidian_brain.reading_vault} />
-            </div>
+            /* Cold fetch, nothing on screen yet: a delayed ghost matching the
+               real 5-tile grid, under the real SectionCard chrome above.
+               Invisible for its first ~120ms so a fast local read never
+               paints it — see VaultStatsGhost below. */
+            <VaultStatsGhost />
           ) : stats ? (
             <div className="grid grid-cols-5 gap-3">
               {[
@@ -287,7 +289,10 @@ export default function GraphPanel() {
         <div className="grid grid-cols-2 gap-4">
           <SectionCard collapsible title={`${t.plugins.obsidian_brain.orphan_notes_title} (${orphans.length})`} subtitle={t.plugins.obsidian_brain.orphan_notes_subtitle} storageKey="obsidian-graph-orphans">
             {orphans.length === 0 ? (
-              <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.orphan_notes_empty}</p>
+              /* Settled-only empty state — orphans load in the same
+                 Promise.all as stats, so don't claim "none" while that
+                 fetch is still in flight. */
+              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.orphan_notes_empty}</p>
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
@@ -308,7 +313,7 @@ export default function GraphPanel() {
 
           <SectionCard collapsible title={`${t.plugins.obsidian_brain.mocs_title} (${mocs.length})`} subtitle={t.plugins.obsidian_brain.mocs_subtitle} storageKey="obsidian-graph-mocs">
             {mocs.length === 0 ? (
-              <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.mocs_empty}</p>
+              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.mocs_empty}</p>
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
@@ -405,6 +410,36 @@ export default function GraphPanel() {
       <SavedConfigsSidebar
         emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_other}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// VaultStatsGhost — calm, delayed, geometry-matched placeholder for the ONLY
+// moment the stats grid has nothing to show (docs/design/overview-loading.md
+// §C). `animate-fade-in` (150ms, fill-mode: both) behind a ≥120ms
+// animation-delay means a fast local read never paints a single tile — the
+// delay IS the anti-flash. No `animate-pulse`, ever. `aria-hidden` — nothing
+// here is content. Mirrors the real 5-tile grid exactly so the swap to real
+// stats moves nothing.
+// ---------------------------------------------------------------------------
+
+const STAT_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function VaultStatsGhost() {
+  return (
+    <div className="grid grid-cols-5 gap-3" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="px-3 py-3 rounded-modal bg-secondary/20 border border-primary/10 flex flex-col items-start gap-1 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className={`w-3.5 h-3.5 ${STAT_GHOST_BAR}`} />
+          <span className={`h-5 w-10 ${STAT_GHOST_BAR}`} />
+          <span className={`h-3 w-16 ${STAT_GHOST_BAR}`} />
+        </div>
+      ))}
     </div>
   );
 }

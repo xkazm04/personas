@@ -175,40 +175,104 @@ fn dir_prefixes(files: &[String], depth: usize, max: usize) -> Vec<String> {
     v.into_iter().take(max).map(|(p, _)| p).collect()
 }
 
-/// Scopes from Personas' own context map: one per group.
-fn scopes_from_context_map(raw: &str) -> Option<Vec<HarvestScope>> {
-    let map: serde_json::Value = serde_json::from_str(raw).ok()?;
-    let groups = map.get("groups")?.as_array()?;
-    let mut out = Vec::new();
-    for g in groups {
-        let label = g.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-        if label.is_empty() {
-            continue;
+/// One context row, normalized across both context-map schema versions.
+struct MappedContext {
+    group: String,
+    name: String,
+    files: Vec<String>,
+}
+
+/// Read contexts out of either context-map schema.
+///
+/// **v1** (`generator` absent, pre-2026-07-30) nested contexts inside groups and
+/// used camelCase: `groups[].contexts[].filePaths`.
+///
+/// **v2** (`generator: personas-context-scan`, `version: 2`) flattens contexts to
+/// the top level in snake_case — `contexts[].file_paths` — with `groups[]`
+/// reduced to metadata and the owning group named on each context (`group`).
+///
+/// Both are read because a checkout can hold either: the map is git-tracked and
+/// only rewritten when a scan runs, so a repo that has not rescanned since the
+/// generator changed still carries v1. Silently returning no scopes for v1 would
+/// drop every group territory and fall back to the generic directory walk —
+/// which is exactly what happened on 2026-07-30 when the first v2 map landed.
+fn read_mapped_contexts(map: &serde_json::Value) -> Vec<MappedContext> {
+    let str_list = |v: Option<&serde_json::Value>| -> Vec<String> {
+        v.and_then(|x| x.as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|p| p.as_str().map(str::to_string))
+            .collect()
+    };
+
+    // v2: flat `contexts[]`, each naming its group.
+    if let Some(flat) = map.get("contexts").and_then(|v| v.as_array()) {
+        if !flat.is_empty() {
+            return flat
+                .iter()
+                .map(|c| MappedContext {
+                    group: c
+                        .get("group")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Ungrouped")
+                        .to_string(),
+                    name: c.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    files: str_list(c.get("file_paths")),
+                })
+                .collect();
         }
-        let contexts = g.get("contexts").and_then(|v| v.as_array());
-        let mut files: Vec<String> = Vec::new();
-        let mut names: Vec<String> = Vec::new();
-        for c in contexts.into_iter().flatten() {
-            if let Some(n) = c.get("name").and_then(|v| v.as_str()) {
-                names.push(n.to_string());
-            }
-            for p in c
-                .get("filePaths")
+    }
+
+    // v1: contexts nested under groups.
+    map.get("groups")
+        .and_then(|v| v.as_array())
+        .into_iter()
+        .flatten()
+        .flat_map(|g| {
+            let group = g.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+            g.get("contexts")
                 .and_then(|v| v.as_array())
                 .into_iter()
                 .flatten()
-            {
-                if let Some(s) = p.as_str() {
-                    files.push(s.to_string());
-                }
-            }
+                .map(move |c| MappedContext {
+                    group: group.clone(),
+                    name: c.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    files: str_list(c.get("filePaths")),
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+/// Scopes from Personas' own context map: one per group.
+fn scopes_from_context_map(raw: &str) -> Option<Vec<HarvestScope>> {
+    let map: serde_json::Value = serde_json::from_str(raw).ok()?;
+    let mapped = read_mapped_contexts(&map);
+    if mapped.is_empty() {
+        return None;
+    }
+    // Group the normalized contexts by their owning group name.
+    let mut by_group: std::collections::BTreeMap<String, (Vec<String>, Vec<String>)> =
+        std::collections::BTreeMap::new();
+    for c in mapped {
+        if c.group.is_empty() {
+            continue;
         }
+        let e = by_group.entry(c.group).or_default();
+        if !c.name.is_empty() {
+            e.1.push(c.name);
+        }
+        e.0.extend(c.files);
+    }
+
+    let mut out = Vec::new();
+    for (label, (files, names)) in by_group {
         if files.is_empty() {
             continue;
         }
         out.push(HarvestScope {
-            id: format!("group:{}", slug(label)),
-            label: label.to_string(),
+            id: format!("group:{}", slug(&label)),
+            label: label.clone(),
             kind: "group",
             paths: dir_prefixes(&files, 3, 12),
             file_count: files.len(),
@@ -355,6 +419,50 @@ mod tests {
         assert_eq!(s[1].id, "group:small-group");
         // Paths are directory prefixes, never the raw file list.
         assert!(s[0].paths.iter().all(|p| !p.ends_with(".ts")));
+    }
+
+    /// The v2 map (generator `personas-context-scan`, 2026-07-30 onward) flattens
+    /// contexts to the top level in snake_case. Reading only the v1 shape made
+    /// `scopes_from_context_map` return None the moment a repo rescanned, which
+    /// silently dropped every group territory and fell back to the directory
+    /// walk — orphaning the harvest-coverage rows keyed on `group:<slug>`.
+    #[test]
+    fn reads_the_v2_flat_schema_and_groups_by_group_name() {
+        let raw = r#"{
+            "version": 2,
+            "generator": "personas-context-scan",
+            "groups": [
+                {"id":"g1","name":"Agent Platform","domain":"feature","context_count":2},
+                {"id":"g2","name":"Execution Engine","domain":"feature","context_count":1}
+            ],
+            "contexts": [
+                {"name":"ai-director","group":"Agent Platform","file_paths":["src/a/one.ts","src/a/two.ts"]},
+                {"name":"lab","group":"Agent Platform","file_paths":["src/b/three.ts"]},
+                {"name":"runner","group":"Execution Engine","file_paths":["src-tauri/src/r/x.rs"]}
+            ]
+        }"#;
+        let s = scopes_from_context_map(raw).expect("v2 map must yield scopes");
+        assert_eq!(s.len(), 2, "one scope per group, not per context");
+        let agent = s.iter().find(|x| x.id == "group:agent-platform").expect("agent platform");
+        assert_eq!(agent.file_count, 3, "files summed across the group's contexts");
+        assert_eq!(agent.contexts, vec!["ai-director".to_string(), "lab".to_string()]);
+        // Largest territory still leads the fan-out.
+        assert_eq!(s[0].id, "group:agent-platform");
+    }
+
+    /// v1 must keep working: a repo that has not rescanned since the generator
+    /// changed still carries the nested camelCase shape on disk.
+    #[test]
+    fn still_reads_the_v1_nested_schema() {
+        let raw = r#"{"groups":[
+            {"name":"Legacy Group","contexts":[
+                {"name":"old","filePaths":["src/legacy/a.ts","src/legacy/b.ts"]}
+            ]}
+        ]}"#;
+        let s = scopes_from_context_map(raw).expect("v1 map must still yield scopes");
+        assert_eq!(s.len(), 1);
+        assert_eq!(s[0].id, "group:legacy-group");
+        assert_eq!(s[0].file_count, 2);
     }
 
     #[test]

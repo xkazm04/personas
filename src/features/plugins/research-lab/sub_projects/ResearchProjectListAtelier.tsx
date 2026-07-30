@@ -34,6 +34,7 @@ const PHASE_ORDER: ProjectStatus[] = [
 export default function ResearchProjectListAtelier() {
   const { t, tx } = useTranslation();
   const projects = useSystemStore((s) => s.researchProjects);
+  const loading = useSystemStore((s) => s.researchProjectsLoading);
   const fetchProjects = useSystemStore((s) => s.fetchResearchProjects);
   const deleteProject = useSystemStore((s) => s.deleteResearchProject);
   const setActiveProject = useSystemStore((s) => s.setActiveResearchProject);
@@ -104,6 +105,13 @@ export default function ResearchProjectListAtelier() {
       setSyncing(null);
     }
   };
+
+  // Loading choreography (docs/design/overview-loading.md): a cold fetch with
+  // nothing in the store yet shows the delayed hero/rail ghost instead of
+  // flashing "no projects" before the store settles.
+  if (loading && projects.length === 0) {
+    return <AtelierGhost />;
+  }
 
   if (projects.length === 0) {
     return <AtelierEmpty t={t} onCreate={() => setShowForm(true)} formOpen={showForm} editing={editing} onCloseForm={() => { setShowForm(false); setEditing(null); }} />;
@@ -511,6 +519,61 @@ export function BackgroundGrid() {
       <rect width="100%" height="100%" fill="url(#atelier-grid-projects)" className="text-foreground" />
       <rect width="100%" height="100%" fill="url(#atelier-glow-projects)" />
     </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AtelierGhost — calm ghost of the band/rail/hero shell for the ONLY moment
+// this variant has nothing to show (a cold fetch with an empty store). Same
+// three-column geometry as the real layout. Delayed `animate-fade-in`
+// entrance (120ms+ stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const ATELIER_GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function AtelierGhost() {
+  return (
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-background" aria-hidden="true">
+      <div className="flex-shrink-0 border-b border-border bg-foreground/[0.015]">
+        <div className="flex items-center gap-4 px-6 py-3">
+          <div className="flex items-center gap-3 min-w-0 animate-fade-in" style={{ animationDelay: '120ms' }}>
+            <span className={`w-9 h-9 rounded-full ${ATELIER_GHOST_BAR} flex-shrink-0`} />
+            <div className="flex flex-col gap-1.5">
+              <span className={`h-3.5 w-24 ${ATELIER_GHOST_BAR}`} />
+              <span className={`h-2.5 w-32 ${ATELIER_GHOST_BAR}`} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-7 rounded-interactive ${ATELIER_GHOST_BAR} animate-fade-in`}
+              style={{ animationDelay: `${120 + i * 35}ms` }}
+            />
+          ))}
+        </aside>
+        <main className="flex-1 min-w-0 relative overflow-hidden">
+          <div className="max-w-3xl mx-auto px-10 py-10 space-y-5">
+            <span className={`block h-4 w-24 rounded-full ${ATELIER_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '155ms' }} />
+            <span className={`block h-9 w-2/3 ${ATELIER_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '190ms' }} />
+            <span className={`block h-4 w-full ${ATELIER_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '225ms' }} />
+            <span className={`block h-4 w-5/6 ${ATELIER_GHOST_BAR} animate-fade-in`} style={{ animationDelay: '260ms' }} />
+          </div>
+        </main>
+        <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-14 rounded-card ${ATELIER_GHOST_BAR} animate-fade-in`}
+              style={{ animationDelay: `${155 + i * 35}ms` }}
+            />
+          ))}
+        </aside>
+      </div>
+    </div>
   );
 }
 

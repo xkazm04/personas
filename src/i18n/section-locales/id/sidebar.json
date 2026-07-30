@@ -91,5 +91,9 @@
   "group_monitoring": "Pemantauan",
   "group_operations": "Operasi",
   "group_plugins": "Plugin",
-  "group_templates": "Templat"
+  "group_templates": "Templat",
+  "extracted": "Terekstrak",
+  "memories": "Memori",
+  "memory_graph": "Grafik",
+  "patterns": "Pola"
 }

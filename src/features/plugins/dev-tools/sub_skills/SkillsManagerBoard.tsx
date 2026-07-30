@@ -148,7 +148,7 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
   );
 }
 
-export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, projectId, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts }: SkillsManagerVariantProps) {
+export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName, projectId, onAdopt, onShare, onUse, onSwitchMemory, onOpenContexts, onOpenInfo }: SkillsManagerVariantProps) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const wsSort = useSort();
@@ -219,26 +219,26 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
 
   const renderProjRow = (r: ProjRow) => (
     <li key={r.entry.name} className={`${PROJ_COLS} py-2 border-b border-foreground/[0.08] last:border-b-0`}>
-      {/* Name cell: memory icon + name (opens contexts when tracked) */}
+      {/* Name cell: memory icon + name (click → skill info modal) */}
       <span className="flex items-center gap-2 min-w-0">
         <MemoryBindingButton binding={r.entry.memory} onSwitch={(next) => onSwitchMemory(r.entry.name, next)} />
-        {r.tracked ? (
-          <button
-            type="button"
-            onClick={() => onOpenContexts(r.entry.name)}
-            className="min-w-0 text-left hover:text-primary transition-colors"
-            data-testid={`skills-manager-proj-${r.entry.name}`}
-          >
-            <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
-          </button>
-        ) : (
-          <span className="typo-caption font-medium text-foreground truncate" data-testid={`skills-manager-proj-${r.entry.name}`}>{r.entry.name}</span>
-        )}
+        <button
+          type="button"
+          onClick={() => onOpenInfo(r.entry.name)}
+          className="min-w-0 text-left hover:text-primary transition-colors"
+          data-testid={`skills-manager-proj-${r.entry.name}`}
+        >
+          <span className="typo-caption font-medium text-foreground truncate">{r.entry.name}</span>
+        </button>
       </span>
-      {/* Coverage — its own column for scannable visual structure */}
+      {/* Coverage — its own column; click opens the context-coverage detail. */}
       <span className="flex justify-end">
         {r.tracked
-          ? <CoverageBar row={r.coverage} total={totalContexts} />
+          ? (
+            <button type="button" onClick={() => onOpenContexts(r.entry.name)} className="hover:opacity-80 transition-opacity" data-testid={`skills-manager-coverage-${r.entry.name}`}>
+              <CoverageBar row={r.coverage} total={totalContexts} />
+            </button>
+          )
           : <span className="typo-label text-foreground/25">—</span>}
       </span>
       <UsageCount usage={r.usage} />
@@ -296,7 +296,11 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
                         <visual.icon className="w-3 h-3" aria-hidden strokeWidth={1.75} />
                       </span>
                     )}
-                    <span className={`typo-caption font-medium truncate ${installed ? 'text-foreground/45' : 'text-foreground'}`}>{entry.name}</span>
+                    <button type="button" onClick={() => onOpenInfo(entry.name)}
+                      className={`typo-caption font-medium truncate text-left hover:text-primary transition-colors ${installed ? 'text-foreground/45' : 'text-foreground'}`}
+                      data-testid={`skills-manager-ws-${entry.name}`}>
+                      {entry.name}
+                    </button>
                   </span>
                   <UsageCount usage={usage} />
                   <LastUsed usage={usage} />

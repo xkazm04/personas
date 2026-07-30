@@ -1849,6 +1849,21 @@ pub struct RepoEvidence {
     /// A source→doc coupling manifest exists (feature-doc-map.json) — the
     /// signal that doc freshness is *managed*, not incidental.
     pub has_doc_map: bool,
+    // -- Design system (passport automation artifact) ------------------------
+    /// A root `DESIGN.md` exists — the portable location the DESIGN.md format
+    /// spec (google-labs-code/design.md) defines, and the one a design-aware
+    /// tool will actually look in.
+    pub has_design_md: bool,
+    /// That `DESIGN.md` opens with YAML frontmatter — the machine-readable
+    /// token layer (colors / typography / rounded / spacing / components).
+    /// Prose alone documents a system to humans; frontmatter makes it
+    /// consumable by a linter or a generator, which is the rung that matters.
+    pub design_md_has_tokens: bool,
+    /// Design guidance exists but NOT at the spec location — e.g. a project's
+    /// own `.claude/Design.md` or `docs/design.md`. Real and useful, just not
+    /// portable or machine-readable. Kept distinct so the ladder never calls a
+    /// documented system "none".
+    pub has_informal_design_doc: bool,
     // -- App cost (passport env/cost rows) -----------------------------------
     /// Raw contents of the well-known `app-cost.json` at the repo root — the
     /// user-maintained (and expected-gitignored) monthly-cost ledger. None when
@@ -1969,6 +1984,70 @@ fn probe_agent_memory(root: &std::path::Path, root_path: &str) -> (bool, u32, u3
     }
 
     (has_repo_memory, file_count, index_lines, newest_age)
+}
+
+/// Design-system probe → `(has_design_md, has_tokens, has_informal_doc)`.
+///
+/// Three rungs, because "does this repo have a design system an agent can read"
+/// is genuinely three different answers:
+///   - nothing at all;
+///   - guidance a human can read, somewhere the project chose (informal);
+///   - a root `DESIGN.md` at the spec location — and, separately, whether it
+///     carries the YAML token frontmatter that makes it machine-consumable.
+///
+/// Only the frontmatter rung is checkable by a tool, which is exactly why it is
+/// the top of the ladder rather than "a design doc exists".
+fn probe_design_system(root: &std::path::Path) -> (bool, bool, bool) {
+    let design_md = root.join("DESIGN.md");
+    let has_design_md = design_md.is_file();
+
+    // Frontmatter must OPEN the file (`---` on the first non-empty line) and
+    // close on a later one. Reading a bounded prefix keeps a large design doc
+    // from being slurped on every wall render.
+    let has_tokens = has_design_md
+        && std::fs::metadata(&design_md)
+            .ok()
+            .filter(|m| m.len() <= 1_048_576)
+            .and_then(|_| std::fs::read_to_string(&design_md).ok())
+            .map(|text| {
+                let mut lines = text.lines().skip_while(|l| l.trim().is_empty());
+                if lines.next().map(str::trim) != Some("---") {
+                    return false;
+                }
+                // A closing fence within a sane prefix, with at least one
+                // top-level token group between the fences.
+                let mut saw_group = false;
+                for line in lines.take(400) {
+                    let t = line.trim_end();
+                    if t.trim() == "---" {
+                        return saw_group;
+                    }
+                    if matches!(
+                        t.split(':').next().map(str::trim),
+                        Some("colors" | "typography" | "rounded" | "spacing" | "components")
+                    ) {
+                        saw_group = true;
+                    }
+                }
+                false
+            })
+            .unwrap_or(false);
+
+    // Common non-spec locations. Deliberately a short, explicit list: a wide
+    // glob would match design *docs about a feature* and inflate the rung.
+    let informal = [
+        ".claude/Design.md",
+        ".claude/DESIGN.md",
+        "docs/design.md",
+        "docs/DESIGN.md",
+        "docs/design-system.md",
+        "STYLEGUIDE.md",
+        "design/README.md",
+    ]
+    .iter()
+    .any(|rel| re_exists(root, rel));
+
+    (has_design_md, has_tokens, informal)
 }
 
 /// Documentation probe: bounded count of markdown files under docs/ plus the
@@ -2233,6 +2312,11 @@ pub fn dev_tools_probe_repo_evidence(
     let (docs_count, has_doc_map) = probe_docs(root);
     ev.docs_file_count = docs_count;
     ev.has_doc_map = has_doc_map;
+
+    let (has_design_md, design_tokens, informal_design) = probe_design_system(root);
+    ev.has_design_md = has_design_md;
+    ev.design_md_has_tokens = design_tokens;
+    ev.has_informal_design_doc = informal_design;
 
     // App-cost ledger — a small manual file; size-capped so a mislabeled data
     // file never ships over IPC on every wall render.

@@ -19,7 +19,9 @@ import { loadGroups, saveGroups } from './groups';
 import { loadLinks, saveLinks, LINK_PALETTE } from './links';
 import { loadNotes, saveNotes } from './notes';
 import { loadPositions } from './positions';
+import { nearestTo, pickInDirection } from './kbNav';
 import { tidyLayout, type TidyResult } from './tidyLayout';
+import { DimLegend } from './DimLegend';
 import { FleetListPopover } from './FleetListPopover';
 import { GroupLayer, type GroupMember } from './GroupLayer';
 import { IslandMenu } from './IslandMenu';
@@ -76,7 +78,7 @@ export interface IslandCtx {
 export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const { cam, camRef, panning, fit, zoomBy, handlers } = useCanvasCamera(svgRef, worldRef);
@@ -97,6 +99,13 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   // Single-level undo for the one-shot Tidy: the exact pre-tidy positions +
   // group rects. Present ⇒ the Undo affordance shows.
   const [undoSnap, setUndoSnap] = useState<{ positions: TidyResult; groups: GroupRect[] } | null>(null);
+  // Keyboard cursor. The canvas was pointer-only: no island was reachable, and
+  // the right-click dimension menu and double-click focus had no equivalent at
+  // all. This is one roving cursor over the island set rather than N tab stops
+  // — a 200-project portfolio must not become 200 tab presses, and the map is
+  // spatial, so arrow keys navigate it spatially.
+  const [kbFocus, setKbFocus] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState('');
   const connectDrag = useRef<{ id: number; from: string; sx: number; sy: number } | null>(null);
   const noteTap = useRef<{ id: number; sx: number; sy: number } | null>(null);
   const drawId = useRef<number | null>(null);
@@ -220,9 +229,15 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     const id = requestAnimationFrame(() => setMountBudget((n) => n + MOUNT_WAVE));
     return () => cancelAnimationFrame(id);
   }, [mountBudget, visibleIslands.length]);
-  const mountedIslands = mountBudget >= visibleIslands.length
-    ? visibleIslands
-    : visibleIslands.slice(0, mountBudget);
+  // The keyboard cursor is always mounted, even mid-flight to an off-screen
+  // island: focus travel is an animated pan, so without this the focused island
+  // would be culled for the duration and the ring would draw over nothing.
+  const mountedIslands = useMemo(() => {
+    const base = mountBudget >= visibleIslands.length ? visibleIslands : visibleIslands.slice(0, mountBudget);
+    if (!kbFocus || base.some((i) => i.slug === kbFocus)) return base;
+    const f = bySlug.get(kbFocus);
+    return f ? [...base, f] : base;
+  }, [mountBudget, visibleIslands, kbFocus, bySlug]);
 
   // Gesture-time world math reads the LIVE camera (camRef) so it stays correct
   // even mid-pan, when `cam` state is intentionally stale for render-freedom.
@@ -444,6 +459,100 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     handlers.onPointerUp(e);
   };
 
+  // --- keyboard navigation -------------------------------------------------
+  /** Screen position of an island's header, for menus opened from the keyboard. */
+  const islandScreenPos = (i: Island) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    const c = camRef.current;
+    return {
+      x: (rect?.left ?? 0) + i.x * c.z + c.x,
+      y: (rect?.top ?? 0) + i.y * c.z + c.y,
+    };
+  };
+
+  const stateLabel = (s: Island['state']) =>
+    ({
+      healthy: t.mastermind.kb_state_healthy,
+      building: t.mastermind.kb_state_building,
+      warning: t.mastermind.kb_state_warning,
+      critical: t.mastermind.kb_state_critical,
+    })[s];
+
+  const describeIsland = (i: Island) => {
+    const blockers = i.blockers
+      ? ` ${tx(i.blockers === 1 ? t.mastermind.kb_blockers_one : t.mastermind.kb_blockers_other, { count: i.blockers })}.`
+      : '';
+    return `${i.name}. ${stateLabel(i.state)}.${blockers}`;
+  };
+
+  const focusSlug = (slug: string, travel = true) => {
+    const i = bySlug.get(slug);
+    if (!i) return;
+    setKbFocus(slug);
+    setAnnounce(describeIsland(i));
+    if (travel) onIslandFocus(slug);
+  };
+
+  /** Move the cursor one step in a direction (see kbNav for the geometry). */
+  const stepFocus = (dx: number, dy: number) => {
+    const cur = kbFocus ? bySlug.get(kbFocus) : null;
+    if (!cur) {
+      // Entering the map: start from whatever sits nearest the viewport centre.
+      const c = camRef.current;
+      const entry = nearestTo(scene.islands, (viewport.w / 2 - c.x) / c.z, (viewport.h / 2 - c.y) / c.z);
+      if (entry) focusSlug(entry.slug, false);
+      return;
+    }
+    const next = pickInDirection(scene.islands, cur, dx, dy);
+    if (next) focusSlug(next.slug);
+  };
+
+  const onCanvasKeyDown = (e: React.KeyboardEvent<SVGSVGElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+    const cur = kbFocus ? bySlug.get(kbFocus) : null;
+    switch (e.key) {
+      case 'ArrowRight': e.preventDefault(); stepFocus(1, 0); return;
+      case 'ArrowLeft': e.preventDefault(); stepFocus(-1, 0); return;
+      case 'ArrowDown': e.preventDefault(); stepFocus(0, 1); return;
+      case 'ArrowUp': e.preventDefault(); stepFocus(0, -1); return;
+      case 'Home': {
+        e.preventDefault();
+        const first = [...scene.islands].sort((a, b) => a.name.localeCompare(b.name))[0];
+        if (first) focusSlug(first.slug);
+        return;
+      }
+      case 'Enter':
+        if (!cur) { e.preventDefault(); stepFocus(1, 0); return; }
+        e.preventDefault();
+        onIslandTap(cur.slug);
+        return;
+      case ' ':
+        if (!cur) return;
+        e.preventDefault();
+        onIslandFocus(cur.slug);
+        setAnnounce(tx(t.mastermind.kb_framed, { name: cur.name }));
+        return;
+      // Shift+F10 and the ContextMenu key are the platform keyboard equivalents
+      // of right-click — the island dimension menu had no other way in.
+      case 'ContextMenu':
+      case 'F10': {
+        if (e.key === 'F10' && !e.shiftKey) return;
+        if (!cur) return;
+        e.preventDefault();
+        const p = islandScreenPos(cur);
+        setMenu({ slug: cur.slug, x: p.x, y: p.y });
+        return;
+      }
+      case 'Escape':
+        if (kbFocus) { setKbFocus(null); setAnnounce(t.mastermind.kb_left); }
+        return;
+      default:
+    }
+  };
+
+  const kbIsland = kbFocus ? bySlug.get(kbFocus) ?? null : null;
+
   const editingGroup = editing ? groups.find((g) => g.id === editing) ?? null : null;
   const editingLinkObj = editingLink ? links.find((l) => l.id === editingLink) ?? null : null;
   const editorAnchor = useMemo(() => {
@@ -484,8 +593,13 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
         onDoubleClick={handlers.onDoubleClick}
+        onKeyDown={onCanvasKeyDown}
+        onBlur={() => setKbFocus(null)}
         data-testid="mastermind-canvas"
-        className="absolute inset-0 w-full h-full select-none"
+        tabIndex={0}
+        role="application"
+        aria-label={`${t.mastermind.canvas_label} ${t.mastermind.kb_hint}`}
+        className="absolute inset-0 w-full h-full select-none focus-ring"
         style={{ touchAction: 'none', cursor: mode === 'group' || mode === 'note' ? 'crosshair' : panning ? 'grabbing' : 'grab' }}
       >
         <defs>
@@ -538,6 +652,9 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
           <NoteLayer notes={notes} z={cam.z} mode={mode} onNotesChange={commitNotes} onEdit={setEditingNote} />
           {/* connect overlay — ABOVE the islands so source/target/rubber are
               unmistakable (the round-5 under-island ring was barely visible) */}
+          {/* Keyboard cursor ring — drawn by the shell, not the island, so no
+              variant's memo'd renderer changes and every variant gets it. */}
+          {kbIsland && <KbFocusRing island={kbIsland} z={cam.z} />}
           {mode === 'connect' && (
             <ConnectOverlay
               source={connectDrag.current ? bySlug.get(connectDrag.current.from) : linkSource ? bySlug.get(linkSource) : undefined}
@@ -549,6 +666,13 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
         </g>
       </svg>
 
+      {/* Screen-reader channel for the keyboard cursor. The ring is the visual
+          answer to "where am I"; this is the spoken one. */}
+      <span className="sr-only" role="status" aria-live="polite" data-testid="mm-kb-announce">
+        {announce}
+      </span>
+
+      <DimLegend />
       <ZoomBadge z={cam.z} />
       <ZoomControls
         onZoomBy={zoomBy}
@@ -652,6 +776,19 @@ const normalize = (d: { x0: number; y0: number; x1: number; y1: number }) => ({
   w: Math.abs(d.x1 - d.x0),
   h: Math.abs(d.y1 - d.y0),
 });
+
+/** Keyboard-cursor ring. Counter-scaled like the connect rings so it reads the
+ *  same thickness at every zoom, and deliberately solid where connect's is
+ *  dashed — "you are here" must not be mistaken for "link source". */
+function KbFocusRing({ island, z }: { island: Island; z: number }) {
+  const k = 1 / z;
+  return (
+    <g transform={`translate(${island.x} ${island.y}) scale(${k})`} pointerEvents="none">
+      <circle r={46} fill="none" stroke={mix('var(--accent)', 95)} strokeWidth={3} />
+      <circle r={53} fill="none" stroke={mix('var(--accent)', 40)} strokeWidth={1.5} />
+    </g>
+  );
+}
 
 /** Connect-mode feedback: bright counter-scaled ring on the source, a dashed
  *  rubber line to the cursor, and a success-tinted ring on the drop target. */

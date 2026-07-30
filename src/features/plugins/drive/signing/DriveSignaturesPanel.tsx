@@ -97,9 +97,7 @@ export function DriveSignaturesPanel({
 
         <div className="flex-1 overflow-y-auto">
           {signing.loadingSignatures && signing.signatures.length === 0 && (
-            <div className="flex items-center justify-center py-10 typo-body text-foreground">
-              {t.plugins.drive.loading}
-            </div>
+            <SignatureRowGhosts />
           )}
 
           {!signing.loadingSignatures && signing.signatures.length === 0 && (
@@ -130,6 +128,30 @@ export function DriveSignaturesPanel({
         </div>
       </div>
     </BaseModal>
+  );
+}
+
+/**
+ * Cold-fetch placeholder for the signature history list — same row
+ * geometry (name bar + meta line) as `SignatureRow`, delayed entrance per
+ * docs/design/overview-loading.md §C so a fast fetch never paints a ghost.
+ */
+function SignatureRowGhosts() {
+  const { t } = useTranslation();
+  return (
+    <div aria-hidden="true">
+      <span className="sr-only">{t.plugins.drive.loading}</span>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="px-4 py-3 border-b border-primary/10 animate-fade-in"
+          style={{ animationDelay: `${120 + i * 35}ms` }}
+        >
+          <span className="block h-3.5 w-40 max-w-full rounded bg-primary/[0.06]" />
+          <span className="mt-2.5 block h-3 w-28 rounded bg-primary/[0.06]" />
+        </div>
+      ))}
+    </div>
   );
 }
 

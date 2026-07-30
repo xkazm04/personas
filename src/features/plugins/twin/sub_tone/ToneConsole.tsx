@@ -146,10 +146,8 @@ export default function ToneConsole() {
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-12 text-center typo-body text-foreground">{t.tone.loading}</td></tr>
-            )}
-            {!isLoading && visible.map((c) => {
+            {isLoading && twinTones.length === 0 && <ToneMatrixGhostRows />}
+            {visible.map((c) => {
               const form = getForm(c.id);
               const exists = hasTone(c.id);
               const isExpanded = expanded === c.id;
@@ -264,6 +262,31 @@ function Tile({ label, value, accent = 'violet' }: { label: string; value: numbe
       <span className="typo-data-lg tabular-nums leading-none">{value}</span>
       <span className={`${OVERLINE} text-foreground mt-0.5`}>{label}</span>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ToneMatrixGhostRows — calm, geometry-matched ghost rows for the tone table,
+// the only moment it has nothing to show while the first fetch is in flight
+// (docs/design/overview-loading.md). No animate-pulse; each row fades in
+// behind a ≥120ms delay (fill-mode both).
+// ---------------------------------------------------------------------------
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ToneMatrixGhostRows() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <tr key={i} className="border-b border-primary/5 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <td className="pl-4 md:pl-6 xl:pl-8 pr-3 py-2.5"><span className={`inline-block h-3.5 w-20 ${GHOST_BAR}`} /></td>
+          <td className="px-3 py-2.5"><span className={`inline-block h-3 w-full max-w-[220px] ${GHOST_BAR}`} /></td>
+          <td className="px-3 py-2.5 hidden md:table-cell"><span className={`inline-block h-3 w-16 ${GHOST_BAR}`} /></td>
+          <td className="px-3 py-2.5 hidden lg:table-cell"><span className={`inline-block h-3 w-20 ${GHOST_BAR}`} /></td>
+          <td className="px-3 py-2.5 hidden md:table-cell text-center"><span className={`inline-block h-3 w-6 ${GHOST_BAR}`} /></td>
+          <td className="pr-4 md:pr-6 xl:pr-8 pl-3 py-2.5 text-right"><span className={`inline-block h-4 w-20 rounded-full ${GHOST_BAR}`} /></td>
+        </tr>
+      ))}
+    </>
   );
 }
 

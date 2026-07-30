@@ -1,4 +1,4 @@
-import { Loader2, ScrollText, Search, Sparkles, X } from 'lucide-react';
+import { ScrollText, Search, Sparkles, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, {
   NoResults,
@@ -67,12 +67,44 @@ export function DecisionsFilterInput({
   );
 }
 
-export function DecisionsLoadingRow() {
-  const { t } = useTranslation();
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
+
+/**
+ * Cold-load ghost for the Atlas layout (docs/design/overview-loading.md §C):
+ * a rail-shaped column of bars beside a reading-pane-shaped block, so the
+ * swap to real content doesn't shift geometry. Only rendered when the fetch
+ * is in flight AND nothing is on screen yet (see DecisionsPanel) — a
+ * refetch that already has rows keeps showing them, per law 1.
+ */
+export function DecisionsGhostRows() {
   return (
-    <div className="flex items-center gap-2 typo-caption text-foreground">
-      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-      {t.plugins.companion.decisions_panel_loading}
+    <div className="flex items-start gap-6" aria-hidden="true" data-testid="companion-decisions-loading">
+      <div className="w-56 shrink-0 space-y-1.5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="px-2.5 py-1.5 animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          >
+            <span className={`block h-3.5 w-2/3 ${GHOST_BAR}`} />
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 min-w-0 space-y-6">
+        {Array.from({ length: 3 }).map((_, i) => {
+          const titleW = GHOST_TITLE_WIDTHS[i % GHOST_TITLE_WIDTHS.length];
+          const delay = `${120 + i * 35}ms`;
+          return (
+            <div key={i} className="space-y-1.5 animate-fade-in" style={{ animationDelay: delay }}>
+              <span className={`block h-3 ${titleW} max-w-full ${GHOST_BAR}`} />
+              <span className={`block h-4 w-3/4 ${GHOST_BAR}`} />
+              <span className={`block h-3 w-full ${GHOST_BAR}`} />
+              <span className={`block h-3 w-5/6 ${GHOST_BAR}`} />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

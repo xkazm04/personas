@@ -50,6 +50,7 @@ export default function ResearchDashboard() {
   const stats = useSystemStore((s) => s.researchDashboardStats);
   const fetchStats = useSystemStore((s) => s.fetchResearchDashboardStats);
   const projects = useSystemStore((s) => s.researchProjects);
+  const projectsLoading = useSystemStore((s) => s.researchProjectsLoading);
   const fetchProjects = useSystemStore((s) => s.fetchResearchProjects);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
   const setActiveProject = useSystemStore((s) => s.setActiveResearchProject);
@@ -92,6 +93,12 @@ export default function ResearchDashboard() {
     setResearchLabTab('literature');
   };
 
+  // Loading choreography (docs/design/overview-loading.md): the bench ghost
+  // only ever covers a cold fetch with nothing in the store yet — once any
+  // projects exist they stay on screen while a background refetch runs, and
+  // once the fetch settles empty the real "no projects" bench takes over.
+  const showGhost = projectsLoading && projects.length === 0;
+
   return (
     <div className="flex flex-col h-full min-h-0 overflow-hidden bg-background">
       {/* Identity band */}
@@ -129,7 +136,9 @@ export default function ResearchDashboard() {
 
       {/* Bench — phase stations */}
       <div className="flex-1 min-h-0 overflow-auto px-6 py-8">
-        {projects.length === 0 ? (
+        {showGhost ? (
+          <BenchGhost />
+        ) : projects.length === 0 ? (
           <BenchEmptyState
             t={t}
             onCreate={() => setResearchLabTab('projects')}
@@ -351,6 +360,41 @@ const DOMAIN_TINTS = [
 ];
 function domainTint(idx: number) {
   return DOMAIN_TINTS[idx % DOMAIN_TINTS.length];
+}
+
+// ---------------------------------------------------------------------------
+// BenchGhost — calm ghost of the phase-station grid for the ONLY moment the
+// bench has nothing to show (a cold fetch with an empty store). Same 8-column
+// grid geometry as the real bench so the swap to real content is shift-free.
+// Delayed `animate-fade-in` entrance (120ms+ stagger); no `animate-pulse`.
+// ---------------------------------------------------------------------------
+
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function BenchGhost() {
+  return (
+    <div aria-hidden="true">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center animate-fade-in"
+            style={{ animationDelay: `${120 + i * 35}ms` }}
+          >
+            <span className={`w-[68px] h-[68px] rounded-full ${GHOST_BAR} mb-3`} />
+            <span className={`h-2.5 w-12 ${GHOST_BAR} mb-2`} />
+          </div>
+        ))}
+      </div>
+      <div className="mt-10 pt-6 border-t border-border/40">
+        <span className={`block h-2.5 w-24 ${GHOST_BAR} mb-3`} />
+        <span
+          className={`block h-7 w-full rounded-interactive ${GHOST_BAR} animate-fade-in`}
+          style={{ animationDelay: `${120 + 8 * 35}ms` }}
+        />
+      </div>
+    </div>
+  );
 }
 
 function BenchEmptyState({ t, onCreate }: { t: Translations; onCreate: () => void }) {

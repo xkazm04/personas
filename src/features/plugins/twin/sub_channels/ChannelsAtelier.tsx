@@ -233,7 +233,7 @@ export default function ChannelsAtelier() {
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (
-            <p className="typo-body text-foreground text-center py-12">{t.channels.loading}</p>
+            <ChannelGridGhost />
           ) : channels.length === 0 && !adding ? (
             <div className="py-16 text-center max-w-md mx-auto">
               <div className="relative w-20 h-20 mx-auto mb-4">
@@ -393,6 +393,37 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
     <div className="flex flex-col items-start leading-tight">
       <span className={`typo-data-lg tabular-nums ${tone}`}>{value}</span>
       <span className="text-[9px] uppercase tracking-[0.18em] text-foreground">{label}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ChannelGridGhost — calm, geometry-matched ghost for the channel card grid,
+// the only moment it has nothing to show while a fetch is in flight
+// (docs/design/overview-loading.md). Each card fades in behind a ≥120ms
+// delay (fill-mode both) so a fast fetch never paints one; no animate-pulse.
+// ---------------------------------------------------------------------------
+const GHOST_BAR = 'rounded bg-primary/[0.06]';
+
+function ChannelGridGhost() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-card border border-primary/10 bg-card/30 p-4 pt-5 animate-fade-in" style={{ animationDelay: `${120 + i * 35}ms` }}>
+          <div className="flex items-start gap-3">
+            <span className={`w-10 h-10 flex-shrink-0 ${GHOST_BAR}`} />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <span className={`block h-3.5 w-24 ${GHOST_BAR}`} />
+              <span className={`block h-3 w-16 ${GHOST_BAR}`} />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-primary/10 space-y-2">
+            {Array.from({ length: 3 }).map((_, j) => (
+              <span key={j} className={`block h-2.5 w-full ${GHOST_BAR}`} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

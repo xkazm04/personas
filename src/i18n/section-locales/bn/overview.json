@@ -277,7 +277,12 @@
     "failures": "ব্যর্থ",
     "avg_cost": "গড় খরচ",
     "avg_duration": "গড় সময়কাল",
-    "pattern_data": "প্যাটার্ন ডাটা"
+    "pattern_data": "প্যাটার্ন ডাটা",
+    "extracted_tab": "নিষ্কাশিত",
+    "patterns_library_tab": "প্যাটার্ন",
+    "patterns_no_workspace_desc": "অনুশীলনগুলি প্রতি ওয়ার্কস্পেস অনুযায়ী সংগ্রহ করা হয়। একটি শেয়ার্ড লাইব্রেরি তৈরি শুরু করতে একটি ওয়ার্কস্পেস তৈরি করুন এবং তাতে প্রকল্প যুক্ত করুন।",
+    "patterns_no_workspace_title": "এখনও কোনো ওয়ার্কস্পেস নেই",
+    "patterns_workspace_picker": "ওয়ার্কস্পেস নির্বাচন করুন"
   },
   "dashboard": {
     "greeting_morning": "শুভ সকাল",

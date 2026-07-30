@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
@@ -54,10 +54,22 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     execution.cost_usd,
   );
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts. currentMs is read through a ref so the listener doesn't
+  // re-bind on every animation frame during playback.
+  const currentMsRef = useRef(state.currentMs);
+  currentMsRef.current = state.currentMs;
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const target = e.target;
+      // Don't hijack typing, and don't fight the scrubber: it is a real slider
+      // now and owns its own arrow keys.
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable) ||
+        (target instanceof HTMLElement && target.getAttribute('role') === 'slider')
+      ) return;
       switch (e.key) {
         case ' ':
           e.preventDefault();
@@ -66,12 +78,12 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
         case 'ArrowLeft':
           e.preventDefault();
           if (e.shiftKey) actions.stepBackward();
-          else actions.scrubTo(state.currentMs - 500);
+          else actions.scrubTo(currentMsRef.current - 500);
           break;
         case 'ArrowRight':
           e.preventDefault();
           if (e.shiftKey) actions.stepForward();
-          else actions.scrubTo(state.currentMs + 500);
+          else actions.scrubTo(currentMsRef.current + 500);
           break;
         case 'Home':
           actions.jumpToStart();
@@ -83,7 +95,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [actions, state.currentMs]);
+  }, [actions]);
 
   const handleFork = useCallback(() => {
     if (state.forkPoint == null) return;

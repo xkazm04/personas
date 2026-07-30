@@ -91,5 +91,9 @@
   "group_monitoring": "监控",
   "group_operations": "运维",
   "group_plugins": "插件",
-  "group_templates": "模板"
+  "group_templates": "模板",
+  "extracted": "已提取",
+  "memories": "记忆",
+  "memory_graph": "图表",
+  "patterns": "模式"
 }

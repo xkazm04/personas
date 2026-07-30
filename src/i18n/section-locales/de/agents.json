@@ -525,7 +525,10 @@
     "active_chains_one": "{count} Kette aktiv",
     "active_chains_other": "{count} Ketten aktiv",
     "active_chains_title": "Aktive Ketten",
-    "copy_log_failed": "Protokoll konnte nicht kopiert werden"
+    "copy_log_failed": "Protokoll konnte nicht kopiert werden",
+    "lines_counter": "{visible}/{total} Zeilen",
+    "timeline_scrubber_label": "Ausführungs-Zeitleiste",
+    "timeline_scrubber_value": "{current} von {total}"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -1660,7 +1663,8 @@
     "connectors": "Konnektoren",
     "triggers": "Trigger",
     "all_connectors": "Alle Konnektoren",
-    "active_triggers": "{count} aktiver/aktive Trigger"
+    "active_triggers": "{count} aktiver/aktive Trigger",
+    "quality": "Qualität"
   },
   "health_indicator": {
     "last": "letzte {count}"

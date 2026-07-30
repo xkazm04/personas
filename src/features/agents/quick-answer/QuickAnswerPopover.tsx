@@ -1,16 +1,31 @@
-// QuickAnswerPopover — lightweight header surface to answer pending build /
-// adoption questions and human reviews without leaving the current screen.
+// QuickAnswerPopover — the app-size triage surface for everything waiting on a
+// human. Mounted from the title-bar dock's TrayOverlays when
+// headerOverlay === 'quick-answer'.
 //
-// Sibling to the full-screen PersonaMonitor: this is the fast "a question is
-// waiting — answer it and keep working" path. Mounted from the title-bar
-// dock's TrayOverlays when headerOverlay === 'quick-answer'.
+// It used to be a 576px anchored panel over two queues (build questions +
+// persona reviews). It is now a full-app deck over FOUR: persona manual
+// reviews, backlog ideas, workspace practices and build questions, unified by
+// `triage/triageTypes` and fed by `triage/useUnifiedTriage`.
+//
+// The exported name and props are unchanged, so `TrayOverlays` never learned
+// about any of this. `QuickAnswerBody` and its children are deliberately NOT
+// deleted — the channel-timeline rail and the reviews rail still render them.
 
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { X, Activity } from 'lucide-react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
+
+import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { usePendingInteractions } from './usePendingInteractions';
-import { QuickAnswerBodyView } from './QuickAnswerBody';
+
+import { useUnifiedTriage } from './triage/useUnifiedTriage';
+import { useTriageCopy } from './triage/useTriageCopy';
+
+// Lazy: the deck pulls in framer drag machinery and the markdown renderer, and
+// most sessions never open it.
+const TriageDeckVariant = lazy(() =>
+  import('./triage/TriageDeckVariant').then((m) => ({ default: m.TriageDeckVariant })),
+);
 
 interface QuickAnswerPopoverProps {
   onClose: () => void;
@@ -18,79 +33,61 @@ interface QuickAnswerPopoverProps {
 }
 
 export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopoverProps) {
-  const { t, tx } = useTranslation();
-  const panelRef = useRef<HTMLDivElement>(null);
-  // Single data mount for the whole popover: header chip AND body share this
-  // instance. Calling usePendingInteractions here and again inside
-  // QuickAnswerBody double-mounted four polling loops per open popover.
-  const interactions = usePendingInteractions();
-  const { total } = interactions;
+  const { t } = useTranslation();
+  const copy = useTriageCopy();
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const setPendingExecutionFocus = useOverviewStore((s) => s.setPendingExecutionFocus);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
-  // Esc closes; click-outside closes. (Route nav / Back already clear the
-  // header overlay centrally in uiSlice.)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onDown = (e: MouseEvent) => {
-      const target = e.target as Element | null;
-      // Ignore clicks on the titlebar trigger — it toggles the overlay itself,
-      // so closing here would race the re-click into a close-then-reopen.
-      if (target?.closest?.('[data-quick-answer-trigger]')) return;
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    // Defer click-outside so the opening click on the titlebar button doesn't
-    // immediately close the just-opened popover.
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.clearTimeout(id);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+  // Deep-link for questions that need the full builder (connector picker or
+  // file attach) — mirrors QuickAnswerBody's openBuilder.
+  //
+  // Memoised, both of these: they are handed to `useUnifiedTriage`, which puts
+  // them in the injected port bundle every verdict route reads. An unwrapped
+  // arrow here re-created the bundle on every render, which re-created `decide`,
+  // which re-rendered all three stacked cards on every keystroke.
+  const openBuilder = useCallback(
+    (personaId: string) => {
+      setSidebarSection('personas');
+      setEditorTab('matrix' as Parameters<typeof setEditorTab>[0]);
+      selectPersona(personaId);
+      onClose();
+    },
+    [setSidebarSection, setEditorTab, selectPersona, onClose],
+  );
+
+  // "See the run that raised this" — `GlobalExecutionList` watches
+  // `pendingExecutionFocus` and pops that execution's detail modal (the same
+  // handoff the notification centre and the schedule history rows use, so there
+  // is nothing new to keep working here).
+  const openRun = useCallback(
+    (executionId: string) => {
+      setPendingExecutionFocus(executionId);
+      setOverviewTab('executions');
+      setSidebarSection('overview');
+      onClose();
+    },
+    [setPendingExecutionFocus, setOverviewTab, setSidebarSection, onClose],
+  );
+
+  const hosts = useMemo(
+    () => ({ onOpenBuilder: openBuilder, onOpenRun: openRun }),
+    [openBuilder, openRun],
+  );
+
+  const queue = useUnifiedTriage(copy, hosts);
 
   return (
-    <motion.div
-      ref={panelRef}
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.14 }}
-      aria-label={tx(t.monitor.quick_aria, { count: total })}
-      data-testid="quick-answer-popover"
-      className="fixed top-[var(--titlebar-height,40px)] right-2 z-50 w-[576px] max-w-[calc(100vw-1rem)] max-h-[80vh] flex flex-col rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
-    >
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 h-12 border-b border-primary/10 bg-secondary/15">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <span className="typo-heading-lg font-semibold text-foreground">{t.monitor.quick_title}</span>
-          {total > 0 && <span className="typo-caption text-foreground tabular-nums">{total}</span>}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={onOpenMonitor}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/20 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
-            data-testid="quick-answer-open-monitor"
-          >
-            <Activity className="w-3.5 h-3.5" />
-            {t.monitor.quick_open_monitor}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t.monitor.quick_close}
-            className="p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-        <QuickAnswerBodyView interactions={interactions} onAfterBuilderNav={onClose} />
-      </div>
-    </motion.div>
+    <Suspense fallback={null}>
+      <TriageDeckVariant
+        queue={queue}
+        title={t.monitor.quick_title}
+        onOpenMonitor={onOpenMonitor}
+        onClose={onClose}
+      />
+    </Suspense>
   );
 }
 

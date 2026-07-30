@@ -302,13 +302,19 @@ export default function ProjectOverviewPage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {(() => {
+              // `loading` only ghosts a tile that has never resolved a value yet
+              // (docs/design/overview-loading.md law 1 — "data on screen is
+              // sacred"). repoState/monitorState flip back to 'loading' on every
+              // manual refresh too; gating on `!repoStats`/`!monitorStats` keeps
+              // the last-good numeral on screen while that refresh settles
+              // silently, instead of re-ghosting an already-rendered tile.
               const tilesById: Record<TileId, { icon: typeof CircleDot; value: string | number; label: string; tone: Tone; loading: boolean }> = {
-                open_issues: { icon: CircleDot, value: repoStats ? `${repoStats.openIssues}${repoStats.openIssuesCapped ? '+' : ''}` : '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' },
-                open_prs:    { icon: GitPullRequest, value: repoStats ? `${repoStats.openPullRequests}${repoStats.openPullRequestsCapped ? '+' : ''}` : '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' },
-                commits:     { icon: GitCommitHorizontal, value: repoStats ? `${repoStats.commitsLastWeek}${repoStats.commitsLastWeekCapped ? '+' : ''}` : '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' },
-                unresolved:  { icon: Bug, value: monitorStats?.unresolvedIssues ?? '—', label: po.unresolved_issues, tone: unresolvedTone, loading: monitorState === 'loading' },
-                events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' },
-                events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' },
+                open_issues: { icon: CircleDot, value: repoStats ? `${repoStats.openIssues}${repoStats.openIssuesCapped ? '+' : ''}` : '—', label: po.open_issues, tone: issueTone, loading: repoState === 'loading' && !repoStats },
+                open_prs:    { icon: GitPullRequest, value: repoStats ? `${repoStats.openPullRequests}${repoStats.openPullRequestsCapped ? '+' : ''}` : '—', label: isGitLab ? po.open_mrs : po.open_prs, tone: prTone, loading: repoState === 'loading' && !repoStats },
+                commits:     { icon: GitCommitHorizontal, value: repoStats ? `${repoStats.commitsLastWeek}${repoStats.commitsLastWeekCapped ? '+' : ''}` : '—', label: po.commits_this_week, tone: commitsTone, loading: repoState === 'loading' && !repoStats },
+                unresolved:  { icon: Bug, value: monitorStats?.unresolvedIssues ?? '—', label: po.unresolved_issues, tone: unresolvedTone, loading: monitorState === 'loading' && !monitorStats },
+                events_24h:  { icon: Activity, value: monitorStats?.eventsLast24h ?? '—', label: po.events_24h, tone: events24Tone, loading: monitorState === 'loading' && !monitorStats },
+                events_7d:   { icon: BarChart3, value: monitorStats?.eventsLastWeek ?? '—', label: po.events_7d, tone: events7Tone, loading: monitorState === 'loading' && !monitorStats },
               };
               return tileOrder.map((id, idx) => {
                 const t = tilesById[id];
@@ -572,11 +578,18 @@ function VitalTile({
         <div className="flex items-center justify-between mb-1.5">
           <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />
         </div>
-        {/* Loading → shimmer skeleton in place of the numeral; when the value
-            lands it cross-fades in (keyed on value) instead of snapping. */}
+        {/* Loading → calm delayed ghost bar in place of the numeral (only for a
+            tile that has never resolved a value — see the `loading` derivation
+            above); when the value lands it cross-fades in (keyed on value)
+            instead of snapping. No animate-pulse — a fade-in behind a ≥120ms
+            delay is the anti-flash (docs/design/overview-loading.md §C). */}
         <div className="h-[1.75rem] flex items-center">
           {loading ? (
-            <span className="block h-6 w-12 rounded bg-primary/10 animate-pulse" aria-hidden="true" />
+            <span
+              className="block h-6 w-12 rounded bg-primary/[0.06] animate-fade-in"
+              style={{ animationDelay: '150ms' }}
+              aria-hidden="true"
+            />
           ) : (
             <motion.p
               key={String(value)}
