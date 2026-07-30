@@ -4,6 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
 const CreativeStudioPanel = lazy(() => import('./sub_blender/CreativeStudioPanel'));
 const GalleryPage = lazy(() => import('./sub_gallery/GalleryPage'));
@@ -45,7 +46,7 @@ export default function ArtistPage() {
             className="animate-fade-slide-in flex-1 flex flex-col min-h-0"
           >
             <ErrorBoundary name="Artist">
-              <Suspense fallback={null}>
+              <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
                 <MediaStudioPage />
               </Suspense>
             </ErrorBoundary>
@@ -65,7 +66,7 @@ export default function ArtistPage() {
           className="animate-fade-slide-in"
         >
           <ErrorBoundary name="Artist">
-            <Suspense fallback={null}>
+            <Suspense fallback={<RouteChunkSkeleton showActions={false} />}>
               {artistTab === 'blender' && <CreativeStudioPanel />}
               {artistTab === 'gallery' && <GalleryPage />}
             </Suspense>
