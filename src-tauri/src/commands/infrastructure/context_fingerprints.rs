@@ -313,16 +313,28 @@ mod tests {
     }
 
     #[test]
-    fn content_hash_is_order_insensitive_but_membership_sensitive() {
+    fn content_hash_is_membership_sensitive() {
         let a = vec![("a.rs".to_string(), "1".to_string()), ("b.rs".to_string(), "2".to_string())];
-        let mut b = a.clone();
-        b.reverse();
-        // Callers always sort, so the hash inputs are equal for a pure reorder.
-        assert_ne!(content_hash(&a), content_hash(&b), "raw order does matter");
-
         let mut more = a.clone();
         more.push(("c.rs".to_string(), "3".to_string()));
         assert_ne!(content_hash(&a), content_hash(&more));
+    }
+
+    /// `content_hash` itself is order-SENSITIVE; order-insensitivity comes from
+    /// `parse_file_paths` sorting before the hash is built. Pinning both halves
+    /// separately keeps that division of labour honest.
+    #[test]
+    fn order_insensitivity_comes_from_sorting_not_from_the_hash() {
+        let a = vec![("a.rs".to_string(), "1".to_string()), ("b.rs".to_string(), "2".to_string())];
+        let mut reversed = a.clone();
+        reversed.reverse();
+        assert_ne!(content_hash(&a), content_hash(&reversed));
+
+        assert_eq!(
+            parse_file_paths(r#"["a.rs","b.rs"]"#),
+            parse_file_paths(r#"["b.rs","a.rs"]"#),
+            "the sort is what makes a pure reorder a no-op"
+        );
     }
 
     #[test]
