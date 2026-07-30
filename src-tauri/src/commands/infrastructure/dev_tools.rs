@@ -821,7 +821,7 @@ pub fn dev_tools_create_task(
     depth: Option<String>,
 ) -> Result<DevTask, AppError> {
     require_auth_sync(&state)?;
-    let task = repo::create_task(
+    create_task_core(
         &state.db,
         project_id.as_deref(),
         &title,
@@ -830,15 +830,41 @@ pub fn dev_tools_create_task(
         goal_id.as_deref(),
         status.as_deref(),
         depth.as_deref(),
+    )
+}
+
+/// The IPC-free task-creation core — everything `dev_tools_create_task` does
+/// minus the auth gate, so headless callers (the Overnight Portfolio Engine
+/// tick) create tasks through the exact same path a click would.
+#[allow(clippy::too_many_arguments)]
+pub fn create_task_core(
+    db: &crate::db::DbPool,
+    project_id: Option<&str>,
+    title: &str,
+    description: Option<&str>,
+    source_idea_id: Option<&str>,
+    goal_id: Option<&str>,
+    status: Option<&str>,
+    depth: Option<&str>,
+) -> Result<DevTask, AppError> {
+    let task = repo::create_task(
+        db,
+        project_id,
+        title,
+        description,
+        source_idea_id,
+        goal_id,
+        status,
+        depth,
     )?;
     // A task created FROM a materialized workspace practice means that repo has
     // started the work — the adoption cell leaves the `to_process` queue for
     // `dispatched`. `finalize_task` carries it the rest of the way (adopted on
     // success, back to `to_process` on failure).
-    if let Some(idea_id) = source_idea_id.as_deref() {
-        if let Ok(idea) = repo::get_idea_by_id(&state.db, idea_id) {
+    if let Some(idea_id) = source_idea_id {
+        if let Ok(idea) = repo::get_idea_by_id(db, idea_id) {
             crate::db::repos::dev_workspaces::sync_practice_adoption_for_task(
-                &state.db,
+                db,
                 &idea,
                 "dispatched",
                 &format!("task:{}", task.id),
@@ -868,6 +894,9 @@ pub struct DispatchedIdea {
     /// The composed task description, so the fleet arm can seed a session with
     /// the exact same text the runner would have executed.
     pub prompt: String,
+    /// The fleet session spawned for this idea (fleet target only; `None` for
+    /// runner dispatches or when the spawn was skipped/failed — see `skipped`).
+    pub session_id: Option<String>,
 }
 
 /// An idea that could not be dispatched, and why. Reported per item — a batch
@@ -889,8 +918,8 @@ pub struct DispatchIdeasResult {
     pub target: String,
     pub dispatched: Vec<DispatchedIdea>,
     pub skipped: Vec<DispatchSkip>,
-    /// True when the runner batch was actually started (fleet dispatches leave
-    /// this false — the frontend spawns the sessions).
+    /// True when execution actually began: the runner batch was started, or
+    /// (fleet) at least one headless session was spawned backend-side.
     pub started: bool,
 }
 
@@ -935,9 +964,10 @@ pub fn dispatch_prompt(idea: &DevIdea) -> String {
 ///
 /// `runner` starts the created tasks through the existing batch machinery
 /// (`dev_tools_start_batch`, unchanged — no fork of the execution path).
-/// `fleet` returns the tasks plus each project's `root_path` and the composed
-/// prompt, and the frontend spawns the sessions (v1 decision: the fleet arm
-/// stays frontend-composed).
+/// `fleet` composes AND spawns the sessions backend-side (headless
+/// `claude -p`, one per idea, rooted at the project's `root_path`) — the
+/// documented v1 "fleet arm stays frontend-composed" limitation is gone, so a
+/// headless tick (Overnight Portfolio Engine) can dispatch with no UI present.
 #[tauri::command]
 pub async fn dev_tools_dispatch_ideas(
     state: State<'_, Arc<AppState>>,
@@ -949,14 +979,67 @@ pub async fn dev_tools_dispatch_ideas(
 ) -> Result<DispatchIdeasResult, AppError> {
     require_auth(&state).await?;
 
+    let mut result =
+        dispatch_ideas_core(&state.db, &app, idea_ids, &target, depth.as_deref(), false).await?;
+
+    if target == "runner" {
+        let task_ids: Vec<String> = result.dispatched.iter().map(|d| d.task_id.clone()).collect();
+        crate::commands::infrastructure::task_executor::dev_tools_start_batch(
+            state.clone(),
+            app,
+            task_ids,
+            max_parallel,
+        )
+        .await?;
+        result.started = true;
+    }
+
+    Ok(result)
+}
+
+/// Guardrail block appended to every UNATTENDED fleet dispatch prompt. The
+/// package-level invariant (batch-2 "safe autonomy"): overnight work never
+/// touches a repo's default branch — branch-only writes, human merges.
+const UNATTENDED_DISPATCH_GUARDRAILS: &str = "\
+--- Unattended dispatch guardrails (Overnight Portfolio Engine) ---\n\
+You are running UNATTENDED overnight. Hard rules:\n\
+1. NEVER commit to the repository's default branch (main/master). Create and \
+work on a dedicated branch named `autopilot/<short-slug>` before changing any file.\n\
+2. Do NOT push, do NOT merge, do NOT open pull requests. Your branch is \
+reviewed by a human in the morning.\n\
+3. Do NOT run destructive commands (force-push, reset --hard on shared \
+branches, deletions outside your change scope).\n\
+4. If the fix requires a decision you cannot verify from the evidence, stop \
+and summarize instead of guessing.\n\
+When done, end your final message with `FLEET:DONE — <one-line summary>`.";
+
+/// The IPC-free dispatch core — compose + (for `fleet`) spawn, no auth gate,
+/// no runner batch start (the command wrapper owns that; the overnight tick
+/// only uses the fleet arm). `unattended` appends the branch-only guardrail
+/// block to every fleet prompt and is set ONLY by the autopilot tick.
+///
+/// Per idea: **dispatching IS a decision**, so a still-pending idea is
+/// auto-accepted through [`apply_idea_verdict_by`] (never a raw status write —
+/// the decision memory and the workspace adoption sync must happen too), then
+/// a task is created through [`create_task_core`] (the path that carries a
+/// materialized workspace practice's adoption cell to `dispatched`).
+pub async fn dispatch_ideas_core(
+    db: &crate::db::DbPool,
+    app: &tauri::AppHandle,
+    idea_ids: Vec<String>,
+    target: &str,
+    depth: Option<&str>,
+    unattended: bool,
+) -> Result<DispatchIdeasResult, AppError> {
     if idea_ids.is_empty() {
         return Err(AppError::Validation("No ideas selected to dispatch.".into()));
     }
-    if !matches!(target.as_str(), "runner" | "fleet") {
+    if !matches!(target, "runner" | "fleet") {
         return Err(AppError::Validation(format!(
             "dispatch target must be `runner` or `fleet`, got `{target}`"
         )));
     }
+    let actor = if unattended { "Autonomy" } else { "Human" };
 
     let mut dispatched: Vec<DispatchedIdea> = Vec::new();
     let mut skipped: Vec<DispatchSkip> = Vec::new();
@@ -966,7 +1049,7 @@ pub async fn dev_tools_dispatch_ideas(
         if !seen.insert(id.clone()) {
             continue;
         }
-        let idea = match repo::get_idea_by_id(&state.db, &id) {
+        let idea = match repo::get_idea_by_id(db, &id) {
             Ok(i) => i,
             Err(_) => {
                 skipped.push(DispatchSkip { idea_id: id, reason: "not found".into() });
@@ -984,7 +1067,7 @@ pub async fn dev_tools_dispatch_ideas(
         // so the memory + adoption write-backs happen exactly as they would from
         // a click. Idempotent, so an already-accepted idea costs nothing.
         let idea = if idea.status == "pending" {
-            match apply_idea_verdict(&state.db, &id, IdeaVerdict::Accept) {
+            match apply_idea_verdict_by(db, &id, IdeaVerdict::Accept, actor) {
                 Ok(i) => i,
                 Err(e) => {
                     skipped.push(DispatchSkip { idea_id: id, reason: e.to_string() });
@@ -996,15 +1079,15 @@ pub async fn dev_tools_dispatch_ideas(
         };
 
         let prompt = dispatch_prompt(&idea);
-        let task = match dev_tools_create_task(
-            state.clone(),
-            idea.project_id.clone(),
-            idea.title.clone(),
-            Some(prompt.clone()),
-            Some(idea.id.clone()),
+        let task = match create_task_core(
+            db,
+            idea.project_id.as_deref(),
+            &idea.title,
+            Some(&prompt),
+            Some(&idea.id),
             None,
             None,
-            depth.clone(),
+            depth,
         ) {
             Ok(t) => t,
             Err(e) => {
@@ -1016,7 +1099,7 @@ pub async fn dev_tools_dispatch_ideas(
         let project = idea
             .project_id
             .as_deref()
-            .and_then(|pid| repo::get_project_by_id(&state.db, pid).ok());
+            .and_then(|pid| repo::get_project_by_id(db, pid).ok());
         dispatched.push(DispatchedIdea {
             idea_id: idea.id.clone(),
             task_id: task.id,
@@ -1025,6 +1108,7 @@ pub async fn dev_tools_dispatch_ideas(
             project_name: project.as_ref().map(|p| p.name.clone()),
             root_path: project.as_ref().map(|p| p.root_path.clone()),
             prompt,
+            session_id: None,
         });
     }
 
@@ -1035,19 +1119,70 @@ pub async fn dev_tools_dispatch_ideas(
     }
 
     let mut started = false;
-    if target == "runner" {
-        let task_ids: Vec<String> = dispatched.iter().map(|d| d.task_id.clone()).collect();
-        crate::commands::infrastructure::task_executor::dev_tools_start_batch(
-            state.clone(),
-            app,
-            task_ids,
-            max_parallel,
-        )
-        .await?;
-        started = true;
+    if target == "fleet" {
+        // Backend-side fleet composition: one headless session per idea, seeded
+        // with the exact prompt the runner arm would execute. Fleet APIs are
+        // call-only here — spawn goes through the public fleet command.
+        let mut spawned: Vec<DispatchedIdea> = Vec::new();
+        for mut d in dispatched.drain(..) {
+            let Some(root) = d.root_path.clone().filter(|r| !r.trim().is_empty()) else {
+                skipped.push(DispatchSkip {
+                    idea_id: d.idea_id.clone(),
+                    reason: "project has no root_path — cannot spawn a fleet session".into(),
+                });
+                // The task row stays (visible in the Run Desk) but no session ran.
+                spawned.push(d);
+                continue;
+            };
+            let task_text = if unattended {
+                format!("{}\n\n{}", d.prompt, UNATTENDED_DISPATCH_GUARDRAILS)
+            } else {
+                d.prompt.clone()
+            };
+            match crate::commands::fleet::commands::fleet_spawn_headless_session(
+                app.clone(),
+                root,
+                task_text,
+                None,
+            )
+            .await
+            {
+                Ok(session_id) => {
+                    let now = chrono::Utc::now().to_rfc3339();
+                    let _ = repo::update_task(
+                        db,
+                        &d.task_id,
+                        None,
+                        None,
+                        Some("running"),
+                        Some(Some(session_id.as_str())),
+                        None,
+                        None,
+                        None,
+                        Some(Some(now.as_str())),
+                        None,
+                    );
+                    d.session_id = Some(session_id);
+                    started = true;
+                }
+                Err(e) => {
+                    skipped.push(DispatchSkip {
+                        idea_id: d.idea_id.clone(),
+                        reason: format!("fleet spawn failed: {e}"),
+                    });
+                }
+            }
+            spawned.push(d);
+        }
+        dispatched = spawned;
     }
 
-    Ok(DispatchIdeasResult { target, dispatched, skipped, started })
+    Ok(DispatchIdeasResult {
+        target: target.to_string(),
+        dispatched,
+        skipped,
+        started,
+    })
 }
 
 #[tauri::command]
@@ -1194,56 +1329,74 @@ pub fn dev_tools_run_triage_rules(
     project_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let outcome = run_triage_rules_core(&state.db, &project_id)?;
+    Ok(serde_json::json!({
+        "applied": outcome.applied,
+        "ideas_affected": outcome.ideas_affected,
+    }))
+}
 
+/// What a mechanical triage-rules pass did — the accepted ids are what the
+/// Overnight Portfolio Engine dispatches (its "auto-accepted ideas" set).
+#[derive(Debug, Default)]
+pub struct TriageRunOutcome {
+    /// Number of enabled rules that were evaluated.
+    pub applied: usize,
+    /// Ideas that received a verdict (accepted + rejected).
+    pub ideas_affected: usize,
+    /// Ideas auto-ACCEPTED this pass, in evaluation order.
+    pub accepted_idea_ids: Vec<String>,
+    /// Ideas auto-rejected this pass.
+    pub rejected_count: usize,
+}
+
+/// The IPC-free triage core — purely mechanical rule evaluation (no LLM), the
+/// same first-matching-rule-wins pass `dev_tools_run_triage_rules` runs, minus
+/// the auth gate so the overnight tick can call it headlessly.
+pub fn run_triage_rules_core(
+    db: &crate::db::DbPool,
+    project_id: &str,
+) -> Result<TriageRunOutcome, AppError> {
     // 1. Fetch enabled rules
-    let rules = repo::list_triage_rules(&state.db, Some(&project_id))?;
+    let rules = repo::list_triage_rules(db, Some(project_id))?;
     let enabled_rules: Vec<_> = rules.into_iter().filter(|r| r.enabled).collect();
 
     if enabled_rules.is_empty() {
-        return Ok(serde_json::json!({ "applied": 0, "ideas_affected": 0 }));
+        return Ok(TriageRunOutcome::default());
     }
 
     // 2. Fetch pending ideas
-    let ideas = repo::list_ideas(
-        &state.db,
-        Some(&project_id),
-        Some("pending"),
-        None,
-        None,
-        None,
-    )?;
+    let ideas = repo::list_ideas(db, Some(project_id), Some("pending"), None, None, None)?;
 
-    let mut ideas_affected = 0;
+    let mut outcome = TriageRunOutcome {
+        applied: enabled_rules.len(),
+        ..Default::default()
+    };
 
     // 3. Evaluate rules against each idea (first matching rule wins)
     for idea in &ideas {
         for rule in &enabled_rules {
             if triage::evaluate_conditions(&rule.conditions, idea) {
-                let new_status = if rule.action == "accept" {
-                    "accepted"
-                } else {
-                    "rejected"
-                };
-                let rejection_reason = if new_status == "rejected" {
-                    Some(format!("Auto-rejected by triage rule '{}'", rule.name))
-                } else {
+                let accepted = rule.action == "accept";
+                let rejection_reason = if accepted {
                     None
+                } else {
+                    Some(format!("Auto-rejected by triage rule '{}'", rule.name))
                 };
                 // Routed through the shared verdict core (plan 1B), so a rule
                 // firing writes the same decision memory and the same
                 // workspace-adoption sync a human accept/reject would.
-                let verdict = if new_status == "accepted" {
+                let verdict = if accepted {
                     IdeaVerdict::Accept
                 } else {
                     IdeaVerdict::Reject {
                         reason: rejection_reason,
                     }
                 };
-                let _ =
-                    apply_idea_verdict_by(&state.db, &idea.id, verdict, "TriageRule");
+                let _ = apply_idea_verdict_by(db, &idea.id, verdict, "TriageRule");
                 // Increment times_fired
                 let _ = repo::update_triage_rule(
-                    &state.db,
+                    db,
                     &rule.id,
                     None,
                     None,
@@ -1251,13 +1404,18 @@ pub fn dev_tools_run_triage_rules(
                     None,
                     Some(rule.times_fired + 1),
                 );
-                ideas_affected += 1;
+                outcome.ideas_affected += 1;
+                if accepted {
+                    outcome.accepted_idea_ids.push(idea.id.clone());
+                } else {
+                    outcome.rejected_count += 1;
+                }
                 break; // first match wins
             }
         }
     }
 
-    Ok(serde_json::json!({ "applied": enabled_rules.len(), "ideas_affected": ideas_affected }))
+    Ok(outcome)
 }
 
 // ============================================================================

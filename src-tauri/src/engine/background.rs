@@ -642,6 +642,13 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Overnight Portfolio Engine — nightly mechanical scan-delta → triage
+        // rules → budget-governed fleet dispatch per autopilot suggest/full
+        // project (explicit opt-in only; no global flag). Branch-only writes.
+        Box::new(crate::commands::infrastructure::overnight::OvernightEngineSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Fleet liveness watchdog — raises ONE deduped fleet_stall incident +
         // notification when autonomy is on, work is available, no quota
         // cooldown applies, and nothing has executed for 2h (the 06-09 silent

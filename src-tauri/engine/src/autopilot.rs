@@ -24,9 +24,17 @@
 //! ```text
 //!   off      → nothing
 //!   measure  → KpiEvaluation
-//!   suggest  → KpiEvaluation, KpiGoalDerivation        (goals derived, not advanced)
-//!   full     → KpiEvaluation, KpiGoalDerivation, GoalAdvancement
+//!   suggest  → KpiEvaluation, KpiGoalDerivation, ScanAndTriage   (finds + triages, never spends on fixes)
+//!   full     → all of the above + GoalAdvancement + DispatchFixes
 //! ```
+//!
+//! `ScanAndTriage`/`DispatchFixes` power the Overnight Portfolio Engine
+//! (`commands::infrastructure::overnight`): the nightly mechanical tick that
+//! computes a scan delta, runs the project's triage rules, and — on `full`
+//! only — dispatches the auto-accepted ideas to fleet sessions. The budget
+//! governor's degrade path (`full` → `suggest`) maps exactly onto this split:
+//! a degraded project keeps scanning + triaging but can no longer spend on
+//! dispatch.
 
 use std::collections::HashMap;
 
@@ -52,6 +60,12 @@ pub enum Capability {
     KpiEvaluation,
     KpiGoalDerivation,
     GoalAdvancement,
+    /// Overnight tick: compute the incremental scan delta + run the project's
+    /// mechanical triage rules. Read/classify only — spends nothing on fixes.
+    ScanAndTriage,
+    /// Overnight tick: dispatch auto-accepted backlog ideas to unattended
+    /// fleet fix sessions (branch-only writes; budget-governed pre-dispatch).
+    DispatchFixes,
 }
 
 impl AutopilotMode {
@@ -81,7 +95,7 @@ impl AutopilotMode {
         match self {
             Self::Off => false,
             Self::Measure => matches!(cap, KpiEvaluation),
-            Self::Suggest => matches!(cap, KpiEvaluation | KpiGoalDerivation),
+            Self::Suggest => matches!(cap, KpiEvaluation | KpiGoalDerivation | ScanAndTriage),
             Self::Full => true,
         }
     }
@@ -149,6 +163,13 @@ mod tests {
         assert!(AutopilotMode::Suggest.allows(KpiGoalDerivation));
         assert!(!AutopilotMode::Suggest.allows(GoalAdvancement));
         assert!(AutopilotMode::Full.allows(GoalAdvancement));
+        // Overnight engine capabilities: suggest scans + triages but must
+        // NEVER dispatch (that split IS the budget-governor degrade semantics).
+        assert!(!AutopilotMode::Measure.allows(ScanAndTriage));
+        assert!(AutopilotMode::Suggest.allows(ScanAndTriage));
+        assert!(!AutopilotMode::Suggest.allows(DispatchFixes));
+        assert!(AutopilotMode::Full.allows(ScanAndTriage));
+        assert!(AutopilotMode::Full.allows(DispatchFixes));
     }
 
     #[test]

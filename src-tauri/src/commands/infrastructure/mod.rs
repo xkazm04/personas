@@ -28,6 +28,7 @@ pub mod memory_ledger;
 pub mod use_case_scan;
 pub mod llm_spend;
 pub mod incremental_scan;
+pub mod overnight;
 pub mod qwen_engine;
 pub mod research_lab;
 pub mod scraper;
