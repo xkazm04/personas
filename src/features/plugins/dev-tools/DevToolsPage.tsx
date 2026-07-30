@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
@@ -27,7 +27,7 @@ export default function DevToolsPage() {
         key={devToolsTab}
         className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
       >
-        <Suspense fallback={<SuspenseFallback />}>
+        <Suspense fallback={<RouteChunkSkeleton />}>
           {devToolsTab === 'overview' && <ProjectOverviewPage />}
           {devToolsTab === 'llm-overview' && <LlmOverviewPage />}
           {devToolsTab === 'context-map' && <ContextMapPage />}
