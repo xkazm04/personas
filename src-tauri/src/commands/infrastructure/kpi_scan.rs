@@ -694,7 +694,11 @@ async fn run_kpi_scan(
             .map(|g| (g.name.to_lowercase(), g.id))
             .collect();
     // Duplicate guard: existing non-archived KPI names (case-insensitive).
-    let existing: std::collections::HashSet<String> = repo::list_kpis(pool, project_id, None)
+    // Mutable because names created DURING this scan join the set — the CLI's
+    // --verbose stream delivers each turn as both a JSON event and a plain-text
+    // line, so without this every proposal would be parsed and inserted twice
+    // (the same dual-delivery that duplicated contexts in the context lane).
+    let mut existing: std::collections::HashSet<String> = repo::list_kpis(pool, project_id, None)
         .unwrap_or_default()
         .into_iter()
         .filter(|k| k.status != "archived")
@@ -844,6 +848,7 @@ async fn run_kpi_scan(
                 ) {
                     Ok(kpi) => {
                         created += 1;
+                        existing.insert(p.name.to_lowercase());
                         KPI_SCAN_JOBS.emit_line(
                             app,
                             scan_id,
