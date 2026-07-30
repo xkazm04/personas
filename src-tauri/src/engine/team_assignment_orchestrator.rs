@@ -173,6 +173,14 @@ pub fn run_assignment(
                     Some(&e.to_string()),
                 );
                 emit_progress(&deps.app, &assignment_id, "failed", None);
+                // Self-Evolving Team: even a loop-crash failure is a learning
+                // signal — record the outcome (idempotent) + update trust.
+                crate::engine::team_assignment_learning::spawn_on_terminal(
+                    deps.pool.clone(),
+                    deps.app.clone(),
+                    assignment_id.clone(),
+                    "failed".to_string(),
+                );
             }
         }
     });
@@ -329,6 +337,14 @@ pub fn resolve_review_abort(
 ) -> Result<(), AppError> {
     assignment_repo::update_assignment_status(&pool, &assignment_id, "aborted", reason.as_deref())?;
     emit_progress(&app, &assignment_id, "aborted", None);
+    // Self-Evolving Team: an abort is terminal — record the outcome so the
+    // ledger stays complete (no retrospective is convened for aborts).
+    crate::engine::team_assignment_learning::spawn_on_terminal(
+        pool,
+        app,
+        assignment_id,
+        "aborted".to_string(),
+    );
     Ok(())
 }
 
@@ -659,6 +675,16 @@ async fn tick_loop(
                     }
                 }
             }
+            // Self-Evolving Team: terminal status reached — write the
+            // assignment_outcome record, run the Brier trust update, and (for
+            // non-trivial runs) convene the budget-capped retrospective.
+            // Fire-and-forget: learning must never delay loop exit.
+            crate::engine::team_assignment_learning::spawn_on_terminal(
+                deps.pool.clone(),
+                deps.app.clone(),
+                assignment_id.to_string(),
+                final_status.to_string(),
+            );
             return Ok(());
         }
 
@@ -1502,8 +1528,19 @@ async fn resolve_assignee(
     let members = team_repo::get_members(&deps.pool, &assignment.team_id)?;
     let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
     for m in &members {
-        if let Ok(p) = persona_repo::get_by_id(&deps.pool, &m.persona_id) {
+        if let Ok(mut p) = persona_repo::get_by_id(&deps.pool, &m.persona_id) {
             if check_persona_eligible(&p).is_ok() {
+                // Self-Evolving Team: overlay the team-scoped, outcome-learned
+                // (Brier-updated, floored) trust when it exists — the matcher's
+                // trust tie-break then reflects how this persona ACTUALLY
+                // performed on this team, not just its global execution stats.
+                if let Ok(Some(t)) = crate::db::repos::orchestration::assignment_outcomes::get_trust(
+                    &deps.pool,
+                    &assignment.team_id,
+                    &p.id,
+                ) {
+                    p.trust_score = t.trust;
+                }
                 personas.push(p);
             }
         }
@@ -1526,6 +1563,14 @@ async fn resolve_assignee(
         .clone()
         .unwrap_or_else(|| step.title.clone());
 
+    // Self-Evolving Team: retrieve the lessons past retrospectives distilled
+    // for this team — the llm_eval prompt gains a "Team lessons" section.
+    // Empty when the team hasn't learned anything yet (honest omission).
+    let team_lessons = crate::engine::team_assignment_learning::team_lessons_for_matching(
+        &deps.pool,
+        &assignment.team_id,
+    );
+
     let result = match strategy {
         "embedding" => match deps.embedding_manager.as_ref() {
             Some(embedder) => {
@@ -1546,6 +1591,7 @@ async fn resolve_assignee(
                             &step.title,
                             &step_text,
                             &candidates,
+                            &team_lessons,
                             MATCH_LLM_TIMEOUT_SECS,
                         )
                         .await
@@ -1565,6 +1611,7 @@ async fn resolve_assignee(
                     &step.title,
                     &step_text,
                     &candidates,
+                    &team_lessons,
                     MATCH_LLM_TIMEOUT_SECS,
                 )
                 .await
@@ -1575,6 +1622,7 @@ async fn resolve_assignee(
                 &step.title,
                 &step_text,
                 &candidates,
+                &team_lessons,
                 MATCH_LLM_TIMEOUT_SECS,
             )
             .await

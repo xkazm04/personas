@@ -10,6 +10,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { setTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';
 import { AssignmentReplay } from '@/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay';
+import { MissionLearning } from '@/features/teams/sub_assignments/MissionLearning';
 import {
   GoalChip, PersonaStack, StepProgressStrip, StepRelay,
   isLiveAssignmentStatus, stepMeta, useAssignmentSteps, usePersonaIndex,
@@ -318,6 +319,10 @@ export function GoalsMissions() {
             ) : (
               <p className="typo-body text-foreground">{ts.deck_decomposing}</p>
             )}
+
+            {/* Self-Evolving Team: the learning record for a finished mission —
+                outcome evidence, trust deltas, retro status, team lessons. */}
+            {isTerminal && <MissionLearning assignmentId={selected.id} teamId={selected.teamId} />}
           </>
         ) : (
           <p className="typo-body text-foreground">{ts.deck_select}</p>

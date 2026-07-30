@@ -305,6 +305,60 @@ pub struct CreateTeamAssignmentTemplateInput {
     pub steps: Vec<CreateTeamAssignmentStepInput>,
 }
 
+// ============================================================================
+// Self-Evolving Team v1 — learning records
+// ============================================================================
+
+/// The structured learning signal written when an assignment reaches a
+/// terminal status (`done` / `failed` / `aborted`). One row per assignment
+/// (idempotent — the first terminal transition wins). `outcome_json` carries
+/// the per-step evidence: matched persona, strategy, confidence, duration,
+/// result, and the trust delta each step produced — the raw material the
+/// retrospective deliberates over and the UI renders as the evidence drawer.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AssignmentOutcome {
+    pub id: String,
+    pub assignment_id: String,
+    pub team_id: String,
+    /// Terminal assignment status this record captured: done | failed | aborted.
+    pub status: String,
+    pub steps_total: i32,
+    pub steps_done: i32,
+    pub steps_failed: i32,
+    pub steps_skipped: i32,
+    /// Steps that needed human/QA intervention (retries or failures).
+    pub review_interventions: i32,
+    /// Wall-clock seconds from assignment start to completion, when known.
+    pub duration_secs: Option<i64>,
+    /// JSON evidence: `{ steps: [{stepId, title, personaId, strategy,
+    /// confidence, durationSecs, result, retryCount, trustBefore, trustAfter}] }`.
+    pub outcome_json: String,
+    /// The auto-retrospective deliberation seeded from this outcome, if one ran.
+    pub retro_deliberation_id: Option<String>,
+    /// Why no retrospective ran (e.g. `trivial_run`, `active_deliberation`).
+    pub retro_skipped_reason: Option<String>,
+    pub created_at: String,
+}
+
+/// Team-scoped, outcome-learned trust for one roster member — the Brier-style
+/// score `team_assignment_matching` overlays on the persona's global
+/// `trust_score` when routing steps for THIS team. Bounded by a hard floor so
+/// a few unlucky runs can never death-spiral a persona off the roster.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TeamMemberTrust {
+    pub team_id: String,
+    pub persona_id: String,
+    /// 0.0–1.0; floored at the engine's `TRUST_FLOOR`.
+    pub trust: f64,
+    /// How many step outcomes have fed this score (evidence volume).
+    pub samples: i64,
+    pub updated_at: String,
+}
+
 /// Action taken by a user resolving an `awaiting_review` step.
 /// Maps 1:1 to the four buttons in the AssignmentReviewModal (Phase A4).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
