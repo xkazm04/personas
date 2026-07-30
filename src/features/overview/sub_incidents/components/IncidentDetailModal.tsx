@@ -26,6 +26,7 @@ import {
   statusLabel,
 } from '../libs/incidentTaxonomy';
 import { IncidentDetailBreakdown } from './IncidentDetailBreakdown';
+import { IncidentDiagnosisCard } from './IncidentDiagnosisCard';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 interface IncidentDetailModalProps {
@@ -221,6 +222,10 @@ export function IncidentDetailModal({
             <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
           </div>
         </div>
+
+        {/* Autonomous NOC v1 — root-cause diagnosis (auto-attached by the
+            server evaluator, or run on demand from here). */}
+        <IncidentDiagnosisCard incidentId={incident.id} />
 
         <div className="rounded-card border border-primary/10 bg-secondary/20 p-4">
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">

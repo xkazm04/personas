@@ -18,6 +18,7 @@ import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
 import { IncidentTableHeader } from './IncidentTableHeader';
 import { IncidentAgentGroup } from './IncidentAgentGroup';
+import { AutonomousLane } from './AutonomousLane';
 import { useAgentStore } from '@/stores/agentStore';
 import { useColumnWidths } from '@/features/shared/components/display/ColumnResize';
 import { INCIDENT_COLUMNS, INCIDENT_TABLE_ID } from '../libs/incidentColumns';
@@ -472,6 +473,9 @@ export default function IncidentsInbox() {
         <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader summary={summary} filters={filters} onApplyFilters={setFilters} />
         </div>
+
+        {/* Autonomous NOC v1 — what the system fixed without a human. */}
+        <AutonomousLane onOpenIncident={openDetail} />
 
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
 

@@ -619,6 +619,38 @@ pub fn bulk_resolve(
     Ok(flipped)
 }
 
+/// Incidents the system handled without a human — the "handled autonomously"
+/// lane of the inbox (Autonomous NOC v1). Today the only stamped autonomous
+/// path is the incident-continuation loop (`continued_at IS NOT NULL`): the
+/// blocked work was re-run by the reactive consumer, no human click involved.
+/// Future auto-remediation paths should stamp the same column (or a successor)
+/// so this lane stays the single honest source. Sorted by most recent
+/// continuation; any status qualifies (a continued incident may later be
+/// resolved by the sweep or the user).
+pub fn list_handled_autonomously(
+    pool: &DbPool,
+    limit: i64,
+) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!(
+        "audit_incidents",
+        "audit_incidents::list_handled_autonomously",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM audit_incidents
+                 WHERE continued_at IS NOT NULL
+                 ORDER BY continued_at DESC
+                 LIMIT ?1",
+            )?;
+            let rows = stmt.query_map(params![limit.clamp(1, 200)], row_to_incident)?;
+            Ok(collect_rows(
+                rows,
+                "audit_incidents::list_handled_autonomously",
+            ))
+        }
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1004,5 +1036,41 @@ mod tests {
             flipped_again.is_empty(),
             "re-resolving an all-resolved selection must flip nothing"
         );
+    }
+
+    /// The "handled autonomously" lane lists ONLY incidents with a stamped
+    /// `continued_at` (the incident-continuation loop's claim), newest
+    /// continuation first — a plain open incident never appears there.
+    #[test]
+    fn handled_autonomously_lane_filters_on_continued_at() {
+        let pool = init_test_db().unwrap();
+        // Continuable source so claim_continuation applies.
+        let a = promote(
+            &pool,
+            make_input("persona_blocker", "pb-1", "high", "Blocked run A"),
+        )
+        .unwrap()
+        .unwrap();
+        let _b = promote(
+            &pool,
+            make_input("persona_blocker", "pb-2", "high", "Blocked run B"),
+        )
+        .unwrap()
+        .unwrap();
+
+        assert!(
+            list_handled_autonomously(&pool, 50).unwrap().is_empty(),
+            "nothing continued yet — the lane must be empty (honest empty state)"
+        );
+
+        // claim_continuation requires resolved status first (P2.3b consumer
+        // path); resolve then claim.
+        assert!(resolve(&pool, &a, None).unwrap());
+        assert!(claim_continuation(&pool, &a).unwrap());
+
+        let lane = list_handled_autonomously(&pool, 50).unwrap();
+        assert_eq!(lane.len(), 1, "only the continued incident is in the lane");
+        assert_eq!(lane[0].id, a);
+        assert!(lane[0].continued_at.is_some());
     }
 }

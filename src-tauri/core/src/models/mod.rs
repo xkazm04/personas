@@ -26,6 +26,7 @@ mod gitlab;
 mod healing;
 #[cfg(feature = "p2p")]
 mod identity;
+mod incident_diagnosis;
 mod json_column;
 mod knowledge;
 #[cfg(feature = "ml")]
@@ -102,6 +103,7 @@ pub use genome::*;
 pub use healing::*;
 #[cfg(feature = "p2p")]
 pub use identity::*;
+pub use incident_diagnosis::*;
 pub use json_column::Json;
 pub use knowledge::*;
 #[cfg(feature = "ml")]

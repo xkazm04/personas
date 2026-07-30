@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { AuditIncident } from "@/lib/bindings/AuditIncident";
 import type { AuditIncidentSummary } from "@/lib/bindings/AuditIncidentSummary";
+import type { IncidentDiagnosis } from "@/lib/bindings/IncidentDiagnosis";
 import type { IncidentFilters } from "@/lib/bindings/IncidentFilters";
 
 // ============================================================================
@@ -11,7 +12,7 @@ import type { IncidentFilters } from "@/lib/bindings/IncidentFilters";
 // See `src/features/overview/sub_incidents/DESIGN.md` for the architecture.
 // All commands require IPC auth (handled by `invokeWithTimeout`).
 
-export type { AuditIncident, AuditIncidentSummary, IncidentFilters };
+export type { AuditIncident, AuditIncidentSummary, IncidentDiagnosis, IncidentFilters };
 
 export const listAuditIncidents = (
   filters?: IncidentFilters,
@@ -58,4 +59,26 @@ export const bulkResolveAuditIncidents = (ids: string[], resolutionNote?: string
   invoke<number>("bulk_resolve_audit_incidents", {
     ids,
     resolutionNote: resolutionNote ?? null,
+  });
+
+// ============================================================================
+// Autonomous NOC v1 — diagnosis + "handled autonomously" lane
+// ============================================================================
+
+/** Stored root-cause diagnosis for an incident (null when not yet diagnosed). */
+export const getIncidentDiagnosis = (incidentId: string) =>
+  invoke<IncidentDiagnosis | null>("get_incident_diagnosis", { incidentId });
+
+/**
+ * Run (or return the stored) diagnosis for an incident. May create ONE
+ * pending companion approval proposing a remediation — proposal only, the
+ * user approves/rejects it in Athena's Approvals.
+ */
+export const diagnoseAuditIncident = (incidentId: string) =>
+  invoke<IncidentDiagnosis>("diagnose_audit_incident", { incidentId });
+
+/** Incidents the system handled without a human (sparse in v1 by design). */
+export const listAutonomouslyHandledIncidents = (limit?: number) =>
+  invoke<AuditIncident[]>("list_autonomously_handled_incidents", {
+    limit: limit ?? null,
   });
