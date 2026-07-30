@@ -649,7 +649,11 @@ pub fn run() {
             // Create CDC channel for reactive SQLite change notifications
             let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
 
-            let pool = db::init_db(&app_data_dir, Some(cdc_sender))?;
+            // Reversible Agent: durable change-journal capture channel
+            // (preupdate hook -> batch writer thread; see db::journal).
+            let (journal_sender, journal_receiver) = db::journal::create_journal_channel(2048);
+
+            let pool = db::init_db_with_journal(&app_data_dir, Some(cdc_sender), Some(journal_sender))?;
             tracing::info!("Database pool ready (max_size=4, CDC enabled)");
             st.checkpoint("db_init");
 
@@ -1324,6 +1328,10 @@ pub fn run() {
             );
             st.checkpoint("cdc_drain_task");
 
+            // Reversible Agent: journal writer thread (batches captures into
+            // the change_journal table; prunes retention at startup).
+            db::journal::spawn_journal_writer(pool.clone(), journal_receiver);
+
             db::spawn_idle_maintenance_task(pool.clone(), user_db_pool.clone());
 
             // Persona-jobs worker — projects the dream-job shape onto
@@ -1890,6 +1898,8 @@ pub fn run() {
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
             commands::execution::executions::get_chain_stop_reasons,
+            commands::execution::journal::get_execution_data_diff,
+            commands::execution::journal::undo_execution,
             commands::execution::executions::list_active_chains,
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
@@ -2092,6 +2102,9 @@ pub fn run() {
             commands::design::template_feedback::get_template_performance,
             // Design -- Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
+            commands::design::team_synthesis::synthesize_project_crew,
+            commands::design::team_synthesis::get_project_pulse_snapshots,
+            commands::design::team_synthesis::get_crew_fitness,
             // Design -- Platform Definitions
             commands::design::platform_definitions::list_platform_definitions,
             commands::design::platform_definitions::get_platform_definition,
@@ -2157,6 +2170,10 @@ pub fn run() {
             commands::credentials::resources::list_connector_resources,
             commands::credentials::resources::set_credential_scope_enforcement,
             // Credentials -- External API Keys (A2A Gateway management API auth)
+            commands::credentials::broker::mint_credential_handle,
+            commands::credentials::broker::list_broker_consumers,
+            commands::credentials::broker::list_broker_consumer_activity,
+            commands::credentials::broker::revoke_broker_consumer,
             commands::credentials::external_api_keys::create_external_api_key,
             commands::credentials::external_api_keys::list_external_api_keys,
             commands::credentials::external_api_keys::revoke_external_api_key,
@@ -3256,6 +3273,9 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_run_triage_rules,
+            // Dev Tools -- Overnight Portfolio Engine
+            commands::infrastructure::overnight::dev_tools_list_night_runs,
+            commands::infrastructure::overnight::dev_tools_run_overnight_now,
             // Dev Tools -- Pipelines (Idea-to-Execution)
             // Dev Tools -- Health Snapshots
             // Dev Tools -- Cross-Project (Codebases connector)

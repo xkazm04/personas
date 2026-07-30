@@ -4503,10 +4503,38 @@
       "unverifiable_tooltip": "Trình kết nối này không có kiểm tra trực tiếp -- thông tin xác thực được lưu trữ nhưng chưa bao giờ được xác minh với nhà cung cấp",
       "title_catalog": "Danh mục",
       "title_dependencies": "Phụ thuộc",
-      "title_databases": "Cơ sở dữ liệu"
+      "title_databases": "Cơ sở dữ liệu",
+      "title_broker": "Trung gian"
     },
     "breadcrumb": {
       "aria_label": "Điều hướng Kho lưu trữ"
+    },
+    "broker": {
+      "title": "Trung gian thông tin xác thực",
+      "subtitle": "Bên tiêu thụ bên ngoài chỉ giữ handle có thể thu hồi — bí mật không bao giờ rời khỏi kho lưu trữ. Mọi lệnh gọi qua trung gian đều được kiểm toán và cập nhật vào biểu đồ phạm vi ảnh hưởng theo thời gian thực.",
+      "exclusion_note": "Hiện chỉ hỗ trợ connector Bearer và khóa API. Các SDK tự ký yêu cầu (ví dụ AWS SigV4) hoặc cần websocket chưa thể đi qua trung gian — những thông tin xác thực đó vẫn phải nằm ở phía bên tiêu thụ.",
+      "consumers_header": "Bên tiêu thụ",
+      "loading": "Đang tải bên tiêu thụ",
+      "load_error": "Không thể tải danh sách bên tiêu thụ của trung gian.",
+      "empty_title": "Chưa có bên tiêu thụ nào",
+      "empty_body": "Chưa có tiến trình bên ngoài nào dùng thông tin xác thực qua trung gian. Tạo handle cho một thông tin xác thực và trỏ script hoặc agent của bạn tới proxy cục bộ — hoạt động của nó sẽ hiển thị tại đây.",
+      "status_active": "Đang hoạt động",
+      "status_revoked": "Đã thu hồi",
+      "status_inactive": "Không hoạt động",
+      "calls_one": "{count} lệnh gọi",
+      "calls_other": "{count} lệnh gọi",
+      "last_used": "Dùng lần cuối",
+      "expires": "Hết hạn",
+      "credentials_used": "Thông tin xác thực đã dùng",
+      "kill_switch": "Thu hồi quyền truy cập",
+      "kill_switch_confirm": "Thu hồi?",
+      "kill_switch_hint": "Công tắc khẩn cấp: handle của bên tiêu thụ ngừng hoạt động ngay từ yêu cầu kế tiếp.",
+      "revoking": "Đang thu hồi...",
+      "revoke_error": "Không thể thu hồi bên tiêu thụ này.",
+      "activity_show": "Hiện hoạt động",
+      "activity_hide": "Ẩn hoạt động",
+      "activity_empty": "Chưa ghi nhận yêu cầu nào cho bên tiêu thụ này.",
+      "activity_loading": "Đang tải hoạt động"
     },
     "credential_card": {
       "delete_credential": "Xóa thông tin xác thực",

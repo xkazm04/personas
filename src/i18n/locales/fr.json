@@ -4503,10 +4503,38 @@
       "unverifiable_tooltip": "Ce connecteur n'a aucune sonde en direct -- les identifiants sont stockés mais n'ont jamais été vérifiés auprès du fournisseur",
       "title_catalog": "Catalogue",
       "title_dependencies": "Dépendances",
-      "title_databases": "Bases de données"
+      "title_databases": "Bases de données",
+      "title_broker": "Courtier"
     },
     "breadcrumb": {
       "aria_label": "Fil d'Ariane"
+    },
+    "broker": {
+      "title": "Courtier d'identifiants",
+      "subtitle": "Les consommateurs externes ne détiennent que des jetons révocables — les secrets ne quittent jamais le coffre-fort. Chaque appel relayé est audité et alimente le graphe en direct du rayon d’impact.",
+      "exclusion_note": "Connecteurs Bearer et clé API uniquement pour l'instant. Les SDK qui signent eux-mêmes leurs requêtes (p. ex. AWS SigV4) ou qui nécessitent des websockets ne peuvent pas encore être relayés — ces identifiants doivent rester chez le consommateur.",
+      "consumers_header": "Consommateurs",
+      "loading": "Chargement des consommateurs",
+      "load_error": "Impossible de charger les consommateurs du courtier.",
+      "empty_title": "Aucun consommateur pour l'instant",
+      "empty_body": "Aucun processus externe n'a encore utilisé d'identifiant via le courtier. Créez un jeton pour un identifiant et pointez votre script ou agent vers le proxy local — son activité apparaîtra ici.",
+      "status_active": "Actif",
+      "status_revoked": "Révoqué",
+      "status_inactive": "Inactif",
+      "calls_one": "{count} appel",
+      "calls_other": "{count} appels",
+      "last_used": "Dernière utilisation",
+      "expires": "Expire",
+      "credentials_used": "Identifiants utilisés",
+      "kill_switch": "Révoquer l'accès",
+      "kill_switch_confirm": "Révoquer ?",
+      "kill_switch_hint": "Coupe-circuit : le jeton du consommateur cesse de fonctionner dès sa prochaine requête.",
+      "revoking": "Révocation...",
+      "revoke_error": "Impossible de révoquer ce consommateur.",
+      "activity_show": "Afficher l'activité",
+      "activity_hide": "Masquer l'activité",
+      "activity_empty": "Aucune requête enregistrée pour ce consommateur pour l'instant.",
+      "activity_loading": "Chargement de l'activité"
     },
     "credential_card": {
       "delete_credential": "Supprimer l'identifiant",

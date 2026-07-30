@@ -4503,10 +4503,38 @@
       "unverifiable_tooltip": "このコネクタにはライブプローブがありません -- 認証情報は保存されていますが、プロバイダーに対して確認されたことはありません",
       "title_catalog": "カタログ",
       "title_dependencies": "依存関係",
-      "title_databases": "データベース"
+      "title_databases": "データベース",
+      "title_broker": "ブローカー"
     },
     "breadcrumb": {
       "aria_label": "ボルトのパンくずリスト"
+    },
+    "broker": {
+      "title": "認証情報ブローカー",
+      "subtitle": "外部コンシューマーは失効可能なハンドルのみを保持し、シークレットが保管庫の外に出ることはありません。プロキシ経由のすべての呼び出しは監査され、影響範囲のライブグラフに反映されます。",
+      "exclusion_note": "現時点では Bearer と API キーのコネクターのみ対応しています。リクエストを自身で署名する SDK（AWS SigV4 など）や websocket が必要なものはまだプロキシできません — それらの認証情報は引き続きコンシューマー側で保持する必要があります。",
+      "consumers_header": "コンシューマー",
+      "loading": "コンシューマーを読み込み中",
+      "load_error": "ブローカーのコンシューマーを読み込めませんでした。",
+      "empty_title": "コンシューマーはまだありません",
+      "empty_body": "ブローカー経由で認証情報を使用した外部プロセスはまだありません。認証情報のハンドルを発行し、スクリプトやエージェントをローカルプロキシに向けると、その活動がここに表示されます。",
+      "status_active": "有効",
+      "status_revoked": "失効済み",
+      "status_inactive": "無効",
+      "calls_one": "{count} 回の呼び出し",
+      "calls_other": "{count} 回の呼び出し",
+      "last_used": "最終使用",
+      "expires": "有効期限",
+      "credentials_used": "使用された認証情報",
+      "kill_switch": "アクセスを失効",
+      "kill_switch_confirm": "失効しますか？",
+      "kill_switch_hint": "キルスイッチ：コンシューマーのハンドルは次のリクエストから直ちに無効になります。",
+      "revoking": "失効処理中...",
+      "revoke_error": "このコンシューマーを失効できませんでした。",
+      "activity_show": "アクティビティを表示",
+      "activity_hide": "アクティビティを非表示",
+      "activity_empty": "このコンシューマーのリクエストはまだ記録されていません。",
+      "activity_loading": "アクティビティを読み込み中"
     },
     "credential_card": {
       "delete_credential": "認証情報を削除",

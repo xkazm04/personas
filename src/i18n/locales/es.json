@@ -4503,10 +4503,38 @@
       "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor",
       "title_catalog": "Catálogo",
       "title_dependencies": "Dependencias",
-      "title_databases": "Bases de datos"
+      "title_databases": "Bases de datos",
+      "title_broker": "Bróker"
     },
     "breadcrumb": {
       "aria_label": "Navegación del Bóveda"
+    },
+    "broker": {
+      "title": "Bróker de credenciales",
+      "subtitle": "Los consumidores externos solo tienen identificadores revocables — los secretos nunca salen de la bóveda. Cada llamada que pasa por el proxy se audita y alimenta el grafo en vivo del radio de impacto.",
+      "exclusion_note": "Por ahora solo conectores Bearer y de clave API. Los SDK que firman las peticiones por sí mismos (p. ej. AWS SigV4) o que necesitan websockets aún no se pueden pasar por el proxy — esas credenciales deben seguir en manos del consumidor.",
+      "consumers_header": "Consumidores",
+      "loading": "Cargando consumidores",
+      "load_error": "No se pudieron cargar los consumidores del bróker.",
+      "empty_title": "Aún no hay consumidores",
+      "empty_body": "Ningún proceso externo ha usado todavía una credencial a través del bróker. Crea un identificador para una credencial y apunta tu script o agente al proxy local — su actividad aparecerá aquí.",
+      "status_active": "Activo",
+      "status_revoked": "Revocado",
+      "status_inactive": "Inactivo",
+      "calls_one": "{count} llamada",
+      "calls_other": "{count} llamadas",
+      "last_used": "Último uso",
+      "expires": "Expira",
+      "credentials_used": "Credenciales usadas",
+      "kill_switch": "Revocar acceso",
+      "kill_switch_confirm": "¿Revocar?",
+      "kill_switch_hint": "Interruptor de emergencia: el identificador del consumidor deja de funcionar en su siguiente petición.",
+      "revoking": "Revocando...",
+      "revoke_error": "No se pudo revocar este consumidor.",
+      "activity_show": "Mostrar actividad",
+      "activity_hide": "Ocultar actividad",
+      "activity_empty": "Aún no hay peticiones registradas para este consumidor.",
+      "activity_loading": "Cargando actividad"
     },
     "credential_card": {
       "delete_credential": "Eliminar credencial",

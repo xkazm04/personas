@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Získat koučink portfolia od Directora",
     "pm_event_chain_title": "Řetězit agenty pomocí posluchačů událostí",
     "pm_live_stream_title": "Sledovat kaskádu řetězů v reálném čase",
-    "pm_athena_fleet_title": "Požádat Athenu o analýzu vaší flotily"
+    "pm_athena_fleet_title": "Požádat Athenu o analýzu vaší flotily",
+    "composed_tours": "Sestavila Athena",
+    "composed_badge": "Od Atheny",
+    "composed_stale": "Může být zastaralé — aplikace se od sestavení změnila",
+    "composed_empty": "Když požádáte Athenu, aby vám ukázala, jak něco funguje, průvodci, které sestaví, se objeví zde."
   },
   "setup_stepper": {
     "your_profile": "Váš profil",

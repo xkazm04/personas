@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "احصل على توجيه المحفظة من Director",
     "pm_event_chain_title": "ربط الوكلاء بمستمعي الأحداث",
     "pm_live_stream_title": "مشاهدة تتالي السلاسل في الوقت الفعلي",
-    "pm_athena_fleet_title": "اطلب من Athena تحليل أسطولك"
+    "pm_athena_fleet_title": "اطلب من Athena تحليل أسطولك",
+    "composed_tours": "من إعداد Athena",
+    "composed_badge": "أعدّتها Athena",
+    "composed_stale": "قد يكون قديمًا — تغيّر التطبيق منذ إعداده",
+    "composed_empty": "عندما تطلب من Athena أن تريك كيفية عمل شيء ما، تظهر الجولات التي تُعدّها هنا."
   },
   "setup_stepper": {
     "your_profile": "ملفك الشخصي",

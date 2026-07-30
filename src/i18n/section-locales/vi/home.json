@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Nhận tư vấn danh mục từ Director",
     "pm_event_chain_title": "Kết nối agent bằng trình lắng nghe sự kiện",
     "pm_live_stream_title": "Xem chuỗi cascade theo thời gian thực",
-    "pm_athena_fleet_title": "Nhờ Athena phân tích fleet của bạn"
+    "pm_athena_fleet_title": "Nhờ Athena phân tích fleet của bạn",
+    "composed_tours": "Do Athena soạn",
+    "composed_badge": "Athena soạn",
+    "composed_stale": "Có thể đã lỗi thời — ứng dụng đã thay đổi kể từ khi soạn",
+    "composed_empty": "Khi bạn nhờ Athena hướng dẫn cách một tính năng hoạt động, các hướng dẫn cô ấy soạn sẽ hiển thị ở đây."
   },
   "setup_stepper": {
     "your_profile": "Hồ sơ của bạn",

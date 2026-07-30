@@ -4503,10 +4503,38 @@
       "unverifiable_tooltip": "此连接器没有实时探测 -- 凭据已存储，但从未针对提供商进行过验证",
       "title_catalog": "目录",
       "title_dependencies": "依赖项",
-      "title_databases": "数据库"
+      "title_databases": "数据库",
+      "title_broker": "代理"
     },
     "breadcrumb": {
       "aria_label": "保险库面包屑"
+    },
+    "broker": {
+      "title": "凭据代理",
+      "subtitle": "外部消费方只持有可撤销的句柄——机密永不离开密钥库。每次经代理转发的调用都会被审计，并实时汇入影响范围图。",
+      "exclusion_note": "目前仅支持 Bearer 和 API 密钥连接器。自行签名请求的 SDK（如 AWS SigV4）或需要 websocket 的场景暂时无法代理——这些凭据仍需保存在消费方。",
+      "consumers_header": "消费方",
+      "loading": "正在加载消费方",
+      "load_error": "无法加载代理消费方。",
+      "empty_title": "暂无消费方",
+      "empty_body": "尚无外部进程通过代理使用过凭据。为某个凭据签发句柄，并将你的脚本或代理程序指向本地代理，其活动将显示在这里。",
+      "status_active": "活跃",
+      "status_revoked": "已撤销",
+      "status_inactive": "不活跃",
+      "calls_one": "{count} 次调用",
+      "calls_other": "{count} 次调用",
+      "last_used": "最近使用",
+      "expires": "过期时间",
+      "credentials_used": "使用的凭据",
+      "kill_switch": "撤销访问",
+      "kill_switch_confirm": "确认撤销？",
+      "kill_switch_hint": "紧急开关：消费方的句柄在其下一次请求时立即失效。",
+      "revoking": "正在撤销...",
+      "revoke_error": "无法撤销该消费方。",
+      "activity_show": "显示活动",
+      "activity_hide": "隐藏活动",
+      "activity_empty": "该消费方暂无请求记录。",
+      "activity_loading": "正在加载活动"
     },
     "credential_card": {
       "delete_credential": "删除凭据",

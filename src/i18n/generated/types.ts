@@ -4735,6 +4735,7 @@ export type Translations = {
       title_catalog: string;
       title_dependencies: string;
       title_databases: string;
+      title_broker: string;
       credentials_stored_one: string;
       credentials_stored_other: string;
       search_catalog: string;
@@ -4757,6 +4758,33 @@ export type Translations = {
     };
     breadcrumb: {
       aria_label: string;
+    };
+    broker: {
+      title: string;
+      subtitle: string;
+      exclusion_note: string;
+      consumers_header: string;
+      loading: string;
+      load_error: string;
+      empty_title: string;
+      empty_body: string;
+      status_active: string;
+      status_revoked: string;
+      status_inactive: string;
+      calls_one: string;
+      calls_other: string;
+      last_used: string;
+      expires: string;
+      credentials_used: string;
+      kill_switch: string;
+      kill_switch_confirm: string;
+      kill_switch_hint: string;
+      revoking: string;
+      revoke_error: string;
+      activity_show: string;
+      activity_hide: string;
+      activity_empty: string;
+      activity_loading: string;
     };
     credential_card: {
       delete_credential: string;

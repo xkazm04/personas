@@ -4329,6 +4329,59 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- Reversible Agent: durable change journal -----------------------------
+    // The persistence target of the second CDC consumer (db/journal.rs): one
+    // row per captured INSERT/UPDATE/DELETE on an allowlisted table, with
+    // the OLD row values serialized as JSON for UPDATE/DELETE (before-image;
+    // encrypted columns stay ciphertext — the hook copies values as stored)
+    // and the owning execution stamped by the attribution context.
+    //
+    // `row_pk` is the TEXT `id` of the touched row (every allowlisted table
+    // has one); undo addresses rows by pk, never by reusable rowid. `id` is
+    // a plain INTEGER PRIMARY KEY: monotonic enough for replay ordering and
+    // "later foreign write" conflict detection (only the oldest rows are
+    // ever pruned). `undo_status` NULL = live, 'undone' = reversed,
+    // 'conflict' = parked because a later foreign write touched the row.
+    //
+    // Journal writes are themselves EXCLUDED from CDC + journal capture
+    // (cdc::table_to_event returns None; journal::is_journaled_table guards
+    // explicitly), so this table cannot recurse.
+    //
+    // MUST stay INSIDE `run_incremental` — the file's tail belongs to
+    // `ensure_composite_fires_table`, which runs BEFORE this function.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "change_journal",
+            description: "Reversible Agent: durable, execution-attributed change journal with before-images",
+            already_applied: |conn| has_table(conn, "change_journal"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS change_journal (
+                        id            INTEGER PRIMARY KEY,
+                        execution_id  TEXT,
+                        tbl           TEXT NOT NULL,
+                        row_pk        TEXT,
+                        row_id        INTEGER NOT NULL,
+                        action        TEXT NOT NULL CHECK (action IN ('insert', 'update', 'delete')),
+                        before_image  TEXT,
+                        undo_status   TEXT CHECK (undo_status IN ('undone', 'conflict')),
+                        undone_at     TEXT,
+                        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_change_journal_execution
+                        ON change_journal(execution_id, id);
+                    CREATE INDEX IF NOT EXISTS idx_change_journal_key
+                        ON change_journal(tbl, row_pk, id);
+                    CREATE INDEX IF NOT EXISTS idx_change_journal_created
+                        ON change_journal(created_at);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -6588,6 +6641,99 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
                         confidence         REAL NOT NULL DEFAULT 0,
                         diagnosed_at       TEXT NOT NULL DEFAULT (datetime('now'))
                     );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- credential_consumer_edges: Zero-Plaintext Broker live blast-radius --
+    // One row per (credential, external-consumer-key) pair, UPSERTed on every
+    // proxied management-API call so the dependency graph reflects observed
+    // reality, not just declared bindings. Consumer identity is the
+    // `external_api_keys` row that authenticated the call (per-consumer
+    // handle or broad key). No FK to external_api_keys: revoked keys stay
+    // visible as historical consumers (readers join for live status).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "credential_consumer_edges",
+            description: "Create credential_consumer_edges (broker per-consumer usage edges)",
+            already_applied: |conn| has_table(conn, "credential_consumer_edges"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS credential_consumer_edges (
+                        id               TEXT PRIMARY KEY,
+                        credential_id    TEXT NOT NULL,
+                        consumer_key_id  TEXT NOT NULL,
+                        consumer_name    TEXT NOT NULL,
+                        call_count       INTEGER NOT NULL DEFAULT 0,
+                        last_status      INTEGER,
+                        first_used_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                        last_used_at     TEXT NOT NULL DEFAULT (datetime('now')),
+                        UNIQUE(credential_id, consumer_key_id)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_consumer_edges_credential
+                        ON credential_consumer_edges(credential_id);",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_consumer_edges_consumer
+                        ON credential_consumer_edges(consumer_key_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- autopilot_night_runs: Overnight Portfolio Engine ledger -------------
+    // One row per project per night (UNIQUE(project_id, night) is the
+    // once-per-night claim). Written by the overnight subscription tick and
+    // the manual `dev_tools_run_overnight_now` command; read by the
+    // night-runs list command and the morning digest. Soft ref to
+    // dev_projects (no FK): a night's audit trail survives project deletion.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "autopilot_night_runs",
+            description: "Create autopilot_night_runs (Overnight Portfolio Engine per-night ledger)",
+            already_applied: |conn| has_table(conn, "autopilot_night_runs"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS autopilot_night_runs (
+                        id                 TEXT PRIMARY KEY,
+                        project_id         TEXT NOT NULL,
+                        night              TEXT NOT NULL,
+                        mode               TEXT NOT NULL,
+                        status             TEXT NOT NULL DEFAULT 'running',
+                        scan_added         INTEGER NOT NULL DEFAULT 0,
+                        scan_modified      INTEGER NOT NULL DEFAULT 0,
+                        scan_deleted       INTEGER NOT NULL DEFAULT 0,
+                        triage_applied     INTEGER NOT NULL DEFAULT 0,
+                        ideas_accepted     INTEGER NOT NULL DEFAULT 0,
+                        ideas_rejected     INTEGER NOT NULL DEFAULT 0,
+                        dispatched_count   INTEGER NOT NULL DEFAULT 0,
+                        skipped_count      INTEGER NOT NULL DEFAULT 0,
+                        blocked_reason     TEXT,
+                        degraded           INTEGER NOT NULL DEFAULT 0,
+                        projected_cost_usd REAL NOT NULL DEFAULT 0,
+                        month_spend_usd    REAL NOT NULL DEFAULT 0,
+                        ceiling_usd        REAL,
+                        session_ids        TEXT,
+                        started_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        finished_at        TEXT,
+                        UNIQUE(project_id, night)
+                    );",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_night_runs_project
+                        ON autopilot_night_runs(project_id, started_at DESC);",
                 )?;
                 Ok(())
             },
