@@ -3,7 +3,8 @@ use std::collections::{HashMap, HashSet};
 use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{
-    AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
+    AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext,
+    DevContextFingerprint, DevContextGroup,
     DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiBinding, DevKpiMeasurement, DevIdea,
     DevMilestone, DevMilestoneItem,
     DevProject, DevScan, DevStandard, DevTask, DevUseCase, GoalProgressSuggestion, PortfolioProjectSummary,
@@ -2418,6 +2419,162 @@ pub fn clear_file_hashes(pool: &DbPool, project_id: &str) -> Result<usize, AppEr
                 params![project_id],
             )?;
             Ok(n)
+        }
+    )
+}
+
+// ============================================================================
+// Per-context structural fingerprints (derived cache)
+// ============================================================================
+//
+// A DERIVED cache alongside the context map — never a source of truth. Rows are
+// keyed by `content_hash` (a hash over a context's file list plus each file's
+// sha256), so a refresh can skip every context whose files are unchanged and
+// answer later structural questions with SQL instead of file reads. See
+// `personas_core::context_fingerprint` for what the counters do and don't mean.
+
+fn row_to_context_fingerprint(row: &Row) -> rusqlite::Result<DevContextFingerprint> {
+    Ok(DevContextFingerprint {
+        project_id: row.get("project_id")?,
+        context_id: row.get("context_id")?,
+        content_hash: row.get("content_hash")?,
+        file_count: row.get("file_count")?,
+        missing_file_count: row.get("missing_file_count")?,
+        imports: row.get("imports").unwrap_or(None),
+        primitives: row.get("primitives").unwrap_or(None),
+        promise_all_count: row.get("promise_all_count")?,
+        join_all_count: row.get("join_all_count")?,
+        await_count: row.get("await_count")?,
+        sql_write_count: row.get("sql_write_count")?,
+        spawn_count: row.get("spawn_count")?,
+        use_effect_count: row.get("use_effect_count")?,
+        set_state_after_await_count: row.get("set_state_after_await_count")?,
+        exports_components: row.get::<_, i64>("exports_components")? != 0,
+        exports_hooks: row.get::<_, i64>("exports_hooks")? != 0,
+        exports_commands: row.get::<_, i64>("exports_commands")? != 0,
+        exports_repo_fns: row.get::<_, i64>("exports_repo_fns")? != 0,
+        computed_at: row.get("computed_at")?,
+    })
+}
+
+/// Write (or replace) one context's fingerprint. Upsert on the
+/// `(project_id, context_id)` primary key so a re-refresh overwrites in place
+/// and the table can never accumulate duplicate rows per context.
+pub fn upsert_context_fingerprint(
+    pool: &DbPool,
+    fp: &DevContextFingerprint,
+) -> Result<(), AppError> {
+    timed_query!(
+        "dev_context_fingerprints",
+        "dev_context_fingerprints::upsert_context_fingerprint",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO dev_context_fingerprints (
+                    project_id, context_id, content_hash, file_count, missing_file_count,
+                    imports, primitives,
+                    promise_all_count, join_all_count, await_count, sql_write_count,
+                    spawn_count, use_effect_count, set_state_after_await_count,
+                    exports_components, exports_hooks, exports_commands, exports_repo_fns,
+                    computed_at
+                 ) VALUES (
+                    ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+                    ?15, ?16, ?17, ?18, ?19
+                 )
+                 ON CONFLICT(project_id, context_id) DO UPDATE SET
+                    content_hash = excluded.content_hash,
+                    file_count = excluded.file_count,
+                    missing_file_count = excluded.missing_file_count,
+                    imports = excluded.imports,
+                    primitives = excluded.primitives,
+                    promise_all_count = excluded.promise_all_count,
+                    join_all_count = excluded.join_all_count,
+                    await_count = excluded.await_count,
+                    sql_write_count = excluded.sql_write_count,
+                    spawn_count = excluded.spawn_count,
+                    use_effect_count = excluded.use_effect_count,
+                    set_state_after_await_count = excluded.set_state_after_await_count,
+                    exports_components = excluded.exports_components,
+                    exports_hooks = excluded.exports_hooks,
+                    exports_commands = excluded.exports_commands,
+                    exports_repo_fns = excluded.exports_repo_fns,
+                    computed_at = excluded.computed_at",
+                params![
+                    fp.project_id,
+                    fp.context_id,
+                    fp.content_hash,
+                    fp.file_count,
+                    fp.missing_file_count,
+                    fp.imports,
+                    fp.primitives,
+                    fp.promise_all_count,
+                    fp.join_all_count,
+                    fp.await_count,
+                    fp.sql_write_count,
+                    fp.spawn_count,
+                    fp.use_effect_count,
+                    fp.set_state_after_await_count,
+                    fp.exports_components as i32,
+                    fp.exports_hooks as i32,
+                    fp.exports_commands as i32,
+                    fp.exports_repo_fns as i32,
+                    fp.computed_at,
+                ],
+            )?;
+            Ok(())
+        }
+    )
+}
+
+/// All cached fingerprints for a project, ordered by `context_id` so callers
+/// get a stable listing.
+pub fn list_context_fingerprints(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<DevContextFingerprint>, AppError> {
+    timed_query!(
+        "dev_context_fingerprints",
+        "dev_context_fingerprints::list_context_fingerprints",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM dev_context_fingerprints WHERE project_id = ?1 ORDER BY context_id",
+            )?;
+            let rows = stmt.query_map(params![project_id], row_to_context_fingerprint)?;
+            let mut out = Vec::new();
+            for row in rows {
+                out.push(row.map_err(AppError::Database)?);
+            }
+            Ok(out)
+        }
+    )
+}
+
+/// `{context_id: content_hash}` for a project — the skip-logic input. Reads only
+/// the two columns it needs so a refresh can decide what is dirty without
+/// materializing every fingerprint.
+pub fn get_context_fingerprint_hashes(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<HashMap<String, String>, AppError> {
+    timed_query!(
+        "dev_context_fingerprints",
+        "dev_context_fingerprints::get_context_fingerprint_hashes",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT context_id, content_hash FROM dev_context_fingerprints
+                 WHERE project_id = ?1",
+            )?;
+            let rows = stmt.query_map(params![project_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?;
+            let mut map = HashMap::new();
+            for row in rows {
+                let (context_id, hash) = row.map_err(AppError::Database)?;
+                map.insert(context_id, hash);
+            }
+            Ok(map)
         }
     )
 }
