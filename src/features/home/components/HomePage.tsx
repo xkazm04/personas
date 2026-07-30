@@ -3,6 +3,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import type { HomeTab } from '@/lib/types/types';
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/sub_welcome/HomeWelcome';
+import { useMorningBriefing } from '@/features/home/sub_cockpit/briefing/useMorningBriefing';
 
 const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/sub_learning/HomeLearning'));
@@ -25,6 +26,11 @@ function KeepAlivePane({ active, children }: { active: boolean; children: ReactN
 export default function HomePage() {
   const homeTab = useSystemStore((s) => s.homeTab);
   const devSystemCheck = import.meta.env.DEV;
+
+  // Morning Director: once per app session, compose the session-open
+  // briefing from the since-left delta (delta-gated — no LLM call when
+  // nothing happened) and surface it as a Cockpit overlay.
+  useMorningBriefing();
 
   // The effective active tab. `system-check` is DEV-only; outside DEV — and for
   // any unknown value from stale persisted state — it falls back to the Welcome

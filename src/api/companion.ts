@@ -1437,6 +1437,12 @@ export interface CompanionCockpitWidget {
   title?: string;
   span?: number;
   config?: Record<string, unknown>;
+  /**
+   * Morning Director: enum-validated one-click actions carried by
+   * briefing widgets. Raw wire shape — the frontend re-validates via
+   * `parseWidgetActions` before rendering (never trust a stored spec).
+   */
+  actions?: Record<string, unknown>[];
 }
 
 export interface CompanionCockpitSpecBody {

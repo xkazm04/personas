@@ -26,8 +26,12 @@ import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { silentCatch } from '@/lib/silentCatch';
 
+import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+
 import { cockpitRowSpan, cockpitWidgetRegistry } from './widgetRegistry';
 import { composeDefaultCockpit, type DefaultCockpitLabels } from './defaultCockpit';
+import { parseWidgetActions } from './briefing/actions';
+import { WidgetActionBar } from './briefing/WidgetActionBar';
 
 /** Window (days) for the default-cockpit fleet-vitals stat grid. */
 const DEFAULT_COCKPIT_METRICS_DAYS = 7;
@@ -189,7 +193,13 @@ export default function CockpitPanel() {
   const headerSubtitle: ReactNode = contextualCockpit
     ? contextualCockpit.source.kind === 'explain'
       ? cockpit.subtitle_explaining
-      : cockpit.subtitle_contextual
+      : contextualCockpit.source.kind === 'briefing'
+        ? new Date(contextualCockpit.source.generatedAt).toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+          })
+        : cockpit.subtitle_contextual
     : spec
       ? (
           <>
@@ -229,7 +239,37 @@ export default function CockpitPanel() {
         actions={talkToAthena}
       />
       <ContentBody centered>
-        {contextualCockpit && (
+        {contextualCockpit && contextualCockpit.source.kind === 'briefing' ? (
+          <div
+            data-testid="cockpit-briefing-banner"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-primary/15 bg-primary/[0.04] mb-3"
+          >
+            {contextualCockpit.source.composedBy === 'athena' ? (
+              <AthenaComposedBadge
+                variant="composed"
+                label={t.overview.cockpit.briefing_composed_by}
+                title={t.overview.cockpit.briefing_subtitle_athena}
+              />
+            ) : (
+              <Info className="w-4 h-4 text-primary/70 flex-shrink-0" />
+            )}
+            <span className="typo-body text-foreground/85 truncate">
+              {contextualCockpit.source.composedBy === 'fallback'
+                ? t.overview.cockpit.briefing_subtitle_fallback
+                : contextualCockpit.source.composedBy === 'quiet'
+                  ? t.overview.cockpit.briefing_quiet_title
+                  : t.overview.cockpit.briefing_title}
+            </span>
+            <button
+              type="button"
+              data-testid="cockpit-briefing-exit"
+              onClick={() => setContextualCockpit(null)}
+              className="ml-auto typo-caption text-primary hover:text-primary/80 transition-colors"
+            >
+              {t.overview.cockpit.context_exit}
+            </button>
+          </div>
+        ) : contextualCockpit ? (
           <div
             data-testid="cockpit-context-banner"
             className="flex items-center gap-3 px-4 py-2.5 rounded-card border border-primary/15 bg-primary/[0.04] mb-3"
@@ -242,11 +282,13 @@ export default function CockpitPanel() {
                       contextualCockpit.source.decisionTitle ||
                       t.overview.cockpit.title_default,
                   })
-                : tx(t.overview.cockpit.context_for, {
-                    title:
-                      contextualCockpit.source.messageTitle ||
-                      t.overview.messages_view.message_label,
-                  })}
+                : contextualCockpit.source.kind === 'message'
+                  ? tx(t.overview.cockpit.context_for, {
+                      title:
+                        contextualCockpit.source.messageTitle ||
+                        t.overview.messages_view.message_label,
+                    })
+                  : null}
             </span>
             <button
               type="button"
@@ -257,7 +299,7 @@ export default function CockpitPanel() {
               {t.overview.cockpit.context_exit}
             </button>
           </div>
-        )}
+        ) : null}
 
         {!contextualCockpit && loading && !spec ? (
           <CockpitGhostGrid />
@@ -387,6 +429,9 @@ function CockpitWidgetCell({ widget, order, enter }: CockpitWidgetCellProps) {
   const span = Math.max(1, Math.min(12, widget.span ?? 6));
   const rowSpan = cockpitRowSpan(widget.kind);
   const Component = cockpitWidgetRegistry[widget.kind];
+  // Morning Director: enum-validated one-click actions (re-parsed here —
+  // never trust a stored/composed spec's raw shape).
+  const actions = useMemo(() => parseWidgetActions(widget.actions), [widget.actions]);
   return (
     <RevealItem
       revealId={widget.id}
@@ -399,13 +444,18 @@ function CockpitWidgetCell({ widget, order, enter }: CockpitWidgetCellProps) {
       }}
       className="min-h-0"
     >
-      {Component ? (
-        <Component title={widget.title} config={widget.config} />
-      ) : (
-        <div className="rounded-card border border-status-error/30 bg-status-error/[0.06] p-4 typo-caption text-status-error h-full flex items-center justify-center">
-          {tx(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
+      <div className="h-full flex flex-col min-h-0">
+        <div className="flex-1 min-h-0">
+          {Component ? (
+            <Component title={widget.title} config={widget.config} />
+          ) : (
+            <div className="rounded-card border border-status-error/30 bg-status-error/[0.06] p-4 typo-caption text-status-error h-full flex items-center justify-center">
+              {tx(t.overview.cockpit.unknown_widget, { kind: widget.kind })}
+            </div>
+          )}
         </div>
-      )}
+        <WidgetActionBar actions={actions} />
+      </div>
     </RevealItem>
   );
 }
