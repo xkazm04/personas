@@ -79,7 +79,7 @@ const GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
  */
 export function DecisionsGhostRows() {
   return (
-    <div className="flex items-start gap-6" aria-hidden="true">
+    <div className="flex items-start gap-6" aria-hidden="true" data-testid="companion-decisions-loading">
       <div className="w-56 shrink-0 space-y-1.5">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
