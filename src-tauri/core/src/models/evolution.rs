@@ -84,3 +84,66 @@ pub struct EvolutionCycle {
     pub started_at: String,
     pub completed_at: Option<String>,
 }
+
+// =============================================================================
+// Evolution Promotion Proposal — human-gated promotion (Darwin Mode v1)
+// =============================================================================
+
+/// A pending promotion produced by an evolution cycle whose challenger beat the
+/// incumbent by the policy's `improvement_threshold`.
+///
+/// Mirrors the `memory_review_proposal` pattern: the cycle FILES a proposal and
+/// stops — nothing is applied until a human approves it. On approval the winner
+/// genome is written onto the incumbent persona (compare-and-swap on
+/// `base_updated_at`) and the change is logged to `persona_change_log`; on
+/// rejection only the decision is recorded. There is NO auto-promotion path.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct EvolutionPromotionProposal {
+    pub id: String,
+    /// Evolution cycle that produced this proposal.
+    pub cycle_id: String,
+    pub persona_id: String,
+    /// `pending` | `approved` | `rejected`.
+    pub status: String,
+    /// JSON-serialized `PersonaGenome` of the winning challenger.
+    pub winner_genome_json: String,
+    /// The winner's reassembled system prompt (what approval would install).
+    pub new_prompt: String,
+    /// Incumbent's measured score on the same replay set (0.0--1.0).
+    pub incumbent_score: f64,
+    /// Winner's measured score on the same replay set (0.0--1.0).
+    pub winner_score: f64,
+    /// `winner_score - incumbent_score` at filing time.
+    pub improvement: f64,
+    /// The policy's `improvement_threshold` the winner had to clear.
+    pub threshold: f64,
+    /// `measured` — score provenance marker (inherited-only cycles never file).
+    pub fitness_source: String,
+    /// Raw evidence JSON: replay counts, per-side measured fitness breakdowns,
+    /// scenario names, and the cycle's budget state. Inspectable in the UI.
+    pub evidence_json: Option<String>,
+    /// Incumbent's `updated_at` captured when the cycle started — the
+    /// optimistic-lock token approval must match (stale proposals fail closed).
+    pub base_updated_at: String,
+    /// Optional human note recorded at decision time.
+    pub decision_note: Option<String>,
+    pub created_at: String,
+    pub decided_at: Option<String>,
+}
+
+/// Input for filing a promotion proposal (repo fills id/status/timestamps).
+#[derive(Debug, Clone)]
+pub struct CreateEvolutionProposalInput {
+    pub cycle_id: String,
+    pub persona_id: String,
+    pub winner_genome_json: String,
+    pub new_prompt: String,
+    pub incumbent_score: f64,
+    pub winner_score: f64,
+    pub improvement: f64,
+    pub threshold: f64,
+    pub evidence_json: Option<String>,
+    pub base_updated_at: String,
+}

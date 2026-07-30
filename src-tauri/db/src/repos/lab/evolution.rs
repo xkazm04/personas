@@ -349,6 +349,37 @@ pub fn complete_cycle(
     )
 }
 
+/// Flip a completed cycle's `promoted` flag and bump the policy's
+/// `total_promotions`. Called ONLY from the human-approval path of a
+/// promotion proposal (Darwin Mode v1) — cycles themselves always complete
+/// with `promoted = false`.
+pub fn mark_cycle_promoted(pool: &DbPool, cycle_id: &str) -> Result<(), AppError> {
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::mark_cycle_promoted",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            let rows = tx.execute(
+                "UPDATE evolution_cycles SET promoted = 1 WHERE id = ?1 AND promoted = 0",
+                params![cycle_id],
+            )?;
+            if rows > 0 {
+                tx.execute(
+                    "UPDATE evolution_policies SET
+                        total_promotions = total_promotions + 1,
+                        updated_at = ?1
+                     WHERE id = (SELECT policy_id FROM evolution_cycles WHERE id = ?2)",
+                    params![now, cycle_id],
+                )?;
+            }
+            tx.commit().map_err(AppError::Database)?;
+            Ok(())
+        }
+    )
+}
+
 /// Advance ONLY the policy's `last_cycle_at`/`updated_at` clock — without
 /// touching `total_cycles` or `total_promotions`. Called on a *failed*
 /// terminal evolution path so `should_evolve` requires a fresh

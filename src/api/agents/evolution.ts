@@ -2,6 +2,7 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { EvolutionPolicy } from "@/lib/bindings/EvolutionPolicy";
 import type { EvolutionCycle } from "@/lib/bindings/EvolutionCycle";
+import type { EvolutionPromotionProposal } from "@/lib/bindings/EvolutionPromotionProposal";
 import type { FitnessObjective } from "@/lib/bindings/FitnessObjective";
 import type { CliCapabilities } from "@/lib/bindings/CliCapabilities";
 
@@ -51,6 +52,42 @@ export const triggerCycle = (personaId: string) =>
 
 export const checkEligibility = (personaId: string) =>
   invoke<boolean>("evolution_check_eligibility", { personaId });
+
+// ============================================================================
+// Promotion proposals (Darwin Mode v1 — human-gated, no auto-promotion)
+// ============================================================================
+
+/**
+ * List promotion proposals, newest first. A proposal is filed by an evolution
+ * cycle whose measured challenger beat the incumbent by the policy threshold;
+ * nothing is applied until `resolvePromotionProposal(..., true)`.
+ */
+export const listPromotionProposals = (opts?: {
+  personaId?: string;
+  status?: "pending" | "approved" | "rejected";
+  limit?: number;
+}) =>
+  invoke<EvolutionPromotionProposal[]>("evolution_list_promotion_proposals", {
+    personaId: opts?.personaId,
+    status: opts?.status,
+    limit: opts?.limit,
+  });
+
+/**
+ * Approve (apply winner genome + log to persona change log) or reject a
+ * pending promotion proposal. Approval fails closed if the persona changed
+ * since the cycle ran.
+ */
+export const resolvePromotionProposal = (
+  proposalId: string,
+  approve: boolean,
+  note?: string,
+) =>
+  invoke<EvolutionPromotionProposal>("evolution_resolve_promotion_proposal", {
+    proposalId,
+    approve,
+    note,
+  });
 
 // ============================================================================
 // CLI capability probe

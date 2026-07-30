@@ -228,6 +228,103 @@ pub async fn evolution_trigger_cycle(
     Ok(cycle)
 }
 
+// ============================================================================
+// Promotion proposals (Darwin Mode v1 — human-gated, NO auto-promotion)
+// ============================================================================
+
+/// List promotion proposals, newest first. Optional persona/status filters
+/// (`status`: `pending` | `approved` | `rejected`).
+#[tauri::command]
+pub fn evolution_list_promotion_proposals(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    status: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<EvolutionPromotionProposal>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::lab::evolution_proposals::list(
+        &state.db,
+        persona_id.as_deref(),
+        status.as_deref(),
+        limit.unwrap_or(50),
+    )
+}
+
+/// Approve or reject a PENDING promotion proposal.
+///
+/// This is the ONLY code path that promotes an evolved variant onto a live
+/// persona. Approval applies the winner genome under an optimistic lock (the
+/// `base_updated_at` token captured when the cycle started — a persona edited
+/// since then fails closed) and writes field-level `persona_change_log` rows
+/// with source `"evolution"`, then flips the originating cycle's `promoted`
+/// flag. Rejection records the decision and touches nothing else.
+#[tauri::command]
+pub fn evolution_resolve_promotion_proposal(
+    state: State<'_, Arc<AppState>>,
+    proposal_id: String,
+    approve: bool,
+    note: Option<String>,
+) -> Result<EvolutionPromotionProposal, AppError> {
+    require_auth_sync(&state)?;
+    let repo = crate::db::repos::lab::evolution_proposals::get_by_id;
+    let proposal = repo(&state.db, &proposal_id)?;
+    if proposal.status != "pending" {
+        return Err(AppError::Validation(format!(
+            "Proposal {proposal_id} is already {}",
+            proposal.status
+        )));
+    }
+
+    if approve {
+        let winner: crate::engine::genome::PersonaGenome =
+            serde_json::from_str(&proposal.winner_genome_json).map_err(|e| {
+                AppError::Internal(format!("Failed to parse winner genome: {e}"))
+            })?;
+        if proposal.new_prompt.trim().is_empty() {
+            return Err(AppError::Validation(
+                "Cannot promote: the winner's prompt reassembles to an empty system prompt".into(),
+            ));
+        }
+        // Apply FIRST — if the persona moved since the cycle ran, this fails
+        // closed and the proposal stays pending for an informed rejection.
+        evolution::apply_promotion(
+            &state.db,
+            &proposal.persona_id,
+            &winner,
+            &proposal.new_prompt,
+            &proposal.base_updated_at,
+        )?;
+        let resolved = crate::db::repos::lab::evolution_proposals::resolve(
+            &state.db,
+            &proposal_id,
+            true,
+            note.as_deref(),
+        )?;
+        // Best-effort stats: the promotion itself already succeeded.
+        if let Err(e) = evolution_repo::mark_cycle_promoted(&state.db, &proposal.cycle_id) {
+            tracing::warn!(
+                cycle_id = %proposal.cycle_id,
+                error = %e,
+                "Promotion applied but cycle stats update failed",
+            );
+        }
+        tracing::info!(
+            persona_id = %proposal.persona_id,
+            proposal_id = %proposal_id,
+            improvement = proposal.improvement,
+            "Evolution promotion APPROVED and applied",
+        );
+        Ok(resolved)
+    } else {
+        crate::db::repos::lab::evolution_proposals::resolve(
+            &state.db,
+            &proposal_id,
+            false,
+            note.as_deref(),
+        )
+    }
+}
+
 /// Check if a persona is eligible for an evolution cycle.
 #[tauri::command]
 pub fn evolution_check_eligibility(

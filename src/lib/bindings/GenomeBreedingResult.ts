@@ -17,15 +17,23 @@ parentIds: string,
  */
 generation: number, 
 /**
- * JSON-serialized FitnessScore. This is an *inherited* (mid-parent)
- * prediction, NOT a measured evaluation of the offspring; null only if it
- * could not be predicted. Direct offspring evaluation is a deferred follow-up.
+ * JSON-serialized fitness. When `fitness_source` is `"inherited"` this is
+ * the mid-parent *prediction*; when `"measured"` it is a
+ * `MeasuredFitness` produced by replaying the fixture set through this
+ * offspring (Darwin Mode). Null only if neither could be computed.
  */
-fitnessJson: string | null, 
+fitnessJson: string | null,
 /**
- * Overall predicted (inherited) fitness, for sorting/ranking. Not measured.
+ * Overall fitness for sorting/ranking. Predicted or measured per
+ * `fitness_source`.
  */
-fitnessOverall: number | null, 
+fitnessOverall: number | null,
+/**
+ * Provenance of the fitness fields: `"inherited"` (mid-parent prediction)
+ * or `"measured"` (fixture-replay evaluation). `None` on legacy rows,
+ * which are all inherited.
+ */
+fitnessSource: string | null,
 /**
  * Whether user adopted this offspring as a new persona.
  */
