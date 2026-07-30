@@ -1,0 +1,2239 @@
+{
+ "id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+ "name": "Plugin Ecosystem",
+ "description": "",
+ "domain": "integration",
+ "contexts": [
+  {
+   "name": "artist-3d-viewer",
+   "category": "ui",
+   "business_feature": "3D Model Viewer",
+   "description": "Three.js-based 3D model viewer embedded in the gallery for previewing GLB/GLTF and other 3D asset formats. Renders models with orbit controls and lighting directly in the browser.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx"
+   ],
+   "cross_refs": [
+    "artist-gallery"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/artist/sub_gallery/ThreeViewer.tsx"
+   ]
+  },
+  {
+   "name": "artist-asset-hooks",
+   "category": "lib",
+   "business_feature": "Artist Asset Management",
+   "description": "React hooks for loading, scanning, importing, tagging, renaming, and deleting artist assets from the local file system via Tauri IPC. Manages loading/scanning state, syncs the default folder from Tauri, and provides local image data-URL resolution with module-level cache invalidation.",
+   "api_surface": "artistListAssets, artistScanFolder, artistImportAsset, artistDeleteAsset, artistRenameAsset, artistUpdateTags, artistGetDefaultFolder, artistEnsureFolders, artistReadLocalImage",
+   "db_tables": [
+    "artist_assets"
+   ],
+   "entry_points": [
+    "src/features/plugins/artist/hooks/useArtistAssets.ts",
+    "src/features/plugins/artist/hooks/useGallerySelection.ts"
+   ],
+   "cross_refs": [
+    "artist-gallery",
+    "artist-plugin-shell"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/artist/hooks/useArtistAssets.ts",
+    "src/features/plugins/artist/hooks/useLocalImage.ts",
+    "src/features/plugins/artist/hooks/useGallerySelection.ts",
+    "src/features/plugins/artist/hooks/__tests__/useArtistAssets.test.ts",
+    "src/features/plugins/artist/hooks/__tests__/useGallerySelection.test.ts"
+   ]
+  },
+  {
+   "name": "artist-composition-preview",
+   "category": "ui",
+   "business_feature": "Composition Preview",
+   "description": "Canvas-based real-time composition preview that renders the current timeline state at the playback cursor position. Composites video thumbnails, images, and title overlays scaled to the canvas. Exposes a captureThumbnail() handle for the persistence layer to auto-generate composition thumbnails on save.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-playback",
+    "artist-timeline-ui"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx"
+   ]
+  },
+  {
+   "name": "artist-creative-hooks",
+   "category": "lib",
+   "business_feature": "Creative Studio Hooks",
+   "description": "React hooks powering the Creative Studio: Blender MCP status checking and installation, streaming creative session management (send prompt, cancel, clear output), and connector readiness detection for image-gen services. Bridges the UI to Tauri IPC commands for Blender and creative sessions.",
+   "api_surface": "artistCheckBlenderMcp, artistInstallBlenderMcp, artistStartCreativeSession, artistCancelCreativeSession",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/hooks/useBlenderMcp.ts",
+    "src/features/plugins/artist/hooks/useCreativeSession.ts"
+   ],
+   "cross_refs": [
+    "artist-creative-studio"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/artist/hooks/useBlenderMcp.ts",
+    "src/features/plugins/artist/hooks/useCreativeSession.ts",
+    "src/features/plugins/artist/hooks/useCreativeConnectors.ts",
+    "src/features/plugins/artist/hooks/useModelViewer.ts"
+   ]
+  },
+  {
+   "name": "artist-creative-studio",
+   "category": "ui",
+   "business_feature": "AI Creative Studio",
+   "description": "Blender MCP integration panel for AI-assisted 3D creation. Shows Blender and blender-mcp install status, connected image-gen connectors (Leonardo AI, Gemini), a streaming CLI-backed creative session chat, session history, and a collapsible reference mood board. Users describe creative goals; the session runs them through available tools.",
+   "api_surface": "artistCheckBlenderMcp, artistInstallBlenderMcp, artistStartCreativeSession (streaming)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx",
+    "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx"
+   ],
+   "cross_refs": [
+    "artist-plugin-shell",
+    "artist-gallery",
+    "artist-creative-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx",
+    "src/features/plugins/artist/sub_blender/CreativeSessionHistory.tsx",
+    "src/features/plugins/artist/sub_blender/ReferenceBoard.tsx",
+    "src/features/plugins/artist/sub_blender/sessionMarkdown.ts",
+    "src/features/plugins/artist/sub_blender/__tests__/sessionMarkdown.test.ts"
+   ]
+  },
+  {
+   "name": "artist-gallery",
+   "category": "ui",
+   "business_feature": "Artist Asset Gallery",
+   "description": "Image and 3D model gallery for browsing, managing, and tagging AI-generated or imported creative assets. Supports 2D/3D mode toggle, search, sort, date-based grouping, folder scanning, and a drag-to-reference-board handoff to Creative Studio. Assets can be bulk-selected, tagged, renamed, deleted, and sent to Media Studio.",
+   "api_surface": "artistListAssets, artistScanFolder, artistImportAsset, artistDeleteAsset, artistRenameAsset, artistUpdateTags",
+   "db_tables": [
+    "artist_assets"
+   ],
+   "entry_points": [
+    "src/features/plugins/artist/sub_gallery/GalleryPage.tsx",
+    "src/features/plugins/artist/sub_gallery/Gallery2D.tsx"
+   ],
+   "cross_refs": [
+    "artist-plugin-shell",
+    "artist-asset-hooks",
+    "artist-creative-studio"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/plugins/artist/sub_gallery/GalleryPage.tsx",
+    "src/features/plugins/artist/sub_gallery/Gallery2D.tsx",
+    "src/features/plugins/artist/sub_gallery/Gallery3D.tsx",
+    "src/features/plugins/artist/sub_gallery/AssetCard.tsx",
+    "src/features/plugins/artist/sub_gallery/GallerySelectionBar.tsx",
+    "src/features/plugins/artist/sub_gallery/TagEditorModal.tsx"
+   ]
+  },
+  {
+   "name": "artist-media-hooks",
+   "category": "lib",
+   "business_feature": "Media Studio Hooks",
+   "description": "React hooks for Media Studio non-UI logic: composition state machine with 80-step undo/redo history and coalescing (useMediaStudio), file-persistence with MRU list and auto-thumbnail on save (useMediaStudioPersistence), FFmpeg binary detection (useFfmpegDetect), export progress tracking over IPC events (useMediaExport), media file picker via Tauri dialogs (useMediaFilePicker), audio waveform computation (useAudioWaveform), and video thumbnail generation (useVideoThumbnails).",
+   "api_surface": "artistSaveComposition, artistLoadComposition, artistListRecentCompositions, artistExportComposition, artistFfmpegStatus, artistProbeMedia, artistReadAudioWaveform, artistVideoThumbnail",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-playback"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudio.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaStudioPersistence.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaExport.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useFfmpegDetect.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useMediaFilePicker.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useAudioWaveform.ts"
+   ]
+  },
+  {
+   "name": "artist-media-studio-core",
+   "category": "ui",
+   "business_feature": "Media Studio Editor",
+   "description": "Non-linear video composition editor with a multi-lane timeline for video, audio, image, text beats, and title overlays. The root page orchestrates all sub-systems: composition state management with undo/redo, FFmpeg detection, media import, playback, export, and Gallery-to-MediaStudio asset handoff. Defines all timeline item types and composition schema.",
+   "api_surface": "artistProbeMedia, artistExportComposition, artistFfmpegStatus",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/MediaStudioPage.tsx",
+    "src/features/plugins/artist/sub_media_studio/types.ts"
+   ],
+   "cross_refs": [
+    "artist-timeline-ui",
+    "artist-playback",
+    "artist-media-hooks",
+    "artist-plugin-shell"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/MediaStudioPage.tsx",
+    "src/features/plugins/artist/sub_media_studio/types.ts",
+    "src/features/plugins/artist/sub_media_studio/constants.ts",
+    "src/features/plugins/artist/sub_media_studio/renderPlanHelpers.ts",
+    "src/features/plugins/artist/sub_media_studio/FfmpegStatusBanner.tsx"
+   ]
+  },
+  {
+   "name": "artist-playback",
+   "category": "lib",
+   "business_feature": "Timeline Playback Engine",
+   "description": "Media Studio playback engine and controls. Implements a requestAnimationFrame-based virtual playback clock (PlaybackEngine) for scrubbing the composition preview, looping, and seeking without relying on a DOM media element. PlaybackControls exposes play/pause/stop/loop/seek and shows current time and total duration.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts",
+    "src/features/plugins/artist/sub_media_studio/PlaybackControls.tsx"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-timeline-ui",
+    "artist-composition-preview"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/PlaybackControls.tsx",
+    "src/features/plugins/artist/sub_media_studio/hooks/useTimelinePlayback.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useTimelineKeyboard.ts"
+   ]
+  },
+  {
+   "name": "artist-plugin-shell",
+   "category": "ui",
+   "business_feature": "Artist Plugin Shell",
+   "description": "Top-level shell for the Artist plugin that routes between three sub-tabs (Creative Studio, Gallery, Media Studio) driven by the `artistTab` state in systemStore. Provides the shared ContentHeader across subtab switches and lazy-loads each sub-page. Entry point for the entire Artist feature area.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/ArtistPage.tsx"
+   ],
+   "cross_refs": [
+    "artist-gallery",
+    "artist-media-studio",
+    "artist-creative-studio"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/artist/ArtistPage.tsx",
+    "src/features/plugins/artist/types.ts",
+    "src/features/plugins/artist/utils/format.ts",
+    "src/features/plugins/artist/utils/__tests__/format.test.ts"
+   ]
+  },
+  {
+   "name": "artist-render-plan",
+   "category": "lib",
+   "business_feature": "Render Plan Compiler",
+   "description": "Render plan computation layer that translates the in-memory composition into an IR (Intermediate Representation) list of FFmpeg operations. Validates clip paths, detects gaps/overlaps, computes transition sequences, and surfaces warnings. The render plan is consumed by both the export path and the composition preview.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/hooks/useRenderPlan.ts"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-media-hooks"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/hooks/useRenderPlan.ts",
+    "src/features/plugins/artist/sub_media_studio/hooks/useTranscriptCache.ts"
+   ]
+  },
+  {
+   "name": "artist-timeline-ui",
+   "category": "ui",
+   "business_feature": "Timeline Editor",
+   "description": "Visual timeline editor UI components: the scrollable multi-lane panel, per-lane strips (Video, Audio, Image, Text/Beat, Title), individual clip cards with drag-to-reposition, a ruler showing time markers, clip context menu for actions like split/duplicate/delete, and a transition picker between video clips.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/TimelinePanel.tsx",
+    "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-playback"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/TimelinePanel.tsx",
+    "src/features/plugins/artist/sub_media_studio/TimelineRuler.tsx",
+    "src/features/plugins/artist/sub_media_studio/TimelineClip.tsx",
+    "src/features/plugins/artist/sub_media_studio/VideoLane.tsx",
+    "src/features/plugins/artist/sub_media_studio/AudioLane.tsx",
+    "src/features/plugins/artist/sub_media_studio/ImageLane.tsx"
+   ]
+  },
+  {
+   "name": "artist-toolbar-beat-sidebar",
+   "category": "ui",
+   "business_feature": "Media Studio Toolbar & Beat Sidebar",
+   "description": "Media Studio toolbar and beat sidebar. The toolbar exposes composition settings, selected-item property editors (clip trim, title text/font, image scale/position, transition, voiceover), undo/redo, and export trigger. The BeatSidebar lists all TextItem beats keyed to the playback cursor, and the VoiceoverButton initiates TTS generation into the audio lane.",
+   "api_surface": "artistGenerateVoiceover",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/artist/sub_media_studio/toolbar/MediaStudioToolbar.tsx",
+    "src/features/plugins/artist/sub_media_studio/BeatSidebar.tsx"
+   ],
+   "cross_refs": [
+    "artist-media-studio-core",
+    "artist-timeline-ui"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/artist/sub_media_studio/toolbar/MediaStudioToolbar.tsx",
+    "src/features/plugins/artist/sub_media_studio/toolbar/fields.tsx",
+    "src/features/plugins/artist/sub_media_studio/toolbar/IconPopover.tsx",
+    "src/features/plugins/artist/sub_media_studio/BeatSidebar.tsx",
+    "src/features/plugins/artist/sub_media_studio/VoiceoverButton.tsx",
+    "src/features/plugins/artist/sub_media_studio/__tests__/BeatSidebar.test.tsx"
+   ]
+  },
+  {
+   "name": "cloud-deployment",
+   "category": "ui",
+   "business_feature": "Cloud Deployment",
+   "description": "Cloud platform integration for deploying personas to managed cloud infrastructure. Handles cloud authentication, instance lifecycle (deploy, redeploy, teardown), tier-based quota enforcement, and the cloud management UI.",
+   "api_surface": "invoke('deploy_persona'), invoke('get_cloud_instances'), invoke('teardown_instance')",
+   "db_tables": [
+    "cloud_deployments",
+    "deployment_logs"
+   ],
+   "entry_points": [
+    "src/features/cloud/CloudPage.tsx",
+    "src-tauri/src/cloud/client.rs"
+   ],
+   "cross_refs": [
+    "persona-management",
+    "credential-vault",
+    "execution-runner"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/api/system/cloud.ts",
+    "src-tauri/src/cloud/client.rs",
+    "src-tauri/src/cloud/config.rs",
+    "src-tauri/src/commands/infrastructure/cloud.rs"
+   ]
+  },
+  {
+   "name": "companion-athena-api",
+   "category": "api",
+   "business_feature": "Athena Companion Brain",
+   "description": "IPC wrappers for the Athena companion brain plugin: initialization of the disk layout, conversation management, adaptation policy, usage dashboard, browser bridge status, and HMR-safe singleton deduplication. Bridges covers the event-driven side channels that mirror fleet lifecycle, MCP pending requests, and team-assignment outcomes into the companion memory; project tracking manages per-project subscription enabling for the 1h-tick scheduler. Together these form the always-on Athena intelligence layer.",
+   "api_surface": "Tauri commands: companion_init, list_companion_conversations, get_athena_usage_dashboard, bridge_fleet_event, project_tracking_list_subscriptions",
+   "db_tables": [
+    "companion_conversations",
+    "companion_adaptations"
+   ],
+   "entry_points": [
+    "src/api/companion.ts"
+   ],
+   "cross_refs": [
+    "fleet-director-api",
+    "team-management-api",
+    "research-obsidian-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/companion.ts",
+    "src/api/companion/bridges.ts",
+    "src/api/companion/projectTracking.ts"
+   ]
+  },
+  {
+   "name": "context-map-core",
+   "category": "ui",
+   "business_feature": "Context Map Viewer",
+   "description": "The Context Map feature lets developers visualise and navigate the codebase divided into named, colour-coded context groups. This layer owns the page layout, the ledger table, group-row stats, individual context detail panels, and the group colour picker. It reads contexts and groups from the backend DB and renders them with KPI status overlays.",
+   "api_surface": "GET contexts, GET context-groups via devTools API",
+   "db_tables": [
+    "dev_contexts",
+    "dev_context_groups"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx",
+    "src/features/plugins/dev-tools/sub_context/contextMapTypes.ts"
+   ],
+   "cross_refs": [
+    "context-map-runtime",
+    "dev-tools-shell"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx",
+    "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx",
+    "src/features/plugins/dev-tools/sub_context/contextLedgerShared.tsx",
+    "src/features/plugins/dev-tools/sub_context/ContextGroupRowsStats.tsx",
+    "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx",
+    "src/features/plugins/dev-tools/sub_context/GroupColorPicker.tsx"
+   ]
+  },
+  {
+   "name": "context-map-runtime",
+   "category": "lib",
+   "business_feature": "Context Map Scan Runtime",
+   "description": "Runtime layer for the Context Map: manages live codebase scanning state (ScanOverlay), computes KPI health per context, and resolves use-case associations. The useContextRuntime hook drives incremental scan updates via Tauri events; useUseCases fetches and caches use-case rows; UseCaseDetailModal surfaces per-use-case drill-down. Tests cover the runtime hook and the Coverage view.",
+   "api_surface": "getScanCodebaseStatus, cancelScanCodebase, listUseCases via devTools API",
+   "db_tables": [
+    "dev_contexts",
+    "dev_use_cases",
+    "dev_kpis"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts",
+    "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts"
+   ],
+   "cross_refs": [
+    "context-map-core",
+    "dev-tools-shell"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_context/ScanOverlay.tsx",
+    "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts",
+    "src/features/plugins/dev-tools/sub_context/contextKpiStatus.ts",
+    "src/features/plugins/dev-tools/sub_context/useUseCases.ts",
+    "src/features/plugins/dev-tools/sub_context/UseCaseDetailModal.tsx",
+    "src/features/plugins/dev-tools/sub_context/useCaseKind.ts"
+   ]
+  },
+  {
+   "name": "creative-media-api",
+   "category": "api",
+   "business_feature": "Artist & Radio Plugins",
+   "description": "IPC wrappers for the Artist plugin (Blender MCP integration: session management, 3D render plan pipeline, composition loading, asset library) and the Radio plugin (SomaFM stream player: station listing, play/pause/stop/skip, now-playing metadata, radio state). These are the creative and ambient media plugins that run alongside agent work.",
+   "api_surface": "Tauri commands: artist_get_blender_status, artist_start_session, artist_execute_render_plan, radio_list_stations, radio_play, radio_get_state",
+   "db_tables": [
+    "artist_assets"
+   ],
+   "entry_points": [
+    "src/api/artist/index.ts",
+    "src/api/radio.ts"
+   ],
+   "cross_refs": [
+    "companion-athena-api"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/artist/index.ts",
+    "src/api/radio.ts"
+   ]
+  },
+  {
+   "name": "dev-tools-shell",
+   "category": "ui",
+   "business_feature": "Dev Tools Plugin Shell",
+   "description": "Top-level shell for the Dev Tools plugin — routes between all sub-modules via a tab key from the system store. Hosts the page header, the shared project dropdown, and constant catalogs (idea categories, colors, badges, preset skills, scan agents) consumed across every sub-module. Acts as the single lazy-import boundary for all dev-tools pages.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/dev-tools/DevToolsPage.tsx",
+    "src/features/plugins/dev-tools/hooks/useDevToolsActions.ts"
+   ],
+   "cross_refs": [
+    "project-overview",
+    "context-map-core",
+    "run-desk",
+    "skills-manager-core",
+    "lifecycle-setup",
+    "llm-monitoring-pinpoints",
+    "workspace-knowledge"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/plugins/dev-tools/DevToolsPage.tsx",
+    "src/features/plugins/dev-tools/DevToolsPageHeader.tsx",
+    "src/features/plugins/dev-tools/components/DevToolsProjectDropdown.tsx",
+    "src/features/plugins/dev-tools/constants/ideaBadges.tsx",
+    "src/features/plugins/dev-tools/constants/ideaCategories.ts",
+    "src/features/plugins/dev-tools/constants/ideaColors.ts"
+   ]
+  },
+  {
+   "name": "drive-browser-components",
+   "category": "ui",
+   "business_feature": "Drive File Browser",
+   "description": "Core file-browser UI components: toolbar (path bar, new folder/file, view switcher), folder tree sidebar with recent-files rail, file/folder list with multi-view modes (list/icons/columns), kind-filter bar, and trash banner. These components compose the primary Finder-style browsing surface of the Drive plugin and receive all state from useDrive via props.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/components/DriveFileList.tsx",
+    "src/features/plugins/drive/components/DriveToolbar.tsx"
+   ],
+   "cross_refs": [
+    "drive-navigation-state",
+    "drive-page",
+    "drive-utility-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/drive/components/DriveToolbar.tsx",
+    "src/features/plugins/drive/components/DriveSidebar.tsx",
+    "src/features/plugins/drive/components/DriveFileList.tsx",
+    "src/features/plugins/drive/components/DriveKindFilterBar.tsx",
+    "src/features/plugins/drive/components/DriveTrashBanner.tsx"
+   ]
+  },
+  {
+   "name": "drive-detail-components",
+   "category": "ui",
+   "business_feature": "Drive Details & Overlays",
+   "description": "Secondary UI layer for the Drive plugin: details pane showing selected-entry metadata, right-click context menu with all file actions, image/video/PDF lightbox for in-app preview, empty-state hint, confirmation prompt dialog, and the drop-count chip widget used in drag-over affordances. These overlay and panel components receive the drive state and action callbacks from DrivePage.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/components/DriveDetailsPane.tsx",
+    "src/features/plugins/drive/components/DriveContextMenu.tsx"
+   ],
+   "cross_refs": [
+    "drive-page",
+    "drive-navigation-state",
+    "drive-signing",
+    "drive-ocr",
+    "drive-knowledge"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/drive/components/DriveDetailsPane.tsx",
+    "src/features/plugins/drive/components/DriveContextMenu.tsx",
+    "src/features/plugins/drive/components/DriveImageLightbox.tsx",
+    "src/features/plugins/drive/components/DriveEmptyHint.tsx",
+    "src/features/plugins/drive/components/DrivePrompt.tsx",
+    "src/features/plugins/drive/components/DropCountChip.tsx"
+   ]
+  },
+  {
+   "name": "drive-knowledge",
+   "category": "ui",
+   "business_feature": "Drive Knowledge Base Ingestion",
+   "description": "Knowledge-base ingestion bridge that connects the Drive file sandbox to the vector KB feature (available only in the ML-enabled desktop-full build). useDriveKnowledge feature-detects KB availability at runtime, translates drive-relative paths to absolute filesystem paths, and dispatches background ingest jobs (files via kb_ingest_files, folders via kb_ingest_directory). KbPickerDialog lets users choose or create a target knowledge base, and DriveKnowledgeDrawer provides a read surface over the chosen KB. DESIGN.md documents the feature's availability model.",
+   "api_surface": "Tauri: list_knowledge_bases, create_knowledge_base, kb_ingest_files, kb_ingest_directory",
+   "db_tables": [
+    "knowledge_bases",
+    "knowledge_documents"
+   ],
+   "entry_points": [
+    "src/features/plugins/drive/knowledge/useDriveKnowledge.ts",
+    "src/features/plugins/drive/knowledge/KbPickerDialog.tsx"
+   ],
+   "cross_refs": [
+    "drive-page",
+    "drive-detail-components"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/plugins/drive/knowledge/useDriveKnowledge.ts",
+    "src/features/plugins/drive/knowledge/KbPickerDialog.tsx",
+    "src/features/plugins/drive/knowledge/DriveKnowledgeDrawer.tsx"
+   ]
+  },
+  {
+   "name": "drive-navigation-state",
+   "category": "lib",
+   "business_feature": "Drive State Management",
+   "description": "Master state hook for the Drive Finder UI that owns navigation history, entry list, selection model, clipboard (copy/cut/paste), sort/filter/view preferences, storage info, recent-files rail, per-folder scroll memory, and all file mutations (create, rename, delete, move). Persists view-mode and sort preferences to localStorage across sessions. Implements a concurrency-capped bulk-operation runner to parallelise multi-file IPC calls without saturating the Tauri IPC thread.",
+   "api_surface": "Tauri: drive_list, drive_list_tree, drive_mkdir, drive_rename, drive_delete, drive_move, drive_copy, drive_search, drive_storage_info, drive_recent, drive_write_text",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/hooks/useDrive.ts"
+   ],
+   "cross_refs": [
+    "drive-page",
+    "drive-browser-components"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/drive/hooks/useDrive.ts"
+   ]
+  },
+  {
+   "name": "drive-ocr",
+   "category": "ui",
+   "business_feature": "Drive OCR Text Extraction",
+   "description": "OCR text-extraction sub-feature for the Drive plugin. useOcr detects whether a Google Gemini credential is connected in the vault and exposes its ID so the backend wrapper can decrypt and use the API key server-side without exposing it to the frontend. DriveOcrDrawer renders the extraction UI, shows results, and can write the extracted text back to a new drive file.",
+   "api_surface": "Tauri: ocr_drive_file_gemini; vault: list_credentials",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/ocr/useOcr.ts",
+    "src/features/plugins/drive/ocr/DriveOcrDrawer.tsx"
+   ],
+   "cross_refs": [
+    "drive-page",
+    "drive-detail-components"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/drive/ocr/useOcr.ts",
+    "src/features/plugins/drive/ocr/DriveOcrDrawer.tsx"
+   ]
+  },
+  {
+   "name": "drive-page",
+   "category": "ui",
+   "business_feature": "Drive File Manager",
+   "description": "Root page component for the Drive plugin, wiring together all sub-features (navigation, selection, drag-drop, signing, OCR, knowledge) into a single orchestrated view. Also owns the file-type visual design system (icon presets, colour tokens, kind weights, trash name parsing, and relative-time formatting) shared across every Drive view. Entry point for the Drive sidebar route.",
+   "api_surface": "Tauri: drive_open_in_os, drive_reveal_in_os, drive_parent_path, drive_write",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/DrivePage.tsx"
+   ],
+   "cross_refs": [
+    "drive-navigation-state",
+    "drive-browser-components",
+    "drive-detail-components",
+    "drive-signing",
+    "drive-ocr",
+    "drive-knowledge"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/drive/DrivePage.tsx",
+    "src/features/plugins/drive/designTokens.ts"
+   ]
+  },
+  {
+   "name": "drive-signing",
+   "category": "ui",
+   "business_feature": "Drive Document Signing",
+   "description": "Document signing and verification sub-feature within the Drive plugin. useSigning bridges the P2P signing backend (sign_document, verify_document) with the drive-relative path world, manages the user's signing identity (auto-generates an Ed25519 key pair on first use), and maintains an in-memory history of signed files for badge display. DriveSignDialog, DriveVerifyDialog, and DriveSignaturesPanel provide the sign/verify/history UI surfaces.",
+   "api_surface": "Tauri: sign_document, verify_document, generate_signing_key, list_document_signatures, delete_document_signature, export_signature_sidecar",
+   "db_tables": [
+    "document_signatures"
+   ],
+   "entry_points": [
+    "src/features/plugins/drive/signing/useSigning.ts",
+    "src/features/plugins/drive/signing/DriveSignDialog.tsx"
+   ],
+   "cross_refs": [
+    "drive-page",
+    "drive-detail-components"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/drive/signing/useSigning.ts",
+    "src/features/plugins/drive/signing/DriveSignDialog.tsx",
+    "src/features/plugins/drive/signing/DriveSignaturesPanel.tsx",
+    "src/features/plugins/drive/signing/DriveVerifyDialog.tsx"
+   ]
+  },
+  {
+   "name": "drive-tests",
+   "category": "test",
+   "business_feature": "Drive Plugin Tests",
+   "description": "Unit and component test suite for the Drive plugin. Covers designToken utilities (visual preset resolution, kind bucket ordering), component rendering for DriveEmptyHint and DropCountChip, the useDrive state hook (navigation, selection, mutations, search), and useScrollShadows behaviour. Also includes integration-level tests for image blob preview rendering.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts"
+   ],
+   "cross_refs": [
+    "drive-navigation-state",
+    "drive-browser-components",
+    "drive-page"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/drive/__tests__/designTokens.test.ts",
+    "src/features/plugins/drive/components/__tests__/DriveEmptyHint.test.tsx",
+    "src/features/plugins/drive/components/__tests__/DropCountChip.test.tsx",
+    "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts",
+    "src/features/plugins/drive/hooks/__tests__/useScrollShadows.test.ts",
+    "src/features/plugins/drive/components/__tests__/ImagePreviewBlob.test.tsx"
+   ]
+  },
+  {
+   "name": "drive-utility-hooks",
+   "category": "lib",
+   "business_feature": "Drive UI Utilities",
+   "description": "Reusable low-level hooks that support the Drive UI. useScrollShadows tracks whether a scroll container has content above or below the visible viewport (top/bottom fade affordance) using ResizeObserver. useLazyImageThumb uses IntersectionObserver to load image bytes via Tauri IPC only when a tile is near the viewport, and revokes the blob URL when it scrolls away to bound memory on large image folders.",
+   "api_surface": "Tauri: drive_read",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/drive/hooks/useScrollShadows.ts",
+    "src/features/plugins/drive/hooks/useLazyImageThumb.ts"
+   ],
+   "cross_refs": [
+    "drive-browser-components",
+    "drive-detail-components"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/drive/hooks/useScrollShadows.ts",
+    "src/features/plugins/drive/hooks/useLazyImageThumb.ts"
+   ]
+  },
+  {
+   "name": "fleet-director-api",
+   "category": "api",
+   "business_feature": "Fleet & Director",
+   "description": "IPC wrappers for Fleet (multi-session Claude Code orchestration: spawning PTY sessions, monitoring processes, reading transcripts, aggregating tokens, run summaries and reports, hook status, debug logs) and the Director meta-persona (evaluating agent health across all personas and emitting verdicts with severity and category). Fleet turns the desktop into a multi-agent terminal coordinator; Director is the governance meta-agent.",
+   "api_surface": "Tauri commands: fleet_spawn_session, fleet_list_processes, fleet_get_run_report, director_run_evaluation, director_get_last_report",
+   "db_tables": [
+    "fleet_registry",
+    "fleet_runs",
+    "fleet_transcripts"
+   ],
+   "entry_points": [
+    "src/api/fleet/fleet.ts",
+    "src/api/director.ts"
+   ],
+   "cross_refs": [
+    "companion-athena-api",
+    "persona-lifecycle-api"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/fleet/fleet.ts",
+    "src/api/director.ts"
+   ]
+  },
+  {
+   "name": "gitlab-integration",
+   "category": "api",
+   "business_feature": "GitLab Integration",
+   "description": "GitLab integration plugin for triggering persona executions on GitLab events (MRs, pipelines, issues). Manages GitLab credential binding, webhook registration, event parsing, and issue/MR creation from agent outputs.",
+   "api_surface": "invoke('connect_gitlab'), invoke('get_gitlab_events'), invoke('create_gitlab_issue')",
+   "db_tables": [
+    "gitlab_configs",
+    "gitlab_webhook_events"
+   ],
+   "entry_points": [
+    "src/features/plugins/gitlab/GitLabPage.tsx",
+    "src-tauri/src/gitlab/client.rs"
+   ],
+   "cross_refs": [
+    "trigger-system",
+    "credential-vault",
+    "execution-runner"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/api/system/gitlab.ts",
+    "src-tauri/src/gitlab/client.rs",
+    "src-tauri/src/gitlab/config.rs",
+    "src-tauri/src/gitlab/types.rs",
+    "src-tauri/src/commands/infrastructure/gitlab.rs"
+   ]
+  },
+  {
+   "name": "knowledge-harvest",
+   "category": "lib",
+   "business_feature": "Knowledge Harvest Pipeline",
+   "description": "Automated knowledge extraction pipeline that mines project artefacts and agent transcripts to surface reusable practices into the workspace library. harvestWave executes a multi-wave harvest with dedup; libraryModel and libraryPulse derive health metrics for the knowledge library; useHarvestAutoIngest subscribes to events and auto-ingests new entries; KnowledgeLibrary and KnowledgeTree render the library view; ExtractionMenu triggers on-demand extraction.",
+   "api_surface": "harvestKnowledge, ingestKnowledge via devTools API",
+   "db_tables": [
+    "workspace_knowledge",
+    "harvest_waves"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_workspaces/harvestWave.ts",
+    "src/features/plugins/dev-tools/sub_workspaces/KnowledgeLibrary.tsx"
+   ],
+   "cross_refs": [
+    "workspace-knowledge",
+    "practice-library"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_workspaces/KnowledgeLibrary.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/KnowledgeTree.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/ExtractionMenu.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/harvestWave.ts",
+    "src/features/plugins/dev-tools/sub_workspaces/libraryModel.ts",
+    "src/features/plugins/dev-tools/sub_workspaces/libraryPulse.ts"
+   ]
+  },
+  {
+   "name": "lifecycle-setup",
+   "category": "ui",
+   "business_feature": "Dev Clone Lifecycle Setup",
+   "description": "The Lifecycle module manages the dev-clone persona setup flow for a project — creating a trigger-backed clone persona that auto-runs on review events. LifecyclePage orchestrates trigger/persona creation and deletion; SetupTab and FlowSteps render the multi-step onboarding UI; useDevCloneAdoption and DevCloneAdoptionCard wrap the adopt task machinery; CompetitionPage is the entry point into prompt competitions.",
+   "api_surface": "createTrigger, listTriggers, deleteTrigger, listPersonas",
+   "db_tables": [
+    "personas",
+    "persona_triggers"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/useDevCloneAdoption.ts"
+   ],
+   "cross_refs": [
+    "prompt-competitions",
+    "run-desk",
+    "dev-tools-shell"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/CompetitionPage.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/useDevCloneAdoption.ts",
+    "src/features/plugins/dev-tools/sub_lifecycle/setup/DevCloneAdoptionCard.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/setup/FlowSteps.tsx"
+   ]
+  },
+  {
+   "name": "llm-monitoring-pinpoints",
+   "category": "ui",
+   "business_feature": "LLM Monitoring & Pinpoints",
+   "description": "LLM monitoring and use-case pinpoints page that surfaces per-use-case LLM cost, latency, and error rollups over selectable time windows (24h, 7d, 30d). MonitoringSection shows infra-level signals from the assigned connector; useLlmPinpoints and useMonitoringPinpoints fetch and normalise the data. The page also surfaces a use-case creation flow.",
+   "api_surface": "listUseCases, createUseCase, LLM connector observability endpoints",
+   "db_tables": [
+    "dev_use_cases",
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx"
+   ],
+   "cross_refs": [
+    "llm-tracing-matrix",
+    "dev-tools-shell"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx",
+    "src/features/plugins/dev-tools/sub_llm_overview/MonitoringSection.tsx",
+    "src/features/plugins/dev-tools/sub_llm_overview/useLlmPinpoints.ts",
+    "src/features/plugins/dev-tools/sub_llm_overview/useMonitoringPinpoints.ts"
+   ]
+  },
+  {
+   "name": "llm-tracing-matrix",
+   "category": "lib",
+   "business_feature": "LLM Connector Assignment Matrix",
+   "description": "Manages LLM observability connector assignments across projects via an AssignmentMatrix UI. Adapters in llmTracingAdapters normalise responses from different LLM monitoring connectors (Langfuse, Langsmith, etc.) into a unified LlmPinpoint shape consumed by the pinpoints layer. Tested by the adapter unit test.",
+   "api_surface": "updateProject (llm_tracking_credential_id field)",
+   "db_tables": [
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx",
+    "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts"
+   ],
+   "cross_refs": [
+    "llm-monitoring-pinpoints",
+    "dev-tools-shell"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx",
+    "src/features/plugins/dev-tools/sub_llm_overview/matrixShared.tsx",
+    "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts",
+    "src/features/plugins/dev-tools/sub_llm_overview/__tests__/llmTracingAdapters.test.ts"
+   ]
+  },
+  {
+   "name": "mcp-protocol",
+   "category": "api",
+   "business_feature": "MCP Protocol",
+   "description": "Model Context Protocol (MCP) server and client implementation. Exposes persona tools as MCP-compatible endpoints for external LLM hosts, handles tool discovery, and routes MCP tool calls into the execution engine. The companion connects via MCP for Claude-Managed Agents.",
+   "api_surface": "MCP stdio protocol; invoke('get_mcp_tools'), invoke('register_mcp_server')",
+   "db_tables": [
+    "mcp_tool_registrations",
+    "mcp_sessions"
+   ],
+   "entry_points": [
+    "src-tauri/src/mcp_server/server.rs",
+    "docs/architecture/mcp-desktop-integration.md"
+   ],
+   "cross_refs": [
+    "tool-runner",
+    "agent-connectors",
+    "companion-brain",
+    "execution-runner"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/api/agents/mcpTools.ts"
+   ]
+  },
+  {
+   "name": "media-studio",
+   "category": "api",
+   "business_feature": "Media Studio",
+   "description": "AI media production commands — FFmpeg-based video/audio rendering, voiceover synthesis, speech-to-text transcription, and schema-policy enforcement for media output. Supports title overlays, animated entrances, and render-plan IR compilation for the Artist media studio feature.",
+   "api_surface": "render_video, synthesize_voiceover, transcribe_audio, list_artist_projects",
+   "db_tables": [
+    "artist_projects",
+    "media_renders"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/artist/ffmpeg.rs"
+   ],
+   "cross_refs": [
+    "companion-voice"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/artist/ffmpeg.rs",
+    "src-tauri/src/commands/artist/mod.rs",
+    "src-tauri/src/commands/artist/persistence.rs",
+    "src-tauri/src/commands/artist/schema_policy.rs",
+    "src-tauri/src/commands/artist/transcribe.rs",
+    "src-tauri/src/commands/artist/voiceover.rs"
+   ]
+  },
+  {
+   "name": "obsidian-brain",
+   "category": "api",
+   "business_feature": "Obsidian Brain",
+   "description": "Obsidian vault integration — reads and writes markdown notes, traverses the vault graph, lints markdown quality, resolves conflicts between Personas-managed notes and user edits, revitalises stale notes, and mirrors test data. Acts as a persistent knowledge-management backend backed by a local Obsidian vault.",
+   "api_surface": "read_vault_file, write_vault_file, get_vault_graph, lint_vault, resolve_conflict",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/commands/obsidian_brain/vault_fs.rs"
+   ],
+   "cross_refs": [
+    "companion-intelligence",
+    "research-tools"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src-tauri/src/commands/obsidian_brain/conflict.rs",
+    "src-tauri/src/commands/obsidian_brain/drive.rs",
+    "src-tauri/src/commands/obsidian_brain/graph.rs",
+    "src-tauri/src/commands/obsidian_brain/lint.rs",
+    "src-tauri/src/commands/obsidian_brain/markdown.rs",
+    "src-tauri/src/commands/obsidian_brain/mirror_tests.rs"
+   ]
+  },
+  {
+   "name": "obsidian-brain-shell",
+   "category": "ui",
+   "business_feature": "Obsidian Brain Plugin Shell",
+   "description": "Top-level page shell for the Obsidian Brain plugin, routing between six tab panels (Setup, Sync, Browse, Graph, Cloud, Revitalize). Lazy-loads each sub-panel for code splitting, and anchors per-tab test IDs for the guided onboarding tour's spotlight mechanism using a literal map to stay statically analyzable.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-vault-setup",
+    "obsidian-vault-sync",
+    "obsidian-vault-browse",
+    "obsidian-graph-intelligence",
+    "obsidian-cloud-sync",
+    "obsidian-revitalize"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx"
+   ]
+  },
+  {
+   "name": "obsidian-cloud-sync",
+   "category": "ui",
+   "business_feature": "Vault Cloud Backup (Google Drive)",
+   "description": "Google Drive backup panel that mirrors the active Obsidian vault to the user's Drive account. Handles OAuth authorization flow, shows storage quota, and exposes push/pull sync actions with result reporting. Requires both a connected local vault and an authenticated Personas account.",
+   "api_surface": "obsidian_drive_status, obsidian_drive_push_sync, obsidian_drive_pull_sync, login_with_google_drive, get_google_drive_status",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-brain-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_cloud/CloudSyncPanel.tsx"
+   ]
+  },
+  {
+   "name": "obsidian-graph-intelligence",
+   "category": "ui",
+   "business_feature": "Vault Graph & Note Writing",
+   "description": "Graph analytics and note-writing panel that surfaces vault health metrics (total notes, links, orphans, MOCs, daily notes), full-text search, and quick-capture forms for daily journal entries and meeting notes. Starts a real-time file-system watcher via IPC and debounces vault-changed events to auto-refresh stats.",
+   "api_surface": "obsidian_graph_search, obsidian_graph_stats, obsidian_graph_list_orphans, obsidian_graph_list_mocs, obsidian_graph_append_daily_note, obsidian_graph_write_meeting_note, obsidian_graph_start/stop_watcher",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-open-deep-link",
+    "obsidian-saved-vault-configs",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx"
+   ]
+  },
+  {
+   "name": "obsidian-open-deep-link",
+   "category": "lib",
+   "business_feature": "Open Note in Obsidian",
+   "description": "Utility for launching the Obsidian desktop app from within Personas via the `obsidian://open` URI scheme. Builds vault-relative note URIs from the vault name and note path, normalizing separators and stripping the `.md` extension so Obsidian resolves the correct note regardless of location within the vault.",
+   "api_surface": "obsidian://open?vault=...&file=...",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/openInObsidian.ts"
+   ],
+   "cross_refs": [
+    "obsidian-vault-browse",
+    "obsidian-graph-intelligence"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/openInObsidian.ts"
+   ]
+  },
+  {
+   "name": "obsidian-revitalize",
+   "category": "ui",
+   "business_feature": "AI Vault Revitalization",
+   "description": "AI-driven vault maintenance panel ('Revitalize') that runs a background job to prune stale notes, merge duplicates, and refresh vault structure using an LLM. Streams live output lines, shows a post-pass summary with token savings and highlights, and persists run history across app restarts.",
+   "api_surface": "obsidian_revitalize_start, obsidian_revitalize_cancel, obsidian_revitalize_active, obsidian_revitalize_snapshot, obsidian_revitalize_history",
+   "db_tables": [
+    "obsidian_revitalize_runs"
+   ],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx",
+    "src/features/plugins/obsidian-brain/sub_revitalize/useRevitalizeJob.ts"
+   ],
+   "cross_refs": [
+    "obsidian-saved-vault-configs",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizePanel.tsx",
+    "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeProgress.tsx",
+    "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeSummaryCard.tsx",
+    "src/features/plugins/obsidian-brain/sub_revitalize/RevitalizeHistoryTable.tsx",
+    "src/features/plugins/obsidian-brain/sub_revitalize/useRevitalizeJob.ts"
+   ]
+  },
+  {
+   "name": "obsidian-saved-vault-configs",
+   "category": "ui",
+   "business_feature": "Saved Vault Switcher",
+   "description": "Shared vault-roster hook and sidebar component for managing multiple saved Obsidian vault configurations. Configs are persisted in the app database (migrated from legacy localStorage on first access), broadcast cross-panel via a CustomEvent so all open panels stay in sync without a store subscription.",
+   "api_surface": "obsidian_brain_list_saved_vaults, obsidian_brain_set_saved_vaults, obsidian_brain_save_config",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/useSavedVaultConfigs.ts",
+    "src/features/plugins/obsidian-brain/SavedConfigsSidebar.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-vault-setup",
+    "obsidian-vault-sync",
+    "obsidian-vault-browse",
+    "obsidian-graph-intelligence",
+    "obsidian-revitalize"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/SavedConfigsSidebar.tsx",
+    "src/features/plugins/obsidian-brain/useSavedVaultConfigs.ts"
+   ]
+  },
+  {
+   "name": "obsidian-session-services",
+   "category": "lib",
+   "business_feature": "Obsidian Session Bootstrap",
+   "description": "App-wide background hooks that run outside the plugin page. `useObsidianVaultRehydration` restores the active-vault Zustand state from the persisted config on app start so 'no vault connected' is never shown after a restart. `useVisibleConnectorDefinitions` gates the `obsidian_memory` connector entry in connector pickers until a vault is configured.",
+   "api_surface": "obsidian_brain_get_config",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/useObsidianVaultRehydration.ts",
+    "src/features/plugins/obsidian-brain/useVisibleConnectorDefinitions.ts"
+   ],
+   "cross_refs": [
+    "obsidian-vault-setup",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/useObsidianVaultRehydration.ts",
+    "src/features/plugins/obsidian-brain/useVisibleConnectorDefinitions.ts"
+   ]
+  },
+  {
+   "name": "obsidian-vault-browse",
+   "category": "ui",
+   "business_feature": "Vault Note Browser",
+   "description": "Read-only vault file browser with a collapsible folder tree, in-app Markdown preview with YAML frontmatter property extraction, and a deep-link button to open any selected note directly in the Obsidian app. Implements ghost skeleton trees and note-body placeholders to avoid flash-of-loading on fast local reads.",
+   "api_surface": "obsidian_brain_list_vault_files, obsidian_brain_read_vault_note",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-open-deep-link",
+    "obsidian-saved-vault-configs",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx",
+    "src/features/plugins/obsidian-brain/sub_browse/parseNote.ts"
+   ]
+  },
+  {
+   "name": "obsidian-vault-setup",
+   "category": "ui",
+   "business_feature": "Vault Setup & Connection",
+   "description": "Vault connection and configuration panel: auto-detects or browses for Obsidian vault paths, tests connectivity, and saves the active vault config with sync options and folder mapping. Also controls the opt-in knowledge mirror (research lab, execution history, Athena) that continuously writes app data into the vault as Markdown notes.",
+   "api_surface": "obsidian_brain_detect_vaults, obsidian_brain_test_connection, obsidian_brain_save_config, obsidian_mirror_get/set_config, obsidian_available, obsidian_mirror_backfill_execution_knowledge",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-saved-vault-configs",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx"
+   ]
+  },
+  {
+   "name": "obsidian-vault-sync",
+   "category": "ui",
+   "business_feature": "Vault Bidirectional Sync",
+   "description": "Bidirectional sync panel between the Personas app and the Obsidian vault. Lets the user select individual personas to push as Markdown notes, pull vault changes back into the app, and resolve conflicts with a three-way (keep-app / keep-vault / skip) decision UI backed by a persistent sync log.",
+   "api_surface": "obsidian_brain_push_sync, obsidian_brain_pull_sync, obsidian_brain_get_sync_log, obsidian_brain_resolve_conflict",
+   "db_tables": [
+    "obsidian_sync_log"
+   ],
+   "entry_points": [
+    "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx"
+   ],
+   "cross_refs": [
+    "obsidian-saved-vault-configs",
+    "obsidian-brain-shell"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/obsidian-brain/sub_sync/SyncPanel.tsx",
+    "src/features/plugins/obsidian-brain/sub_sync/SyncResultCard.tsx",
+    "src/features/plugins/obsidian-brain/sub_sync/ConflictDiffView.tsx",
+    "src/features/plugins/obsidian-brain/sub_sync/conflictDiff.ts"
+   ]
+  },
+  {
+   "name": "p2p-dev-misc-models",
+   "category": "data",
+   "business_feature": "P2P, Dev Tools & Misc Models",
+   "description": "Remaining domain model types spanning three distinct concerns: P2P networking types gated behind the `p2p` feature (`Exposure`, `Identity`, `Signing`, `OwnedDevice` for device registry and P2P identity), developer tooling types (`DevIdea` with category vocabulary, `FrontendCrash` renderer error records, `SavedView` persisted UI filter presets), and `VirtualToolDefinition` / `VirtualToolId` for automation-backed virtual tool surfaces.",
+   "api_surface": "",
+   "db_tables": [
+    "exposures",
+    "identities",
+    "owned_devices",
+    "dev_ideas",
+    "saved_views",
+    "virtual_tools"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/tool.rs",
+    "src-tauri/core/src/models/dev_tools.rs"
+   ],
+   "cross_refs": [
+    "core-foundation-types",
+    "automation-event-models"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/core/src/models/exposure.rs",
+    "src-tauri/core/src/models/identity.rs",
+    "src-tauri/core/src/models/signing.rs",
+    "src-tauri/core/src/models/owned_device.rs",
+    "src-tauri/core/src/models/dev_tools.rs",
+    "src-tauri/core/src/models/saved_views.rs"
+   ]
+  },
+  {
+   "name": "p2p-networking",
+   "category": "api",
+   "business_feature": "P2P Networking",
+   "description": "LAN discovery and P2P execution via QUIC transport (Quinn) and mDNS-SD. Enables agents on different machines to discover each other and coordinate executions without a central server. Gated behind the 'p2p' Cargo feature.",
+   "api_surface": "invoke('start_p2p_discovery'), invoke('get_peers'), invoke('connect_peer')",
+   "db_tables": [
+    "peers",
+    "p2p_sessions"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/p2p/discovery.rs",
+    "src-tauri/src/engine/p2p/transport.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "fleet-management"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "plugin-companion-state",
+   "category": "lib",
+   "business_feature": "Companion Plugin State",
+   "description": "Slices backing the AI companion plugin suite — the twin persona generator, companion plugin activation, artist/image generation plugin, research lab session state, and SomaFM radio integration. Each slice manages its own API connection state and result caching independently.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/twinSlice.ts",
+    "src/stores/slices/system/companionPluginSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "agent-persona-state"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/stores/slices/system/twinSlice.ts",
+    "src/stores/slices/system/companionPluginSlice.ts",
+    "src/stores/slices/system/artistSlice.ts",
+    "src/stores/slices/system/researchLabSlice.ts",
+    "src/stores/slices/system/radioSlice.ts",
+    "src/stores/slices/system/__tests__/twinSlice.fetchTwinTones.test.ts"
+   ]
+  },
+  {
+   "name": "plugin-integration-models",
+   "category": "data",
+   "business_feature": "Plugin & Integration Models",
+   "description": "Domain types for the external plugin and integration surface: `ArtistAsset` with 2D/3D classification (companion media generator), `TwinProfile` (user digital-identity persona), `DetectedVault` / `ObsidianNote` (Obsidian Brain knowledge sync), `N8nSession` (n8n workflow automation sessions), `GitlabProject` (GitLab integration), `OcrResult` (OCR extraction output), and `ResearchLabEntry` (web research artifact storage).",
+   "api_surface": "",
+   "db_tables": [
+    "artist_assets",
+    "twin_profiles",
+    "obsidian_vaults",
+    "n8n_sessions",
+    "gitlab_projects",
+    "ocr_results",
+    "research_lab_entries"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/twin.rs",
+    "src-tauri/core/src/models/obsidian_brain.rs"
+   ],
+   "cross_refs": [
+    "persona-genome-models",
+    "memory-knowledge-models",
+    "credential-connector-models"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/core/src/models/artist.rs",
+    "src-tauri/core/src/models/twin.rs",
+    "src-tauri/core/src/models/obsidian_brain.rs",
+    "src-tauri/core/src/models/n8n_session.rs",
+    "src-tauri/core/src/models/gitlab.rs",
+    "src-tauri/core/src/models/ocr.rs"
+   ]
+  },
+  {
+   "name": "plugin-obsidian-state",
+   "category": "lib",
+   "business_feature": "Obsidian Brain State",
+   "description": "Slice managing the Obsidian Brain plugin integration — tracking vault connection status, memory node ingestion progress, and sync state between the Personas knowledge ledger and an Obsidian markdown vault. Drives the knowledge-base memory surface in the overview.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/obsidianBrainSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "fleet-orchestration-state",
+    "overview-dashboard-state"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/stores/slices/system/obsidianBrainSlice.ts"
+   ]
+  },
+  {
+   "name": "practice-library",
+   "category": "ui",
+   "business_feature": "Practice Library Governance",
+   "description": "Practice governance layer within workspaces — operators review, adopt, reject, or deprecate practice entries surfaced from project learnings. PracticeDetailModal and PracticeDetailLedger render the review queue with stepper navigation; PracticeRolloutModal handles adoption rollout flow; CreatePracticeModal handles manual creation; practiceViewTypes defines the shared view props contract; adoptPracticePrompt and practiceHarvestPrompt hold the AI prompt templates.",
+   "api_surface": "adoptPractice, rejectPractice, deprecatePractice, createPractice via devTools API",
+   "db_tables": [
+    "workspace_knowledge"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_workspaces/PracticeDetailModal.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/practiceViewTypes.ts"
+   ],
+   "cross_refs": [
+    "workspace-knowledge",
+    "knowledge-harvest"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_workspaces/PracticeDetailModal.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/PracticeDetailLedger.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/PracticeRolloutModal.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/CreatePracticeModal.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/practiceViewTypes.ts",
+    "src/features/plugins/dev-tools/sub_workspaces/practiceAreaTheme.ts"
+   ]
+  },
+  {
+   "name": "project-manager",
+   "category": "ui",
+   "business_feature": "Dev Project Manager",
+   "description": "The Project Manager surface lets operators create, edit, and organise dev projects, attach GitHub repos, preview team graphs, and manage cross-project metadata. ProjectManagerPage and ProjectManagerParts render the list/detail layout; ProjectModal handles create/edit forms; GitHubRepoSelector integrates repo-picker flow; TeamGraphPreview and ProjectTeamPreviewModal visualise agent assignments; CrossProjectMetadataModal handles shared metadata.",
+   "api_surface": "createProject, updateProject, deleteProject, listProjects via devTools API",
+   "db_tables": [
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx",
+    "src/features/plugins/dev-tools/sub_projects/projectManagerTypes.tsx"
+   ],
+   "cross_refs": [
+    "project-pipeline",
+    "project-overview",
+    "dev-tools-shell"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_projects/ProjectManagerPage.tsx",
+    "src/features/plugins/dev-tools/sub_projects/ProjectManagerParts.tsx",
+    "src/features/plugins/dev-tools/sub_projects/ProjectModal.tsx",
+    "src/features/plugins/dev-tools/sub_projects/projectManagerTypes.tsx",
+    "src/features/plugins/dev-tools/sub_projects/TeamGraphPreview.tsx",
+    "src/features/plugins/dev-tools/sub_projects/ProjectTeamPreviewModal.tsx"
+   ]
+  },
+  {
+   "name": "project-overview",
+   "category": "ui",
+   "business_feature": "Project Overview Dashboard",
+   "description": "The Project Overview page consolidates health metrics, pipeline state, and standards scan results for the active dev project. It exposes a PulseGlyph animated health indicator, an editable pipeline view, and a standards scan card. Adapters normalise heterogeneous API shapes into the unified view model; overviewHelpers perform metric derivations tested in isolation.",
+   "api_surface": "GET project overview, GET standards scan status",
+   "db_tables": [
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
+    "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts"
+   ],
+   "cross_refs": [
+    "project-pipeline",
+    "dev-tools-shell",
+    "triage-findings"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx",
+    "src/features/plugins/dev-tools/sub_overview/OverviewParts.tsx",
+    "src/features/plugins/dev-tools/sub_overview/EditableProjectPipeline.tsx",
+    "src/features/plugins/dev-tools/sub_overview/PulseGlyph.tsx",
+    "src/features/plugins/dev-tools/sub_overview/pulseGlyphData.ts",
+    "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx"
+   ]
+  },
+  {
+   "name": "project-pipeline",
+   "category": "ui",
+   "business_feature": "Dev Project Pipeline",
+   "description": "Pipeline view for a dev project showing sequential steps (source control, standards, custom project steps) as a visual rail. PipelineRail renders the step sequence; ProjectStep, SourceControlStep, and StandardsStep are the individual step components; standardsConfig defines the step schema; pipelineTypes holds the shared type contracts.",
+   "api_surface": "updateProject pipeline fields",
+   "db_tables": [
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/pipelineTypes.ts"
+   ],
+   "cross_refs": [
+    "project-manager",
+    "project-overview"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/PipelineRail.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/ProjectStep.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/SourceControlStep.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/StandardsStep.tsx",
+    "src/features/plugins/dev-tools/sub_projects/pipeline/pipelineTypes.ts"
+   ]
+  },
+  {
+   "name": "prompt-competitions",
+   "category": "ui",
+   "business_feature": "Prompt Competitions",
+   "description": "Prompt competitions allow multiple prompt variants to race head-to-head, scored on quality and execution time, with a leaderboard and winner insight analysis. CompetitionList, CompetitionCard, CompetitionSlotRow, and RacingProgress form the live-race UI; StrategyLeaderboard and WinningGeneProfile surface post-race analysis; strategyPresets, qualityScore, and timeUtils provide domain logic; PromptDiffModal shows prompt diffs between competitors.",
+   "api_surface": "createCompetition, listCompetitions, getCompetitionSlots via devTools API",
+   "db_tables": [
+    "dev_competitions",
+    "dev_competition_slots"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/strategyPresets.ts"
+   ],
+   "cross_refs": [
+    "lifecycle-setup"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionList.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionCard.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/CompetitionSlotRow.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/NewCompetitionModal.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/RacingProgress.tsx",
+    "src/features/plugins/dev-tools/sub_lifecycle/competitions/StrategyLeaderboard.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-dashboard",
+   "category": "ui",
+   "business_feature": "Research Pipeline Dashboard",
+   "description": "Pipeline/process-flow overview dashboard that shows all research projects grouped by their current phase (scoping → literature_review → hypothesis → experiment → analysis → writing → review → complete). It renders a schematic-style phase station rail with project chips, a domain-distribution bar, and summary counters. Reads from systemStore researchProjects and researchDashboardStats.",
+   "api_surface": "",
+   "db_tables": [
+    "research_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_dashboard/ResearchDashboard.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-shared-tokens",
+    "research-lab-projects"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_dashboard/ResearchDashboard.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-experiments",
+   "category": "ui",
+   "business_feature": "Experiment Tracking",
+   "description": "Experiment design, execution tracking, and run-results drawer for research projects. Experiments link to hypotheses and carry an ExperimentConfig (linkedPersonaId, inputDataTemplate, passPattern) stored as JSON in the DB. The ExperimentRunsDrawer shows per-run results with pass/fail evaluation against the pattern or terminal execution status.",
+   "api_surface": "",
+   "db_tables": [
+    "research_experiments",
+    "research_experiment_runs"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_experiments/ExperimentsPanel.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-shared-experiment-config",
+    "research-lab-hypotheses",
+    "research-lab-shared-primitives"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_experiments/ExperimentsPanel.tsx",
+    "src/features/plugins/research-lab/sub_experiments/AddExperimentForm.tsx",
+    "src/features/plugins/research-lab/sub_experiments/ExperimentRunsDrawer.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-findings",
+   "category": "ui",
+   "business_feature": "Research Findings",
+   "description": "Research finding capture and display. A form allows attaching findings to sources, experiments, and hypotheses via JSON id-lists; a panel lists all findings with confidence scores, category badges, and link counts. Findings are the primary evidence objects that flow into report synthesis.",
+   "api_surface": "",
+   "db_tables": [
+    "research_findings"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_findings/FindingsPanel.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-experiments",
+    "research-lab-hypotheses",
+    "research-lab-literature",
+    "research-lab-shared-primitives"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_findings/FindingsPanel.tsx",
+    "src/features/plugins/research-lab/sub_findings/AddFindingForm.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-graph",
+   "category": "ui",
+   "business_feature": "Research Knowledge Graph",
+   "description": "Interactive knowledge-graph visualization of a research project's entities (project root, sources, hypotheses, experiments, findings, reports) laid out in columns with directional edges. Uses @xyflow/react for the canvas; graphLayout.ts computes node positions and edges; ResearchNode renders each entity as a typed, color-coded card.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_graph/GraphPanel.tsx",
+    "src/features/plugins/research-lab/sub_graph/graphLayout.ts"
+   ],
+   "cross_refs": [
+    "research-lab-literature",
+    "research-lab-hypotheses",
+    "research-lab-experiments",
+    "research-lab-findings",
+    "research-lab-reports"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_graph/GraphPanel.tsx",
+    "src/features/plugins/research-lab/sub_graph/ResearchNode.tsx",
+    "src/features/plugins/research-lab/sub_graph/graphLayout.ts"
+   ]
+  },
+  {
+   "name": "research-lab-hypotheses",
+   "category": "ui",
+   "business_feature": "Hypothesis Management",
+   "description": "Hypothesis lifecycle management including creation forms, a panel listing all hypotheses with confidence scores and status badges, and an AI-generation modal that submits a prompt to a linked persona and parses the structured output. The parseHypotheses utility tolerates numbered lists, bullets, JSON arrays, and plain text from LLM output.",
+   "api_surface": "",
+   "db_tables": [
+    "research_hypotheses"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_hypotheses/HypothesesPanel.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-shared-primitives",
+    "research-lab-shared-tokens",
+    "research-lab-shared-run-persona"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_hypotheses/HypothesesPanel.tsx",
+    "src/features/plugins/research-lab/sub_hypotheses/AddHypothesisForm.tsx",
+    "src/features/plugins/research-lab/sub_hypotheses/GenerateHypothesesModal.tsx",
+    "src/features/plugins/research-lab/sub_hypotheses/parseHypotheses.ts"
+   ]
+  },
+  {
+   "name": "research-lab-literature",
+   "category": "ui",
+   "business_feature": "Literature Search & Sources",
+   "description": "Literature source management with external search integration. Provides three panel variants (base, Atelier, Workbench), an arXiv Atom-feed search client, a Crossref REST client, and an ArxivSearchModal for discovering and adding papers. Users can add sources manually or via search and trigger ingestion (status flip: pending → ingesting → indexed).",
+   "api_surface": "GET https://export.arxiv.org/api/query, GET https://api.crossref.org/works",
+   "db_tables": [
+    "research_sources"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanel.tsx",
+    "src/features/plugins/research-lab/sub_literature/arxivClient.ts"
+   ],
+   "cross_refs": [
+    "research-lab-shared-ingest",
+    "research-lab-shared-tokens",
+    "research-lab-shared-primitives"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanel.tsx",
+    "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanelAtelier.tsx",
+    "src/features/plugins/research-lab/sub_literature/LiteratureSearchPanelWorkbench.tsx",
+    "src/features/plugins/research-lab/sub_literature/AddSourceForm.tsx",
+    "src/features/plugins/research-lab/sub_literature/ArxivSearchModal.tsx",
+    "src/features/plugins/research-lab/sub_literature/arxivClient.ts"
+   ]
+  },
+  {
+   "name": "research-lab-projects",
+   "category": "ui",
+   "business_feature": "Research Project Management",
+   "description": "Research project CRUD surface: list views in two visual styles (Cartograph card grid and Atelier compact list) plus a creation/edit form. Users create projects with a name, domain, thesis, description, and status; the list views allow selection which drives the active project context in systemStore.",
+   "api_surface": "",
+   "db_tables": [
+    "research_projects"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_projects/ResearchProjectList.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-shell",
+    "research-lab-shared-tokens",
+    "research-lab-shared-primitives"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_projects/ResearchProjectList.tsx",
+    "src/features/plugins/research-lab/sub_projects/ResearchProjectListCartograph.tsx",
+    "src/features/plugins/research-lab/sub_projects/ResearchProjectListAtelier.tsx",
+    "src/features/plugins/research-lab/sub_projects/ResearchProjectForm.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-reports",
+   "category": "ui",
+   "business_feature": "Research Report Generation",
+   "description": "AI-powered research report generation and preview. A synthesis prompt builder serialises project hypotheses, experiments, and findings into a structured prompt; a persona runs it and the output is parsed tolerantly (JSON object or markdown headings) into abstract + discussion sections. ReportPreviewDrawer renders the compiled markdown report with a download-file action.",
+   "api_surface": "",
+   "db_tables": [
+    "research_reports"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/sub_reports/ReportsPanel.tsx",
+    "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts"
+   ],
+   "cross_refs": [
+    "research-lab-findings",
+    "research-lab-hypotheses",
+    "research-lab-experiments",
+    "research-lab-shared-run-persona",
+    "research-lab-shared-download"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/research-lab/sub_reports/ReportsPanel.tsx",
+    "src/features/plugins/research-lab/sub_reports/AddReportForm.tsx",
+    "src/features/plugins/research-lab/sub_reports/ReportPreviewDrawer.tsx",
+    "src/features/plugins/research-lab/sub_reports/buildSynthesisPrompt.ts",
+    "src/features/plugins/research-lab/sub_reports/compileReport.ts",
+    "src/features/plugins/research-lab/sub_reports/parseSynthesis.ts"
+   ]
+  },
+  {
+   "name": "research-lab-shared-lib",
+   "category": "lib",
+   "business_feature": "Research Lab Shared Logic",
+   "description": "Business-logic utilities and domain constants shared across all research-lab sub-features. tokens.ts defines the ProjectStatus, Domain, SourceType, and SourceStatus enums plus colour-badge helpers and i18n-label resolvers. experimentConfig.ts handles JSON serialisation/deserialisation and pass-pattern evaluation for experiment run configs. runPersona.ts bridges to the execution API to run a persona against a prompt; downloadFile.ts provides a browser download helper; useIngestSource.ts orchestrates the source status-flip workflow.",
+   "api_surface": "",
+   "db_tables": [
+    "research_sources"
+   ],
+   "entry_points": [
+    "src/features/plugins/research-lab/shared/tokens.ts",
+    "src/features/plugins/research-lab/shared/experimentConfig.ts"
+   ],
+   "cross_refs": [
+    "research-lab-experiments",
+    "research-lab-literature",
+    "research-lab-reports",
+    "research-lab-hypotheses"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/research-lab/shared/tokens.ts",
+    "src/features/plugins/research-lab/shared/experimentConfig.ts",
+    "src/features/plugins/research-lab/shared/runPersona.ts",
+    "src/features/plugins/research-lab/shared/downloadFile.ts",
+    "src/features/plugins/research-lab/shared/useIngestSource.ts"
+   ]
+  },
+  {
+   "name": "research-lab-shared-primitives",
+   "category": "ui",
+   "business_feature": "Research Lab UI Primitives",
+   "description": "Reusable UI primitives scoped to the Research Lab: a modal wrapper (ResearchLabFormModal), a signal-strength meter (SignalMeter), a shared FormField, a section header, a prototype tabs component, an empty-state block, and a PrototypeTabs layout. These components provide visual consistency across all research-lab sub-panels without re-using project-level shared components where research-specific styling is needed.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/research-lab/shared/ResearchLabFormModal.tsx"
+   ],
+   "cross_refs": [],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/research-lab/shared/ResearchLabFormModal.tsx",
+    "src/features/plugins/research-lab/shared/SignalMeter.tsx",
+    "src/features/plugins/research-lab/shared/FormField.tsx",
+    "src/features/plugins/research-lab/shared/SectionHeader.tsx",
+    "src/features/plugins/research-lab/shared/PrototypeTabs.tsx",
+    "src/features/plugins/research-lab/shared/EmptyState.tsx"
+   ]
+  },
+  {
+   "name": "research-lab-shell",
+   "category": "ui",
+   "business_feature": "Research Lab Page Shell",
+   "description": "The top-level page component and tab-routing entry point for the Research Lab plugin. It lazy-loads each panel tab (dashboard, projects, literature, hypotheses, experiments, findings, reports, graph) behind Suspense boundaries and drives tab selection from Zustand systemStore. Depends on the i18n system and shared ContentLayout primitives.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/research-lab/ResearchLabPage.tsx"
+   ],
+   "cross_refs": [
+    "research-lab-dashboard",
+    "research-lab-projects",
+    "research-lab-literature",
+    "research-lab-hypotheses",
+    "research-lab-experiments",
+    "research-lab-findings",
+    "research-lab-reports",
+    "research-lab-graph"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/research-lab/ResearchLabPage.tsx"
+   ]
+  },
+  {
+   "name": "research-obsidian-api",
+   "category": "api",
+   "business_feature": "Research Lab & Obsidian Brain",
+   "description": "IPC wrappers for the Research Lab plugin (projects, sessions, findings, citations, team binding, Obsidian vault path) and the Obsidian Brain plugin (vault detection and connection, note CRUD, sync with conflict resolution, doctrine ingest, search and retrieval). Research Lab manages structured research projects; Obsidian Brain mirrors them to a local vault for long-term knowledge persistence.",
+   "api_surface": "Tauri commands: list_research_projects, create_research_project, connect_obsidian_vault, list_obsidian_notes, sync_obsidian, resolve_conflict",
+   "db_tables": [
+    "research_projects",
+    "research_sessions",
+    "research_findings"
+   ],
+   "entry_points": [
+    "src/api/researchLab/researchLab.ts",
+    "src/api/obsidianBrain/index.ts"
+   ],
+   "cross_refs": [
+    "companion-athena-api",
+    "vault-intelligence-api"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/researchLab/researchLab.ts",
+    "src/api/obsidianBrain/index.ts"
+   ]
+  },
+  {
+   "name": "run-desk",
+   "category": "ui",
+   "business_feature": "Dev Task Run Desk",
+   "description": "The Run Desk is the execution surface for dispatched dev tasks — a paged, event-driven task queue replacing the old Task Runner. It renders tasks grouped by status, supports retry/cancel, shows real streaming output via TaskOutputPanel, manages auto-run banners backed by dev_auto_runs, and surfaces a self-healing panel that recommends retries for failed tasks. PrBridge handles PR integration.",
+   "api_surface": "createTask, cancelTaskExecution, retryTask, batchFromAcceptedIdeas",
+   "db_tables": [
+    "dev_tasks",
+    "dev_auto_runs"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx",
+    "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts"
+   ],
+   "cross_refs": [
+    "dev-tools-shell",
+    "triage-findings",
+    "lifecycle-setup"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx",
+    "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx",
+    "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx",
+    "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx",
+    "src/features/plugins/dev-tools/sub_runner/TaskCard.tsx",
+    "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx"
+   ]
+  },
+  {
+   "name": "sensor-capture",
+   "category": "api",
+   "business_feature": "Sensor Capture",
+   "description": "Sensor and media-capture integrations — OCR (optical character recognition of screen content), radio/audio stream capture, and Google Drive file access. These three thin command wrappers bring external data sources into the persona execution pipeline.",
+   "api_surface": "ocr_capture, tune_radio, list_drive_files",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/commands/ocr/mod.rs"
+   ],
+   "cross_refs": [
+    "companion-integration",
+    "media-studio"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/commands/ocr/mod.rs",
+    "src-tauri/src/commands/radio.rs",
+    "src-tauri/src/commands/drive.rs"
+   ]
+  },
+  {
+   "name": "skills-analytics",
+   "category": "ui",
+   "business_feature": "Skills Analytics",
+   "description": "Analytics sub-tab of the Skills Manager showing coverage pipelines, skill scoreboards, usage history tables, and static scan configuration. useSkillsAnalytics derives coverage metrics from context × skill matrices; StaticScanCard and StaticScanConfigModal orchestrate background code-quality scan runs against the active project's contexts.",
+   "api_surface": "getSkillCoverage, getSkillUsage, runStaticScan via devTools API",
+   "db_tables": [
+    "skill_coverage",
+    "skill_usage"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_skills/analytics/SkillsAnalyticsTab.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/useSkillsAnalytics.ts"
+   ],
+   "cross_refs": [
+    "skills-manager-core",
+    "context-map-core"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_skills/analytics/SkillsAnalyticsTab.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/SkillScoreboard.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/SkillHistoryTable.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanCard.tsx",
+    "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanConfigModal.tsx"
+   ]
+  },
+  {
+   "name": "skills-manager-core",
+   "category": "ui",
+   "business_feature": "Skills Manager",
+   "description": "The Skills Manager shows the workspace-global skill library alongside the active project's installed skills, enabling adopt, share, and dispatch operations. skillsManagerData fetches workspace passport data and resolves install/usage/coverage state; SkillsManagerBoard renders the dual-panel exchange UI; UseSkillDialog lets operators dispatch a skill with context and target (Fleet or clipboard).",
+   "api_surface": "installSystemSkill, listSkills, adoptSkill, shareSkill via devTools API",
+   "db_tables": [
+    "workspace_skills",
+    "project_skills"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx",
+    "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts"
+   ],
+   "cross_refs": [
+    "skills-analytics",
+    "dev-tools-shell",
+    "context-map-core"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_skills/SkillsManagerPage.tsx",
+    "src/features/plugins/dev-tools/sub_skills/SkillsManagerBoard.tsx",
+    "src/features/plugins/dev-tools/sub_skills/skillsManagerBits.tsx",
+    "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts",
+    "src/features/plugins/dev-tools/sub_skills/UseSkillDialog.tsx",
+    "src/features/plugins/dev-tools/sub_skills/UseSkillShared.tsx"
+   ]
+  },
+  {
+   "name": "skills-system",
+   "category": "api",
+   "business_feature": "Skills System",
+   "description": "Reusable skill definitions that agents can invoke — discrete capabilities like 'summarise', 'translate', or 'search' packaged as callable units with defined inputs/outputs. Skills can be discovered, composed into recipes, and exposed via MCP.",
+   "api_surface": "invoke('get_skills'), invoke('invoke_skill'), invoke('register_skill')",
+   "db_tables": [
+    "skills",
+    "skill_invocations"
+   ],
+   "entry_points": [
+    "src/api/skills/skills.ts",
+    "src-tauri/src/engine/skill_registry.rs"
+   ],
+   "cross_refs": [
+    "mcp-protocol",
+    "recipe-engine",
+    "agent-connectors"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "triage-findings",
+   "category": "lib",
+   "business_feature": "Dev Findings Sweep Engine",
+   "description": "The findings engine automates discovery and triage of development issues by sweeping multiple sensor sources (Sentry errors, off-track KPIs, context coverage gaps) and writing deduped FindingDraft records to dev_ideas. emitters produce typed drafts per sensor; dispatch persists them; verify re-measures shipped findings to clear or regress their status; sensorStats and healthIngest feed the Sensor Scoreboard UI.",
+   "api_surface": "createFinding, setVerifyState, sweepFindings via devTools API",
+   "db_tables": [
+    "dev_ideas",
+    "dev_findings"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/types.ts"
+   ],
+   "cross_refs": [
+    "triage-rules",
+    "project-overview",
+    "run-desk"
+   ],
+   "file_count": 16,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_triage/findings/types.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/findingConfig.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/emitters.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/verify.ts",
+    "src/features/plugins/dev-tools/sub_triage/findings/sweep.ts"
+   ]
+  },
+  {
+   "name": "triage-rules",
+   "category": "ui",
+   "business_feature": "Dev Triage Rules",
+   "description": "Triage rules panel that lets operators configure which findings categories to accept and with what effort/risk thresholds. TriageRulesPanel renders the rule list; EffortRiskFilter provides the effort × risk slider controls; triageRuleSuggestions generates AI-suggested rules based on project history.",
+   "api_surface": "listTriageRules, updateTriageRule via devTools API",
+   "db_tables": [
+    "dev_triage_rules"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_triage/TriageRulesPanel.tsx",
+    "src/features/plugins/dev-tools/sub_triage/triageRuleSuggestions.ts"
+   ],
+   "cross_refs": [
+    "triage-findings"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_triage/TriageRulesPanel.tsx",
+    "src/features/plugins/dev-tools/sub_triage/EffortRiskFilter.tsx",
+    "src/features/plugins/dev-tools/sub_triage/triageRuleSuggestions.ts",
+    "src/features/plugins/dev-tools/sub_triage/__tests__/triageRuleSuggestions.test.ts"
+   ]
+  },
+  {
+   "name": "twin-api",
+   "category": "api",
+   "business_feature": "Digital Twin",
+   "description": "IPC wrappers for the Digital Twin plugin: managing a user's twin profile (tone, voice, personality), twin channels (Slack, email, Telegram delivery), pending memory approval queue, outbound communications log, contacts, wiki compilation (building a knowledge document from twin facts), distilled facts, studio batch runs, and reflections. The twin acts as the user's AI representative across communication channels.",
+   "api_surface": "Tauri commands: get_twin_profile, update_twin_profile, list_twin_channels, compile_twin_wiki, list_twin_pending_memories",
+   "db_tables": [
+    "twin_profiles",
+    "twin_channels",
+    "twin_communications",
+    "twin_memories",
+    "twin_contacts"
+   ],
+   "entry_points": [
+    "src/api/twin/twin.ts"
+   ],
+   "cross_refs": [
+    "companion-athena-api",
+    "persona-execution-chat-api"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/api/twin/twin.ts"
+   ]
+  },
+  {
+   "name": "twin-brain",
+   "category": "ui",
+   "business_feature": "Twin Brain / Knowledge Base",
+   "description": "Knowledge-base and memory connectivity layer for a twin, visualised as a two-layer cortex: Layer 1 is an optional Obsidian vault subpath binding; Layer 2 is a searchable knowledge base (create, bind, or link existing). Also hosts three sub-panels — distilled facts, semantic recall preview, and twin reflections — tabbed below the KB connection UI.",
+   "api_surface": "knowledge base CRUD + bind/unbind via twinApi",
+   "db_tables": [
+    "knowledge_bases",
+    "twin_profiles",
+    "twin_pending_memories"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx",
+    "src/features/plugins/twin/sub_brain/useBrainConnection.ts"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-shared-ui",
+    "twin-knowledge-memory"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/twin/sub_brain/BrainPage.tsx",
+    "src/features/plugins/twin/sub_brain/BrainAtelier.tsx",
+    "src/features/plugins/twin/sub_brain/useBrainConnection.ts",
+    "src/features/plugins/twin/sub_brain/RejectionPatternsPanel.tsx",
+    "src/features/plugins/twin/sub_brain/DistilledFactsPanel.tsx",
+    "src/features/plugins/twin/sub_brain/RecallPreviewPanel.tsx"
+   ]
+  },
+  {
+   "name": "twin-channels",
+   "category": "ui",
+   "business_feature": "Twin Channel Management",
+   "description": "Deployment channel management for a twin: create, activate/pause, and delete channel bindings (email, LinkedIn, Slack, Twitter, etc.) with credential linking and tone binding. Includes an activity-staleness tracker, a reply outbox for staged outbound messages, and a sent-replies log with reuse affordances.",
+   "api_surface": "twin channel CRUD + activity query via systemStore/twinApi",
+   "db_tables": [
+    "twin_channels",
+    "twin_communications"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx",
+    "src/features/plugins/twin/sub_channels/useChannelActivity.ts"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-shared-ui",
+    "twin-tone"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/twin/sub_channels/ChannelsPage.tsx",
+    "src/features/plugins/twin/sub_channels/ChannelsAtelier.tsx",
+    "src/features/plugins/twin/sub_channels/ContactThread.tsx",
+    "src/features/plugins/twin/sub_channels/SentReplies.tsx",
+    "src/features/plugins/twin/sub_channels/ReplyOutbox.tsx",
+    "src/features/plugins/twin/sub_channels/useChannelActivity.ts"
+   ]
+  },
+  {
+   "name": "twin-identity",
+   "category": "ui",
+   "business_feature": "Twin Identity",
+   "description": "Identity configuration sub-page for a digital twin, covering bio, pronouns, languages, and role fields. The atelier wraps an identity form with contextual guidance on how bio length affects the readiness score. Writes back to the active twin profile via systemStore.",
+   "api_surface": "",
+   "db_tables": [
+    "twin_profiles"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-shared-ui"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/plugins/twin/sub_identity/IdentityPage.tsx",
+    "src/features/plugins/twin/sub_identity/IdentityAtelier.tsx"
+   ]
+  },
+  {
+   "name": "twin-knowledge-memory",
+   "category": "ui",
+   "business_feature": "Twin Memory Inbox",
+   "description": "Memory inbox for a twin: incoming communications surface as pending memories for user approval, rejection (with preset reasons), or deferral. Approved memories feed the readiness score. Also exposes a contacts panel and a wiki-style ingestion flow for loading doctrine documents into the brain.",
+   "api_surface": "memory approve/reject/defer + doctrine ingest via twinApi",
+   "db_tables": [
+    "twin_pending_memories",
+    "twin_communications",
+    "twin_contacts"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-brain",
+    "twin-shared-ui"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/plugins/twin/sub_knowledge/KnowledgePage.tsx",
+    "src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx",
+    "src/features/plugins/twin/sub_knowledge/ContactsPanel.tsx"
+   ]
+  },
+  {
+   "name": "twin-profiles",
+   "category": "ui",
+   "business_feature": "Twin Profile Management",
+   "description": "Digital twin profile management including a constellation-style atelier UI with a hero card for the active twin and satellite cards for others. Handles CRUD (create via wizard, inline edit, delete with confirmation) and aggregates per-profile readiness scores and KPIs across the roster. Relies on useTwinReadiness and useProfileDashboards for derived state.",
+   "api_surface": "twin_profiles CRUD via systemStore",
+   "db_tables": [
+    "twin_profiles"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-shared-ui"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/plugins/twin/sub_profiles/ProfilesPage.tsx",
+    "src/features/plugins/twin/sub_profiles/ProfilesAtelier.tsx",
+    "src/features/plugins/twin/sub_profiles/TwinHero.tsx",
+    "src/features/plugins/twin/sub_profiles/CompleteTwinChecklist.tsx",
+    "src/features/plugins/twin/sub_profiles/CreateTwinWizard.tsx"
+   ]
+  },
+  {
+   "name": "twin-shared-ui",
+   "category": "ui",
+   "business_feature": "Twin Shared UI",
+   "description": "Shared presentational components and utility modules used across all Twin sub-pages. Includes the unified TwinHeaderBand (gradient hero band with KPI slots, readiness ribbon, and decoration prop), the ReadinessGapPopover and gap-ranking logic, a TwinPicker selector, channel palette definitions, gender-sigil helpers, and decorative SVG elements.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/twin/shared/TwinHeaderBand.tsx",
+    "src/features/plugins/twin/shared/readinessGaps.ts",
+    "src/features/plugins/twin/shared/channels.ts"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-profiles",
+    "twin-tone",
+    "twin-brain",
+    "twin-channels",
+    "twin-knowledge-memory",
+    "twin-training",
+    "twin-identity"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/plugins/twin/shared/TwinHeaderBand.tsx",
+    "src/features/plugins/twin/shared/TwinReadinessRibbon.tsx",
+    "src/features/plugins/twin/shared/TwinStat.tsx",
+    "src/features/plugins/twin/shared/TwinPicker.tsx",
+    "src/features/plugins/twin/shared/TwinWikiPanel.tsx",
+    "src/features/plugins/twin/shared/WikiFreshnessPill.tsx"
+   ]
+  },
+  {
+   "name": "twin-shell",
+   "category": "ui",
+   "business_feature": "Twin Plugin Shell",
+   "description": "Entry point and routing layer for the Twin plugin. Manages tab routing across seven sub-pages, hydratesactive-twin data layers on twin change, and drives a readiness-celebration effect when a milestone closes. Depends on systemStore for active twin state and lazy-loads each sub-page for code splitting.",
+   "api_surface": "",
+   "db_tables": [
+    "twin_profiles",
+    "twin_tones",
+    "twin_channels",
+    "twin_pending_memories"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/TwinPage.tsx",
+    "src/features/plugins/twin/useTwinReadiness.ts"
+   ],
+   "cross_refs": [
+    "twin-profiles",
+    "twin-brain",
+    "twin-channels",
+    "twin-knowledge-memory",
+    "twin-training",
+    "twin-tone",
+    "twin-identity"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/plugins/twin/TwinPage.tsx",
+    "src/features/plugins/twin/useTwinReadiness.ts",
+    "src/features/plugins/twin/useReadinessCelebration.ts",
+    "src/features/plugins/twin/TwinEmptyState.tsx",
+    "src/features/plugins/twin/CoachMark.tsx",
+    "src/features/plugins/twin/useProfileDashboards.ts"
+   ]
+  },
+  {
+   "name": "twin-tests",
+   "category": "test",
+   "business_feature": "Twin Readiness Tests",
+   "description": "Unit tests for the Twin plugin's core logic. Covers the useTwinReadiness hook's milestone-status derivation and scoring algorithm across all combinations of profile, tone, channel, and memory states.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts"
+   ],
+   "cross_refs": [
+    "twin-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts"
+   ]
+  },
+  {
+   "name": "twin-tone",
+   "category": "ui",
+   "business_feature": "Twin Tone Configuration",
+   "description": "Voice and tone configuration for a twin's communication style across channels. The atelier presents a left rail of channel stations (generic, email, LinkedIn, Slack, etc.) and a centre stage card for editing voice directives, message examples, constraints, and length hints per channel. Includes an AI auto-suggest flow and a console view for quick inline edits.",
+   "api_surface": "twin tones CRUD via twinApi + systemStore",
+   "db_tables": [
+    "twin_tones"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-shared-ui"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/plugins/twin/sub_tone/TonePage.tsx",
+    "src/features/plugins/twin/sub_tone/ToneAtelier.tsx",
+    "src/features/plugins/twin/sub_tone/ToneBaseline.tsx",
+    "src/features/plugins/twin/sub_tone/ToneConsole.tsx"
+   ]
+  },
+  {
+   "name": "twin-training",
+   "category": "ui",
+   "business_feature": "Twin Training Sessions",
+   "description": "Interview-style training sessions that teach a twin how to respond by collecting Q&A pairs across six topic categories (background, opinions, communication, values, expertise, personal). An AI generates contextual follow-up questions; answers are saved as approved memories. Includes topic-coverage scoring, a momentum tracker, and a training studio for extended sessions.",
+   "api_surface": "AI question generation + memory save via twinApi",
+   "db_tables": [
+    "twin_pending_memories",
+    "twin_profiles"
+   ],
+   "entry_points": [
+    "src/features/plugins/twin/sub_training/TrainingAtelier.tsx",
+    "src/features/plugins/twin/sub_training/useTrainingSession.ts"
+   ],
+   "cross_refs": [
+    "twin-shell",
+    "twin-knowledge-memory",
+    "twin-shared-ui"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/plugins/twin/sub_training/TrainingPage.tsx",
+    "src/features/plugins/twin/sub_training/TrainingAtelier.tsx",
+    "src/features/plugins/twin/sub_training/TrainingStudio.tsx",
+    "src/features/plugins/twin/sub_training/NextMovesPanel.tsx",
+    "src/features/plugins/twin/sub_training/useTrainingSession.ts",
+    "src/features/plugins/twin/sub_training/useTrainingMomentum.ts"
+   ]
+  },
+  {
+   "name": "twin-variant-tabs",
+   "category": "ui",
+   "business_feature": "Twin Variant Tabs",
+   "description": "Variant tab strip component for switching between twin variants within the Twin plugin. Renders a compact tab bar used by pages that surface multiple view modes or twin variants side-by-side.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/plugins/twin/variants/TwinVariantTabs.tsx"
+   ],
+   "cross_refs": [
+    "twin-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/plugins/twin/variants/TwinVariantTabs.tsx"
+   ]
+  },
+  {
+   "name": "workspace-knowledge",
+   "category": "ui",
+   "business_feature": "Workspace Knowledge Center",
+   "description": "The Workspaces Knowledge Center organises practices and knowledge across a portfolio of workspaces. WorkspacesAtlas renders the workspace map; WorkspaceTabs and WorkspacePulse show workspace-level health and tabs; SwitcherBreadcrumb and useWorkspaceSwitch manage the active workspace; MoveToWorkspaceButton and WorkspaceEditMenu handle governance actions; workspaceStore persists active state.",
+   "api_surface": "listWorkspaces, updateWorkspace via devTools API",
+   "db_tables": [
+    "workspaces",
+    "workspace_knowledge"
+   ],
+   "entry_points": [
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspacesPage.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/workspaceStore.ts"
+   ],
+   "cross_refs": [
+    "practice-library",
+    "knowledge-harvest",
+    "dev-tools-shell"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspacesPage.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspacesAtlas.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspaceTabs.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspacePulse.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/WorkspaceEditMenu.tsx",
+    "src/features/plugins/dev-tools/sub_workspaces/SwitcherBreadcrumb.tsx"
+   ]
+  }
+ ]
+}

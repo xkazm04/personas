@@ -1,0 +1,1289 @@
+{
+ "id": "483d9b43-f34f-4903-a31c-15070afefeaa",
+ "name": "Factory & Projects",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "build-sessions",
+   "category": "api",
+   "business_feature": "Build Sessions",
+   "description": "Guided persona build session commands — the step-by-step AI-assisted wizard that collects user answers, infers required tools and connectors, and assembles a persona definition. Includes simulation (dry-run build preview), multi-turn conversations within a session, and review checkpoints.",
+   "api_surface": "create_build_session, advance_build_phase, simulate_build, submit_build_review",
+   "db_tables": [
+    "build_sessions",
+    "build_conversations",
+    "build_phases"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/design/build_sessions.rs"
+   ],
+   "cross_refs": [
+    "template-library",
+    "connector-design",
+    "persona-crud"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/design/build_sessions.rs",
+    "src-tauri/src/commands/design/build_simulate.rs",
+    "src-tauri/src/commands/design/conversations.rs",
+    "src-tauri/src/commands/design/reviews.rs",
+    "src-tauri/src/commands/design/mod.rs"
+   ]
+  },
+  {
+   "name": "connector-design",
+   "category": "api",
+   "business_feature": "Connector Design",
+   "description": "Connector explorer and readiness assessment commands — browsing available connectors from the catalog, and computing a persona's connector readiness score (are all required credentials bound? are they healthy?). The readiness resolver is used by the build-sessions wizard and persona list views.",
+   "api_surface": "explore_connectors, get_connector_readiness, check_build_readiness",
+   "db_tables": [
+    "connector_definitions",
+    "persona_credentials"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/design/connector_readiness.rs"
+   ],
+   "cross_refs": [
+    "connector-management",
+    "build-sessions",
+    "credential-vault"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/design/connector_explorer.rs",
+    "src-tauri/src/commands/design/connector_readiness.rs"
+   ]
+  },
+  {
+   "name": "dev-projects-kpi-api",
+   "category": "api",
+   "business_feature": "Factory & Dev Projects",
+   "description": "IPC wrappers for the full Factory & Projects feature: dev project CRUD and directory scanning, skill installation, goals with signals and dependency graphs, ideas, context groups, tasks, competition tracking, and strategy stats (devTools.ts); KPI definitions, measurements, and bindings (kpis.ts); ship-layer milestones with use-case membership and bucket classification (milestones.ts); use-case slice definitions and status lifecycle (useCases.ts); per-project autopilot mode control (autopilot.ts); and the workspace knowledge center — cross-project practice libraries, harvest, ingest, and adoption matrices (workspaces.ts). This is the entire Factory cockpit IPC surface.",
+   "api_surface": "Tauri commands: dev_tools_list_projects, dev_tools_list_kpis, dev_tools_create_kpi, dev_tools_list_milestones, dev_tools_list_use_cases, dev_tools_get_autopilot_mode, dev_tools_list_workspaces, dev_tools_workspace_harvest",
+   "db_tables": [
+    "dev_projects",
+    "dev_goals",
+    "dev_kpis",
+    "dev_kpi_measurements",
+    "dev_milestones",
+    "dev_use_cases",
+    "dev_workspaces",
+    "workspace_knowledge"
+   ],
+   "entry_points": [
+    "src/api/devTools/devTools.ts",
+    "src/api/devTools/kpis.ts"
+   ],
+   "cross_refs": [
+    "overview-intelligence-api",
+    "team-management-api",
+    "persona-lifecycle-api"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/api/devTools/devTools.ts",
+    "src/api/devTools/kpis.ts",
+    "src/api/devTools/milestones.ts",
+    "src/api/devTools/useCases.ts",
+    "src/api/devTools/autopilot.ts",
+    "src/api/devTools/workspaces.ts"
+   ]
+  },
+  {
+   "name": "draft-editor",
+   "category": "ui",
+   "business_feature": "Draft Persona Editor",
+   "description": "Multi-tab editor for reviewing and modifying an n8n-derived persona draft before it is committed. Provides Prompt, Settings, and JSON tabs that let operators tune the AI system prompt, persona metadata, and raw JSON payload. Accepts an N8nPersonaDraft shape and exposes update callbacks consumed by the n8n wizard's confirm step.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/draft-editor/DraftEditStep.tsx"
+   ],
+   "cross_refs": [
+    "n8n-wizard-steps",
+    "n8n-wizard-orchestration"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/templates/draft-editor/DraftEditStep.tsx",
+    "src/features/templates/draft-editor/DraftPromptTab.tsx",
+    "src/features/templates/draft-editor/DraftSettingsTab.tsx",
+    "src/features/templates/draft-editor/DraftJsonTab.tsx",
+    "src/features/templates/draft-editor/DraftIdentityTab.tsx",
+    "src/features/templates/draft-editor/DesignContextViewer.tsx"
+   ]
+  },
+  {
+   "name": "factory-kpi-actions",
+   "category": "lib",
+   "business_feature": "Factory KPI Actions",
+   "description": "Data adapter and action layer for the Factory. FactoryDataProvider maps live dev_tools rows into the Factory view-model (MockKpi shapes) via IPC. Action modals let users add KPIs, set up measurements, compose tasks, and view a KPI proposal pipeline. factoryModel.ts contains all pure domain types and derivations shared across factory layers.",
+   "api_surface": null,
+   "db_tables": [
+    "dev_projects",
+    "kpis",
+    "contexts"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_factory/factoryData.tsx",
+    "src/features/teams/sub_factory/factoryModel.ts"
+   ],
+   "cross_refs": [
+    "factory-kpi-display",
+    "kpi-math-models",
+    "factory-project-tabs"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/teams/sub_factory/factoryData.tsx",
+    "src/features/teams/sub_factory/factoryModel.ts",
+    "src/features/teams/sub_factory/AddKpiModal.tsx",
+    "src/features/teams/sub_factory/addKpiPrimitives.tsx",
+    "src/features/teams/sub_factory/MeasureSetupModal.tsx",
+    "src/features/teams/sub_factory/useAddKpi.ts"
+   ]
+  },
+  {
+   "name": "factory-kpi-display",
+   "category": "ui",
+   "business_feature": "Factory KPI Overview",
+   "description": "Factory page — the L1/L2/L3 KPI management hierarchy for dev projects. L1 renders project score-cards; L2 is a context × KPI matrix with micro-sparkline cells (TrendVariant); L3 drills into a KPI table and console. Uses live dev_tools data via FactoryDataProvider. Traffic-light colouring shows met/warn/crit/unmeasured KPI status.",
+   "api_surface": null,
+   "db_tables": [
+    "dev_projects",
+    "kpis",
+    "kpi_measurements"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_factory/FactoryPage.tsx",
+    "src/features/teams/sub_factory/TrendVariant.tsx"
+   ],
+   "cross_refs": [
+    "factory-kpi-actions",
+    "factory-project-tabs",
+    "kpi-math-models"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/teams/sub_factory/FactoryPage.tsx",
+    "src/features/teams/sub_factory/FactoryShell.tsx",
+    "src/features/teams/sub_factory/TrendVariant.tsx",
+    "src/features/teams/sub_factory/FactoryBreadcrumb.tsx",
+    "src/features/teams/sub_factory/ContextMatrix.tsx",
+    "src/features/teams/sub_factory/ProjectsLayer.tsx"
+   ]
+  },
+  {
+   "name": "factory-project-tabs",
+   "category": "ui",
+   "business_feature": "Factory Project Tabs",
+   "description": "L2 project detail tabs within the Factory drill-down. Three tabs — Overview, Observability, and Ship — give per-project health snapshots. factoryL2Data.ts provides the aggregation logic that populates the tab content from the Factory data context.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx",
+    "src/features/teams/sub_factory/l2/factoryL2Data.ts"
+   ],
+   "cross_refs": [
+    "factory-kpi-display",
+    "factory-ship-milestone"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx",
+    "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx",
+    "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx",
+    "src/features/teams/sub_factory/l2/factoryL2Data.ts"
+   ]
+  },
+  {
+   "name": "factory-ship-milestone",
+   "category": "ui",
+   "business_feature": "Factory Ship Milestone",
+   "description": "Ship tab within the Factory — a milestone convergence surface that shows release-readiness, velocity, and a planner. Derives milestones, velocity metrics, and criteria gates from the Factory data. Includes a Fleet dispatch integration so users can ship from the UI. Thoroughly tested with fixture-driven unit tests for derivation and velocity calculations.",
+   "api_surface": null,
+   "db_tables": [
+    "dev_milestones",
+    "dev_projects"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx",
+    "src/features/teams/sub_factory/l2/ship/shipDerive.ts"
+   ],
+   "cross_refs": [
+    "factory-project-tabs",
+    "factory-kpi-display"
+   ],
+   "file_count": 17,
+   "sample_files": [
+    "src/features/teams/sub_factory/l2/ship/FactoryShipTab.tsx",
+    "src/features/teams/sub_factory/l2/ship/ShipContextDrawer.tsx",
+    "src/features/teams/sub_factory/l2/ship/ShipDispatch.tsx",
+    "src/features/teams/sub_factory/l2/ship/ShipLibraryTree.tsx",
+    "src/features/teams/sub_factory/l2/ship/ShipMilestoneComposer.tsx",
+    "src/features/teams/sub_factory/l2/ship/ShipPlannerTab.tsx"
+   ]
+  },
+  {
+   "name": "goal-acceptance",
+   "category": "ui",
+   "business_feature": "Goal Acceptance",
+   "description": "Models and surfaces the goal acceptance workflow — the criteria by which a goal transitions from agent-driven work to human review and sign-off. Includes the acceptance overlay, triage view, KPI linkage, status badges, and the business logic for partitioning and scoring goal acceptance state.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_goals/goalAcceptanceModel.ts",
+    "src/features/teams/sub_goals/GoalAcceptanceOverlay.tsx"
+   ],
+   "cross_refs": [
+    "goal-board",
+    "kpi-tracking"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/teams/sub_goals/goalStatus.ts",
+    "src/features/teams/sub_goals/GoalStatusBadge.tsx",
+    "src/features/teams/sub_goals/goalAcceptanceModel.ts",
+    "src/features/teams/sub_goals/GoalAcceptanceOverlay.tsx",
+    "src/features/teams/sub_goals/GoalAcceptanceView.tsx",
+    "src/features/teams/sub_goals/AcceptanceTriagePolished.tsx"
+   ]
+  },
+  {
+   "name": "goal-board",
+   "category": "ui",
+   "business_feature": "Goal Board",
+   "description": "Main goal-tracking surface for teams and projects. Renders goals as a kanban board, timeline, constellation map, and mission list. Supports creating and editing goals via a modal, detailed drawers, task tables, and a handoff panel for agent-to-human hand-offs. Scope can be all-projects or per-project, with the Done lane toggleable.",
+   "api_surface": null,
+   "db_tables": [
+    "goals",
+    "goal_tasks"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_goals/GoalsPage.tsx",
+    "src/features/teams/sub_goals/GoalKanban.tsx"
+   ],
+   "cross_refs": [
+    "goal-acceptance",
+    "kpi-tracking",
+    "mastermind-scene-derive"
+   ],
+   "file_count": 17,
+   "sample_files": [
+    "src/features/teams/sub_goals/GoalsPage.tsx",
+    "src/features/teams/sub_goals/GoalCard.tsx",
+    "src/features/teams/sub_goals/GoalConstellation.tsx",
+    "src/features/teams/sub_goals/GoalDetailDrawer.tsx",
+    "src/features/teams/sub_goals/GoalEditorModal.tsx",
+    "src/features/teams/sub_goals/GoalHandoffPanel.tsx"
+   ]
+  },
+  {
+   "name": "kpi-and-goals",
+   "category": "lib",
+   "business_feature": "KPI & Goal Advancement",
+   "description": "KPI measurement, connector binding, and goal-derivation pipeline. The evaluator runs active KPIs by their stored procedure (codebase command or connector API call) and records rolling measurements. The binding module wires a connector KPI to a semantic metric type via a curated recipe or LLM-composed procedure that is test-run before saving. The derivation module closes the steering loop: an off-track KPI fires a headless Claude decision that creates a team goal, which the goal-advance module converts into a running team assignment.",
+   "api_surface": "run_kpi_eval, bind_kpi_connector, derive_goal_from_kpi (internal)",
+   "db_tables": [
+    "dev_kpis",
+    "dev_kpi_measurements",
+    "dev_goals",
+    "dev_goal_signals",
+    "team_assignments"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/kpi_eval.rs",
+    "src-tauri/src/engine/kpi_derivation.rs"
+   ],
+   "cross_refs": [
+    "team-orchestration",
+    "credential-lifecycle",
+    "pipeline-and-automation"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/engine/kpi_eval.rs",
+    "src-tauri/src/engine/kpi_binding.rs",
+    "src-tauri/src/engine/kpi_derivation.rs",
+    "src-tauri/src/engine/goal_advance.rs"
+   ]
+  },
+  {
+   "name": "kpi-intelligence",
+   "category": "api",
+   "business_feature": "KPI Intelligence",
+   "description": "KPI proposal scanning and simulation — a headless Claude pass that analyses the context map, existing KPIs, and the codebase to propose measurable KPIs for each project context; a KPI composition module for assembling multi-signal composite metrics; a KPI simulator for projecting future values; and the live roadmap command (milestone convergence view for the ship tab).",
+   "api_surface": "run_kpi_scan, compose_kpi, simulate_kpi, get_live_roadmap",
+   "db_tables": [
+    "dev_kpis",
+    "dev_kpi_measurements",
+    "dev_milestones"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/kpi_scan.rs"
+   ],
+   "cross_refs": [
+    "context-scanning",
+    "dev-tools-core",
+    "observability-metrics"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/kpi_scan.rs",
+    "src-tauri/src/commands/infrastructure/kpi_compose.rs",
+    "src-tauri/src/commands/infrastructure/kpi_sim.rs",
+    "src-tauri/src/commands/live_roadmap.rs"
+   ]
+  },
+  {
+   "name": "kpi-math-models",
+   "category": "lib",
+   "business_feature": "KPI Math Models",
+   "description": "Pure business-logic layer for KPI calculations: distance to target, convergence scoring, measurement provenance tracking, sim prompt generation, and descriptive measurement labels. These are domain-model utilities with no UI dependencies, consumed by both the KPI tracking surface and the Factory overview.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_kpis/kpiMath.ts",
+    "src/features/teams/sub_kpis/kpiMeasurementProvenance.ts"
+   ],
+   "cross_refs": [
+    "kpi-tracking",
+    "factory-kpi-display",
+    "factory-kpi-actions"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/teams/sub_kpis/kpiMath.ts",
+    "src/features/teams/sub_kpis/kpiMeasurementProvenance.ts",
+    "src/features/teams/sub_kpis/kpiMeta.ts",
+    "src/features/teams/sub_kpis/kpiDistance.tsx",
+    "src/features/teams/sub_kpis/describeMeasurement.ts",
+    "src/features/teams/sub_kpis/kpiConvergence.ts"
+   ]
+  },
+  {
+   "name": "kpi-tracking",
+   "category": "ui",
+   "business_feature": "KPI Tracking",
+   "description": "Full KPI management surface including the KPI dashboard, connect wizard, proposal queue, signal board, steering panel, sim control, and detail modal. Users connect data sources to KPIs, review AI-generated proposals, simulate projections, and steer via autopilot controls. Depends on kpi-math-models for calculations.",
+   "api_surface": null,
+   "db_tables": [
+    "kpis",
+    "kpi_measurements"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_kpis/KPIsPage.tsx",
+    "src/features/teams/sub_kpis/KPIDashboard.tsx"
+   ],
+   "cross_refs": [
+    "kpi-math-models",
+    "factory-kpi-display",
+    "goal-acceptance"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/teams/sub_kpis/KPIsPage.tsx",
+    "src/features/teams/sub_kpis/KPIDashboard.tsx",
+    "src/features/teams/sub_kpis/KPIConnectWizard.tsx",
+    "src/features/teams/sub_kpis/KPIProposalModal.tsx",
+    "src/features/teams/sub_kpis/KPIProposalsQueue.tsx",
+    "src/features/teams/sub_kpis/KpiDetailModal.tsx"
+   ]
+  },
+  {
+   "name": "mastermind-canvas-chrome",
+   "category": "ui",
+   "business_feature": "Mastermind Canvas Chrome",
+   "description": "Canvas-level chrome for the Mastermind view: the shell that owns the SVG/canvas coordinate system, the toolbar with mode controls (edit/group/connect/note), the Fleet preview panel for live terminal sessions, the project list sidebar, and the data health bar that reports stale or failed data families. CanvasShell is the host container all variants render inside.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx",
+    "src/features/teams/sub_mastermind/lib/CanvasToolbar.tsx"
+   ],
+   "cross_refs": [
+    "mastermind-island-ui",
+    "mastermind-layout-store",
+    "mastermind-page"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/lib/CanvasShell.tsx",
+    "src/features/teams/sub_mastermind/lib/CanvasToolbar.tsx",
+    "src/features/teams/sub_mastermind/lib/DataHealthBar.tsx",
+    "src/features/teams/sub_mastermind/lib/DemoNotice.tsx",
+    "src/features/teams/sub_mastermind/lib/ProjectListSidebar.tsx",
+    "src/features/teams/sub_mastermind/lib/ProjectSidebar.tsx"
+   ]
+  },
+  {
+   "name": "mastermind-island-ui",
+   "category": "ui",
+   "business_feature": "Mastermind Island UI",
+   "description": "Per-island visual components rendered within Mastermind canvas variants. IslandBanner and IslandMenu are the island's header and context menu; DimTile and DimGlyph render individual dimension cells; GroupLayer manages island grouping overlays; NoteLayer and NoteEditor handle inline canvas notes; StatColumns display metric columns; ZoomBadge and ZoomControls manage the camera zoom HUD.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/lib/IslandBanner.tsx",
+    "src/features/teams/sub_mastermind/lib/DimTile.tsx"
+   ],
+   "cross_refs": [
+    "mastermind-scene-derive",
+    "mastermind-layout-store",
+    "mastermind-canvas-chrome"
+   ],
+   "file_count": 15,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/lib/IslandBanner.tsx",
+    "src/features/teams/sub_mastermind/lib/IslandMenu.tsx",
+    "src/features/teams/sub_mastermind/lib/DimTile.tsx",
+    "src/features/teams/sub_mastermind/lib/DimGlyph.tsx",
+    "src/features/teams/sub_mastermind/lib/GroupLayer.tsx",
+    "src/features/teams/sub_mastermind/lib/NoteLayer.tsx"
+   ]
+  },
+  {
+   "name": "mastermind-layout-store",
+   "category": "lib",
+   "business_feature": "Mastermind Layout & State",
+   "description": "Persistent layout state for the Mastermind canvas — island positions, hidden slugs, group memberships, notes, and cross-project relation links. sceneStore.ts batches async IPC fetches (meta, scans, goals, sentry, LLM spend) into a Zustand store with per-family status tracking. layoutStore.ts durably hydrates from the DB on first session mount.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/lib/sceneStore.ts",
+    "src/features/teams/sub_mastermind/lib/layoutStore.ts"
+   ],
+   "cross_refs": [
+    "mastermind-scene-derive",
+    "mastermind-canvas-chrome"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/lib/sceneStore.ts",
+    "src/features/teams/sub_mastermind/lib/layoutStore.ts",
+    "src/features/teams/sub_mastermind/lib/positions.ts",
+    "src/features/teams/sub_mastermind/lib/groups.ts",
+    "src/features/teams/sub_mastermind/lib/links.ts",
+    "src/features/teams/sub_mastermind/lib/notes.ts"
+   ]
+  },
+  {
+   "name": "mastermind-page",
+   "category": "ui",
+   "business_feature": "Mastermind Page & Variants",
+   "description": "Top-level Mastermind page and its two canvas variants (Hex Mosaic and Inverse Grid). MastermindPage wraps the inner page in FactoryDataProvider and ImproveProvider; MastermindInner orchestrates all data families (passports, relations, scans, goals, fleet, sentry, LLM spend), the content-stable island identity cache, and all popover/sidebar open states. Variants are toggled via a segmented tab switcher.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/MastermindPage.tsx"
+   ],
+   "cross_refs": [
+    "mastermind-canvas-chrome",
+    "mastermind-popovers",
+    "mastermind-scene-derive",
+    "mastermind-layout-store",
+    "passport-improve-ui",
+    "factory-kpi-display"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/MastermindPage.tsx",
+    "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx",
+    "src/features/teams/sub_mastermind/variants/MastermindInverseGrid.tsx",
+    "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx",
+    "src/features/teams/sub_mastermind/variants/InverseIsland.tsx"
+   ]
+  },
+  {
+   "name": "mastermind-popovers",
+   "category": "ui",
+   "business_feature": "Mastermind Popovers",
+   "description": "Contextual popovers that open when a user clicks a dimension cell or island affordance on the Mastermind canvas. Covers: category drill-down, dimension list, Fleet session list, goal list, idea scan dispatch, KPI list, persona list, stack-list (datalinks/support), and the Fleet dispatch modal for sending instructions to a project's terminal session.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx",
+    "src/features/teams/sub_mastermind/lib/DispatchFleetModal.tsx"
+   ],
+   "cross_refs": [
+    "mastermind-scene-derive",
+    "mastermind-canvas-chrome",
+    "mastermind-island-ui"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/lib/CategoryPopover.tsx",
+    "src/features/teams/sub_mastermind/lib/DimListPopover.tsx",
+    "src/features/teams/sub_mastermind/lib/DispatchFleetModal.tsx",
+    "src/features/teams/sub_mastermind/lib/FleetListPopover.tsx",
+    "src/features/teams/sub_mastermind/lib/GoalListPopover.tsx",
+    "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx"
+   ]
+  },
+  {
+   "name": "mastermind-scene-derive",
+   "category": "lib",
+   "business_feature": "Mastermind Scene Model",
+   "description": "Core scene derivation for the Mastermind multi-project canvas. deriveScene.ts produces an Island array from passport readiness, Factory KPI rollups, Sentry error counts, Fleet sessions, goal counts, and idea scan freshness — all reduced to per-cell colour/count payloads. dimActions, dimCategories, dimRegistry, and liveState support cell-click actionability and attention computation.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_mastermind/lib/deriveScene.ts",
+    "src/features/teams/sub_mastermind/lib/types.ts"
+   ],
+   "cross_refs": [
+    "passport-wall-model",
+    "factory-kpi-display",
+    "mastermind-layout-store",
+    "goal-board"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/teams/sub_mastermind/lib/deriveScene.ts",
+    "src/features/teams/sub_mastermind/lib/dimActions.ts",
+    "src/features/teams/sub_mastermind/lib/dimCategories.ts",
+    "src/features/teams/sub_mastermind/lib/dimMeta.ts",
+    "src/features/teams/sub_mastermind/lib/dimRegistry.ts",
+    "src/features/teams/sub_mastermind/lib/fleetMeta.ts"
+   ]
+  },
+  {
+   "name": "n8n-integration",
+   "category": "api",
+   "business_feature": "n8n Integration",
+   "description": "n8n workflow transformation pipeline — converts Personas automation definitions into n8n JSON workflows via a streaming Claude CLI pass. Includes a prompt sanitiser, a streaming output parser, job-state machine, user-confirmation gate, and a CLI runner that drives the transformation end-to-end. Also manages n8n session persistence and rate-limit tracking.",
+   "api_surface": "start_n8n_transform, confirm_n8n_transform, get_n8n_session, check_n8n_limits",
+   "db_tables": [
+    "n8n_sessions",
+    "n8n_transform_jobs"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/design/n8n_transform/cli_runner.rs"
+   ],
+   "cross_refs": [
+    "platform-integrations",
+    "tools-management"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src-tauri/src/commands/design/n8n_sessions.rs",
+    "src-tauri/src/commands/design/n8n_limits.rs",
+    "src-tauri/src/commands/design/n8n_transform/mod.rs",
+    "src-tauri/src/commands/design/n8n_transform/cli_runner.rs",
+    "src-tauri/src/commands/design/n8n_transform/confirmation.rs",
+    "src-tauri/src/commands/design/n8n_transform/job_state.rs"
+   ]
+  },
+  {
+   "name": "passport-improve-model",
+   "category": "lib",
+   "business_feature": "Passport Improve Engine",
+   "description": "Business logic for the passport improvement engine. useImproveEngine coordinates the improvement plan derivation; improvePlan.ts computes actionable items per skill; goldenStandard.ts defines quality benchmarks; findingFix.ts maps scan findings to fix actions. Also includes provenance tracking, levels definitions, deploy actions, and connector resolution.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts",
+    "src/features/teams/sub_factory/passport/improve/improvePlan.ts"
+   ],
+   "cross_refs": [
+    "passport-improve-ui",
+    "passport-wall-model"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/teams/sub_factory/passport/improve/useImproveEngine.ts",
+    "src/features/teams/sub_factory/passport/improve/ImproveContext.tsx",
+    "src/features/teams/sub_factory/passport/improve/improvePlan.ts",
+    "src/features/teams/sub_factory/passport/improve/goldenStandard.ts",
+    "src/features/teams/sub_factory/passport/improve/findingFix.ts",
+    "src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts"
+   ]
+  },
+  {
+   "name": "passport-improve-ui",
+   "category": "ui",
+   "business_feature": "Passport Improve Workbench",
+   "description": "Skill workbench and improvement surfaces that let users act on passport readiness findings. The workbench renders a list/detail view of skills with actionable items; ImprovePopover and DeployPopover anchor to passport cell clicks on both the wall and the Mastermind canvas. StandardsScan shows coverage against golden-standard checklists.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_factory/passport/improve/SkillsWorkbench.tsx",
+    "src/features/teams/sub_factory/passport/improve/ImprovePopover.tsx"
+   ],
+   "cross_refs": [
+    "passport-improve-model",
+    "passport-wall-ui",
+    "mastermind-canvas-chrome"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/teams/sub_factory/passport/improve/SkillsWorkbench.tsx",
+    "src/features/teams/sub_factory/passport/improve/SkillDetailPane.tsx",
+    "src/features/teams/sub_factory/passport/improve/SkillListPane.tsx",
+    "src/features/teams/sub_factory/passport/improve/workbenchChrome.tsx",
+    "src/features/teams/sub_factory/passport/improve/ImproveCell.tsx",
+    "src/features/teams/sub_factory/passport/improve/ImprovePlanPanel.tsx"
+   ]
+  },
+  {
+   "name": "passport-wall-model",
+   "category": "lib",
+   "business_feature": "Passport Wall Model",
+   "description": "Domain model and data layer for the Passport Wall. passportModel.ts defines the AppPassport type; passportDerive.ts derives readiness scores; passportRows.ts produces the wall row shapes; passportHistory.ts provides trend data; usePassportData.ts is the IPC bridge. Also includes export, environment cost estimation, onboarding and populate dispatch helpers.",
+   "api_surface": null,
+   "db_tables": [
+    "dev_projects",
+    "passport_rows",
+    "passport_history"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_factory/passport/usePassportData.ts",
+    "src/features/teams/sub_factory/passport/passportModel.ts"
+   ],
+   "cross_refs": [
+    "passport-wall-ui",
+    "passport-improve-model",
+    "mastermind-scene-derive"
+   ],
+   "file_count": 19,
+   "sample_files": [
+    "src/features/teams/sub_factory/passport/passportModel.ts",
+    "src/features/teams/sub_factory/passport/passportDerive.ts",
+    "src/features/teams/sub_factory/passport/passportRows.ts",
+    "src/features/teams/sub_factory/passport/passportHistory.ts",
+    "src/features/teams/sub_factory/passport/passportExport.ts",
+    "src/features/teams/sub_factory/passport/usePassportData.ts"
+   ]
+  },
+  {
+   "name": "passport-wall-ui",
+   "category": "ui",
+   "business_feature": "Passport Wall",
+   "description": "The Passport Wall UI — a multi-project readiness dashboard where each project's passport is rendered as a row of dimension cells (ink-coloured by readiness). Includes the cover roadmap, actions row, populate scope picker, wall comparison table, overview grid, and action confirmation modals. Ink-based visual encoding communicates project health at a glance.",
+   "api_surface": null,
+   "db_tables": [
+    "dev_projects",
+    "passport_rows"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx",
+    "src/features/teams/sub_factory/passport/InkWallCell.tsx"
+   ],
+   "cross_refs": [
+    "passport-wall-model",
+    "passport-improve-ui",
+    "mastermind-scene-derive"
+   ],
+   "file_count": 16,
+   "sample_files": [
+    "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx",
+    "src/features/teams/sub_factory/passport/CoverBody.tsx",
+    "src/features/teams/sub_factory/passport/CoverRoadmap.tsx",
+    "src/features/teams/sub_factory/passport/ActionConfirmModal.tsx",
+    "src/features/teams/sub_factory/passport/InkWallCell.tsx",
+    "src/features/teams/sub_factory/passport/LlmTrackingCell.tsx"
+   ]
+  },
+  {
+   "name": "persona-design-tools",
+   "category": "api",
+   "business_feature": "Persona Design Tools",
+   "description": "Design-time analytical and synthesis tools — persona capability analysis, platform definitions (what the persona targets), team preset libraries for quick multi-persona team scaffolding, and team synthesis (AI generates a recommended team composition from a natural-language brief).",
+   "api_surface": "analyse_persona, list_platform_definitions, list_team_presets, synthesize_team",
+   "db_tables": [
+    "platform_definitions",
+    "team_presets"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/design/analysis.rs"
+   ],
+   "cross_refs": [
+    "build-sessions",
+    "teams-core",
+    "template-library"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/design/analysis.rs",
+    "src-tauri/src/commands/design/platform_definitions.rs",
+    "src-tauri/src/commands/design/team_presets.rs",
+    "src-tauri/src/commands/design/team_synthesis.rs"
+   ]
+  },
+  {
+   "name": "project-tracking-core",
+   "category": "lib",
+   "business_feature": "Project Activity Tracking",
+   "description": "Dev-project activity tracking subsystem that absorbs CLI signals (git commits, active-runs entries, Obsidian notes), maintains a capped raw event log, and runs an hourly Sonnet 4.6 consolidator that produces a stable per-project 'pulse' (narrative + named directions + tensions). The pulse is consumed by the companion brain and surfaced in chat. Includes the push accelerator for out-of-cadence consolidation triggered by a local HTTP POST from a skill or CLI.",
+   "api_surface": "POST /project-tracking/cli-event (local HTTP)",
+   "db_tables": [
+    "dev_tools_project_subscriptions",
+    "project_tracking_events",
+    "project_pulses"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/project_tracking/mod.rs",
+    "src-tauri/src/engine/project_tracking/consolidator.rs"
+   ],
+   "cross_refs": [
+    "project-tracking-watchers",
+    "engine-core-infrastructure"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/src/engine/project_tracking/mod.rs",
+    "src-tauri/src/engine/project_tracking/subscription.rs",
+    "src-tauri/src/engine/project_tracking/scheduler.rs",
+    "src-tauri/src/engine/project_tracking/push.rs",
+    "src-tauri/src/engine/project_tracking/events.rs",
+    "src-tauri/src/engine/project_tracking/pulse.rs"
+   ]
+  },
+  {
+   "name": "project-tracking-watchers",
+   "category": "lib",
+   "business_feature": "Project Source Watchers",
+   "description": "Pull-based source watchers that turn external state into typed EventPayload entries for the project tracking event log. The git watcher runs 'git log --since' against a project path; the ledger watcher parses the Claude Code active-runs.md file for RunStarted/RunCompleted events; the Obsidian watcher scans a configured vault for Lessons, Explorer sweeps, and Architect scan notes modified since the last poll.",
+   "api_surface": "git log subprocess (outbound), filesystem reads",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/engine/project_tracking/watchers/mod.rs"
+   ],
+   "cross_refs": [
+    "project-tracking-core"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/engine/project_tracking/watchers/mod.rs",
+    "src-tauri/src/engine/project_tracking/watchers/git.rs",
+    "src-tauri/src/engine/project_tracking/watchers/ledger.rs",
+    "src-tauri/src/engine/project_tracking/watchers/obsidian.rs"
+   ]
+  },
+  {
+   "name": "recipe-build-models",
+   "category": "data",
+   "business_feature": "Recipe & Build Session Models",
+   "description": "Domain types for the Design & Build Studio: `RecipeDefinition` (parameterised action templates with input_schema and `{{param}}` interpolation), `RecipeSuggestion` (AI-proposed recipes from execution analysis), `BuildSession` and `BuildPhase` (LLM-driven persona construction state machine), `CompositionWorkflow` (multi-step composition orchestration), `DesignConversation` (structured design-time dialogue), and `TemplateFeedback` (user ratings on persona templates).",
+   "api_surface": "",
+   "db_tables": [
+    "recipe_definitions",
+    "recipe_suggestions",
+    "build_sessions",
+    "composition_workflows",
+    "design_conversations",
+    "template_feedback"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/recipe.rs",
+    "src-tauri/core/src/models/build_session.rs"
+   ],
+   "cross_refs": [
+    "persona-genome-models",
+    "core-validation",
+    "chat-review-models"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/core/src/models/recipe.rs",
+    "src-tauri/core/src/models/recipe_suggestion.rs",
+    "src-tauri/core/src/models/build_session.rs",
+    "src-tauri/core/src/models/composition_workflow.rs",
+    "src-tauri/core/src/models/design_conversation.rs",
+    "src-tauri/core/src/models/template_feedback.rs"
+   ]
+  },
+  {
+   "name": "template-activity-diagrams",
+   "category": "ui",
+   "business_feature": "Use-Case Flow Diagrams",
+   "description": "Interactive modal that renders a template's use-case flows as a node-edge flow diagram. Supports multi-flow navigation via tab bar, node inspection via popover, and smart popover positioning relative to the canvas viewport. Consumes UseCaseFlow JSON stored in PersonaDesignReview.use_case_flows.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_diagrams/ActivityDiagramModal.tsx"
+   ],
+   "cross_refs": [
+    "template-page-shell",
+    "template-gallery-card-actions"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/templates/sub_diagrams/ActivityDiagramModal.tsx",
+    "src/features/templates/sub_diagrams/activityDiagramTypes.ts",
+    "src/features/templates/sub_diagrams/FlowDiagram.tsx",
+    "src/features/templates/sub_diagrams/FlowNodeCard.tsx",
+    "src/features/templates/sub_diagrams/NodePopover.tsx",
+    "src/features/templates/sub_diagrams/PopoverPositioner.tsx"
+   ]
+  },
+  {
+   "name": "template-adoption-chronology",
+   "category": "ui",
+   "business_feature": "Template Adoption Wizard Orchestration",
+   "description": "Top-level adoption wizard orchestrator: AdoptionWizardModal is the outer shell (modal or inline) that resets stale build sessions and confirms before discarding in-progress work. ChronologyAdoptionView drives the full adoption lifecycle (session creation, questionnaire, build). ChronologyCommandHub and TestReportModal handle post-adoption use-case command visibility and test reports.",
+   "api_surface": "invoke create_adoption_session, save_adoption_answers, adjust_adoption_draft",
+   "db_tables": [
+    "build_sessions",
+    "personas"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx",
+    "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx"
+   ],
+   "cross_refs": [
+    "template-adoption-questionnaire",
+    "template-adoption-persona-layout",
+    "template-adoption-support",
+    "template-gallery-modals"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/AdoptionWizardModal.tsx",
+    "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx",
+    "src/features/templates/sub_generated/adoption/chronology/ChronologyCommandHub.tsx",
+    "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx",
+    "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx",
+    "src/features/templates/sub_generated/adoption/chronology/useUseCaseChronology.ts"
+   ]
+  },
+  {
+   "name": "template-adoption-persona-layout",
+   "category": "ui",
+   "business_feature": "Adoption Persona Layout Matrix",
+   "description": "Matrix-style adoption surface that shows all 8 persona dimensions as a petal layout, letting the user review and edit each capability, error policy, schedule, and connector binding before creating. useAdoptionDimensionModel is the orchestration hook that maintains petal states, maps questionnaire answers to dimensions, and drives inline editing.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx"
+   ],
+   "cross_refs": [
+    "template-adoption-questionnaire",
+    "template-adoption-chronology",
+    "template-adoption-uc-picker-core"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutAdoption.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx",
+    "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx"
+   ]
+  },
+  {
+   "name": "template-adoption-questionnaire",
+   "category": "ui",
+   "business_feature": "Template Adoption Questionnaire",
+   "description": "Multi-question interview UI that walks the user through configuring a template's 8 adoption dimensions. Each question maps to a glyph dimension and renders as a hero question with stacked options, a story thread, category rail, footer navigation, and keyboard shortcuts. Tracks category progress and surfaces blocked-credential CTAs when required connectors are missing.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx"
+   ],
+   "cross_refs": [
+    "template-adoption-persona-layout",
+    "template-adoption-chronology",
+    "template-adoption-support"
+   ],
+   "file_count": 17,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireForm.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeaderBand.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireCategoryRail.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireHeroQuestion.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStackedOptions.tsx",
+    "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx"
+   ]
+  },
+  {
+   "name": "template-adoption-support",
+   "category": "lib",
+   "business_feature": "Adoption Flow Utilities",
+   "description": "Supporting utilities and cross-cutting components for the adoption flow: vault-to-question credential matching (vaultAdoptionMatcher), dynamic question option resolution, hydrated design result loading, shared use-case trigger normalisation, composition x-ray inspector, messaging picker, pill selectors, questionnaire form grid, glyph animations, and the quick-add credential modal.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/shared/vaultAdoptionMatcher.ts",
+    "src/features/templates/sub_generated/adoption/useCasePickerShared.ts"
+   ],
+   "cross_refs": [
+    "template-adoption-chronology",
+    "template-adoption-questionnaire",
+    "template-shared-primitives"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/glyph/PersonaChronologyGlyph.tsx",
+    "src/features/templates/sub_generated/adoption/glyph/index.ts",
+    "src/features/templates/sub_generated/adoption/CompositionXray.tsx",
+    "src/features/templates/sub_generated/adoption/MessagingPickerShared.tsx",
+    "src/features/templates/sub_generated/adoption/SelectPills.tsx",
+    "src/features/templates/sub_generated/adoption/QuestionnaireFormGrid.tsx"
+   ]
+  },
+  {
+   "name": "template-adoption-uc-picker-core",
+   "category": "ui",
+   "business_feature": "Use-Case Picker Core",
+   "description": "Core use-case picker shell that lets users select how a template will be activated (schedule, event, cockpit, forge). The panel hosts route toggles, a card-based selection grid, and the cockpit/power-rail views. useUcPickerState manages the picker's internal tab and selection state, and ucPickerHelpers provides normalization utilities.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/useUcPickerState.ts"
+   ],
+   "cross_refs": [
+    "template-adoption-persona-layout",
+    "template-adoption-uc-picker-variants"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucPanel.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucCard.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucCockpitView.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucPowerRail.tsx"
+   ]
+  },
+  {
+   "name": "template-adoption-uc-picker-variants",
+   "category": "ui",
+   "business_feature": "Use-Case Picker Variants",
+   "description": "Specialised visual variants for the use-case picker: notification glyphs (stamp, in-app, app-notification), deliver card, forge editor, preview modal, time-aware cards and controls (clock variant, time card, time controls). Each variant represents a distinct way the template persona can be scheduled or triggered in production.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/adoption/ucPicker/ucDeliverCard.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucForgeEditor.tsx"
+   ],
+   "cross_refs": [
+    "template-adoption-uc-picker-core"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/templates/sub_generated/adoption/ucPicker/ucStampGlyph.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucAppNotificationGlyph.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucInAppMessageGlyph.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucClockVariant.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucDeliverCard.tsx",
+    "src/features/templates/sub_generated/adoption/ucPicker/ucForgeEditor.tsx"
+   ]
+  },
+  {
+   "name": "template-design-preview",
+   "category": "ui",
+   "business_feature": "Template Design Preview",
+   "description": "Read-only preview of an AI-generated template's design result, broken into three sections: connectors pipeline, event subscriptions, and messaging channels. Also includes the design summary bar, a test-results panel that shows validation scores per dimension, and a checkbox to flag specific dimensions for re-generation.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx"
+   ],
+   "cross_refs": [
+    "template-generation",
+    "template-shared-primitives"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/templates/sub_generated/design-preview/DesignResultPreview.tsx",
+    "src/features/templates/sub_generated/design-preview/DesignSummaryBar.tsx",
+    "src/features/templates/sub_generated/design-preview/ConnectorsSection.tsx",
+    "src/features/templates/sub_generated/design-preview/EventsSection.tsx",
+    "src/features/templates/sub_generated/design-preview/MessagesSection.tsx",
+    "src/features/templates/sub_generated/design-preview/DesignTestResults.tsx"
+   ]
+  },
+  {
+   "name": "template-explore-view",
+   "category": "ui",
+   "business_feature": "Template Domain Explorer",
+   "description": "Two-level domain explorer that presents automation templates grouped into business domains. Level 1 is a bento-grid mosaic of 7 domains; level 2 drills into a domain's templates and recipes. Reads from useExploreCatalog which merges the template gallery with the recipe index to produce a unified exploration surface.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_explore/ExploreView.tsx",
+    "src/features/templates/sub_explore/useExploreCatalog.ts"
+   ],
+   "cross_refs": [
+    "template-page-shell",
+    "recipe-logic"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/templates/sub_explore/ExploreView.tsx",
+    "src/features/templates/sub_explore/atlas/BentoGrid.tsx",
+    "src/features/templates/sub_explore/exploreDomains.ts",
+    "src/features/templates/sub_explore/level2/DomainLevel2.tsx",
+    "src/features/templates/sub_explore/level2/DomainTable.tsx",
+    "src/features/templates/sub_explore/useExploreCatalog.ts"
+   ]
+  },
+  {
+   "name": "template-gallery-card-actions",
+   "category": "ui",
+   "business_feature": "Template Gallery Card List",
+   "description": "Interactive card-layer elements: the virtual scrolling list, row-level action menu, connector icon buttons, expanded row details, compare tray, review cache, and all hooks driving card data and comparison state. GeneratedReviewsTab is the root gallery host that wires together search, filters, virtual list, and modals.",
+   "api_surface": null,
+   "db_tables": [
+    "persona_design_reviews"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx",
+    "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx"
+   ],
+   "cross_refs": [
+    "template-gallery-card-renderers",
+    "template-gallery-search",
+    "template-gallery-modals",
+    "template-adoption-chronology"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/templates/sub_generated/gallery/cards/TemplateVirtualList.tsx",
+    "src/features/templates/sub_generated/gallery/cards/ComfortableRow.tsx",
+    "src/features/templates/sub_generated/gallery/cards/CompactRow.tsx",
+    "src/features/templates/sub_generated/gallery/cards/CompareTray.tsx",
+    "src/features/templates/sub_generated/gallery/cards/ConnectorIconButton.tsx",
+    "src/features/templates/sub_generated/gallery/cards/ExpandedRowContent.tsx"
+   ]
+  },
+  {
+   "name": "template-gallery-card-renderers",
+   "category": "ui",
+   "business_feature": "Template Gallery Card Renderer",
+   "description": "Rendering layer for individual template cards in the gallery list. TemplateCard is the top-level polymorphic renderer that delegates to header, body, footer, and preview sub-components based on density mode. Also includes category icon mapping and category pill badges used across all card densities.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCard.tsx"
+   ],
+   "cross_refs": [
+    "template-gallery-card-actions",
+    "template-gallery-search"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCard.tsx",
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardBody.tsx",
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardFooter.tsx",
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardHeader.tsx",
+    "src/features/templates/sub_generated/gallery/cards/renderers/TemplateCardPreview.tsx",
+    "src/features/templates/sub_generated/gallery/cards/renderers/templateCardTypes.ts"
+   ]
+  },
+  {
+   "name": "template-gallery-explore",
+   "category": "ui",
+   "business_feature": "Template Discovery Carousels",
+   "description": "Discovery section within the generated gallery: trending and recommended template carousels, role-group category cards, an automation opportunities rail (AI-generated suggestions tied to the active persona), background decorative banners, and an empty-state family for zero-result and AI-search modes.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/gallery/explore/useAutomationDiscovery.ts"
+   ],
+   "cross_refs": [
+    "template-gallery-card-actions",
+    "template-gallery-search"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/templates/sub_generated/gallery/explore/TrendingCarousel.tsx",
+    "src/features/templates/sub_generated/gallery/explore/RecommendedCarousel.tsx",
+    "src/features/templates/sub_generated/gallery/explore/RoleGroupCard.tsx",
+    "src/features/templates/sub_generated/gallery/explore/AutomationOpportunitiesRail.tsx",
+    "src/features/templates/sub_generated/gallery/explore/BackgroundBanners.tsx",
+    "src/features/templates/sub_generated/gallery/explore/EmptyState.tsx"
+   ]
+  },
+  {
+   "name": "template-gallery-modals",
+   "category": "ui",
+   "business_feature": "Template Gallery Modals",
+   "description": "Modal layer for the template gallery: detail view, preview, rebuild, multi-template compare, recommended picks, credential quick-setup, and the use-cases tab. useModalStack manages a push/pop stack so modals can open sub-modals without losing their parent. TemplateModals is the root compositor that renders whichever modal is currently active.",
+   "api_surface": null,
+   "db_tables": [
+    "persona_design_reviews"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx",
+    "src/features/templates/sub_generated/gallery/modals/useModalStack.ts"
+   ],
+   "cross_refs": [
+    "template-gallery-card-actions",
+    "template-adoption-chronology",
+    "template-shared-primitives"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/templates/sub_generated/gallery/modals/TemplateModals.tsx",
+    "src/features/templates/sub_generated/gallery/modals/TemplateDetailModal.tsx",
+    "src/features/templates/sub_generated/gallery/modals/TemplatePreviewModal.tsx",
+    "src/features/templates/sub_generated/gallery/modals/RebuildModal.tsx",
+    "src/features/templates/sub_generated/gallery/modals/CompareModal.tsx",
+    "src/features/templates/sub_generated/gallery/modals/RecommendedModal.tsx"
+   ]
+  },
+  {
+   "name": "template-gallery-search",
+   "category": "ui",
+   "business_feature": "Template Gallery Search & Filters",
+   "description": "Full search and filter bar for the template gallery: structured query chips, AI-powered autocomplete suggestions, connector/component/sort/density/admin filter dropdowns, and a filter chip row. useStructuredQuery converts free-text input into typed query chips (keyword, connector, tag, use-case) that the virtual list filters against.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/gallery/search/TemplateSearchBar.tsx",
+    "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts"
+   ],
+   "cross_refs": [
+    "template-gallery-card-actions",
+    "template-gallery-card-renderers"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/templates/sub_generated/gallery/search/TemplateSearchBar.tsx",
+    "src/features/templates/sub_generated/gallery/search/TemplateSearchBarTypes.ts",
+    "src/features/templates/sub_generated/gallery/search/TemplateSearchFilterRow.tsx",
+    "src/features/templates/sub_generated/gallery/search/filters/AdminToolsDropdown.tsx",
+    "src/features/templates/sub_generated/gallery/search/filters/ComponentFilterDropdown.tsx",
+    "src/features/templates/sub_generated/gallery/search/filters/ConnectorFilterDropdown.tsx"
+   ]
+  },
+  {
+   "name": "template-generation",
+   "category": "ui",
+   "business_feature": "AI Template Generation",
+   "description": "Three-step AI wizard for creating a new template from scratch: Describe (name + description input), Generate (invokes the design runner via IPC and streams progress), and Review (shows the generated design result for approval). State is managed by a wizard reducer with snapshot persistence so the wizard can survive navigations.",
+   "api_surface": "invoke run_design_review, save_design_review",
+   "db_tables": [
+    "persona_design_reviews"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_generated/generation/modals/CreateTemplateModal.tsx",
+    "src/features/templates/sub_generated/generation/useCreateTemplateActions.ts"
+   ],
+   "cross_refs": [
+    "template-design-preview",
+    "template-shared-primitives",
+    "template-gallery-card-actions"
+   ],
+   "file_count": 17,
+   "sample_files": [
+    "src/features/templates/sub_generated/generation/modals/CreateTemplateModal.tsx",
+    "src/features/templates/sub_generated/generation/modals/CreateTemplateModalFooter.tsx",
+    "src/features/templates/sub_generated/generation/modals/CreateTemplateModalHeader.tsx",
+    "src/features/templates/sub_generated/generation/modals/CreateTemplateSteps.tsx",
+    "src/features/templates/sub_generated/generation/modals/createTemplateTypes.ts",
+    "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx"
+   ]
+  },
+  {
+   "name": "template-library",
+   "category": "api",
+   "business_feature": "Template Library",
+   "description": "Persona template adoption and discovery — adopting a community or built-in template onto a persona, capturing user feedback on templates, semantic smart-search across the template library, and archetype definitions (the 9 pre-built persona composition building blocks).",
+   "api_surface": "adopt_template, submit_template_feedback, search_templates, list_archetypes",
+   "db_tables": [
+    "template_adoptions",
+    "template_feedback"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/design/template_adopt.rs"
+   ],
+   "cross_refs": [
+    "build-sessions",
+    "persona-portability"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/design/template_adopt.rs",
+    "src-tauri/src/commands/design/template_feedback.rs",
+    "src-tauri/src/commands/design/smart_search.rs",
+    "src-tauri/src/commands/design/archetypes.rs"
+   ]
+  },
+  {
+   "name": "template-page-shell",
+   "category": "ui",
+   "business_feature": "Template Hub Page",
+   "description": "Top-level page container for the Templates section that hosts five tab-routed sub-views (generated gallery, n8n import, explore, recipes, presets). It reads the active tab from the system store, composes sub-feature components behind ErrorBoundary guards, and manages the activity-diagram modal that shows use-case flow visualisations. Depends on useDesignReviews hook and vaultStore/systemStore for credential/tab state.",
+   "api_surface": "invokes list_design_reviews via useDesignReviews hook",
+   "db_tables": [
+    "persona_design_reviews"
+   ],
+   "entry_points": [
+    "src/features/templates/components/DesignReviewsPage.tsx"
+   ],
+   "cross_refs": [
+    "template-gallery-card-actions",
+    "template-explore-view",
+    "n8n-wizard-steps",
+    "recipe-catalog",
+    "template-presets",
+    "template-activity-diagrams"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/templates/components/DesignReviewsPage.tsx",
+    "src/features/templates/components/ConfigureStep.tsx",
+    "src/features/templates/components/SourceDefinitionInput.tsx"
+   ]
+  },
+  {
+   "name": "template-presets",
+   "category": "ui",
+   "business_feature": "Team Preset Library",
+   "description": "Team preset library that surfaces filesystem-shipped multi-persona team configurations. PresetLibraryPage renders presets as a data-weighted bento mosaic (tile size scales with team size). PresetPreviewModal shows a graph preview and adoption flow; PresetQuestionnaireForm and usePresetAdoption handle configuring the preset before deployment.",
+   "api_surface": "invoke list_team_presets",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_presets/PresetLibraryPage.tsx"
+   ],
+   "cross_refs": [
+    "template-page-shell",
+    "template-adoption-chronology"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/templates/sub_presets/PresetLibraryPage.tsx",
+    "src/features/templates/sub_presets/PresetPreviewModal.tsx",
+    "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx",
+    "src/features/templates/sub_presets/PresetGraphAdapter.tsx",
+    "src/features/templates/sub_presets/usePresetAdoption.ts",
+    "src/features/templates/sub_presets/index.ts"
+   ]
+  },
+  {
+   "name": "template-shared-primitives",
+   "category": "lib",
+   "business_feature": "Template Shared Primitives",
+   "description": "Reusable building blocks shared across template sub-features: BaseModal overlay, ThinkingLoader spinner, TrustBadge scan indicator, ConnectorReadiness readiness chip, ConnectorPipeline visualisation, DimensionRadial chart, AdoptCelebration confetti, SandboxWarningBanner, ScanResultsBanner, TeamSynthesisPanel, and library utilities (adoptionReadiness, architecturalCategories, templateComplexity, vaultAdoptionMatcher).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_generated/shared/BaseModal.tsx",
+    "src/features/templates/sub_generated/shared/adoptionReadiness.ts"
+   ],
+   "cross_refs": [
+    "template-adoption-chronology",
+    "template-gallery-modals",
+    "template-generation",
+    "template-design-preview"
+   ],
+   "file_count": 16,
+   "sample_files": [
+    "src/features/templates/sub_generated/shared/BaseModal.tsx",
+    "src/features/templates/sub_generated/shared/ThinkingLoader.tsx",
+    "src/features/templates/sub_generated/shared/TrustBadge.tsx",
+    "src/features/templates/sub_generated/shared/ConnectorReadiness.tsx",
+    "src/features/templates/sub_generated/shared/ConnectorPipeline.tsx",
+    "src/features/templates/sub_generated/shared/DimensionRadial.tsx"
+   ]
+  }
+ ]
+}

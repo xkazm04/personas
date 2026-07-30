@@ -1,0 +1,1756 @@
+{
+ "id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
+ "name": "Automation & Pipelines",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "automation-event-models",
+   "category": "data",
+   "business_feature": "Automation & Event Models",
+   "description": "Domain types for the automation and event pipeline: `AutomationPipeline` (multi-step automation definitions with deploy status), `PersonaTrigger` / `TriggerConfig` (schedule, webhook, manual, chain trigger variants), `PersonaEvent` (inbound event records with lifecycle), `SharedEvent` (cross-persona event bus payload), and `NotificationSubscription` (user notification preferences per channel).",
+   "api_surface": "",
+   "db_tables": [
+    "automation_pipelines",
+    "persona_triggers",
+    "persona_events",
+    "shared_events",
+    "notification_subscriptions"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/trigger.rs",
+    "src-tauri/core/src/models/automation.rs"
+   ],
+   "cross_refs": [
+    "cron-scheduling",
+    "webhook-relay-models",
+    "persona-genome-models"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/core/src/models/automation.rs",
+    "src-tauri/core/src/models/trigger.rs",
+    "src-tauri/core/src/models/event.rs",
+    "src-tauri/core/src/models/shared_event.rs",
+    "src-tauri/core/src/models/notification_subscription.rs"
+   ]
+  },
+  {
+   "name": "build-compilation-pipeline",
+   "category": "lib",
+   "business_feature": "Build Compilation Pipeline",
+   "description": "Staged compilation pipeline framework shared by persona, intent, and workflow compilers. The compilation_pipeline module defines the CompilationPipeline trait and stage machinery; template_v3 bridges the newer v3 template schema (nested use_cases) to the flat AgentIr shape the backend needs; template_checksums manages integrity verification for template manifests.",
+   "api_surface": null,
+   "db_tables": [
+    "persona_templates",
+    "recipe_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/compilation_pipeline.rs",
+    "src-tauri/engine/src/template_v3.rs"
+   ],
+   "cross_refs": [
+    "persona-compilers",
+    "recipe-adoption"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/engine/src/compilation_pipeline.rs",
+    "src-tauri/engine/src/template_v3.rs",
+    "src-tauri/engine/src/template_checksums.rs"
+   ]
+  },
+  {
+   "name": "cloud-webhooks",
+   "category": "ui",
+   "business_feature": "Cloud Webhooks",
+   "description": "Cloud webhooks management tab: allows users to register, list, and manage cloud-hosted webhook endpoints that forward events into the Personas event bus. Complements the local smee relay with production-grade external webhook reception.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/sub_cloud_webhooks/CloudWebhooksTab.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell",
+    "smee-relay"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/sub_cloud_webhooks/CloudWebhooksTab.tsx"
+   ]
+  },
+  {
+   "name": "communication-events-repo",
+   "category": "data",
+   "business_feature": "Event System & Shared Events",
+   "description": "Repositories for the event system — event definitions, shared event catalog subscriptions, event firings, and Smee relay configurations for webhooks. Powers the trigger/automation system by storing the event graph that connects external service events to persona executions.",
+   "api_surface": "",
+   "db_tables": [
+    "events",
+    "shared_event_catalog",
+    "shared_event_firings",
+    "smee_relays"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/communication/events.rs"
+   ],
+   "cross_refs": [
+    "triggers-automations-repo",
+    "builtin-connector-seed"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/communication/events.rs",
+    "src-tauri/db/src/repos/communication/shared_events.rs",
+    "src-tauri/db/src/repos/communication/smee_relays.rs",
+    "src-tauri/db/src/repos/communication/mod.rs"
+   ]
+  },
+  {
+   "name": "connector-automation",
+   "category": "ui",
+   "business_feature": "Connector Automation Rules",
+   "description": "Automation rules management within the connector tab: create and manage automations that fire when a connector event matches a condition and execute an action. The AutomationSetupModal wizard steps through trigger, condition, action, and review; AutomationCard/CardActions display existing rules with status badges.",
+   "api_surface": "create_automation, list_automations, toggle_automation",
+   "db_tables": [
+    "automations",
+    "connectors"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_connectors/components/automation/AutomationsSection.tsx",
+    "src/features/agents/sub_connectors/libs/useAutomationSetup.ts"
+   ],
+   "cross_refs": [
+    "connector-status",
+    "notification-channels"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/agents/sub_connectors/components/automation/AutomationsSection.tsx",
+    "src/features/agents/sub_connectors/components/automation/AutomationCard.tsx",
+    "src/features/agents/sub_connectors/components/automation/AutomationCardActions.tsx",
+    "src/features/agents/sub_connectors/components/automation/AutomationSetupModal.tsx",
+    "src/features/agents/sub_connectors/components/automation/AutomationTriggerStep.tsx",
+    "src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx"
+   ]
+  },
+  {
+   "name": "connector-status",
+   "category": "ui",
+   "business_feature": "Persona Connector Status",
+   "description": "Persona connectors tab showing which external integrations (APIs, tools) are bound to the persona, their readiness status, unfulfilled credential demands, and a verification panel. CredentialPicker lets users bind vault credentials to connector slots. useConnectorStatuses polls connector readiness; useUnfulfilledCredentials derives the gap list.",
+   "api_surface": "list_persona_connectors, verify_connector, get_connector_readiness",
+   "db_tables": [
+    "connectors",
+    "credentials",
+    "personas"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab.tsx",
+    "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts"
+   ],
+   "cross_refs": [
+    "persona-editor",
+    "connector-automation",
+    "notification-channels",
+    "quick-config-shared"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab.tsx",
+    "src/features/agents/sub_connectors/components/connectors/ConnectorsTabSections.tsx",
+    "src/features/agents/sub_connectors/components/connectors/ConnectorStatusCard.tsx",
+    "src/features/agents/sub_connectors/components/connectors/ConnectorStatusBadges.tsx",
+    "src/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel.tsx",
+    "src/features/agents/sub_connectors/components/connectors/AgentCredentialDemands.tsx"
+   ]
+  },
+  {
+   "name": "cron-scheduling",
+   "category": "lib",
+   "business_feature": "Cron Scheduling & Harvest Scopes",
+   "description": "Core scheduling primitives: a 5-field cron expression parser using O(1) bitmask matching, timezone-aware schedule validation helpers, a performance digest configuration struct validated by the settings layer, the `EvolutionCycleStatus` state machine for genome breeding runs, and harvest scope territory definitions that partition the codebase into bounded agent-readable segments for the practice-harvest engine.",
+   "api_surface": "",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/cron.rs",
+    "src-tauri/core/src/scheduler.rs"
+   ],
+   "cross_refs": [
+    "automation-event-models",
+    "persona-genome-models",
+    "core-validation"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/core/src/cron.rs",
+    "src-tauri/core/src/scheduler.rs",
+    "src-tauri/core/src/digest_config.rs",
+    "src-tauri/core/src/evolution_status.rs",
+    "src-tauri/core/src/harvest_scopes.rs"
+   ]
+  },
+  {
+   "name": "dead-letter",
+   "category": "ui",
+   "business_feature": "Dead Letter Queue",
+   "description": "Dead-letter queue viewer for failed/undeliverable events. Shows events that could not be processed so operators can inspect, retry, or discard them. Part of the event-bus reliability surface.",
+   "api_surface": "",
+   "db_tables": [
+    "events"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_dead_letter/DeadLetterTab.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell",
+    "live-stream"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/sub_dead_letter/DeadLetterTab.tsx"
+   ]
+  },
+  {
+   "name": "event-subscriptions",
+   "category": "lib",
+   "business_feature": "Event Subscriptions",
+   "description": "Reactive subscription framework that powers all background polling and event-driven automation. The ReactiveSubscription trait captures the source→predicate→action pattern; composite triggers evaluate AND/OR/sequence conditions with time windows against the event log; the polling loop fans out to per-persona pollers on each tick.",
+   "api_surface": "ReactiveSubscription trait (internal)",
+   "db_tables": [
+    "persona_events",
+    "composite_trigger_state"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/subscription.rs",
+    "src-tauri/src/engine/composite.rs"
+   ],
+   "cross_refs": [
+    "outbound-notifications",
+    "webhook-ingestion",
+    "execution-runner"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/engine/subscription.rs",
+    "src-tauri/src/engine/composite.rs",
+    "src-tauri/src/engine/polling.rs"
+   ]
+  },
+  {
+   "name": "events-automation-api",
+   "category": "api",
+   "business_feature": "Event Feed & Notification Automation",
+   "description": "IPC wrappers for the shared event feed (cross-service event catalog subscriptions that flow into persona triggers), notification subscription management (push channels for execution outcomes), system-op automations (binding built-in backend operations like context scans to schedules or events), and the persona recipe library (reusable capability building blocks). These wires together the reactive automation layer.",
+   "api_surface": "Tauri commands: shared_events_browse_catalog, list_notification_subscriptions, list_system_op_automations, list_recipes",
+   "db_tables": [
+    "shared_event_subscriptions",
+    "notification_subscriptions",
+    "system_op_automations",
+    "persona_recipes"
+   ],
+   "entry_points": [
+    "src/api/events/sharedEvents.ts",
+    "src/api/systemOps.ts"
+   ],
+   "cross_refs": [
+    "trigger-scheduler-api",
+    "persona-lifecycle-api",
+    "team-communication-api"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/api/events/sharedEvents.ts",
+    "src/api/events/notificationSubscriptions.ts",
+    "src/api/systemOps.ts",
+    "src/api/recipes/recipes.ts"
+   ]
+  },
+  {
+   "name": "external-integrations-repo",
+   "category": "data",
+   "business_feature": "External Service Integrations",
+   "description": "Repositories for external service integrations — MCP gateway configurations for Model Context Protocol servers, n8n session tracking for workflow automation, owned device registry, Playwright procedure definitions for browser automation, and OCR job records.",
+   "api_surface": "",
+   "db_tables": [
+    "mcp_gateways",
+    "n8n_sessions",
+    "owned_devices",
+    "playwright_procedures",
+    "ocr_jobs"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/resources/mcp_gateways.rs"
+   ],
+   "cross_refs": [
+    "tools-connectors-repo",
+    "credentials-repo"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/db/src/repos/resources/mcp_gateways.rs",
+    "src-tauri/db/src/repos/resources/n8n_sessions.rs",
+    "src-tauri/db/src/repos/resources/owned_devices.rs",
+    "src-tauri/db/src/repos/resources/playwright_procedures.rs",
+    "src-tauri/db/src/repos/resources/ocr.rs"
+   ]
+  },
+  {
+   "name": "live-stream",
+   "category": "ui",
+   "business_feature": "Live Event Stream",
+   "description": "Real-time event bus monitor: streams live PersonaEvent records via the event bus listener, with pause/resume, per-frame rAF batching to prevent OOM under high throughput, rolling events/min counter, filter by status/type, and a detail modal per event. Serves as the main operational visibility surface for the event bus.",
+   "api_surface": "listEvents (backfill)",
+   "db_tables": [
+    "events"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_live_stream/LiveStreamTab.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/triggers/sub_live_stream/LiveStreamTab.tsx",
+    "src/features/triggers/sub_live_stream/EventDetailModal.tsx",
+    "src/features/triggers/sub_live_stream/EventTypeChip.tsx",
+    "src/features/triggers/sub_live_stream/HighlightedJson.tsx",
+    "src/features/triggers/sub_live_stream/eventTypeMeta.ts"
+   ]
+  },
+  {
+   "name": "messaging-alerts-repo",
+   "category": "data",
+   "business_feature": "Messaging & Alert Rules",
+   "description": "Repositories for in-app messaging, alert rules, and SLA tracking. Stores persona-to-user messages, system notifications, and configurable alert rules that fire when execution metrics cross thresholds. SLA tracking records response-time commitments and violation events.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_messages",
+    "alert_rules",
+    "sla_records"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/communication/messages.rs",
+    "src-tauri/db/src/repos/communication/alert_rules.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "agent-persona-repo"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/repos/communication/messages.rs",
+    "src-tauri/db/src/repos/communication/alert_rules.rs",
+    "src-tauri/db/src/repos/communication/sla.rs"
+   ]
+  },
+  {
+   "name": "n8n-connector-analysis",
+   "category": "lib",
+   "business_feature": "n8n Connector Analysis",
+   "description": "Analyses an imported n8n workflow's connector requirements against the user's vault: connectorMatching applies ranked credential-to-connector fuzzy matching, credentialGapAnalysis identifies unmet requirements, connectorHealth aggregates per-connector readiness, and protocolParser extracts structured connector metadata from raw n8n protocol strings.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_n8n/edit/connectorMatching.ts",
+    "src/features/templates/sub_n8n/edit/credentialGapAnalysis.ts"
+   ],
+   "cross_refs": [
+    "n8n-wizard-orchestration",
+    "n8n-wizard-steps"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/templates/sub_n8n/edit/connectorMatching.ts",
+    "src/features/templates/sub_n8n/edit/credentialGapAnalysis.ts",
+    "src/features/templates/sub_n8n/edit/connectorHealth.ts",
+    "src/features/templates/sub_n8n/edit/protocolParser.ts"
+   ]
+  },
+  {
+   "name": "n8n-wizard-orchestration",
+   "category": "lib",
+   "business_feature": "n8n Wizard Orchestration",
+   "description": "Hooks that orchestrate the n8n import wizard: useN8nWizard is the top-level orchestrator composing session, transform, and test sub-hooks. Handler hooks decompose wizard actions into lifecycle, transform, and generic event handlers. useWorkflowImport calls the backend transform IPC and useN8nDesignData fetches the resulting design object.",
+   "api_surface": "invoke transform_n8n_workflow, get_n8n_design_data, test_n8n_workflow",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_n8n/hooks/useN8nWizard.ts"
+   ],
+   "cross_refs": [
+    "n8n-wizard-steps",
+    "n8n-wizard-state",
+    "n8n-connector-analysis",
+    "draft-editor"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/templates/sub_n8n/hooks/useN8nWizard.ts",
+    "src/features/templates/sub_n8n/hooks/useN8nWizardHandlers.ts",
+    "src/features/templates/sub_n8n/hooks/useN8nWizardLifecycleHandlers.ts",
+    "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts",
+    "src/features/templates/sub_n8n/hooks/useN8nSession.ts",
+    "src/features/templates/sub_n8n/hooks/useN8nTransform.ts"
+   ]
+  },
+  {
+   "name": "n8n-wizard-state",
+   "category": "lib",
+   "business_feature": "n8n Wizard State Management",
+   "description": "State management for the n8n import wizard: four reducers (session, navigation, transform, test) each managing their own slice of wizard state, and the colorTokens module that maps n8n node types to brand-consistent colour tokens for parser result visualisation.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_n8n/reducers/sessionReducer.ts",
+    "src/features/templates/sub_n8n/reducers/navigationReducer.ts"
+   ],
+   "cross_refs": [
+    "n8n-wizard-orchestration"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/templates/sub_n8n/reducers/sessionReducer.ts",
+    "src/features/templates/sub_n8n/reducers/navigationReducer.ts",
+    "src/features/templates/sub_n8n/reducers/transformReducer.ts",
+    "src/features/templates/sub_n8n/reducers/testReducer.ts",
+    "src/features/templates/sub_n8n/colorTokens.ts"
+   ]
+  },
+  {
+   "name": "n8n-wizard-steps",
+   "category": "ui",
+   "business_feature": "n8n Import Wizard Steps",
+   "description": "UI steps for the multi-step n8n workflow import wizard: the root import tab (step orchestrator), parser results display with grouped sections, session list, persona entity summary, selection checkbox, step indicator widget, and wizard footer navigation. Surfaces the parsed n8n workflow nodes as reviewable entity groups before transformation.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_n8n/steps/N8nImportTab.tsx"
+   ],
+   "cross_refs": [
+    "n8n-wizard-orchestration",
+    "n8n-wizard-upload",
+    "draft-editor"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/templates/sub_n8n/steps/N8nImportTab.tsx",
+    "src/features/templates/sub_n8n/steps/N8nParserResults.tsx",
+    "src/features/templates/sub_n8n/steps/N8nParserResultsSections.tsx",
+    "src/features/templates/sub_n8n/steps/N8nSessionList.tsx",
+    "src/features/templates/sub_n8n/steps/PersonaEntitySummary.tsx",
+    "src/features/templates/sub_n8n/steps/SelectionCheckbox.tsx"
+   ]
+  },
+  {
+   "name": "n8n-wizard-upload",
+   "category": "ui",
+   "business_feature": "n8n Workflow Upload",
+   "description": "Upload and ingestion step for the n8n import wizard: a drag-and-drop / file-picker upload panel, paste-from-clipboard import, URL import, platform origin labels, and a JSON preview card. Three distinct ingestion hooks (useFileUpload, usePasteImport, useUrlImport) normalise their respective input formats into the same n8n JSON payload.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/templates/sub_n8n/steps/upload/N8nUploadStep.tsx"
+   ],
+   "cross_refs": [
+    "n8n-wizard-steps",
+    "n8n-wizard-orchestration"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/templates/sub_n8n/steps/upload/N8nUploadStep.tsx",
+    "src/features/templates/sub_n8n/steps/upload/n8nUploadTypes.ts",
+    "src/features/templates/sub_n8n/steps/upload/PlatformLabels.tsx",
+    "src/features/templates/sub_n8n/steps/upload/PreviewCard.tsx",
+    "src/features/templates/sub_n8n/steps/upload/useFileUpload.ts",
+    "src/features/templates/sub_n8n/steps/upload/usePasteImport.ts"
+   ]
+  },
+  {
+   "name": "nl-trigger-parser",
+   "category": "lib",
+   "business_feature": "Natural Language Trigger Input",
+   "description": "Natural-language trigger input: parses plain-English scheduling phrases into structured trigger configs (e.g. 'every Monday at 9am'). Includes the NlTriggerInput component, the parser library, and its unit tests.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/sub_triggers/NlTriggerInput.tsx",
+    "src/features/triggers/sub_triggers/nlTriggerParser.ts"
+   ],
+   "cross_refs": [
+    "trigger-list-management",
+    "trigger-schedule"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/triggers/sub_triggers/NlTriggerInput.tsx",
+    "src/features/triggers/sub_triggers/nlTriggerParser.ts",
+    "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts"
+   ]
+  },
+  {
+   "name": "notification-channels",
+   "category": "ui",
+   "business_feature": "Notification Channels",
+   "description": "Notification channel management in the connector tab: shows a list of configured delivery channels (email, Slack, webhook, etc.) with per-channel settings and health badges. Users can add new channels via AddChannelButton. DeliveryHealthBadge surfaces delivery success rates from execution events.",
+   "api_surface": "list_channels, create_channel, test_channel",
+   "db_tables": [
+    "notification_channels",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_connectors/components/channels/ChannelList.tsx"
+   ],
+   "cross_refs": [
+    "connector-status",
+    "connector-automation"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/agents/sub_connectors/components/channels/ChannelList.tsx",
+    "src/features/agents/sub_connectors/components/channels/NotificationChannelCard.tsx",
+    "src/features/agents/sub_connectors/components/channels/NotificationChannelSettings.tsx",
+    "src/features/agents/sub_connectors/components/channels/AddChannelButton.tsx",
+    "src/features/agents/sub_connectors/components/channels/DeliveryHealthBadge.tsx"
+   ]
+  },
+  {
+   "name": "outbound-notifications",
+   "category": "lib",
+   "business_feature": "Outbound Notifications",
+   "description": "Outbound event fan-out stack: routes persona_events to user-configured Slack/Discord/Teams/generic JSON webhooks via Mustache templates, relays selected events to the cloud synchronisation layer, polls Slack and Discord channels for inbound messages and injects them as events, and generates a scheduled performance digest delivered via OS notification plus messaging channels.",
+   "api_surface": "Slack API (outbound), Discord API (outbound), generic webhooks (outbound)",
+   "db_tables": [
+    "persona_events",
+    "notification_channels",
+    "slack_poll_state",
+    "discord_poll_state"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/webhook_notifier.rs",
+    "src-tauri/src/engine/discord_poller.rs"
+   ],
+   "cross_refs": [
+    "event-subscriptions",
+    "credential-lifecycle"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/engine/webhook_notifier.rs",
+    "src-tauri/src/engine/shared_event_relay.rs",
+    "src-tauri/src/engine/discord_poller.rs",
+    "src-tauri/src/engine/slack_poller.rs",
+    "src-tauri/src/engine/digest.rs"
+   ]
+  },
+  {
+   "name": "pipeline-recipes-state",
+   "category": "lib",
+   "business_feature": "Recipe Workflow State",
+   "description": "Slice managing reusable recipe templates that define parameterized sequences of agent invocations. Recipes can be assigned to personas as workflow blueprints and support input schema binding for runtime parameter injection.",
+   "api_surface": null,
+   "db_tables": [
+    "recipes"
+   ],
+   "entry_points": [
+    "src/stores/slices/pipeline/recipeSlice.ts"
+   ],
+   "cross_refs": [
+    "pipeline-store-root",
+    "agent-persona-state",
+    "pipeline-triggers-state"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/stores/slices/pipeline/recipeSlice.ts"
+   ]
+  },
+  {
+   "name": "pipeline-store-root",
+   "category": "lib",
+   "business_feature": "Pipeline Store Composition",
+   "description": "Top-level Zustand store composing the pipeline domain — triggers, teams, recipes, assignments, and channels. Exposes a unified store for all automation and collaboration orchestration features.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/pipelineStore.ts"
+   ],
+   "cross_refs": [
+    "pipeline-triggers-state",
+    "pipeline-team-state",
+    "pipeline-recipes-state"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/stores/pipelineStore.ts"
+   ]
+  },
+  {
+   "name": "pipeline-team-state",
+   "category": "lib",
+   "business_feature": "Team Collaboration State",
+   "description": "Slices for team collaboration — managing team membership, agent-to-team assignments, and communication channels. The channel slice tracks messaging channels per team; assignment slice coordinates which personas are assigned to which teams and tasks.",
+   "api_surface": null,
+   "db_tables": [
+    "teams",
+    "team_assignments",
+    "channels"
+   ],
+   "entry_points": [
+    "src/stores/slices/pipeline/teamSlice.ts"
+   ],
+   "cross_refs": [
+    "pipeline-store-root",
+    "agent-persona-state"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/stores/slices/pipeline/teamSlice.ts",
+    "src/stores/slices/pipeline/assignmentSlice.ts",
+    "src/stores/slices/pipeline/channelSlice.ts",
+    "src/stores/slices/pipeline/__tests__/channelSlice.test.ts"
+   ]
+  },
+  {
+   "name": "pipeline-triggers-state",
+   "category": "lib",
+   "business_feature": "Trigger Automation State",
+   "description": "Slice managing event-driven trigger rules that automatically fire agent personas on schedule or in response to webhooks/events. Tracks webhook registration status, cron syntax, rate-limit configs, and trigger CRUD operations with discriminated error presentation (crud vs validation vs runtime errors).",
+   "api_surface": null,
+   "db_tables": [
+    "triggers",
+    "webhook_registrations"
+   ],
+   "entry_points": [
+    "src/stores/slices/pipeline/triggerSlice.ts"
+   ],
+   "cross_refs": [
+    "pipeline-store-root",
+    "agent-persona-state"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/stores/slices/pipeline/triggerSlice.ts"
+   ]
+  },
+  {
+   "name": "platform-adapters",
+   "category": "lib",
+   "business_feature": "Platform Automation Adapters",
+   "description": "Platform-specific adapter modules that translate persona automation actions into calls against external workflow platforms: GitHub Actions (workflow dispatch + status polling), n8n (webhook trigger + execution retrieval), and Zapier (zap trigger). The deploy adapter handles the generic deploy-target abstraction used by the pipeline executor and the Deployment & Cloud feature.",
+   "api_surface": "GitHub REST API (outbound), n8n webhook (outbound), Zapier webhook (outbound)",
+   "db_tables": [
+    "persona_automations",
+    "automation_runs"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/platforms/github.rs",
+    "src-tauri/src/engine/platforms/n8n.rs"
+   ],
+   "cross_refs": [
+    "pipeline-and-automation",
+    "credential-lifecycle"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/engine/platforms/mod.rs",
+    "src-tauri/src/engine/platforms/deploy.rs",
+    "src-tauri/src/engine/platforms/github.rs",
+    "src-tauri/src/engine/platforms/n8n.rs",
+    "src-tauri/src/engine/platforms/zapier.rs"
+   ]
+  },
+  {
+   "name": "platform-integrations",
+   "category": "api",
+   "business_feature": "Platform Integrations",
+   "description": "GitHub and n8n platform adapter commands — bridges that translate Personas automation concepts into platform-native API calls (GitHub Actions, n8n workflow nodes). These are thin protocol translators between the internal automation model and external orchestration platforms.",
+   "api_surface": "github_trigger_workflow, n8n_execute_workflow, n8n_list_workflows",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/commands/tools/github_platform.rs"
+   ],
+   "cross_refs": [
+    "tools-management",
+    "n8n-integration",
+    "credential-vault"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/tools/github_platform.rs",
+    "src-tauri/src/commands/tools/n8n_platform.rs"
+   ]
+  },
+  {
+   "name": "plugins-resources-repo",
+   "category": "data",
+   "business_feature": "Plugin Data Storage",
+   "description": "Repositories for plugin-specific data stores — Artist plugin media generation records, Obsidian Brain plugin node/edge mappings, database schema exploration metadata, and deliberation records for multi-agent reasoning sessions.",
+   "api_surface": "",
+   "db_tables": [
+    "artist_jobs",
+    "obsidian_nodes",
+    "db_schema_cache",
+    "deliberation_records"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/resources/artist.rs"
+   ],
+   "cross_refs": [
+    "tools-connectors-repo",
+    "agent-persona-repo"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/db/src/repos/resources/artist.rs",
+    "src-tauri/db/src/repos/resources/obsidian_brain.rs",
+    "src-tauri/db/src/repos/resources/db_schema.rs",
+    "src-tauri/db/src/repos/resources/deliberation.rs",
+    "src-tauri/db/src/repos/resources/mod.rs"
+   ]
+  },
+  {
+   "name": "project-autonomy",
+   "category": "lib",
+   "business_feature": "Project Autonomy",
+   "description": "Per-project autopilot mode and global autonomy control surface. The autopilot module stores a per-project mode (off/measure/suggest/full) that gates which KPI→goal→team loop capabilities run unattended; the autonomy module is the single front door that resolves precedence between per-project mode and legacy global flags; optimizer surfaces team topology analytics and improvement suggestions.",
+   "api_surface": null,
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/autonomy.rs",
+    "src-tauri/engine/src/autopilot.rs"
+   ],
+   "cross_refs": [
+    "team-topology",
+    "ai-self-healing"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/engine/src/autopilot.rs",
+    "src-tauri/engine/src/autonomy.rs",
+    "src-tauri/engine/src/optimizer.rs"
+   ]
+  },
+  {
+   "name": "rate-limit-dashboard",
+   "category": "ui",
+   "business_feature": "Rate Limit Dashboard",
+   "description": "Per-trigger rate-limit configuration and dashboard. Displays configured rate limits derived from all triggers, lets users understand throughput caps, and provides the RateLimitControls editing component used inside trigger config. Distinguishes 'no data yet' from 'genuinely no rate limits' via a loading flag.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_speed_limits/RateLimitDashboard.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell",
+    "trigger-schedule"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/sub_speed_limits/RateLimitDashboard.tsx"
+   ]
+  },
+  {
+   "name": "recipe-adoption",
+   "category": "lib",
+   "business_feature": "Recipe Adoption",
+   "description": "Three-phase recipe system for discovering, scoring, and parameterizing existing recipes for a persona. Eligibility scoring classifies recipes as Eligible/AdoptableWithSetup/Incompatible based on tool availability; the matcher uses Jaccard keyword similarity to surface recipe suggestions during intent entry; parameterization derives live persona.parameters from recipe input_schema knobs.",
+   "api_surface": null,
+   "db_tables": [
+    "recipe_definitions",
+    "persona_tool_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/recipe_eligibility.rs",
+    "src-tauri/engine/src/recipe_matcher.rs"
+   ],
+   "cross_refs": [
+    "build-compilation-pipeline",
+    "persona-capability-blueprint"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/engine/src/recipe_eligibility.rs",
+    "src-tauri/engine/src/recipe_matcher.rs",
+    "src-tauri/engine/src/recipe_parameters.rs"
+   ]
+  },
+  {
+   "name": "recipe-catalog",
+   "category": "ui",
+   "business_feature": "Recipe Catalog Browse & Adopt",
+   "description": "Browse-and-adopt UI for the recipe catalog: RecipesPage is the root host managing browse/detail/adopt view states. RecipesBrowseList and RecipesTableResults render the catalog. RecipeDetailPanel shows full recipe metadata with detail sub-cards (guardrails, how-it-runs, needs, header). RecipeAdoptionModal drives the adoption flow for a chosen recipe.",
+   "api_surface": "invoke list_recipes via usePipelineStore",
+   "db_tables": [
+    "recipes"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_recipes/RecipesPage.tsx",
+    "src/features/templates/sub_recipes/components/RecipesBrowseList.tsx"
+   ],
+   "cross_refs": [
+    "recipe-logic",
+    "template-page-shell",
+    "template-adoption-chronology"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/templates/sub_recipes/RecipesPage.tsx",
+    "src/features/templates/sub_recipes/components/RecipesBrowseList.tsx",
+    "src/features/templates/sub_recipes/components/RecipesTableResults.tsx",
+    "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx",
+    "src/features/templates/sub_recipes/components/RecipeAdoptionModal.tsx",
+    "src/features/templates/sub_recipes/components/EligibilityChip.tsx"
+   ]
+  },
+  {
+   "name": "recipe-core",
+   "category": "api",
+   "business_feature": "Recipe Management",
+   "description": "Core recipe lifecycle commands — CRUD, adoption (applying a recipe to a persona), eligibility checking, and execution. Recipes are reusable automation templates that can be adopted onto a persona, parameterised, and run in sequence.",
+   "api_surface": "list_recipes, create_recipe, adopt_recipe, check_eligibility, execute_recipe",
+   "db_tables": [
+    "recipes",
+    "persona_recipes",
+    "recipe_executions"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/recipes/crud.rs"
+   ],
+   "cross_refs": [
+    "tools-management",
+    "recipe-intelligence",
+    "persona-crud"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/recipes/crud.rs",
+    "src-tauri/src/commands/recipes/recipe_adoption.rs",
+    "src-tauri/src/commands/recipes/recipe_eligibility.rs",
+    "src-tauri/src/commands/recipes/recipe_execution.rs",
+    "src-tauri/src/commands/recipes/mod.rs"
+   ]
+  },
+  {
+   "name": "recipe-editor",
+   "category": "ui",
+   "business_feature": "Recipe Editor",
+   "description": "Create and edit recipe definitions through a structured form. RecipeEditor handles both create and update modes, serialising tags (JSON array) and input-schema fields before calling pipelineStore.createRecipe / updateRecipe. SchemaFieldBuilder provides a visual row-editor for typed input-schema fields. TagChipInput renders an accessible chip-style tag editor.",
+   "api_surface": "createRecipe, updateRecipe (pipelineStore)",
+   "db_tables": [
+    "recipes"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_editor/components/RecipeEditor.tsx"
+   ],
+   "cross_refs": [
+    "recipe-manager-shell",
+    "recipe-shared"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/recipes/sub_editor/components/RecipeEditor.tsx",
+    "src/features/recipes/sub_editor/components/SchemaFieldBuilder.tsx",
+    "src/features/recipes/sub_editor/components/TagChipInput.tsx",
+    "src/features/recipes/sub_editor/index.ts"
+   ]
+  },
+  {
+   "name": "recipe-intelligence",
+   "category": "api",
+   "business_feature": "Recipe Intelligence",
+   "description": "AI-powered recipe intelligence — LLM-driven generation of new recipes from natural language descriptions, derivation of variant recipes, semantic matching against existing recipes, suggestion logging for analytics, and versioning. Follows the ai_artifact_flow streaming pattern.",
+   "api_surface": "generate_recipe, derive_recipe, match_recipes, log_recipe_suggestion",
+   "db_tables": [
+    "recipes",
+    "recipe_suggestion_log",
+    "recipe_versions"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/recipes/recipe_generation.rs"
+   ],
+   "cross_refs": [
+    "recipe-core",
+    "credential-intelligence"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/recipes/recipe_derivation.rs",
+    "src-tauri/src/commands/recipes/recipe_generation.rs",
+    "src-tauri/src/commands/recipes/recipe_match.rs",
+    "src-tauri/src/commands/recipes/recipe_suggestion_log.rs",
+    "src-tauri/src/commands/recipes/recipe_versioning.rs"
+   ]
+  },
+  {
+   "name": "recipe-list",
+   "category": "ui",
+   "business_feature": "Recipe List & Browse",
+   "description": "Browse, search, and select recipes. RecipeList renders a responsive card grid with quick-test capability (fires executeRecipe API and shows an inline result overlay). RecipeCard provides the per-recipe action surface (edit, playground, delete, quick-test). RecipePicker is a modal search-and-select dialog used when linking a recipe to a persona.",
+   "api_surface": "executeRecipe (Tauri IPC via @/api/recipes/recipes)",
+   "db_tables": [
+    "recipes"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_list/components/RecipeList.tsx"
+   ],
+   "cross_refs": [
+    "recipe-manager-shell",
+    "recipe-playground",
+    "recipe-persona-linking"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/recipes/sub_list/components/RecipeList.tsx",
+    "src/features/recipes/sub_list/components/RecipeCard.tsx",
+    "src/features/recipes/sub_list/components/RecipePicker.tsx",
+    "src/features/recipes/sub_list/index.ts"
+   ]
+  },
+  {
+   "name": "recipe-logic",
+   "category": "lib",
+   "business_feature": "Recipe Logic & Eligibility",
+   "description": "Business logic for the recipe feature: type definitions, mock seed catalog, eligibility resolution (checks which connectors a recipe needs vs what the persona has), frontend shape adapter (RecipeDefinition → Recipe), staleness detection, binding substitution (replaces {{param}} tokens), category labels, and the useAdoption hook that writes a substituted DesignUseCase into the persona's design_context.",
+   "api_surface": null,
+   "db_tables": [
+    "recipes",
+    "personas"
+   ],
+   "entry_points": [
+    "src/features/templates/sub_recipes/types.ts",
+    "src/features/templates/sub_recipes/eligibility.ts",
+    "src/features/templates/sub_recipes/libs/useAdoption.ts"
+   ],
+   "cross_refs": [
+    "recipe-catalog",
+    "template-explore-view"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/templates/sub_recipes/types.ts",
+    "src/features/templates/sub_recipes/eligibility.ts",
+    "src/features/templates/sub_recipes/useEligibility.ts",
+    "src/features/templates/sub_recipes/mockRecipes.ts",
+    "src/features/templates/sub_recipes/index.ts",
+    "src/features/templates/sub_recipes/libs/recipeAdapter.ts"
+   ]
+  },
+  {
+   "name": "recipe-manager-shell",
+   "category": "ui",
+   "business_feature": "Recipe Manager Shell",
+   "description": "Top-level orchestration shell for the Recipes feature. RecipeManager wires together list, create, edit, and playground sub-views via a finite-state machine, handles initial data fetch from pipelineStore, and responds to cross-feature deep-link handoffs (pendingPlaygroundRecipeId from Glyph composer). It owns the search bar and header toolbar shown in list mode.",
+   "api_surface": "Tauri IPC via pipelineStore: fetchRecipes, deleteRecipe, consumePendingPlayground",
+   "db_tables": [
+    "recipes"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_manager/components/RecipeManager.tsx"
+   ],
+   "cross_refs": [
+    "recipe-navigation",
+    "recipe-list",
+    "recipe-editor",
+    "recipe-playground"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/recipes/sub_manager/components/RecipeManager.tsx",
+    "src/features/recipes/sub_manager/index.ts"
+   ]
+  },
+  {
+   "name": "recipe-navigation",
+   "category": "lib",
+   "business_feature": "Recipe Navigation FSM",
+   "description": "Finite-state machine hook that governs view transitions inside the Recipes feature (list → create → edit → playground). Uses useReducer with a discriminated-union state type so each view carries exactly the data it needs, and derives filtered recipe lists and the active editing/playground recipe via memoisation.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/recipes/hooks/useRecipeViewFSM.ts"
+   ],
+   "cross_refs": [
+    "recipe-manager-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/recipes/hooks/useRecipeViewFSM.ts"
+   ]
+  },
+  {
+   "name": "recipe-persona-linking",
+   "category": "ui",
+   "business_feature": "Persona Recipe Linking",
+   "description": "Cross-feature integration surface that lets personas own a set of linked recipes. LinkedRecipesSection fetches, displays, links, and unlinks recipes for a given personaId via pipelineStore, and embeds the RecipePicker and RecipePlaygroundModal so linked recipes can be run directly from the persona detail view.",
+   "api_surface": "fetchPersonaRecipes, linkRecipeToPersona, unlinkRecipeFromPersona (pipelineStore)",
+   "db_tables": [
+    "persona_recipes"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_list/components/LinkedRecipesSection.tsx"
+   ],
+   "cross_refs": [
+    "recipe-list",
+    "recipe-playground"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/recipes/sub_list/components/LinkedRecipesSection.tsx"
+   ]
+  },
+  {
+   "name": "recipe-playground",
+   "category": "ui",
+   "business_feature": "Recipe Playground",
+   "description": "Interactive playground modal for testing recipes end-to-end. RecipePlaygroundModal hosts a four-tab shell (Overview, Test Runner, History, Versions). useRecipeTestRunner manages a two-phase execution: prompt rendering via the backend API, then LLM execution via the CLI stream, with run-id correlation to prevent cross-run output contamination. RecipeInputSection handles schema-driven or free-form input entry and mock-value management; RecipeOutputSection renders streaming terminal output and final results.",
+   "api_surface": "executeRecipe, updateRecipe (sample_inputs patch) via @/api/recipes/recipes",
+   "db_tables": [
+    "recipes",
+    "recipe_executions"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx",
+    "src/features/recipes/sub_playground/libs/useRecipeTestRunner.ts"
+   ],
+   "cross_refs": [
+    "recipe-versioning",
+    "recipe-shared",
+    "recipe-list"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/recipes/sub_playground/components/RecipePlaygroundModal.tsx",
+    "src/features/recipes/sub_playground/tabs/RecipeTestRunnerTab.tsx",
+    "src/features/recipes/sub_playground/tabs/RecipeInputSection.tsx",
+    "src/features/recipes/sub_playground/tabs/RecipeOutputSection.tsx",
+    "src/features/recipes/sub_playground/tabs/RecipeOverviewTab.tsx",
+    "src/features/recipes/sub_playground/tabs/RecipeHistoryTab.tsx"
+   ]
+  },
+  {
+   "name": "recipe-shared",
+   "category": "lib",
+   "business_feature": "Recipe Shared Utilities",
+   "description": "Shared visual primitives and parsing utilities used across all recipe sub-features. Includes three decorative illustrations (RecipeBookIllustration, PuzzlePieceIllustration, VersionTimelineIllustration), the animated RecipePageFlipLoader, a SchemaParseErrorBanner for inline JSON parse errors, and recipeParseUtils with typed helpers for tags, input-schema, and mock-value JSON.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/recipes/shared/recipeParseUtils.ts",
+    "src/features/recipes/shared/RecipePageFlipLoader.tsx"
+   ],
+   "cross_refs": [
+    "recipe-editor",
+    "recipe-playground",
+    "recipe-versioning",
+    "recipe-persona-linking"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/recipes/shared/RecipePageFlipLoader.tsx",
+    "src/features/recipes/shared/RecipeBookIllustration.tsx",
+    "src/features/recipes/shared/PuzzlePieceIllustration.tsx",
+    "src/features/recipes/shared/VersionTimelineIllustration.tsx",
+    "src/features/recipes/shared/SchemaParseErrorBanner.tsx",
+    "src/features/recipes/shared/recipeParseUtils.ts"
+   ]
+  },
+  {
+   "name": "recipe-versioning",
+   "category": "ui",
+   "business_feature": "Recipe Versioning",
+   "description": "AI-assisted prompt-template versioning inside the playground. RecipeVersionsTab streams an LLM-generated diff proposal (via useRecipeVersioning hook), presents a live terminal strip and diff preview, then lets the user accept (with optimistic-lock protection against concurrent edits) or revert to a prior version. Maintains a timeline of all committed versions.",
+   "api_surface": "getRecipeVersions, acceptRecipeVersion, revertRecipeVersion via @/api/recipes/recipes",
+   "db_tables": [
+    "recipe_versions"
+   ],
+   "entry_points": [
+    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx"
+   ],
+   "cross_refs": [
+    "recipe-playground",
+    "recipe-shared"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/recipes/sub_playground/tabs/RecipeVersionsTab.tsx"
+   ]
+  },
+  {
+   "name": "review-feedback-repo",
+   "category": "data",
+   "business_feature": "Human Review & Approval Workflows",
+   "description": "Repositories for human review workflows — manual review requests triggered when personas encounter uncertainty, chat review sessions for interactive oversight, and template feedback collection. Enables human-in-the-loop patterns where executions can pause for human approval before proceeding.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_manual_reviews",
+    "reviews",
+    "chat_sessions",
+    "template_feedback"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/communication/reviews.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "agent-persona-repo"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/communication/reviews.rs",
+    "src-tauri/db/src/repos/communication/manual_reviews.rs",
+    "src-tauri/db/src/repos/communication/chat.rs",
+    "src-tauri/db/src/repos/communication/template_feedback.rs"
+   ]
+  },
+  {
+   "name": "schedule-calendar-view",
+   "category": "ui",
+   "business_feature": "Schedule Calendar",
+   "description": "Calendar visualisation of scheduled agent fires in week and month layouts. Future fires are projected via cron_fire_times_in_range IPC (seeded with trigger id for H-spread accuracy); past cron slots are matched against real execution records within a 90s tolerance window so colour coding reflects actual outcomes rather than fabricated health. Detects and highlights scheduling conflicts within 5-minute windows.",
+   "api_surface": "cronFireTimesInRange, listRecentScheduleRuns",
+   "db_tables": [
+    "executions",
+    "schedule_runs"
+   ],
+   "entry_points": [
+    "src/features/schedules/components/ScheduleCalendar.tsx",
+    "src/features/schedules/libs/calendarHelpers.ts"
+   ],
+   "cross_refs": [
+    "schedule-timeline"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/schedules/components/ScheduleCalendar.tsx",
+    "src/features/schedules/components/WeekView.tsx",
+    "src/features/schedules/components/MonthView.tsx",
+    "src/features/schedules/components/EventBlock.tsx",
+    "src/features/schedules/components/EventTooltip.tsx",
+    "src/features/schedules/libs/calendarHelpers.ts"
+   ]
+  },
+  {
+   "name": "schedule-row-actions",
+   "category": "ui",
+   "business_feature": "Schedule Row & Actions",
+   "description": "Per-schedule row UI and the action hook that drives all schedule mutations: manual execute, toggle enabled, change frequency (cron/interval/timezone), skip next fire, delayed run (run-in-N-minutes), and user-initiated backfill. Uses read-modify-write on trigger config to preserve active_window and rate_limit settings. Exposes a conflict-preview hook that debounces cron_fire_times_in_range IPC calls.",
+   "api_surface": "executePersona, updateTrigger, backfillSchedule, previewCronSchedule, cronFireTimesInRange, listTriggers",
+   "db_tables": [
+    "triggers",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/schedules/components/ScheduleRow.tsx",
+    "src/features/schedules/libs/useScheduleActions.ts"
+   ],
+   "cross_refs": [
+    "schedule-timeline",
+    "schedule-run-history"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/schedules/components/ScheduleRow.tsx",
+    "src/features/schedules/components/FrequencyEditor.tsx",
+    "src/features/schedules/components/BackfillModal.tsx",
+    "src/features/schedules/libs/useScheduleActions.ts"
+   ]
+  },
+  {
+   "name": "schedule-run-history",
+   "category": "ui",
+   "business_feature": "Schedule Run History",
+   "description": "Inline run-history surfaces attached to schedule rows: a per-trigger history panel with a 14-day sparkline showing success/failure trends and a link to the execution detail modal, plus a global recent-runs section at the top of the timeline showing the last 24 hours of scheduled fires across all agents. Both auto-refresh and respect the active group filter.",
+   "api_surface": "listExecutionsByTrigger, listRecentScheduleRuns",
+   "db_tables": [
+    "executions",
+    "schedule_runs"
+   ],
+   "entry_points": [
+    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx",
+    "src/features/schedules/components/ScheduleRecentRuns.tsx"
+   ],
+   "cross_refs": [
+    "schedule-timeline",
+    "schedule-row-actions"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/schedules/components/ScheduleRowHistoryPanel.tsx",
+    "src/features/schedules/components/ScheduleRecentRuns.tsx"
+   ]
+  },
+  {
+   "name": "schedule-tests",
+   "category": "test",
+   "business_feature": "Schedule Tests",
+   "description": "Unit tests for the schedule feature's pure-logic helpers: slot-to-run matching (matchPastSlotsToRuns, classifyRunOutcome), calendar event orchestration (useCalendarEvents), and schedule list flattening (flattenScheduleGroups, scheduleListItems). Tests verify correctness of the tolerance-window binding algorithm and the grouped/windowed list collapse.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/schedules/libs/__tests__/matchPastSlotsToRuns.test.ts"
+   ],
+   "cross_refs": [
+    "schedule-calendar-view",
+    "schedule-timeline"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/schedules/libs/__tests__/matchPastSlotsToRuns.test.ts",
+    "src/features/schedules/libs/__tests__/useCalendarEvents.test.ts",
+    "src/features/schedules/libs/__tests__/scheduleListItems.test.ts"
+   ]
+  },
+  {
+   "name": "schedule-timeline",
+   "category": "ui",
+   "business_feature": "Schedule Timeline",
+   "description": "Main schedule management page that lists all cron-triggered agents grouped by time window (overdue, next 15 min, next hour, etc.). Polls the backend every 30 seconds and coalesces refresh calls via in-flight deduplication. Provides scheduler engine start/stop, group filtering via sidebar custom events, and switches between grouped and calendar views.",
+   "api_surface": "getSchedulerStatus, startScheduler, stopScheduler, listScheduleMissedRuns, clearScheduleMissedRuns, fetchCronAgents",
+   "db_tables": [
+    "cron_agents"
+   ],
+   "entry_points": [
+    "src/features/schedules/components/ScheduleTimeline.tsx"
+   ],
+   "cross_refs": [
+    "schedule-row-actions",
+    "schedule-calendar-view",
+    "schedule-run-history"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/schedules/index.ts",
+    "src/features/schedules/components/ScheduleTimeline.tsx",
+    "src/features/schedules/components/ScheduleGroupedList.tsx",
+    "src/features/schedules/libs/scheduleHelpers.ts",
+    "src/features/schedules/libs/scheduleListItems.ts"
+   ]
+  },
+  {
+   "name": "shared-event-feeds",
+   "category": "ui",
+   "business_feature": "Shared Event Feeds",
+   "description": "Shared / marketplace event feed catalog (Watchtower): displays curated external event feeds (e.g. API update notifications), lets users subscribe/watch individual feeds, and shows recent change-activity per feed with a history modal. Backed by useSharedEvents and useSubscribedFeeds hooks.",
+   "api_surface": "listSharedEventCatalog, subscribe, unsubscribe, listFeedActivity",
+   "db_tables": [
+    "shared_event_catalog",
+    "shared_event_subscriptions"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_shared/SharedEventsTab.tsx",
+    "src/features/triggers/sub_shared/useSharedEvents.ts"
+   ],
+   "cross_refs": [
+    "triggers-page-shell"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/triggers/sub_shared/SharedEventsTab.tsx",
+    "src/features/triggers/sub_shared/useSharedEvents.ts",
+    "src/features/triggers/sub_shared/useSubscribedFeeds.ts",
+    "src/features/triggers/sub_shared/sharedEventsUi.tsx",
+    "src/features/triggers/sub_shared/SubscribeControls.tsx",
+    "src/features/triggers/sub_shared/EventHistoryModal.tsx"
+   ]
+  },
+  {
+   "name": "smee-relay",
+   "category": "ui",
+   "business_feature": "Smee Relay",
+   "description": "Smee.io webhook relay tab: configures and monitors a local smee relay channel that proxies external webhooks to the local desktop app for development or testing. Includes a switch to jump to the live stream after firing a test webhook.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell",
+    "cloud-webhooks"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx"
+   ]
+  },
+  {
+   "name": "studio-commit-logic",
+   "category": "lib",
+   "business_feature": "Studio Commit Logic",
+   "description": "Business logic for committing Studio draft routes to live trigger bindings. studioCommit.ts encodes the commit flow (signal-source vs form-commit vs direct commit), studioDraftModel manages the in-memory draft state, and studioLabels/studioCommit constants provide display strings and type guards. Includes unit tests.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_studio/libs/studioCommit.ts",
+    "src/features/triggers/sub_studio/libs/studioDraftModel.ts"
+   ],
+   "cross_refs": [
+    "trigger-studio",
+    "studio-routing-state"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/triggers/sub_studio/libs/studioCommit.ts",
+    "src/features/triggers/sub_studio/libs/studioDraftModel.ts",
+    "src/features/triggers/sub_studio/libs/studioLabels.ts",
+    "src/features/triggers/sub_studio/libs/triggerStudioConstants.ts",
+    "src/features/triggers/sub_studio/libs/__tests__/studioCommit.test.ts"
+   ]
+  },
+  {
+   "name": "studio-routing-state",
+   "category": "lib",
+   "business_feature": "Studio Routing State",
+   "description": "State management and helpers for the Studio's live routing inventory. useRoutingState computes EventRow + Connection data from raw triggers and events, and exposes mutation handlers for add-persona, disconnect, and rename-event operations. buildEventRows and routingHelpers provide the derivation logic.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers",
+    "trigger_events"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts",
+    "src/features/triggers/sub_studio/routing/layouts/buildEventRows.ts"
+   ],
+   "cross_refs": [
+    "trigger-studio",
+    "studio-commit-logic"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/triggers/sub_studio/routing/layouts/useRoutingState.ts",
+    "src/features/triggers/sub_studio/routing/layouts/buildEventRows.ts",
+    "src/features/triggers/sub_studio/routing/layouts/routingHelpers.tsx",
+    "src/features/triggers/sub_studio/routing/layouts/AddPersonaModal.tsx",
+    "src/features/triggers/sub_studio/routing/layouts/DisconnectDialog.tsx",
+    "src/features/triggers/sub_studio/routing/layouts/RenameEventDialog.tsx"
+   ]
+  },
+  {
+   "name": "studio-system-ops",
+   "category": "ui",
+   "business_feature": "System Event Automations",
+   "description": "System-event automation panel inside the Chain Studio: lets users wire built-in system events (startup, focus-change, etc.) to persona executions without manual trigger setup. SystemEventAutomationsPanel lists active automations; useSystemOpStudio provides the data layer; SystemEventCommitModal handles creation.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_studio/system_ops/SystemEventAutomationsPanel.tsx",
+    "src/features/triggers/sub_studio/system_ops/useSystemOpStudio.ts"
+   ],
+   "cross_refs": [
+    "trigger-studio",
+    "studio-commit-logic"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/triggers/sub_studio/system_ops/SystemEventAutomationsPanel.tsx",
+    "src/features/triggers/sub_studio/system_ops/SystemOpOptionCard.tsx",
+    "src/features/triggers/sub_studio/system_ops/useSystemOpStudio.ts",
+    "src/features/triggers/sub_studio/system_ops/SystemEventCommitModal.tsx"
+   ]
+  },
+  {
+   "name": "teams-collaboration-repo",
+   "category": "data",
+   "business_feature": "Team Collaboration & Orchestration",
+   "description": "Repositories for team collaboration features — team definitions, team memory shared across personas, team channel configurations, notification subscriptions, and team-to-persona assignments for orchestration. Enables multi-agent coordination under shared team contexts.",
+   "api_surface": "",
+   "db_tables": [
+    "teams",
+    "team_memories",
+    "team_channels",
+    "notification_subscriptions",
+    "team_assignments"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/resources/teams.rs"
+   ],
+   "cross_refs": [
+    "agent-persona-repo",
+    "execution-repo"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/db/src/repos/resources/teams.rs",
+    "src-tauri/db/src/repos/resources/team_memories.rs",
+    "src-tauri/db/src/repos/resources/team_channel.rs",
+    "src-tauri/db/src/repos/resources/notification_subscriptions.rs",
+    "src-tauri/db/src/repos/orchestration/team_assignments.rs",
+    "src-tauri/db/src/repos/orchestration/mod.rs"
+   ]
+  },
+  {
+   "name": "tool-runner",
+   "category": "ui",
+   "business_feature": "Tool Runner",
+   "description": "Direct tool invocation panel that lets a developer call a specific tool bound to a persona without triggering a full execution. ToolRunnerModal and ToolRunnerPanel compose the UI; ToolInvocationCard renders each invocation result; useToolRunner manages the IPC request/response cycle.",
+   "api_surface": "invoke_tool",
+   "db_tables": [
+    "connectors"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx",
+    "src/features/agents/sub_tool_runner/libs/useToolRunner.ts"
+   ],
+   "cross_refs": [
+    "connector-status",
+    "execution-runner"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx",
+    "src/features/agents/sub_tool_runner/components/ToolRunnerModal.tsx",
+    "src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx",
+    "src/features/agents/sub_tool_runner/libs/useToolRunner.ts",
+    "src/features/agents/sub_tool_runner/index.ts"
+   ]
+  },
+  {
+   "name": "tools-management",
+   "category": "api",
+   "business_feature": "Tools & Automations",
+   "description": "CRUD and lifecycle management for tools (callable functions/integrations) and automation pipelines attached to personas. Covers automation design (AI-assisted generation), deployment, and trigger wiring. The triggers module manages event→automation bindings.",
+   "api_surface": "list_tools, create_tool, list_automations, deploy_automation, list_triggers, create_trigger",
+   "db_tables": [
+    "persona_tools",
+    "persona_automations",
+    "persona_triggers"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/tools/automations.rs"
+   ],
+   "cross_refs": [
+    "recipe-core",
+    "execution-core",
+    "platform-integrations"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/tools/tools.rs",
+    "src-tauri/src/commands/tools/automations.rs",
+    "src-tauri/src/commands/tools/automation_design.rs",
+    "src-tauri/src/commands/tools/deploy_automation.rs",
+    "src-tauri/src/commands/tools/triggers.rs",
+    "src-tauri/src/commands/tools/mod.rs"
+   ]
+  },
+  {
+   "name": "trigger-config",
+   "category": "ui",
+   "business_feature": "Trigger Configuration",
+   "description": "Configuration panels for every supported trigger type (webhook, polling, file-watcher, event-listener, app-focus, clipboard, composite). Includes the config dispatcher buildTriggerConfig and each type-specific form component, plus shared field-group layout. Used inside TriggerDetailDrawer and TriggerAddForm.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_triggers/TriggerConfig.tsx",
+    "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts"
+   ],
+   "cross_refs": [
+    "trigger-list-management",
+    "trigger-schedule"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/triggers/sub_triggers/TriggerConfig.tsx",
+    "src/features/triggers/sub_triggers/TriggerConfigSection.tsx",
+    "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts",
+    "src/features/triggers/sub_triggers/configs/WebhookConfig.tsx",
+    "src/features/triggers/sub_triggers/configs/PollingConfig.tsx",
+    "src/features/triggers/sub_triggers/configs/FileWatcherConfig.tsx"
+   ]
+  },
+  {
+   "name": "trigger-health-indicators",
+   "category": "ui",
+   "business_feature": "Trigger Health Indicators",
+   "description": "Visual health and status indicators for individual triggers: health sparklines, health dots, arm state badge, dry-run result view. Provides at-a-glance feedback on trigger reliability and recent execution outcome.",
+   "api_surface": "dryRunTrigger",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/sub_triggers/TriggerHealthSparkline.tsx",
+    "src/features/triggers/sub_triggers/triggerArmState.ts"
+   ],
+   "cross_refs": [
+    "trigger-list-management",
+    "trigger-operations-hook"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/triggers/sub_triggers/TriggerHealthSparkline.tsx",
+    "src/features/triggers/sub_triggers/HealthDot.tsx",
+    "src/features/triggers/sub_triggers/triggerArmState.ts",
+    "src/features/triggers/sub_triggers/DryRunResultView.tsx",
+    "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts"
+   ]
+  },
+  {
+   "name": "trigger-list-management",
+   "category": "ui",
+   "business_feature": "Trigger CRUD",
+   "description": "Per-persona trigger list UI: creating, viewing, toggling, deleting, and detail-drilling triggers. Includes the add form with NL input support, trigger rows, the detail drawer, quick templates, type/category selectors, and execution history per trigger. The core CRUD surface users interact with inside each persona.",
+   "api_surface": "createTrigger, updateTrigger, deleteTrigger, listTriggers",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_triggers/TriggerList.tsx",
+    "src/features/triggers/sub_triggers/TriggerAddForm.tsx"
+   ],
+   "cross_refs": [
+    "trigger-config",
+    "trigger-schedule",
+    "trigger-operations-hook",
+    "nl-trigger-parser"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/triggers/sub_triggers/TriggerList.tsx",
+    "src/features/triggers/sub_triggers/TriggerRow.tsx",
+    "src/features/triggers/sub_triggers/TriggerListItem.tsx",
+    "src/features/triggers/sub_triggers/TriggerAddForm.tsx",
+    "src/features/triggers/sub_triggers/TriggerDetailDrawer.tsx",
+    "src/features/triggers/sub_triggers/TriggerQuickTemplates.tsx"
+   ]
+  },
+  {
+   "name": "trigger-operations-hook",
+   "category": "lib",
+   "business_feature": "Trigger Operations",
+   "description": "Centralised React hooks for trigger CRUD, validation, test-fire, dry-run, and execution history fetch. useTriggerOperations provides a uniform {ok, data?, error?} result shape for all trigger mutations. useTriggerHistory and useTriggerDetail offer read-oriented query hooks.",
+   "api_surface": "validateTrigger, dryRunTrigger, executePersona, listExecutionsByTrigger",
+   "db_tables": [
+    "triggers",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/triggers/hooks/useTriggerOperations.ts"
+   ],
+   "cross_refs": [
+    "trigger-list-management",
+    "trigger-config"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/triggers/hooks/useTriggerOperations.ts",
+    "src/features/triggers/hooks/useTriggerHistory.ts",
+    "src/features/triggers/hooks/useTriggerDetail.ts",
+    "src/features/triggers/lib/triggerError.ts",
+    "src/features/triggers/lib/eventSourceTemplates.ts",
+    "src/features/triggers/lib/canvas/gridUtils.ts"
+   ]
+  },
+  {
+   "name": "trigger-schedule",
+   "category": "ui",
+   "business_feature": "Trigger Scheduling",
+   "description": "Schedule/time-based configuration for triggers: timezone selector, active-hours windowing, unattended-mode section, countdown ring, schedule preview, and schedule config form. Handles cron-style and interval-based scheduling UX.",
+   "api_surface": "",
+   "db_tables": [
+    "triggers"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_triggers/TriggerScheduleConfig.tsx"
+   ],
+   "cross_refs": [
+    "trigger-config",
+    "trigger-list-management"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/triggers/sub_triggers/TriggerScheduleConfig.tsx",
+    "src/features/triggers/sub_triggers/TriggerSchedulePreview.tsx",
+    "src/features/triggers/sub_triggers/TriggerCountdown.tsx",
+    "src/features/triggers/sub_triggers/RadialCountdownRing.tsx",
+    "src/features/triggers/sub_triggers/TimezoneSelect.tsx",
+    "src/features/triggers/sub_triggers/ActiveHoursSection.tsx"
+   ]
+  },
+  {
+   "name": "trigger-scheduler-api",
+   "category": "api",
+   "business_feature": "Trigger & Scheduler",
+   "description": "IPC wrappers for persona trigger management (cron schedules, webhooks, event-based firings) and the background scheduler that orchestrates them. Triggers define when a persona runs autonomously; the scheduler controls start/stop/backfill and reports missed runs. Workflow job management (listing, cancelling, reading output of background CI-style jobs) is also included.",
+   "api_surface": "Tauri commands: list_triggers, create_trigger, start_scheduler, backfill_missed_runs, get_workflows_overview, cancel_workflow_job",
+   "db_tables": [
+    "persona_triggers",
+    "cron_agents",
+    "schedule_runs",
+    "webhook_request_logs"
+   ],
+   "entry_points": [
+    "src/api/pipeline/triggers.ts",
+    "src/api/pipeline/scheduler.ts"
+   ],
+   "cross_refs": [
+    "persona-execution-chat-api",
+    "events-automation-api",
+    "team-management-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/pipeline/triggers.ts",
+    "src/api/pipeline/scheduler.ts",
+    "src/api/pipeline/workflows.ts"
+   ]
+  },
+  {
+   "name": "trigger-studio",
+   "category": "ui",
+   "business_feature": "Chain Studio",
+   "description": "Chain Studio — a visual patchbay UI for creating and managing event-routing rules between personas. Users compose draft 'patch cable' routes (source event → target persona), set run conditions (always/success/failure/output_match), and commit them as live trigger bindings. Supersedes the older builder + routes views.",
+   "api_surface": "listAllTriggers, listEvents, createTrigger",
+   "db_tables": [
+    "triggers",
+    "trigger_events"
+   ],
+   "entry_points": [
+    "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx",
+    "src/features/triggers/sub_studio/StudioPatchbay.tsx"
+   ],
+   "cross_refs": [
+    "studio-routing-state",
+    "studio-system-ops",
+    "studio-commit-logic",
+    "trigger-operations-hook"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx",
+    "src/features/triggers/sub_studio/StudioPatchbay.tsx",
+    "src/features/triggers/sub_studio/StudioRails.tsx",
+    "src/features/triggers/sub_studio/studioChips.tsx",
+    "src/features/triggers/sub_studio/StudioOptionCards.tsx",
+    "src/features/triggers/sub_studio/useStudioComposer.ts"
+   ]
+  },
+  {
+   "name": "trigger-system",
+   "category": "api",
+   "business_feature": "Trigger System",
+   "description": "Event-driven trigger system that fires persona executions based on external events (webhooks, GitHub, Slack, scheduled events). Manages trigger definitions, routing rules, event matching, and the trigger configuration UI.",
+   "api_surface": "invoke('create_trigger'), invoke('test_trigger'), POST /webhook/:id",
+   "db_tables": [
+    "triggers",
+    "trigger_events",
+    "trigger_logs"
+   ],
+   "entry_points": [
+    "src/features/triggers/TriggersPage.tsx",
+    "src-tauri/src/engine/event_registry.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "overview-events",
+    "scheduler"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/TriggersPage.tsx"
+   ]
+  },
+  {
+   "name": "trigger-test-tab",
+   "category": "ui",
+   "business_feature": "Trigger Test",
+   "description": "Manual trigger test-fire tab: lets users fire a test event against a selected trigger to validate it without waiting for the real schedule or event. Surfaces validation errors and the resulting execution.",
+   "api_surface": "validateTrigger, executePersona",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/sub_test/TestTab.tsx"
+   ],
+   "cross_refs": [
+    "triggers-page-shell",
+    "trigger-operations-hook"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/sub_test/TestTab.tsx"
+   ]
+  },
+  {
+   "name": "triggers-page-shell",
+   "category": "ui",
+   "business_feature": "Triggers Page Shell",
+   "description": "The top-level shell for the Event Bus / Triggers section. It owns the tab-switcher between all sub-tabs (live-stream, rate-limits, test, smee-relay, cloud-webhooks, dead-letter, studio, shared) and fetches the global trigger health map on mount. Depends on pipelineStore, agentStore, and systemStore for tab routing.",
+   "api_surface": "listAllTriggers, getTriggerHealthMap",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/triggers/TriggersPage.tsx"
+   ],
+   "cross_refs": [
+    "trigger-list-management",
+    "trigger-studio",
+    "live-stream",
+    "rate-limit-dashboard",
+    "dead-letter",
+    "smee-relay",
+    "cloud-webhooks",
+    "trigger-test-tab",
+    "shared-event-feeds"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/triggers/TriggersPage.tsx"
+   ]
+  },
+  {
+   "name": "webhook-ingestion",
+   "category": "api",
+   "business_feature": "Webhook Ingestion",
+   "description": "Inbound webhook server stack that receives external HTTP POSTs (via the local axum server), relays cloud trigger firings polled from the cloud orchestrator, and bridges Smee.io SSE streams into the local event bus. Together these three paths let external systems trigger personas regardless of whether the desktop has a public URL.",
+   "api_surface": "POST /webhook/:persona_id/:secret (local HTTP), Smee.io SSE (outbound subscribe)",
+   "db_tables": [
+    "persona_events",
+    "webhooks"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/webhook.rs",
+    "src-tauri/src/engine/cloud_webhook_relay.rs"
+   ],
+   "cross_refs": [
+    "event-subscriptions",
+    "execution-runner"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/engine/webhook.rs",
+    "src-tauri/src/engine/cloud_webhook_relay.rs",
+    "src-tauri/src/engine/smee_relay.rs"
+   ]
+  },
+  {
+   "name": "webhook-relay-models",
+   "category": "data",
+   "business_feature": "Webhook & Relay Models",
+   "description": "Domain types for inbound webhook and Smee relay infrastructure: `WebhookLog` captures each incoming webhook delivery with headers, payload, and processing status; `SmeeRelay` stores configuration for proxying GitHub-style webhooks through the Smee.io relay service during local development. Both power the webhook trigger path for persona automation.",
+   "api_surface": "",
+   "db_tables": [
+    "webhook_logs",
+    "smee_relays"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/webhook_log.rs"
+   ],
+   "cross_refs": [
+    "automation-event-models",
+    "core-http-safety"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/core/src/models/webhook_log.rs",
+    "src-tauri/core/src/models/smee_relay.rs"
+   ]
+  }
+ ]
+}

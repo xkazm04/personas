@@ -1,0 +1,416 @@
+{
+ "id": "033f6bf8-a87c-4365-9d99-8800b5142487",
+ "name": "Database Infrastructure",
+ "description": "",
+ "domain": "infrastructure",
+ "contexts": [
+  {
+   "name": "builtin-connector-seed",
+   "category": "data",
+   "business_feature": "Builtin Connector & Event Catalog",
+   "description": "Auto-generated module containing the static definitions for all built-in connector templates (e.g. GitHub, Slack, Gmail). Generated from JSON source files in `scripts/connectors/builtin/` via `generate-connector-seed.mjs`. Used by `init_db` to upsert connector templates on every app boot.",
+   "api_surface": "BUILTIN_CONNECTORS, BUILTIN_SHARED_EVENTS, BUILTIN_SHARED_EVENT_FIRINGS",
+   "db_tables": [
+    "connector_definitions",
+    "shared_event_catalog",
+    "shared_event_firings"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/builtin_connectors.rs"
+   ],
+   "cross_refs": [
+    "db-pool-init",
+    "connectors-repo"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/db/src/builtin_connectors.rs",
+    "src-tauri/db/src/builtin_shared_events.rs"
+   ]
+  },
+  {
+   "name": "change-data-capture",
+   "category": "data",
+   "business_feature": "Change Data Capture",
+   "description": "Implements SQLite update-hook-based CDC (Change Data Capture) that broadcasts row-level INSERT/UPDATE/DELETE events to an async channel on every pooled connection. The `CdcCustomizer` registers the hook at connection acquisition time; consumers (typically the engine event bus) subscribe via `CdcSender`. Enables real-time reactive UI updates without polling.",
+   "api_surface": "CdcCustomizer, CdcSender, CdcEvent",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/db/src/cdc.rs"
+   ],
+   "cross_refs": [
+    "db-pool-init",
+    "execution-repo"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src-tauri/db/src/cdc.rs"
+   ]
+  },
+  {
+   "name": "credential-fields",
+   "category": "lib",
+   "business_feature": "Credential Field Classification",
+   "description": "Provides credential field classification logic — determining which fields are sensitive vs. non-sensitive, canonical field key names, and key-rename mappings. Used by credential repositories, migration helpers, and data-portability commands to consistently classify and normalize credential data across the app.",
+   "api_surface": "classify_field_type(), NON_SENSITIVE_KEYS, FIELD_KEY_RENAMES, settings_keys constants",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/credential_fields.rs"
+   ],
+   "cross_refs": [
+    "credentials-repo",
+    "db-migrations-incremental"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/db/src/credential_fields.rs",
+    "src-tauri/db/src/settings_keys.rs"
+   ]
+  },
+  {
+   "name": "database-explorer-api",
+   "category": "api",
+   "business_feature": "Database Explorer",
+   "description": "IPC wrappers for the Database Explorer feature: natural-language-to-SQL query execution (streaming job results with generated SQL and explanation), database schema inspection (table/column/index metadata from a connected credential), and AI schema proposal generation (suggesting schema improvements or new tables). These commands require a live database credential and power the in-app SQL workbench.",
+   "api_surface": "Tauri commands: start_nl_query, get_nl_query_snapshot, get_db_schema, start_schema_proposal",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/vault/database/nlQuery.ts",
+    "src/api/vault/database/dbSchema.ts"
+   ],
+   "cross_refs": [
+    "vault-intelligence-api",
+    "credential-core-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/vault/database/nlQuery.ts",
+    "src/api/vault/database/dbSchema.ts",
+    "src/api/vault/database/schemaProposal.ts"
+   ]
+  },
+  {
+   "name": "database-explorer-hooks",
+   "category": "lib",
+   "business_feature": "Database Schema Explorer",
+   "description": "Hooks for the in-app SQL database explorer feature: introspecting the live SQLite schema, splitting raw SQL text into executable statements, proposing schema changes from natural language, and surfacing query debug information. Enables the Database Explorer panel where users can inspect and query the agent's working database.",
+   "api_surface": "Tauri commands: get_table_schema, propose_schema_change, debug_query",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/database/useTableIntrospection.ts",
+    "src/hooks/database/sqlStatementSplitter.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 5,
+   "sample_files": [
+    "src/hooks/database/useTableIntrospection.ts",
+    "src/hooks/database/sqlStatementSplitter.ts",
+    "src/hooks/database/useSchemaProposal.ts",
+    "src/hooks/database/useQueryDebug.ts",
+    "src/hooks/database/__tests__/sqlStatementSplitter.test.ts"
+   ]
+  },
+  {
+   "name": "db-backup",
+   "category": "data",
+   "business_feature": "Database Backup & Rotation",
+   "description": "Implements the pre-migration safety snapshot policy: copies the existing `personas.db` to `<data_dir>/backups/` before any migration chain runs, then rotates old snapshots so only the three newest backup sets are kept. Skips fresh installs (no existing DB to protect). Each backup set includes WAL/SHM sidecars.",
+   "api_surface": "backup::backup_before_migrations(app_data_dir, db_path)",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/db/src/backup.rs"
+   ],
+   "cross_refs": [
+    "db-pool-init"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src-tauri/db/src/backup.rs"
+   ]
+  },
+  {
+   "name": "db-migrations-incremental",
+   "category": "data",
+   "business_feature": "Incremental Schema Migration",
+   "description": "Handles additive schema evolution after the initial baseline — ALTER TABLE column additions, new index creation, new table creation for features added post-baseline, and the composite trigger fires table. Each statement is idempotent (guarded against duplicate-column errors). Also owns FK hygiene utilities and credential field migration helpers.",
+   "api_surface": "migrations::run_incremental(conn), migrations::ensure_composite_fires_table(conn)",
+   "db_tables": [
+    "composite_trigger_fires",
+    "dev_llm_spend",
+    "persona_metrics_snapshots",
+    "persona_healing_issues"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/migrations/incremental.rs"
+   ],
+   "cross_refs": [
+    "db-migrations-schema",
+    "db-pool-init",
+    "credential-fields"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/migrations/incremental.rs",
+    "src-tauri/db/src/migrations/fk_hygiene.rs",
+    "src-tauri/db/src/migrations/helpers.rs"
+   ]
+  },
+  {
+   "name": "db-migrations-schema",
+   "category": "data",
+   "business_feature": "Database Schema Migrations",
+   "description": "Contains the canonical initial SQL schema DDL for all core application tables, created as a consolidated idempotent migration from the original 11 versioned Vibeman migrations. This is the single source of truth for the database structure at baseline — all subsequent changes go through incremental migrations. Consumed by `migrations::run()` at every app boot.",
+   "api_surface": "migrations::run(conn)",
+   "db_tables": [
+    "personas",
+    "persona_executions",
+    "persona_messages",
+    "persona_memories",
+    "app_settings",
+    "persona_tools",
+    "persona_triggers"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/migrations/mod.rs"
+   ],
+   "cross_refs": [
+    "db-pool-init",
+    "db-migrations-incremental"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/migrations/schema.rs",
+    "src-tauri/db/src/migrations/mod.rs",
+    "src-tauri/db/src/migrations/initial.rs"
+   ]
+  },
+  {
+   "name": "db-pool-init",
+   "category": "data",
+   "business_feature": "Database Initialization & Pool Management",
+   "description": "Manages the SQLite connection pool lifecycle, WAL/pragma configuration, and database initialization sequence. Handles fresh installs and upgrade-on-boot paths including migration execution, FTS backfill, builtin data seeding, and orphan-row cleanup. Exposes `init_db`, `open_pool_at`, `init_user_db`, and `seed_builtin_credentials` as the main entry points consumed by the Tauri app setup.",
+   "api_surface": "init_db(), open_pool_at(), init_user_db(), seed_builtin_credentials()",
+   "db_tables": [
+    "personas",
+    "persona_executions",
+    "app_settings",
+    "connector_definitions",
+    "persona_tool_definitions",
+    "shared_event_catalog",
+    "shared_event_firings",
+    "knowledge_bases",
+    "kb_chunks",
+    "companion_node"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/lib.rs"
+   ],
+   "cross_refs": [
+    "db-migrations-schema",
+    "db-migrations-incremental",
+    "builtin-connector-seed",
+    "builtin-shared-events-seed"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src-tauri/db/src/lib.rs"
+   ]
+  },
+  {
+   "name": "db-query-utilities",
+   "category": "lib",
+   "business_feature": "Database Query Utilities",
+   "description": "Provides reusable query-builder helpers, shared macros for CRUD code generation, and row-mapper utilities that reduce boilerplate across all repository modules. Also includes performance measurement helpers for tracking query latency. These primitives are the foundation for the entire repository layer.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/db/src/macros.rs",
+    "src-tauri/db/src/query_builder.rs"
+   ],
+   "cross_refs": [
+    "agent-persona-repo",
+    "execution-repo",
+    "credentials-repo"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/query_builder.rs",
+    "src-tauri/db/src/macros.rs",
+    "src-tauri/db/src/perf.rs"
+   ]
+  },
+  {
+   "name": "repos-shared-utilities",
+   "category": "lib",
+   "business_feature": "Repository Shared Utilities",
+   "description": "Cross-cutting repository utilities: shared test fixture helpers (`test_fixtures.rs`), common row-mapping utilities (`utils.rs`), system operations (`system_ops.rs`), and the top-level `repos/mod.rs` registry that re-exports all repository modules. These support all repository layers without being domain-specific.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/db/src/repos/mod.rs"
+   ],
+   "cross_refs": [
+    "agent-persona-repo",
+    "execution-repo",
+    "credentials-repo"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/mod.rs",
+    "src-tauri/db/src/repos/utils.rs",
+    "src-tauri/db/src/repos/system_ops.rs",
+    "src-tauri/db/src/repos/test_fixtures.rs"
+   ]
+  },
+  {
+   "name": "vault-database-chat",
+   "category": "ui",
+   "business_feature": "Database AI Chat",
+   "description": "AI-assisted SQL chat tab inside the database explorer. ChatTab is the container; ChatMessages renders the conversation history; ChatInput handles user queries; AssistantSqlBlock renders AI-generated SQL with syntax highlighting and a one-click 'run in editor' action. The AI interprets schema context to generate contextually correct queries.",
+   "api_surface": "Tauri IPC: chat_db_query (AI SQL generation)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/vault/sub_databases/tabs/ChatTab.tsx"
+   ],
+   "cross_refs": [
+    "vault-database-shell",
+    "vault-database-query-editor"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/vault/sub_databases/tabs/AssistantSqlBlock.tsx",
+    "src/features/vault/sub_databases/tabs/ChatInput.tsx",
+    "src/features/vault/sub_databases/tabs/ChatMessages.tsx",
+    "src/features/vault/sub_databases/tabs/ChatTab.tsx"
+   ]
+  },
+  {
+   "name": "vault-database-query-editor",
+   "category": "ui",
+   "business_feature": "SQL Query Editor",
+   "description": "SQL query editor pane and console tab within the database explorer. QueryEditorPane hosts the editor + toolbar; QueryToolbar provides run/format/safe-mode controls; QuerySidebar shows saved queries; QueriesTab is the tab container; ConsoleTab and ConsoleOutput show query execution logs; ResultsTable renders query results; MutationConfirmBanner guards destructive queries.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/vault/sub_databases/tabs/QueryEditorPane.tsx"
+   ],
+   "cross_refs": [
+    "vault-database-shell",
+    "vault-database-table-browser"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/vault/sub_databases/tabs/ConsoleOutput.tsx",
+    "src/features/vault/sub_databases/tabs/ConsoleTab.tsx",
+    "src/features/vault/sub_databases/tabs/MutationConfirmBanner.tsx",
+    "src/features/vault/sub_databases/tabs/QueriesTab.tsx",
+    "src/features/vault/sub_databases/tabs/QueryEditorPane.tsx",
+    "src/features/vault/sub_databases/tabs/QuerySidebar.tsx"
+   ]
+  },
+  {
+   "name": "vault-database-shell",
+   "category": "ui",
+   "business_feature": "Database Explorer Shell",
+   "description": "Core database connector explorer shell. DatabaseListView lists all database-type credentials; DatabaseCard renders a card per database with connection status; DBGrid is the main explorer host; SchemaManagerModal browses database schema; SqlEditor is the CodeMirror-based SQL input; introspectionQueries defines per-dialect schema queries; safeModeUtils and sqlTokenizers support safe-mode filtering.",
+   "api_surface": "Tauri IPC: run_db_query, introspect_schema, list_databases",
+   "db_tables": [
+    "credentials"
+   ],
+   "entry_points": [
+    "src/features/vault/sub_databases/DBGrid.tsx",
+    "src/features/vault/sub_databases/DatabaseListView.tsx"
+   ],
+   "cross_refs": [
+    "vault-database-query-editor",
+    "vault-database-table-browser",
+    "vault-database-chat"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/vault/sub_databases/DatabaseCard.tsx",
+    "src/features/vault/sub_databases/DatabaseListView.tsx",
+    "src/features/vault/sub_databases/DBGrid.tsx",
+    "src/features/vault/sub_databases/introspectionQueries.ts",
+    "src/features/vault/sub_databases/QueryResultTable.tsx",
+    "src/features/vault/sub_databases/safeModeUtils.ts"
+   ]
+  },
+  {
+   "name": "vault-database-table-browser",
+   "category": "ui",
+   "business_feature": "Database Table Browser",
+   "description": "Table and column browser within the database explorer. TablesTab lists all tables; TableListSidebar provides sidebar navigation; TableDetailPanel shows column details and row preview; ColumnList renders columns with types; TableSearch enables fuzzy search; TableActions and TableContextMenu provide table-level operations; ConnectorCapabilityNote surfaces capability limitations.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/vault/sub_databases/tabs/TablesTab.tsx",
+    "src/features/vault/sub_databases/tabs/TableListSidebar.tsx"
+   ],
+   "cross_refs": [
+    "vault-database-shell",
+    "vault-database-query-editor"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/vault/sub_databases/tabs/ColumnList.tsx",
+    "src/features/vault/sub_databases/tabs/ConnectorCapabilityNote.tsx",
+    "src/features/vault/sub_databases/tabs/TableActions.tsx",
+    "src/features/vault/sub_databases/tabs/TableContextMenu.tsx",
+    "src/features/vault/sub_databases/tabs/TableDetailPanel.tsx",
+    "src/features/vault/sub_databases/tabs/TableListSidebar.tsx"
+   ]
+  },
+  {
+   "name": "vault-database-tests",
+   "category": "test",
+   "business_feature": "Database Explorer Tests",
+   "description": "Test suite for the database explorer sub-feature. Covers ChatTab integration, ConnectorCapabilityNote rendering, DatabaseCard and DatabaseListView display, introspection query parity across dialects, introspection query correctness, QueryResultTable, SchemaManagerModal, and SqlEditor behavior.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts"
+   ],
+   "cross_refs": [
+    "vault-database-shell",
+    "vault-database-query-editor",
+    "vault-database-table-browser"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx",
+    "src/features/vault/sub_databases/__tests__/ConnectorCapabilityNote.test.tsx",
+    "src/features/vault/sub_databases/__tests__/DatabaseCard.test.tsx",
+    "src/features/vault/sub_databases/__tests__/DatabaseListView.test.tsx",
+    "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts",
+    "src/features/vault/sub_databases/__tests__/introspectionQueries.test.ts"
+   ]
+  },
+  {
+   "name": "vector-store",
+   "category": "data",
+   "business_feature": "Vector Knowledge Base Search",
+   "description": "Manages the sqlite-vec virtual table used for semantic vector search over knowledge base chunks. Handles vec0 extension registration, embedding storage, approximate nearest-neighbor queries, and the BM25 FTS5 re-ranker. ML-feature-gated; only compiled when the `ml` cargo feature is enabled.",
+   "api_surface": "ensure_vec_registered_pub(), vector search queries",
+   "db_tables": [
+    "kb_chunks",
+    "kb_chunks_fts",
+    "knowledge_bases"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/vector_store.rs"
+   ],
+   "cross_refs": [
+    "db-pool-init",
+    "knowledge-base-repo"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/db/src/vector_store.rs",
+    "src-tauri/db/src/embedder.rs"
+   ]
+  }
+ ]
+}
