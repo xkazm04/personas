@@ -16,6 +16,13 @@
 //! Athena (via the team path), and the default-OFF autonomous tick
 //! (`GoalAdvanceSubscription`). The one-active-assignment-per-goal guard here
 //! protects all three from double-spawning.
+//!
+//! **Crew Foundry**: a crew forged via `synthesize_project_crew` is wired as
+//! the project's default team (`dev_projects.team_id`), so both the manual
+//! advance button and `GoalAdvanceSubscription::find_goal_advance_candidates`
+//! (which selects teams through that column) employ the forged, project-scoped
+//! crew with no changes here. Per-persona fitness for those runs is read back
+//! by `get_crew_fitness` from this module's terminal step statuses.
 
 use std::sync::Arc;
 

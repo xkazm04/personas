@@ -31,6 +31,7 @@ import { EventName, type ContextGenCompletePayload } from '@/lib/eventRegistry';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { toastCatch } from '@/lib/silentCatch';
 
+import { CrewFoundryPanel } from '../foundry/CrewFoundryPanel';
 import { INK, anchorTip } from '../passport/passportInk';
 import type { FactoryL2Data } from './factoryL2Data';
 
@@ -517,6 +518,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
         <Toolbar data={data} summary={summary} onNote={setNote} />
         {note && <p className="typo-caption text-foreground/45 mt-1.5">{note}</p>}
       </div>
+      <CrewFoundryPanel data={data} />
       <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))' }}>
         {groups.map((g) => {
           const kinds = g.cells.map((c) => c.kind);
