@@ -217,6 +217,30 @@ sweep.
 5. **Write the context note and update `Sweep.md` before moving to the next
    one.** Never batch the bookkeeping to the end.
 
+### Review mode — manual, or earned autonomy
+
+Before the sweep starts, ask the operator once which review mode this run uses:
+
+- **`manual`** (default) — every context's proposals go through the operator,
+  as described below. Always offer this first; adoption is theirs.
+- **`auto`** — you triage on your own recommendation, recording decisions with
+  the same per-KPI immediacy. Only enter this mode when the operator names it.
+- **`calibrated`** — the middle path, and the one to suggest for a large map:
+  run the first **20 contexts** manual while tracking, per proposal, whether
+  the operator's decision matched the recommendation you stated BEFORE they
+  answered. At 20 contexts, report the agreement rate. **At ≥90%, offer to
+  switch to `auto` for the remainder** — and switch only when they accept.
+  Below 90%, stay manual and say which kinds of proposals you misjudged, so
+  the disagreement pattern becomes part of the record.
+
+Track calibration in the vault note (`Sweep.md`): one line per triaged context
+— `recommended / operator kept / match`. The count is honest only if the
+recommendation was committed before the answer; never restate a
+recommendation after the fact to improve the score. In `auto` mode, keep
+writing the same lines with `auto` in place of the operator column, so a later
+session (or the operator) can audit what autonomy actually decided — and drop
+back to manual the moment the operator asks or a whole batch smells wrong.
+
 ### Triage per context — pick 0 to 4
 
 Each context scan returns at most 4 proposals. Present them as ONE multi-select:
