@@ -503,20 +503,72 @@ pub async fn push_to_drive(
                     match std::fs::read_to_string(&full_path) {
                         Ok(content) => {
                             let hash = compute_content_hash(&content);
+                            let existing_entry = manifest.files.get(&file_key).cloned();
 
-                            // Check if file has changed since last sync
-                            if let Some(entry) = manifest.files.get(&file_key) {
+                            // Check if file has changed locally since last sync
+                            if let Some(entry) = existing_entry.as_ref() {
                                 if entry.content_hash == hash {
                                     result.skipped += 1;
                                     continue;
                                 }
                             }
 
+                            // Local content diverged from what we last pushed.
+                            // Re-read the Drive copy before overwriting it and
+                            // refuse to clobber a concurrent Drive-side edit --
+                            // mirrors `classify_push`'s guard on the local
+                            // vault sync lane (mod.rs), which re-reads before
+                            // every overwrite and classifies the outcome
+                            // instead of trusting a single hash comparison.
+                            // Without this, two sync engines in this plugin
+                            // used two different conflict models: the local
+                            // lane always re-read; this cloud lane uploaded
+                            // whenever the local hash differed from the last
+                            // sync, silently discarding a concurrent Drive
+                            // edit with no record and no way to recover it.
+                            if let Some(entry) = existing_entry.as_ref() {
+                                match download_file(&client, &entry.drive_file_id).await {
+                                    Ok(remote_content) => {
+                                        let remote_hash = compute_content_hash(&remote_content);
+                                        if remote_hash != entry.content_hash {
+                                            if remote_hash == hash {
+                                                // Converged by luck -- nothing
+                                                // to upload, just advance the
+                                                // manifest to the shared hash.
+                                                manifest.files.insert(
+                                                    file_key,
+                                                    ManifestEntry {
+                                                        drive_file_id: entry.drive_file_id.clone(),
+                                                        content_hash: hash,
+                                                        synced_at: Utc::now().to_rfc3339(),
+                                                        size_bytes: content.len() as u64,
+                                                    },
+                                                );
+                                                result.skipped += 1;
+                                                continue;
+                                            }
+                                            result.errors.push(format!(
+                                                "{file_key}: local and Drive both changed since last sync -- skipped push to avoid overwriting the Drive edit; resolve manually (e.g. pull first)"
+                                            ));
+                                            continue;
+                                        }
+                                    }
+                                    Err(e) => {
+                                        // Can't confirm the remote still
+                                        // matches what we last synced -- fail
+                                        // safe rather than risk clobbering an
+                                        // edit we can't see.
+                                        result.errors.push(format!(
+                                            "{file_key}: could not verify current Drive content before push: {e}"
+                                        ));
+                                        continue;
+                                    }
+                                }
+                            }
+
                             // Upload to Drive
-                            let existing_id = manifest
-                                .files
-                                .get(&file_key)
-                                .map(|e| e.drive_file_id.as_str());
+                            let existing_id =
+                                existing_entry.as_ref().map(|e| e.drive_file_id.as_str());
                             match upload_file(
                                 &client,
                                 &drive_subfolder,
@@ -630,15 +682,26 @@ pub async fn pull_from_drive(
             let file_key = format!("{folder_name}/{}", safe_name);
             let local_path = local_folder.join(safe_name);
 
-            // Check if local file is already up-to-date
+            // Check if local file is already up-to-date with what we last
+            // synced. If it matches, skip without downloading -- a file
+            // neither side has touched since the last sync needs no re-check.
+            // If it DIVERGED (edited directly in the vault, not yet pushed),
+            // remember the divergence so we can classify the outcome after
+            // seeing the current Drive content, instead of blindly
+            // overwriting the local edit below.
+            let mut local_divergence: Option<(String, String)> = None; // (local_hash, base_hash)
             if local_path.exists() {
                 if let Ok(local_content) = std::fs::read_to_string(&local_path) {
                     let local_hash = compute_content_hash(&local_content);
-                    if let Some(entry) = manifest.files.get(&file_key) {
-                        if entry.content_hash == local_hash {
+                    match manifest.files.get(&file_key) {
+                        Some(entry) if entry.content_hash == local_hash => {
                             result.skipped += 1;
                             continue;
                         }
+                        Some(entry) => {
+                            local_divergence = Some((local_hash, entry.content_hash.clone()));
+                        }
+                        None => {}
                     }
                 }
             }
@@ -646,11 +709,52 @@ pub async fn pull_from_drive(
             // Download from Drive
             match download_file(&client, &df.id).await {
                 Ok(content) => {
+                    let hash = compute_content_hash(&content);
+
+                    // Re-read-before-overwrite: local content changed since
+                    // last sync. Refuse to clobber it with whatever's on
+                    // Drive -- mirrors `classify_push`'s guard on the local
+                    // vault sync lane (mod.rs) and the symmetric fix on the
+                    // push side above. Without this, pulling always
+                    // overwrote a not-yet-pushed local edit with the stale
+                    // pre-edit Drive copy, silently discarding it.
+                    if let Some((local_hash, base_hash)) = local_divergence {
+                        if hash == local_hash {
+                            // Converged by luck -- nothing to write, just
+                            // advance the manifest to the shared hash.
+                            manifest.files.insert(
+                                file_key,
+                                ManifestEntry {
+                                    drive_file_id: df.id,
+                                    content_hash: hash,
+                                    synced_at: Utc::now().to_rfc3339(),
+                                    size_bytes: content.len() as u64,
+                                },
+                            );
+                            result.skipped += 1;
+                            continue;
+                        }
+                        if hash != base_hash {
+                            // Drive also changed since last sync AND
+                            // disagrees with the local edit -- a real
+                            // conflict. Skip + record instead of silently
+                            // discarding the local edit.
+                            result.errors.push(format!(
+                                "{file_key}: local and Drive both changed since last sync -- skipped pull to avoid overwriting the local edit; resolve manually (e.g. push first)"
+                            ));
+                            continue;
+                        }
+                        // Drive matches the last-synced base -- only the
+                        // local side moved. Nothing new to pull; leave the
+                        // local edit alone.
+                        result.skipped += 1;
+                        continue;
+                    }
+
                     if let Err(e) = std::fs::write(&local_path, &content) {
                         result.errors.push(format!("write {file_key}: {e}"));
                         continue;
                     }
-                    let hash = compute_content_hash(&content);
                     manifest.files.insert(
                         file_key,
                         ManifestEntry {

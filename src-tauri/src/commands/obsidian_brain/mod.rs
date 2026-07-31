@@ -1414,10 +1414,15 @@ pub fn obsidian_brain_resolve_conflict(
 /// case). `rel = None`/empty resolves to the vault root. Returns the canonical,
 /// in-vault absolute path.
 ///
-/// Every command that joins a caller-supplied path to the vault MUST go through
-/// this so the guard cannot diverge between siblings — which is exactly how the
-/// listing command shipped without the read command's checks
-/// (bug-hunt 2026-06-07 creative #2).
+/// Every command that joins a caller-supplied VAULT-RELATIVE FRAGMENT to the
+/// vault MUST go through this so the guard cannot diverge between siblings —
+/// which is exactly how the listing command shipped without the read
+/// command's checks (bug-hunt 2026-06-07 creative #2). For the sibling shape
+/// — a command that already receives (or built) an ABSOLUTE candidate path
+/// and only needs the containment assertion, not the relative-fragment
+/// join/reject-`..` step — use `graph::ensure_within_vault` instead of
+/// re-deriving a third variant of this check; the two together are this
+/// plugin's complete set of vault-root resolvers.
 fn resolve_vault_subpath(vault_base: &Path, rel: Option<&str>) -> Result<std::path::PathBuf, AppError> {
     let vault_canon = vault_base
         .canonicalize()

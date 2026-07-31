@@ -1248,6 +1248,16 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<St
         let out_dur = img.output_end - img.output_start;
         // Preserve the old 40%-of-frame box semantics so scale=1.0 still
         // renders identically. See architecture doc §Image overlay.
+        //
+        // NOT part of the RenderPlan IR (ImageOverlayStage only carries
+        // `scale`, not a resolved box size) — the 0.4 fraction is a rendering
+        // convention this exporter and the browser preview each apply
+        // independently. Keep in sync with the `max-w-[40%] max-h-[40%]`
+        // Tailwind classes in
+        // `src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx`
+        // (image overlay `<img>`) — changing this fraction without updating
+        // that class makes the live preview's image size silently diverge
+        // from the exported video's.
         let target_w = (plan.width as f64 * 0.4 * img.scale).round().max(1.0) as i64;
         let target_h = (plan.height as f64 * 0.4 * img.scale).round().max(1.0) as i64;
 

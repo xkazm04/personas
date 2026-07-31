@@ -250,13 +250,22 @@ fn snippet_for(body: &str, query_lc: &str) -> String {
     s
 }
 
+/// Assert that an already-absolute `target` path (as legitimately passed by
+/// the UI from search/graph results) canonicalises to somewhere inside
+/// `vault_root`. Sibling to `resolve_vault_subpath` in `mod.rs`, which instead
+/// takes a caller-supplied VAULT-RELATIVE FRAGMENT, rejects `..`/absolute
+/// input up front, and returns the resolved path. Use that one when the input
+/// is a relative fragment; use this one when the input is already an absolute
+/// candidate and only needs the containment assertion — do not add a third
+/// variant of this check.
 fn ensure_within_vault(vault_root: &Path, target: &Path) -> Result<(), AppError> {
-    // Canonicalize BOTH sides as a hard requirement. The previous code used
-    // `unwrap_or(<raw path>)`, which turned a canonicalize *failure* into a
-    // guard BYPASS: a target that failed to canonicalize (or a Windows `\\?\`
-    // verbatim-prefix mismatch when only one side resolved) was compared
-    // un-normalized, so a crafted note_path with `..` segments or a symlink
-    // could read files outside the vault. Requiring both to canonicalize means
+    // Canonicalize BOTH sides as a hard requirement (bug-hunt 2026-06-07
+    // creative #4). The previous code used `unwrap_or(<raw path>)`, which
+    // turned a canonicalize *failure* into a guard BYPASS: a target that
+    // failed to canonicalize (or a Windows `\\?\` verbatim-prefix mismatch
+    // when only one side resolved) was compared un-normalized, so a crafted
+    // note_path with `..` segments or a symlink could read files outside the
+    // vault. Requiring both to canonicalize means
     // `..` and symlinks are fully resolved before the prefix check and the two
     // paths share a consistent representation; any failure is a rejection, not
     // a fallback. Absolute in-vault paths (which the UI legitimately passes
@@ -538,6 +547,17 @@ pub fn obsidian_graph_append_daily_note(
     if let Some(parent) = file_path.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| AppError::Validation(format!("Failed to create Daily folder: {e}")))?;
+        // `date_str`/`file_path` are fully derived from a parsed NaiveDate (no
+        // caller-supplied path segments reach `.join()`), so this cannot be
+        // escaped via `..` or a crafted filename today. It CAN still be
+        // escaped if the vault's `Daily` folder itself is a symlink pointing
+        // outside the vault root, so route through the same funnel the read
+        // commands use rather than assuming derived-path safety holds forever
+        // (see `ensure_within_vault` doc comment; same "one canonical
+        // resolver" doctrine as `resolve_vault_subpath`). Checked here (not
+        // before `create_dir_all`) because `canonicalize()` requires the path
+        // to already exist.
+        ensure_within_vault(vault_root, parent)?;
     }
 
     let created = !file_path.exists();
@@ -610,6 +630,12 @@ pub fn obsidian_graph_write_meeting_note(
     let folder = vault_root.join("Meetings");
     std::fs::create_dir_all(&folder)
         .map_err(|e| AppError::Validation(format!("Failed to create Meetings folder: {e}")))?;
+    // Same funnel as the daily-note writer above: `file_name` is sanitized to
+    // alphanumeric/space/dash/underscore (no `/`, `\`, or `.`), so it cannot
+    // itself traverse out of `folder` — but a symlinked `Meetings` folder
+    // still could. Assert containment now that `create_dir_all` guarantees
+    // `folder` exists.
+    ensure_within_vault(vault_root, &folder)?;
     let file_path = folder.join(&file_name);
 
     let mut md = String::new();

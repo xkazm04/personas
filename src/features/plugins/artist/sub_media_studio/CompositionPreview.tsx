@@ -405,6 +405,12 @@ function CompositionPreviewImpl(
                 <img
                   src={convertFileSrc(path)}
                   alt=""
+                  // 40% box mirrors the exporter's `target_w/target_h = plan.width
+                  // * 0.4 * scale` convention in
+                  // src-tauri/src/commands/artist/ffmpeg.rs (image overlay scale
+                  // filter). Not part of the RenderPlan IR — ImageOverlayStage only
+                  // carries `scale`, so this fraction is duplicated by convention,
+                  // not compiled once. Keep the two in sync if either changes.
                   className="max-w-[40%] max-h-[40%] object-contain drop-shadow-elevation-3"
                   draggable={false}
                 />

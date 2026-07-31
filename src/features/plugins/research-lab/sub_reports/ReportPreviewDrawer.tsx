@@ -170,11 +170,21 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
         experiments: projectExperiments,
         findings: projectFindings,
       });
-      const { output, passed } = await runPersonaAndWait({
+      const { output, passed, kind } = await runPersonaAndWait({
         personaId,
         input: prompt,
         onStatus: setSynthStatus,
       });
+      // Timeout != failure: this is the longest-running of the three LLM
+      // surfaces (a synthesis over every hypothesis + finding), so exceeding
+      // the default poll deadline is the likely outcome, not the exception.
+      // The execution may still complete in the backend -- don't tell the
+      // user it failed (mirrors ExperimentsPanel.tsx's `kind === 'timeout'`
+      // guard).
+      if (kind === 'timeout') {
+        addToast('Synthesis still running — not finished observing yet; try again shortly.', 'warning');
+        return;
+      }
       if (!passed || !output) {
         addToast('AI synthesis did not complete', 'error');
         return;
