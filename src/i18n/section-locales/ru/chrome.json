@@ -50,7 +50,13 @@
     "nav_mode_search": "Поиск (в режиме навигации)",
     "open_title": "Горячие клавиши",
     "nav_history_back": "Назад",
-    "nav_history_forward": "Вперёд"
+    "nav_history_forward": "Вперёд",
+    "triage_deck_accept": "Принять карточку в колоде триажа",
+    "triage_deck_branch": "Выполнить пронумерованное действие с карточкой",
+    "triage_deck_close": "Закрыть колоду триажа",
+    "triage_deck_open": "Открыть запуск, породивший карточку",
+    "triage_deck_reject": "Отклонить карточку в колоде триажа",
+    "triage_deck_skip": "Пропустить карточку и вернуться к ней позже"
   },
   "tray_schedules": "Расписания",
   "tray_schedules_today": "{count} запланировано сегодня",

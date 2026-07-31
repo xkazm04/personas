@@ -50,7 +50,13 @@
     "nav_mode_search": "Ouvrir la recherche (mode navigation)",
     "open_title": "Raccourcis clavier",
     "nav_history_back": "Retour",
-    "nav_history_forward": "Avancer"
+    "nav_history_forward": "Avancer",
+    "triage_deck_accept": "Accepter la carte de la pile de tri",
+    "triage_deck_branch": "Exécuter une action numérotée sur la carte",
+    "triage_deck_close": "Fermer la pile de tri",
+    "triage_deck_open": "Ouvrir l’exécution à l’origine de la carte",
+    "triage_deck_reject": "Rejeter la carte de la pile de tri",
+    "triage_deck_skip": "Passer la carte et la revoir plus tard"
   },
   "tray_schedules": "Planifications",
   "tray_schedules_today": "{count} planifiée(s) aujourd'hui",

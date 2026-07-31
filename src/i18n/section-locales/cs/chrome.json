@@ -50,7 +50,13 @@
     "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)",
     "open_title": "Klávesové zkratky",
     "nav_history_back": "Zpět",
-    "nav_history_forward": "Vpřed"
+    "nav_history_forward": "Vpřed",
+    "triage_deck_accept": "Přijmout kartu v balíčku třídění",
+    "triage_deck_branch": "Provést číslovanou akci na kartě",
+    "triage_deck_close": "Zavřít balíček třídění",
+    "triage_deck_open": "Otevřít běh, který kartu vyvolal",
+    "triage_deck_reject": "Zamítnout kartu v balíčku třídění",
+    "triage_deck_skip": "Přeskočit kartu a zobrazit ji později"
   },
   "tray_schedules": "Plány",
   "tray_schedules_today": "{count} naplánováno dnes",

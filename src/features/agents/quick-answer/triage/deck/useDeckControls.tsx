@@ -24,6 +24,8 @@
 //     is the guarantee that no future regression there can wedge the deck.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+
 import {
   reasonPromptFor,
   type TriageDecision,
@@ -59,6 +61,19 @@ interface ReasonCapture {
  * is a stuck-detector, not a second animation clock.
  */
 const FLIGHT_TIMEOUT_MS = 1200;
+
+/**
+ * Where the deck sits on the app's keyboard ladder (see `AppKeyboardProvider`).
+ *
+ * Above every route-level surface (10) and above the app-shell conveniences —
+ * KeyboardNavMode (30), TitleBarDock's hint keys (29), the `?` cheat sheet (20),
+ * WorkspaceShortcuts (15) — because while the deck is up it is the only thing
+ * the reviewer can see, and a `;` or an `R` firing behind it moves the app out
+ * from under a decision in flight. Deliberately BELOW BaseModal (80) and the
+ * command palette (90): a modal opened on top of the deck must keep its own
+ * Escape and focus trap, and mod+K has to work from anywhere in the app.
+ */
+const DECK_KEYBOARD_PRIORITY = 70;
 
 export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) {
   const cardRef = useRef<TriageCardHandle | null>(null);
@@ -315,70 +330,93 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
   const live = useRef({ decideTop, fireBranch, followLink, resolveReason, onClose });
   live.current = { decideTop, fireBranch, followLink, resolveReason, onClose };
 
-  // One stable listener for the session. Arrows decide, numbers branch.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      const tag = el?.tagName;
-      const inField =
-        tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!el?.isContentEditable;
-      const held = captureRef.current;
+  /**
+   * One stable handler for the session. Arrows decide, numbers branch.
+   *
+   * Registered through the app keyboard registry rather than on `window`, and
+   * EXCLUSIVELY (see `useAppKeyboard`). The deck renders OVER the live route —
+   * `TrayOverlays` mounts it and nothing beneath it unmounts — so a bare
+   * `window` listener left every route-level decision surface underneath still
+   * listening: on Approvals → Backlog → Focus, one `←` rejected the deck's card
+   * AND a backlog idea nobody could see. `preventDefault()` cannot stop a
+   * sibling `window` listener; only a registry that knows who owns the keyboard
+   * can. Exclusivity, not just priority, is the guarantee — a key the deck
+   * ignores (`a`, `z`, `Shift+←`) must not reach an invisible surface either.
+   */
+  const onKey = useCallback((e: KeyboardEvent) => {
+    const el = e.target as HTMLElement | null;
+    const tag = el?.tagName;
+    const inField =
+      tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!el?.isContentEditable;
+    const held = captureRef.current;
 
-      if (e.key === 'Escape') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      // Esc inside a text box steps out of it first. Closing the whole deck
+      // mid-sentence would throw away work the reviewer just typed.
+      if (inField) el?.blur();
+      // While a reason is being asked for, Esc is the ONE-KEYSTROKE skip: the
+      // decision lands with no reason, which is what the app did before this
+      // prompt existed. It must never close the deck out from under a verdict
+      // the reviewer has already committed to.
+      else if (held) live.current.resolveReason();
+      else live.current.onClose();
+      return true;
+    }
+
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+    if (inField) return false;
+
+    // Reason mode owns the keyboard while it is up: digits pick a preset,
+    // Enter skips. Nothing else can decide, because there is already a
+    // decision waiting to land.
+    if (held) {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        // Esc inside a text box steps out of it first. Closing the whole deck
-        // mid-sentence would throw away work the reviewer just typed.
-        if (inField) el?.blur();
-        // While a reason is being asked for, Esc is the ONE-KEYSTROKE skip: the
-        // decision lands with no reason, which is what the app did before this
-        // prompt existed. It must never close the deck out from under a verdict
-        // the reviewer has already committed to.
-        else if (held) live.current.resolveReason();
-        else live.current.onClose();
-        return;
+        live.current.resolveReason();
+        return true;
       }
-
-      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (inField) return;
-
-      // Reason mode owns the keyboard while it is up: digits pick a preset,
-      // Enter skips. Nothing else can decide, because there is already a
-      // decision waiting to land.
-      if (held) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          live.current.resolveReason();
-        } else if (/^[1-9]$/.test(e.key)) {
-          const option = held.prompt.options[Number(e.key) - 1];
-          if (!option) return;
-          e.preventDefault();
-          live.current.resolveReason(option.value);
-        }
-        return;
+      if (/^[1-9]$/.test(e.key)) {
+        const option = held.prompt.options[Number(e.key) - 1];
+        if (!option) return false;
+        e.preventDefault();
+        live.current.resolveReason(option.value);
+        return true;
       }
+      return false;
+    }
 
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        live.current.decideTop('reject');
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        live.current.decideTop('accept');
-      } else if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        live.current.decideTop('skip');
-      } else if (e.key === 'o' || e.key === 'O') {
-        e.preventDefault();
-        live.current.followLink();
-      } else if (/^[1-9]$/.test(e.key)) {
-        const branch = topRef.current?.branches[Number(e.key) - 1];
-        if (!branch) return;
-        e.preventDefault();
-        live.current.fireBranch(branch.id);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      live.current.decideTop('reject');
+      return true;
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      live.current.decideTop('accept');
+      return true;
+    }
+    if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      live.current.decideTop('skip');
+      return true;
+    }
+    if (e.key === 'o' || e.key === 'O') {
+      e.preventDefault();
+      live.current.followLink();
+      return true;
+    }
+    if (/^[1-9]$/.test(e.key)) {
+      const branch = topRef.current?.branches[Number(e.key) - 1];
+      if (!branch) return false;
+      e.preventDefault();
+      live.current.fireBranch(branch.id);
+      return true;
+    }
+    return false;
   }, []);
+
+  useAppKeyboard(onKey, { priority: DECK_KEYBOARD_PRIORITY, exclusive: true });
 
   const isDeferred = !!top?.input?.deferred;
   const filledCount = Object.values(answers).filter((v) => v.trim()).length;

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
@@ -69,17 +70,25 @@ export default function AthenaOrbLayer() {
   // before the render-time early return), so the shortcut works even while
   // Athena is dormant.
   const { talking, start, stop, abort, supported } = talk;
-  useEffect(() => {
-    const leader = leaderRef.current;
-    const disarm = () => {
-      leader.armed = false;
-      if (leader.timer != null) {
-        window.clearTimeout(leader.timer);
-        leader.timer = null;
-      }
-    };
 
-    const onKey = (e: KeyboardEvent) => {
+  const disarm = useCallback(() => {
+    const leader = leaderRef.current;
+    leader.armed = false;
+    if (leader.timer != null) {
+      window.clearTimeout(leader.timer);
+      leader.timer = null;
+    }
+  }, []);
+
+  useEffect(() => disarm, [disarm]);
+
+  // On the app keyboard registry rather than `window`: the `;`-leader digits
+  // are the same `1`–`9` the full-app triage deck uses to fire a card's branch,
+  // and with both on `window` one press did both. Registered at route level so
+  // any overlay that claims the keyboard is served first and this layer yields.
+  useAppKeyboard(
+    (e: KeyboardEvent) => {
+      const leader = leaderRef.current;
       // Slice 5 — `;`-leader numeric decision answering. Only active while a
       // decision is pending and the user isn't typing into a field (`;` and
       // digits are common literals). Read `pendingDecision` via getState() so
@@ -95,18 +104,18 @@ export default function AthenaOrbLayer() {
             disarm();
             const opt = decision.options[Number(e.key) - 1];
             if (opt) runDecisionOption(opt);
-            return;
+            return true;
           }
           if (e.key === '0') {
             e.preventDefault();
             disarm();
             explainDecision();
-            return;
+            return true;
           }
           if (e.key === 'Escape') {
             e.preventDefault();
             disarm();
-            return;
+            return true;
           }
           // Any other key cancels the leader (it wasn't a numeric answer).
           disarm();
@@ -119,7 +128,7 @@ export default function AthenaOrbLayer() {
             leader.armed = false;
             leader.timer = null;
           }, LEADER_WINDOW_MS);
-          return;
+          return true;
         }
       } else if (leader.armed) {
         // Decision vanished or focus moved into a field — drop the leader.
@@ -132,28 +141,26 @@ export default function AthenaOrbLayer() {
         if (!orbEnabled) {
           const cur = useCompanionStore.getState().state;
           setState(cur === 'open' ? 'collapsed' : 'open');
-          return;
+          return true;
         }
         if (talking) {
           stop();
-          return;
+          return true;
         }
         if (useCompanionStore.getState().state !== 'minimized') {
           setState('minimized');
         }
         if (supported) start();
-        return;
+        return true;
       }
       if (e.key === 'Escape' && talking) {
+        // Aborts dictation but never consumed: an overlay above still owns Esc.
         abort();
       }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      disarm();
-    };
-  }, [orbEnabled, talking, supported, start, stop, abort, setState]);
+      return false;
+    },
+    { priority: ROUTE_DECISION_PRIORITY },
+  );
 
   if (!orbEnabled || state !== 'minimized') return null;
 

@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -206,10 +207,17 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
   // Keyboard — with multiple decisions, arrow keys triage the CURRENT decision
   // instead of firing the review-wide action. The review-wide "Accept all" /
   // "Reject all" lives on the bottom button bar in that mode.
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
-      if (isProcessing) return;
+  //
+  // Registered on the app keyboard registry (not `window`) at route level, so a
+  // full-app decision surface layered over this route — the triage deck, which
+  // also maps ←/→ to a verdict — claims the arrows and this flow never sees
+  // them. On a bare `window` listener both fired and one press decided two
+  // rows, one of them behind an opaque overlay. Behaviour with nothing layered
+  // over the route is unchanged.
+  useAppKeyboard(
+    (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return false;
+      if (isProcessing) return false;
 
       const multiDecisionMode = hasMultipleDecisions && !!currentDecision && activeAction === null;
 
@@ -223,7 +231,9 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
           setActiveAction('approve');
           setActionNotes('');
         }
-      } else if (e.key === 'ArrowLeft') {
+        return true;
+      }
+      if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (multiDecisionMode) {
           decideAndAdvance(currentDecision!.id, 'reject');
@@ -233,17 +243,22 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
           setActiveAction('reject');
           setActionNotes('');
         }
-      } else if (e.key === 'ArrowDown') {
+        return true;
+      }
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
         if (activeAction === 'retry') handleConfirmAction();
         else { setActiveAction('retry'); setActionNotes(''); }
-      } else if (e.key === 'Escape') {
+        return true;
+      }
+      if (e.key === 'Escape') {
+        // Never consumed: an overlay or modal above this route owns Escape.
         resetAction();
       }
-    }
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isProcessing, activeAction, handleConfirmAction, resetAction, hasMultipleDecisions, currentDecision, decideAndAdvance]);
+      return false;
+    },
+    { priority: ROUTE_DECISION_PRIORITY },
+  );
 
   // Decision summary counts
   const acceptCount = Object.values(decisionVerdicts).filter((v) => v === 'accept').length;

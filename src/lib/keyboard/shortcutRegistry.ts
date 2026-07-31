@@ -91,6 +91,15 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     bindings: [
       { combos: [['←'], ['A']], describe: (t) => t.chrome.shortcuts.triage_reject },
       { combos: [['→'], ['Z']], describe: (t) => t.chrome.shortcuts.triage_accept },
+      // The full-app triage deck (title bar → review). It claims the keyboard
+      // exclusively while open, so these are the ONLY keys live on that surface
+      // — which is exactly why they have to be documented here.
+      { combos: [['←']], describe: (t) => t.chrome.shortcuts.triage_deck_reject },
+      { combos: [['→']], describe: (t) => t.chrome.shortcuts.triage_deck_accept },
+      { combos: [['S']], describe: (t) => t.chrome.shortcuts.triage_deck_skip },
+      { combos: [['O']], describe: (t) => t.chrome.shortcuts.triage_deck_open },
+      { combos: [['1–9']], describe: (t) => t.chrome.shortcuts.triage_deck_branch },
+      { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.triage_deck_close },
     ],
   },
   {

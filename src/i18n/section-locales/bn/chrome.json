@@ -50,7 +50,13 @@
     "nav_mode_search": "অনুসন্ধান খুলুন (নেভ মোডে)",
     "open_title": "কীবোর্ড শর্টকাট",
     "nav_history_back": "পিছনে যান",
-    "nav_history_forward": "সামনে যান"
+    "nav_history_forward": "সামনে যান",
+    "triage_deck_accept": "ট্রায়াজ ডেকে কার্ডটি গ্রহণ করুন",
+    "triage_deck_branch": "কার্ডে একটি নম্বরযুক্ত পদক্ষেপ নিন",
+    "triage_deck_close": "ট্রায়াজ ডেক বন্ধ করুন",
+    "triage_deck_open": "কার্ডের পিছনের রানটি খুলুন",
+    "triage_deck_reject": "ট্রায়াজ ডেকে কার্ডটি প্রত্যাখ্যান করুন",
+    "triage_deck_skip": "কার্ডটি এড়িয়ে যান, পরে আবার দেখুন"
   },
   "tray_schedules": "সময়সূচি",
   "tray_schedules_today": "আজ {count}টি নির্ধারিত",

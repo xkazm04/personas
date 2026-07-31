@@ -619,7 +619,13 @@
       "nav_mode_search": "Suche öffnen (im Nav-Modus)",
       "open_title": "Tastenkürzel",
       "nav_history_back": "Zurück",
-      "nav_history_forward": "Vorwärts"
+      "nav_history_forward": "Vorwärts",
+      "triage_deck_accept": "Karte im Triage-Stapel annehmen",
+      "triage_deck_branch": "Nummerierte Aktion auf der Karte ausführen",
+      "triage_deck_close": "Triage-Stapel schließen",
+      "triage_deck_open": "Lauf hinter der Karte öffnen",
+      "triage_deck_reject": "Karte im Triage-Stapel ablehnen",
+      "triage_deck_skip": "Karte überspringen und später erneut zeigen"
     },
     "tray_schedules": "Zeitpläne",
     "tray_schedules_today": "{count} heute geplant",

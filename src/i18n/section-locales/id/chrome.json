@@ -50,7 +50,13 @@
     "nav_mode_search": "Buka pencarian (mode nav)",
     "open_title": "Pintasan keyboard",
     "nav_history_back": "Kembali",
-    "nav_history_forward": "Maju"
+    "nav_history_forward": "Maju",
+    "triage_deck_accept": "Terima kartu di dek triase",
+    "triage_deck_branch": "Jalankan aksi bernomor pada kartu",
+    "triage_deck_close": "Tutup dek triase",
+    "triage_deck_open": "Buka eksekusi di balik kartu",
+    "triage_deck_reject": "Tolak kartu di dek triase",
+    "triage_deck_skip": "Lewati kartu dan lihat lagi nanti"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",

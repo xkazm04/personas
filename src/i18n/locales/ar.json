@@ -619,7 +619,13 @@
       "nav_mode_search": "فتح البحث (في وضع التنقل)",
       "open_title": "اختصارات لوحة المفاتيح",
       "nav_history_back": "رجوع",
-      "nav_history_forward": "تقدّم"
+      "nav_history_forward": "تقدّم",
+      "triage_deck_accept": "قبول البطاقة في حزمة الفرز",
+      "triage_deck_branch": "تنفيذ إجراء مرقّم على البطاقة",
+      "triage_deck_close": "إغلاق حزمة الفرز",
+      "triage_deck_open": "فتح التشغيل الذي وراء البطاقة",
+      "triage_deck_reject": "رفض البطاقة في حزمة الفرز",
+      "triage_deck_skip": "تخطّي البطاقة ورؤيتها لاحقًا"
     },
     "tray_schedules": "الجداول الزمنية",
     "tray_schedules_today": "{count} مجدول اليوم",

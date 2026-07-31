@@ -15,6 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Hammer, ScanSearch, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
 
 import * as devApi from '@/api/devTools/devTools';
+import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -82,26 +83,38 @@ export function BacklogFocusDeck({
     }
   }, [addToast, r.backlog_build_queued, onAccept]);
 
-  // Stable listener: ←/A reject, →/Z accept. Ignored inside text fields and
+  // Stable handler: ←/A reject, →/Z accept. Ignored inside text fields and
   // whenever a modifier is held (those belong to the browser / the app shell).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  //
+  // On the app keyboard registry at route level rather than on `window`: this
+  // deck stays mounted underneath the full-app triage deck, and a bare listener
+  // meant `←` there rejected a backlog idea here too — invisibly, behind an
+  // opaque overlay. `A` / `Z`, which the triage deck does not even bind, leaked
+  // the same way, which is why the overlay claims the keyboard exclusively
+  // rather than key-by-key. Unchanged when nothing is layered over the route.
+  useAppKeyboard(
+    (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
       const el = e.target as HTMLElement | null;
       const tag = el?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) {
+        return false;
+      }
 
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         swipe('left');
-      } else if (e.key === 'ArrowRight' || e.key === 'z' || e.key === 'Z') {
+        return true;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'z' || e.key === 'Z') {
         e.preventDefault();
         swipe('right');
+        return true;
       }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [swipe]);
+      return false;
+    },
+    { priority: ROUTE_DECISION_PRIORITY },
+  );
 
   // End-of-session summary. Snapshot the decided counts the first time real
   // counts arrive; when pending later hits zero after a non-trivial run, fire

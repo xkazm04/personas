@@ -649,6 +649,12 @@ export type Translations = {
       toggle_athena: string;
       triage_reject: string;
       triage_accept: string;
+      triage_deck_reject: string;
+      triage_deck_accept: string;
+      triage_deck_skip: string;
+      triage_deck_open: string;
+      triage_deck_branch: string;
+      triage_deck_close: string;
       undo: string;
       redo: string;
       open_title: string;

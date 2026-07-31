@@ -50,7 +50,13 @@
     "nav_mode_search": "打开搜索（导航模式）",
     "open_title": "键盘快捷键",
     "nav_history_back": "后退",
-    "nav_history_forward": "前进"
+    "nav_history_forward": "前进",
+    "triage_deck_accept": "采纳分诊卡组中的卡片",
+    "triage_deck_branch": "对卡片执行编号操作",
+    "triage_deck_close": "关闭分诊卡组",
+    "triage_deck_open": "打开卡片背后的运行",
+    "triage_deck_reject": "拒绝分诊卡组中的卡片",
+    "triage_deck_skip": "跳过卡片，稍后再看"
   },
   "tray_schedules": "计划任务",
   "tray_schedules_today": "今日 {count} 个计划任务",

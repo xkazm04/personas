@@ -50,7 +50,13 @@
     "nav_mode_search": "खोज खोलें (नेव मोड में)",
     "open_title": "कीबोर्ड शॉर्टकट",
     "nav_history_back": "पीछे जाएँ",
-    "nav_history_forward": "आगे जाएँ"
+    "nav_history_forward": "आगे जाएँ",
+    "triage_deck_accept": "ट्राइएज डेक में कार्ड स्वीकार करें",
+    "triage_deck_branch": "कार्ड पर क्रमांकित कार्रवाई करें",
+    "triage_deck_close": "ट्राइएज डेक बंद करें",
+    "triage_deck_open": "कार्ड के पीछे का रन खोलें",
+    "triage_deck_reject": "ट्राइएज डेक में कार्ड अस्वीकार करें",
+    "triage_deck_skip": "कार्ड छोड़ें और बाद में फिर देखें"
   },
   "tray_schedules": "शेड्यूल",
   "tray_schedules_today": "आज {count} शेड्यूल",
