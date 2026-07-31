@@ -6,7 +6,7 @@
 // stops the card, the filter chips and the metric badges from drifting into
 // three slightly different reds.
 import type { LucideIcon } from 'lucide-react';
-import { BookOpen, ClipboardCheck, HelpCircle, Lightbulb } from 'lucide-react';
+import { BookOpen, ClipboardCheck, Dna, HelpCircle, Lightbulb, SlidersHorizontal } from 'lucide-react';
 
 import type { Translations } from '@/i18n/en';
 
@@ -63,6 +63,8 @@ export const KIND_META: Record<TriageKind, { icon: LucideIcon; tone: TriageTone 
   idea: { icon: Lightbulb, tone: 'accent' },
   practice: { icon: BookOpen, tone: 'success' },
   question: { icon: HelpCircle, tone: 'warning' },
+  policy: { icon: SlidersHorizontal, tone: 'accent' },
+  evolution: { icon: Dna, tone: 'warning' },
 };
 
 /**
@@ -87,6 +89,14 @@ export function kindCopy(
       return { label: m.triage_kind_practices, one: m.triage_kind_practice, empty: m.triage_none_practices };
     case 'question':
       return { label: m.triage_kind_questions, one: m.triage_kind_question, empty: m.triage_none_questions };
+    case 'policy':
+      return { label: m.triage_kind_policies, one: m.triage_kind_policy, empty: m.triage_none_policies };
+    case 'evolution':
+      return {
+        label: m.triage_kind_promotions,
+        one: m.triage_kind_promotion,
+        empty: m.triage_none_promotions,
+      };
   }
 }
 

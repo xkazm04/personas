@@ -65,6 +65,27 @@ export interface TriagePorts {
   /** Fired after a practice verdict so the workspace centre re-reads. */
   refreshKnowledge: () => void;
   submitAnswers: (sessionId: string, answers: Record<string, string>) => Promise<void>;
+  /**
+   * Apply or decline a Self-Tuning Fabric proposal.
+   *
+   * Split into two ports rather than one `(id, verdict)` because they are not
+   * symmetric: applying is the ONLY policy write in the app and takes nothing
+   * but the id, while declining takes the reason that the settings history
+   * later renders. A single port would have carried a `reason` that is
+   * meaningless on one of its two branches.
+   */
+  applyPolicy: (id: string, seenStatus?: string) => Promise<unknown>;
+  declinePolicy: (id: string, reason?: string, seenStatus?: string) => Promise<unknown>;
+  /** Approve (install the winner genome) or reject a promotion proposal.
+   *  `note` is the reviewer's recorded reason on a rejection. */
+  decideEvolution: (
+    id: string,
+    approve: boolean,
+    note?: string,
+    seenStatus?: string,
+  ) => Promise<unknown>;
+  /** Fired after a proposal verdict so the two proposal queues re-read. */
+  refreshProposals: () => void;
   /** Deep-link to the persona builder. Absent when the host has no route. */
   openBuilder?: (personaId: string) => void;
 }
@@ -182,6 +203,29 @@ export async function routeDecision(
         throw new Error('This card has no answers to submit');
       }
       await ports.submitAnswers(sessionId, filled);
+      return;
+    }
+
+    case 'policy': {
+      const seen = item.payload?.seenStatus ?? undefined;
+      if (verdict === 'accept') await ports.applyPolicy(item.sourceId, seen);
+      else await ports.declinePolicy(item.sourceId, reason, seen);
+      ports.refreshProposals();
+      return;
+    }
+
+    case 'evolution': {
+      // `reason` is the decision note, and it rides on BOTH verdicts even though
+      // only a rejection can currently carry one — the command's `note`
+      // parameter is verdict-agnostic and an approval note is a legitimate
+      // record, so the router does not decide which acts may be annotated.
+      await ports.decideEvolution(
+        item.sourceId,
+        verdict === 'accept',
+        reason,
+        item.payload?.seenStatus ?? undefined,
+      );
+      ports.refreshProposals();
       return;
     }
   }

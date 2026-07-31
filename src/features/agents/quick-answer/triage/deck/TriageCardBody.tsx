@@ -77,6 +77,15 @@ function AlertBanner({ alert }: { alert: TriageAlert }) {
   );
 }
 
+/**
+ * Fact ids whose value is a raw ISO timestamp rather than display text.
+ *
+ * `raised` is "how long has this been waiting". `lockedAt` is the persona
+ * snapshot an evolution promotion is pinned to — the one fact on that card that
+ * can make it undecidable — and it is only legible as an age.
+ */
+const TIME_FACTS = new Set(['raised', 'lockedAt']);
+
 /** One cell of the docked ledger. */
 function FactCell({ fact }: { fact: TriageFact }) {
   return (
@@ -85,7 +94,7 @@ function FactCell({ fact }: { fact: TriageFact }) {
       <dd className="typo-caption truncate text-foreground" title={fact.value}>
         {/* Timestamps arrive as raw ISO strings; the ledger is the one place
             they're read as "how long has this been waiting". */}
-        {fact.id === 'raised' ? <RelativeTime timestamp={fact.value} /> : fact.value}
+        {TIME_FACTS.has(fact.id) ? <RelativeTime timestamp={fact.value} /> : fact.value}
       </dd>
     </div>
   );

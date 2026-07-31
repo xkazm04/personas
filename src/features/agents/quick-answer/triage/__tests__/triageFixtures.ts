@@ -1,7 +1,7 @@
 /** Shared builders for the triage tests. Not a test file — no assertions here. */
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 
-import type { TriageItem, TriageKind } from '../triageTypes';
+import { TRIAGE_KINDS, type TriageItem, type TriageKind } from '../triageTypes';
 
 let seq = 0;
 
@@ -46,4 +46,5 @@ export function makeBuildQuestion(overrides: Partial<BuildQuestion> = {}): Build
   };
 }
 
-export const ALL_KINDS = new Set<TriageKind>(['review', 'idea', 'practice', 'question']);
+/** Derived, not listed: a new kind must not silently skip the queue tests. */
+export const ALL_KINDS = new Set<TriageKind>(TRIAGE_KINDS);

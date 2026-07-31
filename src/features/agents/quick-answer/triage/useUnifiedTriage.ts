@@ -9,6 +9,9 @@
  *  • backlog ideas — the real cross-project keyset query (`dev_tools_triage_ideas`).
  *  • workspace practices — the pending half (observed + proposed) of every
  *    workspace's knowledge library.
+ *  • policy proposals — the Self-Tuning Fabric's pending routing/budget diffs.
+ *  • evolution promotions — Darwin Mode's pending "this challenger beat the
+ *    incumbent, install it?" proposals.
  *
  * Two deliberate behaviours worth knowing before you read the code:
  *
@@ -31,21 +34,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as devApi from '@/api/devTools/devTools';
-import { decidePracticeRow, isDecisionConflict } from '@/lib/decisions/rowWrites';
+import { listPromotionProposals } from '@/api/agents/evolution';
+import { policyTuningList } from '@/api/system/policyTuning';
+import {
+  decideEvolutionProposalRow,
+  decidePolicyProposalRow,
+  decidePracticeRow,
+  isDecisionConflict,
+} from '@/lib/decisions/rowWrites';
 import { toBacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
+import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
+import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 import { usePendingInteractions } from '../usePendingInteractions';
 import {
   DEFAULT_TRIAGE_COPY,
+  evolutionProposalToTriage,
   ideaToTriage,
+  policyProposalToTriage,
   practiceToTriage,
   questionGroupToTriage,
   reviewToTriage,
@@ -55,6 +70,7 @@ import { isDeferral, routeDecision, type TriagePorts } from './triageDispatch';
 import { projectQueue, withSkip, type SkipLedger } from './triageQueue';
 import { adoptReach } from './triageReach';
 import {
+  TRIAGE_KINDS,
   type TriageCounts,
   type TriageDecision,
   type TriageItem,
@@ -86,6 +102,15 @@ const IDEA_PAGE_SIZE = 60;
 /** More successor options than this and the reason strip stops being one glance
  *  and one keypress. Digits only go to 9 anyway. */
 const MAX_SUCCESSORS = 5;
+
+/**
+ * Both proposal ledgers are small by construction — the Fabric supersedes an
+ * open proposal rather than stacking a second one for the same cell, and a
+ * Darwin cycle rejects the previous pending proposal for a persona when it
+ * files a new one. A cap this size exists to bound a pathological ledger, not
+ * to page a queue that realistically holds single digits.
+ */
+const PROPOSAL_PAGE_SIZE = 50;
 
 /**
  * Candidate replacements for a practice being deprecated.
@@ -177,6 +202,9 @@ export function useUnifiedTriage(
   const interactions = usePendingInteractions();
   const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
   const projects = useSystemStore((s) => s.projects);
+  // Promotion proposals carry a persona id and nothing human-readable; the
+  // roster the app already holds is what turns it into a name and a colour.
+  const personas = useAgentStore((s) => s.personas);
   // Idea verdicts go through the slice, not the API: see the port bundle below.
   const acceptIdeaViaStore = useSystemStore((s) => s.acceptIdea);
   const rejectIdeaViaStore = useSystemStore((s) => s.rejectIdea);
@@ -193,9 +221,20 @@ export function useUnifiedTriage(
   const cursorRef = useRef<string | null>(null);
   const [resolved, setResolved] = useState<Set<string>>(() => new Set());
   const [skips, setSkips] = useState<SkipLedger>(() => new Map<string, number>());
-  const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(
-    () => new Set<TriageKind>(['review', 'idea', 'practice', 'question']),
-  );
+  const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(() => new Set(TRIAGE_KINDS));
+
+  /**
+   * The two proposal ledgers, and the generation counter that re-reads them.
+   *
+   * Separate from `ideaFetch.gen` on purpose: `loadMore()` bumps that counter to
+   * deal the next PAGE of ideas, and re-querying two unrelated ledgers because
+   * the reviewer asked for more backlog is work nobody asked for.
+   */
+  const [policyProposals, setPolicyProposals] = useState<PolicyProposal[]>([]);
+  const [promotions, setPromotions] = useState<EvolutionPromotionProposal[]>([]);
+  const [proposalsLoading, setProposalsLoading] = useState(true);
+  const [promotionsLoading, setPromotionsLoading] = useState(true);
+  const [proposalGen, setProposalGen] = useState(0);
 
   const projectName = useCallback(
     (projectId: string | null) =>
@@ -231,6 +270,46 @@ export function useUnifiedTriage(
       cancelled = true;
     };
   }, [ideaFetch]);
+
+  // The two proposal ledgers, fetched independently rather than in one
+  // `Promise.all`: they are unrelated subsystems, and one being unavailable must
+  // not take the other's queue out of the deck with it.
+  useEffect(() => {
+    let cancelled = false;
+    setProposalsLoading(true);
+    void policyTuningList(true, PROPOSAL_PAGE_SIZE)
+      .then((rows) => {
+        if (!cancelled) setPolicyProposals(rows);
+      })
+      .catch(toastCatch('Could not load tuning proposals'))
+      .finally(() => {
+        if (!cancelled) setProposalsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [proposalGen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPromotionsLoading(true);
+    void listPromotionProposals({ status: 'pending', limit: PROPOSAL_PAGE_SIZE })
+      .then((rows) => {
+        if (!cancelled) setPromotions(rows);
+      })
+      .catch(toastCatch('Could not load promotion proposals'))
+      .finally(() => {
+        if (!cancelled) setPromotionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [proposalGen]);
+
+  const personaById = useMemo(
+    () => new Map(personas.map((p) => [p.id, p])),
+    [personas],
+  );
 
   /** Everything, before resolution/skip/kind filtering. */
   const all = useMemo<TriageItem[]>(() => {
@@ -282,6 +361,26 @@ export function useUnifiedTriage(
       }
     }
 
+    for (const proposal of policyProposals) {
+      // `policyTuningList(true, …)` already asks for pending only; the guard
+      // keeps the deck honest for a backend that starts returning history.
+      if (proposal.status !== 'pending') continue;
+      out.push(policyProposalToTriage(proposal, copy));
+    }
+
+    for (const promotion of promotions) {
+      if (promotion.status !== 'pending') continue;
+      const persona = personaById.get(promotion.personaId);
+      out.push(
+        evolutionProposalToTriage(
+          promotion,
+          persona?.name || promotion.personaId,
+          persona?.color ?? null,
+          copy,
+        ),
+      );
+    }
+
     return out;
   }, [
     interactions.reviews,
@@ -290,6 +389,9 @@ export function useUnifiedTriage(
     center.workspaces,
     center.knowledge,
     center.projectById,
+    policyProposals,
+    promotions,
+    personaById,
     copy,
     projectName,
   ]);
@@ -314,6 +416,7 @@ export function useUnifiedTriage(
     setResolved(new Set());
     setSkips(new Map());
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
+    setProposalGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
 
@@ -342,8 +445,12 @@ export function useUnifiedTriage(
    */
   const refreshSources = useCallback(() => {
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
+    setProposalGen((g) => g + 1);
     center.refreshKnowledge();
   }, [center]);
+
+  /** Re-read only the two proposal ledgers — what a proposal verdict invalidates. */
+  const refreshProposals = useCallback(() => setProposalGen((g) => g + 1), []);
 
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
@@ -365,9 +472,29 @@ export function useUnifiedTriage(
         decidePracticeRow(id, verdict, { supersededBy, seenStatus }),
       refreshKnowledge: () => center.refreshKnowledge(),
       submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
+      // Both proposal ledgers go through `rowWrites` for the same reason the
+      // other three do: it is the module that owns the expectation contract and
+      // the conflict wording, and a queue that wrote proposals directly through
+      // `@/api` would be the sixteenth call site with its own error handling.
+      applyPolicy: (id, seenStatus) => decidePolicyProposalRow(id, 'apply', { seenStatus }),
+      declinePolicy: (id, reason, seenStatus) =>
+        decidePolicyProposalRow(id, 'decline', { reason, seenStatus }),
+      decideEvolution: (id, approve, note, seenStatus) =>
+        decideEvolutionProposalRow(id, approve ? 'approve' : 'reject', {
+          reason: note,
+          seenStatus,
+        }),
+      refreshProposals,
       openBuilder: onOpenBuilder,
     }),
-    [interactions, center, onOpenBuilder, acceptIdeaViaStore, rejectIdeaViaStore],
+    [
+      interactions,
+      center,
+      onOpenBuilder,
+      acceptIdeaViaStore,
+      rejectIdeaViaStore,
+      refreshProposals,
+    ],
   );
 
   /**
@@ -442,7 +569,7 @@ export function useUnifiedTriage(
     () => ({
       items: projection.items,
       allCounts: projection.allCounts,
-      loading: interactions.loading || ideasLoading,
+      loading: interactions.loading || ideasLoading || proposalsLoading || promotionsLoading,
       activeKinds,
       toggleKind,
       decidedCount: resolved.size,
@@ -459,6 +586,8 @@ export function useUnifiedTriage(
       projection,
       interactions.loading,
       ideasLoading,
+      proposalsLoading,
+      promotionsLoading,
       activeKinds,
       toggleKind,
       resolved.size,

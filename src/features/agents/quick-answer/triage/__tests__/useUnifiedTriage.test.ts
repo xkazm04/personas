@@ -19,6 +19,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
 import type { DevIdea } from '@/lib/bindings/DevIdea';
+import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
 // --- mocks (must precede the import under test) ----------------------------
@@ -28,6 +29,10 @@ const mockCreateTask = vi.fn();
 const mockAcceptIdea = vi.fn();
 const mockRejectIdea = vi.fn();
 const mockDecidePractice = vi.fn();
+const mockDecidePolicy = vi.fn();
+const mockDecideEvolution = vi.fn();
+const mockPolicyList = vi.fn();
+const mockPromotionList = vi.fn();
 const mockRefreshKnowledge = vi.fn();
 const mockAddToast = vi.fn();
 const mockToastCatch = vi.fn();
@@ -54,6 +59,14 @@ vi.mock('@/api/devTools/devTools', () => ({
   createTask: (...args: unknown[]) => mockCreateTask(...args),
 }));
 
+vi.mock('@/api/system/policyTuning', () => ({
+  policyTuningList: (...args: unknown[]) => mockPolicyList(...args),
+}));
+
+vi.mock('@/api/agents/evolution', () => ({
+  listPromotionProposals: (...args: unknown[]) => mockPromotionList(...args),
+}));
+
 vi.mock('@/lib/decisions/rowWrites', async (importOriginal) => {
   // `isDecisionConflict` stays REAL — the whole point of the conflict test is
   // that the hook recognises the backend's actual wording.
@@ -61,6 +74,8 @@ vi.mock('@/lib/decisions/rowWrites', async (importOriginal) => {
   return {
     isDecisionConflict: actual.isDecisionConflict,
     decidePracticeRow: (...args: unknown[]) => mockDecidePractice(...args),
+    decidePolicyProposalRow: (...args: unknown[]) => mockDecidePolicy(...args),
+    decideEvolutionProposalRow: (...args: unknown[]) => mockDecideEvolution(...args),
   };
 });
 
@@ -86,6 +101,12 @@ const systemState = {
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (sel: (s: typeof systemState) => unknown) => sel(systemState),
+}));
+
+const agentState = { personas: [{ id: 'persona-1', name: 'Scribe', color: '#abcdef' }] };
+
+vi.mock('@/stores/agentStore', () => ({
+  useAgentStore: (sel: (s: typeof agentState) => unknown) => sel(agentState),
 }));
 
 vi.mock('@/stores/toastStore', () => ({
@@ -167,6 +188,30 @@ function practice(overrides: Partial<WorkspaceKnowledge> = {}): WorkspaceKnowled
   } as WorkspaceKnowledge;
 }
 
+function promotion(
+  overrides: Partial<EvolutionPromotionProposal> = {},
+): EvolutionPromotionProposal {
+  return {
+    id: 'prop-1',
+    cycleId: 'cyc-1',
+    personaId: 'persona-1',
+    status: 'pending',
+    winnerGenomeJson: '{}',
+    newPrompt: 'You are a careful summariser.',
+    incumbentScore: 0.7,
+    winnerScore: 0.8,
+    improvement: 0.1,
+    threshold: 0.05,
+    fitnessSource: 'measured',
+    evidenceJson: null,
+    baseUpdatedAt: '2026-01-20T00:00:00.000Z',
+    decisionNote: null,
+    createdAt: '2026-01-02T00:00:00.000Z',
+    decidedAt: null,
+    ...overrides,
+  };
+}
+
 function page(ideas: DevIdea[]) {
   return {
     ideas,
@@ -200,6 +245,13 @@ beforeEach(() => {
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
   mockDecidePractice.mockResolvedValue(undefined);
+  mockDecidePolicy.mockResolvedValue(undefined);
+  mockDecideEvolution.mockResolvedValue(undefined);
+  // Both proposal ledgers are empty unless a test fills them: they are opt-in
+  // sources, and the queue must behave identically for an install that has
+  // never run a tuning pass or an evolution cycle.
+  mockPolicyList.mockResolvedValue([]);
+  mockPromotionList.mockResolvedValue([]);
 });
 
 // --- tests -----------------------------------------------------------------
@@ -342,6 +394,65 @@ describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', (
   });
 });
 
+describe('useUnifiedTriage — the two proposal queues reach the same spine', () => {
+  it('deals a promotion card, names its persona, and writes through the one door', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'evolution');
+    expect(card.title).toContain('Scribe');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'reject', reason: 'Gain too small' });
+    });
+
+    expect(mockDecideEvolution).toHaveBeenCalledWith('prop-1', 'reject', {
+      reason: 'Gain too small',
+      seenStatus: 'pending',
+    });
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.decidedCount).toBe(1);
+  });
+
+  it('treats the PERSONA optimistic lock as a lost swap, not a failed write', async () => {
+    // The promotion's second lock lives on a different table, and this is the
+    // whole reason `isDecisionConflict` had to learn its wording: restoring the
+    // card would re-offer a decision that can never land until a fresh cycle.
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+    mockDecideEvolution.mockRejectedValueOnce(
+      new Error(
+        'Persona changed after this proposal was filed — promotion abandoned to avoid overwriting the newer state. Reject the proposal and run a fresh cycle.',
+      ),
+    );
+
+    const { result } = await mount();
+    const card = itemOfKind(result, 'evolution');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+
+    expect(result.current.items).toHaveLength(0);
+    expect(mockAddToast).toHaveBeenCalledWith(
+      'Someone else already decided this — reloading.',
+      'warning',
+      expect.any(Number),
+    );
+    expect(mockToastCatch).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockPromotionList).toHaveBeenCalledTimes(2));
+  });
+
+  it('keeps the deck usable when a proposal ledger is unavailable', async () => {
+    // The two ledgers are fetched independently on purpose: an install where
+    // one subsystem errors must not lose the other's queue — or the ideas.
+    mockPolicyList.mockRejectedValue(new Error('command not found'));
+    const { result } = await mount();
+    expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
+  });
+});
+
 describe('useUnifiedTriage — deferrals write nothing and keep the card', () => {
   it('skips without touching any backend', async () => {
     const { result } = await mount();
@@ -357,6 +468,20 @@ describe('useUnifiedTriage — deferrals write nothing and keep the card', () =>
     // Skip sorts last, it does not hide — the card is still offered.
     expect(result.current.items.map((i) => i.id)).toEqual([card.id]);
     expect(result.current.skips.get(card.id)).toBe(1);
+  });
+
+  it('does not count a proposal deferral as a decision either', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+    const card = itemOfKind(result, 'evolution');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'skip' });
+    });
+
+    expect(mockDecideEvolution).not.toHaveBeenCalled();
+    expect(result.current.decidedCount).toBe(0);
   });
 
   it('counts a card as deferred once it has exhausted its skip passes', async () => {

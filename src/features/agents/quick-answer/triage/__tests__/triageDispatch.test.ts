@@ -5,7 +5,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { isDeferral, routeDecision, type TriagePorts } from '../triageDispatch';
-import type { TriageDecision } from '../triageTypes';
+import { TRIAGE_KINDS, type TriageDecision } from '../triageTypes';
 import { makeItem, makeQuestion } from './triageFixtures';
 
 function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
@@ -18,6 +18,10 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     decideKnowledge: vi.fn().mockResolvedValue(undefined),
     refreshKnowledge: vi.fn(),
     submitAnswers: vi.fn().mockResolvedValue(undefined),
+    applyPolicy: vi.fn().mockResolvedValue(undefined),
+    declinePolicy: vi.fn().mockResolvedValue(undefined),
+    decideEvolution: vi.fn().mockResolvedValue(undefined),
+    refreshProposals: vi.fn(),
     openBuilder: vi.fn(),
     ...overrides,
   };
@@ -32,7 +36,9 @@ function writeCount(ports: TriagePorts): number {
 
 describe('isDeferral — what must stay in the queue', () => {
   it('treats skip as a deferral for every kind', () => {
-    for (const kind of ['review', 'idea', 'practice', 'question'] as const) {
+    // Derived from `TRIAGE_KINDS`, so a sixth queue cannot be added without
+    // this property being asserted about it.
+    for (const kind of TRIAGE_KINDS) {
       expect(isDeferral({ item: makeItem(kind), verdict: 'skip' })).toBe(true);
     }
   });
@@ -139,6 +145,80 @@ describe('routeDecision — ideas and practices', () => {
 
     await routeDecision({ item, verdict: 'reject', reason: 'k-2' }, ports);
     expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
+  });
+});
+
+describe('routeDecision — policy proposals', () => {
+  const policy = () =>
+    makeItem('policy', { sourceId: 'pol-1', payload: { seenStatus: 'pending', policyKind: 'routing_rule' } });
+
+  it('applies, declines with a reason, and re-reads the ledger either way', async () => {
+    const ports = makePorts();
+
+    await routeDecision({ item: policy(), verdict: 'accept' }, ports);
+    expect(ports.applyPolicy).toHaveBeenCalledWith('pol-1', 'pending');
+
+    await routeDecision({ item: policy(), verdict: 'reject', reason: 'Quality risk' }, ports);
+    expect(ports.declinePolicy).toHaveBeenCalledWith('pol-1', 'Quality risk', 'pending');
+
+    expect(ports.refreshProposals).toHaveBeenCalledTimes(2);
+  });
+
+  it('never routes an apply through the decline door, whatever reason rides along', async () => {
+    // `policy_tuning_apply` is the ONLY policy writer by contract; a decline
+    // that reached it would write a rule nobody approved.
+    const ports = makePorts();
+    await routeDecision({ item: policy(), verdict: 'accept', reason: 'stale' }, ports);
+    expect(ports.declinePolicy).not.toHaveBeenCalled();
+  });
+
+  it('propagates a failed apply instead of swallowing it', async () => {
+    const ports = makePorts({ applyPolicy: vi.fn().mockRejectedValue(new Error('db is locked')) });
+    await expect(routeDecision({ item: policy(), verdict: 'accept' }, ports)).rejects.toThrow(
+      'db is locked',
+    );
+  });
+});
+
+describe('routeDecision — evolution promotions', () => {
+  const promotion = () =>
+    makeItem('evolution', {
+      sourceId: 'prop-1',
+      payload: { seenStatus: 'pending', personaId: 'p-1', baseUpdatedAt: '2026-02-01T00:00:00.000Z' },
+    });
+
+  it('approves and rejects through ONE port, carrying the note and the expectation', async () => {
+    const ports = makePorts();
+
+    await routeDecision({ item: promotion(), verdict: 'accept' }, ports);
+    expect(ports.decideEvolution).toHaveBeenCalledWith('prop-1', true, undefined, 'pending');
+
+    await routeDecision({ item: promotion(), verdict: 'reject', reason: 'Gain too small' }, ports);
+    expect(ports.decideEvolution).toHaveBeenLastCalledWith(
+      'prop-1',
+      false,
+      'Gain too small',
+      'pending',
+    );
+    expect(ports.refreshProposals).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates the persona optimistic-lock failure rather than resolving', async () => {
+    // The exact wording `engine::evolution::apply_promotion` emits when the
+    // persona moved under the proposal. The queue turns this into a conflict,
+    // which it can only do if the router lets it out.
+    const ports = makePorts({
+      decideEvolution: vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            'Persona changed after this proposal was filed — promotion abandoned to avoid overwriting the newer state. Reject the proposal and run a fresh cycle.',
+          ),
+        ),
+    });
+    await expect(routeDecision({ item: promotion(), verdict: 'accept' }, ports)).rejects.toThrow(
+      /changed after this proposal was filed/,
+    );
   });
 });
 

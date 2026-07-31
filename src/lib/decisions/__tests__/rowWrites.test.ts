@@ -24,6 +24,9 @@ const mockCloudRespond = vi.fn();
 const mockAcceptIdea = vi.fn();
 const mockRejectIdea = vi.fn();
 const mockDecideKnowledge = vi.fn();
+const mockPolicyApply = vi.fn();
+const mockPolicyDecline = vi.fn();
+const mockResolvePromotion = vi.fn();
 
 vi.mock('@/api/overview/reviews', () => ({
   updateManualReviewStatus: (...a: unknown[]) => mockUpdateStatus(...a),
@@ -39,9 +42,18 @@ vi.mock('@/api/devTools/devTools', () => ({
 vi.mock('@/api/devTools/workspaces', () => ({
   decideWorkspaceKnowledge: (...a: unknown[]) => mockDecideKnowledge(...a),
 }));
+vi.mock('@/api/system/policyTuning', () => ({
+  policyTuningApply: (...a: unknown[]) => mockPolicyApply(...a),
+  policyTuningDecline: (...a: unknown[]) => mockPolicyDecline(...a),
+}));
+vi.mock('@/api/agents/evolution', () => ({
+  resolvePromotionProposal: (...a: unknown[]) => mockResolvePromotion(...a),
+}));
 
 import {
+  decideEvolutionProposalRow,
   decideIdeaRow,
+  decidePolicyProposalRow,
   decidePracticeRow,
   dispatchReviewRowAction,
   isDecisionConflict,
@@ -56,6 +68,9 @@ beforeEach(() => {
   mockUpdateStatus.mockResolvedValue(undefined);
   mockDispatchAction.mockResolvedValue(undefined);
   mockCloudRespond.mockResolvedValue(undefined);
+  mockPolicyApply.mockResolvedValue(undefined);
+  mockPolicyDecline.mockResolvedValue(undefined);
+  mockResolvePromotion.mockResolvedValue(undefined);
 });
 
 describe('resolveReviewRow — local vs cloud in one place', () => {
@@ -113,6 +128,55 @@ describe('idea + practice doors carry the status the caller SAW', () => {
   });
 });
 
+describe('proposal doors — an expectation the backend does not take a parameter for', () => {
+  it('applies and declines a policy proposal through the ONE policy writer', async () => {
+    await decidePolicyProposalRow('pol-1', 'apply', { seenStatus: 'pending' });
+    expect(mockPolicyApply).toHaveBeenCalledWith('pol-1');
+
+    await decidePolicyProposalRow('pol-1', 'decline', {
+      seenStatus: 'pending',
+      reason: 'Quality risk',
+    });
+    expect(mockPolicyDecline).toHaveBeenCalledWith('pol-1', 'Quality risk');
+  });
+
+  it('sends no reason at all rather than an empty one', async () => {
+    await decidePolicyProposalRow('pol-1', 'decline', { reason: '' });
+    expect(mockPolicyDecline).toHaveBeenCalledWith('pol-1', undefined);
+  });
+
+  it('approves and rejects a promotion, forwarding the decision note', async () => {
+    await decideEvolutionProposalRow('prop-1', 'approve', { seenStatus: 'pending' });
+    expect(mockResolvePromotion).toHaveBeenCalledWith('prop-1', true, undefined);
+
+    await decideEvolutionProposalRow('prop-1', 'reject', { reason: 'Gain too small' });
+    expect(mockResolvePromotion).toHaveBeenLastCalledWith('prop-1', false, 'Gain too small');
+  });
+
+  it('refuses BEFORE the IPC when the card already knows the row is spent', async () => {
+    // Neither command takes an expectation — their write is unconditionally
+    // `WHERE status = 'pending'`. The door still fails fast on a visibly stale
+    // card, and does it with wording `isDecisionConflict` recognises, so a
+    // locally-detected conflict is indistinguishable from a backend one.
+    const policyError = await decidePolicyProposalRow('pol-1', 'apply', {
+      seenStatus: 'applied',
+    }).catch((e: unknown) => e);
+    expect(isDecisionConflict(policyError)).toBe(true);
+    expect(mockPolicyApply).not.toHaveBeenCalled();
+
+    const promotionError = await decideEvolutionProposalRow('prop-1', 'approve', {
+      seenStatus: 'approved',
+    }).catch((e: unknown) => e);
+    expect(isDecisionConflict(promotionError)).toBe(true);
+    expect(mockResolvePromotion).not.toHaveBeenCalled();
+  });
+
+  it('does not guess an expectation the caller never made', async () => {
+    await decidePolicyProposalRow('pol-1', 'apply');
+    expect(mockPolicyApply).toHaveBeenCalledWith('pol-1');
+  });
+});
+
 describe('isDecisionConflict — the wording contract with Rust', () => {
   it('recognises the message every row type emits on a lost swap', () => {
     // Copied verbatim from the three backend `format!`s.
@@ -129,6 +193,31 @@ describe('isDecisionConflict — the wording contract with Rust', () => {
     expect(
       isDecisionConflict(
         new Error("Practice abc was already decided as 'adopted' by a concurrent action"),
+      ),
+    ).toBe(true);
+  });
+
+  it('recognises the two PROPOSAL ledgers, which word it entirely differently', () => {
+    // `commands::execution::policy_tuning`.
+    expect(isDecisionConflict(new Error('proposal pol-1 was decided concurrently'))).toBe(true);
+    expect(isDecisionConflict(new Error("proposal pol-1 is 'declined', not pending"))).toBe(true);
+    expect(isDecisionConflict(new Error('proposal pol-1 is not pending'))).toBe(true);
+    // `repos::lab::evolution_proposals`.
+    expect(isDecisionConflict(new Error('Proposal prop-1 is already approved'))).toBe(true);
+    expect(
+      isDecisionConflict(new Error('Proposal prop-1 is not pending (missing or already decided)')),
+    ).toBe(true);
+  });
+
+  it('recognises the PERSONA optimistic lock, which loses on a different table', () => {
+    // `engine::evolution::apply_promotion` swaps on the persona's `updated_at`,
+    // not on the proposal's status. Different row, same reviewer-facing
+    // meaning: this can no longer land, so do not put the card back.
+    expect(
+      isDecisionConflict(
+        new Error(
+          'Persona changed after this proposal was filed — promotion abandoned to avoid overwriting the newer state. Reject the proposal and run a fresh cycle.',
+        ),
       ),
     ).toBe(true);
   });
