@@ -25,6 +25,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 
 import {
   reasonPromptFor,
@@ -417,6 +418,22 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       // the reviewer has already committed to.
       else if (held) live.current.resolveReason();
       else live.current.onClose();
+      return true;
+    }
+
+    // `?` opens the cheat sheet, and it has to be handled HERE — before the
+    // modifier bail-out, because `?` is Shift+/ and because an exclusive
+    // surface swallows whatever it declines. The cheat sheet sits at priority
+    // 20, far below this deck, so it can never see the key on its own.
+    //
+    // Dispatching its open-event rather than raising its priority above 70 is
+    // deliberate: the alternative would make `?` beat every modal in the app,
+    // and `?` typed into a modal's text field is a different intent entirely.
+    // The sheet is a BaseModal at 80, so once open it correctly owns Escape
+    // and renders above the deck.
+    if (e.key === '?' && !e.altKey && !e.ctrlKey && !e.metaKey && !inField) {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT));
       return true;
     }
 
