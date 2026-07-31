@@ -7,8 +7,8 @@
  * conflict with `"replace" | "skip" | "duplicate"` keyed by
  * `bundle_project_id`.
  */
-export type ProjectConflict = { bundle_project_id: string, name: string, root_path: string, existing_project_id: string, 
+export type ProjectConflict = { bundleProjectId: string, name: string, rootPath: string, existingProjectId: string, 
 /**
  * `"root_path"` or `"name"`.
  */
-matched_by: string, };
+matchedBy: string, };

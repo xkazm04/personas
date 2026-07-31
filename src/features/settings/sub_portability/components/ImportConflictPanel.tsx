@@ -43,7 +43,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
 
   const handleConfirm = () => {
     const map: Record<string, string> = {};
-    for (const c of conflicts) map[c.bundle_project_id] = resolutionOf(c.bundle_project_id);
+    for (const c of conflicts) map[c.bundleProjectId] = resolutionOf(c.bundleProjectId);
     onConfirm(map);
   };
 
@@ -60,20 +60,20 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
 
       <div className="space-y-2">
         {conflicts.map((c) => {
-          const current = resolutionOf(c.bundle_project_id);
+          const current = resolutionOf(c.bundleProjectId);
           return (
             <div
-              key={c.bundle_project_id}
-              data-testid={`portability-conflict-row-${c.bundle_project_id}`}
+              key={c.bundleProjectId}
+              data-testid={`portability-conflict-row-${c.bundleProjectId}`}
               className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/20 border border-primary/10"
             >
               <div className="flex-1 min-w-0">
                 <span className="typo-body font-medium text-foreground truncate block">{c.name}</span>
-                <span className="typo-caption text-foreground block" title={c.root_path}>
-                  {truncateMiddle(c.root_path)}
+                <span className="typo-caption text-foreground block" title={c.rootPath}>
+                  {truncateMiddle(c.rootPath)}
                 </span>
                 <span className="typo-caption text-foreground">
-                  {c.matched_by === 'root_path' ? s.matched_by_root_path : s.matched_by_name}
+                  {c.matchedBy === 'root_path' ? s.matched_by_root_path : s.matched_by_name}
                 </span>
               </div>
               <Listbox
@@ -81,13 +81,13 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
                 itemCount={RESOLUTIONS.length}
                 onSelectFocused={(i) => {
                   const picked = RESOLUTIONS[i];
-                  if (picked) setResolutions((prev) => ({ ...prev, [c.bundle_project_id]: picked }));
+                  if (picked) setResolutions((prev) => ({ ...prev, [c.bundleProjectId]: picked }));
                 }}
                 className="w-36 flex-shrink-0"
                 renderTrigger={({ isOpen, toggle }) => (
                   <button
                     type="button"
-                    data-testid={`portability-conflict-select-${c.bundle_project_id}`}
+                    data-testid={`portability-conflict-select-${c.bundleProjectId}`}
                     onClick={toggle}
                     className="w-full inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-input typo-body
                       bg-secondary/20 border border-primary/15 text-foreground hover:border-primary/30 transition-colors"
@@ -106,7 +106,7 @@ export function ImportConflictPanel({ conflicts, busy, onConfirm, onDismiss }: I
                         role="option"
                         aria-selected={current === option}
                         onClick={() => {
-                          setResolutions((prev) => ({ ...prev, [c.bundle_project_id]: option }));
+                          setResolutions((prev) => ({ ...prev, [c.bundleProjectId]: option }));
                           close();
                         }}
                         className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
