@@ -10,7 +10,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { listManualReviews } from '@/api/overview/reviews';
-import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
+import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
@@ -318,6 +318,20 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     void fetchPendingReviewCount();
   }, [reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount]);
 
+  /**
+   * A LOST compare-and-swap means somebody else's verdict is now the truth, so
+   * the queue this hook is serving is stale by definition. Re-read before the
+   * error reaches the caller — otherwise the reviewer's next keystroke lands on
+   * a card the backend has already resolved and they lose the swap twice. Fired
+   * and not awaited: the rejection is what the caller is waiting for.
+   */
+  const refreshAfterConflict = useCallback(
+    (err: unknown) => {
+      if (isDecisionConflict(err)) void refreshAfterWrite();
+    },
+    [refreshAfterWrite],
+  );
+
   // Both writers route through `@/lib/decisions/rowWrites` — the one door for a
   // review row. Local vs cloud lives there, so this hook cannot drift from the
   // five other surfaces that resolve the same rows. It also closed a real hole:
@@ -334,12 +348,13 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
           await refreshAfterWrite();
         } catch (err) {
           logger.error('Failed to action review', { error: err });
+          refreshAfterConflict(err);
           // Rethrow: the caller decides how to surface it. Swallowing here is
           // what let an optimistic queue report a decision that never landed.
           throw err;
         }
       }),
-    [track, requireReview, refreshAfterWrite],
+    [track, requireReview, refreshAfterWrite, refreshAfterConflict],
   );
 
   // Phase 4 — resolve a review by CHOOSING a suggested action, which records the
@@ -353,10 +368,11 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
           await refreshAfterWrite();
         } catch (err) {
           logger.error('Failed to dispatch review action', { error: err });
+          refreshAfterConflict(err);
           throw err;
         }
       }),
-    [track, requireReview, refreshAfterWrite],
+    [track, requireReview, refreshAfterWrite, refreshAfterConflict],
   );
 
   const handleMarkRead = useCallback(

@@ -296,6 +296,36 @@ describe('useMonitorData — failures are surfaced, not swallowed', () => {
   });
 });
 
+describe('useMonitorData — a lost compare-and-swap re-reads the queue', () => {
+  it('refetches before the rejection reaches the caller', async () => {
+    mockUpdateStatus.mockRejectedValueOnce(
+      new Error('Manual review r1 was already resolved by a concurrent action'),
+    );
+    const { result } = await mount();
+    const listCallsBefore = mockListReviews.mock.calls.length;
+
+    await expect(result.current.handleReviewAction('r1', 'approved')).rejects.toThrow(
+      /concurrent action/,
+    );
+    // Otherwise the reviewer's next keystroke lands on a card the backend has
+    // already resolved and they lose the swap twice.
+    await waitFor(() =>
+      expect(mockListReviews.mock.calls.length).toBeGreaterThan(listCallsBefore),
+    );
+  });
+
+  it('does NOT refetch for an ordinary failure — the row is still theirs to decide', async () => {
+    mockUpdateStatus.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = await mount();
+    const listCallsBefore = mockListReviews.mock.calls.length;
+
+    await expect(result.current.handleReviewAction('r1', 'approved')).rejects.toThrow(
+      'database is locked',
+    );
+    expect(mockListReviews.mock.calls.length).toBe(listCallsBefore);
+  });
+});
+
 describe('useMonitorData — the in-flight key names the INTENT, not just the row', () => {
   it('writes BOTH verdicts when a different one lands on the same row mid-flight', async () => {
     // The defect: both writers keyed on `review:${id}`, so a reject issued
