@@ -5,7 +5,7 @@
  * to pick the best agent-icon alias, then persists via updatePersona.
  */
 import type { Persona } from '@/lib/bindings/Persona';
-import { updatePersona } from '@/api/agents/personas';
+import { updatePersona, buildUpdateInput, type PartialPersonaUpdate } from '@/api/agents/personas';
 import { isAgentIcon, AGENT_ICONS, toAgentIconValue } from './agentIconCatalog';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -92,14 +92,19 @@ export async function autoAssignPersonaIcons(personas: Persona[]): Promise<boole
       batch.map((p) => {
         const iconId = inferIconId(p.name, p.description);
         const entry = AGENT_ICONS.find((e) => e.id === iconId);
-        const updates: Record<string, unknown> = {
+        // Built through buildUpdateInput so the untouched Option<Option<T>>
+        // columns are OMITTED from the payload rather than sent as null (which
+        // the backend reads as "clear this column").
+        const updates: PartialPersonaUpdate = {
           icon: toAgentIconValue(iconId),
         };
         // Only set color if persona doesn't have one
         if (!p.color && entry) {
           updates.color = entry.suggestedColor;
         }
-        return updatePersona(p.id, updates as never).catch(silentCatch('autoAssignIcons:updatePersona'));
+        return updatePersona(p.id, buildUpdateInput(updates)).catch(
+          silentCatch('autoAssignIcons:updatePersona'),
+        );
       }),
     );
   }

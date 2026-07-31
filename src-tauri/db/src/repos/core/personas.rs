@@ -2672,14 +2672,25 @@ mod tests {
     fn test_option_option_serde_json_boundary() {
         // Verify that serde_json deserialization of UpdatePersonaInput matches
         // the documented contract:
-        //   - field absent (with Default) → None (skip)
-        //   - field: null               → None (skip, same as absent for standard serde)
-        //   - field: "value"            → Some(Some("value")) (set)
+        //   - field absent   → None          (skip)
+        //   - field: null    → Some(None)    (CLEAR the column)
+        //   - field: "value" → Some(Some(v)) (set)
         //
-        // IMPORTANT: Standard serde cannot distinguish absent vs null for
-        // Option<Option<T>>. Both produce None. The "clear" semantic (Some(None))
-        // is only achievable via Rust constructors, not via JSON. This test
-        // documents that limitation.
+        // This test previously asserted the opposite for the null case, on the
+        // grounds that "standard serde cannot distinguish absent from null for
+        // Option<Option<T>>". True of standard serde — but every nullable field
+        // on this struct carries
+        // `#[serde(default, deserialize_with = "double_option")]`
+        // (core/src/models/persona.rs), which restores the distinction. When
+        // that attribute was added the test began failing and was not noticed,
+        // because `personas-db` unit tests are not in the documented gate.
+        //
+        // The failure was not cosmetic: `push_field_param!` (db/src/macros.rs)
+        // matches `Some(ref v)`, so Some(None) binds SQL NULL and clears the
+        // column. Meanwhile the frontend builder was still emitting an explicit
+        // null for every field a caller had not mentioned, so a partial update
+        // wiped the other columns. Fixed in src/api/agents/personas.ts by
+        // omitting unmentioned keys.
 
         // Case 1: field present with value → Some(Some(value))
         let json = serde_json::json!({
@@ -2740,15 +2751,43 @@ mod tests {
             "parameters": null
         });
         let input: UpdatePersonaInput = serde_json::from_value(json).unwrap();
-        // With standard serde, null for Option<Option<T>> becomes None (skip), NOT Some(None) (clear).
-        // The frontend buildUpdateInput sends null for both "skip" and "clear" cases,
-        // so they are indistinguishable at the JSON boundary.
+        // `double_option` makes an explicit null mean "clear this column".
         assert_eq!(
-            input.description, None,
-            "null → None (skip), not Some(None) (clear)"
+            input.description,
+            Some(None),
+            "explicit null → Some(None) (clear)"
         );
-        assert_eq!(input.max_budget_usd, None, "null → None (skip)");
-        assert_eq!(input.icon, None, "null → None (skip)");
+        assert_eq!(input.max_budget_usd, Some(None), "explicit null → Some(None)");
+        assert_eq!(input.icon, Some(None), "explicit null → Some(None)");
+
+        // Case 3: the field ABSENT is the only way to say "leave it alone".
+        // This is the half the frontend builder was getting wrong.
+        let input: UpdatePersonaInput = serde_json::from_value(serde_json::json!({
+            "name": "Renamed"
+        }))
+        .unwrap();
+        assert_eq!(input.name, Some("Renamed".to_string()));
+        for (field, got) in [
+            ("description", input.description.is_none()),
+            ("icon", input.icon.is_none()),
+            ("color", input.color.is_none()),
+            ("structured_prompt", input.structured_prompt.is_none()),
+            ("model_profile", input.model_profile.is_none()),
+            ("design_context", input.design_context.is_none()),
+            ("home_team_id", input.home_team_id.is_none()),
+            ("parameters", input.parameters.is_none()),
+            ("last_design_result", input.last_design_result.is_none()),
+            ("last_test_report", input.last_test_report.is_none()),
+            ("disabled_dims_json", input.disabled_dims_json.is_none()),
+        ] {
+            assert!(
+                got,
+                "absent `{field}` must deserialize to None (skip), or a partial \
+                 update silently clears the column"
+            );
+        }
+        assert!(input.max_budget_usd.is_none(), "absent max_budget_usd → None");
+        assert!(input.max_turns.is_none(), "absent max_turns → None");
     }
 
     // v3.2 — shape-v2 notification_channels encrypt/decrypt round-trip.

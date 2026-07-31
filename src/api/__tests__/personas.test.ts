@@ -16,6 +16,7 @@ import {
   importPersona,
   operationToPartial,
   buildUpdateInput,
+  PERSONA_NULLABLE_FIELDS,
 } from "@/api/agents/personas";
 
 const mockedInvoke = vi.mocked(invoke);
@@ -164,7 +165,8 @@ describe("api/agents/personas", () => {
     });
 
     it("clears a field when explicit null is provided", () => {
-      // JS explicit null should signal "clear this field to NULL in DB"
+      // JS explicit null signals "clear this column to NULL in the DB". The key
+      // is PRESENT with value null, which `double_option` reads as Some(None).
       const input = buildUpdateInput({
         description: null,
         icon: null,
@@ -175,52 +177,69 @@ describe("api/agents/personas", () => {
         home_team_id: null,
       });
 
-      // When the caller explicitly passes null, buildUpdateInput should
-      // forward null. On the Rust side, serde deserializes this as None (skip),
-      // which means the "clear" intent is lost at the JSON boundary.
-      // This documents the current behavior — null = skip, same as omitting.
-      expect(input.description).toBeNull();
-      expect(input.icon).toBeNull();
-      expect(input.color).toBeNull();
-      expect(input.max_budget_usd).toBeNull();
-      expect(input.max_turns).toBeNull();
-      expect(input.design_context).toBeNull();
-      expect(input.home_team_id).toBeNull();
+      for (const key of [
+        'description', 'icon', 'color', 'max_budget_usd', 'max_turns',
+        'design_context', 'home_team_id',
+      ] as const) {
+        expect(input).toHaveProperty(key);
+        expect(input[key]).toBeNull();
+      }
     });
 
-    it("skips a field when key is omitted (undefined)", () => {
-      // An empty partial: all fields are undefined → all become null (skip)
+    it("OMITS an Option<Option<T>> key that the caller did not name", () => {
+      // The regression this pins: emitting `field: null` for an unmentioned
+      // column means Some(None) = "clear it" on the Rust side, so a partial
+      // update would erase every column the caller did not mention.
       const input = buildUpdateInput({});
 
-      // Option<T> fields: null = skip
+      // Option<T> fields stay present — for those, null genuinely means skip.
       expect(input.name).toBeNull();
       expect(input.system_prompt).toBeNull();
       expect(input.enabled).toBeNull();
       expect(input.sensitive).toBeNull();
 
-      // Option<Option<T>> fields: null = skip
-      expect(input.description).toBeNull();
-      expect(input.icon).toBeNull();
-      expect(input.color).toBeNull();
-      expect(input.model_profile).toBeNull();
-      expect(input.max_budget_usd).toBeNull();
+      // Option<Option<T>> fields must be ABSENT, not null.
+      for (const key of PERSONA_NULLABLE_FIELDS) {
+        expect(input).not.toHaveProperty(key);
+      }
     });
 
-    it("explicit null and omitted key produce identical JSON for Option<Option<T>> fields", () => {
-      // This is the critical edge case: JS null and JS undefined both become
-      // null in the output, which means the Rust backend cannot distinguish
-      // "clear this field" from "don't touch this field" at the JSON boundary.
+    it("a single-field update leaves every other nullable column absent", () => {
+      // The two live call sites that made this data loss reachable:
+      // DeepFanoutToggle (parameters) and PersonaLayoutView (disabled_dims_json).
+      const fanout = buildUpdateInput({ parameters: '{"deep_fanout":true}' });
+      expect(fanout.parameters).toBe('{"deep_fanout":true}');
+      for (const key of PERSONA_NULLABLE_FIELDS) {
+        if (key === 'parameters') continue;
+        expect(fanout).not.toHaveProperty(key);
+      }
+
+      const dims = buildUpdateInput({ disabled_dims_json: '{"uc_a":["tone"]}' });
+      expect(dims.disabled_dims_json).toBe('{"uc_a":["tone"]}');
+      expect(dims).not.toHaveProperty('description');
+      expect(dims).not.toHaveProperty('model_profile');
+      expect(dims).not.toHaveProperty('max_budget_usd');
+    });
+
+    it("never touches last_test_report, which build_sessions.rs owns", () => {
+      // Omission is the only way to leave it alone; `null` would clear it.
+      expect(buildUpdateInput({})).not.toHaveProperty('last_test_report');
+      expect(buildUpdateInput({ description: 'x' })).not.toHaveProperty('last_test_report');
+    });
+
+    it("explicit null and an omitted key are OPPOSITES for Option<Option<T>>", () => {
+      // Before double_option these were identical; that equivalence is exactly
+      // what made the old builder safe, and its removal is what broke it.
       const withExplicitNull = buildUpdateInput({ description: null });
       const withOmittedKey = buildUpdateInput({});
 
+      expect(withExplicitNull).toHaveProperty('description');   // clear
       expect(withExplicitNull.description).toBeNull();
-      expect(withOmittedKey.description).toBeNull();
-      expect(withExplicitNull.description).toBe(withOmittedKey.description);
+      expect(withOmittedKey).not.toHaveProperty('description'); // skip
 
-      // Same for numeric Option<Option<T>> fields
-      const nullBudget = buildUpdateInput({ max_budget_usd: null });
-      const omittedBudget = buildUpdateInput({});
-      expect(nullBudget.max_budget_usd).toBe(omittedBudget.max_budget_usd);
+      // The distinction must survive JSON serialisation — this is the wire.
+      expect(JSON.parse(JSON.stringify(withExplicitNull))).toHaveProperty('description');
+      expect(JSON.parse(JSON.stringify(withOmittedKey))).not.toHaveProperty('description');
     });
   });
 });

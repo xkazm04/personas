@@ -52,7 +52,14 @@ export const getPersona = (id: string) =>
 export const createPersona = (input: CreatePersonaInput) =>
   invoke<Persona>("create_persona", { input });
 
-export const updatePersona = (id: string, input: UpdatePersonaInput) =>
+/**
+ * Partial update. Build the payload with {@link buildUpdateInput} rather than
+ * assembling it by hand — for the 13 `Option<Option<T>>` columns an explicit
+ * `null` means "clear this column", so a hand-written payload that nulls the
+ * fields it does not care about will erase them. See
+ * {@link PERSONA_NULLABLE_FIELDS}.
+ */
+export const updatePersona = (id: string, input: PersonaUpdatePayload) =>
   invoke<Persona>("update_persona", { id, input });
 
 /** Newest-first field-level change history for a persona (editor Settings tab). */
@@ -353,15 +360,61 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
 }
 
 /**
- * Convert a caller-friendly partial update into the full UpdatePersonaInput
- * expected by the Tauri command.
+ * The 13 `Option<Option<T>>` columns on `UpdatePersonaInput` (see
+ * `core/src/models/persona.rs`). Each carries
+ * `#[serde(default, deserialize_with = "double_option")]`, which gives the key
+ * THREE meanings on the wire — and the generated binding cannot express that,
+ * because ts-rs flattens `Option<Option<T>>` to `T | null | null`:
  *
- * - Option<T> fields: `null` = skip, value = set
- * - Option<Option<T>> fields: key absent = skip, `null` = clear, value = set
+ *   key ABSENT     -> `None`          -> leave the column alone
+ *   key = `null`   -> `Some(None)`    -> SET THE COLUMN TO NULL
+ *   key = value    -> `Some(Some(v))` -> set it
+ *
+ * So for these fields "absent" and "null" are opposites, and sending `null`
+ * where you meant "skip" erases data.
  */
-export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaInput {
-  return {
-    // Option<T> fields: null means "skip" on the Rust side
+export const PERSONA_NULLABLE_FIELDS = [
+  'description', 'structured_prompt', 'icon', 'color', 'last_design_result',
+  'last_test_report', 'model_profile', 'max_budget_usd', 'max_turns',
+  'design_context', 'home_team_id', 'parameters', 'disabled_dims_json',
+] as const;
+
+type PersonaNullableField = (typeof PERSONA_NULLABLE_FIELDS)[number];
+
+/**
+ * Wire payload for `update_persona`, typed to match the Rust contract that the
+ * flattened ts-rs binding loses:
+ *
+ * - plain `Option<T>` keys stay REQUIRED — for those, standard serde maps
+ *   `null` to `None`, so `null` genuinely means "skip".
+ * - the `Option<Option<T>>` keys above are OPTIONAL — omitting is the only way
+ *   to say "skip", so the type must permit omission.
+ */
+export type PersonaUpdatePayload =
+  Omit<UpdatePersonaInput, PersonaNullableField> &
+  Partial<Pick<UpdatePersonaInput, PersonaNullableField>>;
+
+/**
+ * Convert a caller-friendly partial update into the payload the Tauri command
+ * expects.
+ *
+ * - `Option<T>` fields: `null` = skip, value = set
+ * - `Option<Option<T>>` fields: key OMITTED = skip, `null` = clear, value = set
+ *
+ * The omission is load-bearing, not a style choice. This builder used to write
+ * `field: partial.field !== undefined ? partial.field : null` for every
+ * nullable column, i.e. it emitted an explicit `null` for each field the caller
+ * had not mentioned. That was correct before `double_option` existed, when
+ * plain serde collapsed `null` and absent to the same `None`. Once
+ * `double_option` was added to enable explicit clears, the meaning of every one
+ * of those nulls silently inverted to `Some(None)`, and any caller passing a
+ * genuinely partial update — `buildUpdateInput({ parameters })` from the
+ * deep-fanout toggle, `buildUpdateInput({ disabled_dims_json })` from the
+ * persona layout view — wiped the other twelve columns.
+ */
+export function buildUpdateInput(partial: PartialPersonaUpdate): PersonaUpdatePayload {
+  const payload: PersonaUpdatePayload = {
+    // Option<T> fields: null means "skip" on the Rust side.
     name: partial.name ?? null,
     system_prompt: partial.system_prompt ?? null,
     enabled: partial.enabled !== undefined ? partial.enabled : null,
@@ -370,24 +423,9 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     max_concurrent: partial.max_concurrent ?? null,
     timeout_ms: partial.timeout_ms ?? null,
     notification_channels: partial.notification_channels ?? null,
-    // Option<Option<T>> fields: only include when explicitly provided
-    description: partial.description !== undefined ? partial.description : null,
-    structured_prompt: partial.structured_prompt !== undefined ? partial.structured_prompt : null,
-    icon: partial.icon !== undefined ? partial.icon : null,
-    color: partial.color !== undefined ? partial.color : null,
-    last_design_result: partial.last_design_result !== undefined ? partial.last_design_result : null,
-    // last_test_report is owned by build_sessions.rs (Phase 2 tool_tests surface)
-    // — never set from the frontend builder, so always pass null here.
-    last_test_report: null,
-    model_profile: partial.model_profile !== undefined ? partial.model_profile : null,
-    max_budget_usd: partial.max_budget_usd !== undefined ? partial.max_budget_usd : null,
-    max_turns: partial.max_turns !== undefined ? partial.max_turns : null,
-    design_context: partial.design_context !== undefined ? partial.design_context : null,
-    home_team_id: partial.home_team_id !== undefined ? partial.home_team_id : null,
-    parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
-    cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
-    disabled_dims_json: partial.disabled_dims_json !== undefined ? partial.disabled_dims_json : null,
+    cli_awareness_enabled:
+      partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
     // lifecycle is normally driven by the archive/restore/promote commands, not
     // this generic builder; passing null = "leave unchanged".
     lifecycle: partial.lifecycle ?? null,
@@ -395,4 +433,19 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     // path; header/model-switch ops override this explicitly.
     source: partial.source ?? 'editor',
   };
+
+  // Option<Option<T>> fields: assign ONLY when the caller named the field, so
+  // an unmentioned column is absent from the JSON rather than null.
+  // `last_test_report` is deliberately never listed here — it is owned by
+  // build_sessions.rs (the Phase 2 tool_tests surface) and this builder must
+  // leave it untouched, which now means omitting it rather than nulling it.
+  for (const key of PERSONA_NULLABLE_FIELDS) {
+    if (key === 'last_test_report') continue;
+    const value = (partial as Record<string, unknown>)[key];
+    if (value !== undefined) {
+      (payload as Record<string, unknown>)[key] = value;
+    }
+  }
+
+  return payload;
 }
