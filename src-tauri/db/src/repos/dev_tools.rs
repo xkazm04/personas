@@ -3790,9 +3790,13 @@ pub fn update_idea(
 /// the row actually shows and still wins — reversing a decision you can see is
 /// a decision; overwriting one you never saw is data loss.
 ///
-/// Returns [`AppError::Validation`] on a lost swap. The phrase "already decided
-/// by a concurrent action" is load-bearing: `src/lib/errors/errorRegistry.ts`
-/// matches it to surface "someone else already decided this — reloading".
+/// Returns [`AppError::Validation`] on a lost swap. The MESSAGE is a contract:
+/// `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`) and the error registry
+/// both match `/already (decided|resolved) … by a concurrent action/` to tell a
+/// lost swap apart from a failed write — the two make optimistic surfaces behave
+/// differently, so reword it and they silently degrade to "could not record that
+/// decision". `src/lib/decisions/__tests__/rowWrites.test.ts` pins the exact
+/// strings all three row types emit.
 pub fn decide_idea_cas(
     pool: &DbPool,
     id: &str,

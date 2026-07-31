@@ -121,6 +121,13 @@ export async function routeDecision(
     case 'idea': {
       const seen = item.payload?.seenStatus ?? undefined;
       if (branchId === 'build') {
+        // Task first, then the verdict: a failed task creation must not leave an
+        // accepted idea with no work behind it. The residual case the swap makes
+        // visible is the mirror — someone else decides the idea between these two
+        // calls and the task outlives a verdict that never landed. Rare, and the
+        // cheaper failure: an orphan task is a row a human can see and delete,
+        // whereas an accepted idea with no task is invisible work that never
+        // happens.
         await ports.createTask(
           item.title,
           item.payload?.projectId ?? undefined,

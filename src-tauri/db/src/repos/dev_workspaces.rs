@@ -761,9 +761,13 @@ pub fn decide_knowledge(
 /// call, which still closes the read→write interleave that the adoption fan-out
 /// must never pass through twice.
 ///
-/// Returns [`AppError::Validation`] on a lost swap. The phrase "already decided
-/// by a concurrent action" is load-bearing: `src/lib/errors/errorRegistry.ts`
-/// matches it to surface "someone else already decided this — reloading".
+/// Returns [`AppError::Validation`] on a lost swap. The MESSAGE is a contract:
+/// `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`) and the error registry
+/// both match `/already (decided|resolved) … by a concurrent action/` to tell a
+/// lost swap apart from a failed write — the two make optimistic surfaces behave
+/// differently, so reword it and they silently degrade to "could not record that
+/// decision". `src/lib/decisions/__tests__/rowWrites.test.ts` pins the exact
+/// strings all three row types emit.
 pub fn decide_knowledge_cas(
     pool: &DbPool,
     id: &str,
@@ -2550,13 +2554,13 @@ mod tests {
         let pool = test_pool();
         let (_ws, practice, _projects) = seeded(&pool, 2, "pattern");
 
-        // Surface A rejects the observed row.
-        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+        // Surface A rejects the row. `create_knowledge` seeds `proposed`.
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("proposed")).unwrap();
 
-        // Surface B was still rendering it as `observed` and adopts. Before the
+        // Surface B was still rendering it as `proposed` and adopts. Before the
         // swap this silently flipped the row to `adopted` AND fanned an adoption
         // cell into every member repo.
-        let err = decide_knowledge_cas(&pool, &practice, "adopt", None, Some("observed"))
+        let err = decide_knowledge_cas(&pool, &practice, "adopt", None, Some("proposed"))
             .unwrap_err();
         assert!(
             err.to_string().contains("already decided"),
@@ -2569,9 +2573,9 @@ mod tests {
     fn a_lost_swap_fans_out_no_adoption_cells() {
         let pool = test_pool();
         let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
-        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("proposed")).unwrap();
 
-        assert!(decide_knowledge_cas(&pool, &practice, "adopt", None, Some("observed")).is_err());
+        assert!(decide_knowledge_cas(&pool, &practice, "adopt", None, Some("proposed")).is_err());
 
         // The adoption fan-out is the expensive half of `adopt`; a rolled-back
         // decision must not leave a single cell behind.
@@ -2596,7 +2600,7 @@ mod tests {
         // against a status the row no longer holds is data loss.
         let pool = test_pool();
         let (_ws, practice, _projects) = seeded(&pool, 1, "pattern");
-        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("proposed")).unwrap();
         decide_knowledge_cas(&pool, &practice, "adopt", None, Some("rejected")).unwrap();
         assert_eq!(status_of(&pool, &practice), "adopted");
     }
