@@ -21629,7 +21629,7 @@
       ]
     },
     {
-      "api_surface": "get_pending_interactions, answer_interaction",
+      "api_surface": "list_manual_reviews, update_manual_review_status, dispatch_review_action, dev_tools_triage_ideas, dev_tools_accept_idea, dev_tools_reject_idea, dev_tools_create_task, dev_tools_workspace_knowledge_list, dev_tools_workspace_knowledge_decide, answer_build_question",
       "business_feature": "Quick Answer Panel",
       "category": "ui",
       "cross_refs": [
@@ -21637,31 +21637,64 @@
         "persona-shared-ui"
       ],
       "db_tables": [
-        "pending_interactions"
+        "manual_reviews",
+        "dev_ideas",
+        "workspace_knowledge",
+        "dev_tasks"
       ],
-      "description": "A lightweight popover surface that intercepts pending interaction requests from a running persona and lets the user answer clarification questions without opening the full editor. Organises questions into groups, supports a review/stepper card flow, and registers pending interactions via a polling hook.",
+      "description": "The app-size unified triage deck: the one surface where a human decides everything waiting on them. Fuses four queues — persona manual reviews, backlog ideas, workspace practices and build questions — into a single TriageItem model (triage/triageTypes.ts) fed by useUnifiedTriage, and deals them as a keyboard-first swipe deck. Every item supports one accept/reject/skip verdict spine; anything domain-specific (carry out a suggested action, build now, deprecate, open in builder) is a digit-hotkeyed branch. Verdict routing, queue projection and pagination live in pure React-free modules (triageDispatch / triageQueue / triageReach). Opened from the title-bar dock via headerOverlay === \"quick-answer\". The legacy popover components (QuickAnswerBody, QuickAnswerQuestionGroup, QuickAnswerReviewCard) are retained because the channel-timeline rail and reviews rail still render them.",
       "entry_points": [
         "src/features/agents/quick-answer/QuickAnswerPopover.tsx"
       ],
       "file_paths": [
-        "src/features/agents/quick-answer/QuickAnswerPopover.tsx",
         "src/features/agents/quick-answer/QuickAnswerBody.tsx",
+        "src/features/agents/quick-answer/QuickAnswerPopover.tsx",
         "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx",
         "src/features/agents/quick-answer/QuickAnswerReviewCard.tsx",
         "src/features/agents/quick-answer/QuickAnswerReviewStepper.tsx",
+        "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx",
+        "src/features/agents/quick-answer/triage/__tests__/triageAdapters.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageDispatch.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageFixtures.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageQueue.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageReach.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageRenderCost.test.tsx",
+        "src/features/agents/quick-answer/triage/__tests__/useDeckControls.test.ts",
+        "src/features/agents/quick-answer/triage/deck/DeckActionBar.tsx",
+        "src/features/agents/quick-answer/triage/deck/DeckChips.tsx",
+        "src/features/agents/quick-answer/triage/deck/DeckStates.tsx",
+        "src/features/agents/quick-answer/triage/deck/DeckTopBar.tsx",
+        "src/features/agents/quick-answer/triage/deck/MetricBadgeRow.tsx",
+        "src/features/agents/quick-answer/triage/deck/QuestionPanel.tsx",
+        "src/features/agents/quick-answer/triage/deck/ReasonStrip.tsx",
+        "src/features/agents/quick-answer/triage/deck/TriageCard.tsx",
+        "src/features/agents/quick-answer/triage/deck/TriageCardBody.tsx",
+        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx",
+        "src/features/agents/quick-answer/triage/triageAdapters.ts",
+        "src/features/agents/quick-answer/triage/triageDispatch.ts",
+        "src/features/agents/quick-answer/triage/triageQueue.ts",
+        "src/features/agents/quick-answer/triage/triageReach.ts",
+        "src/features/agents/quick-answer/triage/triageTypes.ts",
+        "src/features/agents/quick-answer/triage/useTriageCopy.ts",
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts",
         "src/features/agents/quick-answer/usePendingInteractions.ts"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
       "id": "40b3c4b9-3bc6-459d-8152-b908f1e59bc6",
       "keywords": [
+        "triage",
         "quick-answer",
-        "interaction",
-        "pending",
-        "popover",
-        "clarification",
+        "deck",
+        "verdict",
         "review",
-        "stepper"
+        "backlog",
+        "practice",
+        "build-question",
+        "swipe",
+        "approve",
+        "reject",
+        "skip"
       ],
       "last_written_at": "2026-07-30T07:44:46.698575700+00:00",
       "name": "quick-answer-panel",
