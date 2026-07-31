@@ -92,7 +92,19 @@ export function CostAccrualOverlay({
           className="w-full h-full"
         >
           <path d={areaD} fill="rgba(16, 185, 129, 0.1)" />
-          <path d={pathD} fill="none" stroke="rgba(16, 185, 129, 0.5)" strokeWidth="0.5" />
+          {/* Dashed unconditionally: the curve's SHAPE is always a
+              proportional reconstruction (the `* 0.95` split above), never a
+              per-span cost measurement, regardless of `isSynthetic` -- which
+              only describes whether the surrounding trace's SPAN TIMING was
+              captured live or reconstructed. The `isSynthetic` badge above is
+              a separate, still-accurate signal about that different fact. */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke="rgba(16, 185, 129, 0.5)"
+            strokeWidth="0.5"
+            strokeDasharray="1.5 1"
+          />
         </svg>
       </div>
     </div>

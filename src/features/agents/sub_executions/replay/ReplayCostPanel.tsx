@@ -38,7 +38,12 @@ export function ReplayCostPanel({
           <DollarSign className="w-3 h-3 text-emerald-400/60 flex-shrink-0" />
         )}
         <span className="typo-code tabular-nums text-emerald-400 truncate">
-          {formatCost(accumulatedCost)}
+          {/* accumulatedCost is a proportional estimate derived from scrub
+              position (see useReplayTimeline's accumulatedCost doc), not a
+              measured per-step cost -- the "~" matches the same convention
+              used for estimated_time/estimated_minutes elsewhere. totalCost
+              is the real execution.cost_usd, so it renders unprefixed. */}
+          ~{formatCost(accumulatedCost)}
         </span>
         <span className="typo-body text-foreground truncate">
           / {formatCost(totalCost)}

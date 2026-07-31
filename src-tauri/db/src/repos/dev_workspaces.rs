@@ -20,6 +20,27 @@ use crate::DbPool;
 use personas_core::error::AppError;
 
 pub const KNOWLEDGE_KINDS: [&str; 5] = ["pattern", "pitfall", "decision", "howto", "fact"];
+/// The zoom axis: workspace-wide doctrine (`macro`), project-level pattern
+/// (`meso`), or a local technique (`micro`). Closed for the same reason
+/// `topic`/`ftype` are (see `workspace_taxonomy`): the doctrine roll-up below
+/// gates on an EXACT `Some("macro")`, and the TS binding casts this column
+/// straight to a 3-value union (`Abstraction`) with no runtime check, so a
+/// writer's `"Macro"` or `"high-level"` doesn't just fail to roll up — it also
+/// breaks the TS-side type contract. Unlike `topic`/`ftype` this is a strict
+/// 3-way enum, not an open taxonomy, so there is no natural "unsorted" shelf
+/// to land an unrecognized value on; `normalize_abstraction` refuses it to
+/// `None` instead (same disposition already used for `durability` below).
+pub const KNOWLEDGE_ABSTRACTIONS: [&str; 3] = ["macro", "meso", "micro"];
+
+/// Coerce a writer-supplied `abstraction` onto the closed zoom axis. Case and
+/// surrounding whitespace are normalized; unset stays unset; anything else
+/// unrecognized is refused to `None` rather than stored as a value the
+/// roll-up gate and the TS `Abstraction` union both silently mishandle.
+pub fn normalize_abstraction(raw: Option<&str>) -> Option<String> {
+    let s = raw?.trim().to_lowercase();
+    KNOWLEDGE_ABSTRACTIONS.contains(&s.as_str()).then_some(s)
+}
+
 pub const KNOWLEDGE_STATUSES: [&str; 5] =
     ["observed", "proposed", "adopted", "deprecated", "rejected"];
 pub const ADOPTION_STATES: [&str; 6] = [
@@ -1560,7 +1581,13 @@ pub fn ingest_candidates(
                     // grows); an unknown *area* is quarantined on a visible
                     // shelf rather than silently inventing a new top level.
                     crate::repos::workspace_taxonomy::normalize_topic(c.topic.as_deref()),
-                    c.abstraction,
+                    // Closed at the door for the same reason topic/ftype are —
+                    // see `normalize_abstraction` and `KNOWLEDGE_ABSTRACTIONS`
+                    // above. A caller filtering "macro"/"meso" upstream (e.g.
+                    // workspace_divergence.rs) is redundant-but-harmless now;
+                    // one that doesn't filter at all (workspace_harvest.rs) no
+                    // longer has a silent route around the vocabulary.
+                    normalize_abstraction(c.abstraction.as_deref()),
                     // Same treatment for the SHAPE axis. Left free-form, it
                     // fragmented harder than topic ever did (90 values / 330
                     // items in the 2026-07-27 scan) — see workspace_taxonomy.
@@ -1885,6 +1912,25 @@ fn cluster_skill_adoption(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn abstraction_closes_the_zoom_axis() {
+        // Exact hits and casing/whitespace noise.
+        for canonical in KNOWLEDGE_ABSTRACTIONS {
+            assert_eq!(normalize_abstraction(Some(canonical)).as_deref(), Some(canonical));
+        }
+        assert_eq!(normalize_abstraction(Some("Macro")).as_deref(), Some("macro"));
+        assert_eq!(normalize_abstraction(Some("  meso  ")).as_deref(), Some("meso"));
+        // The real drift the divergence caller only half-guarded against: an
+        // unrecognized value must NOT survive into the closed column, since the
+        // roll-up gate does an exact `Some("macro")` check and the TS binding
+        // casts this column straight to a 3-value union.
+        assert_eq!(normalize_abstraction(Some("high-level")), None);
+        assert_eq!(normalize_abstraction(Some("Macro-ish")), None);
+        // Unset stays unset — "no altitude given" is not "altitude unknown".
+        assert_eq!(normalize_abstraction(None), None);
+        assert_eq!(normalize_abstraction(Some("   ")), None);
+    }
 
     #[test]
     fn applicability_matching() {

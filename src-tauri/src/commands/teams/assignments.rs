@@ -29,6 +29,24 @@ use crate::AppState;
 /// goal; 120s covers tail latency.
 const DECOMPOSE_TIMEOUT_SECS: u64 = 120;
 
+/// Is this persona admissible to the LLM-decomposition candidate pool?
+///
+/// `needs_credentials` is ADVISORY, not a hard block: the runtime resolves a
+/// credential by service-type at execution time, and only the runtime knows
+/// whether that resolution will succeed (G3 proved Dev Clone opens real PRs
+/// despite the badge — see `engine::goal_advance::advance_goal` and
+/// `engine::team_assignment_orchestrator`'s own run-time admission check,
+/// which both treat `ready` + `needs_credentials` as usable). Excluding
+/// `needs_credentials` here — as this file did before — silently shrinks the
+/// roster the decomposition model sees below what the orchestrator would
+/// actually accept, so a team that CAN work reports "no eligible personas".
+/// Only genuinely-broken states (disabled, revoked trust) are excluded.
+fn is_decompose_candidate(p: &Persona) -> bool {
+    p.enabled
+        && matches!(p.setup_status.as_str(), "ready" | "needs_credentials")
+        && !matches!(p.trust_level, crate::db::models::PersonaTrustLevel::Revoked)
+}
+
 #[tauri::command]
 pub fn create_team_assignment(
     state: State<'_, Arc<AppState>>,
@@ -346,10 +364,7 @@ pub async fn companion_assign_team_inner(
     let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
     for m in &members {
         if let Ok(p) = persona_repo::get_by_id(&state.db, &m.persona_id) {
-            if p.enabled
-                && p.setup_status == "ready"
-                && !matches!(p.trust_level, crate::db::models::PersonaTrustLevel::Revoked)
-            {
+            if is_decompose_candidate(&p) {
                 personas.push(p);
             }
         }
@@ -477,12 +492,10 @@ pub async fn decompose_team_assignment_goal(
     let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
     for m in &members {
         if let Ok(p) = persona_repo::get_by_id(&state.db, &m.persona_id) {
-            // Same eligibility filter the orchestrator applies at run time;
-            // proposing steps that won't run is wasted Sonnet tokens.
-            if p.enabled
-                && p.setup_status == "ready"
-                && !matches!(p.trust_level, crate::db::models::PersonaTrustLevel::Revoked)
-            {
+            // Same eligibility filter the orchestrator applies at run time
+            // (see `is_decompose_candidate`); proposing steps that won't run
+            // is wasted Sonnet tokens, but `needs_credentials` DOES run.
+            if is_decompose_candidate(&p) {
                 personas.push(p);
             }
         }
@@ -591,4 +604,81 @@ pub fn instantiate_assignment_template(
         steps,
     };
     repo::create(&state.db, input)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::PersonaTrustOrigin;
+
+    fn base_persona(setup_status: &str, enabled: bool, trust_level: crate::db::models::PersonaTrustLevel) -> Persona {
+        Persona {
+            lifecycle: "active".to_string(),
+            id: "p-1".into(),
+            project_id: "proj-1".into(),
+            name: "Dev Clone".into(),
+            description: None,
+            system_prompt: "You implement.".into(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled,
+            sensitive: false,
+            headless: false,
+            starred: false,
+            max_concurrent: 1,
+            timeout_ms: 300000,
+            notification_channels: None,
+            last_design_result: None,
+            last_test_report: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            home_team_id: None,
+            source_review_id: None,
+            trust_level,
+            trust_origin: PersonaTrustOrigin::User,
+            trust_verified_at: None,
+            trust_score: 0.0,
+            parameters: None,
+            gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
+            template_category: None,
+            cli_awareness_enabled: false,
+            setup_status: setup_status.to_string(),
+            setup_detail: None,
+            disabled_dims_json: None,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+        }
+    }
+
+    /// The regression this closes: `needs_credentials` is advisory (the
+    /// runtime resolves credentials by service-type at execution time — see
+    /// `engine::goal_advance::advance_goal` and
+    /// `engine::team_assignment_orchestrator`'s run-time admission check).
+    /// Before this fix, `companion_assign_team_inner` and
+    /// `decompose_team_assignment_goal` both excluded it from the
+    /// LLM-decomposition candidate pool, so a team whose only implementer
+    /// carries `needs_credentials` reported "no eligible personas" even
+    /// though the exact same team runs fine via `advance_team_goal`.
+    #[test]
+    fn decompose_candidate_admits_ready_and_needs_credentials() {
+        use crate::db::models::PersonaTrustLevel;
+        assert!(is_decompose_candidate(&base_persona("ready", true, PersonaTrustLevel::Manual)));
+        assert!(is_decompose_candidate(&base_persona("needs_credentials", true, PersonaTrustLevel::Manual)));
+    }
+
+    #[test]
+    fn decompose_candidate_rejects_genuinely_broken_states() {
+        use crate::db::models::PersonaTrustLevel;
+        // Disabled.
+        assert!(!is_decompose_candidate(&base_persona("ready", false, PersonaTrustLevel::Manual)));
+        // Revoked trust, even if otherwise ready.
+        assert!(!is_decompose_candidate(&base_persona("ready", true, PersonaTrustLevel::Revoked)));
+        // needs_credentials does NOT rescue a revoked persona.
+        assert!(!is_decompose_candidate(&base_persona("needs_credentials", true, PersonaTrustLevel::Revoked)));
+        // Any other setup_status (e.g. "pending", "failed") is excluded.
+        assert!(!is_decompose_candidate(&base_persona("pending", true, PersonaTrustLevel::Manual)));
+    }
 }
