@@ -152,13 +152,24 @@ fn app_data_dir_normalised() -> Option<String> {
 
 /// Check whether a normalised path is under the current user's home directory.
 fn is_under_user_home(normalised: &str) -> bool {
-    if let Some(home) = dirs::home_dir() {
-        let home_norm = home.to_string_lossy().replace('\\', "/").to_lowercase();
-        normalised == home_norm || normalised.starts_with(&format!("{home_norm}/"))
-    } else {
-        // If we can't determine home, allow the path (fail-open for usability;
-        // the blocked-prefix checks above still apply).
-        true
+    match dirs::home_dir() {
+        Some(home) => {
+            let home_norm = home.to_string_lossy().replace('\\', "/").to_lowercase();
+            normalised == home_norm || normalised.starts_with(&format!("{home_norm}/"))
+        }
+        None => {
+            // Fail CLOSED: this predicate is the last line of defence in both
+            // `validate_watch_path` and `resolve_and_guard` (save/file-access),
+            // gating everything the blocked-prefix lists don't already name. An
+            // unresolvable home directory must not silently widen that into an
+            // allow-all for every path outside the (small, fixed) system-dir
+            // blocklist -- mirrors `desktop_security.rs::is_path_allowed`'s
+            // "can't resolve -> deny" contract for the same reason.
+            tracing::warn!(
+                "is_under_user_home: could not resolve the home directory; denying (fail-closed)"
+            );
+            false
+        }
     }
 }
 

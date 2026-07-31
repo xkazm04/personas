@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { resetInvokeMocks } from '@/test/tauriMock';
-import { generateIntervalFireTimes, useCalendarEvents } from '../useCronPreview';
+import { generateIntervalFireTimes, useCalendarEvents, useConflictPreview } from '../useCronPreview';
 import { parseScheduleEntry } from '../scheduleHelpers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 
@@ -103,6 +103,46 @@ describe('useCalendarEvents — preview seed matches the engine seed', () => {
     // hash the SAME id so the rendered minute equals the fired minute.
     expect((call![1] as { seed?: string }).seed).toBe('trig-xyz');
     expect(result.current.events).toHaveLength(1);
+  });
+});
+
+describe('useConflictPreview — candidate seed matches the engine seed when editing', () => {
+  beforeEach(() => {
+    resetInvokeMocks();
+  });
+
+  it('passes excludeTriggerId as the seed for the candidate cron fetch', async () => {
+    const { invoke } = await import('@tauri-apps/api/core');
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+      if (cmd === 'cron_fire_times_in_range') return [];
+      return undefined;
+    });
+
+    const existingEntries = [
+      parseScheduleEntry(makeAgent({ trigger_id: 'other-trig', cron_expression: '0 9 * * *' })),
+    ];
+
+    // FrequencyEditor (the only live caller) always edits an existing trigger,
+    // so `excludeTriggerId` IS the candidate's own future stable id — the
+    // engine will seed H-token expansion on it after save.
+    const { result } = renderHook(() =>
+      useConflictPreview(existingEntries, 'H 9 * * *', null, 'UTC', 'trig-being-edited'),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 2000 });
+
+    const candidateCall = vi
+      .mocked(invoke)
+      .mock.calls.find(
+        ([cmd, args]) =>
+          cmd === 'cron_fire_times_in_range' &&
+          (args as { cronExpression?: string } | undefined)?.cronExpression === 'H 9 * * *',
+      );
+    expect(candidateCall).toBeDefined();
+    // Regression: this used to omit the seed entirely, so an H-token
+    // candidate's conflict count was checked against minute 0 (seed-0
+    // default) instead of the minute the engine will actually fire at.
+    expect((candidateCall![1] as { seed?: string }).seed).toBe('trig-being-edited');
   });
 });
 

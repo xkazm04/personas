@@ -717,6 +717,38 @@ fn fallback_heuristic(input: &EvalInput<'_>, method: EvalMethod) -> LlmEvalResul
     let keyword = eval_keyword_match(input);
     let protocol = eval_protocol_compliance(input);
 
+    // Confusion detection is a VETO signal, not one more weighted dimension
+    // (see `eval_composite`, which encodes the same override but is
+    // otherwise unreachable dead code on the live path -- this heuristic
+    // fallback is the one live path with no LLM judgement of its own, so a
+    // known confusion phrase / unused-tools signal must force the scores
+    // down rather than risk being averaged away by an otherwise-plausible
+    // keyword/tool/protocol match. Not applied to the LLM-judged path: a
+    // real judge already scores "barely relevant/filler" content low as
+    // part of output_quality, and layering a naive string-match veto on top
+    // of a nuanced verdict risks overriding a legitimately good score.
+    let confusion = eval_confusion_detect(input);
+    if confusion.score == 0 && confusion.confidence > 0.5 {
+        return LlmEvalResult {
+            tool_accuracy: 0,
+            output_quality: 0,
+            protocol_compliance: 0,
+            rationale: format!(
+                "Heuristic fallback vetoed by confusion detection: {}",
+                confusion.explanation
+            ),
+            suggestions: "Agent appears confused or lost; consider re-running with LLM eval enabled for a fuller diagnosis.".to_string(),
+            tool_accuracy_rationale: None,
+            output_quality_rationale: Some(confusion.explanation.clone()),
+            protocol_rationale: None,
+            verdict: Some(format!(
+                "Blocked by confusion detection: {}",
+                confusion.explanation
+            )),
+            eval_method: method,
+        };
+    }
+
     LlmEvalResult {
         tool_accuracy: tool.score,
         output_quality: keyword.score,
@@ -950,5 +982,49 @@ mod tests {
             "Confusion should override composite"
         );
         assert!(result.composite.explanation.contains("confusion"));
+    }
+
+    // -- Heuristic fallback confusion veto (live path) --
+
+    #[test]
+    fn test_fallback_heuristic_vetoed_by_confusion() {
+        // Regression: `eval_composite`'s confusion veto is tested but
+        // unreachable dead code -- the live degraded-eval path is
+        // `fallback_heuristic`, which used to omit confusion detection
+        // entirely, letting keyword/tool/protocol scores for a confused
+        // response pass through un-vetoed.
+        let input = EvalInput {
+            output: "I don't have enough information to determine which API to call.",
+            expected_behavior: Some("send email"),
+            expected_tools: None,
+            actual_tools: None,
+            expected_protocols: None,
+            has_tools: true,
+        };
+        let result = fallback_heuristic(&input, EvalMethod::HeuristicFallback);
+        assert_eq!(result.tool_accuracy, 0);
+        assert_eq!(result.output_quality, 0);
+        assert_eq!(result.protocol_compliance, 0);
+        assert!(result.rationale.contains("confusion"));
+        assert!(result.verdict.as_deref().unwrap_or("").contains("confusion"));
+    }
+
+    #[test]
+    fn test_fallback_heuristic_not_vetoed_when_not_confused() {
+        let expected_tools = vec!["gmail_send".to_string()];
+        let actual_tools = vec!["gmail_send".to_string()];
+        let input = EvalInput {
+            output: "Email sent successfully with the report attached to john@example.com.",
+            expected_behavior: Some("send email with report attachment"),
+            expected_tools: Some(&expected_tools),
+            actual_tools: Some(&actual_tools),
+            expected_protocols: None,
+            has_tools: true,
+        };
+        let result = fallback_heuristic(&input, EvalMethod::HeuristicFallback);
+        // A non-confused response must still be scored normally -- the veto
+        // must not fire on legitimate output.
+        assert!(result.tool_accuracy > 0 || result.output_quality > 0);
+        assert!(!result.rationale.contains("vetoed"));
     }
 }

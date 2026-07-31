@@ -320,7 +320,12 @@ export function useConflictPreview(
       let candidateTimes: Date[] = [];
       if (trimmedCandidateCron) {
         try {
-          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 500);
+          // Seed with `excludeTriggerId` when editing an existing trigger: it
+          // IS the candidate's own stable id (the only live caller,
+          // FrequencyEditor, always edits an existing trigger), so an H-token
+          // candidate's conflict count is checked against the exact minutes
+          // the engine will use post-save, not the seed-0 default.
+          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 500, excludeTriggerId);
           candidateTimes = isos.map((s) => new Date(s));
         } catch {
           candidateTimes = [];

@@ -47,11 +47,18 @@ pub enum EnforcementMode {
 
 impl EnforcementMode {
     pub fn from_metadata(metadata_json: Option<&str>) -> Self {
+        // Absent metadata -> the documented default.
         let Some(json) = metadata_json else {
             return Self::Warn;
         };
+        // Present but unparseable (truncated write, schema drift, manual
+        // edit) is a DIFFERENT case from absent and must resolve to the most
+        // restrictive outcome, not silently collapse to the same default --
+        // mirrors `ExternalApiKey::is_expired_at` and this module's own
+        // fail-closed handling of a corrupt `scoped_resources_json` blob in
+        // `evaluate` above.
         let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
-            return Self::Warn;
+            return Self::Block;
         };
         match v.get("scope_enforcement").and_then(|x| x.as_str()) {
             Some("block") => Self::Block,
@@ -321,9 +328,14 @@ mod tests {
             EnforcementMode::from_metadata(Some(r#"{"other":"thing"}"#)),
             EnforcementMode::Warn,
         );
+        // Regression: unparseable metadata (corrupt, truncated, manually
+        // edited) must fail CLOSED to the most restrictive mode, not
+        // silently collapse to the same `Warn` default as genuinely absent
+        // metadata -- a corrupted blob must never quietly downgrade a
+        // credential from block-mode to warn-mode.
         assert_eq!(
             EnforcementMode::from_metadata(Some("not json")),
-            EnforcementMode::Warn
+            EnforcementMode::Block
         );
     }
 }

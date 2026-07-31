@@ -1071,7 +1071,7 @@ async fn run_cli(binary: &str, args: &[&str]) -> Result<String, AppError> {
     if combined.len() > MAX_OUTPUT_BYTES {
         Ok(format!(
             "{}...\n[truncated at {} bytes, total {} bytes]",
-            &combined[..MAX_OUTPUT_BYTES],
+            personas_core::utils::text::truncate_on_char_boundary(&combined, MAX_OUTPUT_BYTES),
             MAX_OUTPUT_BYTES,
             combined.len()
         ))

@@ -445,8 +445,15 @@ fn row_to_config(row: &rusqlite::Row) -> rusqlite::Result<ScraperConfig> {
 /// no upcoming fire). Cron is evaluated in the machine's local timezone, matching
 /// the semantics used elsewhere in the scheduler (persona cron, `ActiveWindow`) --
 /// a user-configured "0 9 * * *" fires at 9am local, not 9am UTC.
-fn compute_next_run(cron: &str) -> Option<String> {
-    let sched = personas_core::cron::parse_cron(cron).ok()?;
+///
+/// Seeded by the owning config's stable `id` (mirroring
+/// `scheduler::compute_next_trigger_at`) so Jenkins-style `H` tokens spread
+/// across configs that share one cron template instead of all collapsing to
+/// their range minimum -- unseeded `parse_cron` is reserved for syntax
+/// validation/previews with no per-entity context (see its doc comment).
+fn compute_next_run(cron: &str, id: &str) -> Option<String> {
+    let seed = personas_core::cron::seed_hash(id);
+    let sched = personas_core::cron::parse_cron_seeded(cron, seed).ok()?;
     personas_core::cron::next_fire_time_local(&sched, chrono::Utc::now()).map(|t| t.to_rfc3339())
 }
 
@@ -474,13 +481,13 @@ pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String
         personas_core::cron::parse_cron(c).map_err(|e| format!("invalid cron: {e}"))?;
     }
     let _: RuleSet = serde_json::from_value(rules.clone()).map_err(|e| format!("invalid rules: {e}"))?;
-    let next_run = if enabled { cron.as_deref().and_then(compute_next_run) } else { None };
-    let now = chrono::Utc::now().to_rfc3339();
     let id = input
         .get("id")
         .and_then(Value::as_str)
         .map(String::from)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let next_run = if enabled { cron.as_deref().and_then(|c| compute_next_run(c, &id)) } else { None };
+    let now = chrono::Utc::now().to_rfc3339();
     let conn = pool.get().map_err(|e| e.to_string())?;
     conn.execute(
         "INSERT INTO scraper_configs
@@ -564,7 +571,7 @@ pub async fn config_run(pool: &DbPool, id: &str) -> Result<ExtractSummary, Strin
     let result = run_extract(pool, ecfg).await;
     emit_run_signal(pool, &cfg, &result);
     let next = if cfg.enabled {
-        cfg.cron.as_deref().and_then(compute_next_run)
+        cfg.cron.as_deref().and_then(|c| compute_next_run(c, &cfg.id))
     } else {
         None
     };
@@ -884,6 +891,28 @@ mod tests {
 
         config_delete(&pool, &saved.id).unwrap();
         assert_eq!(config_list(&pool).unwrap().len(), 0);
+    }
+
+    /// Regression: `compute_next_run` used to call the unseeded `parse_cron`,
+    /// which collapses every Jenkins-style `H` token to its range minimum --
+    /// exactly the thundering-herd pile-up `H` tokens exist to prevent. It
+    /// must seed by the owning config's stable `id` via `seed_hash` +
+    /// `parse_cron_seeded`, mirroring `scheduler::compute_next_trigger_at`.
+    #[test]
+    fn compute_next_run_seeds_h_tokens_by_owning_id() {
+        let seed = personas_core::cron::seed_hash("cfg-fixed-id");
+        let expected_sched = personas_core::cron::parse_cron_seeded("H * * * *", seed).unwrap();
+        let expected = personas_core::cron::next_fire_time_local(&expected_sched, chrono::Utc::now())
+            .map(|t| t.to_rfc3339());
+
+        let actual = compute_next_run("H * * * *", "cfg-fixed-id");
+
+        // Both derived from the same seed within microseconds of each other;
+        // they agree unless "now" crosses a minute boundary between the two
+        // calls. If `compute_next_run` regresses to the unseeded `parse_cron`
+        // (seed 0 instead of `seed_hash("cfg-fixed-id")`), this fails because
+        // the two schedules resolve to different minutes.
+        assert_eq!(actual, expected);
     }
 
     #[tokio::test]

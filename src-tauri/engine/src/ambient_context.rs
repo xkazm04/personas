@@ -1072,11 +1072,21 @@ pub fn redact_window_title(title: &str) -> String {
             } else {
                 out.push_str(token);
             }
-        } else if token.starts_with("http://") || token.starts_with("https://") {
-            // URL: keep scheme+host, drop path/query.
-            let host_end = token[8..]
+        } else if let Some(rest) = token
+            .strip_prefix("https://")
+            .or_else(|| token.strip_prefix("http://"))
+        {
+            // URL: keep scheme+host, drop path/query. Derive the offset
+            // from the matched prefix's actual length via strip_prefix
+            // rather than a fixed byte constant — "http://" (7 bytes)
+            // and "https://" (8 bytes) differ, so a fixed offset both
+            // mis-locates the host boundary for the shorter scheme and
+            // can land mid-codepoint when an IDN host's first character
+            // is multi-byte, panicking on the byte slice.
+            let scheme_len = token.len() - rest.len();
+            let host_end = rest
                 .find('/')
-                .map(|i| i + 8)
+                .map(|i| i + scheme_len)
                 .unwrap_or(token.len());
             out.push_str(&token[..host_end]);
         } else {
@@ -1897,6 +1907,27 @@ mod tests {
     fn redact_title_idempotent_on_clean_input() {
         let clean = "main.rs - Code";
         assert_eq!(redact_window_title(clean), clean);
+    }
+
+    #[test]
+    fn redact_title_handles_idn_host_after_http_scheme() {
+        // Regression: the old code sliced `token[8..]` unconditionally,
+        // which is one byte too many for the 7-byte "http://" prefix and
+        // panics ("not a char boundary") when the host's first character
+        // is multi-byte, as in an IDN domain. Must not panic, and must
+        // keep the scheme+host intact.
+        let out = redact_window_title("Tab — http://café.example/path?x=1");
+        assert!(out.contains("http://café.example"));
+        assert!(!out.contains("/path"));
+    }
+
+    #[test]
+    fn redact_title_keeps_full_ascii_host_after_http_scheme() {
+        // Same off-by-one bug, ASCII case: the fixed offset of 8 chopped
+        // the first byte of the host for plain "http://" URLs.
+        let out = redact_window_title("http://example.com/path");
+        assert!(out.contains("http://example.com"));
+        assert!(!out.contains("/path"));
     }
 
     // ── list_signals + delete_signal (Phase 2 v3) ─────────────────────────

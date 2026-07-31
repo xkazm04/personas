@@ -6,13 +6,25 @@ use std::time::{Duration, Instant};
 /// How often (in `check()` calls) to trigger an automatic prune pass.
 const AUTO_PRUNE_INTERVAL: u64 = 100;
 
+/// One key's sliding window of event timestamps, plus a once-only latch for
+/// the "rejecting" crossing (see `RateLimiter::check`).
+#[derive(Default)]
+struct Bucket {
+    timestamps: Vec<Instant>,
+    /// True once we've already logged the *current* streak of rejections for
+    /// this key. Reset the moment a request is admitted again, so the next
+    /// streak of rejections warns exactly once instead of the latch going
+    /// stale forever.
+    warned: bool,
+}
+
 /// Sliding-window rate limiter using in-memory token buckets.
 ///
 /// Each key (e.g. source type or trigger ID) gets its own bucket with
 /// a configurable window and max event count.
 pub struct RateLimiter {
-    /// Per-key buckets: key -> list of timestamps within the window.
-    buckets: Mutex<HashMap<String, Vec<Instant>>>,
+    /// Per-key buckets: key -> timestamps within the window + warn latch.
+    buckets: Mutex<HashMap<String, Bucket>>,
     /// Monotonic counter of `check()` calls, used to trigger periodic pruning.
     call_count: AtomicU64,
 }
@@ -40,36 +52,45 @@ impl RateLimiter {
         let cutoff = now - window;
 
         let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
-        let timestamps = buckets.entry(key.to_string()).or_default();
+        let bucket = buckets.entry(key.to_string()).or_default();
 
         // Evict expired entries
-        timestamps.retain(|t| *t > cutoff);
+        bucket.timestamps.retain(|t| *t > cutoff);
 
-        if timestamps.len() >= max_events {
+        if bucket.timestamps.len() >= max_events {
             // After retain the bucket may be empty (e.g. max_events == 0, or all
             // entries expired between the len check and now). Guard against
             // index-out-of-bounds on an empty vec.
-            if timestamps.is_empty() {
+            if bucket.timestamps.is_empty() {
                 return Err(window.as_secs().max(1));
             }
             // Calculate how long until the oldest entry expires
-            let oldest = timestamps[0];
+            let oldest = bucket.timestamps[0];
             let retry_after = window
                 .checked_sub(now.duration_since(oldest))
                 .unwrap_or(Duration::from_secs(1));
             let retry_after_secs = retry_after.as_secs().max(1);
-            tracing::warn!(
-                rate_key = %key,
-                retry_after_secs = retry_after_secs,
-                bucket_depth = timestamps.len(),
-                max_events = max_events,
-                window_secs = window.as_secs(),
-                "Rate limit rejected request"
-            );
+            // Signal the crossing, not the level: warn once per rejection
+            // streak (latched on `bucket.warned`), not once per rejected
+            // call -- a caller hammering a limit would otherwise flood the
+            // log with one warning per request. The latch resets below the
+            // moment a request is admitted again.
+            if !bucket.warned {
+                bucket.warned = true;
+                tracing::warn!(
+                    rate_key = %key,
+                    retry_after_secs = retry_after_secs,
+                    bucket_depth = bucket.timestamps.len(),
+                    max_events = max_events,
+                    window_secs = window.as_secs(),
+                    "Rate limit rejected request"
+                );
+            }
             return Err(retry_after_secs);
         }
 
-        timestamps.push(now);
+        bucket.warned = false;
+        bucket.timestamps.push(now);
 
         // Periodically prune fully-expired buckets to prevent unbounded memory growth.
         // We do this while already holding the lock to avoid a second lock acquisition.
@@ -80,10 +101,10 @@ impl RateLimiter {
                 let mut high_watermark_depth: usize = 0;
                 let active_buckets = buckets
                     .iter()
-                    .filter(|(_, ts)| ts.iter().any(|t| *t > cutoff))
+                    .filter(|(_, b)| b.timestamps.iter().any(|t| *t > cutoff))
                     .count();
-                for (k, ts) in buckets.iter() {
-                    let live = ts.iter().filter(|t| **t > cutoff).count();
+                for (k, b) in buckets.iter() {
+                    let live = b.timestamps.iter().filter(|t| **t > cutoff).count();
                     if live > high_watermark_depth {
                         high_watermark_depth = live;
                         high_watermark_key = k.clone();
@@ -99,9 +120,9 @@ impl RateLimiter {
                 }
             }
 
-            buckets.retain(|_, ts| {
-                ts.retain(|t| *t > cutoff);
-                !ts.is_empty()
+            buckets.retain(|_, b| {
+                b.timestamps.retain(|t| *t > cutoff);
+                !b.timestamps.is_empty()
             });
         }
 
@@ -118,9 +139,9 @@ impl RateLimiter {
         let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
         buckets
             .iter_mut()
-            .map(|(key, timestamps)| {
-                timestamps.retain(|t| *t > cutoff);
-                (key.clone(), timestamps.len())
+            .map(|(key, bucket)| {
+                bucket.timestamps.retain(|t| *t > cutoff);
+                (key.clone(), bucket.timestamps.len())
             })
             .filter(|(_, count)| *count > 0)
             .collect()
@@ -131,9 +152,9 @@ impl RateLimiter {
     pub fn prune(&self, window: Duration) {
         let cutoff = Instant::now() - window;
         let mut buckets = self.buckets.lock().unwrap_or_else(|e| e.into_inner());
-        buckets.retain(|_, timestamps| {
-            timestamps.retain(|t| *t > cutoff);
-            !timestamps.is_empty()
+        buckets.retain(|_, bucket| {
+            bucket.timestamps.retain(|t| *t > cutoff);
+            !bucket.timestamps.is_empty()
         });
     }
 }
@@ -229,6 +250,61 @@ mod tests {
         // Now call with max_events = 0: retain evicts everything, len (0) >= 0 is true
         let result = rl.check("key", 0, short_window);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_warn_latch_sets_on_first_rejection_and_stays_set() {
+        // Regression: `check` used to `tracing::warn!` on EVERY rejection --
+        // a caller hammering a limit would flood the log with one warning
+        // per call. The fix signals the crossing (first rejection) via a
+        // once-only latch, not the level (every rejection).
+        let rl = RateLimiter::new();
+        let window = Duration::from_secs(60);
+        for _ in 0..3 {
+            rl.check("key", 3, window).unwrap();
+        }
+        assert!(rl.check("key", 3, window).is_err());
+        {
+            let buckets = rl.buckets.lock().unwrap();
+            assert!(
+                buckets.get("key").unwrap().warned,
+                "first rejection in a streak must set the latch"
+            );
+        }
+        // A second rejection in the same streak leaves the latch set (i.e. a
+        // second `tracing::warn!` would be suppressed) rather than being a
+        // fresh, independent crossing.
+        assert!(rl.check("key", 3, window).is_err());
+        {
+            let buckets = rl.buckets.lock().unwrap();
+            assert!(buckets.get("key").unwrap().warned);
+        }
+    }
+
+    #[test]
+    fn test_warn_latch_resets_after_admission_so_next_streak_warns_again() {
+        let rl = RateLimiter::new();
+        let short_window = Duration::from_millis(50);
+        for _ in 0..2 {
+            rl.check("key", 2, short_window).unwrap();
+        }
+        assert!(rl.check("key", 2, short_window).is_err());
+        {
+            let buckets = rl.buckets.lock().unwrap();
+            assert!(buckets.get("key").unwrap().warned);
+        }
+        // Once the window clears, the next admitted request must reset the
+        // latch -- otherwise a later, independent rejection streak would
+        // silently never warn again.
+        thread::sleep(Duration::from_millis(60));
+        rl.check("key", 2, short_window).unwrap();
+        {
+            let buckets = rl.buckets.lock().unwrap();
+            assert!(
+                !buckets.get("key").unwrap().warned,
+                "admission must reset the warn latch for the next streak"
+            );
+        }
     }
 
     #[test]

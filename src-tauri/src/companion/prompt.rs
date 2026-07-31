@@ -368,22 +368,31 @@ fn format_facts(facts: &[Fact]) -> String {
             .then(b.updated_at.cmp(&a.updated_at))
     });
     for f in sorted {
+        // `write_fact` refuses to persist a fact with no sources, so this
+        // should be unreachable -- but the old fallback rendered the literal
+        // string "no-sources" as if it were a real citation, teaching the
+        // model that uncited memory is a legitimate shape. Skip it instead
+        // (matching `consolidation.rs`'s `continue` on the same check) and
+        // log loudly, since reaching this means the write-time invariant was
+        // bypassed somewhere.
+        if f.sources.is_empty() {
+            tracing::warn!(
+                key = %f.key,
+                "skipping fact with empty sources in prompt render; write-time invariant should have prevented this"
+            );
+            continue;
+        }
         if last_scope != Some(f.scope.as_str()) {
             s.push_str(&format!("## {} facts\n\n", capitalize(&f.scope)));
             last_scope = Some(f.scope.as_str());
         }
-        let sources = if f.sources.is_empty() {
-            "no-sources".into()
-        } else {
-            f.sources.join(", ")
-        };
         s.push_str(&format!(
             "- **{key}** (importance {imp}, conf {conf:.0}%) — {value}  [from {srcs}]\n",
             key = f.key,
             imp = f.importance,
             conf = f.confidence * 100.0,
             value = f.value.trim(),
-            srcs = sources,
+            srcs = f.sources.join(", "),
         ));
     }
     s.push('\n');
@@ -1475,4 +1484,52 @@ Do NOT emit propose_action for any other action during onboarding —
 keep this conversation focused on the interview itself.
 "#,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fact(key: &str, sources: Vec<String>) -> Fact {
+        Fact {
+            id: format!("fact_{key}"),
+            scope: "user".to_string(),
+            key: key.to_string(),
+            value: format!("{key} value"),
+            importance: 3,
+            confidence: 0.9,
+            sources,
+            supersedes_id: None,
+            contradicts_id: None,
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+            last_seen_at: "2026-01-01T00:00:00Z".to_string(),
+            file_path: "identity.md".to_string(),
+        }
+    }
+
+    #[test]
+    fn format_facts_skips_a_fact_with_no_sources_rather_than_fabricate_one() {
+        // Regression: this used to render the literal string "no-sources" as
+        // if it were a real citation, teaching the model that uncited memory
+        // is a legitimate shape. `semantic::write_fact` already refuses to
+        // persist a sourceless fact, so reaching this case at all means the
+        // write-time invariant was bypassed; the render must skip it (like
+        // `consolidation.rs`'s `continue` on the same check), never fabricate
+        // a placeholder citation.
+        let facts = vec![
+            fact("cited", vec!["ep_1".to_string()]),
+            fact("uncited", vec![]),
+        ];
+        let out = format_facts(&facts);
+        assert!(out.contains("cited"));
+        assert!(out.contains("[from ep_1]"));
+        assert!(!out.contains("uncited"));
+        assert!(!out.contains("no-sources"));
+    }
+
+    #[test]
+    fn format_facts_empty_input_is_empty_string() {
+        assert_eq!(format_facts(&[]), "");
+    }
 }
