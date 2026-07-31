@@ -2,6 +2,7 @@
 
 ## Active
 
+
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
 - Paths (intended): `src/features/agents/quick-answer/**`, `src/features/fleet/monitor/useMonitorData.ts`, `src/stores/slices/overview/overviewSlice.ts` (cloud-review rethrow), `src/lib/keyboard/**` + the 3 colliding keydown surfaces (`overview/sub_manual-review/ReviewFocusFlow.tsx`, `.../backlog/BacklogFocusDeck.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`), `src-tauri` idea/practice verdict CAS, `context-map.json` + `DESIGN.md` + doc-map (Director does these inline). Builders work in `.claude/worktrees/perfect-triage-r2*`.
@@ -71,6 +72,9 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-devtools-portability — /spark round 1 COMPLETE, merged 042753a06
+- 2026-08-01. Dev-tools artifacts (projects incl. skills-on-disk, workspace knowledge) in Import/Export. 4 WPs + camelCase ratchet fix; commits aee9e3ff4/04e7a49cb/270f05029/2fec476e8/691dab806/3bc56f4ea, merge 042753a06. Gates: tsc 0 err, vitest 3019/3020 (1 red = pre-existing DevMilestone ratchet), data_portability 21/21, i18n strict+untranslated 14 locales clean. Worktree removed. Vault: Obsidian/personas/Spark/.
 
 ### context-fingerprints — deterministic per-context structural fingerprint cache — session opus-5 — COMPLETE, commits `a0fa056a8`(migration+model) `a29bbd09a`(extractor+tests) `dd212ed5d`(repo+command+bindings) `01eeba042`(test naming)
 - 2026-07-30. Keystone of a scan-efficiency design: a derived cache alongside the context map so repeat structural questions become SQL instead of file reads (the motivating probe read 13,622 files to answer 6 questions, because `dev_contexts.category` — 4 values — was the only routable metadata and all 236 descriptions are the "Pending LLM description" placeholder).
