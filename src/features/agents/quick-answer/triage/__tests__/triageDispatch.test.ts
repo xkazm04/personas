@@ -4,7 +4,13 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
-import { isDeferral, routeDecision, type TriagePorts } from '../triageDispatch';
+import {
+  isDeferral,
+  reversibleStatus,
+  routeDecision,
+  undoDecision,
+  type TriagePorts,
+} from '../triageDispatch';
 import { TRIAGE_KINDS, type TriageDecision } from '../triageTypes';
 import { makeItem, makeQuestion } from './triageFixtures';
 
@@ -22,6 +28,8 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     declinePolicy: vi.fn().mockResolvedValue(undefined),
     decideEvolution: vi.fn().mockResolvedValue(undefined),
     refreshProposals: vi.fn(),
+    reopenIdea: vi.fn().mockResolvedValue(undefined),
+    reopenPractice: vi.fn().mockResolvedValue(undefined),
     openBuilder: vi.fn(),
     ...overrides,
   };
@@ -322,5 +330,84 @@ describe('routeDecision — build questions', () => {
     const decision: TriageDecision = { item: makeQuestion(), verdict: 'reject' };
     expect(isDeferral(decision)).toBe(true);
     expect(writeCount(ports)).toBe(0);
+  });
+});
+
+describe('reversibleStatus — which verdicts may be offered back, and as what', () => {
+  it('names the status an idea verdict PRODUCED, which is the undo expectation', () => {
+    const item = makeItem('idea');
+    expect(reversibleStatus({ item, verdict: 'accept' })).toBe('accepted');
+    expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
+    // `build` accepts and queues a task; the accept is what gets undone.
+    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'build' })).toBe('accepted');
+  });
+
+  it('names the status a practice verdict produced, deprecate included', () => {
+    const item = makeItem('practice');
+    expect(reversibleStatus({ item, verdict: 'accept' })).toBe('adopted');
+    expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
+    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'deprecate' })).toBe('deprecated');
+  });
+
+  it('refuses the four kinds whose act is already out in the world', () => {
+    // A review has no backend path from decided back to pending; a question has
+    // already resumed the CLI; a policy apply is the ONLY policy writer and has
+    // no un-apply; a promotion has installed a genome on a live persona.
+    for (const kind of ['review', 'question', 'policy', 'evolution'] as const) {
+      expect(reversibleStatus({ item: makeItem(kind), verdict: 'accept' })).toBeNull();
+    }
+  });
+});
+
+describe('undoDecision — the reverse is a write against an expectation', () => {
+  it('reopens an idea against the status its own verdict produced', async () => {
+    const item = makeItem('idea', { sourceId: 'idea-3' });
+    const ports = makePorts();
+    await undoDecision(
+      { decision: { item, verdict: 'accept' }, producedStatus: 'accepted', at: Date.now() },
+      ports,
+    );
+    expect(ports.reopenIdea).toHaveBeenCalledWith('idea-3', 'accepted');
+  });
+
+  it('reopens a practice and re-reads the workspace centre', async () => {
+    const item = makeItem('practice', { sourceId: 'k-3' });
+    const ports = makePorts();
+    await undoDecision(
+      { decision: { item, verdict: 'accept' }, producedStatus: 'adopted', at: Date.now() },
+      ports,
+    );
+    expect(ports.reopenPractice).toHaveBeenCalledWith('k-3', 'adopted');
+    expect(ports.refreshKnowledge).toHaveBeenCalledTimes(1);
+  });
+
+  it('THROWS rather than silently doing nothing for a kind with no reverse door', async () => {
+    // A quiet no-op would tell a reviewer their approve was taken back while
+    // the row is still approved — the exact class of lie `routeDecision` exists
+    // to make impossible.
+    const ports = makePorts();
+    await expect(
+      undoDecision(
+        { decision: { item: makeItem('review'), verdict: 'accept' }, producedStatus: 'approved', at: 0 },
+        ports,
+      ),
+    ).rejects.toThrow(/cannot be undone/);
+    expect(writeCount(ports)).toBe(0);
+  });
+
+  it('propagates a lost swap so the queue can surface it as a conflict', async () => {
+    const ports = makePorts({
+      reopenIdea: vi
+        .fn()
+        .mockRejectedValue(
+          new Error("Backlog idea idea-3 was already decided as 'rejected' by a concurrent action"),
+        ),
+    });
+    await expect(
+      undoDecision(
+        { decision: { item: makeItem('idea', { sourceId: 'idea-3' }), verdict: 'accept' }, producedStatus: 'accepted', at: 0 },
+        ports,
+      ),
+    ).rejects.toThrow(/by a concurrent action/);
   });
 });

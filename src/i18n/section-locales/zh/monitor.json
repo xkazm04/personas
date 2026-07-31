@@ -435,5 +435,17 @@
   "triage_reason_prompt_worse": "提示词质量下降",
   "triage_reason_quality_risk": "质量风险",
   "triage_reason_saving_too_small": "节省幅度过小",
-  "triage_reason_thin_evidence": "证据不足"
+  "triage_reason_thin_evidence": "证据不足",
+  "triage_summary_accepted": "已采纳",
+  "triage_summary_decided": "已决定",
+  "triage_summary_deferred": "已延后",
+  "triage_summary_kind_value": "{accepted}/{decided}",
+  "triage_summary_lost": "被他人抢先",
+  "triage_summary_pace": "典型卡片",
+  "triage_summary_pace_value": "{seconds}秒",
+  "triage_summary_rate": "{percent}%",
+  "triage_summary_title": "本次会话",
+  "triage_summary_undone": "已撤回",
+  "triage_undo": "撤销{verdict}",
+  "triage_undo_hint": "将卡片放回队列。该裁定已触发的操作不会被撤销。"
 }

@@ -41,6 +41,8 @@ import {
   decidePolicyProposalRow,
   decidePracticeRow,
   isDecisionConflict,
+  reopenIdeaRow,
+  reopenPracticeRow,
 } from '@/lib/decisions/rowWrites';
 import { toBacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
@@ -66,9 +68,25 @@ import {
   reviewToTriage,
   type TriageCopy,
 } from './triageAdapters';
-import { isDeferral, routeDecision, type TriagePorts } from './triageDispatch';
-import { projectQueue, withSkip, type SkipLedger } from './triageQueue';
+import {
+  isDeferral,
+  reversibleStatus,
+  routeDecision,
+  undoDecision,
+  type TriagePorts,
+  type UndoableDecision,
+} from './triageDispatch';
+import {
+  markUndone,
+  readJournal,
+  recordDecision,
+  summariseJournal,
+  type TriageJournalEntry,
+  type TriageSessionSummary,
+} from './triageJournal';
+import { projectQueue, withoutSkip, withSkip, type SkipLedger } from './triageQueue';
 import { adoptReach } from './triageReach';
+import { clearTriageSession, loadTriageSession, saveTriageSession } from './triageSession';
 import {
   TRIAGE_KINDS,
   type TriageCounts,
@@ -113,6 +131,17 @@ const MAX_SUCCESSORS = 5;
 const PROPOSAL_PAGE_SIZE = 50;
 
 /**
+ * How long the reviewer's LAST act stays takeable-back.
+ *
+ * Long enough to cover the real case — a mis-flicked card, noticed while reading
+ * the next one — and short enough that the offer is never stale. It is not a
+ * general "history": exactly one act is undoable, because a deck that lets you
+ * walk backwards through a session is a deck you can spend a session walking
+ * backwards through.
+ */
+const UNDO_WINDOW_MS = 30_000;
+
+/**
  * Candidate replacements for a practice being deprecated.
  *
  * Same workspace, same topic, not itself — the realistic shape of "we deprecate
@@ -143,6 +172,17 @@ export interface IdeaBacklog {
   /** Whether another page exists. Drives "you cleared the batch, not the queue". */
   hasMore: boolean;
 }
+
+/**
+ * The one act the reviewer can still take back.
+ *
+ * Two shapes because a deferral and a verdict fail differently: a skip wrote
+ * nothing, so undoing it is local and infallible; a verdict wrote a row, so
+ * undoing it is another compare-and-swap that can lose.
+ */
+export type TriageUndo =
+  | { type: 'skip'; itemId: string; label: string; at: number }
+  | { type: 'verdict'; record: UndoableDecision; label: string; at: number };
 
 export interface UnifiedTriageQueue {
   /** Undecided first, skipped last, both in weight order. */
@@ -177,6 +217,20 @@ export interface UnifiedTriageQueue {
   backlog: IdeaBacklog;
   /** Pull the next page of ideas into the working set. No-op when there is none. */
   loadMore: () => void;
+  /**
+   * What this sitting has actually done — throughput, accept rate per kind,
+   * typical time per card. Read from the decision journal, scoped to the
+   * session, so it survives closing the deck exactly as the session does.
+   */
+  summary: TriageSessionSummary;
+  /**
+   * The last act, while it is still takeable-back. Null when there is nothing
+   * to undo, when the window has passed, or when the row type has no reverse
+   * door — see `triageDispatch#reversibleStatus`.
+   */
+  undo: TriageUndo | null;
+  /** Take the last act back. No-op when {@link undo} is null. */
+  undoLast: () => Promise<void>;
   decide: (decision: TriageDecision) => Promise<void>;
   /**
    * Follow one of an item's {@link TriageItem.links}. NOT a decision: nothing is
@@ -219,9 +273,46 @@ export function useUnifiedTriage(
   const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
   const [backlog, setBacklog] = useState<IdeaBacklog>({ loaded: 0, pending: 0, hasMore: false });
   const cursorRef = useRef<string | null>(null);
-  const [resolved, setResolved] = useState<Set<string>>(() => new Set());
-  const [skips, setSkips] = useState<SkipLedger>(() => new Map<string, number>());
-  const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(() => new Set(TRIAGE_KINDS));
+
+  /**
+   * The session as it stood when the deck last closed.
+   *
+   * Read ONCE, synchronously, in the initialisers below — `QuickAnswerPopover`
+   * unmounts whenever the header overlay changes, so every reopen is a fresh
+   * mount and an effect-based rehydrate would paint the forgotten queue first.
+   */
+  const [restored] = useState(loadTriageSession);
+
+  const [sessionStart, setSessionStart] = useState(() => restored.startedAt);
+  const [resolved, setResolved] = useState<Set<string>>(() => restored.resolved);
+  const [skips, setSkips] = useState<SkipLedger>(() => restored.skips);
+  const [activeKinds, setActiveKinds] = useState<Set<TriageKind>>(
+    () => restored.kinds ?? new Set(TRIAGE_KINDS),
+  );
+  /**
+   * The journal, held as state so the summary recomputes when it is written.
+   *
+   * The entries themselves rather than a version counter: `readJournal()`
+   * returns a NEW array on every write, so the array IS the version, and a
+   * counter would be a second thing to keep in step with the first.
+   */
+  const [journalEntries, setJournalEntries] = useState<TriageJournalEntry[]>(readJournal);
+  const [undo, setUndo] = useState<TriageUndo | null>(null);
+  const undoTimerRef = useRef<number | null>(null);
+
+  // Three independent writes rather than one: the hooks that own these pieces
+  // change them at completely different rates (a filter chip is rare, a skip is
+  // per-card), and `saveTriageSession` merges, so none of them can clobber the
+  // drafts `useDeckControls` persists into the same record.
+  useEffect(() => {
+    saveTriageSession({ skips });
+  }, [skips]);
+  useEffect(() => {
+    saveTriageSession({ kinds: activeKinds });
+  }, [activeKinds]);
+  useEffect(() => {
+    saveTriageSession({ resolved });
+  }, [resolved]);
 
   /**
    * The two proposal ledgers, and the generation counter that re-reads them.
@@ -401,6 +492,74 @@ export function useUnifiedTriage(
     [all, resolved, skips, activeKinds],
   );
 
+  /**
+   * When the card currently on top BECAME the card on top.
+   *
+   * Time-per-decision is the one number that tells a slow queue apart from a
+   * slow reviewer, and it is measured here rather than in the deck because the
+   * queue is what decides which card is presented — the deck just renders
+   * `items[0]`. A card that has been re-presented after a skip starts its clock
+   * again, which is right: it is being read again.
+   */
+  const topId = projection.items[0]?.id ?? null;
+  const topSinceRef = useRef<{ id: string | null; at: number }>({ id: null, at: Date.now() });
+  if (topSinceRef.current.id !== topId) topSinceRef.current = { id: topId, at: Date.now() };
+
+  const dwellFor = useCallback((item: TriageItem): number | undefined => {
+    const { id, at } = topSinceRef.current;
+    return id === item.id ? Date.now() - at : undefined;
+  }, []);
+
+  /** Journal a decision and let the summary know it has something new to say. */
+  const journal = useCallback(
+    (decision: TriageDecision, conflicted?: boolean) => {
+      recordDecision({
+        item: decision.item,
+        verdict: decision.verdict,
+        branchId: decision.branchId,
+        reason: decision.reason,
+        dwellMs: dwellFor(decision.item),
+        conflicted,
+      });
+      setJournalEntries(readJournal());
+    },
+    [dwellFor],
+  );
+
+  /**
+   * Offer this act back for a bounded window.
+   *
+   * The timer is what makes the offer honest: an undo button that sits there
+   * forever invites a reviewer to take back a verdict from twenty cards ago,
+   * whose side effects (a decision memory, an adoption fan-out, a queued task)
+   * have long since been acted on by something else.
+   */
+  const arm = useCallback((next: TriageUndo | null) => {
+    if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = null;
+    setUndo(next);
+    if (!next) return;
+    undoTimerRef.current = window.setTimeout(() => {
+      undoTimerRef.current = null;
+      setUndo((current) => (current === next ? null : current));
+    }, UNDO_WINDOW_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+    },
+    [],
+  );
+
+  /** What the act was CALLED, in the item's own words — the undo button's label. */
+  const actLabel = useCallback((decision: TriageDecision): string => {
+    const branch = decision.branchId
+      ? decision.item.branches.find((b) => b.id === decision.branchId)
+      : undefined;
+    return branch?.label ?? decision.item.verdictLabels[decision.verdict];
+  }, []);
+
   const toggleKind = useCallback((kind: TriageKind) => {
     setActiveKinds((prev) => {
       const next = new Set(prev);
@@ -415,6 +574,13 @@ export function useUnifiedTriage(
   const reload = useCallback(() => {
     setResolved(new Set());
     setSkips(new Map());
+    // "Show me the world again" ENDS the session: a reviewer who asks for a
+    // clean slate must not get last hour's deferrals back with it. The journal
+    // survives (it is the record of what happened, not working state) but the
+    // summary's window moves, so the next readout is about the new sitting.
+    clearTriageSession();
+    setSessionStart(Date.now());
+    setUndo(null);
     setIdeaFetch((f) => ({ gen: f.gen + 1 }));
     setProposalGen((g) => g + 1);
     center.refreshKnowledge();
@@ -485,6 +651,8 @@ export function useUnifiedTriage(
           seenStatus,
         }),
       refreshProposals,
+      reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
+      reopenPractice: (id, seenStatus) => reopenPracticeRow(id, { seenStatus }),
       openBuilder: onOpenBuilder,
     }),
     [
@@ -498,6 +666,18 @@ export function useUnifiedTriage(
   );
 
   /**
+   * The toast every lost swap raises, from wherever it was lost.
+   *
+   * Shared between `decide` and `undoLast` deliberately: an undo that loses is
+   * not a special failure with special copy — it is the same event, and telling
+   * the reviewer so in different words would make them think it was.
+   */
+  const sayConflict = useCallback(() => {
+    const t = getActiveTranslations();
+    useToastStore.getState().addToast(t.error_registry.decision_conflict_message, 'warning', 4000);
+  }, []);
+
+  /**
    * Route one verdict to the right backend. Writes resolve optimistically —
    * the row leaves the queue as soon as the write is issued — because a triage
    * surface that pauses after each decision is a triage surface nobody
@@ -508,9 +688,14 @@ export function useUnifiedTriage(
     async (decision: TriageDecision) => {
       const { item } = decision;
 
-      // A deferral writes nothing, so it must not resolve anything either.
+      // A deferral writes nothing, so it must not resolve anything either. It
+      // IS journalled: "I looked at this and could not judge it" is the most
+      // informative thing a reviewer does, and a session readout that counts
+      // only verdicts describes a session that did not happen.
       if (isDeferral(decision)) {
         setSkips((prev) => withSkip(prev, item.id));
+        journal(decision);
+        arm({ type: 'skip', itemId: item.id, label: item.verdictLabels.skip, at: Date.now() });
         return;
       }
 
@@ -519,6 +704,21 @@ export function useUnifiedTriage(
 
       try {
         await routeDecision(decision, ports);
+        journal(decision);
+        // Only rows with a reverse door are offered back. Anything else clears
+        // the slot rather than leaving the previous card's offer standing over
+        // a decision that has since been made — see `reversibleStatus`.
+        const producedStatus = reversibleStatus(decision);
+        arm(
+          producedStatus
+            ? {
+                type: 'verdict',
+                record: { decision, producedStatus, at: Date.now() },
+                label: actLabel(decision),
+                at: Date.now(),
+              }
+            : null,
+        );
       } catch (error) {
         // A LOST COMPARE-AND-SWAP is not a failed write — the row IS decided,
         // just not by this reviewer (Athena's Night Shift resolves approvals
@@ -527,10 +727,12 @@ export function useUnifiedTriage(
         // Say what happened, keep it resolved, and re-read so the rest of the
         // queue reflects whoever won.
         if (isDecisionConflict(error)) {
-          const t = getActiveTranslations();
-          useToastStore
-            .getState()
-            .addToast(t.error_registry.decision_conflict_message, 'warning', 4000);
+          // Journalled as spent-and-lost: it is throughput the reviewer paid
+          // for and did not get, and a session full of these means something
+          // else is working the same queue.
+          journal(decision, true);
+          arm(null);
+          sayConflict();
           refreshSources();
           return;
         }
@@ -540,10 +742,68 @@ export function useUnifiedTriage(
           next.delete(item.id);
           return next;
         });
+        arm(null);
         toastCatch('Could not record that decision')(error);
       }
     },
-    [ports, refreshSources],
+    [ports, refreshSources, journal, arm, actLabel, sayConflict],
+  );
+
+  /**
+   * Take the last act back.
+   *
+   * The verdict branch is the interesting one: it is a WRITE, against the status
+   * the reviewer's own verdict produced, and it loses the swap in exactly the
+   * same way and with exactly the same message as any other verdict that arrives
+   * second. That is not a limitation worked around — it is the point. An undo
+   * that could overwrite whoever decided the row in the meantime would be a
+   * worse bug than the mis-flick it exists to fix.
+   *
+   * On a lost undo the card stays resolved: the row IS decided, just not by this
+   * reviewer, and the sources are re-read so the queue reflects the winner.
+   */
+  const undoLast = useCallback(async () => {
+    const slot = undo;
+    if (!slot) return;
+
+    if (slot.type === 'skip') {
+      // A deferral wrote nothing, so taking it back cannot fail and cannot lose.
+      setSkips((prev) => withoutSkip(prev, slot.itemId));
+      markUndone(slot.itemId);
+      setJournalEntries(readJournal());
+      arm(null);
+      return;
+    }
+
+    const itemId = slot.record.decision.item.id;
+    try {
+      await undoDecision(slot.record, ports);
+      setResolved((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
+      markUndone(itemId);
+      setJournalEntries(readJournal());
+      arm(null);
+      // The row's true status is whatever the reopen wrote; re-read rather than
+      // reconstruct it, so the card comes back with the facts it now has.
+      refreshSources();
+    } catch (error) {
+      arm(null);
+      if (isDecisionConflict(error)) {
+        sayConflict();
+        refreshSources();
+        return;
+      }
+      toastCatch('Could not undo that decision')(error);
+    }
+  }, [undo, ports, arm, refreshSources, sayConflict]);
+
+  /** What this sitting has done. Recomputed whenever the journal is written. */
+  const summary = useMemo(
+    () => summariseJournal(journalEntries, sessionStart),
+    [journalEntries, sessionStart],
   );
 
   /**
@@ -578,6 +838,9 @@ export function useUnifiedTriage(
       skips,
       backlog,
       loadMore,
+      summary,
+      undo,
+      undoLast,
       decide,
       openLink,
       reload,
@@ -593,6 +856,9 @@ export function useUnifiedTriage(
       resolved.size,
       skips,
       backlog,
+      summary,
+      undo,
+      undoLast,
       loadMore,
       decide,
       openLink,

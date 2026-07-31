@@ -158,15 +158,21 @@ describe('proposal doors — an expectation the backend does not take a paramete
     // `WHERE status = 'pending'`. The door still fails fast on a visibly stale
     // card, and does it with wording `isDecisionConflict` recognises, so a
     // locally-detected conflict is indistinguishable from a backend one.
-    const policyError = await decidePolicyProposalRow('pol-1', 'apply', {
-      seenStatus: 'applied',
-    }).catch((e: unknown) => e);
+    let policyError: unknown;
+    try {
+      await decidePolicyProposalRow('pol-1', 'apply', { seenStatus: 'applied' });
+    } catch (error) {
+      policyError = error;
+    }
     expect(isDecisionConflict(policyError)).toBe(true);
     expect(mockPolicyApply).not.toHaveBeenCalled();
 
-    const promotionError = await decideEvolutionProposalRow('prop-1', 'approve', {
-      seenStatus: 'approved',
-    }).catch((e: unknown) => e);
+    let promotionError: unknown;
+    try {
+      await decideEvolutionProposalRow('prop-1', 'approve', { seenStatus: 'approved' });
+    } catch (error) {
+      promotionError = error;
+    }
     expect(isDecisionConflict(promotionError)).toBe(true);
     expect(mockResolvePromotion).not.toHaveBeenCalled();
   });

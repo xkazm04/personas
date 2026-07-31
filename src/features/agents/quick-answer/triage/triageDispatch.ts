@@ -86,6 +86,15 @@ export interface TriagePorts {
   ) => Promise<unknown>;
   /** Fired after a proposal verdict so the two proposal queues re-read. */
   refreshProposals: () => void;
+  /**
+   * Put a decided row BACK — the undo half of the two kinds that have a reverse
+   * door. `seenStatus` is the status the verdict produced, so the reopen is a
+   * compare-and-swap exactly like the verdict was. See
+   * `lib/decisions/rowWrites#ReopenOptions` for which rows reopen and what a
+   * reopen does NOT retract.
+   */
+  reopenIdea: (id: string, seenStatus: string) => Promise<unknown>;
+  reopenPractice: (id: string, seenStatus: string) => Promise<unknown>;
   /** Deep-link to the persona builder. Absent when the host has no route. */
   openBuilder?: (personaId: string) => void;
 }
@@ -228,5 +237,79 @@ export async function routeDecision(
       ports.refreshProposals();
       return;
     }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Undo                                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A verdict that has landed and could still be taken back.
+ *
+ * `producedStatus` is the whole point. An undo is not a special operation with
+ * special rules — it is another write against an expectation, and the
+ * expectation is what the reviewer's own verdict just put on the row. If someone
+ * else has decided it since, the reopen loses the swap and says so with the same
+ * message any other lost verdict uses, because it IS the same failure.
+ */
+export interface UndoableDecision {
+  decision: TriageDecision;
+  /** The status the write left on the row. */
+  producedStatus: string;
+  /** Epoch ms the verdict landed — what the undo window is measured from. */
+  at: number;
+}
+
+/**
+ * The status a verdict leaves on the row, or `null` when the row type has no
+ * reverse door and must therefore not be offered an undo.
+ *
+ * Deriving it rather than reading it back from the write's return value is
+ * deliberate: the deck resolves optimistically, so the row object it holds is
+ * the one it rendered, and the honest expectation for the reverse is "the status
+ * MY verdict was supposed to produce" — which is exactly what loses the swap if
+ * the verdict never landed the way this surface thinks it did.
+ */
+export function reversibleStatus(decision: TriageDecision): string | null {
+  const { item, verdict, branchId } = decision;
+  switch (item.kind) {
+    case 'idea':
+      // `build` accepts and queues a task; the accept is what would be undone.
+      return branchId === 'build' || verdict === 'accept' ? 'accepted' : 'rejected';
+    case 'practice':
+      return branchId === 'deprecate' ? 'deprecated' : verdict === 'accept' ? 'adopted' : 'rejected';
+    // Reviews (the backend state machine has no path back to `pending`), build
+    // questions (the CLI already resumed), policy proposals (the rule is
+    // written, and there is deliberately no second policy writer) and promotions
+    // (the genome is on a live persona). See `rowWrites#ReopenOptions`.
+    default:
+      return null;
+  }
+}
+
+/**
+ * Reverse a landed verdict. Callers MUST have obtained `record` from a decision
+ * whose {@link reversibleStatus} was non-null.
+ *
+ * Throws on anything else, for the same reason `routeDecision` does: a silent
+ * no-op here would tell a reviewer their approve was taken back when the row is
+ * still approved.
+ */
+export async function undoDecision(
+  record: UndoableDecision,
+  ports: TriagePorts,
+): Promise<void> {
+  const { item } = record.decision;
+  switch (item.kind) {
+    case 'idea':
+      await ports.reopenIdea(item.sourceId, record.producedStatus);
+      return;
+    case 'practice':
+      await ports.reopenPractice(item.sourceId, record.producedStatus);
+      ports.refreshKnowledge();
+      return;
+    default:
+      throw new Error(`A ${item.kind} decision cannot be undone`);
   }
 }

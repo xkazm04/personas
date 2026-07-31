@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "Промпт читается хуже",
     "triage_reason_quality_risk": "Риск качества",
     "triage_reason_saving_too_small": "Экономия слишком мала",
-    "triage_reason_thin_evidence": "Недостаточно данных"
+    "triage_reason_thin_evidence": "Недостаточно данных",
+    "triage_summary_accepted": "Принято",
+    "triage_summary_decided": "Решено",
+    "triage_summary_deferred": "Отложено",
+    "triage_summary_kind_value": "{accepted} из {decided}",
+    "triage_summary_lost": "Досталось другому",
+    "triage_summary_pace": "Типичная карточка",
+    "triage_summary_pace_value": "{seconds} с",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "Эта сессия",
+    "triage_summary_undone": "Отменено",
+    "triage_undo": "Отменить {verdict}",
+    "triage_undo_hint": "Возвращает карточку в очередь. Действия, уже запущенные вердиктом, не отменяются."
   },
   "common": {
     "loading": "Загрузка...",

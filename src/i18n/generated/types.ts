@@ -99,6 +99,18 @@ export type Translations = {
     triage_reason_quality_risk: string;
     triage_reason_saving_too_small: string;
     triage_reason_thin_evidence: string;
+    triage_summary_accepted: string;
+    triage_summary_decided: string;
+    triage_summary_deferred: string;
+    triage_summary_kind_value: string;
+    triage_summary_lost: string;
+    triage_summary_pace: string;
+    triage_summary_pace_value: string;
+    triage_summary_rate: string;
+    triage_summary_title: string;
+    triage_summary_undone: string;
+    triage_undo: string;
+    triage_undo_hint: string;
     view_capabilities: string;
     clear_filter: string;
     project_filter: string;

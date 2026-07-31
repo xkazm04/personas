@@ -435,5 +435,17 @@
   "triage_reason_prompt_worse": "Prompt liest sich schlechter",
   "triage_reason_quality_risk": "Qualitätsrisiko",
   "triage_reason_saving_too_small": "Ersparnis zu gering",
-  "triage_reason_thin_evidence": "Nicht genug Belege"
+  "triage_reason_thin_evidence": "Nicht genug Belege",
+  "triage_summary_accepted": "Angenommen",
+  "triage_summary_decided": "Entschieden",
+  "triage_summary_deferred": "Zurückgestellt",
+  "triage_summary_kind_value": "{accepted} von {decided}",
+  "triage_summary_lost": "An andere verloren",
+  "triage_summary_pace": "Typische Karte",
+  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_rate": "{percent}%",
+  "triage_summary_title": "Diese Sitzung",
+  "triage_summary_undone": "Zurückgenommen",
+  "triage_undo": "{verdict} rückgängig machen",
+  "triage_undo_hint": "Legt die Karte zurück in die Warteschlange. Was durch die Entscheidung bereits in Gang gesetzt wurde, wird dadurch nicht zurückgenommen."
 }

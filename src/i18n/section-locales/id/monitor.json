@@ -435,5 +435,17 @@
   "triage_reason_prompt_worse": "Prompt terbaca lebih buruk",
   "triage_reason_quality_risk": "Risiko kualitas",
   "triage_reason_saving_too_small": "Penghematan terlalu kecil",
-  "triage_reason_thin_evidence": "Bukti tidak cukup"
+  "triage_reason_thin_evidence": "Bukti tidak cukup",
+  "triage_summary_accepted": "Diterima",
+  "triage_summary_decided": "Diputuskan",
+  "triage_summary_deferred": "Ditunda",
+  "triage_summary_kind_value": "{accepted} dari {decided}",
+  "triage_summary_lost": "Direbut orang lain",
+  "triage_summary_pace": "Kartu tipikal",
+  "triage_summary_pace_value": "{seconds}dtk",
+  "triage_summary_rate": "{percent}%",
+  "triage_summary_title": "Sesi ini",
+  "triage_summary_undone": "Dibatalkan",
+  "triage_undo": "Batalkan {verdict}",
+  "triage_undo_hint": "Mengembalikan kartu ke antrean. Apa pun yang sudah dipicu oleh keputusan ini tidak akan dibatalkan."
 }

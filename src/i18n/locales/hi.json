@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "प्रॉम्प्ट पढ़ने में खराब लगता है",
     "triage_reason_quality_risk": "गुणवत्ता जोखिम",
     "triage_reason_saving_too_small": "बचत बहुत कम",
-    "triage_reason_thin_evidence": "पर्याप्त प्रमाण नहीं"
+    "triage_reason_thin_evidence": "पर्याप्त प्रमाण नहीं",
+    "triage_summary_accepted": "स्वीकृत",
+    "triage_summary_decided": "तय किए गए",
+    "triage_summary_deferred": "स्थगित",
+    "triage_summary_kind_value": "{decided} में से {accepted}",
+    "triage_summary_lost": "दूसरे को मिला",
+    "triage_summary_pace": "औसत कार्ड",
+    "triage_summary_pace_value": "{seconds} सेकंड",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "यह सत्र",
+    "triage_summary_undone": "वापस लिया गया",
+    "triage_undo": "{verdict} पूर्ववत करें",
+    "triage_undo_hint": "कार्ड को फिर से कतार में डाल देता है। फैसले से पहले से शुरू हो चुकी कोई भी कार्रवाई वापस नहीं ली जाती।"
   },
   "common": {
     "loading": "लोड हो रहा है...",

@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "প্রম্পট পড়তে খারাপ লাগে",
     "triage_reason_quality_risk": "মান ঝুঁকি",
     "triage_reason_saving_too_small": "সাশ্রয় খুবই কম",
-    "triage_reason_thin_evidence": "পর্যাপ্ত প্রমাণ নেই"
+    "triage_reason_thin_evidence": "পর্যাপ্ত প্রমাণ নেই",
+    "triage_summary_accepted": "গৃহীত",
+    "triage_summary_decided": "সিদ্ধান্ত হয়েছে",
+    "triage_summary_deferred": "স্থগিত",
+    "triage_summary_kind_value": "{decided}-এর মধ্যে {accepted}",
+    "triage_summary_lost": "অন্য কেউ আগে সিদ্ধান্ত নিয়েছে",
+    "triage_summary_pace": "সাধারণ কার্ড",
+    "triage_summary_pace_value": "{seconds}সে",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "এই সেশন",
+    "triage_summary_undone": "ফিরিয়ে নেওয়া",
+    "triage_undo": "{verdict} বাতিল করুন",
+    "triage_undo_hint": "কার্ডটি আবার সারিতে ফিরিয়ে দেয়। সিদ্ধান্তের ফলে ইতিমধ্যে শুরু হওয়া কোনো কাজ প্রত্যাহার করা হয় না।"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

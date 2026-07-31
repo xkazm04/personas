@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "El prompt se lee peor",
     "triage_reason_quality_risk": "Riesgo de calidad",
     "triage_reason_saving_too_small": "Ahorro demasiado pequeño",
-    "triage_reason_thin_evidence": "Evidencia insuficiente"
+    "triage_reason_thin_evidence": "Evidencia insuficiente",
+    "triage_summary_accepted": "Aceptados",
+    "triage_summary_decided": "Decididos",
+    "triage_summary_deferred": "Aplazados",
+    "triage_summary_kind_value": "{accepted} de {decided}",
+    "triage_summary_lost": "Perdidos ante otro",
+    "triage_summary_pace": "Tarjeta típica",
+    "triage_summary_pace_value": "{seconds}s",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "Esta sesión",
+    "triage_summary_undone": "Revertidos",
+    "triage_undo": "Deshacer {verdict}",
+    "triage_undo_hint": "Devuelve la tarjeta a la cola. Lo que el veredicto ya puso en marcha no se revierte."
   },
   "common": {
     "loading": "Cargando...",

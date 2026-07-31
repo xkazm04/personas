@@ -34,6 +34,7 @@ import {
   type TriageReasonPrompt,
   type TriageVerdict,
 } from '../triageTypes';
+import { loadTriageSession, saveTriageSession } from '../triageSession';
 import type { UnifiedTriageQueue } from '../useUnifiedTriage';
 import type { FlingDirection, TriageCardHandle } from './TriageCard';
 import { useDeckDialog } from './useDeckDialog';
@@ -63,6 +64,17 @@ interface ReasonCapture {
  * is a stuck-detector, not a second animation clock.
  */
 const FLIGHT_TIMEOUT_MS = 1200;
+
+/**
+ * How long typing pauses before the drafts are written to the session store.
+ *
+ * A synchronous `localStorage.setItem` per keystroke is small but it is on the
+ * keystroke path, and an answer box is the one place in this surface where
+ * someone types continuously. The flush on unmount is what makes the debounce
+ * safe: closing the deck mid-sentence is exactly the case this persistence
+ * exists for.
+ */
+const DRAFT_SAVE_DEBOUNCE_MS = 400;
 
 /**
  * Where the deck sits on the app's keyboard ladder (see `AppKeyboardProvider`).
@@ -96,8 +108,33 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
    * one raised by the CLI — changed the card's identity and took the
    * half-written answer with it. Session ids outlive that churn; card ids
    * deliberately do not (see `questionGroupToTriage`).
+   *
+   * Rehydrated from (and written back to) the session store, because the churn
+   * that used to eat an answer is not only a poll: `QuickAnswerPopover` unmounts
+   * whenever the header overlay changes, so closing the deck to go and check
+   * something threw the half-typed answer away outright. Same key, same rules —
+   * only the lifetime got longer.
    */
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => loadTriageSession().drafts);
+  const draftSaveRef = useRef<number | null>(null);
+
+  // Debounced, and flushed on unmount. `saveTriageSession` merges, so this half
+  // of the record can never clobber the skip ledger `useUnifiedTriage` owns.
+  useEffect(() => {
+    if (draftSaveRef.current !== null) window.clearTimeout(draftSaveRef.current);
+    draftSaveRef.current = window.setTimeout(() => {
+      draftSaveRef.current = null;
+      saveTriageSession({ drafts });
+    }, DRAFT_SAVE_DEBOUNCE_MS);
+    return () => {
+      if (draftSaveRef.current === null) return;
+      window.clearTimeout(draftSaveRef.current);
+      draftSaveRef.current = null;
+      // The unmount case IS the case: this runs when the deck closes, which is
+      // when a debounced write would otherwise be lost.
+      saveTriageSession({ drafts });
+    };
+  }, [drafts]);
 
   /** The decision currently waiting on "why?", and its half-typed reason. */
   const [capture, setCapture] = useState<ReasonCapture | null>(null);
@@ -357,11 +394,23 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     queue.openLink(item, link.id);
   }, [queue]);
 
+  /**
+   * Take the last act back. Not a verdict and never a throw: the card it
+   * concerns has already left, and what comes back arrives through the queue's
+   * own re-read.
+   */
+  const undoLast = useCallback(() => {
+    if (pendingRef.current || captureRef.current) return;
+    if (!queue.undo) return;
+    void queue.undoLast();
+  }, [queue]);
+
   const live = useRef({
     decideTop,
     fireBranch,
     followLink,
     resolveReason,
+    undoLast,
     onClose,
     scrollBody,
     cycleTab,
@@ -371,6 +420,7 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     fireBranch,
     followLink,
     resolveReason,
+    undoLast,
     onClose,
     scrollBody,
     cycleTab,
@@ -487,6 +537,16 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     if (e.key === 'o' || e.key === 'O') {
       e.preventDefault();
       live.current.followLink();
+      return true;
+    }
+    // `U` and not `mod+Z`: the deck owns the keyboard EXCLUSIVELY, so a
+    // modifier chord here would swallow the browser/app undo everywhere else on
+    // the surface — including inside the reason strip's free-text box, where
+    // mod+Z means what it always means. A bare letter joins the same grammar as
+    // `S` and `O`, and is only live when there is something to take back.
+    if (e.key === 'u' || e.key === 'U') {
+      e.preventDefault();
+      live.current.undoLast();
       return true;
     }
     if (/^[1-9]$/.test(e.key)) {

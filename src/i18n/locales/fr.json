@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "Le prompt est moins bon",
     "triage_reason_quality_risk": "Risque qualité",
     "triage_reason_saving_too_small": "Économie trop faible",
-    "triage_reason_thin_evidence": "Preuves insuffisantes"
+    "triage_reason_thin_evidence": "Preuves insuffisantes",
+    "triage_summary_accepted": "Acceptées",
+    "triage_summary_decided": "Décidées",
+    "triage_summary_deferred": "Reportées",
+    "triage_summary_kind_value": "{accepted} sur {decided}",
+    "triage_summary_lost": "Devancées par un autre",
+    "triage_summary_pace": "Carte type",
+    "triage_summary_pace_value": "{seconds}s",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "Cette session",
+    "triage_summary_undone": "Annulées",
+    "triage_undo": "Annuler {verdict}",
+    "triage_undo_hint": "Remet la carte dans la file d'attente. Ce que le verdict avait déjà déclenché n'est pas annulé."
   },
   "common": {
     "loading": "Chargement...",

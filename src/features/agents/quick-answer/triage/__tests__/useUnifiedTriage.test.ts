@@ -29,6 +29,8 @@ const mockCreateTask = vi.fn();
 const mockAcceptIdea = vi.fn();
 const mockRejectIdea = vi.fn();
 const mockDecidePractice = vi.fn();
+const mockReopenIdea = vi.fn();
+const mockReopenPractice = vi.fn();
 const mockDecidePolicy = vi.fn();
 const mockDecideEvolution = vi.fn();
 const mockPolicyList = vi.fn();
@@ -76,6 +78,8 @@ vi.mock('@/lib/decisions/rowWrites', async (importOriginal) => {
     decidePracticeRow: (...args: unknown[]) => mockDecidePractice(...args),
     decidePolicyProposalRow: (...args: unknown[]) => mockDecidePolicy(...args),
     decideEvolutionProposalRow: (...args: unknown[]) => mockDecideEvolution(...args),
+    reopenIdeaRow: (...args: unknown[]) => mockReopenIdea(...args),
+    reopenPracticeRow: (...args: unknown[]) => mockReopenPractice(...args),
   };
 });
 
@@ -130,6 +134,8 @@ vi.mock('@/i18n/useTranslation', () => ({
   }),
 }));
 
+import { clearJournal, resetJournalCache } from '../triageJournal';
+import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { useUnifiedTriage } from '../useUnifiedTriage';
 
 // --- fixtures --------------------------------------------------------------
@@ -239,12 +245,21 @@ const itemOfKind = (
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The session and the journal are now DURABLE — that is the feature — so
+  // every test starts from a deck that has never been opened. A test that
+  // wants continuity across a remount asks for it explicitly.
+  clearTriageSession();
+  clearJournal();
+  resetTriageSessionCache();
+  resetJournalCache();
   workspaceCenter.workspaces = [];
   workspaceCenter.knowledge = {};
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
   mockDecidePractice.mockResolvedValue(undefined);
+  mockReopenIdea.mockResolvedValue(undefined);
+  mockReopenPractice.mockResolvedValue(undefined);
   mockDecidePolicy.mockResolvedValue(undefined);
   mockDecideEvolution.mockResolvedValue(undefined);
   // Both proposal ledgers are empty unless a test fills them: they are opt-in
@@ -500,5 +515,219 @@ describe('useUnifiedTriage — deferrals write nothing and keep the card', () =>
     // Still never written, and never counted as decided.
     expect(result.current.decidedCount).toBe(0);
     expect(mockAcceptIdea).not.toHaveBeenCalled();
+  });
+});
+
+describe('useUnifiedTriage — the session survives closing the deck', () => {
+  // `QuickAnswerPopover` unmounts whenever the header overlay changes, so a
+  // remount is not an edge case: it is what closing the deck IS.
+  it('brings deferrals and the kind filter back on the next open', async () => {
+    mockTriageIdeas.mockResolvedValue(page([idea(), idea({ id: 'idea-2' })]));
+    const first = await mount();
+
+    await act(async () => {
+      await first.result.current.decide({
+        item: itemOfKind(first.result, 'idea'),
+        verdict: 'skip',
+      });
+    });
+    act(() => first.result.current.toggleKind('practice'));
+    const skippedId = [...first.result.current.skips.keys()][0]!;
+    const kinds = [...first.result.current.activeKinds].sort();
+    first.unmount();
+
+    const second = await mount();
+    expect(second.result.current.skips.get(skippedId)).toBe(1);
+    expect([...second.result.current.activeKinds].sort()).toEqual(kinds);
+    // And the skip-pass bound came back WITH it: the SECOND skip of that card
+    // stands it down for the session, rather than the wedge guard restarting
+    // from zero every time the deck is reopened.
+    const again = second.result.current.items.find((i) => i.id === skippedId)!;
+    // It sorts last, behind everything still undecided — skip does not hide.
+    expect(second.result.current.items.at(-1)?.id).toBe(skippedId);
+    await act(async () => {
+      await second.result.current.decide({ item: again, verdict: 'skip' });
+    });
+    expect(second.result.current.items.some((i) => i.id === skippedId)).toBe(false);
+    expect(second.result.current.deferredCount).toBe(1);
+  });
+
+  it('keeps what the session already decided out of the queue and in the count', async () => {
+    mockTriageIdeas.mockResolvedValue(page([idea(), idea({ id: 'idea-2' })]));
+    const first = await mount();
+    await act(async () => {
+      await first.result.current.decide({
+        item: itemOfKind(first.result, 'idea'),
+        verdict: 'accept',
+      });
+    });
+    first.unmount();
+
+    const second = await mount();
+    // The backend would normally stop returning it, but a poll landing before
+    // the write commits must not re-offer a card this reviewer just decided.
+    expect(second.result.current.items).toHaveLength(1);
+    expect(second.result.current.decidedCount).toBe(1);
+  });
+
+  it('reload() ENDS the session — deferrals do not come back with it', async () => {
+    const first = await mount();
+    await act(async () => {
+      await first.result.current.decide({
+        item: itemOfKind(first.result, 'idea'),
+        verdict: 'skip',
+      });
+    });
+    act(() => first.result.current.reload());
+    first.unmount();
+
+    const second = await mount();
+    expect(second.result.current.skips.size).toBe(0);
+    expect(second.result.current.summary.decided).toBe(0);
+  });
+
+  it('records the session summary, and carries it across the close', async () => {
+    mockTriageIdeas.mockResolvedValue(page([idea(), idea({ id: 'idea-2' })]));
+    const first = await mount();
+    await act(async () => {
+      await first.result.current.decide({
+        item: itemOfKind(first.result, 'idea'),
+        verdict: 'accept',
+      });
+    });
+    expect(first.result.current.summary.decided).toBe(1);
+    expect(first.result.current.summary.accepted).toBe(1);
+    expect(first.result.current.summary.byKind).toEqual([
+      { kind: 'idea', decided: 1, accepted: 1 },
+    ]);
+    first.unmount();
+
+    const second = await mount();
+    expect(second.result.current.summary.decided).toBe(1);
+  });
+});
+
+describe('useUnifiedTriage — undo', () => {
+  it('offers the last verdict back, and reopens against the status it produced', async () => {
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+    expect(result.current.undo?.type).toBe('verdict');
+    expect(result.current.decidedCount).toBe(1);
+
+    await act(async () => {
+      await result.current.undoLast();
+    });
+
+    // An undo is a WRITE against an expectation — the status this reviewer's
+    // own verdict was supposed to leave on the row.
+    expect(mockReopenIdea).toHaveBeenCalledWith('idea-1', { seenStatus: 'accepted' });
+    expect(result.current.decidedCount).toBe(0);
+    expect(result.current.undo).toBeNull();
+    // Amended, not erased: "decided then undone" is not "never decided".
+    expect(result.current.summary.undone).toBe(1);
+    expect(result.current.summary.decided).toBe(0);
+  });
+
+  it('LOSES the swap gracefully, with the same message as any other lost verdict', async () => {
+    // Someone else decided the row between the verdict and the undo. Putting
+    // the card back would re-offer a decision that can never land.
+    mockReopenIdea.mockRejectedValueOnce(
+      new Error("Backlog idea idea-1 was already decided as 'rejected' by a concurrent action"),
+    );
+    const { result } = await mount();
+    const card = itemOfKind(result, 'idea');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'accept' });
+    });
+    expect(mockTriageIdeas).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.undoLast();
+    });
+
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.decidedCount).toBe(1);
+    expect(mockAddToast).toHaveBeenCalledWith(
+      'Someone else already decided this — reloading.',
+      'warning',
+      expect.any(Number),
+    );
+    // The generic "could not" toast must NOT also fire — a lost swap is not a
+    // failure to write.
+    expect(mockToastCatch).not.toHaveBeenCalled();
+    // And the offer is spent either way.
+    expect(result.current.undo).toBeNull();
+    await waitFor(() => expect(mockTriageIdeas).toHaveBeenCalledTimes(2));
+  });
+
+  it('leaves the row decided and says so when the undo simply fails', async () => {
+    mockReopenIdea.mockRejectedValueOnce(new Error('database is locked'));
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept' });
+    });
+    await act(async () => {
+      await result.current.undoLast();
+    });
+
+    expect(result.current.decidedCount).toBe(1);
+    expect(mockToastCatch).toHaveBeenCalledTimes(1);
+    expect(mockAddToast).not.toHaveBeenCalled();
+  });
+
+  it('takes a SKIP back locally — no write, and available on every kind', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+    const card = itemOfKind(result, 'evolution');
+
+    await act(async () => {
+      await result.current.decide({ item: card, verdict: 'skip' });
+    });
+    expect(result.current.skips.get(card.id)).toBe(1);
+    expect(result.current.undo?.type).toBe('skip');
+
+    await act(async () => {
+      await result.current.undoLast();
+    });
+    expect(result.current.skips.get(card.id)).toBeUndefined();
+    expect(mockReopenIdea).not.toHaveBeenCalled();
+    expect(mockDecideEvolution).not.toHaveBeenCalled();
+  });
+
+  it('offers NOTHING back for a verdict whose act is already out in the world', async () => {
+    // A promotion has installed a genome on a live persona; there is no reverse
+    // door, and an undo button that refuses when pressed is worse than none.
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'evolution'), verdict: 'accept' });
+    });
+    expect(result.current.undo).toBeNull();
+  });
+
+  it('clears a stale offer when the next decision is not reversible', async () => {
+    mockTriageIdeas.mockResolvedValue(page([idea()]));
+    mockPromotionList.mockResolvedValue([promotion()]);
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept' });
+    });
+    expect(result.current.undo).not.toBeNull();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'evolution'), verdict: 'accept' });
+    });
+    // Otherwise `U` would take back the card BEFORE the one just decided.
+    expect(result.current.undo).toBeNull();
   });
 });

@@ -435,5 +435,17 @@
   "triage_reason_prompt_worse": "Prompt đọc kém hơn",
   "triage_reason_quality_risk": "Rủi ro chất lượng",
   "triage_reason_saving_too_small": "Mức tiết kiệm quá nhỏ",
-  "triage_reason_thin_evidence": "Chưa đủ bằng chứng"
+  "triage_reason_thin_evidence": "Chưa đủ bằng chứng",
+  "triage_summary_accepted": "Đã chấp nhận",
+  "triage_summary_decided": "Đã quyết định",
+  "triage_summary_deferred": "Hoãn lại",
+  "triage_summary_kind_value": "{accepted}/{decided}",
+  "triage_summary_lost": "Bị người khác giành mất",
+  "triage_summary_pace": "Thẻ điển hình",
+  "triage_summary_pace_value": "{seconds}s",
+  "triage_summary_rate": "{percent}%",
+  "triage_summary_title": "Phiên này",
+  "triage_summary_undone": "Đã hoàn tác",
+  "triage_undo": "Hoàn tác {verdict}",
+  "triage_undo_hint": "Đưa thẻ trở lại hàng đợi. Những gì quyết định đã kích hoạt sẽ không được thu hồi."
 }

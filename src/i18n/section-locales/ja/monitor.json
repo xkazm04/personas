@@ -435,5 +435,17 @@
   "triage_reason_prompt_worse": "プロンプトの質が低下",
   "triage_reason_quality_risk": "品質リスク",
   "triage_reason_saving_too_small": "節約額が小さすぎる",
-  "triage_reason_thin_evidence": "根拠が不十分"
+  "triage_reason_thin_evidence": "根拠が不十分",
+  "triage_summary_accepted": "採用",
+  "triage_summary_decided": "判定",
+  "triage_summary_deferred": "保留",
+  "triage_summary_kind_value": "{decided}件中{accepted}件",
+  "triage_summary_lost": "先を越された",
+  "triage_summary_pace": "平均カード",
+  "triage_summary_pace_value": "{seconds}秒",
+  "triage_summary_rate": "{percent}%",
+  "triage_summary_title": "今回のセッション",
+  "triage_summary_undone": "取り消し",
+  "triage_undo": "{verdict}を取り消す",
+  "triage_undo_hint": "カードをキューに戻します。判定によってすでに開始された処理は取り消されません。"
 }

@@ -34,7 +34,12 @@ import {
   dispatchReviewAction as dispatchReviewActionApi,
 } from '@/api/overview/reviews';
 import { cloudRespondToReview } from '@/api/system/cloud';
-import { acceptIdea as acceptIdeaApi, rejectIdea as rejectIdeaApi } from '@/api/devTools/devTools';
+import {
+  acceptIdea as acceptIdeaApi,
+  getIdea,
+  rejectIdea as rejectIdeaApi,
+  updateIdea,
+} from '@/api/devTools/devTools';
 import { decideWorkspaceKnowledge } from '@/api/devTools/workspaces';
 import { policyTuningApply, policyTuningDecline } from '@/api/system/policyTuning';
 import { resolvePromotionProposal } from '@/api/agents/evolution';
@@ -233,6 +238,90 @@ export function decidePracticeRow(
   options: PracticeVerdictOptions = {},
 ): Promise<WorkspaceKnowledge> {
   return decideWorkspaceKnowledge(id, decision, options.supersededBy, options.seenStatus);
+}
+
+// ---------------------------------------------------------------------------
+// Reopening — the reverse of a verdict, where a reverse exists
+// ---------------------------------------------------------------------------
+
+/**
+ * Which row types can be put BACK, and what a reopen actually costs.
+ *
+ * A reopen is a verdict like any other — an optimistic write against an
+ * expectation, which loses loudly rather than clobbering whoever decided in the
+ * meantime. What it is NOT is a rollback: a verdict fires side effects, and no
+ * backend in this app offers to retract them. Every limit below is named because
+ * a silent version of it is far worse than a documented one.
+ *
+ *  • **Ideas reopen to `pending`** — `dev_tools_update_idea` treats `pending`
+ *    and `archived` as lifecycle rather than as verdicts and passes them
+ *    straight through, so this is the door's intended use, not a loophole. The
+ *    `decision`/`constraint` memory `record_idea_decision_by` wrote is NOT
+ *    retracted: a rejected-then-reopened idea is back in the queue but a future
+ *    scan is still suppressed for it. A build-branch accept also leaves its
+ *    task, which is a row a human can see and delete — the same trade
+ *    `triageDispatch` already documents for the mirror case.
+ *  • **Practices reopen to `proposed`**, the pending status the decide door can
+ *    write. A practice that was `observed` therefore comes back one notch
+ *    promoted. Adoption cells an `adopt` fanned into member repos are not
+ *    retracted either.
+ *  • **Reviews cannot reopen at all.** `ManualReviewStatus::validate_transition`
+ *    allows `Approved | Rejected → Resolved` and nothing else; `pending` is
+ *    unreachable from a decided review by design, because the resolution fires
+ *    the held-step resume and the follow-up dispatch. Making it reachable is a
+ *    change to a deliberate backend state machine, not a frontend affordance.
+ *  • **Build questions, policy proposals and promotions cannot reopen** for the
+ *    same reason in three costumes: the act is already out in the world. The CLI
+ *    has resumed, the routing rule is written (and `policy_tuning_apply` is by
+ *    contract the ONLY policy writer, so there is no un-apply to add), the
+ *    winning genome is installed on a live persona.
+ */
+export interface ReopenOptions {
+  /** The status the verdict PRODUCED — the reopen's compare-and-swap expectation. */
+  seenStatus?: string;
+}
+
+/**
+ * Put a decided idea back in the queue.
+ *
+ * The expectation is checked HERE rather than in SQL, and that is the one place
+ * this module is weaker than its siblings: `dev_tools_update_idea` has no
+ * `expected_status` parameter, so the swap is a read-then-write with a
+ * millisecond window rather than a single `WHERE ... AND status = ?`. It is
+ * stated rather than hidden, the message is byte-identical to the one
+ * `decide_idea_cas` emits so no caller can tell the difference, and the fix if
+ * this ever becomes more than an undo affordance is a `dev_tools_reopen_idea`
+ * command wrapping `decide_idea_cas(.., "pending", ..)`.
+ */
+export async function reopenIdeaRow(
+  id: string,
+  options: ReopenOptions = {},
+): Promise<DevIdea> {
+  const { seenStatus } = options;
+  if (seenStatus) {
+    const current = await getIdea(id);
+    if (current.status !== seenStatus) {
+      throw new Error(
+        `Backlog idea ${id} was already decided as '${current.status}' by a concurrent action`,
+      );
+    }
+  }
+  return updateIdea(id, { status: 'pending' });
+}
+
+/**
+ * Put a decided practice back in the pending set.
+ *
+ * `propose` is a first-class decision on the knowledge ladder, so this reopen
+ * gets the real thing: `decide_knowledge_cas` swaps `WHERE id = ? AND status =
+ * ?` inside its transaction and emits the same conflict wording as any other
+ * lost practice verdict.
+ */
+export function reopenPracticeRow(
+  id: string,
+  options: ReopenOptions = {},
+): Promise<WorkspaceKnowledge> {
+  return decideWorkspaceKnowledge(id, 'propose', undefined, options.seenStatus);
 }
 
 // ---------------------------------------------------------------------------

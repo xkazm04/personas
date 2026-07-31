@@ -436,7 +436,19 @@
     "triage_reason_prompt_worse": "الموجّه أسوأ صياغةً",
     "triage_reason_quality_risk": "خطر على الجودة",
     "triage_reason_saving_too_small": "التوفير صغير جدًا",
-    "triage_reason_thin_evidence": "أدلة غير كافية"
+    "triage_reason_thin_evidence": "أدلة غير كافية",
+    "triage_summary_accepted": "مقبول",
+    "triage_summary_decided": "البت",
+    "triage_summary_deferred": "مؤجل",
+    "triage_summary_kind_value": "{accepted} من {decided}",
+    "triage_summary_lost": "خسر لآخر",
+    "triage_summary_pace": "البطاقة النموذجية",
+    "triage_summary_pace_value": "{seconds}ث",
+    "triage_summary_rate": "{percent}%",
+    "triage_summary_title": "هذه الجلسة",
+    "triage_summary_undone": "مسترجع",
+    "triage_undo": "تراجع عن {verdict}",
+    "triage_undo_hint": "يعيد البطاقة إلى قائمة الانتظار. أي إجراء بدأه القرار بالفعل لن يُلغى."
   },
   "common": {
     "loading": "جارٍ التحميل...",
