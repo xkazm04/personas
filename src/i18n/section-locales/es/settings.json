@@ -610,7 +610,20 @@
     "storage_title": "Almacenamiento",
     "storage_total": "Total de ejecuciones",
     "dev_projects": "Proyectos de desarrollo",
-    "workspace_knowledge": "Conocimiento del workspace"
+    "workspace_knowledge": "Conocimiento del workspace",
+    "choose_resolution": "Elegir resolución del conflicto",
+    "duplicate": "Duplicar",
+    "import_knowledge": "{count} elementos de conocimiento",
+    "import_knowledge_skipped": "{count} elementos de conocimiento duplicados omitidos",
+    "import_projects": "{count} proyectos",
+    "import_projects_skipped": "{count} proyectos omitidos",
+    "import_skills_deferred": "{count} archivos de skill aplazados",
+    "import_skills_written": "{count} archivos de skill escritos",
+    "matched_by_name": "coincide por nombre",
+    "matched_by_root_path": "coincide por ruta de carpeta",
+    "project_conflict_hint": "Estos proyectos del paquete coinciden con otros ya existentes en este workspace. Elige cómo importar cada uno:",
+    "projects_exist": "{count} proyecto dev ya existe",
+    "projects_exist_plural": "{count} proyectos dev ya existen"
   },
   "config": {
     "title": "Resolución de Configuración",

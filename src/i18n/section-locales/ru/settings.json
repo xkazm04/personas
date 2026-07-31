@@ -610,7 +610,20 @@
     "storage_title": "Хранилище",
     "storage_total": "Всего запусков",
     "dev_projects": "Dev-проекты",
-    "workspace_knowledge": "Знания рабочего пространства"
+    "workspace_knowledge": "Знания рабочего пространства",
+    "choose_resolution": "Выберите способ разрешения конфликта",
+    "duplicate": "Дублировать",
+    "import_knowledge": "Элементов знаний: {count}",
+    "import_knowledge_skipped": "Пропущено дублирующихся элементов знаний: {count}",
+    "import_projects": "Проектов: {count}",
+    "import_projects_skipped": "Пропущено проектов: {count}",
+    "import_skills_deferred": "Отложено файлов навыков: {count}",
+    "import_skills_written": "Записано файлов навыков: {count}",
+    "matched_by_name": "совпадение по имени",
+    "matched_by_root_path": "совпадение по пути к папке",
+    "project_conflict_hint": "Эти проекты из бандла совпадают с уже существующими в этом рабочем пространстве. Выберите, как импортировать каждый:",
+    "projects_exist": "{count} dev-проект уже существует",
+    "projects_exist_plural": "{count} dev-проектов уже существует"
   },
   "config": {
     "title": "Разрешение конфигурации",

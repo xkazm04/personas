@@ -610,7 +610,20 @@
     "storage_title": "Stockage",
     "storage_total": "Total des exécutions",
     "dev_projects": "Projets de dev",
-    "workspace_knowledge": "Connaissances du workspace"
+    "workspace_knowledge": "Connaissances du workspace",
+    "choose_resolution": "Choisir la résolution du conflit",
+    "duplicate": "Dupliquer",
+    "import_knowledge": "{count} éléments de connaissances",
+    "import_knowledge_skipped": "{count} éléments de connaissances en double ignorés",
+    "import_projects": "{count} projets",
+    "import_projects_skipped": "{count} projets ignorés",
+    "import_skills_deferred": "{count} fichiers de skill reportés",
+    "import_skills_written": "{count} fichiers de skill écrits",
+    "matched_by_name": "correspondance par nom",
+    "matched_by_root_path": "correspondance par chemin de dossier",
+    "project_conflict_hint": "Ces projets du bundle correspondent à des projets déjà présents dans ce workspace. Choisissez comment importer chacun :",
+    "projects_exist": "{count} projet dev existe déjà",
+    "projects_exist_plural": "{count} projets dev existent déjà"
   },
   "config": {
     "title": "Résolution de la configuration",

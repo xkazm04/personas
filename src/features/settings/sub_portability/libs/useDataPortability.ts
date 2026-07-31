@@ -25,6 +25,35 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 const STATS_KEY = 'stats';
 const exportStatsCache = createTtlValueCache<ExportStats>(60_000);
 
+/** Backend counters are per-invocation (pass 2 only reports what IT created),
+ *  so the visible result card sums both passes. Conflicts are cleared — the
+ *  resolution pass consumed them — and the second pass's id_mapping wins on
+ *  key collisions (there are none in practice; passes cover disjoint rows). */
+function mergeImportResults(
+  first: PortabilityImportResult,
+  second: PortabilityImportResult,
+): PortabilityImportResult {
+  return {
+    ...second,
+    personas_created: first.personas_created + second.personas_created,
+    teams_created: first.teams_created + second.teams_created,
+    tools_created: first.tools_created + second.tools_created,
+    credentials_created: first.credentials_created + second.credentials_created,
+    team_memories_created: first.team_memories_created + second.team_memories_created,
+    kpis_created: first.kpis_created + second.kpis_created,
+    projects_imported: first.projects_imported + second.projects_imported,
+    projects_skipped: first.projects_skipped + second.projects_skipped,
+    knowledge_imported: first.knowledge_imported + second.knowledge_imported,
+    knowledge_skipped_duplicates: first.knowledge_skipped_duplicates + second.knowledge_skipped_duplicates,
+    skills_written: first.skills_written + second.skills_written,
+    skills_deferred: first.skills_deferred + second.skills_deferred,
+    warnings: [...first.warnings, ...second.warnings],
+    id_mapping: { ...first.id_mapping, ...second.id_mapping },
+    project_conflicts: [],
+    bundle_file_path: null,
+  };
+}
+
 export function useDataPortability() {
   const { t } = useTranslation();
   const s = t.settings.portability;
@@ -34,6 +63,10 @@ export function useDataPortability() {
   const [exportStatus, setExportStatus] = useState<Status>('idle');
   const [importStatus, setImportStatus] = useState<Status>('idle');
   const [importResult, setImportResult] = useState<PortabilityImportResult | null>(null);
+  // Project conflict pass — pass 1 imported everything else; these hold what
+  // the resolution pass needs to re-invoke without re-picking the file.
+  const [projectImportFilePath, setProjectImportFilePath] = useState<string | null>(null);
+  const [pendingImportPassphrase, setPendingImportPassphrase] = useState<string | undefined>(undefined);
 
   const [credExportStatus, setCredExportStatus] = useState<Status>('idle');
   const [credImportStatus, setCredImportStatus] = useState<Status>('idle');
@@ -106,8 +139,19 @@ export function useDataPortability() {
     }
   }, [exportStatus, s.selective_export_failed]);
 
+  const refreshStats = useCallback(() => {
+    // Import changed the counts — refresh stats and the module cache so a
+    // later remount of this tab seeds from the fresh value, not the stale one.
+    getExportStats()
+      .then((fresh) => { exportStatsCache.set(STATS_KEY, fresh); setStats(fresh); })
+      .catch(silentCatch("useDataPortability:refreshExportStats"));
+  }, []);
+
   const handleImport = useCallback(async (passphrase?: string) => {
     if (importStatus === 'loading') return;
+    // Block a fresh import while a conflict-resolution pass is pending; the
+    // stored passphrase belongs to that pass and a silent re-run would double-import.
+    if (projectImportFilePath) return;
     setImportStatus('loading');
     setImportResult(null);
     setErrorMsg('');
@@ -115,12 +159,16 @@ export function useDataPortability() {
       const result = await importPortabilityBundle(passphrase);
       if (result) {
         setImportResult(result);
-        setImportStatus('success');
-        // Import changed the counts — refresh stats and the module cache so a
-        // later remount of this tab seeds from the fresh value, not the stale one.
-        getExportStats()
-          .then((fresh) => { exportStatsCache.set(STATS_KEY, fresh); setStats(fresh); })
-          .catch(silentCatch("useDataPortability:refreshExportStats"));
+        if (result.project_conflicts.length > 0 && result.bundle_file_path) {
+          // Conflicts detected — pass 1 imported everything else; hold the
+          // bundle path + passphrase for the resolution pass.
+          setProjectImportFilePath(result.bundle_file_path);
+          setPendingImportPassphrase(passphrase);
+          setImportStatus('idle');
+        } else {
+          setImportStatus('success');
+        }
+        refreshStats();
       } else {
         setImportStatus('idle');
       }
@@ -129,7 +177,45 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, s.import_failed));
       setImportStatus('error');
     }
-  }, [importStatus, s.import_failed]);
+  }, [importStatus, projectImportFilePath, refreshStats, s.import_failed]);
+
+  const handleImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
+    if (importStatus === 'loading') return;
+    if (!projectImportFilePath) {
+      setErrorMsg(s.no_import_file);
+      return;
+    }
+    setImportStatus('loading');
+    setErrorMsg('');
+    try {
+      const result = await importPortabilityBundle(
+        pendingImportPassphrase,
+        JSON.stringify(resolutions),
+        projectImportFilePath,
+      );
+      if (result) {
+        setImportResult((prev) => (prev ? mergeImportResults(prev, result) : result));
+        setImportStatus('success');
+        refreshStats();
+      } else {
+        setImportStatus('idle');
+      }
+      setProjectImportFilePath(null);
+      setPendingImportPassphrase(undefined);
+    } catch (e) {
+      silentCatch("useDataPortability:importPortabilityBundleResolutions")(e);
+      setErrorMsg(errMsg(e, s.import_failed));
+      setImportStatus('error');
+    }
+  }, [importStatus, projectImportFilePath, pendingImportPassphrase, refreshStats, s.no_import_file, s.import_failed]);
+
+  const dismissProjectConflicts = useCallback(() => {
+    // Cancel = conflicted projects simply not imported; pass 1 already landed.
+    setProjectImportFilePath(null);
+    setPendingImportPassphrase(undefined);
+    setImportResult((prev) => (prev ? { ...prev, project_conflicts: [], bundle_file_path: null } : prev));
+    setImportStatus('success');
+  }, []);
 
   const handleCredExport = useCallback(async () => {
     if (credExportStatus === 'loading') return;
@@ -242,6 +328,8 @@ export function useDataPortability() {
     handleExportFull,
     handleExportSelective,
     handleImport,
+    handleImportWithResolutions,
+    dismissProjectConflicts,
     handleCredExport,
     handleCredImport,
     handleCredImportWithResolutions,

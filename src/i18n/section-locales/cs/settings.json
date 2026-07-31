@@ -610,7 +610,20 @@
     "storage_title": "Úložiště",
     "storage_total": "Celkem spuštění",
     "dev_projects": "Dev projekty",
-    "workspace_knowledge": "Znalosti workspace"
+    "workspace_knowledge": "Znalosti workspace",
+    "choose_resolution": "Zvolte řešení konfliktu",
+    "duplicate": "Duplikovat",
+    "import_knowledge": "{count} znalostních položek",
+    "import_knowledge_skipped": "{count} duplicitních znalostních položek přeskočeno",
+    "import_projects": "{count} projektů",
+    "import_projects_skipped": "{count} projektů přeskočeno",
+    "import_skills_deferred": "{count} souborů skillů odloženo",
+    "import_skills_written": "{count} souborů skillů zapsáno",
+    "matched_by_name": "shoda podle názvu",
+    "matched_by_root_path": "shoda podle cesty ke složce",
+    "project_conflict_hint": "Tyto projekty z balíčku odpovídají projektům, které už v tomto workspace existují. Zvolte, jak každý importovat:",
+    "projects_exist": "{count} dev projekt už existuje",
+    "projects_exist_plural": "{count} dev projektů už existuje"
   },
   "config": {
     "title": "Řešení konfigurace",

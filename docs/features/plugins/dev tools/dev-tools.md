@@ -549,6 +549,12 @@ A collapsible card on every completed task in the Runner. Source in `sub_runner/
 
 ---
 
+## Portability
+
+Dev projects travel with workspace exports via **Settings › Data Portability** (the "Dev projects" scope in the export picker). A project ships as its row plus the full planning graph (goals, contexts, ideas, tasks, use cases, competitions, pipelines, standards, milestones, project KPIs, memories) and its on-disk `.claude/skills/` library; telemetry/scan-cache tables, credential-id columns, and global skills deliberately do not travel. Importing a bundle whose project collides with an existing one (same `root_path` or name) surfaces a per-project **Skip / Duplicate / Replace** resolution panel in the Data tab. See [`docs/features/settings/README.md`](../../settings/README.md) § Data portability.
+
+---
+
 ## Reference: backend commands
 
 | Family | Key commands |

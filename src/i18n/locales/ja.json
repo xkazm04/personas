@@ -10807,7 +10807,20 @@
       "storage_title": "ストレージ",
       "storage_total": "総実行数",
       "dev_projects": "開発プロジェクト",
-      "workspace_knowledge": "ワークスペースナレッジ"
+      "workspace_knowledge": "ワークスペースナレッジ",
+      "choose_resolution": "競合の解決方法を選択",
+      "duplicate": "複製",
+      "import_knowledge": "ナレッジ項目 {count} 件",
+      "import_knowledge_skipped": "重複ナレッジ項目 {count} 件をスキップ",
+      "import_projects": "プロジェクト {count} 件",
+      "import_projects_skipped": "プロジェクト {count} 件をスキップ",
+      "import_skills_deferred": "スキルファイル {count} 件を保留",
+      "import_skills_written": "スキルファイル {count} 件を書き込み",
+      "matched_by_name": "名前で一致",
+      "matched_by_root_path": "フォルダーパスで一致",
+      "project_conflict_hint": "バンドル内のプロジェクトがこのワークスペースの既存プロジェクトと一致します。それぞれのインポート方法を選択してください:",
+      "projects_exist": "{count} 件の開発プロジェクトが既に存在します",
+      "projects_exist_plural": "{count} 件の開発プロジェクトが既に存在します"
     },
     "config": {
       "title": "設定の解決",

@@ -610,7 +610,20 @@
     "storage_title": "Bộ nhớ",
     "storage_total": "Tổng lần chạy",
     "dev_projects": "Dự án dev",
-    "workspace_knowledge": "Kiến thức workspace"
+    "workspace_knowledge": "Kiến thức workspace",
+    "choose_resolution": "Chọn cách xử lý xung đột",
+    "duplicate": "Nhân bản",
+    "import_knowledge": "{count} mục kiến thức",
+    "import_knowledge_skipped": "Đã bỏ qua {count} mục kiến thức trùng lặp",
+    "import_projects": "{count} dự án",
+    "import_projects_skipped": "Đã bỏ qua {count} dự án",
+    "import_skills_deferred": "Đã hoãn {count} tệp skill",
+    "import_skills_written": "Đã ghi {count} tệp skill",
+    "matched_by_name": "khớp theo tên",
+    "matched_by_root_path": "khớp theo đường dẫn thư mục",
+    "project_conflict_hint": "Các dự án trong gói này trùng với dự án đã có trong workspace. Chọn cách nhập từng dự án:",
+    "projects_exist": "{count} dự án dev đã tồn tại",
+    "projects_exist_plural": "{count} dự án dev đã tồn tại"
   },
   "config": {
     "title": "Giải quyết cấu hình",

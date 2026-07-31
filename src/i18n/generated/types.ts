@@ -10968,6 +10968,12 @@ export type Translations = {
       import_credentials_count: string;
       import_team_memories: string;
       import_kpis: string;
+      import_projects: string;
+      import_projects_skipped: string;
+      import_knowledge: string;
+      import_knowledge_skipped: string;
+      import_skills_written: string;
+      import_skills_deferred: string;
       include_memories_label: string;
       include_memories_note: string;
       export_title: string;
@@ -11002,6 +11008,13 @@ export type Translations = {
       keep_both: string;
       replace: string;
       import_with_resolutions: string;
+      projects_exist: string;
+      projects_exist_plural: string;
+      project_conflict_hint: string;
+      matched_by_root_path: string;
+      matched_by_name: string;
+      duplicate: string;
+      choose_resolution: string;
       cred_import_complete: string;
       cred_imported: string;
       cred_skipped: string;

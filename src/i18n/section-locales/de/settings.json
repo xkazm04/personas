@@ -610,7 +610,20 @@
     "storage_title": "Speicher",
     "storage_total": "Ausführungen gesamt",
     "dev_projects": "Dev-Projekte",
-    "workspace_knowledge": "Workspace-Wissen"
+    "workspace_knowledge": "Workspace-Wissen",
+    "choose_resolution": "Konfliktlösung wählen",
+    "duplicate": "Duplizieren",
+    "import_knowledge": "{count} Wissenseinträge",
+    "import_knowledge_skipped": "{count} doppelte Wissenseinträge übersprungen",
+    "import_projects": "{count} Projekte",
+    "import_projects_skipped": "{count} Projekte übersprungen",
+    "import_skills_deferred": "{count} Skill-Dateien zurückgestellt",
+    "import_skills_written": "{count} Skill-Dateien geschrieben",
+    "matched_by_name": "über Namen zugeordnet",
+    "matched_by_root_path": "über Ordnerpfad zugeordnet",
+    "project_conflict_hint": "Diese gebündelten Projekte entsprechen bereits vorhandenen in diesem Workspace. Wähle für jedes, wie es importiert wird:",
+    "projects_exist": "{count} Dev-Projekt existiert bereits",
+    "projects_exist_plural": "{count} Dev-Projekte existieren bereits"
   },
   "config": {
     "title": "Konfigurationsauflösung",

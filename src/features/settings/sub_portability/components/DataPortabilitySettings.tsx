@@ -77,6 +77,8 @@ export default function DataPortabilitySettings() {
           onCloseExportModal={() => dp.setShowExportModal(false)}
           onExportSelective={dp.handleExportSelective}
           onImport={dp.handleImport}
+          onImportWithResolutions={dp.handleImportWithResolutions}
+          onDismissConflicts={dp.dismissProjectConflicts}
         />
       ),
     },

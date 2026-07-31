@@ -610,7 +610,20 @@
     "storage_title": "存储",
     "storage_total": "总运行次数",
     "dev_projects": "开发项目",
-    "workspace_knowledge": "工作区知识"
+    "workspace_knowledge": "工作区知识",
+    "choose_resolution": "选择冲突解决方式",
+    "duplicate": "复制",
+    "import_knowledge": "{count} 个知识条目",
+    "import_knowledge_skipped": "已跳过 {count} 个重复知识条目",
+    "import_projects": "{count} 个项目",
+    "import_projects_skipped": "已跳过 {count} 个项目",
+    "import_skills_deferred": "{count} 个技能文件已推迟",
+    "import_skills_written": "已写入 {count} 个技能文件",
+    "matched_by_name": "按名称匹配",
+    "matched_by_root_path": "按文件夹路径匹配",
+    "project_conflict_hint": "这些打包的项目与此工作区中已有的项目匹配。请选择每个项目的导入方式:",
+    "projects_exist": "{count} 个开发项目已存在",
+    "projects_exist_plural": "{count} 个开发项目已存在"
   },
   "config": {
     "title": "配置解析",
