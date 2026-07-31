@@ -19,6 +19,7 @@ import {
   type KnowledgeBase,
 } from "@/api/vault/database/vectorKb";
 import { silentCatch } from "@/lib/silentCatch";
+import { isCommandNotFound } from "@/lib/utils/tauri/safeInvoke";
 
 /**
  * Bridges Drive's sandbox-relative world to the vector knowledge base, which
@@ -43,9 +44,15 @@ export function useDriveKnowledge() {
     try {
       setKnowledgeBases(await listKnowledgeBases());
       setAvailable(true);
-    } catch {
-      // Not an error worth reporting — the lite build legitimately has no
-      // KB commands registered.
+    } catch (err) {
+      // Only a genuine "command not registered" rejection means "this build
+      // has no KB lane" and is not worth reporting. Any other failure (a
+      // real backend error on an ML build) must not be swallowed silently —
+      // it still hides the feature (we can't confirm availability), but a
+      // breadcrumb is recorded so it's diagnosable instead of vanishing.
+      if (!isCommandNotFound(err)) {
+        silentCatch("drive:knowledge:refresh")(err);
+      }
       setAvailable(false);
       setKnowledgeBases([]);
     }

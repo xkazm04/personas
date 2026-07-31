@@ -50,9 +50,29 @@ export function FleetProcessScanner() {
   }, [scan]);
 
   const doKill = useCallback(
-    async (pid: number) => {
+    async (target: FleetDetectedProcess) => {
+      const { pid } = target;
       setKilling(pid);
       try {
+        // PIDs are OS-recycled — the process captured when the confirm
+        // dialog opened may no longer be the same process by the time the
+        // user confirms. Re-scan and resolve the target against the LIVE
+        // list before writing (the repo's "resolve against the live
+        // collection" rule — see FleetGridPage's `sessions.find(... ===
+        // activeSessionId)` and FleetBroadcastModal's live-prune effect);
+        // a vanished/changed target aborts with a visible toast rather than
+        // silently killing whatever now holds that pid.
+        const fresh = await detectProcesses();
+        apply(fresh);
+        const stillThere = fresh.some(
+          (p) => p.pid === pid && p.cmd === target.cmd && p.cwd === target.cwd,
+        );
+        if (!stillThere) {
+          toastCatch('FleetProcessScanner:kill')(
+            new Error('That process already exited — the list has been refreshed.'),
+          );
+          return;
+        }
         await killPid(pid);
         setProcs((cur) => {
           const next = cur?.filter((p) => p.pid !== pid) ?? null;
@@ -66,7 +86,7 @@ export function FleetProcessScanner() {
         setConfirm(null);
       }
     },
-    [setOrphanCount],
+    [apply, setOrphanCount],
   );
 
   const doResume = useCallback(
@@ -157,7 +177,7 @@ export function FleetProcessScanner() {
           body={`End PID ${confirm.pid}${confirm.cwd ? ` (${confirm.cwd})` : ''}? Any unsaved work in that session is lost. To keep the conversation, use Resume instead.`}
           danger
           confirmLabel="Kill"
-          onConfirm={() => doKill(confirm.pid)}
+          onConfirm={() => doKill(confirm)}
           onCancel={() => setConfirm(null)}
         />
       )}

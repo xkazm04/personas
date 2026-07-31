@@ -109,9 +109,23 @@ struct ProjectApproach {
     approach: String,
 }
 
+/// Pull a proposal out of a line.
+///
+/// Deliberately tolerant about what surrounds the JSON — mirrors
+/// `workspace_verify::parse_verdict`. The strict `strip_prefix` version
+/// requires `DIVERGENCE:` at the very start of the line, so a model that
+/// decorates it (`- DIVERGENCE: {...}`, a leading bullet) silently drops a
+/// proposal it actually produced. The JSON span itself is still parsed
+/// strictly.
 fn parse_divergence_line(line: &str) -> Option<DivergenceProposal> {
-    let rest = line.trim().strip_prefix("DIVERGENCE:")?;
-    match serde_json::from_str::<DivergenceProposal>(rest.trim()) {
+    let idx = line.find("DIVERGENCE:")?;
+    let rest = &line[idx + "DIVERGENCE:".len()..];
+    let start = rest.find('{')?;
+    let end = rest.rfind('}')?;
+    if end < start {
+        return None;
+    }
+    match serde_json::from_str::<DivergenceProposal>(&rest[start..=end]) {
         Ok(p) => Some(p),
         Err(e) => {
             tracing::warn!(error = %e, "divergence: unparseable protocol line");
@@ -499,4 +513,39 @@ async fn run_divergence(
     let inserted = summary.inserted;
     DIVERGENCE_JOBS.update_extra(job_id, |e| e.inserted = inserted);
     Ok((proposed, inserted))
+}
+
+#[cfg(test)]
+mod parse_divergence_line_tests {
+    use super::parse_divergence_line;
+
+    #[test]
+    fn parses_marker_at_start_of_line() {
+        let line = r#"DIVERGENCE: {"title":"t","statement":"s","approaches":[]}"#;
+        let p = parse_divergence_line(line).expect("should parse");
+        assert_eq!(p.title, "t");
+    }
+
+    #[test]
+    fn parses_decorated_marker_line() {
+        // A model that prefixes the protocol line with a bullet or other
+        // decoration has still done the work — the strict start-of-line
+        // `strip_prefix` used to drop this silently (see workspace_verify's
+        // parse_verdict docstring for the real-world "lost 7 of 8" incident).
+        let line = r#"- DIVERGENCE: {"title":"t","statement":"s","approaches":[]}"#;
+        let p = parse_divergence_line(line).expect("decorated line should still parse");
+        assert_eq!(p.title, "t");
+    }
+
+    #[test]
+    fn rejects_line_without_marker() {
+        let line = r#"{"title":"t","statement":"s","approaches":[]}"#;
+        assert!(parse_divergence_line(line).is_none());
+    }
+
+    #[test]
+    fn rejects_unparseable_payload() {
+        let line = "DIVERGENCE: {not json}";
+        assert!(parse_divergence_line(line).is_none());
+    }
 }
