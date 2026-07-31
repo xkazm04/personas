@@ -189,6 +189,12 @@ fn attention_roster(pool: &DbPool) -> Result<Vec<(String, Option<i64>)>, AppErro
 // ---------------------------------------------------------------------------
 
 /// The approved Director verdict a commission starts from.
+// `Debug` is required by the `#[cfg(test)]` block below, which calls
+// `.unwrap()`/`.unwrap_err()` on `Result<ApprovedVerdict, _>`. Without it
+// app_lib's TEST targets do not compile at all — invisible in normal work
+// because `cargo check --lib` skips test targets and app_lib's test binary
+// cannot launch on this host (see CLAUDE.md, STATUS_ENTRYPOINT_NOT_FOUND).
+#[derive(Debug)]
 struct ApprovedVerdict {
     review_id: String,
     persona_id: String,
