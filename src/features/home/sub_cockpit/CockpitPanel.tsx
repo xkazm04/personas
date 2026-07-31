@@ -142,10 +142,18 @@ export default function CockpitPanel() {
 
   // Active spec body: contextual overlay wins.
   let persistentBody: CompanionCockpitSpecBody | null = null;
+  // Distinguish "spec fetched but corrupt" from "never composed" — both leave
+  // persistentBody null, but only the former should surface as a visible
+  // error instead of silently falling through to the empty-state CTA (a
+  // corrupt persisted spec is a real degradation, not a first-boot state).
+  let specParseFailed = false;
   if (spec) {
     try {
       persistentBody = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
-    } catch (err) { silentCatch("features/home/sub_cockpit/CockpitPanel:catch1")(err); }
+    } catch (err) {
+      specParseFailed = true;
+      silentCatch("features/home/sub_cockpit/CockpitPanel:catch1")(err);
+    }
   }
 
   // Deterministic starter cockpit — Athena's composed spec (persistentBody)
@@ -200,7 +208,7 @@ export default function CockpitPanel() {
             day: 'numeric',
           })
         : cockpit.subtitle_contextual
-    : spec
+    : spec && !specParseFailed
       ? (
           <>
             {cockpit.subtitle_composed_prefix}{' '}
@@ -303,6 +311,17 @@ export default function CockpitPanel() {
 
         {!contextualCockpit && loading && !spec ? (
           <CockpitGhostGrid />
+        ) : !contextualCockpit && specParseFailed ? (
+          <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
+            <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>
+            <button
+              type="button"
+              onClick={load}
+              className="rounded-modal border border-primary/20 px-3 py-1.5 typo-body text-primary hover:bg-primary/10 transition-colors"
+            >
+              {cockpit.error_retry}
+            </button>
+          </div>
         ) : !contextualCockpit && error && !spec ? (
           <div className="rounded-modal border border-status-error/20 bg-status-error/5 p-6 flex flex-col items-center gap-3 text-center">
             <p className="typo-body text-status-error font-medium">{cockpit.error_title}</p>

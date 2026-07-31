@@ -112,7 +112,32 @@ export const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
   { agentKey: 'risk-assessor', keywords: /risk|single.?point|scale|failover|backup|disaster|recovery/i },
   { agentKey: 'integration-planner', keywords: /api|webhook|integration|sync|external|third.?party|oauth/i },
   { agentKey: 'devops-optimizer', keywords: /ci|cd|deploy|docker|pipeline|build|monitor|infra/i },
+  { agentKey: 'bounty-hunter', keywords: /exploit|vulnerab|race.?condition|edge.?case|logic.?flaw|inconsisten|data.?leak|bounty/i },
+  { agentKey: 'business-strategist', keywords: /business.?value|monetiz|conversion|retention|competitor|workflow.?friction|revenue|value.?prop/i },
 ];
+
+// Dev-only invariant: every SCAN_AGENTS key must have a matcher rule, and vice
+// versa. `SCAN_MATCH_RULES` is a hand-authored parallel list (not derived from
+// SCAN_AGENTS), so it silently drifts when an agent is added without a rule —
+// bounty-hunter and business-strategist did exactly that (22 agents vs 20
+// rules), leaving matchAgentsToContext structurally unable to ever pick them
+// for any context. A missing rule is invisible forever (no test, no page,
+// nothing ever calls out that a lens can't be recommended) — the cost of being
+// wrong is high enough to warrant a hard fail in dev rather than a silent gap.
+// Stripped in production builds (import.meta.env.DEV is statically false).
+if (import.meta.env?.DEV) {
+  const agentKeys = new Set(SCAN_AGENTS.map((a) => a.key));
+  const ruleKeys = new Set(SCAN_MATCH_RULES.map((r) => r.agentKey));
+  const missingRules = [...agentKeys].filter((k) => !ruleKeys.has(k));
+  const orphanRules = [...ruleKeys].filter((k) => !agentKeys.has(k));
+  if (missingRules.length > 0 || orphanRules.length > 0) {
+    throw new Error(
+      `SCAN_MATCH_RULES has drifted from SCAN_AGENTS — missing: [${missingRules.join(', ')}], ` +
+      `orphaned: [${orphanRules.join(', ')}]. Every scan agent needs a matcher rule or it can ` +
+      `never be recommended by matchAgentsToContext.`,
+    );
+  }
+}
 
 /** Searchable haystack for a context's match rules. */
 function contextHaystack(ctx: DevContext): string {

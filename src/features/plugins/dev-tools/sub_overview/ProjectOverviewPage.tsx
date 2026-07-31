@@ -45,6 +45,11 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 type TileId = 'open_issues' | 'open_prs' | 'commits' | 'unresolved' | 'events_24h' | 'events_7d';
 const DEFAULT_TILE_ORDER: TileId[] = ['open_issues', 'open_prs', 'commits', 'unresolved', 'events_24h', 'events_7d'];
 
+/** Private drag MIME for vital-tile reordering — mirrors KanbanBoard's
+ *  `dragMimeType` doctrine so this drop zone only reacts to its own payload,
+ *  never an OS file drag, a text selection, or a foreign draggable. */
+const VITAL_TILE_DRAG_MIME = 'application/x-personas-vital-tile-id';
+
 function tileOrderStorageKey(projectId: string): string {
   return `personas.devtools.overview_tile_order.${projectId}`;
 }
@@ -164,14 +169,22 @@ export default function ProjectOverviewPage() {
     setTileOrder(readTileOrder(activeProjectId));
   }, [activeProjectId]);
   const [draggingTileId, setDraggingTileId] = useState<TileId | null>(null);
-  const handleTileDrop = (target: TileId) => {
-    if (!draggingTileId || draggingTileId === target || !activeProjectId) return;
+  // Reorder is keyed off the id carried on the drop event's own payload (via
+  // VITAL_TILE_DRAG_MIME), not solely off `draggingTileId` component state.
+  // State alone is exploitable: if `onDragEnd` doesn't fire (dragging out of
+  // the window, a mid-drag re-render), a stale `draggingTileId` would still
+  // be truthy when an UNRELATED drag (an OS file, selected text) is dropped
+  // on a tile, silently reordering tiles from a drag this component never
+  // started. Gating on the MIME + reading the id back from the payload makes
+  // an unrelated drop inert regardless of stale local state.
+  const handleTileDrop = (sourceId: TileId, target: TileId) => {
+    if (!sourceId || sourceId === target || !activeProjectId) return;
     const next = [...tileOrder];
-    const from = next.indexOf(draggingTileId);
+    const from = next.indexOf(sourceId);
     const to = next.indexOf(target);
     if (from < 0 || to < 0) return;
     next.splice(from, 1);
-    next.splice(to, 0, draggingTileId);
+    next.splice(to, 0, sourceId);
     setTileOrder(next);
     writeTileOrder(activeProjectId, next);
   };
@@ -329,10 +342,23 @@ export default function ProjectOverviewPage() {
                     index={idx}
                     draggable
                     isDragging={draggingTileId === id}
-                    onDragStart={() => setDraggingTileId(id)}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(VITAL_TILE_DRAG_MIME, id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggingTileId(id);
+                    }}
                     onDragEnd={() => setDraggingTileId(null)}
-                    onDragOver={(e) => { e.preventDefault(); }}
-                    onDrop={(e) => { e.preventDefault(); handleTileDrop(id); }}
+                    onDragOver={(e) => {
+                      if (!e.dataTransfer.types.includes(VITAL_TILE_DRAG_MIME)) return;
+                      e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      if (!e.dataTransfer.types.includes(VITAL_TILE_DRAG_MIME)) return;
+                      e.preventDefault();
+                      const sourceId = e.dataTransfer.getData(VITAL_TILE_DRAG_MIME) as TileId | '';
+                      if (sourceId) handleTileDrop(sourceId, id);
+                      setDraggingTileId(null);
+                    }}
                     onActivate={() => handleTileActivate(id)}
                     actionLabel={tileActionLabel(id)}
                   />
