@@ -31,12 +31,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import * as devApi from '@/api/devTools/devTools';
-import { decideWorkspaceKnowledge } from '@/api/devTools/workspaces';
+import { decidePracticeRow, isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { toBacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { useWorkspaceCenter } from '@/features/plugins/dev-tools/sub_workspaces/centerShared';
 import { viewFromRow } from '@/features/overview/sub_patterns/libraryModel';
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 
@@ -175,6 +177,9 @@ export function useUnifiedTriage(
   const interactions = usePendingInteractions();
   const center = useWorkspaceCenter(PRACTICE_CENTER_OPTIONS);
   const projects = useSystemStore((s) => s.projects);
+  // Idea verdicts go through the slice, not the API: see the port bundle below.
+  const acceptIdeaViaStore = useSystemStore((s) => s.acceptIdea);
+  const rejectIdeaViaStore = useSystemStore((s) => s.rejectIdea);
 
   const [ideas, setIdeas] = useState<DevIdea[]>([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
@@ -326,6 +331,20 @@ export function useUnifiedTriage(
     setIdeaFetch((f) => ({ cursor, gen: f.gen + 1 }));
   }, []);
 
+  /**
+   * Re-read the sources WITHOUT forgetting what this session decided.
+   *
+   * Distinct from `reload`, which also clears `resolved`/`skips` — that is the
+   * right shape for "show me the world again" and the wrong one for reacting to
+   * somebody else's verdict landing mid-session: throwing away the reviewer's
+   * own progress because a card they never touched was decided elsewhere is a
+   * worse outcome than the conflict itself.
+   */
+  const refreshSources = useCallback(() => {
+    setIdeaFetch((f) => ({ gen: f.gen + 1 }));
+    center.refreshKnowledge();
+  }, [center]);
+
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
   const ports = useMemo<TriagePorts>(
@@ -334,15 +353,21 @@ export function useUnifiedTriage(
       dispatchReviewAction: (id, action) => interactions.handleDispatchAction(id, action),
       createTask: (title, projectId, body, ideaId) =>
         devApi.createTask(title, projectId, body, ideaId),
-      acceptIdea: (id) => devApi.acceptIdea(id),
-      rejectIdea: (id, reason) => devApi.rejectIdea(id, reason),
-      decideKnowledge: (id, verdict, supersededBy) =>
-        decideWorkspaceKnowledge(id, verdict, supersededBy),
+      // Through the STORE, not `devApi` directly. The deck used to call the API
+      // and bypass `devToolsTriageSlice` entirely, so accepting an idea here
+      // never reached Approvals' Backlog tab: its rows and facet counts still
+      // showed the item as pending until someone refetched. The slice is the one
+      // door for an idea verdict; it writes the row, shifts the counts and
+      // rejects on failure so the restore below can fire.
+      acceptIdea: (id, seenStatus) => acceptIdeaViaStore(id, seenStatus),
+      rejectIdea: (id, reason, seenStatus) => rejectIdeaViaStore(id, reason, seenStatus),
+      decideKnowledge: (id, verdict, supersededBy, seenStatus) =>
+        decidePracticeRow(id, verdict, { supersededBy, seenStatus }),
       refreshKnowledge: () => center.refreshKnowledge(),
       submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
       openBuilder: onOpenBuilder,
     }),
-    [interactions, center, onOpenBuilder],
+    [interactions, center, onOpenBuilder, acceptIdeaViaStore, rejectIdeaViaStore],
   );
 
   /**
@@ -368,6 +393,20 @@ export function useUnifiedTriage(
       try {
         await routeDecision(decision, ports);
       } catch (error) {
+        // A LOST COMPARE-AND-SWAP is not a failed write — the row IS decided,
+        // just not by this reviewer (Athena's Night Shift resolves approvals
+        // unattended, so this is routine rather than exotic). Putting the card
+        // back would be a lie and would re-offer a decision that can never land.
+        // Say what happened, keep it resolved, and re-read so the rest of the
+        // queue reflects whoever won.
+        if (isDecisionConflict(error)) {
+          const t = getActiveTranslations();
+          useToastStore
+            .getState()
+            .addToast(t.error_registry.decision_conflict_message, 'warning', 4000);
+          refreshSources();
+          return;
+        }
         // Put it back: a failed write must not look like a completed decision.
         setResolved((prev) => {
           const next = new Set(prev);
@@ -377,7 +416,7 @@ export function useUnifiedTriage(
         toastCatch('Could not record that decision')(error);
       }
     },
-    [ports],
+    [ports, refreshSources],
   );
 
   /**

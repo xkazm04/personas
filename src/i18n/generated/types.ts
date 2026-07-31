@@ -6666,6 +6666,7 @@ export type Translations = {
       gc_resolved: string;
       gc_none: string;
       gc_failed: string;
+      bulk_partial_failure: string;
       backlog_all_groups: string;
       backlog_group_summary: string;
       backlog_all_summary: string;
@@ -11533,6 +11534,8 @@ export type Translations = {
     gitlab_error: string;
   };
   error_registry: {
+    decision_conflict_message: string;
+    decision_conflict_suggestion: string;
     network_offline_message: string;
     network_offline_suggestion: string;
     timed_out_message: string;

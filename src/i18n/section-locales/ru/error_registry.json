@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "Сборка выдала поле, которое среда выполнения не распознаёт.",
   "unknown_prompt_field_suggestion": "Нажмите «Refine» — новая сборка будет использовать актуальную схему.",
   "webhook_missing_secret_message": "У этого webhook-триггера отсутствует секрет подписи.",
-  "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку."
+  "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку.",
+  "decision_conflict_message": "Это уже решил кто-то другой — перезагружаем.",
+  "decision_conflict_suggestion": "Список обновляется с учётом последнего решения. Проверьте его и решите снова, если не согласны."
 }

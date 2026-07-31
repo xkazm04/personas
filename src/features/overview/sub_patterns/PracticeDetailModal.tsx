@@ -16,7 +16,8 @@
 import { useEffect, useState } from 'react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { decideWorkspaceKnowledge, isActionableKind } from '@/api/devTools/workspaces';
+import { isActionableKind } from '@/api/devTools/workspaces';
+import { decidePracticeRow } from '@/lib/decisions/rowWrites';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
 import { toastCatch } from '@/lib/silentCatch';
@@ -53,7 +54,11 @@ export function PracticeDetailModal({
   const decide = async (decision: 'adopt' | 'reject' | 'deprecate') => {
     setBusy(true);
     try {
-      await decideWorkspaceKnowledge(practice.id, decision);
+      // `seenStatus` is what this modal is RENDERING. It makes the write a
+      // single-winner compare-and-swap, so adopting a practice the triage deck
+      // (or Athena, overnight) already rejected fails loudly instead of fanning
+      // adoption cells into every member repo off a stale card.
+      await decidePracticeRow(practice.id, decision, { seenStatus: practice.status });
       // Adopting an ACTIONABLE kind (pitfall/pattern) queues every applicable
       // member repo at `to_process`; say so, or the decision reads as a state
       // change with no consequence.

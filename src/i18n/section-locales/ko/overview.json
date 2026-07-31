@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "건너뛰기",
     "backlog_execute_accepted": "승인 항목 실행",
     "backlog_execute_none": "실행할 승인 항목이 없습니다.",
-    "backlog_execute_queued": "Run Desk에 작업 {count}개를 대기열에 넣었습니다."
+    "backlog_execute_queued": "Run Desk에 작업 {count}개를 대기열에 넣었습니다.",
+    "bulk_partial_failure": "선택한 검토 중 {count}건을 처리하지 못했습니다 — 아직 대기 중입니다."
   },
   "messages_view": {
     "title": "메시지",

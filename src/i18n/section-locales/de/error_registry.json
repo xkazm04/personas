@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "Der Build hat ein Feld ausgegeben, das die Laufzeitumgebung nicht erkennt.",
   "unknown_prompt_field_suggestion": "Klicken Sie auf Refine — der neue Build verwendet das aktuelle Schema.",
   "webhook_missing_secret_message": "Diesem Webhook-Trigger fehlt sein Signatur-Geheimnis.",
-  "webhook_missing_secret_suggestion": "Führen Sie Promote erneut aus — die Pipeline generiert beim Absenden automatisch ein webhook_secret. Falls das Problem weiterhin besteht, starten Sie den Build neu."
+  "webhook_missing_secret_suggestion": "Führen Sie Promote erneut aus — die Pipeline generiert beim Absenden automatisch ein webhook_secret. Falls das Problem weiterhin besteht, starten Sie den Build neu.",
+  "decision_conflict_message": "Jemand anderes hat dies bereits entschieden — wird neu geladen.",
+  "decision_conflict_suggestion": "Die Liste wird mit dem neuesten Ergebnis aktualisiert. Prüfen Sie es und entscheiden Sie erneut, falls Sie anderer Meinung sind."
 }

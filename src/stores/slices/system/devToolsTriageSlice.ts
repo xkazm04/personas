@@ -5,6 +5,7 @@ import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { TriageCounts } from "@/lib/bindings/TriageCounts";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 import * as devApi from "@/api/devTools/devTools";
+import { decideIdeaRow } from "@/lib/decisions/rowWrites";
 
 /**
  * Server-side narrowing for a triage page. `projectId` is a separate argument
@@ -53,8 +54,21 @@ export interface DevToolsTriageSlice {
   /** `projectId` undefined = cross-project (the unified Backlog default). */
   fetchTriageIdeas: (projectId?: string, query?: TriageQuery) => Promise<void>;
   fetchMoreTriageIdeas: (projectId?: string, query?: TriageQuery) => Promise<void>;
-  acceptIdea: (id: string) => Promise<void>;
-  rejectIdea: (id: string, reason?: string) => Promise<void>;
+  /**
+   * THE door for an idea verdict. Every surface that decides a backlog idea —
+   * the Backlog table, the triage deck, the dev-tools panel — goes through here
+   * so the row, the facet counts and the error handling move together.
+   *
+   * `seenStatus` is the status the CALLING SURFACE rendered. It becomes the
+   * backend's compare-and-swap expectation, so a verdict written against a card
+   * someone else already decided loses loudly instead of overwriting them.
+   * Defaults to whatever this slice holds for the row.
+   *
+   * REJECTS on failure (in addition to the toast) so an optimistic caller can
+   * put the row back.
+   */
+  acceptIdea: (id: string, seenStatus?: string) => Promise<void>;
+  rejectIdea: (id: string, reason?: string, seenStatus?: string) => Promise<void>;
   deleteTriageIdea: (id: string) => Promise<void>;
   setTriageFilterCategory: (category: string | null) => void;
   setTriageFilterScanType: (scanType: string | null) => void;
@@ -131,41 +145,40 @@ export const createDevToolsTriageSlice: StateCreator<SystemStore, [], [], DevToo
     }
   },
 
-  acceptIdea: async (id) => {
+  acceptIdea: async (id, seenStatus) => {
+    const from = seenStatus ?? get().triageItems.find((i) => i.id === id)?.status ?? "pending";
     try {
-      const updated = await devApi.acceptIdea(id);
+      const updated = await decideIdeaRow(id, "accept", { seenStatus: from });
       set((state) => ({
         triageItems: state.triageItems.map((i) => (i.id === id ? updated : i)),
         ideas: state.ideas.map((i) => (i.id === id ? updated : i)),
         // Decrement the bucket the row ACTUALLY left — accepting an already
         // rejected/archived row must not drive `pending` negative.
-        triageCounts: shiftCounts(
-          state.triageCounts,
-          state.triageItems.find((i) => i.id === id)?.status ?? "pending",
-          "accepted",
-        ),
+        triageCounts: shiftCounts(state.triageCounts, from, "accepted"),
         error: null,
       }));
     } catch (err) {
       reportError(err, "Failed to accept idea", set);
+      // Rethrow: this used to swallow, so the triage deck (which resolves the
+      // card the moment it decides) had nothing to restore from and every
+      // failure looked like a completed decision.
+      throw err;
     }
   },
 
-  rejectIdea: async (id, reason) => {
+  rejectIdea: async (id, reason, seenStatus) => {
+    const from = seenStatus ?? get().triageItems.find((i) => i.id === id)?.status ?? "pending";
     try {
-      const updated = await devApi.rejectIdea(id, reason);
+      const updated = await decideIdeaRow(id, "reject", { seenStatus: from, reason });
       set((state) => ({
         triageItems: state.triageItems.map((i) => (i.id === id ? updated : i)),
         ideas: state.ideas.map((i) => (i.id === id ? updated : i)),
-        triageCounts: shiftCounts(
-          state.triageCounts,
-          state.triageItems.find((i) => i.id === id)?.status ?? "pending",
-          "rejected",
-        ),
+        triageCounts: shiftCounts(state.triageCounts, from, "rejected"),
         error: null,
       }));
     } catch (err) {
       reportError(err, "Failed to reject idea", set);
+      throw err;
     }
   },
 

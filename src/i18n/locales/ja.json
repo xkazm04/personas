@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "スキップ",
       "backlog_execute_accepted": "承認済みを実行",
       "backlog_execute_none": "実行できる承認済み項目がありません。",
-      "backlog_execute_queued": "Run Desk に {count} 件のタスクを登録しました。"
+      "backlog_execute_queued": "Run Desk に {count} 件のタスクを登録しました。",
+      "bulk_partial_failure": "選択したレビューのうち {count} 件を処理できませんでした — まだ保留中です。"
     },
     "messages_view": {
       "title": "メッセージ",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "ビルドがランタイムで認識されないフィールドを出力しました。",
     "unknown_prompt_field_suggestion": "「Refine」をクリックしてください。新しいビルドは現在のスキーマを使用します。",
     "webhook_missing_secret_message": "このwebhookトリガーには署名用シークレットがありません。",
-    "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。"
+    "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。",
+    "decision_conflict_message": "この判断はすでに他の人が下しています — 再読み込みしています。",
+    "decision_conflict_suggestion": "最新の判断でリストを更新しています。内容を確認し、同意できない場合はもう一度判断してください。"
   },
   "empty_states": {
     "credentials_title": "エージェントの実行には認証情報が必要です",

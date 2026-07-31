@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "Build menghasilkan field yang tidak dikenali runtime.",
   "unknown_prompt_field_suggestion": "Klik Refine — build baru akan menggunakan skema terbaru.",
   "webhook_missing_secret_message": "Trigger webhook ini kehilangan signing secret-nya.",
-  "webhook_missing_secret_suggestion": "Jalankan ulang Promote — pipeline otomatis membuat webhook_secret saat submit. Jika masih berlanjut, mulai ulang build."
+  "webhook_missing_secret_suggestion": "Jalankan ulang Promote — pipeline otomatis membuat webhook_secret saat submit. Jika masih berlanjut, mulai ulang build.",
+  "decision_conflict_message": "Orang lain sudah memutuskan ini — memuat ulang.",
+  "decision_conflict_suggestion": "Daftar sedang disegarkan dengan keputusan terbaru. Tinjau lalu putuskan lagi jika Anda tidak setuju."
 }

@@ -480,7 +480,11 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
     // re-raise this finding next week stops raising it at all.
     reasonPrompts: [rejectPrompt(IDEA_REJECT_PRESETS, copy)],
     verdictLabels: { accept: copy.accept, reject: copy.reject, skip: copy.skip },
-    payload: { projectId: idea.projectId },
+    // `seenStatus` is what the CARD claims this row is. It rides to the backend
+    // as the compare-and-swap expectation, so a verdict decided on a card that
+    // someone else (or Athena, overnight) has already ruled on loses loudly
+    // instead of overwriting them and firing a second decision-memory fan-out.
+    payload: { projectId: idea.projectId, seenStatus: idea.status },
   };
 }
 
@@ -600,6 +604,10 @@ export function practiceToTriage(
           ]
         : undefined,
     verdictLabels: { accept: copy.adopt, reject: copy.reject, skip: copy.skip },
+    // See the idea adapter: the status the card claims becomes the write's
+    // compare-and-swap expectation. It matters more here — a stale `adopt` fans
+    // an adoption cell into every applicable member repo.
+    payload: { seenStatus: practice.status },
   };
 }
 

@@ -41,8 +41,16 @@ export interface TriagePorts {
     body: string,
     ideaId: string,
   ) => Promise<unknown>;
-  acceptIdea: (id: string) => Promise<unknown>;
-  rejectIdea: (id: string, reason?: string) => Promise<unknown>;
+  /**
+   * `seenStatus` is the status the CARD rendered. Every write door in this app
+   * carries it so the backend can make the write a single-winner
+   * compare-and-swap — a verdict decided on a card someone else already ruled on
+   * must lose loudly, not overwrite them. It is threaded through the ports (not
+   * read from the item inside the port) so this router stays the one place that
+   * knows where a verdict's facts come from.
+   */
+  acceptIdea: (id: string, seenStatus?: string) => Promise<unknown>;
+  rejectIdea: (id: string, reason?: string, seenStatus?: string) => Promise<unknown>;
   /**
    * `supersededBy` is the id of the practice that REPLACES this one. The backend
    * rejects it outright for any decision other than `deprecate`, so the router
@@ -52,6 +60,7 @@ export interface TriagePorts {
     id: string,
     verdict: 'adopt' | 'reject' | 'deprecate',
     supersededBy?: string,
+    seenStatus?: string,
   ) => Promise<unknown>;
   /** Fired after a practice verdict so the workspace centre re-reads. */
   refreshKnowledge: () => void;
@@ -109,7 +118,8 @@ export async function routeDecision(
       else await ports.reviewAction(item.sourceId, 'rejected', reason);
       return;
 
-    case 'idea':
+    case 'idea': {
+      const seen = item.payload?.seenStatus ?? undefined;
       if (branchId === 'build') {
         await ports.createTask(
           item.title,
@@ -117,13 +127,14 @@ export async function routeDecision(
           item.body,
           item.sourceId,
         );
-        await ports.acceptIdea(item.sourceId);
+        await ports.acceptIdea(item.sourceId, seen);
       } else if (verdict === 'accept') {
-        await ports.acceptIdea(item.sourceId);
+        await ports.acceptIdea(item.sourceId, seen);
       } else {
-        await ports.rejectIdea(item.sourceId, reason);
+        await ports.rejectIdea(item.sourceId, reason, seen);
       }
       return;
+    }
 
     case 'practice': {
       const deprecating = branchId === 'deprecate';
@@ -136,6 +147,7 @@ export async function routeDecision(
         // non-deprecate decision as a validation error, which would turn a
         // stale reason into a failed adopt.
         deprecating ? reason || undefined : undefined,
+        item.payload?.seenStatus ?? undefined,
       );
       ports.refreshKnowledge();
       return;

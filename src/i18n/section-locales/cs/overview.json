@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Přeskočit",
     "backlog_execute_accepted": "Spustit přijaté",
     "backlog_execute_none": "Žádné přijaté položky ke spuštění.",
-    "backlog_execute_queued": "Do Run Desku zařazeno {count} úloh."
+    "backlog_execute_queued": "Do Run Desku zařazeno {count} úloh.",
+    "bulk_partial_failure": "{count} z vybraných kontrol se nepodařilo vyřídit — stále čekají na vyřízení."
   },
   "messages_view": {
     "title": "Zprávy",

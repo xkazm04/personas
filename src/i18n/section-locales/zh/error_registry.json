@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "构建生成了一个运行时无法识别的字段。",
   "unknown_prompt_field_suggestion": "点击“Refine”——新的构建将使用当前的架构。",
   "webhook_missing_secret_message": "该 webhook 触发器缺少签名密钥。",
-  "webhook_missing_secret_suggestion": "请重新执行“Promote”——流程会在提交时自动生成 webhook_secret。如果问题仍然存在，请重新开始构建。"
+  "webhook_missing_secret_suggestion": "请重新执行“Promote”——流程会在提交时自动生成 webhook_secret。如果问题仍然存在，请重新开始构建。",
+  "decision_conflict_message": "其他人已经做出了决定 — 正在重新加载。",
+  "decision_conflict_suggestion": "列表正在刷新为最新裁决。请查看，如有异议可重新决定。"
 }

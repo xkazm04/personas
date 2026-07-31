@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "Bỏ qua",
       "backlog_execute_accepted": "Thực thi mục đã chấp nhận",
       "backlog_execute_none": "Không có mục đã chấp nhận nào để thực thi.",
-      "backlog_execute_queued": "Đã xếp {count} tác vụ vào Run Desk."
+      "backlog_execute_queued": "Đã xếp {count} tác vụ vào Run Desk.",
+      "bulk_partial_failure": "Không thể xử lý {count} trong số các đánh giá đã chọn — chúng vẫn đang chờ."
     },
     "messages_view": {
       "title": "Tin nhắn",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "Build đã tạo ra một trường dữ liệu mà runtime không nhận diện được.",
     "unknown_prompt_field_suggestion": "Nhấn Refine — build mới sẽ dùng schema hiện hành.",
     "webhook_missing_secret_message": "Trigger webhook này đang thiếu webhook_secret.",
-    "webhook_missing_secret_suggestion": "Chạy lại Promote — pipeline sẽ tự động tạo webhook_secret khi gửi. Nếu vẫn tiếp diễn, hãy khởi động lại build."
+    "webhook_missing_secret_suggestion": "Chạy lại Promote — pipeline sẽ tự động tạo webhook_secret khi gửi. Nếu vẫn tiếp diễn, hãy khởi động lại build.",
+    "decision_conflict_message": "Người khác đã quyết định việc này — đang tải lại.",
+    "decision_conflict_suggestion": "Danh sách đang được làm mới theo quyết định mới nhất. Hãy xem lại và quyết định lại nếu bạn không đồng ý."
   },
   "empty_states": {
     "credentials_title": "Tác tử cần thông tin xác thực để chạy",

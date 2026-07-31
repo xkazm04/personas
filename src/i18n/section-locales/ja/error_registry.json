@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "ビルドがランタイムで認識されないフィールドを出力しました。",
   "unknown_prompt_field_suggestion": "「Refine」をクリックしてください。新しいビルドは現在のスキーマを使用します。",
   "webhook_missing_secret_message": "このwebhookトリガーには署名用シークレットがありません。",
-  "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。"
+  "webhook_missing_secret_suggestion": "「Promote」を再実行してください。送信時にパイプラインがwebhook_secretを自動生成します。解決しない場合はビルドを再起動してください。",
+  "decision_conflict_message": "この判断はすでに他の人が下しています — 再読み込みしています。",
+  "decision_conflict_suggestion": "最新の判断でリストを更新しています。内容を確認し、同意できない場合はもう一度判断してください。"
 }

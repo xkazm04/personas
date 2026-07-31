@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "Omitir",
       "backlog_execute_accepted": "Ejecutar aceptados",
       "backlog_execute_none": "No hay elementos aceptados que ejecutar.",
-      "backlog_execute_queued": "{count} tareas en cola en el Run Desk."
+      "backlog_execute_queued": "{count} tareas en cola en el Run Desk.",
+      "bulk_partial_failure": "No se pudieron resolver {count} de las revisiones seleccionadas: siguen pendientes."
     },
     "messages_view": {
       "title": "Mensajes",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "La build generó un campo que el motor de ejecución no reconoce.",
     "unknown_prompt_field_suggestion": "Haz clic en Refine; la nueva build usará el esquema actual.",
     "webhook_missing_secret_message": "A este disparador de webhook le falta su secreto de firma.",
-    "webhook_missing_secret_suggestion": "Vuelve a ejecutar Promote; el flujo genera automáticamente un webhook_secret al enviarlo. Si persiste, reinicia la build."
+    "webhook_missing_secret_suggestion": "Vuelve a ejecutar Promote; el flujo genera automáticamente un webhook_secret al enviarlo. Si persiste, reinicia la build.",
+    "decision_conflict_message": "Otra persona ya decidió esto — recargando.",
+    "decision_conflict_suggestion": "La lista se está actualizando con el último veredicto. Revísalo y vuelve a decidir si no estás de acuerdo."
   },
   "empty_states": {
     "credentials_title": "Tus agentes necesitan credenciales para ejecutarse",

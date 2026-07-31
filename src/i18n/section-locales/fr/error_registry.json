@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "Le build a produit un champ que le moteur d'exécution ne reconnaît pas.",
   "unknown_prompt_field_suggestion": "Cliquez sur Refine — le nouveau build utilisera le schéma actuel.",
   "webhook_missing_secret_message": "Ce déclencheur webhook n'a pas de secret de signature.",
-  "webhook_missing_secret_suggestion": "Relancez Promote — le pipeline génère automatiquement un webhook_secret lors de la soumission. Si le problème persiste, redémarrez le build."
+  "webhook_missing_secret_suggestion": "Relancez Promote — le pipeline génère automatiquement un webhook_secret lors de la soumission. Si le problème persiste, redémarrez le build.",
+  "decision_conflict_message": "Quelqu'un d'autre a déjà tranché — rechargement en cours.",
+  "decision_conflict_suggestion": "La liste se met à jour avec le dernier verdict. Consultez-le et décidez à nouveau si vous n'êtes pas d'accord."
 }

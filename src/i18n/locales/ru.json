@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "Пропустить",
       "backlog_execute_accepted": "Выполнить принятые",
       "backlog_execute_none": "Нет принятых элементов для выполнения.",
-      "backlog_execute_queued": "В Run Desk поставлено задач: {count}."
+      "backlog_execute_queued": "В Run Desk поставлено задач: {count}.",
+      "bulk_partial_failure": "Не удалось обработать {count} из выбранных проверок — они всё ещё ожидают решения."
     },
     "messages_view": {
       "title": "Сообщения",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "Сборка выдала поле, которое среда выполнения не распознаёт.",
     "unknown_prompt_field_suggestion": "Нажмите «Refine» — новая сборка будет использовать актуальную схему.",
     "webhook_missing_secret_message": "У этого webhook-триггера отсутствует секрет подписи.",
-    "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку."
+    "webhook_missing_secret_suggestion": "Повторно нажмите «Promote» — конвейер автоматически генерирует webhook_secret при отправке. Если проблема сохраняется, перезапустите сборку.",
+    "decision_conflict_message": "Это уже решил кто-то другой — перезагружаем.",
+    "decision_conflict_suggestion": "Список обновляется с учётом последнего решения. Проверьте его и решите снова, если не согласны."
   },
   "empty_states": {
     "credentials_title": "Вашим агентам нужны учётные данные для работы",

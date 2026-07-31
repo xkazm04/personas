@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "Přeskočit",
       "backlog_execute_accepted": "Spustit přijaté",
       "backlog_execute_none": "Žádné přijaté položky ke spuštění.",
-      "backlog_execute_queued": "Do Run Desku zařazeno {count} úloh."
+      "backlog_execute_queued": "Do Run Desku zařazeno {count} úloh.",
+      "bulk_partial_failure": "{count} z vybraných kontrol se nepodařilo vyřídit — stále čekají na vyřízení."
     },
     "messages_view": {
       "title": "Zprávy",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "Build vygeneroval pole, které runtime nerozpoznává.",
     "unknown_prompt_field_suggestion": "Klikněte na Refine — nový build použije aktuální schéma.",
     "webhook_missing_secret_message": "Tomuto webhook triggeru chybí podpisový secret.",
-    "webhook_missing_secret_suggestion": "Znovu spusťte Promote — pipeline při odeslání automaticky vygeneruje webhook_secret. Pokud problém přetrvává, restartujte build."
+    "webhook_missing_secret_suggestion": "Znovu spusťte Promote — pipeline při odeslání automaticky vygeneruje webhook_secret. Pokud problém přetrvává, restartujte build.",
+    "decision_conflict_message": "Toto už rozhodl někdo jiný — načítá se znovu.",
+    "decision_conflict_suggestion": "Seznam se obnovuje s nejnovějším verdiktem. Zkontrolujte ho a rozhodněte znovu, pokud nesouhlasíte."
   },
   "empty_states": {
     "credentials_title": "Tvoji agenti potřebují ke spuštění přihlašovací údaje",

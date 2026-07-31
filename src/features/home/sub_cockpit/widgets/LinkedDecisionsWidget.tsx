@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, ShieldCheck, ThumbsDown, ThumbsUp } from 'lucide-react';
 
-import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { listManualReviews } from '@/api/overview/reviews';
+import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
@@ -58,10 +59,13 @@ export function LinkedDecisionsWidget({ config, title }: CockpitWidgetProps) {
     if (resolvingId) return;
     setResolvingId(review.id);
     try {
-      await updateManualReviewStatus(review.id, status);
+      await resolveReviewRow(review, status);
       reload();
     } catch (err) {
       toastCatch('Failed to update review')(err);
+      // A conflict means someone else's verdict is the truth — re-read so the
+      // widget stops offering a decision that has already been made.
+      reload();
     } finally {
       setResolvingId(null);
     }

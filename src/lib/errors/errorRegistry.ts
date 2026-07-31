@@ -58,6 +58,20 @@ interface ErrorRule {
 // ---------------------------------------------------------------------------
 
 const ERROR_RULES: ErrorRule[] = [
+  // ── Concurrent decisions ────────────────────────────────────────────
+  // A lost compare-and-swap on a decidable row (manual review, backlog idea,
+  // workspace practice). NOT a failure: the row IS decided, just not by this
+  // reviewer — Athena's Night Shift resolves approvals unattended, so this is a
+  // routine event, not a race. First in the list because the raw strings also
+  // contain generic words ("Validation", ids) that later rules would claim.
+  {
+    match: /already (?:decided|resolved)[\s\S]{0,80}?by a concurrent action/i,
+    error: {
+      message: 'Someone else already decided this — reloading.',
+      suggestion: 'The list is refreshing with the latest verdict. Review it and decide again if you disagree.',
+      category: 'recoverable',
+    },
+  },
   // ── Network & connectivity ──────────────────────────────────────────
   {
     match: 'NetworkOffline',

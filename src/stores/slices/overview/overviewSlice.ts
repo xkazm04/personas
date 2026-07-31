@@ -16,7 +16,8 @@ import { listAllExecutions, countExecutions } from "@/api/agents/executions";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import { getExecutionDashboard, getOverviewBundle } from "@/api/overview/observability";
 import { listHealingIssues } from "@/api/overview/healing";
-import { getPendingReviewCount, listManualReviews, updateManualReviewStatus } from "@/api/overview/reviews";
+import { getPendingReviewCount, listManualReviews } from "@/api/overview/reviews";
+import { resolveReviewRow } from "@/lib/decisions/rowWrites";
 
 import { cloudListPendingReviews, cloudRespondToReview } from "@/api/system/cloud";
 import { log } from "@/lib/log";
@@ -444,13 +445,24 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     }
   },
 
+  // A verdict on a LOCAL review row. Routed through the one write door so it
+  // cannot drift from the five other surfaces that resolve the same rows.
+  //
+  // It REJECTS on failure. `reportError` returns a string and never throws, so
+  // for the whole life of this action a failed write resolved successfully: the
+  // Cockpit widgets and the companion inbox showed the row as decided while
+  // SQLite still said `pending`, with nothing but a toast to say otherwise —
+  // and the callers, which `await` this, had no way to undo their own optimistic
+  // state. `reportError` still fires (state + toast); the rethrow is what lets a
+  // caller restore.
   updateManualReview: async (id, updates) => {
     try {
-      await updateManualReviewStatus(id, updates.status ?? 'pending', updates.reviewer_notes);
+      await resolveReviewRow({ id, execution_id: '', source: 'local' }, updates.status ?? 'pending', updates.reviewer_notes);
       // Re-fetch to get updated list
       await get().fetchManualReviews();
     } catch (err) {
       reportError(err, "Failed to update manual review", set);
+      throw err;
     }
   },
 
@@ -501,6 +513,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     }
   },
 
+  // REJECTS on failure. It used to resolve — `reportError` returns a string —
+  // so every caller that awaited it (the Monitor's review writers, the Approvals
+  // list, its bulk path) was told a cloud verdict had landed when the request had
+  // failed: the row left the list, the pending counter dropped, and the cloud
+  // review was still `pending`. The toast stays; the rethrow is what lets an
+  // optimistic caller put the row back.
   respondToCloudReview: async (reviewId, executionId, decision, message) => {
     try {
       await cloudRespondToReview(executionId, reviewId, decision, message);
@@ -508,6 +526,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       await get().fetchCloudReviews();
     } catch (err) {
       reportError(err, "Failed to respond to cloud review", set);
+      throw err;
     }
   },
 

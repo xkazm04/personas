@@ -6660,6 +6660,7 @@
       "gc_resolved": "Auto-resolved {count} stale reviews (older than 7 days).",
       "gc_none": "No stale reviews to clear.",
       "gc_failed": "Could not clear stale reviews — see logs.",
+      "bulk_partial_failure": "{count} of the selected reviews could not be resolved — they are still pending.",
       "backlog_all_groups": "All categories",
       "backlog_group_summary": "{group} · {count} ideas",
       "backlog_all_summary": "{count} ideas",
@@ -11544,6 +11545,8 @@
     "gitlab_error": "GitLab error: {detail}"
   },
   "error_registry": {
+    "decision_conflict_message": "Someone else already decided this — reloading.",
+    "decision_conflict_suggestion": "The list is refreshing with the latest verdict. Review it and decide again if you disagree.",
     "network_offline_message": "You appear to be offline.",
     "network_offline_suggestion": "Check your internet connection and try again.",
     "timed_out_message": "The request took too long to complete.",

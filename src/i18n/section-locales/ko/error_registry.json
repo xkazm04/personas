@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "빌드가 런타임에서 인식하지 못하는 필드를 생성했습니다.",
   "unknown_prompt_field_suggestion": "Refine을 클릭하세요 — 새 빌드는 현재 스키마를 사용합니다.",
   "webhook_missing_secret_message": "이 webhook 트리거에 서명용 secret이 없습니다.",
-  "webhook_missing_secret_suggestion": "Promote를 다시 실행하세요 — 파이프라인이 제출 시 webhook_secret을 자동으로 생성합니다. 문제가 계속되면 빌드를 다시 시작하세요."
+  "webhook_missing_secret_suggestion": "Promote를 다시 실행하세요 — 파이프라인이 제출 시 webhook_secret을 자동으로 생성합니다. 문제가 계속되면 빌드를 다시 시작하세요.",
+  "decision_conflict_message": "다른 사람이 이미 결정했습니다 — 다시 불러오는 중입니다.",
+  "decision_conflict_suggestion": "최신 결정 내용으로 목록을 새로 고치고 있습니다. 확인 후 동의하지 않으면 다시 결정하세요."
 }

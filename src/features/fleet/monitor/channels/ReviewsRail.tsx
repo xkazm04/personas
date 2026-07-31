@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { listManualReviews } from '@/api/overview/reviews';
+import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { QuickAnswerReviewCard } from '@/features/agents/quick-answer/QuickAnswerReviewCard';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
@@ -74,10 +75,16 @@ export function ReviewsRail({ members }: { members: ChannelMember[] }) {
   const act = async (id: string, status: ManualReviewStatus, notes?: string) => {
     setBusy(true);
     try {
-      await updateManualReviewStatus(id, status, notes);
+      // One door for the row type; local-only here (this rail lists local rows).
+      await resolveReviewRow({ id, execution_id: '', source: 'local' }, status, notes);
       setReviews((rs) => rs.filter((r) => r.id !== id));
     } catch (e) {
-      silentCatch('conversation:resolveReview')(e);
+      // Was `silentCatch`: a failed verdict left the card on screen with no
+      // explanation, and work stayed blocked on a step the reviewer believed
+      // they had unblocked. A held team step is the most time-critical thing
+      // this rail shows — it does not get to fail quietly.
+      toastCatch('conversation:resolveReview')(e);
+      refresh();
     } finally {
       setBusy(false);
     }

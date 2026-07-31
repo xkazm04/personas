@@ -19,11 +19,8 @@ import {
   type PendingApproval,
   type ProactiveMessage,
 } from '@/api/companion';
-import {
-  listManualReviews,
-  updateManualReviewStatus,
-  dispatchReviewAction,
-} from '@/api/overview/reviews';
+import { listManualReviews } from '@/api/overview/reviews';
+import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
 import { markMessageRead } from '@/api/overview/messages';
 import { companionEngageProactive } from '@/api/companion';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
@@ -209,7 +206,7 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
 
   const resolve = async (status: 'approved' | 'rejected'): Promise<void> => {
     try {
-      await updateManualReviewStatus(review.id, status);
+      await resolveReviewRow(review, status);
     } catch (err) {
       silentCatch('companion/decision:review')(err);
       // Propagate so runDecisionOption keeps the review pending + toasts on
@@ -223,7 +220,7 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
   // model). Capped so the orb's numbered chips stay legible.
   const carryOut = async (action: string): Promise<void> => {
     try {
-      await dispatchReviewAction(review.id, action);
+      await dispatchReviewRowAction(review, action);
     } catch (err) {
       silentCatch('companion/decision:review-action')(err);
       // Propagate so runDecisionOption keeps the review pending + toasts on

@@ -6516,7 +6516,8 @@
       "backlog_athena_verdict_skip": "छोड़ें",
       "backlog_execute_accepted": "स्वीकृत निष्पादित करें",
       "backlog_execute_none": "निष्पादित करने के लिए कोई स्वीकृत आइटम नहीं।",
-      "backlog_execute_queued": "Run Desk पर {count} कार्य कतारबद्ध किए।"
+      "backlog_execute_queued": "Run Desk पर {count} कार्य कतारबद्ध किए।",
+      "bulk_partial_failure": "चुनी गई समीक्षाओं में से {count} हल नहीं हो सकीं — वे अब भी लंबित हैं।"
     },
     "messages_view": {
       "title": "संदेश",
@@ -11430,7 +11431,9 @@
     "unknown_prompt_field_message": "बिल्ड ने एक ऐसा फ़ील्ड जनरेट किया जिसे रनटाइम नहीं पहचानता।",
     "unknown_prompt_field_suggestion": "Refine पर क्लिक करें — नया बिल्ड मौजूदा स्कीमा का उपयोग करेगा।",
     "webhook_missing_secret_message": "इस वेबहुक ट्रिगर में इसका साइनिंग सीक्रेट गायब है।",
-    "webhook_missing_secret_suggestion": "Promote को फिर से चलाएँ — सबमिट करने पर पाइपलाइन अपने आप एक webhook_secret जनरेट करती है। यदि यह बना रहे, तो बिल्ड को फिर से शुरू करें।"
+    "webhook_missing_secret_suggestion": "Promote को फिर से चलाएँ — सबमिट करने पर पाइपलाइन अपने आप एक webhook_secret जनरेट करती है। यदि यह बना रहे, तो बिल्ड को फिर से शुरू करें।",
+    "decision_conflict_message": "यह फ़ैसला पहले ही किसी और ने कर दिया है — फिर से लोड हो रहा है।",
+    "decision_conflict_suggestion": "सूची नवीनतम फ़ैसले के साथ रीफ़्रेश हो रही है। उसे देखें और असहमत हों तो दोबारा फ़ैसला करें।"
   },
   "empty_states": {
     "credentials_title": "आपके एजेंटों को चलने के लिए क्रेडेंशियल चाहिए",

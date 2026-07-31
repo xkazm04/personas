@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Omitir",
     "backlog_execute_accepted": "Ejecutar aceptados",
     "backlog_execute_none": "No hay elementos aceptados que ejecutar.",
-    "backlog_execute_queued": "{count} tareas en cola en el Run Desk."
+    "backlog_execute_queued": "{count} tareas en cola en el Run Desk.",
+    "bulk_partial_failure": "No se pudieron resolver {count} de las revisiones seleccionadas: siguen pendientes."
   },
   "messages_view": {
     "title": "Mensajes",

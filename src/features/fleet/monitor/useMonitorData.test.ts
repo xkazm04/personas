@@ -16,11 +16,21 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 const mockListReviews = vi.fn();
 const mockUpdateStatus = vi.fn();
 const mockDispatchAction = vi.fn();
+const mockCloudRespond = vi.fn();
 
 vi.mock('@/api/overview/reviews', () => ({
   listManualReviews: (...args: unknown[]) => mockListReviews(...args),
   updateManualReviewStatus: (...args: unknown[]) => mockUpdateStatus(...args),
   dispatchReviewAction: (...args: unknown[]) => mockDispatchAction(...args),
+}));
+
+// The cloud verdict command, mocked at the API rather than at the store. The
+// store action used to be the only thing this hook could reach, and mocking it
+// to always resolve (as this file did) hid the entire cloud-failure branch —
+// which was in fact broken: `overviewSlice.respondToCloudReview` caught and
+// called `reportError`, which returns a string and never throws.
+vi.mock('@/api/system/cloud', () => ({
+  cloudRespondToReview: (...args: unknown[]) => mockCloudRespond(...args),
 }));
 
 vi.mock('@/api/overview/messages', () => ({
@@ -52,7 +62,7 @@ const agentState = {
 };
 const overviewState = {
   activeProcesses: {},
-  cloudReviews: [],
+  cloudReviews: [] as ReturnType<typeof cloudRow>[],
   fetchCloudReviews: vi.fn().mockResolvedValue(undefined),
   respondToCloudReview: vi.fn().mockResolvedValue(undefined),
   fetchPendingReviewCount: vi.fn().mockResolvedValue(undefined),
@@ -91,6 +101,11 @@ function row(id: string) {
   };
 }
 
+/** A cloud row, shaped the way `fetchCloudReviews` shapes one. */
+function cloudRow(id: string) {
+  return { ...row(id), source: 'cloud' as const };
+}
+
 /** Mount and wait for the initial review load to land. */
 async function mount(feeds?: Parameters<typeof useMonitorData>[0]) {
   const hook = renderHook(() => useMonitorData(feeds));
@@ -108,6 +123,8 @@ beforeEach(() => {
   mockListReviews.mockResolvedValue([row('r1'), row('r2')]);
   mockUpdateStatus.mockResolvedValue(undefined);
   mockDispatchAction.mockResolvedValue(undefined);
+  mockCloudRespond.mockResolvedValue(undefined);
+  overviewState.cloudReviews = [];
 });
 
 // --- tests -----------------------------------------------------------------
@@ -241,5 +258,85 @@ describe('useMonitorData — failures are surfaced, not swallowed', () => {
       /no longer in the pending queue/,
     );
     expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects when a CLOUD review write fails', async () => {
+    // The branch the old mock hid. The card leaves an optimistic queue the
+    // moment the reviewer decides; if this resolves on failure the counter
+    // increments, no toast fires, and the row is still `pending` in the cloud.
+    overviewState.cloudReviews = [cloudRow('c1')];
+    mockCloudRespond.mockRejectedValueOnce(new Error('cloud worker unreachable'));
+
+    const { result } = await mount();
+    await expect(result.current.handleReviewAction('c1', 'approved')).rejects.toThrow(
+      'cloud worker unreachable',
+    );
+    // Never fell back to the local command for a cloud row.
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+
+  it('rejects when a CLOUD dispatch-action write fails', async () => {
+    overviewState.cloudReviews = [cloudRow('c1')];
+    mockCloudRespond.mockRejectedValueOnce(new Error('cloud worker unreachable'));
+
+    const { result } = await mount();
+    await expect(result.current.handleDispatchAction('c1', 'rotate the key')).rejects.toThrow(
+      'cloud worker unreachable',
+    );
+  });
+
+  it('routes a cloud verdict to the cloud worker, not the local command', async () => {
+    overviewState.cloudReviews = [cloudRow('c1')];
+    const { result } = await mount();
+
+    await act(async () => { await result.current.handleReviewAction('c1', 'rejected', 'no'); });
+
+    expect(mockCloudRespond).toHaveBeenCalledWith('e1', 'c1', 'reject', 'no');
+    expect(mockUpdateStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('useMonitorData — the in-flight key names the INTENT, not just the row', () => {
+  it('writes BOTH verdicts when a different one lands on the same row mid-flight', async () => {
+    // The defect: both writers keyed on `review:${id}`, so a reject issued
+    // while an approve was open JOINED the approve's promise — one write, and
+    // the caller was told its reject had landed.
+    let releaseFirst!: () => void;
+    mockUpdateStatus.mockImplementationOnce(
+      () => new Promise<void>((resolve) => { releaseFirst = resolve; }),
+    );
+
+    const { result } = await mount();
+
+    let approve!: Promise<void>;
+    await act(async () => { approve = result.current.handleReviewAction('r1', 'approved'); });
+    let reject!: Promise<void>;
+    await act(async () => { reject = result.current.handleReviewAction('r1', 'rejected'); });
+
+    await act(async () => {
+      releaseFirst();
+      await Promise.allSettled([approve, reject]);
+    });
+
+    expect(mockUpdateStatus).toHaveBeenCalledTimes(2);
+    expect(mockUpdateStatus).toHaveBeenCalledWith('r1', 'approved', undefined);
+    expect(mockUpdateStatus).toHaveBeenCalledWith('r1', 'rejected', undefined);
+  });
+
+  it('still joins two calls that ask for exactly the same thing', async () => {
+    let release!: () => void;
+    mockDispatchAction.mockImplementationOnce(
+      () => new Promise<void>((resolve) => { release = resolve; }),
+    );
+
+    const { result } = await mount();
+
+    let a!: Promise<void>;
+    let b!: Promise<void>;
+    await act(async () => { a = result.current.handleDispatchAction('r1', 'rotate the key'); });
+    await act(async () => { b = result.current.handleDispatchAction('r1', 'rotate the key'); });
+
+    await act(async () => { release(); await Promise.all([a, b]); });
+    expect(mockDispatchAction).toHaveBeenCalledTimes(1);
   });
 });

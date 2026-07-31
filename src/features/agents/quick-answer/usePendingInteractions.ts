@@ -96,11 +96,25 @@ export function usePendingInteractions(): QuickAnswerData {
     async (sessionId: string, answers: Record<string, string>) => {
       if (Object.keys(answers).length === 0) return;
       const payload = buildBatchedAnswerPayload(answers);
-      // Optimistic: clear the answered questions immediately so the popover
-      // updates without waiting for the backend round-trip. The CLI confirms
-      // via cell_update / session_status events through the global eventBridge.
-      applyPendingAnswers(sessionId, answers);
+      // WRITE FIRST, then clear.
+      //
+      // This used to call `applyPendingAnswers` before awaiting, which was a
+      // one-way optimistic mutation with no rollback: on a rejected write the
+      // questions were already gone from `buildSessions`, so the card could not
+      // be re-derived from anything. The CLI stayed halted at `awaiting_input`
+      // and the answer the user had just typed was unrecoverable from this
+      // surface — the one failure mode where being optimistic costs data rather
+      // than latency.
+      //
+      // Nothing perceptible is lost: the triage deck already resolves its card
+      // the moment the reviewer decides and restores it on rejection, so the
+      // deck's responsiveness never depended on this store write landing early.
+      // The popover simply keeps showing the questions until the CLI has them.
       await answerBuildQuestion(sessionId, '_batch', payload);
+      // The CLI confirms via cell_update / session_status events through the
+      // global eventBridge; this keeps the popover in step without waiting for
+      // the first event to land.
+      applyPendingAnswers(sessionId, answers);
     },
     [applyPendingAnswers],
   );

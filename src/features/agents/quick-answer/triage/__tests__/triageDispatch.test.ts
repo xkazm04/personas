@@ -98,7 +98,7 @@ describe('routeDecision — ideas and practices', () => {
     await routeDecision({ item, verdict: 'accept', branchId: 'build' }, ports);
 
     expect(ports.createTask).toHaveBeenCalledWith(item.title, 'proj-1', item.body, 'idea-1');
-    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-1');
+    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-1', undefined);
   });
 
   it('maps practice verdicts onto adopt / reject / deprecate and refreshes', async () => {
@@ -106,13 +106,13 @@ describe('routeDecision — ideas and practices', () => {
     const ports = makePorts();
 
     await routeDecision({ item, verdict: 'accept' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
 
     await routeDecision({ item, verdict: 'reject' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
 
     await routeDecision({ item, verdict: 'accept', branchId: 'deprecate' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined, undefined);
     expect(ports.refreshKnowledge).toHaveBeenCalledTimes(3);
   });
 
@@ -124,7 +124,7 @@ describe('routeDecision — ideas and practices', () => {
       { item, verdict: 'accept', branchId: 'deprecate', reason: 'k-2' },
       ports,
     );
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2');
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2', undefined);
   });
 
   it('never forwards a successor on a NON-deprecate decision', async () => {
@@ -135,10 +135,44 @@ describe('routeDecision — ideas and practices', () => {
     const ports = makePorts();
 
     await routeDecision({ item, verdict: 'accept', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
 
     await routeDecision({ item, verdict: 'reject', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
+  });
+});
+
+describe('routeDecision — the status the CARD showed rides to the write', () => {
+  // The compare-and-swap expectation. Without it, a verdict decided on a card
+  // someone else already ruled on overwrites their verdict AND fires a second
+  // side-effect fan-out (a `constraint` memory for ideas, an adoption cell per
+  // member repo for practices) — the two loops then disagree forever.
+  it('forwards an idea card seenStatus on accept, build-now and reject', async () => {
+    const item = makeItem('idea', {
+      sourceId: 'idea-7',
+      payload: { projectId: 'proj-1', seenStatus: 'pending' },
+    });
+    const ports = makePorts();
+
+    await routeDecision({ item, verdict: 'accept' }, ports);
+    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-7', 'pending');
+
+    await routeDecision({ item, verdict: 'accept', branchId: 'build' }, ports);
+    expect(ports.acceptIdea).toHaveBeenLastCalledWith('idea-7', 'pending');
+
+    await routeDecision({ item, verdict: 'reject', reason: 'Out of scope' }, ports);
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-7', 'Out of scope', 'pending');
+  });
+
+  it('forwards a practice card seenStatus alongside the successor', async () => {
+    const item = makeItem('practice', { sourceId: 'k-7', payload: { seenStatus: 'proposed' } });
+    const ports = makePorts();
+
+    await routeDecision({ item, verdict: 'accept' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-7', 'adopt', undefined, 'proposed');
+
+    await routeDecision({ item, verdict: 'accept', branchId: 'deprecate', reason: 'k-8' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenLastCalledWith('k-7', 'deprecate', 'k-8', 'proposed');
   });
 });
 
@@ -158,13 +192,13 @@ describe('routeDecision — rejections carry their reason to the write', () => {
       { item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject', reason: 'Out of scope' },
       ports,
     );
-    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', 'Out of scope');
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', 'Out of scope', undefined);
   });
 
   it('still writes the rejection when the reviewer skipped the reason', async () => {
     const ports = makePorts();
     await routeDecision({ item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject' }, ports);
-    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', undefined);
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', undefined, undefined);
   });
 });
 
