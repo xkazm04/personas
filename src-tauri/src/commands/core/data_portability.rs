@@ -70,6 +70,18 @@ const MAX_TEAM_CONNECTIONS: usize = 200;
 const MAX_TEAM_MEMORIES_PER_TEAM: usize = 500;
 const MAX_KPIS: usize = 200;
 const MAX_KPI_MEASUREMENTS: usize = 100;
+const MAX_DEV_PROJECTS: usize = 25;
+const MAX_KNOWLEDGE_ENTRIES: usize = 2000;
+
+/// Hard ceiling on a single exported skill file. Skills are markdown +
+/// small reference files; anything bigger is a binary asset or generated
+/// artifact that has no business travelling in a portability bundle.
+const MAX_SKILL_FILE_BYTES: u64 = 256 * 1024;
+
+/// Provenance sidecar written by skill installs — local sync bookkeeping,
+/// never exported. Mirrors `PROVENANCE_FILE` in
+/// `commands::infrastructure::skill_files` (private there).
+const SKILL_PROVENANCE_FILE: &str = ".personas-skill-meta.json";
 
 // ============================================================================
 // Export bundle types
@@ -92,6 +104,14 @@ pub struct PortabilityBundle {
     // deserialize cleanly — no format-version bump (same precedent as team memories).
     #[serde(default)]
     pub kpis: Vec<KpiExport>,
+    // Dev-tools projects (full planning/child graph + on-disk skills) and
+    // workspace knowledge libraries. Optional + serde-default so bundles
+    // written before these fields existed still deserialize cleanly — no
+    // format-version bump (same additive precedent as `kpis`).
+    #[serde(default)]
+    pub dev_projects: Vec<DevProjectExport>,
+    #[serde(default)]
+    pub workspace_knowledge: Vec<WorkspaceKnowledgeExport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credentials: Option<CredentialExportEnvelope>,
 }
@@ -105,6 +125,10 @@ pub enum ExportScope {
         team_ids: Vec<String>,
         #[serde(default)]
         credential_ids: Vec<String>,
+        #[serde(default)]
+        project_ids: Vec<String>,
+        #[serde(default)]
+        workspace_ids: Vec<String>,
     },
 }
 
@@ -257,6 +281,531 @@ pub struct KpiMeasurementExport {
 }
 
 // ============================================================================
+// Dev-tools export types (export side; import lands in a follow-up)
+//
+// A dev project travels as its row plus the full planning graph (goals,
+// contexts, ideas, tasks, use cases, milestones, KPIs, memories) and the
+// on-disk `.claude/skills/` library. Rows mirror their tables with original
+// uuids and timestamps so a future import can rebuild relationships; the
+// only stripped cells are credential ids (unresolvable soft refs into the
+// source vault). Telemetry / scan-cache tables (dev_llm_spend, dev_auto_runs,
+// dev_run_checkpoints, skill_registry / skill_usage_events,
+// dev_context_file_hashes, context_health_snapshots, dev_scans,
+// workspace_harvest_coverage) intentionally do NOT travel.
+// ============================================================================
+
+/// A dev project in the portability bundle. The four credential-id columns
+/// (`monitoring_credential_id`, `llm_tracking_credential_id`,
+/// `support_credential_id`, `pr_credential_id`) are intentionally NOT
+/// exported — they point into the source workspace's vault.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevProjectExport {
+    pub id: String,
+    pub name: String,
+    pub root_path: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub tech_stack: Option<String>,
+    /// Soft ref into the bundle's teams — orphan-tolerant by design. The
+    /// import side remaps it via id_mapping when the team travels in the
+    /// same bundle, else keeps it as-is.
+    pub team_id: Option<String>,
+    pub auto_pr_on_success: bool,
+    pub github_url: Option<String>,
+    pub main_branch: Option<String>,
+    pub test_env_url: Option<String>,
+    pub test_env_branch: Option<String>,
+    pub workspace_id: Option<String>,
+    pub data_links: Option<String>,
+    pub static_scan_config: Option<String>,
+    pub standards_config: Option<String>,
+    pub monitoring_project_slug: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub goals: Vec<DevGoalExport>,
+    pub goal_dependencies: Vec<DevGoalDependencyExport>,
+    pub goal_signals: Vec<DevGoalSignalExport>,
+    pub goal_items: Vec<DevGoalItemExport>,
+    pub context_groups: Vec<DevContextGroupExport>,
+    pub contexts: Vec<DevContextExport>,
+    pub context_group_relationships: Vec<DevContextGroupRelationshipExport>,
+    pub context_fingerprints: Vec<DevContextFingerprintExport>,
+    pub ideas: Vec<DevIdeaExport>,
+    pub tasks: Vec<DevTaskExport>,
+    pub competitions: Vec<DevCompetitionExport>,
+    pub competition_slots: Vec<DevCompetitionSlotExport>,
+    pub triage_rules: Vec<DevTriageRuleExport>,
+    pub pipelines: Vec<DevPipelineExport>,
+    pub standards: Vec<DevStandardExport>,
+    pub use_cases: Vec<DevUseCaseExport>,
+    pub use_case_contexts: Vec<DevUseCaseContextExport>,
+    pub milestones: Vec<DevMilestoneExport>,
+    pub milestone_items: Vec<DevMilestoneItemExport>,
+    pub kpis: Vec<DevKpiExport>,
+    pub kpi_measurements: Vec<DevKpiMeasurementExport>,
+    pub kpi_bindings: Vec<DevKpiBindingExport>,
+    pub memories: Vec<DevMemoryExport>,
+    pub memory_nodes: Vec<MemoryNodeExport>,
+    pub memory_edges: Vec<MemoryEdgeExport>,
+    pub skills: Vec<SkillFileExport>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevGoalExport {
+    pub id: String,
+    pub parent_goal_id: Option<String>,
+    pub context_id: Option<String>,
+    pub kpi_id: Option<String>,
+    pub order_index: i32,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub progress: Option<i32>,
+    pub target_date: Option<String>,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevGoalDependencyExport {
+    pub id: String,
+    pub goal_id: String,
+    pub depends_on_id: String,
+    pub dependency_type: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevGoalSignalExport {
+    pub id: String,
+    pub goal_id: String,
+    pub signal_type: String,
+    pub source_id: Option<String>,
+    pub delta: Option<i32>,
+    pub message: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevGoalItemExport {
+    pub id: String,
+    pub goal_id: String,
+    pub title: String,
+    pub done: bool,
+    pub order_index: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevContextGroupExport {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+    pub icon: Option<String>,
+    pub group_type: Option<String>,
+    pub position: i32,
+    pub health_score: Option<i32>,
+    pub last_scan_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevContextExport {
+    pub id: String,
+    pub group_id: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+    pub file_paths: String,
+    pub entry_points: Option<String>,
+    pub db_tables: Option<String>,
+    pub keywords: Option<String>,
+    pub api_surface: Option<String>,
+    pub cross_refs: Option<String>,
+    pub tech_stack: Option<String>,
+    pub category: Option<String>,
+    pub business_feature: Option<String>,
+    pub pinned: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevContextGroupRelationshipExport {
+    pub id: String,
+    pub source_group_id: String,
+    pub target_group_id: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevContextFingerprintExport {
+    pub context_id: String,
+    pub content_hash: String,
+    pub file_count: i32,
+    pub missing_file_count: i32,
+    pub imports: Option<String>,
+    pub primitives: Option<String>,
+    pub promise_all_count: i32,
+    pub join_all_count: i32,
+    pub await_count: i32,
+    pub sql_write_count: i32,
+    pub spawn_count: i32,
+    pub use_effect_count: i32,
+    pub set_state_after_await_count: i32,
+    pub exports_components: i32,
+    pub exports_hooks: i32,
+    pub exports_commands: i32,
+    pub exports_repo_fns: i32,
+    pub computed_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevIdeaExport {
+    pub id: String,
+    pub context_id: Option<String>,
+    pub scan_type: String,
+    pub category: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub reasoning: Option<String>,
+    pub status: String,
+    pub effort: Option<i32>,
+    pub impact: Option<i32>,
+    pub risk: Option<i32>,
+    pub priority: Option<i32>,
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub rejection_reason: Option<String>,
+    pub origin: Option<String>,
+    pub use_case_id: Option<String>,
+    pub evidence: Option<String>,
+    pub dedup_key: Option<String>,
+    pub verify_state: Option<String>,
+    pub verify_checked_at: Option<String>,
+    pub verify_evidence: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevTaskExport {
+    pub id: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub source_idea_id: Option<String>,
+    pub goal_id: Option<String>,
+    pub status: String,
+    pub session_id: Option<String>,
+    pub progress_pct: Option<i32>,
+    pub output_lines: Option<i32>,
+    pub error: Option<String>,
+    pub depth: String,
+    pub parent_task_id: Option<String>,
+    pub attempt: i32,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevCompetitionExport {
+    pub id: String,
+    pub task_title: String,
+    pub task_description: Option<String>,
+    pub source_idea_id: Option<String>,
+    pub source_goal_id: Option<String>,
+    pub slot_count: i32,
+    pub status: String,
+    pub winner_task_id: Option<String>,
+    pub winner_insight: Option<String>,
+    pub baseline_json: Option<String>,
+    pub reviewer_notes: Option<String>,
+    pub worktree_base_ref: Option<String>,
+    pub created_at: String,
+    pub resolved_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevCompetitionSlotExport {
+    pub id: String,
+    pub competition_id: String,
+    pub task_id: String,
+    pub strategy_label: String,
+    pub strategy_prompt: Option<String>,
+    pub worktree_name: String,
+    pub branch_name: Option<String>,
+    pub slot_index: i32,
+    pub disqualified: bool,
+    pub disqualify_reason: Option<String>,
+    pub diff_hash: Option<String>,
+    pub diff_stats_json: Option<String>,
+    pub diff_analyzed_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevTriageRuleExport {
+    pub id: String,
+    pub name: String,
+    pub conditions: String,
+    pub action: String,
+    pub enabled: Option<bool>,
+    pub times_fired: Option<i32>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevPipelineExport {
+    pub id: String,
+    pub idea_id: String,
+    pub task_id: Option<String>,
+    pub stage: String,
+    pub auto_execute: bool,
+    pub verify_after: bool,
+    pub verification_scan_id: Option<String>,
+    pub error: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevStandardExport {
+    pub id: String,
+    pub scan_id: Option<String>,
+    pub rule_key: String,
+    pub category: String,
+    pub title: String,
+    pub status: String,
+    pub severity: String,
+    pub evidence: Option<String>,
+    pub recommendation: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevUseCaseExport {
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+    pub description: Option<String>,
+    pub kind: String,
+    pub primary_context_id: Option<String>,
+    pub status: String,
+    pub created_by: String,
+    pub pinned: bool,
+    pub rationale: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevUseCaseContextExport {
+    pub use_case_id: String,
+    pub context_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevMilestoneExport {
+    pub id: String,
+    pub name: String,
+    pub goal: Option<String>,
+    pub status: String,
+    pub order_index: i32,
+    pub target_date: Option<String>,
+    pub cut_at: Option<String>,
+    pub shipped_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevMilestoneItemExport {
+    pub milestone_id: String,
+    pub item_kind: String,
+    pub item_id: String,
+    pub bucket: String,
+    pub added_after_cut: bool,
+    pub order_index: i32,
+    pub created_at: String,
+}
+
+/// Full-fidelity KPI row for a bundled dev project. Unlike the team-scoped
+/// [`KpiExport`] (which re-derives a clean dormant KPI), this mirrors the
+/// table so the project graph round-trips intact.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevKpiExport {
+    pub id: String,
+    pub context_group_id: Option<String>,
+    pub context_id: Option<String>,
+    pub use_case_id: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+    pub category: String,
+    pub measure_kind: String,
+    pub measure_config: String,
+    pub unit: String,
+    pub direction: String,
+    pub baseline_value: Option<f64>,
+    pub target_value: Option<f64>,
+    pub target_date: Option<String>,
+    pub current_value: Option<f64>,
+    pub last_measured_at: Option<String>,
+    pub cadence: String,
+    pub status: String,
+    pub created_by: String,
+    pub rationale: Option<String>,
+    pub needed_connector: Option<String>,
+    pub metric_type: Option<String>,
+    pub tier: String,
+    pub warn_at: Option<f64>,
+    pub crit_at: Option<f64>,
+    pub manual_rating: Option<i32>,
+    pub assessment_pros: Option<String>,
+    pub assessment_cons: Option<String>,
+    pub last_skip_at: Option<String>,
+    pub last_skip_rationale: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevKpiMeasurementExport {
+    pub id: String,
+    pub kpi_id: String,
+    pub value: f64,
+    pub measured_at: String,
+    pub source: String,
+    pub env: String,
+    pub evidence: Option<String>,
+    pub note: Option<String>,
+}
+
+/// KPI measurement binding minus `credential_id` — the binding's procedure
+/// and service type travel, but the vault reference cannot resolve in the
+/// destination workspace.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevKpiBindingExport {
+    pub id: String,
+    pub kpi_id: String,
+    pub service_type: String,
+    pub procedure: String,
+    pub composed_by: String,
+    pub status: String,
+    pub verified_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DevMemoryExport {
+    pub id: String,
+    pub category: String,
+    pub title: String,
+    pub content: String,
+    pub importance: i32,
+    pub source_kind: String,
+    pub source_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MemoryNodeExport {
+    pub id: String,
+    pub context_id: Option<String>,
+    pub kind: String,
+    pub title: String,
+    pub body: Option<String>,
+    pub source: String,
+    pub status: String,
+    pub content_hash: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct MemoryEdgeExport {
+    pub from_id: String,
+    pub to_id: String,
+    pub rel: String,
+    pub created_at: String,
+}
+
+/// One file inside an exported skill, relative to the skill's directory
+/// (forward-slash separators). UTF-8 text only.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SkillFileEntry {
+    pub rel_path: String,
+    pub content: String,
+}
+
+/// A skill read from `<root_path>/.claude/skills/` — either a directory
+/// containing `SKILL.md` (+ optional reference files) or a single
+/// `<name>.md`. Non-UTF-8 files, files over [`MAX_SKILL_FILE_BYTES`], and
+/// the provenance sidecar are skipped. `content_hash` is a sha256 over the
+/// sorted (rel_path, content) pairs so the import side can detect drift.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SkillFileExport {
+    pub name: String,
+    pub files: Vec<SkillFileEntry>,
+    pub content_hash: String,
+}
+
+/// A workspace and its shared knowledge library. Knowledge travels in ALL
+/// statuses (the lifecycle is the data); adoption cells are filtered to the
+/// projects actually bundled so the slice stays resolvable on import.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkspaceKnowledgeExport {
+    pub id: String,
+    pub name: String,
+    pub color: Option<String>,
+    pub description: Option<String>,
+    pub knowledge: Vec<WorkspaceKnowledgeEntryExport>,
+    pub adoption: Vec<WorkspaceAdoptionExport>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkspaceKnowledgeEntryExport {
+    pub id: String,
+    pub kind: String,
+    pub title: String,
+    pub statement: String,
+    pub detail_md: Option<String>,
+    pub topic: Option<String>,
+    pub abstraction: Option<String>,
+    pub ftype: Option<String>,
+    pub durability: Option<String>,
+    pub governing_id: Option<String>,
+    pub evidence_count: Option<i32>,
+    pub applicability: Option<String>,
+    pub status: String,
+    pub origin_project_id: Option<String>,
+    pub provenance: Option<String>,
+    pub confidence: Option<f64>,
+    pub dedup_key: Option<String>,
+    pub superseded_by: Option<String>,
+    pub harvest_scope: Option<String>,
+    pub valid_from: Option<String>,
+    pub valid_to: Option<String>,
+    pub decided_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorkspaceAdoptionExport {
+    pub practice_id: String,
+    pub project_id: String,
+    pub state: String,
+    pub note: Option<String>,
+    pub last_verified_at: Option<String>,
+}
+
+// ============================================================================
 // Import result types
 // ============================================================================
 
@@ -288,6 +837,8 @@ pub struct ExportStats {
     pub team_memory_count: u32,
     pub test_suite_count: u32,
     pub kpi_count: u32,
+    pub dev_project_count: u32,
+    pub workspace_knowledge_count: u32,
 }
 
 // ============================================================================
@@ -298,7 +849,12 @@ pub struct ExportStats {
 #[tauri::command]
 pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportStats, AppError> {
     require_auth_sync(&state)?;
-    let pool = &state.db;
+    compute_export_stats(&state.db)
+}
+
+/// Pool-level body of [`get_export_stats`] — split out so unit tests can
+/// exercise the counters without constructing a Tauri `State`.
+fn compute_export_stats(pool: &DbPool) -> Result<ExportStats, AppError> {
     let personas = persona_repo::get_all(pool)?;
     let tools = tool_repo::get_all_definitions(pool)?;
     let teams = team_repo::get_all(pool)?;
@@ -324,6 +880,11 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
     let kpi_count =
         scalar_count("SELECT COUNT(*) FROM dev_kpis WHERE status IN ('active', 'paused')")
             .unwrap_or(0);
+    // Dev-tools tables arrive via incremental migrations — tolerate their
+    // absence on very old databases the same way kpi_count does.
+    let dev_project_count = scalar_count("SELECT COUNT(*) FROM dev_projects").unwrap_or(0);
+    let workspace_knowledge_count =
+        scalar_count("SELECT COUNT(*) FROM workspace_knowledge").unwrap_or(0);
 
     Ok(ExportStats {
         persona_count: personas.len() as u32,
@@ -334,6 +895,8 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
         team_memory_count,
         test_suite_count,
         kpi_count,
+        dev_project_count,
+        workspace_knowledge_count,
     })
 }
 
@@ -381,6 +944,8 @@ pub async fn export_selective(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
+    project_ids: Vec<String>,
+    workspace_ids: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
@@ -397,6 +962,8 @@ pub async fn export_selective(
         persona_ids: persona_ids.clone(),
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
+        project_ids: project_ids.clone(),
+        workspace_ids: workspace_ids.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
@@ -570,6 +1137,8 @@ pub async fn export_selective_to_path(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
+    project_ids: Vec<String>,
+    workspace_ids: Vec<String>,
     include_memories: Option<bool>,
     include_kpis: Option<bool>,
     passphrase: Option<String>,
@@ -586,6 +1155,8 @@ pub async fn export_selective_to_path(
         persona_ids: persona_ids.clone(),
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
+        project_ids: project_ids.clone(),
+        workspace_ids: workspace_ids.clone(),
     };
     let mut bundle = build_export_bundle(
         pool,
@@ -1031,6 +1602,23 @@ fn build_export_bundle(
         Vec::new()
     };
 
+    // Dev-tools projects + workspace knowledge. Full scope takes every
+    // project and workspace; selective scope takes exactly the requested ids
+    // (an empty list means none — same semantics as personas/teams above).
+    let (project_filter, workspace_filter): (Option<&[String]>, Option<&[String]>) = match &scope {
+        ExportScope::Full => (None, None),
+        ExportScope::Selective {
+            project_ids,
+            workspace_ids,
+            ..
+        } => (Some(project_ids.as_slice()), Some(workspace_ids.as_slice())),
+    };
+    let dev_project_exports = collect_dev_project_exports(pool, project_filter)?;
+    let bundled_project_ids: Vec<String> =
+        dev_project_exports.iter().map(|p| p.id.clone()).collect();
+    let workspace_exports =
+        collect_workspace_knowledge_exports(pool, workspace_filter, &bundled_project_ids)?;
+
     Ok(PortabilityBundle {
         format_version: 2,
         exported_at: chrono::Utc::now().to_rfc3339(),
@@ -1041,8 +1629,1052 @@ fn build_export_bundle(
         teams: team_exports,
         credentials: credential_exports,
         kpis: kpi_exports,
+        dev_projects: dev_project_exports,
+        workspace_knowledge: workspace_exports,
         encrypted_credentials: None,
     })
+}
+
+/// Run a single-parameter query and collect the mapped rows. All dev-tools
+/// collection queries key off one id (project or workspace), so this keeps
+/// the two dozen table sweeps below from each re-spelling the same loop.
+fn query_rows<T>(
+    conn: &rusqlite::Connection,
+    sql: &str,
+    key: &str,
+    map: impl FnMut(&rusqlite::Row<'_>) -> rusqlite::Result<T>,
+) -> Result<Vec<T>, AppError> {
+    let mut stmt = conn.prepare(sql).map_err(AppError::Database)?;
+    let rows = stmt.query_map([key], map).map_err(AppError::Database)?;
+    let mut out = Vec::new();
+    for r in rows {
+        out.push(r.map_err(AppError::Database)?);
+    }
+    Ok(out)
+}
+
+/// Collect dev projects (with their full child graph + on-disk skills).
+/// `filter_ids: None` = all projects (Full scope, capped); `Some(ids)` =
+/// exactly those ids, silently skipping unknown ones (same posture as the
+/// persona/team selective filters).
+fn collect_dev_project_exports(
+    pool: &DbPool,
+    filter_ids: Option<&[String]>,
+) -> Result<Vec<DevProjectExport>, AppError> {
+    if filter_ids.is_some_and(|ids| ids.is_empty()) {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+
+    const PROJECT_COLS: &str = "id, name, root_path, description, status, tech_stack, team_id, \
+         auto_pr_on_success, github_url, main_branch, \
+         test_env_url, test_env_branch, workspace_id, data_links, static_scan_config, \
+         standards_config, monitoring_project_slug, created_at, updated_at";
+    type ProjectRow = (
+        String,
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<String>,
+        Option<String>,
+        bool,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        String,
+        String,
+    );
+    let map_project = |r: &rusqlite::Row<'_>| -> rusqlite::Result<ProjectRow> {
+        Ok((
+            r.get(0)?,
+            r.get(1)?,
+            r.get(2)?,
+            r.get(3)?,
+            r.get(4)?,
+            r.get(5)?,
+            r.get(6)?,
+            r.get(7)?,
+            r.get(8)?,
+            r.get(9)?,
+            r.get(10)?,
+            r.get(11)?,
+            r.get(12)?,
+            r.get(13)?,
+            r.get(14)?,
+            r.get(15)?,
+            r.get(16)?,
+            r.get(17)?,
+            r.get(18)?,
+        ))
+    };
+
+    let project_rows: Vec<ProjectRow> = match filter_ids {
+        None => {
+            let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects ORDER BY created_at");
+            let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
+            let rows = stmt.query_map([], map_project).map_err(AppError::Database)?;
+            let mut out = Vec::new();
+            for r in rows {
+                out.push(r.map_err(AppError::Database)?);
+                if out.len() >= MAX_DEV_PROJECTS {
+                    break;
+                }
+            }
+            out
+        }
+        Some(ids) => {
+            let sql = format!("SELECT {PROJECT_COLS} FROM dev_projects WHERE id = ?1");
+            let mut seen = std::collections::HashSet::new();
+            let mut out = Vec::new();
+            for id in ids.iter().take(MAX_DEV_PROJECTS) {
+                if !seen.insert(id.clone()) {
+                    continue;
+                }
+                let mut stmt = conn.prepare(&sql).map_err(AppError::Database)?;
+                let mut rows = stmt.query_map([id.as_str()], map_project).map_err(AppError::Database)?;
+                if let Some(row) = rows.next() {
+                    out.push(row.map_err(AppError::Database)?);
+                }
+            }
+            out
+        }
+    };
+
+    let mut exports = Vec::with_capacity(project_rows.len());
+    for row in project_rows {
+        let (
+            id,
+            name,
+            root_path,
+            description,
+            status,
+            tech_stack,
+            team_id,
+            auto_pr_on_success,
+            github_url,
+            main_branch,
+            test_env_url,
+            test_env_branch,
+            workspace_id,
+            data_links,
+            static_scan_config,
+            standards_config,
+            monitoring_project_slug,
+            created_at,
+            updated_at,
+        ) = row;
+        let pid = id.as_str();
+
+        let goals = query_rows(
+            &conn,
+            "SELECT id, parent_goal_id, context_id, kpi_id, order_index, title, description, \
+                    status, progress, target_date, started_at, completed_at, created_at, updated_at \
+             FROM dev_goals WHERE project_id = ?1 ORDER BY order_index, created_at",
+            pid,
+            |r| {
+                Ok(DevGoalExport {
+                    id: r.get(0)?,
+                    parent_goal_id: r.get(1)?,
+                    context_id: r.get(2)?,
+                    kpi_id: r.get(3)?,
+                    order_index: r.get(4)?,
+                    title: r.get(5)?,
+                    description: r.get(6)?,
+                    status: r.get(7)?,
+                    progress: r.get(8)?,
+                    target_date: r.get(9)?,
+                    started_at: r.get(10)?,
+                    completed_at: r.get(11)?,
+                    created_at: r.get(12)?,
+                    updated_at: r.get(13)?,
+                })
+            },
+        )?;
+
+        let goal_dependencies = query_rows(
+            &conn,
+            "SELECT d.id, d.goal_id, d.depends_on_id, d.dependency_type, d.created_at \
+             FROM dev_goal_dependencies d JOIN dev_goals g ON g.id = d.goal_id \
+             WHERE g.project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevGoalDependencyExport {
+                    id: r.get(0)?,
+                    goal_id: r.get(1)?,
+                    depends_on_id: r.get(2)?,
+                    dependency_type: r.get(3)?,
+                    created_at: r.get(4)?,
+                })
+            },
+        )?;
+
+        let goal_signals = query_rows(
+            &conn,
+            "SELECT s.id, s.goal_id, s.signal_type, s.source_id, s.delta, s.message, s.created_at \
+             FROM dev_goal_signals s JOIN dev_goals g ON g.id = s.goal_id \
+             WHERE g.project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevGoalSignalExport {
+                    id: r.get(0)?,
+                    goal_id: r.get(1)?,
+                    signal_type: r.get(2)?,
+                    source_id: r.get(3)?,
+                    delta: r.get(4)?,
+                    message: r.get(5)?,
+                    created_at: r.get(6)?,
+                })
+            },
+        )?;
+
+        let goal_items = query_rows(
+            &conn,
+            "SELECT i.id, i.goal_id, i.title, i.done, i.order_index, i.created_at, i.updated_at \
+             FROM dev_goal_items i JOIN dev_goals g ON g.id = i.goal_id \
+             WHERE g.project_id = ?1 ORDER BY i.goal_id, i.order_index",
+            pid,
+            |r| {
+                Ok(DevGoalItemExport {
+                    id: r.get(0)?,
+                    goal_id: r.get(1)?,
+                    title: r.get(2)?,
+                    done: r.get(3)?,
+                    order_index: r.get(4)?,
+                    created_at: r.get(5)?,
+                    updated_at: r.get(6)?,
+                })
+            },
+        )?;
+
+        let context_groups = query_rows(
+            &conn,
+            "SELECT id, name, color, icon, group_type, position, health_score, last_scan_at, \
+                    created_at, updated_at \
+             FROM dev_context_groups WHERE project_id = ?1 ORDER BY position",
+            pid,
+            |r| {
+                Ok(DevContextGroupExport {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    color: r.get(2)?,
+                    icon: r.get(3)?,
+                    group_type: r.get(4)?,
+                    position: r.get(5)?,
+                    health_score: r.get(6)?,
+                    last_scan_at: r.get(7)?,
+                    created_at: r.get(8)?,
+                    updated_at: r.get(9)?,
+                })
+            },
+        )?;
+
+        let contexts = query_rows(
+            &conn,
+            "SELECT id, group_id, name, description, file_paths, entry_points, db_tables, \
+                    keywords, api_surface, cross_refs, tech_stack, category, business_feature, \
+                    pinned, created_at, updated_at \
+             FROM dev_contexts WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevContextExport {
+                    id: r.get(0)?,
+                    group_id: r.get(1)?,
+                    name: r.get(2)?,
+                    description: r.get(3)?,
+                    file_paths: r.get(4)?,
+                    entry_points: r.get(5)?,
+                    db_tables: r.get(6)?,
+                    keywords: r.get(7)?,
+                    api_surface: r.get(8)?,
+                    cross_refs: r.get(9)?,
+                    tech_stack: r.get(10)?,
+                    category: r.get(11)?,
+                    business_feature: r.get(12)?,
+                    pinned: r.get(13)?,
+                    created_at: r.get(14)?,
+                    updated_at: r.get(15)?,
+                })
+            },
+        )?;
+
+        let context_group_relationships = query_rows(
+            &conn,
+            "SELECT id, source_group_id, target_group_id, created_at \
+             FROM dev_context_group_relationships WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevContextGroupRelationshipExport {
+                    id: r.get(0)?,
+                    source_group_id: r.get(1)?,
+                    target_group_id: r.get(2)?,
+                    created_at: r.get(3)?,
+                })
+            },
+        )?;
+
+        let context_fingerprints = query_rows(
+            &conn,
+            "SELECT context_id, content_hash, file_count, missing_file_count, imports, \
+                    primitives, promise_all_count, join_all_count, await_count, sql_write_count, \
+                    spawn_count, use_effect_count, set_state_after_await_count, \
+                    exports_components, exports_hooks, exports_commands, exports_repo_fns, \
+                    computed_at \
+             FROM dev_context_fingerprints WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevContextFingerprintExport {
+                    context_id: r.get(0)?,
+                    content_hash: r.get(1)?,
+                    file_count: r.get(2)?,
+                    missing_file_count: r.get(3)?,
+                    imports: r.get(4)?,
+                    primitives: r.get(5)?,
+                    promise_all_count: r.get(6)?,
+                    join_all_count: r.get(7)?,
+                    await_count: r.get(8)?,
+                    sql_write_count: r.get(9)?,
+                    spawn_count: r.get(10)?,
+                    use_effect_count: r.get(11)?,
+                    set_state_after_await_count: r.get(12)?,
+                    exports_components: r.get(13)?,
+                    exports_hooks: r.get(14)?,
+                    exports_commands: r.get(15)?,
+                    exports_repo_fns: r.get(16)?,
+                    computed_at: r.get(17)?,
+                })
+            },
+        )?;
+
+        let ideas = query_rows(
+            &conn,
+            "SELECT id, context_id, scan_type, category, title, description, reasoning, status, \
+                    effort, impact, risk, priority, provider, model, rejection_reason, origin, \
+                    use_case_id, evidence, dedup_key, verify_state, verify_checked_at, \
+                    verify_evidence, created_at, updated_at \
+             FROM dev_ideas WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevIdeaExport {
+                    id: r.get(0)?,
+                    context_id: r.get(1)?,
+                    scan_type: r.get(2)?,
+                    category: r.get(3)?,
+                    title: r.get(4)?,
+                    description: r.get(5)?,
+                    reasoning: r.get(6)?,
+                    status: r.get(7)?,
+                    effort: r.get(8)?,
+                    impact: r.get(9)?,
+                    risk: r.get(10)?,
+                    priority: r.get(11)?,
+                    provider: r.get(12)?,
+                    model: r.get(13)?,
+                    rejection_reason: r.get(14)?,
+                    origin: r.get(15)?,
+                    use_case_id: r.get(16)?,
+                    evidence: r.get(17)?,
+                    dedup_key: r.get(18)?,
+                    verify_state: r.get(19)?,
+                    verify_checked_at: r.get(20)?,
+                    verify_evidence: r.get(21)?,
+                    created_at: r.get(22)?,
+                    updated_at: r.get(23)?,
+                })
+            },
+        )?;
+
+        let tasks = query_rows(
+            &conn,
+            "SELECT id, title, description, source_idea_id, goal_id, status, session_id, \
+                    progress_pct, output_lines, error, depth, parent_task_id, attempt, \
+                    started_at, completed_at, created_at \
+             FROM dev_tasks WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevTaskExport {
+                    id: r.get(0)?,
+                    title: r.get(1)?,
+                    description: r.get(2)?,
+                    source_idea_id: r.get(3)?,
+                    goal_id: r.get(4)?,
+                    status: r.get(5)?,
+                    session_id: r.get(6)?,
+                    progress_pct: r.get(7)?,
+                    output_lines: r.get(8)?,
+                    error: r.get(9)?,
+                    depth: r.get(10)?,
+                    parent_task_id: r.get(11)?,
+                    attempt: r.get(12)?,
+                    started_at: r.get(13)?,
+                    completed_at: r.get(14)?,
+                    created_at: r.get(15)?,
+                })
+            },
+        )?;
+
+        let competitions = query_rows(
+            &conn,
+            "SELECT id, task_title, task_description, source_idea_id, source_goal_id, \
+                    slot_count, status, winner_task_id, winner_insight, baseline_json, \
+                    reviewer_notes, worktree_base_ref, created_at, resolved_at \
+             FROM dev_competitions WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevCompetitionExport {
+                    id: r.get(0)?,
+                    task_title: r.get(1)?,
+                    task_description: r.get(2)?,
+                    source_idea_id: r.get(3)?,
+                    source_goal_id: r.get(4)?,
+                    slot_count: r.get(5)?,
+                    status: r.get(6)?,
+                    winner_task_id: r.get(7)?,
+                    winner_insight: r.get(8)?,
+                    baseline_json: r.get(9)?,
+                    reviewer_notes: r.get(10)?,
+                    worktree_base_ref: r.get(11)?,
+                    created_at: r.get(12)?,
+                    resolved_at: r.get(13)?,
+                })
+            },
+        )?;
+
+        let competition_slots = query_rows(
+            &conn,
+            "SELECT s.id, s.competition_id, s.task_id, s.strategy_label, s.strategy_prompt, \
+                    s.worktree_name, s.branch_name, s.slot_index, s.disqualified, \
+                    s.disqualify_reason, s.diff_hash, s.diff_stats_json, s.diff_analyzed_at, \
+                    s.created_at \
+             FROM dev_competition_slots s \
+             JOIN dev_competitions c ON c.id = s.competition_id \
+             WHERE c.project_id = ?1 ORDER BY s.competition_id, s.slot_index",
+            pid,
+            |r| {
+                Ok(DevCompetitionSlotExport {
+                    id: r.get(0)?,
+                    competition_id: r.get(1)?,
+                    task_id: r.get(2)?,
+                    strategy_label: r.get(3)?,
+                    strategy_prompt: r.get(4)?,
+                    worktree_name: r.get(5)?,
+                    branch_name: r.get(6)?,
+                    slot_index: r.get(7)?,
+                    disqualified: r.get(8)?,
+                    disqualify_reason: r.get(9)?,
+                    diff_hash: r.get(10)?,
+                    diff_stats_json: r.get(11)?,
+                    diff_analyzed_at: r.get(12)?,
+                    created_at: r.get(13)?,
+                })
+            },
+        )?;
+
+        let triage_rules = query_rows(
+            &conn,
+            "SELECT id, name, conditions, action, enabled, times_fired, created_at \
+             FROM dev_triage_rules WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevTriageRuleExport {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    conditions: r.get(2)?,
+                    action: r.get(3)?,
+                    enabled: r.get(4)?,
+                    times_fired: r.get(5)?,
+                    created_at: r.get(6)?,
+                })
+            },
+        )?;
+
+        // dev_pipelines carries project_id with no FK — enumerate by the
+        // column explicitly (same below for dev_memories).
+        let pipelines = query_rows(
+            &conn,
+            "SELECT id, idea_id, task_id, stage, auto_execute, verify_after, \
+                    verification_scan_id, error, created_at, updated_at \
+             FROM dev_pipelines WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevPipelineExport {
+                    id: r.get(0)?,
+                    idea_id: r.get(1)?,
+                    task_id: r.get(2)?,
+                    stage: r.get(3)?,
+                    auto_execute: r.get(4)?,
+                    verify_after: r.get(5)?,
+                    verification_scan_id: r.get(6)?,
+                    error: r.get(7)?,
+                    created_at: r.get(8)?,
+                    updated_at: r.get(9)?,
+                })
+            },
+        )?;
+
+        let standards = query_rows(
+            &conn,
+            "SELECT id, scan_id, rule_key, category, title, status, severity, evidence, \
+                    recommendation, created_at, updated_at \
+             FROM dev_standards WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevStandardExport {
+                    id: r.get(0)?,
+                    scan_id: r.get(1)?,
+                    rule_key: r.get(2)?,
+                    category: r.get(3)?,
+                    title: r.get(4)?,
+                    status: r.get(5)?,
+                    severity: r.get(6)?,
+                    evidence: r.get(7)?,
+                    recommendation: r.get(8)?,
+                    created_at: r.get(9)?,
+                    updated_at: r.get(10)?,
+                })
+            },
+        )?;
+
+        let use_cases = query_rows(
+            &conn,
+            "SELECT id, name, slug, description, kind, primary_context_id, status, created_by, \
+                    pinned, rationale, created_at, updated_at \
+             FROM dev_use_cases WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevUseCaseExport {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    slug: r.get(2)?,
+                    description: r.get(3)?,
+                    kind: r.get(4)?,
+                    primary_context_id: r.get(5)?,
+                    status: r.get(6)?,
+                    created_by: r.get(7)?,
+                    pinned: r.get(8)?,
+                    rationale: r.get(9)?,
+                    created_at: r.get(10)?,
+                    updated_at: r.get(11)?,
+                })
+            },
+        )?;
+
+        let use_case_contexts = query_rows(
+            &conn,
+            "SELECT ucc.use_case_id, ucc.context_id \
+             FROM dev_use_case_contexts ucc \
+             JOIN dev_use_cases uc ON uc.id = ucc.use_case_id \
+             WHERE uc.project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevUseCaseContextExport {
+                    use_case_id: r.get(0)?,
+                    context_id: r.get(1)?,
+                })
+            },
+        )?;
+
+        let milestones = query_rows(
+            &conn,
+            "SELECT id, name, goal, status, order_index, target_date, cut_at, shipped_at, \
+                    created_at, updated_at \
+             FROM dev_milestones WHERE project_id = ?1 ORDER BY order_index",
+            pid,
+            |r| {
+                Ok(DevMilestoneExport {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    goal: r.get(2)?,
+                    status: r.get(3)?,
+                    order_index: r.get(4)?,
+                    target_date: r.get(5)?,
+                    cut_at: r.get(6)?,
+                    shipped_at: r.get(7)?,
+                    created_at: r.get(8)?,
+                    updated_at: r.get(9)?,
+                })
+            },
+        )?;
+
+        let milestone_items = query_rows(
+            &conn,
+            "SELECT mi.milestone_id, mi.item_kind, mi.item_id, mi.bucket, mi.added_after_cut, \
+                    mi.order_index, mi.created_at \
+             FROM dev_milestone_items mi \
+             JOIN dev_milestones m ON m.id = mi.milestone_id \
+             WHERE m.project_id = ?1 ORDER BY mi.milestone_id, mi.order_index",
+            pid,
+            |r| {
+                Ok(DevMilestoneItemExport {
+                    milestone_id: r.get(0)?,
+                    item_kind: r.get(1)?,
+                    item_id: r.get(2)?,
+                    bucket: r.get(3)?,
+                    added_after_cut: r.get(4)?,
+                    order_index: r.get(5)?,
+                    created_at: r.get(6)?,
+                })
+            },
+        )?;
+
+        let kpis = query_rows(
+            &conn,
+            "SELECT id, context_group_id, context_id, use_case_id, name, description, category, \
+                    measure_kind, measure_config, unit, direction, baseline_value, target_value, \
+                    target_date, current_value, last_measured_at, cadence, status, created_by, \
+                    rationale, needed_connector, metric_type, tier, warn_at, crit_at, \
+                    manual_rating, assessment_pros, assessment_cons, last_skip_at, \
+                    last_skip_rationale, created_at, updated_at \
+             FROM dev_kpis WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevKpiExport {
+                    id: r.get(0)?,
+                    context_group_id: r.get(1)?,
+                    context_id: r.get(2)?,
+                    use_case_id: r.get(3)?,
+                    name: r.get(4)?,
+                    description: r.get(5)?,
+                    category: r.get(6)?,
+                    measure_kind: r.get(7)?,
+                    measure_config: r.get(8)?,
+                    unit: r.get(9)?,
+                    direction: r.get(10)?,
+                    baseline_value: r.get(11)?,
+                    target_value: r.get(12)?,
+                    target_date: r.get(13)?,
+                    current_value: r.get(14)?,
+                    last_measured_at: r.get(15)?,
+                    cadence: r.get(16)?,
+                    status: r.get(17)?,
+                    created_by: r.get(18)?,
+                    rationale: r.get(19)?,
+                    needed_connector: r.get(20)?,
+                    metric_type: r.get(21)?,
+                    tier: r.get(22)?,
+                    warn_at: r.get(23)?,
+                    crit_at: r.get(24)?,
+                    manual_rating: r.get(25)?,
+                    assessment_pros: r.get(26)?,
+                    assessment_cons: r.get(27)?,
+                    last_skip_at: r.get(28)?,
+                    last_skip_rationale: r.get(29)?,
+                    created_at: r.get(30)?,
+                    updated_at: r.get(31)?,
+                })
+            },
+        )?;
+
+        let kpi_measurements = query_rows(
+            &conn,
+            "SELECT m.id, m.kpi_id, m.value, m.measured_at, m.source, m.env, m.evidence, m.note \
+             FROM dev_kpi_measurements m JOIN dev_kpis k ON k.id = m.kpi_id \
+             WHERE k.project_id = ?1 ORDER BY m.kpi_id, m.measured_at",
+            pid,
+            |r| {
+                Ok(DevKpiMeasurementExport {
+                    id: r.get(0)?,
+                    kpi_id: r.get(1)?,
+                    value: r.get(2)?,
+                    measured_at: r.get(3)?,
+                    source: r.get(4)?,
+                    env: r.get(5)?,
+                    evidence: r.get(6)?,
+                    note: r.get(7)?,
+                })
+            },
+        )?;
+
+        // credential_id intentionally not selected — see DevKpiBindingExport.
+        let kpi_bindings = query_rows(
+            &conn,
+            "SELECT b.id, b.kpi_id, b.service_type, b.procedure, b.composed_by, b.status, \
+                    b.verified_at, b.created_at \
+             FROM dev_kpi_bindings b JOIN dev_kpis k ON k.id = b.kpi_id \
+             WHERE k.project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevKpiBindingExport {
+                    id: r.get(0)?,
+                    kpi_id: r.get(1)?,
+                    service_type: r.get(2)?,
+                    procedure: r.get(3)?,
+                    composed_by: r.get(4)?,
+                    status: r.get(5)?,
+                    verified_at: r.get(6)?,
+                    created_at: r.get(7)?,
+                })
+            },
+        )?;
+
+        let memories = query_rows(
+            &conn,
+            "SELECT id, category, title, content, importance, source_kind, source_id, \
+                    created_at, updated_at \
+             FROM dev_memories WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(DevMemoryExport {
+                    id: r.get(0)?,
+                    category: r.get(1)?,
+                    title: r.get(2)?,
+                    content: r.get(3)?,
+                    importance: r.get(4)?,
+                    source_kind: r.get(5)?,
+                    source_id: r.get(6)?,
+                    created_at: r.get(7)?,
+                    updated_at: r.get(8)?,
+                })
+            },
+        )?;
+
+        let memory_nodes = query_rows(
+            &conn,
+            "SELECT id, context_id, kind, title, body, source, status, content_hash, \
+                    created_at, updated_at \
+             FROM memory_nodes WHERE project_id = ?1",
+            pid,
+            |r| {
+                Ok(MemoryNodeExport {
+                    id: r.get(0)?,
+                    context_id: r.get(1)?,
+                    kind: r.get(2)?,
+                    title: r.get(3)?,
+                    body: r.get(4)?,
+                    source: r.get(5)?,
+                    status: r.get(6)?,
+                    content_hash: r.get(7)?,
+                    created_at: r.get(8)?,
+                    updated_at: r.get(9)?,
+                })
+            },
+        )?;
+
+        let memory_edges = query_rows(
+            &conn,
+            "SELECT e.from_id, e.to_id, e.rel, e.created_at \
+             FROM memory_edges e JOIN memory_nodes n ON n.id = e.from_id \
+             WHERE n.project_id = ?1",
+            pid,
+            |r| {
+                Ok(MemoryEdgeExport {
+                    from_id: r.get(0)?,
+                    to_id: r.get(1)?,
+                    rel: r.get(2)?,
+                    created_at: r.get(3)?,
+                })
+            },
+        )?;
+
+        let skills = collect_project_skills(&root_path);
+
+        exports.push(DevProjectExport {
+            id,
+            name,
+            root_path,
+            description,
+            status,
+            tech_stack,
+            team_id,
+            auto_pr_on_success,
+            github_url,
+            main_branch,
+            test_env_url,
+            test_env_branch,
+            workspace_id,
+            data_links,
+            static_scan_config,
+            standards_config,
+            monitoring_project_slug,
+            created_at,
+            updated_at,
+            goals,
+            goal_dependencies,
+            goal_signals,
+            goal_items,
+            context_groups,
+            contexts,
+            context_group_relationships,
+            context_fingerprints,
+            ideas,
+            tasks,
+            competitions,
+            competition_slots,
+            triage_rules,
+            pipelines,
+            standards,
+            use_cases,
+            use_case_contexts,
+            milestones,
+            milestone_items,
+            kpis,
+            kpi_measurements,
+            kpi_bindings,
+            memories,
+            memory_nodes,
+            memory_edges,
+            skills,
+        });
+    }
+
+    Ok(exports)
+}
+
+/// Read a project's `.claude/skills/` library from disk. Mirrors the layout
+/// scanned by `commands::infrastructure::skill_files`: each skill is a
+/// directory (SKILL.md + optional reference files, possibly nested) or a
+/// single `<name>.md`. Missing/unreadable dirs yield an empty vec — a
+/// project whose repo isn't on this machine still exports its DB graph.
+fn collect_project_skills(root_path: &str) -> Vec<SkillFileExport> {
+    let skills_dir = std::path::Path::new(root_path).join(".claude").join("skills");
+    let Ok(read_dir) = std::fs::read_dir(&skills_dir) else {
+        return Vec::new();
+    };
+
+    let mut skills = Vec::new();
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let entry_name = entry.file_name().to_string_lossy().to_string();
+        // Same shape as skill_files::validate_skill_name — a skill is one
+        // safe path segment. Anything else is skipped, never an error.
+        if entry_name.is_empty()
+            || entry_name.contains('/')
+            || entry_name.contains('\\')
+            || entry_name.contains("..")
+            || entry_name.contains(':')
+        {
+            continue;
+        }
+
+        let (name, mut files) = if path.is_dir() {
+            let mut files = Vec::new();
+            collect_skill_dir_files(&path, &path, &mut files);
+            (entry_name, files)
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            // Single-file skill: skills/<name>.md
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("unknown")
+                .to_string();
+            match read_skill_file(&path) {
+                Some(content) => (
+                    stem,
+                    vec![SkillFileEntry {
+                        rel_path: entry_name,
+                        content,
+                    }],
+                ),
+                None => continue,
+            }
+        } else {
+            continue;
+        };
+
+        if files.is_empty() {
+            continue;
+        }
+        // Deterministic order → deterministic content_hash.
+        files.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+
+        use sha2::Digest as _;
+        let mut hasher = sha2::Sha256::new();
+        for f in &files {
+            hasher.update(f.rel_path.as_bytes());
+            hasher.update([0u8]);
+            hasher.update(f.content.as_bytes());
+            hasher.update([0u8]);
+        }
+        let content_hash = format!("{:x}", hasher.finalize());
+
+        skills.push(SkillFileExport {
+            name,
+            files,
+            content_hash,
+        });
+    }
+
+    skills.sort_by(|a, b| a.name.cmp(&b.name));
+    skills
+}
+
+/// Recursively collect a skill directory's exportable files (rel paths with
+/// forward slashes). Skips the provenance sidecar, oversize files, and
+/// non-UTF-8 content.
+fn collect_skill_dir_files(base: &std::path::Path, dir: &std::path::Path, out: &mut Vec<SkillFileEntry>) {
+    let Ok(read_dir) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_skill_dir_files(base, &path, out);
+            continue;
+        }
+        if path.file_name().and_then(|n| n.to_str()) == Some(SKILL_PROVENANCE_FILE) {
+            continue;
+        }
+        let Some(content) = read_skill_file(&path) else {
+            continue;
+        };
+        let Ok(rel) = path.strip_prefix(base) else {
+            continue;
+        };
+        let rel_path = rel
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy())
+            .collect::<Vec<_>>()
+            .join("/");
+        out.push(SkillFileEntry { rel_path, content });
+    }
+}
+
+/// Read one skill file as UTF-8 text, or None when it is oversize
+/// (> [`MAX_SKILL_FILE_BYTES`]), unreadable, or not valid UTF-8.
+fn read_skill_file(path: &std::path::Path) -> Option<String> {
+    let meta = std::fs::metadata(path).ok()?;
+    if meta.len() > MAX_SKILL_FILE_BYTES {
+        return None;
+    }
+    let bytes = std::fs::read(path).ok()?;
+    String::from_utf8(bytes).ok()
+}
+
+/// Collect workspaces with their knowledge library and adoption cells.
+/// `filter_ids: None` = all workspaces; `Some(ids)` = exactly those.
+/// Adoption is filtered to `bundled_project_ids` so the bundle never carries
+/// cells pointing at projects that don't travel with it.
+fn collect_workspace_knowledge_exports(
+    pool: &DbPool,
+    filter_ids: Option<&[String]>,
+    bundled_project_ids: &[String],
+) -> Result<Vec<WorkspaceKnowledgeExport>, AppError> {
+    if filter_ids.is_some_and(|ids| ids.is_empty()) {
+        return Ok(Vec::new());
+    }
+    let conn = pool.get()?;
+
+    type WorkspaceRow = (String, String, Option<String>, Option<String>);
+    let map_workspace = |r: &rusqlite::Row<'_>| -> rusqlite::Result<WorkspaceRow> {
+        Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+    };
+
+    let workspace_rows: Vec<WorkspaceRow> = match filter_ids {
+        None => {
+            let mut stmt = conn
+                .prepare("SELECT id, name, color, description FROM dev_workspaces ORDER BY created_at")
+                .map_err(AppError::Database)?;
+            let rows = stmt.query_map([], map_workspace).map_err(AppError::Database)?;
+            let mut out = Vec::new();
+            for r in rows {
+                out.push(r.map_err(AppError::Database)?);
+            }
+            out
+        }
+        Some(ids) => {
+            let mut seen = std::collections::HashSet::new();
+            let mut out = Vec::new();
+            for id in ids {
+                if !seen.insert(id.clone()) {
+                    continue;
+                }
+                let mut stmt = conn
+                    .prepare("SELECT id, name, color, description FROM dev_workspaces WHERE id = ?1")
+                    .map_err(AppError::Database)?;
+                let mut rows = stmt
+                    .query_map([id.as_str()], map_workspace)
+                    .map_err(AppError::Database)?;
+                if let Some(row) = rows.next() {
+                    out.push(row.map_err(AppError::Database)?);
+                }
+            }
+            out
+        }
+    };
+
+    let mut exports = Vec::with_capacity(workspace_rows.len());
+    for (id, name, color, description) in workspace_rows {
+        // ALL statuses travel — the lifecycle (observed → adopted /
+        // deprecated / rejected) is itself the data being ported.
+        let knowledge = query_rows(
+            &conn,
+            "SELECT id, kind, title, statement, detail_md, topic, abstraction, ftype, \
+                    durability, governing_id, evidence_count, applicability, status, \
+                    origin_project_id, provenance, confidence, dedup_key, superseded_by, \
+                    harvest_scope, valid_from, valid_to, decided_at, created_at, updated_at \
+             FROM workspace_knowledge WHERE workspace_id = ?1 ORDER BY created_at",
+            &id,
+            |r| {
+                Ok(WorkspaceKnowledgeEntryExport {
+                    id: r.get(0)?,
+                    kind: r.get(1)?,
+                    title: r.get(2)?,
+                    statement: r.get(3)?,
+                    detail_md: r.get(4)?,
+                    topic: r.get(5)?,
+                    abstraction: r.get(6)?,
+                    ftype: r.get(7)?,
+                    durability: r.get(8)?,
+                    governing_id: r.get(9)?,
+                    evidence_count: r.get(10)?,
+                    applicability: r.get(11)?,
+                    status: r.get(12)?,
+                    origin_project_id: r.get(13)?,
+                    provenance: r.get(14)?,
+                    confidence: r.get(15)?,
+                    dedup_key: r.get(16)?,
+                    superseded_by: r.get(17)?,
+                    harvest_scope: r.get(18)?,
+                    valid_from: r.get(19)?,
+                    valid_to: r.get(20)?,
+                    decided_at: r.get(21)?,
+                    created_at: r.get(22)?,
+                    updated_at: r.get(23)?,
+                })
+            },
+        )?;
+        let knowledge: Vec<WorkspaceKnowledgeEntryExport> =
+            knowledge.into_iter().take(MAX_KNOWLEDGE_ENTRIES).collect();
+
+        let adoption_all = query_rows(
+            &conn,
+            "SELECT a.practice_id, a.project_id, a.state, a.note, a.last_verified_at \
+             FROM workspace_practice_adoption a \
+             JOIN workspace_knowledge k ON k.id = a.practice_id \
+             WHERE k.workspace_id = ?1",
+            &id,
+            |r| {
+                Ok(WorkspaceAdoptionExport {
+                    practice_id: r.get(0)?,
+                    project_id: r.get(1)?,
+                    state: r.get(2)?,
+                    note: r.get(3)?,
+                    last_verified_at: r.get(4)?,
+                })
+            },
+        )?;
+        let adoption: Vec<WorkspaceAdoptionExport> = adoption_all
+            .into_iter()
+            .filter(|a| bundled_project_ids.contains(&a.project_id))
+            .collect();
+
+        exports.push(WorkspaceKnowledgeExport {
+            id,
+            name,
+            color,
+            description,
+            knowledge,
+            adoption,
+        });
+    }
+
+    Ok(exports)
 }
 
 async fn save_bundle_to_file(
@@ -1146,6 +2778,14 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     validation::require_max_count("teams", &bundle.teams, MAX_TEAMS)?;
     validation::require_max_count("credentials", &bundle.credentials, MAX_CREDENTIALS)?;
     validation::require_max_count("kpis", &bundle.kpis, MAX_KPIS)?;
+    validation::require_max_count("dev_projects", &bundle.dev_projects, MAX_DEV_PROJECTS)?;
+    for (i, w) in bundle.workspace_knowledge.iter().enumerate() {
+        validation::require_max_count(
+            &format!("workspace_knowledge[{i}].knowledge"),
+            &w.knowledge,
+            MAX_KNOWLEDGE_ENTRIES,
+        )?;
+    }
 
     // Validate tool definitions
     for (i, t) in bundle.tool_definitions.iter().enumerate() {
@@ -2792,6 +4432,8 @@ mod tests {
             teams: Vec::new(),
             credentials: Vec::new(),
             kpis: Vec::new(),
+            dev_projects: Vec::new(),
+            workspace_knowledge: Vec::new(),
             encrypted_credentials: None,
         }
     }
@@ -3022,6 +4664,305 @@ mod tests {
             })
             .collect();
         bundle.kpis.push(kpi_export("Coverage", measurements));
+        assert!(validate_bundle(&bundle).is_err());
+    }
+
+    // ------------------------------------------------------------------
+    // Dev-tools export (WP1 — export side)
+    // ------------------------------------------------------------------
+
+    /// Insert a dev project row with every credential-id column populated so
+    /// the stripping assertion below has something real to strip.
+    fn seed_dev_project(pool: &DbPool, id: &str, root_path: &str) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, description, status, tech_stack, \
+                 team_id, auto_pr_on_success, github_url, \
+                 main_branch, monitoring_credential_id, llm_tracking_credential_id, \
+                 support_credential_id, pr_credential_id, monitoring_project_slug) \
+             VALUES (?1, ?2, ?3, 'a project', 'paused', 'rust+react', 'team-x', 1, \
+                 'https://github.com/x/y', 'main', \
+                 'cred-mon', 'cred-llm', 'cred-sup', 'cred-pr', 'proj-slug')",
+            rusqlite::params![id, format!("Project {id}"), root_path],
+        )
+        .unwrap();
+    }
+
+    fn seed_dev_project_graph(pool: &DbPool, pid: &str) {
+        let conn = pool.get().unwrap();
+        conn.execute_batch(&format!(
+            "INSERT INTO dev_goals (id, project_id, title, status) VALUES ('g1-{pid}', '{pid}', 'Goal one', 'open');
+             INSERT INTO dev_goals (id, project_id, title, status) VALUES ('g2-{pid}', '{pid}', 'Goal two', 'open');
+             INSERT INTO dev_goal_dependencies (id, goal_id, depends_on_id) VALUES ('gd1-{pid}', 'g2-{pid}', 'g1-{pid}');
+             INSERT INTO dev_goal_items (id, goal_id, title, done) VALUES ('gi1-{pid}', 'g1-{pid}', 'todo', 1);
+             INSERT INTO dev_context_groups (id, project_id, name) VALUES ('cg1-{pid}', '{pid}', 'Core');
+             INSERT INTO dev_contexts (id, project_id, group_id, name, file_paths) VALUES ('c1-{pid}', '{pid}', 'cg1-{pid}', 'Auth', '[\"src/a.ts\"]');
+             INSERT INTO dev_ideas (id, project_id, context_id, scan_type, title, status) VALUES ('i1-{pid}', '{pid}', 'c1-{pid}', 'feature', 'An idea', 'pending');
+             INSERT INTO dev_tasks (id, project_id, title, status) VALUES ('t1-{pid}', '{pid}', 'A task', 'queued');
+             INSERT INTO dev_use_cases (id, project_id, name, slug) VALUES ('uc1-{pid}', '{pid}', 'Login', 'login');
+             INSERT INTO dev_use_case_contexts (use_case_id, context_id) VALUES ('uc1-{pid}', 'c1-{pid}');
+             INSERT INTO dev_milestones (id, project_id, name, status) VALUES ('m1-{pid}', '{pid}', 'M1', 'active');
+             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id) VALUES ('m1-{pid}', 'use_case', 'uc1-{pid}');
+             INSERT INTO dev_kpis (id, project_id, name, status) VALUES ('k1-{pid}', '{pid}', 'Coverage', 'active');
+             INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env) VALUES ('km1-{pid}', 'k1-{pid}', 42.0, 'manual', 'local');
+             INSERT INTO dev_kpi_bindings (id, kpi_id, credential_id, service_type, procedure) VALUES ('kb1-{pid}', 'k1-{pid}', 'cred-bind', 'sentry', 'count errors');
+             INSERT INTO dev_memories (id, project_id, title, content) VALUES ('dm1-{pid}', '{pid}', 'Learned', 'a fact');
+             INSERT INTO memory_nodes (id, project_id, title) VALUES ('n1-{pid}', '{pid}', 'Node one');
+             INSERT INTO memory_nodes (id, project_id, title) VALUES ('n2-{pid}', '{pid}', 'Node two');
+             INSERT INTO memory_edges (from_id, to_id, rel) VALUES ('n1-{pid}', 'n2-{pid}', 'relates');"
+        ))
+        .unwrap();
+    }
+
+    fn seed_workspace_with_knowledge(pool: &DbPool, wid: &str) {
+        let conn = pool.get().unwrap();
+        conn.execute_batch(&format!(
+            "INSERT INTO dev_workspaces (id, name, color, created_at, updated_at)
+                VALUES ('{wid}', 'Shared WS', '#fff', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, dedup_key, confidence, created_at, updated_at)
+                VALUES ('kn-obs-{wid}', '{wid}', 'pattern', 'Observed one', 'Do X', 'observed', 'dk1', 0.7, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, created_at, updated_at)
+                VALUES ('kn-ado-{wid}', '{wid}', 'pitfall', 'Adopted one', 'Never Y', 'adopted', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO workspace_knowledge (id, workspace_id, kind, title, statement, status, created_at, updated_at)
+                VALUES ('kn-rej-{wid}', '{wid}', 'fact', 'Rejected one', 'Z is true', 'rejected', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');"
+        ))
+        .unwrap();
+    }
+
+    #[test]
+    fn export_full_includes_dev_project_graph_and_skills() {
+        let pool = init_test_db().unwrap();
+
+        // Real skills dir: a directory skill (SKILL.md + provenance sidecar +
+        // an oversize file, both of which must NOT travel) and a single-file
+        // skill.
+        let tmp = tempfile::tempdir().unwrap();
+        let skill_dir = tmp.path().join(".claude").join("skills").join("foo");
+        std::fs::create_dir_all(&skill_dir).unwrap();
+        std::fs::write(skill_dir.join("SKILL.md"), "# Foo skill\nbody").unwrap();
+        std::fs::write(skill_dir.join(SKILL_PROVENANCE_FILE), "{\"local\":true}").unwrap();
+        std::fs::write(skill_dir.join("huge.md"), "a".repeat(300 * 1024)).unwrap();
+        std::fs::write(
+            tmp.path().join(".claude").join("skills").join("bar.md"),
+            "# Bar skill",
+        )
+        .unwrap();
+
+        seed_dev_project(&pool, "p1", &tmp.path().to_string_lossy());
+        seed_dev_project_graph(&pool, "p1");
+
+        let bundle = build_export_bundle(&pool, ExportScope::Full, true, true).unwrap();
+        assert_eq!(bundle.dev_projects.len(), 1);
+        let p = &bundle.dev_projects[0];
+        assert_eq!(p.id, "p1");
+        assert_eq!(p.monitoring_project_slug.as_deref(), Some("proj-slug"));
+        assert_eq!(p.status, "paused");
+        assert_eq!(p.tech_stack.as_deref(), Some("rust+react"));
+        assert_eq!(p.team_id.as_deref(), Some("team-x"));
+        assert!(p.auto_pr_on_success);
+        assert_eq!(p.goals.len(), 2);
+        assert_eq!(p.goal_dependencies.len(), 1);
+        assert_eq!(p.goal_items.len(), 1);
+        assert!(p.goal_items[0].done);
+        assert_eq!(p.context_groups.len(), 1);
+        assert_eq!(p.contexts.len(), 1);
+        assert_eq!(p.ideas.len(), 1);
+        assert_eq!(p.tasks.len(), 1);
+        assert_eq!(p.use_cases.len(), 1);
+        assert_eq!(p.use_case_contexts.len(), 1);
+        assert_eq!(p.milestones.len(), 1);
+        assert_eq!(p.milestone_items.len(), 1);
+        assert_eq!(p.kpis.len(), 1);
+        assert_eq!(p.kpi_measurements.len(), 1);
+        assert_eq!(p.kpi_bindings.len(), 1);
+        assert_eq!(p.memories.len(), 1);
+        assert_eq!(p.memory_nodes.len(), 2);
+        assert_eq!(p.memory_edges.len(), 1);
+
+        // Skills: sorted by name; provenance sidecar + oversize file skipped.
+        assert_eq!(p.skills.len(), 2);
+        assert_eq!(p.skills[0].name, "bar");
+        assert_eq!(p.skills[1].name, "foo");
+        let foo = &p.skills[1];
+        assert_eq!(foo.files.len(), 1);
+        assert_eq!(foo.files[0].rel_path, "SKILL.md");
+        assert!(!foo.content_hash.is_empty());
+
+        // Credential ids never travel — neither the project's four columns
+        // nor the KPI binding's vault reference.
+        let json = serde_json::to_string(&bundle).unwrap();
+        assert!(!json.contains("cred-mon"));
+        assert!(!json.contains("cred-llm"));
+        assert!(!json.contains("cred-sup"));
+        assert!(!json.contains("cred-pr"));
+        assert!(!json.contains("cred-bind"));
+        assert!(!json.contains("credential_id"));
+
+        // Round-trip: the bundle re-parses with the dev sections intact, and
+        // a legacy bundle without them still deserializes (serde defaults).
+        let reparsed: PortabilityBundle = serde_json::from_str(&json).unwrap();
+        assert_eq!(reparsed.dev_projects.len(), 1);
+        assert_eq!(reparsed.dev_projects[0].kpi_bindings.len(), 1);
+        assert_eq!(reparsed.dev_projects[0].status, "paused");
+        assert_eq!(reparsed.dev_projects[0].tech_stack.as_deref(), Some("rust+react"));
+        assert_eq!(reparsed.dev_projects[0].team_id.as_deref(), Some("team-x"));
+        assert!(reparsed.dev_projects[0].auto_pr_on_success);
+        let legacy: PortabilityBundle = serde_json::from_str(
+            r#"{"format_version":2,"exported_at":"x","app_version":"x","scope":"full",
+                "personas":[],"tool_definitions":[],"teams":[],"credentials":[]}"#,
+        )
+        .unwrap();
+        assert!(legacy.dev_projects.is_empty());
+        assert!(legacy.workspace_knowledge.is_empty());
+    }
+
+    #[test]
+    fn export_selective_scopes_dev_projects_and_workspaces() {
+        let pool = init_test_db().unwrap();
+        seed_dev_project(&pool, "p1", "/tmp/portability-p1");
+        seed_dev_project(&pool, "p2", "/tmp/portability-p2");
+        seed_workspace_with_knowledge(&pool, "w1");
+
+        let scope = ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: vec!["p1".into()],
+            workspace_ids: Vec::new(),
+        };
+        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        assert_eq!(bundle.dev_projects.len(), 1);
+        assert_eq!(bundle.dev_projects[0].id, "p1");
+        // Empty workspace selection means none travel.
+        assert!(bundle.workspace_knowledge.is_empty());
+
+        let scope = ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: Vec::new(),
+            workspace_ids: vec!["w1".into()],
+        };
+        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        assert!(bundle.dev_projects.is_empty());
+        assert_eq!(bundle.workspace_knowledge.len(), 1);
+        assert_eq!(bundle.workspace_knowledge[0].id, "w1");
+    }
+
+    #[test]
+    fn workspace_knowledge_keeps_statuses_and_filters_adoption_to_bundled_projects() {
+        let pool = init_test_db().unwrap();
+        seed_dev_project(&pool, "p1", "/tmp/portability-wp1");
+        seed_dev_project(&pool, "p2", "/tmp/portability-wp2");
+        seed_workspace_with_knowledge(&pool, "w1");
+        {
+            let conn = pool.get().unwrap();
+            conn.execute_batch(
+                "INSERT INTO workspace_practice_adoption (practice_id, project_id, state, note, updated_at)
+                    VALUES ('kn-ado-w1', 'p1', 'adopted', 'in use', '2026-01-01T00:00:00Z');
+                 INSERT INTO workspace_practice_adoption (practice_id, project_id, state, updated_at)
+                    VALUES ('kn-ado-w1', 'p2', 'proposed', '2026-01-01T00:00:00Z');",
+            )
+            .unwrap();
+        }
+
+        // Only p1 travels — the p2 adoption cell must be filtered out.
+        let scope = ExportScope::Selective {
+            persona_ids: Vec::new(),
+            team_ids: Vec::new(),
+            credential_ids: Vec::new(),
+            project_ids: vec!["p1".into()],
+            workspace_ids: vec!["w1".into()],
+        };
+        let bundle = build_export_bundle(&pool, scope, true, true).unwrap();
+        assert_eq!(bundle.workspace_knowledge.len(), 1);
+        let w = &bundle.workspace_knowledge[0];
+        assert_eq!(w.knowledge.len(), 3);
+        let statuses: std::collections::HashSet<&str> =
+            w.knowledge.iter().map(|k| k.status.as_str()).collect();
+        assert_eq!(
+            statuses,
+            ["observed", "adopted", "rejected"].into_iter().collect()
+        );
+        // Lifecycle columns survive.
+        let observed = w.knowledge.iter().find(|k| k.status == "observed").unwrap();
+        assert_eq!(observed.dedup_key.as_deref(), Some("dk1"));
+        assert_eq!(observed.confidence, Some(0.7));
+
+        assert_eq!(w.adoption.len(), 1);
+        assert_eq!(w.adoption[0].project_id, "p1");
+        assert_eq!(w.adoption[0].state, "adopted");
+        assert_eq!(w.adoption[0].note.as_deref(), Some("in use"));
+    }
+
+    #[test]
+    fn compute_export_stats_counts_dev_projects_and_knowledge() {
+        let pool = init_test_db().unwrap();
+        seed_dev_project(&pool, "p1", "/tmp/portability-sp1");
+        seed_dev_project(&pool, "p2", "/tmp/portability-sp2");
+        seed_workspace_with_knowledge(&pool, "w1");
+
+        let stats = compute_export_stats(&pool).unwrap();
+        assert_eq!(stats.dev_project_count, 2);
+        assert_eq!(stats.workspace_knowledge_count, 3);
+    }
+
+    fn minimal_dev_project(id: &str) -> DevProjectExport {
+        DevProjectExport {
+            id: id.into(),
+            name: format!("P {id}"),
+            root_path: format!("/tmp/{id}"),
+            description: None,
+            status: "active".into(),
+            tech_stack: None,
+            team_id: None,
+            auto_pr_on_success: false,
+            github_url: None,
+            main_branch: None,
+            test_env_url: None,
+            test_env_branch: None,
+            workspace_id: None,
+            data_links: None,
+            static_scan_config: None,
+            standards_config: None,
+            monitoring_project_slug: None,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+            goals: Vec::new(),
+            goal_dependencies: Vec::new(),
+            goal_signals: Vec::new(),
+            goal_items: Vec::new(),
+            context_groups: Vec::new(),
+            contexts: Vec::new(),
+            context_group_relationships: Vec::new(),
+            context_fingerprints: Vec::new(),
+            ideas: Vec::new(),
+            tasks: Vec::new(),
+            competitions: Vec::new(),
+            competition_slots: Vec::new(),
+            triage_rules: Vec::new(),
+            pipelines: Vec::new(),
+            standards: Vec::new(),
+            use_cases: Vec::new(),
+            use_case_contexts: Vec::new(),
+            milestones: Vec::new(),
+            milestone_items: Vec::new(),
+            kpis: Vec::new(),
+            kpi_measurements: Vec::new(),
+            kpi_bindings: Vec::new(),
+            memories: Vec::new(),
+            memory_nodes: Vec::new(),
+            memory_edges: Vec::new(),
+            skills: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn validate_bundle_rejects_too_many_dev_projects() {
+        let mut bundle = empty_bundle();
+        for i in 0..=MAX_DEV_PROJECTS {
+            bundle.dev_projects.push(minimal_dev_project(&format!("p{i}")));
+        }
         assert!(validate_bundle(&bundle).is_err());
     }
 }
