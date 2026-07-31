@@ -140,6 +140,15 @@ So for a `full` verdict on anything beyond a few hundred files:
    did not finish; split it and re-run. Slightly over 100% is normal.
 4. Consolidate group sprawl at the end with explicit merge pairs, and run the
    idempotent repair routes once.
+5. **Then `POST /dev-tools/export-context-map`.** The repair routes mutate the
+   database without touching the exported artifacts, so the consolidation step
+   above is precisely what leaves `context-map.json` and the generated CLAUDE.md
+   block describing a map that no longer exists — and that block tells every
+   agent in the repo to scope its edits by that file.
+
+Launching a scan whose `scan_id` you did not capture is not a reason to relaunch
+it: `GET /dev-tools/scans/{project_id}` lists every known scan with its subtree
+and status. Relaunching pays twice and maps one tree twice.
 
 Full command reference and the failure modes in
 [`references/bridge.md`](references/bridge.md).
@@ -217,6 +226,30 @@ sweep.
 5. **Write the context note and update `Sweep.md` before moving to the next
    one.** Never batch the bookkeeping to the end.
 
+### Review mode — manual, or earned autonomy
+
+Before the sweep starts, ask the operator once which review mode this run uses:
+
+- **`manual`** (default) — every context's proposals go through the operator,
+  as described below. Always offer this first; adoption is theirs.
+- **`auto`** — you triage on your own recommendation, recording decisions with
+  the same per-KPI immediacy. Only enter this mode when the operator names it.
+- **`calibrated`** — the middle path, and the one to suggest for a large map:
+  run the first **20 contexts** manual while tracking, per proposal, whether
+  the operator's decision matched the recommendation you stated BEFORE they
+  answered. At 20 contexts, report the agreement rate. **At ≥90%, offer to
+  switch to `auto` for the remainder** — and switch only when they accept.
+  Below 90%, stay manual and say which kinds of proposals you misjudged, so
+  the disagreement pattern becomes part of the record.
+
+Track calibration in the vault note (`Sweep.md`): one line per triaged context
+— `recommended / operator kept / match`. The count is honest only if the
+recommendation was committed before the answer; never restate a
+recommendation after the fact to improve the score. In `auto` mode, keep
+writing the same lines with `auto` in place of the operator column, so a later
+session (or the operator) can audit what autonomy actually decided — and drop
+back to manual the moment the operator asks or a whole batch smells wrong.
+
 ### Triage per context — pick 0 to 4
 
 Each context scan returns at most 4 proposals. Present them as ONE multi-select:
@@ -230,6 +263,15 @@ something to make a context look covered.
 For each kept KPI, `POST /dev-tools/kpi-decision` with `active` immediately,
 one call per KPI. Anything not kept goes `archived` in the same pass so the
 context's queue is empty and the sweep can move on.
+
+**When you adopt a KPI whose measurement the grounding proved wrong, fix it in
+the same pass** — `POST /dev-tools/kpi-update` with a corrected `description` /
+`measure_kind` / `measure_config` / `baseline_value`. This is common rather than
+exceptional: the lane proposes a sound pillar attached to a column that does not
+exist, or a `connector` naming a service the project has never integrated.
+Adopting the pillar and leaving the instructions makes the row's only record of
+how to measure it a fiction, and the next session re-derives what you already
+verified. The vault note is for the reasoning; the row should carry the truth.
 
 Write the note:
 

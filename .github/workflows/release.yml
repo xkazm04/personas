@@ -4,7 +4,20 @@ on:
   # Manual dispatch is the PRIMARY release path — development lands directly
   # on master (no PRs), so the pull_request trigger alone never fires on the
   # real workflow. Releasing stays a deliberate act.
+  #
+  # PUBLISHING IS OPT-IN. By default this workflow is a *build validation* run:
+  # it builds all four platforms from the current ref and uploads the installers
+  # as workflow artifacts, but does NOT bump the version, commit, tag, push, or
+  # create a GitHub Release. The app is still in development; auto-tagging on
+  # every run left 5 tags on origin with zero releases behind them (each run
+  # pushed its tag and then died in the platform builds). Flip `publish` on
+  # only when you actually intend to ship.
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a release (bump version, tag, push, create GitHub Release). Leave OFF for a build-validation run."
+        type: boolean
+        default: false
   pull_request:
     types: [closed]
     branches:
@@ -18,12 +31,16 @@ permissions:
   contents: write
 
 jobs:
-  # ─── Job 1: Bump version, commit, tag, push ───────────────
-  bump-version:
+  # ─── Job 1: Resolve version + (optionally) bump, commit, tag, push ───
+  version:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     outputs:
-      new_version: ${{ steps.bump.outputs.new_version }}
+      new_version: ${{ steps.resolve.outputs.version }}
+      # The ref every downstream job checks out: the fresh tag when
+      # publishing, the triggering commit otherwise (no tag exists).
+      ref: ${{ steps.resolve.outputs.ref }}
+      publish: ${{ steps.mode.outputs.publish }}
       changelog: ${{ steps.changelog.outputs.body }}
     steps:
       - name: Checkout master
@@ -38,14 +55,30 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      - name: Resolve release mode
+        id: mode
+        # Publishing requires an explicit opt-in on a manual dispatch. A merged
+        # PR builds for validation but never tags — nothing should push a tag
+        # as a side effect of merging while the app is pre-production.
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.publish }}" = "true" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            echo "Mode: PUBLISH — will bump, tag, push, and create a GitHub Release."
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "Mode: BUILD VALIDATION — no bump, no tag, no release. Installers upload as workflow artifacts."
+          fi
+
       - name: Bump version in all files
         id: bump
+        if: steps.mode.outputs.publish == 'true'
         run: |
           NEW_VERSION=$(node scripts/bump-version.mjs)
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Bumped to $NEW_VERSION"
 
       - name: Guard against tag collision
+        if: steps.mode.outputs.publish == 'true'
         # Fail HERE (seconds in) with an actionable message instead of at
         # `git tag` — or worse, after 45 minutes of platform builds. A
         # collision means the version files on master lag existing tags
@@ -72,6 +105,7 @@ jobs:
           echo "${EOF_MARKER}" >> "$GITHUB_OUTPUT"
 
       - name: Commit and tag
+        if: steps.mode.outputs.publish == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -80,16 +114,33 @@ jobs:
           git tag "v${{ steps.bump.outputs.new_version }}"
           git push origin master --tags
 
+      - name: Resolve version and build ref
+        id: resolve
+        # On a publish run the tag now exists and is what the platform jobs
+        # build from. On a validation run there is no tag and package.json was
+        # never touched — build the triggering commit at its current version.
+        run: |
+          if [ "${{ steps.mode.outputs.publish }}" = "true" ]; then
+            VERSION="${{ steps.bump.outputs.new_version }}"
+            REF="v${VERSION}"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            REF="${{ github.sha }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Building ref ${REF} at version ${VERSION}"
+
   # ─── Job 2: Build frontend once, share across platforms ───
   frontend:
-    needs: bump-version
+    needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout at tag
+      - name: Checkout build ref
         uses: actions/checkout@v4
         with:
-          ref: v${{ needs.bump-version.outputs.new_version }}
+          ref: ${{ needs.version.outputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -115,7 +166,7 @@ jobs:
 
   # ─── Job 3: Build native binaries on all platforms ────────
   build:
-    needs: [bump-version, frontend]
+    needs: [version, frontend]
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -147,10 +198,10 @@ jobs:
       RUSTC_WRAPPER: "sccache"
 
     steps:
-      - name: Checkout at tag
+      - name: Checkout build ref
         uses: actions/checkout@v4
         with:
-          ref: v${{ needs.bump-version.outputs.new_version }}
+          ref: ${{ needs.version.outputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -216,9 +267,13 @@ jobs:
           GCP_CLIENT_ID: ${{ secrets.GCP_CLIENT_ID }}
           GCP_CLIENT_SECRET: ${{ secrets.GCP_CLIENT_SECRET }}
         with:
-          tagName: v${{ needs.bump-version.outputs.new_version }}
-          releaseName: "Personas v${{ needs.bump-version.outputs.new_version }}"
-          releaseBody: ${{ needs.bump-version.outputs.changelog }}
+          # tauri-action creates/uploads to a GitHub Release only when tagName
+          # is non-empty. On a validation run these are blank, so it builds the
+          # bundles and stops — the installers are picked up by the artifact
+          # upload step below instead.
+          tagName: ${{ needs.version.outputs.publish == 'true' && format('v{0}', needs.version.outputs.new_version) || '' }}
+          releaseName: ${{ needs.version.outputs.publish == 'true' && format('Personas v{0}', needs.version.outputs.new_version) || '' }}
+          releaseBody: ${{ needs.version.outputs.publish == 'true' && needs.version.outputs.changelog || '' }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
@@ -240,14 +295,29 @@ jobs:
         if: matrix.label == 'windows-x64'
         run: node scripts/binary-size-report.mjs --target ${{ matrix.rust_target }} --budget 100
 
+      - name: Upload installers (build-validation runs)
+        # Without a release to upload to, the bundles would be discarded when
+        # the runner is torn down and the run would prove only "it compiled".
+        # Keep them downloadable so a validation run is also a testable build.
+        if: needs.version.outputs.publish != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.label }}
+          path: src-tauri/target/${{ matrix.rust_target }}/release/bundle/**/*
+          retention-days: 7
+          if-no-files-found: error
+
       - name: Upload source maps to Sentry
-        if: matrix.label == 'linux-x64'
+        # Publish-only: a validation run has no shipped build for these maps to
+        # correspond to, and registering a Sentry release for it would pollute
+        # the release list with versions no user ever runs.
+        if: matrix.label == 'linux-x64' && needs.version.outputs.publish == 'true'
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
-          VERSION="${{ needs.bump-version.outputs.new_version }}"
+          VERSION="${{ needs.version.outputs.new_version }}"
           if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
             npx @sentry/cli@latest releases \
               --org "$SENTRY_ORG" \
@@ -270,7 +340,11 @@ jobs:
 
   # ─── Job 4: Generate latest.json for Tauri updater ─────────
   updater-manifest:
-    needs: [bump-version, build]
+    needs: [version, build]
+    # No release exists on a validation run, so there is nothing to attach
+    # latest.json to (and no .sig files, since updater artifacts are only
+    # signed and uploaded on the publish path).
+    if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -279,8 +353,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ needs.bump-version.outputs.new_version }}"
-          VERSION="${{ needs.bump-version.outputs.new_version }}"
+          TAG="v${{ needs.version.outputs.new_version }}"
+          VERSION="${{ needs.version.outputs.new_version }}"
           REPO="${{ github.repository }}"
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
 

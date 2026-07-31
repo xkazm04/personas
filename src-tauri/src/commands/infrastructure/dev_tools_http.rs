@@ -12,6 +12,7 @@
 //!   POST /projects                          → register a project { name, root_path, tech_stack? }
 //!   POST /scan-codebase                     → start a scan { project_id, root_path?, delta_mode?, subtree? } → { scan_id }
 //!   GET  /scan-status/{scan_id}             → { status, error, lines }
+//!   GET  /scans/{project_id}                → every known context scan + its subtree (don't relaunch a running scope)
 //!   POST /scan-kpis                         → start a KPI scan { project_id, context_id? } → { scan_id }
 //!   GET  /kpi-scan-status/{scan_id}         → { status, error, lines }
 //!   GET  /kpi-scan-prompt/{project_id}      → the KPI-scan prompt as plain text
@@ -21,7 +22,9 @@
 //!   GET  /contexts/{project_id}             → every context (the per-context sweep walks these)
 //!   POST /retire-contexts                   → delete contexts by explicit id { project_id, context_ids }
 //!   POST /kpi-decision                      → adopt/adjust/reject one KPI → the updated row
+//!   POST /kpi-update                        → fix a KPI's definition (description, measure_config, …)
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
+//!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -39,7 +42,10 @@ use serde::Deserialize;
 use serde_json::Value;
 use tauri::{AppHandle, Manager};
 
-use crate::commands::infrastructure::context_generation::{launch_context_scan, scan_status_json};
+use crate::commands::infrastructure::context_generation::{
+    launch_context_scan, list_scans_json, scan_status_json,
+};
+use crate::commands::infrastructure::context_map_export::write_context_map_artifacts;
 use crate::commands::infrastructure::kpi_scan::{kpi_scan_prompt, kpi_scan_status_json, launch_kpi_scan};
 use crate::commands::infrastructure::kpi_sim::{
     ingest_kpi_sim, prepare_kpi_sim, KpiSimIngestSummary, KpiSimPrepared,
@@ -61,6 +67,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/projects", get(list_projects).post(create_project))
         .route("/scan-codebase", post(scan_codebase))
         .route("/scan-status/{scan_id}", get(scan_status))
+        .route("/scans/{project_id}", get(list_scans))
         .route("/scan-kpis", post(scan_kpis))
         .route("/kpi-scan-status/{scan_id}", get(kpi_scan_status))
         .route("/kpi-scan-prompt/{project_id}", get(kpi_scan_prompt_route))
@@ -68,6 +75,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/use-case-scan-status/{scan_id}", get(use_case_scan_status))
         .route("/kpis/{project_id}", get(list_kpis))
         .route("/kpi-decision", post(kpi_decision))
+        .route("/kpi-update", post(kpi_update))
         .route("/kpi-rebind", post(kpi_rebind))
         .route("/context-groups/{project_id}", get(list_context_groups))
         .route("/contexts/{project_id}", get(list_contexts))
@@ -76,6 +84,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/retire-contexts", post(retire_contexts))
         .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
         .route("/merge-context-groups", post(merge_context_groups))
+        .route("/export-context-map", post(export_context_map))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -162,6 +171,27 @@ async fn scan_codebase(
 
 async fn scan_status(State(_s): State<DevToolsHttp>, Path(scan_id): Path<String>) -> Json<Value> {
     Json(scan_status_json(&scan_id))
+}
+
+/// Every context scan this process knows about for a project, with its scope.
+///
+/// Exists because a scan_id was previously the ONLY handle on a scan: lose it and
+/// the scan becomes unobservable, so a client's safest move was to relaunch —
+/// scanning the same subtree twice, at full token cost, producing two maps of one
+/// tree. A sweep driven from a shell is exactly where ids get lost (a `curl`
+/// inside a `while read` loop consumes the loop's stdin and its output vanishes).
+/// With this, "did that POST actually start?" is answerable.
+///
+/// Returns per-scan `subtree` (null = whole tree) so a caller can match the scope
+/// it is about to launch against what is already running, and a `running` count so
+/// the common check is a single field. Only the in-memory registry is consulted —
+/// context scans are not persisted, and entries evict 30 minutes after finishing.
+async fn list_scans(
+    State(s): State<DevToolsHttp>,
+    Path(project_id): Path<String>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    require_project(&s, &project_id)?;
+    Ok(Json(list_scans_json(&project_id)))
 }
 
 #[derive(Deserialize)]
@@ -280,6 +310,45 @@ async fn list_contexts(
     repo::list_contexts_by_project(&db(&s), &project_id, None)
         .map(Json)
         .map_err(err)
+}
+
+#[derive(Deserialize)]
+struct ExportContextMapBody {
+    project_id: String,
+    /// Defaults to the project's registered `root_path`, like `/scan-codebase`.
+    #[serde(default)]
+    root_path: Option<String>,
+}
+
+/// Re-write `context-map.json` + the CLAUDE.md marked block from CURRENT database
+/// state, without running a scan.
+///
+/// The export used to happen only at the end of a scan, while every repair route
+/// on this bridge — dedupe-contexts, dedupe-context-groups, retire-contexts,
+/// prune-nonsource-contexts, merge-context-groups — mutates the map and returns
+/// without touching the file. So the documented good practice (sweep, then
+/// consolidate group sprawl) is exactly what leaves the exported artifacts stale:
+/// after a real sweep the file described 236 contexts across 34 groups while the
+/// database held 233 across 25, including groups that had been merged away.
+///
+/// That gap matters more than a stale build artifact normally would, because the
+/// generated CLAUDE.md block instructs every agent working in that repo to read
+/// `context-map.json` and scope its edits to the matching context — so the drift
+/// is read as ground truth by the next agent, and it points at groups that no
+/// longer exist. Repair, then export.
+async fn export_context_map(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<ExportContextMapBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let project = require_project(&s, &b.project_id)?;
+    let root = match b.root_path.as_deref() {
+        Some(r) if r != "." && !r.is_empty() => r.to_string(),
+        _ => project.root_path.clone(),
+    };
+    let contexts = write_context_map_artifacts(&db(&s), &b.project_id, &root).map_err(err)?;
+    Ok(Json(
+        serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
+    ))
 }
 
 #[derive(Deserialize)]
@@ -725,6 +794,136 @@ async fn kpi_decision(
     )
     .map(Json)
     .map_err(err)
+}
+
+/// Correct a KPI's DEFINITION. Every field is optional; omitted fields are left
+/// untouched, so a caller fixing one wrong sentence cannot blank the rest.
+#[derive(Deserialize, Default)]
+struct KpiUpdateBody {
+    kpi_id: String,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    description: Option<String>,
+    /// `technical` | `traffic` | `value` | `quality`
+    #[serde(default)]
+    category: Option<String>,
+    /// `codebase` | `connector` | `manual` | `derived`
+    #[serde(default)]
+    measure_kind: Option<String>,
+    /// The how-to-measure payload. Free-form JSON, but it must BE valid JSON —
+    /// the column has a `'{}'` default and every reader parses it.
+    #[serde(default)]
+    measure_config: Option<Value>,
+    #[serde(default)]
+    unit: Option<String>,
+    /// `up` | `down`
+    #[serde(default)]
+    direction: Option<String>,
+    /// `manual` | `daily` | `weekly`
+    #[serde(default)]
+    cadence: Option<String>,
+    /// `north_star` | `primary` | `supporting`
+    #[serde(default)]
+    tier: Option<String>,
+    #[serde(default)]
+    baseline_value: Option<f64>,
+    #[serde(default)]
+    needed_connector: Option<String>,
+    // NOTE: `rationale` is intentionally absent — `repo::update_kpi` has no
+    // parameter for it, and widening that signature would touch every UI caller.
+    // Corrected measurement instructions belong in `measure_config` anyway.
+}
+
+/// Fix a KPI's definition — name, description, how it is measured, its baseline.
+///
+/// `/kpi-decision` deliberately accepts only a status and a target, on the
+/// reasoning that redefining a KPI belongs in the app's editor where the operator
+/// can see what else references it. That holds for a human at the UI, but it left
+/// a terminal session unable to repair its OWN scan output: a KPI-scan pass
+/// routinely proposes a sound metric with a WRONG measurement — naming a column
+/// that does not exist, or a `connector` pointing at a service the project has
+/// never integrated. The operator adopts the metric (correctly — the pillar is
+/// right), and the false instructions then sit in the row as the only record of
+/// how to measure it. Better to let the session that just verified the real
+/// measurement write it down.
+///
+/// Enum-valued fields are validated here rather than left to SQLite's CHECK
+/// constraints, which would surface as an opaque 500.
+async fn kpi_update(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<KpiUpdateBody>,
+) -> Result<Json<DevKpi>, (StatusCode, String)> {
+    fn check(field: &str, value: Option<&String>, allowed: &[&str]) -> Result<(), (StatusCode, String)> {
+        match value {
+            Some(v) if !allowed.contains(&v.as_str()) => Err((
+                StatusCode::BAD_REQUEST,
+                format!("{field} must be one of {allowed:?}, got {v:?}"),
+            )),
+            _ => Ok(()),
+        }
+    }
+    check("category", b.category.as_ref(), &["technical", "traffic", "value", "quality"])?;
+    check(
+        "measure_kind",
+        b.measure_kind.as_ref(),
+        &["codebase", "connector", "manual", "derived"],
+    )?;
+    check("direction", b.direction.as_ref(), &["up", "down"])?;
+    check("cadence", b.cadence.as_ref(), &["manual", "daily", "weekly"])?;
+    check("tier", b.tier.as_ref(), &["north_star", "primary", "supporting"])?;
+
+    // Reject a no-op explicitly. Silently returning the unchanged row would read
+    // as "your correction was saved" to a caller that mistyped a field name.
+    let measure_config = b.measure_config.as_ref().map(|v| v.to_string());
+    if b.name.is_none()
+        && b.description.is_none()
+        && b.category.is_none()
+        && b.measure_kind.is_none()
+        && measure_config.is_none()
+        && b.unit.is_none()
+        && b.direction.is_none()
+        && b.cadence.is_none()
+        && b.tier.is_none()
+        && b.baseline_value.is_none()
+        && b.needed_connector.is_none()
+    {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "no updatable field supplied — send at least one of name, description, category, \
+             measure_kind, measure_config, unit, direction, cadence, tier, baseline_value, \
+             needed_connector"
+                .into(),
+        ));
+    }
+
+    repo::update_kpi(
+        &db(&s),
+        &b.kpi_id,
+        b.name.as_deref(),
+        b.description.as_deref().map(Some),
+        None,
+        None,
+        b.category.as_deref(),
+        b.measure_kind.as_deref(),
+        measure_config.as_deref(),
+        b.unit.as_deref(),
+        b.direction.as_deref(),
+        b.baseline_value.map(Some),
+        None,
+        None,
+        b.cadence.as_deref(),
+        None,
+        b.needed_connector.as_deref().map(Some),
+        None,
+        b.tier.as_deref(),
+        None,
+    )
+    .map(Json)
+    .map_err(|e| match e {
+        AppError::NotFound(m) => (StatusCode::NOT_FOUND, m),
+        other => err(other),
+    })
 }
 
 #[derive(Deserialize)]
