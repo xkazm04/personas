@@ -10791,7 +10791,11 @@
         "select_filtered": "Sélectionner {count} affichés",
         "selected_of": "{selected} / {total}",
         "team_label": "Appartenance à l'équipe",
-        "trust_label_full": "Score de confiance"
+        "trust_label_full": "Score de confiance",
+        "row_knowledge": "Connaissances du workspace",
+        "row_projects": "Projets dev",
+        "scope_knowledge": "Connaissances",
+        "scope_projects": "Projets dev"
       },
       "storage_confirm": "Supprimer {count} exécutions terminées de plus de 24 heures ?",
       "storage_confirm_yes": "Supprimer",
@@ -10801,7 +10805,22 @@
       "storage_removable": "Supprimable",
       "storage_subtitle": "Utilisation de la base de données locale et nettoyage des exécutions terminées.",
       "storage_title": "Stockage",
-      "storage_total": "Total des exécutions"
+      "storage_total": "Total des exécutions",
+      "dev_projects": "Projets de dev",
+      "workspace_knowledge": "Connaissances du workspace",
+      "choose_resolution": "Choisir la résolution du conflit",
+      "duplicate": "Dupliquer",
+      "import_knowledge": "{count} éléments de connaissances",
+      "import_knowledge_skipped": "{count} éléments de connaissances en double ignorés",
+      "import_projects": "{count} projets",
+      "import_projects_skipped": "{count} projets ignorés",
+      "import_skills_deferred": "{count} fichiers de skill reportés",
+      "import_skills_written": "{count} fichiers de skill écrits",
+      "matched_by_name": "correspondance par nom",
+      "matched_by_root_path": "correspondance par chemin de dossier",
+      "project_conflict_hint": "Ces projets du bundle correspondent à des projets déjà présents dans ce workspace. Choisissez comment importer chacun :",
+      "projects_exist": "{count} projet dev existe déjà",
+      "projects_exist_plural": "{count} projets dev existent déjà"
     },
     "config": {
       "title": "Résolution de la configuration",

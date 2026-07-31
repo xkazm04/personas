@@ -10791,7 +10791,11 @@
         "select_filtered": "تحديد {count} معروض",
         "selected_of": "{selected} / {total}",
         "team_label": "عضوية الفريق",
-        "trust_label_full": "درجة الثقة"
+        "trust_label_full": "درجة الثقة",
+        "row_knowledge": "معرفة مساحة العمل",
+        "row_projects": "مشاريع التطوير",
+        "scope_knowledge": "المعرفة",
+        "scope_projects": "مشاريع التطوير"
       },
       "storage_confirm": "إزالة {count} تشغيلة منتهية أقدم من 24 ساعة؟",
       "storage_confirm_yes": "إزالة",
@@ -10801,7 +10805,22 @@
       "storage_removable": "قابل للإزالة",
       "storage_subtitle": "استخدام قاعدة البيانات المحلية وتنظيف التشغيلات المنتهية.",
       "storage_title": "التخزين",
-      "storage_total": "إجمالي التشغيلات"
+      "storage_total": "إجمالي التشغيلات",
+      "dev_projects": "مشاريع التطوير",
+      "workspace_knowledge": "معرفة مساحة العمل",
+      "choose_resolution": "اختر طريقة حل التعارض",
+      "duplicate": "تكرار",
+      "import_knowledge": "{count} عنصر معرفة",
+      "import_knowledge_skipped": "تم تخطي {count} عنصر معرفة مكرر",
+      "import_projects": "{count} مشروع",
+      "import_projects_skipped": "تم تخطي {count} مشروع",
+      "import_skills_deferred": "تم تأجيل {count} ملف مهارة",
+      "import_skills_written": "تمت كتابة {count} ملف مهارة",
+      "matched_by_name": "مطابقة بالاسم",
+      "matched_by_root_path": "مطابقة بمسار المجلد",
+      "project_conflict_hint": "هذه المشاريع المضمنة تطابق مشاريع موجودة في مساحة العمل هذه. اختر كيفية استيراد كل منها:",
+      "projects_exist": "{count} مشروع تطوير موجود بالفعل",
+      "projects_exist_plural": "{count} مشاريع تطوير موجودة بالفعل"
     },
     "config": {
       "title": "حل الإعداد",

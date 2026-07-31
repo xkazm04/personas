@@ -1,4 +1,4 @@
-import { Bot, Users, KeyRound, Boxes, Eraser, type LucideIcon } from 'lucide-react';
+import { Bot, Users, KeyRound, FolderGit2, BookOpen, Boxes, Eraser, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExportKind, ExportPicker } from './types';
 
@@ -6,6 +6,8 @@ export const SCOPES: { key: ExportKind; icon: LucideIcon; accent: string }[] = [
   { key: 'personas', icon: Bot, accent: 'bg-violet-500/10 text-violet-300' },
   { key: 'teams', icon: Users, accent: 'bg-sky-500/10 text-sky-300' },
   { key: 'credentials', icon: KeyRound, accent: 'bg-amber-500/10 text-amber-300' },
+  { key: 'projects', icon: FolderGit2, accent: 'bg-emerald-500/10 text-emerald-300' },
+  { key: 'knowledge', icon: BookOpen, accent: 'bg-indigo-500/10 text-indigo-300' },
 ];
 
 export function ScopeRail({
@@ -22,12 +24,22 @@ export function ScopeRail({
   const { inv } = picker;
 
   const scopeLabel = (k: ExportKind) =>
-    k === 'personas' ? p.scope_personas : k === 'teams' ? p.scope_teams : p.scope_credentials;
+    k === 'personas'
+      ? p.scope_personas
+      : k === 'teams'
+        ? p.scope_teams
+        : k === 'credentials'
+          ? p.scope_credentials
+          : k === 'projects'
+            ? p.scope_projects
+            : p.scope_knowledge;
 
   const setAll = (on: boolean) => {
     picker.setMany('personas', inv.personas.map((x) => x.id), on);
     picker.setMany('teams', inv.teams.map((x) => x.id), on);
     picker.setMany('credentials', inv.credentials.map((x) => x.id), on);
+    picker.setMany('projects', inv.projects.map((x) => x.id), on);
+    picker.setMany('knowledge', inv.workspaces.map((x) => x.id), on);
   };
 
   return (

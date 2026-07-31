@@ -10947,6 +10947,8 @@ export type Translations = {
       team_memories: string;
       test_suites: string;
       kpis: string;
+      dev_projects: string;
+      workspace_knowledge: string;
       export_import_title: string;
       export_import_hint: string;
       exporting: string;
@@ -10966,6 +10968,12 @@ export type Translations = {
       import_credentials_count: string;
       import_team_memories: string;
       import_kpis: string;
+      import_projects: string;
+      import_projects_skipped: string;
+      import_knowledge: string;
+      import_knowledge_skipped: string;
+      import_skills_written: string;
+      import_skills_deferred: string;
       include_memories_label: string;
       include_memories_note: string;
       export_title: string;
@@ -11000,6 +11008,13 @@ export type Translations = {
       keep_both: string;
       replace: string;
       import_with_resolutions: string;
+      projects_exist: string;
+      projects_exist_plural: string;
+      project_conflict_hint: string;
+      matched_by_root_path: string;
+      matched_by_name: string;
+      duplicate: string;
+      choose_resolution: string;
       cred_import_complete: string;
       cred_imported: string;
       cred_skipped: string;
@@ -11021,6 +11036,8 @@ export type Translations = {
         scope_personas: string;
         scope_teams: string;
         scope_credentials: string;
+        scope_projects: string;
+        scope_knowledge: string;
         select_filtered: string;
         deselect_filtered: string;
         clear_all: string;
@@ -11036,6 +11053,8 @@ export type Translations = {
         row_personas: string;
         row_teams: string;
         row_credentials: string;
+        row_projects: string;
+        row_knowledge: string;
         dependency_note: string;
         secrets_encrypted: string;
         secrets_excluded: string;

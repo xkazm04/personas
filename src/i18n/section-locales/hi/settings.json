@@ -594,7 +594,11 @@
       "select_filtered": "{count} दिखाए गए चुनें",
       "selected_of": "{selected} / {total}",
       "team_label": "टीम सदस्यता",
-      "trust_label_full": "विश्वास स्कोर"
+      "trust_label_full": "विश्वास स्कोर",
+      "row_knowledge": "वर्कस्पेस नॉलेज",
+      "row_projects": "डेव प्रोजेक्ट",
+      "scope_knowledge": "नॉलेज",
+      "scope_projects": "डेव प्रोजेक्ट"
     },
     "storage_confirm": "24 घंटे से पुराने {count} पूर्ण रन हटाएं?",
     "storage_confirm_yes": "हटाएं",
@@ -604,7 +608,22 @@
     "storage_removable": "हटाने योग्य",
     "storage_subtitle": "स्थानीय डेटाबेस उपयोग और पूर्ण रन की सफाई।",
     "storage_title": "संग्रहण",
-    "storage_total": "कुल रन"
+    "storage_total": "कुल रन",
+    "dev_projects": "डेव प्रोजेक्ट",
+    "workspace_knowledge": "वर्कस्पेस नॉलेज",
+    "choose_resolution": "टकराव समाधान चुनें",
+    "duplicate": "डुप्लिकेट",
+    "import_knowledge": "{count} नॉलेज आइटम",
+    "import_knowledge_skipped": "{count} डुप्लिकेट नॉलेज आइटम छोड़े गए",
+    "import_projects": "{count} प्रोजेक्ट",
+    "import_projects_skipped": "{count} प्रोजेक्ट छोड़े गए",
+    "import_skills_deferred": "{count} स्किल फ़ाइलें स्थगित",
+    "import_skills_written": "{count} स्किल फ़ाइलें लिखी गईं",
+    "matched_by_name": "नाम से मिलान",
+    "matched_by_root_path": "फ़ोल्डर पथ से मिलान",
+    "project_conflict_hint": "ये बंडल किए गए प्रोजेक्ट इस वर्कस्पेस में मौजूदा प्रोजेक्ट से मेल खाते हैं। चुनें कि प्रत्येक को कैसे इंपोर्ट करें:",
+    "projects_exist": "{count} डेव प्रोजेक्ट पहले से मौजूद है",
+    "projects_exist_plural": "{count} डेव प्रोजेक्ट पहले से मौजूद हैं"
   },
   "config": {
     "title": "कॉन्फ़िग रिज़ॉल्यूशन",

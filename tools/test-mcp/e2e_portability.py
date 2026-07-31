@@ -173,7 +173,12 @@ def step_export(persona_ids: list[str], bundle_path: str) -> None:
         "personaIds": persona_ids,
         "teamIds": [],
         "credentialIds": [],
+        # New selective-export scopes (dev projects / workspace knowledge).
+        # Empty keeps this scenario identical to the pre-scope behavior.
+        "projectIds": [],
+        "workspaceIds": [],
         "includeMemories": True,
+        "includeKpis": None,
         "passphrase": None,
         "filePath": bundle_path,
     }, timeout_secs=90)
@@ -246,6 +251,9 @@ def step_import(bundle_path: str, expected_persona_count: int) -> dict:
     resp = bridge("importPortabilityFromPath", {
         "passphrase": None,
         "filePath": bundle_path,
+        # Pass-2 conflict resolutions (bundleProjectId -> replace|skip|duplicate).
+        # None = pass 1: import everything except conflicting dev projects.
+        "projectResolutionsJson": None,
     }, timeout_secs=120)
     if not resp.get("success"):
         fatal("importPortabilityFromPath failed",
@@ -289,7 +297,10 @@ def step_memory_toggle(persona_ids: list[str]) -> None:
             "personaIds": persona_ids,
             "teamIds": [],
             "credentialIds": [],
+            "projectIds": [],
+            "workspaceIds": [],
             "includeMemories": False,
+            "includeKpis": None,
             "passphrase": None,
             "filePath": toggle_path,
         }, timeout_secs=90)

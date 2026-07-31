@@ -10791,7 +10791,11 @@
         "select_filtered": "{count}টি দেখানো নির্বাচন",
         "selected_of": "{selected} / {total}",
         "team_label": "দলের সদস্যপদ",
-        "trust_label_full": "বিশ্বাস স্কোর"
+        "trust_label_full": "বিশ্বাস স্কোর",
+        "row_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার",
+        "row_projects": "ডেভ প্রজেক্ট",
+        "scope_knowledge": "জ্ঞানভান্ডার",
+        "scope_projects": "ডেভ প্রজেক্ট"
       },
       "storage_confirm": "২৪ ঘণ্টার বেশি পুরানো {count}টি শেষ হওয়া রান সরিয়ে ফেলবেন?",
       "storage_confirm_yes": "সরান",
@@ -10801,7 +10805,22 @@
       "storage_removable": "সরানোযোগ্য",
       "storage_subtitle": "লোকাল ডেটাবেস ব্যবহার এবং শেষ হওয়া রান পরিষ্কার।",
       "storage_title": "স্টোরেজ",
-      "storage_total": "মোট রান"
+      "storage_total": "মোট রান",
+      "dev_projects": "ডেভ প্রজেক্ট",
+      "workspace_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার",
+      "choose_resolution": "দ্বন্দ্ব সমাধান বেছে নিন",
+      "duplicate": "অনুলিপি",
+      "import_knowledge": "{count}টি জ্ঞান আইটেম",
+      "import_knowledge_skipped": "{count}টি সদৃশ জ্ঞান আইটেম এড়ানো হয়েছে",
+      "import_projects": "{count}টি প্রজেক্ট",
+      "import_projects_skipped": "{count}টি প্রজেক্ট এড়ানো হয়েছে",
+      "import_skills_deferred": "{count}টি স্কিল ফাইল স্থগিত",
+      "import_skills_written": "{count}টি স্কিল ফাইল লেখা হয়েছে",
+      "matched_by_name": "নাম দিয়ে মিলেছে",
+      "matched_by_root_path": "ফোল্ডার পাথ দিয়ে মিলেছে",
+      "project_conflict_hint": "এই বান্ডেল করা প্রজেক্টগুলি এই ওয়ার্কস্পেসে বিদ্যমানগুলির সাথে মিলে যায়। প্রতিটি কীভাবে ইমপোর্ট করবেন তা বেছে নিন:",
+      "projects_exist": "{count}টি ডেভ প্রজেক্ট ইতিমধ্যে বিদ্যমান",
+      "projects_exist_plural": "{count}টি ডেভ প্রজেক্ট ইতিমধ্যে বিদ্যমান"
     },
     "config": {
       "title": "কনফিগ রেজোলিউশন",

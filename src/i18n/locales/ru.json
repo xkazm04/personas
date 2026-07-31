@@ -10791,7 +10791,11 @@
         "select_filtered": "Выбрать {count} показанных",
         "selected_of": "{selected} / {total}",
         "team_label": "Членство в команде",
-        "trust_label_full": "Уровень доверия"
+        "trust_label_full": "Уровень доверия",
+        "row_knowledge": "Знания воркспейса",
+        "row_projects": "Dev-проекты",
+        "scope_knowledge": "Знания",
+        "scope_projects": "Dev-проекты"
       },
       "storage_confirm": "Удалить {count} завершённых запусков старше 24 часов?",
       "storage_confirm_yes": "Удалить",
@@ -10801,7 +10805,22 @@
       "storage_removable": "Удаляемые",
       "storage_subtitle": "Использование локальной базы данных и очистка завершённых запусков.",
       "storage_title": "Хранилище",
-      "storage_total": "Всего запусков"
+      "storage_total": "Всего запусков",
+      "dev_projects": "Dev-проекты",
+      "workspace_knowledge": "Знания рабочего пространства",
+      "choose_resolution": "Выберите способ разрешения конфликта",
+      "duplicate": "Дублировать",
+      "import_knowledge": "Элементов знаний: {count}",
+      "import_knowledge_skipped": "Пропущено дублирующихся элементов знаний: {count}",
+      "import_projects": "Проектов: {count}",
+      "import_projects_skipped": "Пропущено проектов: {count}",
+      "import_skills_deferred": "Отложено файлов навыков: {count}",
+      "import_skills_written": "Записано файлов навыков: {count}",
+      "matched_by_name": "совпадение по имени",
+      "matched_by_root_path": "совпадение по пути к папке",
+      "project_conflict_hint": "Эти проекты из бандла совпадают с уже существующими в этом рабочем пространстве. Выберите, как импортировать каждый:",
+      "projects_exist": "{count} dev-проект уже существует",
+      "projects_exist_plural": "{count} dev-проектов уже существует"
     },
     "config": {
       "title": "Разрешение конфигурации",

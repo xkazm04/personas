@@ -594,7 +594,11 @@
       "select_filtered": "표시된 {count}개 선택",
       "selected_of": "{selected} / {total}",
       "team_label": "팀 구성원",
-      "trust_label_full": "신뢰 점수"
+      "trust_label_full": "신뢰 점수",
+      "row_knowledge": "워크스페이스 지식",
+      "row_projects": "개발 프로젝트",
+      "scope_knowledge": "지식",
+      "scope_projects": "개발 프로젝트"
     },
     "storage_confirm": "24시간 이상된 완료된 실행 {count}개를 제거하시겠습니까?",
     "storage_confirm_yes": "제거",
@@ -604,7 +608,22 @@
     "storage_removable": "제거 가능",
     "storage_subtitle": "로컬 데이터베이스 사용량 및 완료된 실행 정리.",
     "storage_title": "저장소",
-    "storage_total": "총 실행 수"
+    "storage_total": "총 실행 수",
+    "dev_projects": "개발 프로젝트",
+    "workspace_knowledge": "워크스페이스 지식",
+    "choose_resolution": "충돌 해결 방법 선택",
+    "duplicate": "복제",
+    "import_knowledge": "지식 항목 {count}개",
+    "import_knowledge_skipped": "중복 지식 항목 {count}개 건너뜀",
+    "import_projects": "프로젝트 {count}개",
+    "import_projects_skipped": "프로젝트 {count}개 건너뜀",
+    "import_skills_deferred": "스킬 파일 {count}개 보류됨",
+    "import_skills_written": "스킬 파일 {count}개 작성됨",
+    "matched_by_name": "이름으로 일치",
+    "matched_by_root_path": "폴더 경로로 일치",
+    "project_conflict_hint": "번들에 포함된 프로젝트가 이 워크스페이스의 기존 프로젝트와 일치합니다. 각 항목의 가져오기 방법을 선택하세요:",
+    "projects_exist": "개발 프로젝트 {count}개가 이미 존재합니다",
+    "projects_exist_plural": "개발 프로젝트 {count}개가 이미 존재합니다"
   },
   "config": {
     "title": "구성 해석",
