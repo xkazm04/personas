@@ -36,6 +36,14 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
   const [installedProviders, setInstalledProviders] = useState<Set<CliEngine>>(new Set());
   const [loaded, setLoaded] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set when the stored capability JSON failed to parse. `capabilities` then
+  // stays at the permissive DEFAULT_CAPABILITIES the useState was seeded
+  // with -- if a later `toggle()` were allowed to persist, it would silently
+  // overwrite the operator's real (but now-corrupt) stored map with "every
+  // operation enabled" the moment they flip one unrelated switch. Block
+  // persistence until an explicit `resetToDefaults()` (a deliberate choice,
+  // not a side effect) clears it.
+  const loadCorruptedRef = useRef(false);
 
   // Load saved capabilities + detect installed providers in parallel. The
   // settings read goes through the microtask coalescer so it shares an IPC
@@ -51,7 +59,10 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
         try {
           const parsed = JSON.parse(savedResult.value) as Partial<EngineCapabilityMap>;
           setCapabilities(mergeCapabilities(parsed));
-        } catch (err) { silentCatch("hooks/utility/data/useEngineCapabilities:catch1")(err); }
+        } catch (err) {
+          loadCorruptedRef.current = true;
+          silentCatch("hooks/utility/data/useEngineCapabilities:catch1")(err);
+        }
       }
 
       if (localResult.status === 'fulfilled') {
@@ -75,6 +86,13 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
   onSaveRef.current = opts?.onSave;
 
   const persist = useCallback((next: EngineCapabilityMap) => {
+    if (loadCorruptedRef.current) {
+      // Refuse to write over a load we know is corrupt -- see loadCorruptedRef.
+      silentCatch("engineCapabilities:persistBlockedByCorruptLoad")(
+        new Error('Refusing to persist engine capabilities: stored JSON failed to parse on load'),
+      );
+      return;
+    }
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       setAppSetting(CAPABILITY_SETTING_KEY, JSON.stringify(next))
@@ -93,6 +111,10 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
   }, [persist]);
 
   const resetToDefaults = useCallback(() => {
+    // An explicit reset is a deliberate, informed choice to discard whatever
+    // is stored -- safe to clear the corrupt-load guard so this write (unlike
+    // a plain toggle) is allowed through.
+    loadCorruptedRef.current = false;
     setCapabilities(DEFAULT_CAPABILITIES);
     persist(DEFAULT_CAPABILITIES);
   }, [persist]);

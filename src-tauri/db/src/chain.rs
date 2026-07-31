@@ -79,6 +79,16 @@ pub mod stop_reason {
     /// budget (`healing::MAX_RETRY_COUNT`) without recovering the link — the
     /// capped counterpart of [`HEALING_ABANDONED`].
     pub const HEALING_CAPPED: &str = "healing_capped";
+    /// The chain-trigger lookup itself failed (a DB error) before any trigger
+    /// could be evaluated — the cascade halts because there was nothing to
+    /// evaluate, not because a trigger or its config declared a reason.
+    pub const LOOKUP_FAILED: &str = "lookup_failed";
+    /// The stored `chain_max_cost_usd` ceiling is present but corrupt
+    /// (unparsable, negative, or non-finite). Unlike an unset ceiling — which
+    /// fails open by design ("0 = no ceiling") — a corrupt one must not
+    /// silently resolve to the same "disabled" behavior: it fails restrictive
+    /// and halts the cascade instead of dropping the only brake on spend.
+    pub const COST_CEILING_CORRUPT: &str = "cost_ceiling_corrupt";
 }
 
 use crate::repos::execution::chain_stop_reasons::{self, ChainStopReasonInput};
@@ -141,17 +151,55 @@ pub fn input_is_assignment_step(input: Option<&str>) -> bool {
         .unwrap_or(false)
 }
 
-/// Read the configured chain cost ceiling (USD) from settings. Returns 0.0
-/// (disabled) when unset, empty, non-numeric, non-finite, or negative — so a
-/// malformed row can never accidentally choke every chain. Mirrors the
-/// monthly-ceiling convention where `0` means "no ceiling".
-fn read_chain_cost_ceiling(pool: &DbPool) -> f64 {
-    crate::repos::core::settings::get(pool, crate::settings_keys::CHAIN_MAX_COST_USD)
-        .ok()
-        .flatten()
-        .and_then(|raw| raw.trim().parse::<f64>().ok())
-        .filter(|c| c.is_finite() && *c >= 0.0)
-        .unwrap_or(crate::settings_keys::CHAIN_MAX_COST_USD_DEFAULT)
+/// Outcome of reading the configured chain cost ceiling setting. Unset and
+/// corrupt are deliberately NOT the same variant — see [`read_chain_cost_ceiling`].
+enum CostCeilingReading {
+    /// No brake configured: unset, blank, or an explicit non-negative value
+    /// that parses to `CHAIN_MAX_COST_USD_DEFAULT` (0.0). Mirrors the
+    /// monthly-ceiling convention where `0` means "no ceiling" — a
+    /// deliberate, legible choice, not data damage.
+    Disabled,
+    /// A valid, finite, non-negative, non-zero ceiling in USD.
+    Configured(f64),
+    /// The stored value is present but corrupt (unparsable, negative, or
+    /// non-finite). Carries the raw string for the audit trail.
+    Corrupt(String),
+}
+
+/// Read the configured chain cost ceiling (USD) from settings. See
+/// [`CostCeilingReading`] for why "unset" and "corrupt" resolve differently:
+/// a malformed row must not silently disable the only brake on runaway
+/// cascade spend the way a genuinely-unset setting does.
+fn read_chain_cost_ceiling(pool: &DbPool) -> CostCeilingReading {
+    let raw = match crate::repos::core::settings::get(pool, crate::settings_keys::CHAIN_MAX_COST_USD)
+    {
+        Ok(Some(raw)) => raw,
+        Ok(None) => return CostCeilingReading::Disabled,
+        Err(e) => {
+            // A transient DB read failure is infrastructure trouble, not data
+            // corruption — treat like unset (fail open) rather than halting
+            // every cascade because the settings table hiccuped.
+            tracing::warn!(
+                error = %e,
+                "Failed to read chain cost ceiling setting; treating as unset"
+            );
+            return CostCeilingReading::Disabled;
+        }
+    };
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return CostCeilingReading::Disabled;
+    }
+    match trimmed.parse::<f64>() {
+        Ok(c) if c.is_finite() && c >= 0.0 => {
+            if c == crate::settings_keys::CHAIN_MAX_COST_USD_DEFAULT {
+                CostCeilingReading::Disabled
+            } else {
+                CostCeilingReading::Configured(c)
+            }
+        }
+        _ => CostCeilingReading::Corrupt(raw),
+    }
 }
 
 /// Read the configured chain BREADTH ceiling (max links per chain trace) from
@@ -244,6 +292,12 @@ pub fn evaluate_chain_triggers(
         Ok(t) => t,
         Err(e) => {
             tracing::error!("Chain trigger evaluation failed: {}", e);
+            record_stop(
+                None,
+                None,
+                stop_reason::LOOKUP_FAILED,
+                Some(format!("chain trigger lookup failed: {e}")),
+            );
             metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
             return metrics;
         }
@@ -261,27 +315,56 @@ pub fn evaluate_chain_triggers(
     // includes the just-completed hop) has reached the configured ceiling, halt
     // the whole cascade before firing any further link and record a single
     // budget stop reason. 0 / unset = disabled (parity with monthly ceiling).
-    let cost_ceiling = read_chain_cost_ceiling(pool);
-    if cost_ceiling > 0.0 && chain_cost_usd >= cost_ceiling {
-        tracing::warn!(
-            source_persona_id = %source_persona_id,
-            chain_depth,
-            chain_cost_usd,
-            cost_ceiling,
-            "Chain cost ceiling reached (${:.4} >= ${:.4}); halting cascade",
-            chain_cost_usd,
-            cost_ceiling,
-        );
-        record_stop(
-            None,
-            None,
-            stop_reason::BUDGET_EXCEEDED,
-            Some(format!(
-                "chain cost ${chain_cost_usd:.4} reached the ceiling of ${cost_ceiling:.4}"
-            )),
-        );
-        metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
-        return metrics;
+    let cost_ceiling = match read_chain_cost_ceiling(pool) {
+        CostCeilingReading::Disabled => None,
+        CostCeilingReading::Configured(c) => Some(c),
+        CostCeilingReading::Corrupt(raw) => {
+            // Unset and corrupt must not resolve to the same "disabled"
+            // behavior (see `CostCeilingReading`) — halt the cascade as a
+            // fail-safe rather than silently dropping the only brake on
+            // runaway spend because a stored value got mangled.
+            tracing::error!(
+                source_persona_id = %source_persona_id,
+                chain_depth,
+                raw_value = %raw,
+                "Chain cost ceiling setting is corrupt (unparsable/negative/non-finite); \
+                 halting cascade as a fail-safe rather than treating it as disabled"
+            );
+            record_stop(
+                None,
+                None,
+                stop_reason::COST_CEILING_CORRUPT,
+                Some(format!(
+                    "stored chain_max_cost_usd value '{raw}' is corrupt (unparsable/negative/non-finite); \
+                     halting cascade as a fail-safe"
+                )),
+            );
+            metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+            return metrics;
+        }
+    };
+    if let Some(cost_ceiling) = cost_ceiling {
+        if chain_cost_usd >= cost_ceiling {
+            tracing::warn!(
+                source_persona_id = %source_persona_id,
+                chain_depth,
+                chain_cost_usd,
+                cost_ceiling,
+                "Chain cost ceiling reached (${:.4} >= ${:.4}); halting cascade",
+                chain_cost_usd,
+                cost_ceiling,
+            );
+            record_stop(
+                None,
+                None,
+                stop_reason::BUDGET_EXCEEDED,
+                Some(format!(
+                    "chain cost ${chain_cost_usd:.4} reached the ceiling of ${cost_ceiling:.4}"
+                )),
+            );
+            metrics.duration_ms = hop_start.elapsed().as_millis() as u64;
+            return metrics;
+        }
     }
 
     // Direction 1: chain fan-out BREADTH ceiling. The depth-8 limit bounds a
@@ -1758,6 +1841,39 @@ mod tests {
     }
 
     #[test]
+    fn test_stop_reason_lookup_failed_recorded() {
+        // Simulate a DB error inside get_chain_triggers_for_source (e.g. a
+        // corrupt install missing the table) by dropping it out from under
+        // the evaluator. The cascade must still record a queryable stop
+        // reason rather than just logging and returning silently.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        pool.get()
+            .unwrap()
+            .execute("DROP TABLE persona_triggers", [])
+            .unwrap();
+
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-lookup-failed"),
+            false,
+            0.0,
+        );
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(
+            stop_tokens(&pool, "trace-lookup-failed"),
+            vec![stop_reason::LOOKUP_FAILED]
+        );
+    }
+
+    #[test]
     fn test_stop_reason_predicate_unmet_recorded() {
         let pool = init_test_db().unwrap();
         let a = make_persona(&pool, "Agent A");
@@ -1971,6 +2087,47 @@ mod tests {
         );
         assert_eq!(metrics.events_published, 1);
         assert!(stop_tokens(&pool, "trace-b2b").is_empty());
+    }
+
+    #[test]
+    fn test_chain_budget_corrupt_ceiling_halts_as_fail_safe() {
+        // A corrupt stored ceiling (negative here; NaN/non-numeric take the
+        // same branch) must NOT resolve to the same "disabled" behavior as an
+        // unset ceiling — it halts the cascade instead of silently dropping
+        // the only brake on runaway spend. Bypass settings::set's own
+        // validation (which would reject "-5" outright) with a raw insert to
+        // simulate a row written before that guard existed, or corrupted by
+        // hand.
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        make_chain(&pool, &a, &b);
+        pool.get()
+            .unwrap()
+            .execute(
+                "INSERT INTO app_settings (key, value) VALUES (?1, ?2)",
+                rusqlite::params![crate::settings_keys::CHAIN_MAX_COST_USD, "-5"],
+            )
+            .unwrap();
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-b-corrupt"),
+            false,
+            0.0,
+        );
+        assert_eq!(metrics.events_published, 0);
+        assert_eq!(metrics.triggers_evaluated, 1);
+        assert_eq!(
+            stop_tokens(&pool, "trace-b-corrupt"),
+            vec![stop_reason::COST_CEILING_CORRUPT]
+        );
     }
 
     #[test]

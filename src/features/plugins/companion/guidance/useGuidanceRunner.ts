@@ -15,12 +15,35 @@ const SCROLL_SETTLE_MS = 320;
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// Mirrors tourSlice's TOUR_TEST_ID_PATTERN / useTrackedElementRect's local
+// copy -- kept local so this hook carries no dependency on the onboarding
+// store slice. Defense-in-depth: static steps (`walkthroughs.ts`) and
+// composeAdHoc's anchor-catalog lookups both already supply hand-audited
+// literals today, but a stray quote/bracket must never reach querySelector
+// and throw a SyntaxError inside the fire-and-forget async step effect below
+// (whose rejection nobody awaits or catches).
+const TESTID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/** Exported for the guidance test suite; not part of the hook's public surface. */
+export function isSafeTestId(id: string): boolean {
+  return TESTID_PATTERN.test(id);
+}
+
 /** Poll for `[data-testid="${testId}"]` until present, cancelled, or timed out. */
 function waitForTestId(
   testId: string,
   isCancelled: () => boolean,
   timeoutMs = ANCHOR_WAIT_MS,
 ): Promise<Element | null> {
+  if (!isSafeTestId(testId)) {
+    if (typeof console !== 'undefined') {
+      console.warn(
+        `[useGuidanceRunner] rejected unsafe testid; expected /^[a-zA-Z0-9_-]+$/`,
+        { received: testId },
+      );
+    }
+    return Promise.resolve(null);
+  }
   return new Promise((resolve) => {
     const deadline = Date.now() + timeoutMs;
     const tick = () => {
@@ -208,7 +231,10 @@ export function useGuidanceRunner() {
         if (cancelled) return;
 
         // Re-query post-scroll: the node may have re-rendered into a new element.
-        const live = step.highlightTestId
+        // Guarded the same way as waitForTestId above -- this is a second,
+        // independent interpolation site and would throw on its own if left
+        // unvalidated even after waitForTestId's guard.
+        const live = step.highlightTestId && isSafeTestId(step.highlightTestId)
           ? document.querySelector(`[data-testid="${step.highlightTestId}"]`)
           : null;
         const target = live ?? el;

@@ -9,15 +9,6 @@ import type { DesignPhase, AgentIR, DesignQuestion } from '@/lib/types/designTyp
 import { designPhaseFSM } from '@/lib/fsm';
 import { SystemTraceSession } from '@/lib/execution/systemTrace';
 
-// -- Stream outcome discriminator ------------------------------------
-// The design status event produces three outcomes (result, question, error).
-// useTauriStream natively handles result + error; we encode questions as
-// a result variant and route them in a useEffect.
-
-type DesignStreamOutcome =
-  | { kind: 'result'; data: AgentIR }
-  | { kind: 'question'; data: DesignQuestion };
-
 const MAX_OUTPUT_LINES = 500;
 
 // -- Hook ------------------------------------------------------------
@@ -62,16 +53,17 @@ export function useDesignAnalysis() {
   }, []);
 
   const resolveStatus = useCallback((payload: Record<string, unknown>):
-    | { result: DesignStreamOutcome }
+    | { result: AgentIR }
+    | { question: DesignQuestion }
     | { error: string }
     | null => {
     if (designIdRef.current && payload.design_id !== designIdRef.current) return null;
     const status = payload.status as string;
     if (status === 'completed' && payload.result) {
-      return { result: { kind: 'result', data: payload.result as AgentIR } };
+      return { result: payload.result as AgentIR };
     }
     if (status === 'awaiting-input' && payload.question) {
-      return { result: { kind: 'question', data: payload.question as DesignQuestion } };
+      return { question: payload.question as DesignQuestion };
     }
     if (status === 'failed') {
       return { error: (payload.error as string) || 'Design analysis failed' };
@@ -94,36 +86,39 @@ export function useDesignAnalysis() {
   // -- Core streaming via useTauriStream -----------------------------
   // Handles: listener lifecycle, line accumulation, cleanup on unmount,
   // timeout, and basic phase + error management.
-  const stream = useTauriStream<DesignStreamOutcome>({
+  const stream = useTauriStream<AgentIR, DesignQuestion>({
     progressEvent: 'design-output',
     statusEvent: EventName.DESIGN_STATUS,
     getLine,
     resolveStatus,
     completedPhase: '__design_done__',
     runningPhase: '__design_running__',
+    awaitingInputPhase: '__design_awaiting_input__',
   });
 
   // -- Route stream outcomes to design-specific state ----------------
 
   useEffect(() => {
-    const outcome = stream.result;
-    if (!outcome) return;
+    const result = stream.result;
+    if (!result) return;
 
-    if (outcome.kind === 'result') {
-      setDesignResult(outcome.data);
-      setQuestion(null);
-      setDesignPhase('preview');
-      traceSessionRef.current?.complete();
-      traceSessionRef.current = null;
-      // Refresh the persona store so persona.last_design_result (the canonical
-      // source of truth, already written by the backend) is available to all
-      // consumers without relying on this transient preview state.
-      refreshPersonas().catch(silentCatch("designAnalysis:refreshAfterComplete"));
-    } else if (outcome.kind === 'question') {
-      setQuestion(outcome.data);
-      setDesignPhase('awaiting-input');
-    }
+    setDesignResult(result);
+    setQuestion(null);
+    setDesignPhase('preview');
+    traceSessionRef.current?.complete();
+    traceSessionRef.current = null;
+    // Refresh the persona store so persona.last_design_result (the canonical
+    // source of truth, already written by the backend) is available to all
+    // consumers without relying on this transient preview state.
+    refreshPersonas().catch(silentCatch("designAnalysis:refreshAfterComplete"));
   }, [refreshPersonas, setDesignPhase, stream.result]);
+
+  useEffect(() => {
+    const q = stream.question;
+    if (!q) return;
+    setQuestion(q);
+    setDesignPhase('awaiting-input');
+  }, [setDesignPhase, stream.question]);
 
   // Route stream errors -- refine failures fall back to 'preview' (preserving
   // the previous result), while analysis failures go to 'error'.

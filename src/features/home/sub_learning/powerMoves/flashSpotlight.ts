@@ -11,8 +11,29 @@ function removeActiveFlash() {
   activeFlash = null;
 }
 
+// Mirrors tourSlice's TOUR_TEST_ID_PATTERN / useTrackedElementRect's local
+// copy -- kept local so this file carries no dependency on the onboarding
+// store slice. Defense-in-depth: every known caller (`registry.ts`) already
+// supplies a hand-audited literal, but a stray quote/bracket must never
+// reach querySelector and throw a SyntaxError inside this fire-and-forget
+// async function, whose rejection nobody awaits or catches.
+const TESTID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function isSafeTestId(id: string): boolean {
+  return TESTID_PATTERN.test(id);
+}
+
 /** Poll for `[data-testid="${testId}"]` until present or timed out. */
 function waitForTestId(testId: string): Promise<Element | null> {
+  if (!isSafeTestId(testId)) {
+    if (typeof console !== 'undefined') {
+      console.warn(
+        `[flashSpotlight] rejected unsafe testid; expected /^[a-zA-Z0-9_-]+$/`,
+        { received: testId },
+      );
+    }
+    return Promise.resolve(null);
+  }
   return new Promise((resolve) => {
     const deadline = Date.now() + WAIT_MS;
     const tick = () => {
