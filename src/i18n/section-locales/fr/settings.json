@@ -594,7 +594,11 @@
       "select_filtered": "Sélectionner {count} affichés",
       "selected_of": "{selected} / {total}",
       "team_label": "Appartenance à l'équipe",
-      "trust_label_full": "Score de confiance"
+      "trust_label_full": "Score de confiance",
+      "row_knowledge": "Connaissances du workspace",
+      "row_projects": "Projets dev",
+      "scope_knowledge": "Connaissances",
+      "scope_projects": "Projets dev"
     },
     "storage_confirm": "Supprimer {count} exécutions terminées de plus de 24 heures ?",
     "storage_confirm_yes": "Supprimer",
@@ -604,7 +608,9 @@
     "storage_removable": "Supprimable",
     "storage_subtitle": "Utilisation de la base de données locale et nettoyage des exécutions terminées.",
     "storage_title": "Stockage",
-    "storage_total": "Total des exécutions"
+    "storage_total": "Total des exécutions",
+    "dev_projects": "Projets de dev",
+    "workspace_knowledge": "Connaissances du workspace"
   },
   "config": {
     "title": "Résolution de la configuration",

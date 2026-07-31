@@ -594,7 +594,11 @@
       "select_filtered": "{count} angezeigte auswählen",
       "selected_of": "{selected} / {total}",
       "team_label": "Teammitgliedschaft",
-      "trust_label_full": "Vertrauenswert"
+      "trust_label_full": "Vertrauenswert",
+      "row_knowledge": "Workspace-Wissen",
+      "row_projects": "Dev-Projekte",
+      "scope_knowledge": "Wissen",
+      "scope_projects": "Dev-Projekte"
     },
     "storage_confirm": "{count} abgeschlossene Ausführungen entfernen, die älter als 24 Stunden sind?",
     "storage_confirm_yes": "Entfernen",
@@ -604,7 +608,9 @@
     "storage_removable": "Entfernbar",
     "storage_subtitle": "Lokale Datenbanknutzung und Bereinigung abgeschlossener Ausführungen.",
     "storage_title": "Speicher",
-    "storage_total": "Ausführungen gesamt"
+    "storage_total": "Ausführungen gesamt",
+    "dev_projects": "Dev-Projekte",
+    "workspace_knowledge": "Workspace-Wissen"
   },
   "config": {
     "title": "Konfigurationsauflösung",

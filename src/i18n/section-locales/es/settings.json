@@ -594,7 +594,11 @@
       "select_filtered": "Seleccionar {count} mostrados",
       "selected_of": "{selected} / {total}",
       "team_label": "Pertenencia a equipo",
-      "trust_label_full": "Puntuación de confianza"
+      "trust_label_full": "Puntuación de confianza",
+      "row_knowledge": "Conocimiento del workspace",
+      "row_projects": "Proyectos dev",
+      "scope_knowledge": "Conocimiento",
+      "scope_projects": "Proyectos dev"
     },
     "storage_confirm": "¿Eliminar {count} ejecuciones finalizadas con más de 24 horas?",
     "storage_confirm_yes": "Eliminar",
@@ -604,7 +608,9 @@
     "storage_removable": "Eliminable",
     "storage_subtitle": "Uso de la base de datos local y limpieza de ejecuciones finalizadas.",
     "storage_title": "Almacenamiento",
-    "storage_total": "Total de ejecuciones"
+    "storage_total": "Total de ejecuciones",
+    "dev_projects": "Proyectos de desarrollo",
+    "workspace_knowledge": "Conocimiento del workspace"
   },
   "config": {
     "title": "Resolución de Configuración",

@@ -10791,7 +10791,11 @@
         "select_filtered": "표시된 {count}개 선택",
         "selected_of": "{selected} / {total}",
         "team_label": "팀 구성원",
-        "trust_label_full": "신뢰 점수"
+        "trust_label_full": "신뢰 점수",
+        "row_knowledge": "워크스페이스 지식",
+        "row_projects": "개발 프로젝트",
+        "scope_knowledge": "지식",
+        "scope_projects": "개발 프로젝트"
       },
       "storage_confirm": "24시간 이상된 완료된 실행 {count}개를 제거하시겠습니까?",
       "storage_confirm_yes": "제거",
@@ -10801,7 +10805,9 @@
       "storage_removable": "제거 가능",
       "storage_subtitle": "로컬 데이터베이스 사용량 및 완료된 실행 정리.",
       "storage_title": "저장소",
-      "storage_total": "총 실행 수"
+      "storage_total": "총 실행 수",
+      "dev_projects": "개발 프로젝트",
+      "workspace_knowledge": "워크스페이스 지식"
     },
     "config": {
       "title": "구성 해석",

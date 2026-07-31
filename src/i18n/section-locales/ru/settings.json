@@ -594,7 +594,11 @@
       "select_filtered": "Выбрать {count} показанных",
       "selected_of": "{selected} / {total}",
       "team_label": "Членство в команде",
-      "trust_label_full": "Уровень доверия"
+      "trust_label_full": "Уровень доверия",
+      "row_knowledge": "Знания воркспейса",
+      "row_projects": "Dev-проекты",
+      "scope_knowledge": "Знания",
+      "scope_projects": "Dev-проекты"
     },
     "storage_confirm": "Удалить {count} завершённых запусков старше 24 часов?",
     "storage_confirm_yes": "Удалить",
@@ -604,7 +608,9 @@
     "storage_removable": "Удаляемые",
     "storage_subtitle": "Использование локальной базы данных и очистка завершённых запусков.",
     "storage_title": "Хранилище",
-    "storage_total": "Всего запусков"
+    "storage_total": "Всего запусков",
+    "dev_projects": "Dev-проекты",
+    "workspace_knowledge": "Знания рабочего пространства"
   },
   "config": {
     "title": "Разрешение конфигурации",

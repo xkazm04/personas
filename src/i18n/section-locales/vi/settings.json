@@ -594,7 +594,11 @@
       "select_filtered": "Chọn {count} đang hiển thị",
       "selected_of": "{selected} / {total}",
       "team_label": "Tư cách thành viên nhóm",
-      "trust_label_full": "Điểm tin cậy"
+      "trust_label_full": "Điểm tin cậy",
+      "row_knowledge": "Kiến thức workspace",
+      "row_projects": "Dự án dev",
+      "scope_knowledge": "Kiến thức",
+      "scope_projects": "Dự án dev"
     },
     "storage_confirm": "Xóa {count} lần chạy đã hoàn thành cũ hơn 24 giờ?",
     "storage_confirm_yes": "Xóa",
@@ -604,7 +608,9 @@
     "storage_removable": "Có thể xóa",
     "storage_subtitle": "Sử dụng cơ sở dữ liệu cục bộ và dọn dẹp các lần chạy đã hoàn thành.",
     "storage_title": "Bộ nhớ",
-    "storage_total": "Tổng lần chạy"
+    "storage_total": "Tổng lần chạy",
+    "dev_projects": "Dự án dev",
+    "workspace_knowledge": "Kiến thức workspace"
   },
   "config": {
     "title": "Giải quyết cấu hình",

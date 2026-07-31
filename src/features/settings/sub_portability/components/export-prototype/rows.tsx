@@ -1,10 +1,12 @@
-import { Cpu, ShieldCheck, KeyRound, Users, Target, AlertTriangle, Power } from 'lucide-react';
+import { Cpu, ShieldCheck, KeyRound, Users, Target, AlertTriangle, Power, FolderGit2, BookOpen } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
 import { SelectBox, StatChip } from './atoms';
 
 const ROW_BASE =
@@ -156,6 +158,81 @@ export function CredentialRow({
           <RelativeTime timestamp={credential.lastUsedAt} />
         </span>
       )}
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dev project row — name + middle-truncated root path.
+// ---------------------------------------------------------------------------
+
+/** Keep the drive/head and the leaf of a long path; elide the middle. */
+function truncatePathMiddle(path: string, max = 56): string {
+  if (path.length <= max) return path;
+  const head = path.slice(0, Math.floor(max * 0.4));
+  const tail = path.slice(-(max - head.length - 1));
+  return `${head}…${tail}`;
+}
+
+export function ProjectPickRow({
+  project,
+  selected,
+  onToggle,
+}: {
+  project: DevProject;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <label className={`${ROW_BASE} ${rowTone(selected)}`}>
+      <SelectBox state={selected} onChange={onToggle} ariaLabel={project.name} />
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-emerald-500/10 text-emerald-300 flex-shrink-0">
+        <FolderGit2 className="w-4 h-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="typo-body font-medium text-foreground truncate">{project.name}</div>
+        <div className="typo-caption text-foreground truncate" title={project.root_path}>
+          {truncatePathMiddle(project.root_path)}
+        </div>
+      </div>
+    </label>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Workspace knowledge row — name + colour dot.
+// ---------------------------------------------------------------------------
+
+export function WorkspacePickRow({
+  workspace,
+  selected,
+  onToggle,
+}: {
+  workspace: DevWorkspace;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <label className={`${ROW_BASE} ${rowTone(selected)}`}>
+      <SelectBox state={selected} onChange={onToggle} ariaLabel={workspace.name} />
+      <span className="w-8 h-8 rounded-card flex items-center justify-center bg-indigo-500/10 text-indigo-300 flex-shrink-0">
+        <BookOpen className="w-4 h-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {workspace.color && (
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: workspace.color }}
+              aria-hidden
+            />
+          )}
+          <span className="typo-body font-medium text-foreground truncate">{workspace.name}</span>
+        </div>
+        {workspace.description && (
+          <p className="typo-caption text-foreground truncate">{workspace.description}</p>
+        )}
+      </div>
     </label>
   );
 }

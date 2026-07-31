@@ -20,7 +20,7 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], projectIds: string[], workspaceIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
   onImport: (passphrase?: string) => void;
 }
 

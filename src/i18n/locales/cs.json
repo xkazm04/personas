@@ -10791,7 +10791,11 @@
         "select_filtered": "Vybrat {count} zobrazených",
         "selected_of": "{selected} / {total}",
         "team_label": "Členství v týmu",
-        "trust_label_full": "Skóre důvěry"
+        "trust_label_full": "Skóre důvěry",
+        "row_knowledge": "Znalosti workspace",
+        "row_projects": "Dev projekty",
+        "scope_knowledge": "Znalosti",
+        "scope_projects": "Dev projekty"
       },
       "storage_confirm": "Odstranit {count} dokončených spuštění starších než 24 hodin?",
       "storage_confirm_yes": "Odstranit",
@@ -10801,7 +10805,9 @@
       "storage_removable": "Odstranitelné",
       "storage_subtitle": "Využití lokální databáze a čištění dokončených spuštění.",
       "storage_title": "Úložiště",
-      "storage_total": "Celkem spuštění"
+      "storage_total": "Celkem spuštění",
+      "dev_projects": "Dev projekty",
+      "workspace_knowledge": "Znalosti workspace"
     },
     "config": {
       "title": "Řešení konfigurace",

@@ -594,7 +594,11 @@
       "select_filtered": "Pilih {count} yang ditampilkan",
       "selected_of": "{selected} / {total}",
       "team_label": "Keanggotaan tim",
-      "trust_label_full": "Skor kepercayaan"
+      "trust_label_full": "Skor kepercayaan",
+      "row_knowledge": "Pengetahuan workspace",
+      "row_projects": "Proyek dev",
+      "scope_knowledge": "Pengetahuan",
+      "scope_projects": "Proyek dev"
     },
     "storage_confirm": "Hapus {count} jalankan selesai yang lebih lama dari 24 jam?",
     "storage_confirm_yes": "Hapus",
@@ -604,7 +608,9 @@
     "storage_removable": "Dapat dihapus",
     "storage_subtitle": "Penggunaan database lokal dan pembersihan jalankan yang selesai.",
     "storage_title": "Penyimpanan",
-    "storage_total": "Total jalankan"
+    "storage_total": "Total jalankan",
+    "dev_projects": "Proyek Dev",
+    "workspace_knowledge": "Pengetahuan workspace"
   },
   "config": {
     "title": "Resolusi Konfigurasi",

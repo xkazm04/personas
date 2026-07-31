@@ -86,6 +86,8 @@ export function useDataPortability() {
     personaIds: string[],
     teamIds: string[],
     credentialIds: string[],
+    projectIds: string[],
+    workspaceIds: string[],
     includeMemories: boolean,
     includeKpis: boolean,
     passphrase?: string,
@@ -94,7 +96,7 @@ export function useDataPortability() {
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportSelective(personaIds, teamIds, credentialIds, includeMemories, includeKpis, passphrase);
+      const saved = await exportSelective(personaIds, teamIds, credentialIds, projectIds, workspaceIds, includeMemories, includeKpis, passphrase);
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {

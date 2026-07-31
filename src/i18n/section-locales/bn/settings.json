@@ -594,7 +594,11 @@
       "select_filtered": "{count}টি দেখানো নির্বাচন",
       "selected_of": "{selected} / {total}",
       "team_label": "দলের সদস্যপদ",
-      "trust_label_full": "বিশ্বাস স্কোর"
+      "trust_label_full": "বিশ্বাস স্কোর",
+      "row_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার",
+      "row_projects": "ডেভ প্রজেক্ট",
+      "scope_knowledge": "জ্ঞানভান্ডার",
+      "scope_projects": "ডেভ প্রজেক্ট"
     },
     "storage_confirm": "২৪ ঘণ্টার বেশি পুরানো {count}টি শেষ হওয়া রান সরিয়ে ফেলবেন?",
     "storage_confirm_yes": "সরান",
@@ -604,7 +608,9 @@
     "storage_removable": "সরানোযোগ্য",
     "storage_subtitle": "লোকাল ডেটাবেস ব্যবহার এবং শেষ হওয়া রান পরিষ্কার।",
     "storage_title": "স্টোরেজ",
-    "storage_total": "মোট রান"
+    "storage_total": "মোট রান",
+    "dev_projects": "ডেভ প্রজেক্ট",
+    "workspace_knowledge": "ওয়ার্কস্পেস জ্ঞানভান্ডার"
   },
   "config": {
     "title": "কনফিগ রেজোলিউশন",

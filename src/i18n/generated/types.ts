@@ -10947,6 +10947,8 @@ export type Translations = {
       team_memories: string;
       test_suites: string;
       kpis: string;
+      dev_projects: string;
+      workspace_knowledge: string;
       export_import_title: string;
       export_import_hint: string;
       exporting: string;
@@ -11021,6 +11023,8 @@ export type Translations = {
         scope_personas: string;
         scope_teams: string;
         scope_credentials: string;
+        scope_projects: string;
+        scope_knowledge: string;
         select_filtered: string;
         deselect_filtered: string;
         clear_all: string;
@@ -11036,6 +11040,8 @@ export type Translations = {
         row_personas: string;
         row_teams: string;
         row_credentials: string;
+        row_projects: string;
+        row_knowledge: string;
         dependency_note: string;
         secrets_encrypted: string;
         secrets_excluded: string;

@@ -10791,7 +10791,11 @@
         "select_filtered": "选择 {count} 个显示项",
         "selected_of": "{selected} / {total}",
         "team_label": "团队成员",
-        "trust_label_full": "信任分数"
+        "trust_label_full": "信任分数",
+        "row_knowledge": "工作区知识",
+        "row_projects": "开发项目",
+        "scope_knowledge": "知识",
+        "scope_projects": "开发项目"
       },
       "storage_confirm": "删除 {count} 个超过 24 小时的已完成运行？",
       "storage_confirm_yes": "删除",
@@ -10801,7 +10805,9 @@
       "storage_removable": "可删除",
       "storage_subtitle": "本地数据库使用情况及已完成运行的清理。",
       "storage_title": "存储",
-      "storage_total": "总运行次数"
+      "storage_total": "总运行次数",
+      "dev_projects": "开发项目",
+      "workspace_knowledge": "工作区知识"
     },
     "config": {
       "title": "配置解析",
