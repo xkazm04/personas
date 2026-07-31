@@ -1,0 +1,516 @@
+{
+ "id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+ "name": "Team Collaboration",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "companion-brain",
+   "category": "api",
+   "business_feature": "Athena Companion Brain",
+   "description": "Athena — the AI companion that lives across the app. Handles proactive nudges, interactive replies, explain-in-cockpit, autonomous goal creation, and long-term brain memory. Runs as the Director's evaluator and surfaces insights through the CompanionPanel. The brain module includes vector-based retrieval with a MAX_VECTOR_DISTANCE floor and a dedicated doctrine lane to prevent off-topic recall padding.",
+   "api_surface": "invoke('queue_companion_job'), invoke('get_companion_replies'), Tauri event 'companion_reply'",
+   "db_tables": [
+    "companion_jobs",
+    "companion_notes",
+    "brain_memories"
+   ],
+   "entry_points": [
+    "src/features/shared/components/layout/TitleBarDock.tsx",
+    "src-tauri/src/companion/brain/doctrine.rs"
+   ],
+   "cross_refs": [
+    "goals-kpi",
+    "director-meta-persona",
+    "knowledge-base",
+    "memory-messages"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/shared/components/layout/FullScreenOverlay.tsx",
+    "src-tauri/src/companion/brain/graph.rs",
+    "src-tauri/src/companion/brain/episodic.rs",
+    "src-tauri/src/companion/brain/embeddings.rs",
+    "src-tauri/src/companion/brain/doctrine.rs",
+    "src-tauri/src/companion/brain/retrieval.rs"
+   ]
+  },
+  {
+   "name": "team-assignment-tracking",
+   "category": "lib",
+   "business_feature": "Team Assignment Tracking",
+   "description": "Tracks real-time progress of team assignments by subscribing to TEAM_ASSIGNMENT_PROGRESS Tauri events. Applies incremental assignment-step updates to the pipeline store and dispatches toast notifications for assignment state transitions. Includes both per-team and global (cross-team) listener variants.",
+   "api_surface": null,
+   "db_tables": [
+    "team_assignments",
+    "team_assignment_steps"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_assignments/useAssignmentProgressListener.ts",
+    "src/features/teams/sub_assignments/useGlobalAssignmentProgressListener.ts"
+   ],
+   "cross_refs": [
+    "team-collaboration-channels",
+    "team-studio"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/teams/sub_assignments/index.ts",
+    "src/features/teams/sub_assignments/useAssignmentProgressListener.ts",
+    "src/features/teams/sub_assignments/useGlobalAssignmentProgressListener.ts",
+    "src/features/teams/sub_assignments/useAssignmentNotificationDispatcher.ts"
+   ]
+  },
+  {
+   "name": "team-canvas-controls",
+   "category": "ui",
+   "business_feature": "Team Canvas Controls & Debugger",
+   "description": "Pipeline control panel, toolbar, optimizer, and debug tooling for the legacy team DAG canvas. The debugger supports dry-run step-through with variable inspection; the assistant provides a conversational interface for canvas edits; the optimizer analyses the pipeline for bottlenecks. All sit above the canvas core reducers.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_canvas/components/debugger/DryRunDebugger.tsx",
+    "src/features/teams/sub_canvas/libs/useDebugger.ts"
+   ],
+   "cross_refs": [
+    "team-canvas-core",
+    "team-canvas-nodes-edges"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/teams/sub_canvas/components/PipelineControls.tsx",
+    "src/features/teams/sub_canvas/components/TeamToolbar.tsx",
+    "src/features/teams/sub_canvas/components/OptimizerPanel.tsx",
+    "src/features/teams/sub_canvas/components/OptimizerResults.tsx",
+    "src/features/teams/sub_canvas/components/debugger/DebuggerControls.tsx",
+    "src/features/teams/sub_canvas/components/debugger/DebuggerStepView.tsx"
+   ]
+  },
+  {
+   "name": "team-canvas-core",
+   "category": "lib",
+   "business_feature": "Team Canvas Core",
+   "description": "Core state and graph model for the legacy DAG team pipeline canvas (now orphaned by the Studio redesign). Manages the canvas reducer, derived canvas state, drag context, team graph topology calculations, and shared constants such as connection-type styles and persona avatar rendering. These files underpin the node/edge layers above them.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_canvas/libs/useCanvasReducer.ts",
+    "src/features/teams/sub_canvas/libs/teamGraph.ts"
+   ],
+   "cross_refs": [
+    "team-canvas-nodes-edges",
+    "team-canvas-controls"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/teams/sub_canvas/index.ts",
+    "src/features/teams/sub_canvas/libs/CanvasDragContext.tsx",
+    "src/features/teams/sub_canvas/libs/canvasActions.ts",
+    "src/features/teams/sub_canvas/libs/teamConstants.tsx",
+    "src/features/teams/sub_canvas/libs/teamGraph.ts",
+    "src/features/teams/sub_canvas/libs/useCanvasReducer.ts"
+   ]
+  },
+  {
+   "name": "team-canvas-nodes-edges",
+   "category": "ui",
+   "business_feature": "Team Canvas Nodes & Edges",
+   "description": "Visual node and edge components for the legacy team pipeline DAG canvas. Persona nodes display agent avatars with role badges and context menus; edge components render typed connections (sequential, conditional, parallel, feedback) with legends, ghost previews for in-progress wiring, and delete tooltips. Alignment guides assist with layout snapping.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_canvas/components/nodes/PersonaNode.tsx",
+    "src/features/teams/sub_canvas/components/edges/ConnectionEdge.tsx"
+   ],
+   "cross_refs": [
+    "team-canvas-core",
+    "team-canvas-controls"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/teams/sub_canvas/components/AlignmentGuides.tsx",
+    "src/features/teams/sub_canvas/components/edges/ConnectionEdge.tsx",
+    "src/features/teams/sub_canvas/components/edges/ConnectionLegend.tsx",
+    "src/features/teams/sub_canvas/components/edges/EdgeDeleteTooltip.tsx",
+    "src/features/teams/sub_canvas/components/edges/GhostEdge.tsx",
+    "src/features/teams/sub_canvas/components/nodes/NodeContextMenu.tsx"
+   ]
+  },
+  {
+   "name": "team-collaboration-channels",
+   "category": "lib",
+   "business_feature": "Team Collaboration Channels",
+   "description": "Manages real-time team communication channels including a channel detail modal and a singleton channel service that subscribes to TEAM_ASSIGNMENT_PROGRESS events and runs a polling fallback. Renders channel payloads and messages via collabRender. Previously each surface had its own listener per team; this centralises refresh to avoid N×M subscription costs.",
+   "api_surface": null,
+   "db_tables": [
+    "team_channels",
+    "team_channel_messages"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_collab/useChannelService.ts",
+    "src/features/teams/sub_collab/useTeamChannel.ts"
+   ],
+   "cross_refs": [
+    "team-assignment-tracking",
+    "team-studio"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/teams/sub_collab/ChannelDetailModal.tsx",
+    "src/features/teams/sub_collab/collabRender.tsx",
+    "src/features/teams/sub_collab/payloadView.ts",
+    "src/features/teams/sub_collab/useChannelService.ts",
+    "src/features/teams/sub_collab/useTeamChannel.ts",
+    "src/features/teams/sub_collab/useTeamChannel.test.ts"
+   ]
+  },
+  {
+   "name": "team-collaboration-models",
+   "category": "data",
+   "business_feature": "Team Collaboration Models",
+   "description": "Domain types for the team collaboration layer: `Team` (org-level grouping), `TeamAssignment` (persona membership in a team), `TeamChannel` (communication channel configuration), `TeamMemory` (shared knowledge accessible to all team personas), and `TeamPreset` (reusable team configuration templates). These types back the collaborative multi-persona workflow features.",
+   "api_surface": "",
+   "db_tables": [
+    "teams",
+    "team_assignments",
+    "team_channels",
+    "team_memories",
+    "team_presets"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/team.rs"
+   ],
+   "cross_refs": [
+    "persona-genome-models",
+    "memory-knowledge-models",
+    "execution-evaluation"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/core/src/models/team.rs",
+    "src-tauri/core/src/models/team_assignment.rs",
+    "src-tauri/core/src/models/team_channel.rs",
+    "src-tauri/core/src/models/team_memory.rs",
+    "src-tauri/core/src/models/team_preset.rs"
+   ]
+  },
+  {
+   "name": "team-communication",
+   "category": "api",
+   "business_feature": "Team Communication",
+   "description": "Inter-team communication layer — team channels for message exchange between personas, shared team memories for persistent cross-persona context, and deliberation commands for structured decision-making within a team. Enables asynchronous coordination between grouped agents.",
+   "api_surface": "send_team_message, list_team_memories, create_deliberation, resolve_deliberation",
+   "db_tables": [
+    "team_channels",
+    "team_messages",
+    "team_memories",
+    "team_deliberations"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/teams/team_channel.rs"
+   ],
+   "cross_refs": [
+    "teams-core",
+    "persona-memory"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/commands/teams/team_channel.rs",
+    "src-tauri/src/commands/teams/team_memories.rs",
+    "src-tauri/src/commands/teams/deliberations.rs"
+   ]
+  },
+  {
+   "name": "team-communication-api",
+   "category": "api",
+   "business_feature": "Team Channel & Deliberation",
+   "description": "IPC wrappers for the team communication channel (a keyset-paginated feed of step events, memories, messages, and deliberation turns), team deliberations (structured multi-agent debate sessions with cost budgets and agenda items), and team memories (cross-run knowledge accumulated by teams). Together these form the shared cognitive layer for multi-agent teams.",
+   "api_surface": "Tauri commands: list_team_channel, create_team_deliberation, list_team_memories, get_team_memory_stats",
+   "db_tables": [
+    "team_channel_items",
+    "team_deliberations",
+    "deliberation_agenda_items",
+    "team_memories"
+   ],
+   "entry_points": [
+    "src/api/pipeline/teamChannel.ts"
+   ],
+   "cross_refs": [
+    "team-management-api",
+    "overview-incidents-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/pipeline/teamChannel.ts",
+    "src/api/pipeline/teamDeliberations.ts",
+    "src/api/pipeline/teamMemories.ts"
+   ]
+  },
+  {
+   "name": "team-deliberations",
+   "category": "lib",
+   "business_feature": "Team Deliberations",
+   "description": "Implements an autonomous multi-agent deliberation system where a team moderates a topic through structured rounds of discussion. Supports parallel tracks, capability gating (approve/skip), escalation resolution, cost budgeting, and a run-to-budget loop. Polls the active deliberation at 6s intervals so the UI reflects autonomous moderator progress in near-real-time.",
+   "api_surface": "createTeamDeliberation, advanceTeamDeliberation, approveDeliberationAction, resolveDeliberationEscalation, splitTeamDeliberation, mergeDeliberationTracks",
+   "db_tables": [
+    "team_deliberations",
+    "deliberation_agenda",
+    "deliberation_turns",
+    "deliberation_tracks"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_deliberations/useTeamDeliberations.ts"
+   ],
+   "cross_refs": [
+    "team-studio",
+    "team-collaboration-channels"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/teams/sub_deliberations/useTeamDeliberations.ts"
+   ]
+  },
+  {
+   "name": "team-management-api",
+   "category": "api",
+   "business_feature": "Team & Assignment Management",
+   "description": "IPC wrappers for persona team CRUD and team assignment orchestration. Teams group personas into a multi-agent workforce with topology blueprints and pipeline analytics; assignments are the top-level orchestration unit that decomposes a task into steps, dispatches them to team members, and manages step reviews and outcomes. Drives the Team Studio and pipeline orchestration UI.",
+   "api_surface": "Tauri commands: list_teams, create_team, create_team_assignment, resolve_step_review, list_assignment_templates",
+   "db_tables": [
+    "persona_teams",
+    "team_members",
+    "team_assignments",
+    "team_assignment_steps",
+    "team_assignment_events"
+   ],
+   "entry_points": [
+    "src/api/pipeline/teams.ts",
+    "src/api/pipeline/assignments.ts"
+   ],
+   "cross_refs": [
+    "team-communication-api",
+    "trigger-scheduler-api",
+    "persona-lifecycle-api"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/pipeline/teams.ts",
+    "src/api/pipeline/assignments.ts"
+   ]
+  },
+  {
+   "name": "team-memory",
+   "category": "ui",
+   "business_feature": "Team Memory",
+   "description": "Provides a shared knowledge store for teams — a paginated CRUD panel for team memories with category/search/run filters, importance ratings, timeline view, and run-diff summaries. The hook useTeamMemories orchestrates IPC calls against the team memories API and exposes filter, load-more, and CRUD handlers to panel components.",
+   "api_surface": "listTeamMemories, createTeamMemory, deleteTeamMemory, updateTeamMemory, getTeamMemoryStats",
+   "db_tables": [
+    "team_memories"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_teamMemory/useTeamMemories.ts",
+    "src/features/teams/sub_teamMemory/TeamMemoryPane.tsx"
+   ],
+   "cross_refs": [
+    "team-studio",
+    "team-collaboration-channels"
+   ],
+   "file_count": 20,
+   "sample_files": [
+    "src/features/teams/sub_teamMemory/TeamMemoryPane.tsx",
+    "src/features/teams/sub_teamMemory/useTeamMemories.ts",
+    "src/features/teams/sub_teamMemory/index.ts",
+    "src/features/teams/sub_teamMemory/libs/memoryConstants.ts",
+    "src/features/teams/sub_teamMemory/libs/memoryDiff.ts",
+    "src/features/teams/sub_teamMemory/libs/useRunDiffSummaries.ts"
+   ]
+  },
+  {
+   "name": "team-orchestration",
+   "category": "lib",
+   "business_feature": "Team Assignment Orchestration",
+   "description": "Orchestrates team assignments from DAG walking through step-level status transitions (pending→matching→running→done/failed/skipped/awaiting_review) to terminal outcome, with parallel step execution up to the concurrency cap. The matching layer provides three strategies (manual, LLM-suggested, skill-based) to assign a step to a persona+use_case pair. The preset-adopter turns filesystem-shipped TeamPreset manifests into live PersonaTeams with persona adoption and connection wiring.",
+   "api_surface": "run_team_assignment, adopt_team_preset (Tauri commands)",
+   "db_tables": [
+    "team_assignments",
+    "team_assignment_steps",
+    "persona_teams",
+    "team_connections",
+    "connectors"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/team_assignment_orchestrator.rs",
+    "src-tauri/src/engine/team_assignment_matching.rs"
+   ],
+   "cross_refs": [
+    "pipeline-and-automation",
+    "execution-runner"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/engine/team_assignment_orchestrator.rs",
+    "src-tauri/src/engine/team_assignment_matching.rs",
+    "src-tauri/src/engine/team_preset_adopter.rs"
+   ]
+  },
+  {
+   "name": "team-preset-studio",
+   "category": "ui",
+   "business_feature": "Team Preset Studio",
+   "description": "Handles the in-app preset adoption flow where users browse, preview, and adopt pre-built team configurations. The gallery showcases themed presets (web-development, SDLC, backlog-execution, etc.) and the studio renders a connection graph and process blueprint before adoption. Driven by pipelineStore.presetFlowOpen.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetGalleryShowcase.tsx"
+   ],
+   "cross_refs": [
+    "team-workspace-shell",
+    "team-studio"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetProcessBlueprint.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetProcessHost.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/PresetGalleryShowcase.tsx",
+    "src/features/teams/sub_teamWorkspace/presetStudio/presetBackground.ts"
+   ]
+  },
+  {
+   "name": "team-studio",
+   "category": "ui",
+   "business_feature": "Team Studio",
+   "description": "Implements the split-pane team studio where users configure a selected team's roster, capability toggles, and assignment console. Includes publish controls for exporting teams as presets and a replay view for past assignments. Replaced the old React Flow DAG canvas as the primary team authoring surface.",
+   "api_surface": null,
+   "db_tables": [
+    "teams",
+    "team_assignments"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/useTeamStudioData.ts"
+   ],
+   "cross_refs": [
+    "team-workspace-shell",
+    "team-assignment-tracking",
+    "team-preset-studio"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/teams/sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/TeamWorkspacePane.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/PublishPresetButton.tsx",
+    "src/features/teams/sub_teamWorkspace/teamStudio/boardShared.tsx"
+   ]
+  },
+  {
+   "name": "team-topology",
+   "category": "lib",
+   "business_feature": "Team Topology",
+   "description": "Compiles natural-language workflow descriptions into deployable multi-persona team topologies and wires the connection graph into runtime event chains. The workflow_compiler translates prose into a TeamBlueprint and persists the PersonaTeam + member/connection rows; team_handoff derives chain triggers and event listeners from connection edges; team_preset_loader reads JSON manifests for the presets gallery; topology types and heuristics support canvas rendering and analytics.",
+   "api_surface": null,
+   "db_tables": [
+    "persona_teams",
+    "persona_team_members",
+    "persona_team_connections",
+    "persona_triggers"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/workflow_compiler.rs",
+    "src-tauri/engine/src/team_handoff.rs"
+   ],
+   "cross_refs": [
+    "event-bus-routing",
+    "project-autonomy"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/engine/src/workflow_compiler.rs",
+    "src-tauri/engine/src/team_handoff.rs",
+    "src-tauri/engine/src/team_preset_loader.rs",
+    "src-tauri/engine/src/topology_heuristic.rs",
+    "src-tauri/engine/src/topology_types.rs",
+    "src-tauri/engine/src/optimizer.rs"
+   ]
+  },
+  {
+   "name": "team-workspace-shell",
+   "category": "ui",
+   "business_feature": "Team Workspace Shell",
+   "description": "Provides the top-level team selection and workspace entry point. Renders a team list when no team is selected, and hands off to TeamStudioSplitVariant when a team is chosen. Also hosts the auto-team modal and blueprint preview for team composition.",
+   "api_surface": "pipelineStore.teams, pipelineStore.selectTeam",
+   "db_tables": [
+    "teams"
+   ],
+   "entry_points": [
+    "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx",
+    "src/features/teams/sub_teamWorkspace/TeamList.tsx"
+   ],
+   "cross_refs": [
+    "team-studio",
+    "team-preset-studio",
+    "team-assignment-tracking"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/teams/sub_teamWorkspace/TeamCanvas.tsx",
+    "src/features/teams/sub_teamWorkspace/TeamList.tsx",
+    "src/features/teams/sub_teamWorkspace/TeamColorPicker.tsx",
+    "src/features/teams/sub_teamWorkspace/CreateTeamForm.tsx",
+    "src/features/teams/sub_teamWorkspace/AutoTeamModal.tsx",
+    "src/features/teams/sub_teamWorkspace/useAutoTeam.ts"
+   ]
+  },
+  {
+   "name": "teams-core",
+   "category": "api",
+   "business_feature": "Team Management",
+   "description": "Team entity management — creating, listing, and managing teams of personas; assigning personas to teams; and team-level metadata. Provides the organisational unit that groups personas for coordinated multi-agent work.",
+   "api_surface": "list_teams, create_team, assign_persona, remove_assignment",
+   "db_tables": [
+    "teams",
+    "team_members",
+    "team_assignments"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/teams/teams.rs"
+   ],
+   "cross_refs": [
+    "persona-crud",
+    "team-communication"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/commands/teams/teams.rs",
+    "src-tauri/src/commands/teams/assignments.rs",
+    "src-tauri/src/commands/teams/mod.rs"
+   ]
+  },
+  {
+   "name": "teams-management",
+   "category": "ui",
+   "business_feature": "Teams Management",
+   "description": "Teams feature enabling multi-user grouping of personas, shared goals, and collaborative KPI tracking. Manages team CRUD, member assignment, and the Teams sidebar navigation.",
+   "api_surface": "invoke('get_teams'), invoke('create_team'), invoke('add_team_member')",
+   "db_tables": [
+    "teams",
+    "team_members",
+    "team_personas"
+   ],
+   "entry_points": [
+    "src/features/teams/TeamsPage.tsx",
+    "src-tauri/src/commands/core/teams.rs"
+   ],
+   "cross_refs": [
+    "goals-kpi",
+    "persona-management"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  }
+ ]
+}

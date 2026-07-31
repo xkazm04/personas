@@ -114,6 +114,18 @@ pub fn resolve(request_id: &str, response: Result<Value, String>) -> bool {
     }
 }
 
+/// True while `request_id` is still awaiting resolution. Used by the
+/// night-shift unattended watchdogs to check whether a human already
+/// resolved the card before they act. Expired-but-unswept entries count as
+/// not pending.
+pub fn is_pending(request_id: &str) -> bool {
+    let h = hub().lock().unwrap_or_else(|p| p.into_inner());
+    h.by_id
+        .get(request_id)
+        .map(|e| Instant::now().duration_since(e.created_at) <= REQUEST_TTL)
+        .unwrap_or(false)
+}
+
 /// Cancel any pending requests bound to this Fleet session. Called on
 /// session exit so the blocking MCP call returns immediately with an
 /// "exited" error instead of waiting for TTL.
@@ -199,6 +211,16 @@ mod tests {
         let r = rx.await.unwrap();
         assert!(r.is_err());
         assert!(r.unwrap_err().contains("exited"));
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn is_pending_tracks_lifecycle() {
+        let _g = lock_and_reset();
+        let (id, _rx) = submit("sess-pending", RequestKind::Guidance);
+        assert!(is_pending(&id));
+        assert!(resolve(&id, Ok(Value::Null)));
+        assert!(!is_pending(&id));
+        assert!(!is_pending("mcpreq_never-existed"));
     }
 
     #[test]

@@ -43,6 +43,8 @@ mod backup;
 pub mod builtin_connectors;
 pub(crate) mod builtin_shared_events;
 pub mod cdc;
+pub mod attribution;
+pub mod journal;
 // Relocated from `engine/` in crate-split step 4c. Each of these six is
 // data-layer code that happened to live in the engine directory: they depend
 // only on `db`, `db::repos` and `personas-core`, while `db::repos` calls INTO
@@ -55,6 +57,7 @@ pub mod chain;
 pub mod embedder;
 pub mod memory_recall;
 pub mod model_routing;
+pub mod policy_tuning;
 pub mod quality_gate;
 #[cfg(feature = "ml")]
 pub mod vector_store;
@@ -265,6 +268,19 @@ pub fn init_db(
     app_data_dir: &PathBuf,
     cdc_sender: Option<cdc::CdcSender>,
 ) -> Result<DbPool, AppError> {
+    init_db_with_journal(app_data_dir, cdc_sender, None)
+}
+
+/// [`init_db`] plus the Reversible Agent's durable change-journal capture:
+/// when `journal_sender` is provided (and CDC is enabled), every pooled
+/// connection additionally registers a `preupdate_hook` that captures
+/// allowlisted writes — with before-images for UPDATE/DELETE — into the
+/// channel drained by [`journal::spawn_journal_writer`].
+pub fn init_db_with_journal(
+    app_data_dir: &PathBuf,
+    cdc_sender: Option<cdc::CdcSender>,
+    journal_sender: Option<journal::JournalSender>,
+) -> Result<DbPool, AppError> {
     std::fs::create_dir_all(app_data_dir)?;
     restrict_dir_permissions(app_data_dir);
     let db_path = app_data_dir.join("personas.db");
@@ -281,9 +297,12 @@ pub fn init_db(
 
     let manager = SqliteConnectionManager::file(&db_path);
     let customizer: Box<dyn CustomizeConnection<rusqlite::Connection, rusqlite::Error>> =
-        match cdc_sender {
-            Some(sender) => Box::new(cdc::CdcCustomizer::new(sender)),
-            None => Box::new(SqlitePragmaCustomizer),
+        match (cdc_sender, journal_sender) {
+            (Some(sender), Some(journal)) => {
+                Box::new(cdc::CdcCustomizer::with_journal(sender, journal))
+            }
+            (Some(sender), None) => Box::new(cdc::CdcCustomizer::new(sender)),
+            (None, _) => Box::new(SqlitePragmaCustomizer),
         };
     // Pool sized for concurrent IPC: settings + executions list + healing +
     // vector search (each can hold a connection for hundreds of ms). At
@@ -1173,6 +1192,42 @@ CREATE TABLE IF NOT EXISTS companion_ux_signal (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_ux_signal_kind
     ON companion_ux_signal(kind, created_at DESC);
+
+-- Night Shift v1 (moonshot batch-2): one row per proposed overnight plan.
+-- Status: proposed → approved → running → completed | declined | expired.
+-- plan_json is the bounded planner::DraftPlan; window_end (RFC3339 UTC, set
+-- at approval) is the wake time that closes the unattended night window.
+-- No plan runs unapproved — dispatch only happens via the
+-- `night_shift_execute_plan` approval executor.
+CREATE TABLE IF NOT EXISTS companion_night_plan (
+    id            TEXT PRIMARY KEY,
+    status        TEXT NOT NULL DEFAULT 'proposed',
+    summary       TEXT NOT NULL,
+    plan_json     TEXT NOT NULL,
+    window_end    TEXT,
+    max_sessions  INTEGER NOT NULL DEFAULT 3,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    approved_at   TEXT,
+    completed_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_night_plan_status
+    ON companion_night_plan(status, created_at DESC);
+
+-- Night Shift v1: append-only audit ledger of every autonomous night act —
+-- dispatches, unattended guidance answers, parked destructive approvals,
+-- review-station verdicts. Every row is attributed (plan_id +
+-- fleet_session_id); the morning report is composed from this table.
+CREATE TABLE IF NOT EXISTS companion_night_event (
+    id               TEXT PRIMARY KEY,
+    plan_id          TEXT,
+    kind             TEXT NOT NULL,
+    fleet_session_id TEXT,
+    project_label    TEXT,
+    payload_json     TEXT NOT NULL DEFAULT '{}',
+    created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_night_event_plan
+    ON companion_night_event(plan_id, kind, created_at);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

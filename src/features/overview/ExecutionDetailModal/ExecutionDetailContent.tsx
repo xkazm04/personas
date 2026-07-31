@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Clock, Calendar, Cpu, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
+import { Clock, Calendar, Cpu, Shield, RotateCw, RefreshCw, Check, Copy, Code, LayoutDashboard, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
 import { formatTimestamp, formatDuration, formatModelShort, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -11,7 +11,10 @@ import { HighlightedJsonBlock } from '@/features/agents/sub_executions/detail/in
 import { ErrorExplanationCard } from '@/features/agents/sub_executions/detail/ErrorExplanationCard';
 import { ExecutionMemories } from '@/features/agents/sub_executions/detail/views/ExecutionMemories';
 import { ExecutionLogViewer } from '@/features/agents/sub_executions/detail/views/ExecutionLogViewer';
+import { extractSurfaceSpec } from '@/features/shared/components/surface/surfaceSpec';
+import { SurfaceRenderer } from '@/features/shared/components/surface/SurfaceRenderer';
 import { parseOutputData, type OutputSection } from './outputParser';
+import { DataDiffSection } from './DataDiffSection';
 import { UserMessageCard, FlowSteps, ReviewsList, MemoriesList, EventsList, KnowledgeSection, OutcomeSection } from './OutputSections';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -34,6 +37,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 }
 
 const SECTION_DEFS: Record<string, { icon: LucideIcon; color: string }> = {
+  surface: { icon: LayoutDashboard, color: 'text-primary/60' },
   messages: { icon: MessageSquare, color: 'text-blue-400' },
   flow: { icon: ChevronRight, color: 'text-primary/60' },
   reviews: { icon: AlertTriangle, color: 'text-amber-400' },
@@ -65,9 +69,13 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
   }, [execution.persona_id, execution.input_data, executePersona, fetchExecutions]);
 
   const parsed = useMemo(() => parseOutputData(execution.output_data), [execution.output_data]);
+  // Generative Cockpit: a run whose output declares a SurfaceSpec renders as a
+  // live, interactive surface (catalog-only, consent-gated) instead of prose.
+  const surface = useMemo(() => extractSurfaceSpec(execution.output_data), [execution.output_data]);
 
   const sections = useMemo(() => {
     const s: Array<{ id: OutputSection; label: string; count?: number }> = [];
+    if (surface) s.push({ id: 'surface', label: t.shared.surface.section_label });
     if (parsed?.userMessage) s.push({ id: 'messages', label: 'Message' });
     if (parsed?.executionFlow) s.push({ id: 'flow', label: 'Flow' });
     if (parsed && parsed.reviews.length > 0) s.push({ id: 'reviews', label: 'Reviews', count: parsed.reviews.length });
@@ -77,7 +85,7 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
     if ((parsed?.data as Record<string, unknown>)?.outcome_assessment) s.push({ id: 'outcome', label: 'Outcome' });
     if (hasOutputData) s.push({ id: 'json', label: 'Raw JSON' });
     return s;
-  }, [parsed, hasOutputData]);
+  }, [surface, parsed, hasOutputData, t]);
 
   const effectiveSection = sections.find((s) => s.id === activeSection) ? activeSection : (sections[0]?.id ?? 'json');
 
@@ -136,6 +144,16 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
             </div>
           )}
           <div className="flex-1 min-w-0 p-4 overflow-y-auto max-h-[50vh]">
+            {effectiveSection === 'surface' && surface && (
+              <SurfaceRenderer
+                spec={surface.spec}
+                dropped={surface.dropped}
+                context={{
+                  personaId: execution.persona_id,
+                  onExecutePersona: (personaId, input) => executePersona(personaId, input),
+                }}
+              />
+            )}
             {effectiveSection === 'messages' && parsed?.userMessage && <UserMessageCard msg={parsed.userMessage} />}
             {effectiveSection === 'flow' && parsed?.executionFlow && <FlowSteps flow={parsed.executionFlow} />}
             {effectiveSection === 'reviews' && parsed && parsed.reviews.length > 0 && <ReviewsList reviews={parsed.reviews} />}
@@ -154,6 +172,8 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
       )}
 
       <ExecutionMemories executionId={execution.id} executionStatus={execution.status} />
+      {/* Reversible Agent: the run's exact row-level data changes + consent-gated undo */}
+      {isTerminalState(execution.status) && <DataDiffSection executionId={execution.id} />}
       {execution.log_file_path && <ExecutionLogViewer executionId={execution.id} personaId={execution.persona_id} logTruncated={execution.log_truncated} />}
     </div>
   );

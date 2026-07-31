@@ -228,6 +228,18 @@
     "link_goal_none": "Mit keinem Ziel verknüpft"
   },
   "team_studio": {
+    "learning_heading": "Team-Lernen",
+    "learning_empty": "Kein Lernprotokoll — diese Mission endete, bevor das Team begann, aus Ergebnissen zu lernen.",
+    "learning_steps_summary": "{done} erledigt · {failed} fehlgeschlagen · {skipped} übersprungen",
+    "learning_interventions": "Eingriffe: {count}",
+    "learning_trust_heading": "Vertrauens-Updates",
+    "learning_retro_held": "Retrospektive durchgeführt",
+    "learning_retro_skipped_trivial": "Retrospektive übersprungen — trivialer Lauf",
+    "learning_retro_skipped_aborted": "Retrospektive übersprungen — Mission abgebrochen",
+    "learning_retro_skipped_busy": "Retrospektive übersprungen — eine andere Beratung war aktiv",
+    "learning_retro_none": "Keine Retrospektive",
+    "learning_lessons_heading": "Team-Lektionen",
+    "learning_no_lessons": "Noch keine Lektionen — Retrospektiven werden sie hier festhalten.",
     "header_label": "Team",
     "teams_header_label": "Teams",
     "teams_count_one": "{count} Team",

@@ -1,0 +1,1659 @@
+{
+ "id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
+ "name": "Overview Observability",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "agent-activity",
+   "category": "ui",
+   "business_feature": "Agent Activity Log",
+   "description": "Per-persona activity log tab showing a chronological list of events (executions, health checks, config changes) with filtering and header. ActivityModals provides detail overlays for individual events. activityTypes centralises the event-type taxonomy used for filtering and display.",
+   "api_surface": null,
+   "db_tables": [
+    "executions",
+    "health_checks",
+    "persona_change_history"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_activity/ActivityTab.tsx"
+   ],
+   "cross_refs": [
+    "persona-editor",
+    "execution-list"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/agents/sub_activity/ActivityTab.tsx",
+    "src/features/agents/sub_activity/ActivityList.tsx",
+    "src/features/agents/sub_activity/ActivityHeader.tsx",
+    "src/features/agents/sub_activity/ActivityFilters.tsx",
+    "src/features/agents/sub_activity/ActivityModals.tsx",
+    "src/features/agents/sub_activity/activityTypes.ts"
+   ]
+  },
+  {
+   "name": "agent-deployment-dashboard",
+   "category": "ui",
+   "business_feature": "Deployment Dashboard",
+   "description": "Deployment tab showing the overall deployment status of a persona across targets (local, cloud, Claude). Provides a unified dashboard, deployment table with filters, health sparkline, bulk-action toolbar, execution progress bar, and hooks for deployment health polling and test-run invocation.",
+   "api_surface": "list_deployments, test_deployment",
+   "db_tables": [
+    "deployments",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx"
+   ],
+   "cross_refs": [
+    "cloud-deployment",
+    "execution-runner",
+    "persona-editor"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx",
+    "src/features/agents/sub_deployment/components/UnifiedDeploymentHistory.tsx",
+    "src/features/agents/sub_deployment/components/DeploymentTable.tsx",
+    "src/features/agents/sub_deployment/components/DeploymentFilters.tsx",
+    "src/features/agents/sub_deployment/components/DeploymentHealthSparkline.tsx",
+    "src/features/agents/sub_deployment/components/DeploymentSubComponents.tsx"
+   ]
+  },
+  {
+   "name": "agent-health",
+   "category": "ui",
+   "business_feature": "Agent Health Monitoring",
+   "description": "Per-persona health monitoring tab: runs a health check (useHealthCheck) that evaluates assertions and surfaces issues as HealthIssueCards, shows an overall health score, a digest panel with prefetching and scheduled digest refreshes, a watch toggle, and a one-click apply-fix action. gradeColors and statusConfig centralise severity presentation.",
+   "api_surface": "run_health_check, get_health_digest, apply_health_fix",
+   "db_tables": [
+    "personas",
+    "health_checks",
+    "health_digests"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_health/HealthCheckPanel.tsx",
+    "src/features/agents/sub_health/useHealthCheck.ts"
+   ],
+   "cross_refs": [
+    "persona-editor",
+    "agent-settings",
+    "persona-overview-director"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/agents/sub_health/HealthCheckPanel.tsx",
+    "src/features/agents/sub_health/HealthDigestPanel.tsx",
+    "src/features/agents/sub_health/HealthIssueCard.tsx",
+    "src/features/agents/sub_health/HealthScoreDisplay.tsx",
+    "src/features/agents/sub_health/HealthWatchToggle.tsx",
+    "src/features/agents/sub_health/gradeColors.ts"
+   ]
+  },
+  {
+   "name": "agent-session-replay",
+   "category": "lib",
+   "business_feature": "Session Replay",
+   "description": "Git checkpointing and deterministic dream-replay for execution debugging and recovery. The git_checkpoint module creates per-stage commits on a run-specific branch enabling rollback; dream_replay reconstructs execution state frame-by-frame from stored trace spans for VCR-style time-travel debugging without consuming LLM tokens; context_fidelity manages graded upstream-context injection in pipeline fan-in nodes.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/git_checkpoint.rs",
+    "src-tauri/engine/src/dream_replay.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "output-stream-parser"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/engine/src/git_checkpoint.rs",
+    "src-tauri/engine/src/dream_replay.rs",
+    "src-tauri/engine/src/context_fidelity.rs"
+   ]
+  },
+  {
+   "name": "chat-review-models",
+   "category": "data",
+   "business_feature": "Chat & Human Review Models",
+   "description": "Domain types for human-in-the-loop interaction: `ChatRole` (assistant/user/system with SQLite serialization), `ChatMessage` (conversation history rows), `DeliberationEntry` (structured reasoning steps captured during agent deliberation for review), and `ManualReview` (human approval/rejection records with outcome and rationale). These back the review queue, conversation inspector, and deliberation viewer.",
+   "api_surface": "",
+   "db_tables": [
+    "chat_messages",
+    "messages",
+    "deliberations",
+    "manual_reviews"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/chat.rs",
+    "src-tauri/core/src/models/review.rs"
+   ],
+   "cross_refs": [
+    "persona-genome-models",
+    "execution-state-models",
+    "core-validation"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/core/src/models/chat.rs",
+    "src-tauri/core/src/models/message.rs",
+    "src-tauri/core/src/models/deliberation.rs",
+    "src-tauri/core/src/models/review.rs"
+   ]
+  },
+  {
+   "name": "cloud-deployment",
+   "category": "ui",
+   "business_feature": "Cloud Deployment",
+   "description": "Cloud-specific deployment panels: cloud connection form, OAuth panel, deploy panel, deployment card and status panel, schedule management (create trigger form, schedules panel, trigger list), execution history with daily breakdown chart, reconcile banner, and cloud health monitor hook. All cloud surfaces call the Tauri cloud deployment commands.",
+   "api_surface": "deploy_to_cloud, list_cloud_schedules, cloud_execute",
+   "db_tables": [
+    "deployments",
+    "cloud_schedules",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_deployment/components/cloud/CloudDeployPanel.tsx",
+    "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx"
+   ],
+   "cross_refs": [
+    "agent-deployment-dashboard",
+    "connector-status"
+   ],
+   "file_count": 19,
+   "sample_files": [
+    "src/features/agents/sub_deployment/components/cloud/CloudDeployPanel.tsx",
+    "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx",
+    "src/features/agents/sub_deployment/components/cloud/CloudConnectionForm.tsx",
+    "src/features/agents/sub_deployment/components/cloud/CloudOAuthPanel.tsx",
+    "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx",
+    "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx"
+   ]
+  },
+  {
+   "name": "companion-approvals",
+   "category": "api",
+   "business_feature": "Companion Approvals",
+   "description": "Approval queue and human-in-the-loop action execution — Athena proposes actions (run_persona, resolve_human_review) that land as pending approval rows; the user approves or rejects via UI; approved actions are executed by specialist executors (core, dev, fleet variants). Autopilot mode can auto-approve low-risk actions per configured policy.",
+   "api_surface": "companion_approve_action, companion_reject_action, list_pending_approvals, configure_autopilot",
+   "db_tables": [
+    "companion_approvals",
+    "manual_reviews"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/companion/approvals/mod.rs"
+   ],
+   "cross_refs": [
+    "companion-core",
+    "execution-core",
+    "fleet-core",
+    "ai-director"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/companion/approvals/mod.rs",
+    "src-tauri/src/commands/companion/approvals/approval_autopilot.rs",
+    "src-tauri/src/commands/companion/approvals/approval_exec_core.rs",
+    "src-tauri/src/commands/companion/approvals/approval_exec_dev.rs",
+    "src-tauri/src/commands/companion/approvals/approval_exec_fleet.rs",
+    "src-tauri/src/commands/companion/approvals/approval_lifecycle.rs"
+   ]
+  },
+  {
+   "name": "companion-core",
+   "category": "api",
+   "business_feature": "Companion Core",
+   "description": "Athena companion core — the primary chat/turn command (streams replies via `companion://stream` Tauri events), conversation history management, and the brain module (episodic memory read/write for Athena's long-term recall). Entry point for all user interactions with the Athena AI companion.",
+   "api_surface": "companion_send_turn, list_companion_conversations, get_companion_brain",
+   "db_tables": [
+    "companion_episodes",
+    "companion_conversations"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/companion/chat.rs"
+   ],
+   "cross_refs": [
+    "companion-intelligence",
+    "companion-approvals",
+    "persona-memory"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/companion/chat.rs",
+    "src-tauri/src/commands/companion/conversation.rs",
+    "src-tauri/src/commands/companion/brain.rs",
+    "src-tauri/src/commands/companion/mod.rs"
+   ]
+  },
+  {
+   "name": "companion-integration",
+   "category": "api",
+   "business_feature": "Companion Integrations",
+   "description": "Athena's integration surface — fleet session bridging (Athena monitors and comments on fleet runs), MCP tool bridge (Athena can call MCP tools), plugin dispatching, template suggestions, connector awareness, project tracking context, browser testing assistance, and background job dispatching.",
+   "api_surface": "companion_fleet_status, companion_call_mcp_tool, companion_suggest_template, companion_track_project",
+   "db_tables": [
+    "companion_jobs",
+    "companion_project_tracking"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/companion/fleet_bridge.rs"
+   ],
+   "cross_refs": [
+    "companion-core",
+    "fleet-core",
+    "mcp-gateway",
+    "template-library"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src-tauri/src/commands/companion/fleet_bridge.rs",
+    "src-tauri/src/commands/companion/mcp_bridge.rs",
+    "src-tauri/src/commands/companion/plugins.rs",
+    "src-tauri/src/commands/companion/templates.rs",
+    "src-tauri/src/commands/companion/connectors.rs",
+    "src-tauri/src/commands/companion/project_tracking.rs"
+   ]
+  },
+  {
+   "name": "companion-intelligence",
+   "category": "api",
+   "business_feature": "Companion Intelligence",
+   "description": "Athena proactive and analytical intelligence — proactive suggestions (Athena self-initiates based on context), sensory input processing (screen/audio awareness), observability feeds to Athena's context, user feedback capture, backlog triage (AI-assisted issue prioritisation), consolidation of memory, and decision-capture (operator corrections logged to the decision ledger).",
+   "api_surface": "trigger_proactive, submit_feedback, triage_backlog, consolidate_memory, log_decision",
+   "db_tables": [
+    "companion_decisions",
+    "companion_feedback",
+    "backlog_triage_runs"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/companion/proactive.rs"
+   ],
+   "cross_refs": [
+    "companion-core",
+    "dev-tools-core",
+    "observability-metrics"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/src/commands/companion/proactive.rs",
+    "src-tauri/src/commands/companion/sensory.rs",
+    "src-tauri/src/commands/companion/observability.rs",
+    "src-tauri/src/commands/companion/feedback.rs",
+    "src-tauri/src/commands/companion/backlog_triage.rs",
+    "src-tauri/src/commands/companion/consolidate.rs"
+   ]
+  },
+  {
+   "name": "companion-voice",
+   "category": "api",
+   "business_feature": "Companion Voice",
+   "description": "Voice I/O for the Athena companion — ElevenLabs/Kokoro TTS playback (spoken responses) and real-time speech-to-text input (Whisper-backed STT for hands-free interaction). Pairs with the TTS text field returned by the chat command to enable voice-first companion sessions.",
+   "api_surface": "synthesize_companion_voice, start_stt_session, stop_stt_session",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/commands/companion/voice.rs"
+   ],
+   "cross_refs": [
+    "companion-core",
+    "media-studio"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/companion/voice.rs",
+    "src-tauri/src/commands/companion/stt.rs"
+   ]
+  },
+  {
+   "name": "engine-shared-utilities",
+   "category": "lib",
+   "business_feature": "Engine Shared Utilities",
+   "description": "Cross-cutting engine utilities shared across all engine modules. The str_utils module provides string manipulation helpers; config_merge resolves per-execution configuration by merging persona-level and workspace-level settings (ConfigSource enum); persona_icon normalizes custom-icon: scheme values for safe serialization across export boundaries.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/lib.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "prompt-assembly-engine"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/engine/src/str_utils.rs",
+    "src-tauri/engine/src/config_merge.rs",
+    "src-tauri/engine/src/persona_icon.rs",
+    "src-tauri/engine/src/lib.rs"
+   ]
+  },
+  {
+   "name": "event-bus",
+   "category": "api",
+   "business_feature": "Event Bus",
+   "description": "Core event and notification infrastructure — the event registry (all named events personas can emit/subscribe to), shared event types used across modules, notifications (push delivery to the user), and SLA tracking (per-persona reliability targets). This is the real-time signal backbone for the observability layer.",
+   "api_surface": "list_events, subscribe_event, send_notification, get_sla_status",
+   "db_tables": [
+    "events",
+    "notifications",
+    "persona_sla"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/communication/events.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "observability-metrics",
+    "event-bus"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/communication/events.rs",
+    "src-tauri/src/commands/communication/shared_events.rs",
+    "src-tauri/src/commands/communication/mod.rs",
+    "src-tauri/src/commands/communication/notifications.rs",
+    "src-tauri/src/commands/communication/sla.rs"
+   ]
+  },
+  {
+   "name": "execution-knowledge",
+   "category": "lib",
+   "business_feature": "Execution Knowledge",
+   "description": "Extracts structured intelligence from completed executions and upserts it into the execution_knowledge table, creating a knowledge graph that improves future runs. Includes the shared KB search that embeds a query and searches every knowledge base for best matches (the single implementation consumed by both clipboard-intelligence and subscription paths), and the memory-reflection engine that consolidates related memories into higher-level insights to prevent recall budget bloat.",
+   "api_surface": "extract_execution_knowledge (internal), search_kb_for_error (internal)",
+   "db_tables": [
+    "execution_knowledge",
+    "persona_memories",
+    "knowledge_bases"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/knowledge.rs",
+    "src-tauri/src/engine/memory_reflection.rs"
+   ],
+   "cross_refs": [
+    "knowledge-base-pipeline",
+    "director-coaching",
+    "persona-evolution"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/engine/knowledge.rs",
+    "src-tauri/src/engine/kb_scan.rs",
+    "src-tauri/src/engine/memory_reflection.rs"
+   ]
+  },
+  {
+   "name": "fleet-core",
+   "category": "api",
+   "business_feature": "Fleet Management",
+   "description": "Fleet session registry and command dispatch — the process-wide registry of active PTY-backed Claude Code sessions, run grouping (dispatches + harvest), session persistence to SQLite, top-level fleet commands, and shared session types. The authoritative session state machine for the Fleet feature.",
+   "api_surface": "list_fleet_sessions, spawn_fleet_session, mark_fleet_finished, harvest_fleet_run",
+   "db_tables": [
+    "fleet_sessions",
+    "fleet_runs"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/fleet/registry.rs"
+   ],
+   "cross_refs": [
+    "fleet-sessions",
+    "fleet-headless",
+    "ai-director"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/fleet/run.rs",
+    "src-tauri/src/commands/fleet/registry.rs",
+    "src-tauri/src/commands/fleet/commands.rs",
+    "src-tauri/src/commands/fleet/persist.rs",
+    "src-tauri/src/commands/fleet/mod.rs",
+    "src-tauri/src/commands/fleet/types.rs"
+   ]
+  },
+  {
+   "name": "fleet-headless",
+   "category": "api",
+   "business_feature": "Headless Fleet",
+   "description": "Headless Claude session management — spawning and managing Claude Code sessions without a visible terminal (stream-json mode), PTY emulation, debug-log access for diagnosing sessions, and external process management (launching non-Claude processes as fleet members). Includes process scanning for port-based PID lookup.",
+   "api_surface": "spawn_headless_session, write_pty_input, read_debug_log, launch_external_process, scan_processes",
+   "db_tables": [
+    "fleet_sessions"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/fleet/headless.rs"
+   ],
+   "cross_refs": [
+    "fleet-core",
+    "fleet-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/fleet/headless.rs",
+    "src-tauri/src/commands/fleet/pty.rs",
+    "src-tauri/src/commands/fleet/debug_log.rs",
+    "src-tauri/src/commands/fleet/external.rs",
+    "src-tauri/src/commands/fleet/process_scan.rs"
+   ]
+  },
+  {
+   "name": "fleet-hooks",
+   "category": "api",
+   "business_feature": "Fleet Hooks",
+   "description": "Claude Code hook installation and management — installing pre/post-tool hooks into Claude Code's config, managing hook event subscriptions, session key management for secure hook-to-app callbacks, and the benchmark harness for measuring fleet dispatch performance.",
+   "api_surface": "install_fleet_hooks, list_fleet_hooks, get_fleet_session_key, run_fleet_bench",
+   "db_tables": [
+    "fleet_hook_config"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/fleet/hook_install.rs"
+   ],
+   "cross_refs": [
+    "fleet-core",
+    "fleet-headless",
+    "skill-management"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/fleet/hooks.rs",
+    "src-tauri/src/commands/fleet/hook_install.rs",
+    "src-tauri/src/commands/fleet/keys.rs",
+    "src-tauri/src/commands/fleet/bench.rs"
+   ]
+  },
+  {
+   "name": "fleet-sessions",
+   "category": "api",
+   "business_feature": "Fleet Sessions",
+   "description": "Fleet session lifecycle and transcript intelligence — transcript reading (incremental JSONL delta parse, token rollups), screen-activity monitoring, stale-session reaping, naming (LLM-generated session titles), and wait/synchronisation primitives for orchestrated multi-session flows.",
+   "api_surface": "read_fleet_transcript, get_fleet_screen_activity, reap_stale_sessions, name_fleet_session",
+   "db_tables": [
+    "fleet_sessions",
+    "fleet_transcript_cache"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/fleet/transcript_read.rs"
+   ],
+   "cross_refs": [
+    "fleet-core",
+    "observability-metrics"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/fleet/transcript.rs",
+    "src-tauri/src/commands/fleet/transcript_read.rs",
+    "src-tauri/src/commands/fleet/screen_activity.rs",
+    "src-tauri/src/commands/fleet/stale.rs",
+    "src-tauri/src/commands/fleet/wait.rs",
+    "src-tauri/src/commands/fleet/naming.rs"
+   ]
+  },
+  {
+   "name": "knowledge-base",
+   "category": "api",
+   "business_feature": "Knowledge Base",
+   "description": "Local vector knowledge base backed by SQLite-vec and ONNX fastembed embeddings. Lets users upload documents, chunk and embed them, and run semantic search. The companion brain uses this for RAG-style context injection.",
+   "api_surface": "invoke('index_document'), invoke('semantic_search'), invoke('get_kb_documents')",
+   "db_tables": [
+    "kb_documents",
+    "kb_chunks",
+    "kb_embeddings"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_knowledge/KnowledgeView.tsx",
+    "src-tauri/src/companion/brain/embeddings.rs"
+   ],
+   "cross_refs": [
+    "companion-brain",
+    "overview-analytics"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/api/vault/database/vectorKb.ts",
+    "src/api/vault/database/nlQuery.ts",
+    "src-tauri/src/companion/brain/embeddings.rs",
+    "src-tauri/src/companion/brain/graph.rs"
+   ]
+  },
+  {
+   "name": "knowledge-base-pipeline",
+   "category": "lib",
+   "business_feature": "Knowledge Base Ingestion",
+   "description": "Knowledge-base document ingestion and structured extraction pipeline. The ingest module orchestrates the read→chunk→embed→store-vectors flow as a background job with progress events and cancellation. The extract module adds a two-pass LLM extraction (schema inference + per-chunk entity extraction) with a human gate between passes, turning unstructured documents into typed, queryable rows.",
+   "api_surface": "ingest_knowledge_base (Tauri command), infer_schema, extract_entities (internal)",
+   "db_tables": [
+    "knowledge_bases",
+    "knowledge_base_documents",
+    "knowledge_base_chunks"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/kb_ingest.rs",
+    "src-tauri/src/engine/kb_extract.rs"
+   ],
+   "cross_refs": [
+    "execution-knowledge"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/engine/kb_ingest.rs",
+    "src-tauri/src/engine/kb_extract.rs"
+   ]
+  },
+  {
+   "name": "memory-knowledge-models",
+   "category": "data",
+   "business_feature": "Memory & Knowledge Models",
+   "description": "Domain types for the persona memory and knowledge systems: `Memory` (structured recall entries with scope, kind, and injection metadata), `KnowledgeEntry` (execution-derived intelligence about tool sequences, failure patterns, and model performance with annotation support), and `KnowledgeBase` (ml-feature-gated vector store metadata for semantic retrieval). These back both the human-review panel and the autonomous memory injection pipeline.",
+   "api_surface": "",
+   "db_tables": [
+    "memories",
+    "knowledge_entries",
+    "knowledge_bases"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/memory.rs",
+    "src-tauri/core/src/models/knowledge.rs"
+   ],
+   "cross_refs": [
+    "core-retrieval",
+    "persona-genome-models",
+    "team-collaboration-models"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/core/src/models/memory.rs",
+    "src-tauri/core/src/models/knowledge.rs",
+    "src-tauri/core/src/models/knowledge_base.rs"
+   ]
+  },
+  {
+   "name": "memory-messages",
+   "category": "ui",
+   "business_feature": "Memories & Messages",
+   "description": "Persists and surfaces agent-produced memories (episodic facts the agent writes to recall later) and the full message history of agent conversations. Used for continuity across executions and human review of what agents learned.",
+   "api_surface": "invoke('get_memories'), invoke('get_messages'), invoke('delete_memory')",
+   "db_tables": [
+    "memories",
+    "messages",
+    "message_threads"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_memories/MemoriesView.tsx",
+    "src-tauri/src/companion/brain/episodic.rs"
+   ],
+   "cross_refs": [
+    "companion-brain",
+    "execution-runner",
+    "knowledge-base"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/overview/sub_memories/components/MemoryCard.tsx",
+    "src-tauri/src/companion/brain/episodic.rs"
+   ]
+  },
+  {
+   "name": "messaging",
+   "category": "api",
+   "business_feature": "Messaging",
+   "description": "Inter-persona message passing and test data seeding — the messages module handles direct structured messages between personas and the runtime, while mock_seed generates realistic fixture data for development and testing of the communication layer.",
+   "api_surface": "send_message, list_messages, seed_mock_data",
+   "db_tables": [
+    "persona_messages"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/communication/messages.rs"
+   ],
+   "cross_refs": [
+    "event-bus",
+    "team-communication"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/communication/messages.rs",
+    "src-tauri/src/commands/communication/mock_seed.rs"
+   ]
+  },
+  {
+   "name": "observability-audit-models",
+   "category": "data",
+   "business_feature": "Observability & Audit Models",
+   "description": "Domain types for the full observability surface: `ObservabilityMetric` for aggregated operational metrics, `AuditLog` and `AuditIncident` for security and change audit trails, `SettingsAuditLog` for configuration change history, `LlmSpend` for per-execution cost attribution, `ToolUsage` and `ToolAudit` for tool call tracking, `PolicyEvent` for governance policy triggers, and `FrontendCrash` for renderer error capture.",
+   "api_surface": "",
+   "db_tables": [
+    "observability_metrics",
+    "audit_logs",
+    "audit_incidents",
+    "settings_audit_log",
+    "llm_spend",
+    "tool_usage",
+    "tool_audits",
+    "policy_events",
+    "frontend_crashes"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/observability.rs",
+    "src-tauri/core/src/models/audit_log.rs"
+   ],
+   "cross_refs": [
+    "execution-state-models",
+    "execution-tracing-budget",
+    "core-utilities"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src-tauri/core/src/models/observability.rs",
+    "src-tauri/core/src/models/audit_log.rs",
+    "src-tauri/core/src/models/audit_incident.rs",
+    "src-tauri/core/src/models/settings_audit_log.rs",
+    "src-tauri/core/src/models/llm_spend.rs",
+    "src-tauri/core/src/models/tool_usage.rs"
+   ]
+  },
+  {
+   "name": "observability-metrics",
+   "category": "api",
+   "business_feature": "Observability Metrics",
+   "description": "Execution dashboard metrics, anomaly drilldown, heatmaps, healing issue tracking, prompt lab analytics, and digest generation. Aggregates execution data into time-series charts, reliability rollups, and provider usage stats for the main overview dashboard.",
+   "api_surface": "get_execution_dashboard, get_metrics_chart, get_anomaly_drilldown, generate_digest, list_alerts",
+   "db_tables": [
+    "execution_metrics",
+    "provider_audit",
+    "persona_sla"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/communication/observability/metrics.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "event-bus",
+    "resource-tracking"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/communication/observability/alerts.rs",
+    "src-tauri/src/commands/communication/observability/digest.rs",
+    "src-tauri/src/commands/communication/observability/metrics.rs",
+    "src-tauri/src/commands/communication/observability/mod.rs",
+    "src-tauri/src/commands/communication/observability/prompt_lab.rs"
+   ]
+  },
+  {
+   "name": "overview-activity-metrics",
+   "category": "ui",
+   "business_feature": "Execution Activity Metrics",
+   "description": "Aggregated execution activity dashboard: global execution list, per-persona LLM spend, error category breakdown, value rollup, and Athena usage. useExecutionMetrics and useLlmSpend pull from execution history to drive KPI cards and time-series charts. This is the primary 'what did my agents spend today?' surface.",
+   "api_surface": "getExecutionMetrics, getLlmSpend, getAthenaUsage",
+   "db_tables": [
+    "executions",
+    "llm_calls"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_activity/components/ExecutionMetricsDashboard.tsx",
+    "src/features/overview/sub_activity/libs/useExecutionMetrics.ts"
+   ],
+   "cross_refs": [
+    "overview-usage-charts",
+    "overview-execution-detail",
+    "overview-dashboard-shell"
+   ],
+   "file_count": 15,
+   "sample_files": [
+    "src/features/overview/sub_activity/index.ts",
+    "src/features/overview/sub_activity/components/AthenaUsageSection.tsx",
+    "src/features/overview/sub_activity/components/ErrorCategorySection.tsx",
+    "src/features/overview/sub_activity/components/ExecutionMetricsDashboard.tsx",
+    "src/features/overview/sub_activity/components/ExecutionRow.tsx",
+    "src/features/overview/sub_activity/components/GlobalExecutionList.tsx"
+   ]
+  },
+  {
+   "name": "overview-alert-anomaly",
+   "category": "ui",
+   "business_feature": "Alert & Anomaly Detection",
+   "description": "Alert rules management, alert history, real-time anomaly drilldown, and Athena health tracking. The global alert evaluator runs as a background hook that continuously evaluates rules against live metrics and emits toast notifications on violations. AnomalyDrilldownPanel lets operators drill into detected statistical outliers.",
+   "api_surface": "listAlertRules, getAthenaHealthStatus, getAnomalyData",
+   "db_tables": [
+    "alert_rules",
+    "alert_history"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_observability/components/AlertRulesPanel.tsx",
+    "src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts"
+   ],
+   "cross_refs": [
+    "overview-healing-monitor",
+    "overview-observability-traces"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/overview/sub_observability/components/AlertHistoryPanel.tsx",
+    "src/features/overview/sub_observability/components/AlertRulesPanel.tsx",
+    "src/features/overview/sub_observability/components/AlertToastContainer.tsx",
+    "src/features/overview/sub_observability/components/AnomalyDrilldownPanel.tsx",
+    "src/features/overview/sub_observability/components/AthenaHealthPanel.tsx",
+    "src/features/overview/sub_observability/components/IssuesList.tsx"
+   ]
+  },
+  {
+   "name": "overview-cron-agents",
+   "category": "ui",
+   "business_feature": "Cron Agents",
+   "description": "Management UI for scheduled (cron) agents: shows next-run time, last-run status, and cron expression for each scheduled persona. cronHelpers parses cron expressions and computes humanized next-run labels.",
+   "api_surface": "listScheduledAgents",
+   "db_tables": [
+    "schedules",
+    "personas"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx"
+   ],
+   "cross_refs": [
+    "overview-mission-control",
+    "overview-dashboard-shell"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/overview/sub_cron_agents/index.ts",
+    "src/features/overview/sub_cron_agents/components/CronAgentCard.tsx",
+    "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx",
+    "src/features/overview/sub_cron_agents/libs/cronHelpers.ts"
+   ]
+  },
+  {
+   "name": "overview-dashboard-hooks",
+   "category": "lib",
+   "business_feature": "Execution Dashboard Pipeline",
+   "description": "Hooks that power the execution dashboard pipeline on the Overview tab: aggregating execution metrics across all personas, building a pipeline-stage view of concurrent and historical runs, and feeding the dashboard with live counts and status breakdowns. Bridges the real-time event bus and the overview store.",
+   "api_surface": "",
+   "db_tables": [
+    "executions"
+   ],
+   "entry_points": [
+    "src/hooks/overview/useExecutionDashboardPipeline.ts"
+   ],
+   "cross_refs": [
+    "realtime-event-bus-hooks",
+    "execution-streaming-hooks"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/hooks/overview/useExecutionDashboardPipeline.ts"
+   ]
+  },
+  {
+   "name": "overview-dashboard-shell",
+   "category": "ui",
+   "business_feature": "Overview Dashboard Shell",
+   "description": "The top-level Overview routing shell and dashboard home. OverviewPage lazy-loads each subtab on demand and mounts OverviewFilterContext for shared filter state. DashboardWithSubtabs hosts the home/analytics subtabs; widgets (DashboardChartCard, TopPerformersWidget, TrafficErrorsChart) are reusable dashboard card primitives.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/overview/components/dashboard/OverviewPage.tsx",
+    "src/features/overview/components/dashboard/DashboardWithSubtabs.tsx"
+   ],
+   "cross_refs": [
+    "overview-activity-metrics",
+    "overview-mission-control",
+    "overview-usage-charts"
+   ],
+   "file_count": 15,
+   "sample_files": [
+    "src/features/overview/components/dashboard/DashboardEmptyState.tsx",
+    "src/features/overview/components/dashboard/DashboardHome.tsx",
+    "src/features/overview/components/dashboard/DashboardWithSubtabs.tsx",
+    "src/features/overview/components/dashboard/ExecutionsWithSubtabs.tsx",
+    "src/features/overview/components/dashboard/HomeCustomizePopover.tsx",
+    "src/features/overview/components/dashboard/OverviewFilterContext.tsx"
+   ]
+  },
+  {
+   "name": "overview-dashboard-state",
+   "category": "lib",
+   "business_feature": "Dashboard Layout State",
+   "description": "Slices powering the main dashboard view — the overview metrics panel, home-spine multi-window layout manager, and the memory/knowledge graph panel. The homeSpineWindows utility handles window ordering, resizing, and pinning state for the dashboard grid.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/overview/overviewSlice.ts",
+    "src/stores/slices/overview/homeSpineSlice.ts"
+   ],
+   "cross_refs": [
+    "overview-store-root",
+    "overview-health-state"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/stores/slices/overview/overviewSlice.ts",
+    "src/stores/slices/overview/homeSpineSlice.ts",
+    "src/stores/slices/overview/homeSpineWindows.ts",
+    "src/stores/slices/overview/homeSpineWindows.test.ts",
+    "src/stores/slices/overview/memorySlice.ts",
+    "src/stores/slices/overview/cascadeStrength.test.ts"
+   ]
+  },
+  {
+   "name": "overview-empty-states",
+   "category": "ui",
+   "business_feature": "Overview Empty States",
+   "description": "Prototype empty-state system for Overview tabs: IllustrationEmptyState renders a static illustration with CTA; MotionEmptyState wraps it in a Framer Motion entrance animation; motifs (ActivityMotif, KnowledgeMotif, MemoriesMotif) are SVG glyphs for themed empty states. Includes light/dark illustration asset pairs for approval, leaderboard, and messages tabs.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx",
+    "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx"
+   ],
+   "cross_refs": [
+    "overview-memories-browser",
+    "overview-leaderboard",
+    "overview-messages"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/overview/shared/emptyStatePrototype/index.ts",
+    "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx",
+    "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx",
+    "src/features/overview/shared/emptyStatePrototype/parts.tsx",
+    "src/features/overview/shared/emptyStatePrototype/types.ts",
+    "src/features/overview/shared/emptyStatePrototype/illustrations/index.ts"
+   ]
+  },
+  {
+   "name": "overview-event-log",
+   "category": "ui",
+   "business_feature": "Persisted Event Log",
+   "description": "Displays the durable, SQLite-backed log of PersonaEvent rows so operators can search what happened. Uses the searchEvents API with filter inputs and supports saved filter views. Entry point is EventLogList; EventDetailModal drills into individual events with a JSON syntax-highlighted view.",
+   "api_surface": "searchEvents(EventFilterInput), listSavedViewsByType",
+   "db_tables": [
+    "persona_events"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_events/components/EventLogList.tsx",
+    "src/features/overview/sub_events/libs/useEventLog.ts"
+   ],
+   "cross_refs": [
+    "overview-dashboard-shell",
+    "overview-observability-traces"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/overview/sub_events/index.ts",
+    "src/features/overview/sub_events/EventDetailModal.tsx",
+    "src/features/overview/sub_events/HighlightedJson.tsx",
+    "src/features/overview/sub_events/components/EventDetailContent.tsx",
+    "src/features/overview/sub_events/components/EventLogList.tsx",
+    "src/features/overview/sub_events/libs/eventTypeLabel.ts"
+   ]
+  },
+  {
+   "name": "overview-events",
+   "category": "ui",
+   "business_feature": "Event Feed",
+   "description": "Event feed and filtering UI that surfaces system-wide events from executions, triggers, healings, and integrations. Supports saved filter views and real-time streaming of new events as they arrive.",
+   "api_surface": "Tauri event 'new_system_event', invoke('get_events'), invoke('save_event_filter')",
+   "db_tables": [
+    "events",
+    "event_filters"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_events/EventsView.tsx",
+    "src-tauri/src/engine/shared_event_relay.rs"
+   ],
+   "cross_refs": [
+    "overview-analytics",
+    "trigger-system",
+    "execution-monitoring"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/events/sharedEvents.ts",
+    "src-tauri/src/commands/communication/events.rs",
+    "src-tauri/src/engine/shared_event_relay.rs"
+   ]
+  },
+  {
+   "name": "overview-events-state",
+   "category": "lib",
+   "business_feature": "Events & Alerts State",
+   "description": "Slices for real-time event streams, system messages, alert management, and process activity tracking. The event slice subscribes to Tauri backend events; alertSlice manages triggered alert conditions; processActivity tracks concurrently running background operations.",
+   "api_surface": null,
+   "db_tables": [
+    "events",
+    "alerts"
+   ],
+   "entry_points": [
+    "src/stores/slices/overview/eventSlice.ts",
+    "src/stores/slices/overview/alertSlice.ts"
+   ],
+   "cross_refs": [
+    "overview-store-root",
+    "overview-health-state"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/stores/slices/overview/eventSlice.ts",
+    "src/stores/slices/overview/eventSlice.test.ts",
+    "src/stores/slices/overview/messageSlice.ts",
+    "src/stores/slices/overview/alertSlice.ts",
+    "src/stores/selectors/activeAlertCount.ts",
+    "src/stores/slices/processActivitySlice.ts"
+   ]
+  },
+  {
+   "name": "overview-execution-analytics",
+   "category": "ui",
+   "business_feature": "Execution Analytics",
+   "description": "Heatmap and rotation overview analytics panels for visualizing execution density over time and agent rotation patterns. ExecutionHeatmap renders a calendar-style density grid; RotationOverviewPanel shows how frequently each persona runs across time slots. analyticsHelpers provides bucketing and normalization utilities.",
+   "api_surface": "getExecutionHeatmapData",
+   "db_tables": [
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx"
+   ],
+   "cross_refs": [
+    "overview-activity-metrics",
+    "overview-usage-charts"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx",
+    "src/features/overview/sub_analytics/components/RotationOverviewPanel.tsx",
+    "src/features/overview/sub_analytics/libs/analyticsHelpers.ts"
+   ]
+  },
+  {
+   "name": "overview-execution-detail",
+   "category": "ui",
+   "business_feature": "Execution Detail Modal",
+   "description": "Deep-dive modal for a single execution record. outputParser extracts structured sections from raw execution output; provenance.ts resolves the data lineage (which persona, template, chain); OutputSections renders each parsed section in a collapsible layout. Tests cover provenance edge cases.",
+   "api_surface": "getExecutionDetail, getExecutionProvenance",
+   "db_tables": [
+    "executions",
+    "execution_spans"
+   ],
+   "entry_points": [
+    "src/features/overview/ExecutionDetailModal/ExecutionDetailModal.tsx",
+    "src/features/overview/ExecutionDetailModal/outputParser.ts"
+   ],
+   "cross_refs": [
+    "overview-activity-metrics",
+    "overview-observability-traces"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/overview/ExecutionDetailModal/index.ts",
+    "src/features/overview/ExecutionDetailModal/ExecutionDetailContent.tsx",
+    "src/features/overview/ExecutionDetailModal/ExecutionDetailModal.tsx",
+    "src/features/overview/ExecutionDetailModal/outputParser.ts",
+    "src/features/overview/ExecutionDetailModal/OutputSections.tsx",
+    "src/features/overview/ExecutionDetailModal/provenance.ts"
+   ]
+  },
+  {
+   "name": "overview-healing-monitor",
+   "category": "ui",
+   "business_feature": "AI Healing Monitor",
+   "description": "Visualizes the AI self-healing pipeline: surfaces healing timeline events, issue summaries, and live healing stream overlays so operators can see which failures the healer is addressing. Driven by HealingTimelineEvent bindings correlated by chain_id. The HealingToast in the feedback folder is co-owned here as it surfaces healing state to the top-level notification layer.",
+   "api_surface": "listHealingIssues, getHealingTimeline",
+   "db_tables": [
+    "healing_events",
+    "healing_issues"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_observability/components/HealingIssuesPanel.tsx",
+    "src/features/overview/sub_observability/libs/useHealingPanelState.ts"
+   ],
+   "cross_refs": [
+    "overview-observability-traces",
+    "overview-incidents-inbox"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/overview/sub_observability/components/AiHealingStreamOverlay.tsx",
+    "src/features/overview/sub_observability/components/HealingIssueModal.tsx",
+    "src/features/overview/sub_observability/components/HealingIssuesPanel.tsx",
+    "src/features/overview/sub_observability/components/HealingIssueStatusBadge.tsx",
+    "src/features/overview/sub_observability/components/HealingIssueSummary.tsx",
+    "src/features/overview/sub_observability/components/HealingTimeline.tsx"
+   ]
+  },
+  {
+   "name": "overview-health-api",
+   "category": "api",
+   "business_feature": "Overview Health",
+   "description": "IPC wrappers for the persona health dashboard: the health bundle command (a single server-side join of monthly spend, healing issues, BYOM policy, and provider usage), per-section system healthchecks (local, agents, cloud, circuit-breaker, subscriptions), and healing operations (listing, applying, and tracking automated issue remediation). Drives the Overview → Health tab.",
+   "api_surface": "Tauri commands: get_health_bundle, health_check_local, health_check_agents, list_healing_actions, apply_healing_action",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/overview/health.ts",
+    "src/api/overview/healthcheckApi.ts"
+   ],
+   "cross_refs": [
+    "overview-metrics-api",
+    "system-core-api",
+    "system-config-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/overview/health.ts",
+    "src/api/overview/healthcheckApi.ts",
+    "src/api/overview/healing.ts"
+   ]
+  },
+  {
+   "name": "overview-health-dashboard",
+   "category": "ui",
+   "business_feature": "Persona Health Dashboard",
+   "description": "Per-persona health summary dashboard and public status page view. compositeHealthScore computes a weighted score from latency, error rate, and healing coverage; useStatusPageData drives the public-facing status view. Tests confirm score calculation accuracy.",
+   "api_surface": "getPersonaHealthSummary, getStatusPageData",
+   "db_tables": [
+    "executions",
+    "healing_events"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_health/components/PersonaHealthDashboard.tsx",
+    "src/features/overview/sub_health/libs/compositeHealthScore.ts"
+   ],
+   "cross_refs": [
+    "overview-vitals-ledger",
+    "overview-healing-monitor"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/overview/sub_health/components/HeartbeatIndicator.tsx",
+    "src/features/overview/sub_health/components/PersonaHealthDashboard.tsx",
+    "src/features/overview/sub_health/components/StatusPageView.tsx",
+    "src/features/overview/sub_health/libs/compositeHealthScore.ts",
+    "src/features/overview/sub_health/libs/compositeHealthScore.test.ts",
+    "src/features/overview/sub_health/libs/useStatusPageData.ts"
+   ]
+  },
+  {
+   "name": "overview-health-state",
+   "category": "lib",
+   "business_feature": "Agent Health & Healing State",
+   "description": "Slices tracking agent health, autonomous healing workflows, quality certification scores, and cron-scheduled agent runs. The healing slice surfaces issue analysis and retry chains; personaHealth aggregates per-persona health scores; certification tracks passing/failing quality criteria.",
+   "api_surface": null,
+   "db_tables": [
+    "healing_issues",
+    "persona_health"
+   ],
+   "entry_points": [
+    "src/stores/slices/overview/healingSlice.ts",
+    "src/stores/slices/overview/personaHealthSlice.ts"
+   ],
+   "cross_refs": [
+    "overview-store-root",
+    "agent-execution-state"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/stores/slices/overview/healingSlice.ts",
+    "src/stores/slices/overview/personaHealthSlice.ts",
+    "src/stores/slices/overview/certificationSlice.ts",
+    "src/stores/slices/overview/cronAgentsSlice.ts",
+    "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts"
+   ]
+  },
+  {
+   "name": "overview-incident-detail",
+   "category": "ui",
+   "business_feature": "Incident Detail",
+   "description": "Deep-dive detail view for a single incident: a breakdown modal with timeline, affected spans, resolution state, and deep-link navigation. useIncidentsData drives data fetching; useIncidentActions handles resolve/dismiss/escalate mutations.",
+   "api_surface": "getIncidentDetail, resolveIncident, dismissIncident",
+   "db_tables": [
+    "incidents"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_incidents/components/IncidentDetailModal.tsx",
+    "src/features/overview/sub_incidents/libs/useIncidentsData.ts"
+   ],
+   "cross_refs": [
+    "overview-incidents-inbox",
+    "overview-observability-traces"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/overview/sub_incidents/components/IncidentDetailBreakdown.tsx",
+    "src/features/overview/sub_incidents/components/IncidentDetailModal.tsx",
+    "src/features/overview/sub_incidents/libs/incidentDeepLink.ts",
+    "src/features/overview/sub_incidents/libs/incidentDetail.ts",
+    "src/features/overview/sub_incidents/libs/useIncidentActions.ts",
+    "src/features/overview/sub_incidents/libs/useIncidentsData.ts"
+   ]
+  },
+  {
+   "name": "overview-incidents-api",
+   "category": "api",
+   "business_feature": "Incidents, Reviews & Audit Trail",
+   "description": "IPC wrappers for the cross-cutting Overview audit surfaces: audit incidents inbox (filterable cross-source incident log), manual and design review queues (human-in-the-loop review of persona outputs and build outputs), eval certification status (team streak and verdict distribution from doc/test/runs/), persona memories (categories, dispute claims), execution messages, overview events, and saved views (persisted filter/column presets). These form the human review and audit trail layer.",
+   "api_surface": "Tauri commands: list_audit_incidents, list_design_reviews, fetch_cert_status, list_memory_categories, list_saved_views",
+   "db_tables": [
+    "audit_incidents",
+    "persona_design_reviews",
+    "persona_manual_reviews",
+    "persona_memories",
+    "saved_views"
+   ],
+   "entry_points": [
+    "src/api/overview/incidents.ts",
+    "src/api/overview/reviews.ts"
+   ],
+   "cross_refs": [
+    "overview-metrics-api",
+    "team-communication-api",
+    "lab-testing-api"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/api/overview/incidents.ts",
+    "src/api/overview/reviews.ts",
+    "src/api/overview/certification.ts",
+    "src/api/overview/memories.ts",
+    "src/api/overview/messages.ts",
+    "src/api/overview/events.ts"
+   ]
+  },
+  {
+   "name": "overview-incidents-inbox",
+   "category": "ui",
+   "business_feature": "Incidents Inbox",
+   "description": "The incidents inbox where operators triage system-level failures grouped by agent. Provides filtering, severity classification using incidentTaxonomy, column configuration, and a KPI header showing open/critical counts. Groups incidents by IncidentAgentGroup for a per-persona view of failure patterns.",
+   "api_surface": "listIncidents(IncidentFilterInput)",
+   "db_tables": [
+    "incidents",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_incidents/components/IncidentsInbox.tsx",
+    "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts"
+   ],
+   "cross_refs": [
+    "overview-incident-detail",
+    "overview-healing-monitor"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/overview/sub_incidents/index.ts",
+    "src/features/overview/sub_incidents/components/IncidentAgentGroup.tsx",
+    "src/features/overview/sub_incidents/components/IncidentRow.tsx",
+    "src/features/overview/sub_incidents/components/IncidentsFilterBar.tsx",
+    "src/features/overview/sub_incidents/components/IncidentsInbox.tsx",
+    "src/features/overview/sub_incidents/components/IncidentsInboxKpiHeader.tsx"
+   ]
+  },
+  {
+   "name": "overview-intelligence-api",
+   "category": "api",
+   "business_feature": "Overview Intelligence & Search",
+   "description": "IPC wrappers for the Overview intelligence features: execution knowledge extraction (structured facts and knowledge graphs distilled from persona runs), smart template search (semantic search across the template library), and team synthesis from templates (AI composing a team topology from a natural-language query). These power the AI-assisted discovery surfaces in the Overview and template browser.",
+   "api_surface": "Tauri commands: list_execution_knowledge, smart_search_templates, synthesize_team_from_templates",
+   "db_tables": [
+    "execution_knowledge"
+   ],
+   "entry_points": [
+    "src/api/overview/intelligence/knowledge.ts"
+   ],
+   "cross_refs": [
+    "overview-incidents-api",
+    "vault-intelligence-api",
+    "team-management-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/overview/intelligence/knowledge.ts",
+    "src/api/overview/intelligence/smartSearch.ts",
+    "src/api/overview/intelligence/teamSynthesis.ts"
+   ]
+  },
+  {
+   "name": "overview-knowledge",
+   "category": "ui",
+   "business_feature": "Knowledge Graph",
+   "description": "Knowledge graph dashboard that surfaces entries in the agent knowledge base with annotation support. KnowledgeGraphDashboard renders browseable knowledge rows; AnnotateModal lets operators tag/enrich entries; KnowledgeTypeIcons provides visual classification icons by knowledge category.",
+   "api_surface": "listKnowledgeItems, annotateKnowledgeItem",
+   "db_tables": [
+    "knowledge_items"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx"
+   ],
+   "cross_refs": [
+    "overview-memories-browser",
+    "overview-review-inbox"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/overview/sub_knowledge/index.ts",
+    "src/features/overview/sub_knowledge/components/AnnotateModal.tsx",
+    "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx",
+    "src/features/overview/sub_knowledge/components/KnowledgeRow.tsx",
+    "src/features/overview/sub_knowledge/libs/knowledgeHelpers.ts",
+    "src/features/overview/sub_knowledge/libs/KnowledgeTypeIcons.tsx"
+   ]
+  },
+  {
+   "name": "overview-memories-browser",
+   "category": "ui",
+   "business_feature": "Memory Browser",
+   "description": "Read-side memory browser: paginated memory cards with filter bar, dense/graph/list layout toggles, and a detail modal per memory. The graph view (MemoriesPageGraph) renders a force-directed node graph of memory relationships. All layout modes share the same useOverviewStore memories slice.",
+   "api_surface": "listMemories(MemoryFilterInput), getMemoryDetail",
+   "db_tables": [
+    "memories"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_memories/components/MemoriesPage.tsx"
+   ],
+   "cross_refs": [
+    "overview-memory-management",
+    "overview-knowledge"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/overview/sub_memories/index.ts",
+    "src/features/overview/sub_memories/components/MemoriesPage.tsx",
+    "src/features/overview/sub_memories/components/MemoriesPageDense.tsx",
+    "src/features/overview/sub_memories/components/MemoriesPageGraph.tsx",
+    "src/features/overview/sub_memories/components/MemoryCard.tsx",
+    "src/features/overview/sub_memories/components/MemoryDetailModal.tsx"
+   ]
+  },
+  {
+   "name": "overview-memory-management",
+   "category": "ui",
+   "business_feature": "Memory Management",
+   "description": "Write-side memory management: create new memories, review and resolve conflicts between competing memory claims, and inspect claims per memory. memoryConflicts computes pairwise conflicts; conflictHelpers provides merge/reject resolution actions; memoryVisualTokens maps memory categories to colour tokens.",
+   "api_surface": "createMemory, resolveMemoryConflict, listMemoryClaims",
+   "db_tables": [
+    "memories",
+    "memory_claims"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_memories/components/MemoryConflictReview.tsx",
+    "src/features/overview/sub_memories/libs/memoryConflicts.ts"
+   ],
+   "cross_refs": [
+    "overview-memories-browser",
+    "overview-review-inbox"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/overview/sub_memories/components/ConflictCard.tsx",
+    "src/features/overview/sub_memories/components/CreateMemoryForm.tsx",
+    "src/features/overview/sub_memories/components/MemoryActionCard.tsx",
+    "src/features/overview/sub_memories/components/MemoryClaimsSection.tsx",
+    "src/features/overview/sub_memories/components/MemoryConflictReview.tsx",
+    "src/features/overview/sub_memories/components/ReviewResultsModal.tsx"
+   ]
+  },
+  {
+   "name": "overview-messages",
+   "category": "ui",
+   "business_feature": "Message Inbox",
+   "description": "Inbox of messages sent by personas to the operator, with channel delivery info, priority classification, and a detail modal. PriorityChip and ChannelDeliveryPill are inline display primitives; feedbackInstruction provides templated feedback copy surfaced in message threads.",
+   "api_surface": "listMessages, getMessage, markMessageRead",
+   "db_tables": [
+    "messages"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_messages/components/MessageList.tsx"
+   ],
+   "cross_refs": [
+    "overview-review-inbox",
+    "overview-dashboard-shell"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/overview/sub_messages/index.ts",
+    "src/features/overview/sub_messages/components/ChannelDeliveryPill.tsx",
+    "src/features/overview/sub_messages/components/MessageDetailModal.tsx",
+    "src/features/overview/sub_messages/components/MessageList.tsx",
+    "src/features/overview/sub_messages/components/PriorityChip.tsx",
+    "src/features/overview/sub_messages/libs/chatSeed.ts"
+   ]
+  },
+  {
+   "name": "overview-metrics-api",
+   "category": "api",
+   "business_feature": "Overview Metrics & SLA",
+   "description": "IPC wrappers for the Overview metrics and analytics surface: the observability bundle (alert rules, fired alerts, metrics charts, heatmaps, execution dashboard, anomaly drilldown, A/B prompt test results), SLA dashboard (daily SLA points, persona-level and global SLA stats, healing summaries), and LLM spend dashboard (headless scanner/evaluator/design costs tracked outside per-execution billing). Powers the main Overview analytics views.",
+   "api_surface": "Tauri commands: get_overview_bundle, get_alert_rules, get_sla_dashboard, llm_spend_dashboard",
+   "db_tables": [
+    "alert_rules",
+    "fired_alerts",
+    "sla_daily_points"
+   ],
+   "entry_points": [
+    "src/api/overview/observability.ts"
+   ],
+   "cross_refs": [
+    "overview-health-api",
+    "persona-execution-chat-api",
+    "lab-testing-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/overview/observability.ts",
+    "src/api/overview/sla.ts",
+    "src/api/llmSpend.ts"
+   ]
+  },
+  {
+   "name": "overview-mission-control",
+   "category": "ui",
+   "business_feature": "Mission Control",
+   "description": "The Mission Control dashboard home aggregates fleet optimization suggestions, upcoming routine schedules, and recent vault credential changes into a command-center pane. FleetOptimizationCard runs fleetOptimizer logic to surface idle or underperforming persona recommendations.",
+   "api_surface": "getFleetOptimizationSuggestions, listUpcomingSchedules, getRecentVaultChanges",
+   "db_tables": [
+    "schedules",
+    "credentials"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_missionControl/DashboardHomeMissionControl.tsx"
+   ],
+   "cross_refs": [
+    "overview-cron-agents",
+    "overview-activity-metrics",
+    "overview-shared-libs"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/overview/sub_missionControl/index.ts",
+    "src/features/overview/sub_missionControl/DashboardHomeMissionControl.tsx",
+    "src/features/overview/sub_missionControl/PaneHeader.tsx",
+    "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx",
+    "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx",
+    "src/features/overview/sub_missionControl/cards/VaultRecentChangesCard.tsx"
+   ]
+  },
+  {
+   "name": "overview-observability-traces",
+   "category": "ui",
+   "business_feature": "System Trace Observability",
+   "description": "Core observability dashboard showing system traces, IPC performance, and aggregated metrics charts. Consumes UnifiedSpan/SystemTrace data from the trace engine and renders span trees and operational dashboards. Serves the user question 'what is running and how fast?'",
+   "api_surface": "useSystemTraces, getIpcPerformanceStats",
+   "db_tables": [
+    "execution_spans",
+    "system_traces"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx",
+    "src/features/overview/sub_observability/libs/useObservabilityData.ts"
+   ],
+   "cross_refs": [
+    "overview-healing-monitor",
+    "overview-alert-anomaly",
+    "overview-event-log"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/overview/sub_observability/index.ts",
+    "src/features/overview/sub_observability/components/ObservabilityDashboard.tsx",
+    "src/features/overview/sub_observability/components/SystemTraceViewer.tsx",
+    "src/features/overview/sub_observability/components/MetricsCharts.tsx",
+    "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx",
+    "src/features/overview/sub_observability/libs/chartAnnotations.ts"
+   ]
+  },
+  {
+   "name": "overview-review-backlog",
+   "category": "ui",
+   "business_feature": "Review Backlog",
+   "description": "Swipe-card and table-based backlog management for accumulated review items. BacklogFocusDeck provides a Tinder-style swipe UX; BacklogTable supports bulk triage; AthenaVerdictCard surfaces Athena's pre-scored recommendation for each item; BacklogDetailModal shows full context and ledger entries.",
+   "api_surface": "listBacklogItems, dismissBacklogItem, resolveBacklogItem",
+   "db_tables": [
+    "review_queue",
+    "backlog_items"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_manual-review/components/backlog/BacklogPanel.tsx",
+    "src/features/overview/sub_manual-review/components/backlog/backlogModel.ts"
+   ],
+   "cross_refs": [
+    "overview-review-inbox",
+    "overview-review-focus"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx",
+    "src/features/overview/sub_manual-review/components/backlog/BacklogDetailLedger.tsx",
+    "src/features/overview/sub_manual-review/components/backlog/BacklogDetailModal.tsx",
+    "src/features/overview/sub_manual-review/components/backlog/BacklogFocusDeck.tsx",
+    "src/features/overview/sub_manual-review/components/backlog/backlogLabels.ts",
+    "src/features/overview/sub_manual-review/components/backlog/backlogModel.ts"
+   ]
+  },
+  {
+   "name": "overview-review-focus",
+   "category": "ui",
+   "business_feature": "Focused Review Flow",
+   "description": "Focused decision flow for reviewing one item at a time: a full-screen card with approve/reject actions, auto-resolved badge for items resolved by the healer before human action, and a review focus flow that drives a sequential session. Designed for operators who prefer a zero-distraction triage UX.",
+   "api_surface": "approveReviewItem, rejectReviewItem",
+   "db_tables": [
+    "review_queue"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx",
+    "src/features/overview/sub_manual-review/components/FocusedDecisionCard.tsx"
+   ],
+   "cross_refs": [
+    "overview-review-inbox",
+    "overview-review-backlog"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/overview/sub_manual-review/components/ActionZone.tsx",
+    "src/features/overview/sub_manual-review/components/AutoResolvedBadge.tsx",
+    "src/features/overview/sub_manual-review/components/FocusedDecisionCard.tsx",
+    "src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx",
+    "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx"
+   ]
+  },
+  {
+   "name": "overview-review-inbox",
+   "category": "ui",
+   "business_feature": "Manual Review Inbox",
+   "description": "The manual review inbox where operators see and act on items that require human decision: flagged executions, knowledge approvals, and pending actions. ManualReviewList is the entry point; useManualReviewQueue drives pagination and filter state; reviewHelpers normalises raw queue items into display shape.",
+   "api_surface": "listReviewQueue, approveReviewItem, rejectReviewItem",
+   "db_tables": [
+    "review_queue",
+    "knowledge_items"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx",
+    "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts"
+   ],
+   "cross_refs": [
+    "overview-review-focus",
+    "overview-review-backlog",
+    "overview-knowledge"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/overview/sub_manual-review/index.ts",
+    "src/features/overview/sub_manual-review/components/BulkActionBar.tsx",
+    "src/features/overview/sub_manual-review/components/DecisionModeTabs.tsx",
+    "src/features/overview/sub_manual-review/components/KnowledgeApprovalsPanel.tsx",
+    "src/features/overview/sub_manual-review/components/ManualReviewList.tsx",
+    "src/features/overview/sub_manual-review/components/ReviewDetailPanel.tsx"
+   ]
+  },
+  {
+   "name": "overview-shared-libs",
+   "category": "lib",
+   "business_feature": "Overview Shared Utilities",
+   "description": "Shared utilities and display primitives used across all Overview sub-modules. dashboardGrid defines responsive grid layout constants; metricIdentity provides stable metric IDs for chart key stability; fleetOptimizer heuristics power the mission control fleet card; computeTrends and formatRelativeShort are display helpers. KpiTile and TrendIndicator are micro-components used in KPI header rows.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/overview/libs/dashboardGrid.ts",
+    "src/features/overview/libs/fleetOptimizer.ts"
+   ],
+   "cross_refs": [
+    "overview-dashboard-shell",
+    "overview-mission-control",
+    "overview-usage-charts"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/overview/libs/animations.ts",
+    "src/features/overview/libs/computeTrends.ts",
+    "src/features/overview/libs/dashboardGrid.ts",
+    "src/features/overview/libs/fleetOptimizer.ts",
+    "src/features/overview/libs/fleetOptimizer.test.ts",
+    "src/features/overview/libs/formatRelativeShort.ts"
+   ]
+  },
+  {
+   "name": "overview-sla",
+   "category": "ui",
+   "business_feature": "SLA Compliance",
+   "description": "SLA compliance dashboard that displays per-persona SLA cards with success-rate targets, breach counts, and trend indicators. slaHelpers computes SLA grades from execution history; SLADashboard aggregates all active personas' SLA status in a grid.",
+   "api_surface": "getSLAMetrics",
+   "db_tables": [
+    "executions",
+    "personas"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_sla/components/SLADashboard.tsx"
+   ],
+   "cross_refs": [
+    "overview-activity-metrics",
+    "overview-health-dashboard"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/overview/sub_sla/index.ts",
+    "src/features/overview/sub_sla/components/SLACard.tsx",
+    "src/features/overview/sub_sla/components/SLADashboard.tsx",
+    "src/features/overview/sub_sla/libs/slaHelpers.ts"
+   ]
+  },
+  {
+   "name": "overview-store-root",
+   "category": "lib",
+   "business_feature": "Overview Store Composition",
+   "description": "Top-level Zustand store that composes the overview domain slices — dashboard metrics, messages, events, healing issues, memories, cron agents, alerts, persona health, certifications, process activity, and the home-spine window manager.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/overviewStore.ts"
+   ],
+   "cross_refs": [
+    "overview-health-state",
+    "overview-events-state",
+    "overview-dashboard-state"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/stores/overviewStore.ts",
+    "src/stores/improveActivityStore.ts",
+    "src/stores/improveActivityStore.test.ts"
+   ]
+  },
+  {
+   "name": "overview-system-health-panel",
+   "category": "ui",
+   "business_feature": "System Health Panel",
+   "description": "The system-level health panel showing app crash logs, disk usage, configuration state, and install status. Composed of SectionCard sections; ConfigurationPopup and popupFieldConfigs drive the inline config editing UX; useHealthChecks polls platform health indicators from Tauri.",
+   "api_surface": "getSystemHealth, getCrashLogs, getDiskUsage",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/overview/components/health/SystemHealthPanel.tsx",
+    "src/features/overview/components/health/useHealthChecks.ts"
+   ],
+   "cross_refs": [
+    "overview-health-dashboard",
+    "overview-dashboard-shell"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/overview/components/health/ConfigurationPopup.tsx",
+    "src/features/overview/components/health/CrashLogsSection.tsx",
+    "src/features/overview/components/health/FooterActions.tsx",
+    "src/features/overview/components/health/healthPanelConstants.ts",
+    "src/features/overview/components/health/InstallButton.tsx",
+    "src/features/overview/components/health/LogDiskUsageSection.tsx"
+   ]
+  },
+  {
+   "name": "overview-usage-charts",
+   "category": "ui",
+   "business_feature": "Usage Charts",
+   "description": "Time-series token and tool usage charts with period comparison and pivot by tool. LazyChart defers Recharts bundle loading; MetricChart is the reusable chart primitive; pivotToolUsage aggregates raw usage rows into per-tool series; periodComparison computes period-over-period deltas.",
+   "api_surface": "getUsageMetrics(dateRange, personaId)",
+   "db_tables": [
+    "tool_usage",
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_usage/components/MetricChart.tsx",
+    "src/features/overview/sub_usage/libs/pivotToolUsage.ts"
+   ],
+   "cross_refs": [
+    "overview-activity-metrics",
+    "overview-dashboard-shell"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/overview/sub_usage/index.ts",
+    "src/features/overview/sub_usage/components/ChartErrorBoundary.tsx",
+    "src/features/overview/sub_usage/components/ChartGradientDefs.tsx",
+    "src/features/overview/sub_usage/components/ChartTooltip.tsx",
+    "src/features/overview/sub_usage/components/DayRangePicker.tsx",
+    "src/features/overview/sub_usage/components/LazyChart.tsx"
+   ]
+  },
+  {
+   "name": "overview-vitals-ledger",
+   "category": "ui",
+   "business_feature": "Vitals Ledger",
+   "description": "The Vitals Ledger (renamed from Heartbeats) displays per-execution heartbeat rows with row-level detail, healing effectiveness, and insight panels for alerts, burn rate, and cascade failures. VitalsLedger is the main table; InsightBand surfaces contextual recommendations based on detected patterns.",
+   "api_surface": "listHeartbeats, getHealingEffectivenessStats",
+   "db_tables": [
+    "executions",
+    "healing_events"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_health/components/heartbeats/VitalsLedger.tsx",
+    "src/features/overview/sub_health/components/heartbeats/HeartbeatsView.tsx"
+   ],
+   "cross_refs": [
+    "overview-health-dashboard",
+    "overview-healing-monitor"
+   ],
+   "file_count": 15,
+   "sample_files": [
+    "src/features/overview/sub_health/components/heartbeats/HeartbeatsView.tsx",
+    "src/features/overview/sub_health/components/heartbeats/VitalsLedger.tsx",
+    "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx",
+    "src/features/overview/sub_health/components/heartbeats/RowDetail.tsx",
+    "src/features/overview/sub_health/components/heartbeats/SuccessSourceBadge.tsx",
+    "src/features/overview/sub_health/components/heartbeats/primitives.tsx"
+   ]
+  },
+  {
+   "name": "sla-tracking",
+   "category": "ui",
+   "business_feature": "SLA Tracking",
+   "description": "Service-level agreement monitoring for persona executions — defines SLA targets (latency, success rate, cost bounds), evaluates runs against them, and surfaces violations with severity badges in the overview.",
+   "api_surface": "invoke('get_sla_configs'), invoke('get_sla_violations')",
+   "db_tables": [
+    "sla_configs",
+    "sla_evaluations"
+   ],
+   "entry_points": [
+    "src/features/overview/sub_sla/SLAView.tsx",
+    "src/api/overview/sla.ts"
+   ],
+   "cross_refs": [
+    "overview-analytics",
+    "execution-monitoring",
+    "healing-engine"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/overview/sla.ts",
+    "src-tauri/src/commands/communication/sla.rs"
+   ]
+  }
+ ]
+}

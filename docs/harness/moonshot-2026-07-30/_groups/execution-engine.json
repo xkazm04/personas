@@ -1,0 +1,1003 @@
+{
+ "id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+ "name": "Execution Engine",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "audit-incidents-repo",
+   "category": "data",
+   "business_feature": "Audit Incidents & Policy Enforcement",
+   "description": "Repositories for audit incidents — records of policy violations, anomalous behaviors, and security events detected during persona execution. Includes the `audit_incidents_promoter` which classifies and promotes raw execution events into structured incident records for operator review.",
+   "api_surface": "",
+   "db_tables": [
+    "audit_incidents",
+    "policy_events",
+    "provider_audit_log"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/execution/audit_incidents.rs",
+    "src-tauri/db/src/audit_incidents_promoter.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "healing-repo"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/execution/audit_incidents.rs",
+    "src-tauri/db/src/audit_incidents_promoter.rs",
+    "src-tauri/db/src/repos/execution/policy_events.rs",
+    "src-tauri/db/src/repos/execution/provider_audit.rs"
+   ]
+  },
+  {
+   "name": "build-session-api",
+   "category": "api",
+   "business_feature": "Build Session Management",
+   "description": "IPC wrappers for the Design & Build Studio's build session workflow: streaming build events over a Tauri Channel, managing persisted build sessions, promoting builds, running simulations, and defining output assertions (quality rules evaluated against execution outputs). Build sessions are the iterative compile-and-test loop that turns a design intent into a validated persona.",
+   "api_surface": "Tauri commands: start_build_session, stream build events via Channel, promote_build, run_simulation, create_output_assertion, evaluate_assertions",
+   "db_tables": [
+    "build_sessions",
+    "output_assertions",
+    "assertion_results"
+   ],
+   "entry_points": [
+    "src/api/agents/buildSession.ts"
+   ],
+   "cross_refs": [
+    "persona-execution-chat-api",
+    "design-template-api",
+    "lab-testing-api"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/api/agents/buildSession.ts",
+    "src/api/agents/outputAssertions.ts"
+   ]
+  },
+  {
+   "name": "byom-provider-settings",
+   "category": "ui",
+   "business_feature": "Bring-Your-Own-Model Policy",
+   "description": "Implements the 'Bring Your Own Model' policy layer for enterprise and power users: controls which AI providers (Anthropic Claude, Qwen, etc.) are allowed or blocked, manages per-provider API keys with credential storage, defines task-complexity-based routing rules (simple/complex task → specific provider), enforces workflow-tag compliance rules restricting which providers certain tagged workflows may use, and renders a provider audit log with usage sparklines and timeseries charts. State is managed by useByomSettings which batches IPC calls to the system/byom Rust module.",
+   "api_surface": "getByomPolicy, setByomPolicy, deleteByomPolicy, listProviderAuditLog, getProviderUsageStats, getProviderUsageTimeseries, testProviderConnection; getQwenStatus, setQwenCredentials, clearQwenCredentials",
+   "db_tables": [
+    "app_settings",
+    "provider_audit_log",
+    "provider_usage_stats",
+    "provider_usage_timeseries"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_byom/components/ByomSettings.tsx",
+    "src/features/settings/sub_byom/libs/useByomSettings.ts"
+   ],
+   "cross_refs": [
+    "engine-capability-matrix",
+    "settings-shell"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/settings/sub_byom/index.ts",
+    "src/features/settings/sub_byom/components/ByomApiKeyManager.tsx",
+    "src/features/settings/sub_byom/components/ByomAuditLog.tsx",
+    "src/features/settings/sub_byom/components/ByomComplianceRules.tsx",
+    "src/features/settings/sub_byom/components/ByomProviderList.tsx",
+    "src/features/settings/sub_byom/components/ByomRoutingRules.tsx"
+   ]
+  },
+  {
+   "name": "chain-byom-repo",
+   "category": "data",
+   "business_feature": "Execution Chains & Custom Models",
+   "description": "Repositories for execution chains (multi-step pipelines linking persona executions in sequence) and BYOM (Bring Your Own Model) configuration. Chains enable complex workflows where one persona's output feeds another; BYOM allows users to configure custom model endpoints beyond the default providers.",
+   "api_surface": "",
+   "db_tables": [
+    "execution_chains",
+    "byom_configs",
+    "knowledge_items"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/chain.rs",
+    "src-tauri/db/src/byom.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "agent-persona-repo",
+    "model-routing"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/chain.rs",
+    "src-tauri/db/src/byom.rs",
+    "src-tauri/db/src/repos/execution/knowledge.rs"
+   ]
+  },
+  {
+   "name": "engine-capability-matrix",
+   "category": "ui",
+   "business_feature": "Engine Capability Matrix",
+   "description": "Displays and lets operators toggle a capability matrix showing which CLI operations (persona execution, design analysis, credential health check, n8n transform, test generation, healing analysis, recipe execution, query debug, etc.) each installed AI provider supports. Also exposes a per-operation model routing section for fine-grained control over which model handles each task category. Capability overrides are serialised to the engine_capabilities key in app_settings via the system API.",
+   "api_surface": "getModelRoutingRules, setModelRoutingRules; getAppSetting / setAppSetting (engine_capabilities)",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_engine/components/EngineSettings.tsx",
+    "src/features/settings/sub_engine/libs/engineCapabilities.ts"
+   ],
+   "cross_refs": [
+    "byom-provider-settings",
+    "settings-shell"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx",
+    "src/features/settings/sub_engine/components/EngineSettings.tsx",
+    "src/features/settings/sub_engine/components/ModelRoutingSection.tsx",
+    "src/features/settings/sub_engine/components/OperationRow.tsx",
+    "src/features/settings/sub_engine/libs/engineCapabilities.ts"
+   ]
+  },
+  {
+   "name": "event-bus-routing",
+   "category": "lib",
+   "business_feature": "Event Bus & Routing",
+   "description": "Typed event bus that routes persona events to subscribers and drives trigger-based execution. The bus module implements event matching against subscriptions and PersonaTrigger rows; the event_registry wraps Tauri's emit API with typed payloads; event_vocabulary and shared_event_local_relay handle event naming and local relay bridging.",
+   "api_surface": null,
+   "db_tables": [
+    "persona_events",
+    "persona_event_subscriptions",
+    "persona_triggers"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/bus.rs",
+    "src-tauri/engine/src/event_registry.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "team-topology"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/engine/src/bus.rs",
+    "src-tauri/engine/src/events.rs",
+    "src-tauri/engine/src/event_registry.rs",
+    "src-tauri/engine/src/event_vocabulary.rs",
+    "src-tauri/engine/src/shared_event_local_relay.rs"
+   ]
+  },
+  {
+   "name": "execution-chaining",
+   "category": "api",
+   "business_feature": "Execution Chaining",
+   "description": "Enables sequential and parallel chaining of persona executions — one execution's output feeds the next. Manages chain definitions, runtime state, failure policies, and the visual chain builder in the UI.",
+   "api_surface": "invoke('create_chain'), invoke('execute_chain'), invoke('get_chain_status')",
+   "db_tables": [
+    "chains",
+    "chain_steps",
+    "chain_runs"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/chain.rs",
+    "src/features/agents/sub_executions/ChainBuilder.tsx"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "recipe-engine",
+    "workflow-automation"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "execution-core",
+   "category": "api",
+   "business_feature": "Persona Execution",
+   "description": "Primary execution command surface — listing, inspecting, and triggering persona runs. The scheduler command layer exposes cron-style scheduling controls; ambient mode handles background always-on execution. Reads from the executions DB repo and cross-references the automation runner and circuit-breaker.",
+   "api_surface": "list_executions, get_execution, start_execution, stop_execution, schedule_persona, get_ambient_status",
+   "db_tables": [
+    "persona_executions",
+    "execution_schedule"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/execution/executions.rs"
+   ],
+   "cross_refs": [
+    "persona-crud",
+    "execution-healing",
+    "fleet-core"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/execution/executions.rs",
+    "src-tauri/src/commands/execution/scheduler.rs",
+    "src-tauri/src/commands/execution/ambient.rs",
+    "src-tauri/src/commands/execution/mod.rs"
+   ]
+  },
+  {
+   "name": "execution-detail-inspector",
+   "category": "ui",
+   "business_feature": "Execution Detail Inspector",
+   "description": "Deep-dive execution detail view presenting a waterfall trace inspector, subagent tree, tool-call cards, cost breakdown bar, span rows, log viewer, memory viewer, summary card, and chain-trace view for chained persona runs. ErrorExplanationCard surfaces Athena-generated explanations for failed executions. The TraceInspector is the primary entry point.",
+   "api_surface": "get_execution_trace, get_execution_detail",
+   "db_tables": [
+    "executions",
+    "execution_events",
+    "execution_spans"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_executions/detail/ExecutionDetail.tsx",
+    "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx"
+   ],
+   "cross_refs": [
+    "execution-list",
+    "execution-replay",
+    "execution-trace-primitives"
+   ],
+   "file_count": 23,
+   "sample_files": [
+    "src/features/agents/sub_executions/detail/ExecutionDetail.tsx",
+    "src/features/agents/sub_executions/detail/ExecutionDetailContent.tsx",
+    "src/features/agents/sub_executions/detail/ExecutionDetailTabs.tsx",
+    "src/features/agents/sub_executions/detail/ErrorExplanationCard.tsx",
+    "src/features/agents/sub_executions/detail/executionDetailTypes.ts",
+    "src/features/agents/sub_executions/detail/inspector/ExecutionInspector.tsx"
+   ]
+  },
+  {
+   "name": "execution-evaluation",
+   "category": "lib",
+   "business_feature": "Evaluation Scoring & Graph Algorithms",
+   "description": "Two algorithmic primitives for the evaluation layer: `ScoreWeights` — the single source of truth for composite lab score weights (tool accuracy, output quality, protocol compliance) seeded to the frontend at startup via `lab_get_score_weights` — and `TopologyGraph` — a unified Kahn's topological sort with cycle detection that replaced three independent copies across the team, topology, and optimizer modules.",
+   "api_surface": "Tauri: lab_get_score_weights",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/score_weights.rs",
+    "src-tauri/core/src/topology_graph.rs"
+   ],
+   "cross_refs": [
+    "lab-quality-models",
+    "team-collaboration-models"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/core/src/score_weights.rs",
+    "src-tauri/core/src/topology_graph.rs"
+   ]
+  },
+  {
+   "name": "execution-healing",
+   "category": "api",
+   "business_feature": "Execution Healing & Evolution",
+   "description": "Self-healing and evolutionary adaptation of persona executions — detects failure patterns, triggers recovery strategies, evolves genome-level configuration, and enforces policy events (rate limits, budget gates). These commands form the reliability and adaptation loop around the core runner.",
+   "api_surface": "list_healing_events, trigger_healing, get_genome, apply_policy_event",
+   "db_tables": [
+    "execution_healing_log",
+    "persona_genome",
+    "policy_events"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/execution/healing.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "observability-metrics"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/execution/healing.rs",
+    "src-tauri/src/commands/execution/evolution.rs",
+    "src-tauri/src/commands/execution/genome.rs",
+    "src-tauri/src/commands/execution/policy_events.rs"
+   ]
+  },
+  {
+   "name": "execution-lab",
+   "category": "api",
+   "business_feature": "Execution Lab & Testing",
+   "description": "Lab, testing, and knowledge-management commands for persona execution experiments — prompt-variant experiments, assertion suites, test-suite management, and the persona knowledge base (retrieved context injected at execution time). Enables iterative prompt engineering and quality gating.",
+   "api_surface": "run_lab_experiment, list_test_suites, run_assertions, list_knowledge_entries",
+   "db_tables": [
+    "lab_runs",
+    "test_suites",
+    "assertions",
+    "persona_knowledge"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/execution/lab.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "eval-runs"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/execution/lab.rs",
+    "src-tauri/src/commands/execution/tests.rs",
+    "src-tauri/src/commands/execution/test_suites.rs",
+    "src-tauri/src/commands/execution/assertions.rs",
+    "src-tauri/src/commands/execution/knowledge.rs"
+   ]
+  },
+  {
+   "name": "execution-list",
+   "category": "ui",
+   "business_feature": "Execution History List",
+   "description": "Paginated execution history list with filtering, bulk rerun, cost sparklines, and a side-by-side comparison view for two selected executions. The ExecutionList drives useExecutionList for data fetching; ComparisonTable/Diff/Metrics delegate to a Web Worker for heavy diff computation; BulkRerun manages multi-select requeue flows.",
+   "api_surface": "list_executions, rerun_executions",
+   "db_tables": [
+    "executions",
+    "execution_events"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_executions/components/list/ExecutionList.tsx",
+    "src/features/agents/sub_executions/libs/useExecutionList.ts"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "execution-detail-inspector",
+    "execution-replay"
+   ],
+   "file_count": 17,
+   "sample_files": [
+    "src/features/agents/sub_executions/components/list/ExecutionList.tsx",
+    "src/features/agents/sub_executions/components/list/ExecutionListFilters.tsx",
+    "src/features/agents/sub_executions/components/list/ExecutionListRow.tsx",
+    "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx",
+    "src/features/agents/sub_executions/components/list/CostSparkline.tsx",
+    "src/features/agents/sub_executions/components/list/ExecutionComparison.tsx"
+   ]
+  },
+  {
+   "name": "execution-metrics-repo",
+   "category": "data",
+   "business_feature": "Execution Metrics & Spend Tracking",
+   "description": "Repositories for execution performance metrics snapshots, LLM spend tracking, and run budget enforcement. Captures aggregated statistics (latency, cost, token consumption) at multiple granularities for the observability dashboard and KPI tracking features.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_metrics_snapshots",
+    "dev_llm_spend",
+    "run_budget"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/execution/metrics.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "agent-persona-repo"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/db/src/repos/execution/metrics.rs",
+    "src-tauri/db/src/repos/llm_spend.rs",
+    "src-tauri/db/src/repos/run_budget.rs"
+   ]
+  },
+  {
+   "name": "execution-mini-player",
+   "category": "ui",
+   "business_feature": "Execution Mini Player",
+   "description": "A compact always-visible execution mini-player shown outside the editor for ongoing runs. ExecutionMiniPlayer displays the current step and status with a pipeline-dot progress strip (PipelineDots), enabling users to monitor execution progress from any part of the app without navigating to the full runner view.",
+   "api_surface": null,
+   "db_tables": [
+    "executions"
+   ],
+   "entry_points": [
+    "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "execution-trace-primitives"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx",
+    "src/features/agents/executionPlayer/PipelineDots.tsx"
+   ]
+  },
+  {
+   "name": "execution-monitoring",
+   "category": "ui",
+   "business_feature": "Execution Monitoring",
+   "description": "Frontend observability for live and historical execution runs — real-time status updates via WebSocket/Tauri events, execution timeline, stage drill-down, and replay of past runs. Powers the executions tab inside the agent editor.",
+   "api_surface": "Tauri event 'execution_update', invoke('get_execution_history')",
+   "db_tables": [
+    "executions",
+    "execution_stages"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_executions/ExecutionsTab.tsx",
+    "src/features/overview/sub_realtime/RealtimeView.tsx"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "overview-analytics",
+    "sla-tracking"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "execution-monitoring-hooks",
+   "category": "lib",
+   "business_feature": "Execution Monitoring",
+   "description": "Observability-oriented hooks that watch a running execution for file system changes, system-level traces, AI self-healing stream events, reasoning traces, and timeline replay. Enables the activity monitor panel and the post-execution replay surface to reflect what the agent did during its run.",
+   "api_surface": "",
+   "db_tables": [
+    "executions",
+    "execution_events"
+   ],
+   "entry_points": [
+    "src/hooks/execution/useActivityMonitor.ts",
+    "src/hooks/execution/useAiHealingStream.ts"
+   ],
+   "cross_refs": [
+    "execution-streaming-hooks",
+    "realtime-event-bus-hooks"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/hooks/execution/useActivityMonitor.ts",
+    "src/hooks/execution/useFileChanges.ts",
+    "src/hooks/execution/useSystemTrace.ts",
+    "src/hooks/execution/useReasoningTrace.ts",
+    "src/hooks/execution/useReplayTimeline.ts",
+    "src/hooks/execution/useAiHealingStream.ts"
+   ]
+  },
+  {
+   "name": "execution-queue-scheduler",
+   "category": "lib",
+   "business_feature": "Execution Queue & Scheduling",
+   "description": "Priority-based queue and concurrency management layer that controls how many personas execute simultaneously. Implements per-persona queue depth limits, global concurrency caps, rate limiting, session pooling, and a pre-prepared run cache for fast startup. Ensures fair scheduling across concurrent executions.",
+   "api_surface": null,
+   "db_tables": [
+    "executions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/queue.rs",
+    "src-tauri/engine/src/session_pool.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "cli-process-driver"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/engine/src/queue.rs",
+    "src-tauri/engine/src/rate_limiter.rs",
+    "src-tauri/engine/src/session_pool.rs",
+    "src-tauri/engine/src/prepared_run_cache.rs"
+   ]
+  },
+  {
+   "name": "execution-replay",
+   "category": "ui",
+   "business_feature": "Execution Replay",
+   "description": "Time-scrubbing replay sandbox for reviewing a past execution as if it were happening live. Provides transport controls (play/pause/seek), a pipeline waterfall, terminal replay panel, tool panel, cost accrual overlay, and a cost replay panel. The ReplaySandbox orchestrates replay state via useReplayState.",
+   "api_surface": null,
+   "db_tables": [
+    "executions",
+    "execution_events"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_executions/replay/ReplaySandbox.tsx",
+    "src/features/agents/sub_executions/libs/useReplayState.ts"
+   ],
+   "cross_refs": [
+    "execution-detail-inspector",
+    "execution-trace-primitives"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/agents/sub_executions/replay/ReplaySandbox.tsx",
+    "src/features/agents/sub_executions/replay/ReplayTransportControls.tsx",
+    "src/features/agents/sub_executions/replay/TimelineScrubber.tsx",
+    "src/features/agents/sub_executions/replay/ReplayTerminalPanel.tsx",
+    "src/features/agents/sub_executions/replay/ReplayToolPanel.tsx",
+    "src/features/agents/sub_executions/replay/PipelineWaterfall.tsx"
+   ]
+  },
+  {
+   "name": "execution-repo",
+   "category": "data",
+   "business_feature": "Persona Execution Records",
+   "description": "Core repository for persona execution records — stores every run of a persona (status, token usage, cost, duration, tool calls, output), supports full-text search via FTS5, and provides the query surface for the executions dashboard and observability features. The most frequently read table in the system.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_executions",
+    "execution_traces",
+    "tool_usage_log",
+    "execution_annotations",
+    "executions_fts"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/execution/executions.rs"
+   ],
+   "cross_refs": [
+    "agent-persona-repo",
+    "execution-metrics-repo",
+    "healing-repo"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/db/src/repos/execution/executions.rs",
+    "src-tauri/db/src/repos/execution/traces.rs",
+    "src-tauri/db/src/repos/execution/tool_usage.rs",
+    "src-tauri/db/src/repos/execution/annotations.rs",
+    "src-tauri/db/src/repos/execution/mod.rs"
+   ]
+  },
+  {
+   "name": "execution-resilience",
+   "category": "lib",
+   "business_feature": "Execution Resilience",
+   "description": "Resilience layer for persona execution: provider failover with circuit-breaker pattern, incident auto-continuation (resumes blocked executions after an incident is resolved), resource-aware admission control based on CPU/memory load, and integration tests for circuit-breaker behaviour. Together these ensure the engine degrades gracefully under provider failures or host stress.",
+   "api_surface": "select_failover_provider (internal), admit_execution (internal)",
+   "db_tables": [
+    "executions",
+    "audit_incidents"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/failover.rs",
+    "src-tauri/src/engine/resource_governor.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "credential-lifecycle"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/engine/failover.rs",
+    "src-tauri/src/engine/incident_continuation.rs",
+    "src-tauri/src/engine/resource_governor.rs",
+    "src-tauri/src/engine/circuit_breakers_integration_tests.rs"
+   ]
+  },
+  {
+   "name": "execution-runner",
+   "category": "api",
+   "business_feature": "Execution Runner",
+   "description": "Core engine that runs a persona against an input: spawns the execution task, manages the stage-by-stage pipeline (prompt → LLM → output → post-processing), and emits real-time progress events. Non-blocking — returns after spawn; callers poll for terminal state.",
+   "api_surface": "invoke('execute_persona'), invoke('get_execution'), invoke('cancel_execution')",
+   "db_tables": [
+    "executions",
+    "execution_stages",
+    "execution_outputs"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/execution_engine/engine.rs",
+    "src-tauri/src/commands/execution/execute.rs"
+   ],
+   "cross_refs": [
+    "persona-management",
+    "execution-monitoring",
+    "agent-connectors",
+    "execution-chaining"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/api/agents/genome.ts"
+   ]
+  },
+  {
+   "name": "execution-runner",
+   "category": "ui",
+   "business_feature": "Execution Runner",
+   "description": "Live persona execution runner UI: terminal output panel, phase timeline, runner header, dry-run modal, budget-recovery card, healing card, and stuck-execution guidance. The PersonaRunner component orchestrates the live session; useRunnerExecution and useRunnerState manage the IPC-streamed execution state including self-healing flows.",
+   "api_surface": "execute_persona, cancel_execution, dry_run_persona",
+   "db_tables": [
+    "executions",
+    "execution_events"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_executions/components/runner/PersonaRunner.tsx",
+    "src/features/agents/sub_executions/libs/useRunnerExecution.ts"
+   ],
+   "cross_refs": [
+    "execution-list",
+    "execution-trace-primitives",
+    "agent-health",
+    "quick-answer-panel"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/agents/sub_executions/components/runner/PersonaRunner.tsx",
+    "src/features/agents/sub_executions/components/runner/ExecutionTerminal.tsx",
+    "src/features/agents/sub_executions/components/runner/RunnerHeader.tsx",
+    "src/features/agents/sub_executions/components/runner/RunnerPhaseTimeline.tsx",
+    "src/features/agents/sub_executions/components/runner/ExecutionPreviewPanel.tsx",
+    "src/features/agents/sub_executions/components/runner/DryRunModal.tsx"
+   ]
+  },
+  {
+   "name": "execution-state-models",
+   "category": "data",
+   "business_feature": "Execution Data Models",
+   "description": "Domain types for the execution data layer: `Execution` (the persisted run record), `ExecutionAnnotation` (user/agent tags on individual runs), and `SystemOp` (background maintenance operations). These structs are the canonical DB row shapes consumed by the execution repository and surfaced to the frontend via Tauri IPC.",
+   "api_surface": "",
+   "db_tables": [
+    "executions",
+    "execution_annotations",
+    "system_ops"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/models/execution.rs"
+   ],
+   "cross_refs": [
+    "core-foundation-types",
+    "execution-tracing-budget",
+    "execution-healing"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/core/src/models/execution.rs",
+    "src-tauri/core/src/models/execution_annotation.rs",
+    "src-tauri/core/src/models/system_op.rs"
+   ]
+  },
+  {
+   "name": "execution-streaming-hooks",
+   "category": "lib",
+   "business_feature": "Execution Streaming",
+   "description": "Core hooks for consuming live execution output from the Tauri backend as it streams. Handles persona-owned output filtering, correlated CLI stream pairing, structured stream parsing with typed handlers, execution scope detection, and per-execution summary aggregation. The primary integration point between the Tauri execution engine IPC and React UI components such as ChatTab and PersonaRunner.",
+   "api_surface": "",
+   "db_tables": [
+    "executions"
+   ],
+   "entry_points": [
+    "src/hooks/execution/useExecutionStream.ts",
+    "src/hooks/execution/usePersonaExecution.ts"
+   ],
+   "cross_refs": [
+    "realtime-event-bus-hooks",
+    "agent-list-hooks"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/hooks/execution/useExecutionStream.ts",
+    "src/hooks/execution/useCorrelatedCliStream.ts",
+    "src/hooks/execution/useStructuredStream.ts",
+    "src/hooks/execution/usePersonaExecution.ts",
+    "src/hooks/execution/useExecutionScope.ts",
+    "src/hooks/execution/useExecutionSummary.ts"
+   ]
+  },
+  {
+   "name": "execution-telemetry",
+   "category": "lib",
+   "business_feature": "Execution Telemetry",
+   "description": "Records execution cost, token usage, and process-level activity signals for observability. The cost module tracks per-execution token and dollar spend; logger writes structured execution logs; process_activity monitors active process signals for the desktop overlay and health dashboards.",
+   "api_surface": null,
+   "db_tables": [
+    "execution_logs",
+    "sla_breach_episodes"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/cost.rs",
+    "src-tauri/engine/src/sla_breach.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "operational-intelligence"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/engine/src/cost.rs",
+    "src-tauri/engine/src/logger.rs",
+    "src-tauri/engine/src/process_activity.rs",
+    "src-tauri/engine/src/sla_breach.rs"
+   ]
+  },
+  {
+   "name": "execution-trace-primitives",
+   "category": "lib",
+   "business_feature": "Execution Trace Primitives",
+   "description": "Low-level execution trace primitives: stage bar and sub-span bar for rendering timeline stages, SyntheticTrace for constructing synthetic trace trees from raw events, stage colour mapping, the chain-trace hook, and shared lifecycle UI icons. Also includes the Web Worker that performs heavy diff computation for execution comparison.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/agents/sub_executions/trace/SyntheticTrace.ts",
+    "src/features/agents/sub_executions/libs/traceHelpers.ts"
+   ],
+   "cross_refs": [
+    "execution-detail-inspector",
+    "execution-replay",
+    "execution-runner"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/agents/sub_executions/trace/StageBar.tsx",
+    "src/features/agents/sub_executions/trace/SubSpanBar.tsx",
+    "src/features/agents/sub_executions/trace/SyntheticTrace.ts",
+    "src/features/agents/sub_executions/trace/stageColors.ts",
+    "src/features/agents/sub_executions/components/ActiveChainsBadge.tsx",
+    "src/features/agents/sub_executions/components/AnnotationEditor.tsx"
+   ]
+  },
+  {
+   "name": "execution-tracing-budget",
+   "category": "lib",
+   "business_feature": "Execution Tracing & Budget",
+   "description": "Two complementary execution-cost primitives: `trace.rs` implements a span-tree execution tracer that records root → child spans (prompt assembly, credential resolution, CLI spawn, tool calls) with timing and token attribution, storing traces as JSON in `execution_traces`; `run_budget.rs` provides a run-level cost ceiling across multi-spawn operations (evolution cycles, lab matrices) where `--max-budget-usd` per-spawn is insufficient.",
+   "api_surface": "",
+   "db_tables": [
+    "execution_traces"
+   ],
+   "entry_points": [
+    "src-tauri/core/src/trace.rs",
+    "src-tauri/core/src/run_budget.rs"
+   ],
+   "cross_refs": [
+    "execution-state-models",
+    "execution-healing",
+    "core-error-handling"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/core/src/trace.rs",
+    "src-tauri/core/src/run_budget.rs"
+   ]
+  },
+  {
+   "name": "healing-repo",
+   "category": "data",
+   "business_feature": "Self-Healing & Circuit Breaker",
+   "description": "Repository for the self-healing engine — stores detected execution issues, healing action records, circuit breaker states, and scheduled retry jobs. When a persona execution fails in a recognized pattern, the healing engine proposes and attempts automated recovery actions tracked in these tables.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_healing_issues",
+    "circuit_breaker_state",
+    "scheduled_retries",
+    "chain_stop_reasons"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/execution/healing.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "audit-incidents-repo"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/execution/healing.rs",
+    "src-tauri/db/src/repos/execution/circuit_breaker.rs",
+    "src-tauri/db/src/repos/execution/scheduled_retries.rs",
+    "src-tauri/db/src/repos/execution/chain_stop_reasons.rs"
+   ]
+  },
+  {
+   "name": "http-inference-engine",
+   "category": "lib",
+   "business_feature": "Remote HTTP Inference",
+   "description": "Remote HTTP inference path that runs a persona against an OpenAI-compatible LLM provider (DashScope/Qwen) instead of the local Claude CLI. Handles streaming text, tool-calling loop, API-key storage in the OS keyring, and Tauri event emission matching the CLI path's contract. Enables BYOM (bring your own model) workflows for latency or cost trade-offs.",
+   "api_surface": "OpenAI-compatible /v1/chat/completions (outbound)",
+   "db_tables": [
+    "executions",
+    "tool_usage",
+    "credentials"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/http_engine/mod.rs",
+    "src-tauri/src/engine/http_engine/openai.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "tool-execution"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/engine/http_engine/mod.rs",
+    "src-tauri/src/engine/http_engine/config.rs",
+    "src-tauri/src/engine/http_engine/events.rs",
+    "src-tauri/src/engine/http_engine/openai.rs",
+    "src-tauri/src/engine/http_engine/secrets.rs",
+    "src-tauri/src/engine/http_engine/tools.rs"
+   ]
+  },
+  {
+   "name": "lab-testing-api",
+   "category": "api",
+   "business_feature": "Agent Lab & Testing",
+   "description": "IPC wrappers for the Agent Lab: arena (multi-model comparison runs), A/B testing, matrix runs, and eval runs — all designed to benchmark persona prompt versions against configurable models. Also covers test and test-suite CRUD for defining reusable evaluation scenarios. Powers the Lab 7-tab UI and version×model result table.",
+   "api_surface": "Tauri commands: lab_start_arena, lab_start_ab, lab_start_matrix, lab_start_eval, list_tests, create_test_suite",
+   "db_tables": [
+    "lab_arena_runs",
+    "lab_ab_runs",
+    "lab_matrix_runs",
+    "lab_eval_runs",
+    "persona_prompt_versions",
+    "lab_user_ratings"
+   ],
+   "entry_points": [
+    "src/api/agents/lab.ts"
+   ],
+   "cross_refs": [
+    "persona-lifecycle-api",
+    "build-session-api",
+    "genome-evolution-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/agents/lab.ts",
+    "src/api/agents/tests.ts",
+    "src/api/agents/testSuites.ts"
+   ]
+  },
+  {
+   "name": "model-routing",
+   "category": "lib",
+   "business_feature": "Model Routing & Selection",
+   "description": "Handles model selection and routing logic — mapping persona configurations and BYOM settings to actual LLM provider endpoints. Applies fallback strategies, tier-based routing, and cost optimization rules to select the appropriate model for each execution.",
+   "api_surface": "",
+   "db_tables": [
+    "byom_configs"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/model_routing.rs"
+   ],
+   "cross_refs": [
+    "chain-byom-repo",
+    "execution-repo"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src-tauri/db/src/model_routing.rs"
+   ]
+  },
+  {
+   "name": "output-stream-parser",
+   "category": "lib",
+   "business_feature": "Output Stream Parsing",
+   "description": "Parses the raw JSONL output stream from Claude CLI into typed protocol messages and stream line events. Handles tool use blocks, subagent fan-out attribution (P4), message chunking, safe JSON sanitization, and tool outcome classification. Forms the boundary between raw CLI bytes and typed execution events.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/parser.rs",
+    "src-tauri/engine/src/protocol.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "ai-provider-layer"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/engine/src/parser.rs",
+    "src-tauri/engine/src/protocol.rs",
+    "src-tauri/engine/src/chunker.rs",
+    "src-tauri/engine/src/safe_json.rs",
+    "src-tauri/engine/src/tool_outcome.rs"
+   ]
+  },
+  {
+   "name": "pipeline-and-automation",
+   "category": "lib",
+   "business_feature": "Team Pipeline Execution",
+   "description": "Runs multi-persona team pipeline graphs node-by-node (topological sort, predecessor tracking, conditional branching) and executes scheduled automation actions that are not persona executions. The pipeline executor auto-creates team memories from node outputs; the automation runner dispatches to platform-specific adapters (GitHub Actions, n8n, Zapier) on a schedule.",
+   "api_surface": "execute_pipeline_graph (internal)",
+   "db_tables": [
+    "team_assignments",
+    "team_assignment_steps",
+    "automation_runs",
+    "persona_automations"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/pipeline_executor.rs",
+    "src-tauri/src/engine/automation_runner.rs"
+   ],
+   "cross_refs": [
+    "platform-adapters",
+    "team-orchestration",
+    "execution-runner"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/engine/pipeline_executor.rs",
+    "src-tauri/src/engine/automation_runner.rs"
+   ]
+  },
+  {
+   "name": "realtime-event-bus-hooks",
+   "category": "lib",
+   "business_feature": "Realtime Event Bus",
+   "description": "Provides singleton Tauri event bus subscriptions shared across the UI so only one native listener is registered per channel. Covers the main PersonaEvent bus, run-scoped events, message-created events, animated event rendering, timeline replay, event coloring, Smee relay status, cloud webhook relay, and deployment event emission. Uses a createSingletonListener factory to avoid duplicate subscriptions when multiple components mount.",
+   "api_surface": "Tauri event channel: event-bus, run-events, message-created",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/realtime/createSingletonListener.ts",
+    "src/hooks/realtime/useEventBusListener.ts",
+    "src/hooks/realtime/useRealtimeEvents.ts"
+   ],
+   "cross_refs": [
+    "execution-streaming-hooks",
+    "execution-monitoring-hooks"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/hooks/realtime/createSingletonListener.ts",
+    "src/hooks/realtime/useEventBusListener.ts",
+    "src/hooks/realtime/useRunEventListener.ts",
+    "src/hooks/realtime/useMessageCreatedListener.ts",
+    "src/hooks/realtime/useRealtimeEvents.ts",
+    "src/hooks/realtime/useAnimatedEvents.ts"
+   ]
+  },
+  {
+   "name": "scheduler",
+   "category": "api",
+   "business_feature": "Agent Scheduler",
+   "description": "Cron-based scheduler that fires persona executions on a time schedule. Manages schedule CRUD, the tick loop, missed-run recovery, and the UI for browsing scheduled runs and their histories.",
+   "api_surface": "invoke('create_schedule'), invoke('delete_schedule'), invoke('get_schedules')",
+   "db_tables": [
+    "schedules",
+    "scheduled_runs"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/scheduler.rs",
+    "src/features/schedules/SchedulesPage.tsx"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "trigger-system",
+    "overview-analytics"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "testing-quality-repo",
+   "category": "data",
+   "business_feature": "Persona Testing & Quality Gates",
+   "description": "Repositories for persona test suites, test runs, assertions, and knowledge base quality gating. Allows users to define expected behavior tests that run against persona executions, with structured assertion results. The `quality_gate` module enforces pass/fail criteria before execution can be promoted.",
+   "api_surface": "",
+   "db_tables": [
+    "persona_test_suites",
+    "persona_test_runs",
+    "test_assertions"
+   ],
+   "entry_points": [
+    "src-tauri/db/src/repos/execution/test_suites.rs",
+    "src-tauri/db/src/quality_gate.rs"
+   ],
+   "cross_refs": [
+    "execution-repo",
+    "agent-persona-repo"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/db/src/repos/execution/test_suites.rs",
+    "src-tauri/db/src/repos/execution/test_runs.rs",
+    "src-tauri/db/src/repos/execution/assertions.rs",
+    "src-tauri/db/src/quality_gate.rs"
+   ]
+  },
+  {
+   "name": "tool-execution",
+   "category": "lib",
+   "business_feature": "Tool Execution",
+   "description": "Handles virtual tool dispatch during persona execution: built-in tools (filesystem, shell, search), MCP (Model Context Protocol) tools via stdio/SSE transport with session pooling, and dry-run preview that assembles the full prompt and tool surface without spawning a real subprocess. Acts as the tool execution broker between the runner and external capability providers.",
+   "api_surface": "execute_tool (internal), tools/list and tools/call (MCP)",
+   "db_tables": [
+    "tool_usage",
+    "connectors",
+    "credentials"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/tool_runner.rs",
+    "src-tauri/src/engine/mcp_tools.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "credential-lifecycle"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/engine/tool_runner.rs",
+    "src-tauri/src/engine/mcp_tools.rs",
+    "src-tauri/src/engine/dry_run.rs"
+   ]
+  }
+ ]
+}

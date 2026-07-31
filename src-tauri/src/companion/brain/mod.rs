@@ -6,6 +6,7 @@
 //! compiles cleanly.
 
 pub mod backlog;
+pub mod briefing;
 pub mod cockpit;
 pub mod consolidation;
 pub mod dashboard;

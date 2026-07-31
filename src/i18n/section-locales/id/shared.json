@@ -177,6 +177,18 @@
     "importance_prefix": "kepentingan:",
     "confidence_suffix": "% keyakinan"
   },
+  "surface": {
+    "section_label": "Permukaan",
+    "composed_badge": "Dibuat oleh agen",
+    "composed_tip": "Permukaan ini dideklarasikan oleh keluaran agen dan dirender dari katalog komponen bersama. Tindakan tidak pernah berjalan tanpa konfirmasi Anda.",
+    "dropped_blocks": "{count} blok tidak valid dikeluarkan dari permukaan ini.",
+    "no_target": "Tidak tersedia di sini — tampilan ini tidak memiliki proyek atau persona untuk ditindaklanjuti.",
+    "confirm_run_title": "Jalankan tindakan agen ini?",
+    "confirm_run_body": "\"{label}\" akan memulai eksekusi persona dengan masukan ini: {prompt}",
+    "confirm_run_action": "Jalankan",
+    "table_empty": "Tidak ada baris dalam tabel ini.",
+    "terminal_empty": "Tidak ada baris keluaran."
+  },
   "progress_extra": {
     "taking_longer": "Memakan waktu lebih lama dari yang diharapkan",
     "complete": "Selesai",

@@ -323,6 +323,16 @@ pub const COMPANION_EXEC_REVIEW_RETRY: &str = "companion_exec_review_retry";
 /// Additionally gated on the vault being configured. Stored `"true"`/`"false"`.
 pub const DIRECTOR_BRAIN_ENABLED: &str = "director_brain_enabled";
 
+/// Weekly USD budget for Director-commissioned experiments (Director's Lab).
+/// The Director declines to commission a verdict→experiment compile when the
+/// running week's evolution spend (genome-critique ledger rows) has consumed
+/// it. Stored as a decimal string; unset falls back to
+/// [`DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT`].
+pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD: &str = "director_weekly_experiment_budget_usd";
+/// Default weekly Director's Lab budget — mirrors the per-cycle evolution
+/// ceiling (`personas_core::run_budget::DEFAULT_EVOLUTION_CEILING_USD`).
+pub const DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD_DEFAULT: f64 = 2.0;
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -366,6 +376,39 @@ pub const COMPANION_DAILY_ROLLUP_HOUR_DEFAULT: u32 = 18;
 /// The local `YYYY-MM-DD` the rollup last fired — so it fires at most once a day.
 /// Free-form date value (no typed validation).
 pub const COMPANION_DAILY_ROLLUP_LAST: &str = "companion_daily_rollup_last";
+
+/// Night Shift v1 (moonshot batch-2) — whether Athena proposes an overnight
+/// fleet plan each evening (approval-gated; nothing runs unapproved), answers
+/// unattended `request_guidance` during an approved night window, parks
+/// destructive approvals, reviews exited sessions, and delivers the morning
+/// report. Default OFF — the most autonomous surface in the app is strictly
+/// opt-in. Read by `companion::night_shift`. Stored `"true"` / `"false"`.
+pub const COMPANION_NIGHT_SHIFT: &str = "companion_night_shift";
+/// Default for [`COMPANION_NIGHT_SHIFT`] — off (opt-in autonomy).
+pub const COMPANION_NIGHT_SHIFT_DEFAULT: bool = false;
+/// Local hour (0–23) at/after which the evening night-plan job may be
+/// enqueued. Default 21 (9pm).
+pub const COMPANION_NIGHT_SHIFT_PLAN_HOUR: &str = "companion_night_shift_plan_hour";
+/// Default for [`COMPANION_NIGHT_SHIFT_PLAN_HOUR`].
+pub const COMPANION_NIGHT_SHIFT_PLAN_HOUR_DEFAULT: u32 = 21;
+/// Local hour (0–23) that ends an approved plan's night window (wake time —
+/// when the morning report is delivered). Default 7.
+pub const COMPANION_NIGHT_SHIFT_WAKE_HOUR: &str = "companion_night_shift_wake_hour";
+/// Default for [`COMPANION_NIGHT_SHIFT_WAKE_HOUR`].
+pub const COMPANION_NIGHT_SHIFT_WAKE_HOUR_DEFAULT: u32 = 7;
+/// Minutes an unresolved `request_guidance` waits for a human during the
+/// night window before Athena answers unattended (clamped 1–8 by the reader
+/// so it undershoots the 10-minute MCP TTL). Default 5.
+pub const COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES: &str = "companion_night_shift_guidance_minutes";
+/// Default for [`COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES`].
+pub const COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES_DEFAULT: u32 = 5;
+/// Max fleet sessions a night plan may dispatch (reader clamps 1–6). Default 3.
+pub const COMPANION_NIGHT_SHIFT_MAX_SESSIONS: &str = "companion_night_shift_max_sessions";
+/// Default for [`COMPANION_NIGHT_SHIFT_MAX_SESSIONS`].
+pub const COMPANION_NIGHT_SHIFT_MAX_SESSIONS_DEFAULT: u32 = 3;
+/// The local `YYYY-MM-DD` the night-plan job was last enqueued — once a day.
+/// Free-form date value (no typed validation; audit-excluded bookkeeping).
+pub const COMPANION_NIGHT_SHIFT_PLAN_LAST: &str = "companion_night_shift_plan_last";
 
 /// Whether Athena runs the weekly behavioral profile-synthesis pass (F3) —
 /// learns how the user works from engage/dismiss / refine-chip / approval stats
@@ -645,6 +688,12 @@ pub const SCRATCHPAD_ENABLED: &str = "scratchpad_enabled";
 /// Default for [`SCRATCHPAD_ENABLED`] — ON (the scratchpad ships enabled).
 pub const SCRATCHPAD_ENABLED_DEFAULT: bool = true;
 
+/// Fleet mobile-companion paired devices — JSON array of device records
+/// (id, name, SHA-256 token fingerprint, timestamps, revoked flag). Contains
+/// fingerprints only, NEVER a plaintext token. Owned by
+/// `commands::fleet::pairing`.
+pub const FLEET_COMPANION_DEVICES: &str = "fleet_companion_devices";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -694,11 +743,18 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_MESSAGE_TRIAGE,
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
+    DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_NIGHT_SHIFT,
+    COMPANION_NIGHT_SHIFT_PLAN_HOUR,
+    COMPANION_NIGHT_SHIFT_WAKE_HOUR,
+    COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES,
+    COMPANION_NIGHT_SHIFT_MAX_SESSIONS,
+    COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS,
     COMPANION_PROFILE_SYNTHESIS_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
@@ -727,6 +783,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CHAIN_MAX_LINKS,
     SCRATCHPAD_ENABLED,
     SKILLS_SIDECAR_ENABLED,
+    FLEET_COMPANION_DEVICES,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -854,6 +911,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | COMPANION_DAILY_ROLLUP
+        | COMPANION_NIGHT_SHIFT
         | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
@@ -887,12 +945,22 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         CHAIN_MAX_LINKS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (max links per chain), got {value:?}")
         }),
-        COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
+        COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_NIGHT_SHIFT_PLAN_HOUR
+        | COMPANION_NIGHT_SHIFT_WAKE_HOUR => match value.parse::<u32>() {
             Ok(h) if h <= 23 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
+        COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES | COMPANION_NIGHT_SHIFT_MAX_SESSIONS => {
+            match value.parse::<u32>() {
+                Ok(n) if n > 0 => Ok(()),
+                _ => Err(format!(
+                    "value for '{key}' must be a positive integer, got {value:?}"
+                )),
+            }
+        }
         APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
         // -------------------------------------------------------------------
         // JSON-blob keys (Direction 2): validate against the ACTUAL consumer
@@ -1027,6 +1095,7 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     HEALTH_DIGEST_LAST_RUN,
     CREDENTIAL_HEALTHCHECK_LAST,
     COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS_LAST,
     // Cloud-sync bookkeeping: minted device id, last-pass watermark, row counter.
     CLOUD_SYNC_DEVICE_ID,
@@ -1099,6 +1168,7 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | FILE_WATCHER_DEBOUNCE_MS => "engine",
         // Numeric ceilings / rate limits.
         MONTHLY_COST_CEILING_USD
+        | DIRECTOR_WEEKLY_EXPERIMENT_BUDGET_USD
         | SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR
         | EVENT_RETENTION_MAX_COUNT => "limits",
         // Data-retention windows.
@@ -1124,6 +1194,11 @@ pub fn audit_category(key: &str) -> Option<&'static str> {
         | AUTONOMOUS_DELIBERATION
         | COMPANION_DAILY_ROLLUP
         | COMPANION_DAILY_ROLLUP_HOUR
+        | COMPANION_NIGHT_SHIFT
+        | COMPANION_NIGHT_SHIFT_PLAN_HOUR
+        | COMPANION_NIGHT_SHIFT_WAKE_HOUR
+        | COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES
+        | COMPANION_NIGHT_SHIFT_MAX_SESSIONS
         | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE

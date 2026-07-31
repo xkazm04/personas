@@ -779,6 +779,7 @@ pub async fn send_turn(
                     guide_walkthroughs: Vec::new(),
                     point_ats: Vec::new(),
                     composed_walkthroughs: Vec::new(),
+                    composed_tours: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     requests_continuation: false,
@@ -1082,6 +1083,26 @@ pub async fn send_turn(
         }
         if let Err(e) = app.emit(COMPOSE_COCKPIT_EVENT, serde_json::json!({})) {
             tracing::warn!(error = %e, "companion compose_cockpit event emit failed");
+        }
+    }
+
+    // compose_tour auto-fire (Generative Tours). Every spec in this vec
+    // already passed the anchor-manifest validation in the dispatcher, so
+    // persistence is a plain save; the tour surfaces in Home → Learning
+    // (composed-by-Athena lane) rather than interrupting the current turn.
+    for spec_json in &dispatched.composed_tours {
+        let persist = serde_json::from_str::<serde_json::Value>(spec_json)
+            .map_err(|e| e.to_string())
+            .and_then(|spec| {
+                let topic = spec.get("topic").and_then(|v| v.as_str()).unwrap_or("walkthrough").to_string();
+                let title = spec.get("title").and_then(|v| v.as_str()).unwrap_or("Walkthrough").to_string();
+                let description = spec.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let steps = spec.get("steps").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+                crate::companion::tours::save_tour(&user_db, &topic, &title, &description, &steps)
+                    .map_err(|e| e.to_string())
+            });
+        if let Err(e) = persist {
+            tracing::warn!(error = %e, "companion compose_tour save failed");
         }
     }
 

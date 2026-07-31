@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Recibe asesoramiento de cartera del Director",
     "pm_event_chain_title": "Encadena agentes con detectores de eventos",
     "pm_live_stream_title": "Observa cómo se propagan las cadenas en tiempo real",
-    "pm_athena_fleet_title": "Pide a Athena que analice tu flota"
+    "pm_athena_fleet_title": "Pide a Athena que analice tu flota",
+    "composed_tours": "Compuestas por Athena",
+    "composed_badge": "Compuesto por Athena",
+    "composed_stale": "Puede estar desactualizado — la aplicación ha cambiado desde que se compuso",
+    "composed_empty": "Cuando le pides a Athena que te muestre cómo funciona algo, los recorridos que compone aparecen aquí."
   },
   "setup_stepper": {
     "your_profile": "Tu perfil",

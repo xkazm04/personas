@@ -228,6 +228,18 @@
     "link_goal_none": "Không liên kết với mục tiêu nào"
   },
   "team_studio": {
+    "learning_heading": "Học hỏi của nhóm",
+    "learning_empty": "Chưa có bản ghi học hỏi — nhiệm vụ này kết thúc trước khi nhóm bắt đầu học từ kết quả.",
+    "learning_steps_summary": "{done} hoàn thành · {failed} thất bại · {skipped} bỏ qua",
+    "learning_interventions": "Can thiệp: {count}",
+    "learning_trust_heading": "Cập nhật độ tin cậy",
+    "learning_retro_held": "Đã họp hồi tưởng",
+    "learning_retro_skipped_trivial": "Bỏ qua hồi tưởng — lần chạy đơn giản",
+    "learning_retro_skipped_aborted": "Bỏ qua hồi tưởng — nhiệm vụ bị hủy",
+    "learning_retro_skipped_busy": "Bỏ qua hồi tưởng — một cuộc thảo luận khác đang diễn ra",
+    "learning_retro_none": "Không có hồi tưởng",
+    "learning_lessons_heading": "Bài học của nhóm",
+    "learning_no_lessons": "Chưa có bài học — các buổi hồi tưởng sẽ ghi lại tại đây.",
     "header_label": "Nhóm",
     "teams_header_label": "Nhóm",
     "teams_count_one": "{count} nhóm",

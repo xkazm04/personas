@@ -298,12 +298,31 @@ async fn run_breeding_pipeline(
         }
     }
 
-    let summary = format!(
-        "Bred {} offspring across {} generations from {} parents",
-        offspring_count,
-        max_generations,
-        parent_ids.len()
-    );
+    // -- Darwin Mode step 1: MEASURED offspring fitness ----------------------
+    // Replay the fixture set (lab scenarios generated from the fittest parent)
+    // through the top-ranked offspring and overwrite their inherited
+    // (mid-parent) prediction with a measured evaluation — assertion pass-rate
+    // + cost + latency, `fitness_source = 'measured'`. Budget-capped with a
+    // hard stop; offspring not reached stay honestly marked `inherited`.
+    let measured_count =
+        measure_top_offspring(&pool, &run_id, &parent_ids[0], &objective).await;
+
+    let summary = if measured_count > 0 {
+        format!(
+            "Bred {} offspring across {} generations from {} parents; measured fixture-replay fitness for the top {} (rest inherited)",
+            offspring_count,
+            max_generations,
+            parent_ids.len(),
+            measured_count,
+        )
+    } else {
+        format!(
+            "Bred {} offspring across {} generations from {} parents (fitness inherited — no offspring could be measured)",
+            offspring_count,
+            max_generations,
+            parent_ids.len()
+        )
+    };
 
     let now = chrono::Utc::now().to_rfc3339();
     let _ = genome_repo::update_run_status(
@@ -315,6 +334,134 @@ async fn run_breeding_pipeline(
         None,
         Some(&now),
     );
+}
+
+/// How many top-ranked offspring get a measured fixture-replay evaluation.
+const MEASURED_OFFSPRING_COUNT: usize = 3;
+
+/// Replay lab scenarios through the run's top offspring and persist measured
+/// fitness. Returns how many offspring were successfully measured.
+///
+/// Contained by design: any failure (scenario generation, genome parse, empty
+/// samples) leaves the affected offspring on its inherited prediction — a
+/// missing measurement is never faked as a zero.
+async fn measure_top_offspring(
+    pool: &crate::db::DbPool,
+    run_id: &str,
+    base_parent_id: &str,
+    objective: &FitnessObjective,
+) -> usize {
+    use crate::engine::fitness_driver::{
+        candidate_from_genome, default_eval_model, replay_candidate, score_measured_fitness,
+    };
+
+    let base_persona = match persona_repo::get_by_id(pool, base_parent_id) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(run_id = %run_id, error = %e, "Offspring measurement skipped: base parent unavailable");
+            return 0;
+        }
+    };
+    let tools = tool_repo::get_tools_for_persona(pool, base_parent_id).unwrap_or_default();
+
+    // Fixture set: lab scenarios for the parent's use-cases (cached ~10 min, so
+    // all offspring share one generation call).
+    let scenarios = match crate::engine::test_runner::generate_scenarios(
+        &base_persona,
+        &tools,
+        None,
+        None,
+        pool,
+    )
+    .await
+    {
+        Ok(s) if !s.is_empty() => s,
+        Ok(_) | Err(_) => {
+            tracing::info!(
+                run_id = %run_id,
+                "Offspring measurement skipped: no fixture scenarios available (fitness stays inherited)",
+            );
+            return 0;
+        }
+    };
+    let replay_set: Vec<_> = scenarios
+        .into_iter()
+        .take(crate::engine::fitness_driver::MAX_REPLAYS_PER_CANDIDATE)
+        .collect();
+
+    let results = match genome_repo::get_results_by_run(pool, run_id) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(run_id = %run_id, error = %e, "Offspring measurement skipped: could not list results");
+            return 0;
+        }
+    };
+
+    // Hard budget cap for the whole measurement phase (evolution burns tokens).
+    let budget_id = format!("breeding-measure-{run_id}");
+    let ledger = crate::engine::run_budget::ledger();
+    ledger.register(
+        &budget_id,
+        "evolution",
+        crate::engine::run_budget::evolution_ceiling_usd(),
+    );
+
+    let model = default_eval_model();
+    let mut measured = 0usize;
+    for result in results.iter().take(MEASURED_OFFSPRING_COUNT) {
+        if ledger.is_exceeded(&budget_id) {
+            tracing::warn!(
+                run_id = %run_id,
+                measured,
+                "Offspring measurement hard-stopped: budget ceiling reached (remaining stay inherited)",
+            );
+            break;
+        }
+        let genome: PersonaGenome = match serde_json::from_str(&result.genome_json) {
+            Ok(g) => g,
+            Err(_) => continue,
+        };
+        let candidate = candidate_from_genome(&base_persona, &genome);
+        if candidate.system_prompt.trim().is_empty() {
+            continue; // unrunnable genome — keep inherited ranking
+        }
+        let samples = replay_candidate(
+            pool,
+            &candidate,
+            &tools,
+            &replay_set,
+            &model,
+            &budget_id,
+            base_parent_id,
+        )
+        .await;
+        if let Some(fitness) = score_measured_fitness(&samples, objective) {
+            let fitness_json = match serde_json::to_string(&fitness) {
+                Ok(j) => j,
+                Err(_) => continue,
+            };
+            match genome_repo::update_result_fitness_measured(
+                pool,
+                &result.id,
+                &fitness_json,
+                fitness.overall,
+            ) {
+                Ok(()) => measured += 1,
+                Err(e) => {
+                    tracing::warn!(result_id = %result.id, error = %e, "Failed to persist measured fitness");
+                }
+            }
+        }
+    }
+
+    // Persist the measurement budget for cost-trend dashboards.
+    if let Some(budget) = ledger.finish(&budget_id) {
+        if let Err(e) = crate::db::repos::run_budget::persist(pool, &budget) {
+            tracing::warn!(run_id = %run_id, "measurement budget persist failed: {e}");
+        }
+    }
+
+    measured
 }
 
 /// Compare two fitness `overall` values descending, treating NaN as the WORST

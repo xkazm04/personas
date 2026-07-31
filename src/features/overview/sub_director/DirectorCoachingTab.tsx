@@ -28,6 +28,7 @@ import { CategoryRollup } from './components/CategoryRollup';
 import { MomentumSummary } from './components/MomentumSummary';
 import { ReviewFilteredAction } from './components/ReviewFilteredAction';
 import { StaleSweepButton } from './components/StaleSweepButton';
+import { CampaignReportPanel } from './components/CampaignReportPanel';
 import { filterRoster, type RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
@@ -243,6 +244,9 @@ export default function DirectorCoachingTab() {
                 onFilterChange={setRosterFilter}
               />
             </DirectorSection>
+
+            {/* Director's Lab — campaign report (batch-3 v1) */}
+            <CampaignReportPanel verdicts={d.verdicts} playEntrance={playEntrance} />
           </div>
         )}
         </div>

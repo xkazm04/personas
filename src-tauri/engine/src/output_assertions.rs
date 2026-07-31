@@ -706,3 +706,23 @@ mod tests {
         assert!(!result2.passed);
     }
 }
+
+// ============================================================================
+// Dry evaluation (Darwin Mode fitness driver)
+// ============================================================================
+
+/// Evaluate assertions against an output WITHOUT persisting results or touching
+/// any counters. Used by the evolution fitness driver to score fixture/workload
+/// replays whose outputs are discarded — feedback-loop hygiene requires that a
+/// challenger's own runs never write assertion evidence rows.
+///
+/// Returns `(passed, total)`.
+pub fn evaluate_assertions_dry(assertions: &[OutputAssertion], output: &str) -> (u32, u32) {
+    let mut passed = 0u32;
+    for assertion in assertions {
+        if evaluate_one(assertion, output).passed {
+            passed += 1;
+        }
+    }
+    (passed, assertions.len() as u32)
+}

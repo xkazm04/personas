@@ -16,6 +16,12 @@ import * as toastStoreModule from "@/stores/toastStore";
 
 import {
   createTourSlice,
+  registerDynamicTour,
+  getTourById,
+  getActiveTourSteps,
+  getDynamicTours,
+  isDynamicTourId,
+  type TourDef,
   type TourSlice,
   type TourId,
 } from "./tourSlice";
@@ -285,5 +291,86 @@ describe("tourSlice storage probe", () => {
     } finally {
       Storage.prototype.setItem = original;
     }
+  });
+});
+
+// -- Generative Tours: dynamic tour registry -----------------------------
+
+function makeDynamicDef(id: `athena-${string}`): TourDef & { id: `athena-${string}` } {
+  return {
+    id,
+    title: "Composed: schedules 101",
+    description: "Athena-composed walkthrough",
+    icon: "Sparkles",
+    color: "violet",
+    steps: [
+      {
+        id: "composed-step-1",
+        title: "Open Schedules",
+        description: "Where timed triggers live.",
+        hint: "Look around.",
+        nav: { sidebarSection: "schedules" },
+        completeOn: "tour:composed-step-explored",
+        subSteps: [],
+        narration: "Here are your schedules.",
+      },
+    ],
+  };
+}
+
+describe("dynamic (Athena-composed) tours", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetGlobals();
+    globalThis.__personasDynamicTours = undefined;
+  });
+
+  it("registerDynamicTour makes the tour resolvable through the SAME helpers GuidedTour uses", () => {
+    const def = makeDynamicDef("athena-test-1");
+    expect(getTourById(def.id)).toBeUndefined();
+    const id = registerDynamicTour(def);
+    expect(id).toBe("athena-test-1");
+    expect(getTourById(def.id)?.title).toBe("Composed: schedules 101");
+    expect(getActiveTourSteps(def.id)).toHaveLength(1);
+    expect(getDynamicTours().map((t) => t.id)).toContain("athena-test-1");
+  });
+
+  it("static registry wins over a dynamic id collision and isDynamicTourId discriminates", () => {
+    expect(isDynamicTourId("athena-abc")).toBe(true);
+    expect(isDynamicTourId("getting-started")).toBe(false);
+    // A static id is resolved from TOUR_REGISTRY even if something tried to
+    // shadow it (the dynamic map is only consulted as a fallback).
+    expect(getTourById("getting-started")?.steps.length).toBeGreaterThan(0);
+  });
+
+  it("startTour plays a registered dynamic tour through the normal machinery", () => {
+    const def = makeDynamicDef("athena-test-2");
+    registerDynamicTour(def);
+    const h = makeHarness();
+    h.slice().startTour(def.id);
+    expect(h.state().tourActive).toBe(true);
+    expect(h.state().tourActiveTourId).toBe("athena-test-2");
+    // The acknowledge event completes the composed step.
+    h.slice().emitTourEvent("tour:composed-step-explored");
+    expect(h.state().tourStepCompleted["composed-step-1"]).toBe(true);
+    h.slice().advanceTour();
+    expect(h.state().tourCompleted).toBe(true);
+    expect(h.slice().isTourCompleted(def.id)).toBe(true);
+  });
+
+  it("dynamic tour progress survives the persist cycle (athena- keys are carried over)", () => {
+    const def = makeDynamicDef("athena-test-3");
+    registerDynamicTour(def);
+    const h = makeHarness();
+    h.slice().startTour(def.id);
+    h.slice().emitTourEvent("tour:composed-step-explored");
+    h.slice().dismissTour();
+    // A later persist for a DIFFERENT (static) tour must not drop the
+    // dynamic tour's saved state.
+    h.slice().startTour("getting-started");
+    h.slice().dismissTour();
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    expect(raw.tours["athena-test-3"]).toBeTruthy();
+    expect(raw.tours["athena-test-3"].completedSteps["composed-step-1"]).toBe(true);
   });
 });

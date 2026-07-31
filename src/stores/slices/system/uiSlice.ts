@@ -29,6 +29,16 @@ export interface ContextualCockpit {
         kind: 'explain';
         decisionId: string;
         decisionTitle: string;
+      }
+    | {
+        /** Morning Director session-open briefing (Home → Cockpit overlay). */
+        kind: 'briefing';
+        /** ISO timestamp the briefing was composed — drives the dated banner. */
+        generatedAt: string;
+        /** `athena` = LLM-composed (sanitized); `fallback` = deterministic
+         *  composition after an LLM failure; `quiet` = the honest
+         *  nothing-happened state (no LLM call fired). */
+        composedBy: 'athena' | 'fallback' | 'quiet';
       };
   /** Widget spec body — same shape Athena emits via compose_cockpit. */
   spec: CompanionCockpitSpecBody;

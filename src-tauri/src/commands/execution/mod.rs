@@ -2,6 +2,7 @@
 pub mod ambient;
 pub mod annotations;
 pub mod assertions;
+pub mod alert_evaluator;
 pub mod audit_incidents;
 #[cfg(all(feature = "desktop", feature = "ml"))]
 pub mod clipboard_intel;
@@ -9,9 +10,12 @@ pub mod evolution;
 pub mod executions;
 pub mod genome;
 pub mod healing;
+pub mod incident_diagnosis;
+pub mod journal;
 pub mod knowledge;
 pub mod lab;
 pub mod policy_events;
+pub mod policy_tuning;
 pub mod scheduler;
 pub mod test_suites;
 pub mod tests;

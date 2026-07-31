@@ -144,6 +144,81 @@ fn compose_rollup(user_db: &UserDbPool) -> Result<String, AppError> {
     Ok(s)
 }
 
+/// Night Shift morning report — the rollup delivered as the first proactive
+/// message at wake (`night_shift::tick` → `maybe_emit_morning_report`).
+/// Composed deterministically from the `companion_night_event` ledger, in the
+/// same backend-composed style as the daily rollup above. Deliberately a
+/// rollup CARD, not a briefing: the session-open Morning Director
+/// (`brain::briefing::compose_briefing`, batch-1) remains the one briefing
+/// composer — this card is the overnight ledger it can draw on.
+pub fn compose_night_report(
+    user_db: &UserDbPool,
+    plan: &crate::companion::night_shift::NightPlan,
+) -> Result<String, AppError> {
+    use crate::companion::night_shift as ns;
+
+    let dispatched = ns::events_for_plan(user_db, &plan.id, ns::EVENT_DISPATCH)?;
+    let verdicts = ns::events_for_plan(user_db, &plan.id, ns::EVENT_REVIEW_VERDICT)?;
+    let guidance = ns::events_for_plan(user_db, &plan.id, ns::EVENT_UNATTENDED_GUIDANCE)?;
+    let parked = ns::events_for_plan(user_db, &plan.id, ns::EVENT_APPROVAL_PARKED)?;
+
+    let mut s = format!(
+        "**Night shift report** — {}\n\nI ran **{}** session(s) overnight.\n",
+        plan.summary,
+        dispatched.len()
+    );
+
+    let mut shipped = 0usize;
+    let mut parked_reviews: Vec<String> = Vec::new();
+    let mut retries: Vec<String> = Vec::new();
+    for (_sid, payload) in &verdicts {
+        let v: serde_json::Value = serde_json::from_str(payload).unwrap_or_default();
+        let verdict = v.get("verdict").and_then(|x| x.as_str()).unwrap_or("");
+        let reason = v.get("reason").and_then(|x| x.as_str()).unwrap_or("");
+        match verdict {
+            "ship_to_branch" => shipped += 1,
+            "park_for_human" => parked_reviews.push(reason.to_string()),
+            "retry_with_feedback" => retries.push(reason.to_string()),
+            _ => {}
+        }
+    }
+    if !verdicts.is_empty() {
+        s.push_str(&format!(
+            "- Review station: **{shipped}** branch(es) ready for your merge, {} parked, {} worth a retry.\n",
+            parked_reviews.len(),
+            retries.len()
+        ));
+    }
+    let unreviewed = dispatched.len().saturating_sub(verdicts.len());
+    if unreviewed > 0 {
+        s.push_str(&format!(
+            "- **{unreviewed}** session(s) not yet reviewed (still open or review pending).\n"
+        ));
+    }
+    if !guidance.is_empty() {
+        s.push_str(&format!(
+            "- I answered **{}** worker question(s) unattended — each is in the decision log.\n",
+            guidance.len()
+        ));
+    }
+    if !parked.is_empty() {
+        s.push_str(&format!(
+            "- ⚠️ I parked **{}** destructive approval request(s) for you:\n",
+            parked.len()
+        ));
+        for (_sid, payload) in &parked {
+            let v: serde_json::Value = serde_json::from_str(payload).unwrap_or_default();
+            let action = v.get("action").and_then(|x| x.as_str()).unwrap_or("unknown action");
+            s.push_str(&format!("  - {action}\n"));
+        }
+    }
+    for reason in parked_reviews.iter().take(3) {
+        s.push_str(&format!("- Parked: {reason}\n"));
+    }
+    s.push_str("\nNothing was merged or pushed — every change sits on a night branch awaiting you.");
+    Ok(s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,5 +273,44 @@ mod tests {
         assert!(body.contains("**2** created"));
         assert!(body.contains("1 engaged"));
         assert!(body.contains("background job(s) failed"));
+    }
+
+    #[test]
+    fn night_report_rolls_up_the_ledger() {
+        let manager = SqliteConnectionManager::memory();
+        let pool: UserDbPool = Pool::builder().max_size(1).build(manager).expect("pool");
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE companion_night_event (id TEXT, plan_id TEXT, kind TEXT,
+                fleet_session_id TEXT, project_label TEXT, payload_json TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')));
+             INSERT INTO companion_night_event (id, plan_id, kind, fleet_session_id, payload_json) VALUES
+                ('e1','p1','dispatch','s1','{}'),
+                ('e2','p1','dispatch','s2','{}'),
+                ('e3','p1','review_verdict','s1','{\"verdict\":\"ship_to_branch\",\"reason\":\"clean\"}'),
+                ('e4','p1','unattended_guidance','s2','{\"question\":\"q\",\"answer\":\"a\"}'),
+                ('e5','p1','approval_parked','s2','{\"action\":\"force-push\",\"rationale\":\"r\"}');",
+        )
+        .unwrap();
+        drop(conn);
+
+        let plan = crate::companion::night_shift::NightPlan {
+            id: "p1".into(),
+            status: "running".into(),
+            summary: "two repos".into(),
+            plan_json: "{}".into(),
+            window_end: None,
+            max_sessions: 3,
+            created_at: "2026-07-30T00:00:00Z".into(),
+            approved_at: None,
+            completed_at: None,
+        };
+        let body = compose_night_report(&pool, &plan).unwrap();
+        assert!(body.contains("**2** session(s)"));
+        assert!(body.contains("**1** branch(es) ready"));
+        assert!(body.contains("**1** session(s) not yet reviewed"));
+        assert!(body.contains("**1** worker question(s)"));
+        assert!(body.contains("force-push"));
+        assert!(body.contains("Nothing was merged or pushed"));
     }
 }

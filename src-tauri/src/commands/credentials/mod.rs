@@ -1,6 +1,7 @@
 pub mod ai_artifact_flow;
 pub mod api_proxy;
 pub mod auth_detect;
+pub mod broker;
 pub mod auto_cred_browser;
 pub mod cli_capture;
 pub mod connectors;

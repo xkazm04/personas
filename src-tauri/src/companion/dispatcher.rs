@@ -74,6 +74,13 @@ pub struct Dispatched {
     /// frontend runs the runtime-assembled multi-step tour. Each step's anchor
     /// validated against `ANCHOR_IDS`; step count clamped to a sane range.
     pub composed_walkthroughs: Vec<ComposedWalkthrough>,
+    /// `compose_tour` payloads (Generative Tours) — serialized
+    /// `{topic, title, description, steps}` specs whose every step already
+    /// passed `companion::tours::validate_tour_spec` against the generated
+    /// anchor manifest (unknown anchors reject the whole tour). session.rs
+    /// persists each via `tours::save_tour`; the tour then appears in the
+    /// Home → Learning timeline with the composed-by-Athena badge.
+    pub composed_tours: Vec<String>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -1641,9 +1648,16 @@ pub fn dispatch(
                     cleaned_lines.push(line);
                     continue;
                 }
-                if !GUIDED_TOPICS.contains(&topic) {
+                // Generative Tours: a topic OUTSIDE the static registry is no
+                // longer rejected — it is offered as a *generative* walkthrough
+                // ("Show me" composes a tour via `compose_tour` instead of
+                // playing a registry script). Sanitize free-text topics hard:
+                // they render in the widget and seed the compose prompt.
+                let is_static = GUIDED_TOPICS.contains(&topic);
+                if !is_static && topic.len() > 120 {
                     out.warnings.push(format!(
-                        "rejected walkthrough offer topic `{topic}` (expected one of {GUIDED_TOPICS:?})"
+                        "rejected walkthrough offer topic (too long: {} chars)",
+                        topic.len()
                     ));
                     cleaned_lines.push(line);
                     continue;
@@ -1651,7 +1665,11 @@ pub fn dispatch(
                 out.chat_cards.push(ChatCard {
                     kind: "walkthrough_offer".to_string(),
                     title: None,
-                    config: serde_json::json!({ "topic": topic, "summary": summary }),
+                    config: serde_json::json!({
+                        "topic": topic,
+                        "summary": summary,
+                        "generative": !is_static,
+                    }),
                 });
             }
             Ok(env)
@@ -1767,6 +1785,42 @@ pub fn dispatch(
                     .filter(|s| !s.is_empty());
                 out.composed_walkthroughs
                     .push(ComposedWalkthrough { title, steps });
+            }
+            Ok(env) if env.op == "propose_action" && env.action == "compose_tour" => {
+                // Generative Tours: a full persisted tour (vs the ephemeral
+                // `compose_walkthrough` above). Every step is proven against
+                // the generated tour-anchor manifest — an unknown spotlight
+                // anchor, sidebar section, or sub-tab setter rejects the
+                // WHOLE tour with a warning Athena sees next turn. Valid
+                // specs are persisted by session.rs via `tours::save_tour`
+                // and surface in the Learning timeline with the
+                // composed-by-Athena badge.
+                let topic = env
+                    .params
+                    .get("topic")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty() && s.len() <= 120)
+                    .unwrap_or("walkthrough");
+                match crate::companion::tours::validate_tour_spec(&env.params) {
+                    Ok((title, description, steps)) => {
+                        out.composed_tours.push(
+                            serde_json::json!({
+                                "topic": topic,
+                                "title": title,
+                                "description": description,
+                                "steps": steps,
+                            })
+                            .to_string(),
+                        );
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected compose_tour: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
             }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
@@ -2584,6 +2638,34 @@ mod tests {
         assert_eq!(out.approvals[0].action, "dev_improve");
         assert!(out.warnings.is_empty(), "warnings: {:?}", out.warnings);
         assert!(!out.cleaned_text.contains("OP:"));
+    }
+
+    // ── compose_tour (Generative Tours) ─────────────────────────────────
+
+    #[test]
+    fn compose_tour_collects_manifest_valid_spec() {
+        let op = r###"{"op":"propose_action","action":"compose_tour","params":{"topic":"scheduling","title":"Meet Schedules","description":"Timed triggers.","steps":[{"id":"open-schedules","title":"Open Schedules","description":"Every timed trigger lives here.","hint":"Look around.","nav":{"sidebarSection":"schedules"}}]},"rationale":"user asked to be shown"}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.composed_tours.len(), 1, "warnings: {:?}", out.warnings);
+        assert!(!out.cleaned_text.contains("compose_tour"));
+        let spec: serde_json::Value = serde_json::from_str(&out.composed_tours[0]).unwrap();
+        assert_eq!(spec["topic"], "scheduling");
+        assert_eq!(
+            spec["steps"][0]["completeOn"], "tour:composed-step-explored",
+            "composed steps must advance on the acknowledge event"
+        );
+    }
+
+    #[test]
+    fn compose_tour_rejects_unknown_anchor_wholesale() {
+        let op = r###"{"op":"propose_action","action":"compose_tour","params":{"topic":"x","title":"T","steps":[{"title":"S","description":"D","nav":{"sidebarSection":"schedules"},"highlightTestId":"totally-hallucinated-anchor-xyz"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.composed_tours.is_empty());
+        assert!(
+            out.warnings.iter().any(|w| w.contains("unknown anchor")),
+            "warnings: {:?}",
+            out.warnings
+        );
     }
 }
 

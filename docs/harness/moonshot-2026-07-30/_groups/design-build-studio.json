@@ -1,0 +1,495 @@
+{
+ "id": "06c96134-c206-4582-9489-96b0f75c8ff9",
+ "name": "Design & Build Studio",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "ai-design-tab",
+   "category": "ui",
+   "business_feature": "AI Design Tab",
+   "description": "Conversational AI-driven design tab embedded in the persona editor. Guides the user through analysis, refining, previewing, and applying phases that generate or update a persona's prompt and parameters via an LLM conversation. Manages multi-phase state (analyzing, refining, preview, applied, error) and displays example input/output pairs.",
+   "api_surface": "run_design_session, apply_design",
+   "db_tables": [
+    "personas",
+    "design_sessions"
+   ],
+   "entry_points": [
+    "src/features/agents/sub_design/DesignTab.tsx",
+    "src/features/agents/sub_design/libs/useDesignTabState.ts"
+   ],
+   "cross_refs": [
+    "persona-editor",
+    "persona-build-matrix"
+   ],
+   "file_count": 27,
+   "sample_files": [
+    "src/features/agents/sub_design/DesignHub.tsx",
+    "src/features/agents/sub_design/DesignTab.tsx",
+    "src/features/agents/sub_design/DesignTabHelpers.ts",
+    "src/features/agents/sub_design/DesignQuestionPanel.tsx",
+    "src/features/agents/sub_design/IntentResultExtras.tsx",
+    "src/features/agents/sub_design/PhaseIndicator.tsx"
+   ]
+  },
+  {
+   "name": "build-session-lifecycle",
+   "category": "lib",
+   "business_feature": "Persona Build Session",
+   "description": "Multi-turn interactive build session engine that wraps the CLI subprocess in a per-session lifecycle with tokio channels for user Q&A, checkpoint-based SQLite persistence, and real-time Tauri event streaming. The orchestrator fans work out to capability-specific sub-agents, and oneshot mode handles the simple single-capability path without the full multi-turn loop.",
+   "api_surface": "start_build_session, answer_build_question (Tauri commands)",
+   "db_tables": [
+    "build_sessions",
+    "user_answers",
+    "connectors",
+    "credentials"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/build_session/mod.rs",
+    "src-tauri/src/engine/build_session/orchestrator.rs"
+   ],
+   "cross_refs": [
+    "build-session-quality",
+    "execution-runner"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/engine/build_session/mod.rs",
+    "src-tauri/src/engine/build_session/runner.rs",
+    "src-tauri/src/engine/build_session/orchestrator.rs",
+    "src-tauri/src/engine/build_session/events.rs",
+    "src-tauri/src/engine/build_session/fanout.rs",
+    "src-tauri/src/engine/build_session/oneshot.rs"
+   ]
+  },
+  {
+   "name": "build-session-quality",
+   "category": "lib",
+   "business_feature": "Build Session Quality Gates",
+   "description": "Quality-gating layer inside build sessions: the Rule 16/17 state machine that enforces tool-test and connector-validation gates before promotion, the fix-pass that auto-patches failing steps, the LLM-driven pre-promote test runner, and the system prompt and template-context assemblers that give the build LLM its reference materials. Also includes the stream-JSON parser that translates raw CLI output into typed BuildEvents.",
+   "api_surface": "run_tool_tests (internal)",
+   "db_tables": [
+    "build_sessions",
+    "recipe_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/build_session/gates.rs",
+    "src-tauri/src/engine/build_session/session_prompt.rs"
+   ],
+   "cross_refs": [
+    "build-session-lifecycle"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/src/engine/build_session/gates.rs",
+    "src-tauri/src/engine/build_session/fix_pass.rs",
+    "src-tauri/src/engine/build_session/tool_tests.rs",
+    "src-tauri/src/engine/build_session/parser.rs",
+    "src-tauri/src/engine/build_session/session_prompt.rs",
+    "src-tauri/src/engine/build_session/templates.rs"
+   ]
+  },
+  {
+   "name": "capability-config-view",
+   "category": "ui",
+   "business_feature": "Capability Configuration View",
+   "description": "Capability-centric persona creation view used in the new-persona wizard. Organises capabilities into expandable rows (each with header, summary, and pane tabs for connectors, events, policies, and trigger) and provides a modal for adding new capabilities. The capabilityHelpers utility derives the row data from the raw capability definition.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityRow.tsx"
+   ],
+   "cross_refs": [
+    "persona-build-matrix",
+    "agent-use-cases",
+    "connector-status"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx",
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityChip.tsx",
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityRow.tsx",
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowHeader.tsx",
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowSummary.tsx",
+    "src/features/agents/sub_new_persona/capabilityView/CapabilityRowTabs.tsx"
+   ]
+  },
+  {
+   "name": "credential-design-hooks",
+   "category": "lib",
+   "business_feature": "Credential Design Flow",
+   "description": "Hooks for the credential negotiation sub-flow within persona design: orchestrating a step graph of credential requirements, querying which credentials are available (foraging), applying a design result's credential bindings, and driving the negotiator UX through required/optional credential steps. Bridges the design analysis output to the Security & Credentials domain.",
+   "api_surface": "",
+   "db_tables": [
+    "credentials",
+    "connectors"
+   ],
+   "entry_points": [
+    "src/hooks/design/credential/useCredentialNegotiator.ts",
+    "src/hooks/design/credential/negotiatorStepGraph.ts"
+   ],
+   "cross_refs": [
+    "persona-design-core-hooks",
+    "oauth-flow-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/hooks/design/credential/useCredentialDesign.ts",
+    "src/hooks/design/credential/useCredentialNegotiator.ts",
+    "src/hooks/design/credential/useCredentialForaging.ts",
+    "src/hooks/design/credential/applyDesignResult.ts",
+    "src/hooks/design/credential/negotiatorStepGraph.ts"
+   ]
+  },
+  {
+   "name": "design-template-api",
+   "category": "api",
+   "business_feature": "Persona Design & Templates",
+   "description": "IPC wrappers for the AI-assisted persona design pipeline (start/refine/cancel design analysis, feasibility testing, compile-from-intent), template adoption (snapshot polling, answer submission for AI-guided questionnaire), n8n workflow import-and-transform (converting n8n workflow JSON into persona drafts), template rating/feedback, localized team presets, and platform definition management (custom node-type schemas for non-standard automation platforms). Together these power the full persona creation funnel from template or blank canvas.",
+   "api_surface": "Tauri commands: start_design_analysis, refine_design, start_adopt_template, get_adopt_snapshot, transform_n8n_workflow, rate_template, list_team_presets, list_platform_definitions, list_recipes",
+   "db_tables": [
+    "template_feedback",
+    "team_presets",
+    "platform_definitions",
+    "persona_recipes"
+   ],
+   "entry_points": [
+    "src/api/design/design.ts",
+    "src/api/templates/templateAdopt.ts"
+   ],
+   "cross_refs": [
+    "persona-lifecycle-api",
+    "build-session-api",
+    "overview-intelligence-api"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/api/design/design.ts",
+    "src/api/templates/templateAdopt.ts",
+    "src/api/templates/n8nTransform.ts",
+    "src/api/templates/templateFeedback.ts",
+    "src/api/templates/teamPresets.ts",
+    "src/api/platforms/platformDefinitions.ts"
+   ]
+  },
+  {
+   "name": "persona-build-matrix",
+   "category": "ui",
+   "business_feature": "Persona Build Matrix",
+   "description": "The build matrix panel where the system assembles a persona from capabilities, model config, and connectors into a runnable agent. Includes the unified build entry, behavior core editor, build context field, simulation preview, template confidence scoring, shared resources panel, and lifecycle/build hooks. Tests cover template matching confidence and the cancel-build flow.",
+   "api_surface": "build_persona, cancel_build, list_templates",
+   "db_tables": [
+    "personas",
+    "templates",
+    "build_sessions"
+   ],
+   "entry_points": [
+    "src/features/agents/components/matrix/UnifiedBuildEntry.tsx",
+    "src/features/agents/components/matrix/useBuild.ts"
+   ],
+   "cross_refs": [
+    "persona-editor",
+    "persona-creation-flow",
+    "ai-design-tab"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/agents/components/matrix/UnifiedBuildEntry.tsx",
+    "src/features/agents/components/matrix/BehaviorCoreEditor.tsx",
+    "src/features/agents/components/matrix/BuildContextField.tsx",
+    "src/features/agents/components/matrix/BuildSimulatePanel.tsx",
+    "src/features/agents/components/matrix/BuildTemplateSuggestion.tsx",
+    "src/features/agents/components/matrix/buildTemplateMatchConfidence.ts"
+   ]
+  },
+  {
+   "name": "persona-capability-blueprint",
+   "category": "lib",
+   "business_feature": "Persona Capability Blueprint",
+   "description": "Type definitions and catalog primitives for persona capabilities, archetypes, and adoption answers. The api_definition and capability_contract modules define the structured contract between a persona and its tools/connectors; archetype_catalog supplies the 9 built-in persona archetypes for the Foundry creator; adoption_answers persists the answers a user gave during persona adoption onboarding.",
+   "api_surface": null,
+   "db_tables": [
+    "personas",
+    "persona_tool_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/capability_contract.rs",
+    "src-tauri/engine/src/archetype_catalog.rs"
+   ],
+   "cross_refs": [
+    "persona-compilers",
+    "recipe-adoption"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/engine/src/api_definition.rs",
+    "src-tauri/engine/src/capability_contract.rs",
+    "src-tauri/engine/src/archetype_catalog.rs",
+    "src-tauri/engine/src/adoption_answers.rs"
+   ]
+  },
+  {
+   "name": "persona-compilers",
+   "category": "lib",
+   "business_feature": "Persona Compilers",
+   "description": "Two specialized compilers for creating and refining personas via LLM: PersonaCompiler refines an existing persona through the staged compilation framework; IntentCompiler bootstraps a complete persona (prompt + tools + triggers + tests) from a plain-language intent string. Both delegate shared prompt parsing to design.rs and use the CompilationPipeline trait.",
+   "api_surface": null,
+   "db_tables": [
+    "personas",
+    "persona_tool_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/compiler.rs",
+    "src-tauri/engine/src/intent_compiler.rs"
+   ],
+   "cross_refs": [
+    "persona-design-engine",
+    "build-compilation-pipeline"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/engine/src/compiler.rs",
+    "src-tauri/engine/src/intent_compiler.rs"
+   ]
+  },
+  {
+   "name": "persona-creation-flow",
+   "category": "lib",
+   "business_feature": "Persona Creation Flow",
+   "description": "Handles template-intent matching during the new-persona creation flow. The useTemplateIntentMatch hook analyses the user's natural-language intent and suggests the closest matching template archetype, bridging the gap between open-ended creation and structured templates.",
+   "api_surface": null,
+   "db_tables": [
+    "templates"
+   ],
+   "entry_points": [
+    "src/features/agents/components/create/useTemplateIntentMatch.ts"
+   ],
+   "cross_refs": [
+    "persona-build-matrix",
+    "ai-design-tab"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/agents/components/create/useTemplateIntentMatch.ts"
+   ]
+  },
+  {
+   "name": "persona-design-core-hooks",
+   "category": "lib",
+   "business_feature": "AI Persona Design Core",
+   "description": "The central hooks powering AI-driven persona design: streaming Tauri output during analysis, compiling natural-language intent into persona configurations, running automation design, maintaining a playbook cache, managing multi-turn design conversations, and orchestrating background preview/rebuild cycles. useDesignAnalysis is the foundational hook; usePersonaCompiler wraps it with compiler-stage semantics; useTauriStream provides the raw streaming plumbing.",
+   "api_surface": "Tauri commands: start_design_analysis, refine_analysis, apply_result, cancel_analysis",
+   "db_tables": [
+    "personas",
+    "design_sessions"
+   ],
+   "entry_points": [
+    "src/hooks/design/core/usePersonaCompiler.ts",
+    "src/hooks/design/core/useDesignAnalysis.ts",
+    "src/hooks/design/core/useTauriStream.ts"
+   ],
+   "cross_refs": [
+    "credential-design-hooks",
+    "template-recipe-hooks",
+    "build-session-hooks"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/hooks/design/core/useDesignAnalysis.ts",
+    "src/hooks/design/core/usePersonaCompiler.ts",
+    "src/hooks/design/core/useAiSearch.ts",
+    "src/hooks/design/core/useAutomationDesign.ts",
+    "src/hooks/design/core/useDesignContextMutator.ts",
+    "src/hooks/design/core/useDesignConversation.ts"
+   ]
+  },
+  {
+   "name": "persona-design-engine",
+   "category": "lib",
+   "business_feature": "Persona Design Engine",
+   "description": "Prompt builders and output parsers for the AI-driven persona design surface. Provides functions to assemble Claude prompts for initial design analysis and iterative refinement, extract structured design results and feasibility assessments from model output, and define the FeasibilityResult type. Shared by both PersonaCompiler and IntentCompiler.",
+   "api_surface": null,
+   "db_tables": [
+    "personas",
+    "persona_tool_definitions",
+    "connector_definitions"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/design.rs"
+   ],
+   "cross_refs": [
+    "persona-compilers",
+    "persona-capability-blueprint"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/engine/src/design.rs",
+    "src-tauri/engine/src/design_context.rs"
+   ]
+  },
+  {
+   "name": "render-plan-ir",
+   "category": "lib",
+   "business_feature": "Media Render Plan",
+   "description": "Intermediate representation compiler for the Media Studio that translates a user-authored Composition into a flat, pre-resolved RenderPlan consumable by both the browser preview and FFmpeg export renderers. The compiler is pure (no I/O); invariant checker validates I1–I11 properties in debug builds; the test module covers the golden example and all negative invariant paths.",
+   "api_surface": "compile(Composition) -> RenderPlan (internal)",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/src/engine/render_plan/mod.rs",
+    "src-tauri/src/engine/render_plan/compile.rs"
+   ],
+   "cross_refs": [],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/engine/render_plan/mod.rs",
+    "src-tauri/src/engine/render_plan/compile.rs",
+    "src-tauri/src/engine/render_plan/invariants.rs",
+    "src-tauri/src/engine/render_plan/tests.rs"
+   ]
+  },
+  {
+   "name": "studio-build-controls",
+   "category": "ui",
+   "business_feature": "Build Settings & Design Knobs",
+   "description": "Per-project build configuration controls surfaced in a popover off the chat input: effort level (fast/balanced/deep/max), Athena voice/style (concise/balanced/teaching), enabled MCP connectors (Docs, Browser), and global design knobs (spacing, corner radius, type scale, vibe) that send templated nudge prompts to Athena. All settings write to the active project's runtime slice in studioStore so every subsequent turn picks them up without the user re-specifying them.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/studio/StudioBuildSettings.tsx"
+   ],
+   "cross_refs": [
+    "studio-core",
+    "studio-chat"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/studio/StudioBuildSettings.tsx",
+    "src/features/studio/StudioDesignKnobs.tsx"
+   ]
+  },
+  {
+   "name": "studio-chat",
+   "category": "ui",
+   "business_feature": "Athena Chat & Decision Interface",
+   "description": "The conversational interface for steering Athena during a build: a collapsible dock (StudioChatInput) docked bottom-centre over the live preview, a streaming message log with a typewriter reveal (StudioMessages), a first-class decision card that lets Athena surface a numbered-choice question and the user answer by click or keypress (StudioDecision), and context-aware quick-action chips derived from the live build plan (StudioQuickActions). Together they form the turn-based dialogue that drives the build without covering the preview.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/studio/StudioChatInput.tsx",
+    "src/features/studio/StudioDecision.tsx"
+   ],
+   "cross_refs": [
+    "studio-core",
+    "studio-plan",
+    "studio-build-controls"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/studio/StudioChatInput.tsx",
+    "src/features/studio/StudioMessages.tsx",
+    "src/features/studio/StudioDecision.tsx",
+    "src/features/studio/StudioQuickActions.tsx"
+   ]
+  },
+  {
+   "name": "studio-core",
+   "category": "ui",
+   "business_feature": "Athena Web Build Studio",
+   "description": "The runtime backbone of the Athena web-dev Studio: a persistent Zustand store that keeps each project's build state alive across tab switches and app navigation, a localStorage-backed history store that restores display state after WebView reloads, a typed build-phase model with progress helpers, and the top-level StudioPage shell that wires projects, previews, and tab state together. The store subscribes to Tauri companion-stream events and drives all IPC calls (scaffold, start, send turn, stop) so builds continue even when the user is elsewhere in the app.",
+   "api_surface": "webbuildScaffold, webbuildDevStart, webbuildDevStop, webbuildSessionSend, webbuildSessionStop, webbuildStatus, webbuildListProjects, webbuildListRoutes, webbuildNextReady, webbuildRegisterExisting",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/studio/StudioPage.tsx",
+    "src/features/studio/studioStore.ts"
+   ],
+   "cross_refs": [
+    "studio-chat",
+    "studio-project-management",
+    "studio-plan",
+    "studio-build-controls"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/studio/studioStore.ts",
+    "src/features/studio/studioHistory.ts",
+    "src/features/studio/studioBuildModel.ts",
+    "src/features/studio/StudioPage.tsx"
+   ]
+  },
+  {
+   "name": "studio-plan",
+   "category": "ui",
+   "business_feature": "Build Plan Visualisation",
+   "description": "Visualisation of the Athena build plan as a right-edge sliding drawer (StudioPlanDrawer) containing a vertical timeline stepper (StudioChecklistStepper) where each phase node fills as work progresses. The drawer sits beside the preview rather than over the chat so the user can read the plan while steering. The animated PlanGlyph SVG (a traced, self-drawing checklist timeline art) provides the decorative header glyph, with path data auto-generated by the motionize skill and normalised to four semantic colour roles for dark/light theme compatibility.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/studio/StudioPlanDrawer.tsx",
+    "src/features/studio/StudioChecklistStepper.tsx"
+   ],
+   "cross_refs": [
+    "studio-core",
+    "studio-chat"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/studio/StudioPlanDrawer.tsx",
+    "src/features/studio/StudioChecklistStepper.tsx",
+    "src/features/studio/PlanGlyph.tsx",
+    "src/features/studio/planGlyphData.ts"
+   ]
+  },
+  {
+   "name": "studio-project-management",
+   "category": "ui",
+   "business_feature": "Studio Project & Tab Management",
+   "description": "Multi-project lifecycle management: a browser-style tab strip (StudioTabBar) showing live status dots per open project with a picker for new/import/re-open, a vision-phase onboarding screen (StudioVisionStart) with prompt starters that seed the initial Athena build session, a version history panel (StudioVersions) that lists build-turn git snapshots and restores them safely, and a global attention pill (StudioAttention) that surfaces across the app when Athena is waiting for a decision in a Studio project the user isn't currently viewing.",
+   "api_surface": "webbuildListVersions, webbuildRestoreVersion, webbuildBunStatus, webbuildNextReady",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/studio/StudioTabBar.tsx",
+    "src/features/studio/StudioVisionStart.tsx"
+   ],
+   "cross_refs": [
+    "studio-core",
+    "studio-chat"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/studio/StudioTabBar.tsx",
+    "src/features/studio/StudioVisionStart.tsx",
+    "src/features/studio/StudioVersions.tsx",
+    "src/features/studio/StudioAttention.tsx"
+   ]
+  },
+  {
+   "name": "template-recipe-hooks",
+   "category": "lib",
+   "business_feature": "Template & Recipe Design",
+   "description": "Hooks for browsing the template gallery, querying gallery items, generating recipes from AI, executing and versioning recipes, managing design review cycles, and driving AI artifact flows. These hooks power the template/recipe picker and the recipe refinement surface inside the Design & Build Studio.",
+   "api_surface": "",
+   "db_tables": [
+    "templates",
+    "recipes",
+    "recipe_versions"
+   ],
+   "entry_points": [
+    "src/hooks/design/template/useTemplateGallery.ts",
+    "src/hooks/design/template/useRecipeGenerator.ts"
+   ],
+   "cross_refs": [
+    "persona-design-core-hooks",
+    "build-session-hooks"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/hooks/design/template/useTemplateGallery.ts",
+    "src/hooks/design/template/useGalleryQuery.ts",
+    "src/hooks/design/template/useDesignReviews.ts",
+    "src/hooks/design/template/useRecipeExecution.ts",
+    "src/hooks/design/template/useRecipeGenerator.ts",
+    "src/hooks/design/template/useRecipeVersioning.ts"
+   ]
+  }
+ ]
+}

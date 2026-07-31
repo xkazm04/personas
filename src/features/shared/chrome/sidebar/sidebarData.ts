@@ -105,6 +105,7 @@ export const credentialItems: SubNavItem[] = [
   { id: 'databases', label: 'Databases', icon: Database, minTier: TIERS.TEAM },
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
   { id: 'graph', label: 'Dependencies', icon: Network },
+  { id: 'broker', label: 'Broker', icon: ShieldCheck },
   { id: 'add-new', label: 'Add new', icon: Plus },
 ];
 
@@ -253,7 +254,7 @@ export const eventGroups: SidebarItemGroupDef[] = [
  * the second group and switch `sidebarSection` to 'design-reviews' on select.
  */
 export const credentialGroups: SidebarItemGroupDef[] = [
-  { id: 'credentials', labelKey: 'group_credentials', itemIds: ['credentials', 'databases', 'from-template', 'graph', 'add-new'] },
+  { id: 'credentials', labelKey: 'group_credentials', itemIds: ['credentials', 'databases', 'from-template', 'graph', 'broker', 'add-new'] },
 ];
 
 export const templateGroups: SidebarItemGroupDef[] = [

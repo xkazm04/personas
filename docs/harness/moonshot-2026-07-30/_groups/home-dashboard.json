@@ -1,0 +1,480 @@
+{
+ "id": "7b28f461-ab10-4a20-824c-07997481d700",
+ "name": "Home Dashboard",
+ "description": "",
+ "domain": "feature",
+ "contexts": [
+  {
+   "name": "cockpit-decision-widgets",
+   "category": "ui",
+   "business_feature": "Decision & Memory Widgets",
+   "description": "Cockpit widgets surfacing the decision audit trail and memory graph: decision panels listing Athena's choices with rationale, decision log timelines per conversation turn, linked-decisions and linked-memories graphs for a given execution or message, and a recent-decisions chip strip per persona context. All fetch from the companion decisions and memories APIs.",
+   "api_surface": "",
+   "db_tables": [
+    "companion_decisions",
+    "companion_memories"
+   ],
+   "entry_points": [
+    "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/DecisionLogWidget.tsx"
+   ],
+   "cross_refs": [
+    "cockpit-panel"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/DecisionLogWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/LinkedDecisionsWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/LinkedMemoriesWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/RecentDecisionsWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx"
+   ]
+  },
+  {
+   "name": "cockpit-design-flow-widgets",
+   "category": "ui",
+   "business_feature": "Design & Flow Widgets",
+   "description": "Cockpit widgets supporting Athena's persona-design and workflow-decomposition flows: model tier choice, observability planning, design capabilities catalog, persona walkthrough plans, persona-ready build summaries, creation offer CTAs, use-case decompositions, trigger-set breakdowns, template match suggestions, browser-test structured reports, and walkthrough offer cards.",
+   "api_surface": "companion_match_templates (IPC)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/TemplateSuggestionsWidget.tsx"
+   ],
+   "cross_refs": [
+    "cockpit-panel"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/ObservabilityPlanWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/DesignCapabilitiesWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/PersonaWalkthroughWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/PersonaReadyWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/PersonaCreationOfferWidget.tsx"
+   ]
+  },
+  {
+   "name": "cockpit-explainer-widgets",
+   "category": "ui",
+   "business_feature": "Explain-in-Cockpit Widgets",
+   "description": "The 'Explain in Cockpit' widget palette: data-agnostic widgets that Athena populates directly from her reasoning to explain decisions visually rather than as long chat bubbles. Includes verdict cards (recommendation + rationale + caveat), causal flow-step chains, side-by-side comparison cards, chronological timelines, labeled stat grids, and monospace log-excerpt evidence blocks.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx"
+   ],
+   "cross_refs": [
+    "cockpit-panel"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/home/sub_cockpit/widgets/VerdictWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/FlowStepsWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/ComparisonCardsWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/TimelineWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/LogExcerptWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/TextCalloutWidget.tsx"
+   ]
+  },
+  {
+   "name": "cockpit-fleet-widgets",
+   "category": "ui",
+   "business_feature": "Fleet Status Widgets",
+   "description": "Cockpit widgets covering fleet-level observability and agent status: persona roster overview, connected services health, metric spark KPI tiles, stat grids, execution facts, message summaries, and issue lists. These widgets display live fleet data fetched on mount and are composed by Athena via compose_cockpit for persistent dashboards, or programmatically for contextual overlays.",
+   "api_surface": "getMetricsSummary (IPC)",
+   "db_tables": [
+    "personas",
+    "executions",
+    "messages",
+    "connector_bindings"
+   ],
+   "entry_points": [
+    "src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/MetricSparkWidget.tsx"
+   ],
+   "cross_refs": [
+    "cockpit-panel"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/MetricSparkWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/StatGridWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/ExecutionFactsWidget.tsx",
+    "src/features/home/sub_cockpit/widgets/MessageSummaryWidget.tsx"
+   ]
+  },
+  {
+   "name": "cockpit-panel",
+   "category": "ui",
+   "business_feature": "Athena Cockpit Panel",
+   "description": "The Athena-composed adaptive dashboard panel on the Home Cockpit tab. Fetches a persisted cockpit spec from the backend (composed by Athena via compose_cockpit), falls back to a deterministic default layout when no spec exists yet, and renders each widget in a 12-column grid. Handles contextual overlays, live spec reload on focus and on compose_cockpit Tauri events, and ghost-grid loading choreography.",
+   "api_surface": "companionGetCockpit (IPC), getMetricsSummary (IPC)",
+   "db_tables": [
+    "companion_cockpit"
+   ],
+   "entry_points": [
+    "src/features/home/sub_cockpit/CockpitPanel.tsx",
+    "src/features/home/sub_cockpit/widgetRegistry.ts"
+   ],
+   "cross_refs": [
+    "cockpit-fleet-widgets",
+    "cockpit-explainer-widgets",
+    "cockpit-decision-widgets",
+    "cockpit-design-flow-widgets"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/home/sub_cockpit/CockpitPanel.tsx",
+    "src/features/home/sub_cockpit/widgetRegistry.ts",
+    "src/features/home/sub_cockpit/defaultCockpit.ts",
+    "src/features/home/sub_cockpit/defaultCockpit.test.ts"
+   ]
+  },
+  {
+   "name": "cockpit-widget-tests",
+   "category": "test",
+   "business_feature": "Cockpit Widget Tests",
+   "description": "Vitest unit and integration tests for the cockpit widget library. Covers rendering, config-driven content, empty states, and interaction for the most complex widgets (decision log, design capabilities, model tier choice, observability plan, persona ready, persona walkthrough, recent decisions, template suggestions, trigger set, use-case set, and persona stats utility).",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_cockpit/widgets/__tests__/PersonaReadyWidget.test.tsx"
+   ],
+   "cross_refs": [
+    "cockpit-design-flow-widgets",
+    "cockpit-decision-widgets",
+    "cockpit-fleet-widgets"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/home/sub_cockpit/widgets/__tests__/ConnectorCallCard.test.tsx",
+    "src/features/home/sub_cockpit/widgets/__tests__/DecisionLogWidget.test.tsx",
+    "src/features/home/sub_cockpit/widgets/__tests__/DesignCapabilitiesWidget.test.tsx",
+    "src/features/home/sub_cockpit/widgets/__tests__/ModelTierChoiceWidget.test.tsx",
+    "src/features/home/sub_cockpit/widgets/__tests__/ObservabilityPlanWidget.test.tsx",
+    "src/features/home/sub_cockpit/widgets/__tests__/PersonaReadyWidget.test.tsx"
+   ]
+  },
+  {
+   "name": "guided-tour-engine",
+   "category": "ui",
+   "business_feature": "Guided Spotlight Tour Engine",
+   "description": "The persistent left-rail coach-mark panel that guides users through multi-step spotlight tours across the live app. GuidedTour.tsx is the state machine driver: it reads the active tour from tourSlice, calls navigateToStep to route the app and fire step-specific side effects (appearance baseline capture, modal open, Obsidian probe), manages minimize/resume/completion screens, and enforces the onboarding-modal precedence contract. TourLauncher is the topbar entry point.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/GuidedTour.tsx"
+   ],
+   "cross_refs": [
+    "tour-panel-ui",
+    "tour-spotlight",
+    "tour-narration",
+    "onboarding-modal-shell"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/onboarding/components/GuidedTour.tsx",
+    "src/features/onboarding/components/TourLauncher.tsx",
+    "src/features/onboarding/components/tourConstants.ts"
+   ]
+  },
+  {
+   "name": "home-learning-hub",
+   "category": "ui",
+   "business_feature": "Learning Hub",
+   "description": "The Learning tab: a guided-tours timeline showing all registered product tours with completion state, a tour detail modal that previews steps and lets the user launch or resume a tour, and a static illustration library for learning card visuals. Integrates with the TOUR_REGISTRY and tourSlice for completion tracking.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_learning/HomeLearning.tsx"
+   ],
+   "cross_refs": [
+    "home-power-moves",
+    "home-page-shell"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/home/sub_learning/HomeLearning.tsx",
+    "src/features/home/sub_learning/TourDetailModal.tsx",
+    "src/features/home/sub_learning/data.ts",
+    "src/features/home/sub_learning/illustrations/index.ts"
+   ]
+  },
+  {
+   "name": "home-page-shell",
+   "category": "ui",
+   "business_feature": "Home Page Shell",
+   "description": "Top-level tab orchestration for the Home page. Renders four lazily-loaded panels (Welcome, Cockpit, Roadmap, Learning) inside a keep-alive pane pattern that hides rather than unmounts inactive tabs to avoid re-fetching on tab switches. Also provides utility hooks for pausable polling intervals and prefetch scheduling for non-active tabs.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/components/HomePage.tsx"
+   ],
+   "cross_refs": [
+    "home-welcome-surface",
+    "cockpit-panel",
+    "home-roadmap-releases",
+    "home-learning-hub"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/home/components/HomePage.tsx",
+    "src/features/home/components/__tests__/HomePage.test.tsx",
+    "src/features/home/lib/prefetch.ts",
+    "src/features/home/lib/usePausableInterval.ts",
+    "src/features/home/lib/usePausableInterval.test.ts"
+   ]
+  },
+  {
+   "name": "home-power-moves",
+   "category": "ui",
+   "business_feature": "Power Moves Quest Board",
+   "description": "The Power Moves quest board on the Learning tab: a curated registry of 12 advanced product capabilities grouped by outcome (save time, prevent failures, level up, orchestrate), each with a 'Try it' action that navigates to the relevant section and spotlights the feature. Includes honest-completion probes (IPC calls that detect real usage), persistent tried/completed state via a Zustand store, and a flash-spotlight animation after landing.",
+   "api_surface": "listAllTriggers (IPC)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_learning/powerMoves/PowerMovesPanel.tsx",
+    "src/features/home/sub_learning/powerMoves/registry.ts"
+   ],
+   "cross_refs": [
+    "home-learning-hub"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/home/sub_learning/powerMoves/PowerMovesPanel.tsx",
+    "src/features/home/sub_learning/powerMoves/PowerMoveRow.tsx",
+    "src/features/home/sub_learning/powerMoves/powerMovesStore.ts",
+    "src/features/home/sub_learning/powerMoves/registry.ts",
+    "src/features/home/sub_learning/powerMoves/flashSpotlight.ts",
+    "src/features/home/sub_learning/powerMoves/launchPowerMove.ts"
+   ]
+  },
+  {
+   "name": "home-roadmap-releases",
+   "category": "ui",
+   "business_feature": "Roadmap & Releases",
+   "description": "The 'What's New' / Roadmap tab: displays the live roadmap fetched from a remote endpoint (NOW/NEXT/LATER lanes with a hero in-progress item), falls back to bundled static roadmap items, and shows shipped release cards below. Includes a freshness pill with manual refresh, an i18n adapter that reshapes flat t.releases.* keys into the shape the view consumes, and a lazy-loaded empty-lane traced SVG glyph.",
+   "api_surface": "useLiveRoadmap (external HTTP fetch for live roadmap data)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_releases/HomeReleases.tsx",
+    "src/features/home/sub_releases/useLiveRoadmap.ts"
+   ],
+   "cross_refs": [
+    "home-page-shell"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/home/sub_releases/HomeReleases.tsx",
+    "src/features/home/sub_releases/roadmapItems.ts",
+    "src/features/home/sub_releases/roadmapItems.test.ts",
+    "src/features/home/sub_releases/useLiveRoadmap.ts",
+    "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx",
+    "src/features/home/sub_releases/RoadmapLaneEmptyGlyph.tsx"
+   ]
+  },
+  {
+   "name": "home-welcome-logic",
+   "category": "lib",
+   "business_feature": "Welcome Status Logic",
+   "description": "Business logic backing the Welcome surface: fleet health scoring, 'Since You Left' briefing (diffs activity since last session), navigation-card status chip derivation, vault credential availability check, and session resume context (last active persona/section). These hooks drive the status badges and briefing panel shown on the Welcome tab.",
+   "api_surface": "",
+   "db_tables": [
+    "executions",
+    "personas",
+    "credentials"
+   ],
+   "entry_points": [
+    "src/features/home/sub_welcome/lib/useNavCardStatus.ts",
+    "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts"
+   ],
+   "cross_refs": [
+    "home-welcome-surface"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/home/sub_welcome/lib/fleetHealth.ts",
+    "src/features/home/sub_welcome/lib/fleetHealth.test.ts",
+    "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts",
+    "src/features/home/sub_welcome/lib/sinceLeftBriefing.test.ts",
+    "src/features/home/sub_welcome/lib/useNavCardStatus.ts",
+    "src/features/home/sub_welcome/lib/useNavCardStatus.test.ts"
+   ]
+  },
+  {
+   "name": "home-welcome-surface",
+   "category": "ui",
+   "business_feature": "Welcome Surface",
+   "description": "The main Welcome tab UI: a hero header with time-of-day greeting, a quick-navigation card grid linking to all major app sections, a language switcher card grid, and a get-started onboarding prompt. Composes visual layout blocks and reads nav-card status from a shared hook to show health chips per section card.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/home/sub_welcome/HomeWelcome.tsx",
+    "src/features/home/sub_welcome/WelcomeLayout.tsx"
+   ],
+   "cross_refs": [
+    "home-welcome-logic",
+    "home-page-shell"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/home/sub_welcome/HomeWelcome.tsx",
+    "src/features/home/sub_welcome/WelcomeLayout.tsx",
+    "src/features/home/sub_welcome/HeroHeader.tsx",
+    "src/features/home/sub_welcome/WelcomeGetStarted.tsx",
+    "src/features/home/sub_welcome/NavigationGrid.tsx",
+    "src/features/home/sub_welcome/NavStatChips.tsx"
+   ]
+  },
+  {
+   "name": "onboarding-modal-shell",
+   "category": "ui",
+   "business_feature": "First Run Onboarding Modal",
+   "description": "The blocking welcome modal that walks new users through 5 steps: appearance customization, desktop app discovery, template selection, agent adoption, and first execution. It is rendered by OnboardingOverlay, which reads onboardingActive from the system store and gates all navigation through useOnboardingState. The modal owns the screen while open — the guided tour panel is suppressed until the modal closes.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/OnboardingOverlay.tsx"
+   ],
+   "cross_refs": [
+    "onboarding-state-orchestration",
+    "onboarding-steps",
+    "guided-tour-engine"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/onboarding/components/OnboardingOverlay.tsx",
+    "src/features/onboarding/components/StepIndicator.tsx",
+    "src/features/onboarding/components/OnboardingProgressBar.tsx"
+   ]
+  },
+  {
+   "name": "onboarding-state-orchestration",
+   "category": "lib",
+   "business_feature": "Onboarding Step Orchestration",
+   "description": "Custom hook (useOnboardingState) that drives all data loading and step transitions for the onboarding modal. It fetches trending templates with a zero-credential prioritization strategy, orchestrates desktop app discovery via Tauri IPC, handles adoption-wizard deduplication, and emits Sentry metrics for each phase. All step handlers (appearance → discover → pick-template → adopt → execute) live here, keeping OnboardingOverlay a pure rendering shell.",
+   "api_surface": "Calls listDesignReviews, getTrendingTemplates, discoverDesktopApps, getDesktopConnectorManifest, approveDesktopCapabilities",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/useOnboardingState.ts"
+   ],
+   "cross_refs": [
+    "onboarding-modal-shell",
+    "onboarding-steps"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/onboarding/components/useOnboardingState.ts",
+    "src/features/onboarding/components/templateRecommendation.ts"
+   ]
+  },
+  {
+   "name": "onboarding-steps",
+   "category": "ui",
+   "business_feature": "Onboarding Step Panels",
+   "description": "The four inline step content components rendered inside the onboarding modal: AppearanceStep (theme, language, density, brightness), DesktopDiscoveryStep (scanned app list with approve controls), TemplatePickerStep (top-3 curated template cards), and ExecutionStep (live first-run persona execution with Tauri event listener). Each step is a self-contained UI panel; navigation logic lives in useOnboardingState.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/AppearanceStep.tsx"
+   ],
+   "cross_refs": [
+    "onboarding-modal-shell",
+    "onboarding-state-orchestration"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/onboarding/components/AppearanceStep.tsx",
+    "src/features/onboarding/components/DesktopDiscoveryStep.tsx",
+    "src/features/onboarding/components/TemplatePickerStep.tsx",
+    "src/features/onboarding/components/ExecutionStep.tsx"
+   ]
+  },
+  {
+   "name": "tour-narration",
+   "category": "lib",
+   "business_feature": "Tour Voice Narration",
+   "description": "TTS narration bridge that speaks each guided-tour step via the companion's ElevenLabs/Piper voice pipeline when the user has voice configured. useTourNarration is a purely additive hook — it never blocks step advancement and silently no-ops when no voice is set up. Results are cached per step-id to avoid redundant synth calls; the orb glow reacts to narration audio through the shared analyser pipeline.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/useTourNarration.ts"
+   ],
+   "cross_refs": [
+    "guided-tour-engine"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/onboarding/components/useTourNarration.ts",
+    "src/features/onboarding/components/TourNarrationButton.tsx",
+    "src/features/onboarding/components/__tests__/useTourNarration.test.ts"
+   ]
+  },
+  {
+   "name": "tour-panel-ui",
+   "category": "ui",
+   "business_feature": "Tour Panel Body & Navigation",
+   "description": "The body content area of the tour panel, including step navigation, sub-step checklist, the 'Show me' focus-scroll affordance, step progress breadcrumbs, and the tour intro card shown on first entry. TourPanelBody dispatches between generic informational content (for tours 2+) and specialized interactive components (TourAppearanceContent, CredentialsTourContent, PersonaCreationCoach) for the Getting Started tour. TourHandoffOffer is a one-time card bridging the onboarding modal completion into the tour.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/TourPanelBody.tsx"
+   ],
+   "cross_refs": [
+    "guided-tour-engine",
+    "tour-step-content"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/onboarding/components/TourPanelBody.tsx",
+    "src/features/onboarding/components/StepProgress.tsx",
+    "src/features/onboarding/components/TourIntroCard.tsx",
+    "src/features/onboarding/components/TourHandoffOffer.tsx",
+    "src/features/onboarding/components/TourProgressArc.tsx"
+   ]
+  },
+  {
+   "name": "tour-spotlight",
+   "category": "ui",
+   "business_feature": "Tour Spotlight Overlay",
+   "description": "SVG-based screen dimming overlay with an animated rectangular cut-out that tracks a live DOM element by data-testid. TourSpotlight uses the shared useTrackedElementRect hook for measurement and MutationObserver-backed re-measurement; when the target can't be found it sets a 'highlightMissing' flag so the panel shows a contextual note rather than dismissing the whole tour.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/TourSpotlight.tsx"
+   ],
+   "cross_refs": [
+    "guided-tour-engine"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/onboarding/components/TourSpotlight.tsx"
+   ]
+  },
+  {
+   "name": "tour-step-content",
+   "category": "ui",
+   "business_feature": "Tour Interactive Step Content",
+   "description": "Three lazy-loaded specialized content components for the Getting Started tour's interactive steps. TourAppearanceContent renders live theme/brightness controls inside the tour panel. CredentialsTourContent guides vault credential setup. PersonaCreationCoach mirrors the multi-agent build engine's real-time phase state (analyzing → resolving → draft_ready → promoted) as an inline coaching checklist with matrix dimension progress.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/onboarding/components/steps/PersonaCreationCoach.tsx"
+   ],
+   "cross_refs": [
+    "tour-panel-ui",
+    "guided-tour-engine"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/onboarding/components/steps/TourAppearanceContent.tsx",
+    "src/features/onboarding/components/steps/CredentialsTourContent.tsx",
+    "src/features/onboarding/components/steps/PersonaCreationCoach.tsx"
+   ]
+  }
+ ]
+}

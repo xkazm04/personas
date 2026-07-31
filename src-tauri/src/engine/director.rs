@@ -153,6 +153,17 @@ output a single JSON object on its own line prefixed with the literal marker
 
 DIRECTOR_VERDICT: {"severity":"info|warning|error","category":"prompt|health|triggers|credentials|memory|usefulness","title":"<=60 chars imperative phrase","description":"1-3 sentences explaining the observation and why it matters","rationale":"concrete evidence from the context above","suggested_actions":["short prose suggestion","..."]}
 
+A verdict MAY additionally carry a typed, testable hypothesis when — and only
+when — the coaching could be verified by a controlled experiment. Add an
+optional "hypothesis" field to the verdict object:
+
+"hypothesis":{"segment_target":"<which prompt segment or behaviour to change>","proposed_change":"<the concrete change to test>","success_metric":"<what measurably improves>","metric_source":"assertions|value_rate|healing_count|cost|latency"}
+
+Only emit a hypothesis when you can name a concrete, measurable metric —
+prefer deterministic sources (assertions, value rate, healing counts, cost)
+over subjective judgment. Most verdicts should NOT carry one; omit the field
+entirely rather than inventing a vague metric.
+
 Rules:
 - The DIRECTOR_SCORE line is MANDATORY. Wins and coaching verdicts are both
   OPTIONAL: a healthy persona may yield the score line + zero wins + zero
@@ -240,6 +251,45 @@ impl DirectorCategory {
     }
 }
 
+/// A typed, testable hypothesis attached to a coaching verdict (Director's Lab
+/// v1). Optional on every verdict — absent means the verdict is plain coaching,
+/// exactly today's behavior. When present, approving the verdict makes it
+/// eligible for compilation into a registered `lab_ab_experiments` row.
+///
+/// Serialized camelCase on the wire (context_data + IPC); the per-field
+/// `alias` attributes additionally accept the snake_case keys the rubric asks
+/// the LLM to emit, so both spellings parse.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectorHypothesis {
+    /// Which prompt segment / behaviour the change targets.
+    #[serde(default, alias = "segment_target")]
+    pub segment_target: String,
+    /// The concrete change to test.
+    #[serde(default, alias = "proposed_change")]
+    pub proposed_change: String,
+    /// What measurably improves if the hypothesis is right.
+    #[serde(default, alias = "success_metric")]
+    pub success_metric: String,
+    /// Where the metric is read from (assertions | value_rate | healing_count |
+    /// cost | latency — deterministic sources preferred over LLM judgment).
+    #[serde(default, alias = "metric_source")]
+    pub metric_source: String,
+}
+
+/// Tolerant hypothesis parse: a JSON value that deserializes into
+/// [`DirectorHypothesis`] AND names both a proposed change and a success
+/// metric. Anything else (malformed, empty, wrong shape) is `None` — the
+/// verdict itself survives untouched, exactly today's behavior.
+pub fn parse_hypothesis(value: &serde_json::Value) -> Option<DirectorHypothesis> {
+    let h: DirectorHypothesis = serde_json::from_value(value.clone()).ok()?;
+    if h.proposed_change.trim().is_empty() || h.success_metric.trim().is_empty() {
+        return None;
+    }
+    Some(h)
+}
+
 /// A single piece of coaching. Produced by an evaluator, routed into the
 /// Human Review layer.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -253,6 +303,9 @@ pub struct DirectorVerdict {
     pub description: String,
     pub rationale: Option<String>,
     pub suggested_actions: Vec<String>,
+    /// Optional typed hypothesis (Director's Lab). `None` = plain coaching.
+    #[serde(default)]
+    pub hypothesis: Option<DirectorHypothesis>,
 }
 
 /// One cycle's aggregate outcome, returned to the caller so the UI can show
@@ -338,6 +391,11 @@ struct RawVerdict {
     rationale: Option<String>,
     #[serde(default)]
     suggested_actions: Vec<String>,
+    /// Raw optional hypothesis block. Captured as a loose JSON value so a
+    /// malformed hypothesis never fails the whole verdict — it degrades to
+    /// `None` (logged) while the coaching itself is kept.
+    #[serde(default)]
+    hypothesis: Option<serde_json::Value>,
 }
 
 /// Parse every `DIRECTOR_VERDICT: {json}` line out of the Director's output.
@@ -355,15 +413,31 @@ pub fn parse_verdicts(output: &str, target_persona_id: &str) -> Vec<DirectorVerd
             continue;
         }
         match serde_json::from_str::<RawVerdict>(json_part) {
-            Ok(raw) => out.push(DirectorVerdict {
-                target_persona_id: target_persona_id.to_string(),
-                severity: raw.severity,
-                category: raw.category,
-                title: raw.title,
-                description: raw.description,
-                rationale: raw.rationale,
-                suggested_actions: raw.suggested_actions,
-            }),
+            Ok(raw) => {
+                let hypothesis = match raw.hypothesis.as_ref() {
+                    None => None,
+                    Some(v) => {
+                        let parsed = parse_hypothesis(v);
+                        if parsed.is_none() {
+                            tracing::warn!(
+                                target = %target_persona_id,
+                                "Director: verdict carried a malformed/empty hypothesis block — kept the verdict, dropped the hypothesis",
+                            );
+                        }
+                        parsed
+                    }
+                };
+                out.push(DirectorVerdict {
+                    target_persona_id: target_persona_id.to_string(),
+                    severity: raw.severity,
+                    category: raw.category,
+                    title: raw.title,
+                    description: raw.description,
+                    rationale: raw.rationale,
+                    suggested_actions: raw.suggested_actions,
+                    hypothesis,
+                })
+            }
             Err(e) => {
                 tracing::warn!(error = %e, line = %json_part, "Director: skipping malformed verdict line");
             }
@@ -1550,6 +1624,10 @@ fn route_verdicts(
             "rationale": v.rationale,
             "feedback_accepts_so_far": ctx.feedback_accepts,
             "feedback_rejects_so_far": ctx.feedback_rejects,
+            // Director's Lab: the typed hypothesis rides along (camelCase; null
+            // when the verdict is plain coaching) so an approval can compile it
+            // into a lab_ab_experiments row with the verdict as provenance.
+            "hypothesis": v.hypothesis,
         });
         let suggested_json = serde_json::json!({
             "actions": v.suggested_actions,
@@ -1600,6 +1678,9 @@ pub struct DirectorVerdictRow {
     pub status: String,
     pub created_at: String,
     pub execution_id: String,
+    /// Typed hypothesis carried in context_data (Director's Lab); `None` for
+    /// plain coaching verdicts and legacy rows.
+    pub hypothesis: Option<DirectorHypothesis>,
 }
 
 pub fn list_verdicts(
@@ -1637,7 +1718,7 @@ pub fn list_verdicts(
         let context_json: Option<String> = row.get("context_data")?;
         let actions_json: Option<String> = row.get("suggested_actions")?;
 
-        let (category, rationale) = context_json
+        let (category, rationale, hypothesis) = context_json
             .as_deref()
             .and_then(|j| serde_json::from_str::<serde_json::Value>(j).ok())
             .map(|v| {
@@ -1650,9 +1731,10 @@ pub fn list_verdicts(
                     .get("rationale")
                     .and_then(|x| x.as_str())
                     .map(|s| s.to_string());
-                (cat, rat)
+                let hyp = v.get("hypothesis").and_then(parse_hypothesis);
+                (cat, rat, hyp)
             })
-            .unwrap_or_else(|| ("usefulness".to_string(), None));
+            .unwrap_or_else(|| ("usefulness".to_string(), None, None));
 
         let suggested_actions: Vec<String> = actions_json
             .as_deref()
@@ -1678,6 +1760,7 @@ pub fn list_verdicts(
             status: row.get("status")?,
             created_at: row.get("created_at")?,
             execution_id: row.get("execution_id")?,
+            hypothesis,
         })
     })?;
 
@@ -2038,6 +2121,7 @@ mod tests {
             description: "Concrete evidence of a fault worth fixing.".into(),
             rationale: Some("12/20 runs failed on a missing credential".into()),
             suggested_actions: vec!["Re-bind the connector credential".into()],
+            hypothesis: None,
         }
     }
 
@@ -2208,6 +2292,51 @@ DIRECTOR_VERDICT: {\"severity\":\"error\",\"category\":\"health\",\"title\":\"Re
     #[test]
     fn parse_verdicts_none_without_marker() {
         assert!(parse_verdicts("regular output, no verdict markers", "p-3").is_empty());
+    }
+
+    /// Director's Lab step 1 — tolerant hypothesis parse. Absent block ⇒
+    /// today's behavior (`hypothesis: None`); a well-formed block (snake_case,
+    /// as the rubric asks the LLM to emit) parses into the typed struct.
+    #[test]
+    fn parse_verdicts_hypothesis_absent_is_none_present_is_typed() {
+        let output = "\
+DIRECTOR_VERDICT: {\"severity\":\"info\",\"category\":\"prompt\",\"title\":\"Plain coaching\"}\n\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"usefulness\",\"title\":\"Testable coaching\",\"hypothesis\":{\"segment_target\":\"done-line\",\"proposed_change\":\"add an explicit done-line instruction\",\"success_metric\":\"value_delivered_rate +15pp\",\"metric_source\":\"value_rate\"}}\n";
+        let v = parse_verdicts(output, "p-h");
+        assert_eq!(v.len(), 2);
+        assert!(v[0].hypothesis.is_none(), "absent block = today's behavior");
+        let h = v[1].hypothesis.as_ref().expect("typed hypothesis parsed");
+        assert_eq!(h.segment_target, "done-line");
+        assert_eq!(h.metric_source, "value_rate");
+    }
+
+    /// A malformed/empty hypothesis block never sinks the verdict — the
+    /// coaching is kept, the hypothesis degrades to `None`.
+    #[test]
+    fn parse_verdicts_malformed_hypothesis_keeps_verdict() {
+        let output = "\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"prompt\",\"title\":\"Bad hypothesis shape\",\"hypothesis\":\"just a string\"}\n\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"prompt\",\"title\":\"Empty metric\",\"hypothesis\":{\"proposed_change\":\"do X\",\"success_metric\":\"\"}}\n";
+        let v = parse_verdicts(output, "p-h2");
+        assert_eq!(v.len(), 2, "both verdicts survive");
+        assert!(v[0].hypothesis.is_none(), "non-object hypothesis dropped");
+        assert!(v[1].hypothesis.is_none(), "empty success_metric dropped");
+    }
+
+    /// `parse_hypothesis` accepts both the LLM's snake_case spelling and our
+    /// own camelCase round-trip (context_data written by `route_verdicts`).
+    #[test]
+    fn parse_hypothesis_accepts_both_spellings_and_round_trips() {
+        let snake = serde_json::json!({
+            "segment_target": "s", "proposed_change": "c",
+            "success_metric": "m", "metric_source": "assertions"
+        });
+        let h = parse_hypothesis(&snake).expect("snake_case parses");
+        // Round-trip through our own camelCase serialization.
+        let camel = serde_json::to_value(&h).unwrap();
+        assert!(camel.get("proposedChange").is_some(), "serializes camelCase");
+        let h2 = parse_hypothesis(&camel).expect("camelCase parses");
+        assert_eq!(h, h2);
     }
 
     #[test]
@@ -2487,6 +2616,7 @@ DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to ze
             description: "Most runs report no input.".into(),
             rationale: Some("12/20 no_input".into()),
             suggested_actions: vec!["Add a precondition".into()],
+            hypothesis: None,
         }];
         let md = render_unscored_review_md(&[], &verdicts);
         assert!(md.contains("Director review — unscored"));

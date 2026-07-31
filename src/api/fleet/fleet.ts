@@ -311,3 +311,57 @@ export const beginRun = (label?: string | null) =>
 
 /** Close the active run; the next spawn opens a fresh one. */
 export const endRun = () => invoke<null>('fleet_end_run', {});
+
+// ---------------------------------------------------------------------------
+// Mobile companion pairing (Fleet Command Anywhere)
+// ---------------------------------------------------------------------------
+// Local mirrors of the Rust DTOs in `commands/fleet/pairing.rs` (ts-rs
+// exports exist there; these stay hand-written until the bindings codegen
+// runs so this file never depends on a generator step).
+
+/** Result of pairing — `token` is shown ONCE; the desktop stores only a hash. */
+export interface FleetPairResult {
+  deviceId: string;
+  deviceName: string;
+  token: string;
+  /** Companion URL the QR encodes (token in the URL fragment). */
+  url: string;
+  /** Full SVG document rendering the QR of `url`. */
+  qrSvg: string;
+  port: number;
+}
+
+/** One paired device (metadata only — never a token or fingerprint). */
+export interface FleetCompanionDevice {
+  id: string;
+  name: string;
+  createdAtMs: number;
+  lastSeenMs: number;
+  revoked: boolean;
+}
+
+/** Paired devices + LAN companion-server status. */
+export interface FleetCompanionStatus {
+  devices: FleetCompanionDevice[];
+  serverRunning: boolean;
+  port: number | null;
+  url: string | null;
+}
+
+/**
+ * Pair a new device: mints a device-scoped token (returned exactly once),
+ * persists its SHA-256 fingerprint, and starts the LAN companion server.
+ */
+export const pairDevice = (name?: string) =>
+  invoke<FleetPairResult>('fleet_pair_device', { name: name ?? null });
+
+/** List paired devices + companion-server status for the settings panel. */
+export const companionDevices = () =>
+  invoke<FleetCompanionStatus>('fleet_companion_devices', {});
+
+/**
+ * Revoke a device's access (effective on its next request). Resolves `true`
+ * if a live device was revoked.
+ */
+export const revokeCompanionDevice = (deviceId: string) =>
+  invoke<boolean>('fleet_companion_revoke', { deviceId });

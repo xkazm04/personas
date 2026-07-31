@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**122 reusable components** live under `src/features/shared/components/`.
+**124 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -85,6 +85,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
+| `AthenaComposedBadge` | Provenance badge for anything Athena composed, diagnosed, or handled autonomously. |
 | `Banner` | _(add a `@catalog` tag)_ |
 | `ConfirmDialog` | Confirm/cancel dialog for destructive or irreversible actions. |
 | `ConnectionStatusBadge` | _(add a `@catalog` tag)_ |
@@ -185,6 +186,12 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TransformStatusPanels` | _(add a `@catalog` tag)_ |
 | `WizardStepper` | _(add a `@catalog` tag)_ |
 
+## surface
+
+| Component | What it's for |
+|---|---|
+| `SurfaceRenderer` | Renders an agent-declared SurfaceSpec (see surface/SPEC.md) as live UI using ONLY blessed catalog primitives — StatCard, UnifiedTa |
+
 ## terminal — Terminal / streaming-output rendering
 
 | Component | What it's for |
@@ -196,4 +203,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_122 components, 43 without a `@catalog` description._
+_124 components, 43 without a `@catalog` description._

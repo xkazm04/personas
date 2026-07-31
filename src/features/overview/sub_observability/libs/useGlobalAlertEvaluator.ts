@@ -33,9 +33,15 @@ export function useGlobalAlertEvaluator(): void {
       const store = useOverviewStore.getState();
       try {
         // Rules drive what to evaluate; history feeds the cooldown fallback so
-        // a reload doesn't immediately re-fire. Both are TTL-guarded → cheap.
+        // a reload doesn't immediately re-fire. Rules stay TTL-guarded, but
+        // history is force-fetched each tick: the Rust alert evaluator (the
+        // NOC authority, running even with the UI closed) persists its fires
+        // to `fired_alerts`, and only a FRESH history read lets this client
+        // loop's cooldown fallback see them — otherwise both loops could
+        // fire the same rule inside the TTL window (double toast + double
+        // incident). One bounded query per minute — cheap.
         await store.fetchAlertRules(false);
-        await store.fetchAlertHistory(false);
+        await store.fetchAlertHistory(true);
         if (cancelled) return;
         const bundle = await getOverviewBundle(ALERT_EVAL_WINDOW_DAYS);
         if (cancelled) return;

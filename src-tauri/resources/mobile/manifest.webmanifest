@@ -1,0 +1,18 @@
+{
+  "name": "Personas Fleet",
+  "short_name": "Fleet",
+  "description": "Answer your Claude fleet from anywhere on your LAN — attention inbox, Athena proposals, wake and kill.",
+  "start_url": "/m/",
+  "scope": "/m/",
+  "display": "standalone",
+  "background_color": "#0a0e14",
+  "theme_color": "#0a0e14",
+  "icons": [
+    {
+      "src": "/m/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

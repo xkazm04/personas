@@ -177,6 +177,18 @@
     "importance_prefix": "importance :",
     "confidence_suffix": "% de confiance"
   },
+  "surface": {
+    "section_label": "Surface",
+    "composed_badge": "Composé par l'agent",
+    "composed_tip": "Cette surface a été déclarée par la sortie de l'agent et rendue à partir du catalogue de composants partagé. Les actions ne s'exécutent jamais sans votre confirmation.",
+    "dropped_blocks": "{count} bloc(s) non valides ont été exclus de cette surface.",
+    "no_target": "Indisponible ici — cette vue n'a ni projet ni persona sur lesquels agir.",
+    "confirm_run_title": "Exécuter cette action de l'agent ?",
+    "confirm_run_body": "« {label} » démarrera une exécution de persona avec cette entrée : {prompt}",
+    "confirm_run_action": "Exécuter",
+    "table_empty": "Aucune ligne dans ce tableau.",
+    "terminal_empty": "Aucune ligne de sortie."
+  },
   "progress_extra": {
     "taking_longer": "Plus long que prévu",
     "complete": "Terminé",

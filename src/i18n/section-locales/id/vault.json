@@ -695,10 +695,38 @@
     "unverifiable_tooltip": "Konektor ini tidak memiliki pemeriksaan langsung -- kredensial disimpan tetapi tidak pernah diverifikasi terhadap penyedia",
     "title_catalog": "Katalog",
     "title_dependencies": "Dependensi",
-    "title_databases": "Basis data"
+    "title_databases": "Basis data",
+    "title_broker": "Perantara"
   },
   "breadcrumb": {
     "aria_label": "Breadcrumb brankas"
+  },
+  "broker": {
+    "title": "Perantara kredensial",
+    "subtitle": "Konsumen eksternal hanya memegang handle yang dapat dicabut — rahasia tidak pernah keluar dari brankas. Setiap panggilan yang diproksikan diaudit dan mengisi grafik radius dampak secara langsung.",
+    "exclusion_note": "Untuk saat ini hanya konektor Bearer dan kunci API. SDK yang menandatangani permintaannya sendiri (mis. AWS SigV4) atau membutuhkan websocket belum bisa diproksikan — kredensial tersebut masih harus berada di sisi konsumen.",
+    "consumers_header": "Konsumen",
+    "loading": "Memuat konsumen",
+    "load_error": "Tidak dapat memuat konsumen perantara.",
+    "empty_title": "Belum ada konsumen",
+    "empty_body": "Belum ada proses eksternal yang menggunakan kredensial melalui perantara. Buat handle untuk sebuah kredensial dan arahkan skrip atau agen Anda ke proxy lokal — aktivitasnya akan muncul di sini.",
+    "status_active": "Aktif",
+    "status_revoked": "Dicabut",
+    "status_inactive": "Tidak aktif",
+    "calls_one": "{count} panggilan",
+    "calls_other": "{count} panggilan",
+    "last_used": "Terakhir digunakan",
+    "expires": "Kedaluwarsa",
+    "credentials_used": "Kredensial yang digunakan",
+    "kill_switch": "Cabut akses",
+    "kill_switch_confirm": "Cabut?",
+    "kill_switch_hint": "Saklar darurat: handle konsumen berhenti berfungsi pada permintaan berikutnya.",
+    "revoking": "Mencabut...",
+    "revoke_error": "Tidak dapat mencabut konsumen ini.",
+    "activity_show": "Tampilkan aktivitas",
+    "activity_hide": "Sembunyikan aktivitas",
+    "activity_empty": "Belum ada permintaan yang tercatat untuk konsumen ini.",
+    "activity_loading": "Memuat aktivitas"
   },
   "credential_card": {
     "delete_credential": "Hapus kredensial",

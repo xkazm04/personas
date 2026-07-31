@@ -1,0 +1,682 @@
+{
+ "id": "91345f65-76ad-43da-abe4-a90174415f33",
+ "name": "Shared UI Components",
+ "description": "",
+ "domain": "shared",
+ "contexts": [
+  {
+   "name": "animation-motion",
+   "category": "lib",
+   "business_feature": "Animation Engine",
+   "description": "Centralizes animation presets and a shared requestAnimationFrame engine for the UI. The RAF engine interpolates all registered spring targets in a single callback, writing directly to DOM refs to avoid React reconciliation overhead. Framer Motion presets and CSS duration classes are also exported here for consistent motion across components.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/rafAnimationEngine.ts",
+    "src/lib/utils/animation/animationPresets.ts"
+   ],
+   "cross_refs": [
+    "design-tokens"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/lib/utils/rafAnimationEngine.ts",
+    "src/lib/utils/animation/animationPresets.ts",
+    "src/lib/utils/interaction/rafCoalescer.ts"
+   ]
+  },
+  {
+   "name": "background-fleet-chrome",
+   "category": "ui",
+   "business_feature": "Background Services & Fleet Chrome",
+   "description": "Null-rendering background services host (deferred 300 KB of domain store subscriptions past first paint) alongside fleet-facing chrome: the always-on 2 px pulse strip that animates live session activity and opens Fleet Monitor on click, update/CLI-readiness banners, and the pure layout model for the strip's center-out slot algorithm. These components mount once at app root and have no visible DOM beyond their specific zones.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/chrome/BackgroundServices.tsx",
+    "src/features/shared/chrome/FleetActivityStrip.tsx"
+   ],
+   "cross_refs": [
+    "window-chrome",
+    "footer-and-notifications"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/shared/chrome/BackgroundServices.tsx",
+    "src/features/shared/chrome/FleetActivityStrip.tsx",
+    "src/features/shared/chrome/fleetStripModel.ts",
+    "src/features/shared/chrome/fleetStripModel.test.ts",
+    "src/features/shared/chrome/UpdateBanner.tsx",
+    "src/features/shared/chrome/CliReadinessBanner.tsx"
+   ]
+  },
+  {
+   "name": "button-primitives",
+   "category": "ui",
+   "business_feature": "Button Primitives",
+   "description": "The canonical button set used throughout the app: primary/secondary/ghost/danger/accent Button, AsyncButton (self-disabling spinner wrapper), and CopyButton (clipboard with 'Copied' feedback). Defined once here and imported everywhere; ESLint warns on any hand-rolled alternatives. The CATALOG.md auto-generated index documents all 115+ shared primitives for discoverability.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/buttons/Button.tsx",
+    "src/features/shared/components/buttons/index.ts"
+   ],
+   "cross_refs": [
+    "feedback-primitives",
+    "form-input-controls",
+    "modal-overlay-dispatch"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/shared/components/buttons/Button.tsx",
+    "src/features/shared/components/buttons/AsyncButton.tsx",
+    "src/features/shared/components/buttons/CopyButton.tsx",
+    "src/features/shared/components/buttons/index.ts",
+    "src/features/shared/components/buttons/Button.test.tsx"
+   ]
+  },
+  {
+   "name": "command-palette",
+   "category": "ui",
+   "business_feature": "Command Palette",
+   "description": "Global ⌘K command palette that lets users fuzzy-search agents, credentials, templates, automations, and navigation sections from anywhere in the app. Supports agent quick-actions (execute, duplicate, health-check), recent-item tracking, and tier-gated section filtering. Pure utility functions for scoring and item building are tested in isolation.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/chrome/CommandPalette.tsx",
+    "src/features/shared/chrome/commandPaletteUtils.ts"
+   ],
+   "cross_refs": [
+    "sidebar-navigation",
+    "window-chrome",
+    "button-primitives"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/shared/chrome/CommandPalette.tsx",
+    "src/features/shared/chrome/CommandPaletteResults.tsx",
+    "src/features/shared/chrome/commandPaletteUtils.ts",
+    "src/features/shared/chrome/commandPaletteUtils.test.ts"
+   ]
+  },
+  {
+   "name": "connector-helpers",
+   "category": "lib",
+   "business_feature": "Connector Type Helpers",
+   "description": "Utility functions for classifying connector types (Google OAuth vs universal OAuth gateway) and extracting OAuth metadata from connector definitions. Prevents scattered instanceof / metadata duck-typing checks across the vault and agent-setup flows from diverging.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/platform/connectors.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 1,
+   "sample_files": [
+    "src/lib/utils/platform/connectors.ts"
+   ]
+  },
+  {
+   "name": "decision-review",
+   "category": "ui",
+   "business_feature": "Decision Review",
+   "description": "Shared decision-stream UI components used across review, backlog, and knowledge surfaces: DecisionActions (accept/reject controls), DecisionRow (list row with title, supporting line, facts, and verdict chip), and the shared TypeScript decision model types. Callers supply the data; these components supply the uniform visual language for acting on AI-generated decisions.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/decisions/DecisionRow.tsx",
+    "src/features/shared/components/decisions/decisionTypes.ts"
+   ],
+   "cross_refs": [
+    "display-table-primitives",
+    "button-primitives",
+    "feedback-primitives"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/features/shared/components/decisions/DecisionActions.tsx",
+    "src/features/shared/components/decisions/DecisionRow.tsx",
+    "src/features/shared/components/decisions/decisionTypes.ts"
+   ]
+  },
+  {
+   "name": "design-tokens",
+   "category": "lib",
+   "business_feature": "Design Tokens",
+   "description": "JavaScript-side design token registry for spacing, motion durations, color helpers, and status/severity palettes. Used alongside Tailwind CSS classes to guarantee consistent visual rhythm across all components. Also provides colorWithAlpha for programmatic hex-to-rgba conversion used in chart and overlay renderers.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/designTokens.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 2,
+   "sample_files": [
+    "src/lib/utils/designTokens.ts",
+    "src/lib/utils/colorWithAlpha.ts"
+   ]
+  },
+  {
+   "name": "display-collapse-inline",
+   "category": "ui",
+   "business_feature": "Collapse & Inline Edit",
+   "description": "Small but frequently used display utilities: Collapse (pure-CSS animated expand/collapse container), InlineEditableText (click-to-edit inline field), connectorRunnability (pure logic for connector runnable/configured checks), and FieldHint (inline hint text showing valid range or examples beneath a form field). These fill gaps not covered by the larger display sub-categories.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/Collapse.tsx",
+    "src/features/shared/components/display/InlineEditableText.tsx"
+   ],
+   "cross_refs": [
+    "form-input-controls",
+    "display-table-primitives"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/shared/components/display/Collapse.tsx",
+    "src/features/shared/components/display/Collapse.test.tsx",
+    "src/features/shared/components/display/InlineEditableText.tsx",
+    "src/features/shared/components/display/connectorRunnability.ts",
+    "src/features/shared/components/display/FieldHint.tsx"
+   ]
+  },
+  {
+   "name": "display-data-formatters",
+   "category": "ui",
+   "business_feature": "Data Formatters",
+   "description": "Read-only display primitives for time and numeric data: RelativeTime (live 'Xh ago', absolute on hover), AbsoluteTime (fixed date/time/datetime with relative hover), Numeric (canonical locale/precision/unit number renderer), UuidLabel, Tooltip (hover/focus), TruncateWithTooltip (overflow text + full value tooltip), and SectionLabel (uppercase section heading). These are the blessed alternatives to ad-hoc .toLocaleString() or title= calls.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/RelativeTime.tsx",
+    "src/features/shared/components/display/Numeric.tsx",
+    "src/features/shared/components/display/Tooltip.tsx"
+   ],
+   "cross_refs": [
+    "display-status-badges",
+    "display-table-primitives"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/shared/components/display/RelativeTime.tsx",
+    "src/features/shared/components/display/AbsoluteTime.tsx",
+    "src/features/shared/components/display/Numeric.tsx",
+    "src/features/shared/components/display/UuidLabel.tsx",
+    "src/features/shared/components/display/Tooltip.tsx",
+    "src/features/shared/components/display/TruncateWithTooltip.tsx"
+   ]
+  },
+  {
+   "name": "display-metrics-counters",
+   "category": "ui",
+   "business_feature": "Metrics & Counters Display",
+   "description": "Animated metric display components for KPI and analytics surfaces: StatCard (icon chip + label + big value + trend delta), AnimatedCounter (number animates old→new), SpringCount (spring-physics count-up), ConfidenceArc (semi-circular gauge), AnimatedList (staggered-delay list), RevealItem (single-row progressive reveal), and RechartsWrapper (code-split lazy chunk loader for recharts to avoid child-identity issues).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/StatCard.tsx",
+    "src/features/shared/charts/RechartsWrapper.tsx"
+   ],
+   "cross_refs": [
+    "display-data-formatters",
+    "display-motion-empty"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/shared/components/display/StatCard.tsx",
+    "src/features/shared/components/display/AnimatedCounter.tsx",
+    "src/features/shared/components/display/SpringCount.tsx",
+    "src/features/shared/components/display/ConfidenceArc.tsx",
+    "src/features/shared/components/display/AnimatedList.tsx",
+    "src/features/shared/components/display/RevealItem.tsx"
+   ]
+  },
+  {
+   "name": "display-motion-empty",
+   "category": "ui",
+   "business_feature": "Motion & Empty State",
+   "description": "Motion presets and empty-state illustration components used across the app: MotionizedGlyph (multi-path SVG self-drawing with centre-out reveal), motionPresets (shared Framer Motion preset definitions — draw, stagger, fade-pop, float, pulse, hover-response, success-settle), EmptyIllustration, IllustratedEmptyState, ChartEmptyState, HeroMesh (decorative noise background), DensityToggle, and DesignConnectorGrid.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/motionPresets.ts",
+    "src/features/shared/components/display/MotionizedGlyph.tsx",
+    "src/features/shared/components/display/IllustratedEmptyState.tsx"
+   ],
+   "cross_refs": [
+    "feedback-primitives",
+    "display-metrics-counters"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/shared/components/display/MotionizedGlyph.tsx",
+    "src/features/shared/components/display/__tests__/MotionizedGlyph.test.tsx",
+    "src/features/shared/components/display/motionPresets.ts",
+    "src/features/shared/components/display/EmptyIllustration.tsx",
+    "src/features/shared/components/display/IllustratedEmptyState.tsx",
+    "src/features/shared/components/display/ChartEmptyState.tsx"
+   ]
+  },
+  {
+   "name": "display-status-badges",
+   "category": "ui",
+   "business_feature": "Status & Badge Display",
+   "description": "Visual vocabulary for expressing status, activity, and classification at a glance: StatusBadge (token → label + colour via tokenLabel()), StatusDot, StatusShape, ActivityDot (emerald/amber/muted), LiveStatusDot (with ping halo), Badge (generic tag pill), BusinessOutcomeBadge, CategoryChip, and ActivityPulseIcon (animated pulse for the title-bar process tray). All use semantic design tokens; none hard-code colours.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/StatusBadge.tsx",
+    "src/features/shared/components/display/LiveStatusDot.tsx"
+   ],
+   "cross_refs": [
+    "feedback-primitives",
+    "display-data-formatters"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/shared/components/display/StatusBadge.tsx",
+    "src/features/shared/components/display/StatusDot.tsx",
+    "src/features/shared/components/display/StatusShape.tsx",
+    "src/features/shared/components/display/ActivityDot.tsx",
+    "src/features/shared/components/display/LiveStatusDot.tsx",
+    "src/features/shared/components/display/Badge.tsx"
+   ]
+  },
+  {
+   "name": "display-table-primitives",
+   "category": "ui",
+   "business_feature": "Table & List Primitives",
+   "description": "Full suite of table and list layout primitives: UnifiedTable (standard sortable table), SortableHeader (clickable column with sort indicator), ColumnResize (drag handle), DataGrid (CSS-grid fraction layout), DragHandle (grip icon), DropIndicator (DnD position indicator), ScrollShadowContainer (overflow fade), FacetedDecisionTable (slash-path facet tree + toolbar + grid), GroupedVirtualList (virtualized sticky-header grouped list), and their pure model/grouping logic and tests.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/display/UnifiedTable.tsx",
+    "src/features/shared/components/display/FacetedDecisionTable.tsx",
+    "src/features/shared/components/display/GroupedVirtualList.tsx"
+   ],
+   "cross_refs": [
+    "display-status-badges",
+    "form-input-controls",
+    "decision-review"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/shared/components/display/UnifiedTable.tsx",
+    "src/features/shared/components/display/SortableHeader.tsx",
+    "src/features/shared/components/display/__tests__/SortableHeader.test.tsx",
+    "src/features/shared/components/display/ColumnResize.tsx",
+    "src/features/shared/components/display/DataGrid.tsx",
+    "src/features/shared/components/display/DragHandle.tsx"
+   ]
+  },
+  {
+   "name": "editor-components",
+   "category": "ui",
+   "business_feature": "Editor Components",
+   "description": "Shared rich-content editor and preview components: JsonEditor (JSON editing with validation), MarkdownRenderer (sanitized markdown to React), PromptTabsPreview (tabbed preview of prompt variants), and PromptTemplateRenderer (renders prompt templates with highlighted {{variable}} placeholder syntax). Used wherever the app lets users view or edit structured content.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/editors/JsonEditor.tsx",
+    "src/features/shared/components/editors/MarkdownRenderer.tsx"
+   ],
+   "cross_refs": [
+    "form-input-controls",
+    "display-table-primitives"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/features/shared/components/editors/JsonEditor.tsx",
+    "src/features/shared/components/editors/MarkdownRenderer.tsx",
+    "src/features/shared/components/editors/PromptTabsPreview.tsx",
+    "src/features/shared/components/editors/PromptTemplateRenderer.tsx"
+   ]
+  },
+  {
+   "name": "feedback-primitives",
+   "category": "ui",
+   "business_feature": "Feedback & Error States",
+   "description": "All user-facing feedback and error-state components: LoadingSpinner (canonical spinner with a11y label), ErrorBoundary (React error boundary with dashboard recovery), ErrorBanner (inline/banner/panel with retry+dismiss), ErrorRecoveryBanner, InlineErrorBanner, Banner (info/warn/error), ConfirmDialog (confirm/cancel for destructive actions), SuspenseFallback, Reveal (fade+slide-up mount transition), StalenessIndicator, ScenarioEmptyState, DropZoneGlow, ConnectionStatusBadge, and AriaLiveProvider.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/feedback/LoadingSpinner.tsx",
+    "src/features/shared/components/feedback/ErrorBanner.tsx",
+    "src/features/shared/components/feedback/ConfirmDialog.tsx"
+   ],
+   "cross_refs": [
+    "display-status-badges",
+    "button-primitives",
+    "modal-overlay-dispatch"
+   ],
+   "file_count": 14,
+   "sample_files": [
+    "src/features/shared/components/feedback/LoadingSpinner.tsx",
+    "src/features/shared/components/feedback/ErrorBoundary.tsx",
+    "src/features/shared/components/feedback/ErrorBanner.tsx",
+    "src/features/shared/components/feedback/ErrorRecoveryBanner.tsx",
+    "src/features/shared/components/feedback/InlineErrorBanner.tsx",
+    "src/features/shared/components/feedback/Banner.tsx"
+   ]
+  },
+  {
+   "name": "footer-and-notifications",
+   "category": "ui",
+   "business_feature": "Footer & Notifications",
+   "description": "App-wide status footer (theme picker, tour, collapse toggle, workspace switcher, companion/radio/fleet/system-load icons, section nav) and the notification center panel that lists pipeline/process notifications with mark-read and dismiss actions. Toast container and auto-dismiss timer hook round out in-app alerting. SystemLoadFooterIcon renders a live CPU/memory traffic-light icon.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/chrome/DesktopFooter.tsx",
+    "src/features/shared/chrome/notifications/NotificationCenter.tsx"
+   ],
+   "cross_refs": [
+    "sidebar-navigation",
+    "window-chrome",
+    "feedback-primitives"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/shared/chrome/DesktopFooter.tsx",
+    "src/features/shared/chrome/FooterSectionNav.tsx",
+    "src/features/shared/chrome/SystemLoadFooterIcon.tsx",
+    "src/features/shared/chrome/__tests__/FooterSectionNav.test.tsx",
+    "src/features/shared/chrome/notifications/NotificationCenter.tsx",
+    "src/features/shared/chrome/ToastContainer.tsx"
+   ]
+  },
+  {
+   "name": "form-input-controls",
+   "category": "ui",
+   "business_feature": "Form Input Controls",
+   "description": "Core form input primitives used across all feature forms: FormField (label + hint + error wrapper), FormFieldGroup (shared layout for grouped fields), Listbox (accessible dropdown), NumberStepper (+/- buttons), Slider (range with live draft), AccessibleToggle (on/off switch, not a raw checkbox), KeyValueEditor (list of key/value pairs), PasswordToggleField (show/hide), and PillGroup (multi-select tags).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/forms/FormField.tsx",
+    "src/features/shared/components/forms/Listbox.tsx",
+    "src/features/shared/components/forms/AccessibleToggle.tsx"
+   ],
+   "cross_refs": [
+    "form-validation",
+    "form-specialized",
+    "button-primitives"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/features/shared/components/forms/FormField.tsx",
+    "src/features/shared/components/forms/FormFieldGroup.tsx",
+    "src/features/shared/components/forms/Listbox.tsx",
+    "src/features/shared/components/forms/NumberStepper.tsx",
+    "src/features/shared/components/forms/__tests__/NumberStepper.test.tsx",
+    "src/features/shared/components/forms/Slider.tsx"
+   ]
+  },
+  {
+   "name": "form-specialized",
+   "category": "ui",
+   "business_feature": "Specialized Form Controls",
+   "description": "Specialized and design-system-specific form controls: DesignInput (styled design-system text input) and DesignInputAttachments, DirectoryPickerInput (Tauri native directory picker), ColorPicker and PopupColorPicker, SortableColumnHeader (draggable column management), TableSelector (table-based multi-select), ThemedSelect (styled select), ColumnDropdownFilter, SettingRow (label+description+toggle row for settings panels), SuccessCheck (animated SVG check), and positioning/portal hooks.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/forms/DesignInput.tsx",
+    "src/features/shared/components/forms/ColorPicker.tsx"
+   ],
+   "cross_refs": [
+    "form-input-controls",
+    "form-validation",
+    "display-table-primitives"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/shared/components/forms/DesignInput.tsx",
+    "src/features/shared/components/forms/DesignInputAttachments.tsx",
+    "src/features/shared/components/forms/designInputHelpers.ts",
+    "src/features/shared/components/forms/DirectoryPickerInput.tsx",
+    "src/features/shared/components/forms/ColorPicker.tsx",
+    "src/features/shared/components/forms/PopupColorPicker.tsx"
+   ]
+  },
+  {
+   "name": "form-validation",
+   "category": "lib",
+   "business_feature": "Form Validation",
+   "description": "Form-level and field-level validation infrastructure: FormErrorContext (React context for form-wide error state), FormErrorSummary (banner listing all validation errors), CharBudget (character count display), useFieldValidation (sync/async validation returning error string or null), useAsyncFieldValidation (debounced async validation), and useShakeError (CSS shake animation on validation failure).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/forms/FormErrorContext.tsx",
+    "src/features/shared/components/forms/useFieldValidation.ts",
+    "src/features/shared/components/forms/useAsyncFieldValidation.ts"
+   ],
+   "cross_refs": [
+    "form-input-controls",
+    "feedback-primitives"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/shared/components/forms/FormErrorContext.tsx",
+    "src/features/shared/components/forms/FormErrorSummary.tsx",
+    "src/features/shared/components/forms/__tests__/FormErrorSummary.test.tsx",
+    "src/features/shared/components/forms/CharBudget.tsx",
+    "src/features/shared/components/forms/useAsyncFieldValidation.ts",
+    "src/features/shared/components/forms/__tests__/useAsyncFieldValidation.test.ts"
+   ]
+  },
+  {
+   "name": "formatters-and-display",
+   "category": "lib",
+   "business_feature": "Display Formatters",
+   "description": "Shared formatting utilities for timestamps, relative time, durations, numbers, and execution status icons. Handles the SQLite UTC-without-timezone quirk by normalizing bare datetime strings before parsing, preventing off-by-hours display for non-UTC users. Also provides terminal line classification and color mapping for the CLI streaming view.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/formatters.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 3,
+   "sample_files": [
+    "src/lib/utils/formatters.ts",
+    "src/lib/utils/terminalColors.ts",
+    "src/lib/utils/parseJson.ts"
+   ]
+  },
+  {
+   "name": "layout-skeleton-settings",
+   "category": "ui",
+   "business_feature": "Skeleton & Settings Layout",
+   "description": "Loading skeleton placeholders for deferring render cost (ContentHeaderSkeleton, ListSkeleton, TableSkeleton, RouteChunkSkeleton — the last renders nothing for ~150 ms to avoid flash), DeferUntilIdle (defers children to requestIdleCallback to avoid blocking paint), and the two-column settings layout: SettingsScaffold (sticky scroll-spy rail + stacked SectionCard content) and its useSectionScrollSpy hook.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/layout/SettingsScaffold.tsx",
+    "src/features/shared/components/layout/DeferUntilIdle.tsx"
+   ],
+   "cross_refs": [
+    "layout-structure",
+    "feedback-primitives"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/features/shared/components/layout/ContentHeaderSkeleton.tsx",
+    "src/features/shared/components/layout/ListSkeleton.tsx",
+    "src/features/shared/components/layout/TableSkeleton.tsx",
+    "src/features/shared/components/layout/RouteChunkSkeleton.tsx",
+    "src/features/shared/components/layout/DeferUntilIdle.tsx",
+    "src/features/shared/components/layout/DeferUntilIdle.test.tsx"
+   ]
+  },
+  {
+   "name": "layout-structure",
+   "category": "ui",
+   "business_feature": "Layout Structure",
+   "description": "Core page and panel layout primitives: ContentLayout (standard content area shell), ActionRow (horizontal filter/status toolbar), PanelTabBar (in-panel tab bar), SegmentedTabs (pill tab switcher), SectionCard (card with header/status-border/collapse), SectionHeader (icon+title+badge+trailing actions), SectionHeading, FullScreenOverlay, ReasoningTrace (expandable AI reasoning display), VibeThemeProvider (persona-derived CSS custom properties), KanbanBoard (generic HTML5 drag-to-move status columns), and the systemLoad pure EMA/hysteresis module.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/layout/ContentLayout.tsx",
+    "src/features/shared/components/layout/SectionCard.tsx",
+    "src/features/shared/components/layout/PanelTabBar.tsx"
+   ],
+   "cross_refs": [
+    "layout-skeleton-settings",
+    "display-table-primitives",
+    "feedback-primitives"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/shared/components/layout/ContentLayout.tsx",
+    "src/features/shared/components/layout/ActionRow.tsx",
+    "src/features/shared/components/layout/PanelTabBar.tsx",
+    "src/features/shared/components/layout/SegmentedTabs.tsx",
+    "src/features/shared/components/layout/SectionCard.tsx",
+    "src/features/shared/components/layout/SectionHeader.tsx"
+   ]
+  },
+  {
+   "name": "modal-overlay-dispatch",
+   "category": "ui",
+   "business_feature": "Modals & Dispatch",
+   "description": "Modal and overlay primitives used across the app: BaseModal re-export (enforced by ESLint over fixed-inset backdrops), ConfirmDestructiveModal (typed delete/reset confirmation), FilterBar (horizontal list filter), FirstUseConsentModal (first-launch onboarding), QuickEditPopover (anchored inline-edit), UnsavedChangesModal (navigation guard), and DispatchChooser (consent surface for routing a prepared prompt to Dev Runner / Fleet / Claude CLI / Console).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/modals/index.ts",
+    "src/features/shared/components/overlays/ConfirmDestructiveModal.tsx",
+    "src/features/shared/dispatch/DispatchChooser.tsx"
+   ],
+   "cross_refs": [
+    "button-primitives",
+    "feedback-primitives",
+    "form-input-controls"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/shared/components/modals/index.ts",
+    "src/features/shared/components/overlays/ConfirmDestructiveModal.tsx",
+    "src/features/shared/components/overlays/FilterBar.tsx",
+    "src/features/shared/components/overlays/FirstUseConsentModal.tsx",
+    "src/features/shared/components/overlays/QuickEditPopover.tsx",
+    "src/features/shared/components/overlays/UnsavedChangesModal.tsx"
+   ]
+  },
+  {
+   "name": "progress-transform",
+   "category": "ui",
+   "business_feature": "Progress & Transform UI",
+   "description": "Multi-phase progress and data-transform UI used during import and pipeline flows: AnalysisModeView and TransformModeView (the two phases of an import), TransformProgress and TransformStatusPanels (progress display and per-step status), EstimatedProgressBar (colour-ramp bar: primary at low %, accent near complete), WizardStepper (multi-step indicator), ContentLoader (generic loading state), a phase-detection pure-logic module, and shared transform progress types.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/progress/TransformProgress.tsx",
+    "src/features/shared/components/progress/phaseDetection.ts"
+   ],
+   "cross_refs": [
+    "terminal-ui",
+    "feedback-primitives",
+    "display-metrics-counters"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src/features/shared/components/progress/AnalysisModeView.tsx",
+    "src/features/shared/components/progress/ContentLoader.tsx",
+    "src/features/shared/components/progress/EstimatedProgressBar.tsx",
+    "src/features/shared/components/progress/TerminalBody.tsx",
+    "src/features/shared/components/progress/TransformModeView.tsx",
+    "src/features/shared/components/progress/TransformProgress.tsx"
+   ]
+  },
+  {
+   "name": "scheduling-primitives",
+   "category": "lib",
+   "business_feature": "Scheduling Primitives",
+   "description": "Canonical cron preset list and day-of-week vocabulary shared across all scheduling UIs (agent use-cases, trigger configuration, schedule pickers). Consolidates three previously divergent copies with conflicting Mon=0 vs Mon=1 conventions. The triggerConstants module extends this with trigger-type icons, colors, and category taxonomy.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/cronPresets.ts",
+    "src/lib/utils/platform/triggerConstants.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 3,
+   "sample_files": [
+    "src/lib/utils/cronPresets.ts",
+    "src/lib/utils/dayOfWeek.ts",
+    "src/lib/utils/platform/triggerConstants.ts"
+   ]
+  },
+  {
+   "name": "sidebar-navigation",
+   "category": "ui",
+   "business_feature": "Sidebar Navigation",
+   "description": "Two-level collapsible sidebar with icon rail (L1) and label-level nav (L2), section badges, tier gates, and group nav. Persists collapsed state in localStorage and adapts for mobile. Section-specific sub-navs for Agents, Plugins, and Teams inject domain content into the L2 slot, while BadgeSlot and OrbitDots supply unread-count and active-item decoration.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/chrome/sidebar/Sidebar.tsx",
+    "src/features/shared/chrome/sidebar/sidebarData.ts"
+   ],
+   "cross_refs": [
+    "window-chrome",
+    "footer-and-notifications"
+   ],
+   "file_count": 12,
+   "sample_files": [
+    "src/features/shared/chrome/sidebar/Sidebar.tsx",
+    "src/features/shared/chrome/sidebar/SidebarLevel1.tsx",
+    "src/features/shared/chrome/sidebar/SidebarLevel2.tsx",
+    "src/features/shared/chrome/sidebar/SidebarGroupNav.tsx",
+    "src/features/shared/chrome/sidebar/SidebarIcons.tsx",
+    "src/features/shared/chrome/sidebar/SidebarSubNav.ts"
+   ]
+  },
+  {
+   "name": "terminal-ui",
+   "category": "ui",
+   "business_feature": "Terminal Output UI",
+   "description": "Reusable terminal-output UI components shared across features that display CLI or log output: CliOutputPanel (panel wrapping stdout/stderr streams), TerminalBody (scrollable xterm-style output body), TerminalHeader (title bar with controls), TerminalSearchBar (filter/search within output), and TerminalStrip (compact inline strip for activity teasers). These are generic display shells; actual stream data comes from callers.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/components/terminal/CliOutputPanel.tsx",
+    "src/features/shared/components/terminal/TerminalBody.tsx"
+   ],
+   "cross_refs": [
+    "progress-transform",
+    "background-fleet-chrome"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/shared/components/terminal/CliOutputPanel.tsx",
+    "src/features/shared/components/terminal/TerminalBody.tsx",
+    "src/features/shared/components/terminal/TerminalHeader.tsx",
+    "src/features/shared/components/terminal/TerminalSearchBar.tsx",
+    "src/features/shared/components/terminal/TerminalStrip.tsx"
+   ]
+  },
+  {
+   "name": "window-chrome",
+   "category": "ui",
+   "business_feature": "Window Chrome",
+   "description": "Implements the native desktop window chrome: title bar with minimize/maximize/close controls via Tauri, ambient blur layer, docked icon tray, breadcrumb navigation trail, and the hook managing tray state. Provides the outermost frame users see around every screen. Depends on Tauri window APIs and the navigation history store.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/features/shared/chrome/TitleBar.tsx"
+   ],
+   "cross_refs": [
+    "sidebar-navigation",
+    "command-palette",
+    "footer-and-notifications"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/features/shared/chrome/TitleBar.tsx",
+    "src/features/shared/chrome/TitleBarAmbient.tsx",
+    "src/features/shared/chrome/TitleBarDock.tsx",
+    "src/features/shared/chrome/BreadcrumbTrail.tsx",
+    "src/features/shared/chrome/useTitleBarTray.tsx"
+   ]
+  }
+ ]
+}

@@ -158,6 +158,9 @@ pub async fn companion_approve_action(
         "run_browser_test" => execute_run_browser_test(&state, &app, &params),
         // Team-channel orchestration (C2) — Athena posts into a team channel.
         "post_team_message" => execute_post_team_message(&state, &params),
+        // Night Shift v1 — the ONLY dispatch path for a night plan (no plan
+        // runs unapproved; see approval_exec_night.rs).
+        "night_shift_execute_plan" => execute_night_shift_execute_plan(&state, &app, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),

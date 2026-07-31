@@ -177,6 +177,18 @@
     "importance_prefix": "důležitost:",
     "confidence_suffix": "% jistota"
   },
+  "surface": {
+    "section_label": "Plocha",
+    "composed_badge": "Vytvořeno agentem",
+    "composed_tip": "Tuto plochu deklaroval výstup agenta a je vykreslena ze sdíleného katalogu komponent. Akce se nikdy nespustí bez vašeho potvrzení.",
+    "dropped_blocks": "{count} neplatných bloků bylo z této plochy vynecháno.",
+    "no_target": "Zde nedostupné — toto zobrazení nemá projekt ani personu, na které by šlo působit.",
+    "confirm_run_title": "Spustit tuto akci agenta?",
+    "confirm_run_body": "„{label}“ spustí běh persony s tímto vstupem: {prompt}",
+    "confirm_run_action": "Spustit",
+    "table_empty": "Tabulka nemá žádné řádky.",
+    "terminal_empty": "Žádné řádky výstupu."
+  },
   "progress_extra": {
     "taking_longer": "Trvá déle než obvykle",
     "complete": "Dokončeno",

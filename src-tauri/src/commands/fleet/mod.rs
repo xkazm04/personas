@@ -21,6 +21,7 @@
 #[cfg(test)]
 pub mod bench;
 pub mod commands;
+pub mod companion_api;
 pub mod debug_log;
 pub mod external;
 pub mod headless;
@@ -28,6 +29,7 @@ pub mod hook_install;
 pub mod hooks;
 pub mod keys;
 pub mod naming;
+pub mod pairing;
 pub mod persist;
 pub mod process_scan;
 pub mod pty;

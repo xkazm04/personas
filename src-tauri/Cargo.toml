@@ -131,7 +131,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-appender = "0.2"
 thiserror = "2"
-rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
+rusqlite = { version = "0.38", features = ["bundled", "hooks", "preupdate_hook"] }
 r2d2 = "0.8"
 # System CPU/RAM sampling for the footer load gauge. default-features=false drops
 # disk/network/component + the macOS-heavy multithread feature — we only need
@@ -157,6 +157,8 @@ tower-http = { version = "0.6", features = ["cors"] }
 hmac = "0.12"
 hkdf = "0.12"
 hex = "0.4"
+# Fleet mobile-companion pairing QR (pure-Rust, zero-dep encoder).
+qrcodegen = "1.8"
 open = "5"
 url = "2"
 urlencoding = "2"

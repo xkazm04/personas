@@ -3,6 +3,7 @@ mod artist;
 mod audit_incident;
 mod audit_log;
 mod automation;
+mod automation_suggestion;
 mod build_session;
 mod chat;
 mod connector;
@@ -26,6 +27,7 @@ mod gitlab;
 mod healing;
 #[cfg(feature = "p2p")]
 mod identity;
+mod incident_diagnosis;
 mod json_column;
 mod knowledge;
 #[cfg(feature = "ml")]
@@ -80,6 +82,7 @@ pub use artist::*;
 pub use audit_incident::*;
 pub use audit_log::*;
 pub use automation::*;
+pub use automation_suggestion::*;
 pub use build_session::*;
 pub use chat::*;
 pub use connector::*;
@@ -102,6 +105,7 @@ pub use genome::*;
 pub use healing::*;
 #[cfg(feature = "p2p")]
 pub use identity::*;
+pub use incident_diagnosis::*;
 pub use json_column::Json;
 pub use knowledge::*;
 #[cfg(feature = "ml")]

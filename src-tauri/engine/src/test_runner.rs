@@ -1075,6 +1075,14 @@ pub struct ExecutionOutput {
     events: Vec<CreateLabResultEventInput>,
 }
 
+impl ExecutionOutput {
+    /// Read access for out-of-crate consumers (e.g. measured-fitness scoring)
+    /// without opening the field itself to mutation.
+    pub fn assistant_text(&self) -> &str {
+        &self.assistant_text
+    }
+}
+
 /// Build a configured CLI `Command` with a temporary working directory.
 ///
 /// Creates the temp dir, configures args, piped stdin/stdout, null stderr,

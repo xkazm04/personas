@@ -1,14 +1,27 @@
 //! Auto-evolution engine — closed-loop persona optimization via lab-driven breeding.
 //!
-//! After execution cycles, automatically generates variant personas, tests them
-//! in the lab (arena mode), and promotes winners to replace predecessors.
-//! Creates Darwinian persona evolution without user intervention.
+//! Darwin Mode v1: after execution cycles, generates challenger variants,
+//! MEASURES incumbent and challengers on the same replay set (synthetic
+//! fixtures + the persona's recent real workload inputs, scored on assertion
+//! pass-rate + cost + latency via `engine::fitness_driver`), and — when a
+//! challenger beats the incumbent by the policy threshold — FILES a
+//! human-review promotion proposal. There is NO auto-promotion path: the only
+//! way a winner reaches the live persona is an explicit approval command,
+//! which applies under an optimistic lock and logs to `persona_change_log`.
+//!
+//! Feedback-loop hygiene: challenger replays never write executions, knowledge
+//! or assertion rows (outputs are discarded), so a challenger cannot feed its
+//! own future evidence. All replay spend is recorded against the cycle's
+//! budget ledger and the evaluation loop HARD-stops at the ceiling.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::test_runner::{execute_scenario, generate_scenarios, score_result, TestModelConfig};
-use crate::db::models::{EvolutionPolicy, Persona, PersonaToolDefinition};
+use super::fitness_driver::{
+    self, replay_candidate, score_measured_fitness, MeasuredFitness, ReplaySample,
+};
+use super::test_runner::generate_scenarios;
+use crate::db::models::{EvolutionPolicy, UpdatePersonaInput};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
@@ -45,8 +58,21 @@ pub struct EvolutionCycleSummary {
     pub variants_tested: i32,
     pub winner_fitness: Option<f64>,
     pub incumbent_fitness: Option<f64>,
+    /// Always `false` at cycle end in Darwin Mode v1 — promotion is
+    /// proposal-gated. Flips true only when a human approves the proposal.
     pub promoted: bool,
     pub promoted_persona_id: Option<String>,
+    /// Id of the promotion proposal FILED by this cycle (winner beat incumbent
+    /// by the threshold). `None` when no challenger cleared the bar.
+    #[serde(default)]
+    pub proposal_id: Option<String>,
+    /// `"measured"` on Darwin cycles — incumbent/winner fitness came from
+    /// replay measurement, not historical prediction.
+    #[serde(default)]
+    pub fitness_source: Option<String>,
+    /// How many of the replay scenarios were rebuilt from REAL workload inputs.
+    #[serde(default)]
+    pub workload_replays: i32,
     /// Whether all status updates succeeded during the cycle.
     /// `false` means the frontend may have shown stale status at some point.
     pub status_reliable: bool,
@@ -361,98 +387,149 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     };
 
     // Default model for evaluation
-    let eval_model = TestModelConfig {
-        id: "sonnet".to_string(),
-        model: Some("claude-sonnet-4-6".to_string()),
-        provider: "anthropic".to_string(),
-        base_url: None,
-        auth_token: None,
-        effort: None, // falls back to prompt::DEFAULT_EFFORT
+    let eval_model = fitness_driver::default_eval_model();
+
+    // Build the shared replay set: a couple of synthetic fixtures plus the
+    // persona's most recent REAL workload inputs (challenger harness) — every
+    // candidate and the incumbent are measured on the SAME set. Replay outputs
+    // are discarded; only measurements survive.
+    let workload =
+        fitness_driver::workload_replay_scenarios(&pool, &persona_id, fitness_driver::WORKLOAD_REPLAY_COUNT);
+    let workload_count = workload.len() as i32;
+    let mut replay_set: Vec<super::test_runner::TestScenario> =
+        scenarios.iter().take(2).cloned().collect();
+    replay_set.extend(workload);
+
+    // Measure the incumbent first (baseline) — assertion pass-rate + cost +
+    // latency folded by the pure scorer.
+    let incumbent_samples: Vec<ReplaySample> = replay_candidate(
+        &pool, &persona, &tools, &replay_set, &eval_model, &cycle_id, &persona_id,
+    )
+    .await;
+    let incumbent_measured = match score_measured_fitness(&incumbent_samples, &objective) {
+        Some(m) => m,
+        None => {
+            // Sparse-data honesty: without a measured baseline there is no
+            // legitimate comparison — fail the cycle rather than fall back to
+            // a historical prediction that isn't like-for-like.
+            if !try_status_update(
+                &pool,
+                &cycle_id,
+                EvolutionCycleStatus::Failed,
+                Some("Could not measure incumbent fitness (no replay samples — budget exhausted before the first replay?)"),
+            ) {
+                status_reliable = false;
+            }
+            let _ = status_reliable;
+            return;
+        }
     };
 
-    // Score the incumbent first (baseline)
-    let incumbent_avg =
-        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model, &cycle_id, &pool).await;
-
-    // Score each variant
+    // Measure each challenger on the same replay set.
     let mut best_variant_idx: Option<usize> = None;
-    let mut best_variant_score: f64 = 0.0;
+    let mut best_measured: Option<MeasuredFitness> = None;
+    let mut per_variant_overall: Vec<Option<f64>> = Vec::with_capacity(variants.len());
 
     for (i, variant) in variants.iter().enumerate() {
-        // P2 enforce-mode: stop evaluating further variants once the cycle's
-        // budget is exhausted (warn-only mode never halts). Already-evaluated
-        // variants still compete for promotion below.
-        if crate::engine::run_budget::ledger().should_halt(&cycle_id) {
+        // HARD budget cap: stop evaluating once the cycle's ceiling is crossed,
+        // regardless of the global enforce toggle — evolution spend is always
+        // capped. Already-measured variants still compete below.
+        if crate::engine::run_budget::ledger().is_exceeded(&cycle_id) {
             tracing::warn!(
                 cycle_id = %cycle_id,
                 evaluated = i,
-                "Evolution cycle halted variant evaluation — budget ceiling reached (enforce mode)",
+                "Evolution cycle hard-stopped variant evaluation — budget ceiling reached",
             );
+            per_variant_overall.resize(variants.len(), None);
             break;
         }
-        // Create ephemeral persona from variant genome
-        let mut variant_persona = persona.clone();
-        variant_persona.system_prompt = variant.reassemble_prompt();
-        // Clear structured_prompt so the system_prompt is used
-        variant_persona.structured_prompt = None;
+        let variant_persona = fitness_driver::candidate_from_genome(&persona, variant);
 
-        let variant_avg =
-            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model, &cycle_id, &pool)
-                .await;
+        let samples = replay_candidate(
+            &pool, &variant_persona, &tools, &replay_set, &eval_model, &cycle_id, &persona_id,
+        )
+        .await;
+        let measured = score_measured_fitness(&samples, &objective);
+        per_variant_overall.push(measured.as_ref().map(|m| m.overall));
 
-        tracing::debug!(
-            cycle_id = %cycle_id,
-            variant = i,
-            score = variant_avg,
-            incumbent = incumbent_avg,
-            "Evolution: variant {} scored {:.2} (incumbent: {:.2})", i, variant_avg, incumbent_avg,
-        );
-
-        if variant_avg > best_variant_score {
-            best_variant_score = variant_avg;
-            best_variant_idx = Some(i);
+        if let Some(m) = measured {
+            tracing::debug!(
+                cycle_id = %cycle_id,
+                variant = i,
+                score = m.overall,
+                incumbent = incumbent_measured.overall,
+                "Evolution: variant {} measured {:.3} (incumbent: {:.3})",
+                i, m.overall, incumbent_measured.overall,
+            );
+            if best_measured.as_ref().map_or(true, |b| m.overall > b.overall) {
+                best_measured = Some(m);
+                best_variant_idx = Some(i);
+            }
         }
     }
 
-    // Phase 3: Promoting
+    // Phase 3: Proposing (status string kept for frontend compatibility)
     if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Promoting, None) {
         tracing::error!(cycle_id = %cycle_id, "Failed to set promoting status even after retry");
         return;
     }
 
+    // Promotion-as-proposal: a winner that beats the measured incumbent by the
+    // policy threshold FILES a review proposal. NOTHING is applied here — the
+    // human decides via `evolution_resolve_promotion_proposal`.
     let threshold = policy.improvement_threshold;
-    let promoted = if let Some(idx) = best_variant_idx {
-        // Compare LIKE-for-LIKE: both incumbent_avg and best_variant_score come
-        // from evaluate_persona_on_scenarios (live quality eval, same 0–1 scale).
-        // Previously this subtracted incumbent_fitness.overall — a historical
-        // cost/speed-weighted blend on a different distribution — so the core
-        // promote/reject decision compared apples to oranges (cheap+fast
-        // incumbents never evolved; expensive ones promoted mediocre variants).
-        // incumbent_fitness is retained for reporting only.
-        let improvement = best_variant_score - incumbent_avg;
+    let best_variant_score = best_measured.as_ref().map(|m| m.overall);
+    let mut proposal_id: Option<String> = None;
+
+    if let (Some(idx), Some(ref winner_measured)) = (best_variant_idx, best_measured.as_ref()) {
+        // LIKE-for-LIKE: both sides are measured by the same scorer on the
+        // same replay set (assertion pass-rate + cost + latency).
+        let improvement = winner_measured.overall - incumbent_measured.overall;
         if improvement >= threshold {
-            // Promote: update the persona with the winning variant's genome
             let winner = &variants[idx];
             let new_prompt = winner.reassemble_prompt();
 
-            match promote_variant(&pool, &persona_id, winner, &new_prompt, &base_updated_at) {
-                Ok(()) => {
+            let evidence = serde_json::json!({
+                "incumbent": incumbent_measured,
+                "winner": winner_measured,
+                "perVariantOverall": per_variant_overall,
+                "replayScenarios": replay_set.iter().map(|s| s.name.clone()).collect::<Vec<_>>(),
+                "workloadReplays": workload_count,
+                "syntheticReplays": (replay_set.len() as i32) - workload_count,
+                "variantsBred": variants.len(),
+                "budget": crate::engine::run_budget::ledger().state(&cycle_id),
+            });
+
+            let input = crate::db::models::CreateEvolutionProposalInput {
+                cycle_id: cycle_id.clone(),
+                persona_id: persona_id.clone(),
+                winner_genome_json: serde_json::to_string(winner).unwrap_or_default(),
+                new_prompt,
+                incumbent_score: incumbent_measured.overall,
+                winner_score: winner_measured.overall,
+                improvement,
+                threshold,
+                evidence_json: serde_json::to_string(&evidence).ok(),
+                base_updated_at: base_updated_at.clone(),
+            };
+            match crate::db::repos::lab::evolution_proposals::create(&pool, &input) {
+                Ok(p) => {
                     tracing::info!(
                         persona_id = %persona_id,
                         cycle_id = %cycle_id,
+                        proposal_id = %p.id,
                         improvement = improvement,
-                        "Evolution: promoted variant with {:.2}% improvement",
+                        "Evolution: challenger beat incumbent by {:.1}% — promotion proposal filed for review",
                         improvement * 100.0,
                     );
-                    true
+                    proposal_id = Some(p.id);
                 }
                 Err(e) => {
                     tracing::warn!(
                         cycle_id = %cycle_id,
                         error = %e,
-                        "Evolution: failed to promote variant"
+                        "Evolution: failed to file promotion proposal"
                     );
-                    false
                 }
             }
         } else {
@@ -463,31 +540,37 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
                 threshold = threshold,
                 "Evolution: no variant met improvement threshold"
             );
-            false
         }
-    } else {
-        false
-    };
+    }
 
-    // Finalize cycle
+    // Finalize cycle. `promoted` is ALWAYS false here — it flips only when a
+    // human approves the filed proposal (see mark_cycle_promoted).
+    let promoted = false;
     let summary = EvolutionCycleSummary {
         cycle_id: cycle_id.clone(),
         persona_id: persona_id.clone(),
         generation: policy.total_cycles + 1,
         variants_tested: variants.len() as i32,
-        winner_fitness: best_variant_idx.map(|_| best_variant_score),
-        incumbent_fitness: Some(incumbent_fitness.overall),
+        winner_fitness: best_variant_score,
+        incumbent_fitness: Some(incumbent_measured.overall),
         promoted,
-        promoted_persona_id: if promoted {
-            Some(persona_id.clone())
-        } else {
-            None
-        },
+        promoted_persona_id: None,
+        proposal_id: proposal_id.clone(),
+        fitness_source: Some("measured".to_string()),
+        workload_replays: workload_count,
         status_reliable,
         warnings: objective_warnings,
         raw_fitness_objective: Some(policy.fitness_objective.clone()),
         budget: crate::engine::run_budget::ledger().state(&cycle_id),
     };
+    // Historical (knowledge-derived) fitness is retained for logs only — the
+    // decision above never mixes it with measured numbers.
+    tracing::debug!(
+        cycle_id = %cycle_id,
+        historical_incumbent = incumbent_fitness.overall,
+        measured_incumbent = incumbent_measured.overall,
+        "Evolution: incumbent historical vs measured fitness",
+    );
 
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();
     // complete_cycle is critical — retry once on failure. It stamps
@@ -500,8 +583,8 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         &pool,
         &cycle_id,
         promoted,
-        best_variant_idx.map(|_| best_variant_score),
-        incumbent_fitness.overall,
+        best_variant_score,
+        incumbent_measured.overall,
         &summary_json,
     ) {
         Ok(()) => true,
@@ -511,8 +594,8 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
                 &pool,
                 &cycle_id,
                 promoted,
-                best_variant_idx.map(|_| best_variant_score),
-                incumbent_fitness.overall,
+                best_variant_score,
+                incumbent_measured.overall,
                 &summary_json,
             ) {
                 Ok(()) => true,
@@ -541,85 +624,33 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
 }
 
 // =============================================================================
-// Real variant evaluation via CLI execution
+// Promotion (approval-time apply — the ONLY path that touches the persona)
 // =============================================================================
 
-/// Run a persona against test scenarios and return average composite score (0.0-1.0).
-async fn evaluate_persona_on_scenarios(
-    persona: &Persona,
-    tools: &[PersonaToolDefinition],
-    scenarios: &[super::test_runner::TestScenario],
-    model: &TestModelConfig,
-    run_id: &str,
-    pool: &DbPool,
-) -> f64 {
-    let mut total_score: f64 = 0.0;
-    let mut count: usize = 0;
-
-    // Run up to 3 scenarios to keep evaluation fast
-    let max_scenarios = scenarios.len().min(3);
-    for scenario in &scenarios[..max_scenarios] {
-        match execute_scenario(persona, tools, scenario, model).await {
-            Ok(output) => {
-                let scores = score_result(&output, scenario, persona, pool).await;
-                // P2: record this scenario's cost against the cycle's aggregate
-                // budget (warn-only — the cycle is not aborted). score_result
-                // copies output.cost_usd into scores.cost_usd, so record it once
-                // (summing them would double-count).
-                let outcome = crate::engine::run_budget::ledger()
-                    .record(run_id, output.cost_usd);
-                if outcome.exceeded_now {
-                    tracing::warn!(
-                        run_id = %run_id,
-                        spent_usd = outcome.spent_usd,
-                        ceiling_usd = outcome.ceiling_usd,
-                        "Evolution cycle exceeded its aggregate budget ceiling (warn-only; cycle continues)",
-                    );
-                }
-                let composite = (scores.tool_accuracy.unwrap_or(0) as f64 * 0.3
-                    + scores.output_quality.unwrap_or(0) as f64 * 0.4
-                    + scores.protocol_compliance.unwrap_or(0) as f64 * 0.3)
-                    / 100.0;
-                total_score += composite;
-                count += 1;
-            }
-            Err(e) => {
-                tracing::debug!(
-                    "Evolution eval failed for scenario '{}': {}",
-                    scenario.name,
-                    e
-                );
-                // Count failures as 0 score
-                count += 1;
-            }
-        }
-    }
-
-    if count == 0 {
-        return 0.0;
-    }
-    total_score / count as f64
-}
-
-// =============================================================================
-// Promotion
-// =============================================================================
-
-/// Apply a winning variant's genome back to the incumbent persona.
-fn promote_variant(
+/// Apply an APPROVED proposal's winning genome onto the incumbent persona.
+///
+/// Called exclusively from the human-review approval command
+/// (`evolution_resolve_promotion_proposal`) — the evolution cycle itself never
+/// calls this. Runs as one transaction: a compare-and-swap UPDATE on
+/// `updated_at` (the token captured when the cycle started — if the persona
+/// changed since, the proposal is stale and we fail closed instead of
+/// clobbering newer state) plus field-level `persona_change_log` rows
+/// (source `"evolution"`) so the promotion is attributable and revertible.
+pub(crate) fn apply_promotion(
     pool: &DbPool,
     persona_id: &str,
     winner: &PersonaGenome,
     new_prompt: &str,
     expected_updated_at: &str,
 ) -> Result<(), crate::error::AppError> {
-    let conn = pool.get()?;
-    // Compare-and-swap on updated_at: the cycle captured the incumbent at its
-    // start and spent minutes evaluating. If the persona changed since then —
-    // a concurrent cycle promoting, or the user editing the prompt in the UI —
-    // updated_at no longer matches, the UPDATE affects 0 rows, and we abandon
-    // promotion instead of silently overwriting the newer state (lost update).
-    let rows = conn.execute(
+    // Load the incumbent OUTSIDE the write txn to diff for the change log.
+    let existing = persona_repo::get_by_id(pool, persona_id)?;
+
+    let mut conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let tx = conn.transaction()?;
+
+    let rows = tx.execute(
         "UPDATE personas SET
             system_prompt = ?1,
             structured_prompt = ?2,
@@ -638,16 +669,46 @@ fn promote_variant(
             winner.model.model_profile,
             winner.model.max_budget_usd,
             winner.model.max_turns,
-            chrono::Utc::now().to_rfc3339(),
+            now,
             persona_id,
             expected_updated_at,
         ],
     )?;
     if rows == 0 {
         return Err(crate::error::AppError::Validation(
-            "Persona changed during the evolution cycle — promotion abandoned to avoid overwriting the newer state".into(),
+            "Persona changed after this proposal was filed — promotion abandoned to avoid overwriting the newer state. Reject the proposal and run a fresh cycle.".into(),
         ));
     }
+
+    // Provenance: field-level change-log rows commit atomically with the
+    // UPDATE. Secret-bearing fields are redacted by write_diff.
+    let diff_input = UpdatePersonaInput {
+        system_prompt: Some(new_prompt.to_string()),
+        structured_prompt: Some(winner.structured_prompt.clone()),
+        timeout_ms: Some(winner.model.timeout_ms),
+        max_concurrent: Some(winner.config.max_concurrent),
+        model_profile: Some(winner.model.model_profile.clone()),
+        max_budget_usd: Some(winner.model.max_budget_usd),
+        max_turns: Some(winner.model.max_turns),
+        ..Default::default()
+    };
+    if let Err(e) = crate::db::repos::resources::persona_change_log::write_diff(
+        &tx,
+        persona_id,
+        &existing,
+        &diff_input,
+        Some("evolution"),
+        &now,
+    ) {
+        // Never fail the approved promotion over audit rows — log loudly.
+        tracing::warn!(
+            persona_id = %persona_id,
+            error = %e,
+            "Promotion applied but change-log write failed",
+        );
+    }
+
+    tx.commit()?;
     Ok(())
 }
 

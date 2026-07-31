@@ -24,7 +24,8 @@ export type ViewName =
   | 'workspace-connect'
   | 'foraging'
   | 'databases'
-  | 'graph';
+  | 'graph'
+  | 'broker';
 
 // -- Discriminated union: each state carries exactly the data it needs --
 
@@ -42,7 +43,8 @@ export type CredentialViewState =
   | { view: 'workspace-connect' }
   | { view: 'foraging' }
   | { view: 'databases' }
-  | { view: 'graph' };
+  | { view: 'graph' }
+  | { view: 'broker' };
 
 // -- Typed actions --
 
@@ -64,6 +66,7 @@ export type CredentialViewAction =
   | { type: 'GO_FORAGING' }
   | { type: 'GO_DATABASES' }
   | { type: 'GO_GRAPH' }
+  | { type: 'GO_BROKER' }
   | { type: 'SET_OAUTH_VALUES'; values: Record<string, string> };
 
 // -- Transition Table ------------------------------------------------
@@ -79,7 +82,7 @@ export type CredentialViewAction =
 type ActionType = CredentialViewAction['type'];
 
 // Sidebar navigation actions are valid from any view
-const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH'];
+const GLOBAL_ACTIONS: ActionType[] = ['GO_LIST', 'GO_CATALOG', 'GO_ADD_NEW', 'GO_WORKSPACE_CONNECT', 'GO_DATABASES', 'GO_GRAPH', 'GO_BROKER'];
 
 /** View-specific transitions (in addition to global actions). */
 const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
@@ -97,26 +100,28 @@ const VIEW_TRANSITIONS: Record<ViewName, readonly ActionType[]> = {
   'foraging':           [],
   'databases':          [],
   'graph':              [],
+  'broker':             [],
 };
 
 /** View-level FSM: validates that a view->view navigation is structurally valid. */
 export const credentialViewFSM = createFSM<ViewName>({
   entity: 'credential-view',
   transitions: {
-    'list':               ['catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'catalog-browse':     ['list', 'catalog-form', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'workspace-connect', 'databases', 'graph'],
-    'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-new':            ['list', 'catalog-browse', 'add-ai-guide', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'workspace-connect', 'foraging', 'databases', 'graph'],
-    'add-ai-guide':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-mcp':            ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-custom':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-database':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'add-desktop':        ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'databases', 'graph'],
-    'foraging':           ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
-    'databases':          ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'graph'],
-    'graph':              ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases'],
+    'list':               ['catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'catalog-browse':     ['list', 'catalog-form', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'catalog-form':       ['list', 'catalog-browse', 'catalog-auto-setup', 'add-new', 'add-desktop', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'catalog-auto-setup': ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'add-new':            ['list', 'catalog-browse', 'add-ai-guide', 'add-mcp', 'add-custom', 'add-database', 'add-desktop', 'workspace-connect', 'foraging', 'databases', 'graph', 'broker'],
+    'add-ai-guide':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'add-mcp':            ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'add-custom':         ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'add-database':       ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'add-desktop':        ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'workspace-connect':  ['list', 'catalog-browse', 'add-new', 'databases', 'graph', 'broker'],
+    'foraging':           ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph', 'broker'],
+    'databases':          ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'graph', 'broker'],
+    'graph':              ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'broker'],
+    'broker':             ['list', 'catalog-browse', 'add-new', 'workspace-connect', 'databases', 'graph'],
   },
 });
 
@@ -152,6 +157,7 @@ const NAV_KEY_MAP: Record<ViewName, CredentialNavKey> = {
   'foraging':           'add-new',
   'databases':          'databases',
   'graph':              'graph',
+  'broker':             'broker',
 };
 
 export function getNavKey(state: CredentialViewState): CredentialNavKey {
@@ -178,6 +184,7 @@ const GO_WORKSPACE_CONNECT: ActionHandler = () => ({ view: 'workspace-connect' }
 const GO_FORAGING: ActionHandler = () => ({ view: 'foraging' });
 const GO_DATABASES: ActionHandler = () => ({ view: 'databases' });
 const GO_GRAPH: ActionHandler = () => ({ view: 'graph' });
+const GO_BROKER: ActionHandler = () => ({ view: 'broker' });
 
 const PICK_CONNECTOR: ActionHandler<Extract<CredentialViewAction, { type: 'PICK_CONNECTOR' }>> =
   (_state, action) => {
@@ -249,6 +256,7 @@ const ACTION_HANDLERS: Record<ActionType, ActionHandler<never>> = {
   GO_FORAGING: GO_FORAGING as ActionHandler<never>,
   GO_DATABASES: GO_DATABASES as ActionHandler<never>,
   GO_GRAPH: GO_GRAPH as ActionHandler<never>,
+  GO_BROKER: GO_BROKER as ActionHandler<never>,
   SET_OAUTH_VALUES: SET_OAUTH_VALUES as ActionHandler<never>,
 };
 
@@ -316,6 +324,8 @@ export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] 
       return [{ label: 'Databases', action: null }];
     case 'graph':
       return [{ label: 'Graph', action: null }];
+    case 'broker':
+      return [{ label: 'Broker', action: null }];
 
     default:
       return [{ ...root, action: null }];
@@ -346,6 +356,9 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
         break;
       case 'graph':
         dispatch({ type: 'GO_GRAPH' });
+        break;
+      case 'broker':
+        dispatch({ type: 'GO_BROKER' });
         break;
     }
   }, []);

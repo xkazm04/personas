@@ -242,6 +242,29 @@ async fn request_guidance(
         return Err(internal_error(format!("failed to emit notice: {e}")));
     }
 
+    // Night Shift: if an approved night plan's window is open and no human
+    // resolves within the configured minutes, Athena answers unattended
+    // from dev memories + decision precedent (episode + decision logged).
+    // Outside the window the watchdog no-ops and the card waits as before.
+    // (Question/context are read back off the notice payload — `a.context`
+    // was moved into it.)
+    crate::companion::night_shift::unattended::spawn_guidance_watchdog(
+        app.clone(),
+        request_id.clone(),
+        fleet_session_id.to_string(),
+        notice
+            .payload
+            .get("question")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        notice
+            .payload
+            .get("context")
+            .and_then(|v| v.as_str())
+            .map(str::to_string),
+    );
+
     // The receiver side has no independent timeout otherwise: `sweep_expired`
     // only runs inside `submit`, so if no further MCP request is ever
     // submitted for this hub, a bare `rx.await` would block past the
@@ -303,6 +326,18 @@ async fn request_approval(
         pending::resolve(&request_id, Err("emit failed".to_string()));
         return Err(internal_error(format!("failed to emit notice: {e}")));
     }
+
+    // Night Shift invariant: destructive/cost-bearing approvals are NEVER
+    // auto-approved unattended — during an open night window an unresolved
+    // approval is parked (explicit DENIED + park note, logged + rolled up in
+    // the morning report). Outside the window the watchdog no-ops.
+    crate::companion::night_shift::unattended::spawn_approval_watchdog(
+        app.clone(),
+        request_id.clone(),
+        fleet_session_id.to_string(),
+        a.action.trim().to_string(),
+        a.rationale.trim().to_string(),
+    );
 
     // See request_guidance: an idle hub never sweeps this entry on its own,
     // so bound the wait explicitly instead of trusting a future `submit` to

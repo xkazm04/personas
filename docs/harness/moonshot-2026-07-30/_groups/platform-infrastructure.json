@@ -1,0 +1,1919 @@
+{
+ "id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+ "name": "Platform Infrastructure",
+ "description": "",
+ "domain": "infrastructure",
+ "contexts": [
+  {
+   "name": "ai-director",
+   "category": "api",
+   "business_feature": "AI Director",
+   "description": "AI meta-orchestration layer — Director (meta-persona that reviews and scores execution outputs), Autopilot (auto-run policy engine), BYOM (bring-your-own-model configuration), and Twin (AI-generated digital twin for simulated user testing). These commands govern how and when AI runs without human intervention.",
+   "api_surface": "run_director, get_autopilot_policy, configure_byom, run_twin_simulation",
+   "db_tables": [
+    "director_verdicts",
+    "autopilot_rules",
+    "byom_config"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/director.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "companion-approvals",
+    "fleet-core"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/director.rs",
+    "src-tauri/src/commands/infrastructure/autopilot.rs",
+    "src-tauri/src/commands/infrastructure/byom.rs",
+    "src-tauri/src/commands/infrastructure/twin.rs"
+   ]
+  },
+  {
+   "name": "ambient-desktop-signals",
+   "category": "lib",
+   "business_feature": "Ambient Desktop Signals",
+   "description": "Fuses clipboard, file-watcher, and app-focus desktop signals into a rolling context window for ambient persona awareness. The ambient_context module maintains a VecDeque of ContextEvents and resolves sensory policies; the signal repo persists ambient events; clipboard_monitor and clipboard_error_detector watch the clipboard; file_watcher tracks file-system changes; app_focus tracks foreground application; context_rules evaluates persona-declared sensory policies against the signal stream.",
+   "api_surface": null,
+   "db_tables": [
+    "ambient_signals"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/ambient_context.rs",
+    "src-tauri/engine/src/context_rules.rs"
+   ],
+   "cross_refs": [
+    "prompt-assembly-engine",
+    "event-bus-routing"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/engine/src/ambient_context.rs",
+    "src-tauri/engine/src/ambient_signal_repo.rs",
+    "src-tauri/engine/src/app_focus.rs",
+    "src-tauri/engine/src/clipboard_monitor.rs",
+    "src-tauri/engine/src/clipboard_error_detector.rs",
+    "src-tauri/engine/src/file_watcher.rs"
+   ]
+  },
+  {
+   "name": "api-bridge-tests",
+   "category": "test",
+   "business_feature": "API Bridge Test Coverage",
+   "description": "Vitest unit tests for the `src/api` IPC bridge layer, covering the most critical command surfaces: credentials, enums, events, executions, memories, messages, observability, personas, settings, system, and triggers. These tests validate the typed wrappers and serialization contracts between the React frontend and Tauri backend without requiring a running desktop binary.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/__tests__/personas.test.ts",
+    "src/api/__tests__/executions.test.ts"
+   ],
+   "cross_refs": [
+    "persona-lifecycle-api",
+    "persona-execution-chat-api",
+    "credential-core-api",
+    "overview-metrics-api",
+    "trigger-scheduler-api"
+   ],
+   "file_count": 11,
+   "sample_files": [
+    "src/api/__tests__/credentials.test.ts",
+    "src/api/__tests__/enums.test.ts",
+    "src/api/__tests__/events.test.ts",
+    "src/api/__tests__/executions.test.ts",
+    "src/api/__tests__/memories.test.ts",
+    "src/api/__tests__/messages.test.ts"
+   ]
+  },
+  {
+   "name": "app-layout-navigation",
+   "category": "ui",
+   "business_feature": "App Layout & Navigation",
+   "description": "Top-level app shell, sidebar navigation, title bar dock (Athena tray), and layout orchestration. Routes between feature pages, manages sidebar section preloading, and hosts the TitleBarDock for companion interactions and fullscreen overlays. Nav analytics (navCatalog, analytics index) track which screens receive usage.",
+   "api_surface": "React Router routes, SidebarSection enum",
+   "db_tables": [],
+   "entry_points": [
+    "src/App.tsx",
+    "src/features/shared/components/layout/AppShell.tsx"
+   ],
+   "cross_refs": [
+    "state-management",
+    "i18n-system",
+    "companion-brain",
+    "onboarding-tours"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/App.tsx",
+    "src/main.tsx",
+    "src/features/shared/components/layout/FullScreenOverlay.tsx",
+    "src/lib/analytics/navCatalog.ts"
+   ]
+  },
+  {
+   "name": "app-settings",
+   "category": "api",
+   "business_feature": "App Settings",
+   "description": "Application settings, initial setup, and IPC authentication infrastructure. Settings CRUD persists user preferences; setup handles first-launch bootstrapping; auth enforces IPC token validation before privileged commands. Also the commands module root.",
+   "api_surface": "get_settings, update_settings, setup_app, verify_ipc_token",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/settings.rs"
+   ],
+   "cross_refs": [
+    "cloud-sync",
+    "system-health"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/settings.rs",
+    "src-tauri/src/commands/infrastructure/setup.rs",
+    "src-tauri/src/commands/infrastructure/auth.rs",
+    "src-tauri/src/commands/infrastructure/mod.rs",
+    "src-tauri/src/commands/mod.rs"
+   ]
+  },
+  {
+   "name": "app-settings-hooks",
+   "category": "lib",
+   "business_feature": "App Settings & Capabilities",
+   "description": "Hooks for reading and persisting application settings: a generic app-setting accessor, granular density/layout-density preferences, engine capability detection, CLI readiness checks, auto-installer and auto-updater flows, formatted-date helpers, and settings-page utilities. These hooks wrap the settings Tauri commands and surface values from the settings store to components.",
+   "api_surface": "Tauri commands: get_setting, set_setting, check_cli_readiness, install_component",
+   "db_tables": [
+    "settings"
+   ],
+   "entry_points": [
+    "src/hooks/utility/data/useSettings.ts",
+    "src/hooks/utility/data/useAppSetting.ts"
+   ],
+   "cross_refs": [
+    "data-collection-hooks",
+    "theming-platform-hooks"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/hooks/utility/data/useSettings.ts",
+    "src/hooks/utility/data/useAppSetting.ts",
+    "src/hooks/utility/data/useDensity.ts",
+    "src/hooks/utility/data/useEngineCapabilities.ts",
+    "src/hooks/utility/data/useCliReadiness.ts",
+    "src/hooks/utility/data/useAutoInstaller.ts"
+   ]
+  },
+  {
+   "name": "app-state-hooks",
+   "category": "lib",
+   "business_feature": "Application State Primitives",
+   "description": "Low-level application-state hooks shared across features: attention management for focus trapping, step-progress tracking for multi-step flows, a wizard state reducer, a slice-error aggregator, the Tauri event subscription primitive, and the public re-export index for the entire hooks package. These are cross-cutting primitives with no single domain owner.",
+   "api_surface": "Tauri event listener wrapper",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/useTauriEvent.ts",
+    "src/hooks/useWizardReducer.ts",
+    "src/hooks/index.ts"
+   ],
+   "cross_refs": [
+    "realtime-event-bus-hooks"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/hooks/useAttention.ts",
+    "src/hooks/useStepProgress.ts",
+    "src/hooks/useWizardReducer.ts",
+    "src/hooks/useSliceError.ts",
+    "src/hooks/useTauriEvent.ts",
+    "src/hooks/index.ts"
+   ]
+  },
+  {
+   "name": "appearance-settings",
+   "category": "ui",
+   "business_feature": "Appearance Customisation",
+   "description": "Manages all visual customisation for the application: language/locale selection with lazy-chunked bundle loading, UI density (compact/comfortable/spacious), text size, timezone for relative timestamps, display brightness, WCAG-annotated theme selection with hover previews, and a full custom-theme palette editor. Theme choices and density/brightness overrides are persisted through the app_settings Tauri command layer. Provides the ThemePreview and AppearanceThemeHoverPreview components used inline by other settings surfaces.",
+   "api_surface": "getAppSetting / setAppSetting (theme, density, language, timezone, brightness)",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_appearance/components/AppearanceSettings.tsx"
+   ],
+   "cross_refs": [
+    "settings-shell"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/features/settings/sub_appearance/components/AppearanceBrightnessSettings.tsx",
+    "src/features/settings/sub_appearance/components/AppearanceDensitySettings.tsx",
+    "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx",
+    "src/features/settings/sub_appearance/components/AppearanceSettings.tsx",
+    "src/features/settings/sub_appearance/components/AppearanceTextSizeSettings.tsx",
+    "src/features/settings/sub_appearance/components/AppearanceThemeHoverPreview.tsx"
+   ]
+  },
+  {
+   "name": "build-test-tooling",
+   "category": "config",
+   "business_feature": "Build & Test Tooling",
+   "description": "Build pipeline, code-generation scripts, tier-validation, test harness, and CI gates. Covers Vite config, Tauri build variants, codegen orchestration, the guide/tour UI test harness at port 17320, custom ESLint rules, and the bug-hunt harness documentation under docs/harness/.",
+   "api_surface": "HTTP :17320 /eval, /click-testid, /bridge-exec, /screenshot, /query, /state, /find-text",
+   "db_tables": [],
+   "entry_points": [
+    "vite.config.ts",
+    "scripts/run-codegen.mjs",
+    "src-tauri/src/local_http/test_server.rs"
+   ],
+   "cross_refs": [
+    "tauri-ipc-bridge",
+    "i18n-system",
+    "onboarding-tours"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "vite.config.ts"
+   ]
+  },
+  {
+   "name": "bundle-and-sharing",
+   "category": "lib",
+   "business_feature": "Bundle Sharing",
+   "description": "P2P bundle packaging (gated behind the p2p feature flag) and one-click share-link server. The bundle module serialises a persona plus its dependencies into a portable archive for peer transfer over the P2P transport. The share-link server generates short-lived, token-authenticated URLs that serve bundle bytes on demand, auto-expiring after 24 hours or first successful download.",
+   "api_surface": "GET /share/:token (local HTTP)",
+   "db_tables": [
+    "personas",
+    "connectors"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/bundle.rs",
+    "src-tauri/src/engine/share_link.rs"
+   ],
+   "cross_refs": [
+    "engine-core-infrastructure"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/engine/bundle.rs",
+    "src-tauri/src/engine/share_link.rs"
+   ]
+  },
+  {
+   "name": "cli-process-driver",
+   "category": "lib",
+   "business_feature": "CLI Process Driver",
+   "description": "Drives the Claude CLI process lifecycle: spawning, argument construction, MCP config injection, and capability resolution. The cli_process module manages process I/O streams and timeout; cli_mcp_config generates per-execution MCP server configs from bound connectors; cli_capabilities resolves the effective Claude Code capabilities for a persona execution.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/cli_process.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "prompt-assembly-engine",
+    "skills-hooks-sidecar"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/engine/src/cli_process.rs",
+    "src-tauri/engine/src/cli_capabilities.rs",
+    "src-tauri/engine/src/cli_mcp_config.rs"
+   ]
+  },
+  {
+   "name": "cli-session-awareness",
+   "category": "lib",
+   "business_feature": "CLI Session Awareness",
+   "description": "Read-only awareness of the user's active interactive Claude CLI session for enriching persona prompts. Discovery finds the running interactive session; transcript reads recent turns from its transcript file; render formats the extracted context for prompt injection; the audit repo persists awareness metadata. Requires dual opt-in (per-persona + global toggle) and a 10-minute freshness gate.",
+   "api_surface": null,
+   "db_tables": [
+    "cli_session_audit"
+   ],
+   "entry_points": [
+    "src-tauri/engine/src/cli_session_awareness/mod.rs"
+   ],
+   "cross_refs": [
+    "prompt-assembly-engine",
+    "cli-process-driver"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/engine/src/cli_session_awareness/mod.rs",
+    "src-tauri/engine/src/cli_session_awareness/discovery.rs",
+    "src-tauri/engine/src/cli_session_awareness/render.rs",
+    "src-tauri/engine/src/cli_session_awareness/transcript.rs",
+    "src-tauri/engine/src/cli_session_audit_repo.rs"
+   ]
+  },
+  {
+   "name": "cloud-sync",
+   "category": "api",
+   "business_feature": "Cloud Sync",
+   "description": "Cloud persistence layer — Supabase-backed remote sync of local persona data (local-first model, with Rust sync writer). Also covers account-level cloud operations. Provides backup, multi-device access, and the operator cloud subscription surface.",
+   "api_surface": "sync_to_cloud, get_cloud_status, authenticate_cloud_account",
+   "db_tables": [
+    "sync_log",
+    "cloud_sessions"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/cloud_sync.rs"
+   ],
+   "cross_refs": [
+    "app-settings",
+    "credential-vault"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/cloud.rs",
+    "src-tauri/src/commands/infrastructure/cloud_sync.rs"
+   ]
+  },
+  {
+   "name": "context-scanning",
+   "category": "api",
+   "business_feature": "Context Scanning",
+   "description": "Context map generation and export pipeline — runs incremental scans over managed project source trees to discover contexts (business features), groups them, audits coverage, and exports both a machine-readable `context-map.json` and an annotated CLAUDE.md block into the managed project root. Also covers use-case and static analysis scans.",
+   "api_surface": "run_context_scan, audit_context_coverage, export_context_map, run_use_case_scan",
+   "db_tables": [
+    "contexts",
+    "context_groups",
+    "context_scans"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/context_generation.rs"
+   ],
+   "cross_refs": [
+    "dev-tools-core",
+    "kpi-intelligence"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/context_generation.rs",
+    "src-tauri/src/commands/infrastructure/context_audit.rs",
+    "src-tauri/src/commands/infrastructure/context_map_export.rs",
+    "src-tauri/src/commands/infrastructure/incremental_scan.rs",
+    "src-tauri/src/commands/infrastructure/use_case_scan.rs",
+    "src-tauri/src/commands/infrastructure/static_scan.rs"
+   ]
+  },
+  {
+   "name": "core-error-handling",
+   "category": "lib",
+   "business_feature": "Error Handling & Taxonomy",
+   "description": "Defines the app-wide `AppError` enum that every fallible function returns, and the unified `ErrorCategory` / `ErrorTaxonomy` that all subsystems (healing, failover, design drift, frontend) share for error classification. Centralising taxonomy here eliminates the four independent heuristic copies that previously diverged across `healing`, `personaSlice`, `designDrift`, and `healthCheckSlice`.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/error.rs",
+    "src-tauri/core/src/error_taxonomy.rs"
+   ],
+   "cross_refs": [
+    "execution-healing",
+    "core-foundation-types"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/core/src/error.rs",
+    "src-tauri/core/src/error_taxonomy.rs"
+   ]
+  },
+  {
+   "name": "core-foundation-types",
+   "category": "lib",
+   "business_feature": "Core Platform Foundation",
+   "description": "The foundational type definitions and singletons that every other crate in the Personas desktop build depends on. Provides the execution state machine via the `declare_lifecycle!` macro, engine kind enum, hard execution ceilings, the SQLite connection-pool type alias, the IPC in-flight counter, event name constants, and the managed drive root cache. These primitives cannot depend on any other Personas crate — they sit at the very bottom of the dependency graph.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/lib.rs",
+    "src-tauri/core/src/types.rs",
+    "src-tauri/core/src/lifecycle.rs"
+   ],
+   "cross_refs": [
+    "core-error-handling",
+    "execution-state-models",
+    "core-ipc-infrastructure"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src-tauri/core/src/lib.rs",
+    "src-tauri/core/src/lifecycle.rs",
+    "src-tauri/core/src/types.rs",
+    "src-tauri/core/src/limits.rs",
+    "src-tauri/core/src/engine_kind.rs",
+    "src-tauri/core/src/pool.rs"
+   ]
+  },
+  {
+   "name": "core-http-safety",
+   "category": "lib",
+   "business_feature": "HTTP Safety & SSRF Protection",
+   "description": "Provides the process-wide shared `reqwest` HTTP client singletons and an SSRF-safe DNS resolver that rejects private/internal IP addresses at connection time. The `SsrfSafeDnsResolver` closes the DNS-rebinding window (CWE-367) by re-validating every redirect hop, ensuring outbound requests from user-supplied credential URLs cannot reach loopback or RFC-1918 ranges.",
+   "api_surface": "Shared HTTP clients: SHARED_HTTP, SSRF_SAFE_HTTP, INTERNAL_HTTP",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/http_clients.rs",
+    "src-tauri/core/src/url_safety.rs"
+   ],
+   "cross_refs": [
+    "core-crypto-redact",
+    "credential-connector-models"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/core/src/http_clients.rs",
+    "src-tauri/core/src/url_safety.rs"
+   ]
+  },
+  {
+   "name": "core-model-primitives",
+   "category": "lib",
+   "business_feature": "Model Primitives & Serialization",
+   "description": "The foundational model infrastructure: the `models` module root that re-exports every domain type, the `DbSchema` struct describing database table metadata, the `Json<T>` newtype for SQLite JSON columns, and `serde_util` helpers (e.g. `double_option`) used by dozens of models to handle nullable-update payloads correctly.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/models/mod.rs",
+    "src-tauri/core/src/models/json_column.rs"
+   ],
+   "cross_refs": [
+    "credential-connector-models",
+    "execution-state-models",
+    "persona-genome-models"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/core/src/models/mod.rs",
+    "src-tauri/core/src/models/db_schema.rs",
+    "src-tauri/core/src/models/json_column.rs",
+    "src-tauri/core/src/models/serde_util.rs"
+   ]
+  },
+  {
+   "name": "core-utilities",
+   "category": "lib",
+   "business_feature": "Shared Utility Functions",
+   "description": "Small shared utilities used across every layer of the codebase: a `now_ms()` epoch clock needed by both the Fleet registry and the data layer without creating a cross-layer dependency, char-boundary-safe string truncation helpers, and a secret/email sanitization pass that masks API keys and PII before they reach audit logs or error paths.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/core/src/utils/mod.rs"
+   ],
+   "cross_refs": [
+    "core-crypto-redact",
+    "observability-audit-models"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/core/src/utils/mod.rs",
+    "src-tauri/core/src/utils/text.rs",
+    "src-tauri/core/src/utils/sanitization.rs"
+   ]
+  },
+  {
+   "name": "crash-persistence",
+   "category": "lib",
+   "business_feature": "Crash Reporting",
+   "description": "Intercepts unhandled frontend errors, sanitizes stack traces and stack-frame arguments to strip credentials and file paths, then persists the crash report to localStorage and reports it to the backend for Sentry ingestion. Ensures crash diagnostics are useful without leaking sensitive runtime data.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/crashPersistence.ts"
+   ],
+   "cross_refs": [
+    "sensitive-data-masking"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/lib/utils/crashPersistence.ts"
+   ]
+  },
+  {
+   "name": "cross-device-workspace-sync",
+   "category": "lib",
+   "business_feature": "Cross-Device Workspace Sync",
+   "description": "Encrypted cross-device persona continuity layer providing content hashing, a three-way merge algorithm, and snapshot serialization. The workspace_sync module holds the pure data model and conflict resolution (last-writer-wins with device-id tiebreak); the crypto submodule handles AES-GCM snapshot encryption; merge implements the three-way diff algorithm; worktree_settings manages per-worktree execution configuration.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/workspace_sync/mod.rs"
+   ],
+   "cross_refs": [
+    "p2p-lan-network",
+    "p2p-identity-enclave"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/engine/src/workspace_sync/mod.rs",
+    "src-tauri/engine/src/workspace_sync/crypto.rs",
+    "src-tauri/engine/src/workspace_sync/merge.rs",
+    "src-tauri/engine/src/workspace_sync/snapshot.rs",
+    "src-tauri/engine/src/worktree_settings.rs"
+   ]
+  },
+  {
+   "name": "crypto-utils",
+   "category": "lib",
+   "business_feature": "IPC Encryption",
+   "description": "Manages front-end side of hybrid IPC encryption for secure credential passing to the Rust backend. Caches the backend's session public key with staleness detection — on rotation (vault re-key, panic recovery) the stale key is detected within ~60 seconds and re-imported without a reload. Used whenever sensitive data must cross the IPC boundary encrypted.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/platform/crypto.ts"
+   ],
+   "cross_refs": [
+    "tauri-ipc-utils"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/lib/utils/platform/crypto.ts"
+   ]
+  },
+  {
+   "name": "data-collection-hooks",
+   "category": "lib",
+   "business_feature": "Shared Data Collections",
+   "description": "Hooks for managing shared in-memory data collections: a persona-id-to-name map, a module subscription pattern for plugin-style data streams, persisted context across navigation, filtered and layered list views for large datasets, and background snapshots for diffing. These primitives are consumed widely by feature modules to avoid duplicating data-wrangling logic.",
+   "api_surface": "",
+   "db_tables": [
+    "personas"
+   ],
+   "entry_points": [
+    "src/hooks/utility/data/usePersonaMap.ts",
+    "src/hooks/utility/data/useFilteredCollection.ts",
+    "src/hooks/utility/data/useLayeredList.ts"
+   ],
+   "cross_refs": [
+    "agent-list-hooks",
+    "app-settings-hooks"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/hooks/utility/data/usePersonaMap.ts",
+    "src/hooks/utility/data/useModuleSubscription.ts",
+    "src/hooks/utility/data/usePersistedContext.ts",
+    "src/hooks/utility/data/useFilteredCollection.ts",
+    "src/hooks/utility/data/useLayeredList.ts",
+    "src/hooks/utility/data/useBackgroundSnapshot.ts"
+   ]
+  },
+  {
+   "name": "data-portability-settings",
+   "category": "ui",
+   "business_feature": "Data Portability & Backup",
+   "description": "Enables workspace portability: shows a live inventory of the user's data (personas, teams, tools, credentials, memories, test suites, KPIs), supports full or selective export to an encrypted bundle file, bundle import with conflict resolution, a separate passphrase-protected credential vault export and import flow, and local SQLite storage usage reporting with a safe-prune tool for old execution records. State is managed by useDataPortability which orchestrates IPC calls to the system/dataPortability and system/system Rust command modules.",
+   "api_surface": "getExportStats, exportFull, exportSelective, importPortabilityBundle, exportCredentials, importCredentials; storageUsage, pruneStorage",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/settings/sub_portability/components/DataPortabilitySettings.tsx",
+    "src/features/settings/sub_portability/libs/useDataPortability.ts"
+   ],
+   "cross_refs": [
+    "export-picker-prototype",
+    "settings-shell"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/settings/sub_portability/components/CredentialPortability.tsx",
+    "src/features/settings/sub_portability/components/DataPortabilitySettings.tsx",
+    "src/features/settings/sub_portability/components/ExportSection.tsx",
+    "src/features/settings/sub_portability/components/ExportSelectionModal.tsx",
+    "src/features/settings/sub_portability/components/StorageUsageSection.tsx",
+    "src/features/settings/sub_portability/libs/useDataPortability.ts"
+   ]
+  },
+  {
+   "name": "database-layer",
+   "category": "data",
+   "business_feature": "Database Layer",
+   "description": "SQLite data persistence layer with r2d2 connection pooling, repository pattern, and versioned migrations. All app data (personas, executions, credentials, events) flows through this layer. Includes schema migration runner and query builders.",
+   "api_surface": "Internal Rust repository trait pattern",
+   "db_tables": [
+    "*"
+   ],
+   "entry_points": [
+    "src-tauri/src/db/connection.rs",
+    "src-tauri/src/db/migrations.rs"
+   ],
+   "cross_refs": [
+    "execution-runner",
+    "credential-vault",
+    "persona-management"
+   ],
+   "file_count": 0,
+   "sample_files": []
+  },
+  {
+   "name": "desktop-app-bridges",
+   "category": "lib",
+   "business_feature": "Desktop App Bridges",
+   "description": "Typed action bridges to native desktop applications (VS Code, Terminal, Finder, etc.) executed via CLI, local API, or filesystem. The bridge_manifest module manages per-app manifest discovery; desktop_discovery scans for installed apps; desktop_runtime hosts the bridge execution sandbox; desktop_bridges provides the concrete per-app action implementations gated by the security approval system.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/desktop_bridges.rs",
+    "src-tauri/engine/src/bridge_manifest/mod.rs"
+   ],
+   "cross_refs": [
+    "access-control",
+    "execution-core"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/engine/src/desktop_bridges.rs",
+    "src-tauri/engine/src/desktop_discovery.rs",
+    "src-tauri/engine/src/desktop_runtime.rs",
+    "src-tauri/engine/src/bridge_manifest/mod.rs"
+   ]
+  },
+  {
+   "name": "dev-tools-core",
+   "category": "api",
+   "business_feature": "Developer Tools",
+   "description": "Developer Tools feature backend — the main dev_tools command file (projects, ideas, tasks, pipelines, KPIs), a standalone HTTP bridge for CI/external tooling, and multi-workspace management. Powers the Dev Tools feature that lets operators track projects and backlog inside Personas.",
+   "api_surface": "dev_tools_list_projects, dev_tools_create_task, dev_tools_list_workspaces",
+   "db_tables": [
+    "dev_projects",
+    "dev_tasks",
+    "dev_pipelines",
+    "dev_ideas",
+    "dev_kpis"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/dev_tools.rs"
+   ],
+   "cross_refs": [
+    "dev-tools-features",
+    "kpi-intelligence"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/dev_tools.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools_http.rs",
+    "src-tauri/src/commands/infrastructure/dev_workspaces.rs"
+   ]
+  },
+  {
+   "name": "dev-tools-features",
+   "category": "api",
+   "business_feature": "Developer Tools Features",
+   "description": "Sub-feature modules for Developer Tools — competition tracking, context management, git operations, goal management, milestone tracking, portfolio views, triage rules, and workspace management. Each module is a focused slice of the Dev Tools product surface, reusing the shared dev_tools repo.",
+   "api_surface": "dev_tools_list_milestones, dev_tools_create_goal, dev_tools_triage_backlog, dev_tools_git_checkpoint",
+   "db_tables": [
+    "dev_milestones",
+    "dev_goals",
+    "dev_competitions",
+    "triage_rules"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/dev_tools/milestones.rs"
+   ],
+   "cross_refs": [
+    "dev-tools-core",
+    "workspace-governance"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/dev_tools/competitions.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools/contexts.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools/goals.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools/milestones.rs",
+    "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs"
+   ]
+  },
+  {
+   "name": "engine-core-infrastructure",
+   "category": "lib",
+   "business_feature": "Engine Infrastructure",
+   "description": "Engine module root and cross-cutting infrastructure: the mod.rs re-export hub that surfaces personas_core and personas_engine crates; AI helper utilities for LLM output extraction; LLM topology prompt builder for multi-persona workflow composition; system-operation runtime (context_scan); management HTTP API (/api/*) for external tool control; recipe seed bootstrap; dynamic resource discovery for adoption questionnaires; background job framework for user-persona curation jobs; and the leadership module that coordinates which process instance owns singleton background loops.",
+   "api_surface": "GET/POST /api/personas, /api/lab, /api/versions (management HTTP)",
+   "db_tables": [
+    "recipe_definitions",
+    "app_settings",
+    "external_api_keys",
+    "persona_jobs"
+   ],
+   "entry_points": [
+    "src-tauri/src/engine/mod.rs",
+    "src-tauri/src/engine/management_api.rs"
+   ],
+   "cross_refs": [
+    "build-session-lifecycle",
+    "execution-runner",
+    "team-orchestration"
+   ],
+   "file_count": 10,
+   "sample_files": [
+    "src-tauri/src/engine/mod.rs",
+    "src-tauri/src/engine/ai_helpers.rs",
+    "src-tauri/src/engine/llm_topology.rs",
+    "src-tauri/src/engine/system_ops.rs",
+    "src-tauri/src/engine/management_api.rs",
+    "src-tauri/src/engine/recipe_seed.rs"
+   ]
+  },
+  {
+   "name": "error-analytics",
+   "category": "lib",
+   "business_feature": "Error Analytics",
+   "description": "Error handling infrastructure: Sentry integration, the error registry that maps raw errors to i18n-friendly messages, toastCatch/silentCatch helpers, and frontend crash reporting to the Rust backend.",
+   "api_surface": "toastCatch(promise), silentCatch(fn), resolveError(rawError)",
+   "db_tables": [
+    "frontend_crashes"
+   ],
+   "entry_points": [
+    "src/lib/silentCatch.ts",
+    "src/lib/errors/errorRegistry.ts"
+   ],
+   "cross_refs": [
+    "i18n-system",
+    "state-management"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/lib/silentCatch.ts",
+    "src/lib/errors/errorRegistry.ts",
+    "src/i18n/useTranslatedError.ts"
+   ]
+  },
+  {
+   "name": "export-picker-prototype",
+   "category": "ui",
+   "business_feature": "Selective Export Picker",
+   "description": "A prototype UI harness for granular selective export: a scope rail for choosing export categories (personas, teams, credentials, KPIs, etc.), a scrollable manifest cart showing selected items with counts, atom/panel/row primitives for the picker layout, and a useExportPicker hook that fetches live data from personas, credentials, teams, and KPI APIs to populate the selection UI. This is an experimental refinement of the ExportSelectionModal, kept isolated in the export-prototype sub-directory while it matures.",
+   "api_surface": "listPersonas, listCredentials, listTeams, listTeamMembers, listAllKpis",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts",
+    "src/features/settings/sub_portability/components/export-prototype/ScopeRail.tsx"
+   ],
+   "cross_refs": [
+    "data-portability-settings"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/settings/sub_portability/components/export-prototype/ManifestCart.tsx",
+    "src/features/settings/sub_portability/components/export-prototype/ScopeRail.tsx",
+    "src/features/settings/sub_portability/components/export-prototype/atoms.tsx",
+    "src/features/settings/sub_portability/components/export-prototype/panels.tsx",
+    "src/features/settings/sub_portability/components/export-prototype/rows.tsx",
+    "src/features/settings/sub_portability/components/export-prototype/types.ts"
+   ]
+  },
+  {
+   "name": "fetch-deduplication-cache",
+   "category": "lib",
+   "business_feature": "Fetch Deduplication & Caching",
+   "description": "Provides two caching utilities to reduce redundant IPC calls: deduplicateFetch coalesces concurrent in-flight calls to the same key into a single promise, and staleWhileRevalidate returns cached data immediately while revalidating in the background. Both protect the Tauri IPC bus from call storms during rapid React renders.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/deduplicateFetch.ts",
+    "src/lib/utils/staleWhileRevalidate.ts"
+   ],
+   "cross_refs": [
+    "tauri-ipc-utils"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/lib/utils/deduplicateFetch.ts",
+    "src/lib/utils/staleWhileRevalidate.ts"
+   ]
+  },
+  {
+   "name": "fleet-orchestration-state",
+   "category": "lib",
+   "business_feature": "Fleet Orchestration State",
+   "description": "Slice managing multi-agent fleet sessions — spawning, monitoring, and terminating headless Claude CLI sessions, ingesting memory outboxes on session exit, and coordinating scan-codebase operations. Listens to Tauri fleet events for real-time session state updates.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/fleetSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "system-devtools-state"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/stores/slices/system/fleetSlice.ts",
+    "src/stores/slices/system/fleetSlice.test.ts",
+    "src/stores/remoteCommandStore.ts"
+   ]
+  },
+  {
+   "name": "i18n-debt-text",
+   "category": "ui",
+   "business_feature": "I18n Debt Text Component",
+   "description": "Utility for rendering i18n-debt strings — English text that has not yet been migrated to the i18n system. `DebtText` is a React component that reads from the `debt` section of the translation bundle via key, and `debtText()` is the non-hook equivalent for non-React callers. Allows incremental i18n migration without hardcoding English directly in JSX.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/DebtText.tsx"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/DebtText.tsx"
+   ]
+  },
+  {
+   "name": "i18n-english-sections",
+   "category": "lib",
+   "business_feature": "English Base Bundle",
+   "description": "Manages the English base translation bundle through a lazy-parse cache. `englishSections.ts` stores all sections as raw JSON strings (generated into `enSectionStrings.ts`) and parses each section on first access, eliminating the 500KB+ cold-parse cost. `en.ts` is a backward-compat Proxy shim so legacy imports of `{ en, type Translations }` continue to compile without per-file updates.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/englishSections.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook",
+    "i18n-type-system"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/i18n/englishSections.ts",
+    "src/i18n/en.ts",
+    "src/i18n/generated/enSectionStrings.ts"
+   ]
+  },
+  {
+   "name": "i18n-error-resolution",
+   "category": "lib",
+   "business_feature": "Translated Error Resolution",
+   "description": "Bridges raw Rust error strings to translated user-friendly messages with actionable suggestions. `useTranslatedError.ts` matches raw IPC error strings against a priority-ordered `ERROR_KEY_MAP` of patterns, resolves translated `message`/`suggestion` pairs from the `error_registry` i18n section, chains into the non-translated `resolveError()` as a fallback, and records Sentry breadcrumbs with the pre-rewrite raw string for operator diagnostics.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/useTranslatedError.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook",
+    "i18n-english-sections",
+    "source-locale-english"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/useTranslatedError.ts"
+   ]
+  },
+  {
+   "name": "i18n-locale-registry",
+   "category": "config",
+   "business_feature": "Locale Registry",
+   "description": "Single source of truth for the set of supported locales the app ships. Defines the `LOCALES` array with BCP 47 codes, native names, English names, and writing direction (ltr/rtl). Provides `LocaleCode` union type, `isLocaleCode` guard, and `getLocaleDescriptor` lookup. To add or remove a language, edit this file and add/remove the matching `locales/<code>.json`.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/locales.manifest.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook",
+    "source-locale-files"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/locales.manifest.ts"
+   ]
+  },
+  {
+   "name": "i18n-pseudo-locale",
+   "category": "lib",
+   "business_feature": "Pseudo-Locale Dev Tool",
+   "description": "Dev-only pseudo-locale that wraps every translated string in `⟦⟧` brackets and replaces ASCII letters with accented look-alikes, making hardcoded English strings immediately visible on screen as unaccented text. Activated via `?pseudo=1` URL param (persists to localStorage) or a `window.__togglePseudoLocale__()` console toggle. The transformed bundle is synthesized at runtime from the English bundle with no JSON file to maintain.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/pseudoLocale.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook",
+    "i18n-type-system"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/pseudoLocale.ts"
+   ]
+  },
+  {
+   "name": "i18n-route-sections",
+   "category": "lib",
+   "business_feature": "Route-Aware Section Preloading",
+   "description": "Declares which translation sections each sidebar route needs and provides the `useActiveI18nSections` hook for route-aware section preloading. `routeSections.ts` maps each `SidebarSection` to its required sections and merges with always-loaded `BASE_SECTIONS`. `useSidebarTranslation.ts` provides an optimized cached lookup of sidebar item IDs to translated labels, avoiding per-render Map rebuilds.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/routeSections.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/i18n/routeSections.ts",
+    "src/i18n/useSidebarTranslation.ts"
+   ]
+  },
+  {
+   "name": "i18n-system",
+   "category": "lib",
+   "business_feature": "Internationalization",
+   "description": "14-language internationalization with lazy per-section loading. English source in locales/en.json (~11,500 keys); codegen produces typed Translations, enSectionStrings, and per-language section chunks. Runtime uses a Proxy that loads chunks on first access.",
+   "api_surface": "useTranslation() → { t, tx }; tokenLabel(t, category, key)",
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/useTranslation.ts",
+    "src/i18n/locales/en.json"
+   ],
+   "cross_refs": [
+    "state-management",
+    "settings-preferences"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/i18n/useTranslation.ts",
+    "src/i18n/en.ts",
+    "src/i18n/routeSections.ts",
+    "src/i18n/tokenMaps.ts",
+    "src/i18n/useTranslatedError.ts",
+    "src/i18n/generated/types.ts"
+   ]
+  },
+  {
+   "name": "i18n-tests-and-contract",
+   "category": "test",
+   "business_feature": "I18n Test Coverage",
+   "description": "Test suite and behavioral contract for the i18n system. `useTranslatedError.test.ts` pins the four-link error resolution fallback chain (translated → raw fallback → English friendly → generic). `chainStopReasons.parity.test.ts` enforces parity between the Rust backend's `stop_reason` string constants and the i18n `status_tokens.chain_stop` keys, catching untranslated tokens at build time. `CONTRACT.md` documents the four-layer translation contract (Rust codes → IPC → React → translators).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/__tests__/useTranslatedError.test.ts"
+   ],
+   "cross_refs": [
+    "i18n-error-resolution",
+    "i18n-token-resolution"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/i18n/__tests__/useTranslatedError.test.ts",
+    "src/i18n/__tests__/chainStopReasons.parity.test.ts"
+   ]
+  },
+  {
+   "name": "i18n-token-resolution",
+   "category": "lib",
+   "business_feature": "Status Token Resolution",
+   "description": "Resolves Rust backend machine tokens (e.g. `\"queued\"`, `\"critical\"`) to translated user-visible labels. The backend sends language-agnostic identifiers over IPC that must never be shown raw to users; `tokenLabel()` maps them through the `status_tokens.*` i18n sections. Covers execution, event, automation, severity, priority, healing, connector, test, and dev token categories.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/tokenMaps.ts"
+   ],
+   "cross_refs": [
+    "i18n-translation-hook",
+    "source-locale-english"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/tokenMaps.ts"
+   ]
+  },
+  {
+   "name": "i18n-translation-hook",
+   "category": "lib",
+   "business_feature": "Translation Hook Runtime",
+   "description": "Core React hook and lazy-loading runtime for the i18n system. Implements per-section async loading via Vite's import.meta.glob, a pub/sub store sync pattern, deep-merge fallback from English to non-English sections, and the `interpolate`/`tx` helper for variable substitution. Also exposes `getActiveTranslations()` for non-React callers and `preloadSections` for intent-based prefetching.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/useTranslation.ts"
+   ],
+   "cross_refs": [
+    "i18n-english-sections",
+    "i18n-route-sections",
+    "i18n-locale-registry",
+    "i18n-type-system"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/useTranslation.ts"
+   ]
+  },
+  {
+   "name": "i18n-type-system",
+   "category": "config",
+   "business_feature": "Translation Type System",
+   "description": "Codegen'd TypeScript type tree for the full translation bundle. Generated from `src/i18n/locales/en.json` by `scripts/i18n/gen-types.mjs` on `predev`/`prebuild`. Provides `t.section.key` autocomplete throughout the codebase and catches key-drift at compile time. Must be regenerated and committed whenever `en.json` changes.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/i18n/generated/types.ts"
+   ],
+   "cross_refs": [
+    "i18n-english-sections",
+    "i18n-translation-hook"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/i18n/generated/types.ts"
+   ]
+  },
+  {
+   "name": "local-ai-integrations",
+   "category": "lib",
+   "business_feature": "Local AI Integrations",
+   "description": "Integrations for locally-hosted AI models and web scraping capabilities. The ollama module provides a typed client for the Ollama local LLM server (compiled with the ollama feature); scraper implements web page fetching and content extraction for the research-lab plugin's source gathering (compiled with the scraper feature).",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/ollama.rs",
+    "src-tauri/engine/src/scraper.rs"
+   ],
+   "cross_refs": [
+    "ai-provider-layer",
+    "knowledge-base"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/engine/src/ollama.rs",
+    "src-tauri/engine/src/scraper.rs"
+   ]
+  },
+  {
+   "name": "model-pricing",
+   "category": "lib",
+   "business_feature": "Model Pricing",
+   "description": "Provides per-model token pricing data (input/output cost per 1M tokens) for Anthropic, OpenAI, and Google model families. Used to compute execution cost estimates shown in the UI and in analytics dashboards. Local model families are detected and treated as zero-cost.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/platform/pricing.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 1,
+   "sample_files": [
+    "src/lib/utils/platform/pricing.ts"
+   ]
+  },
+  {
+   "name": "network-bundle-sharing",
+   "category": "ui",
+   "business_feature": "Network Bundle & Resource Sharing",
+   "description": "Handles resource exposure management and cryptographically signed bundle exchange over the P2P network. Operators control which personas, templates, and connectors are exposed at which access level (ExposureManager), generate signed shareable bundle archives with enclave verification (BundleExportDialog), and import bundles from peers with conflict preview, provenance badge display, enclave tamper detection, and import success celebration (BundleImportDialog, BundlePreviewContent, EnclaveVerificationView). ShareLinkHandler resolves incoming share-link deep links.",
+   "api_surface": "ExposedResource CRUD (network/exposure); BundleImportPreview, NetworkAccessScope (network/bundle); EnclavePolicy, EnclaveVerifyResult (network/enclave)",
+   "db_tables": [
+    "exposed_resources"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_network/components/ExposureManager.tsx",
+    "src/features/settings/sub_network/components/BundleExportDialog.tsx"
+   ],
+   "cross_refs": [
+    "network-peer-management",
+    "settings-shell"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src/features/settings/sub_network/components/BundleExportDialog.tsx",
+    "src/features/settings/sub_network/components/BundleImportDialog.tsx",
+    "src/features/settings/sub_network/components/BundlePreviewContent.tsx",
+    "src/features/settings/sub_network/components/EnclaveVerificationView.tsx",
+    "src/features/settings/sub_network/components/ExposureManager.tsx",
+    "src/features/settings/sub_network/components/ImportSuccessCelebration.tsx"
+   ]
+  },
+  {
+   "name": "network-peer-management",
+   "category": "ui",
+   "business_feature": "P2P Peer Management",
+   "description": "Renders the P2P network dashboard with live status (connected peers, latency, port, peer ID), messaging/connection/manifest-sync metrics panels, local identity display-name management, peer discovery list with expandable detail drawer, and access scope badges. Provides the NetworkIcons asset set used throughout the network settings surface. Reads discovery metrics and peer manifests from the network/discovery Rust command layer in real time.",
+   "api_surface": "ConnectionHealth, MessagingMetrics, ConnectionMetricsSnapshot, ManifestSyncMetrics, DiscoveredPeer, PeerManifestEntry (network/discovery)",
+   "db_tables": [],
+   "entry_points": [
+    "src/features/settings/sub_network/components/NetworkDashboard.tsx",
+    "src/features/settings/sub_network/components/IdentitySettings.tsx"
+   ],
+   "cross_refs": [
+    "network-bundle-sharing",
+    "settings-shell"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/features/settings/sub_network/components/IdentitySettings.tsx",
+    "src/features/settings/sub_network/components/NetworkDashboard.tsx",
+    "src/features/settings/sub_network/components/NetworkIcons.tsx",
+    "src/features/settings/sub_network/components/NetworkAccessScopeBadge.tsx",
+    "src/features/settings/sub_network/components/PeerCard.tsx",
+    "src/features/settings/sub_network/components/PeerDetailDrawer.tsx"
+   ]
+  },
+  {
+   "name": "network-state",
+   "category": "lib",
+   "business_feature": "Network Connectivity State",
+   "description": "Slice tracking network connectivity status and P2P peer discovery. Monitors online/offline transitions and mDNS-discovered peers, surfacing connection quality indicators in the UI and gating features that require network access.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/network/networkSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "fleet-orchestration-state"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/stores/slices/network/networkSlice.ts",
+    "src/stores/slices/network/networkSlice.test.ts"
+   ]
+  },
+  {
+   "name": "notification-settings",
+   "category": "ui",
+   "business_feature": "Notification Preferences",
+   "description": "Controls how and when users receive alerts from the self-healing system: configures per-severity thresholds (critical/high/medium/low) for in-app toast notifications with live test-fire capability, toggles the weekly health digest email, and manages outbound webhook subscriptions to Slack, Discord, Teams, and generic JSON endpoints including CRUD and send-test. Persists notification preferences to app_settings and webhook subscription records to the notification_subscriptions table. Depends on the events notification-subscriptions API module.",
+   "api_surface": "createNotificationSubscription, deleteNotificationSubscription, listNotificationSubscriptions, testNotificationSubscription, updateNotificationSubscription",
+   "db_tables": [
+    "app_settings",
+    "notification_subscriptions"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_notifications/components/NotificationSettings.tsx"
+   ],
+   "cross_refs": [
+    "settings-shell"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/settings/sub_notifications/components/NotificationSettings.tsx",
+    "src/features/settings/sub_notifications/components/WebhookSubscriptionsPanel.tsx"
+   ]
+  },
+  {
+   "name": "p2p-lan-network",
+   "category": "lib",
+   "business_feature": "P2P LAN Networking",
+   "description": "Full LAN peer-to-peer networking stack for the Invisible Apps system, providing mDNS discovery, QUIC transport, connection management, agent-to-agent messaging, and manifest sync. Compiled only with the p2p feature flag; the NetworkService struct orchestrates all sub-systems and exposes a typed API for persona canvas sharing and peer execution.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src-tauri/engine/src/p2p/mod.rs"
+   ],
+   "cross_refs": [
+    "p2p-identity-enclave",
+    "cross-device-workspace-sync"
+   ],
+   "file_count": 9,
+   "sample_files": [
+    "src-tauri/engine/src/p2p/mod.rs",
+    "src-tauri/engine/src/p2p/connection.rs",
+    "src-tauri/engine/src/p2p/manifest_sync.rs",
+    "src-tauri/engine/src/p2p/mdns.rs",
+    "src-tauri/engine/src/p2p/messaging.rs",
+    "src-tauri/engine/src/p2p/periodic.rs"
+   ]
+  },
+  {
+   "name": "p2p-network",
+   "category": "api",
+   "business_feature": "P2P Networking",
+   "description": "Peer-to-peer networking and device management — mDNS/QUIC-based device discovery, enclave creation, network bundle management, exposure controls (which personas are visible on the network), device identity, and owned-device registry. Also includes the P2P signing module for cryptographic session verification. Gated behind the `p2p` Cargo feature.",
+   "api_surface": "discover_peers, create_enclave, list_owned_devices, sign_session, set_exposure",
+   "db_tables": [
+    "owned_devices",
+    "network_enclaves"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/network/discovery.rs"
+   ],
+   "cross_refs": [
+    "credential-auth",
+    "fleet-core"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src-tauri/src/commands/network/bundle.rs",
+    "src-tauri/src/commands/network/discovery.rs",
+    "src-tauri/src/commands/network/enclave.rs",
+    "src-tauri/src/commands/network/exposure.rs",
+    "src-tauri/src/commands/network/identity.rs",
+    "src-tauri/src/commands/network/mod.rs"
+   ]
+  },
+  {
+   "name": "peer-network-api",
+   "category": "api",
+   "business_feature": "P2P Networking & Resource Sharing",
+   "description": "IPC wrappers for the P2P networking layer: mDNS/QUIC peer discovery (discovered peers, connection state, connect/disconnect), peer identity and trust management (public-key identity, trust levels, peer update), enclave seal and verify (cryptographically sealing a persona into a portable bundle and verifying its integrity), resource exposure management (exposing personas/templates/results to trusted peers at configured access levels), and bundle export/import (packaging exposed resources into a signed transferable bundle). This surface enables peer-to-peer persona sharing and remote execution.",
+   "api_surface": "Tauri commands: list_discovered_peers, connect_peer, get_peer_identity, update_trusted_peer, seal_enclave, verify_enclave, list_exposed_resources, export_bundle, import_bundle",
+   "db_tables": [
+    "discovered_peers",
+    "peer_identities",
+    "exposed_resources",
+    "persona_bundles"
+   ],
+   "entry_points": [
+    "src/api/network/discovery.ts",
+    "src/api/network/identity.ts"
+   ],
+   "cross_refs": [
+    "credential-scoping-api",
+    "persona-lifecycle-api",
+    "fleet-director-api"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/api/network/discovery.ts",
+    "src/api/network/identity.ts",
+    "src/api/network/enclave.ts",
+    "src/api/network/exposure.ts",
+    "src/api/network/bundle.ts"
+   ]
+  },
+  {
+   "name": "platform-detection",
+   "category": "lib",
+   "business_feature": "Platform Detection",
+   "description": "Detects whether the app is running on mobile (Android/iOS) vs desktop at build time and runtime. Provides a dev-mode override (Ctrl+Shift+M or localStorage) so engineers can preview mobile layouts without a device. Feeds into feature gating and responsive UI decisions across the app.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/platform/platform.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 2,
+   "sample_files": [
+    "src/lib/utils/platform/platform.ts",
+    "src/lib/utils/platform/osNotification.ts"
+   ]
+  },
+  {
+   "name": "research-tools",
+   "category": "api",
+   "business_feature": "Research Lab",
+   "description": "Research and idea-scanning infrastructure — headless Claude passes that scrape external sources, run Qwen vision analysis, scan the codebase for latent improvement ideas, and synthesise research findings. Backs the Research Lab plugin and the idea pipeline that feeds the Dev Tools backlog.",
+   "api_surface": "start_research_lab, scrape_url, run_idea_scan, analyse_with_qwen",
+   "db_tables": [
+    "dev_ideas",
+    "dev_scans",
+    "research_artifacts"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/research_lab.rs"
+   ],
+   "cross_refs": [
+    "dev-tools-core",
+    "context-scanning"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/research_lab.rs",
+    "src-tauri/src/commands/infrastructure/scraper.rs",
+    "src-tauri/src/commands/infrastructure/qwen_engine.rs",
+    "src-tauri/src/commands/infrastructure/idea_scanner.rs"
+   ]
+  },
+  {
+   "name": "resource-tracking",
+   "category": "api",
+   "business_feature": "Resource Tracking",
+   "description": "LLM spend tracking, tier usage enforcement, and memory ledger health. Monitors per-persona and per-session token costs, enforces subscription-tier limits, and audits the health of the companion brain's memory store. Feeds the billing and tier dashboards.",
+   "api_surface": "get_llm_spend, get_tier_usage, audit_memory_health, list_memory_ledger",
+   "db_tables": [
+    "llm_spend_log",
+    "tier_usage",
+    "memory_ledger"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/llm_spend.rs"
+   ],
+   "cross_refs": [
+    "execution-core",
+    "observability-metrics"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/llm_spend.rs",
+    "src-tauri/src/commands/infrastructure/tier_usage.rs",
+    "src-tauri/src/commands/infrastructure/memory_ledger.rs",
+    "src-tauri/src/commands/infrastructure/memory_health.rs"
+   ]
+  },
+  {
+   "name": "settings-audit-admin",
+   "category": "ui",
+   "business_feature": "Settings Audit & Admin",
+   "description": "Surfaces two meta-settings views: an immutable audit log of all settings changes across every sub-module (filterable by category, paginated at 100 entries, with collapsible before/after value diffs), and an internal developer reset panel that clears the first-use consent modal via a two-step confirm. Both views are administrative in nature and do not hold user-facing preferences. The audit log reads from settings_audit_log via the listSettingsAuditEntries API.",
+   "api_surface": "listSettingsAuditEntries",
+   "db_tables": [
+    "settings_audit_log"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_history/components/SettingsHistoryTab.tsx"
+   ],
+   "cross_refs": [
+    "settings-shell"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/features/settings/sub_history/components/SettingsHistoryTab.tsx",
+    "src/features/settings/sub_admin/components/AdminSettings.tsx"
+   ]
+  },
+  {
+   "name": "settings-shell",
+   "category": "ui",
+   "business_feature": "Settings Page Shell",
+   "description": "Provides the top-level settings page orchestrator that lazy-loads and idle-unmounts each settings tab, the ambient context toggle panel, inline appearance pickers for the chrome bar, the command-palette search integration that deep-links to every settings sub-section, and two shared cross-cutting utilities (two-step confirm hook and recent-change audit chip). Acts as the routing and composition layer that binds all settings sub-modules together without owning domain logic itself. Depends on the settings audit log API for the RecentChangeChip badge.",
+   "api_surface": "GET settings_audit_log (via listSettingsAuditEntries)",
+   "db_tables": [
+    "settings_audit_log"
+   ],
+   "entry_points": [
+    "src/features/settings/components/SettingsPage.tsx",
+    "src/features/settings/search/useSettingsSearchEntries.tsx"
+   ],
+   "cross_refs": [
+    "appearance-settings",
+    "api-key-management",
+    "byom-provider-settings",
+    "notification-settings"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/features/settings/components/SettingsPage.tsx",
+    "src/features/settings/components/AppearancePickers.tsx",
+    "src/features/settings/components/AmbientContextPanel.tsx",
+    "src/features/settings/search/useSettingsSearchEntries.tsx",
+    "src/features/settings/shared/RecentChangeChip.tsx",
+    "src/features/settings/shared/useConfirmClick.ts"
+   ]
+  },
+  {
+   "name": "sidebar-chrome-hooks",
+   "category": "ui",
+   "business_feature": "Sidebar Shell Hooks",
+   "description": "Hooks for the application sidebar shell: badge counts for unread items, live agent activity indicators, codebase-linked persona discovery, a what's-new indicator for release notes, and breadcrumb trail generation for deep navigation paths. These hooks keep the persistent chrome layer in sync with app state without coupling feature modules to the sidebar directly.",
+   "api_surface": "",
+   "db_tables": [
+    "personas",
+    "executions"
+   ],
+   "entry_points": [
+    "src/hooks/sidebar/useSidebarAgentActivity.ts",
+    "src/hooks/sidebar/useBadgeCounts.ts"
+   ],
+   "cross_refs": [
+    "agent-list-hooks",
+    "realtime-event-bus-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/hooks/sidebar/useSidebarAgentActivity.ts",
+    "src/hooks/sidebar/useCodebasePersonas.ts",
+    "src/hooks/sidebar/useWhatsNewIndicator.ts",
+    "src/hooks/sidebar/useBadgeCounts.ts",
+    "src/hooks/navigation/useBreadcrumbTrail.ts"
+   ]
+  },
+  {
+   "name": "skill-management",
+   "category": "api",
+   "business_feature": "Skill Management",
+   "description": "Skill file management and usage tracking — reads Claude Code skill definitions from disk, exposes them for in-app display, and records skill invocation telemetry. Powers the skill browser in the Dev Tools UI and provides the data for skill-usage analytics.",
+   "api_surface": "list_skill_files, get_skill_definition, log_skill_usage",
+   "db_tables": [
+    "skill_usage_log"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/skill_files.rs"
+   ],
+   "cross_refs": [
+    "dev-tools-core",
+    "fleet-hooks"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/skill_files.rs",
+    "src-tauri/src/commands/infrastructure/skill_usage.rs"
+   ]
+  },
+  {
+   "name": "spend-limits",
+   "category": "ui",
+   "business_feature": "Spend & Concurrency Limits",
+   "description": "Provides spend governance and concurrency control for persona execution: operators set a monthly USD cost ceiling that blocks further executions once crossed, and configure the maximum number of parallel persona executions (1–20). Displays a 5-month trailing spend bar chart sourced from the observability metrics API to contextualise the ceiling choice. Persists both limits as typed keys in app_settings via the system/settings IPC bridge.",
+   "api_surface": "getAppSetting / setAppSetting (monthly_cost_ceiling_usd, max_parallel_executions); getMetricsChartData",
+   "db_tables": [
+    "app_settings"
+   ],
+   "entry_points": [
+    "src/features/settings/sub_limits/components/LimitsSettings.tsx"
+   ],
+   "cross_refs": [
+    "settings-shell"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/features/settings/sub_limits/components/LimitsSettings.tsx"
+   ]
+  },
+  {
+   "name": "store-performance",
+   "category": "lib",
+   "business_feature": "Store Performance Instrumentation",
+   "description": "Instruments Zustand store async actions with the browser Performance Timeline API (performance.mark / performance.measure). Wraps any async store action so its latency appears in DevTools and can be correlated with rendering. Errors still emit their end-mark so partial timing data is preserved.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/storePerf.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 1,
+   "sample_files": [
+    "src/lib/utils/storePerf.ts"
+   ]
+  },
+  {
+   "name": "system-ambient-context-state",
+   "category": "lib",
+   "business_feature": "Ambient Context State",
+   "description": "Slice managing ambient contextual awareness — tracking the currently active workspace context, file focus, and session-level signals that Athena and other intelligence features consume for proactive suggestions and context-aware responses.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/ambientContextSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "fleet-orchestration-state"
+   ],
+   "file_count": 1,
+   "sample_files": [
+    "src/stores/slices/system/ambientContextSlice.ts"
+   ]
+  },
+  {
+   "name": "system-cloud-integration-state",
+   "category": "lib",
+   "business_feature": "Cloud & Deployment State",
+   "description": "Slices for external platform integrations at the system level — cloud provider settings, GitLab repository connections, and deployment target configuration. These slices bridge the app to CI/CD pipelines and cloud hosting environments.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/cloudSlice.ts",
+    "src/stores/slices/system/deployTarget.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "fleet-orchestration-state"
+   ],
+   "file_count": 4,
+   "sample_files": [
+    "src/stores/slices/system/cloudSlice.ts",
+    "src/stores/slices/system/gitlabSlice.ts",
+    "src/stores/slices/system/deployTarget.ts",
+    "src/stores/slices/system/deployTarget.test.ts"
+   ]
+  },
+  {
+   "name": "system-config-api",
+   "category": "api",
+   "business_feature": "System Configuration & Portability",
+   "description": "IPC wrappers for global app configuration: key-value app settings (bulk read/write with audit log), tier usage snapshots and rate bucket consumption, data portability (export stats, competitive import previews, credential import), BYOM (bring-your-own-model) policy management (provider routing rules, compliance rules, audit entries, usage timeseries), and the shared string-literal enum unions that keep IPC payloads type-safe across the frontend.",
+   "api_surface": "Tauri commands: get_app_setting, bulk_get_settings, get_tier_usage, get_export_stats, portability_import, get_byom_policy, update_byom_policy",
+   "db_tables": [
+    "app_settings",
+    "settings_audit"
+   ],
+   "entry_points": [
+    "src/api/system/settings.ts",
+    "src/api/system/byom.ts"
+   ],
+   "cross_refs": [
+    "system-core-api",
+    "auth-session-api"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/api/system/settings.ts",
+    "src/api/system/tierUsage.ts",
+    "src/api/system/dataPortability.ts",
+    "src/api/system/byom.ts",
+    "src/api/enums.ts"
+   ]
+  },
+  {
+   "name": "system-core-api",
+   "category": "api",
+   "business_feature": "System Diagnostics",
+   "description": "IPC wrappers for system diagnostics: cascading per-section health checks with a structured report, crash log retrieval (both Rust panics and frontend errors), DB performance snapshots, log directory stats, and a memoizing management API auth helper (fetches the system Bearer token for localhost:9420 once and caches it). Also includes real-time CPU and memory sampling for the status-bar load gauge.",
+   "api_surface": "Tauri commands: system_health_check, health_check_local, get_crash_logs, get_system_metrics; HTTP GET http://127.0.0.1:9420 (management API)",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/system/system.ts"
+   ],
+   "cross_refs": [
+    "overview-health-api",
+    "system-config-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/system/system.ts",
+    "src/api/system/systemMetrics.ts",
+    "src/api/system/managementApiAuth.ts"
+   ]
+  },
+  {
+   "name": "system-devtools-state",
+   "category": "lib",
+   "business_feature": "Developer Tools State",
+   "description": "Slices powering the developer tools overlay — code context scanning, project indexing, task management, triage workflows, and the dev-tools scanner that maps file contexts. These slices back the DevInspector and context-scanning features used during active development sessions.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/devToolsSlice.ts",
+    "src/stores/slices/system/devToolsScannerSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "fleet-orchestration-state"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/stores/slices/system/devToolsSlice.ts",
+    "src/stores/slices/system/devToolsContextSlice.ts",
+    "src/stores/slices/system/devToolsProjectSlice.ts",
+    "src/stores/slices/system/devToolsScannerSlice.ts",
+    "src/stores/slices/system/devToolsTaskSlice.ts",
+    "src/stores/slices/system/devToolsTaskSlice.test.ts"
+   ]
+  },
+  {
+   "name": "system-health",
+   "category": "api",
+   "business_feature": "System Health",
+   "description": "System health monitoring, MCP integration status, storage metrics, crash telemetry, and binary dependency detection (probing for FFmpeg, whisper, etc.). Provides the diagnostic layer that the app's health dashboard reads to surface capability gaps and system-level issues.",
+   "api_surface": "get_system_health, probe_binary, get_storage_usage, list_mcp_integrations",
+   "db_tables": [
+    "crash_reports",
+    "system_snapshots"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/system/health.rs"
+   ],
+   "cross_refs": [
+    "app-settings",
+    "observability-metrics"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/system/binary_probe.rs",
+    "src-tauri/src/commands/infrastructure/system/crash_telemetry.rs",
+    "src-tauri/src/commands/infrastructure/system/health.rs",
+    "src-tauri/src/commands/infrastructure/system/mcp_integration.rs",
+    "src-tauri/src/commands/infrastructure/system/mod.rs",
+    "src-tauri/src/commands/infrastructure/system/storage.rs"
+   ]
+  },
+  {
+   "name": "system-integrations-api",
+   "category": "api",
+   "business_feature": "System Integrations",
+   "description": "IPC wrappers for optional platform integrations: GitLab (config, users, projects, deploy pipelines, rollback, persona versioning), Qwen remote LLM engine (credentials, status, model config), cloud deployment (config, OAuth, deployments, executions, triggers, Smee relays), desktop app discovery (scanning for installed apps and importable MCP servers), API proxy (forwarding authenticated requests to credential-bound endpoints), and ambient context (screen/sensor policy, snapshot, rule matching). These wires in the cloud and third-party layers.",
+   "api_surface": "Tauri commands: get_gitlab_config, deploy_to_gitlab, get_cloud_status, cloud_oauth_authorize, discover_desktop_apps, import_mcp_servers, execute_api_request, get_ambient_context_snapshot",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/system/cloud.ts",
+    "src/api/system/gitlab.ts"
+   ],
+   "cross_refs": [
+    "system-config-api",
+    "auth-session-api",
+    "connector-discovery-api"
+   ],
+   "file_count": 6,
+   "sample_files": [
+    "src/api/system/gitlab.ts",
+    "src/api/system/qwen.ts",
+    "src/api/system/cloud.ts",
+    "src/api/system/desktop.ts",
+    "src/api/system/apiProxy.ts",
+    "src/api/system/ambientContext.ts"
+   ]
+  },
+  {
+   "name": "system-onboarding-state",
+   "category": "lib",
+   "business_feature": "Onboarding & Tour State",
+   "description": "Slices managing new-user onboarding flow, guided product tour steps, and initial workspace setup. The onboarding slice tracks completed steps and wizard progress; tourSlice manages spotlight anchors and step sequencing; setupSlice tracks first-launch configuration.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/onboardingSlice.ts",
+    "src/stores/slices/system/tourSlice.ts"
+   ],
+   "cross_refs": [
+    "system-store-root",
+    "system-ui-theme-state"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src/stores/slices/system/onboardingSlice.ts",
+    "src/stores/slices/system/onboardingSlice.test.ts",
+    "src/stores/slices/system/tourSlice.ts",
+    "src/stores/slices/system/tourSlice.test.ts",
+    "src/stores/slices/system/setupSlice.ts",
+    "src/stores/slices/system/__tests__/tourAnchors.test.ts"
+   ]
+  },
+  {
+   "name": "system-store-root",
+   "category": "lib",
+   "business_feature": "System Store Composition",
+   "description": "Top-level Zustand stores for cross-cutting app concerns: the system store composes UI, cloud, GitLab, onboarding, tour, dev-tools, fleet, network, and plugin slices. Satellite stores handle i18n locale selection, command palette state, toast notifications, and remote command dispatch.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/systemStore.ts"
+   ],
+   "cross_refs": [
+    "system-ui-theme-state",
+    "system-onboarding-state",
+    "system-devtools-state",
+    "fleet-orchestration-state"
+   ],
+   "file_count": 8,
+   "sample_files": [
+    "src/stores/systemStore.ts",
+    "src/stores/i18nStore.ts",
+    "src/stores/commandPaletteStore.ts",
+    "src/stores/toastStore.ts",
+    "src/stores/notificationCenterStore.ts",
+    "src/stores/remoteCommandStore.ts"
+   ]
+  },
+  {
+   "name": "system-sync-api",
+   "category": "api",
+   "business_feature": "Cloud Sync & Remote Commands",
+   "description": "IPC wrappers for desktop-to-cloud data sync, remote command approval, and the live roadmap feed. Cloud sync pushes execution and metric snapshots to a Supabase dashboard mirror (enabled/disabled, manual trigger, status polling). Remote commands are web-dashboard-originated run requests awaiting desktop approval. The live roadmap fetches a remotely-hosted JSON changelog with ETag caching and a bundled fallback.",
+   "api_surface": "Tauri commands: cloud_sync_status, cloud_sync_now, remote_command_list_pending, remote_command_approve, fetch_roadmap",
+   "db_tables": [],
+   "entry_points": [
+    "src/api/cloudSync.ts"
+   ],
+   "cross_refs": [
+    "system-integrations-api",
+    "system-config-api"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/api/cloudSync.ts",
+    "src/api/remoteCommands.ts",
+    "src/api/liveRoadmap.ts"
+   ]
+  },
+  {
+   "name": "system-ui-theme-state",
+   "category": "lib",
+   "business_feature": "UI & Theme State",
+   "description": "Slices and stores controlling application UI state — panel visibility, active sidebar section, modal open/close state, view mode flags, and theme selection (dark/light/system). The themeStore persists the chosen theme and applies it via CSS data-theme attributes.",
+   "api_surface": null,
+   "db_tables": [],
+   "entry_points": [
+    "src/stores/slices/system/uiSlice.ts",
+    "src/stores/themeStore.ts"
+   ],
+   "cross_refs": [
+    "system-store-root"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/stores/slices/system/uiSlice.ts",
+    "src/stores/slices/system/uiSlice.test.ts",
+    "src/stores/themeStore.ts"
+   ]
+  },
+  {
+   "name": "tauri-ipc-bridge",
+   "category": "lib",
+   "business_feature": "Tauri IPC Bridge",
+   "description": "Frontend-to-backend IPC bridge using Tauri's typed command system. All frontend calls go through invokeWithTimeout wrappers; ESLint enforces no raw invoke() calls. Includes generated command-name constants and ts-rs type bindings.",
+   "api_surface": "invokeWithTimeout('<command_name>', payload, timeoutMs)",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/tauriInvoke.ts",
+    "src-tauri/src/lib.rs"
+   ],
+   "cross_refs": [
+    "persona-management",
+    "execution-runner",
+    "credential-vault"
+   ],
+   "file_count": 3,
+   "sample_files": [
+    "src/lib/tauriInvoke.ts",
+    "src-tauri/src/lib.rs",
+    "src-tauri/src/commands/mod.rs"
+   ]
+  },
+  {
+   "name": "tauri-ipc-utils",
+   "category": "lib",
+   "business_feature": "Tauri IPC Safety",
+   "description": "Provides safe wrappers around Tauri IPC command invocation. Includes detection of unregistered backend commands and retry classification via ApiError, preventing misleading not-found errors from masking real business logic failures. Depends on tauriInvoke and the TauriErrorKind type system.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/tauri/safeInvoke.ts",
+    "src/lib/utils/apiError.ts"
+   ],
+   "cross_refs": [
+    "platform-detection",
+    "crash-persistence"
+   ],
+   "file_count": 2,
+   "sample_files": [
+    "src/lib/utils/tauri/safeInvoke.ts",
+    "src/lib/utils/apiError.ts"
+   ]
+  },
+  {
+   "name": "theming-platform-hooks",
+   "category": "lib",
+   "business_feature": "Theming & Display Utilities",
+   "description": "Hooks for platform-level display concerns: resolving a persona's visual vibe/theme, detecting document visibility for pause-on-hide optimizations, checking whether a DOM element is in the viewport, classifying terminal output lines by semantic type, and providing time-of-day context for adaptive UI. These hooks are used by multiple features with no single owner.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/theming/usePersonaVibe.ts",
+    "src/hooks/utility/useDocumentVisibility.ts"
+   ],
+   "cross_refs": [
+    "execution-streaming-hooks"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/hooks/theming/usePersonaVibe.ts",
+    "src/hooks/utility/useDocumentVisibility.ts",
+    "src/hooks/utility/useElementVisible.ts",
+    "src/hooks/utility/useTerminalClassification.ts",
+    "src/hooks/utility/useTimeOfDay.ts"
+   ]
+  },
+  {
+   "name": "timing-utility-hooks",
+   "category": "lib",
+   "business_feature": "Timing & Scheduling Utilities",
+   "description": "Low-level timing and scheduling primitives: debounce for text input, debounced-save combining debounce with persist calls, elapsed timer for duration display, polling loops with configurable interval and backoff, RAF-coalesced callback scheduling to batch rapid updates into single animation frames, animated number interpolation for smooth counters, and a relative-time ticker for live 'X ago' labels.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/utility/timing/useDebounce.ts",
+    "src/hooks/utility/timing/usePolling.ts",
+    "src/hooks/utility/timing/useRafCoalescedCallback.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 8,
+   "sample_files": [
+    "src/hooks/utility/timing/useDebounce.ts",
+    "src/hooks/utility/timing/useDebouncedSave.ts",
+    "src/hooks/utility/timing/useElapsedTimer.ts",
+    "src/hooks/utility/timing/usePolling.ts",
+    "src/hooks/utility/timing/useRafCoalescedCallback.ts",
+    "src/hooks/utility/timing/useAnimatedNumber.ts"
+   ]
+  },
+  {
+   "name": "ui-animation-hooks",
+   "category": "lib",
+   "business_feature": "UI Animation & Interaction",
+   "description": "Hooks for UI motion, progressive disclosure, accessibility, and save-state feedback: a motion preference hook respecting prefers-reduced-motion, progressive reveal animations for list items, tracked element rect for anchor-positioned overlays, roving tab-index for keyboard navigation, async action state management, unsaved-change guards, save feedback toasts, settings-save toasts, and tier-gating checks. Shared across many feature surfaces.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/utility/interaction/useMotion.ts",
+    "src/hooks/utility/interaction/useAsyncAction.ts",
+    "src/hooks/utility/interaction/useProgressiveReveal.ts"
+   ],
+   "cross_refs": [
+    "app-settings-hooks"
+   ],
+   "file_count": 13,
+   "sample_files": [
+    "src/hooks/utility/interaction/useMotion.ts",
+    "src/hooks/utility/interaction/useProgressiveReveal.ts",
+    "src/hooks/utility/interaction/useTrackedElementRect.ts",
+    "src/hooks/utility/interaction/useRovingTabIndex.ts",
+    "src/hooks/utility/interaction/useAsyncAction.ts",
+    "src/hooks/utility/interaction/useUnsavedGuard.ts"
+   ]
+  },
+  {
+   "name": "utils-tests",
+   "category": "test",
+   "business_feature": "Utility Tests",
+   "description": "Unit tests for the shared utility layer, covering terminal line classification, formatter edge cases, safeInvoke command-not-found detection, URL sanitization, and prompt injection stripping. These tests act as a regression guard for security-sensitive primitives that have no higher-level integration tests.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/lib/utils/__tests__/formatters.test.ts"
+   ],
+   "cross_refs": [
+    "tauri-ipc-utils",
+    "url-html-sanitization",
+    "prompt-injection-defense",
+    "formatters-and-display"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src/lib/utils/__tests__/terminalColors.test.ts",
+    "src/lib/utils/__tests__/formatters.test.ts",
+    "src/lib/utils/__tests__/safeInvoke.test.ts",
+    "src/lib/utils/sanitizers/__tests__/sanitizeUrl.test.ts",
+    "src/lib/utils/sanitizers/__tests__/promptInjection.test.ts"
+   ]
+  },
+  {
+   "name": "viewport-interaction-hooks",
+   "category": "lib",
+   "business_feature": "Viewport & Scroll Interaction",
+   "description": "UI interaction primitives for scroll and viewport management: click-outside detection, clipboard copy with keyed flag tracking, infinite-scroll end-reached detection, compact-mode detection, mobile preview toggling, virtual list windowing for large datasets, viewport clamping to keep popovers in-bounds, scroll shadow indicators, and scroll position restoration across navigation. Used by shared components and feature panels alike.",
+   "api_surface": "",
+   "db_tables": [],
+   "entry_points": [
+    "src/hooks/utility/interaction/useVirtualList.ts",
+    "src/hooks/utility/interaction/useScrollRestoration.ts",
+    "src/hooks/utility/interaction/useClickOutside.ts"
+   ],
+   "cross_refs": [],
+   "file_count": 11,
+   "sample_files": [
+    "src/hooks/utility/interaction/useClickOutside.ts",
+    "src/hooks/utility/interaction/useCopyToClipboard.ts",
+    "src/hooks/utility/interaction/useKeyedCopyFlag.ts",
+    "src/hooks/utility/interaction/useEndReached.ts",
+    "src/hooks/utility/interaction/useIsCompact.ts",
+    "src/hooks/utility/interaction/useMobilePreview.ts"
+   ]
+  },
+  {
+   "name": "workflow-infrastructure",
+   "category": "api",
+   "business_feature": "Workflow Infrastructure",
+   "description": "Background workflow and task execution infrastructure — the workflow runner (multi-step async workflows), task executor (general background job dispatch), bridge-manifest management (tracking active IPC bridges), CLI stderr capture, and the Bun web-dev builder integration.",
+   "api_surface": "run_workflow, execute_task, get_bridge_manifest, capture_cli_stderr, start_web_build",
+   "db_tables": [
+    "active_workflows",
+    "task_executions"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/workflows.rs"
+   ],
+   "cross_refs": [
+    "fleet-core",
+    "ai-director"
+   ],
+   "file_count": 5,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/workflows.rs",
+    "src-tauri/src/commands/infrastructure/task_executor.rs",
+    "src-tauri/src/commands/infrastructure/bridge_manifest.rs",
+    "src-tauri/src/commands/infrastructure/cli_stderr.rs",
+    "src-tauri/src/commands/infrastructure/webbuild.rs"
+   ]
+  },
+  {
+   "name": "workspace-governance",
+   "category": "api",
+   "business_feature": "Workspace Governance",
+   "description": "Codebase governance scanning — standards ruleset enforcement (linting rules against a configurable standards file), doc-rot detection (stale documentation finder), workspace divergence analysis, workspace harvesting (extracting structure from managed repos), and Git checkpoint/GitLab integration.",
+   "api_surface": "run_standards_scan, detect_doc_rot, harvest_workspace, verify_workspace, create_git_checkpoint",
+   "db_tables": [
+    "standards_violations",
+    "doc_rot_findings"
+   ],
+   "entry_points": [
+    "src-tauri/src/commands/infrastructure/standards_scan.rs"
+   ],
+   "cross_refs": [
+    "context-scanning",
+    "dev-tools-features"
+   ],
+   "file_count": 7,
+   "sample_files": [
+    "src-tauri/src/commands/infrastructure/standards_scan.rs",
+    "src-tauri/src/commands/infrastructure/doc_rot.rs",
+    "src-tauri/src/commands/infrastructure/workspace_divergence.rs",
+    "src-tauri/src/commands/infrastructure/workspace_harvest.rs",
+    "src-tauri/src/commands/infrastructure/workspace_verify.rs",
+    "src-tauri/src/commands/infrastructure/git_checkpoint.rs"
+   ]
+  }
+ ]
+}

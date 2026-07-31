@@ -63,12 +63,18 @@ pub struct GenomeBreedingResult {
     /// Which generation this offspring belongs to.
     #[ts(type = "number")]
     pub generation: i32,
-    /// JSON-serialized FitnessScore. This is an *inherited* (mid-parent)
-    /// prediction, NOT a measured evaluation of the offspring; null only if it
-    /// could not be predicted. Direct offspring evaluation is a deferred follow-up.
+    /// JSON-serialized fitness. When `fitness_source` is `"inherited"` this is
+    /// the mid-parent *prediction*; when `"measured"` it is a
+    /// `MeasuredFitness` produced by replaying the fixture set through this
+    /// offspring (Darwin Mode). Null only if neither could be computed.
     pub fitness_json: Option<String>,
-    /// Overall predicted (inherited) fitness, for sorting/ranking. Not measured.
+    /// Overall fitness for sorting/ranking. Predicted or measured per
+    /// `fitness_source`.
     pub fitness_overall: Option<f64>,
+    /// Provenance of the fitness fields: `"inherited"` (mid-parent prediction)
+    /// or `"measured"` (fixture-replay evaluation). `None` on legacy rows,
+    /// which are all inherited.
+    pub fitness_source: Option<String>,
     /// Whether user adopted this offspring as a new persona.
     pub adopted: bool,
     /// The persona ID if this offspring was adopted.

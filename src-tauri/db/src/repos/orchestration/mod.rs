@@ -5,4 +5,5 @@
 //! `engine::team_assignment_orchestrator` calls into this repo to advance
 //! state; Tauri commands (Phase A2) wrap it for the frontend.
 
+pub mod assignment_outcomes;
 pub mod team_assignments;

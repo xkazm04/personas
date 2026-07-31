@@ -3,6 +3,7 @@ import { CredentialPicker } from '@/features/vault/sub_catalog/components/picker
 import { CredentialTemplateForm } from '@/features/vault/sub_catalog/components/forms/CredentialTemplateForm';
 import { CatalogAutoSetup } from '@/features/vault/sub_catalog/components/autoCred/steps/CatalogAutoSetup';
 import { CredentialRelationshipGraph } from '@/features/vault/sub_dependencies/CredentialRelationshipGraph';
+import { BrokerPanel } from '@/features/vault/sub_broker/BrokerPanel';
 import { isUniversalOAuthConnector, isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { CredentialAddViews } from './CredentialAddViews';
 import { toastCatch } from "@/lib/silentCatch";
@@ -132,6 +133,9 @@ export function CredentialManagerViews({ state }: CredentialManagerViewsProps) {
         )}
         {viewState.view === 'graph' && (
           <CredentialRelationshipGraph key="graph" />
+        )}
+        {viewState.view === 'broker' && (
+          <BrokerPanel key="broker" />
         )}
 
       <CredentialAddViews state={state} />

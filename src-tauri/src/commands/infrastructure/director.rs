@@ -152,3 +152,48 @@ pub fn get_director_brain_history(
     let persona = crate::db::repos::core::personas::get_by_id(&state.db, &persona_id)?;
     Ok(crate::engine::director_brain::read_brain_history(&state.db, &persona.name))
 }
+
+// ---------------------------------------------------------------------------
+// Director's Lab (batch-3): verdict → experiment compiler + campaign report
+// ---------------------------------------------------------------------------
+
+/// Compile an APPROVED, hypothesis-bearing Director verdict into a registered
+/// `lab_ab_experiments` row. Budget-gated: a dry weekly ledger registers a
+/// visible `declined_budget` row rather than silently dropping the request.
+///
+/// Async + potentially long-running: variant materialization is one bounded
+/// genome-critique CLI call (~3 min ceiling). The frontend invoke must use a
+/// generous timeout.
+#[tauri::command]
+pub async fn commission_director_experiment(
+    state: State<'_, Arc<AppState>>,
+    review_id: String,
+) -> Result<crate::db::models::LabAbExperiment, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::director_lab::commission_experiment(&state.db, &review_id).await
+}
+
+/// Director-commissioned experiments, newest first (optionally per persona).
+#[tauri::command]
+pub fn list_director_experiments(
+    state: State<'_, Arc<AppState>>,
+    persona_id: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<crate::db::models::LabAbExperiment>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::lab::ab::list_experiments(
+        &state.db,
+        persona_id.as_deref(),
+        limit.unwrap_or(50),
+    )
+}
+
+/// The Director tab's minimal campaign report: hypotheses emitted, experiments
+/// by status, and the weekly budget ledger.
+#[tauri::command]
+pub fn get_director_campaign_report(
+    state: State<'_, Arc<AppState>>,
+) -> Result<crate::engine::director_lab::DirectorCampaignReport, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::director_lab::campaign_report(&state.db)
+}

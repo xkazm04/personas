@@ -10,7 +10,8 @@ import { silentCatch } from '@/lib/silentCatch';
 
 export type TourStepId = string;
 
-export type TourId =
+/** The hand-written tours that ship with the app. */
+export type StaticTourId =
   | "getting-started"
   | "getting-started-simple"
   | "execution-observability"
@@ -20,6 +21,17 @@ export type TourId =
   | "templates-recipes"
   | "teams-orchestration"
   | "obsidian-brain";
+
+/**
+ * Athena-composed tours (Generative Tours). Ids are minted server-side as
+ * `athena-<uuid>` when a `compose_tour` spec passes anchor-manifest
+ * validation, then registered at runtime via `registerDynamicTour` so the
+ * whole tour machinery (GuidedTour, TourSpotlight, narration, persistence)
+ * plays them exactly like a static tour.
+ */
+export type DynamicTourId = `athena-${string}`;
+
+export type TourId = StaticTourId | DynamicTourId;
 
 /**
  * The single source of truth for tour completion event keys.
@@ -83,6 +95,10 @@ export const TOUR_EVENTS = [
   'tour:obsidian-vault-connected',
   'tour:obsidian-tab-explored',
   'tour:obsidian-memory-understood',
+  // Generative Tours — the single completion event every Athena-composed
+  // step uses. There is no code-detectable outcome for a generated step, so
+  // all of them are exploration stops: the user clicks "I've explored this".
+  'tour:composed-step-explored',
 ] as const;
 
 export type TourEventKey = (typeof TOUR_EVENTS)[number];
@@ -145,6 +161,8 @@ export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
   'tour:obsidian-detected',
   'tour:obsidian-tab-explored',
   'tour:obsidian-memory-understood',
+  // Generative Tours — every composed step advances via acknowledge.
+  'tour:composed-step-explored',
 ]);
 
 /** True when a step's completion is gated on the user clicking acknowledge rather than a real interaction. */
@@ -973,8 +991,50 @@ export const TOUR_REGISTRY: TourDef[] = [
 /** Backward compat: the original tour steps (Tour 1) */
 export const TOUR_STEPS = GETTING_STARTED_STEPS;
 
+// -- Dynamic (Athena-composed) tours -------------------------------------
+
+/** True when `id` names an Athena-composed tour rather than a static one. */
+export function isDynamicTourId(id: string): id is DynamicTourId {
+  return id.startsWith("athena-");
+}
+
+/**
+ * Runtime registry of Athena-composed tours. Populated by
+ * `registerDynamicTour` (called from `dynamicTours.ts` after a composed spec
+ * passes anchor-manifest validation — NEVER register an unvalidated def).
+ * Module-level rather than store state so the resolution helpers below stay
+ * synchronous and `GuidedTour` plays dynamic tours through the exact same
+ * `getTourById`/`getActiveTourSteps` path as static ones — unchanged.
+ * Survives HMR via globalThis, matching the storage-probe pattern above.
+ */
+declare global {
+  var __personasDynamicTours: Map<string, TourDef> | undefined;
+}
+
+function dynamicTourRegistry(): Map<string, TourDef> {
+  if (!globalThis.__personasDynamicTours) {
+    globalThis.__personasDynamicTours = new Map();
+  }
+  return globalThis.__personasDynamicTours;
+}
+
+/**
+ * Register (or replace) a composed tour so the tour machinery can resolve it.
+ * Idempotent per id — re-registering after a refetch is safe. Returns the id
+ * for `startTour` convenience.
+ */
+export function registerDynamicTour(def: TourDef & { id: DynamicTourId }): DynamicTourId {
+  dynamicTourRegistry().set(def.id, def);
+  return def.id;
+}
+
+/** All currently-registered composed tours, insertion-ordered. */
+export function getDynamicTours(): TourDef[] {
+  return [...dynamicTourRegistry().values()];
+}
+
 export function getTourById(id: TourId): TourDef | undefined {
-  return TOUR_REGISTRY.find((t) => t.id === id);
+  return TOUR_REGISTRY.find((t) => t.id === id) ?? dynamicTourRegistry().get(id);
 }
 
 export function getActiveTourSteps(tourId: TourId): TourStepDef[] {
@@ -1280,12 +1340,22 @@ export const createTourSlice: StateCreator<
     "teams-orchestration": persisted?.tours?.["teams-orchestration"]?.completed ?? false,
     "obsidian-brain": persisted?.tours?.["obsidian-brain"]?.completed ?? false,
   };
+  // Hydrate completion for Athena-composed tours (dynamic ids persist too).
+  for (const [id, state] of Object.entries(persisted?.tours ?? {})) {
+    if (isDynamicTourId(id) && state?.completed) completionMap[id] = true;
+  }
 
   function getPersistedTours(): PersistedTourState['tours'] {
     const existing = loadPersistedState();
     const tours: Record<string, ReturnType<typeof getDefaultTourState>> = {};
     for (const t of TOUR_REGISTRY) {
       tours[t.id] = existing?.tours?.[t.id] ?? getDefaultTourState();
+    }
+    // Carry over Athena-composed tour progress. Dynamic tours aren't in
+    // TOUR_REGISTRY, so without this every persist cycle would silently drop
+    // their saved state (completed/dismissed/step cursor).
+    for (const [id, state] of Object.entries(existing?.tours ?? {})) {
+      if (isDynamicTourId(id)) tours[id] = state;
     }
     return tours as PersistedTourState['tours'];
   }

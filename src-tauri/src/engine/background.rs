@@ -505,6 +505,7 @@ pub fn start_loops(
             pool: pool.clone(),
             composite_state,
         }),
+        Box::new(super::pattern_miner::PatternMinerSubscription { pool: pool.clone() }),
         Box::new(subscription::AutoRollbackSubscription {
             pool: pool.clone(),
             app: app.clone(),
@@ -639,6 +640,13 @@ pub fn start_loops(
         // on unattended runs (derivation refuses stale measurements).
         Box::new(subscription::KpiEvaluationSubscription { pool: pool.clone() }),
         Box::new(subscription::KpiGoalDerivationSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
+        // Overnight Portfolio Engine — nightly mechanical scan-delta → triage
+        // rules → budget-governed fleet dispatch per autopilot suggest/full
+        // project (explicit opt-in only; no global flag). Branch-only writes.
+        Box::new(crate::commands::infrastructure::overnight::OvernightEngineSubscription {
             pool: pool.clone(),
             app: app.clone(),
         }),

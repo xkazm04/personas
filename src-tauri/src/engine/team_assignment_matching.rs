@@ -247,7 +247,17 @@ pub(crate) struct LlmMatchResponse {
 }
 
 /// Builds the prompt fed to the one-shot Sonnet call. Public for testability.
-pub fn build_llm_match_prompt(step_title: &str, step_description: &str, candidates: &[Candidate]) -> String {
+///
+/// `team_lessons` — Self-Evolving Team v1: lessons distilled by past
+/// retrospectives (`team_memories` tagged `lesson`), retrieved by the
+/// orchestrator via `team_assignment_learning::team_lessons_for_matching`.
+/// Empty slice = the section is omitted entirely (sparse-data honesty).
+pub fn build_llm_match_prompt(
+    step_title: &str,
+    step_description: &str,
+    candidates: &[Candidate],
+    team_lessons: &[String],
+) -> String {
     let roster = candidates
         .iter()
         .map(|c| {
@@ -264,6 +274,19 @@ pub fn build_llm_match_prompt(step_title: &str, step_description: &str, candidat
         .collect::<Vec<_>>()
         .join("\n");
 
+    let lessons_section = if team_lessons.is_empty() {
+        String::new()
+    } else {
+        let lines = team_lessons
+            .iter()
+            .map(|l| format!("- {l}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "\n## Team lessons (distilled from this team's past retrospectives)\nWeigh these when routing — they encode how this specific team has succeeded and failed before:\n{lines}\n"
+        )
+    };
+
     format!(
         r#"You are routing a single task to the best agent on a team.
 
@@ -273,7 +296,7 @@ Description: {step_description}
 
 ## Eligible candidates
 {roster}
-
+{lessons_section}
 ## Response
 Respond with ONLY a JSON object on a single line:
 {{"persona_id": "<id>", "use_case_id": "<id or null>", "confidence": <0.0-1.0>, "rationale": "<one short sentence>"}}
@@ -301,6 +324,7 @@ pub async fn match_via_llm_eval(
     step_title: &str,
     step_description: &str,
     candidates: &[Candidate],
+    team_lessons: &[String],
     timeout_secs: u64,
 ) -> Result<MatchResult, AppError> {
     use crate::engine::cli_process::CliProcessDriver;
@@ -314,7 +338,7 @@ pub async fn match_via_llm_eval(
         ));
     }
 
-    let prompt_text = build_llm_match_prompt(step_title, step_description, candidates);
+    let prompt_text = build_llm_match_prompt(step_title, step_description, candidates, team_lessons);
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
@@ -531,4 +555,43 @@ pub async fn decompose_goal(
 #[allow(dead_code)]
 fn _hint() -> serde_json::Value {
     json!({})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn candidate() -> Candidate {
+        Candidate {
+            persona_id: "p1".into(),
+            persona_name: "Dev Clone".into(),
+            trust_score: 0.8,
+            use_case_id: "uc1".into(),
+            use_case_title: "Implement".into(),
+            corpus: "writes code".into(),
+            tool_hints: vec![],
+        }
+    }
+
+    /// Sparse-data honesty: no lessons → NO "Team lessons" section (the model
+    /// must not be prompted to infer from an empty history).
+    #[test]
+    fn match_prompt_omits_lessons_section_when_empty() {
+        let prompt = build_llm_match_prompt("Implement", "write the code", &[candidate()], &[]);
+        assert!(!prompt.contains("Team lessons"));
+    }
+
+    #[test]
+    fn match_prompt_includes_retrieved_lessons() {
+        let lessons = vec!["Always run tsc before opening the PR".to_string()];
+        let prompt =
+            build_llm_match_prompt("Implement", "write the code", &[candidate()], &lessons);
+        assert!(prompt.contains("Team lessons"));
+        assert!(prompt.contains("Always run tsc before opening the PR"));
+        // Section sits between roster and response contract.
+        let roster_pos = prompt.find("Eligible candidates").unwrap();
+        let lessons_pos = prompt.find("Team lessons").unwrap();
+        let response_pos = prompt.find("## Response").unwrap();
+        assert!(roster_pos < lessons_pos && lessons_pos < response_pos);
+    }
 }

@@ -16,8 +16,10 @@
 
 pub mod connector_use;
 pub mod curation_run;
+pub mod night_plan;
 pub mod operations_views;
 pub mod scan_codebase;
+pub mod session_review;
 
 #[cfg(feature = "ml")]
 use std::sync::Arc;
@@ -137,6 +139,17 @@ impl JobProgress {
         self.sink.emit(&snapshot);
     }
 
+    /// The desktop `AppHandle` behind the sink, when there is one. Lets a
+    /// handler emit non-job events (e.g. the night-plan job announcing its
+    /// approval card on `companion://approvals`) without widening the
+    /// dispatch signature. `None` under the daemon/test sink.
+    pub fn app_handle(&self) -> Option<&AppHandle> {
+        match &self.sink {
+            JobEventSink::App(app) => Some(app),
+            JobEventSink::Noop => None,
+        }
+    }
+
     /// Report determinate progress (current/total) plus a note, so the task
     /// tag can render a progress bar (e.g. files scanned). Event-only.
     pub fn report_progress(&self, current: u32, total: u32, message: impl Into<String>) {
@@ -243,6 +256,8 @@ fn default_title(kind: &str) -> String {
         "connector_use" => "Calling a connector".to_string(),
         "scan_codebase" => "Scanning codebase".to_string(),
         curation_run::KIND => "Curating memory".to_string(),
+        night_plan::KIND => "Planning the night shift".to_string(),
+        session_review::KIND => "Reviewing a night session".to_string(),
         other => other.replace('_', " "),
     }
 }
@@ -457,6 +472,8 @@ async fn dispatch_handler(
         }
         "connector_use" => connector_use::run(pool, cred_pool, &params, progress).await,
         curation_run::KIND => curation_run::run(pool, &params, progress).await,
+        night_plan::KIND => night_plan::run(pool, cred_pool, &params, progress).await,
+        session_review::KIND => session_review::run(pool, &params, progress).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"
         ))),

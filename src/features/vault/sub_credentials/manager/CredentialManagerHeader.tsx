@@ -21,16 +21,19 @@ export function CredentialManagerHeader({ credentialCount, view }: CredentialMan
   const isCatalog = view === 'catalog-browse' || view === 'catalog-form' || view === 'catalog-auto-setup';
   const isDependencies = view === 'graph';
   const isDatabases = view === 'databases';
+  const isBroker = view === 'broker';
   const title = isCatalog
     ? m.title_catalog
     : isDependencies
       ? m.title_dependencies
       : isDatabases
         ? m.title_databases
-        : m.title;
+        : isBroker
+          ? m.title_broker
+          : m.title;
   // The "N credentials stored" subtitle only makes sense on the credentials
-  // list — Catalog / Dependencies / Databases get a bare title.
-  const subtitle = isCatalog || isDependencies || isDatabases
+  // list — Catalog / Dependencies / Databases / Broker get a bare title.
+  const subtitle = isCatalog || isDependencies || isDatabases || isBroker
     ? undefined
     : tx(credentialCount === 1 ? m.credentials_stored_one : m.credentials_stored_other, { count: credentialCount });
   return (

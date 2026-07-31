@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Trash2, Save } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { getModelRoutingRules, setModelRoutingRules } from '@/api/system/system';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
+import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
 import { toastCatch } from '@/lib/silentCatch';
 import type { ModelRoutingRule } from '@/lib/bindings/ModelRoutingRule';
+
+import { PolicyProposalsSection } from './PolicyProposalsSection';
 
 const EFFORTS = ['', 'low', 'medium', 'high', 'xhigh'] as const;
 const INPUT_CLS =
@@ -22,16 +25,27 @@ export function ModelRoutingSection() {
   const s = t.settings.engine;
   const [rules, setRules] = useState<ModelRoutingRule[]>([]);
 
-  useEffect(() => {
+  const fetchRules = useCallback(() => {
     getModelRoutingRules().then(setRules).catch(toastCatch('ModelRoutingSection:fetch'));
   }, []);
 
+  useEffect(() => {
+    fetchRules();
+  }, [fetchRules]);
+
+  // Hand-editing a learned rule's selector/model invalidates its provenance
+  // claim, so the stamp is dropped — a rule only carries provenance while it
+  // is exactly what the applied proposal wrote.
   const patchCategory = (i: number, category: string) =>
     setRules((rs) =>
-      rs.map((r, j) => (j === i ? { ...r, match: { ...r.match, category: category || undefined } } : r)),
+      rs.map((r, j) =>
+        j === i
+          ? { ...r, match: { ...r.match, category: category || undefined }, provenance: undefined }
+          : r,
+      ),
     );
   const patchModel = (i: number, model: string) =>
-    setRules((rs) => rs.map((r, j) => (j === i ? { ...r, model } : r)));
+    setRules((rs) => rs.map((r, j) => (j === i ? { ...r, model, provenance: undefined } : r)));
   const patchEffort = (i: number, effort: string) =>
     setRules((rs) => rs.map((r, j) => (j === i ? { ...r, effort: effort || undefined } : r)));
   const addRule = () => setRules((rs) => [...rs, { match: {}, model: '' }]);
@@ -80,6 +94,13 @@ export function ModelRoutingSection() {
                 </option>
               ))}
             </select>
+            {rule.provenance && (
+              <AthenaComposedBadge
+                variant="composed"
+                label={s.tuning_learned_badge}
+                title={`${rule.provenance.claim} — ${rule.provenance.evidenceSnapshotId} @ ${rule.provenance.appliedAt}`}
+              />
+            )}
             <Button variant="ghost" onClick={() => removeRule(i)} aria-label={s.routing_remove}>
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -96,6 +117,10 @@ export function ModelRoutingSection() {
           <Save className="w-4 h-4" />
           {s.routing_save}
         </AsyncButton>
+      </div>
+
+      <div className="border-t border-primary/10 pt-4">
+        <PolicyProposalsSection onRulesChanged={fetchRules} />
       </div>
     </div>
   );

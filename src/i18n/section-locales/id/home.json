@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Dapatkan pelatihan portofolio dari Director",
     "pm_event_chain_title": "Rantai agen dengan pendengar acara",
     "pm_live_stream_title": "Saksikan rantai berjalan secara real time",
-    "pm_athena_fleet_title": "Minta Athena menganalisis armada Anda"
+    "pm_athena_fleet_title": "Minta Athena menganalisis armada Anda",
+    "composed_tours": "Disusun oleh Athena",
+    "composed_badge": "Disusun Athena",
+    "composed_stale": "Mungkin sudah usang — aplikasi telah berubah sejak panduan ini disusun",
+    "composed_empty": "Saat Anda meminta Athena menunjukkan cara kerja sesuatu, panduan yang disusunnya muncul di sini."
   },
   "setup_stepper": {
     "your_profile": "Profil Anda",

@@ -330,12 +330,48 @@ pub fn get_dependents(
         })?;
         let observed = collect_rows(observed, "audit_log::get_dependents/observed");
 
-        // Merge: structural first, then observed (skip duplicates)
+        // Broker consumers (Zero-Plaintext Broker): external consumer keys
+        // that have actually used this credential through the audited proxy.
+        // These are LIVE edges — refreshed on every proxied call — so the
+        // blast radius reflects observed reality, not just declared bindings.
+        // INNER JOIN on active keys: a revoked consumer (kill-switch) drops
+        // out of the blast radius immediately. Ids are prefixed `consumer:`
+        // to keep them out of the persona id space.
+        // Tolerate a DB predating the broker migration (older snapshots /
+        // partial test schemas): treat a missing table as zero consumers
+        // instead of failing the whole dependents read.
+        let consumers = match conn.prepare(
+            "SELECT e.consumer_key_id, e.consumer_name, e.last_used_at
+             FROM credential_consumer_edges e
+             INNER JOIN external_api_keys k ON k.id = e.consumer_key_id
+             WHERE e.credential_id = ?1 AND k.enabled = 1 AND k.revoked_at IS NULL
+             ORDER BY e.last_used_at DESC",
+        ) {
+            Ok(mut stmt3) => {
+                let rows = stmt3.query_map(params![credential_id], |row| {
+                    Ok(CredentialDependent {
+                        persona_id: format!("consumer:{}", row.get::<_, String>(0)?),
+                        persona_name: row.get(1)?,
+                        link_type: "broker_consumer".to_string(),
+                        via_connector: None,
+                        last_used_at: row.get(2)?,
+                    })
+                })?;
+                collect_rows(rows, "audit_log::get_dependents/broker_consumers")
+            }
+            Err(e) => {
+                tracing::debug!(error = %e, "broker consumer-edge scan skipped (table missing?)");
+                Vec::new()
+            }
+        };
+
+        // Merge: structural first, then observed, then broker consumers
+        // (skip duplicates by id).
         let mut result = structural;
-        let existing_ids: std::collections::HashSet<String> =
+        let mut existing_ids: std::collections::HashSet<String> =
             result.iter().map(|d| d.persona_id.clone()).collect();
-        for dep in observed {
-            if !existing_ids.contains(&dep.persona_id) {
+        for dep in observed.into_iter().chain(consumers) {
+            if existing_ids.insert(dep.persona_id.clone()) {
                 result.push(dep);
             }
         }

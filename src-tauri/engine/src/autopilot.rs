@@ -24,9 +24,19 @@
 //! ```text
 //!   off      → nothing
 //!   measure  → KpiEvaluation
-//!   suggest  → KpiEvaluation, KpiGoalDerivation        (goals derived, not advanced)
-//!   full     → KpiEvaluation, KpiGoalDerivation, GoalAdvancement
+//!   suggest  → KpiEvaluation, KpiGoalDerivation, ScanAndTriage,
+//!              AutomationSuggestion                              (finds + triages + proposes, never spends on fixes)
+//!   full     → all of the above + GoalAdvancement + DispatchFixes
+//!              (+ AutomationCommit, reserved — exercised by nothing in v1)
 //! ```
+//!
+//! `ScanAndTriage`/`DispatchFixes` power the Overnight Portfolio Engine
+//! (`commands::infrastructure::overnight`): the nightly mechanical tick that
+//! computes a scan delta, runs the project's triage rules, and — on `full`
+//! only — dispatches the auto-accepted ideas to fleet sessions. The budget
+//! governor's degrade path (`full` → `suggest`) maps exactly onto this split:
+//! a degraded project keeps scanning + triaging but can no longer spend on
+//! dispatch.
 
 use std::collections::HashMap;
 
@@ -52,6 +62,24 @@ pub enum Capability {
     KpiEvaluation,
     KpiGoalDerivation,
     GoalAdvancement,
+    /// Overnight tick: compute the incremental scan delta + run the project's
+    /// mechanical triage rules. Read/classify only — spends nothing on fixes.
+    ScanAndTriage,
+    /// Overnight tick: dispatch auto-accepted backlog ideas to unattended
+    /// fleet fix sessions (branch-only writes; budget-governed pre-dispatch).
+    DispatchFixes,
+    /// Self-Wiring Fabric: the pattern miner may surface mined event→persona
+    /// co-occurrence candidates as ghost patch-cables in the Studio. Pure
+    /// read-side proposals — the user reviews and commits each one by hand.
+    /// Granted at `suggest` and above.
+    AutomationSuggestion,
+    /// Self-Wiring Fabric, RESERVED (v1): auto-commit a mined suggestion that
+    /// passes dry-run, under a conservative rate limit with an undo window.
+    /// Granted at `full` by the matrix but exercised by NOTHING in this batch
+    /// — v1 is review-each everywhere; no code path consults this capability
+    /// yet. Kept in the enum so the ladder position is fixed before the
+    /// auto-commit follow-up ships.
+    AutomationCommit,
 }
 
 impl AutopilotMode {
@@ -81,7 +109,10 @@ impl AutopilotMode {
         match self {
             Self::Off => false,
             Self::Measure => matches!(cap, KpiEvaluation),
-            Self::Suggest => matches!(cap, KpiEvaluation | KpiGoalDerivation),
+            Self::Suggest => matches!(
+                cap,
+                KpiEvaluation | KpiGoalDerivation | ScanAndTriage | AutomationSuggestion
+            ),
             Self::Full => true,
         }
     }
@@ -149,6 +180,21 @@ mod tests {
         assert!(AutopilotMode::Suggest.allows(KpiGoalDerivation));
         assert!(!AutopilotMode::Suggest.allows(GoalAdvancement));
         assert!(AutopilotMode::Full.allows(GoalAdvancement));
+        // Overnight engine capabilities: suggest scans + triages but must
+        // NEVER dispatch (that split IS the budget-governor degrade semantics).
+        assert!(!AutopilotMode::Measure.allows(ScanAndTriage));
+        assert!(AutopilotMode::Suggest.allows(ScanAndTriage));
+        assert!(!AutopilotMode::Suggest.allows(DispatchFixes));
+        assert!(AutopilotMode::Full.allows(ScanAndTriage));
+        assert!(AutopilotMode::Full.allows(DispatchFixes));
+        // Self-Wiring Fabric: suggestions surface at `suggest`; auto-commit is
+        // reserved at `full` (granted by the matrix, exercised by nothing in
+        // v1 — proposed-not-imposed is the batch-3 learning grammar).
+        assert!(!AutopilotMode::Measure.allows(AutomationSuggestion));
+        assert!(AutopilotMode::Suggest.allows(AutomationSuggestion));
+        assert!(!AutopilotMode::Suggest.allows(AutomationCommit));
+        assert!(AutopilotMode::Full.allows(AutomationSuggestion));
+        assert!(AutopilotMode::Full.allows(AutomationCommit));
     }
 
     #[test]

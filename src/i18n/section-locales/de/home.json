@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Portfolio-Coaching vom Director erhalten",
     "pm_event_chain_title": "Agenten mit Ereignis-Listenern verknüpfen",
     "pm_live_stream_title": "Ketten in Echtzeit kaskadieren beobachten",
-    "pm_athena_fleet_title": "Athena zur Flottenanalyse befragen"
+    "pm_athena_fleet_title": "Athena zur Flottenanalyse befragen",
+    "composed_tours": "Von Athena zusammengestellt",
+    "composed_badge": "Von Athena erstellt",
+    "composed_stale": "Möglicherweise veraltet — die App hat sich seit der Erstellung geändert",
+    "composed_empty": "Wenn Sie Athena bitten, Ihnen etwas zu zeigen, landen die von ihr zusammengestellten Rundgänge hier."
   },
   "setup_stepper": {
     "your_profile": "Ihr Profil",

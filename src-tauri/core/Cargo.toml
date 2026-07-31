@@ -43,7 +43,7 @@ serde_json = "1"
 # Scope derivation walks a member repo to size its territories (harvest_scopes).
 walkdir = "2"
 thiserror = "2"
-rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
+rusqlite = { version = "0.38", features = ["bundled", "hooks", "preupdate_hook"] }
 r2d2 = "0.8"
 # error_taxonomy's UsageLimit carries a reset timestamp.
 chrono = { version = "0.4", features = ["serde"] }

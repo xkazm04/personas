@@ -10,7 +10,7 @@ export interface ParsedOutput {
   knowledgeAnnotation: Record<string, unknown> | null;
 }
 
-export type OutputSection = 'overview' | 'messages' | 'flow' | 'memories' | 'events' | 'reviews' | 'knowledge' | 'outcome' | 'json';
+export type OutputSection = 'overview' | 'surface' | 'messages' | 'flow' | 'memories' | 'events' | 'reviews' | 'knowledge' | 'outcome' | 'json';
 
 export function parseOutputData(raw: string | null): ParsedOutput | null {
   if (!raw) return null;

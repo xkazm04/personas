@@ -9,7 +9,9 @@ pub mod bundle;
 pub mod capability;
 pub mod cloud_webhook_relay;
 pub mod composite;
+pub mod pattern_miner;
 pub mod connector_strategy;
+pub mod credential_broker;
 // Moved to `personas-core` (crate-split step 3). Re-exported so every existing
 // `crate::engine::{types, lifecycle, crypto, trace, cron, url_safety}` path
 // keeps resolving — these six modules are needed by `db::models` and
@@ -46,6 +48,7 @@ pub mod deliberation;
 pub mod digest;
 pub mod director;
 pub mod director_brain;
+pub mod director_lab;
 pub mod director_memory;
 pub mod discord_poller;
 pub mod discovery;
@@ -57,6 +60,7 @@ pub mod dry_run;
 pub use personas_core::error_taxonomy;
 pub mod evolution;
 pub mod failover;
+pub mod fitness_driver;
 pub mod genome;
 pub mod genome_critique;
 pub mod healthcheck;
@@ -86,6 +90,7 @@ pub mod incident_continuation;
 pub mod kpi_eval;
 pub mod kpi_derivation;
 pub mod kpi_binding;
+pub mod team_assignment_learning;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod platforms;
@@ -349,21 +354,29 @@ async fn run_execution_with_ceiling(
     // child; the runner takes its own clone for normal registration/cleanup.
     let child_pids_for_ceiling = child_pids.clone();
 
+    // Reversible Agent: every DB write issued while this run's future is
+    // polled is attributed to this execution in the change journal (the
+    // task-local scope is read back inside SQLite's preupdate hook — see
+    // db::attribution / db::journal). This is the single injection point:
+    // repos below this frame need no signature changes.
     match tokio::time::timeout(
         ceiling,
-        runner::run_execution(
-            emitter,
-            pool,
+        crate::db::attribution::with_execution(
             execution_id.clone(),
-            persona,
-            tools,
-            input_data,
-            log_dir,
-            child_pids,
-            cancelled,
-            continuation,
-            chain_trace_id,
-            circuit_breaker,
+            runner::run_execution(
+                emitter,
+                pool,
+                execution_id.clone(),
+                persona,
+                tools,
+                input_data,
+                log_dir,
+                child_pids,
+                cancelled,
+                continuation,
+                chain_trace_id,
+                circuit_breaker,
+            ),
         ),
     )
     .await

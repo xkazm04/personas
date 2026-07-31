@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Получить советы по портфолио от Director",
     "pm_event_chain_title": "Связывать агентов через прослушиватели событий",
     "pm_live_stream_title": "Наблюдать за каскадом цепочек в реальном времени",
-    "pm_athena_fleet_title": "Попросить Athena проанализировать ваш флот"
+    "pm_athena_fleet_title": "Попросить Athena проанализировать ваш флот",
+    "composed_tours": "Составила Athena",
+    "composed_badge": "Составлено Athena",
+    "composed_stale": "Возможно, устарело — приложение изменилось с момента составления",
+    "composed_empty": "Когда вы просите Athena показать, как что-то работает, составленные ею руководства появляются здесь."
   },
   "setup_stepper": {
     "your_profile": "Ваш профиль",

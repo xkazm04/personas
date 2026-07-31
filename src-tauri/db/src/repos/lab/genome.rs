@@ -29,7 +29,7 @@ fn row_to_run(row: &rusqlite::Row) -> rusqlite::Result<GenomeBreedingRun> {
 
 row_mapper!(row_to_result -> GenomeBreedingResult {
     id, run_id, genome_json, parent_ids,
-    generation, fitness_json, fitness_overall,
+    generation, fitness_json, fitness_overall, fitness_source [opt],
     adopted [bool], adopted_persona_id, created_at,
 });
 
@@ -171,8 +171,8 @@ pub fn create_result(
         conn.query_row(
             "INSERT INTO genome_breeding_results
                 (id, run_id, genome_json, parent_ids, generation,
-                 fitness_json, fitness_overall, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                 fitness_json, fitness_overall, fitness_source, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'inherited', ?8)
              RETURNING *",
             params![
                 id,
@@ -204,6 +204,34 @@ pub fn get_results_by_run(
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+/// Replace an offspring's inherited (mid-parent) fitness prediction with a
+/// MEASURED fixture-replay evaluation. Sets `fitness_source = 'measured'` so
+/// consumers can distinguish provenance (Darwin Mode step 1).
+pub fn update_result_fitness_measured(
+    pool: &DbPool,
+    result_id: &str,
+    fitness_json: &str,
+    fitness_overall: f64,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_genome",
+        "persona_genome::update_result_fitness_measured",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "UPDATE genome_breeding_results
+                    SET fitness_json = ?1, fitness_overall = ?2, fitness_source = 'measured'
+                  WHERE id = ?3",
+                params![fitness_json, fitness_overall, result_id],
+            )?;
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("GenomeBreedingResult {result_id}")));
+            }
+            Ok(())
+        }
+    )
 }
 
 pub fn mark_adopted(pool: &DbPool, result_id: &str, persona_id: &str) -> Result<(), AppError> {

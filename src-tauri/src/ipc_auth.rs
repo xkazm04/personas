@@ -282,6 +282,15 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "approve_pairing",
     "reject_pairing",
     "revoke_pairing",
+    // Zero-Plaintext Broker (sync privileged commands — see warning below).
+    "mint_credential_handle",
+    "list_broker_consumers",
+    "list_broker_consumer_activity",
+    "revoke_broker_consumer",
+    // Reversible Agent: undo mutates arbitrary allowlisted tables (sync
+    // privileged command — body calls require_privileged_sync via the
+    // #[requires(privileged)] macro, so it MUST be listed here).
+    "undo_execution",
     // Provider usage audit + health bundle. These are SYNC commands whose
     // bodies call `require_privileged_sync`, which hard-requires the wrapper's
     // thread-local validation flag — and the wrapper only validates commands

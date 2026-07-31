@@ -56,7 +56,11 @@
     "pm_director_coaching_title": "Directorからポートフォリオコーチングを受ける",
     "pm_event_chain_title": "イベントリスナーでエージェントをチェーン",
     "pm_live_stream_title": "チェーンのカスケードをリアルタイムで監視",
-    "pm_athena_fleet_title": "Athenaにフリートを分析させる"
+    "pm_athena_fleet_title": "Athenaにフリートを分析させる",
+    "composed_tours": "Athena が作成したツアー",
+    "composed_badge": "Athena 作成",
+    "composed_stale": "古い可能性があります — 作成後にアプリが変更されています",
+    "composed_empty": "Athena に使い方を見せてもらうと、作成されたウォークスルーがここに表示されます。"
   },
   "setup_stepper": {
     "your_profile": "プロフィール",

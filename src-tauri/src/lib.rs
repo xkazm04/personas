@@ -649,7 +649,11 @@ pub fn run() {
             // Create CDC channel for reactive SQLite change notifications
             let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
 
-            let pool = db::init_db(&app_data_dir, Some(cdc_sender))?;
+            // Reversible Agent: durable change-journal capture channel
+            // (preupdate hook -> batch writer thread; see db::journal).
+            let (journal_sender, journal_receiver) = db::journal::create_journal_channel(2048);
+
+            let pool = db::init_db_with_journal(&app_data_dir, Some(cdc_sender), Some(journal_sender))?;
             tracing::info!("Database pool ready (max_size=4, CDC enabled)");
             st.checkpoint("db_init");
 
@@ -970,6 +974,9 @@ pub fn run() {
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.
             commands::fleet::stale::spawn_ticker(app.handle().clone());
+            // Fleet mobile companion — LAN server restarts only when a live
+            // device pairing already exists (fleet_pair_device starts it fresh).
+            commands::fleet::companion_api::start_if_paired(app.handle().clone());
             #[cfg(feature = "desktop")]
             commands::fleet::transcript::spawn_watcher(app.handle().clone());
             match local_http::start() {
@@ -1321,6 +1328,10 @@ pub fn run() {
             );
             st.checkpoint("cdc_drain_task");
 
+            // Reversible Agent: journal writer thread (batches captures into
+            // the change_journal table; prunes retention at startup).
+            db::journal::spawn_journal_writer(pool.clone(), journal_receiver);
+
             db::spawn_idle_maintenance_task(pool.clone(), user_db_pool.clone());
 
             // Persona-jobs worker — projects the dream-job shape onto
@@ -1372,6 +1383,12 @@ pub fn run() {
             // prompts. Never auto-executes; leader-gated + sync-enabled-gated.
             cloud::remote_commands::spawn_poll_loop(app.handle().clone(), state_arc.clone());
             st.checkpoint("cloud_remote_commands");
+
+            // Autonomous NOC v1: server-side alert evaluator — the authority
+            // for alert firing (fires with the UI closed), auto-opens
+            // incidents and runs the capped auto-diagnosis pass.
+            commands::execution::alert_evaluator::spawn_evaluator(app.handle().clone(), state_arc.clone());
+            st.checkpoint("alert_evaluator");
 
             // F-CRON: scheduled-curation worker. Ticks every 60s,
             // reads `persona_curation_schedule` rows, evaluates the
@@ -1881,6 +1898,8 @@ pub fn run() {
             commands::execution::executions::get_execution_trace,
             commands::execution::executions::get_chain_trace,
             commands::execution::executions::get_chain_stop_reasons,
+            commands::execution::journal::get_execution_data_diff,
+            commands::execution::journal::undo_execution,
             commands::execution::executions::list_active_chains,
             commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
@@ -1922,6 +1941,11 @@ pub fn run() {
             commands::execution::assertions::get_assertion_results_for_execution,
             commands::execution::assertions::get_assertion_result_history,
             commands::execution::policy_events::get_policy_events_for_execution,
+            // Execution -- Self-Tuning Fabric (policy proposals, review-each)
+            commands::execution::policy_tuning::policy_tuning_generate,
+            commands::execution::policy_tuning::policy_tuning_list,
+            commands::execution::policy_tuning::policy_tuning_apply,
+            commands::execution::policy_tuning::policy_tuning_decline,
             // Execution -- Audit Incidents inbox (cross-source triage)
             commands::execution::audit_incidents::list_audit_incidents,
             commands::execution::audit_incidents::get_audit_incidents_summary,
@@ -1933,6 +1957,10 @@ pub fn run() {
             commands::execution::audit_incidents::reopen_audit_incident,
             commands::execution::audit_incidents::bulk_acknowledge_audit_incidents,
             commands::execution::audit_incidents::bulk_resolve_audit_incidents,
+            // Execution -- Autonomous NOC v1 (incident diagnosis + handled lane)
+            commands::execution::incident_diagnosis::get_incident_diagnosis,
+            commands::execution::incident_diagnosis::diagnose_audit_incident,
+            commands::execution::incident_diagnosis::list_autonomously_handled_incidents,
             // Execution -- Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,
@@ -1985,6 +2013,8 @@ pub fn run() {
             commands::execution::evolution::evolution_list_cycles,
             commands::execution::evolution::evolution_trigger_cycle,
             commands::execution::evolution::evolution_check_eligibility,
+            commands::execution::evolution::evolution_list_promotion_proposals,
+            commands::execution::evolution::evolution_resolve_promotion_proposal,
             commands::execution::evolution::get_run_budget_state,
             commands::execution::evolution::probe_cli_capabilities,
             // Execution -- Healing
@@ -2079,6 +2109,9 @@ pub fn run() {
             commands::design::template_feedback::get_template_performance,
             // Design -- Team Synthesis
             commands::design::team_synthesis::synthesize_team_from_templates,
+            commands::design::team_synthesis::synthesize_project_crew,
+            commands::design::team_synthesis::get_project_pulse_snapshots,
+            commands::design::team_synthesis::get_crew_fitness,
             // Design -- Platform Definitions
             commands::design::platform_definitions::list_platform_definitions,
             commands::design::platform_definitions::get_platform_definition,
@@ -2144,6 +2177,10 @@ pub fn run() {
             commands::credentials::resources::list_connector_resources,
             commands::credentials::resources::set_credential_scope_enforcement,
             // Credentials -- External API Keys (A2A Gateway management API auth)
+            commands::credentials::broker::mint_credential_handle,
+            commands::credentials::broker::list_broker_consumers,
+            commands::credentials::broker::list_broker_consumer_activity,
+            commands::credentials::broker::revoke_broker_consumer,
             commands::credentials::external_api_keys::create_external_api_key,
             commands::credentials::external_api_keys::list_external_api_keys,
             commands::credentials::external_api_keys::revoke_external_api_key,
@@ -2512,6 +2549,10 @@ pub fn run() {
             commands::teams::deliberations::split_team_deliberation,
             commands::teams::deliberations::list_deliberation_tracks,
             commands::teams::deliberations::merge_deliberation_tracks,
+            commands::teams::learning::get_assignment_outcome,
+            commands::teams::learning::list_assignment_outcomes,
+            commands::teams::learning::list_team_member_trust,
+            commands::teams::learning::list_team_lessons,
             commands::teams::deliberations::approve_deliberation_proposal,
             commands::teams::deliberations::dismiss_deliberation_proposal,
             commands::teams::assignments::advance_team_goal,
@@ -2588,6 +2629,10 @@ pub fn run() {
             commands::tools::triggers::webhook_request_to_curl,
             commands::tools::triggers::get_persona_config_warnings,
             commands::tools::triggers::get_composite_partial_matches,
+            // Tools -- Self-Wiring Fabric (mined automation suggestions)
+            commands::tools::automation_suggestions::list_automation_suggestions,
+            commands::tools::automation_suggestions::accept_automation_suggestion,
+            commands::tools::automation_suggestions::reject_automation_suggestion,
             commands::tools::triggers::get_composite_partial_match,
             // Signing -- Document Signatures
             #[cfg(feature = "p2p")]
@@ -2747,6 +2792,8 @@ pub fn run() {
             // Companion (Athena)
             commands::companion::companion_init,
             commands::companion::companion_reingest_doctrine,
+            commands::companion::tours::companion_compose_tour,
+            commands::companion::tours::companion_list_composed_tours,
             commands::companion::chat::companion_send_message,
             commands::companion::chat::companion_list_recent_messages,
             commands::companion::chat::companion_reset_conversation,
@@ -2813,6 +2860,8 @@ pub fn run() {
             commands::companion::consolidate::companion_get_reflection,
             commands::companion::consolidate::companion_get_dashboard,
             commands::companion::consolidate::companion_get_cockpit,
+            commands::companion::briefing::companion_compose_briefing,
+            commands::companion::briefing::companion_record_briefing_action,
             commands::companion::consolidate::companion_pin_widget_to_cockpit,
             commands::companion::consolidate::companion_unpin_widget_from_cockpit,
             commands::companion::observability::companion_get_usage_dashboard,
@@ -3031,6 +3080,9 @@ pub fn run() {
             commands::infrastructure::director::get_director_brain_enabled,
             commands::infrastructure::director::set_director_brain_enabled,
             commands::infrastructure::director::get_director_brain_history,
+            commands::infrastructure::director::commission_director_experiment,
+            commands::infrastructure::director::list_director_experiments,
+            commands::infrastructure::director::get_director_campaign_report,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_create_project,
@@ -3239,6 +3291,9 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_delete_triage_rule,
             commands::infrastructure::dev_tools::dev_tools_run_triage_rules,
+            // Dev Tools -- Overnight Portfolio Engine
+            commands::infrastructure::overnight::dev_tools_list_night_runs,
+            commands::infrastructure::overnight::dev_tools_run_overnight_now,
             // Dev Tools -- Pipelines (Idea-to-Execution)
             // Dev Tools -- Health Snapshots
             // Dev Tools -- Cross-Project (Codebases connector)
@@ -3506,6 +3561,9 @@ pub fn run() {
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,
+            commands::fleet::pairing::fleet_pair_device,
+            commands::fleet::pairing::fleet_companion_devices,
+            commands::fleet::pairing::fleet_companion_revoke,
             // Web-build runtime (Athena web-dev companion, P0)
             commands::infrastructure::webbuild::webbuild_scaffold,
             commands::infrastructure::webbuild::webbuild_register_existing,
