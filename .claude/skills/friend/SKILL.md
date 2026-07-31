@@ -1,6 +1,7 @@
 ---
 name: friend
 description: Endless single-area companion loop: scan → propose 5 development directions → user picks a number → execute with repo conventions → repeat. Momentum-first, parallel-session UX/product building, scoped to one context.
+argument-hint: "[context]"
 category: Development
 memory: vault
 contexts: tracked

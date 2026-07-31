@@ -3,6 +3,7 @@ name: prototype
 memory: none
 category: Development
 description: Iteratively prototype a UI component through directional variants behind a tab switcher, then consolidate and refactor the winner. Use when the user wants to improve a component they consider a pillar of the app (visual appeal, creativity, UX clarity).
+argument-hint: "[component path]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Agent
 ---
 

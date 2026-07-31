@@ -3,6 +3,7 @@ name: sentry
 memory: none
 category: Maintenance
 description: Fetch active Sentry issues for the Personas project, diagnose root causes from stack traces, apply code fixes, and mark issues as resolved. Covers both Rust backend (tracing::error!, panics) and React frontend (exceptions, unhandled rejections).
+argument-hint: "[issue]"
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 

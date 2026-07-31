@@ -1,6 +1,7 @@
 ---
 name: architect
 description: Heavy structural codebase scan — surfaces weak patterns to upgrade and strong patterns to codify, producing ADR-style decisions with a durable cross-session backlog. The highest-risk / highest-payoff scan in the suite; walks the context map area by area.
+argument-hint: "[area]"
 category: Development
 memory: vault
 contexts: tracked

@@ -1,6 +1,7 @@
 ---
 name: ship-loop
 description: Milestone-driven ship-readiness loop for the personas app. Maintains a 9-dimension scorecard + append-only backlog, batches items into user-gated milestones (CP checkpoints), executes with atomic commits, and certifies each milestone with the full verification gate (suites first, tours last). Resumable across sessions — all state lives in state/ next to this file. Invoke with `/ship-loop` (resumes) or `/ship-loop boot` (fresh loop after archiving prior state).
+argument-hint: "[boot]"
 ---
 
 # Ship Loop — milestone-driven ship readiness
