@@ -182,9 +182,21 @@ pub fn dev_tools_workspace_knowledge_decide(
     id: String,
     decision: String,
     superseded_by: Option<String>,
+    expected_status: Option<String>,
 ) -> Result<WorkspaceKnowledge, AppError> {
     require_auth_sync(&state)?;
-    let item = repo::decide_knowledge(&state.db, &id, &decision, superseded_by.as_deref())?;
+    // `expected_status` is the status the calling surface rendered. Sending it
+    // makes the write a single-winner swap, so a verdict issued from a card the
+    // reviewer was still looking at when someone else decided the row loses
+    // loudly instead of silently overwriting — and, for `adopt`, never fans
+    // adoption cells into every member repo off a stale decision.
+    let item = repo::decide_knowledge_cas(
+        &state.db,
+        &id,
+        &decision,
+        superseded_by.as_deref(),
+        expected_status.as_deref(),
+    )?;
 
     // POST-COMMIT side effects (plan 1C). Deliberately out here rather than
     // inside `decide_knowledge`'s transaction: `create_finding` takes its own

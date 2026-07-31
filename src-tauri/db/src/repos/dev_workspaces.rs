@@ -743,6 +743,34 @@ pub fn decide_knowledge(
     decision: &str,
     superseded_by: Option<&str>,
 ) -> Result<WorkspaceKnowledge, AppError> {
+    decide_knowledge_cas(pool, id, decision, superseded_by, None)
+}
+
+/// [`decide_knowledge`] with a COMPARE-AND-SWAP guard.
+///
+/// `expected` is the status the calling surface SAW on the row. The triage deck
+/// and the practice modal both render a pending (`observed`/`proposed`) row and
+/// then write a verdict against it; without the predicate below, two surfaces
+/// holding the same row each committed a governance decision, and `adopt`
+/// additionally fanned an `INSERT OR IGNORE` adoption cell into every member
+/// repo — so a rejected practice could end up `adopted` with adoption cells
+/// nobody asked for, or vice versa, with no warning.
+///
+/// Pass `None` from paths with no rendered row (the bulk adjudicator selects
+/// its own working set); the swap then runs against the status read in this
+/// call, which still closes the read→write interleave that the adoption fan-out
+/// must never pass through twice.
+///
+/// Returns [`AppError::Validation`] on a lost swap. The phrase "already decided
+/// by a concurrent action" is load-bearing: `src/lib/errors/errorRegistry.ts`
+/// matches it to surface "someone else already decided this — reloading".
+pub fn decide_knowledge_cas(
+    pool: &DbPool,
+    id: &str,
+    decision: &str,
+    superseded_by: Option<&str>,
+    expected: Option<&str>,
+) -> Result<WorkspaceKnowledge, AppError> {
     let item = get_knowledge_by_id(pool, id)?;
     let new_status = match decision {
         "propose" => "proposed",
@@ -764,19 +792,49 @@ pub fn decide_knowledge(
         get_knowledge_by_id(pool, sup)?;
     }
 
+    // Re-applying the status a row already carries is a no-op success, not a
+    // conflict — same posture as the idea verdict core, and what keeps a replayed
+    // bulk decision from reporting failures it did not cause.
+    if item.status == new_status {
+        return Ok(item);
+    }
+
+    // Fail fast with the informative message before opening a transaction.
+    if let Some(seen) = expected {
+        if item.status != seen {
+            return Err(AppError::Validation(format!(
+                "Practice {id} was already decided as '{}' by a concurrent action",
+                item.status
+            )));
+        }
+    }
+    let swap_from = item.status.clone();
+
     timed_query!("workspace_knowledge", "dev_workspaces::decide_knowledge", {
         let now = chrono::Utc::now().to_rfc3339();
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
 
-        tx.execute(
+        let rows = tx.execute(
             "UPDATE workspace_knowledge
              SET status = ?1, decided_at = ?2, updated_at = ?2,
                  superseded_by = COALESCE(?3, superseded_by),
                  valid_to = CASE WHEN ?1 IN ('deprecated','rejected') THEN ?2 ELSE valid_to END
-             WHERE id = ?4",
-            params![new_status, now, superseded_by, id],
+             WHERE id = ?4 AND status = ?5",
+            params![new_status, now, superseded_by, id, swap_from],
         )?;
+
+        if rows == 0 {
+            // The row exists (read above), so a 0-row swap means someone else's
+            // verdict landed first. Roll back rather than fan out adoption cells
+            // for a decision that never committed.
+            tx.rollback()?;
+            let actual = get_knowledge_by_id(pool, id)?;
+            return Err(AppError::Validation(format!(
+                "Practice {id} was already decided as '{}' by a concurrent action",
+                actual.status
+            )));
+        }
 
         if new_status == "adopted" {
             let members: Vec<(String, Option<String>)> = {
@@ -2477,5 +2535,89 @@ mod tests {
         // Two member projects now hold the same practice idea — the miner must
         // read past them and find nothing.
         assert!(mine_shared_findings(&pool, &ws).unwrap().is_empty());
+    }
+
+    // ------------------------------------------------------------------
+    // Compare-and-swap on the governance gate
+    // ------------------------------------------------------------------
+
+    fn status_of(pool: &DbPool, practice: &str) -> String {
+        get_knowledge_by_id(pool, practice).unwrap().status
+    }
+
+    #[test]
+    fn a_verdict_written_against_a_stale_status_loses_the_swap() {
+        let pool = test_pool();
+        let (_ws, practice, _projects) = seeded(&pool, 2, "pattern");
+
+        // Surface A rejects the observed row.
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+
+        // Surface B was still rendering it as `observed` and adopts. Before the
+        // swap this silently flipped the row to `adopted` AND fanned an adoption
+        // cell into every member repo.
+        let err = decide_knowledge_cas(&pool, &practice, "adopt", None, Some("observed"))
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("already decided"),
+            "expected a concurrency conflict, got: {err}"
+        );
+        assert_eq!(status_of(&pool, &practice), "rejected");
+    }
+
+    #[test]
+    fn a_lost_swap_fans_out_no_adoption_cells() {
+        let pool = test_pool();
+        let (_ws, practice, projects) = seeded(&pool, 2, "pattern");
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+
+        assert!(decide_knowledge_cas(&pool, &practice, "adopt", None, Some("observed")).is_err());
+
+        // The adoption fan-out is the expensive half of `adopt`; a rolled-back
+        // decision must not leave a single cell behind.
+        for project in &projects {
+            let count: i64 = pool
+                .get()
+                .unwrap()
+                .query_row(
+                    "SELECT COUNT(*) FROM workspace_practice_adoption
+                     WHERE practice_id = ?1 AND project_id = ?2",
+                    params![practice, project],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(count, 0, "a losing adopt seeded an adoption cell");
+        }
+    }
+
+    #[test]
+    fn a_verdict_against_the_status_the_reviewer_sees_still_lands() {
+        // Reversing a decision you can SEE is a decision; only a verdict written
+        // against a status the row no longer holds is data loss.
+        let pool = test_pool();
+        let (_ws, practice, _projects) = seeded(&pool, 1, "pattern");
+        decide_knowledge_cas(&pool, &practice, "reject", None, Some("observed")).unwrap();
+        decide_knowledge_cas(&pool, &practice, "adopt", None, Some("rejected")).unwrap();
+        assert_eq!(status_of(&pool, &practice), "adopted");
+    }
+
+    #[test]
+    fn re_applying_the_status_a_practice_already_holds_is_a_no_op_success() {
+        // Keeps a replayed bulk decision from reporting failures it did not cause.
+        let pool = test_pool();
+        let (_ws, practice, _projects) = seeded(&pool, 1, "pattern");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        let again = decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        assert_eq!(again.status, "adopted");
+    }
+
+    #[test]
+    fn callers_with_no_rendered_row_still_decide_normally() {
+        let pool = test_pool();
+        let (_ws, practice, _projects) = seeded(&pool, 1, "pattern");
+        decide_knowledge(&pool, &practice, "propose", None).unwrap();
+        assert_eq!(status_of(&pool, &practice), "proposed");
+        decide_knowledge(&pool, &practice, "adopt", None).unwrap();
+        assert_eq!(status_of(&pool, &practice), "adopted");
     }
 }

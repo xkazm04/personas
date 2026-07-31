@@ -921,11 +921,27 @@ export const triageIdeas = (projectId?: string, limit?: number, cursor?: string,
     cursor: cursor,
   });
 
-export const acceptIdea = (id: string) =>
-  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_accept_idea", { id });
+/**
+ * Accept a backlog idea.
+ *
+ * `expectedStatus` is the status the CALLING SURFACE rendered on the row. Send
+ * it from anything that shows an idea and then writes a verdict against it: the
+ * backend turns it into a single-winner compare-and-swap, so a verdict issued
+ * from a card someone else already decided fails loudly ("already decided by a
+ * concurrent action") instead of silently overwriting their verdict and firing a
+ * second decision-memory + adoption-sync fan-out. Prefer
+ * `decideIdeaRow` from `@/lib/decisions/rowWrites` over calling this directly.
+ */
+export const acceptIdea = (id: string, expectedStatus?: string) =>
+  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_accept_idea", { id, expectedStatus });
 
-export const rejectIdea = (id: string, reason?: string) =>
-  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_reject_idea", { id, reason: reason });
+/** Reject a backlog idea. See {@link acceptIdea} for `expectedStatus`. */
+export const rejectIdea = (id: string, reason?: string, expectedStatus?: string) =>
+  safeInvoke<DevIdea>({} as DevIdea, "dev_tools_reject_idea", {
+    id,
+    reason: reason,
+    expectedStatus,
+  });
 
 /** Pending backlog ideas across all projects — source for the Human-Review
  *  inbox's "Dev Tools backlog" group. Project names resolved from the store. */
