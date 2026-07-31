@@ -140,6 +140,15 @@ So for a `full` verdict on anything beyond a few hundred files:
    did not finish; split it and re-run. Slightly over 100% is normal.
 4. Consolidate group sprawl at the end with explicit merge pairs, and run the
    idempotent repair routes once.
+5. **Then `POST /dev-tools/export-context-map`.** The repair routes mutate the
+   database without touching the exported artifacts, so the consolidation step
+   above is precisely what leaves `context-map.json` and the generated CLAUDE.md
+   block describing a map that no longer exists — and that block tells every
+   agent in the repo to scope its edits by that file.
+
+Launching a scan whose `scan_id` you did not capture is not a reason to relaunch
+it: `GET /dev-tools/scans/{project_id}` lists every known scan with its subtree
+and status. Relaunching pays twice and maps one tree twice.
 
 Full command reference and the failure modes in
 [`references/bridge.md`](references/bridge.md).
@@ -254,6 +263,15 @@ something to make a context look covered.
 For each kept KPI, `POST /dev-tools/kpi-decision` with `active` immediately,
 one call per KPI. Anything not kept goes `archived` in the same pass so the
 context's queue is empty and the sweep can move on.
+
+**When you adopt a KPI whose measurement the grounding proved wrong, fix it in
+the same pass** — `POST /dev-tools/kpi-update` with a corrected `description` /
+`measure_kind` / `measure_config` / `baseline_value`. This is common rather than
+exceptional: the lane proposes a sound pillar attached to a column that does not
+exist, or a `connector` naming a service the project has never integrated.
+Adopting the pillar and leaving the instructions makes the row's only record of
+how to measure it a fiction, and the next session re-derives what you already
+verified. The vault note is for the reasoning; the row should carry the truth.
 
 Write the note:
 

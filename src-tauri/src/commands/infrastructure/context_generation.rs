@@ -52,8 +52,18 @@ static CONTEXT_GEN_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGua
 // Job state
 // =============================================================================
 
+/// What each context-scan job is scanning. The job record used to be a unit
+/// struct, so a scan_id was opaque: given a project you could not ask "is a scan
+/// already running, and over what?" — you could only poll an id you already
+/// held. A client that lost a scan_id (or never saw it, e.g. a shell loop whose
+/// POST output was swallowed) had no way to find out, so it relaunched and
+/// scanned the same subtree twice. `list_scans_json` reads these fields.
 #[derive(Clone, Default)]
-struct ContextGenExtra;
+struct ContextGenExtra {
+    project_id: String,
+    /// `None` = whole-tree scan. Mirrors the single-flight guard's scope key.
+    subtree: Option<String>,
+}
 
 static CONTEXT_GEN_JOBS: BackgroundJobManager<ContextGenExtra> = BackgroundJobManager::new(
     "context-generation lock poisoned",
@@ -607,7 +617,14 @@ pub(crate) fn launch_context_scan(
 
     let scan_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
-    CONTEXT_GEN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), ContextGenExtra)?;
+    CONTEXT_GEN_JOBS.insert_running(
+        scan_id.clone(),
+        cancel_token.clone(),
+        ContextGenExtra {
+            project_id: project_id.clone(),
+            subtree: subtree.map(|s| s.to_string()),
+        },
+    )?;
     CONTEXT_GEN_JOBS.set_status(&app, &scan_id, "running", None);
 
     // Resolve root path
@@ -834,6 +851,43 @@ pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
     }
 }
 
+/// Every context scan this process knows about for one project, newest-agnostic
+/// (the registry is a map, so order is not meaningful — callers should read
+/// `status`). Powers `/dev-tools/scans/{project_id}`, whose reason for existing is
+/// that a client which lost (or never saw) a scan_id previously had no way to ask
+/// "is this subtree already being scanned?" and would relaunch it — paying twice
+/// and producing two maps of the same tree.
+///
+/// `lines` is deliberately omitted: this is an index, and a completed scan's line
+/// stream is thousands of entries. Poll `/scan-status/{id}` for one scan's detail.
+pub(crate) fn list_scans_json(project_id: &str) -> serde_json::Value {
+    match CONTEXT_GEN_JOBS.lock() {
+        Ok(jobs) => {
+            let mut scans: Vec<serde_json::Value> = jobs
+                .iter()
+                .filter(|(_, job)| job.extra.project_id == project_id)
+                .map(|(id, job)| {
+                    json!({
+                        "scan_id": id,
+                        "status": job.status,
+                        "error": job.error,
+                        // None = whole-tree. Matches the single-flight scope key.
+                        "subtree": job.extra.subtree,
+                        "lines": job.lines.len(),
+                    })
+                })
+                .collect();
+            // Stable output so a diff between two polls is readable.
+            scans.sort_by(|a, b| a["scan_id"].as_str().cmp(&b["scan_id"].as_str()));
+            let running = scans.iter().filter(|s| s["status"] == "running").count();
+            json!({ "project_id": project_id, "running": running, "scans": scans })
+        }
+        Err(_) => {
+            json!({ "project_id": project_id, "error": "scan registry lock poisoned", "scans": [] })
+        }
+    }
+}
+
 // =============================================================================
 // Core generation logic
 // =============================================================================
@@ -846,26 +900,72 @@ pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
 /// stopped the scan from mapping it, so an i18n subtree scan swept 807 locale
 /// JSON files into 15 contexts named `section-locales-ar`, `-bn`, … and the
 /// coverage line read 5871%. One list, one meaning, both sides.
-pub(crate) const NON_SOURCE_DIRS: [&str; 10] = [
+pub(crate) const NON_SOURCE_DIRS: &[&str] = &[
     "node_modules", "target", ".git", "dist", "build",
     "bindings", "section-locales", "locales", ".claude", "coverage",
+    // Python build/vendor trees. Added with `py` below: before Python was
+    // mappable these could not appear, so their absence was harmless. Now that a
+    // context may own `.py`, a vendored virtualenv or a __pycache__ tree would
+    // otherwise become mappable for the first time.
+    "__pycache__", ".venv", "venv", ".tox", ".pytest_cache", "site-packages", ".mypy_cache",
 ];
 
-/// Extensions a context may legitimately own. Locale JSON, images and lockfiles
-/// describe the product but are not the code a context maps.
-pub(crate) const SOURCE_EXTS: [&str; 5] = ["ts", "tsx", "rs", "js", "jsx"];
+/// Extensions a context may legitimately own — hand-written CODE only.
+///
+/// Deliberately narrower than `incremental_scan::SOURCE_EXTENSIONS` (the walker
+/// that decides what the model gets to READ): config and data formats
+/// (`toml`/`yaml`/`json`/`md`) are worth showing a model for background, but a
+/// context that CLAIMS them maps description rather than implementation — and
+/// locale JSON is exactly how a subtree scan once produced 15 `section-locales-*`
+/// contexts and a 5871% coverage line.
+///
+/// Non-TS/Rust languages were missing here while `incremental_scan` accepted
+/// them, so the scan showed the model e.g. Python, let it build correct contexts,
+/// and then dropped every one of them as "non-source" (a Python-majority repo
+/// silently mapped to nothing and still reported success). Keep this list in step
+/// with `incremental_scan::SOURCE_EXTENSIONS` minus the data/doc formats.
+pub(crate) const SOURCE_EXTS: &[&str] = &[
+    "rs", "ts", "tsx", "js", "jsx", "mjs", "cjs", "py", "go", "java", "kt", "swift", "c", "cpp",
+    "cc", "h", "hpp", "cs", "rb", "php", "scala", "lua", "ex", "exs", "vue", "svelte", "sql",
+    "css", "scss",
+];
 
 /// Is this repo-relative path something a context is allowed to claim?
 pub(crate) fn is_mappable_path(path: &str) -> bool {
     let norm = path.replace('\\', "/");
-    if norm
-        .split('/')
-        .any(|seg| NON_SOURCE_DIRS.contains(&seg))
+    let mut segments: Vec<&str> = norm.split('/').filter(|s| !s.is_empty()).collect();
+    // The last segment is the FILENAME; everything before it is a directory.
+    let Some(file_name) = segments.pop() else {
+        return false;
+    };
+    // Reject hidden DIRECTORIES the same way `count_source_files` does. The two
+    // used to disagree: the counter skipped every hidden dir while this side
+    // skipped only the named ones, so a model-emitted path under `.next/`,
+    // `.github/` or `.turbo/` passed the write filter yet was absent from the
+    // denominator — coverage above 100%, from the very divergence the
+    // NON_SOURCE_DIRS comment above claims to have closed. One meaning, both sides.
+    //
+    // `.` and `..` are path noise, not hidden dirs — a model that emits
+    // `./app/x.ts` means `app/x.ts`, and rejecting it would strand real source.
+    // The rule deliberately does NOT apply to the filename: a dotfile like
+    // `.eslintrc.js` is a real hand-written file, and the counter accepts it too
+    // (it only tests `starts_with('.')` on directory entries).
+    if segments
+        .iter()
+        .any(|seg| (seg.starts_with('.') && *seg != "." && *seg != "..") || NON_SOURCE_DIRS.contains(seg))
     {
         return false;
     }
-    norm.rsplit_once('.')
-        .is_some_and(|(_, ext)| SOURCE_EXTS.contains(&ext))
+    let norm = file_name;
+    // Extension match is case-insensitive: a `.PY`/`.TSX` file is the same source
+    // file, and rejecting it would silently strand it exactly like `.py` was.
+    match norm.rsplit_once('.') {
+        Some((_, ext)) => {
+            let lower = ext.to_ascii_lowercase();
+            SOURCE_EXTS.contains(&lower.as_str())
+        }
+        None => false,
+    }
 }
 
 /// Count hand-written source files under `root`, optionally narrowed to a
@@ -905,7 +1005,9 @@ fn count_source_files(root: &str, subtree: Option<&str>) -> Option<usize> {
             } else if path
                 .extension()
                 .and_then(|e| e.to_str())
-                .is_some_and(|e| SOURCE_EXTS.contains(&e))
+                // Case-insensitive, matching is_mappable_path — otherwise a
+                // `.PY` file counts on one side and not the other.
+                .is_some_and(|e| SOURCE_EXTS.contains(&e.to_ascii_lowercase().as_str()))
             {
                 count += 1;
             }
@@ -1782,5 +1884,106 @@ fn write_harness_docs(
                 format!("[Warn] Failed to write harness docs: {e}. Contexts are still in the DB."),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // `is_mappable_path` is the whole gate between "the model proposed a context"
+    // and "that context reaches the database". It had no tests, and a too-narrow
+    // extension list silently discarded every Python context on a real project
+    // while the scan still reported success. These pin both halves: the languages
+    // a context may own, and the trees it may never claim.
+
+    #[test]
+    fn accepts_hand_written_source_across_languages() {
+        for p in [
+            "app/page.tsx",
+            "src/lib.rs",
+            "pipeline/jobfit/pipeline.py",
+            "scripts/build.mjs",
+            "scripts/legacy.cjs",
+            "cmd/server/main.go",
+            "src/Main.java",
+            "app/globals.css",
+            "styles/theme.scss",
+            "db/migrate.sql",
+            "src/App.vue",
+        ] {
+            assert!(is_mappable_path(p), "{p} should be mappable");
+        }
+    }
+
+    #[test]
+    fn rejects_generated_vendored_and_locale_trees() {
+        for p in [
+            "node_modules/react/index.js",
+            "src/lib/bindings/DevKpi.ts",
+            "public/section-locales/ar/common.ts",
+            "target/debug/build.rs",
+            "dist/bundle.js",
+            "coverage/lcov-report/index.js",
+        ] {
+            assert!(!is_mappable_path(p), "{p} must not be mappable");
+        }
+    }
+
+    #[test]
+    fn rejects_python_vendor_trees_now_that_py_is_mappable() {
+        // These only became reachable when `py` joined SOURCE_EXTS.
+        for p in [
+            ".venv/lib/site-packages/requests/api.py",
+            "pipeline/__pycache__/cached.py",
+            "venv/bin/activate.py",
+            ".tox/py311/lib/thing.py",
+        ] {
+            assert!(!is_mappable_path(p), "{p} must not be mappable");
+        }
+    }
+
+    #[test]
+    fn rejects_data_and_doc_formats() {
+        // Deliberately narrower than the walker's read-list: claiming these maps
+        // description rather than implementation, and locale JSON is how a subtree
+        // scan once produced 15 `section-locales-*` contexts.
+        for p in ["messages/en.json", "README.md", "Cargo.toml", "ci.yaml"] {
+            assert!(!is_mappable_path(p), "{p} must not be mappable");
+        }
+    }
+
+    #[test]
+    fn hidden_directories_are_rejected_on_both_sides() {
+        // The counter skips every hidden dir; this side used to skip only the
+        // named ones, which let paths in and pushed coverage above 100%.
+        for p in [".next/server/page.js", ".github/scripts/release.mjs", ".turbo/out.js"] {
+            assert!(!is_mappable_path(p), "{p} must not be mappable");
+        }
+    }
+
+    #[test]
+    fn path_noise_and_dotfiles_survive() {
+        // A leading `./` means the same file; rejecting it would strand real source.
+        assert!(is_mappable_path("./app/page.tsx"));
+        assert!(is_mappable_path("app//page.tsx"));
+        // Windows separators are normalized before the segment walk.
+        assert!(is_mappable_path(r"app\features\hiring\board.tsx"));
+        // A dotted FILENAME is a real hand-written file — the hidden rule is for
+        // directories only, matching count_source_files.
+        assert!(is_mappable_path(".eslintrc.js"));
+    }
+
+    #[test]
+    fn extension_match_is_case_insensitive() {
+        assert!(is_mappable_path("legacy/OLD.PY"));
+        assert!(is_mappable_path("app/Page.TSX"));
+    }
+
+    #[test]
+    fn extensionless_and_empty_paths_are_rejected() {
+        assert!(!is_mappable_path("Makefile"));
+        assert!(!is_mappable_path("LICENSE"));
+        assert!(!is_mappable_path(""));
     }
 }
