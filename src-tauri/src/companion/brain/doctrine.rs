@@ -1,6 +1,6 @@
 //! Doctrine: read-only canonical knowledge about the Personas app itself.
 //!
-//! Source of truth lives at `<repo>/docs/...` (curated 22-file allowlist;
+//! Source of truth lives at `<repo>/docs/...` (curated 24-file allowlist;
 //! see `INCLUDED_DOCS`). We treat them as a separate brain tier alongside
 //! episodic memory: ingested into `companion_node` with `kind='doctrine'`,
 //! embedded into `companion_embedding`, retrieved via the same hybrid
@@ -37,7 +37,7 @@ use crate::db::UserDbPool;
 use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
-/// Curated allowlist — 22 docs that capture Personas' philosophy and
+/// Curated allowlist — 24 docs that capture Personas' philosophy and
 /// architecture without dragging in handoffs, test logs, or stale plans.
 /// Paths are relative to the docs root (the directory whose entries
 /// include `concepts/`).
@@ -67,9 +67,12 @@ const INCLUDED_DOCS: &[&str] = &[
     "features/live-roadmap/live-roadmap.md",
     // Top-level concepts — design philosophy.
     "features/agents/operations-hub.md",
-    "concepts/ambient-context-fusion.md",
+    // (ambient-context-fusion.md and mobile.md were removed in the 2026-07-26
+    // docs pruning; their EMBEDDED_DOCS entries went with them at the time,
+    // but these two INCLUDED_DOCS entries were left behind, so every ingest
+    // permanently counted files_missing=2 for paths that no longer exist on
+    // disk or in the binary. Removed here to match EMBEDDED_DOCS.)
     "concepts/invisible-apps-p2p.md",
-    "concepts/mobile.md",
     "concepts/persona-design-best-practices.md",
     "concepts/operational-data-views.md",
     // Athena's own capability surface — kept in doctrine so the
@@ -623,3 +626,50 @@ fn short_random() -> String {
 // Path is intentionally unused on builds without the ml feature — silence.
 #[cfg(not(feature = "ml"))]
 fn _silence_unused(_p: &Path) {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Pins the two allowlists in lock-step: every `INCLUDED_DOCS` entry must
+    /// have a matching `EMBEDDED_DOCS` entry, else `read_curated_doc` silently
+    /// returns `None` for it in production (no repo on disk) and every ingest
+    /// permanently counts it in `files_missing` — exactly the drift that left
+    /// `ambient-context-fusion.md` and `mobile.md` orphaned in `INCLUDED_DOCS`
+    /// after their `EMBEDDED_DOCS` entries were removed in the 2026-07-26 docs
+    /// pruning, with nothing tying the two lists together to catch it.
+    #[test]
+    fn included_docs_all_have_an_embedded_copy() {
+        let embedded: std::collections::HashSet<String> =
+            EMBEDDED_DOCS.iter().map(|(p, _)| p.to_string()).collect();
+        let missing: Vec<String> = INCLUDED_DOCS
+            .iter()
+            .map(|p| p.to_string())
+            .filter(|p| !embedded.contains(p))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "INCLUDED_DOCS entries with no EMBEDDED_DOCS counterpart (the \
+             production fallback silently fails for these; either remove from \
+             INCLUDED_DOCS or add an include_str! entry to EMBEDDED_DOCS): {missing:?}"
+        );
+    }
+
+    /// The inverse direction: an embedded doc with no curated-allowlist entry
+    /// is dead weight baked into the binary that never actually gets ingested.
+    #[test]
+    fn embedded_docs_all_are_curated() {
+        let included: std::collections::HashSet<String> =
+            INCLUDED_DOCS.iter().map(|p| p.to_string()).collect();
+        let orphaned: Vec<String> = EMBEDDED_DOCS
+            .iter()
+            .map(|(p, _)| p.to_string())
+            .filter(|p| !included.contains(p))
+            .collect();
+        assert!(
+            orphaned.is_empty(),
+            "EMBEDDED_DOCS entries not in INCLUDED_DOCS (dead weight baked into the \
+             binary, never ingested): {orphaned:?}"
+        );
+    }
+}

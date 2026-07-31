@@ -219,6 +219,13 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // "save_api_definition",
     "parse_api_definition",
     "load_api_definition",
+    // Credentials -- OpenAPI Autopilot (sync commands carrying
+    // `#[requires(privileged)]` that were missing from this list -- currently
+    // unreachable, since neither is wired into `generate_handler!` yet, but a
+    // sync privileged command missing here fails closed on every call the
+    // moment it IS wired up, so it belongs here now per the invariant below).
+    "openapi_parse_from_content",
+    "openapi_generate_connector",
     // Credentials -- Dynamic discovery (adoption questionnaire)
     // NOT listed here because the wrapper-level header check fails
     // intermittently on Windows WebView2 (same race as the data-portability
@@ -291,6 +298,12 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // privileged command — body calls require_privileged_sync via the
     // #[requires(privileged)] macro, so it MUST be listed here).
     "undo_execution",
+    // Execution -- create_execution carries `#[requires(privileged)]` but was
+    // missing from this list. Currently unreachable (not wired into
+    // `generate_handler!`), so no live call ever hit the always-fail-closed
+    // path this omission produces on a registered sync command — listed here
+    // to close the drift before it is ever wired up.
+    "create_execution",
     // Provider usage audit + health bundle. These are SYNC commands whose
     // bodies call `require_privileged_sync`, which hard-requires the wrapper's
     // thread-local validation flag — and the wrapper only validates commands
@@ -334,6 +347,23 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // user's image-gen API key, so it must be privileged like other secret-using
     // commands (its sibling `list_image_gen_credentials` is read-only metadata).
     "generate_persona_icon",
+    // Network -- Persona bundle export/import (file + clipboard) + share link
+    // + enclave seal. Every entry here reads/writes a caller-supplied file
+    // path, clipboard payload, or persona secret bundle, and all but
+    // `import_from_share_link` carry `#[requires(privileged)]` (that one
+    // calls `require_privileged_sync` directly in its body, before any
+    // `.await`, so the thread-local flag is still reliable). All seven were
+    // missing from this list — a LIVE bug: every call from
+    // `src/api/network/bundle.ts` / `enclave.ts` failed closed with "IPC
+    // authentication required for this operation" (the same drift mode
+    // documented above for `get_provider_usage_stats`).
+    "export_persona_bundle",
+    "apply_bundle_import",
+    "export_bundle_to_clipboard",
+    "apply_bundle_from_clipboard",
+    "create_share_link",
+    "import_from_share_link",
+    "seal_enclave",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).
@@ -835,5 +865,122 @@ mod tests {
         let token = generate_ipc_session_token();
         assert_eq!(token.len(), 64);
         assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    // -----------------------------------------------------------------------
+    // Registry-drift guard
+    // -----------------------------------------------------------------------
+    //
+    // The `#[requires(privileged)]` macro (src-tauri/macros) and
+    // PRIVILEGED_COMMANDS above are two independent sources of truth that must
+    // agree for every SYNC command: `require_privileged_sync` hard-fails
+    // unless the wrapper already set the thread-local validation flag, and the
+    // wrapper only does that for commands on this list. A sync command
+    // annotated `#[requires(privileged)]` (or calling `require_privileged_sync`
+    // directly before its first `.await`) but missing from PRIVILEGED_COMMANDS
+    // fails closed on EVERY call — this is exactly what happened live on
+    // 2026-07-14 with `get_provider_usage_stats` / `get_health_bundle`, and
+    // (discovered while writing this test) with the persona-bundle
+    // export/import, clipboard, share-link, and enclave-seal commands, whose
+    // frontend callers (`src/api/network/bundle.ts`, `enclave.ts`) were
+    // silently broken the same way until this pass added them above.
+    //
+    // Async commands are exempt: `require_privileged` (the async guard) does
+    // NOT check the thread-local flag (unreliable across tokio task
+    // migration), so an async command's absence from this list is tolerated
+    // by design (see the `execute_api_request` precedent above).
+
+    /// Extract the command name from a `pub fn NAME(` / `pub async fn NAME(`
+    /// signature line. Returns `None` (async) when the line is async.
+    fn sync_fn_name(sig_line: &str) -> Option<&str> {
+        let trimmed = sig_line.trim();
+        if trimmed.starts_with("pub async fn ") {
+            return None;
+        }
+        let rest = trimmed.strip_prefix("pub fn ")?;
+        let name_end = rest.find(['(', '<', ' ']).unwrap_or(rest.len());
+        let name = &rest[..name_end];
+        (!name.is_empty()).then_some(name)
+    }
+
+    /// Extract the command name from a direct
+    /// `require_privileged_sync(&state, "name")` call (used by the handful of
+    /// commands that call the guard in their body instead of via the macro,
+    /// e.g. `import_from_share_link`). Skips comments and the guard's own
+    /// definition.
+    fn direct_call_command(line: &str) -> Option<&str> {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("//") || trimmed.starts_with("pub fn require_privileged_sync") {
+            return None;
+        }
+        let idx = line.find("require_privileged_sync(&state,")?;
+        let after = &line[idx..];
+        let q1 = after.find('"')? + 1;
+        let after_q1 = &after[q1..];
+        let q2 = after_q1.find('"')?;
+        Some(&after_q1[..q2])
+    }
+
+    fn scan_file(path: &std::path::Path, missing: &mut Vec<String>, checked: &mut usize) {
+        let Ok(content) = std::fs::read_to_string(path) else {
+            return;
+        };
+        let lines: Vec<&str> = content.lines().collect();
+        for (i, line) in lines.iter().enumerate() {
+            if line.trim() == "#[requires(privileged)]" {
+                // The macro attribute is always immediately followed by the
+                // `pub fn` / `pub async fn` signature line, with no other
+                // attributes in between (verified across all call sites).
+                if let Some(sig_line) = lines.get(i + 1) {
+                    if let Some(name) = sync_fn_name(sig_line) {
+                        *checked += 1;
+                        if !PRIVILEGED_COMMANDS_SET.contains(name) {
+                            missing.push(format!("{name} ({}:{})", path.display(), i + 2));
+                        }
+                    }
+                }
+            } else if let Some(name) = direct_call_command(line) {
+                *checked += 1;
+                if !PRIVILEGED_COMMANDS_SET.contains(name) {
+                    missing.push(format!("{name} (direct call, {}:{})", path.display(), i + 1));
+                }
+            }
+        }
+    }
+
+    fn scan_dir(dir: &std::path::Path, missing: &mut Vec<String>, checked: &mut usize) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                scan_dir(&path, missing, checked);
+            } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                scan_file(&path, missing, checked);
+            }
+        }
+    }
+
+    #[test]
+    fn all_sync_requires_privileged_commands_are_registered() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut missing = Vec::new();
+        let mut checked = 0usize;
+        scan_dir(&root, &mut missing, &mut checked);
+        assert!(
+            checked > 50,
+            "expected to scan well over 50 `#[requires(privileged)]`/direct-call \
+             sites, only found {checked} — the source walk is probably broken \
+             (check CARGO_MANIFEST_DIR / directory layout), not that the app shrank"
+        );
+        assert!(
+            missing.is_empty(),
+            "sync privileged commands missing from PRIVILEGED_COMMANDS: {missing:#?}\n\
+             A sync privileged command not in this list fails closed on EVERY \
+             call (require_privileged_sync hard-requires the wrapper's \
+             thread-local flag, which the wrapper only sets for commands on \
+             this list) — add each one to PRIVILEGED_COMMANDS above."
+        );
     }
 }

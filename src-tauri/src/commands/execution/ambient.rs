@@ -19,6 +19,7 @@ use crate::engine::ambient_context::{
 use crate::engine::ambient_context::{AmbientContextSnapshot, ContextStreamStats, SensoryPolicy};
 use crate::engine::context_rules::{ContextRule, ContextRuleMatch};
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 /// Get the ambient context snapshot for a specific persona, filtered by its sensory policy.
@@ -27,6 +28,7 @@ pub async fn get_ambient_context_snapshot(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<AmbientContextSnapshot, AppError> {
+    require_auth(&state).await?;
     let ctx = state.ambient_context.lock().await;
     Ok(ctx.snapshot_for_persona(&persona_id))
 }
@@ -37,6 +39,7 @@ pub async fn set_ambient_context_enabled(
     state: State<'_, Arc<AppState>>,
     enabled: bool,
 ) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     let mut ctx = state.ambient_context.lock().await;
     ctx.set_enabled(enabled);
     Ok(ctx.is_enabled())
@@ -47,6 +50,7 @@ pub async fn set_ambient_context_enabled(
 pub async fn get_ambient_context_enabled(
     state: State<'_, Arc<AppState>>,
 ) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     let ctx = state.ambient_context.lock().await;
     Ok(ctx.is_enabled())
 }
@@ -58,6 +62,7 @@ pub async fn set_ambient_sensory_policy(
     persona_id: String,
     policy: SensoryPolicy,
 ) -> Result<(), AppError> {
+    require_auth(&state).await?;
     let mut ctx = state.ambient_context.lock().await;
     ctx.set_policy(persona_id, policy);
     Ok(())
@@ -69,6 +74,7 @@ pub async fn get_ambient_sensory_policy(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<SensoryPolicy, AppError> {
+    require_auth(&state).await?;
     let ctx = state.ambient_context.lock().await;
     Ok(ctx.get_policy(&persona_id).clone())
 }
@@ -79,6 +85,7 @@ pub async fn remove_ambient_sensory_policy(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<(), AppError> {
+    require_auth(&state).await?;
     let mut ctx = state.ambient_context.lock().await;
     ctx.remove_policy(&persona_id);
     Ok(())
@@ -94,6 +101,7 @@ pub async fn add_context_rule(
     state: State<'_, Arc<AppState>>,
     rule: ContextRule,
 ) -> Result<(), AppError> {
+    require_auth(&state).await?;
     let mut engine = state.context_rule_engine.lock().await;
     engine.add_rule(rule);
     Ok(())
@@ -105,6 +113,7 @@ pub async fn remove_context_rule(
     state: State<'_, Arc<AppState>>,
     rule_id: String,
 ) -> Result<bool, AppError> {
+    require_auth(&state).await?;
     let mut engine = state.context_rule_engine.lock().await;
     Ok(engine.remove_rule(&rule_id))
 }
@@ -115,6 +124,7 @@ pub async fn list_context_rules(
     state: State<'_, Arc<AppState>>,
     persona_id: String,
 ) -> Result<Vec<ContextRule>, AppError> {
+    require_auth(&state).await?;
     let engine = state.context_rule_engine.lock().await;
     Ok(engine.list_rules(&persona_id))
 }
@@ -124,6 +134,7 @@ pub async fn list_context_rules(
 pub async fn get_context_rule_matches(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ContextRuleMatch>, AppError> {
+    require_auth(&state).await?;
     let engine = state.context_rule_engine.lock().await;
     Ok(engine.recent_matches().to_vec())
 }
@@ -133,6 +144,7 @@ pub async fn get_context_rule_matches(
 pub async fn get_context_stream_stats(
     state: State<'_, Arc<AppState>>,
 ) -> Result<ContextStreamStats, AppError> {
+    require_auth(&state).await?;
     let ctx = state.ambient_context.lock().await;
     Ok(ctx.stream_stats())
 }
@@ -152,9 +164,11 @@ pub async fn get_context_stream_stats(
 #[cfg(feature = "desktop")]
 #[tauri::command]
 pub async fn capture_validation_screenshot(
+    state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     window_title: Option<String>,
 ) -> Result<ValidationScreenshot, AppError> {
+    require_auth(&state).await?;
     use tauri::Manager;
     let base = app
         .path()

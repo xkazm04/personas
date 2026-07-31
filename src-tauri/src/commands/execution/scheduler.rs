@@ -331,53 +331,94 @@ pub fn backfill_schedule(
     })
 }
 
-/// Build the event payload for a user-initiated backfill slot. Mirrors
-/// `engine::background::synthesize_backfill_payload` but also marks the
-/// payload with `user_backfill: true` so consumers can tell scheduler-driven
-/// catch-up apart from on-demand replay.
+/// Build the event payload for a user-initiated backfill slot.
+///
+/// Delegates the field synthesis to the SAME `engine::background::
+/// synthesize_trigger_fired_payload` the live scheduler's own backfill path
+/// builds on (`engine::background::synthesize_backfill_payload` layers just
+/// `backfill_slot: true` on top of that same call). This used to be a
+/// hand-copied field-by-field twin of that function with one extra key —
+/// the copy is what would silently drift if the live payload shape changed;
+/// delegating means the shared fields (trigger_id, trigger_type,
+/// target_persona_id, fired_at, cron, interval_seconds, use_case_id) can
+/// never diverge between the two backfill payload builders. Only the two
+/// marker booleans below are local to the user-initiated path.
 fn synthesize_user_backfill_payload(
     trigger: &crate::db::models::PersonaTrigger,
     cfg: &TriggerConfig,
     slot_fired_at: &str,
 ) -> String {
-    let (cron_expr, interval_seconds) = match cfg {
-        TriggerConfig::Schedule {
-            cron,
-            interval_seconds,
-            ..
-        } => (cron.clone(), *interval_seconds),
-        _ => (None, None),
-    };
-    let mut meta = serde_json::Map::new();
-    meta.insert(
-        "trigger_id".into(),
-        serde_json::Value::String(trigger.id.clone()),
-    );
-    meta.insert(
-        "trigger_type".into(),
-        serde_json::Value::String(trigger.trigger_type.clone()),
-    );
-    meta.insert(
-        "target_persona_id".into(),
-        serde_json::Value::String(trigger.persona_id.clone()),
-    );
-    meta.insert(
-        "fired_at".into(),
-        serde_json::Value::String(slot_fired_at.to_string()),
-    );
-    meta.insert("backfill_slot".into(), serde_json::Value::Bool(true));
-    meta.insert("user_backfill".into(), serde_json::Value::Bool(true));
-    if let Some(c) = cron_expr {
-        meta.insert("cron".into(), serde_json::Value::String(c));
+    let base = background::synthesize_trigger_fired_payload(trigger, cfg, slot_fired_at);
+    let mut value: serde_json::Value =
+        serde_json::from_str(&base).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+    if let serde_json::Value::Object(ref mut map) = value {
+        map.insert("backfill_slot".into(), serde_json::Value::Bool(true));
+        map.insert("user_backfill".into(), serde_json::Value::Bool(true));
     }
-    if let Some(iv) = interval_seconds {
-        meta.insert(
-            "interval_seconds".into(),
-            serde_json::Value::Number(iv.into()),
-        );
+    serde_json::to_string(&value).unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_trigger_for_test(
+        id: &str,
+        persona_id: &str,
+        trigger_type: &str,
+    ) -> crate::db::models::PersonaTrigger {
+        crate::db::models::PersonaTrigger {
+            id: id.into(),
+            persona_id: persona_id.into(),
+            trigger_type: trigger_type.into(),
+            config: None,
+            enabled: true,
+            status: "active".into(),
+            last_triggered_at: None,
+            next_trigger_at: None,
+            trigger_version: 0,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+            use_case_id: None,
+            unattended_mode: "auto".into(),
+        }
     }
-    if let Some(uc) = trigger.use_case_id.as_ref() {
-        meta.insert("use_case_id".into(), serde_json::Value::String(uc.clone()));
+
+    /// Pins the delegation to `background::synthesize_trigger_fired_payload`:
+    /// the shared fields must match exactly what the live path produces (so a
+    /// future change to that shared function is automatically picked up here
+    /// instead of silently drifting out of sync), and both backfill markers
+    /// must be layered on top.
+    #[test]
+    fn user_backfill_payload_delegates_and_adds_both_markers() {
+        let trigger = make_trigger_for_test("t-cron-1", "p-alice", "schedule");
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("*/15 * * * *".into()),
+            interval_seconds: None,
+            timezone: None,
+            max_backfill: None,
+            event_type: None,
+            payload: None,
+        };
+        let fired_at = "2026-04-08T16:30:00Z";
+
+        let live_json = background::synthesize_trigger_fired_payload(&trigger, &cfg, fired_at);
+        let user_json = synthesize_user_backfill_payload(&trigger, &cfg, fired_at);
+
+        let live: serde_json::Value = serde_json::from_str(&live_json).unwrap();
+        let user: serde_json::Value = serde_json::from_str(&user_json).unwrap();
+
+        // Every field the shared builder produces must survive untouched.
+        for key in ["trigger_id", "trigger_type", "target_persona_id", "fired_at", "cron"] {
+            assert_eq!(user[key], live[key], "field `{key}` diverged from the shared builder");
+        }
+        assert!(user.get("interval_seconds").is_none(), "no interval for cron-based schedules");
+
+        // Both backfill markers are layered on top.
+        assert_eq!(user["backfill_slot"], serde_json::Value::Bool(true));
+        assert_eq!(user["user_backfill"], serde_json::Value::Bool(true));
+        // The live (non-backfill) payload carries neither marker.
+        assert!(live.get("backfill_slot").is_none());
+        assert!(live.get("user_backfill").is_none());
     }
-    serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
 }

@@ -11,6 +11,19 @@ interface PanelTabBarProps<T extends string> {
   tabs: PanelTab<T>[];
   activeTab: T;
   onTabChange: (tab: T) => void;
+  /**
+   * Tailwind background-color utility class for the sliding active-tab
+   * underline bar — applied verbatim next to `h-0.5 rounded-full`, so any
+   * `bg-*` utility works (e.g. `bg-indigo-500`, or a per-plugin brand token
+   * like `getBrandTokens('gitlab').underline`).
+   *
+   * Required with no default: there is no single "right" color, because each
+   * panel picks its own accent so the underline matches its brand identity
+   * (compare CloudDeployPanel's hardcoded `bg-indigo-500` against
+   * GitLabPanel's brand-derived orange, both real call sites of this
+   * component). For an unbranded panel with no existing accent, `bg-primary`
+   * is a safe neutral choice.
+   */
   underlineClass: string;
   idPrefix?: string;
   layoutIdPrefix?: string;
