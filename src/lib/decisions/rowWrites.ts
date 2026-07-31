@@ -47,8 +47,15 @@ import type { WorkspaceKnowledge } from '@/lib/bindings/WorkspaceKnowledge';
  * and `dev_workspaces::decide_knowledge_cas`.
  *
  * Matched on the message rather than an error code because `AppError::Validation`
- * is the only channel these repos have; the wording is asserted by the Rust
- * tests on both sides so it cannot drift silently.
+ * is the only channel these repos have.
+ *
+ * The gap in the middle is load-bearing, not laziness: reviews say "already
+ * RESOLVED by a concurrent action" while ideas and practices interpose the
+ * status that won — "already DECIDED AS 'rejected' by a concurrent action". A
+ * pattern requiring the two halves to be adjacent matches reviews and silently
+ * misses the other two, degrading a conflict into a generic "could not record
+ * that decision" and putting a card back into a queue that can never accept it.
+ * `__tests__/rowWrites.test.ts` pins all three strings verbatim.
  */
 const CONFLICT_PATTERN = /already (?:decided|resolved)[\s\S]{0,80}?by a concurrent action/i;
 
