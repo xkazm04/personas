@@ -380,7 +380,10 @@
     "triage_superseded_title": "Ersetzt durch",
     "triage_view_run": "Lauf ansehen",
     "triage_view_run_hint": "Die Ausführung öffnen, die diese Prüfung ausgelöst hat",
-    "triage_why_raised": "Warum das gemeldet wurde"
+    "triage_why_raised": "Warum das gemeldet wurde",
+    "triage_announce_card": "Aktuell zu entscheiden: {kind} — {title}",
+    "triage_announce_verdict": "Erfasst: {verdict}.",
+    "triage_body_region": "Kartendetails — mit den Pfeiltasten scrollen"
   },
   "common": {
     "loading": "Laden...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Triage-Stapel schließen",
       "triage_deck_open": "Lauf hinter der Karte öffnen",
       "triage_deck_reject": "Karte im Triage-Stapel ablehnen",
-      "triage_deck_skip": "Karte überspringen und später erneut zeigen"
+      "triage_deck_skip": "Karte überspringen und später erneut zeigen",
+      "triage_deck_scroll": "Den Rest der Karte lesen"
     },
     "tray_schedules": "Zeitpläne",
     "tray_schedules_today": "{count} heute geplant",

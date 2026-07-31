@@ -380,7 +380,10 @@
     "triage_superseded_title": "Заменено на",
     "triage_view_run": "Открыть запуск",
     "triage_view_run_hint": "Открыть выполнение, вызвавшее эту проверку",
-    "triage_why_raised": "Почему это подняли"
+    "triage_why_raised": "Почему это подняли",
+    "triage_announce_card": "Сейчас решается: {kind} — {title}",
+    "triage_announce_verdict": "Записано: {verdict}.",
+    "triage_body_region": "Детали карточки — прокрутка стрелками"
   },
   "common": {
     "loading": "Загрузка...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Закрыть колоду триажа",
       "triage_deck_open": "Открыть запуск, породивший карточку",
       "triage_deck_reject": "Отклонить карточку в колоде триажа",
-      "triage_deck_skip": "Пропустить карточку и вернуться к ней позже"
+      "triage_deck_skip": "Пропустить карточку и вернуться к ней позже",
+      "triage_deck_scroll": "Прочитать остальную часть карточки"
     },
     "tray_schedules": "Расписания",
     "tray_schedules_today": "{count} запланировано сегодня",

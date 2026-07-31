@@ -379,5 +379,8 @@
   "triage_superseded_title": "Ersetzt durch",
   "triage_view_run": "Lauf ansehen",
   "triage_view_run_hint": "Die Ausführung öffnen, die diese Prüfung ausgelöst hat",
-  "triage_why_raised": "Warum das gemeldet wurde"
+  "triage_why_raised": "Warum das gemeldet wurde",
+  "triage_announce_card": "Aktuell zu entscheiden: {kind} — {title}",
+  "triage_announce_verdict": "Erfasst: {verdict}.",
+  "triage_body_region": "Kartendetails — mit den Pfeiltasten scrollen"
 }

@@ -379,5 +379,8 @@
   "triage_superseded_title": "Digantikan oleh",
   "triage_view_run": "Lihat eksekusi",
   "triage_view_run_hint": "Buka eksekusi yang memunculkan tinjauan ini",
-  "triage_why_raised": "Mengapa ini diajukan"
+  "triage_why_raised": "Mengapa ini diajukan",
+  "triage_announce_card": "Sedang diputuskan: {kind} — {title}",
+  "triage_announce_verdict": "Tercatat: {verdict}.",
+  "triage_body_region": "Detail kartu — gulir dengan tombol panah"
 }

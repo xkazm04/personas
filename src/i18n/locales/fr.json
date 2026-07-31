@@ -380,7 +380,10 @@
     "triage_superseded_title": "Remplacé par",
     "triage_view_run": "Voir l’exécution",
     "triage_view_run_hint": "Ouvrir l’exécution à l’origine de cette revue",
-    "triage_why_raised": "Pourquoi c’est signalé"
+    "triage_why_raised": "Pourquoi c’est signalé",
+    "triage_announce_card": "En cours de décision : {kind} — {title}",
+    "triage_announce_verdict": "Enregistré : {verdict}.",
+    "triage_body_region": "Détails de la carte — faites défiler avec les flèches"
   },
   "common": {
     "loading": "Chargement...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Fermer la pile de tri",
       "triage_deck_open": "Ouvrir l’exécution à l’origine de la carte",
       "triage_deck_reject": "Rejeter la carte de la pile de tri",
-      "triage_deck_skip": "Passer la carte et la revoir plus tard"
+      "triage_deck_skip": "Passer la carte et la revoir plus tard",
+      "triage_deck_scroll": "Lire la suite de la carte"
     },
     "tray_schedules": "Planifications",
     "tray_schedules_today": "{count} planifiée(s) aujourd'hui",

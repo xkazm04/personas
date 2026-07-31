@@ -380,7 +380,10 @@
     "triage_superseded_title": "置き換え先",
     "triage_view_run": "実行を見る",
     "triage_view_run_hint": "このレビューを発生させた実行を開く",
-    "triage_why_raised": "提起された理由"
+    "triage_why_raised": "提起された理由",
+    "triage_announce_card": "判断中: {kind} — {title}",
+    "triage_announce_verdict": "記録しました: {verdict}。",
+    "triage_body_region": "カードの詳細 — 矢印キーでスクロール"
   },
   "common": {
     "loading": "読み込み中...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "トリアージデッキを閉じる",
       "triage_deck_open": "カードの元になった実行を開く",
       "triage_deck_reject": "トリアージデッキのカードを却下",
-      "triage_deck_skip": "カードをスキップして後で再表示"
+      "triage_deck_skip": "カードをスキップして後で再表示",
+      "triage_deck_scroll": "カードの続きを読む"
     },
     "tray_schedules": "スケジュール",
     "tray_schedules_today": "本日 {count} 件のスケジュール",

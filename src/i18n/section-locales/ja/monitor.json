@@ -379,5 +379,8 @@
   "triage_superseded_title": "置き換え先",
   "triage_view_run": "実行を見る",
   "triage_view_run_hint": "このレビューを発生させた実行を開く",
-  "triage_why_raised": "提起された理由"
+  "triage_why_raised": "提起された理由",
+  "triage_announce_card": "判断中: {kind} — {title}",
+  "triage_announce_verdict": "記録しました: {verdict}。",
+  "triage_body_region": "カードの詳細 — 矢印キーでスクロール"
 }

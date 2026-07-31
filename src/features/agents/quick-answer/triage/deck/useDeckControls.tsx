@@ -35,6 +35,7 @@ import {
 } from '../triageTypes';
 import type { UnifiedTriageQueue } from '../useUnifiedTriage';
 import type { FlingDirection, TriageCardHandle } from './TriageCard';
+import { useDeckDialog } from './useDeckDialog';
 
 /**
  * One decision waiting on "why?".
@@ -80,6 +81,10 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const pendingRef = useRef<TriageDecision | null>(null);
   const watchdogRef = useRef<number | null>(null);
+
+  /** Focus trap, focus restore and the reserved vertical keys. */
+  const dialog = useDeckDialog();
+  const { scrollBody, cycleTab, recoverFocus } = dialog;
 
   /**
    * Every answer typed this session, keyed `${sourceId}::${fieldKey}`.
@@ -146,6 +151,30 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
 
   useEffect(() => disarm, [disarm]);
 
+  /**
+   * What the last write actually recorded, in the item's own words.
+   *
+   * Half of the deck's ONE live region (see `TriageDeckVariant`). The card used
+   * to carry two permanent `role="status"` stamps, so every deal announced
+   * "Reject… Approve" and buried the only thing that mattered — the title of
+   * the card now being presented.
+   */
+  const [lastVerdict, setLastVerdict] = useState<string | null>(null);
+
+  /**
+   * The single door out to the queue. Every path that writes goes through it,
+   * so what a screen reader hears can never disagree with what was recorded.
+   */
+  const send = useCallback(
+    (decision: TriageDecision) => {
+      const { item, branchId } = decision;
+      const branch = branchId ? item.branches.find((b) => b.id === branchId) : undefined;
+      setLastVerdict(branch?.label ?? item.verdictLabels[decision.verdict]);
+      void queue.decide(decision);
+    },
+    [queue],
+  );
+
   /** Fired by the card once its flight has been seen. */
   const commit = useCallback(
     (dir: FlingDirection) => {
@@ -153,7 +182,7 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       const queued = pendingRef.current;
       pendingRef.current = null;
       if (queued) {
-        void queue.decide(queued);
+        send(queued);
         return;
       }
       // No queued decision means the drag itself was the verdict.
@@ -172,16 +201,16 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
           return;
         }
       }
-      void queue.decide({ item, verdict });
+      send({ item, verdict });
     },
-    [queue, disarm],
+    [send, disarm],
   );
 
   /** Throw the card, then decide. Decides outright if there is no card to throw. */
   const run = useCallback(
     (decision: TriageDecision, dir: FlingDirection) => {
       if (!cardRef.current) {
-        void queue.decide(decision);
+        send(decision);
         return;
       }
       pendingRef.current = decision;
@@ -193,11 +222,11 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
         watchdogRef.current = null;
         if (pendingRef.current !== decision) return;
         pendingRef.current = null;
-        void queue.decide(decision);
+        send(decision);
       }, FLIGHT_TIMEOUT_MS);
       cardRef.current.launch(dir);
     },
-    [queue, disarm],
+    [send, disarm],
   );
 
   /**
@@ -233,10 +262,10 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
         reason: reason?.trim() || undefined,
       };
       // A card already in the air must not be thrown a second time.
-      if (held.thrown) void queue.decide(decision);
+      if (held.thrown) send(decision);
       else run(decision, held.branchId ? 'right' : 'left');
     },
-    [queue, run],
+    [send, run],
   );
 
   /** A capture whose card has left the queue has nothing left to write. */
@@ -327,8 +356,32 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
     queue.openLink(item, link.id);
   }, [queue]);
 
-  const live = useRef({ decideTop, fireBranch, followLink, resolveReason, onClose });
-  live.current = { decideTop, fireBranch, followLink, resolveReason, onClose };
+  const live = useRef({
+    decideTop,
+    fireBranch,
+    followLink,
+    resolveReason,
+    onClose,
+    scrollBody,
+    cycleTab,
+  });
+  live.current = {
+    decideTop,
+    fireBranch,
+    followLink,
+    resolveReason,
+    onClose,
+    scrollBody,
+    cycleTab,
+  };
+
+  /**
+   * Every verdict remounts the top card, which takes the focused scroller with
+   * it and drops focus on `<body>` — one decision and the trap would be over.
+   */
+  useEffect(() => {
+    recoverFocus();
+  }, [top?.id, recoverFocus]);
 
   /**
    * One stable handler for the session. Arrows decide, numbers branch.
@@ -350,6 +403,9 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
       tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!el?.isContentEditable;
     const held = captureRef.current;
 
+    // Before the modifier bail-out, because Shift+Tab is half of the trap.
+    if (e.key === 'Tab') return live.current.cycleTab(e);
+
     if (e.key === 'Escape') {
       e.preventDefault();
       // Esc inside a text box steps out of it first. Closing the whole deck
@@ -366,6 +422,16 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
 
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
     if (inField) return false;
+
+    // Vertical keys are RESERVED for reading and never become a verdict. They
+    // are handled before reason mode on purpose: "why did you reject this?" is
+    // exactly the moment a reviewer wants to scroll back through the card.
+    // Without them a 40-line description was undecidable by keyboard — `←`/`→`
+    // are verdicts, so there was no way to see past the first screenful.
+    if (live.current.scrollBody(e.key)) {
+      e.preventDefault();
+      return true;
+    }
 
     // Reason mode owns the keyboard while it is up: digits pick a preset,
     // Enter skips. Nothing else can decide, because there is already a
@@ -423,6 +489,12 @@ export function useDeckControls(queue: UnifiedTriageQueue, onClose: () => void) 
 
   return {
     top,
+    /** Attach to the deck's root — it is the dialog panel the trap works over. */
+    containerRef: dialog.containerRef,
+    /** Attach to the TOP card's prose scroller, and nothing deeper. */
+    scrollerRef: dialog.scrollerRef,
+    /** The verdict last written, in the item's own words, or null. */
+    lastVerdict,
     /** The top card's drafts, by field key. */
     answers,
     setAnswer,

@@ -21,6 +21,7 @@
  * its children survive because two other surfaces still render them (the
  * channel-timeline rail and the reviews rail) — only the popover shell is gone.
  */
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
@@ -28,6 +29,7 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DeckActionBar, DeckFlank } from './deck/DeckActionBar';
+import { kindCopy } from './deck/DeckChips';
 import { DeckCleared, DeckLoading } from './deck/DeckStates';
 import { DeckTopBar } from './deck/DeckTopBar';
 import { QuestionPanel } from './deck/QuestionPanel';
@@ -52,10 +54,13 @@ export function TriageDeckVariant({
   /** Surface title — supplied translated by the host. */
   title: string;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const reduced = useReducedMotion();
   const {
     top,
+    containerRef,
+    scrollerRef,
+    lastVerdict,
     answers,
     setAnswer,
     cardRef,
@@ -72,13 +77,40 @@ export function TriageDeckVariant({
     canAccept,
   } = useDeckControls(queue, onClose);
 
+  /**
+   * The deck's ONE live region.
+   *
+   * Composed rather than rendered inline so it starts EMPTY: a live region that
+   * already has its text on first paint is not a change, and most screen
+   * readers will not speak it. Filling it one commit later makes the first card
+   * announce like every card after it.
+   */
+  const spoken = [
+    lastVerdict ? tx(t.monitor.triage_announce_verdict, { verdict: lastVerdict }) : null,
+    top ? tx(t.monitor.triage_announce_card, { kind: kindCopy(t, top.kind).one, title: top.title }) : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const [announcement, setAnnouncement] = useState('');
+  useEffect(() => setAnnouncement(spoken), [spoken]);
+
   const stack = queue.items.slice(0, STACK_DEPTH);
   const showLoading = queue.loading && stack.length === 0;
   // "You filtered it away" and "you finished" are different endings.
   const filteredOut = TRIAGE_KINDS.some((k) => !queue.activeKinds.has(k) && queue.allCounts[k] > 0);
 
   return (
+    // A real dialog, not a bare section. It covers the whole app below the
+    // title bar with an opaque background, so `role="dialog"` + `aria-modal`
+    // are simply the truth — and they are what stops a screen reader walking
+    // the route still rendered underneath. The trap, the first focus and the
+    // restore-to-trigger live in `useDeckDialog` (BaseModal's approach; see
+    // that file for why BaseModal itself is not reused here).
     <motion.section
+      ref={containerRef}
+      // eslint-disable-next-line custom/enforce-base-modal -- full-app surface pinned under the title bar: no backdrop, no centred panel, no modal-stack position, and its own Escape grammar (Esc blurs a field, then resolves an open reason prompt, then closes). BaseModal's approach IS reused — see useDeckDialog.
+      role="dialog"
+      aria-modal="true"
       className="fixed inset-x-0 bottom-0 top-12 z-50 flex flex-col bg-background"
       initial={reduced ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -86,6 +118,13 @@ export function TriageDeckVariant({
       aria-label={t.monitor.triage_deck_aria}
       data-testid="triage-deck-variant"
     >
+      {/* ONE polite region for the whole surface: what was just recorded, then
+          what is now being asked. Replaces the two permanent `role="status"`
+          stamps that used to announce "Reject… Approve" on every deal. */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
+
       <DeckTopBar queue={queue} title={title} onOpenMonitor={onOpenMonitor} onClose={onClose} />
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center gap-6 px-6 py-8 xl:gap-12">
@@ -129,6 +168,7 @@ export function TriageDeckVariant({
                   reduced={reduced}
                   cycle={queue.skips.get(item.id) ?? 0}
                   cardRef={i === 0 ? cardRef : undefined}
+                  scrollerRef={i === 0 ? scrollerRef : undefined}
                   onCommit={commit}
                   answerSlot={
                     i === 0 && item.input ? (

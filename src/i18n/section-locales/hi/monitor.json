@@ -379,5 +379,8 @@
   "triage_superseded_title": "इससे बदला गया",
   "triage_view_run": "रन देखें",
   "triage_view_run_hint": "वह एक्ज़ीक्यूशन खोलें जिससे यह समीक्षा उठी",
-  "triage_why_raised": "यह क्यों उठाया गया"
+  "triage_why_raised": "यह क्यों उठाया गया",
+  "triage_announce_card": "अभी तय किया जा रहा है: {kind} — {title}",
+  "triage_announce_verdict": "दर्ज किया गया: {verdict}।",
+  "triage_body_region": "कार्ड विवरण — तीर कुंजियों से स्क्रॉल करें"
 }

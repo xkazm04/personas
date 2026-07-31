@@ -56,7 +56,8 @@
     "triage_deck_close": "Tutup dek triase",
     "triage_deck_open": "Buka eksekusi di balik kartu",
     "triage_deck_reject": "Tolak kartu di dek triase",
-    "triage_deck_skip": "Lewati kartu dan lihat lagi nanti"
+    "triage_deck_skip": "Lewati kartu dan lihat lagi nanti",
+    "triage_deck_scroll": "Baca sisa kartu"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",

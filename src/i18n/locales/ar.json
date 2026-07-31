@@ -380,7 +380,10 @@
     "triage_superseded_title": "استُبدل بـ",
     "triage_view_run": "عرض التشغيل",
     "triage_view_run_hint": "فتح عملية التنفيذ التي أنتجت هذه المراجعة",
-    "triage_why_raised": "سبب إثارتها"
+    "triage_why_raised": "سبب إثارتها",
+    "triage_announce_card": "قيد البتّ الآن: {kind} — {title}",
+    "triage_announce_verdict": "تم التسجيل: {verdict}.",
+    "triage_body_region": "تفاصيل البطاقة — مرّر بمفاتيح الأسهم"
   },
   "common": {
     "loading": "جارٍ التحميل...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "إغلاق حزمة الفرز",
       "triage_deck_open": "فتح التشغيل الذي وراء البطاقة",
       "triage_deck_reject": "رفض البطاقة في حزمة الفرز",
-      "triage_deck_skip": "تخطّي البطاقة ورؤيتها لاحقًا"
+      "triage_deck_skip": "تخطّي البطاقة ورؤيتها لاحقًا",
+      "triage_deck_scroll": "قراءة بقية البطاقة"
     },
     "tray_schedules": "الجداول الزمنية",
     "tray_schedules_today": "{count} مجدول اليوم",

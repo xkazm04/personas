@@ -380,7 +380,10 @@
     "triage_superseded_title": "被替换为",
     "triage_view_run": "查看运行",
     "triage_view_run_hint": "打开触发此审核的执行记录",
-    "triage_why_raised": "提出原因"
+    "triage_why_raised": "提出原因",
+    "triage_announce_card": "正在裁定：{kind} — {title}",
+    "triage_announce_verdict": "已记录：{verdict}。",
+    "triage_body_region": "卡片详情 — 用方向键滚动"
   },
   "common": {
     "loading": "加载中...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "关闭分诊卡组",
       "triage_deck_open": "打开卡片背后的运行",
       "triage_deck_reject": "拒绝分诊卡组中的卡片",
-      "triage_deck_skip": "跳过卡片，稍后再看"
+      "triage_deck_skip": "跳过卡片，稍后再看",
+      "triage_deck_scroll": "阅读卡片的其余内容"
     },
     "tray_schedules": "计划任务",
     "tray_schedules_today": "今日 {count} 个计划任务",

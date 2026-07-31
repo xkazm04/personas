@@ -379,5 +379,8 @@
   "triage_superseded_title": "Nahrazeno čím",
   "triage_view_run": "Zobrazit běh",
   "triage_view_run_hint": "Otevřít spuštění, které vyvolalo tuto kontrolu",
-  "triage_why_raised": "Proč to vzniklo"
+  "triage_why_raised": "Proč to vzniklo",
+  "triage_announce_card": "Nyní rozhodujete: {kind} — {title}",
+  "triage_announce_verdict": "Zaznamenáno: {verdict}.",
+  "triage_body_region": "Podrobnosti karty — posouvejte šipkami"
 }

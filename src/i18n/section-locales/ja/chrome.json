@@ -56,7 +56,8 @@
     "triage_deck_close": "トリアージデッキを閉じる",
     "triage_deck_open": "カードの元になった実行を開く",
     "triage_deck_reject": "トリアージデッキのカードを却下",
-    "triage_deck_skip": "カードをスキップして後で再表示"
+    "triage_deck_skip": "カードをスキップして後で再表示",
+    "triage_deck_scroll": "カードの続きを読む"
   },
   "tray_schedules": "スケジュール",
   "tray_schedules_today": "本日 {count} 件のスケジュール",

@@ -99,6 +99,12 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: [['S']], describe: (t) => t.chrome.shortcuts.triage_deck_skip },
       { combos: [['O']], describe: (t) => t.chrome.shortcuts.triage_deck_open },
       { combos: [['1–9']], describe: (t) => t.chrome.shortcuts.triage_deck_branch },
+      // Vertical keys are reserved for the card body and never decide anything
+      // — without them a long review is undecidable by keyboard.
+      {
+        combos: [['↑'], ['↓'], ['PgUp'], ['PgDn']],
+        describe: (t) => t.chrome.shortcuts.triage_deck_scroll,
+      },
       { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.triage_deck_close },
     ],
   },

@@ -379,5 +379,8 @@
   "triage_superseded_title": "Được thay bởi",
   "triage_view_run": "Xem lần chạy",
   "triage_view_run_hint": "Mở lần thực thi đã tạo ra bản đánh giá này",
-  "triage_why_raised": "Lý do được nêu"
+  "triage_why_raised": "Lý do được nêu",
+  "triage_announce_card": "Đang quyết định: {kind} — {title}",
+  "triage_announce_verdict": "Đã ghi nhận: {verdict}.",
+  "triage_body_region": "Chi tiết thẻ — cuộn bằng phím mũi tên"
 }

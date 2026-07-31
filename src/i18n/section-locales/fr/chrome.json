@@ -56,7 +56,8 @@
     "triage_deck_close": "Fermer la pile de tri",
     "triage_deck_open": "Ouvrir l’exécution à l’origine de la carte",
     "triage_deck_reject": "Rejeter la carte de la pile de tri",
-    "triage_deck_skip": "Passer la carte et la revoir plus tard"
+    "triage_deck_skip": "Passer la carte et la revoir plus tard",
+    "triage_deck_scroll": "Lire la suite de la carte"
   },
   "tray_schedules": "Planifications",
   "tray_schedules_today": "{count} planifiée(s) aujourd'hui",

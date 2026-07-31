@@ -56,7 +56,8 @@
     "triage_deck_close": "Zavřít balíček třídění",
     "triage_deck_open": "Otevřít běh, který kartu vyvolal",
     "triage_deck_reject": "Zamítnout kartu v balíčku třídění",
-    "triage_deck_skip": "Přeskočit kartu a zobrazit ji později"
+    "triage_deck_skip": "Přeskočit kartu a zobrazit ji později",
+    "triage_deck_scroll": "Přečíst zbytek karty"
   },
   "tray_schedules": "Plány",
   "tray_schedules_today": "{count} naplánováno dnes",

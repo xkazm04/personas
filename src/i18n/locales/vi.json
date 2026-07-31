@@ -380,7 +380,10 @@
     "triage_superseded_title": "Được thay bởi",
     "triage_view_run": "Xem lần chạy",
     "triage_view_run_hint": "Mở lần thực thi đã tạo ra bản đánh giá này",
-    "triage_why_raised": "Lý do được nêu"
+    "triage_why_raised": "Lý do được nêu",
+    "triage_announce_card": "Đang quyết định: {kind} — {title}",
+    "triage_announce_verdict": "Đã ghi nhận: {verdict}.",
+    "triage_body_region": "Chi tiết thẻ — cuộn bằng phím mũi tên"
   },
   "common": {
     "loading": "Đang tải...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Đóng bộ thẻ phân loại",
       "triage_deck_open": "Mở lần chạy đứng sau thẻ",
       "triage_deck_reject": "Từ chối thẻ trong bộ thẻ phân loại",
-      "triage_deck_skip": "Bỏ qua thẻ và xem lại sau"
+      "triage_deck_skip": "Bỏ qua thẻ và xem lại sau",
+      "triage_deck_scroll": "Đọc phần còn lại của thẻ"
     },
     "tray_schedules": "Lịch biểu",
     "tray_schedules_today": "{count} được lên lịch hôm nay",

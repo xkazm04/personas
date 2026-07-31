@@ -288,9 +288,12 @@ export type Translations = {
     triage_adopt: string;
     triage_adopt_reach_value: string;
     triage_answer_placeholder: string;
+    triage_announce_card: string;
+    triage_announce_verdict: string;
     triage_applies_any: string;
     triage_approve: string;
     triage_backlog_capped: string;
+    triage_body_region: string;
     triage_batch_body_one: string;
     triage_batch_body_other: string;
     triage_batch_next: string;
@@ -654,6 +657,7 @@ export type Translations = {
       triage_deck_skip: string;
       triage_deck_open: string;
       triage_deck_branch: string;
+      triage_deck_scroll: string;
       triage_deck_close: string;
       undo: string;
       redo: string;

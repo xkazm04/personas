@@ -56,7 +56,8 @@
     "triage_deck_close": "Đóng bộ thẻ phân loại",
     "triage_deck_open": "Mở lần chạy đứng sau thẻ",
     "triage_deck_reject": "Từ chối thẻ trong bộ thẻ phân loại",
-    "triage_deck_skip": "Bỏ qua thẻ và xem lại sau"
+    "triage_deck_skip": "Bỏ qua thẻ và xem lại sau",
+    "triage_deck_scroll": "Đọc phần còn lại của thẻ"
   },
   "tray_schedules": "Lịch biểu",
   "tray_schedules_today": "{count} được lên lịch hôm nay",

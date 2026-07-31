@@ -56,7 +56,8 @@
     "triage_deck_close": "إغلاق حزمة الفرز",
     "triage_deck_open": "فتح التشغيل الذي وراء البطاقة",
     "triage_deck_reject": "رفض البطاقة في حزمة الفرز",
-    "triage_deck_skip": "تخطّي البطاقة ورؤيتها لاحقًا"
+    "triage_deck_skip": "تخطّي البطاقة ورؤيتها لاحقًا",
+    "triage_deck_scroll": "قراءة بقية البطاقة"
   },
   "tray_schedules": "الجداول الزمنية",
   "tray_schedules_today": "{count} مجدول اليوم",

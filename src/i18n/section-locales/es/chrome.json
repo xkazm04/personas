@@ -56,7 +56,8 @@
     "triage_deck_close": "Cerrar el mazo de triaje",
     "triage_deck_open": "Abrir la ejecución detrás de la tarjeta",
     "triage_deck_reject": "Rechazar la tarjeta del mazo de triaje",
-    "triage_deck_skip": "Omitir la tarjeta y volver a verla luego"
+    "triage_deck_skip": "Omitir la tarjeta y volver a verla luego",
+    "triage_deck_scroll": "Leer el resto de la tarjeta"
   },
   "tray_schedules": "Programaciones",
   "tray_schedules_today": "{count} programadas hoy",

@@ -67,6 +67,11 @@ interface TriageCardProps {
    */
   cycle?: number;
   cardRef?: Ref<TriageCardHandle>;
+  /**
+   * The prose scroller, handed up so the deck's keyboard can drive it. Passed
+   * for the TOP card only — the cards behind it are not being read.
+   */
+  scrollerRef?: Ref<HTMLDivElement>;
   onCommit: (dir: FlingDirection) => void;
   /** Replaces the prose body for items with an `input`. */
   answerSlot?: ReactNode;
@@ -79,6 +84,7 @@ function TriageCardImpl({
   reduced,
   cycle = 0,
   cardRef,
+  scrollerRef,
   onCommit,
   answerSlot,
 }: TriageCardProps) {
@@ -192,23 +198,29 @@ function TriageCardImpl({
           />
 
           <div className="relative flex h-full min-h-0 flex-col px-6 pb-5 pt-9">
-            <TriageCardBody item={item} answerSlot={answerSlot} />
+            <TriageCardBody item={item} answerSlot={answerSlot} scrollerRef={scrollerRef} />
           </div>
 
+          {/* Both stamps are PURE PAINT and are hidden from assistive tech.
+              They used to carry a permanent `role="status" aria-live="polite"`
+              each and sat in the DOM for every top card, so a screen reader
+              announced "Reject… Approve" on every single deal — 80 spurious
+              utterances over a 40-card session, burying the one thing that
+              matters: the title of the card now being presented. The deck has
+              ONE live region for that (see `TriageDeckVariant`); what these do
+              is show a drag its own verdict, which is a visual affordance. */}
           {isTop && draggable ? (
             <>
               <motion.div
                 style={{ opacity: rejectStamp, rotate: -12 }}
-                role="status"
-                aria-live="polite"
+                aria-hidden
                 className="pointer-events-none absolute left-6 top-6 z-30 rounded-modal border-2 border-status-error px-4 py-2 typo-heading-lg font-bold uppercase text-status-error"
               >
                 {item.verdictLabels.reject}
               </motion.div>
               <motion.div
                 style={{ opacity: acceptStamp, rotate: 12 }}
-                role="status"
-                aria-live="polite"
+                aria-hidden
                 className="pointer-events-none absolute right-6 top-6 z-30 rounded-modal border-2 border-status-success px-4 py-2 typo-heading-lg font-bold uppercase text-status-success"
               >
                 {item.verdictLabels.accept}

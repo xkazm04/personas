@@ -380,7 +380,10 @@
     "triage_superseded_title": "Digantikan oleh",
     "triage_view_run": "Lihat eksekusi",
     "triage_view_run_hint": "Buka eksekusi yang memunculkan tinjauan ini",
-    "triage_why_raised": "Mengapa ini diajukan"
+    "triage_why_raised": "Mengapa ini diajukan",
+    "triage_announce_card": "Sedang diputuskan: {kind} — {title}",
+    "triage_announce_verdict": "Tercatat: {verdict}.",
+    "triage_body_region": "Detail kartu — gulir dengan tombol panah"
   },
   "common": {
     "loading": "Memuat...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Tutup dek triase",
       "triage_deck_open": "Buka eksekusi di balik kartu",
       "triage_deck_reject": "Tolak kartu di dek triase",
-      "triage_deck_skip": "Lewati kartu dan lihat lagi nanti"
+      "triage_deck_skip": "Lewati kartu dan lihat lagi nanti",
+      "triage_deck_scroll": "Baca sisa kartu"
     },
     "tray_schedules": "Jadwal",
     "tray_schedules_today": "{count} terjadwal hari ini",

@@ -379,5 +379,8 @@
   "triage_superseded_title": "Заменено на",
   "triage_view_run": "Открыть запуск",
   "triage_view_run_hint": "Открыть выполнение, вызвавшее эту проверку",
-  "triage_why_raised": "Почему это подняли"
+  "triage_why_raised": "Почему это подняли",
+  "triage_announce_card": "Сейчас решается: {kind} — {title}",
+  "triage_announce_verdict": "Записано: {verdict}.",
+  "triage_body_region": "Детали карточки — прокрутка стрелками"
 }

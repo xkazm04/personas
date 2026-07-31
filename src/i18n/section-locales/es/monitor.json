@@ -379,5 +379,8 @@
   "triage_superseded_title": "Reemplazado por",
   "triage_view_run": "Ver la ejecución",
   "triage_view_run_hint": "Abrir la ejecución que generó esta revisión",
-  "triage_why_raised": "Por qué se planteó"
+  "triage_why_raised": "Por qué se planteó",
+  "triage_announce_card": "Decidiendo ahora: {kind} — {title}",
+  "triage_announce_verdict": "Registrado: {verdict}.",
+  "triage_body_region": "Detalles de la tarjeta — desplázate con las flechas"
 }

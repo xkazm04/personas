@@ -380,7 +380,10 @@
     "triage_superseded_title": "대체 항목",
     "triage_view_run": "실행 보기",
     "triage_view_run_hint": "이 검토를 발생시킨 실행 열기",
-    "triage_why_raised": "제기된 이유"
+    "triage_why_raised": "제기된 이유",
+    "triage_announce_card": "지금 결정 중: {kind} — {title}",
+    "triage_announce_verdict": "기록됨: {verdict}.",
+    "triage_body_region": "카드 세부 정보 — 화살표 키로 스크롤"
   },
   "common": {
     "loading": "로딩 중...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "심사 덱 닫기",
       "triage_deck_open": "카드의 원인이 된 실행 열기",
       "triage_deck_reject": "심사 덱의 카드 거부",
-      "triage_deck_skip": "카드를 건너뛰고 나중에 다시 보기"
+      "triage_deck_skip": "카드를 건너뛰고 나중에 다시 보기",
+      "triage_deck_scroll": "카드의 나머지 읽기"
     },
     "tray_schedules": "일정",
     "tray_schedules_today": "오늘 {count}개 예약됨",

@@ -380,7 +380,10 @@
     "triage_superseded_title": "যা দিয়ে বদলানো হলো",
     "triage_view_run": "রান দেখুন",
     "triage_view_run_hint": "যে এক্সিকিউশন থেকে এই পর্যালোচনা এসেছে তা খুলুন",
-    "triage_why_raised": "কেন এটি উত্থাপিত হয়েছে"
+    "triage_why_raised": "কেন এটি উত্থাপিত হয়েছে",
+    "triage_announce_card": "এখন সিদ্ধান্ত নেওয়া হচ্ছে: {kind} — {title}",
+    "triage_announce_verdict": "রেকর্ড করা হয়েছে: {verdict}।",
+    "triage_body_region": "কার্ডের বিবরণ — অ্যারো কী দিয়ে স্ক্রল করুন"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "ট্রায়াজ ডেক বন্ধ করুন",
       "triage_deck_open": "কার্ডের পিছনের রানটি খুলুন",
       "triage_deck_reject": "ট্রায়াজ ডেকে কার্ডটি প্রত্যাখ্যান করুন",
-      "triage_deck_skip": "কার্ডটি এড়িয়ে যান, পরে আবার দেখুন"
+      "triage_deck_skip": "কার্ডটি এড়িয়ে যান, পরে আবার দেখুন",
+      "triage_deck_scroll": "কার্ডের বাকি অংশ পড়ুন"
     },
     "tray_schedules": "সময়সূচি",
     "tray_schedules_today": "আজ {count}টি নির্ধারিত",

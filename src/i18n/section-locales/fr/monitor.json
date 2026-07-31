@@ -379,5 +379,8 @@
   "triage_superseded_title": "Remplacé par",
   "triage_view_run": "Voir l’exécution",
   "triage_view_run_hint": "Ouvrir l’exécution à l’origine de cette revue",
-  "triage_why_raised": "Pourquoi c’est signalé"
+  "triage_why_raised": "Pourquoi c’est signalé",
+  "triage_announce_card": "En cours de décision : {kind} — {title}",
+  "triage_announce_verdict": "Enregistré : {verdict}.",
+  "triage_body_region": "Détails de la carte — faites défiler avec les flèches"
 }

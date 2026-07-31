@@ -21,7 +21,7 @@
 //
 // Score facts (effort/impact/risk/confidence) are deliberately NOT repeated
 // here — they already straddle the card's top edge as meters in MetricBadgeRow.
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -91,7 +91,16 @@ function FactCell({ fact }: { fact: TriageFact }) {
   );
 }
 
-export function TriageCardBody({ item, answerSlot }: { item: TriageItem; answerSlot?: ReactNode }) {
+export function TriageCardBody({
+  item,
+  answerSlot,
+  scrollerRef,
+}: {
+  item: TriageItem;
+  answerSlot?: ReactNode;
+  /** Set on the TOP card only — see `TriageCard`. */
+  scrollerRef?: Ref<HTMLDivElement>;
+}) {
   const { t } = useTranslation();
   const kind = KIND_META[item.kind];
   const kindText = kindCopy(t, item.kind);
@@ -125,7 +134,19 @@ export function TriageCardBody({ item, answerSlot }: { item: TriageItem; answerS
         {item.alert ? <AlertBanner alert={item.alert} /> : null}
       </header>
 
-      <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+      {/* Focusable, and named. A scroller with no `tabIndex` and no focusable
+          descendant is unreachable by keyboard, which on this surface meant a
+          40-line description could only ever be read down to the fold — while
+          `←`/`→` recorded a verdict on it. `useDeckDialog` also drives it from
+          ↑/↓/PgUp/PgDn without needing the focus, and focuses it FIRST on open
+          so the reviewer lands on the prose rather than on a filter chip. */}
+      <div
+        ref={scrollerRef}
+        tabIndex={0}
+        role="region"
+        aria-label={t.monitor.triage_body_region}
+        className="focus-ring mt-4 min-h-0 flex-1 overflow-y-auto"
+      >
         <div className={`${MEASURE} space-y-4 pr-1`}>
           {answerSlot ??
             (item.body ? (

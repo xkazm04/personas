@@ -380,7 +380,10 @@
     "triage_superseded_title": "Reemplazado por",
     "triage_view_run": "Ver la ejecución",
     "triage_view_run_hint": "Abrir la ejecución que generó esta revisión",
-    "triage_why_raised": "Por qué se planteó"
+    "triage_why_raised": "Por qué se planteó",
+    "triage_announce_card": "Decidiendo ahora: {kind} — {title}",
+    "triage_announce_verdict": "Registrado: {verdict}.",
+    "triage_body_region": "Detalles de la tarjeta — desplázate con las flechas"
   },
   "common": {
     "loading": "Cargando...",
@@ -625,7 +628,8 @@
       "triage_deck_close": "Cerrar el mazo de triaje",
       "triage_deck_open": "Abrir la ejecución detrás de la tarjeta",
       "triage_deck_reject": "Rechazar la tarjeta del mazo de triaje",
-      "triage_deck_skip": "Omitir la tarjeta y volver a verla luego"
+      "triage_deck_skip": "Omitir la tarjeta y volver a verla luego",
+      "triage_deck_scroll": "Leer el resto de la tarjeta"
     },
     "tray_schedules": "Programaciones",
     "tray_schedules_today": "{count} programadas hoy",

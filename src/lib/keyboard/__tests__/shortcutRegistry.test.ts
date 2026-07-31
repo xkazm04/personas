@@ -75,6 +75,7 @@ describe('shortcutRegistry', () => {
           triage_deck_skip: 'Skip the card and see it again later',
           triage_deck_open: 'Open the run behind the card',
           triage_deck_branch: 'Take a numbered action on the card',
+          triage_deck_scroll: 'Read the rest of the card',
           triage_deck_close: 'Close the triage deck',
           undo: 'Undo',
           redo: 'Redo',
