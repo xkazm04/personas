@@ -210,9 +210,25 @@ async fn poll_one_trigger(
     {
         // Active window gate: skip polling outside configured active hours,
         // but still advance the schedule so it doesn't pile up as overdue.
+        //
+        // Advance ONLY the schedule pointer here — never `last_triggered_at`.
+        // The UI's "Last triggered" label (TriggerList.tsx) reads that column
+        // for every trigger type, polling included; `try_mark_triggered` (=
+        // `mark_triggered`) would stamp it with `now` even though no GET was
+        // ever made, making the trigger look like it fired when it didn't.
+        // Mirrors `background.rs`'s identical active-window skip for
+        // schedule-type triggers, which uses `advance_schedule_pointer` for
+        // exactly this reason.
         if !trigger.is_within_active_window(now) {
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            try_mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
+            match trigger_repo::advance_schedule_pointer(pool, &trigger.id, next, trigger.trigger_version)
+            {
+                Ok(_) => clear_backoff(&trigger.id),
+                Err(e) => {
+                    tracing::error!(trigger_id = %trigger.id, "advance_schedule_pointer failed: {}", e);
+                    record_mark_failure(&trigger.id);
+                }
+            }
             return;
         }
 

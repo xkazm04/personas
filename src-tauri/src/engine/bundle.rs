@@ -410,10 +410,24 @@ pub fn apply_import(
     let mut skipped = 0u32;
     let mut errors = Vec::new();
 
-    // Load all existing persona names once before the loop for O(1) conflict checks
+    // Load all existing persona names once before the loop for O(1) conflict checks.
+    // An empty set here means "no conflicts" (skip_conflicts becomes a no-op and
+    // every incoming persona is treated as new) — the same "empty = allow all"
+    // sentinel `filter_fields` above is careful never to alias with a parse
+    // failure. `unwrap_or_default()` would silently do exactly that on a DB
+    // error, so propagate instead: abort the import rather than importing
+    // duplicates the user asked to skip.
     let existing_names: HashSet<String> = persona_repo::get_all(pool)
-        .map(|ps| ps.into_iter().map(|p| p.name).collect())
-        .unwrap_or_default();
+        .map_err(|e| {
+            tracing::error!(
+                error = %e,
+                "Failed to load existing personas for conflict check — aborting import instead of treating every persona as conflict-free"
+            );
+            e
+        })?
+        .into_iter()
+        .map(|p| p.name)
+        .collect();
 
     for entry in &manifest.resources {
         if entry.resource_type != "persona" {

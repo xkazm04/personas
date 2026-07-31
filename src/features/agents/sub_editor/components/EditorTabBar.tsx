@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Settings, FlaskConical, Activity, Wand2, HeartPulse } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
@@ -88,6 +89,11 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
   const editorLabels = t.agents.editor_ui;
+  // Per-instance so two editor tab bars (e.g. a future multi-draft editor)
+  // never share a framer-motion layoutId — a shared id makes the active-tab
+  // underline teleport/animate between the two bars (see PanelTabBar /
+  // SegmentedTabs for the same pattern).
+  const layoutIdInstance = useId();
   return (
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex items-center ${IS_MOBILE ? 'px-1' : 'px-6'}`}>
@@ -119,7 +125,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                       : null}
                 {isActive && (
                   <motion.div
-                    layoutId="personaEditorTab"
+                    layoutId={`personaEditorTab-${layoutIdInstance}`}
                     className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />

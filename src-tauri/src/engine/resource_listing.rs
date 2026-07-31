@@ -213,6 +213,15 @@ pub async fn list_resources(
     let connector = connector_repo::get_by_name(pool, &cred.service_type)?
         .ok_or_else(|| AppError::NotFound(format!("Connector {}", cred.service_type)))?;
 
+    // Self-hosted connectors that opted into private-network access (same flag
+    // api_proxy/healthcheck honour) must get the same exemption here — otherwise
+    // their proxy + healthcheck reach a LAN/localhost target fine but resource
+    // listing (this path) always builds the hardened, private-IP-rejecting
+    // client and validator, silently failing for exactly the connectors that
+    // need it most.
+    let allow_private =
+        super::api_proxy::connector_allows_private_network(connector.metadata.as_deref());
+
     // 2. Parse resources spec and find the requested one
     let resources_json = connector.resources.ok_or_else(|| {
         AppError::Validation(format!(
@@ -268,7 +277,7 @@ pub async fn list_resources(
     }
 
     // 5. HTTP fetch with pagination
-    let items = fetch_all_pages(&spec, &values).await?;
+    let items = fetch_all_pages(&spec, &values, allow_private).await?;
 
     // 6. Map each raw item through response_mapping
     let mapped: Vec<ResourceItem> = items
@@ -287,13 +296,22 @@ pub async fn list_resources(
 async fn fetch_all_pages(
     spec: &ResourceSpec,
     values: &HashMap<String, String>,
+    allow_private: bool,
 ) -> Result<Vec<serde_json::Value>, AppError> {
-    // SSRF-safe client: DNS-rebinding resolver + redirect re-validation. A
-    // bare DNS-resolver-only client (the prior shape here) still lets an
-    // upstream `Location: http://<private-ip-literal>/...` redirect bypass
-    // DNS entirely and get auto-followed by reqwest's default policy,
-    // carrying this request's credential auth header to an internal target.
-    let client = crate::engine::url_safety::build_ssrf_safe_client(Duration::from_secs(15));
+    // The escape hatch for self-hosted connectors is a DIFFERENT client, never
+    // a skip-flag inside the hardened one (mirrors api_proxy::execute_api_request
+    // and healthcheck::execute_healthcheck_request_with_strategy). Every other
+    // connector keeps the SSRF-safe client: DNS-rebinding resolver + redirect
+    // re-validation. A bare DNS-resolver-only client (the prior shape here)
+    // still lets an upstream `Location: http://<private-ip-literal>/...`
+    // redirect bypass DNS entirely and get auto-followed by reqwest's default
+    // policy, carrying this request's credential auth header to an internal
+    // target.
+    let client = if allow_private {
+        personas_core::http_clients::HTTP_ALLOW_PRIVATE.clone()
+    } else {
+        crate::engine::url_safety::build_ssrf_safe_client(Duration::from_secs(15))
+    };
 
     let pagination = spec
         .list_endpoint
@@ -304,14 +322,20 @@ async fn fetch_all_pages(
     let mut all: Vec<serde_json::Value> = Vec::new();
     match pagination {
         Pagination::None => {
-            let body = fetch_one(&client, spec, values, None, None, None).await?;
+            let body = fetch_one(&client, spec, values, None, None, None, allow_private).await?;
             all.extend(extract_items(&body, &spec.response_mapping.items_path));
         }
         Pagination::LinkHeader { max_pages } => {
             let mut next_url: Option<String> = None;
             for _ in 0..*max_pages {
-                let (body, next) =
-                    fetch_one_with_headers(&client, spec, values, next_url.as_deref()).await?;
+                let (body, next) = fetch_one_with_headers(
+                    &client,
+                    spec,
+                    values,
+                    next_url.as_deref(),
+                    allow_private,
+                )
+                .await?;
                 all.extend(extract_items(&body, &spec.response_mapping.items_path));
                 match next {
                     Some(n) => next_url = Some(n),
@@ -330,7 +354,9 @@ async fn fetch_all_pages(
                 if let Some(pp) = per_page {
                     query.push((per_page_param.clone(), pp.to_string()));
                 }
-                let body = fetch_one(&client, spec, values, None, Some(&query), None).await?;
+                let body =
+                    fetch_one(&client, spec, values, None, Some(&query), None, allow_private)
+                        .await?;
                 let items = extract_items(&body, &spec.response_mapping.items_path);
                 let empty = items.is_empty();
                 all.extend(items);
@@ -350,7 +376,9 @@ async fn fetch_all_pages(
                     .as_ref()
                     .map(|c| vec![(cursor_param.clone(), c.clone())])
                     .unwrap_or_default();
-                let body = fetch_one(&client, spec, values, None, Some(&query), None).await?;
+                let body =
+                    fetch_one(&client, spec, values, None, Some(&query), None, allow_private)
+                        .await?;
                 all.extend(extract_items(&body, &spec.response_mapping.items_path));
                 cursor =
                     jsonpath_get(&body, cursor_path).and_then(|v| v.as_str().map(String::from));
@@ -363,6 +391,7 @@ async fn fetch_all_pages(
     Ok(all)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_one(
     client: &reqwest::Client,
     spec: &ResourceSpec,
@@ -370,9 +399,11 @@ async fn fetch_one(
     override_url: Option<&str>,
     extra_query: Option<&[(String, String)]>,
     _page: Option<u32>,
+    allow_private: bool,
 ) -> Result<serde_json::Value, AppError> {
     let (body, _link) =
-        fetch_one_with_headers_inner(client, spec, values, override_url, extra_query).await?;
+        fetch_one_with_headers_inner(client, spec, values, override_url, extra_query, allow_private)
+            .await?;
     Ok(body)
 }
 
@@ -381,16 +412,19 @@ async fn fetch_one_with_headers(
     spec: &ResourceSpec,
     values: &HashMap<String, String>,
     override_url: Option<&str>,
+    allow_private: bool,
 ) -> Result<(serde_json::Value, Option<String>), AppError> {
-    fetch_one_with_headers_inner(client, spec, values, override_url, None).await
+    fetch_one_with_headers_inner(client, spec, values, override_url, None, allow_private).await
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_one_with_headers_inner(
     client: &reqwest::Client,
     spec: &ResourceSpec,
     values: &HashMap<String, String>,
     override_url: Option<&str>,
     extra_query: Option<&[(String, String)]>,
+    allow_private: bool,
 ) -> Result<(serde_json::Value, Option<String>), AppError> {
     // Resolve URL (or use the pre-resolved link-header next URL)
     let url = match override_url {
@@ -405,7 +439,14 @@ async fn fetch_one_with_headers_inner(
                 .into(),
         ));
     }
-    validate_healthcheck_url(&url)?;
+    // Skipped for connectors that opted into private-network access — they
+    // connect via the non-filtered client above (mirrors healthcheck.rs's
+    // `if !allow_private { validate_healthcheck_url(...) }`). Otherwise this
+    // pre-flight check rejects the private/LAN target before the request is
+    // ever sent, regardless of which client would have handled it.
+    if !allow_private {
+        validate_healthcheck_url(&url)?;
+    }
 
     let method = spec.list_endpoint.method.to_uppercase();
     let mut req = match method.as_str() {

@@ -51,13 +51,22 @@ export function CredentialEditForm({
   saveDisabled,
   saveDisabledReason,
 }: CredentialEditFormProps) {
-  const [values, setValues] = useState<Record<string, string>>(() => {
+  // Hand-typed API keys/passwords live in a ref, never React state — mirrors
+  // the OAuth hooks (useOAuthPolling/useOAuthProtocol/useUniversalOAuth),
+  // which keep credential values out of `useState` specifically to avoid
+  // exposing them via React DevTools / Sentry error serialization. This form
+  // is the manual-entry counterpart to those OAuth flows and was the one path
+  // still holding secrets in inspectable state. `valuesVersion` is the
+  // re-render trigger; consumers read the current values via `getValues()`.
+  const valuesRef = useRef<Record<string, string>>((() => {
     const defaults: Record<string, string> = {};
     for (const field of fields) {
       defaults[field.key] = initialValues?.[field.key] ?? '';
     }
     return defaults;
-  });
+  })());
+  const [, setValuesVersion] = useState(0);
+  const getValues = useCallback(() => valuesRef.current, []);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -76,18 +85,18 @@ export function CredentialEditForm({
 
   useEffect(() => {
     if (!initialValues) return;
-    setValues((prev) => {
-      const next = { ...prev };
-      for (const [k, v] of Object.entries(initialValues)) {
-        if (!editedFieldsRef.current.has(k)) next[k] = v;
-      }
-      return next;
-    });
+    const next = { ...valuesRef.current };
+    for (const [k, v] of Object.entries(initialValues)) {
+      if (!editedFieldsRef.current.has(k)) next[k] = v;
+    }
+    valuesRef.current = next;
+    setValuesVersion((v) => v + 1);
   }, [initialValues]);
 
   const handleChange = useCallback((key: string, value: string) => {
     editedFieldsRef.current.add(key);
-    setValues(prev => ({ ...prev, [key]: value }));
+    valuesRef.current = { ...valuesRef.current, [key]: value };
+    setValuesVersion((v) => v + 1);
     onValuesChanged?.(key, value);
     if (touched[key]) {
       const field = fields.find((f) => f.key === key);
@@ -106,31 +115,31 @@ export function CredentialEditForm({
     const field = fields.find((f) => f.key === key);
     if (!field) return;
     setTouched((prev) => ({ ...prev, [key]: true }));
-    const nextError = validateField(field, values[key] ?? '');
+    const nextError = validateField(field, valuesRef.current[key] ?? '');
     setErrors((prev) => {
       const next = { ...prev };
       if (nextError) next[key] = nextError;
       else delete next[key];
       return next;
     });
-  }, [fields, values, validateField]);
+  }, [fields, validateField]);
 
   const validate = (): boolean => {
-    const newErrors = validateAll(values);
+    const newErrors = validateAll(valuesRef.current);
     setTouched(Object.fromEntries(fields.map((f) => [f.key, true])));
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => { if (validate()) onSave(values); };
-  const handleHealthcheck = () => { if (validate()) onHealthcheck?.(values); };
-  const handleOAuthConsent = () => { if (validate()) onOAuthConsent?.(values); };
+  const handleSave = () => { if (validate()) onSave(getValues()); };
+  const handleHealthcheck = () => { if (validate()) onHealthcheck?.(getValues()); };
+  const handleOAuthConsent = () => { if (validate()) onOAuthConsent?.(getValues()); };
 
   return (
     <div className="space-y-4">
       <EditFormFields
         fields={fields}
-        values={values}
+        values={valuesRef.current}
         errors={errors}
         touched={touched}
         onValueChange={handleChange}

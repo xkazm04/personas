@@ -509,6 +509,28 @@ pub fn adopt_preset(
                 to = %c.to,
                 "adopt_team_preset: skipping connection — endpoint role failed adoption"
             );
+            // Narrate the decision into the team's own channel, not only the
+            // log — the wiring gap is otherwise invisible to the user who
+            // sees "created_connections: N" with no indication of which
+            // edges were dropped or why (see engine::director /
+            // team_assignment_orchestrator's `maybe_post_channel_message`
+            // for the same system-narration idiom).
+            let _ = crate::db::repos::resources::team_channel::create(
+                &state.db,
+                crate::db::models::CreateChannelMessageInput {
+                    team_id: team.id.clone(),
+                    author_kind: "system".into(),
+                    author_id: None,
+                    body: format!(
+                        "Skipped connection \"{} → {}\" — one of these roles failed to adopt, so there's nothing to wire it to.",
+                        c.from, c.to
+                    ),
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: None,
+                    consumer: Some("display".into()),
+                },
+            );
             continue;
         };
         match team_repo::create_connection(

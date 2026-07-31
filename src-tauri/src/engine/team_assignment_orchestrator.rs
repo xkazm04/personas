@@ -315,6 +315,17 @@ pub fn resolve_review_reassign(
 
 /// User chose "Skip step". Marks the step `skipped`; the next tick will
 /// cascade-skip every step whose `depends_on` references this one.
+///
+/// Deliberately does NOT call `restore_cascade_skipped_dependents` — unlike
+/// `resolve_review_edit` / `resolve_review_reassign` / `auto_resume_retryable_steps`,
+/// this is a human choosing to drop the step, not a reset the DAG should recover
+/// from. That distinction is carried entirely by the `None` error_message passed
+/// here: `restore_cascade_skipped_dependents` only resurrects steps whose
+/// error_message equals the exact sentinel `"Dependency was skipped or failed"`
+/// (written by the automatic cascade-skip pass), so a user skip with `None` can
+/// never be mistaken for one and re-queued. This coupling is load-bearing — if a
+/// future change threads any error_message through this call, the step becomes
+/// silently restorable and a user's explicit skip could be resurrected.
 pub fn resolve_review_skip(
     pool: Arc<DbPool>,
     app: AppHandle,
@@ -1172,6 +1183,29 @@ fn trigger_qa_rework(
             assignment_id = %qa_step.assignment_id,
             "qa rework: changes_requested but no done predecessor to reset — leaving step done"
         );
+        // Every sibling control decision in this file narrates itself into the
+        // team channel (see `maybe_post_channel_message`, the fix-loop-cap
+        // branch's "failed" status + message); this is the one the caller
+        // falls through to a plain "done" on, so without a post here the user
+        // sees a clean-looking step with a bounced PR silently swallowed.
+        if let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) {
+            let _ = crate::db::repos::resources::team_channel::create(
+                pool,
+                crate::db::models::CreateChannelMessageInput {
+                    team_id: assignment.team_id,
+                    author_kind: "system".into(),
+                    author_id: None,
+                    body: format!(
+                        "QA requested changes on \"{}\", but there's no completed predecessor step left to rework — leaving it marked done. This needs manual follow-up.",
+                        qa_step.title
+                    ),
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: Some(qa_step.assignment_id.clone()),
+                    consumer: Some("display".into()),
+                },
+            );
+        }
         return Err(AppError::Internal("no predecessor to rework".into()));
     }
 
