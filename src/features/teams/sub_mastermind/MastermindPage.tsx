@@ -12,6 +12,7 @@ import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
+import { projectWallSummary } from '@/api/devTools/milestones';
 import { spawnSession } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
@@ -21,6 +22,7 @@ import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
+import { buildCoverRoadmap } from '@/features/teams/sub_factory/passport/CoverRoadmap';
 import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
@@ -62,7 +64,7 @@ import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, DimNode, FleetNode } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode, IslandShip } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
 import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
 
@@ -205,6 +207,34 @@ function MastermindInner() {
     void loadScans();
     void loadGoals();
   }, [loadMeta, loadScans, loadGoals]);
+
+  // Ship-milestone chips: ONE batched wall-summary IPC for every real project,
+  // reduced to the banner's next/shipped/late shape via the same roadmap
+  // builder the passport wall uses (the two surfaces must agree on "next").
+  const [shipByProject, setShipByProject] = useState<Map<string, IslandShip>>(new Map());
+  useEffect(() => {
+    const ids = passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-'));
+    if (ids.length === 0) return;
+    let live = true;
+    projectWallSummary(ids)
+      .then((rows) => {
+        if (!live) return;
+        const m = new Map<string, IslandShip>();
+        for (const r of rows) {
+          const vm = buildCoverRoadmap(r.milestones);
+          if (vm.steps.length === 0) continue;
+          m.set(r.project_id, {
+            next: vm.next?.name ?? null,
+            shipped: vm.shipped,
+            total: vm.steps.length,
+            late: vm.forecast?.late ?? false,
+          });
+        }
+        setShipByProject(m);
+      })
+      .catch(silentCatch('mastermind projectWallSummary'));
+    return () => { live = false; };
+  }, [passports]);
 
   // Vault credentials — needed to resolve each project's bound monitoring
   // connector (Sentry) for live error counts. One fetch; refreshed with reload.
@@ -441,7 +471,7 @@ function MastermindInner() {
   const islandCache = useRef(new Map<string, {
     baseKey: string; passport: unknown; raw: unknown;
     oX: number | undefined; oY: number | undefined;
-    fleetKey: string; personasKey: string; busy: boolean;
+    fleetKey: string; personasKey: string; busy: boolean; shipKey: string;
     out: (typeof scene.islands)[number];
   }>());
   const positioned = useMemo(() => {
@@ -454,13 +484,15 @@ function MastermindInner() {
       const passport = passportBySlug.get(i.slug);
       const raw = rawByProject.get(i.slug);
       const busy = busySlugs.has(i.slug);
+      const ship = shipByProject.get(i.slug) ?? null;
       const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
       const personasKey = personasRunning.join('|');
+      const shipKey = ship ? `${ship.next}|${ship.shipped}/${ship.total}|${ship.late}` : '';
       const baseKey = JSON.stringify(i);
       const c = cache.get(i.slug);
       if (c && c.baseKey === baseKey && c.passport === passport && c.raw === raw
         && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
-        && c.personasKey === personasKey && c.busy === busy) {
+        && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey) {
         next.set(i.slug, c);
         return c.out;
       }
@@ -482,14 +514,14 @@ function MastermindInner() {
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
       const attention = computeAttention(fleet);
-      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
-      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, out };
+      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention, ship };
+      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, out };
       next.set(i.slug, entry);
       return out;
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject]);
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject]);
 
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {

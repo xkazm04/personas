@@ -53,6 +53,18 @@ export interface DimNode {
   busy?: boolean;
 }
 
+/** Ship-milestone summary for the banner chip — reduced from the project's
+ *  dev_milestones rows (batched wall-summary IPC + buildCoverRoadmap; the page
+ *  attaches it). Absent/undefined = no milestones planned (or a demo island). */
+export interface IslandShip {
+  /** Next milestone name (active before planned); null once everything shipped. */
+  next: string | null;
+  shipped: number;
+  total: number;
+  /** Velocity forecast says the next milestone lands past its target date. */
+  late: boolean;
+}
+
 export interface Island {
   slug: string;
   name: string;
@@ -87,6 +99,8 @@ export interface Island {
    *  attainment, live errors, 30d LLM spend, tests/auto/prod from the
    *  passport), deterministic mocks for demo islands. */
   stats: IslandStat[];
+  /** Ship-milestone chip data (page attaches it; undefined = no milestones). */
+  ship?: IslandShip | null;
 }
 
 export interface IslandEdge {
