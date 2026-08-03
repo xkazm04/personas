@@ -18,11 +18,16 @@
 //! swallows. A missing harness doc must never fail a scan that already
 //! committed contexts to the DB.
 
+use std::sync::Arc;
+
 use serde_json::{json, Value};
+use tauri::State;
 
 use crate::db::repos::dev_tools as repo;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth_sync;
+use crate::AppState;
 
 // Canonical taxonomy embedded in the exported map so a project-side CLI can
 // validate/extend categories without reaching back into Personas.
@@ -70,6 +75,74 @@ pub fn write_context_map_artifacts(
     ensure_claude_md_section(root, &groups, &contexts)?;
 
     Ok(contexts.len())
+}
+
+/// Caps for the backlog digest — the file is prompt-injected context for scan
+/// skills, so it stays small and bounded.
+const DIGEST_TITLES_PER_STATUS: usize = 150;
+const DIGEST_TITLE_CHARS: usize = 120;
+
+/// Write `.personas/backlog-digest.json` into the managed repo — the backlog
+/// awareness scan skills load before proposing anything (scan-sweep step 2).
+/// Rejected titles matter most: the DB dedup key blocks exact re-emission, but
+/// only this digest lets a scan avoid *rephrasing* a durable human "no".
+/// Best-effort like the context-map export: callers log and swallow failures.
+/// Returns the total number of titles written.
+pub fn write_backlog_digest(
+    pool: &DbPool,
+    project_id: &str,
+    root_path: &str,
+) -> Result<usize, AppError> {
+    let titles = |status: &str| -> Result<Vec<String>, AppError> {
+        Ok(repo::list_ideas(
+            pool,
+            Some(project_id),
+            Some(status),
+            None,
+            Some(DIGEST_TITLES_PER_STATUS as i64),
+            None,
+        )?
+        .into_iter()
+        .map(|i| i.title.chars().take(DIGEST_TITLE_CHARS).collect())
+        .collect())
+    };
+    let pending = titles("pending")?;
+    let accepted = titles("accepted")?;
+    let rejected = titles("rejected")?;
+    let total = pending.len() + accepted.len() + rejected.len();
+
+    let digest = json!({
+        "version": 1,
+        "generated_at": chrono::Utc::now().to_rfc3339(),
+        "backlog_cap": crate::engine::dispatch::IDEA_BACKLOG_CAP,
+        "pending_count": pending.len(),
+        "titles": {
+            "pending": pending,
+            "accepted": accepted,
+            "rejected": rejected,
+        },
+    });
+
+    let dir = std::path::Path::new(root_path).join(".personas");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| AppError::Internal(format!("create .personas dir: {e}")))?;
+    let pretty = serde_json::to_string_pretty(&digest)
+        .map_err(|e| AppError::Internal(format!("serialize backlog-digest.json: {e}")))?;
+    std::fs::write(dir.join("backlog-digest.json"), pretty)
+        .map_err(|e| AppError::Internal(format!("write backlog-digest.json: {e}")))?;
+    Ok(total)
+}
+
+/// On-demand digest refresh — the frontend calls this right before dispatching
+/// a sweep so the skill reads the current backlog, not the last scan's.
+#[tauri::command]
+pub fn dev_tools_export_backlog_digest(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    write_backlog_digest(&state.db, &project_id, &project.root_path)
 }
 
 /// Assemble the full `context-map.json` value.

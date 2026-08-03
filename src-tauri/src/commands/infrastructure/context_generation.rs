@@ -1885,6 +1885,14 @@ fn write_harness_docs(
             );
         }
     }
+    // Backlog awareness for repo-side scan skills — same best-effort contract.
+    if let Err(e) = super::context_map_export::write_backlog_digest(pool, project_id, root_path) {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!("[Warn] Failed to write backlog digest: {e}."),
+        );
+    }
 }
 
 #[cfg(test)]

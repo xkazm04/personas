@@ -775,6 +775,8 @@ export const FINDING_ORIGINS = [
   // Not a measurement sensor — the Workspace Knowledge Center materializing an
   // adopted practice as one backlog item per member repo (plan 1C).
   "workspace_practice",
+  // scan-sweep skill findings + deep-scan escalations (memory-outbox door).
+  "scan_sweep",
 ] as const;
 export type FindingOrigin = (typeof FINDING_ORIGINS)[number];
 
@@ -1085,6 +1087,13 @@ export interface MemoryIngestResult {
   outboxFound: boolean;
   /** `map`-kind nodes seen — the structure-drift signal (triggers a delta context scan). */
   mapNodes: number;
+  /** Scan findings routed into dev_ideas (origin `scan_sweep`). */
+  findingsCreated: number;
+  findingsDeduped: number;
+  /** Dropped by backpressure (backlog at cap) or per-ingest line caps. */
+  findingsSkipped: number;
+  /** NEW deep-scan escalations — auto-dispatch `/scan-<lens> <context>` per entry (bounded). */
+  escalations: { lens: string; context: string | null }[];
 }
 
 export interface MemoryVaultProjectResult {
@@ -1121,6 +1130,12 @@ export interface MemoryCoverage {
  *  Missing outbox = zero-work success (`outboxFound: false`). */
 export const ingestMemoryOutbox = (projectId: string) =>
   invoke<MemoryIngestResult>("dev_tools_memory_ingest", { projectId });
+
+/** Refresh `<root>/.personas/backlog-digest.json` (known idea titles per
+ *  status) so a scan skill dispatched next reads the CURRENT backlog. Returns
+ *  the number of titles written. */
+export const exportBacklogDigest = (projectId: string) =>
+  invoke<number>("dev_tools_export_backlog_digest", { projectId });
 
 /** Fresh-first active ledger nodes; `contextId` narrows to one context. */
 export const listMemoryNodes = (projectId: string, contextId?: string | null, limit?: number) =>
