@@ -1332,9 +1332,7 @@
     "skills_use_hint": "Запустить этот навык сейчас как фоновую сессию Fleet в {name}",
     "skills_use_all_line": "один запуск на контекст ({n})",
     "skills_use_batch": "×{n} контекстов",
-    "skills_use_cmd_copied": "Команда скопирована — выполните её во внешнем терминале",
     "skills_use_context_label": "Контекст",
-    "skills_use_copy_cta": "Скопировать для терминала",
     "skills_use_ctx_all": "Все",
     "skills_use_ctx_recommended": "Рекомендуется",
     "skills_use_ctx_specific": "Этот",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — внедрено {adopted}/{total} · контекстов: {contexts}",
     "skills_registry_running_cell": "{skill} выполняется в {project}",
     "skills_registry_summary": "{name} · проектов: {projects} · навыков: {skills}",
-    "skills_registry_use_cell": "Запустить {skill} в {project}"
+    "skills_registry_use_cell": "Запустить {skill} в {project}",
+    "skills_use_cmd_fallback": "Не удалось открыть терминал. Команда скопирована в буфер обмена.",
+    "skills_use_cmd_launched": "В {name} открыт терминал, навык выполняется",
+    "skills_use_cmd_launched_batch": "В {name} открыто {n} терминалов, по одному на контекст",
+    "skills_use_launch_cta": "Открыть терминал",
+    "skills_use_target_cmd": "Терминал"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

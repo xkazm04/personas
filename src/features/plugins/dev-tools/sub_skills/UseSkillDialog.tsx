@@ -1,6 +1,7 @@
 // "Use skill" dialog — the extended dispatch confirmation for a project skill.
 // Beyond the description + args of the plain confirm, it lets the operator
-// choose WHERE the run goes (Fleet background session vs an external CMD) and,
+// choose WHERE the run goes (Fleet background session vs a new OS terminal
+// window the app opens in the project folder, already running the CLI) and,
 // for context-tracked skills, WHICH context(s) to run against (a specific one,
 // the recommended [least-covered] one, or all of them). The chosen context
 // folds into the run as a trailing arg — a "preset terminal input".
@@ -118,7 +119,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
             <SegmentedTabs
               tabs={[
                 { id: 'fleet', label: <Tooltip content={d.skills_use_target_fleet_hint} placement="top"><span>Fleet</span></Tooltip> },
-                { id: 'cmd', label: <Tooltip content={d.skills_use_target_cmd_hint} placement="top"><span>CMD</span></Tooltip> },
+                { id: 'cmd', label: <Tooltip content={d.skills_use_target_cmd_hint} placement="top"><span>{d.skills_use_target_cmd}</span></Tooltip> },
               ]}
               activeTab={target}
               onTabChange={(v) => setTarget(v as DispatchTarget)}

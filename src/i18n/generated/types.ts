@@ -13447,8 +13447,11 @@ export type Translations = {
       skills_use_pick_context: string;
       skills_use_all_line: string;
       skills_use_batch: string;
-      skills_use_copy_cta: string;
-      skills_use_cmd_copied: string;
+      skills_use_target_cmd: string;
+      skills_use_launch_cta: string;
+      skills_use_cmd_launched: string;
+      skills_use_cmd_launched_batch: string;
+      skills_use_cmd_fallback: string;
       cross_project_title: string;
       cross_project_desc: string;
       regenerate: string;

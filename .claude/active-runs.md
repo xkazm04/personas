@@ -2,6 +2,11 @@
 
 ## Active
 
+### skills-manager-cmd-dispatch — Skills Manager column alignment + real terminal dispatch + /perfect skill audit — session opus-5[1m]
+- Started: 2026-08-03. Status: started. Three asks: (1) fixed-width Action column so Coverage/Usage/Last stop shifting per row, (2) audit `/perfect` in CandiDate (kiro/kp), Adamant (kiro/systedo-case), ascent for coverage-contract drift vs the personas canon, (3) replace the CMD "copy the command" path with a real `fleet_spawn_external_console` launch (cwd = repo root, CLI seeded with `/skill …`), clipboard demoted to fallback.
+- Paths: `src/features/plugins/dev-tools/sub_skills/{SkillsManagerBoard,SkillsManagerPage,UseSkillDialog,UseSkillShared}.tsx`, `src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts`, `src/i18n/locales/*.json` (plugins.dev_tools skills_use_*), `.claude/skills/perfect/SKILL.md`. CROSS-REPO: `kiro/kp`, `kiro/systedo-case`, `kiro/ascent` `.claude/skills/perfect/` + `.personas/`.
+- Note: `prototype-skills-registry` above declares the same sub_skills paths but shipped 2026-07-30; treated as predecessor, not conflict.
+
 
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.

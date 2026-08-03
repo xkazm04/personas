@@ -13642,9 +13642,7 @@
       "skills_use_hint": "이 스킬을 지금 {name}에서 백그라운드 Fleet 세션으로 실행합니다",
       "skills_use_all_line": "컨텍스트당 한 번의 디스패치 ({n})",
       "skills_use_batch": "×{n} 컨텍스트",
-      "skills_use_cmd_copied": "명령이 복사됨 — 외부 터미널에서 실행하세요",
       "skills_use_context_label": "컨텍스트",
-      "skills_use_copy_cta": "터미널용으로 복사",
       "skills_use_ctx_all": "전체",
       "skills_use_ctx_recommended": "추천",
       "skills_use_ctx_specific": "이것",
@@ -13733,7 +13731,12 @@
       "skills_registry_project_hint": "{name} — {adopted}/{total} 채택됨 · {contexts}개 컨텍스트",
       "skills_registry_running_cell": "{skill}이(가) {project}에서 실행 중입니다",
       "skills_registry_summary": "{name} · 프로젝트 {projects}개 · 스킬 {skills}개",
-      "skills_registry_use_cell": "{project}에서 {skill} 실행"
+      "skills_registry_use_cell": "{project}에서 {skill} 실행",
+      "skills_use_cmd_fallback": "터미널을 열 수 없었습니다. 대신 명령을 클립보드에 복사했습니다.",
+      "skills_use_cmd_launched": "{name}에서 터미널을 열었으며 스킬이 실행 중입니다",
+      "skills_use_cmd_launched_batch": "{name}에서 터미널 {n}개를 열었습니다(컨텍스트당 1개)",
+      "skills_use_launch_cta": "터미널 열기",
+      "skills_use_target_cmd": "터미널"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

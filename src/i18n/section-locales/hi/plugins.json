@@ -1332,9 +1332,7 @@
     "skills_use_hint": "इस स्किल को अभी {name} में बैकग्राउंड Fleet सत्र के रूप में चलाएँ",
     "skills_use_all_line": "प्रति कॉन्टेक्स्ट एक डिस्पैच ({n})",
     "skills_use_batch": "×{n} कॉन्टेक्स्ट",
-    "skills_use_cmd_copied": "कमांड कॉपी हो गया — इसे अपने बाहरी टर्मिनल में चलाएँ",
     "skills_use_context_label": "कॉन्टेक्स्ट",
-    "skills_use_copy_cta": "टर्मिनल के लिए कॉपी करें",
     "skills_use_ctx_all": "सभी",
     "skills_use_ctx_recommended": "अनुशंसित",
     "skills_use_ctx_specific": "यही",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} अपनाए गए · {contexts} संदर्भ",
     "skills_registry_running_cell": "{skill} {project} में चल रहा है",
     "skills_registry_summary": "{name} · {projects} प्रोजेक्ट्स · {skills} स्किल्स",
-    "skills_registry_use_cell": "{project} में {skill} चलाएँ"
+    "skills_registry_use_cell": "{project} में {skill} चलाएँ",
+    "skills_use_cmd_fallback": "टर्मिनल खोला नहीं जा सका। इसके बजाय कमांड क्लिपबोर्ड पर है।",
+    "skills_use_cmd_launched": "{name} में टर्मिनल खुला, स्किल चल रही है",
+    "skills_use_cmd_launched_batch": "{name} में {n} टर्मिनल खुले, प्रत्येक कॉन्टेक्स्ट के लिए एक",
+    "skills_use_launch_cta": "टर्मिनल खोलें",
+    "skills_use_target_cmd": "टर्मिनल"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

@@ -13642,9 +13642,7 @@
       "skills_use_hint": "এই স্কিলটি এখনই {name}-এ একটি ব্যাকগ্রাউন্ড Fleet সেশন হিসেবে চালান",
       "skills_use_all_line": "প্রতি কনটেক্সটে একটি ডিসপ্যাচ ({n})",
       "skills_use_batch": "×{n} কনটেক্সট",
-      "skills_use_cmd_copied": "কমান্ড কপি হয়েছে — আপনার বাহ্যিক টার্মিনালে চালান",
       "skills_use_context_label": "কনটেক্সট",
-      "skills_use_copy_cta": "টার্মিনালের জন্য কপি করুন",
       "skills_use_ctx_all": "সব",
       "skills_use_ctx_recommended": "প্রস্তাবিত",
       "skills_use_ctx_specific": "এটি",
@@ -13733,7 +13731,12 @@
       "skills_registry_project_hint": "{name} — {adopted}/{total} অ্যাডপ্টেড · {contexts}টি কনটেক্সট",
       "skills_registry_running_cell": "{project}-এ {skill} চলছে",
       "skills_registry_summary": "{name} · {projects}টি প্রজেক্ট · {skills}টি স্কিল",
-      "skills_registry_use_cell": "{project}-এ {skill} চালান"
+      "skills_registry_use_cell": "{project}-এ {skill} চালান",
+      "skills_use_cmd_fallback": "টার্মিনাল খোলা যায়নি। বদলে কমান্ডটি ক্লিপবোর্ডে কপি করা হয়েছে।",
+      "skills_use_cmd_launched": "{name}-এ টার্মিনাল খোলা হয়েছে, স্কিলটি চলছে",
+      "skills_use_cmd_launched_batch": "{name}-এ {n}টি টার্মিনাল খোলা হয়েছে, প্রতি কন্টেক্সটে একটি",
+      "skills_use_launch_cta": "টার্মিনাল খুলুন",
+      "skills_use_target_cmd": "টার্মিনাল"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

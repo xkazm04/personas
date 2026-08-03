@@ -1332,9 +1332,7 @@
     "skills_use_hint": "立即在 {name} 中将此技能作为后台 Fleet 会话运行",
     "skills_use_all_line": "每个上下文一次派发（{n}）",
     "skills_use_batch": "×{n} 个上下文",
-    "skills_use_cmd_copied": "命令已复制 — 在你的外部终端中运行",
     "skills_use_context_label": "上下文",
-    "skills_use_copy_cta": "复制到终端",
     "skills_use_ctx_all": "全部",
     "skills_use_ctx_recommended": "推荐",
     "skills_use_ctx_specific": "此项",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — 已采用 {adopted}/{total} · {contexts} 个上下文",
     "skills_registry_running_cell": "{skill} 正在 {project} 中运行",
     "skills_registry_summary": "{name} · {projects} 个项目 · {skills} 个技能",
-    "skills_registry_use_cell": "在 {project} 中运行 {skill}"
+    "skills_registry_use_cell": "在 {project} 中运行 {skill}",
+    "skills_use_cmd_fallback": "无法打开终端，命令已改为复制到剪贴板。",
+    "skills_use_cmd_launched": "已在 {name} 中打开终端，技能正在运行",
+    "skills_use_cmd_launched_batch": "已在 {name} 中打开 {n} 个终端，每个上下文一个",
+    "skills_use_launch_cta": "打开终端",
+    "skills_use_target_cmd": "终端"
   },
   "doc_signing": {
     "sign_heading": "签署文档",

@@ -1332,9 +1332,7 @@
     "skills_use_hint": "このスキルを今すぐ {name} でバックグラウンドの Fleet セッションとして実行します",
     "skills_use_all_line": "コンテキストごとに1回のディスパッチ ({n})",
     "skills_use_batch": "×{n} コンテキスト",
-    "skills_use_cmd_copied": "コマンドをコピーしました — 外部ターミナルで実行してください",
     "skills_use_context_label": "コンテキスト",
-    "skills_use_copy_cta": "ターミナル用にコピー",
     "skills_use_ctx_all": "すべて",
     "skills_use_ctx_recommended": "推奨",
     "skills_use_ctx_specific": "これ",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} 件採用済み · {contexts} コンテキスト",
     "skills_registry_running_cell": "{project}で{skill}を実行中",
     "skills_registry_summary": "{name} · {projects} プロジェクト · {skills} スキル",
-    "skills_registry_use_cell": "{project}で{skill}を実行"
+    "skills_registry_use_cell": "{project}で{skill}を実行",
+    "skills_use_cmd_fallback": "ターミナルを開けませんでした。代わりにコマンドをクリップボードにコピーしました。",
+    "skills_use_cmd_launched": "{name} でターミナルを開き、スキルを実行中です",
+    "skills_use_cmd_launched_batch": "{name} で {n} 個のターミナルを開きました（コンテキストごとに1つ）",
+    "skills_use_launch_cta": "ターミナルを開く",
+    "skills_use_target_cmd": "ターミナル"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",

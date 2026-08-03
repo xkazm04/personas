@@ -1332,9 +1332,7 @@
     "skills_use_hint": "شغّل هذه المهارة الآن كجلسة Fleet في الخلفية ضمن {name}",
     "skills_use_all_line": "إرسال واحد لكل سياق ({n})",
     "skills_use_batch": "×{n} سياقات",
-    "skills_use_cmd_copied": "تم نسخ الأمر — شغّله في الطرفية الخارجية",
     "skills_use_context_label": "السياق",
-    "skills_use_copy_cta": "نسخ للطرفية",
     "skills_use_ctx_all": "الكل",
     "skills_use_ctx_recommended": "موصى به",
     "skills_use_ctx_specific": "هذا",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} مُعتمَد · {contexts} سياقات",
     "skills_registry_running_cell": "{skill} قيد التشغيل في {project}",
     "skills_registry_summary": "{name} · {projects} مشاريع · {skills} مهارات",
-    "skills_registry_use_cell": "تشغيل {skill} في {project}"
+    "skills_registry_use_cell": "تشغيل {skill} في {project}",
+    "skills_use_cmd_fallback": "تعذّر فتح طرفية. تم نسخ الأمر إلى الحافظة بدلاً من ذلك.",
+    "skills_use_cmd_launched": "تم فتح طرفية في {name}، والمهارة قيد التشغيل",
+    "skills_use_cmd_launched_batch": "تم فتح {n} طرفيات في {name}، واحدة لكل سياق",
+    "skills_use_launch_cta": "فتح طرفية",
+    "skills_use_target_cmd": "طرفية"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",

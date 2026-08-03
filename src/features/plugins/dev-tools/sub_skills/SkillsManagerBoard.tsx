@@ -22,10 +22,17 @@ type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; s
 type SortKey = 'name' | 'coverage' | 'usage' | 'lastused';
 type SortDir = 'asc' | 'desc';
 
-/** Shared column grid — header and every row align to it. */
-const COLS = 'grid grid-cols-[minmax(0,1fr)_3.5rem_5.25rem_auto] items-center gap-3';
+/** Action column width. FIXED, not `auto`: every row is its own grid, so an
+ *  `auto` last column sizes to that row's own content — a project row with two
+ *  icons then shifted Coverage/Usage/Last left by an icon's width relative to a
+ *  one-icon row, and the header (a wider text label) matched neither. One fixed
+ *  track wide enough for the two-icon case AND the "Action" label keeps every
+ *  column flush across rows, panels and the header. Both templates spell the
+ *  track out literally: Tailwind only extracts classes it can see as source
+ *  text, so the width must not be interpolated in. */
+const COLS = 'grid grid-cols-[minmax(0,1fr)_3.5rem_5.25rem_4rem] items-center gap-3';
 /** Project-panel template — adds a dedicated Coverage column after the name. */
-const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_6.5rem_3.5rem_5.25rem_auto] items-center gap-3';
+const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_6.5rem_3.5rem_5.25rem_4rem] items-center gap-3';
 
 function useSort(): { key: SortKey; dir: SortDir; toggle: (k: SortKey) => void } {
   const [key, setKey] = useState<SortKey>('name');
@@ -114,7 +121,7 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
       {coverage && <SortHead k="coverage" label={d.skills_col_coverage} />}
       <SortHead k="usage" label={d.skills_sort_usage} />
       <SortHead k="lastused" label={d.skills_col_lastused} />
-      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{d.skills_col_action}</span>
+      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
     </div>
   );
 }

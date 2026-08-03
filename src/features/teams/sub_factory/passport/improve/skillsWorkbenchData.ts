@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { listSkills, type SkillEntry } from '@/api/devTools/devTools';
-import { spawnSession } from '@/api/fleet/fleet';
+import { spawnExternalConsole, spawnSession } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -62,6 +62,11 @@ export interface SkillsWorkbench {
   runAdopt: (name: string) => Promise<void>;
   runShare: (name: string) => Promise<void>;
   runDispatch: (name: string, args: string) => Promise<void>;
+  /** Same skill run, but in a NEW terminal window the operator owns — the app
+   *  cd's to the repo root, launches the Claude CLI there and seeds it with the
+   *  `/skill …` command. Rejects when no console can be opened (non-Windows,
+   *  CLI missing); the caller falls back to copying the command. */
+  runConsole: (name: string, args: string) => Promise<void>;
 }
 
 /** One resolved lane: the list to show + the single operation to run. Keeps the
@@ -214,6 +219,21 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     }
   }, [raw, addToast]);
 
+  // The console lane. No toast here and no `dispatching` guard: the app keeps
+  // no handle on the window it opens (see fleet/external.rs), so there is
+  // nothing to reconcile and nothing to debounce against — and the caller
+  // needs the rejection to decide whether to fall back to the clipboard.
+  // `skipPermissions` matches the Fleet lane: a skill run walks the whole repo,
+  // and a prompt-per-file console is unusable.
+  const runConsole = useCallback(async (name: string, args: string) => {
+    if (!raw?.project.root_path) throw new Error('project has no root path on disk');
+    await spawnExternalConsole({
+      cwd: raw.project.root_path,
+      prompt: skillCommand(name, args),
+      skipPermissions: true,
+    });
+  }, [raw]);
+
   if (!engine || !raw) return null;
 
   return {
@@ -227,5 +247,6 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     runAdopt,
     runShare,
     runDispatch,
+    runConsole,
   };
 }

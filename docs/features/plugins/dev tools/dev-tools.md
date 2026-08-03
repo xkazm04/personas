@@ -140,8 +140,15 @@ The library panel has a **Custom | Preset** switcher: Custom lists user-authored
 Experience / Business / Mastermind, each row carrying its lens icon + color). Adopting a
 preset installs from the app bundle (`skill_files_install_system`); adopting a custom skill
 dispatches the Dev-runner customization task. Project rows keep memory bindings, context
-coverage bars, and the **Use** dialog (Fleet | CMD dispatch target + Recommended / This one /
+coverage bars, and the **Use** dialog (Fleet | Terminal dispatch target + Recommended / This one /
 All context selection folded into the run as a trailing arg).
+
+Row columns (Skill · Coverage · Usage · Last used · Action) sit on a **fixed** column
+template including the Action track. Each row is its own CSS grid, so an `auto` last
+column sized to that row's own content — a project row with two action icons pushed
+Coverage/Usage/Last used a full icon-width left of a one-icon row, and the header
+matched neither. The track is spelled out literally (`4rem`) in both templates because
+Tailwind only extracts classes it can read as source text.
 
 **Analytics** — the scanner concepts generalized to skills:
 
@@ -646,9 +653,18 @@ rows only (left: category; right: context-tracked vs standard, no category),
 installed state is an icon, and the 30-day window is stated once per panel
 footer. Row actions are **icon-only** (Adopt ↓ / Share ↑ / Use ▶) and each opens
 a **confirmation modal** showing the skill's description before firing; the
-**Use** action (project side) dispatches the skill as a background Fleet session
-(`/skill args`, optional args field + live preview) via the SkillsWorkbench
-dispatch lane.
+**Use** action (project side) dispatches the skill (`/skill args`, optional args
+field + live preview) via the SkillsWorkbench, over one of two transports:
+
+- **Fleet** — a background session inside the app (`runDispatch` → `spawnSession`).
+- **Terminal** — `runConsole` → `fleet_spawn_external_console`, which opens a NEW
+  OS console window already `cd`'d to the repo root with the Claude CLI running and
+  the `/skill …` command seeded, carrying `--dangerously-skip-permissions` to match
+  the Fleet lane (a skill run walks the whole repo). The window is the operator's:
+  the app keeps no handle, cannot steer or kill it, and it outlives the app. "All
+  contexts" opens one window per context, mirroring Fleet's one-run-per-context.
+  Windows-only today; when no console can be spawned the exact command falls back
+  to the clipboard, which is what this lane used to do unconditionally.
 Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
 LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
 skill instrumentation needed), a **memory-binding icon** (internal ledger /

@@ -1332,9 +1332,7 @@
     "skills_use_hint": "Spustit tuto dovednost nyní jako sezení Fleet na pozadí v {name}",
     "skills_use_all_line": "jedno spuštění na kontext ({n})",
     "skills_use_batch": "×{n} kontextů",
-    "skills_use_cmd_copied": "Příkaz zkopírován — spusťte jej v externím terminálu",
     "skills_use_context_label": "Kontext",
-    "skills_use_copy_cta": "Kopírovat pro terminál",
     "skills_use_ctx_all": "Vše",
     "skills_use_ctx_recommended": "Doporučeno",
     "skills_use_ctx_specific": "Tento",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} osvojeno · {contexts} kontextů",
     "skills_registry_running_cell": "{skill} běží v {project}",
     "skills_registry_summary": "{name} · {projects} projektů · {skills} dovedností",
-    "skills_registry_use_cell": "Spustit {skill} v {project}"
+    "skills_registry_use_cell": "Spustit {skill} v {project}",
+    "skills_use_cmd_fallback": "Terminál se nepodařilo otevřít. Příkaz je místo toho ve schránce.",
+    "skills_use_cmd_launched": "V projektu {name} se otevřel terminál, dovednost běží",
+    "skills_use_cmd_launched_batch": "V projektu {name} se otevřelo {n} terminálů, jeden na každý kontext",
+    "skills_use_launch_cta": "Otevřít terminál",
+    "skills_use_target_cmd": "Terminál"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

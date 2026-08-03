@@ -1332,9 +1332,7 @@
     "skills_use_hint": "Chạy kỹ năng này ngay bây giờ dưới dạng phiên Fleet chạy nền trong {name}",
     "skills_use_all_line": "một lần gửi cho mỗi ngữ cảnh ({n})",
     "skills_use_batch": "×{n} ngữ cảnh",
-    "skills_use_cmd_copied": "Đã sao chép lệnh — chạy nó trong terminal bên ngoài của bạn",
     "skills_use_context_label": "Ngữ cảnh",
-    "skills_use_copy_cta": "Sao chép cho terminal",
     "skills_use_ctx_all": "Tất cả",
     "skills_use_ctx_recommended": "Được đề xuất",
     "skills_use_ctx_specific": "Cái này",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} đã áp dụng · {contexts} ngữ cảnh",
     "skills_registry_running_cell": "{skill} đang chạy trong {project}",
     "skills_registry_summary": "{name} · {projects} dự án · {skills} kỹ năng",
-    "skills_registry_use_cell": "Chạy {skill} trong {project}"
+    "skills_registry_use_cell": "Chạy {skill} trong {project}",
+    "skills_use_cmd_fallback": "Không mở được terminal. Lệnh đã được sao vào clipboard.",
+    "skills_use_cmd_launched": "Đã mở terminal trong {name}, kỹ năng đang chạy",
+    "skills_use_cmd_launched_batch": "Đã mở {n} terminal trong {name}, mỗi ngữ cảnh một cái",
+    "skills_use_launch_cta": "Mở terminal",
+    "skills_use_target_cmd": "Terminal"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",

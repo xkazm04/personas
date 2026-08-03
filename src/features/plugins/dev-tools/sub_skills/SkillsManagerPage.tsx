@@ -17,7 +17,7 @@ import type { SkillCoverageRow, SkillEntry, SkillUsageRow } from '@/api/devTools
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -162,16 +162,36 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
 
   // Route the operator's Use choice. Context term is folded into the args as a
   // trailing positional (a "preset terminal input"); "all" runs one dispatch
-  // per context. Fleet → wb.runDispatch; CMD → copy the command(s) so the
-  // operator runs them in their own external terminal (outside Personas).
+  // per context. Fleet → wb.runDispatch (in-app session). Terminal →
+  // wb.runConsole, which opens a real console window already cd'd to the repo
+  // root with the Claude CLI running and the `/skill …` command seeded — so the
+  // operator no longer copies, opens a terminal, navigates and pastes by hand.
+  //
+  // Clipboard stays as the FALLBACK, not the happy path: console spawning is
+  // Windows-only today and needs the Claude CLI on PATH (see
+  // src-tauri/src/commands/fleet/external.rs). When it can't spawn, the
+  // operator still gets the exact command, which is what they had before.
   const runUse = (name: string, choice: UseSkillChoice) => {
     const argSets = choice.contexts.length
       ? choice.contexts.map((c) => [choice.args, c].filter(Boolean).join(' '))
       : [choice.args];
     if (choice.target === 'cmd') {
-      const cmd = argSets.map((a) => `claude "${skillCommand(name, a)}"`).join(' && ');
-      copy(cmd);
-      addToast(t.plugins.dev_tools.skills_use_cmd_copied, 'success');
+      void (async () => {
+        try {
+          // One window per context, mirroring the Fleet lane's one-run-per-context.
+          for (const a of argSets) await data.wb?.runConsole(name, a);
+          addToast(
+            argSets.length > 1
+              ? tx(t.plugins.dev_tools.skills_use_cmd_launched_batch, { n: argSets.length, name })
+              : tx(t.plugins.dev_tools.skills_use_cmd_launched, { name: projectName }),
+            'success',
+          );
+        } catch (e) {
+          silentCatch('SkillsManagerPage:runConsole')(e);
+          copy(argSets.map((a) => `claude "${skillCommand(name, a)}"`).join(' && '));
+          addToast(t.plugins.dev_tools.skills_use_cmd_fallback, 'warning');
+        }
+      })();
       return;
     }
     for (const a of argSets) void data.wb?.runDispatch(name, a);

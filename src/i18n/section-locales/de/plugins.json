@@ -1332,9 +1332,7 @@
     "skills_use_hint": "Diese Fähigkeit jetzt als Fleet-Sitzung im Hintergrund in {name} ausführen",
     "skills_use_all_line": "ein Durchlauf pro Kontext ({n})",
     "skills_use_batch": "×{n} Kontexte",
-    "skills_use_cmd_copied": "Befehl kopiert — im externen Terminal ausführen",
     "skills_use_context_label": "Kontext",
-    "skills_use_copy_cta": "Für Terminal kopieren",
     "skills_use_ctx_all": "Alle",
     "skills_use_ctx_recommended": "Empfohlen",
     "skills_use_ctx_specific": "Dieser",
@@ -1423,7 +1421,12 @@
     "skills_registry_project_hint": "{name} — {adopted}/{total} übernommen · {contexts} Kontexte",
     "skills_registry_running_cell": "{skill} läuft in {project}",
     "skills_registry_summary": "{name} · {projects} Projekte · {skills} Skills",
-    "skills_registry_use_cell": "{skill} in {project} ausführen"
+    "skills_registry_use_cell": "{skill} in {project} ausführen",
+    "skills_use_cmd_fallback": "Es konnte kein Terminal geöffnet werden. Der Befehl liegt stattdessen in der Zwischenablage.",
+    "skills_use_cmd_launched": "Terminal in {name} geöffnet, der Skill läuft",
+    "skills_use_cmd_launched_batch": "{n} Terminals in {name} geöffnet, eines pro Kontext",
+    "skills_use_launch_cta": "Terminal öffnen",
+    "skills_use_target_cmd": "Terminal"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",

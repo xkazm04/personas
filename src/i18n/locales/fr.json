@@ -13642,9 +13642,7 @@
       "skills_use_hint": "Exécuter cette compétence maintenant en tant que session Fleet en arrière-plan dans {name}",
       "skills_use_all_line": "un lancement par contexte ({n})",
       "skills_use_batch": "×{n} contextes",
-      "skills_use_cmd_copied": "Commande copiée — exécutez-la dans votre terminal externe",
       "skills_use_context_label": "Contexte",
-      "skills_use_copy_cta": "Copier pour le terminal",
       "skills_use_ctx_all": "Tous",
       "skills_use_ctx_recommended": "Recommandé",
       "skills_use_ctx_specific": "Celui-ci",
@@ -13733,7 +13731,12 @@
       "skills_registry_project_hint": "{name} — {adopted}/{total} adoptés · {contexts} contextes",
       "skills_registry_running_cell": "{skill} est en cours d’exécution dans {project}",
       "skills_registry_summary": "{name} · {projects} projets · {skills} compétences",
-      "skills_registry_use_cell": "Exécuter {skill} dans {project}"
+      "skills_registry_use_cell": "Exécuter {skill} dans {project}",
+      "skills_use_cmd_fallback": "Impossible d'ouvrir un terminal. La commande est dans le presse-papiers.",
+      "skills_use_cmd_launched": "Terminal ouvert dans {name}, la compétence s'exécute",
+      "skills_use_cmd_launched_batch": "{n} terminaux ouverts dans {name}, un par contexte",
+      "skills_use_launch_cta": "Ouvrir un terminal",
+      "skills_use_target_cmd": "Terminal"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",
