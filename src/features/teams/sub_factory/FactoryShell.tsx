@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 
 import { projectKpis, applyEdit, collectKpiAttention, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
@@ -51,6 +52,21 @@ export function FactoryShell({
   const [l2Tab, setL2Tab] = useState<L2Tab>('overview');
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
+
+  // Cross-feature deep link (Mastermind Ship chip / island menu → Factory):
+  // consume the pending focus once, land on the requested project + L2 tab,
+  // then clear it so a later manual visit starts at the wall as usual.
+  const pendingFactoryFocus = useSystemStore((s) => s.pendingFactoryFocus);
+  const setPendingFactoryFocus = useSystemStore((s) => s.setPendingFactoryFocus);
+  useEffect(() => {
+    if (!pendingFactoryFocus) return;
+    setProjectId(pendingFactoryFocus.projectId);
+    setL2Tab(pendingFactoryFocus.l2Tab);
+    setGroupId(null);
+    setContextFilter(null);
+    setKpiId(null);
+    setPendingFactoryFocus(null);
+  }, [pendingFactoryFocus, setPendingFactoryFocus]);
 
   // Persist the open KPI's calibration + assessment edits to dev_kpis (debounced).
   useEffect(() => {

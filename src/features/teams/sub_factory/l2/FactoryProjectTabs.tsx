@@ -20,6 +20,8 @@ import { FactoryOverviewTab } from './FactoryOverviewTab';
 import { FactoryObservabilityTab } from './FactoryObservabilityTab';
 import { FactoryShipTab } from './ship/FactoryShipTab';
 
+// Mirrored as `FactoryL2Tab` in stores/slices/system/uiSlice.ts (the store
+// keeps a local union to avoid importing feature code) — keep the two in sync.
 export type L2Tab = 'overview' | 'ship' | 'matrix' | 'observability';
 
 export function FactoryProjectTabs({ projectId, matrix, onKpisChanged, tab, onTabChange }: {
