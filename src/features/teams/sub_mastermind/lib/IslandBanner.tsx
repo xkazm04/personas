@@ -13,7 +13,7 @@ const trunc = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…
  *  raised at near/close so the name stays commanding during inspection. */
 const TITLE_FS: Record<ZoomBand, number> = { far: 20, mid: 18, near: 17, close: 16 };
 
-export function IslandBanner({ island, z, band, topWorldY, handleProps, onContextMenu }: {
+export function IslandBanner({ island, z, band, topWorldY, handleProps, onContextMenu, onShipOpen }: {
   island: Island;
   z: number;
   band: ZoomBand;
@@ -24,8 +24,11 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
   handleProps?: { handlers: Record<string, (e: React.PointerEvent<SVGGElement>) => void>; cursor: string };
   /** Right-click on the header — opens the dimension context menu. */
   onContextMenu?: (e: React.MouseEvent<SVGGElement>) => void;
+  /** Ship chip clicked — deep-link into the project's Factory Ship tab.
+   *  Absent → the chip renders inert (data still reads). */
+  onShipOpen?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ink = STATE_INK[island.state];
   const name = trunc(island.name, 26);
   const hasFlag = island.blockers > 0;
@@ -75,6 +78,42 @@ export function IslandBanner({ island, z, band, topWorldY, handleProps, onContex
           {island.autoScore}·{island.prodScore}
         </text>
       </g>
+
+      {/* Ship milestone chip — dev status at first sight: the next milestone
+          and shipped count from dev_milestones, floated above the name pill.
+          Late forecast tints warning; everything-shipped tints success. */}
+      {island.ship && (() => {
+        const ship = island.ship;
+        const chFs = 10.5;
+        const chH = chFs + 9;
+        const nextLabel = ship.next ? trunc(ship.next, 24) : t.ship.cover_all_shipped;
+        const count = tx(t.ship.cover_shipped_count, { shipped: ship.shipped, total: ship.total });
+        const chW = Math.min(340, nextLabel.length * chFs * 0.56 + count.length * chFs * 0.52 + 44);
+        const chInk = ship.late ? 'var(--status-warning)' : ship.next ? 'var(--primary)' : 'var(--status-success)';
+        return (
+          <g
+            transform={`translate(0 ${-h - chH / 2 - 8})`}
+            {...(onShipOpen
+              ? { onClick: (e: React.MouseEvent<SVGGElement>) => { e.stopPropagation(); onShipOpen(); }, onPointerDown: (e: React.PointerEvent<SVGGElement>) => e.stopPropagation(), style: { cursor: 'pointer' } as React.CSSProperties }
+              : { pointerEvents: 'none' as const })}
+            data-testid={`mm-ship-chip-${island.slug}`}
+          >
+            <title>{`${t.ship.cover_next}: ${nextLabel} · ${count}`}</title>
+            <rect
+              x={-chW / 2} y={-chH / 2} width={chW} height={chH} rx={chH / 2}
+              fill={mix('var(--background)', 82)}
+              stroke={mix(chInk, 50)} strokeWidth={1}
+            />
+            <circle cx={-chW / 2 + chH / 2} r={2.8} fill={chInk} />
+            <text x={-chW / 2 + chH / 2 + 8} y={chFs * 0.35} fontSize={chFs} fontWeight={600} fill="var(--foreground)">
+              {nextLabel}
+            </text>
+            <text x={chW / 2 - 9} y={chFs * 0.35} textAnchor="end" fontSize={9.5} fill={mix('var(--foreground)', 60)} style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {count}
+            </text>
+          </g>
+        );
+      })()}
     </g>
   );
 }

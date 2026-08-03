@@ -19167,6 +19167,12 @@ export type Translations = {
   };
   mastermind: {
     open_terminal: string;
+    open_in_factory: string;
+    open_ship_plan: string;
+    open_skills: string;
+    door_factory: string;
+    door_ship: string;
+    door_skills: string;
     dispatch_fleet: string;
     terminal_disabled_demo: string;
     terminal_disabled_no_path: string;
@@ -19192,9 +19198,6 @@ export type Translations = {
     family_monitoring: string;
     family_kpi: string;
     family_fleet: string;
-    variant_mosaic: string;
-    variant_inverse: string;
-    variant_switcher: string;
     loading_layout: string;
     loading_projects: string;
     family_passports: string;

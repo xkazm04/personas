@@ -10,7 +10,7 @@
 // dimensions render as plain rows with no affordance (the canvas convention:
 // a cell that can't act shows no pointer and no hover ring).
 import type { MouseEvent } from 'react';
-import { Rocket, SquareTerminal } from 'lucide-react';
+import { Factory, Flag, Rocket, SquareTerminal, Wrench } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -40,7 +40,7 @@ export function MenuGlyph({ node }: { node: DimNode }) {
   return <Icon className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} style={{ color: ink }} aria-hidden />;
 }
 
-export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDispatchFleet, onDimOpen, onHoverDim, onClose }: {
+export function IslandMenu({ island, x, y, terminalEnabled, navEnabled, onOpenTerminal, onDispatchFleet, onOpenFactory, onOpenShip, onOpenSkills, onDimOpen, onHoverDim, onClose }: {
   island: Island;
   /** Screen-space anchor (cursor position, clamped by the caller). */
   x: number;
@@ -48,10 +48,17 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
   /** Whether a Fleet session can be spawned for this project (real repo root).
    *  Gates both the terminal and the dispatch rows. */
   terminalEnabled: boolean;
+  /** Whether cross-module navigation applies (real project with a passport) —
+   *  gates the Factory / Ship / Skills rows; demo islands have nowhere to go. */
+  navEnabled: boolean;
   /** "Open terminal" action — spawn a Fleet session in the project root. */
   onOpenTerminal: () => void;
   /** "Dispatch Fleet…" action — open the instruction modal for a background run. */
   onDispatchFleet: () => void;
+  /** Deep links into the other dev-tools layers, focused on this project. */
+  onOpenFactory: () => void;
+  onOpenShip: () => void;
+  onOpenSkills: () => void;
   /** Actionable dimension row clicked — routed to the page's cell handler, so
    *  the row opens exactly what clicking the cell on the canvas would. */
   onDimOpen: (node: DimNode, e: MouseEvent) => void;
@@ -107,6 +114,28 @@ export function IslandMenu({ island, x, y, terminalEnabled, onOpenTerminal, onDi
           <Rocket className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} aria-hidden />
           <span>{t.mastermind.dispatch_fleet}</span>
         </button>
+      </div>
+      {/* navigation rows — Mastermind as the primary channel: hand this project
+          off to the deeper layers (Factory L2, its Ship plan, Skills manager) */}
+      <div className="py-1 border-b border-primary/10">
+        {([
+          { key: 'factory', Icon: Factory, label: t.mastermind.open_in_factory, onGo: onOpenFactory },
+          { key: 'ship', Icon: Flag, label: t.mastermind.open_ship_plan, onGo: onOpenShip },
+          { key: 'skills', Icon: Wrench, label: t.mastermind.open_skills, onGo: onOpenSkills },
+        ] as const).map(({ key, Icon, label, onGo }) => (
+          <button
+            key={key}
+            type="button"
+            disabled={!navEnabled}
+            title={navEnabled ? undefined : t.mastermind.terminal_disabled_demo}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-foreground/70 enabled:hover:bg-secondary/40 enabled:hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={navEnabled ? () => { onGo(); onHoverDim(null); onClose(); } : undefined}
+            data-testid={`mm-menu-open-${key}`}
+          >
+            <Icon className="w-[15px] h-[15px] shrink-0" strokeWidth={1.75} aria-hidden />
+            <span>{label}</span>
+          </button>
+        ))}
       </div>
       <div className="max-h-[300px] overflow-y-auto py-1">
         {groups.map((group) => (

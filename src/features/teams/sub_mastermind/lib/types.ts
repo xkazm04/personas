@@ -53,6 +53,18 @@ export interface DimNode {
   busy?: boolean;
 }
 
+/** Ship-milestone summary for the banner chip — reduced from the project's
+ *  dev_milestones rows (batched wall-summary IPC + buildCoverRoadmap; the page
+ *  attaches it). Absent/undefined = no milestones planned (or a demo island). */
+export interface IslandShip {
+  /** Next milestone name (active before planned); null once everything shipped. */
+  next: string | null;
+  shipped: number;
+  total: number;
+  /** Velocity forecast says the next milestone lands past its target date. */
+  late: boolean;
+}
+
 export interface Island {
   slug: string;
   name: string;
@@ -87,6 +99,8 @@ export interface Island {
    *  attainment, live errors, 30d LLM spend, tests/auto/prod from the
    *  passport), deterministic mocks for demo islands. */
   stats: IslandStat[];
+  /** Ship-milestone chip data (page attaches it; undefined = no milestones). */
+  ship?: IslandShip | null;
 }
 
 export interface IslandEdge {
@@ -132,7 +146,7 @@ export interface CanvasNote {
   font: NoteFont;
 }
 
-/** Common contract every canvas variant implements (prototype scaffold). */
+/** Contract between the page and the canvas (single Hex Mosaic view). */
 export interface VariantProps {
   scene: Scene;
   mode: CanvasMode;
@@ -143,6 +157,12 @@ export interface VariantProps {
   onFleetOpen: (sessionId: string) => void;
   /** Project header clicked (not dragged) — open the project sidebar. */
   onProjectOpen: (slug: string) => void;
+  /** Banner Ship chip clicked — deep-link into the project's Factory Ship tab. */
+  onShipOpen: (slug: string) => void;
+  /** Island menu "Open in Factory" — deep-link into the project's Factory L2. */
+  onFactoryOpen: (slug: string) => void;
+  /** Island menu "Open Skills manager" — activate the project + open Skills. */
+  onSkillsOpen: (slug: string) => void;
   /** Actionable dimension cell clicked — open its Improve popover at the
    *  cursor (same popovers the Passport wall uses). */
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;
@@ -171,7 +191,7 @@ export interface VariantProps {
 // that explicit so each band can be tuned independently from user feedback.
 export type ZoomBand = 'far' | 'mid' | 'near' | 'close';
 
-export const ZOOM_THRESHOLDS = { mid: 0.34, near: 0.72, close: 1.05 } as const;
+export const ZOOM_THRESHOLDS = { mid: 0.2, near: 0.5, close: 0.8 } as const;
 
 export function zoomBand(z: number): ZoomBand {
   if (z < ZOOM_THRESHOLDS.mid) return 'far';

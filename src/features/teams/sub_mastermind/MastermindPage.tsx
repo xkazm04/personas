@@ -1,26 +1,24 @@
-// Mastermind — experimental multi-project development canvas (Projects →
-// Development). Live data: readiness passports (usePassportData) as islands,
-// cross-project relations as edges, Factory KPI rollups as the KPI dimension,
-// and open Fleet CLI sessions as clickable dock nodes per island.
-//
-// ── PROTOTYPE SCAFFOLD (/prototype round 4, throwaway) ──────────────────────
-// Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired); the
-// switcher stays until the module is complete and a final view mode is chosen.
+// Mastermind — multi-project development canvas (Projects → Development).
+// Live data: readiness passports (usePassportData) as islands, cross-project
+// relations as edges, Factory KPI rollups as the KPI dimension, and open Fleet
+// CLI sessions as clickable dock nodes per island. The Hex Mosaic is the final
+// view mode (Grid Board and Inverse Grid prototypes retired).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { runScan } from '@/api/devTools/devTools';
+import { projectWallSummary } from '@/api/devTools/milestones';
 import { spawnSession } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
 import { FactoryDataProvider, useFactoryData } from '@/features/teams/sub_factory/factoryData';
+import { buildCoverRoadmap } from '@/features/teams/sub_factory/passport/CoverRoadmap';
 import { collectKpiAttention, groupKpis, kpiStatus } from '@/features/teams/sub_factory/factoryModel';
 import { ImproveProvider } from '@/features/teams/sub_factory/passport/improve/ImproveContext';
 import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/DeployPopover';
@@ -56,19 +54,15 @@ import { GoalListPopover } from './lib/GoalListPopover';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { openFactory, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
 import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
-import type { CanvasMode, DimNode, FleetNode } from './lib/types';
+import type { CanvasMode, DimNode, FleetNode, IslandShip } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
-import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
-
-type VariantId = 'mosaic' | 'inverse';
-
-const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
@@ -127,7 +121,6 @@ function MastermindInner() {
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
-  const [variant, setVariant] = useState<VariantId>('mosaic');
   const [mode, setMode] = useState<CanvasMode>('edit');
   // Durable layout hydrates once per session from the DB (async IPC). Until it
   // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
@@ -205,6 +198,34 @@ function MastermindInner() {
     void loadScans();
     void loadGoals();
   }, [loadMeta, loadScans, loadGoals]);
+
+  // Ship-milestone chips: ONE batched wall-summary IPC for every real project,
+  // reduced to the banner's next/shipped/late shape via the same roadmap
+  // builder the passport wall uses (the two surfaces must agree on "next").
+  const [shipByProject, setShipByProject] = useState<Map<string, IslandShip>>(new Map());
+  useEffect(() => {
+    const ids = passports.map((p) => p.identity.slug).filter((s) => !s.startsWith('demo-'));
+    if (ids.length === 0) return;
+    let live = true;
+    projectWallSummary(ids)
+      .then((rows) => {
+        if (!live) return;
+        const m = new Map<string, IslandShip>();
+        for (const r of rows) {
+          const vm = buildCoverRoadmap(r.milestones);
+          if (vm.steps.length === 0) continue;
+          m.set(r.project_id, {
+            next: vm.next?.name ?? null,
+            shipped: vm.shipped,
+            total: vm.steps.length,
+            late: vm.forecast?.late ?? false,
+          });
+        }
+        setShipByProject(m);
+      })
+      .catch(silentCatch('mastermind projectWallSummary'));
+    return () => { live = false; };
+  }, [passports]);
 
   // Vault credentials — needed to resolve each project's bound monitoring
   // connector (Sentry) for live error counts. One fetch; refreshed with reload.
@@ -441,7 +462,7 @@ function MastermindInner() {
   const islandCache = useRef(new Map<string, {
     baseKey: string; passport: unknown; raw: unknown;
     oX: number | undefined; oY: number | undefined;
-    fleetKey: string; personasKey: string; busy: boolean;
+    fleetKey: string; personasKey: string; busy: boolean; shipKey: string;
     out: (typeof scene.islands)[number];
   }>());
   const positioned = useMemo(() => {
@@ -454,13 +475,15 @@ function MastermindInner() {
       const passport = passportBySlug.get(i.slug);
       const raw = rawByProject.get(i.slug);
       const busy = busySlugs.has(i.slug);
+      const ship = shipByProject.get(i.slug) ?? null;
       const fleetKey = fleet.map((f) => `${f.id}:${f.state}`).join('|');
       const personasKey = personasRunning.join('|');
+      const shipKey = ship ? `${ship.next}|${ship.shipped}/${ship.total}|${ship.late}` : '';
       const baseKey = JSON.stringify(i);
       const c = cache.get(i.slug);
       if (c && c.baseKey === baseKey && c.passport === passport && c.raw === raw
         && c.oX === o?.x && c.oY === o?.y && c.fleetKey === fleetKey
-        && c.personasKey === personasKey && c.busy === busy) {
+        && c.personasKey === personasKey && c.busy === busy && c.shipKey === shipKey) {
         next.set(i.slug, c);
         return c.out;
       }
@@ -482,14 +505,14 @@ function MastermindInner() {
       // demo fleet for demo islands) — a needs-you marker the banner shows at
       // every zoom band.
       const attention = computeAttention(fleet);
-      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention };
-      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, out };
+      const out = { ...i, ...(o ? { x: o.x, y: o.y } : {}), fleet, personasRunning, nodes, attention, ship };
+      const entry = { baseKey, passport, raw, oX: o?.x, oY: o?.y, fleetKey, personasKey, busy, shipKey, out };
       next.set(i.slug, entry);
       return out;
     });
     islandCache.current = next;
     return { ...scene, islands };
-  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject]);
+  }, [scene, overrides, fleetByProject, personasByProject, passportBySlug, rawByProject, busySlugs, kpiListByProject, shipByProject]);
 
   const onIslandCommit = (slug: string, x: number, y: number) =>
     setOverrides((prev) => {
@@ -517,7 +540,6 @@ function MastermindInner() {
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
   const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
-  const Canvas = VARIANTS[variant];
 
   // Canvas cell → the same Improve popovers the Passport wall opens, anchored
   // at the click point (they flip/clamp against the window themselves). The
@@ -669,12 +691,15 @@ function MastermindInner() {
           first passport load has resolved — an empty world during the fetch
           reads as "you have nothing", not "loading". */}
       {layoutReady && !(loading && passports.length === 0) ? (
-        <Canvas
+        <MastermindHexMosaic
           scene={canvasScene}
           mode={mode}
           onIslandCommit={onIslandCommit}
           onFleetOpen={setPreviewId}
           onProjectOpen={setOpenSlug}
+          onShipOpen={(slug) => openFactory(slug, 'ship')}
+          onFactoryOpen={(slug) => openFactory(slug, 'overview')}
+          onSkillsOpen={openSkillsManager}
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
           onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
@@ -687,19 +712,6 @@ function MastermindInner() {
         <LoadingSpinner label={layoutReady ? t.mastermind.loading_projects : t.mastermind.loading_layout} />
       )}
 
-      {/* variant switcher — stays until the module is complete and a final view mode is chosen */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-        <SegmentedTabs
-          tabs={[{ id: 'mosaic', label: t.mastermind.variant_mosaic }, { id: 'inverse', label: t.mastermind.variant_inverse }]}
-          activeTab={variant}
-          onTabChange={setVariant}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel={t.mastermind.variant_switcher}
-        />
-      </div>
-
       <ProjectListSidebar
         islands={positioned.islands}
         hidden={hiddenSlugs}
@@ -707,6 +719,7 @@ function MastermindInner() {
         onOpenToggle={() => setProjectsOpen((v) => !v)}
         onToggleVisible={toggleVisible}
         onNewProject={() => setNewProjectOpen(true)}
+        onProjectOpen={setOpenSlug}
       />
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
@@ -717,7 +730,15 @@ function MastermindInner() {
 
       <AnimatePresence>
         {openIsland && (
-          <ProjectSidebar key="project-sidebar" passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+          <ProjectSidebar
+            key="project-sidebar"
+            passport={openPassport}
+            name={openIsland.name}
+            onClose={() => setOpenSlug(null)}
+            onOpenFactory={() => openFactory(openIsland.slug, 'overview')}
+            onOpenShip={() => openFactory(openIsland.slug, 'ship')}
+            onOpenSkills={() => openSkillsManager(openIsland.slug)}
+          />
         )}
       </AnimatePresence>
 
