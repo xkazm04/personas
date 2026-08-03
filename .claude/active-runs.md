@@ -72,6 +72,16 @@
 
 ## Recently completed
 
+### mastermind-bridge — Mastermind as primary dev channel (zoom recalib, Near hex redesign, Ship banner chip, Inverse removal, Factory deep-link) — session fable-5
+- Started: 2026-08-03. Status: DONE, merged to master as `4880aae44` (6 commits). Work in `.claude/worktrees/mastermind-bridge` (branch worktree-mastermind-bridge).
+- Paths: `src/features/teams/sub_mastermind/**`, `src/features/teams/sub_factory/FactoryShell.tsx` (consume new pendingFactoryFocus only), `src/stores/slices/system/uiSlice.ts`, `src/i18n/locales/*.json` (mastermind section), `docs/features/plugins/dev tools/mastermind.md`, `context-map.json` (inverse-variant entry), `CHANGELOG.md`.
+- NOTE: perfect-factory-ship declares sub_factory/** (2026-07-29, stale >2h) — my sub_factory touch is one small consumer effect in FactoryShell; no overlap with its Ship-layer scope.
+
+### scan-sweep-tier2 — scan consolidation: context sweeps, findings door, auto deep scans — session fable-5
+- Started: 2026-08-03. Status: DONE, merged to master as `4880aae44` (6 commits). Plan: ~/.claude/plans/nifty-juggling-babbage.md. Work happens in `.claude/worktrees/scan-sweep` (branch worktree-scan-sweep).
+- Paths: `scripts/skills/{scan-agents-to-skills.mjs,gen-scan-match-rules.mjs}`, `.claude/skills/scan-sweep/**`, `src-tauri/src/commands/infrastructure/{scan_agents.toml,memory_ledger.rs,context_map_export.rs,skill_files.rs,context_generation.rs}`, `src-tauri/core/src/models/dev_tools.rs`, `src/lib/bindings/**` (regen), `src/features/plugins/dev-tools/{constants/**,sub_skills/**}`, `src/stores/slices/system/fleetSlice.ts`, `src/api/devTools/devTools.ts`, `src/i18n/locales/*.json`, `docs/features/plugins/dev tools/dev-tools.md`, `CHANGELOG.md`.
+- NOTE: prototype-skills-registry (shipped 2026-07-30) previously owned sub_skills/** + the scan-* generator; building on top of its landed state.
+
 ### skills-manager-cmd-dispatch — Skills Manager column alignment + real terminal dispatch + /perfect skill audit — session opus-5[1m]
 - Started: 2026-08-03. **COMPLETE** — personas `3531f03ab`; CandiDate `9fe610cf`+`afcf4c71` (landed on its checked-out branch `wave/w0-integrity-proof`, not master); Adamant `0debf9e`; ascent `6510e6a2`. Three asks: (1) fixed-width Action column so Coverage/Usage/Last stop shifting per row, (2) audit `/perfect` in CandiDate (kiro/kp), Adamant (kiro/systedo-case), ascent for coverage-contract drift vs the personas canon, (3) replace the CMD "copy the command" path with a real `fleet_spawn_external_console` launch (cwd = repo root, CLI seeded with `/skill …`), clipboard demoted to fallback.
 - Paths: `src/features/plugins/dev-tools/sub_skills/{SkillsManagerBoard,SkillsManagerPage,UseSkillDialog,UseSkillShared}.tsx`, `src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts`, `src/i18n/locales/*.json` (plugins.dev_tools skills_use_*), `.claude/skills/perfect/SKILL.md`. CROSS-REPO: `kiro/kp`, `kiro/systedo-case`, `kiro/ascent` `.claude/skills/perfect/` + `.personas/`.
