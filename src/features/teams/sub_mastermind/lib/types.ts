@@ -171,7 +171,7 @@ export interface VariantProps {
 // that explicit so each band can be tuned independently from user feedback.
 export type ZoomBand = 'far' | 'mid' | 'near' | 'close';
 
-export const ZOOM_THRESHOLDS = { mid: 0.34, near: 0.72, close: 1.05 } as const;
+export const ZOOM_THRESHOLDS = { mid: 0.2, near: 0.5, close: 0.8 } as const;
 
 export function zoomBand(z: number): ZoomBand {
   if (z < ZOOM_THRESHOLDS.mid) return 'far';
