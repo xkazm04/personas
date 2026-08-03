@@ -11,7 +11,6 @@ import { ingestMemoryOutbox, listProjects, projectMemoryToVault, scanCodebase } 
 import { silentCatch } from '@/lib/silentCatch';
 import { deepScanCommand, isAutoDeepScanEnabled, MAX_AUTO_DEEP_SCANS_PER_INGEST } from '@/lib/scanSweep';
 import { SCAN_MATCH_RULES } from '@/features/plugins/dev-tools/constants/scanMatchRules.gen';
-import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
@@ -46,6 +45,9 @@ async function ingestOutboxForCwd(cwd: string | null | undefined): Promise<void>
     const picks = r.escalations
       .filter((e) => validLenses.has(e.lens))
       .slice(0, MAX_AUTO_DEEP_SCANS_PER_INGEST);
+    // Dynamic import: a static one closes the cycle fleetSlice → useTranslation
+    // → routeSections → systemStore → fleetSlice and breaks store creation.
+    const { getActiveTranslations } = await import('@/i18n/useTranslation');
     const t = getActiveTranslations();
     for (const esc of picks) {
       const cmd = deepScanCommand(esc.lens, esc.context);
