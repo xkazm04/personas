@@ -661,10 +661,22 @@ field + live preview) via the SkillsWorkbench, over one of two transports:
   OS console window already `cd`'d to the repo root with the Claude CLI running and
   the `/skill …` command seeded, carrying `--dangerously-skip-permissions` to match
   the Fleet lane (a skill run walks the whole repo). The window is the operator's:
-  the app keeps no handle, cannot steer or kill it, and it outlives the app. "All
-  contexts" opens one window per context, mirroring Fleet's one-run-per-context.
+  the app keeps no handle, cannot steer or kill it, and it outlives the app.
   Windows-only today; when no console can be spawned the exact command falls back
   to the clipboard, which is what this lane used to do unconditionally.
+
+**"All contexts" batches differently per transport, because a batch costs
+differently per transport.** Fleet spawns one background session per context — it
+manages them, so N is free. A console is an OS window the operator closes by hand,
+so this lane opens **exactly one** regardless of N (on this repo, "all" is 767).
+`consolePrompt()` builds the seed: a single run stays a bare `/skill args` so the
+CLI recognizes the slash command, while a batch becomes prose listing every command
+and asking for them one at a time — text appended to a slash command would be
+swallowed as arguments, so the batch seed deliberately does not lead with one. Past
+~4 KB of command list the batch travels as `.personas/skill-batch.md` (written via
+`fleet_write_dispatch_brief`) and the prompt points at it, staying clear of the
+~32 KB Windows command-line ceiling and letting the operator re-run the batch after
+closing the window. Pinned in `skillsWorkbenchData.test.ts`.
 Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
 LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
 skill instrumentation needed), a **memory-binding icon** (internal ledger /

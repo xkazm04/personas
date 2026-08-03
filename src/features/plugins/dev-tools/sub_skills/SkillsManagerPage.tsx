@@ -178,11 +178,13 @@ function SkillsManagerInner({ activeId }: { activeId: string | null }) {
     if (choice.target === 'cmd') {
       void (async () => {
         try {
-          // One window per context, mirroring the Fleet lane's one-run-per-context.
-          for (const a of argSets) await data.wb?.runConsole(name, a);
+          // ONE window for the whole batch — a console is a window the operator
+          // closes by hand, so Fleet's one-session-per-context does not carry
+          // over here. The session runs them sequentially; see consolePrompt.
+          await data.wb?.runConsole(name, argSets);
           addToast(
             argSets.length > 1
-              ? tx(t.plugins.dev_tools.skills_use_cmd_launched_batch, { n: argSets.length, name })
+              ? tx(t.plugins.dev_tools.skills_use_cmd_launched_batch, { n: argSets.length, name: projectName })
               : tx(t.plugins.dev_tools.skills_use_cmd_launched, { name: projectName }),
             'success',
           );

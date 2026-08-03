@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "تشغيل {skill} في {project}",
       "skills_use_cmd_fallback": "تعذّر فتح طرفية. تم نسخ الأمر إلى الحافظة بدلاً من ذلك.",
       "skills_use_cmd_launched": "تم فتح طرفية في {name}، والمهارة قيد التشغيل",
-      "skills_use_cmd_launched_batch": "تم فتح {n} طرفيات في {name}، واحدة لكل سياق",
+      "skills_use_cmd_launched_batch": "تم فتح طرفية واحدة في {name}، وتشغيل المهارة عبر {n} سياقات",
       "skills_use_launch_cta": "فتح طرفية",
-      "skills_use_target_cmd": "طرفية"
+      "skills_use_target_cmd": "طرفية",
+      "skills_use_batch_one_session": "{n} سياقات، جلسة واحدة"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

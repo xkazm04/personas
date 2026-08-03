@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "{project}에서 {skill} 실행",
       "skills_use_cmd_fallback": "터미널을 열 수 없었습니다. 대신 명령을 클립보드에 복사했습니다.",
       "skills_use_cmd_launched": "{name}에서 터미널을 열었으며 스킬이 실행 중입니다",
-      "skills_use_cmd_launched_batch": "{name}에서 터미널 {n}개를 열었습니다(컨텍스트당 1개)",
+      "skills_use_cmd_launched_batch": "{name}에서 터미널 1개를 열어 컨텍스트 {n}개에 걸쳐 스킬을 실행 중입니다",
       "skills_use_launch_cta": "터미널 열기",
-      "skills_use_target_cmd": "터미널"
+      "skills_use_target_cmd": "터미널",
+      "skills_use_batch_one_session": "컨텍스트 {n}개, 세션 1개"
     },
     "doc_signing": {
       "sign_heading": "문서 서명하기",

@@ -1424,9 +1424,10 @@
     "skills_registry_use_cell": "Запустить {skill} в {project}",
     "skills_use_cmd_fallback": "Не удалось открыть терминал. Команда скопирована в буфер обмена.",
     "skills_use_cmd_launched": "В {name} открыт терминал, навык выполняется",
-    "skills_use_cmd_launched_batch": "В {name} открыто {n} терминалов, по одному на контекст",
+    "skills_use_cmd_launched_batch": "В {name} открыт один терминал, навык выполняется по {n} контекстам",
     "skills_use_launch_cta": "Открыть терминал",
-    "skills_use_target_cmd": "Терминал"
+    "skills_use_target_cmd": "Терминал",
+    "skills_use_batch_one_session": "{n} контекстов, один сеанс"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",

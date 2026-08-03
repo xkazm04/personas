@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "{project}-এ {skill} চালান",
       "skills_use_cmd_fallback": "টার্মিনাল খোলা যায়নি। বদলে কমান্ডটি ক্লিপবোর্ডে কপি করা হয়েছে।",
       "skills_use_cmd_launched": "{name}-এ টার্মিনাল খোলা হয়েছে, স্কিলটি চলছে",
-      "skills_use_cmd_launched_batch": "{name}-এ {n}টি টার্মিনাল খোলা হয়েছে, প্রতি কন্টেক্সটে একটি",
+      "skills_use_cmd_launched_batch": "{name}-এ একটি টার্মিনাল খোলা হয়েছে, {n}টি কন্টেক্সট জুড়ে স্কিলটি চলছে",
       "skills_use_launch_cta": "টার্মিনাল খুলুন",
-      "skills_use_target_cmd": "টার্মিনাল"
+      "skills_use_target_cmd": "টার্মিনাল",
+      "skills_use_batch_one_session": "{n}টি কন্টেক্সট, একটি সেশন"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",

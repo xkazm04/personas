@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { listSkills, type SkillEntry } from '@/api/devTools/devTools';
-import { spawnExternalConsole, spawnSession } from '@/api/fleet/fleet';
+import { spawnExternalConsole, spawnSession, writeDispatchBrief } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -64,9 +64,10 @@ export interface SkillsWorkbench {
   runDispatch: (name: string, args: string) => Promise<void>;
   /** Same skill run, but in a NEW terminal window the operator owns — the app
    *  cd's to the repo root, launches the Claude CLI there and seeds it with the
-   *  `/skill …` command. Rejects when no console can be opened (non-Windows,
-   *  CLI missing); the caller falls back to copying the command. */
-  runConsole: (name: string, args: string) => Promise<void>;
+   *  `/skill …` command. Takes the WHOLE batch and opens exactly ONE window:
+   *  see `consolePrompt`. Rejects when no console can be opened (non-Windows,
+   *  CLI missing); the caller falls back to copying the commands. */
+  runConsole: (name: string, argSets: string[]) => Promise<void>;
 }
 
 /** One resolved lane: the list to show + the single operation to run. Keeps the
@@ -112,6 +113,47 @@ export function resolveLane(wb: SkillsWorkbench, mode: WorkbenchMode, direction:
 export function skillCommand(name: string, args: string): string {
   const a = args.trim();
   return a ? `/${name} ${a}` : `/${name}`;
+}
+
+/** Where a batch list lands when it is too long to inline. Under `.personas/`
+ *  because that dir is already the app↔skill handshake and is gitignored in
+ *  every managed repo. */
+export const BATCH_BRIEF_PATH = '.personas/skill-batch.md';
+
+/** Above this many characters of command list, the batch travels as a file
+ *  instead of inline. Well under the ~32 KB Windows command-line ceiling, with
+ *  room for the surrounding instructions. */
+const INLINE_BATCH_LIMIT = 4000;
+
+/**
+ * The seed prompt for a console run, plus the brief file to write first (null
+ * when everything fits inline).
+ *
+ * A single arg set stays a bare `/skill args` so the CLI recognizes it as a
+ * slash command and the session opens mid-invocation. A batch CANNOT: appending
+ * more text to a slash command would be swallowed as arguments, so the batch
+ * seed is prose that lists the commands and asks for them one at a time. The
+ * session invokes the skill itself per line — one window, N sequential runs.
+ */
+export function consolePrompt(name: string, argSets: string[]): { prompt: string; brief: string | null } {
+  const sets = argSets.length ? argSets : [''];
+  if (sets.length === 1) return { prompt: skillCommand(name, sets[0] ?? ''), brief: null };
+
+  const commands = sets.map((a) => skillCommand(name, a));
+  const list = commands.map((c) => `- ${c}`).join('\n');
+  const head =
+    `Run the /${name} skill ${sets.length} times in this session, once per line below. `
+    + 'Work through them IN ORDER and finish each run completely before starting the next '
+    + '— do not run them in parallel, and do not batch them into a single invocation. '
+    + 'If one run fails, say so and carry on with the rest.';
+
+  if (list.length <= INLINE_BATCH_LIMIT) {
+    return { prompt: `${head}\n\n${list}`, brief: null };
+  }
+  return {
+    prompt: `${head}\n\nThe ${sets.length} commands are listed in ${BATCH_BRIEF_PATH} — read that file first.`,
+    brief: `# /${name} batch\n\n${sets.length} runs, in order:\n\n${list}\n`,
+  };
 }
 
 /** Best-effort usage hint from a skill's description (skills document invocation
@@ -225,13 +267,23 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
   // needs the rejection to decide whether to fall back to the clipboard.
   // `skipPermissions` matches the Fleet lane: a skill run walks the whole repo,
   // and a prompt-per-file console is unusable.
-  const runConsole = useCallback(async (name: string, args: string) => {
-    if (!raw?.project.root_path) throw new Error('project has no root path on disk');
-    await spawnExternalConsole({
-      cwd: raw.project.root_path,
-      prompt: skillCommand(name, args),
-      skipPermissions: true,
-    });
+  //
+  // ONE window for the whole batch, never one per arg set. Fleet can afford
+  // one background session per context because it manages them; a console is
+  // an OS window the operator has to close by hand, so "all contexts" on this
+  // repo would have meant 767 of them.
+  const runConsole = useCallback(async (name: string, argSets: string[]) => {
+    const root = raw?.project.root_path;
+    if (!root) throw new Error('project has no root path on disk');
+
+    const { prompt, brief } = consolePrompt(name, argSets);
+    // A batch list can outgrow the ~32 KB Windows command line, so past the
+    // inline threshold the list travels as a file the prompt points at — the
+    // same trick the passport's populate dispatch uses. It also lets the
+    // operator re-run the batch after closing the window.
+    if (brief) await writeDispatchBrief(root, BATCH_BRIEF_PATH, brief);
+
+    await spawnExternalConsole({ cwd: root, prompt, skipPermissions: true });
   }, [raw]);
 
   if (!engine || !raw) return null;

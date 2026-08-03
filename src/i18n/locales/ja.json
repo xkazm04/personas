@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "{project}で{skill}を実行",
       "skills_use_cmd_fallback": "ターミナルを開けませんでした。代わりにコマンドをクリップボードにコピーしました。",
       "skills_use_cmd_launched": "{name} でターミナルを開き、スキルを実行中です",
-      "skills_use_cmd_launched_batch": "{name} で {n} 個のターミナルを開きました（コンテキストごとに1つ）",
+      "skills_use_cmd_launched_batch": "{name} でターミナルを1つ開き、{n} 個のコンテキストでスキルを実行中です",
       "skills_use_launch_cta": "ターミナルを開く",
-      "skills_use_target_cmd": "ターミナル"
+      "skills_use_target_cmd": "ターミナル",
+      "skills_use_batch_one_session": "{n} 個のコンテキストを1セッションで"
     },
     "doc_signing": {
       "sign_heading": "ドキュメントに署名",

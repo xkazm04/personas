@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "Jalankan {skill} di {project}",
       "skills_use_cmd_fallback": "Tidak bisa membuka terminal. Perintahnya ada di papan klip.",
       "skills_use_cmd_launched": "Terminal dibuka di {name}, skill sedang berjalan",
-      "skills_use_cmd_launched_batch": "Membuka {n} terminal di {name}, satu per konteks",
+      "skills_use_cmd_launched_batch": "Satu terminal dibuka di {name}, skill berjalan di {n} konteks",
       "skills_use_launch_cta": "Buka terminal",
-      "skills_use_target_cmd": "Terminal"
+      "skills_use_target_cmd": "Terminal",
+      "skills_use_batch_one_session": "{n} konteks, satu sesi"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",

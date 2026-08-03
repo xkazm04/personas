@@ -13451,6 +13451,7 @@ export type Translations = {
       skills_use_launch_cta: string;
       skills_use_cmd_launched: string;
       skills_use_cmd_launched_batch: string;
+      skills_use_batch_one_session: string;
       skills_use_cmd_fallback: string;
       cross_project_title: string;
       cross_project_desc: string;

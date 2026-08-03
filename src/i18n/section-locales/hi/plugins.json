@@ -1424,9 +1424,10 @@
     "skills_registry_use_cell": "{project} में {skill} चलाएँ",
     "skills_use_cmd_fallback": "टर्मिनल खोला नहीं जा सका। इसके बजाय कमांड क्लिपबोर्ड पर है।",
     "skills_use_cmd_launched": "{name} में टर्मिनल खुला, स्किल चल रही है",
-    "skills_use_cmd_launched_batch": "{name} में {n} टर्मिनल खुले, प्रत्येक कॉन्टेक्स्ट के लिए एक",
+    "skills_use_cmd_launched_batch": "{name} में एक टर्मिनल खुला, स्किल {n} कॉन्टेक्स्ट पर चल रही है",
     "skills_use_launch_cta": "टर्मिनल खोलें",
-    "skills_use_target_cmd": "टर्मिनल"
+    "skills_use_target_cmd": "टर्मिनल",
+    "skills_use_batch_one_session": "{n} कॉन्टेक्स्ट, एक सत्र"
   },
   "doc_signing": {
     "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",

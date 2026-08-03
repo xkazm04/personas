@@ -1424,9 +1424,10 @@
     "skills_registry_use_cell": "Ejecutar {skill} en {project}",
     "skills_use_cmd_fallback": "No se pudo abrir un terminal. El comando está en el portapapeles.",
     "skills_use_cmd_launched": "Terminal abierto en {name}, la habilidad se está ejecutando",
-    "skills_use_cmd_launched_batch": "Se abrieron {n} terminales en {name}, uno por contexto",
+    "skills_use_cmd_launched_batch": "Se abrió un terminal en {name}, ejecutando la habilidad en {n} contextos",
     "skills_use_launch_cta": "Abrir terminal",
-    "skills_use_target_cmd": "Terminal"
+    "skills_use_target_cmd": "Terminal",
+    "skills_use_batch_one_session": "{n} contextos, una sesión"
   },
   "doc_signing": {
     "sign_heading": "Firmar un Documento",

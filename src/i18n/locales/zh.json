@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "在 {project} 中运行 {skill}",
       "skills_use_cmd_fallback": "无法打开终端，命令已改为复制到剪贴板。",
       "skills_use_cmd_launched": "已在 {name} 中打开终端，技能正在运行",
-      "skills_use_cmd_launched_batch": "已在 {name} 中打开 {n} 个终端，每个上下文一个",
+      "skills_use_cmd_launched_batch": "已在 {name} 中打开一个终端，技能将在 {n} 个上下文中依次运行",
       "skills_use_launch_cta": "打开终端",
-      "skills_use_target_cmd": "终端"
+      "skills_use_target_cmd": "终端",
+      "skills_use_batch_one_session": "{n} 个上下文，一个会话"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

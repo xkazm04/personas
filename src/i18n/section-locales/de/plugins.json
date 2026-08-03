@@ -1424,9 +1424,10 @@
     "skills_registry_use_cell": "{skill} in {project} ausführen",
     "skills_use_cmd_fallback": "Es konnte kein Terminal geöffnet werden. Der Befehl liegt stattdessen in der Zwischenablage.",
     "skills_use_cmd_launched": "Terminal in {name} geöffnet, der Skill läuft",
-    "skills_use_cmd_launched_batch": "{n} Terminals in {name} geöffnet, eines pro Kontext",
+    "skills_use_cmd_launched_batch": "Ein Terminal in {name} geöffnet, der Skill läuft über {n} Kontexte",
     "skills_use_launch_cta": "Terminal öffnen",
-    "skills_use_target_cmd": "Terminal"
+    "skills_use_target_cmd": "Terminal",
+    "skills_use_batch_one_session": "{n} Kontexte, eine Sitzung"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",

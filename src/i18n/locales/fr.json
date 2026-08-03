@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "Exécuter {skill} dans {project}",
       "skills_use_cmd_fallback": "Impossible d'ouvrir un terminal. La commande est dans le presse-papiers.",
       "skills_use_cmd_launched": "Terminal ouvert dans {name}, la compétence s'exécute",
-      "skills_use_cmd_launched_batch": "{n} terminaux ouverts dans {name}, un par contexte",
+      "skills_use_cmd_launched_batch": "Un terminal ouvert dans {name}, la compétence s'exécute sur {n} contextes",
       "skills_use_launch_cta": "Ouvrir un terminal",
-      "skills_use_target_cmd": "Terminal"
+      "skills_use_target_cmd": "Terminal",
+      "skills_use_batch_one_session": "{n} contextes, une seule session"
     },
     "doc_signing": {
       "sign_heading": "Signer un document",

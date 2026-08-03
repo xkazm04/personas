@@ -13734,9 +13734,10 @@
       "skills_registry_use_cell": "Chạy {skill} trong {project}",
       "skills_use_cmd_fallback": "Không mở được terminal. Lệnh đã được sao vào clipboard.",
       "skills_use_cmd_launched": "Đã mở terminal trong {name}, kỹ năng đang chạy",
-      "skills_use_cmd_launched_batch": "Đã mở {n} terminal trong {name}, mỗi ngữ cảnh một cái",
+      "skills_use_cmd_launched_batch": "Đã mở một terminal trong {name}, kỹ năng chạy qua {n} ngữ cảnh",
       "skills_use_launch_cta": "Mở terminal",
-      "skills_use_target_cmd": "Terminal"
+      "skills_use_target_cmd": "Terminal",
+      "skills_use_batch_one_session": "{n} ngữ cảnh, một phiên"
     },
     "doc_signing": {
       "sign_heading": "Ký tài liệu",

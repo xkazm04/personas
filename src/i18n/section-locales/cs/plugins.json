@@ -1424,9 +1424,10 @@
     "skills_registry_use_cell": "Spustit {skill} v {project}",
     "skills_use_cmd_fallback": "Terminál se nepodařilo otevřít. Příkaz je místo toho ve schránce.",
     "skills_use_cmd_launched": "V projektu {name} se otevřel terminál, dovednost běží",
-    "skills_use_cmd_launched_batch": "V projektu {name} se otevřelo {n} terminálů, jeden na každý kontext",
+    "skills_use_cmd_launched_batch": "V projektu {name} se otevřel jeden terminál, dovednost běží napříč {n} kontexty",
     "skills_use_launch_cta": "Otevřít terminál",
-    "skills_use_target_cmd": "Terminál"
+    "skills_use_target_cmd": "Terminál",
+    "skills_use_batch_one_session": "{n} kontextů, jedna relace"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",

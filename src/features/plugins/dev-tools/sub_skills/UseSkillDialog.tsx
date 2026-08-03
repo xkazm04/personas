@@ -187,7 +187,15 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
           )}
 
           <ArgsField value={args} onChange={setArgs} onSubmit={confirm} />
-          <PreviewLine preview={preview} extra={batchCount > 1 ? tx(d.skills_use_batch, { n: batchCount }) : undefined} />
+          {/* The batch note differs by target because the batch SHAPE does:
+              Fleet spawns one session per context, the terminal runs them
+              sequentially inside one window. */}
+          <PreviewLine
+            preview={preview}
+            extra={batchCount > 1
+              ? tx(target === 'cmd' ? d.skills_use_batch_one_session : d.skills_use_batch, { n: batchCount })
+              : undefined}
+          />
         </div>
 
         <DialogFooter target={target} busy={busy} onConfirm={confirm} onClose={onClose} />
