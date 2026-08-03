@@ -16662,16 +16662,13 @@
         "mastermind-island-ui"
       ],
       "db_tables": [],
-      "description": "Two parallel canvas layout variants in active prototype development: MastermindHexMosaic renders projects as interlocking honeycombs using the MosaicIsland renderer; MastermindInverseGrid renders them on a structured inverse grid using InverseIsland. Both are thin wrappers over CanvasShell supplying only their island renderer; a tab switcher in MastermindPage lets the user toggle between them until a final mode is chosen.",
+      "description": "The final Mastermind canvas view: MastermindHexMosaic renders projects as interlocking honeycombs using the MosaicIsland renderer — a thin wrapper over CanvasShell supplying only the island renderer. The Inverse Grid prototype and the variant switcher were retired 2026-08.",
       "entry_points": [
-        "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx",
-        "src/features/teams/sub_mastermind/variants/MastermindInverseGrid.tsx"
+        "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx"
       ],
       "file_paths": [
         "src/features/teams/sub_mastermind/variants/MastermindHexMosaic.tsx",
-        "src/features/teams/sub_mastermind/variants/MastermindInverseGrid.tsx",
-        "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx",
-        "src/features/teams/sub_mastermind/variants/InverseIsland.tsx"
+        "src/features/teams/sub_mastermind/variants/MosaicIsland.tsx"
       ],
       "group": "Team Collaboration",
       "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
@@ -16679,9 +16676,7 @@
       "keywords": [
         "variant",
         "hex mosaic",
-        "inverse grid",
         "island renderer",
-        "prototype",
         "layout"
       ],
       "last_written_at": "2026-07-30T11:18:40.875419800+00:00",
