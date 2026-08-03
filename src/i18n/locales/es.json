@@ -13673,7 +13673,6 @@
       "skills_pipeline_fresh_nodes": "{n} nuevos",
       "skills_pipeline_loading": "Emparejando contextos con skills preestablecidos…",
       "skills_pipeline_no_contexts": "Aún no hay contextos asignados para este proyecto.",
-      "skills_pipeline_run": "Ejecutar ({n})",
       "skills_pipeline_subtitle": "una ejecución preestablecida por contexto, empezando por el de menor cobertura",
       "skills_pipeline_title": "Pipeline de cobertura",
       "skills_preset_empty": "No hay skills preestablecidos disponibles.",
@@ -13737,7 +13736,17 @@
       "skills_use_cmd_launched_batch": "Se abrió un terminal en {name}, ejecutando la habilidad en {n} contextos",
       "skills_use_launch_cta": "Abrir terminal",
       "skills_use_target_cmd": "Terminal",
-      "skills_use_batch_one_session": "{n} contextos, una sesión"
+      "skills_use_batch_one_session": "{n} contextos, una sesión",
+      "skills_pipeline_run_sweeps": "Barrer ({n})",
+      "skills_deep_reco_title": "Escaneos profundos recomendados",
+      "skills_deep_reco_run": "Ejecutar escaneo profundo",
+      "skills_auto_deep_label": "Escaneos profundos automáticos",
+      "skills_auto_deep_hint": "Cuando un sweep escala una lente, el escaneo enfocado se lanza automáticamente (máximo 2 por ingesta). Desactívalo para despacharlos manualmente desde esta lista.",
+      "skills_sweep_hero_hint": "Lee un contexto una vez y evalúa cada lente coincidente en una sola sesión. La opción eficiente por defecto; las lentes individuales abajo son la forma enfocada de análisis profundo.",
+      "skills_sweep_roster_show": "Mostrar las {n} lentes",
+      "skills_sweep_roster_hide": "Ocultar lentes individuales",
+      "skills_use_sweep_hint": "Esta lente forma parte del paquete de sweep. Considera /scan-sweep para cubrirla junto con las demás en una sola pasada.",
+      "sweep_auto_deep_toast": "Escaneo profundo despachado: {lens} en {context}"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",
@@ -15495,7 +15504,8 @@
       "origin_skill_dormant": "Habilidad inactiva",
       "origin_standards_finding": "Estándares",
       "origin_why_raised": "Por qué se planteó esto",
-      "origin_workspace_practice": "Práctica del espacio de trabajo"
+      "origin_workspace_practice": "Práctica del espacio de trabajo",
+      "origin_scan_sweep": "Barrido de escaneo"
     },
     "companion_label": "Compañera",
     "companion_desc": "Athena — su compañera de pensamiento siempre disponible. Inspeccione su memoria, configure su apariencia y vincule una voz.",

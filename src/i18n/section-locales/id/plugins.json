@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} baru",
     "skills_pipeline_loading": "Mencocokkan konteks dengan preset skill…",
     "skills_pipeline_no_contexts": "Belum ada konteks yang dipetakan untuk proyek ini.",
-    "skills_pipeline_run": "Jalankan ({n})",
     "skills_pipeline_subtitle": "satu proses preset per konteks, cakupan paling rendah lebih dulu",
     "skills_pipeline_title": "Pipeline cakupan",
     "skills_preset_empty": "Tidak ada preset skill yang tersedia.",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "Satu terminal dibuka di {name}, skill berjalan di {n} konteks",
     "skills_use_launch_cta": "Buka terminal",
     "skills_use_target_cmd": "Terminal",
-    "skills_use_batch_one_session": "{n} konteks, satu sesi"
+    "skills_use_batch_one_session": "{n} konteks, satu sesi",
+    "skills_pipeline_run_sweeps": "Jalankan sapuan ({n})",
+    "skills_deep_reco_title": "Pemindaian mendalam yang direkomendasikan",
+    "skills_deep_reco_run": "Jalankan pemindaian mendalam",
+    "skills_auto_deep_label": "Pemindaian mendalam otomatis",
+    "skills_auto_deep_hint": "Saat sebuah sweep meningkatkan lensa, pemindaian terfokus akan diluncurkan secara otomatis (maksimal 2 per ingest). Nonaktifkan untuk mengirim secara manual dari daftar ini.",
+    "skills_sweep_hero_hint": "Membaca satu konteks sekali dan mengevaluasi setiap lensa yang cocok dalam satu sesi. Pilihan default yang efisien; lensa individual di bawah adalah bentuk pemindaian mendalam yang terfokus.",
+    "skills_sweep_roster_show": "Tampilkan semua {n} lensa",
+    "skills_sweep_roster_hide": "Sembunyikan lensa individual",
+    "skills_use_sweep_hint": "Lensa ini adalah bagian dari paket sweep. Pertimbangkan /scan-sweep untuk mencakupnya bersama yang lain dalam satu proses.",
+    "sweep_auto_deep_toast": "Pemindaian mendalam dikirim: {lens} pada {context}"
   },
   "doc_signing": {
     "sign_heading": "Tandatangani Dokumen",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "Skill tidak terpakai",
     "origin_standards_finding": "Standar",
     "origin_why_raised": "Mengapa ini diangkat",
-    "origin_workspace_practice": "Praktik ruang kerja"
+    "origin_workspace_practice": "Praktik ruang kerja",
+    "origin_scan_sweep": "Sapuan pemindaian"
   },
   "companion_label": "Pendamping",
   "companion_desc": "Athena — mitra berpikir Anda yang selalu siap. Periksa memorinya, konfigurasi chrome-nya, dan pasangkan suara.",

@@ -136,8 +136,11 @@ The **Skills** tab (`sub_skills/`) now has two page tabs:
 
 **Overview (default)** — the workspace library and the active project's skills side by side.
 The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
-`~/.claude/skills`; Preset always shows the full 22-lens catalog (grouped Technical / User
-Experience / Business / Mastermind, each row carrying its lens icon + color). Adopting a
+`~/.claude/skills`; Preset leads with the **scan-sweep hero row** (the consolidated
+multi-lens context sweep — generated alongside the lenses, with a per-lens brief bundle in
+`references/lenses.md`) and collapses the full 22-lens catalog behind a roster toggle
+(grouped Technical / User Experience / Business / Mastermind, each row carrying its lens
+icon + color); the single-lens presets remain the focused deep-dive form. Adopting a
 preset installs from the app bundle (`skill_files_install_system`); adopting a custom skill
 dispatches the Dev-runner customization task. Project rows keep memory bindings, context
 coverage bars, and the **Use** dialog (Fleet | Terminal dispatch target + Recommended / This one /
@@ -152,11 +155,28 @@ Tailwind only extracts classes it can read as source text.
 
 **Analytics** — the scanner concepts generalized to skills:
 
-1. **Coverage pipeline** (Auto-Scan successor) — every mapped context matched to its best
-   preset lens by the keyword rules (`constants/presetSkills.ts` → `SCAN_MATCH_RULES`),
-   ranked least-covered first (Memory-Ledger node counts), checkbox-bounded; **Run** spawns
-   one Fleet session per selected context (`/scan-<key> <context>`). Coverage populates via
-   the memory-outbox ingest when each session exits.
+1. **Coverage pipeline** (Auto-Scan successor, sweep edition) — every mapped context
+   matched to its full **lens bundle** by the keyword rules (generated from
+   `scan_agents.toml` into `constants/scanMatchRules.gen.ts` — the TOML's `match` field is
+   the single source, so a lens can never ship unmatchable again), ranked least-covered
+   first (Memory-Ledger node counts), checkbox-bounded; **Run** first refreshes
+   `.personas/backlog-digest.json` (pending/accepted/rejected idea titles, so a scan never
+   re-proposes a known idea or rephrases a rejected one) and then spawns one Fleet session
+   per selected context running `/scan-sweep --lenses <keys> <context>` — the sweep reads
+   the context's code once and judges it through every bundled lens. Coverage populates via
+   the memory-outbox ingest when each session exits (one `skill:scan-<lens>` node per
+   evaluated lens, so per-lens coverage math needs no backend change).
+
+   **Findings door + Tier 2.** Sweeps emit structured `finding` / `escalation` lines into
+   the same memory outbox; ingest (`memory_ledger.rs`) routes findings into `dev_ideas`
+   through `create_finding` (origin `scan_sweep`, standard dedup guard, `IDEA_BACKLOG_CAP`
+   backpressure) so they land in Overview → Approvals → Backlog with a Scan-sweep badge.
+   A **NEW** escalation (a lens that hit a critical finding or 3 real findings in one
+   context) auto-dispatches a focused `/scan-<lens> <context>` Fleet session on ingest —
+   at most 2 per ingest, toast per spawn, killable via the **Auto deep scans** toggle in
+   the **Recommended deep scans** panel (which lists every open escalation for manual
+   dispatch). The escalation finding's dedup key is the cooldown: re-escalations are
+   absorbed until the operator resolves or archives the finding.
 2. **Skill performance** (Agent Scoreboard successor) — per installed skill: transcript
    invokes (30d), context coverage, fleet run outcomes, and — for `scan-*` presets — the
    ideas accept/impl rates carried over from the agent-keyed history.
@@ -536,7 +556,7 @@ There is one execution path and it is deliberately simple:
 
 1. The frontend posts `dev_tools_run_scan(project_id, agent_keys[], context_id?)` via Tauri IPC.
 2. `src-tauri/src/commands/infrastructure/idea_scanner.rs` spawns an async job and returns a `scan_id` immediately.
-3. The job fans out one LLM call per agent per targeted context, streaming token usage and partial ideas through `IDEA_SCAN_OUTPUT` events.
+3. The job spawns ONE headless Claude CLI process for the whole run — all selected lenses concatenated into a single prompt (`build_idea_scan_prompt`) — streaming token usage and partial ideas through `IDEA_SCAN_OUTPUT` events.
 4. Each returned idea is persisted as a `DevIdea` row with `scan_type = agent.key` and effort/impact/risk extracted from the response.
 5. On completion, `IDEA_SCAN_STATUS` fires with `completed | completed_with_warning | failed | cancelled`; the frontend re-runs `fetchIdeas(project_id)` and the scoreboard recomputes.
 
@@ -544,7 +564,7 @@ Because the agent key is stored as a string, *adding a new agent is a single-fil
 
 ### Auto-match rules
 
-The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (see `SCAN_MATCH_RULES` in `sub_scanner/ideaScannerHelpers.ts`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
+The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (each agent's `match` field in `scan_agents.toml`, generated into `constants/scanMatchRules.gen.ts` by `scripts/skills/gen-scan-match-rules.mjs`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
 
 ### Agent Scoreboard (Proposal B)
 

@@ -931,7 +931,7 @@ pub const VERIFY_STATES: [&str; 5] = ["pending", "cleared", "moved", "unchanged"
 /// `dev_workspaces::mine_shared_findings` — because a practice that fans out to
 /// N repos would otherwise be re-mined as a "shared finding" and re-proposed as
 /// the very practice it came from.
-pub const FINDING_ORIGINS: [&str; 10] = [
+pub const FINDING_ORIGINS: [&str; 11] = [
     "standards_finding",
     "passport_gap",
     "llm_cost",
@@ -942,6 +942,9 @@ pub const FINDING_ORIGINS: [&str; 10] = [
     "kpi_sim",
     "memory_disputed",
     "workspace_practice",
+    // scan-sweep skill findings + deep-scan escalations arriving through the
+    // memory-outbox door (memory_ledger.rs).
+    "scan_sweep",
 ];
 
 // ============================================================================

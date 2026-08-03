@@ -12,10 +12,11 @@
  * Context Map to pick which presets apply to a given context.
  */
 import type { DevContext } from '@/lib/bindings/DevContext';
-import type { LucideIcon } from 'lucide-react';
+import { Compass, type LucideIcon } from 'lucide-react';
 
 import { parseJsonArray } from '../sub_context/contextMapTypes';
 import { SCAN_AGENTS, type ScanAgentDef } from './scanAgents';
+import { SCAN_MATCH_RULES } from './scanMatchRules.gen';
 
 export interface PresetSkillDef {
   /** Skill directory name, e.g. `scan-code-optimizer`. */
@@ -33,9 +34,25 @@ export interface PresetSkillDef {
 
 export const PRESET_SKILL_PREFIX = 'scan-';
 
+/** The consolidated multi-lens sweep — a preset with no scanner lens behind
+ *  it (it composes the 22 lenses), so it lives outside SCAN_AGENTS and must
+ *  never join the Idea Scanner roster. Board renders it as the hero row. */
+export const SWEEP_SKILL_NAME = 'scan-sweep';
+const SWEEP_SKILL: PresetSkillDef = {
+  name: SWEEP_SKILL_NAME,
+  agentKey: 'sweep',
+  label: 'Context Sweep',
+  emoji: '🧭',
+  icon: Compass,
+  color: '#7C3AED',
+  categoryGroup: 'technical',
+  description:
+    'Reads one context once and evaluates it through every matched scan lens. The efficient default; single-lens scans are the focused deep-dive form.',
+};
+
 /** All preset scan skills, keyed by skill name. */
-export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map(
-  SCAN_AGENTS.map((a) => [
+export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map([
+  ...SCAN_AGENTS.map((a): [string, PresetSkillDef] => [
     `${PRESET_SKILL_PREFIX}${a.key}`,
     {
       name: `${PRESET_SKILL_PREFIX}${a.key}`,
@@ -48,7 +65,8 @@ export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map(
       description: a.description,
     },
   ]),
-);
+  [SWEEP_SKILL_NAME, SWEEP_SKILL],
+]);
 
 /**
  * Synthesize a library row for a preset that isn't materialized in the user's
@@ -90,54 +108,12 @@ export function presetByAgentKey(agentKey: string): PresetSkillDef | null {
   return PRESET_SKILLS.get(`${PRESET_SKILL_PREFIX}${agentKey}`) ?? null;
 }
 
-/** Keyword patterns that map context attributes to relevant scan agents. */
-export const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
-  { agentKey: 'code-optimizer', keywords: /performance|render|bundle|query|slow|cache|optim/i },
-  { agentKey: 'security-auditor', keywords: /auth|login|token|secret|password|credential|session|encrypt|permission/i },
-  { agentKey: 'architecture-analyst', keywords: /architect|module|component|layer|service|pattern|coupling|abstract/i },
-  { agentKey: 'test-strategist', keywords: /test|spec|coverage|mock|assert|e2e|integration|unit/i },
-  { agentKey: 'dependency-auditor', keywords: /package|dependency|import|library|version|npm|cargo/i },
-  { agentKey: 'ux-reviewer', keywords: /ui|ux|component|page|view|form|modal|button|layout|style/i },
-  { agentKey: 'accessibility-checker', keywords: /a11y|accessibility|aria|wcag|screen.?reader|keyboard|contrast/i },
-  { agentKey: 'mobile-specialist', keywords: /mobile|responsive|viewport|touch|swipe|tablet/i },
-  { agentKey: 'error-handler', keywords: /error|exception|catch|boundary|fallback|retry|toast|alert/i },
-  { agentKey: 'onboarding-designer', keywords: /onboard|wizard|setup|welcome|tutorial|getting.?started/i },
-  { agentKey: 'feature-scout', keywords: /feature|roadmap|missing|todo|placeholder|future/i },
-  { agentKey: 'monetization-advisor', keywords: /billing|payment|subscription|plan|pricing|tier|premium/i },
-  { agentKey: 'analytics-planner', keywords: /analytics|tracking|event|metric|telemetry|log/i },
-  { agentKey: 'documentation-auditor', keywords: /doc|readme|comment|api.?doc|jsdoc|guide/i },
-  { agentKey: 'growth-hacker', keywords: /share|referral|invite|social|viral|notification/i },
-  { agentKey: 'tech-debt-tracker', keywords: /debt|legacy|workaround|hack|deprecated|fixme|todo/i },
-  { agentKey: 'innovation-catalyst', keywords: /ai|ml|machine.?learn|llm|agent|automat|innovat/i },
-  { agentKey: 'risk-assessor', keywords: /risk|single.?point|scale|failover|backup|disaster|recovery/i },
-  { agentKey: 'integration-planner', keywords: /api|webhook|integration|sync|external|third.?party|oauth/i },
-  { agentKey: 'devops-optimizer', keywords: /ci|cd|deploy|docker|pipeline|build|monitor|infra/i },
-  { agentKey: 'bounty-hunter', keywords: /exploit|vulnerab|race.?condition|edge.?case|logic.?flaw|inconsisten|data.?leak|bounty/i },
-  { agentKey: 'business-strategist', keywords: /business.?value|monetiz|conversion|retention|competitor|workflow.?friction|revenue|value.?prop/i },
-];
-
-// Dev-only invariant: every SCAN_AGENTS key must have a matcher rule, and vice
-// versa. `SCAN_MATCH_RULES` is a hand-authored parallel list (not derived from
-// SCAN_AGENTS), so it silently drifts when an agent is added without a rule —
-// bounty-hunter and business-strategist did exactly that (22 agents vs 20
-// rules), leaving matchAgentsToContext structurally unable to ever pick them
-// for any context. A missing rule is invisible forever (no test, no page,
-// nothing ever calls out that a lens can't be recommended) — the cost of being
-// wrong is high enough to warrant a hard fail in dev rather than a silent gap.
-// Stripped in production builds (import.meta.env.DEV is statically false).
-if (import.meta.env?.DEV) {
-  const agentKeys = new Set(SCAN_AGENTS.map((a) => a.key));
-  const ruleKeys = new Set(SCAN_MATCH_RULES.map((r) => r.agentKey));
-  const missingRules = [...agentKeys].filter((k) => !ruleKeys.has(k));
-  const orphanRules = [...ruleKeys].filter((k) => !agentKeys.has(k));
-  if (missingRules.length > 0 || orphanRules.length > 0) {
-    throw new Error(
-      `SCAN_MATCH_RULES has drifted from SCAN_AGENTS — missing: [${missingRules.join(', ')}], ` +
-      `orphaned: [${orphanRules.join(', ')}]. Every scan agent needs a matcher rule or it can ` +
-      `never be recommended by matchAgentsToContext.`,
-    );
-  }
-}
+// Context→lens keyword matcher — GENERATED from scan_agents.toml (each agent's
+// `match` field) by scripts/skills/gen-scan-match-rules.mjs. The former
+// hand-authored list drifted once (bounty-hunter / business-strategist shipped
+// without rules); the generator hard-fails on a missing `match`, so the old
+// dev-only parity invariant is no longer needed.
+export { SCAN_MATCH_RULES };
 
 /** Searchable haystack for a context's match rules. */
 function contextHaystack(ctx: DevContext): string {

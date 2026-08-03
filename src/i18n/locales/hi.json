@@ -13673,7 +13673,6 @@
       "skills_pipeline_fresh_nodes": "{n} नए",
       "skills_pipeline_loading": "प्रीसेट स्किल्स के साथ कॉन्टेक्स्ट मिलाए जा रहे हैं…",
       "skills_pipeline_no_contexts": "इस प्रोजेक्ट के लिए अभी तक कोई कॉन्टेक्स्ट मैप नहीं किया गया है।",
-      "skills_pipeline_run": "चलाएं ({n})",
       "skills_pipeline_subtitle": "प्रति कॉन्टेक्स्ट एक प्रीसेट रन, सबसे कम कवर वाला पहले",
       "skills_pipeline_title": "कवरेज पाइपलाइन",
       "skills_preset_empty": "कोई प्रीसेट स्किल उपलब्ध नहीं है।",
@@ -13737,7 +13736,17 @@
       "skills_use_cmd_launched_batch": "{name} में एक टर्मिनल खुला, स्किल {n} कॉन्टेक्स्ट पर चल रही है",
       "skills_use_launch_cta": "टर्मिनल खोलें",
       "skills_use_target_cmd": "टर्मिनल",
-      "skills_use_batch_one_session": "{n} कॉन्टेक्स्ट, एक सत्र"
+      "skills_use_batch_one_session": "{n} कॉन्टेक्स्ट, एक सत्र",
+      "skills_pipeline_run_sweeps": "स्वीप चलाएं ({n})",
+      "skills_deep_reco_title": "अनुशंसित डीप स्कैन",
+      "skills_deep_reco_run": "डीप स्कैन चलाएं",
+      "skills_auto_deep_label": "ऑटो डीप स्कैन",
+      "skills_auto_deep_hint": "जब कोई sweep किसी लेंस को अपग्रेड करता है, तो फोकस्ड स्कैन अपने आप शुरू हो जाता है (प्रति ingest अधिकतम 2)। इस सूची से मैन्युअल रूप से डिस्पैच करने के लिए इसे बंद करें।",
+      "skills_sweep_hero_hint": "एक संदर्भ को एक बार पढ़ता है और हर मेल खाते लेंस का एक ही सेशन में मूल्यांकन करता है। यह कुशल डिफ़ॉल्ट है; नीचे दिए गए अलग-अलग लेंस डीप-डाइव का फोकस्ड रूप हैं।",
+      "skills_sweep_roster_show": "सभी {n} लेंस दिखाएं",
+      "skills_sweep_roster_hide": "अलग-अलग लेंस छिपाएं",
+      "skills_use_sweep_hint": "यह लेंस sweep बंडल का हिस्सा है। इसे बाकी के साथ एक ही पास में कवर करने के लिए /scan-sweep पर विचार करें।",
+      "sweep_auto_deep_toast": "डीप स्कैन भेजा गया: {lens}, {context} पर"
     },
     "doc_signing": {
       "sign_heading": "दस्तावेज़ पर हस्ताक्षर करें",
@@ -15495,7 +15504,8 @@
       "origin_skill_dormant": "निष्क्रिय स्किल",
       "origin_standards_finding": "मानक",
       "origin_why_raised": "यह क्यों उठाया गया",
-      "origin_workspace_practice": "वर्कस्पेस प्रथा"
+      "origin_workspace_practice": "वर्कस्पेस प्रथा",
+      "origin_scan_sweep": "स्कैन स्वीप"
     },
     "companion_label": "कंपेनियन",
     "companion_desc": "Athena — आपकी हमेशा उपलब्ध विचार-साथी। उसकी मेमोरी देखें, उसका रूप-रंग सेट करें, और एक आवाज़ जोड़ें।",

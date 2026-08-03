@@ -5,7 +5,7 @@
 // that raised it, and a popover showing the raw evidence that justified emission,
 // so the user can judge the claim instead of trusting it.
 import { useState } from 'react';
-import { Activity, AlertTriangle, BrainCircuit, DollarSign, ClipboardCheck, FileClock, FlaskConical, Library, MoonStar, Target, Info } from 'lucide-react';
+import { Activity, AlertTriangle, BrainCircuit, Compass, DollarSign, ClipboardCheck, FileClock, FlaskConical, Library, MoonStar, Target, Info } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { FindingOrigin } from '@/api/devTools/devTools';
@@ -69,6 +69,13 @@ const ORIGIN_META: Record<
     labelKey: 'origin_workspace_practice',
     icon: Library,
     tw: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/25',
+  },
+  // The scan-sweep skill's findings + deep-scan escalations, arriving through
+  // the memory-outbox door rather than an in-app sensor.
+  scan_sweep: {
+    labelKey: 'origin_scan_sweep',
+    icon: Compass,
+    tw: 'bg-purple-500/10 text-purple-300 border-purple-500/25',
   },
 };
 

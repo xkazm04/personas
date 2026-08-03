@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n}件が新規",
     "skills_pipeline_loading": "コンテキストとプリセットスキールを照合中…",
     "skills_pipeline_no_contexts": "このプロジェクトにマッピングされたコンテキストはまだありません。",
-    "skills_pipeline_run": "実行 ({n})",
     "skills_pipeline_subtitle": "コンテキストごとにプリセットを1回実行、カバレッジが低い順",
     "skills_pipeline_title": "カバレッジパイプライン",
     "skills_preset_empty": "利用可能なプリセットスキルがありません。",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "{name} でターミナルを1つ開き、{n} 個のコンテキストでスキルを実行中です",
     "skills_use_launch_cta": "ターミナルを開く",
     "skills_use_target_cmd": "ターミナル",
-    "skills_use_batch_one_session": "{n} 個のコンテキストを1セッションで"
+    "skills_use_batch_one_session": "{n} 個のコンテキストを1セッションで",
+    "skills_pipeline_run_sweeps": "スイープ {n}",
+    "skills_deep_reco_title": "推奨ディープスキャン",
+    "skills_deep_reco_run": "ディープスキャンを実行",
+    "skills_auto_deep_label": "自動ディープスキャン",
+    "skills_auto_deep_hint": "スイープがレンズをエスカレートすると、集中スキャンが自動的に起動します(1回の取り込みにつき最大2件)。このリストから手動で実行する場合はオフにしてください。",
+    "skills_sweep_hero_hint": "コンテキストを1回読み込み、一致するすべてのレンズを1つのセッションで評価します。効率的なデフォルトです。以下の個別レンズは集中型のディープダイブ形式です。",
+    "skills_sweep_roster_show": "全 {n} レンズを表示",
+    "skills_sweep_roster_hide": "個別レンズを非表示",
+    "skills_use_sweep_hint": "このレンズはスイープバンドルの一部です。他と一括で処理するには /scan-sweep の使用をご検討ください。",
+    "sweep_auto_deep_toast": "ディープスキャンを起動しました: {context} の {lens}"
   },
   "doc_signing": {
     "sign_heading": "ドキュメントに署名",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "休眠中のスキル",
     "origin_standards_finding": "規約",
     "origin_why_raised": "この項目が挙がった理由",
-    "origin_workspace_practice": "ワークスペースの実践"
+    "origin_workspace_practice": "ワークスペースの実践",
+    "origin_scan_sweep": "スキャンスイープ"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — いつでも頼れる思考パートナーです。記憶を確認したり、外観を設定したり、音声を紐づけたりできます。",

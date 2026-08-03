@@ -13390,7 +13390,6 @@ export type Translations = {
       skills_scoreboard_empty: string;
       skills_pipeline_title: string;
       skills_pipeline_subtitle: string;
-      skills_pipeline_run: string;
       skills_pipeline_loading: string;
       skills_pipeline_no_contexts: string;
       skills_pipeline_fresh_nodes: string;
@@ -14038,6 +14037,16 @@ export type Translations = {
       skills_registry_running_cell: string;
       skills_registry_summary: string;
       skills_registry_use_cell: string;
+      skills_pipeline_run_sweeps: string;
+      skills_deep_reco_title: string;
+      skills_deep_reco_run: string;
+      skills_auto_deep_label: string;
+      skills_auto_deep_hint: string;
+      skills_sweep_hero_hint: string;
+      skills_sweep_roster_show: string;
+      skills_sweep_roster_hide: string;
+      skills_use_sweep_hint: string;
+      sweep_auto_deep_toast: string;
     };
     doc_signing: {
       sign_heading: string;
@@ -15796,6 +15805,7 @@ export type Translations = {
       origin_workspace_practice: string;
       origin_why_raised: string;
       origin_evidence: string;
+      origin_scan_sweep: string;
     };
     artist_label: string;
     artist_desc: string;

@@ -13384,7 +13384,6 @@
       "skills_scoreboard_empty": "No installed skills to score yet.",
       "skills_pipeline_title": "Coverage pipeline",
       "skills_pipeline_subtitle": "one preset run per context, least-covered first",
-      "skills_pipeline_run": "Run ({n})",
       "skills_pipeline_loading": "Matching contexts to preset skills…",
       "skills_pipeline_no_contexts": "No contexts mapped for this project yet.",
       "skills_pipeline_fresh_nodes": "{n} fresh",
@@ -14031,7 +14030,17 @@
       "skills_registry_project_hint": "{name} — {adopted}/{total} adopted · {contexts} contexts",
       "skills_registry_running_cell": "{skill} is running in {project}",
       "skills_registry_summary": "{name} · {projects} projects · {skills} skills",
-      "skills_registry_use_cell": "Run {skill} in {project}"
+      "skills_registry_use_cell": "Run {skill} in {project}",
+      "skills_pipeline_run_sweeps": "Sweep {n}",
+      "skills_deep_reco_title": "Recommended deep scans",
+      "skills_deep_reco_run": "Run deep scan",
+      "skills_auto_deep_label": "Auto deep scans",
+      "skills_auto_deep_hint": "When a sweep escalates a lens, the focused scan launches automatically (at most 2 per ingest). Turn off to dispatch manually from this list.",
+      "skills_sweep_hero_hint": "Reads a context once and evaluates every matched lens in one session. The efficient default; the individual lenses below are the focused deep-dive form.",
+      "skills_sweep_roster_show": "Show all {n} lenses",
+      "skills_sweep_roster_hide": "Hide individual lenses",
+      "skills_use_sweep_hint": "This lens is part of the sweep bundle. Consider /scan-sweep to cover it with the rest in one pass.",
+      "sweep_auto_deep_toast": "Deep scan dispatched: {lens} on {context}"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
@@ -15789,7 +15798,8 @@
       "origin_memory_disputed": "Disputed memory",
       "origin_workspace_practice": "Workspace practice",
       "origin_why_raised": "Why this was raised",
-      "origin_evidence": "Evidence"
+      "origin_evidence": "Evidence",
+      "origin_scan_sweep": "Scan sweep"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",

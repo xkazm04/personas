@@ -3160,6 +3160,7 @@ pub fn run() {
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_prepare,
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_ingest,
             commands::infrastructure::memory_ledger::dev_tools_memory_ingest,
+            commands::infrastructure::context_map_export::dev_tools_export_backlog_digest,
             commands::infrastructure::memory_ledger::dev_tools_memory_list,
             commands::infrastructure::memory_ledger::dev_tools_memory_coverage,
             commands::infrastructure::memory_ledger::dev_tools_memory_project_vault,

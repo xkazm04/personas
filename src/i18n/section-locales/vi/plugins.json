@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} mới",
     "skills_pipeline_loading": "Đang khớp các context với kỹ năng thiết lập sẵn…",
     "skills_pipeline_no_contexts": "Chưa có context nào được ánh xạ cho dự án này.",
-    "skills_pipeline_run": "Chạy ({n})",
     "skills_pipeline_subtitle": "một lượt chạy thiết lập sẵn cho mỗi context, ưu tiên context ít được bao phủ nhất",
     "skills_pipeline_title": "Pipeline bao phủ",
     "skills_preset_empty": "Không có kỹ năng thiết lập sẵn nào.",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "Đã mở một terminal trong {name}, kỹ năng chạy qua {n} ngữ cảnh",
     "skills_use_launch_cta": "Mở terminal",
     "skills_use_target_cmd": "Terminal",
-    "skills_use_batch_one_session": "{n} ngữ cảnh, một phiên"
+    "skills_use_batch_one_session": "{n} ngữ cảnh, một phiên",
+    "skills_pipeline_run_sweeps": "Chạy quét ({n})",
+    "skills_deep_reco_title": "Quét chuyên sâu được đề xuất",
+    "skills_deep_reco_run": "Chạy quét chuyên sâu",
+    "skills_auto_deep_label": "Tự động quét chuyên sâu",
+    "skills_auto_deep_hint": "Khi sweep nâng cấp mức độ một lens, quét chuyên sâu sẽ tự động khởi chạy (tối đa 2 lần mỗi lần thu thập). Tắt tùy chọn này để tự điều phối thủ công từ danh sách này.",
+    "skills_sweep_hero_hint": "Đọc một context một lần và đánh giá mọi lens phù hợp trong một phiên duy nhất. Đây là lựa chọn mặc định hiệu quả; các lens riêng lẻ bên dưới là dạng chuyên sâu tập trung.",
+    "skills_sweep_roster_show": "Hiện tất cả {n} lens",
+    "skills_sweep_roster_hide": "Ẩn các lens riêng lẻ",
+    "skills_use_sweep_hint": "Lens này nằm trong gói sweep. Cân nhắc dùng /scan-sweep để xử lý cùng các lens khác trong một lượt.",
+    "sweep_auto_deep_toast": "Đã điều phối quét chuyên sâu: {lens} trên {context}"
   },
   "doc_signing": {
     "sign_heading": "Ký tài liệu",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "Kỹ năng ngủ đông",
     "origin_standards_finding": "Tiêu chuẩn",
     "origin_why_raised": "Vì sao mục này được nêu",
-    "origin_workspace_practice": "Thực hành không gian làm việc"
+    "origin_workspace_practice": "Thực hành không gian làm việc",
+    "origin_scan_sweep": "Quét tổng hợp"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — người bạn đồng hành luôn sẵn sàng cùng bạn suy nghĩ. Xem bộ nhớ của cô ấy, tùy chỉnh giao diện, và gắn giọng nói cho cô ấy.",

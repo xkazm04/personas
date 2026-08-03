@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} récents",
     "skills_pipeline_loading": "Association des contextes aux skills preset…",
     "skills_pipeline_no_contexts": "Aucun contexte associé à ce projet pour l'instant.",
-    "skills_pipeline_run": "Lancer ({n})",
     "skills_pipeline_subtitle": "une exécution preset par contexte, en commençant par les moins couverts",
     "skills_pipeline_title": "Pipeline de couverture",
     "skills_preset_empty": "Aucun skill preset disponible.",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "Un terminal ouvert dans {name}, la compétence s'exécute sur {n} contextes",
     "skills_use_launch_cta": "Ouvrir un terminal",
     "skills_use_target_cmd": "Terminal",
-    "skills_use_batch_one_session": "{n} contextes, une seule session"
+    "skills_use_batch_one_session": "{n} contextes, une seule session",
+    "skills_pipeline_run_sweeps": "Balayer ({n})",
+    "skills_deep_reco_title": "Analyses approfondies recommandées",
+    "skills_deep_reco_run": "Lancer l'analyse approfondie",
+    "skills_auto_deep_label": "Analyses approfondies automatiques",
+    "skills_auto_deep_hint": "Quand un sweep escalade une lentille, l'analyse ciblée se lance automatiquement (2 maximum par ingestion). Désactivez pour les déclencher manuellement depuis cette liste.",
+    "skills_sweep_hero_hint": "Lit un contexte une seule fois et évalue chaque lentille correspondante en une session. L'option efficace par défaut ; les lentilles individuelles ci-dessous sont la forme ciblée d'analyse approfondie.",
+    "skills_sweep_roster_show": "Afficher les {n} lentilles",
+    "skills_sweep_roster_hide": "Masquer les lentilles individuelles",
+    "skills_use_sweep_hint": "Cette lentille fait partie du pack de sweep. Envisagez /scan-sweep pour la couvrir avec les autres en une seule passe.",
+    "sweep_auto_deep_toast": "Analyse approfondie lancée : {lens} sur {context}"
   },
   "doc_signing": {
     "sign_heading": "Signer un document",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "Compétence dormante",
     "origin_standards_finding": "Standards",
     "origin_why_raised": "Pourquoi ceci a été soulevé",
-    "origin_workspace_practice": "Pratique d'espace de travail"
+    "origin_workspace_practice": "Pratique d'espace de travail",
+    "origin_scan_sweep": "Balayage d’analyse"
   },
   "companion_label": "Compagnon",
   "companion_desc": "Athena — votre partenaire de réflexion toujours disponible. Consultez sa mémoire, configurez son interface et attribuez-lui une voix.",

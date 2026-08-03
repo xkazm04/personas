@@ -37,6 +37,10 @@ const MAX_TITLE_CHARS: usize = 200;
 const MAX_BODY_CHARS: usize = 4_000;
 const NODE_KINDS: [&str; 5] = ["fact", "progress", "decision", "gotcha", "map"];
 const EDGE_RELS: [&str; 5] = ["relates", "supersedes", "blocks", "covers", "derived_from"];
+/// Findings-door caps (scan-sweep lines): a sweep emits well under this; more
+/// is a runaway producer, not a scan.
+const MAX_FINDING_LINES: usize = 30;
+const MAX_EVIDENCE_CHARS: usize = 600;
 /// List cap — the MEMORY BLOCK carries at most 8; UI readers stay bounded too.
 const MAX_LIST: i64 = 50;
 
@@ -68,6 +72,19 @@ struct OutboxLine {
     to: Option<String>,
     #[serde(default)]
     rel: Option<String>,
+    // finding / escalation fields (scan-sweep — the backlog door)
+    #[serde(default)]
+    lens: Option<String>,
+    #[serde(default)]
+    evidence: Option<String>,
+    #[serde(default)]
+    reason: Option<String>,
+    #[serde(default)]
+    effort: Option<i64>,
+    #[serde(default)]
+    impact: Option<i64>,
+    #[serde(default)]
+    risk: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -83,6 +100,26 @@ pub struct MemoryIngestResult {
     /// skill observed structure drift; the frontend reacts with a delta
     /// context scan (P2 reconciler).
     pub map_nodes: i32,
+    /// Scan findings routed into `dev_ideas` (origin `scan_sweep`).
+    pub findings_created: i32,
+    /// Findings absorbed by the dedup guard (already known in any status).
+    pub findings_deduped: i32,
+    /// Findings dropped by backpressure (pending backlog at cap) or line caps.
+    pub findings_skipped: i32,
+    /// NEWLY created deep-scan escalations — the frontend auto-dispatches a
+    /// focused `/scan-<lens> <context>` per entry (bounded). Duplicates are
+    /// never re-listed: the escalation finding's dedup key acts as the
+    /// cooldown until the operator resolves or archives it.
+    pub escalations: Vec<IngestEscalation>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngestEscalation {
+    /// Lens key (sanitized) — dispatch as `/scan-<lens>`.
+    pub lens: String,
+    /// Context NAME as the outbox spelled it (None = whole repo).
+    pub context: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -155,6 +192,10 @@ pub fn dev_tools_memory_ingest(
         skipped: 0,
         outbox_found: false,
         map_nodes: 0,
+        findings_created: 0,
+        findings_deduped: 0,
+        findings_skipped: 0,
+        escalations: Vec::new(),
     };
     let Ok(meta) = std::fs::metadata(&path) else {
         return Ok(out);
@@ -192,6 +233,18 @@ pub fn dev_tools_memory_ingest(
     // Outbox-local id → real node id (nodes minted this pass), so edges in the
     // same outbox can reference their own nodes.
     let mut local_ids: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    // Findings backpressure — mirror the idea scanner's saturation gate: never
+    // pour findings into a pending queue nobody is draining. Counted once and
+    // tracked across this pass's own inserts.
+    let mut pending_ideas: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
+            [&project_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    let mut finding_lines = 0usize;
 
     for line in text.lines().take(MAX_OUTBOX_LINES) {
         let t = line.trim();
@@ -320,6 +373,138 @@ pub fn dev_tools_memory_ingest(
                     )
                     .map_err(|e| AppError::Internal(e.to_string()))?;
                 out.edges_inserted += n as i32;
+            }
+            // Scan-sweep findings — routed into `dev_ideas` through the same
+            // guarded door every generated idea uses (origin `scan_sweep`,
+            // dedup honors rejected/archived, backlog-cap backpressure).
+            "finding" => {
+                let Some(title) = parsed.title.as_deref().map(str::trim).filter(|s| !s.is_empty())
+                else {
+                    out.skipped += 1;
+                    continue;
+                };
+                let lens = parsed
+                    .lens
+                    .as_deref()
+                    .map(sanitize_skill_name)
+                    .filter(|s| !s.is_empty());
+                let Some(lens) = lens else {
+                    out.skipped += 1;
+                    continue;
+                };
+                finding_lines += 1;
+                if finding_lines > MAX_FINDING_LINES || pending_ideas >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+                    out.findings_skipped += 1;
+                    continue;
+                }
+                let title: String = title.chars().take(MAX_TITLE_CHARS).collect();
+                let body: Option<String> = parsed
+                    .body
+                    .as_deref()
+                    .map(|b| b.chars().take(MAX_BODY_CHARS).collect());
+                // Stored as a JSON object so the triage card's evidence
+                // popover renders it (the column contract is a JSON blob).
+                let evidence: Option<String> = parsed
+                    .evidence
+                    .as_deref()
+                    .map(|e| e.chars().take(MAX_EVIDENCE_CHARS).collect::<String>())
+                    .map(|e| serde_json::json!({ "evidence": e }).to_string());
+                let context_id = parsed
+                    .context
+                    .as_deref()
+                    .and_then(|n| ctx_by_name.get(&n.trim().to_lowercase()))
+                    .cloned();
+                let score = |v: Option<i64>| v.map(|n| n.clamp(1, 10) as i32);
+                let dedup = repo::scan_dedup_key(&lens, context_id.as_deref(), &title);
+                match repo::create_finding(
+                    &state.db,
+                    &project_id,
+                    "scan_sweep",
+                    &title,
+                    body.as_deref(),
+                    None,
+                    context_id.as_deref(),
+                    None,
+                    evidence.as_deref(),
+                    &dedup,
+                    score(parsed.effort),
+                    score(parsed.impact),
+                    score(parsed.risk),
+                )? {
+                    Some(_) => {
+                        out.findings_created += 1;
+                        pending_ideas += 1;
+                    }
+                    None => out.findings_deduped += 1,
+                }
+            }
+            // Deep-scan escalation: creates a visible backlog finding AND
+            // signals the frontend to auto-dispatch `/scan-<lens> <context>`.
+            // Only a NEWLY created finding is returned as an escalation — the
+            // dedup key is the cooldown, so a re-escalated lens×context stays
+            // silent until the operator resolves or archives the finding.
+            "escalation" => {
+                let lens = parsed
+                    .lens
+                    .as_deref()
+                    .map(sanitize_skill_name)
+                    .filter(|s| !s.is_empty());
+                let Some(lens) = lens else {
+                    out.skipped += 1;
+                    continue;
+                };
+                if pending_ideas >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+                    out.findings_skipped += 1;
+                    continue;
+                }
+                let context_name = parsed
+                    .context
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.chars().take(MAX_TITLE_CHARS).collect::<String>());
+                let context_id = context_name
+                    .as_deref()
+                    .and_then(|n| ctx_by_name.get(&n.to_lowercase()))
+                    .cloned();
+                let scope = context_id
+                    .clone()
+                    .or_else(|| context_name.as_ref().map(|n| n.to_lowercase()))
+                    .unwrap_or_else(|| "all".to_string());
+                let title = format!(
+                    "Deep scan recommended: {lens} on {}",
+                    context_name.as_deref().unwrap_or("the whole repo")
+                );
+                let reason: Option<String> = parsed
+                    .reason
+                    .as_deref()
+                    .map(|r| r.chars().take(MAX_EVIDENCE_CHARS).collect());
+                let dedup = format!("scan:escalation:{lens}:{scope}");
+                if repo::create_finding(
+                    &state.db,
+                    &project_id,
+                    "scan_sweep",
+                    &title,
+                    reason.as_deref(),
+                    None,
+                    context_id.as_deref(),
+                    None,
+                    None,
+                    &dedup,
+                    None,
+                    None,
+                    None,
+                )?
+                .is_some()
+                {
+                    pending_ideas += 1;
+                    out.escalations.push(IngestEscalation {
+                        lens,
+                        context: context_name,
+                    });
+                } else {
+                    out.findings_deduped += 1;
+                }
             }
             _ => out.skipped += 1,
         }
@@ -854,6 +1039,25 @@ mod tests {
     fn slug_collapses_and_caps() {
         assert_eq!(slug("Hello, World!"), "hello-world");
         assert_eq!(slug("  --x--  "), "x");
+    }
+
+    #[test]
+    fn outbox_finding_and_escalation_lines_parse_leniently() {
+        let f: OutboxLine = serde_json::from_str(
+            r#"{"type":"finding","skill":"scan-sweep","lens":"security-auditor","context":"Vault","title":"T","body":"B","evidence":"a.rs:1 proof","effort":3,"impact":11,"risk":0,"unknown_field":true}"#,
+        )
+        .expect("finding line parses (unknown fields ignored)");
+        assert_eq!(f.line_type, "finding");
+        assert_eq!(f.lens.as_deref(), Some("security-auditor"));
+        assert_eq!(f.evidence.as_deref(), Some("a.rs:1 proof"));
+        assert_eq!(f.impact, Some(11), "raw value kept; ingest clamps to 1..=10");
+
+        let e: OutboxLine = serde_json::from_str(
+            r#"{"type":"escalation","lens":"security-auditor","context":"Vault","reason":"3 auth findings"}"#,
+        )
+        .expect("escalation line parses");
+        assert_eq!(e.line_type, "escalation");
+        assert_eq!(e.reason.as_deref(), Some("3 auth findings"));
     }
 }
 

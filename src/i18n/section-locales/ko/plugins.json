@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n}개 신규",
     "skills_pipeline_loading": "컨텍스트와 프리셋 Skill 매칭 중…",
     "skills_pipeline_no_contexts": "이 프로젝트에 매핑된 컨텍스트가 아직 없습니다.",
-    "skills_pipeline_run": "실행 ({n})",
     "skills_pipeline_subtitle": "컨텍스트당 프리셋 실행 1회, 커버리지가 낮은 순",
     "skills_pipeline_title": "커버리지 파이프라인",
     "skills_preset_empty": "사용 가능한 프리셋 Skill이 없습니다.",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "{name}에서 터미널 1개를 열어 컨텍스트 {n}개에 걸쳐 스킬을 실행 중입니다",
     "skills_use_launch_cta": "터미널 열기",
     "skills_use_target_cmd": "터미널",
-    "skills_use_batch_one_session": "컨텍스트 {n}개, 세션 1개"
+    "skills_use_batch_one_session": "컨텍스트 {n}개, 세션 1개",
+    "skills_pipeline_run_sweeps": "스윕 {n}",
+    "skills_deep_reco_title": "추천 딥 스캔",
+    "skills_deep_reco_run": "딥 스캔 실행",
+    "skills_auto_deep_label": "자동 딥 스캔",
+    "skills_auto_deep_hint": "스윕이 렌즈를 에스컬레이션하면 집중 스캔이 자동으로 실행됩니다(수집당 최대 2회). 이 목록에서 수동으로 실행하려면 꺼두세요.",
+    "skills_sweep_hero_hint": "컨텍스트를 한 번 읽고 일치하는 모든 렌즈를 한 세션에서 평가합니다. 효율적인 기본값이며, 아래 개별 렌즈는 집중 딥다이브 형식입니다.",
+    "skills_sweep_roster_show": "전체 {n}개 렌즈 표시",
+    "skills_sweep_roster_hide": "개별 렌즈 숨기기",
+    "skills_use_sweep_hint": "이 렌즈는 스윕 번들의 일부입니다. 나머지와 한 번에 처리하려면 /scan-sweep 사용을 고려하세요.",
+    "sweep_auto_deep_toast": "딥 스캔 실행됨: {context}의 {lens}"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "휴면 스킬",
     "origin_standards_finding": "표준",
     "origin_why_raised": "이 항목이 제기된 이유",
-    "origin_workspace_practice": "워크스페이스 관행"
+    "origin_workspace_practice": "워크스페이스 관행",
+    "origin_scan_sweep": "스캔 스위프"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — 언제나 곁에 있는 생각의 파트너입니다. 기억을 살펴보고, 표시 방식을 설정하고, 음성을 연결하세요.",

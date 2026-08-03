@@ -9,6 +9,9 @@ import { EventName } from '@/lib/eventRegistry';
 import * as fleetApi from '@/api/fleet/fleet';
 import { ingestMemoryOutbox, listProjects, projectMemoryToVault, scanCodebase } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
+import { deepScanCommand, isAutoDeepScanEnabled, MAX_AUTO_DEEP_SCANS_PER_INGEST } from '@/lib/scanSweep';
+import { SCAN_MATCH_RULES } from '@/features/plugins/dev-tools/constants/scanMatchRules.gen';
+import { useToastStore } from '@/stores/toastStore';
 
 /** Normalize a path for cwd↔root matching (Windows separators, case, slash). */
 const normPath = (p: string) => p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
@@ -32,6 +35,36 @@ async function ingestOutboxForCwd(cwd: string | null | undefined): Promise<void>
   }
   if (r.nodesInserted + r.nodesRefreshed > 0) {
     projectMemoryToVault(project.id).catch(silentCatch('fleet memory vault projection'));
+  }
+  // Tier 2: NEW deep-scan escalations auto-dispatch a focused single-lens
+  // session — bounded, toggleable, and never silent (toast per dispatch).
+  // Lens keys are validated against the generated lens registry so a
+  // malformed outbox line can never shape a spawned command.
+  if ((r.escalations?.length ?? 0) > 0 && isAutoDeepScanEnabled()) {
+    const validLenses = new Set(SCAN_MATCH_RULES.map((rule) => rule.agentKey));
+    const picks = r.escalations
+      .filter((e) => validLenses.has(e.lens))
+      .slice(0, MAX_AUTO_DEEP_SCANS_PER_INGEST);
+    // Dynamic import: a static one closes the cycle fleetSlice → useTranslation
+    // → routeSections → systemStore → fleetSlice and breaks store creation.
+    const { getActiveTranslations } = await import('@/i18n/useTranslation');
+    const t = getActiveTranslations();
+    for (const esc of picks) {
+      const cmd = deepScanCommand(esc.lens, esc.context);
+      fleetApi
+        .spawnSession(project.root_path, [cmd])
+        .then(() => {
+          useToastStore
+            .getState()
+            .addToast(
+              t.plugins.dev_tools.sweep_auto_deep_toast
+                .replace('{lens}', esc.lens)
+                .replace('{context}', esc.context ?? project.name),
+              'success',
+            );
+        })
+        .catch(silentCatch('fleet auto deep scan dispatch'));
+    }
   }
 }
 

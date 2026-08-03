@@ -7,6 +7,7 @@ color = "#3B82F6"
 category_group = "technical"
 description = "Identifies performance bottlenecks and optimization opportunities"
 examples = "Reduce bundle size, Optimize database queries, Improve render performance"
+match = "performance|render|bundle|query|slow|cache|optim"
 
 [[agents]]
 key = "security-auditor"
@@ -17,6 +18,7 @@ color = "#EF4444"
 category_group = "technical"
 description = "Identifies security vulnerabilities and best practice violations"
 examples = "XSS prevention, SQL injection risks, Authentication gaps"
+match = "auth|login|token|secret|password|credential|session|encrypt|permission"
 
 [[agents]]
 key = "architecture-analyst"
@@ -27,6 +29,7 @@ color = "#8B5CF6"
 category_group = "technical"
 description = "Evaluates system architecture and suggests structural improvements"
 examples = "Reduce coupling, Improve modularity, Better separation of concerns"
+match = "architect|module|component|layer|service|pattern|coupling|abstract"
 
 [[agents]]
 key = "test-strategist"
@@ -37,6 +40,7 @@ color = "#10B981"
 category_group = "technical"
 description = "Identifies gaps in test coverage and suggests testing strategies"
 examples = "Missing edge cases, Integration test gaps, E2E scenarios"
+match = "test|spec|coverage|mock|assert|e2e|integration|unit"
 
 [[agents]]
 key = "dependency-auditor"
@@ -47,6 +51,7 @@ color = "#F59E0B"
 category_group = "technical"
 description = "Analyzes dependencies for updates, vulnerabilities, and bloat"
 examples = "Outdated packages, Unused dependencies, Version conflicts"
+match = "package|dependency|import|library|version|npm|cargo"
 
 [[agents]]
 key = "ux-reviewer"
@@ -57,6 +62,7 @@ color = "#EC4899"
 category_group = "user"
 description = "Reviews user experience patterns and suggests improvements"
 examples = "Loading states, Error handling UX, Navigation clarity"
+match = "ui|ux|component|page|view|form|modal|button|layout|style"
 
 [[agents]]
 key = "accessibility-checker"
@@ -67,6 +73,7 @@ color = "#6366F1"
 category_group = "user"
 description = "Identifies accessibility issues and WCAG compliance gaps"
 examples = "Missing ARIA labels, Color contrast, Keyboard navigation"
+match = "a11y|accessibility|aria|wcag|screen.?reader|keyboard|contrast"
 
 [[agents]]
 key = "mobile-specialist"
@@ -77,6 +84,7 @@ color = "#14B8A6"
 category_group = "user"
 description = "Evaluates mobile experience and responsive design"
 examples = "Touch targets, Viewport handling, Mobile performance"
+match = "mobile|responsive|viewport|touch|swipe|tablet"
 
 [[agents]]
 key = "error-handler"
@@ -87,6 +95,7 @@ color = "#F97316"
 category_group = "user"
 description = "Reviews error handling, recovery flows, and user messaging"
 examples = "Graceful degradation, Retry logic, Error boundaries"
+match = "error|exception|catch|boundary|fallback|retry|toast|alert"
 
 [[agents]]
 key = "onboarding-designer"
@@ -97,6 +106,7 @@ color = "#06B6D4"
 category_group = "user"
 description = "Evaluates first-time user experience and onboarding flows"
 examples = "Setup wizards, Progressive disclosure, Empty states"
+match = "onboard|wizard|setup|welcome|tutorial|getting.?started"
 
 [[agents]]
 key = "feature-scout"
@@ -107,6 +117,7 @@ color = "#8B5CF6"
 category_group = "business"
 description = "Identifies missing features and enhancement opportunities"
 examples = "Competitive features, User-requested features, Market gaps"
+match = "feature|roadmap|missing|todo|placeholder|future"
 
 [[agents]]
 key = "monetization-advisor"
@@ -117,6 +128,7 @@ color = "#F59E0B"
 category_group = "business"
 description = "Suggests revenue optimization and pricing strategies"
 examples = "Premium features, Usage limits, Conversion funnels"
+match = "billing|payment|subscription|plan|pricing|tier|premium"
 
 [[agents]]
 key = "analytics-planner"
@@ -127,6 +139,7 @@ color = "#3B82F6"
 category_group = "business"
 description = "Plans analytics instrumentation and data collection"
 examples = "Event tracking, Funnel analysis, User behavior insights"
+match = "analytics|tracking|event|metric|telemetry|log"
 
 [[agents]]
 key = "documentation-auditor"
@@ -137,6 +150,7 @@ color = "#10B981"
 category_group = "business"
 description = "Reviews documentation completeness and quality"
 examples = "API docs, README quality, Code comments"
+match = "doc|readme|comment|api.?doc|jsdoc|guide"
 
 [[agents]]
 key = "growth-hacker"
@@ -147,6 +161,7 @@ color = "#EC4899"
 category_group = "business"
 description = "Identifies growth opportunities and viral mechanics"
 examples = "Sharing features, Referral programs, Network effects"
+match = "share|referral|invite|social|viral|notification"
 
 [[agents]]
 key = "tech-debt-tracker"
@@ -157,6 +172,7 @@ color = "#EF4444"
 category_group = "mastermind"
 description = "Catalogs technical debt and prioritizes repayment"
 examples = "Legacy code, Missing abstractions, Workarounds"
+match = "debt|legacy|workaround|hack|deprecated|fixme|todo"
 
 [[agents]]
 key = "innovation-catalyst"
@@ -167,6 +183,7 @@ color = "#F59E0B"
 category_group = "mastermind"
 description = "Suggests innovative approaches and paradigm shifts"
 examples = "AI integration, New architectures, Emerging patterns"
+match = "ai|ml|machine.?learn|llm|agent|automat|innovat"
 
 [[agents]]
 key = "risk-assessor"
@@ -177,6 +194,7 @@ color = "#F97316"
 category_group = "mastermind"
 description = "Identifies project risks and mitigation strategies"
 examples = "Single points of failure, Scaling risks, Data loss scenarios"
+match = "risk|single.?point|scale|failover|backup|disaster|recovery"
 
 [[agents]]
 key = "integration-planner"
@@ -187,6 +205,7 @@ color = "#6366F1"
 category_group = "mastermind"
 description = "Plans system integrations and API design"
 examples = "Third-party APIs, Webhook design, Data synchronization"
+match = "api|webhook|integration|sync|external|third.?party|oauth"
 
 [[agents]]
 key = "devops-optimizer"
@@ -197,6 +216,7 @@ color = "#14B8A6"
 category_group = "mastermind"
 description = "Optimizes build, deploy, and operations workflows"
 examples = "CI/CD pipelines, Docker optimization, Monitoring gaps"
+match = "ci|cd|deploy|docker|pipeline|build|monitor|infra"
 
 [[agents]]
 key = "bounty-hunter"
@@ -207,6 +227,7 @@ color = "#DC2626"
 category_group = "technical"
 description = "Scans for exploitable bugs, logic flaws, and edge cases that qualify for bug bounty programs — pricing anomalies, data inconsistencies, rule violations, race conditions, and UI/logic mismatches"
 examples = "Pricing calculation errors, Race conditions in state updates, Inconsistent validation rules, Edge cases in boundary logic, Data leaks between user contexts"
+match = "exploit|vulnerab|race.?condition|edge.?case|logic.?flaw|inconsisten|data.?leak|bounty"
 
 [[agents]]
 key = "business-strategist"
@@ -217,3 +238,4 @@ color = "#F59E0B"
 category_group = "business"
 description = "Finds pure business-value opportunities: monetization, conversion, user retention, missing features competitors have, pricing/packaging surfaces, and workflow friction that costs users money or time. Thinks like a product manager, not an engineer — proposes WHAT to build for value, not refactors."
 examples = "Add usage-based billing tier, Reduce onboarding drop-off step, Export reports customers ask for, Surface ROI metrics on dashboard"
+match = "business.?value|monetiz|conversion|retention|competitor|workflow.?friction|revenue|value.?prop"

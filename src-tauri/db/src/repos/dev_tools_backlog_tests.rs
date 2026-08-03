@@ -329,3 +329,48 @@ fn aging_rejects_a_nonpositive_window() {
     let pool = test_pool();
     assert!(archive_stale_ideas(&pool, None, 0).is_err());
 }
+
+#[test]
+fn scan_sweep_origin_accepted_and_escalation_key_is_the_cooldown() {
+    let pool = test_pool();
+    let pid = project(&pool);
+    let key = "scan:escalation:security-auditor:ctx-1";
+
+    let first = create_finding(
+        &pool,
+        &pid,
+        "scan_sweep",
+        "Deep scan recommended: security-auditor on Vault",
+        Some("3 auth findings incl. 1 critical"),
+        None,
+        None,
+        None,
+        None,
+        key,
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(first.is_some(), "scan_sweep must be a valid finding origin");
+
+    // Re-escalating the same lens x context is absorbed until the operator
+    // resolves/archives the finding -- this IS the auto-dispatch cooldown.
+    let second = create_finding(
+        &pool,
+        &pid,
+        "scan_sweep",
+        "Deep scan recommended: security-auditor on Vault",
+        Some("still hot"),
+        None,
+        None,
+        None,
+        None,
+        key,
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(second.is_none(), "duplicate escalation must not re-dispatch");
+}

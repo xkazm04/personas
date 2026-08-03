@@ -13673,7 +13673,6 @@
       "skills_pipeline_fresh_nodes": "{n} নতুন",
       "skills_pipeline_loading": "প্রিসেট স্কিলের সাথে কনটেক্সট মেলানো হচ্ছে…",
       "skills_pipeline_no_contexts": "এই প্রকল্পের জন্য এখনো কোনো কনটেক্সট ম্যাপ করা হয়নি।",
-      "skills_pipeline_run": "চালান ({n})",
       "skills_pipeline_subtitle": "প্রতি কনটেক্সটে একটি প্রিসেট রান, সবচেয়ে কম কভারেজ প্রথমে",
       "skills_pipeline_title": "কভারেজ পাইপলাইন",
       "skills_preset_empty": "কোনো প্রিসেট স্কিল উপলব্ধ নেই।",
@@ -13737,7 +13736,17 @@
       "skills_use_cmd_launched_batch": "{name}-এ একটি টার্মিনাল খোলা হয়েছে, {n}টি কন্টেক্সট জুড়ে স্কিলটি চলছে",
       "skills_use_launch_cta": "টার্মিনাল খুলুন",
       "skills_use_target_cmd": "টার্মিনাল",
-      "skills_use_batch_one_session": "{n}টি কন্টেক্সট, একটি সেশন"
+      "skills_use_batch_one_session": "{n}টি কন্টেক্সট, একটি সেশন",
+      "skills_pipeline_run_sweeps": "সুইপ {n}",
+      "skills_deep_reco_title": "প্রস্তাবিত গভীর স্ক্যান",
+      "skills_deep_reco_run": "গভীর স্ক্যান চালান",
+      "skills_auto_deep_label": "স্বয়ংক্রিয় গভীর স্ক্যান",
+      "skills_auto_deep_hint": "যখন কোনো সুইপ একটি লেন্সকে এসকেলেট করে, তখন ফোকাসড স্ক্যান স্বয়ংক্রিয়ভাবে চালু হয় (প্রতি ইনজেস্টে সর্বোচ্চ ২টি)। এই তালিকা থেকে ম্যানুয়ালি পাঠাতে বন্ধ করুন।",
+      "skills_sweep_hero_hint": "একটি প্রসঙ্গ একবার পড়ে এবং এক সেশনে প্রতিটি মিলিত লেন্স মূল্যায়ন করে। কার্যকর ডিফল্ট; নিচের পৃথক লেন্সগুলো হলো ফোকাসড ডিপ-ডাইভ রূপ।",
+      "skills_sweep_roster_show": "সব {n}টি লেন্স দেখান",
+      "skills_sweep_roster_hide": "পৃথক লেন্স লুকান",
+      "skills_use_sweep_hint": "এই লেন্সটি সুইপ বান্ডেলের অংশ। বাকিগুলোর সাথে একবারে কভার করতে /scan-sweep বিবেচনা করুন।",
+      "sweep_auto_deep_toast": "গভীর স্ক্যান পাঠানো হয়েছে: {lens}, {context}-এ"
     },
     "doc_signing": {
       "sign_heading": "ডকুমেন্ট স্বাক্ষর করুন",
@@ -15495,7 +15504,8 @@
       "origin_skill_dormant": "নিষ্ক্রিয় স্কিল",
       "origin_standards_finding": "স্ট্যান্ডার্ড",
       "origin_why_raised": "কেন এটি উত্থাপিত হলো",
-      "origin_workspace_practice": "ওয়ার্কস্পেস অনুশীলন"
+      "origin_workspace_practice": "ওয়ার্কস্পেস অনুশীলন",
+      "origin_scan_sweep": "স্ক্যান সুইপ"
     },
     "companion_label": "কম্প্যানিয়ন",
     "companion_desc": "Athena — আপনার সর্বদা উপলব্ধ চিন্তার সঙ্গী। তার স্মৃতি পরীক্ষা করুন, তার চেহারা কনফিগার করুন এবং একটি ভয়েস যুক্ত করুন।",

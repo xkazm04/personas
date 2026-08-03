@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} nových",
     "skills_pipeline_loading": "Přiřazování kontextů k přednastaveným skillům…",
     "skills_pipeline_no_contexts": "Pro tento projekt zatím nejsou namapované žádné kontexty.",
-    "skills_pipeline_run": "Spustit ({n})",
     "skills_pipeline_subtitle": "jeden přednastavený běh na kontext, nejméně pokryté první",
     "skills_pipeline_title": "Pipeline pokrytí",
     "skills_preset_empty": "Žádné přednastavené skilly nejsou k dispozici.",
@@ -1427,7 +1426,17 @@
     "skills_use_cmd_launched_batch": "V projektu {name} se otevřel jeden terminál, dovednost běží napříč {n} kontexty",
     "skills_use_launch_cta": "Otevřít terminál",
     "skills_use_target_cmd": "Terminál",
-    "skills_use_batch_one_session": "{n} kontextů, jedna relace"
+    "skills_use_batch_one_session": "{n} kontextů, jedna relace",
+    "skills_pipeline_run_sweeps": "Provést sweep ({n})",
+    "skills_deep_reco_title": "Doporučené hloubkové skeny",
+    "skills_deep_reco_run": "Spustit hloubkový sken",
+    "skills_auto_deep_label": "Automatické hloubkové skeny",
+    "skills_auto_deep_hint": "Když sweep eskaluje objektiv, cílené skenování se spustí automaticky (max. 2 na ingest). Vypněte pro ruční spouštění z tohoto seznamu.",
+    "skills_sweep_hero_hint": "Přečte kontext jednou a v jedné relaci vyhodnotí každý odpovídající objektiv. Efektivní výchozí volba; jednotlivé objektivy níže jsou cílenou hloubkovou formou.",
+    "skills_sweep_roster_show": "Zobrazit všech {n} objektivů",
+    "skills_sweep_roster_hide": "Skrýt jednotlivé objektivy",
+    "skills_use_sweep_hint": "Tento objektiv je součástí sweep balíčku. Zvažte /scan-sweep, aby se pokryl spolu s ostatními v jednom průchodu.",
+    "sweep_auto_deep_toast": "Hloubkový sken odeslán: {lens} na {context}"
   },
   "doc_signing": {
     "sign_heading": "Podepsat dokument",
@@ -3185,7 +3194,8 @@
     "origin_skill_dormant": "Nevyužitá dovednost",
     "origin_standards_finding": "Standardy",
     "origin_why_raised": "Proč to bylo vyvoláno",
-    "origin_workspace_practice": "Praxe pracovního prostoru"
+    "origin_workspace_practice": "Praxe pracovního prostoru",
+    "origin_scan_sweep": "Souhrnný sken"
   },
   "companion_label": "Companion",
   "companion_desc": "Athena — váš vždy dostupný myšlenkový partner. Prohlédněte její paměť, nastavte její vzhled a přiřaďte hlas.",
