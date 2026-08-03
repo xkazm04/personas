@@ -146,7 +146,7 @@ export interface CanvasNote {
   font: NoteFont;
 }
 
-/** Common contract every canvas variant implements (prototype scaffold). */
+/** Contract between the page and the canvas (single Hex Mosaic view). */
 export interface VariantProps {
   scene: Scene;
   mode: CanvasMode;

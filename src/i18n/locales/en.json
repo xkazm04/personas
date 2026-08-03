@@ -9728,39 +9728,22 @@
       "close_sources_rail": "Hide sources panel",
       "open_targets_rail": "Show targets panel",
       "close_targets_rail": "Hide targets panel",
-
       "ghost_section_title": "Suggested routes",
-
       "ghost_suggested": "suggested",
-
       "ghost_observed_count": "observed {count}×",
-
       "ghost_evidence_hint": "Show the observations behind this suggestion",
-
       "ghost_evidence_summary": "I paired {matched} of your {total} manual runs with this event over the last {days} days.",
-
       "ghost_evidence_ran": "you ran it {gap} later",
-
       "ghost_accept": "Wire it",
-
       "ghost_accept_hint": "Create this trigger — dry-run first, nothing fires until it passes",
-
       "ghost_reject": "Dismiss suggestion",
-
       "ghost_reject_hint": "Dismiss — I won't suggest this route again",
-
       "ghost_accepted_toast": "Route wired. Its own runs won't count as evidence for new suggestions.",
-
       "ghost_accept_failed": "Couldn't wire the suggested route",
-
       "ghost_rejected_toast": "Dismissed — I won't suggest this route again.",
-
       "ghost_reject_failed": "Couldn't dismiss the suggestion",
-
       "ghost_dry_run_failed": "Dry-run failed — nothing was wired. {error}",
-
       "ghost_not_enough_signal": "Not enough signal yet — I only suggest a route after seeing the same event followed by the same manual run at least {count} times.",
-
       "ghost_miner_off": "Route suggestions are off — set a project's autopilot to Suggest or Full and I'll start watching for patterns."
     },
     "subscription_list": {
@@ -19202,9 +19185,6 @@
     "family_monitoring": "Monitoring",
     "family_kpi": "KPIs",
     "family_fleet": "Fleet",
-    "variant_mosaic": "Hex Puzzle",
-    "variant_inverse": "Inverse Grid",
-    "variant_switcher": "Mastermind canvas variant",
     "loading_layout": "Loading canvas layout",
     "loading_projects": "Loading projects",
     "family_passports": "Passports",

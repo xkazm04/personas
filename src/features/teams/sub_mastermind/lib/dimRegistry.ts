@@ -106,10 +106,10 @@ const ord = <T extends string>(scale: T[], v: T) => {
 /** Boolean-presence dimensions: solid when a value exists, absent otherwise. */
 const presence = (v: string | null | undefined): DimStatus => (v ? 'solid' : 'absent');
 
-// Canvas node order — the lattice slots map onto this 1:1 (MosaicIsland.AXIAL /
-// InverseIsland.RING). DimKey is derived from this tuple (NOT from the registry
+// Canvas node order — the lattice slots map onto this 1:1 (MosaicIsland.AXIAL).
+// DimKey is derived from this tuple (NOT from the registry
 // value types) so the key space stays decoupled from the entry value types
-// and free of circular type references. DO NOT reorder without updating those lattices.
+// and free of circular type references. DO NOT reorder without updating that lattice.
 export const DIM_ORDER = [
   'db', 'monitoring', 'ci', 'tests', 'security', 'hosting', 'auth', 'agents',
   'skills', 'llm', 'kpi', 'ideas', 'goals', 'datalinks', 'support',
@@ -303,9 +303,9 @@ export const DIM_REGISTRY: Record<DimKey, DimRegistryEntry> = {
 // addingADimension:
 //   1. In THIS file: add the key to DIM_ORDER and its entry to DIM_REGISTRY
 //      (label/category/icon/derive/rowKey/action/payloadKind).
-//      deriveScene/dimMeta/dimActions/DimGlyph and both cell renderers pick it
+//      deriveScene/dimMeta/dimActions/DimGlyph and the cell renderer pick it
 //      up with no further edits.
-//   2. Open a lattice slot for it: add a [q,r] coord to MosaicIsland.AXIAL AND a
-//      [col,row] coord to InverseIsland.RING (both currently hold 15 — the 16th+
-//      slots are the only render-side change a new dimension needs; at ~15 we're
-//      at the comfortable ceiling, see mastermind.md §5 dimension-categories).
+//   2. Open a lattice slot for it: add a [q,r] coord to MosaicIsland.AXIAL
+//      (currently 15 — the 16th+ slot is the only render-side change a new
+//      dimension needs; at ~15 we're at the comfortable ceiling, see
+//      mastermind.md §5 dimension-categories).

@@ -19191,9 +19191,6 @@ export type Translations = {
     family_monitoring: string;
     family_kpi: string;
     family_fleet: string;
-    variant_mosaic: string;
-    variant_inverse: string;
-    variant_switcher: string;
     loading_layout: string;
     loading_projects: string;
     family_passports: string;

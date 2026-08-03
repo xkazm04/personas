@@ -1,11 +1,8 @@
-// Mastermind — experimental multi-project development canvas (Projects →
-// Development). Live data: readiness passports (usePassportData) as islands,
-// cross-project relations as edges, Factory KPI rollups as the KPI dimension,
-// and open Fleet CLI sessions as clickable dock nodes per island.
-//
-// ── PROTOTYPE SCAFFOLD (/prototype round 4, throwaway) ──────────────────────
-// Hex Puzzle + Inverse Grid develop in parallel (Grid Board retired); the
-// switcher stays until the module is complete and a final view mode is chosen.
+// Mastermind — multi-project development canvas (Projects → Development).
+// Live data: readiness passports (usePassportData) as islands, cross-project
+// relations as edges, Factory KPI rollups as the KPI dimension, and open Fleet
+// CLI sessions as clickable dock nodes per island. The Hex Mosaic is the final
+// view mode (Grid Board and Inverse Grid prototypes retired).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
@@ -17,7 +14,6 @@ import { spawnSession } from '@/api/fleet/fleet';
 import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { navigateToProcess } from '@/features/fleet/monitor/navigateToProcess';
 import { useContextScanBackground } from '@/features/plugins/dev-tools/hooks/useContextScanBackground';
 import { ProjectModal } from '@/features/plugins/dev-tools/sub_projects/ProjectModal';
@@ -66,11 +62,6 @@ import { ProjectListSidebar } from './lib/ProjectListSidebar';
 import { ProjectSidebar } from './lib/ProjectSidebar';
 import type { CanvasMode, DimNode, FleetNode, IslandShip } from './lib/types';
 import { MastermindHexMosaic } from './variants/MastermindHexMosaic';
-import { MastermindInverseGrid } from './variants/MastermindInverseGrid';
-
-type VariantId = 'mosaic' | 'inverse';
-
-const VARIANTS = { mosaic: MastermindHexMosaic, inverse: MastermindInverseGrid } as const;
 
 /** Stable empty fallbacks — a fresh [] per island would defeat the identity cache. */
 const EMPTY_FLEET: FleetNode[] = [];
@@ -129,7 +120,6 @@ function MastermindInner() {
   const invalidateScans = useSceneStore((s) => s.invalidateScans);
   const retryFailed = useSceneStore((s) => s.retryFailed);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
-  const [variant, setVariant] = useState<VariantId>('mosaic');
   const [mode, setMode] = useState<CanvasMode>('edit');
   // Durable layout hydrates once per session from the DB (async IPC). Until it
   // resolves the canvas is held back so CanvasShell's sync `useState(loadGroups)`
@@ -549,7 +539,6 @@ function MastermindInner() {
   const previewSession = previewId ? sessions.find((s) => s.id === previewId) ?? null : null;
   const openIsland = openSlug ? positioned.islands.find((i) => i.slug === openSlug) ?? null : null;
   const openPassport = openSlug ? passports.find((p) => p.identity.slug === openSlug) ?? null : null;
-  const Canvas = VARIANTS[variant];
 
   // Canvas cell → the same Improve popovers the Passport wall opens, anchored
   // at the click point (they flip/clamp against the window themselves). The
@@ -701,7 +690,7 @@ function MastermindInner() {
           first passport load has resolved — an empty world during the fetch
           reads as "you have nothing", not "loading". */}
       {layoutReady && !(loading && passports.length === 0) ? (
-        <Canvas
+        <MastermindHexMosaic
           scene={canvasScene}
           mode={mode}
           onIslandCommit={onIslandCommit}
@@ -718,19 +707,6 @@ function MastermindInner() {
       ) : (
         <LoadingSpinner label={layoutReady ? t.mastermind.loading_projects : t.mastermind.loading_layout} />
       )}
-
-      {/* variant switcher — stays until the module is complete and a final view mode is chosen */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
-        <SegmentedTabs
-          tabs={[{ id: 'mosaic', label: t.mastermind.variant_mosaic }, { id: 'inverse', label: t.mastermind.variant_inverse }]}
-          activeTab={variant}
-          onTabChange={setVariant}
-          variant="segment"
-          size="sm"
-          fullWidth={false}
-          ariaLabel={t.mastermind.variant_switcher}
-        />
-      </div>
 
       <ProjectListSidebar
         islands={positioned.islands}
