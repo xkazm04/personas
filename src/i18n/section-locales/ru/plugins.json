@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} новых",
     "skills_pipeline_loading": "Сопоставление контекстов с готовыми навыками…",
     "skills_pipeline_no_contexts": "Для этого проекта пока не сопоставлены контексты.",
-    "skills_pipeline_run": "Запустить ({n})",
     "skills_pipeline_subtitle": "один готовый запуск на контекст, начиная с наименее покрытых",
     "skills_pipeline_title": "Конвейер покрытия",
     "skills_preset_empty": "Готовые навыки недоступны.",
@@ -1426,7 +1425,17 @@
     "skills_use_cmd_launched": "В {name} открыт терминал, навык выполняется",
     "skills_use_cmd_launched_batch": "В {name} открыто {n} терминалов, по одному на контекст",
     "skills_use_launch_cta": "Открыть терминал",
-    "skills_use_target_cmd": "Терминал"
+    "skills_use_target_cmd": "Терминал",
+    "skills_auto_deep_hint": "Когда sweep эскалирует объектив, углублённое сканирование запускается автоматически (не более 2 на прием). Отключите, чтобы запускать вручную из этого списка.",
+    "skills_auto_deep_label": "Автоматические глубокие сканы",
+    "skills_deep_reco_run": "Запустить глубокое сканирование",
+    "skills_deep_reco_title": "Рекомендуемые глубокие сканы",
+    "skills_pipeline_run_sweeps": "Запустить свип ({n})",
+    "skills_sweep_hero_hint": "Считывает контекст один раз и оценивает все подходящие объективы за один сеанс. Эффективный вариант по умолчанию; отдельные объективы ниже представляют собой сфокусированную углублённую форму.",
+    "skills_sweep_roster_hide": "Скрыть отдельные объективы",
+    "skills_sweep_roster_show": "Показать все объективы ({n})",
+    "skills_use_sweep_hint": "Этот объектив входит в пакет sweep. Рассмотрите /scan-sweep, чтобы охватить его вместе с остальными за один проход.",
+    "sweep_auto_deep_toast": "Запущено глубокое сканирование: {lens} для {context}"
   },
   "doc_signing": {
     "sign_heading": "Подписать документ",
@@ -3184,7 +3193,8 @@
     "origin_skill_dormant": "Неиспользуемый навык",
     "origin_standards_finding": "Стандарты",
     "origin_why_raised": "Почему это возникло",
-    "origin_workspace_practice": "Практика рабочей области"
+    "origin_workspace_practice": "Практика рабочей области",
+    "origin_scan_sweep": "Сводное сканирование"
   },
   "companion_label": "Компаньон",
   "companion_desc": "Athena — ваш всегда доступный партнёр для размышлений. Загляните в её память, настройте её оформление и подключите голос.",

@@ -17,6 +17,7 @@ import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
+import { isPresetSkill, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -112,6 +113,11 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
 
         <div className="px-5 py-4 space-y-4">
           <SkillDescription description={skill.description} />
+          {/* Single-lens presets: nudge toward the consolidated sweep, which
+              reads the context once and covers this lens with the rest. */}
+          {isPresetSkill(skill.name) && skill.name !== SWEEP_SKILL_NAME && (
+            <p className="typo-label text-foreground/45">{d.skills_use_sweep_hint}</p>
+          )}
 
           <Row label={d.skills_use_run_via}>
             {/* What each target means lives in the variant's tooltip — the row

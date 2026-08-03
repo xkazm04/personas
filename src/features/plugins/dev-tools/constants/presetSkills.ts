@@ -12,7 +12,7 @@
  * Context Map to pick which presets apply to a given context.
  */
 import type { DevContext } from '@/lib/bindings/DevContext';
-import type { LucideIcon } from 'lucide-react';
+import { Compass, type LucideIcon } from 'lucide-react';
 
 import { parseJsonArray } from '../sub_context/contextMapTypes';
 import { SCAN_AGENTS, type ScanAgentDef } from './scanAgents';
@@ -34,9 +34,25 @@ export interface PresetSkillDef {
 
 export const PRESET_SKILL_PREFIX = 'scan-';
 
+/** The consolidated multi-lens sweep — a preset with no scanner lens behind
+ *  it (it composes the 22 lenses), so it lives outside SCAN_AGENTS and must
+ *  never join the Idea Scanner roster. Board renders it as the hero row. */
+export const SWEEP_SKILL_NAME = 'scan-sweep';
+const SWEEP_SKILL: PresetSkillDef = {
+  name: SWEEP_SKILL_NAME,
+  agentKey: 'sweep',
+  label: 'Context Sweep',
+  emoji: '🧭',
+  icon: Compass,
+  color: '#7C3AED',
+  categoryGroup: 'technical',
+  description:
+    'Reads one context once and evaluates it through every matched scan lens. The efficient default; single-lens scans are the focused deep-dive form.',
+};
+
 /** All preset scan skills, keyed by skill name. */
-export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map(
-  SCAN_AGENTS.map((a) => [
+export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map([
+  ...SCAN_AGENTS.map((a): [string, PresetSkillDef] => [
     `${PRESET_SKILL_PREFIX}${a.key}`,
     {
       name: `${PRESET_SKILL_PREFIX}${a.key}`,
@@ -49,7 +65,8 @@ export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map(
       description: a.description,
     },
   ]),
-);
+  [SWEEP_SKILL_NAME, SWEEP_SKILL],
+]);
 
 /**
  * Synthesize a library row for a preset that isn't materialized in the user's

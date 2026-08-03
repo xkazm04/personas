@@ -11,10 +11,11 @@ import type { SkillEntry } from '@/api/devTools/devTools';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { isPresetSkill, presetVisual } from '../constants/presetSkills';
+import { isPresetSkill, presetVisual, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import type { SkillsManagerVariantProps, ProjRow, WsRow } from './SkillsManagerPage';
 import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skillsManagerBits';
 import { SkillActionConfirm } from './SkillActionConfirm';
+import { SweepHeroRow } from './SweepHeroRow';
 import { UseSkillDialog } from './UseSkillDialog';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
@@ -163,18 +164,26 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   const [pending, setPending] = useState<Pending | null>(null);
   // Library group: app-owned presets (icon rows) vs user-authored skills.
   const [libTab, setLibTab] = useState<'preset' | 'custom'>('custom');
+  // Preset tab: the 22 single-lens presets collapse behind the sweep hero row.
+  const [rosterOpen, setRosterOpen] = useState(false);
 
   const libRows = useMemo(
     () => ws.filter((r) => isPresetSkill(r.entry.name) === (libTab === 'preset')),
     [ws, libTab],
   );
+  const sweepRow = useMemo(
+    () => (libTab === 'preset' ? libRows.find((r) => r.entry.name === SWEEP_SKILL_NAME) ?? null : null),
+    [libRows, libTab],
+  );
 
   // Left — grouped (name-asc), sorted within each group. Custom tab groups by
   // frontmatter category; Preset tab groups by the lens's category group so
-  // the four scanner families read as one block each.
+  // the four scanner families read as one block each (the sweep hero row is
+  // rendered separately, never inside a family group).
   const wsGroups = useMemo(() => {
     const byCat = new Map<string, WsRow[]>();
-    for (const r of libRows) {
+    const grouped = libTab === 'preset' ? libRows.filter((r) => r.entry.name !== SWEEP_SKILL_NAME) : libRows;
+    for (const r of grouped) {
       const cat = libTab === 'preset'
         ? (presetVisual(r.entry.name)?.categoryGroup ?? 'Other')
         : (r.entry.category ?? 'Other');
@@ -285,7 +294,19 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         )}
         footer={d.skills_footer_usage}
       >
-        {wsGroups.map(([cat, rows]) => (
+        {libTab === 'preset' && sweepRow && (
+          <SweepHeroRow
+            row={sweepRow}
+            projectName={projectName}
+            busy={busy}
+            rosterOpen={rosterOpen}
+            lensCount={libRows.length - 1}
+            onToggleRoster={() => setRosterOpen((o) => !o)}
+            onInfo={onOpenInfo}
+            onAdopt={(entry) => setPending({ kind: 'adopt', skill: entry })}
+          />
+        )}
+        {(libTab !== 'preset' || rosterOpen) && wsGroups.map(([cat, rows]) => (
           <div key={cat}>
             <GroupDivider>{groupLabel(cat)}</GroupDivider>
             <ul>

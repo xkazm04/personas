@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} جديدة",
     "skills_pipeline_loading": "مطابقة السياقات مع المهارات الجاهزة…",
     "skills_pipeline_no_contexts": "لا توجد سياقات معينة لهذا المشروع بعد.",
-    "skills_pipeline_run": "تشغيل ({n})",
     "skills_pipeline_subtitle": "تشغيل جاهز واحد لكل سياق، الأقل تغطية أولاً",
     "skills_pipeline_title": "خط أنابيب التغطية",
     "skills_preset_empty": "لا توجد مهارات جاهزة متاحة.",
@@ -1426,7 +1425,17 @@
     "skills_use_cmd_launched": "تم فتح طرفية في {name}، والمهارة قيد التشغيل",
     "skills_use_cmd_launched_batch": "تم فتح {n} طرفيات في {name}، واحدة لكل سياق",
     "skills_use_launch_cta": "فتح طرفية",
-    "skills_use_target_cmd": "طرفية"
+    "skills_use_target_cmd": "طرفية",
+    "skills_auto_deep_hint": "عند تصعيد المسح لعدسة معينة، يتم تشغيل الفحص المتعمق تلقائيا (بحد أقصى 2 لكل استيعاب). أوقف الخيار للإرسال يدويا من هذه القائمة.",
+    "skills_auto_deep_label": "الفحوصات العميقة التلقائية",
+    "skills_deep_reco_run": "تشغيل فحص عميق",
+    "skills_deep_reco_title": "الفحوصات العميقة الموصى بها",
+    "skills_pipeline_run_sweeps": "مسح {n}",
+    "skills_sweep_hero_hint": "يقرأ السياق مرة واحدة ويقيّم كل عدسة مطابقة في جلسة واحدة. الخيار الافتراضي الفعال؛ العدسات الفردية أدناه هي الشكل المتعمق المركّز.",
+    "skills_sweep_roster_hide": "إخفاء العدسات الفردية",
+    "skills_sweep_roster_show": "عرض كل العدسات ({n})",
+    "skills_use_sweep_hint": "هذه العدسة جزء من حزمة المسح. يمكنك استخدام /scan-sweep لتغطيتها مع البقية في مرور واحد.",
+    "sweep_auto_deep_toast": "تم إرسال فحص عميق: {lens} على {context}"
   },
   "doc_signing": {
     "sign_heading": "توقيع مستند",
@@ -3184,7 +3193,8 @@
     "origin_skill_dormant": "مهارة خاملة",
     "origin_standards_finding": "المعايير",
     "origin_why_raised": "سبب إثارة هذا البند",
-    "origin_workspace_practice": "ممارسة مساحة العمل"
+    "origin_workspace_practice": "ممارسة مساحة العمل",
+    "origin_scan_sweep": "مسح شامل"
   },
   "companion_label": "الرفيق",
   "companion_desc": "Athena — رفيقتك الفكرية المتاحة دائمًا. استكشف ذاكرتها، واضبط واجهتها، واربط لها صوتًا.",

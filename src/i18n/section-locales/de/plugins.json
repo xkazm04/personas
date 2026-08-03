@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} neu",
     "skills_pipeline_loading": "Kontexte werden mit Vorlagen-Skills abgeglichen…",
     "skills_pipeline_no_contexts": "Für dieses Projekt sind noch keine Kontexte zugeordnet.",
-    "skills_pipeline_run": "Ausführen ({n})",
     "skills_pipeline_subtitle": "ein Vorlagenlauf pro Kontext, am wenigsten abgedeckte zuerst",
     "skills_pipeline_title": "Abdeckungs-Pipeline",
     "skills_preset_empty": "Keine Vorlagen-Skills verfügbar.",
@@ -1426,7 +1425,17 @@
     "skills_use_cmd_launched": "Terminal in {name} geöffnet, der Skill läuft",
     "skills_use_cmd_launched_batch": "{n} Terminals in {name} geöffnet, eines pro Kontext",
     "skills_use_launch_cta": "Terminal öffnen",
-    "skills_use_target_cmd": "Terminal"
+    "skills_use_target_cmd": "Terminal",
+    "skills_auto_deep_hint": "Wenn ein Sweep eine Linse eskaliert, wird der fokussierte Scan automatisch gestartet (max. 2 pro Ingest). Deaktivieren, um manuell aus dieser Liste zu starten.",
+    "skills_auto_deep_label": "Automatische Tiefenscans",
+    "skills_deep_reco_run": "Tiefenscan ausfuehren",
+    "skills_deep_reco_title": "Empfohlene Tiefenscans",
+    "skills_pipeline_run_sweeps": "Sweep starten ({n})",
+    "skills_sweep_hero_hint": "Liest einen Kontext einmal und wertet jede passende Linse in einer Sitzung aus. Die effiziente Standardoption; die einzelnen Linsen unten sind die fokussierte Tiefenform.",
+    "skills_sweep_roster_hide": "Einzelne Linsen ausblenden",
+    "skills_sweep_roster_show": "Alle {n} Linsen anzeigen",
+    "skills_use_sweep_hint": "Diese Linse ist Teil des Sweep-Bundles. Verwende /scan-sweep, um sie zusammen mit den anderen in einem Durchgang abzudecken.",
+    "sweep_auto_deep_toast": "Tiefenscan gestartet: {lens} bei {context}"
   },
   "doc_signing": {
     "sign_heading": "Dokument signieren",
@@ -3184,7 +3193,8 @@
     "origin_skill_dormant": "Ruhende Skill",
     "origin_standards_finding": "Standards",
     "origin_why_raised": "Warum das aufkam",
-    "origin_workspace_practice": "Workspace-Praxis"
+    "origin_workspace_practice": "Workspace-Praxis",
+    "origin_scan_sweep": "Scan-Sweep"
   },
   "companion_label": "Begleiter",
   "companion_desc": "Athena — Ihr stets verfügbarer Denkpartner. Athenas Gedächtnis einsehen, ihr Erscheinungsbild konfigurieren und ihr eine Stimme zuweisen.",

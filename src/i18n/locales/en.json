@@ -9728,39 +9728,22 @@
       "close_sources_rail": "Hide sources panel",
       "open_targets_rail": "Show targets panel",
       "close_targets_rail": "Hide targets panel",
-
       "ghost_section_title": "Suggested routes",
-
       "ghost_suggested": "suggested",
-
       "ghost_observed_count": "observed {count}×",
-
       "ghost_evidence_hint": "Show the observations behind this suggestion",
-
       "ghost_evidence_summary": "I paired {matched} of your {total} manual runs with this event over the last {days} days.",
-
       "ghost_evidence_ran": "you ran it {gap} later",
-
       "ghost_accept": "Wire it",
-
       "ghost_accept_hint": "Create this trigger — dry-run first, nothing fires until it passes",
-
       "ghost_reject": "Dismiss suggestion",
-
       "ghost_reject_hint": "Dismiss — I won't suggest this route again",
-
       "ghost_accepted_toast": "Route wired. Its own runs won't count as evidence for new suggestions.",
-
       "ghost_accept_failed": "Couldn't wire the suggested route",
-
       "ghost_rejected_toast": "Dismissed — I won't suggest this route again.",
-
       "ghost_reject_failed": "Couldn't dismiss the suggestion",
-
       "ghost_dry_run_failed": "Dry-run failed — nothing was wired. {error}",
-
       "ghost_not_enough_signal": "Not enough signal yet — I only suggest a route after seeing the same event followed by the same manual run at least {count} times.",
-
       "ghost_miner_off": "Route suggestions are off — set a project's autopilot to Suggest or Full and I'll start watching for patterns."
     },
     "subscription_list": {
@@ -13401,7 +13384,6 @@
       "skills_scoreboard_empty": "No installed skills to score yet.",
       "skills_pipeline_title": "Coverage pipeline",
       "skills_pipeline_subtitle": "one preset run per context, least-covered first",
-      "skills_pipeline_run": "Run ({n})",
       "skills_pipeline_loading": "Matching contexts to preset skills…",
       "skills_pipeline_no_contexts": "No contexts mapped for this project yet.",
       "skills_pipeline_fresh_nodes": "{n} fresh",
@@ -14047,7 +14029,17 @@
       "skills_registry_project_hint": "{name} — {adopted}/{total} adopted · {contexts} contexts",
       "skills_registry_running_cell": "{skill} is running in {project}",
       "skills_registry_summary": "{name} · {projects} projects · {skills} skills",
-      "skills_registry_use_cell": "Run {skill} in {project}"
+      "skills_registry_use_cell": "Run {skill} in {project}",
+      "skills_pipeline_run_sweeps": "Sweep {n}",
+      "skills_deep_reco_title": "Recommended deep scans",
+      "skills_deep_reco_run": "Run deep scan",
+      "skills_auto_deep_label": "Auto deep scans",
+      "skills_auto_deep_hint": "When a sweep escalates a lens, the focused scan launches automatically (at most 2 per ingest). Turn off to dispatch manually from this list.",
+      "skills_sweep_hero_hint": "Reads a context once and evaluates every matched lens in one session. The efficient default; the individual lenses below are the focused deep-dive form.",
+      "skills_sweep_roster_show": "Show all {n} lenses",
+      "skills_sweep_roster_hide": "Hide individual lenses",
+      "skills_use_sweep_hint": "This lens is part of the sweep bundle. Consider /scan-sweep to cover it with the rest in one pass.",
+      "sweep_auto_deep_toast": "Deep scan dispatched: {lens} on {context}"
     },
     "doc_signing": {
       "sign_heading": "Sign a Document",
@@ -15805,7 +15797,8 @@
       "origin_memory_disputed": "Disputed memory",
       "origin_workspace_practice": "Workspace practice",
       "origin_why_raised": "Why this was raised",
-      "origin_evidence": "Evidence"
+      "origin_evidence": "Evidence",
+      "origin_scan_sweep": "Scan sweep"
     },
     "artist_label": "Artist",
     "artist_desc": "Generate 3D models with Blender, create images with Leonardo AI, and manage creative assets.",

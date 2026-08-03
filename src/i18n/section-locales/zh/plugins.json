@@ -1363,7 +1363,6 @@
     "skills_pipeline_fresh_nodes": "{n} 个新增",
     "skills_pipeline_loading": "正在将上下文与预设技能匹配…",
     "skills_pipeline_no_contexts": "该项目尚未映射任何上下文。",
-    "skills_pipeline_run": "运行（{n}）",
     "skills_pipeline_subtitle": "每个上下文运行一次预设，覆盖率最低的优先",
     "skills_pipeline_title": "覆盖率流水线",
     "skills_preset_empty": "暂无可用的预设技能。",
@@ -1426,7 +1425,17 @@
     "skills_use_cmd_launched": "已在 {name} 中打开终端，技能正在运行",
     "skills_use_cmd_launched_batch": "已在 {name} 中打开 {n} 个终端，每个上下文一个",
     "skills_use_launch_cta": "打开终端",
-    "skills_use_target_cmd": "终端"
+    "skills_use_target_cmd": "终端",
+    "skills_auto_deep_hint": "当 sweep 将某个视角升级时,会自动启动聚焦扫描(每次摄取最多2次)。关闭此选项可从此列表手动分派。",
+    "skills_auto_deep_label": "自动深度扫描",
+    "skills_deep_reco_run": "运行深度扫描",
+    "skills_deep_reco_title": "推荐的深度扫描",
+    "skills_pipeline_run_sweeps": "执行扫描（{n}）",
+    "skills_sweep_hero_hint": "只读取一次上下文,并在一个会话中评估所有匹配的视角。这是高效的默认方式;下方的各个视角是其聚焦深挖形式。",
+    "skills_sweep_roster_hide": "隐藏各个视角",
+    "skills_sweep_roster_show": "显示全部 {n} 个视角",
+    "skills_use_sweep_hint": "此视角是 sweep 组合的一部分。可考虑使用 /scan-sweep 在一次运行中与其他视角一并覆盖。",
+    "sweep_auto_deep_toast": "已分派深度扫描:{context} 上的 {lens}"
   },
   "doc_signing": {
     "sign_heading": "签署文档",
@@ -3184,7 +3193,8 @@
     "origin_skill_dormant": "闲置技能",
     "origin_standards_finding": "规范",
     "origin_why_raised": "为何提出此项",
-    "origin_workspace_practice": "工作区实践"
+    "origin_workspace_practice": "工作区实践",
+    "origin_scan_sweep": "综合扫描"
   },
   "companion_label": "伴侣",
   "companion_desc": "Athena——您随时待命的思考伙伴。查看她的记忆、配置她的呈现方式，并绑定语音。",
