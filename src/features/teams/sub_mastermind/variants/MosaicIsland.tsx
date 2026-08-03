@@ -69,7 +69,7 @@ const catXY = (q: number, r: number) => {
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
 // mode switch, or its own dim/highlight state.
-export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onShipOpen, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const rootRef = useRef<SVGGElement>(null);
@@ -171,6 +171,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
         topWorldY={topY - 10}
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
+        onShipOpen={mode === 'edit' ? () => onShipOpen(island.slug) : undefined}
       />
       {band !== 'far' && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
       <FleetBadges

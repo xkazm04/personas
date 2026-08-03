@@ -1,5 +1,11 @@
 {
   "open_terminal": "فتح الطرفية",
+  "open_in_factory": "فتح في Factory",
+  "open_ship_plan": "فتح خطة Ship",
+  "open_skills": "فتح مدير Skills",
+  "door_factory": "Factory",
+  "door_ship": "Ship",
+  "door_skills": "Skills",
   "terminal_disabled_demo": "مشروع تجريبي — افتح طرفية من مشروع حقيقي",
   "terminal_disabled_no_path": "لا يحتوي هذا المشروع على مسار مجلد",
   "fit_all": "احتواء كل المشاريع",

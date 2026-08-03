@@ -19160,6 +19160,12 @@
   },
   "mastermind": {
     "open_terminal": "Otevřít terminál",
+    "open_in_factory": "Otevřít ve Factory",
+    "open_ship_plan": "Otevřít plán Ship",
+    "open_skills": "Otevřít správce Skills",
+    "door_factory": "Factory",
+    "door_ship": "Ship",
+    "door_skills": "Skills",
     "terminal_disabled_demo": "Ukázkový projekt — otevřete terminál ze skutečného projektu",
     "terminal_disabled_no_path": "Tento projekt nemá cestu ke složce",
     "fit_all": "Přizpůsobit všem projektům",

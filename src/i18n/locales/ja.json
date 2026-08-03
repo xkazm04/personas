@@ -19160,6 +19160,12 @@
   },
   "mastermind": {
     "open_terminal": "ターミナルを開く",
+    "open_in_factory": "Factory で開く",
+    "open_ship_plan": "Ship プランを開く",
+    "open_skills": "Skills マネージャーを開く",
+    "door_factory": "Factory",
+    "door_ship": "Ship",
+    "door_skills": "Skills",
     "terminal_disabled_demo": "デモプロジェクト — 実際のプロジェクトからターミナルを開いてください",
     "terminal_disabled_no_path": "このプロジェクトにはフォルダーパスがありません",
     "fit_all": "すべてのプロジェクトに合わせる",

@@ -13,7 +13,7 @@ import type { Island } from './types';
 
 const LINEAR = { duration: 0.2, ease: 'linear' as const };
 
-export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onToggleVisible, onNewProject }: {
+export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onToggleVisible, onNewProject, onProjectOpen }: {
   /** ALL islands (including canvas-hidden ones), any order. */
   islands: Island[];
   hidden: Set<string>;
@@ -21,6 +21,8 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
   onOpenToggle: () => void;
   onToggleVisible: (slug: string) => void;
   onNewProject: () => void;
+  /** Row (name) clicked — open the project sidebar, same as a header tap. */
+  onProjectOpen: (slug: string) => void;
 }) {
   const { t } = useTranslation();
   const sorted = [...islands].sort((a, b) => a.name.localeCompare(b.name));
@@ -89,7 +91,14 @@ export function ProjectListSidebar({ islands, hidden, open, onOpenToggle, onTogg
                   <li key={i.slug}>
                     <div className={`flex items-center gap-2.5 px-3 py-2 rounded-lg typo-body transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground ${isHidden ? 'opacity-50' : ''}`}>
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: STATE_INK[i.state] }} aria-hidden />
-                      <span className="truncate flex-1">{i.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => onProjectOpen(i.slug)}
+                        className="truncate flex-1 text-left focus-ring rounded-interactive"
+                        data-testid={`mm-project-open-${i.slug}`}
+                      >
+                        {i.name}
+                      </button>
                       <button
                         type="button"
                         onClick={() => onToggleVisible(i.slug)}

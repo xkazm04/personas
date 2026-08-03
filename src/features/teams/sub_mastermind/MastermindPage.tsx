@@ -54,6 +54,7 @@ import { GoalListPopover } from './lib/GoalListPopover';
 import { KpiListPopover, type KpiListItem } from './lib/KpiListPopover';
 import { IdeaScanPopover, type ScanParams } from './lib/IdeaScanPopover';
 import { hydrateLayout, isLayoutHydrated, loadHidden, saveHidden } from './lib/layoutStore';
+import { openFactory, openSkillsManager } from './lib/navigate';
 import { computeAttention } from './lib/liveState';
 import { useSceneStore } from './lib/sceneStore';
 import { loadPositions, savePositions } from './lib/positions';
@@ -696,6 +697,9 @@ function MastermindInner() {
           onIslandCommit={onIslandCommit}
           onFleetOpen={setPreviewId}
           onProjectOpen={setOpenSlug}
+          onShipOpen={(slug) => openFactory(slug, 'ship')}
+          onFactoryOpen={(slug) => openFactory(slug, 'overview')}
+          onSkillsOpen={openSkillsManager}
           onDimOpen={onDimOpen}
           onPersonasOpen={(slug, e) => setPersonaMenu({ slug, x: Math.min(e.clientX, window.innerWidth - 244), y: Math.min(e.clientY + 10, window.innerHeight - 280) })}
           onCategoryOpen={(slug, category, e) => setCategoryPopup({ slug, category, x: Math.min(e.clientX, window.innerWidth - 300), y: Math.min(e.clientY + 10, window.innerHeight - 320) })}
@@ -715,6 +719,7 @@ function MastermindInner() {
         onOpenToggle={() => setProjectsOpen((v) => !v)}
         onToggleVisible={toggleVisible}
         onNewProject={() => setNewProjectOpen(true)}
+        onProjectOpen={setOpenSlug}
       />
 
       <CanvasToolbar mode={mode} onModeChange={setMode} />
@@ -725,7 +730,15 @@ function MastermindInner() {
 
       <AnimatePresence>
         {openIsland && (
-          <ProjectSidebar key="project-sidebar" passport={openPassport} name={openIsland.name} onClose={() => setOpenSlug(null)} />
+          <ProjectSidebar
+            key="project-sidebar"
+            passport={openPassport}
+            name={openIsland.name}
+            onClose={() => setOpenSlug(null)}
+            onOpenFactory={() => openFactory(openIsland.slug, 'overview')}
+            onOpenShip={() => openFactory(openIsland.slug, 'ship')}
+            onOpenSkills={() => openSkillsManager(openIsland.slug)}
+          />
         )}
       </AnimatePresence>
 

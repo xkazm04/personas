@@ -157,6 +157,12 @@ export interface VariantProps {
   onFleetOpen: (sessionId: string) => void;
   /** Project header clicked (not dragged) — open the project sidebar. */
   onProjectOpen: (slug: string) => void;
+  /** Banner Ship chip clicked — deep-link into the project's Factory Ship tab. */
+  onShipOpen: (slug: string) => void;
+  /** Island menu "Open in Factory" — deep-link into the project's Factory L2. */
+  onFactoryOpen: (slug: string) => void;
+  /** Island menu "Open Skills manager" — activate the project + open Skills. */
+  onSkillsOpen: (slug: string) => void;
   /** Actionable dimension cell clicked — open its Improve popover at the
    *  cursor (same popovers the Passport wall uses). */
   onDimOpen: (slug: string, node: DimNode, e: React.MouseEvent) => void;

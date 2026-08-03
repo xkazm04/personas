@@ -19160,6 +19160,12 @@
   },
   "mastermind": {
     "open_terminal": "Open terminal",
+    "open_in_factory": "Open in Factory",
+    "open_ship_plan": "Open Ship plan",
+    "open_skills": "Open Skills manager",
+    "door_factory": "Factory",
+    "door_ship": "Ship",
+    "door_skills": "Skills",
     "dispatch_fleet": "Dispatch Fleet…",
     "terminal_disabled_demo": "Demo project — open a terminal from a real project",
     "terminal_disabled_no_path": "This project has no folder path",

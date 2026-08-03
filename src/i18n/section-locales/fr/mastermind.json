@@ -1,5 +1,11 @@
 {
   "open_terminal": "Ouvrir le terminal",
+  "open_in_factory": "Ouvrir dans Factory",
+  "open_ship_plan": "Ouvrir le plan Ship",
+  "open_skills": "Ouvrir le gestionnaire Skills",
+  "door_factory": "Factory",
+  "door_ship": "Ship",
+  "door_skills": "Skills",
   "terminal_disabled_demo": "Projet de démonstration — ouvrez un terminal depuis un vrai projet",
   "terminal_disabled_no_path": "Ce projet n'a pas de chemin de dossier",
   "fit_all": "Ajuster tous les projets",

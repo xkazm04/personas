@@ -1,5 +1,11 @@
 {
   "open_terminal": "打开终端",
+  "open_in_factory": "在 Factory 中打开",
+  "open_ship_plan": "打开 Ship 计划",
+  "open_skills": "打开 Skills 管理器",
+  "door_factory": "Factory",
+  "door_ship": "Ship",
+  "door_skills": "Skills",
   "terminal_disabled_demo": "演示项目 — 请从真实项目打开终端",
   "terminal_disabled_no_path": "此项目没有文件夹路径",
   "fit_all": "适应所有项目",

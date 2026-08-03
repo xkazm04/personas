@@ -19160,6 +19160,12 @@
   },
   "mastermind": {
     "open_terminal": "টার্মিনাল খুলুন",
+    "open_in_factory": "Factory-তে খুলুন",
+    "open_ship_plan": "Ship পরিকল্পনা খুলুন",
+    "open_skills": "Skills ম্যানেজার খুলুন",
+    "door_factory": "Factory",
+    "door_ship": "Ship",
+    "door_skills": "Skills",
     "terminal_disabled_demo": "ডেমো প্রকল্প — একটি প্রকৃত প্রকল্প থেকে টার্মিনাল খুলুন",
     "terminal_disabled_no_path": "এই প্রকল্পের কোনো ফোল্ডার পাথ নেই",
     "fit_all": "সব প্রকল্প ফিট করুন",
