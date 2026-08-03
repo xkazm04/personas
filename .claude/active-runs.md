@@ -2,12 +2,6 @@
 
 ## Active
 
-### skills-manager-cmd-dispatch — Skills Manager column alignment + real terminal dispatch + /perfect skill audit — session opus-5[1m]
-- Started: 2026-08-03. Status: started. Three asks: (1) fixed-width Action column so Coverage/Usage/Last stop shifting per row, (2) audit `/perfect` in CandiDate (kiro/kp), Adamant (kiro/systedo-case), ascent for coverage-contract drift vs the personas canon, (3) replace the CMD "copy the command" path with a real `fleet_spawn_external_console` launch (cwd = repo root, CLI seeded with `/skill …`), clipboard demoted to fallback.
-- Paths: `src/features/plugins/dev-tools/sub_skills/{SkillsManagerBoard,SkillsManagerPage,UseSkillDialog,UseSkillShared}.tsx`, `src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts`, `src/i18n/locales/*.json` (plugins.dev_tools skills_use_*), `.claude/skills/perfect/SKILL.md`. CROSS-REPO: `kiro/kp`, `kiro/systedo-case`, `kiro/ascent` `.claude/skills/perfect/` + `.personas/`.
-- Note: `prototype-skills-registry` above declares the same sub_skills paths but shipped 2026-07-30; treated as predecessor, not conflict.
-
-
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
 - Paths (intended): `src/features/agents/quick-answer/**`, `src/features/fleet/monitor/useMonitorData.ts`, `src/stores/slices/overview/overviewSlice.ts` (cloud-review rethrow), `src/lib/keyboard/**` + the 3 colliding keydown surfaces (`overview/sub_manual-review/ReviewFocusFlow.tsx`, `.../backlog/BacklogFocusDeck.tsx`, `plugins/companion/orb/AthenaOrbLayer.tsx`), `src-tauri` idea/practice verdict CAS, `context-map.json` + `DESIGN.md` + doc-map (Director does these inline). Builders work in `.claude/worktrees/perfect-triage-r2*`.
@@ -77,6 +71,14 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### skills-manager-cmd-dispatch — Skills Manager column alignment + real terminal dispatch + /perfect skill audit — session opus-5[1m]
+- Started: 2026-08-03. **COMPLETE** — personas `3531f03ab`; CandiDate `9fe610cf`+`afcf4c71` (landed on its checked-out branch `wave/w0-integrity-proof`, not master); Adamant `0debf9e`; ascent `6510e6a2`. Three asks: (1) fixed-width Action column so Coverage/Usage/Last stop shifting per row, (2) audit `/perfect` in CandiDate (kiro/kp), Adamant (kiro/systedo-case), ascent for coverage-contract drift vs the personas canon, (3) replace the CMD "copy the command" path with a real `fleet_spawn_external_console` launch (cwd = repo root, CLI seeded with `/skill …`), clipboard demoted to fallback.
+- Paths: `src/features/plugins/dev-tools/sub_skills/{SkillsManagerBoard,SkillsManagerPage,UseSkillDialog,UseSkillShared}.tsx`, `src/features/teams/sub_factory/passport/improve/skillsWorkbenchData.ts`, `src/i18n/locales/*.json` (plugins.dev_tools skills_use_*), `.claude/skills/perfect/SKILL.md`. CROSS-REPO: `kiro/kp`, `kiro/systedo-case`, `kiro/ascent` `.claude/skills/perfect/` + `.personas/`.
+- Note: `prototype-skills-registry` above declares the same sub_skills paths but shipped 2026-07-30; treated as predecessor, not conflict.
+
+- Audit result: CandiDate and Adamant were missing ALL THREE coverage prerequisites (`contexts: tracked` frontmatter, `.personas/` marker, App-context-coverage section) so `/perfect` read 0% there with no error; ascent had all three and needed only filename casing + `argument-hint`. The personas canon was itself stale — it pointed at `.claude/codebase-context.md` (2026-06-16 render of the old 49-context map) while the app now holds 767 contexts, so nearly every name it suggested would have anchored to nothing. Canon now points at `.personas/contexts.txt`, regenerated for all four.
+- NOT live-fired: the new Terminal dispatch spawns a real Claude session with `--dangerously-skip-permissions`, so the button was verified up to its label/route only.
 
 ### spark-devtools-portability — /spark round 1 COMPLETE, merged 042753a06
 - 2026-08-01. Dev-tools artifacts (projects incl. skills-on-disk, workspace knowledge) in Import/Export. 4 WPs + camelCase ratchet fix; commits aee9e3ff4/04e7a49cb/270f05029/2fec476e8/691dab806/3bc56f4ea, merge 042753a06. Gates: tsc 0 err, vitest 3019/3020 (1 red = pre-existing DevMilestone ratchet), data_portability 21/21, i18n strict+untranslated 14 locales clean. Worktree removed. Vault: Obsidian/personas/Spark/.
