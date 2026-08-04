@@ -126,5 +126,13 @@
   "athena_revert_cta": "移除她的",
   "athena_revert_one": "移除 Athena 添加的 1 个画布标记",
   "athena_revert_other": "移除 Athena 添加的 {count} 个画布标记",
-  "athena_revert_title": "要移除 Athena 添加的标记吗？"
+  "athena_revert_title": "要移除 Athena 添加的标记吗？",
+  "athena_panel_close": "关闭面板",
+  "athena_panel_composed": "已生成",
+  "athena_panel_reset": "重置此面板",
+  "athena_panel_reset_action": "重置面板",
+  "athena_panel_reset_body": "移除 Athena 为 {name} 生成的面板。其他项目的面板不受影响，她可以随时重新生成一个。",
+  "athena_panel_reset_title": "重置此面板？",
+  "athena_panel_unreadable": "此面板无法呈现。",
+  "athena_panel_unreadable_hint": "Athena 以此版本无法识别的格式生成了它。请重置后向她请求一个新的。"
 }

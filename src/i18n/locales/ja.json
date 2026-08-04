@@ -19362,7 +19362,15 @@
     "athena_revert_cta": "Athenaの分を削除",
     "athena_revert_one": "Athenaが追加した1件のキャンバスマークを削除",
     "athena_revert_other": "Athenaが追加した{count}件のキャンバスマークを削除",
-    "athena_revert_title": "Athenaが追加したマークを削除しますか？"
+    "athena_revert_title": "Athenaが追加したマークを削除しますか？",
+    "athena_panel_close": "パネルを閉じる",
+    "athena_panel_composed": "作成済み",
+    "athena_panel_reset": "このパネルをリセット",
+    "athena_panel_reset_action": "パネルをリセット",
+    "athena_panel_reset_body": "Athenaが{name}のために作成したパネルを削除します。他のプロジェクトのパネルはそのまま残り、いつでも新しく作成できます。",
+    "athena_panel_reset_title": "このパネルをリセットしますか?",
+    "athena_panel_unreadable": "このパネルを表示できませんでした。",
+    "athena_panel_unreadable_hint": "Athenaはこのバージョンが理解できない形式で作成しました。リセットして新しいものを依頼してください。"
   },
   "ship": {
     "add": "追加",

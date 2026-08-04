@@ -1534,6 +1534,24 @@ export interface CompanionExplainCockpitEvent {
   spec: string;
 }
 
+/**
+ * Tauri event for `compose_canvas_panel` auto-fire (WP3 — Athena composing a
+ * panel beside the Mastermind canvas). The backend validated the slug against
+ * the published scene snapshot; the listener persists the spec into the canvas
+ * layout document, routes to Teams → Mastermind and focuses that island.
+ */
+export const COMPANION_COMPOSE_CANVAS_PANEL_EVENT = 'companion://compose-canvas-panel';
+
+/** Payload of {@link COMPANION_COMPOSE_CANVAS_PANEL_EVENT}. */
+export interface CompanionComposeCanvasPanelEvent {
+  /** Canvas slug (a `dev_projects.id`) the panel is anchored to. */
+  slug: string;
+  /** Spec-envelope version the backend emitted; unknown values are dropped. */
+  specVersion: number;
+  /** Serialized SurfaceSpec JSON — parsed and salvage-repaired by the panel. */
+  spec: string;
+}
+
 // ── Inline chat-cards (show_* ops) ───────────────────────────────────
 
 /**

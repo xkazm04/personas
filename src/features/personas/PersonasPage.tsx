@@ -20,6 +20,7 @@ import DesktopFooter from '@/features/shared/chrome/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
+import { useCanvasPanelBridge } from '@/features/teams/sub_mastermind/lib/useCanvasPanelBridge';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/features/personas/sectionRouter';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
@@ -92,6 +93,10 @@ export default function PersonasPage() {
   // D7 — subscribes to `athena://orchestration/digest-changed` and
   // populates the operative-memory store the LiveOpsStrip reads.
   useOperativeMemoryBridge();
+  // WP3 — `compose_canvas_panel`: persists Athena's composed panel into the
+  // canvas layout doc, then routes to Teams → Mastermind and focuses the
+  // island. App-wide so a composition lands wherever the user is standing.
+  useCanvasPanelBridge();
   const { sidebarSection, cloudTab, agentTab, teamsTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,

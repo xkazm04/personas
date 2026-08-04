@@ -628,6 +628,43 @@ pub(crate) fn resolve_canvas_target(
     })
 }
 
+/// Resolve one canvas slug against the PUBLISHED SCENE (WP3).
+///
+/// Deliberately not [`resolve_canvas_target`]: composing a panel touches no
+/// repository and starts nothing, so the question is not "is this a registered
+/// project with a root path" but "is this an island Athena can actually see".
+/// Validating against the same snapshot she read keeps the vocabulary closed —
+/// a slug that is not in the block is a slug she invented.
+///
+/// Returns the canonical slug on success; on failure, a message that names real
+/// alternatives so the next attempt is grounded rather than another guess.
+pub(crate) fn resolve_scene_slug(sys_db: &DbPool, query: &str) -> Result<String, String> {
+    let q = query.trim();
+    if q.is_empty() {
+        return Err("a canvas panel needs the `slug` of the island it belongs to".to_string());
+    }
+    if is_demo_slug(q) {
+        return Err(demo_refusal(q));
+    }
+    let Some(scene) = load_scene(sys_db) else {
+        return Err(no_scene_line().to_string());
+    };
+    let Some(p) = scene.find(q) else {
+        return Err(format!(
+            "No project matches `{q}` on the canvas, so there is nothing to dock a \
+             panel to. Existing slugs include: {}. Ask the user which they meant; \
+             do not invent a slug.",
+            scene.slug_suggestions(SLUG_SUGGESTIONS)
+        ));
+    };
+    // A published scene should never carry demo islands (the canvas refuses to
+    // publish the demo scene), but a stale snapshot from an older build might.
+    if is_demo_slug(&p.slug) {
+        return Err(demo_refusal(&p.slug));
+    }
+    Ok(p.slug.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

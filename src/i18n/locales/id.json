@@ -19362,7 +19362,15 @@
     "athena_revert_cta": "Hapus miliknya",
     "athena_revert_one": "Hapus 1 tanda kanvas yang ditambahkan Athena",
     "athena_revert_other": "Hapus {count} tanda kanvas yang ditambahkan Athena",
-    "athena_revert_title": "Hapus tanda yang ditambahkan Athena?"
+    "athena_revert_title": "Hapus tanda yang ditambahkan Athena?",
+    "athena_panel_close": "Tutup panel",
+    "athena_panel_composed": "Disusun",
+    "athena_panel_reset": "Atur ulang panel ini",
+    "athena_panel_reset_action": "Atur ulang panel",
+    "athena_panel_reset_body": "Menghapus panel yang disusun Athena untuk {name}. Panel di proyek lain tidak terpengaruh, dan dia bisa menyusun panel baru kapan saja.",
+    "athena_panel_reset_title": "Atur ulang panel ini?",
+    "athena_panel_unreadable": "Panel ini tidak dapat ditampilkan.",
+    "athena_panel_unreadable_hint": "Athena menyusunnya dalam bentuk yang tidak dipahami versi ini. Atur ulang dan minta dia membuat yang baru."
   },
   "ship": {
     "add": "Tambah",

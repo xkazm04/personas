@@ -126,5 +126,13 @@
   "athena_revert_cta": "Quitar suyos",
   "athena_revert_one": "Quitar 1 marca del lienzo añadida por Athena",
   "athena_revert_other": "Quitar {count} marcas del lienzo añadidas por Athena",
-  "athena_revert_title": "¿Quitar las marcas que añadió Athena?"
+  "athena_revert_title": "¿Quitar las marcas que añadió Athena?",
+  "athena_panel_close": "Cerrar panel",
+  "athena_panel_composed": "Compuesto",
+  "athena_panel_reset": "Restablecer este panel",
+  "athena_panel_reset_action": "Restablecer panel",
+  "athena_panel_reset_body": "Elimina el panel que Athena compuso para {name}. Los paneles de otros proyectos no se ven afectados, y ella puede componer uno nuevo en cualquier momento.",
+  "athena_panel_reset_title": "¿Restablecer este panel?",
+  "athena_panel_unreadable": "Este panel no se pudo mostrar.",
+  "athena_panel_unreadable_hint": "Athena lo compuso en un formato que esta versión no entiende. Restablécelo y pídele uno nuevo."
 }

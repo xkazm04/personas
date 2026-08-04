@@ -23,6 +23,7 @@ import { canvasId } from './canvasIds';
 import { revertAthenaObjects } from './layoutStore';
 import { useAthenaObjectCount, useLayoutGroups, useLayoutLinks, useLayoutNotes } from './useLayout';
 import { AthenaRevertControl } from './AthenaRevertControl';
+import { useCanvasFocus } from './focusStore';
 import { nearestTo, pickInDirection } from './kbNav';
 import { tidyLayout, type TidyResult } from './tidyLayout';
 import { DimLegend } from './DimLegend';
@@ -316,6 +317,21 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     // Linear tween to the island — no sudden jump (double-click zoom brief).
     if (i) fit({ minX: i.x - 480, maxX: i.x + 480, minY: i.y - 400, maxY: i.y + 400 }, true);
   });
+  // Focus driven from OUTSIDE the shell (Athena composing a panel for a
+  // project, a deep link). The request lives in `focusStore`; the shell answers
+  // it by MOVING THE CAMERA — an off-screen island is not in the DOM (viewport
+  // culling + the mount waves), so nothing here may look for a node. A request
+  // whose island is not in the scene yet is left unhandled: the next derive
+  // re-runs this effect and it lands then.
+  const focusRequest = useCanvasFocus();
+  const handledFocus = useRef(0);
+  useEffect(() => {
+    if (!focusRequest?.travel || focusRequest.seq === handledFocus.current) return;
+    if (!bySlug.has(focusRequest.target.slug)) return;
+    handledFocus.current = focusRequest.seq;
+    onIslandFocus(focusRequest.target.slug);
+  }, [focusRequest, bySlug, onIslandFocus]);
+
   const onIslandMenu = useEventCallback((slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

@@ -354,4 +354,11 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// slugs come from the block or a lookup and are never derived; `unknown` is a
 /// data-load failure, not a gap in the product; and the six `demo-*` islands
 /// are placeholders every action refuses.
-pub const CONSTITUTION_VERSION: u32 = 46;
+/// v47 (canvas panels) adds `compose_canvas_panel`: a SurfaceSpec v1 surface
+/// docked beside the Mastermind canvas for ONE project. The rules that needed
+/// teaching rather than listing: composing REPLACES that project's panel (it is
+/// persisted and restored on focus, so it must read as the current picture);
+/// only the seven frozen block types exist; the slug rule from v46 applies
+/// unchanged; and a reset by the user is a verdict on the composition, not an
+/// invitation to re-compose the same thing.
+pub const CONSTITUTION_VERSION: u32 = 47;

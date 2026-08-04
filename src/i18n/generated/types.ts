@@ -19313,6 +19313,14 @@ export type Translations = {
     passport_title: string;
     passport_demo: string;
     sidebar_close: string;
+    athena_panel_composed: string;
+    athena_panel_close: string;
+    athena_panel_reset: string;
+    athena_panel_reset_title: string;
+    athena_panel_reset_body: string;
+    athena_panel_reset_action: string;
+    athena_panel_unreadable: string;
+    athena_panel_unreadable_hint: string;
     group_label_placeholder: string;
     group_default_label: string;
     fleet_demo: string;

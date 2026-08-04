@@ -1113,7 +1113,9 @@ fn render_scene_digest(scene: &crate::companion::canvas::CanvasScene) -> String 
          for one island's full fifteen cells, and `describe_canvas_freshness` \
          for scan ages, ongoing goals and KPI standing. To act: \
          `canvas_dispatch` (one project), `canvas_group_dispatch` (several, run \
-         one after another), `canvas_run_idea_scan`.\n"
+         one after another), `canvas_run_idea_scan`. To show structured \
+         findings about one project, `compose_canvas_panel` docks a \
+         SurfaceSpec v1 panel beside its island.\n"
     ))
 }
 

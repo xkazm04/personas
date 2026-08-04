@@ -126,5 +126,13 @@
   "athena_revert_cta": "أزل عناصرها",
   "athena_revert_one": "إزالة علامة كانفس واحدة أضافتها Athena",
   "athena_revert_other": "إزالة {count} علامات كانفس أضافتها Athena",
-  "athena_revert_title": "هل تريد إزالة العلامات التي أضافتها Athena؟"
+  "athena_revert_title": "هل تريد إزالة العلامات التي أضافتها Athena؟",
+  "athena_panel_close": "إغلاق اللوحة",
+  "athena_panel_composed": "تمت الصياغة",
+  "athena_panel_reset": "إعادة تعيين هذه اللوحة",
+  "athena_panel_reset_action": "إعادة تعيين اللوحة",
+  "athena_panel_reset_body": "إزالة اللوحة التي أعدتها Athena لـ {name}. لوحات المشاريع الأخرى تبقى كما هي، ويمكنها إعداد لوحة جديدة في أي وقت.",
+  "athena_panel_reset_title": "إعادة تعيين هذه اللوحة؟",
+  "athena_panel_unreadable": "تعذر عرض هذه اللوحة.",
+  "athena_panel_unreadable_hint": "أعدت Athena هذه اللوحة بصيغة لا يفهمها هذا الإصدار. أعد تعيينها واطلب منها لوحة جديدة."
 }

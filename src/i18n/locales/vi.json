@@ -19362,7 +19362,15 @@
     "athena_revert_cta": "Xóa của cô ấy",
     "athena_revert_one": "Xóa 1 dấu trên bảng vẽ do Athena thêm vào",
     "athena_revert_other": "Xóa {count} dấu trên bảng vẽ do Athena thêm vào",
-    "athena_revert_title": "Xóa các dấu do Athena thêm vào?"
+    "athena_revert_title": "Xóa các dấu do Athena thêm vào?",
+    "athena_panel_close": "Đóng bảng",
+    "athena_panel_composed": "Đã soạn",
+    "athena_panel_reset": "Đặt lại bảng này",
+    "athena_panel_reset_action": "Đặt lại bảng",
+    "athena_panel_reset_body": "Xóa bảng mà Athena đã soạn cho {name}. Bảng của các dự án khác không bị ảnh hưởng, và cô ấy có thể soạn bảng mới bất cứ lúc nào.",
+    "athena_panel_reset_title": "Đặt lại bảng này?",
+    "athena_panel_unreadable": "Không thể hiển thị bảng này.",
+    "athena_panel_unreadable_hint": "Athena đã soạn nó ở định dạng mà phiên bản này không hiểu. Hãy đặt lại và yêu cầu cô ấy soạn bảng mới."
   },
   "ship": {
     "add": "Thêm",

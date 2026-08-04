@@ -126,5 +126,13 @@
   "athena_revert_cta": "Retirer les siens",
   "athena_revert_one": "Retirer 1 repère de canevas ajouté par Athena",
   "athena_revert_other": "Retirer {count} repères de canevas ajoutés par Athena",
-  "athena_revert_title": "Retirer les repères ajoutés par Athena ?"
+  "athena_revert_title": "Retirer les repères ajoutés par Athena ?",
+  "athena_panel_close": "Fermer le panneau",
+  "athena_panel_composed": "Composé",
+  "athena_panel_reset": "Réinitialiser ce panneau",
+  "athena_panel_reset_action": "Réinitialiser le panneau",
+  "athena_panel_reset_body": "Supprime le panneau qu'Athena a composé pour {name}. Les panneaux des autres projets restent intacts, et elle peut en composer un nouveau à tout moment.",
+  "athena_panel_reset_title": "Réinitialiser ce panneau ?",
+  "athena_panel_unreadable": "Ce panneau n'a pas pu être affiché.",
+  "athena_panel_unreadable_hint": "Athena l'a composé dans un format que cette version ne comprend pas. Réinitialisez-le et demandez-lui-en un nouveau."
 }
