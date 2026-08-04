@@ -205,12 +205,13 @@ to say returns nothing.
 
 - The **final argument** is the context name. Read \`context-map.json\` at the
   project root, find the context, and stay inside its \`filePaths\`.
-- **No context argument → pick an unswept context yourself.** Read
-  \`context-map.json\` and \`.claude/scan-history/scan-sweep.jsonl\` (if present)
-  and choose the first context, in map order, that has NO prior sweep snapshot
-  (\`scope\` field). If every context has been swept, take the one whose latest
-  snapshot is OLDEST. State the chosen context and why in the report header
-  ("never swept" or "oldest sweep: <date>") so coverage rotation is auditable.
+- **No context argument → pick the least lens-covered context yourself.** Read
+  \`context-map.json\` and \`.claude/scan-history/scan-sweep.jsonl\` (if present).
+  Choose, in this order: the first context in map order with NO snapshot at all;
+  else the context whose snapshots' \`lens_keys\` union is SMALLEST (fewest lenses
+  ever applied); tie → the one whose latest snapshot is oldest. State the choice
+  and why in the report header ("never swept" / "lens coverage 4/22, oldest
+  <date>") so coverage rotation is auditable.
 
 ## 2. Load shared awareness (do this BEFORE reading code)
 
@@ -224,14 +225,19 @@ to say returns nothing.
 - \`.claude/scan-history/scan-sweep.jsonl\` (if present) — prior sweep
   snapshots for the trend line.
 
-## 3. Pick the lens bundle
+## 3. Pick the lens package
 
 - If \`--lenses key1,key2,...\` was passed, use exactly those keys.
-- Otherwise match lenses yourself: apply each lens's \`Match\` regex from
-  \`references/lenses.md\` to the context's name, description, keywords, tech
-  stack, API surface, and file paths. Fewer than 2 matches → fall back to
-  \`architecture-analyst\` + \`code-optimizer\`.
-- List the chosen lens keys in the report header.
+- Otherwise the package is **ALL lenses in \`references/lenses.md\`**, ordered
+  matched-first: lenses whose \`Match\` regex hits the context's name,
+  description, keywords, tech stack, API surface, or file paths go first (they
+  get the deepest attention); the remaining lenses follow as a lighter pass —
+  most will honestly report "nothing real", and that clean verdict is itself
+  coverage worth recording.
+- If prior snapshots for this context already carry \`lens_keys\`, put the
+  never-applied lenses first within each tier — the package's job is to close
+  lens coverage, not re-walk the covered ones.
+- List matched vs. remaining lens keys in the report header.
 
 ## 4. Survey, then judge
 
@@ -240,12 +246,34 @@ to say returns nothing.
 2. Run any cheap deterministic check that applies (type-checker, linter,
    existing script) and reconcile; deterministic findings belong to those tools,
    not to this sweep — do not restate them as findings.
-3. Then walk the lens bundle **sequentially**. Per lens: at most **3** findings,
-   each grounded in \`file:line\` evidence. Zero findings is a valid and common
-   result — say "nothing real" and move on. Prefer one deep finding over three
-   shallow ones.
+3. Then walk the lens package **sequentially**. Per lens: at most **3**
+   findings, each grounded in \`file:line\` evidence. Zero findings is a valid
+   and common result — say "nothing real" and move on. Prefer one deep finding
+   over three shallow ones.
+4. **Budget: at most 30 findings per context, lifetime.** Before emitting,
+   subtract what prior snapshots already reported for this scope (\`findings\`
+   counts) and never re-emit a finding already reported in a prior run or
+   present in the backlog digest. When the remaining budget is smaller than
+   what you found, keep the highest-impact items and say what was cut.
 
-## 5. Report
+## 5. Size classes — large items are triaged, not dumped
+
+Classify every candidate finding:
+
+- **S** — localized: one file, one mechanism (a rename, a guard, an attribute).
+- **M** — a few files or one subsystem seam; a normal PR.
+- **L** — structural / moonshot: architecture-grade work spanning modules
+  (the kind an architect pass would propose: new layers, protocol redesigns,
+  cross-cutting migrations).
+
+S and M items flow straight to the outbox. **L items are a decision, not a
+drive-by**: if an operator is present (interactive terminal run), present the
+L candidates with a one-line pitch each and ask which to emit before writing
+them. Unattended (Fleet/app dispatch), emit them with \`"size":"L"\` and
+effort ≥ 8 so the app's backlog triage gates them — never silently promote an
+L item into work.
+
+## 6. Report
 
 Header first:
 
@@ -261,7 +289,7 @@ Then per lens with findings, a short section per finding:
 
 End with a one-line summary (N findings across M lenses, highest impact first).
 
-## 6. Emit structured findings (memory outbox)
+## 7. Emit structured findings (memory outbox)
 
 Append to \`.personas/memory-outbox.jsonl\` (create \`.personas/\` if needed),
 ONE JSON object per line, nothing else on the line:
@@ -269,7 +297,7 @@ ONE JSON object per line, nothing else on the line:
 Each reported finding:
 
 \`\`\`json
-{"type":"finding","skill":"scan-sweep","lens":"<lens-key>","context":"<context name>","title":"<finding title>","body":"<what + why + recommendation, condensed>","evidence":"<file:line — one-line proof>","effort":3,"impact":7,"risk":2}
+{"type":"finding","skill":"scan-sweep","lens":"<lens-key>","context":"<context name>","title":"<finding title>","body":"<what + why + recommendation, condensed>","evidence":"<file:line — one-line proof>","size":"S|M|L","effort":3,"impact":7,"risk":2}
 \`\`\`
 
 Escalation — emit at most one per lens, ONLY when that lens produced a
@@ -287,18 +315,22 @@ not), plus one for the sweep itself:
 {"type":"node","kind":"progress","skill":"scan-sweep","context":"<context name>","title":"Sweep of <context>","body":"<lenses evaluated>; <total> findings, <e> escalations"}
 \`\`\`
 
-Keep the outbox lean — the ingest caps at 200 lines / 512 KB; a sweep should
-emit well under 40 lines. The Personas app ingests and DELETES this file when a
-Fleet session exits or the Skills Manager opens; findings land in the project
-backlog deduped against everything already known.
+Keep the outbox lean — the ingest caps at 200 lines / 512 KB and accepts at
+most 30 finding lines per pass; a full-package sweep emits ≤30 findings plus
+one coverage node per evaluated lens (a clean lens still gets its node — that
+IS the per-lens coverage record). The Personas app ingests and DELETES this
+file when a Fleet session exits or the Skills Manager opens; findings land in
+the project backlog deduped against everything already known.
 
-## 7. Persist a snapshot
+## 8. Persist a snapshot
 
 Append one line to \`.claude/scan-history/scan-sweep.jsonl\` (create the
-directory if needed):
+directory if needed). \`lens_keys\` = every lens actually evaluated this run —
+it is the per-context lens-coverage ledger the no-arg picker and the
+package-ordering rule read:
 
 \`\`\`json
-{"at":"<ISO-8601>","scope":"<context>","lenses":<n>,"findings":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
+{"at":"<ISO-8601>","scope":"<context>","lens_keys":["<key>","<key>"],"lenses":<n>,"findings":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
 \`\`\`
 
 If prior lines exist for the SAME scope, add a trend line to the report
