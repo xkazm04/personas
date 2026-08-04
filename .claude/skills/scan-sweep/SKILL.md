@@ -17,8 +17,12 @@ to say returns nothing.
 
 - The **final argument** is the context name. Read `context-map.json` at the
   project root, find the context, and stay inside its `filePaths`.
-- No context argument → pick the repo's most central source area and say so in
-  the report header.
+- **No context argument → pick an unswept context yourself.** Read
+  `context-map.json` and `.claude/scan-history/scan-sweep.jsonl` (if present)
+  and choose the first context, in map order, that has NO prior sweep snapshot
+  (`scope` field). If every context has been swept, take the one whose latest
+  snapshot is OLDEST. State the chosen context and why in the report header
+  ("never swept" or "oldest sweep: <date>") so coverage rotation is auditable.
 
 ## 2. Load shared awareness (do this BEFORE reading code)
 
