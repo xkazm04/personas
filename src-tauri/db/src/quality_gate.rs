@@ -117,17 +117,19 @@ impl QualityGateConfig {
         rules: &'a [QualityGateRule],
         combined: &str,
     ) -> Option<(String, &'a FilterAction)> {
+        // The lowercased haystack is the same for every case-insensitive rule
+        // (the default — all 33 shipped rules are case-insensitive), so build
+        // it at most once instead of re-lowercasing the whole title+content
+        // per rule. Lazily: an all-case-sensitive rule set never allocates.
+        let mut lowered: Option<String> = None;
         for r in rules {
-            let haystack: String;
-            let needle: String;
-            if r.case_sensitive {
-                haystack = combined.to_string();
-                needle = r.pattern.clone();
+            let matched = if r.case_sensitive {
+                combined.contains(&r.pattern)
             } else {
-                haystack = combined.to_lowercase();
-                needle = r.pattern.to_lowercase();
-            }
-            if haystack.contains(&needle) {
+                let haystack = lowered.get_or_insert_with(|| combined.to_lowercase());
+                haystack.contains(&r.pattern.to_lowercase())
+            };
+            if matched {
                 return Some((r.label.clone(), &r.action));
             }
         }
@@ -180,6 +182,34 @@ mod tests {
         let result = QualityGateConfig::check_rules(&rules, "Found a STACK TRACE in output");
         assert!(result.is_some());
         assert_eq!(result.unwrap().0, "test");
+    }
+
+    #[test]
+    fn check_rules_respects_case_sensitive_flag() {
+        // A case-sensitive rule must NOT match a differently-cased haystack,
+        // and must not be affected by the shared lowercased haystack the
+        // case-insensitive rules use.
+        let sensitive = QualityGateRule {
+            label: "exact".into(),
+            pattern: "API_KEY".into(),
+            case_sensitive: true,
+            action: FilterAction::Reject,
+        };
+        let rules = vec![sensitive, rule("loose", "stack trace")];
+        assert!(QualityGateConfig::check_rules(&rules, "leaked api_key=1").is_none());
+        assert_eq!(
+            QualityGateConfig::check_rules(&rules, "leaked API_KEY=1")
+                .unwrap()
+                .0,
+            "exact"
+        );
+        // The case-insensitive rule still matches after a case-sensitive miss.
+        assert_eq!(
+            QualityGateConfig::check_rules(&rules, "a STACK TRACE here")
+                .unwrap()
+                .0,
+            "loose"
+        );
     }
 
     #[test]
