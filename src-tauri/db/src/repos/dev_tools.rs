@@ -3773,6 +3773,74 @@ pub fn update_idea(
     })
 }
 
+/// Compare-and-swap a backlog idea's triage status.
+///
+/// The status write behind [`crate::repos::dev_tools`]-fed verdicts, with the
+/// `AND status = ?expected` predicate that `update_idea` never had. Reviews got
+/// this in `manual_reviews::update_status`; ideas did not, so two surfaces
+/// holding the same row could each write a verdict and each fire its own side
+/// effects (the decision memory, the workspace adoption sync) — leaving a
+/// `rejected` constraint memory attached to an `accepted` idea with nothing
+/// warning anyone.
+///
+/// `expected` is the status the CALLER SAW, not a re-read: that is the whole
+/// point. A deck that dealt a `pending` row passes `pending`, so a verdict
+/// written from a stale card loses to whoever already decided. A reviewer
+/// deliberately changing their mind from the Backlog table passes the status
+/// the row actually shows and still wins — reversing a decision you can see is
+/// a decision; overwriting one you never saw is data loss.
+///
+/// Returns [`AppError::Validation`] on a lost swap. The MESSAGE is a contract:
+/// `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`) and the error registry
+/// both match `/already (decided|resolved) … by a concurrent action/` to tell a
+/// lost swap apart from a failed write — the two make optimistic surfaces behave
+/// differently, so reword it and they silently degrade to "could not record that
+/// decision". `src/lib/decisions/__tests__/rowWrites.test.ts` pins the exact
+/// strings all three row types emit.
+pub fn decide_idea_cas(
+    pool: &DbPool,
+    id: &str,
+    expected: &str,
+    new_status: &str,
+    rejection_reason: Option<Option<&str>>,
+) -> Result<DevIdea, AppError> {
+    timed_query!("dev_ideas", "dev_ideas::decide_idea_cas", {
+        // Existence check: a missing row must read as NotFound, never as a
+        // conflict.
+        get_idea_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+
+        // Two statements rather than one COALESCE: a reject that carries no
+        // reason must be able to write NULL (matching `update_idea`'s
+        // `Option<Option<_>>` contract), while an accept must not touch the
+        // column at all.
+        let rows = match rejection_reason {
+            Some(reason) => conn.execute(
+                "UPDATE dev_ideas SET status = ?1, rejection_reason = ?2, updated_at = ?3
+                 WHERE id = ?4 AND status = ?5",
+                params![new_status, reason, now, id, expected],
+            )?,
+            None => conn.execute(
+                "UPDATE dev_ideas SET status = ?1, updated_at = ?2 WHERE id = ?3 AND status = ?4",
+                params![new_status, now, id, expected],
+            )?,
+        };
+
+        if rows == 0 {
+            // Re-read so the message names the status that actually won, not
+            // the one the loser was holding.
+            let actual = get_idea_by_id(pool, id)?;
+            return Err(AppError::Validation(format!(
+                "Backlog idea {id} was already decided as '{}' by a concurrent action",
+                actual.status
+            )));
+        }
+
+        get_idea_by_id(pool, id)
+    })
+}
+
 pub fn delete_idea(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_ideas", "dev_ideas::delete_idea", {
         let conn = pool.get()?;

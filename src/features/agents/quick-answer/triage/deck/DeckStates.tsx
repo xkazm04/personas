@@ -16,6 +16,9 @@ import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import type { TriageSessionSummary } from '../triageJournal';
+import { DeckSummary } from './DeckSummary';
+
 const GHOSTS = [0, 1, 2];
 
 export function DeckLoading({ reduced }: { reduced: boolean }) {
@@ -54,6 +57,7 @@ export function DeckLoading({ reduced }: { reduced: boolean }) {
 
 export function DeckCleared({
   decided,
+  summary,
   filtered,
   remaining,
   reduced,
@@ -61,6 +65,10 @@ export function DeckCleared({
   onLoadMore,
 }: {
   decided: number;
+  /** What the session did, from the decision journal. Rendered under the
+   *  headline: the moment the deck runs dry is the only moment a reviewer is
+   *  reading rather than deciding. */
+  summary: TriageSessionSummary;
   /** True when the queue still holds items, just none of the active kinds. */
   filtered: boolean;
   /**
@@ -93,7 +101,7 @@ export function DeckCleared({
 
   return (
     <motion.div
-      className="flex max-w-[46ch] flex-col items-center gap-4 text-center"
+      className="flex max-w-[52ch] flex-col items-center gap-4 text-center"
       initial={reduced ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 220, damping: 24 }}
@@ -127,6 +135,8 @@ export function DeckCleared({
       </h2>
 
       <p className="typo-body-lg text-foreground">{body}</p>
+
+      <DeckSummary summary={summary} />
 
       {batched ? (
         <Button

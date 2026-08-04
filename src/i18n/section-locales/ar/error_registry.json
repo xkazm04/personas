@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "أصدر البناء حقلاً لا يتعرف عليه المحرك.",
   "unknown_prompt_field_suggestion": "انقر على Refine — سيستخدم البناء الجديد المخطط الحالي.",
   "webhook_missing_secret_message": "يفتقد محفّز webhook هذا إلى سر التوقيع (signing secret) الخاص به.",
-  "webhook_missing_secret_suggestion": "أعد تشغيل Promote — يقوم خط الأنابيب تلقائيًا بتوليد webhook_secret عند الإرسال. إذا استمرت المشكلة، أعد تشغيل البناء."
+  "webhook_missing_secret_suggestion": "أعد تشغيل Promote — يقوم خط الأنابيب تلقائيًا بتوليد webhook_secret عند الإرسال. إذا استمرت المشكلة، أعد تشغيل البناء.",
+  "decision_conflict_message": "قرّر شخص آخر هذا بالفعل — جارٍ إعادة التحميل.",
+  "decision_conflict_suggestion": "يتم تحديث القائمة بأحدث قرار. راجِعه وقرّر مرة أخرى إذا كنت غير موافق."
 }

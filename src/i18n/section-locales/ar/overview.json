@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "تخطٍّ",
     "backlog_execute_accepted": "نفّذ المقبولة",
     "backlog_execute_none": "لا توجد عناصر مقبولة للتنفيذ.",
-    "backlog_execute_queued": "تمت جدولة {count} من المهام في Run Desk."
+    "backlog_execute_queued": "تمت جدولة {count} من المهام في Run Desk.",
+    "bulk_partial_failure": "تعذّر حسم {count} من المراجعات المحددة — لا تزال معلّقة."
   },
   "messages_view": {
     "title": "الرسائل",

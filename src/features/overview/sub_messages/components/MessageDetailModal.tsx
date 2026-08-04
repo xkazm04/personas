@@ -19,9 +19,8 @@ import { getMessageDeliveries } from "@/api/overview/messages";
 import {
   createMemory, updateMemoryContent, listMemoriesByExecution,
 } from "@/api/overview/memories";
-import {
-  listManualReviews, updateManualReviewStatus,
-} from "@/api/overview/reviews";
+import { listManualReviews } from "@/api/overview/reviews";
+import { resolveReviewRow } from "@/lib/decisions/rowWrites";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { buildFeedbackInstruction, buildFeedbackChatTitle } from '../libs/feedbackInstruction';
 import { buildSummariseChatPrompt } from '../libs/chatSeed';
@@ -312,10 +311,11 @@ export function MessageDetailModal({
     if (resolvingReviewId) return;
     setResolvingReviewId(review.id);
     try {
-      await updateManualReviewStatus(review.id, status);
+      await resolveReviewRow(review, status);
       reloadReviews();
     } catch (err) {
       toastCatch('Failed to update review')(err);
+      reloadReviews();
     } finally {
       setResolvingReviewId(null);
     }

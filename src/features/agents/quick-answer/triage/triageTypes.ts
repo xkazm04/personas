@@ -25,7 +25,13 @@ import type { LucideIcon } from 'lucide-react';
 
 /** Which queue an item came from. Presentation uses it only for grouping and
  *  filtering — never to branch on how to render content. */
-export type TriageKind = 'review' | 'idea' | 'practice' | 'question';
+export type TriageKind =
+  | 'review'
+  | 'idea'
+  | 'practice'
+  | 'question'
+  | 'policy'
+  | 'evolution';
 
 /**
  * The universal verdict spine. Every item supports all three, whatever it is:
@@ -294,11 +300,25 @@ export function reasonPromptFor(
 /** Per-kind queue tallies, for filter chips and progress. */
 export type TriageCounts = Record<TriageKind, number> & { total: number };
 
-export const TRIAGE_KINDS: readonly TriageKind[] = ['review', 'idea', 'practice', 'question'];
+/**
+ * Chip order, and the order every exhaustive loop walks.
+ *
+ * Roughly descending by how loudly the kind interrupts: the four original
+ * queues first (they carry the volume), then the two proposal queues the
+ * Self-Tuning Fabric and Darwin Mode file — rarer, heavier, and read last.
+ */
+export const TRIAGE_KINDS: readonly TriageKind[] = [
+  'review',
+  'idea',
+  'practice',
+  'question',
+  'policy',
+  'evolution',
+];
 
 /** Empty tally — the shape every counter starts from. */
 export function emptyCounts(): TriageCounts {
-  return { review: 0, idea: 0, practice: 0, question: 0, total: 0 };
+  return { review: 0, idea: 0, practice: 0, question: 0, policy: 0, evolution: 0, total: 0 };
 }
 
 /** Tally a queue by kind. */

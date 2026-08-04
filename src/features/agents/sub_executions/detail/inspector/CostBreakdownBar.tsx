@@ -2,12 +2,40 @@ import { estimateCost, isSubscriptionModel } from '@/lib/utils/platform/pricing'
 import { formatCost } from './inspectorTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
-export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: string; inputTokens: number; outputTokens: number }) {
+export function CostBreakdownBar({
+  model,
+  inputTokens,
+  outputTokens,
+  actualCostUsd,
+}: {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  /**
+   * The run's authoritative cost — the root span's `cost_usd`, which the CLI
+   * reports and the tracer stores. When present it IS the total; the pricing
+   * table is then used only to derive the input/output *ratio*, never a second
+   * total. That keeps this component reconciled with `TraceSummary` instead of
+   * printing a competing figure for the same run.
+   */
+  actualCostUsd?: number | null;
+}) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
-  const { inputCost, outputCost, totalCost, estimated } = estimateCost(model, inputTokens, outputTokens);
-  const inputPct = totalCost > 0 ? (inputCost / totalCost) * 100 : 50;
-  const outputPct = totalCost > 0 ? (outputCost / totalCost) * 100 : 50;
+  // `outputCost` is deliberately not destructured: the output side is derived
+  // as the complement of the input share, so the two halves always sum to the
+  // displayed total instead of drifting by a rounding step.
+  const { inputCost, totalCost: pricedTotal, estimated } = estimateCost(model, inputTokens, outputTokens);
+
+  // The split is only knowable when the pricing table recognised the model and
+  // the run actually priced above zero. Otherwise we show the total alone
+  // rather than a fabricated 50/50 bar (the previous default), which asserted a
+  // decomposition nobody measured.
+  const canSplit = pricedTotal > 0;
+  const totalCost = actualCostUsd ?? pricedTotal;
+  const inputShare = canSplit ? inputCost / pricedTotal : 0;
+  const inputPct = inputShare * 100;
+  const outputPct = 100 - inputPct;
 
   return (
     <div className="space-y-2">
@@ -20,26 +48,34 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
         )}
       </div>
       <div className="flex items-center gap-3 typo-code">
-        <span className="text-blue-400">{tx(e.input_label, { cost: formatCost(inputCost) })}</span>
-        <span className="text-foreground">|</span>
-        <span className="text-amber-400">{tx(e.output_label, { cost: formatCost(outputCost) })}</span>
-        <span className="text-foreground">|</span>
+        {canSplit && (
+          <>
+            <span className="text-blue-400">{tx(e.input_label, { cost: formatCost(totalCost * inputShare) })}</span>
+            <span className="text-foreground">|</span>
+            <span className="text-amber-400">{tx(e.output_label, { cost: formatCost(totalCost * (1 - inputShare)) })}</span>
+            <span className="text-foreground">|</span>
+          </>
+        )}
         <span className="text-foreground/90">{tx(e.total_label, { cost: formatCost(totalCost) })}</span>
       </div>
-      <div className="h-2.5 rounded-full overflow-hidden bg-secondary/60 border border-primary/10 flex">
-        <div
-          className="h-full bg-blue-500/40 transition-all"
-          style={{ width: `${inputPct}%` }}
-        />
-        <div
-          className="h-full bg-amber-500/40 transition-all"
-          style={{ width: `${outputPct}%` }}
-        />
-      </div>
-      <div className="flex justify-between typo-code text-foreground">
-        <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
-        <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
-      </div>
+      {canSplit && (
+        <>
+          <div className="h-2.5 rounded-full overflow-hidden bg-secondary/60 border border-primary/10 flex">
+            <div
+              className="h-full bg-blue-500/40 transition-all"
+              style={{ width: `${inputPct}%` }}
+            />
+            <div
+              className="h-full bg-amber-500/40 transition-all"
+              style={{ width: `${outputPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between typo-code text-foreground">
+            <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
+            <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
+          </div>
+        </>
+      )}
       {/* Subscription-vs-API reframe: this run's cost is the Anthropic API list
           price for the same tokens — on the user's Claude subscription it's
           included, not billed. Shown only for Claude models (external-API

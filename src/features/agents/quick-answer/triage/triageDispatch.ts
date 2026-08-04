@@ -41,8 +41,16 @@ export interface TriagePorts {
     body: string,
     ideaId: string,
   ) => Promise<unknown>;
-  acceptIdea: (id: string) => Promise<unknown>;
-  rejectIdea: (id: string, reason?: string) => Promise<unknown>;
+  /**
+   * `seenStatus` is the status the CARD rendered. Every write door in this app
+   * carries it so the backend can make the write a single-winner
+   * compare-and-swap — a verdict decided on a card someone else already ruled on
+   * must lose loudly, not overwrite them. It is threaded through the ports (not
+   * read from the item inside the port) so this router stays the one place that
+   * knows where a verdict's facts come from.
+   */
+  acceptIdea: (id: string, seenStatus?: string) => Promise<unknown>;
+  rejectIdea: (id: string, reason?: string, seenStatus?: string) => Promise<unknown>;
   /**
    * `supersededBy` is the id of the practice that REPLACES this one. The backend
    * rejects it outright for any decision other than `deprecate`, so the router
@@ -52,10 +60,41 @@ export interface TriagePorts {
     id: string,
     verdict: 'adopt' | 'reject' | 'deprecate',
     supersededBy?: string,
+    seenStatus?: string,
   ) => Promise<unknown>;
   /** Fired after a practice verdict so the workspace centre re-reads. */
   refreshKnowledge: () => void;
   submitAnswers: (sessionId: string, answers: Record<string, string>) => Promise<void>;
+  /**
+   * Apply or decline a Self-Tuning Fabric proposal.
+   *
+   * Split into two ports rather than one `(id, verdict)` because they are not
+   * symmetric: applying is the ONLY policy write in the app and takes nothing
+   * but the id, while declining takes the reason that the settings history
+   * later renders. A single port would have carried a `reason` that is
+   * meaningless on one of its two branches.
+   */
+  applyPolicy: (id: string, seenStatus?: string) => Promise<unknown>;
+  declinePolicy: (id: string, reason?: string, seenStatus?: string) => Promise<unknown>;
+  /** Approve (install the winner genome) or reject a promotion proposal.
+   *  `note` is the reviewer's recorded reason on a rejection. */
+  decideEvolution: (
+    id: string,
+    approve: boolean,
+    note?: string,
+    seenStatus?: string,
+  ) => Promise<unknown>;
+  /** Fired after a proposal verdict so the two proposal queues re-read. */
+  refreshProposals: () => void;
+  /**
+   * Put a decided row BACK — the undo half of the two kinds that have a reverse
+   * door. `seenStatus` is the status the verdict produced, so the reopen is a
+   * compare-and-swap exactly like the verdict was. See
+   * `lib/decisions/rowWrites#ReopenOptions` for which rows reopen and what a
+   * reopen does NOT retract.
+   */
+  reopenIdea: (id: string, seenStatus: string) => Promise<unknown>;
+  reopenPractice: (id: string, seenStatus: string) => Promise<unknown>;
   /** Deep-link to the persona builder. Absent when the host has no route. */
   openBuilder?: (personaId: string) => void;
 }
@@ -109,21 +148,30 @@ export async function routeDecision(
       else await ports.reviewAction(item.sourceId, 'rejected', reason);
       return;
 
-    case 'idea':
+    case 'idea': {
+      const seen = item.payload?.seenStatus ?? undefined;
       if (branchId === 'build') {
+        // Task first, then the verdict: a failed task creation must not leave an
+        // accepted idea with no work behind it. The residual case the swap makes
+        // visible is the mirror — someone else decides the idea between these two
+        // calls and the task outlives a verdict that never landed. Rare, and the
+        // cheaper failure: an orphan task is a row a human can see and delete,
+        // whereas an accepted idea with no task is invisible work that never
+        // happens.
         await ports.createTask(
           item.title,
           item.payload?.projectId ?? undefined,
           item.body,
           item.sourceId,
         );
-        await ports.acceptIdea(item.sourceId);
+        await ports.acceptIdea(item.sourceId, seen);
       } else if (verdict === 'accept') {
-        await ports.acceptIdea(item.sourceId);
+        await ports.acceptIdea(item.sourceId, seen);
       } else {
-        await ports.rejectIdea(item.sourceId, reason);
+        await ports.rejectIdea(item.sourceId, reason, seen);
       }
       return;
+    }
 
     case 'practice': {
       const deprecating = branchId === 'deprecate';
@@ -136,6 +184,7 @@ export async function routeDecision(
         // non-deprecate decision as a validation error, which would turn a
         // stale reason into a failed adopt.
         deprecating ? reason || undefined : undefined,
+        item.payload?.seenStatus ?? undefined,
       );
       ports.refreshKnowledge();
       return;
@@ -165,5 +214,102 @@ export async function routeDecision(
       await ports.submitAnswers(sessionId, filled);
       return;
     }
+
+    case 'policy': {
+      const seen = item.payload?.seenStatus ?? undefined;
+      if (verdict === 'accept') await ports.applyPolicy(item.sourceId, seen);
+      else await ports.declinePolicy(item.sourceId, reason, seen);
+      ports.refreshProposals();
+      return;
+    }
+
+    case 'evolution': {
+      // `reason` is the decision note, and it rides on BOTH verdicts even though
+      // only a rejection can currently carry one — the command's `note`
+      // parameter is verdict-agnostic and an approval note is a legitimate
+      // record, so the router does not decide which acts may be annotated.
+      await ports.decideEvolution(
+        item.sourceId,
+        verdict === 'accept',
+        reason,
+        item.payload?.seenStatus ?? undefined,
+      );
+      ports.refreshProposals();
+      return;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Undo                                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A verdict that has landed and could still be taken back.
+ *
+ * `producedStatus` is the whole point. An undo is not a special operation with
+ * special rules — it is another write against an expectation, and the
+ * expectation is what the reviewer's own verdict just put on the row. If someone
+ * else has decided it since, the reopen loses the swap and says so with the same
+ * message any other lost verdict uses, because it IS the same failure.
+ */
+export interface UndoableDecision {
+  decision: TriageDecision;
+  /** The status the write left on the row. */
+  producedStatus: string;
+  /** Epoch ms the verdict landed — what the undo window is measured from. */
+  at: number;
+}
+
+/**
+ * The status a verdict leaves on the row, or `null` when the row type has no
+ * reverse door and must therefore not be offered an undo.
+ *
+ * Deriving it rather than reading it back from the write's return value is
+ * deliberate: the deck resolves optimistically, so the row object it holds is
+ * the one it rendered, and the honest expectation for the reverse is "the status
+ * MY verdict was supposed to produce" — which is exactly what loses the swap if
+ * the verdict never landed the way this surface thinks it did.
+ */
+export function reversibleStatus(decision: TriageDecision): string | null {
+  const { item, verdict, branchId } = decision;
+  switch (item.kind) {
+    case 'idea':
+      // `build` accepts and queues a task; the accept is what would be undone.
+      return branchId === 'build' || verdict === 'accept' ? 'accepted' : 'rejected';
+    case 'practice':
+      return branchId === 'deprecate' ? 'deprecated' : verdict === 'accept' ? 'adopted' : 'rejected';
+    // Reviews (the backend state machine has no path back to `pending`), build
+    // questions (the CLI already resumed), policy proposals (the rule is
+    // written, and there is deliberately no second policy writer) and promotions
+    // (the genome is on a live persona). See `rowWrites#ReopenOptions`.
+    default:
+      return null;
+  }
+}
+
+/**
+ * Reverse a landed verdict. Callers MUST have obtained `record` from a decision
+ * whose {@link reversibleStatus} was non-null.
+ *
+ * Throws on anything else, for the same reason `routeDecision` does: a silent
+ * no-op here would tell a reviewer their approve was taken back when the row is
+ * still approved.
+ */
+export async function undoDecision(
+  record: UndoableDecision,
+  ports: TriagePorts,
+): Promise<void> {
+  const { item } = record.decision;
+  switch (item.kind) {
+    case 'idea':
+      await ports.reopenIdea(item.sourceId, record.producedStatus);
+      return;
+    case 'practice':
+      await ports.reopenPractice(item.sourceId, record.producedStatus);
+      ports.refreshKnowledge();
+      return;
+    default:
+      throw new Error(`A ${item.kind} decision cannot be undone`);
   }
 }

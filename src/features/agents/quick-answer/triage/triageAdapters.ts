@@ -1,5 +1,5 @@
 /**
- * triageAdapters.ts — four source shapes in, one {@link TriageItem} out.
+ * triageAdapters.ts — six source shapes in, one {@link TriageItem} out.
  *
  * Each adapter answers the same four questions about its domain, and nothing
  * else: what is the case being judged, what facts would a reviewer weigh, what
@@ -14,11 +14,22 @@
  *
  * React-free and store-free: callers inject already-loaded rows and copy.
  */
-import { Hammer, ExternalLink, Archive, Play, ArrowUpNarrowWide, Terminal, Users } from 'lucide-react';
+import {
+  Hammer,
+  ExternalLink,
+  Archive,
+  Play,
+  ArrowUpNarrowWide,
+  Lock,
+  Terminal,
+  Users,
+} from 'lucide-react';
 
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
+import type { EvolutionPromotionProposal } from '@/lib/bindings/EvolutionPromotionProposal';
+import type { PolicyProposal } from '@/lib/bindings/PolicyProposal';
 import type { KnowledgeItemView } from '@/features/overview/sub_patterns/libraryModel';
 import {
   prettyEvidence,
@@ -125,6 +136,69 @@ export interface TriageCopy {
    *  string in the contract that is a template rather than a label. */
   questionsPending: string;
   questionsFact: string;
+  /* -- policy proposals (Self-Tuning Fabric) --------------------------------- */
+  /** Verdict verbs. "Apply" and "Decline" are the Fabric's own words. */
+  policyApply: string;
+  policyDecline: string;
+  /** Who raised it. */
+  policySource: string;
+  policyKindRouting: string;
+  policyKindBudget: string;
+  /** `{category}` `{to}`. */
+  policyRoutingTitle: string;
+  /** `{category}` `{from}` `{to}` `{saving}` `{pct}`. */
+  policyRoutingBody: string;
+  /** `{proposed}`. */
+  policyBudgetIntroduceTitle: string;
+  policyBudgetRaiseTitle: string;
+  policyBudgetLowerTitle: string;
+  /** `{observed}` `{rows}` `{current}`. */
+  policyBudgetBody: string;
+  fromModel: string;
+  toModel: string;
+  saving: string;
+  /** `{amount}`. */
+  savingValue: string;
+  qualityDelta: string;
+  /** The alert: this proposal buys its saving with quality. */
+  policyQualityDrop: string;
+  /** `{delta}` `{basis}`. */
+  policyQualityDropDetail: string;
+  qualityBasis: string;
+  basisLab: string;
+  basisSuccess: string;
+  runs: string;
+  /** `{incumbent}` `{challenger}`. */
+  runsValue: string;
+  ceiling: string;
+  proposedCeiling: string;
+  observedSpend: string;
+  /** Value of `ceiling` when there is not one yet. */
+  noCeiling: string;
+  reasonQualityRisk: string;
+  reasonSavingTooSmall: string;
+  reasonThinEvidence: string;
+  reasonKeepCurrent: string;
+  /* -- evolution promotions (Darwin Mode) ------------------------------------ */
+  promote: string;
+  evolutionSource: string;
+  /** `{persona}`. */
+  evolutionTitle: string;
+  evolutionMeasured: string;
+  incumbentScore: string;
+  winnerScore: string;
+  gain: string;
+  bar: string;
+  /** `{value}` — a fitness delta rendered in points. */
+  points: string;
+  fitnessSource: string;
+  /** The alert: this proposal is pinned to a persona snapshot. */
+  evolutionLock: string;
+  evolutionLockDetail: string;
+  evolutionLockFact: string;
+  reasonGainTooSmall: string;
+  reasonPromptWorse: string;
+  reasonFreshCycle: string;
 }
 
 /** Provisional English. Replaced wholesale by translated copy at consolidation. */
@@ -191,7 +265,74 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   supersededSkip: 'No successor',
   questionsPending: '{count} questions before this build can continue',
   questionsFact: 'Questions',
+  policyApply: 'Apply',
+  policyDecline: 'Decline',
+  policySource: 'Self-tuning',
+  policyKindRouting: 'Routing',
+  policyKindBudget: 'Budget',
+  policyRoutingTitle: 'Route {category} work to {to}',
+  policyRoutingBody:
+    'Sending {category} runs to {to} instead of {from} projects a saving of {saving} a month — {pct} of what that work costs today.',
+  policyBudgetIntroduceTitle: 'Introduce a monthly ceiling of {proposed}',
+  policyBudgetRaiseTitle: 'Raise the monthly ceiling to {proposed}',
+  policyBudgetLowerTitle: 'Lower the monthly ceiling to {proposed}',
+  policyBudgetBody:
+    'Spend is running at {observed} a month across {rows} charged runs, against a ceiling of {current}.',
+  fromModel: 'Now',
+  toModel: 'Proposed',
+  saving: 'Saving',
+  savingValue: '{amount}/mo',
+  qualityDelta: 'Quality',
+  policyQualityDrop: 'Cheaper, and measurably worse',
+  policyQualityDropDetail:
+    'The proposed model scores {delta} against the one in use, on {basis}. Applying this buys the saving with that quality.',
+  qualityBasis: 'Measured on',
+  basisLab: 'Lab scores',
+  basisSuccess: 'Success rate',
+  runs: 'Runs',
+  runsValue: '{incumbent} vs {challenger}',
+  ceiling: 'Ceiling now',
+  proposedCeiling: 'Ceiling after',
+  observedSpend: 'Spend',
+  noCeiling: 'None',
+  reasonQualityRisk: 'Quality risk',
+  reasonSavingTooSmall: 'Saving too small',
+  reasonThinEvidence: 'Not enough evidence',
+  reasonKeepCurrent: 'Keep what we have',
+  promote: 'Promote',
+  evolutionSource: 'Evolution',
+  evolutionTitle: 'Promote the evolved {persona}',
+  evolutionMeasured: 'Measured',
+  incumbentScore: 'Incumbent',
+  winnerScore: 'Challenger',
+  gain: 'Gain',
+  bar: 'Bar',
+  points: '{value} pts',
+  fitnessSource: 'Fitness',
+  evolutionLock: 'Pinned to an earlier persona',
+  evolutionLockDetail:
+    "Promoting installs the challenger's prompt on the live persona. If the persona has been edited since this cycle ran, the write fails closed and nothing changes.",
+  evolutionLockFact: 'Pinned to',
+  reasonGainTooSmall: 'Gain too small',
+  reasonPromptWorse: 'Prompt reads worse',
+  reasonFreshCycle: 'Run a fresh cycle',
 };
+
+/**
+ * Substitute every `{name}` in a template.
+ *
+ * The copy contract carries templates rather than assembled sentences, because
+ * word order is not universal — a locale that needs the model before the
+ * category cannot be served by concatenating labels. Chained `.replace()` calls
+ * were fine for the one-placeholder strings this file started with; the policy
+ * claims carry five.
+ */
+function fill(template: string, values: Record<string, string | number>): string {
+  return Object.entries(values).reduce(
+    (out, [key, value]) => out.split(`{${key}}`).join(String(value)),
+    template,
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Weight — the one cross-domain scale                                        */
@@ -231,6 +372,48 @@ const QUESTION_WEIGHT = 90;
  */
 const BLOCKING_WEIGHT_BOOST = 40;
 
+/**
+ * Policy proposals — below every idea that is actually worth doing, and far
+ * below anything that has stopped.
+ *
+ * A routing proposal is an OPTIMISATION of work that is already succeeding: not
+ * deciding it costs a little money per day and nothing else, and the evidence
+ * snapshot behind it does not rot (it is persisted per proposal, so a week-old
+ * proposal argues exactly as well as a fresh one). 40 lands it mid-idea band —
+ * ahead of the stale low-value tail, behind a high-value quick win.
+ *
+ * A budget-ceiling proposal outranks it, because the thing it is reacting to is
+ * money already leaving: `lower` means spend has outrun the ceiling and
+ * `introduce` means there is no ceiling at all. Still below a blocked build (90)
+ * — a persona halted mid-run is work not happening, which beats work happening
+ * expensively.
+ */
+const POLICY_ROUTING_WEIGHT = 40;
+const POLICY_BUDGET_WEIGHT = 52;
+
+/**
+ * Evolution promotions — the heaviest non-incident row in the deck.
+ *
+ * Two arguments put it here, and only the second is about urgency:
+ *
+ *  1. **Blast radius.** Approving installs a new system prompt on a LIVE
+ *     persona and writes `persona_change_log` rows. Nothing else this deck
+ *     collects changes how an agent behaves on its next run.
+ *  2. **It is the one row that EXPIRES.** Every other card argues as well
+ *     tomorrow as today. A promotion is pinned to the persona's `updated_at`
+ *     when the cycle started, so any edit to that persona — by a human, by
+ *     Athena — makes the approval fail closed forever. Deferring it is not free:
+ *     it is the only way to lose the decision by doing nothing.
+ *
+ * `EVOLUTION_BASE` sits just under a blocked build session (90), so a halted
+ * persona still gets read first, and the margin the challenger cleared its
+ * threshold by lifts it from there: a variant that scraped past the bar is not
+ * the same call as one that beat it outright. `MAX` caps the lift below a
+ * `critical` review (120), because a promotion is never an incident.
+ */
+const EVOLUTION_BASE = 78;
+const EVOLUTION_MARGIN_MAX = 25;
+
 /* -------------------------------------------------------------------------- */
 /* Rejection reasons — the presets                                             */
 /* -------------------------------------------------------------------------- */
@@ -263,7 +446,37 @@ const IDEA_REJECT_PRESETS = [
   { id: 'already_done', value: 'Already done', copy: (c: TriageCopy) => c.reasonAlreadyDone },
 ] as const;
 
-type PresetSet = typeof REVIEW_REJECT_PRESETS | typeof IDEA_REJECT_PRESETS;
+/**
+ * A declined policy proposal writes its reason into `policy_proposals.decline_reason`,
+ * which the settings history renders verbatim. The four presets are the four
+ * things the generator can actually be wrong about — a quality claim it
+ * over-trusted, a saving too small to be worth a routing change, an evidence
+ * window too thin, and "the current setup is deliberate".
+ */
+const POLICY_DECLINE_PRESETS = [
+  { id: 'quality_risk', value: 'Quality risk', copy: (c: TriageCopy) => c.reasonQualityRisk },
+  { id: 'saving_too_small', value: 'Saving too small', copy: (c: TriageCopy) => c.reasonSavingTooSmall },
+  { id: 'thin_evidence', value: 'Not enough evidence', copy: (c: TriageCopy) => c.reasonThinEvidence },
+  { id: 'keep_current', value: 'Keep the current setup', copy: (c: TriageCopy) => c.reasonKeepCurrent },
+] as const;
+
+/**
+ * A rejected promotion writes `decision_note`, which is the only feedback a
+ * Darwin cycle ever gets from a human. "Run a fresh cycle" is the one that
+ * matters most: it distinguishes "this challenger is wrong" from "this
+ * challenger is stale", and those call for opposite next actions.
+ */
+const EVOLUTION_REJECT_PRESETS = [
+  { id: 'gain_too_small', value: 'Gain too small', copy: (c: TriageCopy) => c.reasonGainTooSmall },
+  { id: 'prompt_worse', value: 'Prompt reads worse', copy: (c: TriageCopy) => c.reasonPromptWorse },
+  { id: 'fresh_cycle', value: 'Run a fresh cycle', copy: (c: TriageCopy) => c.reasonFreshCycle },
+] as const;
+
+type PresetSet =
+  | typeof REVIEW_REJECT_PRESETS
+  | typeof IDEA_REJECT_PRESETS
+  | typeof POLICY_DECLINE_PRESETS
+  | typeof EVOLUTION_REJECT_PRESETS;
 
 /** A reject prompt over one preset set. Free text is always also accepted. */
 function rejectPrompt(presets: PresetSet, copy: TriageCopy): TriageReasonPrompt {
@@ -480,7 +693,11 @@ export function ideaToTriage(idea: BacklogIdea, copy: TriageCopy): TriageItem {
     // re-raise this finding next week stops raising it at all.
     reasonPrompts: [rejectPrompt(IDEA_REJECT_PRESETS, copy)],
     verdictLabels: { accept: copy.accept, reject: copy.reject, skip: copy.skip },
-    payload: { projectId: idea.projectId },
+    // `seenStatus` is what the CARD claims this row is. It rides to the backend
+    // as the compare-and-swap expectation, so a verdict decided on a card that
+    // someone else (or Athena, overnight) has already ruled on loses loudly
+    // instead of overwriting them and firing a second decision-memory fan-out.
+    payload: { projectId: idea.projectId, seenStatus: idea.status },
   };
 }
 
@@ -600,6 +817,10 @@ export function practiceToTriage(
           ]
         : undefined,
     verdictLabels: { accept: copy.adopt, reject: copy.reject, skip: copy.skip },
+    // See the idea adapter: the status the card claims becomes the write's
+    // compare-and-swap expectation. It matters more here — a stale `adopt` fans
+    // an adoption cell into every applicable member repo.
+    payload: { seenStatus: practice.status },
   };
 }
 
@@ -707,5 +928,286 @@ export function questionGroupToTriage(
     input: { fields, deferred: allDeferred },
     verdictLabels: { accept: copy.submit, reject: copy.skip, skip: copy.defer },
     payload: { sessionId: session.sessionId, personaId: session.personaId },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Policy proposals (Self-Tuning Fabric)                                       */
+/* -------------------------------------------------------------------------- */
+
+const usd = (v: number) => `$${v.toFixed(2)}`;
+const signedPct = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`;
+
+/**
+ * A tuning proposal as a triage card.
+ *
+ * The fit is close to exact: the Fabric is a two-verdict queue by design
+ * ("review-each only — the ONLY policy writer is `policy_tuning_apply`"), and a
+ * decline already had a reason column that the settings history renders
+ * verbatim. So this adapter adds nothing to the domain; it only re-expresses a
+ * queue that was already shaped like the spine.
+ *
+ * The one editorial call is the ALERT. A routing proposal's quality delta is
+ * buried in the settings list as a caption under the claim, and it is the fact
+ * that changes what applying MEANS: a proposal that is cheaper AND better is a
+ * yes, and a proposal that is cheaper and worse is a trade the reviewer has to
+ * actually make. Negative delta is promoted out of the ledger; positive stays a
+ * fact, because a surface with an alert on every card has none.
+ */
+export function policyProposalToTriage(proposal: PolicyProposal, copy: TriageCopy): TriageItem {
+  const routing = proposal.routing;
+  const budget = proposal.budget;
+  const isRouting = proposal.kind === 'routing_rule' && !!routing;
+  const isBudget = proposal.kind === 'budget_ceiling' && !!budget;
+
+  const tags: TriageTag[] = [
+    {
+      id: 'kind',
+      label: isBudget ? copy.policyKindBudget : copy.policyKindRouting,
+      tone: isBudget ? 'warning' : 'accent',
+    },
+  ];
+  if (routing?.category) tags.push({ id: 'category', label: routing.category, tone: 'neutral' });
+
+  const facts: TriageFact[] = [];
+  let title = proposal.kind.replace(/_/g, ' ');
+  let body = '';
+  let alert: TriageItem['alert'];
+
+  if (isRouting && routing) {
+    const claim = routing.claim;
+    const from = routing.fromModel ?? '—';
+    const category = routing.category ?? '*';
+    const basis = claim.qualityBasis === 'lab' ? copy.basisLab : copy.basisSuccess;
+
+    title = fill(copy.policyRoutingTitle, { category, to: routing.toModel });
+    body = fill(copy.policyRoutingBody, {
+      category,
+      from,
+      to: routing.toModel,
+      saving: usd(claim.projectedMonthlySavingUsd),
+      pct: `${Math.round(claim.savingPct * 100)}%`,
+    });
+
+    facts.push({
+      id: 'saving',
+      label: copy.saving,
+      value: fill(copy.savingValue, { amount: usd(claim.projectedMonthlySavingUsd) }),
+      // The meter is the RELATIVE saving, not the dollars: "$4/mo" means nothing
+      // without knowing whether that is 4% or 90% of the category's spend.
+      score: { value: claim.savingPct, max: 1 },
+    });
+    facts.push(
+      { id: 'from', label: copy.fromModel, value: from },
+      { id: 'to', label: copy.toModel, value: routing.toModel },
+      {
+        id: 'quality',
+        label: copy.qualityDelta,
+        value: signedPct(claim.qualityDeltaPct),
+        tone: claim.qualityDeltaPct < 0 ? 'danger' : claim.qualityDeltaPct > 0 ? 'success' : 'neutral',
+      },
+      { id: 'basis', label: copy.qualityBasis, value: basis },
+      {
+        id: 'runs',
+        label: copy.runs,
+        value: fill(copy.runsValue, {
+          incumbent: claim.incumbentRuns,
+          challenger: claim.challengerRuns,
+        }),
+      },
+    );
+
+    if (claim.qualityDeltaPct < 0) {
+      alert = {
+        id: 'quality',
+        label: copy.policyQualityDrop,
+        detail: fill(copy.policyQualityDropDetail, {
+          delta: signedPct(claim.qualityDeltaPct),
+          basis,
+        }),
+        tone: 'warning',
+      };
+    }
+  } else if (isBudget && budget) {
+    const ceiling = budget.currentCeilingUsd > 0 ? usd(budget.currentCeilingUsd) : copy.noCeiling;
+    title = fill(
+      budget.direction === 'introduce'
+        ? copy.policyBudgetIntroduceTitle
+        : budget.direction === 'raise'
+          ? copy.policyBudgetRaiseTitle
+          : copy.policyBudgetLowerTitle,
+      { proposed: usd(budget.proposedCeilingUsd) },
+    );
+    body = fill(copy.policyBudgetBody, {
+      observed: usd(budget.observedMonthlySpendUsd),
+      rows: budget.spendRows,
+      current: ceiling,
+    });
+
+    facts.push({
+      id: 'spend',
+      label: copy.observedSpend,
+      value: usd(budget.observedMonthlySpendUsd),
+      // Inverted on purpose: this meter reads "how much of the PROPOSED ceiling
+      // today's spend already uses", and a bar that is nearly full is the bad
+      // news. Without the flip a proposal that barely contains the spend would
+      // paint green.
+      score: {
+        value: budget.observedMonthlySpendUsd,
+        max: Math.max(budget.proposedCeilingUsd, budget.observedMonthlySpendUsd, 0.01),
+        invert: true,
+      },
+    });
+    facts.push(
+      { id: 'ceiling', label: copy.ceiling, value: ceiling },
+      { id: 'proposed', label: copy.proposedCeiling, value: usd(budget.proposedCeilingUsd) },
+      { id: 'runs', label: copy.runs, value: String(budget.spendRows) },
+    );
+  }
+
+  facts.push({ id: 'raised', label: copy.raised, value: proposal.createdAt });
+
+  return {
+    id: `policy:${proposal.id}`,
+    sourceId: proposal.id,
+    kind: 'policy',
+    title,
+    body: body || copy.noDescription,
+    // The persisted snapshot slice IS the case. It is what the settings
+    // section's evidence drawer shows, and the deck already has a monospace
+    // block for exactly this.
+    evidence: prettyEvidence(JSON.stringify(proposal.evidence)),
+    tags,
+    alert,
+    facts,
+    source: { label: copy.policySource, sublabel: proposal.evidenceSnapshotId },
+    createdAt: proposal.createdAt,
+    weight: isBudget ? POLICY_BUDGET_WEIGHT : POLICY_ROUTING_WEIGHT,
+    // No branches: the Fabric offers exactly two acts, and inventing a third
+    // here would need a second policy writer, which its contract forbids.
+    branches: [],
+    reasonPrompts: [rejectPrompt(POLICY_DECLINE_PRESETS, copy)],
+    verdictLabels: { accept: copy.policyApply, reject: copy.policyDecline, skip: copy.skip },
+    payload: { seenStatus: proposal.status, policyKind: proposal.kind },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Evolution promotion proposals (Darwin Mode)                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A promotion proposal as a triage card.
+ *
+ * This is the richest facts payload in the app — four measured values on one
+ * comparable scale — and it is the only decidable row carrying a real
+ * optimistic-lock token. Both shape the card:
+ *
+ *  • **Four meters, two scales.** Incumbent and challenger are fitness scores in
+ *    `0..1`, so they share the natural scale and read as a direct comparison.
+ *    Gain and bar are DELTAS on that scale — tiny next to it (a 3-point gain is
+ *    `0.03`) — so they get their own shared scale, sized to whichever is larger.
+ *    Putting all four on `0..1` would have flattened the only two numbers the
+ *    decision actually turns on into invisible slivers.
+ *  • **The lock is the alert.** `baseUpdatedAt` is not a display fact; it is the
+ *    reason this card can stop being decidable while the reviewer looks at it.
+ *    Every other row in the deck can be decided late. This one can expire.
+ */
+export function evolutionProposalToTriage(
+  proposal: EvolutionPromotionProposal,
+  /**
+   * Resolved persona name. Empty is tolerated and falls back to the id: the
+   * roster is loaded by a different store on a different clock, and a card
+   * titled "Promote the evolved " names nothing at all.
+   */
+  personaName: string,
+  personaColor: string | null,
+  copy: TriageCopy,
+): TriageItem {
+  const owner = personaName.trim() || proposal.personaId;
+  const { incumbentScore, winnerScore, improvement, threshold } = proposal;
+  // One scale for the two deltas, headroom so a winner that beat the bar
+  // outright still has bar left to show for it.
+  const deltaScale = Math.max(improvement, threshold, 0.01) * 1.25;
+  const points = (v: number) =>
+    fill(copy.points, { value: `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}` });
+
+  const facts: TriageFact[] = [
+    {
+      id: 'incumbent',
+      label: copy.incumbentScore,
+      value: `${Math.round(incumbentScore * 100)}%`,
+      score: { value: incumbentScore, max: 1 },
+    },
+    {
+      id: 'winner',
+      label: copy.winnerScore,
+      value: `${Math.round(winnerScore * 100)}%`,
+      score: { value: winnerScore, max: 1 },
+    },
+    {
+      id: 'gain',
+      label: copy.gain,
+      value: points(improvement),
+      score: { value: improvement, max: deltaScale },
+    },
+    {
+      id: 'bar',
+      label: copy.bar,
+      value: points(threshold),
+      // NOT inverted, and that is the judgement: a LOW bar is weak evidence, not
+      // good news. A challenger that cleared a demanding threshold and one that
+      // cleared a token threshold are different cases, and the meter says which
+      // by painting a low bar amber.
+      score: { value: threshold, max: deltaScale },
+    },
+    { id: 'fitness', label: copy.fitnessSource, value: proposal.fitnessSource },
+    { id: 'lockedAt', label: copy.evolutionLockFact, value: proposal.baseUpdatedAt },
+    { id: 'raised', label: copy.raised, value: proposal.createdAt },
+  ];
+
+  const margin = Math.min(
+    EVOLUTION_MARGIN_MAX,
+    Math.max(0, Math.round((improvement - threshold) * 100)),
+  );
+
+  return {
+    id: `evolution:${proposal.id}`,
+    sourceId: proposal.id,
+    kind: 'evolution',
+    title: fill(copy.evolutionTitle, { persona: owner }),
+    // The reassembled prompt IS the case being judged — approving installs
+    // exactly this text.
+    body: proposal.newPrompt.trim() || copy.noDescription,
+    evidence: prettyEvidence(proposal.evidenceJson),
+    tags: [
+      { id: 'measured', label: copy.evolutionMeasured, tone: 'success' },
+      { id: 'fitness', label: proposal.fitnessSource, tone: 'neutral' },
+    ],
+    alert: {
+      id: 'lock',
+      label: copy.evolutionLock,
+      detail: copy.evolutionLockDetail,
+      tone: 'warning',
+      icon: Lock,
+    },
+    facts,
+    source: { label: owner, sublabel: copy.evolutionSource, color: personaColor },
+    createdAt: proposal.createdAt,
+    weight: EVOLUTION_BASE + margin,
+    branches: [],
+    // A rejected promotion writes `decision_note` — the only signal a Darwin
+    // cycle ever gets back from a human.
+    reasonPrompts: [rejectPrompt(EVOLUTION_REJECT_PRESETS, copy)],
+    verdictLabels: { accept: copy.promote, reject: copy.reject, skip: copy.skip },
+    // `baseUpdatedAt` rides as payload rather than as a write argument: the
+    // command reads the token off the stored row, so the client cannot stale it.
+    // See `decideEvolutionProposalRow`.
+    payload: {
+      seenStatus: proposal.status,
+      personaId: proposal.personaId,
+      cycleId: proposal.cycleId,
+      baseUpdatedAt: proposal.baseUpdatedAt,
+    },
   };
 }

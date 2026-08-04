@@ -522,47 +522,109 @@ pub fn apply_idea_verdict_by(
     verdict: IdeaVerdict,
     actor: &str,
 ) -> Result<DevIdea, AppError> {
+    apply_idea_verdict_cas(db, id, verdict, actor, None)
+}
+
+/// [`apply_idea_verdict_by`] with a COMPARE-AND-SWAP guard.
+///
+/// `expected` is the status the caller SAW when it offered the decision. Pass
+/// it from any surface that renders a row and then writes a verdict against it;
+/// pass `None` from server-side loops that select their own working set in the
+/// same breath (Athena's batch triage, triage rules, the scanner).
+///
+/// Why it matters: reviews have had a single-winner swap since
+/// `manual_reviews::update_status`, and ideas did not. Two surfaces holding the
+/// same `pending` row could each write a verdict, and each fired
+/// [`record_idea_decision_by`] + `sync_practice_adoption` — so rejecting an idea
+/// on the triage deck (which writes a `constraint` memory telling every future
+/// scan not to raise it) and then accepting the same stale row in Approvals left
+/// status `accepted` WITH a permanent "never raise this" constraint. The two
+/// loops disagreed forever and nothing warned anyone.
+///
+/// A deliberate reversal is still a decision: a reviewer looking at a `rejected`
+/// row and accepting it passes `expected = "rejected"` and wins. Only a verdict
+/// written against a status the row no longer holds loses.
+pub fn apply_idea_verdict_cas(
+    db: &crate::db::DbPool,
+    id: &str,
+    verdict: IdeaVerdict,
+    actor: &str,
+    expected: Option<&str>,
+) -> Result<DevIdea, AppError> {
     let status = verdict.status();
     let existing = repo::get_idea_by_id(db, id)?;
     if existing.status == status {
         return Ok(existing);
     }
 
+    // Fail fast with the informative message before touching the DB. The swap
+    // below is still the authority — this only turns the common case (a stale
+    // card, seconds old) into a precise error instead of a bare 0-row result.
+    if let Some(seen) = expected {
+        if existing.status != seen {
+            return Err(AppError::Validation(format!(
+                "Backlog idea {id} was already decided as '{}' by a concurrent action",
+                existing.status
+            )));
+        }
+    }
+
     let reason = match &verdict {
         IdeaVerdict::Accept => None,
         IdeaVerdict::Reject { reason } => Some(reason.as_deref()),
     };
-    let idea = repo::update_idea(db, id, None, None, Some(status), None, None, None, None, reason)?;
+    // Swap against what we just read even when the caller named nothing: that
+    // still closes the read→write interleave, which is the window the two
+    // side-effect fan-outs below must never both pass through.
+    let idea = repo::decide_idea_cas(db, id, &existing.status, status, reason)?;
 
     record_idea_decision_by(db, &idea, status, actor);
     crate::db::repos::dev_workspaces::sync_practice_adoption(db, &idea);
     Ok(idea)
 }
 
-/// Accept a backlog idea (triage). Delegates to [`apply_idea_verdict`] — the
-/// status write, the decision memory and the workspace adoption sync all live
-/// there.
+/// Accept a backlog idea (triage). Delegates to [`apply_idea_verdict_cas`] —
+/// the status write, the decision memory and the workspace adoption sync all
+/// live there.
+///
+/// `expected_status` is the status the CALLING SURFACE saw on the row. Every
+/// UI that renders a row and then writes a verdict against it should send it;
+/// omitting it keeps the pre-CAS behaviour for callers with no rendered row.
 #[tauri::command]
 pub fn dev_tools_accept_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
+    expected_status: Option<String>,
 ) -> Result<DevIdea, AppError> {
     require_auth_sync(&state)?;
-    apply_idea_verdict(&state.db, &id, IdeaVerdict::Accept)
+    apply_idea_verdict_cas(
+        &state.db,
+        &id,
+        IdeaVerdict::Accept,
+        "Human",
+        expected_status.as_deref(),
+    )
 }
 
-/// Reject a backlog idea (triage). Delegates to [`apply_idea_verdict`], which
-/// records the decision as a `constraint` memory (so the team + future scans
-/// avoid re-surfacing it) and diverges the workspace adoption cell when the
-/// idea was a materialized practice.
+/// Reject a backlog idea (triage). Delegates to [`apply_idea_verdict_cas`],
+/// which records the decision as a `constraint` memory (so the team + future
+/// scans avoid re-surfacing it) and diverges the workspace adoption cell when
+/// the idea was a materialized practice.
 #[tauri::command]
 pub fn dev_tools_reject_idea(
     state: State<'_, Arc<AppState>>,
     id: String,
     reason: Option<String>,
+    expected_status: Option<String>,
 ) -> Result<DevIdea, AppError> {
     require_auth_sync(&state)?;
-    apply_idea_verdict(&state.db, &id, IdeaVerdict::Reject { reason })
+    apply_idea_verdict_cas(
+        &state.db,
+        &id,
+        IdeaVerdict::Reject { reason },
+        "Human",
+        expected_status.as_deref(),
+    )
 }
 
 /// One keyset page of backlog ideas + facet counts — the read behind the
@@ -2662,5 +2724,83 @@ mod verdict_core_tests {
         .unwrap();
         assert_eq!(flipped.status, "rejected");
         assert_eq!(flipped.rejection_reason.as_deref(), Some("changed our mind"));
+    }
+
+    // ------------------------------------------------------------------
+    // Compare-and-swap
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn a_verdict_written_against_a_stale_status_loses_the_swap() {
+        // THE failure this exists to stop: the triage deck rejects an idea —
+        // which writes a `constraint` memory telling every future scan never to
+        // raise it — and Approvals, still rendering the row as `pending`,
+        // accepts it. Before the swap the final state was `accepted` PLUS a
+        // permanent "do not raise this" constraint, and nothing warned anyone.
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+
+        apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Reject { reason: Some("out of scope".into()) },
+            "Human",
+            Some("pending"),
+        )
+        .unwrap();
+
+        let err = apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Accept,
+            "Human",
+            Some("pending"),
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string().contains("already decided"),
+            "expected a concurrency conflict, got: {err}"
+        );
+
+        let row = crate::db::repos::dev_tools::get_idea_by_id(&pool, &idea_id).unwrap();
+        assert_eq!(row.status, "rejected");
+        // One verdict, one decision memory — the loser fired no side effects.
+        assert_eq!(decision_memories(&pool, &idea_id), 1);
+    }
+
+    #[test]
+    fn a_verdict_against_the_status_the_reviewer_sees_still_lands() {
+        // Reversing a decision you can SEE is a decision. Only a verdict written
+        // against a status the row no longer holds is data loss.
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+        apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
+            .unwrap();
+        let flipped = apply_idea_verdict_cas(
+            &pool,
+            &idea_id,
+            IdeaVerdict::Reject { reason: Some("changed our mind".into()) },
+            "Human",
+            Some("accepted"),
+        )
+        .unwrap();
+        assert_eq!(flipped.status, "rejected");
+    }
+
+    #[test]
+    fn replaying_the_same_verdict_survives_a_stale_expectation() {
+        // Athena's batch path writes the idea first and the approval status
+        // last, so a crash mid-flight replays a verdict the row already carries.
+        // That must stay a no-op success even when the caller's expectation is
+        // now stale — otherwise recovery reports a conflict against itself.
+        let pool = test_pool();
+        let idea_id = seeded_idea(&pool);
+        apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
+            .unwrap();
+        let replay =
+            apply_idea_verdict_cas(&pool, &idea_id, IdeaVerdict::Accept, "Human", Some("pending"))
+                .unwrap();
+        assert_eq!(replay.status, "accepted");
+        assert_eq!(decision_memories(&pool, &idea_id), 1);
     }
 }

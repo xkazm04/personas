@@ -60,7 +60,14 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
           <AlertCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
         )}
 
-        {span.cost_usd != null && span.cost_usd > 0 && (
+        {/* A missing cost and a free step are different facts. `cost_usd > 0`
+            hid both, so a genuinely $0.0000 step looked identical to one the
+            tracer never priced. Only null means "unknown" — and unknown prints
+            nothing rather than a column of em-dashes, because today the tracer
+            attributes cost to the root span alone (every `end_span` call in
+            src-tauri/src/engine/runner/mod.rs passes `None`), so all but one
+            row would carry a placeholder. */}
+        {span.cost_usd != null && (
           <span className="typo-code text-amber-400/70 flex-shrink-0">
             $<Numeric value={span.cost_usd} precision={4} />
           </span>

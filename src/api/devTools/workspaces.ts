@@ -151,11 +151,20 @@ export async function decideWorkspaceKnowledge(
   id: string,
   decision: KnowledgeDecision,
   supersededBy?: string,
+  /**
+   * The status the CALLING SURFACE rendered on the row. Sending it turns the
+   * write into a single-winner compare-and-swap, so a verdict issued from a card
+   * someone else already decided fails loudly instead of overwriting them — and,
+   * for `adopt`, never fans adoption cells into every member repo off a stale
+   * decision. Prefer `decidePracticeRow` from `@/lib/decisions/rowWrites`.
+   */
+  expectedStatus?: string,
 ): Promise<WorkspaceKnowledge> {
   return invoke<WorkspaceKnowledge>("dev_tools_workspace_knowledge_decide", {
     id,
     decision,
     supersededBy,
+    expectedStatus,
   });
 }
 

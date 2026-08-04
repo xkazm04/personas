@@ -5,7 +5,7 @@ import type { PersonaEvent, PersonaMessage } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import { updateManualReviewStatus } from '@/api/overview/reviews';
+import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { deleteMessage } from '@/api/overview/messages';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
@@ -13,7 +13,7 @@ import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModa
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
 import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';
 import type { ActivityItem } from './activityTypes';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 interface ActivityModalsProps {
   personaName: string;
@@ -44,8 +44,15 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
     if (!selectedReview) return;
     setReviewProcessing(true);
     try {
-      await updateManualReviewStatus(selectedReview.id, status, notes);
+      await resolveReviewRow(selectedReview, status, notes);
       setSelectedReview(null);
+      onDataChanged();
+    } catch (err) {
+      // Was `try/finally` with no catch: a failed verdict closed the modal and
+      // refreshed the activity feed exactly like a successful one, so the row
+      // simply reappeared as `pending` with no explanation. The modal now stays
+      // open on failure so the decision is still in the reviewer's hand.
+      toastCatch('activity:resolveReview')(err);
       onDataChanged();
     } finally {
       setReviewProcessing(false);

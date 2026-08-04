@@ -123,6 +123,41 @@ describe('devToolsTriageSlice — verdict bookkeeping', () => {
     expect(h.get().triageItems[0]!.status).toBe('accepted');
   });
 
+  it('sends the status the CALLER saw as the compare-and-swap expectation', async () => {
+    // The row's status in this slice is only a default; a surface that renders
+    // its own copy (the triage deck deals its own idea page) passes what IT
+    // showed. Getting this wrong means a stale verdict silently overwrites
+    // whoever decided first, and fires a second decision-memory fan-out.
+    triageIdeasMock.mockResolvedValue({
+      ideas: [idea({ id: 'a', status: 'rejected' })], cursor: null, hasMore: false,
+      counts: counts(),
+    });
+    const h = harness();
+    await h.get().fetchTriageIdeas(undefined, { status: 'rejected' });
+
+    acceptIdeaMock.mockResolvedValue(idea({ id: 'a', status: 'accepted' }));
+    await h.get().acceptIdea('a');
+    expect(acceptIdeaMock).toHaveBeenCalledWith('a', 'rejected');
+
+    await h.get().acceptIdea('a', 'pending');
+    expect(acceptIdeaMock).toHaveBeenLastCalledWith('a', 'pending');
+  });
+
+  it('REJECTS on a failed write instead of swallowing it', async () => {
+    // The triage deck resolves a card the moment it decides; without this
+    // rejection it has nothing to restore from and every failed verdict — every
+    // lost compare-and-swap against Athena's overnight pass — looks like a
+    // completed decision.
+    const h = harness();
+    acceptIdeaMock.mockRejectedValueOnce(new Error('database is locked'));
+    await expect(h.get().acceptIdea('a')).rejects.toThrow('database is locked');
+
+    vi.mocked(devApi.rejectIdea).mockRejectedValueOnce(
+      new Error("Backlog idea a was already decided as 'accepted' by a concurrent action"),
+    );
+    await expect(h.get().rejectIdea('a')).rejects.toThrow(/concurrent action/);
+  });
+
   it('never drives a bucket negative and decrements total on delete', async () => {
     triageIdeasMock.mockResolvedValue({
       ideas: [idea({ id: 'a' })], cursor: null, hasMore: false,

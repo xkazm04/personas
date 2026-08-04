@@ -76,6 +76,23 @@ export function withSkip(skips: SkipLedger, id: string): Map<string, number> {
   return next;
 }
 
+/**
+ * One FEWER skip for `id` — the undo of a deferral.
+ *
+ * A skip writes nothing, so taking one back is purely local and available on
+ * every kind, including the four whose verdicts have no reverse door. It matters
+ * most at the bound: the second skip is what stands a card down for the session
+ * ({@link MAX_SKIP_PASSES}), so an accidental `S` on the card you meant to read
+ * is otherwise unrecoverable until a reload.
+ */
+export function withoutSkip(skips: SkipLedger, id: string): Map<string, number> {
+  const next = new Map(skips);
+  const remaining = skipCount(skips, id) - 1;
+  if (remaining > 0) next.set(id, remaining);
+  else next.delete(id);
+  return next;
+}
+
 export function projectQueue({
   all,
   resolved,

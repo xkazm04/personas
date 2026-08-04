@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Überspringen",
     "backlog_execute_accepted": "Angenommene ausführen",
     "backlog_execute_none": "Keine angenommenen Einträge zum Ausführen.",
-    "backlog_execute_queued": "{count} Aufgaben im Run Desk eingereiht."
+    "backlog_execute_queued": "{count} Aufgaben im Run Desk eingereiht.",
+    "bulk_partial_failure": "{count} der ausgewählten Prüfungen konnten nicht abgeschlossen werden — sie sind weiterhin offen."
   },
   "messages_view": {
     "title": "Nachrichten",

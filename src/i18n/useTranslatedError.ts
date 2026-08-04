@@ -64,6 +64,10 @@ export interface TranslatedError {
 // Each entry's `category` mirrors the same field on the corresponding rule
 // in errorRegistry.ts — keep the two in sync when adding new rules.
 const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category: FriendlyErrorCategory }> = [
+  // Lost compare-and-swap on a decidable row — mirrors the first rule in
+  // ERROR_RULES. Kept first for the same reason: the raw string carries generic
+  // words a later rule would otherwise claim.
+  { match: /already (?:decided|resolved)[\s\S]{0,80}?by a concurrent action/i, keyPrefix: 'decision_conflict', category: 'recoverable' },
   { match: 'NetworkOffline', keyPrefix: 'network_offline', category: 'system' },
   { match: 'timed out', keyPrefix: 'timed_out', category: 'recoverable' },
   { match: 'Failed to build HTTP client', keyPrefix: 'http_client', category: 'system' },

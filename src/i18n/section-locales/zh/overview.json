@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "跳过",
     "backlog_execute_accepted": "执行已采纳项",
     "backlog_execute_none": "没有可执行的已采纳条目。",
-    "backlog_execute_queued": "已在 Run Desk 排入 {count} 个任务。"
+    "backlog_execute_queued": "已在 Run Desk 排入 {count} 个任务。",
+    "bulk_partial_failure": "所选审核中有 {count} 项未能处理 — 它们仍处于待处理状态。"
   },
   "messages_view": {
     "title": "消息",

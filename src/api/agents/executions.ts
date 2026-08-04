@@ -9,7 +9,6 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { ChainStopReason } from "@/lib/bindings/ChainStopReason";
 import type { ActiveChain } from "@/lib/bindings/ActiveChain";
-import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
 import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 import type { DryRunReport } from "@/lib/bindings/DryRunReport";
 import type { ExecutionPreview } from "@/lib/bindings/ExecutionPreview";
@@ -124,13 +123,6 @@ export const getChainStopReasons = (chainTraceId: string, callerPersonaId: strin
  *  chain_trace_id. Empty array = nothing chain-shaped is running. */
 export const listActiveChains = () =>
   invoke<ActiveChain[]>("list_active_chains");
-
-// ============================================================================
-// Dream Replay
-// ============================================================================
-
-export const getDreamReplay = (executionId: string, callerPersonaId: string) =>
-  invoke<DreamReplaySession | null>("get_dream_replay", { executionId, callerPersonaId });
 
 // ============================================================================
 // Circuit Breaker

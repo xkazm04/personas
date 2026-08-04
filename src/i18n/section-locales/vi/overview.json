@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Bỏ qua",
     "backlog_execute_accepted": "Thực thi mục đã chấp nhận",
     "backlog_execute_none": "Không có mục đã chấp nhận nào để thực thi.",
-    "backlog_execute_queued": "Đã xếp {count} tác vụ vào Run Desk."
+    "backlog_execute_queued": "Đã xếp {count} tác vụ vào Run Desk.",
+    "bulk_partial_failure": "Không thể xử lý {count} trong số các đánh giá đã chọn — chúng vẫn đang chờ."
   },
   "messages_view": {
     "title": "Tin nhắn",

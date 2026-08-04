@@ -2,17 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, RefreshCw, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  policyTuningApply,
-  policyTuningDecline,
-  policyTuningGenerate,
-  policyTuningList,
-} from '@/api/system/policyTuning';
+import { policyTuningGenerate, policyTuningList } from '@/api/system/policyTuning';
 import type { PolicyProposal, PolicyTuningGenerationReport } from '@/api/system/policyTuning';
 import type { DeclinedCell } from '@/lib/bindings/DeclinedCell';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
+import { decidePolicyProposalRow } from '@/lib/decisions/rowWrites';
 import { toastCatch } from '@/lib/silentCatch';
 
 const INPUT_CLS =
@@ -29,6 +25,24 @@ const usd = (v: number) => v.toFixed(2);
  * provenance, decline records feedback. When the generator declines to
  * propose (evidence floor / hysteresis / quality), those reasons are shown
  * verbatim — sparse data reads as sparse data.
+ *
+ * DELIBERATELY NOT DELEGATED to the triage deck, which now also decides these
+ * rows (`quick-answer/triage/triageAdapters#policyProposalToTriage`). The two
+ * surfaces answer different questions and only one of them is triage:
+ *
+ *  • This section is the SUBSYSTEM's page. It runs the generator, reports the
+ *    cells the generator declined to propose for and why, and keeps decided
+ *    history visible (`policyTuningList(false, …)`) so an operator can audit
+ *    what tuning has done to their routing. None of that is a pending decision,
+ *    and none of it belongs on a card.
+ *  • The deck is the fast lane over the PENDING half, mixed in with every other
+ *    row waiting on a human.
+ *
+ * They share the write, not the layout: both go through
+ * `lib/decisions/rowWrites#decidePolicyProposalRow` → `policyTuningApply` /
+ * `policyTuningDecline`, which is the Fabric's single-writer contract. Folding
+ * this section into `TriageItem` would have cost the generator controls and the
+ * declined-cells report to gain a card shape it does not need.
  */
 export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: () => void }) {
   const { t, tx } = useTranslation();
@@ -59,9 +73,12 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
     }
   };
 
-  const apply = async (id: string) => {
+  // Both verdicts go through the shared door, carrying the status this list
+  // RENDERED — so a proposal Athena applied while the page sat open fails here
+  // exactly as it fails in the deck, instead of two surfaces racing.
+  const apply = async (proposal: PolicyProposal) => {
     try {
-      await policyTuningApply(id);
+      await decidePolicyProposalRow(proposal.id, 'apply', { seenStatus: proposal.status });
       refresh();
       onRulesChanged?.();
     } catch (e) {
@@ -69,9 +86,12 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
     }
   };
 
-  const confirmDecline = async (id: string) => {
+  const confirmDecline = async (proposal: PolicyProposal) => {
     try {
-      await policyTuningDecline(id, declineReason || undefined);
+      await decidePolicyProposalRow(proposal.id, 'decline', {
+        seenStatus: proposal.status,
+        reason: declineReason,
+      });
       setDecliningId(null);
       setDeclineReason('');
       refresh();
@@ -241,7 +261,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
           </Button>
           {p.status === 'pending' && decliningId !== p.id && (
             <>
-              <AsyncButton variant="primary" onClick={() => apply(p.id)}>
+              <AsyncButton variant="primary" onClick={() => apply(p)}>
                 <Check className="w-4 h-4" />
                 {s.tuning_apply}
               </AsyncButton>
@@ -259,7 +279,7 @@ export function PolicyProposalsSection({ onRulesChanged }: { onRulesChanged?: ()
                 placeholder={s.tuning_decline_reason_ph}
                 onChange={(e) => setDeclineReason(e.target.value)}
               />
-              <AsyncButton variant="secondary" onClick={() => confirmDecline(p.id)}>
+              <AsyncButton variant="secondary" onClick={() => confirmDecline(p)}>
                 {s.tuning_decline_confirm}
               </AsyncButton>
             </>

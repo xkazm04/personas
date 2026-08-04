@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Пропустить",
     "backlog_execute_accepted": "Выполнить принятые",
     "backlog_execute_none": "Нет принятых элементов для выполнения.",
-    "backlog_execute_queued": "В Run Desk поставлено задач: {count}."
+    "backlog_execute_queued": "В Run Desk поставлено задач: {count}.",
+    "bulk_partial_failure": "Не удалось обработать {count} из выбранных проверок — они всё ещё ожидают решения."
   },
   "messages_view": {
     "title": "Сообщения",

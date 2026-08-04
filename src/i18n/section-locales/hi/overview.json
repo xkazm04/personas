@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "छोड़ें",
     "backlog_execute_accepted": "स्वीकृत निष्पादित करें",
     "backlog_execute_none": "निष्पादित करने के लिए कोई स्वीकृत आइटम नहीं।",
-    "backlog_execute_queued": "Run Desk पर {count} कार्य कतारबद्ध किए।"
+    "backlog_execute_queued": "Run Desk पर {count} कार्य कतारबद्ध किए।",
+    "bulk_partial_failure": "चुनी गई समीक्षाओं में से {count} हल नहीं हो सकीं — वे अब भी लंबित हैं।"
   },
   "messages_view": {
     "title": "संदेश",

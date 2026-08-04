@@ -12,21 +12,24 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 import { useDeckControls } from '../deck/useDeckControls';
-import type { TriageItem } from '../triageTypes';
-import type { UnifiedTriageQueue } from '../useUnifiedTriage';
-import { emptyCounts } from '../triageTypes';
+import type { TriageItem, TriageKind } from '../triageTypes';
+import type { TriageUndo, UnifiedTriageQueue } from '../useUnifiedTriage';
+import { emptyCounts, TRIAGE_KINDS } from '../triageTypes';
+import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { makeItem, makeQuestion } from './triageFixtures';
 
 function makeQueue(
   items: TriageItem[],
   decide = vi.fn().mockResolvedValue(undefined),
   openLink = vi.fn(),
+  extra: { undo?: TriageUndo | null; undoLast?: () => Promise<void> } = {},
 ) {
+  const undoLast = extra.undoLast ?? vi.fn().mockResolvedValue(undefined);
   const queue: UnifiedTriageQueue = {
     items,
     allCounts: emptyCounts(),
     loading: false,
-    activeKinds: new Set(['review', 'idea', 'practice', 'question']),
+    activeKinds: new Set<TriageKind>(TRIAGE_KINDS),
     toggleKind: vi.fn(),
     decidedCount: 0,
     sessionTotal: items.length,
@@ -34,12 +37,31 @@ function makeQueue(
     skips: new Map(),
     backlog: { loaded: items.length, pending: items.length, hasMore: false },
     loadMore: vi.fn(),
+    summary: {
+      decided: 0,
+      accepted: 0,
+      rejected: 0,
+      skipped: 0,
+      undone: 0,
+      conflicts: 0,
+      medianDwellMs: null,
+      byKind: [],
+    },
+    undo: extra.undo ?? null,
+    undoLast,
     decide,
     openLink,
     reload: vi.fn(),
   };
-  return { queue, decide, openLink };
+  return { queue, decide, openLink, undoLast };
 }
+
+// Drafts are DURABLE now, so a test that types must not leave that typing
+// behind for the next one.
+beforeEach(() => {
+  clearTriageSession();
+  resetTriageSessionCache();
+});
 
 describe('useDeckControls — a thrown card that never lands', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -400,5 +422,68 @@ describe('useDeckControls — question cards', () => {
 
     act(() => result.current.fireBranch('builder'));
     expect(decide).toHaveBeenCalledWith({ item, verdict: 'accept', branchId: 'builder' });
+  });
+});
+
+describe('useDeckControls — the deck remembers what you were typing', () => {
+  it('restores a half-typed answer after the deck is CLOSED and reopened', () => {
+    // Not a poll this time: `QuickAnswerPopover` unmounts whenever the header
+    // overlay changes, so stepping away to look at anything threw the answer
+    // away outright.
+    vi.useFakeTimers();
+    try {
+      const item = makeQuestion({ sourceId: 'sess-9' });
+      const first = renderHook(() => useDeckControls(makeQueue([item]).queue, vi.fn()));
+      act(() => first.result.current.setAnswer('tools', 'half a sen'));
+      // The debounce has not fired; the unmount flush is what must save it.
+      first.unmount();
+
+      const second = renderHook(() => useDeckControls(makeQueue([item]).queue, vi.fn()));
+      expect(second.result.current.answers.tools).toBe('half a sen');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('useDeckControls — U takes the last act back', () => {
+  const press = (key: string) =>
+    act(() => void window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })));
+
+  it('calls the queue only when there is something to undo', () => {
+    const item = makeItem('idea');
+    const armed: TriageUndo = {
+      type: 'skip',
+      itemId: item.id,
+      label: 'Skip',
+      at: Date.now(),
+    };
+
+    const cold = makeQueue([item], vi.fn().mockResolvedValue(undefined), vi.fn(), { undo: null });
+    const { unmount } = renderHook(() => useDeckControls(cold.queue, vi.fn()));
+    press('u');
+    expect(cold.undoLast).not.toHaveBeenCalled();
+    unmount();
+
+    const hot = makeQueue([item], vi.fn().mockResolvedValue(undefined), vi.fn(), { undo: armed });
+    renderHook(() => useDeckControls(hot.queue, vi.fn()));
+    press('U');
+    expect(hot.undoLast).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a BARE letter, so a modifier chord still belongs to the browser', () => {
+    // The deck owns the keyboard exclusively; binding mod+Z here would swallow
+    // the undo a reviewer expects inside the reason strip's text box.
+    const item = makeItem('idea');
+    const armed: TriageUndo = { type: 'skip', itemId: item.id, label: 'Skip', at: Date.now() };
+    const hot = makeQueue([item], vi.fn().mockResolvedValue(undefined), vi.fn(), { undo: armed });
+    renderHook(() => useDeckControls(hot.queue, vi.fn()));
+
+    act(() =>
+      void window.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }),
+      ),
+    );
+    expect(hot.undoLast).not.toHaveBeenCalled();
   });
 });

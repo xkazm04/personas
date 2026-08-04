@@ -14,7 +14,8 @@ import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
-import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus, dispatchReviewAction, deleteAllManualReviews } from '@/api/overview/reviews';
+import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } from '@/api/overview/reviews';
+import { resolveReviewRow, dispatchReviewRowAction } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
@@ -84,11 +85,10 @@ export default function ManualReviewList() {
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const {
-    cloudReviews, fetchCloudReviews, respondToCloudReview,
+    cloudReviews, fetchCloudReviews,
   } = useOverviewStore(useShallow((s) => ({
     cloudReviews: s.cloudReviews,
     fetchCloudReviews: s.fetchCloudReviews,
-    respondToCloudReview: s.respondToCloudReview,
   })));
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
   const personas = useAgentStore((s) => s.personas);
@@ -205,17 +205,22 @@ export default function ManualReviewList() {
     if (!reviewToAct || isProcessing) return;
     setIsProcessing(true);
     try {
-      if (reviewToAct.source === 'cloud') {
-        await respondToCloudReview(reviewToAct.id, reviewToAct.execution_id, status === 'approved' ? 'approve' : 'reject', notes ?? '');
-      } else {
-        await updateManualReviewStatus(reviewToAct.id, status, notes);
-      }
+      // One door (`@/lib/decisions/rowWrites`) for local + cloud. The catch is
+      // the point: this used to be `try/finally` with no `catch`, so a failed
+      // verdict advanced to the next review and reloaded the queue exactly as a
+      // successful one did — the reviewer's only signal was the row reappearing.
+      await resolveReviewRow(reviewToAct, status, notes);
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct!.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
       reloadQueue();
+    } catch (err) {
+      toastCatch('manualReview:resolve')(err);
+      // Re-read regardless: a conflict means somebody else's verdict is the
+      // truth, and the list must show it rather than the row we tried to write.
+      reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reloadQueue]);
+  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
 
   // Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
   // (the same action model as the Quick Answer stepper). Cloud reviews record
@@ -225,32 +230,39 @@ export default function ManualReviewList() {
     if (!reviewToAct || isProcessing) return;
     setIsProcessing(true);
     try {
-      if (reviewToAct.source === 'cloud') {
-        await respondToCloudReview(reviewToAct.id, reviewToAct.execution_id, 'approve', action);
-      } else {
-        await dispatchReviewAction(reviewToAct.id, action);
-      }
+      await dispatchReviewRowAction(reviewToAct, action);
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
       reloadQueue();
+    } catch (err) {
+      toastCatch('manualReview:dispatchAction')(err);
+      reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reloadQueue]);
+  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
     try {
-      const decision = status === 'approved' ? 'approve' : 'reject';
-      await Promise.allSettled(Array.from(selectedIds).map((id) => {
+      const ids = Array.from(selectedIds);
+      const results = await Promise.allSettled(ids.map((id) => {
         const review = reviewMap.get(id);
         if (!review) return Promise.resolve();
-        if (review.source === 'cloud') return respondToCloudReview(review.id, review.execution_id, decision, '');
-        return updateManualReviewStatus(id, status);
+        return resolveReviewRow(review, status);
       }));
+      // `allSettled` used to be the END of it: every rejection was discarded, so
+      // "50 approved" could mean 47 approved and 3 still pending — and with
+      // Athena resolving approvals unattended overnight, losing a
+      // compare-and-swap on part of a batch is routine, not exotic. Count them
+      // and say so.
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed > 0) {
+        useToastStore.getState().addToast(tx(t.overview.review.bulk_partial_failure, { count: failed }), 'warning', 4000);
+      }
       setSelectedIds(new Set());
       setConfirmAction(null);
       reloadQueue();
     } finally { setIsBulkProcessing(false); }
-  }, [selectedIds, reviewMap, respondToCloudReview, reloadQueue]);
+  }, [selectedIds, reviewMap, reloadQueue, tx, t]);
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 

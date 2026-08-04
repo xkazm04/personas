@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Lewati",
     "backlog_execute_accepted": "Jalankan yang diterima",
     "backlog_execute_none": "Tidak ada item diterima untuk dijalankan.",
-    "backlog_execute_queued": "{count} tugas diantrekan di Run Desk."
+    "backlog_execute_queued": "{count} tugas diantrekan di Run Desk.",
+    "bulk_partial_failure": "{count} dari ulasan yang dipilih tidak dapat diselesaikan — semuanya masih tertunda."
   },
   "messages_view": {
     "title": "Pesan",

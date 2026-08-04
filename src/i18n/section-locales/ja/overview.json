@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "スキップ",
     "backlog_execute_accepted": "承認済みを実行",
     "backlog_execute_none": "実行できる承認済み項目がありません。",
-    "backlog_execute_queued": "Run Desk に {count} 件のタスクを登録しました。"
+    "backlog_execute_queued": "Run Desk に {count} 件のタスクを登録しました。",
+    "bulk_partial_failure": "選択したレビューのうち {count} 件を処理できませんでした — まだ保留中です。"
   },
   "messages_view": {
     "title": "メッセージ",

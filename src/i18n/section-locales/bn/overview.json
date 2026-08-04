@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "এড়িয়ে যান",
     "backlog_execute_accepted": "গৃহীতগুলো চালান",
     "backlog_execute_none": "চালানোর মতো কোনো গৃহীত আইটেম নেই।",
-    "backlog_execute_queued": "Run Desk-এ {count}টি কাজ সারিবদ্ধ হয়েছে।"
+    "backlog_execute_queued": "Run Desk-এ {count}টি কাজ সারিবদ্ধ হয়েছে।",
+    "bulk_partial_failure": "নির্বাচিত পর্যালোচনাগুলোর মধ্যে {count}টি নিষ্পত্তি করা যায়নি — সেগুলো এখনও অমীমাংসিত।"
   },
   "messages_view": {
     "title": "বার্তা",

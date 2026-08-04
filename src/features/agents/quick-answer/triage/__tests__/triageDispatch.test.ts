@@ -4,8 +4,14 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 
-import { isDeferral, routeDecision, type TriagePorts } from '../triageDispatch';
-import type { TriageDecision } from '../triageTypes';
+import {
+  isDeferral,
+  reversibleStatus,
+  routeDecision,
+  undoDecision,
+  type TriagePorts,
+} from '../triageDispatch';
+import { TRIAGE_KINDS, type TriageDecision } from '../triageTypes';
 import { makeItem, makeQuestion } from './triageFixtures';
 
 function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
@@ -18,6 +24,12 @@ function makePorts(overrides: Partial<TriagePorts> = {}): TriagePorts {
     decideKnowledge: vi.fn().mockResolvedValue(undefined),
     refreshKnowledge: vi.fn(),
     submitAnswers: vi.fn().mockResolvedValue(undefined),
+    applyPolicy: vi.fn().mockResolvedValue(undefined),
+    declinePolicy: vi.fn().mockResolvedValue(undefined),
+    decideEvolution: vi.fn().mockResolvedValue(undefined),
+    refreshProposals: vi.fn(),
+    reopenIdea: vi.fn().mockResolvedValue(undefined),
+    reopenPractice: vi.fn().mockResolvedValue(undefined),
     openBuilder: vi.fn(),
     ...overrides,
   };
@@ -32,7 +44,9 @@ function writeCount(ports: TriagePorts): number {
 
 describe('isDeferral — what must stay in the queue', () => {
   it('treats skip as a deferral for every kind', () => {
-    for (const kind of ['review', 'idea', 'practice', 'question'] as const) {
+    // Derived from `TRIAGE_KINDS`, so a sixth queue cannot be added without
+    // this property being asserted about it.
+    for (const kind of TRIAGE_KINDS) {
       expect(isDeferral({ item: makeItem(kind), verdict: 'skip' })).toBe(true);
     }
   });
@@ -98,7 +112,7 @@ describe('routeDecision — ideas and practices', () => {
     await routeDecision({ item, verdict: 'accept', branchId: 'build' }, ports);
 
     expect(ports.createTask).toHaveBeenCalledWith(item.title, 'proj-1', item.body, 'idea-1');
-    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-1');
+    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-1', undefined);
   });
 
   it('maps practice verdicts onto adopt / reject / deprecate and refreshes', async () => {
@@ -106,13 +120,13 @@ describe('routeDecision — ideas and practices', () => {
     const ports = makePorts();
 
     await routeDecision({ item, verdict: 'accept' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
 
     await routeDecision({ item, verdict: 'reject' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
 
     await routeDecision({ item, verdict: 'accept', branchId: 'deprecate' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', undefined, undefined);
     expect(ports.refreshKnowledge).toHaveBeenCalledTimes(3);
   });
 
@@ -124,7 +138,7 @@ describe('routeDecision — ideas and practices', () => {
       { item, verdict: 'accept', branchId: 'deprecate', reason: 'k-2' },
       ports,
     );
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2');
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'deprecate', 'k-2', undefined);
   });
 
   it('never forwards a successor on a NON-deprecate decision', async () => {
@@ -135,10 +149,118 @@ describe('routeDecision — ideas and practices', () => {
     const ports = makePorts();
 
     await routeDecision({ item, verdict: 'accept', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'adopt', undefined, undefined);
 
     await routeDecision({ item, verdict: 'reject', reason: 'k-2' }, ports);
-    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-1', 'reject', undefined, undefined);
+  });
+});
+
+describe('routeDecision — policy proposals', () => {
+  const policy = () =>
+    makeItem('policy', { sourceId: 'pol-1', payload: { seenStatus: 'pending', policyKind: 'routing_rule' } });
+
+  it('applies, declines with a reason, and re-reads the ledger either way', async () => {
+    const ports = makePorts();
+
+    await routeDecision({ item: policy(), verdict: 'accept' }, ports);
+    expect(ports.applyPolicy).toHaveBeenCalledWith('pol-1', 'pending');
+
+    await routeDecision({ item: policy(), verdict: 'reject', reason: 'Quality risk' }, ports);
+    expect(ports.declinePolicy).toHaveBeenCalledWith('pol-1', 'Quality risk', 'pending');
+
+    expect(ports.refreshProposals).toHaveBeenCalledTimes(2);
+  });
+
+  it('never routes an apply through the decline door, whatever reason rides along', async () => {
+    // `policy_tuning_apply` is the ONLY policy writer by contract; a decline
+    // that reached it would write a rule nobody approved.
+    const ports = makePorts();
+    await routeDecision({ item: policy(), verdict: 'accept', reason: 'stale' }, ports);
+    expect(ports.declinePolicy).not.toHaveBeenCalled();
+  });
+
+  it('propagates a failed apply instead of swallowing it', async () => {
+    const ports = makePorts({ applyPolicy: vi.fn().mockRejectedValue(new Error('db is locked')) });
+    await expect(routeDecision({ item: policy(), verdict: 'accept' }, ports)).rejects.toThrow(
+      'db is locked',
+    );
+  });
+});
+
+describe('routeDecision — evolution promotions', () => {
+  const promotion = () =>
+    makeItem('evolution', {
+      sourceId: 'prop-1',
+      payload: { seenStatus: 'pending', personaId: 'p-1', baseUpdatedAt: '2026-02-01T00:00:00.000Z' },
+    });
+
+  it('approves and rejects through ONE port, carrying the note and the expectation', async () => {
+    const ports = makePorts();
+
+    await routeDecision({ item: promotion(), verdict: 'accept' }, ports);
+    expect(ports.decideEvolution).toHaveBeenCalledWith('prop-1', true, undefined, 'pending');
+
+    await routeDecision({ item: promotion(), verdict: 'reject', reason: 'Gain too small' }, ports);
+    expect(ports.decideEvolution).toHaveBeenLastCalledWith(
+      'prop-1',
+      false,
+      'Gain too small',
+      'pending',
+    );
+    expect(ports.refreshProposals).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates the persona optimistic-lock failure rather than resolving', async () => {
+    // The exact wording `engine::evolution::apply_promotion` emits when the
+    // persona moved under the proposal. The queue turns this into a conflict,
+    // which it can only do if the router lets it out.
+    const ports = makePorts({
+      decideEvolution: vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            'Persona changed after this proposal was filed — promotion abandoned to avoid overwriting the newer state. Reject the proposal and run a fresh cycle.',
+          ),
+        ),
+    });
+    await expect(routeDecision({ item: promotion(), verdict: 'accept' }, ports)).rejects.toThrow(
+      /changed after this proposal was filed/,
+    );
+  });
+});
+
+describe('routeDecision — the status the CARD showed rides to the write', () => {
+  // The compare-and-swap expectation. Without it, a verdict decided on a card
+  // someone else already ruled on overwrites their verdict AND fires a second
+  // side-effect fan-out (a `constraint` memory for ideas, an adoption cell per
+  // member repo for practices) — the two loops then disagree forever.
+  it('forwards an idea card seenStatus on accept, build-now and reject', async () => {
+    const item = makeItem('idea', {
+      sourceId: 'idea-7',
+      payload: { projectId: 'proj-1', seenStatus: 'pending' },
+    });
+    const ports = makePorts();
+
+    await routeDecision({ item, verdict: 'accept' }, ports);
+    expect(ports.acceptIdea).toHaveBeenCalledWith('idea-7', 'pending');
+
+    await routeDecision({ item, verdict: 'accept', branchId: 'build' }, ports);
+    expect(ports.acceptIdea).toHaveBeenLastCalledWith('idea-7', 'pending');
+
+    await routeDecision({ item, verdict: 'reject', reason: 'Out of scope' }, ports);
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-7', 'Out of scope', 'pending');
+  });
+
+  it('forwards a practice card seenStatus alongside the successor', async () => {
+    const item = makeItem('practice', { sourceId: 'k-7', payload: { seenStatus: 'proposed' } });
+    const ports = makePorts();
+
+    await routeDecision({ item, verdict: 'accept' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenCalledWith('k-7', 'adopt', undefined, 'proposed');
+
+    await routeDecision({ item, verdict: 'accept', branchId: 'deprecate', reason: 'k-8' }, ports);
+    expect(ports.decideKnowledge).toHaveBeenLastCalledWith('k-7', 'deprecate', 'k-8', 'proposed');
   });
 });
 
@@ -158,13 +280,13 @@ describe('routeDecision — rejections carry their reason to the write', () => {
       { item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject', reason: 'Out of scope' },
       ports,
     );
-    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', 'Out of scope');
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', 'Out of scope', undefined);
   });
 
   it('still writes the rejection when the reviewer skipped the reason', async () => {
     const ports = makePorts();
     await routeDecision({ item: makeItem('idea', { sourceId: 'idea-9' }), verdict: 'reject' }, ports);
-    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', undefined);
+    expect(ports.rejectIdea).toHaveBeenCalledWith('idea-9', undefined, undefined);
   });
 });
 
@@ -208,5 +330,84 @@ describe('routeDecision — build questions', () => {
     const decision: TriageDecision = { item: makeQuestion(), verdict: 'reject' };
     expect(isDeferral(decision)).toBe(true);
     expect(writeCount(ports)).toBe(0);
+  });
+});
+
+describe('reversibleStatus — which verdicts may be offered back, and as what', () => {
+  it('names the status an idea verdict PRODUCED, which is the undo expectation', () => {
+    const item = makeItem('idea');
+    expect(reversibleStatus({ item, verdict: 'accept' })).toBe('accepted');
+    expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
+    // `build` accepts and queues a task; the accept is what gets undone.
+    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'build' })).toBe('accepted');
+  });
+
+  it('names the status a practice verdict produced, deprecate included', () => {
+    const item = makeItem('practice');
+    expect(reversibleStatus({ item, verdict: 'accept' })).toBe('adopted');
+    expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
+    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'deprecate' })).toBe('deprecated');
+  });
+
+  it('refuses the four kinds whose act is already out in the world', () => {
+    // A review has no backend path from decided back to pending; a question has
+    // already resumed the CLI; a policy apply is the ONLY policy writer and has
+    // no un-apply; a promotion has installed a genome on a live persona.
+    for (const kind of ['review', 'question', 'policy', 'evolution'] as const) {
+      expect(reversibleStatus({ item: makeItem(kind), verdict: 'accept' })).toBeNull();
+    }
+  });
+});
+
+describe('undoDecision — the reverse is a write against an expectation', () => {
+  it('reopens an idea against the status its own verdict produced', async () => {
+    const item = makeItem('idea', { sourceId: 'idea-3' });
+    const ports = makePorts();
+    await undoDecision(
+      { decision: { item, verdict: 'accept' }, producedStatus: 'accepted', at: Date.now() },
+      ports,
+    );
+    expect(ports.reopenIdea).toHaveBeenCalledWith('idea-3', 'accepted');
+  });
+
+  it('reopens a practice and re-reads the workspace centre', async () => {
+    const item = makeItem('practice', { sourceId: 'k-3' });
+    const ports = makePorts();
+    await undoDecision(
+      { decision: { item, verdict: 'accept' }, producedStatus: 'adopted', at: Date.now() },
+      ports,
+    );
+    expect(ports.reopenPractice).toHaveBeenCalledWith('k-3', 'adopted');
+    expect(ports.refreshKnowledge).toHaveBeenCalledTimes(1);
+  });
+
+  it('THROWS rather than silently doing nothing for a kind with no reverse door', async () => {
+    // A quiet no-op would tell a reviewer their approve was taken back while
+    // the row is still approved — the exact class of lie `routeDecision` exists
+    // to make impossible.
+    const ports = makePorts();
+    await expect(
+      undoDecision(
+        { decision: { item: makeItem('review'), verdict: 'accept' }, producedStatus: 'approved', at: 0 },
+        ports,
+      ),
+    ).rejects.toThrow(/cannot be undone/);
+    expect(writeCount(ports)).toBe(0);
+  });
+
+  it('propagates a lost swap so the queue can surface it as a conflict', async () => {
+    const ports = makePorts({
+      reopenIdea: vi
+        .fn()
+        .mockRejectedValue(
+          new Error("Backlog idea idea-3 was already decided as 'rejected' by a concurrent action"),
+        ),
+    });
+    await expect(
+      undoDecision(
+        { decision: { item: makeItem('idea', { sourceId: 'idea-3' }), verdict: 'accept' }, producedStatus: 'accepted', at: 0 },
+        ports,
+      ),
+    ).rejects.toThrow(/by a concurrent action/);
   });
 });

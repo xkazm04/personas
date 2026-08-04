@@ -132,5 +132,7 @@
   "unknown_prompt_field_message": "বিল্ড এমন একটি ফিল্ড পাঠিয়েছে যা রানটাইম চিনতে পারে না।",
   "unknown_prompt_field_suggestion": "Refine ক্লিক করুন — নতুন বিল্ডটি বর্তমান স্কিমা ব্যবহার করবে।",
   "webhook_missing_secret_message": "এই webhook ট্রিগারে সাইনিং সিক্রেট নেই।",
-  "webhook_missing_secret_suggestion": "Promote আবার চালান — সাবমিট করার সময় পাইপলাইন স্বয়ংক্রিয়ভাবে একটি webhook_secret তৈরি করে। সমস্যা থেকে গেলে, বিল্ড পুনরায় শুরু করুন।"
+  "webhook_missing_secret_suggestion": "Promote আবার চালান — সাবমিট করার সময় পাইপলাইন স্বয়ংক্রিয়ভাবে একটি webhook_secret তৈরি করে। সমস্যা থেকে গেলে, বিল্ড পুনরায় শুরু করুন।",
+  "decision_conflict_message": "অন্য কেউ ইতিমধ্যেই এটি সিদ্ধান্ত নিয়েছেন — রিলোড করা হচ্ছে।",
+  "decision_conflict_suggestion": "সর্বশেষ সিদ্ধান্ত অনুযায়ী তালিকাটি রিফ্রেশ হচ্ছে। দেখে নিন এবং একমত না হলে আবার সিদ্ধান্ত নিন।"
 }

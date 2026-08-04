@@ -9,7 +9,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { listManualReviews, updateManualReviewStatus, dispatchReviewAction } from '@/api/overview/reviews';
+import { listManualReviews } from '@/api/overview/reviews';
+import { resolveReviewRow, dispatchReviewRowAction, isDecisionConflict } from '@/lib/decisions/rowWrites';
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { usePersonaMap, useEnrichedRecords } from '@/hooks/utility/data/usePersonaMap';
@@ -140,6 +141,15 @@ export interface MonitorData {
  * for the SAME review joins the in-flight promise instead of racing a duplicate
  * write. Either way no caller is ever told "done" without a write having
  * happened.
+ *
+ * **The key names the INTENT, not just the row** (see `verdictKey` below). It
+ * used to be `review:${id}` for both writers, so a *different* verdict on the
+ * same row issued inside one round-trip silently inherited the first one's
+ * outcome and reported success — approve-then-reject in the same second wrote
+ * one approval and told the caller both had landed. Joining is only honest
+ * between calls that ask for the same thing; two different verdicts must both
+ * reach the backend, where the compare-and-swap decides which one wins and the
+ * loser gets a conflict it can surface.
  */
 function useInFlight() {
   const inFlight = useRef(new Map<string, Promise<void>>());
@@ -161,6 +171,12 @@ function useInFlight() {
   return { track, busy: busyKeys.length > 0 };
 }
 
+/** In-flight key for one verdict on one row. Two calls join ONLY when they ask
+ *  the backend for the same thing. */
+function verdictKey(id: string, intent: string): string {
+  return `review:${id}:${intent}`;
+}
+
 export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const wantsMessages = feeds.messages ?? ALL_FEEDS.messages;
   const wantsPersonaHealth = feeds.personaHealth ?? ALL_FEEDS.personaHealth;
@@ -170,7 +186,6 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const activeProcesses = useOverviewStore((s) => s.activeProcesses);
   const cloudReviews = useOverviewStore((s) => s.cloudReviews);
   const fetchCloudReviews = useOverviewStore((s) => s.fetchCloudReviews);
-  const respondToCloudReview = useOverviewStore((s) => s.respondToCloudReview);
   const fetchPendingReviewCount = useOverviewStore((s) => s.fetchPendingReviewCount);
   const fetchUnreadMessageCount = useOverviewStore((s) => s.fetchUnreadMessageCount);
   const isCloudConnected = useSystemStore((s) => s.cloudConfig?.is_connected ?? false);
@@ -303,30 +318,43 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
     void fetchPendingReviewCount();
   }, [reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount]);
 
+  /**
+   * A LOST compare-and-swap means somebody else's verdict is now the truth, so
+   * the queue this hook is serving is stale by definition. Re-read before the
+   * error reaches the caller — otherwise the reviewer's next keystroke lands on
+   * a card the backend has already resolved and they lose the swap twice. Fired
+   * and not awaited: the rejection is what the caller is waiting for.
+   */
+  const refreshAfterConflict = useCallback(
+    (err: unknown) => {
+      if (isDecisionConflict(err)) void refreshAfterWrite();
+    },
+    [refreshAfterWrite],
+  );
+
+  // Both writers route through `@/lib/decisions/rowWrites` — the one door for a
+  // review row. Local vs cloud lives there, so this hook cannot drift from the
+  // five other surfaces that resolve the same rows. It also closed a real hole:
+  // the cloud branch used to go through `overviewSlice.respondToCloudReview`,
+  // whose catch calls `reportError` — which RETURNS a string and never throws.
+  // A failed cloud verdict therefore RESOLVED, so the triage deck's restore
+  // never fired: the card left the queue, the counter ticked, no toast, and the
+  // row was still `pending`.
   const handleReviewAction = useCallback(
     (id: string, status: ManualReviewStatus, notes?: string) =>
-      track(`review:${id}`, async () => {
+      track(verdictKey(id, status), async () => {
         try {
-          const review = requireReview(id);
-          if (review.source === 'cloud') {
-            await respondToCloudReview(
-              review.id,
-              review.execution_id,
-              status === 'approved' ? 'approve' : 'reject',
-              notes ?? '',
-            );
-          } else {
-            await updateManualReviewStatus(id, status, notes);
-          }
+          await resolveReviewRow(requireReview(id), status, notes);
           await refreshAfterWrite();
         } catch (err) {
           logger.error('Failed to action review', { error: err });
+          refreshAfterConflict(err);
           // Rethrow: the caller decides how to surface it. Swallowing here is
           // what let an optimistic queue report a decision that never landed.
           throw err;
         }
       }),
-    [track, requireReview, respondToCloudReview, refreshAfterWrite],
+    [track, requireReview, refreshAfterWrite, refreshAfterConflict],
   );
 
   // Phase 4 — resolve a review by CHOOSING a suggested action, which records the
@@ -334,21 +362,17 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   // have no dispatch path, so the choice is recorded as an approval.
   const handleDispatchAction = useCallback(
     (id: string, action: string) =>
-      track(`review:${id}`, async () => {
+      track(verdictKey(id, `action:${action}`), async () => {
         try {
-          const review = requireReview(id);
-          if (review.source === 'cloud') {
-            await respondToCloudReview(review.id, review.execution_id, 'approve', action);
-          } else {
-            await dispatchReviewAction(id, action);
-          }
+          await dispatchReviewRowAction(requireReview(id), action);
           await refreshAfterWrite();
         } catch (err) {
           logger.error('Failed to dispatch review action', { error: err });
+          refreshAfterConflict(err);
           throw err;
         }
       }),
-    [track, requireReview, respondToCloudReview, refreshAfterWrite],
+    [track, requireReview, refreshAfterWrite, refreshAfterConflict],
   );
 
   const handleMarkRead = useCallback(

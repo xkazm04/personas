@@ -19,7 +19,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Cog, Target, Archive, X, Sparkles } from 'lucide-react';
 
-import { listIdeas, acceptIdea, rejectIdea } from '@/api/devTools/devTools';
+import { listIdeas } from '@/api/devTools/devTools';
+import { decideIdeaRow } from '@/lib/decisions/rowWrites';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -112,7 +113,9 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
       } else {
         await updateKpi(s.kpiId, { status: 'archived' });
       }
-      await acceptIdea(s.ideaId);
+      // The suggestion list only ever renders pending ideas, so that is the
+      // status this surface saw — see `decideIdeaRow`.
+      await decideIdeaRow(s.ideaId, 'accept', { seenStatus: 'pending' });
       addToast(tx(t.kpis.suggest_applied_toast, { name: kpi?.name ?? 'KPI' }), 'success');
       onApplied?.();
       load();
@@ -126,7 +129,7 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
   const dismiss = async (s: Suggestion) => {
     setBusyId(s.ideaId);
     try {
-      await rejectIdea(s.ideaId);
+      await decideIdeaRow(s.ideaId, 'reject', { seenStatus: 'pending' });
       load();
     } catch (e) {
       toastCatch('kpiSimSuggestions:dismiss')(e);

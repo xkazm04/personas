@@ -9,14 +9,14 @@
 // have switched off still shows how much of it is waiting. A kind with nothing
 // in it is rendered inert rather than hidden, because a chip that disappears
 // makes the reviewer wonder what else vanished.
-import { Activity, Layers, X } from 'lucide-react';
+import { Activity, Layers, Undo2, X } from 'lucide-react';
 
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { TRIAGE_KINDS, type TriageKind } from '../triageTypes';
-import type { UnifiedTriageQueue } from '../useUnifiedTriage';
-import { KIND_META, kindCopy, TONE_CHIP, TONE_HOVER } from './DeckChips';
+import type { TriageUndo, UnifiedTriageQueue } from '../useUnifiedTriage';
+import { Kbd, KIND_META, kindCopy, TONE_CHIP, TONE_HOVER } from './DeckChips';
 
 function KindFilterChip({
   kind,
@@ -92,6 +92,37 @@ function BacklogChip({
   );
 }
 
+/**
+ * "You just did that. Take it back?"
+ *
+ * Rendered ONLY while the last act is genuinely reversible, and it disappears
+ * on its own when the window closes — an undo control that is always visible
+ * has to explain, every time it is pressed and refuses, why this particular
+ * decision was different. Absence is the clearer message.
+ *
+ * The label names the act in the item's own words ("Adopt", "Build now",
+ * "Later"), because "Undo" alone leaves the reviewer guessing which of the last
+ * two cards it means.
+ */
+function UndoChip({ undo, onUndo }: { undo: TriageUndo; onUndo: () => void }) {
+  const { t, tx } = useTranslation();
+  const label = tx(t.monitor.triage_undo, { verdict: undo.label });
+
+  return (
+    <button
+      type="button"
+      onClick={onUndo}
+      aria-label={label}
+      title={t.monitor.triage_undo_hint}
+      className={`focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-pill border px-2.5 py-1 typo-caption transition-colors ${TONE_CHIP.accent} ${TONE_HOVER.accent}`}
+    >
+      <Undo2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span className="hidden sm:inline">{label}</span>
+      <Kbd>U</Kbd>
+    </button>
+  );
+}
+
 export function DeckTopBar({
   queue,
   title,
@@ -131,6 +162,10 @@ export function DeckTopBar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        {queue.undo ? (
+          <UndoChip undo={queue.undo} onUndo={() => void queue.undoLast()} />
+        ) : null}
+
         {queue.backlog.hasMore ? (
           <BacklogChip
             loaded={queue.backlog.loaded}

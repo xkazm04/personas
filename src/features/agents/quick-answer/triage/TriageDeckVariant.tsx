@@ -138,6 +138,7 @@ export function TriageDeckVariant({
         ) : !top ? (
           <DeckCleared
             decided={queue.decidedCount}
+            summary={queue.summary}
             filtered={filteredOut}
             // "You cleared the batch" and "you cleared the queue" are different
             // endings, and until now the deck told the same story for both.

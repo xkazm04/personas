@@ -540,7 +540,8 @@
     "backlog_athena_verdict_skip": "Ignorer",
     "backlog_execute_accepted": "Exécuter les acceptés",
     "backlog_execute_none": "Aucun élément accepté à exécuter.",
-    "backlog_execute_queued": "{count} tâches mises en file dans le Run Desk."
+    "backlog_execute_queued": "{count} tâches mises en file dans le Run Desk.",
+    "bulk_partial_failure": "{count} des revues sélectionnées n'ont pas pu être traitées — elles sont toujours en attente."
   },
   "messages_view": {
     "title": "Messages",

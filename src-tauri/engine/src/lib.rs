@@ -92,7 +92,6 @@ pub mod desktop_discovery;
 #[cfg(feature = "desktop")]
 pub mod desktop_runtime;
 pub mod desktop_security;
-pub mod dream_replay;
 #[cfg(feature = "p2p")]
 pub mod enclave;
 pub mod eval;
