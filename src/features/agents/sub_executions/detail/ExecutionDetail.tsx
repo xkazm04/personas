@@ -11,7 +11,7 @@ import { ExecutionDetailContent } from './ExecutionDetailContent';
 import { ChainTraceView } from './chain/ChainTraceView';
 import { useChainTrace } from '../libs/useChainTrace';
 import { getExecution } from '@/api/agents/executions';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { X } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -41,7 +41,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
   const openChainExecution = (executionId: string) => {
     getExecution(executionId, execution.persona_id)
       .then(setChainOpen)
-      .catch(silentCatch('execution-detail:openChainExecution'));
+      .catch(toastCatch('execution-detail:openChainExecution'));
   };
   const dryRun = useDryRun({
     personaId: execution.persona_id,
