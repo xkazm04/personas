@@ -1524,7 +1524,6 @@ export type Translations = {
       active_now: string;
       recently_completed: string;
       upcoming: string;
-      dream_replay: string;
       zero_tokens: string;
       incomplete_trace: string;
       spans_frames: string;
@@ -1536,11 +1535,7 @@ export type Translations = {
       active_spans: string;
       no_active_spans_frame: string;
       cost_accumulation: string;
-      dream_replay_cost: string;
-      dream_replay_zero: string;
       deterministic_replay: string;
-      loading_dream_replay: string;
-      no_dream_trace: string;
       frame_count: string;
       depth_label: string;
       active_count_label: string;

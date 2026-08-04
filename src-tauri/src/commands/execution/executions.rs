@@ -712,23 +712,6 @@ pub fn get_execution_trace(
     crate::db::repos::execution::traces::get_by_execution_id(&state.db, &execution_id)
 }
 
-/// Build a deterministic dream replay session from stored trace spans.
-///
-/// Reconstructs frame-by-frame execution state without consuming LLM tokens.
-/// Each span boundary becomes a DreamFrame with full state reconstruction.
-#[tauri::command]
-pub fn get_dream_replay(
-    state: State<'_, Arc<AppState>>,
-    execution_id: String,
-    caller_persona_id: String,
-) -> Result<Option<crate::engine::dream_replay::DreamReplaySession>, AppError> {
-    require_auth_sync(&state)?;
-    let execution = repo::get_by_id(&state.db, &execution_id)?;
-    verify_execution_owner(&execution, &caller_persona_id)?;
-    let trace = crate::db::repos::execution::traces::get_by_execution_id(&state.db, &execution_id)?;
-    Ok(trace.map(|t| crate::engine::dream_replay::build_dream_replay(&t)))
-}
-
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
 ///
 /// Only returns traces belonging to the caller's persona. Chain executions may

@@ -394,7 +394,6 @@ them):
 | `get_execution_log_lines(id, offset?, limit?)` | `Vec<String>` | Paginated log |
 | `get_execution_trace(id)` | `Option<ExecutionTrace>` | Structured trace |
 | `get_chain_trace(chain_trace_id)` | `Vec<ExecutionTrace>` | Entire cascade |
-| `get_dream_replay(id)` | `Option<DreamReplaySession>` | Frame-by-frame replay |
 | `get_circuit_breaker_status()` | `CircuitBreakerStatus` | Provider health |
 | `preview_execution(persona_id, input?)` | `ExecutionPreview` | Pre-run cost estimate |
 

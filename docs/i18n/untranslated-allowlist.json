@@ -2866,7 +2866,6 @@
   "ru:agents.connectors.platform_github_actions",
   "ru:agents.connectors.platform_zapier",
   "ru:agents.editor_ui.base_url_example",
-  "ru:agents.executions.dream_replay",
   "ru:agents.executions.tab_director",
   "ru:agents.messaging_picker.field_placeholders.to",
   "ru:agents.ops.director",

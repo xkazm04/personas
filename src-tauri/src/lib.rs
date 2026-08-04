@@ -1901,7 +1901,6 @@ pub fn run() {
             commands::execution::journal::get_execution_data_diff,
             commands::execution::journal::undo_execution,
             commands::execution::executions::list_active_chains,
-            commands::execution::executions::get_dream_replay,
             commands::execution::executions::get_circuit_breaker_status,
             commands::execution::executions::preview_execution,
             commands::execution::executions::dry_run_persona,
