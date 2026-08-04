@@ -361,4 +361,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// only the seven frozen block types exist; the slug rule from v46 applies
 /// unchanged; and a reset by the user is a verdict on the composition, not an
 /// invitation to re-compose the same thing.
-pub const CONSTITUTION_VERSION: u32 = 47;
+/// v48 adds `show_ship_milestone` — the editable milestone card. Athena
+/// proposes a whole cut (name, goal, scope members) and the operator edits and
+/// confirms before anything is written. Its doctrine: every `item_id` comes
+/// from something she actually read, members are use cases and goals ONLY, and
+/// KPIs are the outcome layer above a milestone rather than part of one.
+pub const CONSTITUTION_VERSION: u32 = 48;

@@ -128,7 +128,7 @@ export const SHIP_CRITERIA: readonly CriterionSpec[] = [
       const crept = core.filter((m) => m.afterCut);
       const total = core.length;
       const done = total - crept.length;
-      if (!row.cut_at) {
+      if (!row.cutAt) {
         // No baseline stamped, so added_after_cut carries no information yet.
         // Saying "frozen" here would be a claim the data cannot support.
         return { evidence: t.ship.crit_scope_uncut, done, total, state: 'setup' };

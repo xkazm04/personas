@@ -10,7 +10,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { INK } from '../../passport/passportInk';
 
-export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions, index = 0 }: {
+export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, dashed, marker, meta, actions, footer, index = 0 }: {
   name: string;
   contexts: string[];
   stateLabel?: string | null;
@@ -24,6 +24,12 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
   /** Extra inline info right after the name (e.g. "proposed since the cut"). */
   meta?: ReactNode;
   actions?: ReactNode;
+  /**
+   * A strip under the row's body — the operator-owned annotations (note +
+   * rating) sit here, beneath the row's derived state rather than beside it, so
+   * the two readings never look like one number.
+   */
+  footer?: ReactNode;
   /** Position in its list — drives the staggered fade-in. */
   index?: number;
 }) {
@@ -55,6 +61,7 @@ export function LedgerRow({ name, contexts, stateLabel, stateHue, blocker, dim, 
         </span>
       )}
       {blocker && <p className="typo-caption mt-1 pl-[15px]" style={{ color: INK.amber }}>{blocker}</p>}
+      {footer}
     </motion.li>
   );
 }

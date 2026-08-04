@@ -17,6 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { INK } from '../../passport/passportInk';
 import { buildGoalAssistPrompt } from './ShipDispatch';
 import { ShipContextDrawer } from './ShipContextDrawer';
+import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipLibraryTree } from './ShipLibraryTree';
 import { TONE_HUE_MAP, type ShipContext, type ShipGoal, type ShipMilestoneVM } from './shipModel';
 import { LedgerEmpty, LedgerHeader, LedgerList, LedgerRow } from './shipRows';
@@ -115,6 +116,13 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
                   : t.ship.state_no_kpi}
                 stateHue={m.feature.kpiCount > 0 ? INK.emerald : INK.blue}
                 meta={m.afterCut ? <span className="typo-caption shrink-0" style={{ color: INK.violet }}>{t.ship.added_after_cut}</span> : undefined}
+                footer={(
+                  <ShipItemAnnotations
+                    member={m}
+                    editable={vm.status !== 'shipped'}
+                    onPatch={(patch) => ship.setItem(vm.id, 'use_case', m.feature.id, m.bucket, patch)}
+                  />
+                )}
                 actions={
                   <button type="button" onClick={() => ship.removeItem(vm.id, 'use_case', m.feature.id)} {...iconBtn('rgba(148,163,184,.7)')} aria-label={tx(t.ship.remove_aria, { name: m.feature.name })}>
                     <X className="w-3 h-3" aria-hidden />

@@ -6505,6 +6505,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- dev_milestone_items.description + rating ---------------------------
+    // A scope member carried only its bucket, so the WHY of a decision lived
+    // nowhere: why this use case is core, why that goal was pushed to later.
+    // `description` is that note. `rating` is the operator's own read on the
+    // item (1..5), and is NULL by design — "unrated" must stay distinguishable
+    // from "rated 1", which is why there is no DEFAULT here. The CHECK rides
+    // along on the ADD COLUMN: SQLite evaluates it per row, and NULL is not
+    // FALSE, so every pre-existing row passes on a populated database.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_milestone_items.description_rating",
+            description: "Give a milestone scope member a free-text rationale and an operator rating (1..5, NULL = unrated), so a bucket decision carries its reason and its judged value.",
+            already_applied: |conn| has_column(conn, "dev_milestone_items", "rating"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_milestone_items ADD COLUMN description TEXT;
+                     ALTER TABLE dev_milestone_items ADD COLUMN rating INTEGER
+                         CHECK (rating IS NULL OR (rating BETWEEN 1 AND 5));",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // -- workspace_harvest_coverage: which territory has been read ----------
     // The harvest engine used to send one agent at a whole repository with an
     // item cap and no map, so it read the root configs and stopped — and had
@@ -7470,6 +7496,63 @@ mod tests {
             cut_at("m-cut").as_deref(),
             Some("2026-02-02T00:00:00Z"),
             "an existing cut stamp must not be rewritten"
+        );
+    }
+
+    /// The description/rating ALTER lands on a table the operator already has
+    /// live rows in, and the boot chain replays on EVERY launch. Both columns
+    /// must appear, existing rows must survive with NULLs (unrated, which is
+    /// not rated-1), and replaying must neither fail nor rewrite the data.
+    #[test]
+    fn milestone_item_description_rating_alter_is_safe_on_a_populated_db() {
+        let pool = crate::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('p9', 'P', '/tmp/p9');
+             INSERT INTO dev_milestones (id, project_id, name, status, cut_at, created_at, updated_at)
+                VALUES ('m9', 'p9', 'v1', 'active', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket, added_after_cut, order_index, created_at)
+                VALUES ('m9', 'use_case', 'uc-old', 'core', 1, 0, '2026-01-01T00:00:00Z');",
+        )
+        .unwrap();
+
+        assert!(has_column(&conn, "dev_milestone_items", "description").unwrap());
+        assert!(has_column(&conn, "dev_milestone_items", "rating").unwrap());
+
+        // Annotate the pre-existing row, then replay the whole boot chain
+        // twice — the guard must skip the ALTER rather than error, and must
+        // not touch the data.
+        conn.execute(
+            "UPDATE dev_milestone_items SET description = 'kept', rating = 4
+             WHERE milestone_id = 'm9' AND item_id = 'uc-old'",
+            [],
+        )
+        .unwrap();
+        crate::migrations::run(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+        crate::migrations::run(&conn).unwrap();
+        run_incremental(&conn).unwrap();
+
+        let (desc, rating, creep): (Option<String>, Option<i64>, i64) = conn
+            .query_row(
+                "SELECT description, rating, added_after_cut FROM dev_milestone_items
+                 WHERE milestone_id = 'm9' AND item_id = 'uc-old'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(desc.as_deref(), Some("kept"));
+        assert_eq!(rating, Some(4));
+        assert_eq!(creep, 1, "the replay must not disturb the creep flag");
+
+        // The CHECK rode along on the ADD COLUMN.
+        assert!(
+            conn.execute(
+                "UPDATE dev_milestone_items SET rating = 0 WHERE milestone_id = 'm9'",
+                [],
+            )
+            .is_err(),
+            "rating 0 must be refused by the column CHECK"
         );
     }
 

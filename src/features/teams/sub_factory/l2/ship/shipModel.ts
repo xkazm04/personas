@@ -12,6 +12,7 @@ import type { Translations } from '@/i18n/generated/types';
 import type { DevMilestone } from '@/lib/bindings/DevMilestone';
 
 import { INK } from '../../passport/passportInk';
+import type { DualitySummary } from './shipDuality';
 
 export type ScopeBucket = 'core' | 'later' | 'never';
 /** go = met · warn = partial · nogo = blocking · setup = sensor/scope not wired. */
@@ -67,7 +68,14 @@ export interface ShipGoal {
   name: string;
   description: string | null;
   status: string;
+  /** Context NAMES the goal hangs off (display-ready). */
   contexts: string[];
+  /**
+   * Context IDs, positionally aligned with `contexts`. Same reason as
+   * `ShipFeature.contextIds`: display names collide, so every "which contexts
+   * does this belong to" join resolves on THESE.
+   */
+  contextIds: string[];
 }
 
 /** A milestone scope member (feature kind). */
@@ -76,6 +84,14 @@ export interface ShipMember {
   bucket: ScopeBucket;
   /** Joined after the cut — scope creep awaiting triage. */
   afterCut: boolean;
+  /** Operator's note on why this member sits in this bucket. */
+  description: string | null;
+  /**
+   * Operator's own 1..5 read on the member. `null` is UNRATED — a state of its
+   * own, never a zero and never equivalent to a 1. Nothing derived from this
+   * touches the ship verdict or progress; it is a second opinion, not a gate.
+   */
+  rating: number | null;
 }
 
 export interface ExitCriterion {
@@ -102,6 +118,11 @@ export interface ShipMilestoneVM {
   criteria: ExitCriterion[];
   /** Ready core members / total core members (100 once shipped). */
   progress: number;
+  /**
+   * How the operator's ratings line up against the automation's readiness on
+   * the CORE cut. Reporting only — see shipDuality.ts.
+   */
+  duality: DualitySummary;
 }
 
 // -- ink ----------------------------------------------------------------------

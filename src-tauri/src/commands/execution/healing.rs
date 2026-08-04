@@ -53,7 +53,7 @@ pub async fn run_healing_analysis(
     state: State<'_, Arc<AppState>>,
     app: tauri::AppHandle,
     persona_id: String,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<healing_timeline::HealingAnalysisResult, AppError> {
     require_auth(&state).await?;
     let pool = &state.db;
 
@@ -69,13 +69,12 @@ pub async fn run_healing_analysis(
         );
     }
 
-    Ok(serde_json::json!({
-        "status": "completed",
-        "failures_analyzed": result.failures_analyzed,
-        "issues_created": result.issues_created,
-        "auto_fixed": result.auto_fixed,
-        "auto_retried": result.auto_retried,
-    }))
+    // Return the typed struct, NOT a hand-built `serde_json::json!` copy. The
+    // copy is what let the binding drift: it carried a `status: "completed"`
+    // field that exists on no Rust struct, and its snake_case keys silently
+    // stopped matching the moment the struct adopted camelCase. A command that
+    // returns its own exported type cannot drift from its binding.
+    Ok(result)
 }
 
 #[tauri::command]

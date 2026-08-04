@@ -52,7 +52,7 @@ export const createHealingSlice: StateCreator<OverviewStore, [], [], HealingSlic
       const result = await runHealingAnalysis(personaId);
       const issues = await listHealingIssues();
       set({ healingIssues: issues, healingRunning: false });
-      return { failures_analyzed: result.failures_analyzed, issues_created: result.issues_created, auto_fixed: result.auto_fixed };
+      return { failures_analyzed: result.failuresAnalyzed, issues_created: result.issuesCreated, auto_fixed: result.autoFixed };
     } catch (err) {
       reportError(err, "Failed to run healing analysis", set, { stateUpdates: { healingRunning: false } });
       return null;

@@ -26,6 +26,7 @@ import type { FactoryL2Data } from '../factoryL2Data';
 import { parseStringArray } from '../factoryL2Data';
 import { deriveCriteria } from './shipCriteria';
 import { deriveFootprint } from './shipDerive';
+import { deriveDuality } from './shipDuality';
 import {
   featureState, type ContextTone, type ScopeBucket,
   type ShipContext, type ShipFeature, type ShipGoal, type ShipGroup,
@@ -48,7 +49,20 @@ export interface ShipData {
   goals: ShipGoal[];
   create: (name: string, goal?: string) => void;
   setStatus: (id: string, status: MilestoneStatus) => void;
-  setItem: (milestoneId: string, kind: MilestoneItemKind, itemId: string, bucket: MilestoneBucket) => void;
+  /** Rename the milestone's objective line (the `goal` column). */
+  setGoal: (id: string, goal: string) => void;
+  /**
+   * Upsert a scope member. `annotations` is a PATCH: pass only the keys that
+   * changed. An omitted key leaves the stored column untouched; an explicit
+   * `null` clears it.
+   */
+  setItem: (
+    milestoneId: string,
+    kind: MilestoneItemKind,
+    itemId: string,
+    bucket: MilestoneBucket,
+    annotations?: { description?: string | null; rating?: number | null },
+  ) => void;
   removeItem: (milestoneId: string, kind: MilestoneItemKind, itemId: string) => void;
   /** Hand-add a use case under a context (the composer's quick-add). */
   createFeature: (contextId: string, name: string) => void;
@@ -146,7 +160,11 @@ export function useShipData(data: FactoryL2Data): ShipData {
         name: g.title,
         description: g.description,
         status: g.status,
-        contexts: g.context_id ? [ctxById.get(g.context_id)?.name ?? ''].filter(Boolean) : [],
+        // Resolve the context BY ID, then carry both the display name and the
+        // id: every downstream "does this goal belong to context X" join reads
+        // contextIds, never the name (names collide in the generated map).
+        contexts: g.context_id && ctxById.has(g.context_id) ? [ctxById.get(g.context_id)!.name] : [],
+        contextIds: g.context_id && ctxById.has(g.context_id) ? [g.context_id] : [],
       })),
     [devGoals, ctxById],
   );
@@ -160,17 +178,24 @@ export function useShipData(data: FactoryL2Data): ShipData {
     return milestones.map((m) => {
       const items = itemsByMs.get(m.id) ?? [];
       const members: ShipMember[] = items
-        .filter((it) => it.item_kind === 'use_case')
+        .filter((it) => it.itemKind === 'use_case')
         .map((it) => {
-          const feature = featById.get(it.item_id);
+          const feature = featById.get(it.itemId);
           return feature
-            ? { feature, bucket: it.bucket as ScopeBucket, afterCut: it.added_after_cut }
+            ? {
+                feature,
+                bucket: it.bucket as ScopeBucket,
+                afterCut: it.addedAfterCut,
+                description: it.description,
+                // NEVER coerce a missing rating to 0 — unrated is its own state.
+                rating: it.rating,
+              }
             : null;
         })
         .filter((x): x is ShipMember => x !== null);
       const boundGoals = items
-        .filter((it) => it.item_kind === 'goal')
-        .map((it) => goalById.get(it.item_id))
+        .filter((it) => it.itemKind === 'goal')
+        .map((it) => goalById.get(it.itemId))
         .filter((g): g is ShipGoal => Boolean(g));
 
       const core = members.filter((mm) => mm.bucket === 'core');
@@ -186,6 +211,8 @@ export function useShipData(data: FactoryL2Data): ShipData {
         tx,
       });
 
+      // Progress reads the AUTOMATION only. Ratings are reported beside it
+      // (deriveDuality) and deliberately do not move this number.
       const ready = core.filter((mm) => mm.feature.ready).length;
       const progress = m.status === 'shipped'
         ? 100
@@ -198,13 +225,14 @@ export function useShipData(data: FactoryL2Data): ShipData {
         goal: m.goal,
         status: m.status as ShipMilestoneVM['status'],
         targetLabel: m.status === 'shipped'
-          ? tx(t.ship.target_shipped, { date: dateLabel(m.shipped_at) ?? '' }).trim()
-          : m.target_date ? tx(t.ship.target_date, { date: m.target_date }) : null,
+          ? tx(t.ship.target_shipped, { date: dateLabel(m.shippedAt) ?? '' }).trim()
+          : m.targetDate ? tx(t.ship.target_date, { date: m.targetDate }) : null,
         members,
         boundGoals,
         footprint,
         criteria,
         progress,
+        duality: deriveDuality(core),
       };
     });
   }, [milestones, itemsByMs, features, goals, contexts, data.monitoringWired, data.llmWired, t, tx]);
@@ -220,8 +248,19 @@ export function useShipData(data: FactoryL2Data): ShipData {
     void updateMilestone(id, { status }).then(reload).catch(toastCatch('ship milestone status'));
   }, [reload]);
 
-  const setItem = useCallback((milestoneId: string, kind: MilestoneItemKind, itemId: string, bucket: MilestoneBucket) => {
-    void setMilestoneItem(milestoneId, kind, itemId, bucket).then(reload).catch(toastCatch('ship set scope'));
+  const setGoal = useCallback((id: string, goal: string) => {
+    void updateMilestone(id, { goal }).then(reload).catch(toastCatch('ship milestone goal'));
+  }, [reload]);
+
+  const setItem = useCallback((
+    milestoneId: string,
+    kind: MilestoneItemKind,
+    itemId: string,
+    bucket: MilestoneBucket,
+    annotations?: { description?: string | null; rating?: number | null },
+  ) => {
+    void setMilestoneItem(milestoneId, kind, itemId, bucket, annotations)
+      .then(reload).catch(toastCatch('ship set scope'));
   }, [reload]);
 
   const removeItem = useCallback((milestoneId: string, kind: MilestoneItemKind, itemId: string) => {
@@ -267,7 +306,7 @@ export function useShipData(data: FactoryL2Data): ShipData {
     loading: loading || data.loading,
     project: data.project,
     roadmap, contexts, groups, features, goals, reload,
-    create, setStatus, setItem, removeItem,
+    create, setStatus, setGoal, setItem, removeItem,
     createFeature, scanContexts, ctxScanning: ctxScanId !== null,
   };
 }

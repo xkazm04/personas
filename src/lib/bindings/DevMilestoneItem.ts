@@ -6,11 +6,11 @@
  * objectives. Contexts are never members — they derive from the bound use
  * cases' slices at read time.
  */
-export type DevMilestoneItem = { milestone_id: string, 
+export type DevMilestoneItem = { milestoneId: string, 
 /**
  * 'use_case' | 'goal'
  */
-item_kind: string, item_id: string, 
+itemKind: string, itemId: string, 
 /**
  * 'core' | 'later' | 'never'
  */
@@ -18,4 +18,13 @@ bucket: string,
 /**
  * Proposed after the cut — scope creep awaiting triage.
  */
-added_after_cut: boolean, order_index: number, created_at: string, };
+addedAfterCut: boolean, orderIndex: number, createdAt: string, 
+/**
+ * Why this member sits in this bucket. Free text, operator-authored.
+ */
+description: string | null, 
+/**
+ * Operator's own read on the member, 1..5. NULL means UNRATED, which is
+ * deliberately distinct from a rating of 1.
+ */
+rating: number | null, };

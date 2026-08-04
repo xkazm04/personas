@@ -39,7 +39,7 @@ export interface CoverRoadmapVM {
 /** dev_milestones rows → the cover's minimized view model. Ordered by
  *  order_index so the pips read left-to-right as the plan was cut. */
 export function buildCoverRoadmap(rows: DevMilestone[]): CoverRoadmapVM {
-  const ordered = [...rows].sort((a, b) => a.order_index - b.order_index);
+  const ordered = [...rows].sort((a, b) => a.orderIndex - b.orderIndex);
   const steps: CoverRoadmapStep[] = ordered.map((m) => ({
     id: m.id,
     name: m.name,
@@ -54,7 +54,7 @@ export function buildCoverRoadmap(rows: DevMilestone[]): CoverRoadmapVM {
     next: nextRow
       ? {
         name: nextRow.name,
-        targetDate: nextRow.target_date,
+        targetDate: nextRow.targetDate,
         status: nextRow.status === 'active' ? 'active' : 'planned',
       }
       : null,

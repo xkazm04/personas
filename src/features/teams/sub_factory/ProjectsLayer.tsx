@@ -68,13 +68,13 @@ export function ProjectsLayer({
         // `kpiTrack` is time-dependent (pace against target_date at now) and
         // already has one Rust twin in engine/kpi_derivation.rs; a server-side
         // third copy would drift and would go stale in cache besides.
-        setHeaderStats(new Map(rows.map((r) => [r.project_id, {
-          contexts: r.contexts_count,
-          kpiPassed: r.active_kpis.filter((k) => kpiTrack(k) === 'met').length,
-          kpiTotal: r.active_kpis.length,
+        setHeaderStats(new Map(rows.map((r) => [r.projectId, {
+          contexts: r.contextsCount,
+          kpiPassed: r.activeKpis.filter((k) => kpiTrack(k) === 'met').length,
+          kpiTotal: r.activeKpis.length,
         }])));
         // Full DevMilestone rows in, unchanged builder contract out.
-        setRoadmapBySlug(new Map(rows.map((r) => [r.project_id, buildCoverRoadmap(r.milestones)])));
+        setRoadmapBySlug(new Map(rows.map((r) => [r.projectId, buildCoverRoadmap(r.milestones)])));
       })
       .catch(silentCatch('ProjectsLayer:wallSummary'));
     return () => { alive = false; };

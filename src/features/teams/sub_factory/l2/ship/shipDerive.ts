@@ -25,3 +25,18 @@ export function deriveFootprint(core: ShipMember[], contexts: ShipContext[]): Sh
     .map((id) => byId.get(id))
     .filter((c): c is ShipContext => Boolean(c));
 }
+
+/**
+ * Everything (features or goals) that slices ONE context, resolved by context
+ * ID.
+ *
+ * The library tree and the context drawer used to filter on
+ * `item.contexts.includes(ctx.name)` — the exact name-join this module was
+ * rewritten to avoid. Two contexts that share a display name ("area [1/3]" and
+ * "area [2/3]" collapse to "area" often enough in the generated map) made each
+ * one list the OTHER's features, so the operator cut scope under the wrong
+ * band. One helper, used by both surfaces, keeps that fixed in one place.
+ */
+export function inContext<T extends { contextIds: string[] }>(items: T[], contextId: string): T[] {
+  return items.filter((i) => i.contextIds.includes(contextId));
+}

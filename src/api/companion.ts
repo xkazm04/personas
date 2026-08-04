@@ -155,6 +155,54 @@ export async function companionDispatchFleetPlan(
   return invoke<string>('companion_dispatch_fleet_plan', { operationIntent, rows });
 }
 
+/**
+ * One scope member of an editable ship milestone (`show_ship_milestone` →
+ * milestone card). `itemKind` is `use_case` or `goal` and nothing else — KPIs
+ * are the outcome layer above a milestone, never members of one.
+ */
+export interface ShipMilestoneRow {
+  itemKind: 'use_case' | 'goal';
+  /** Real `dev_use_cases.id` / `dev_goals.id`, resolved backend-side. */
+  itemId: string;
+  /** Why this item is in the cut. Editable in the card; may be blank. */
+  description?: string | null;
+}
+
+/** What the backend reports after a confirmed milestone is created. */
+export interface ShipMilestoneCreated {
+  milestoneId: string;
+  name: string;
+  /** Always `planned`: a milestone is cut and shipped by transition, never born so. */
+  status: string;
+  itemsCreated: number;
+}
+
+/**
+ * Confirm an edited ship milestone and create it.
+ *
+ * The backend re-validates the whole proposal (the project resolves, every
+ * `itemId` is a real use case / goal OF THAT PROJECT, the row cap, no
+ * duplicate member) because these rows are the USER-EDITED ones, not the ones
+ * Athena proposed.
+ */
+export async function companionCreateShipMilestone(
+  projectSlug: string,
+  name: string,
+  goal: string | null,
+  rows: ShipMilestoneRow[],
+): Promise<ShipMilestoneCreated> {
+  return invoke<ShipMilestoneCreated>('companion_create_ship_milestone', {
+    projectSlug,
+    name,
+    goal,
+    rows: rows.map((r) => ({
+      item_kind: r.itemKind,
+      item_id: r.itemId,
+      description: r.description ?? null,
+    })),
+  });
+}
+
 // ── Browser testing (Athena × browser tester arc) ──────────────────────────
 
 /** Pairing + connection status for the Companion Setup → Browser panel. */
