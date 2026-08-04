@@ -26,6 +26,7 @@ const srcRoot = path.join(ROOT, '.claude', 'skills');
 const SYSTEM_SKILLS = [
   'passport-onboard',
   'project-populate',
+  'i18n-translate',
   ...readdirSync(srcRoot, { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name.startsWith('scan-'))
     .map((d) => d.name)

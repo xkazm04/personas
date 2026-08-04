@@ -1,216 +1,259 @@
-# i18n-translate — copywriting-grade, context-aware localization (Personas)
+---
+name: i18n-translate
+category: Maintenance
+description: Copywriting-grade, context-aware localization for any managed app — a transcreation loop (draft → typed MQM estimate → gated refine) with an engineering guardrail. Portable across i18n stacks via a per-repo contract artifact; keeps a glossary, per-locale style guides, and gold exemplar pairs in the target repo so run N+1 stays consistent with run N. Invoke with /i18n-translate <mode> [locale] [scope].
+argument-hint: <mode> [locale] [scope]
+---
 
-Translate `src/i18n/locales/en.json` into the other 13 locales the way a bilingual
-copywriter on the product team would — not a machine. The English is strong; the
-job is to make each *other* locale read as if it were written first in that
-language, in the Personas voice, using the right domain terms, and never breaking
-the interpolation contract the build enforces.
+# i18n-translate — copywriting-grade, context-aware localization
+
+Translate an app's source-language catalog into its other locales the way a
+bilingual copywriter on the product team would — not a machine. The job is to
+make each non-source locale read as if it were written first in that language,
+in the product's voice, using the right domain terms, and never breaking the
+format contract the target repo's build enforces.
 
 This is a **transcreation** loop with an engineering guardrail, not a
 find-and-replace. Word-for-word is the failure mode.
 
-> Adapted from the `kp` skill of the same name. The method is identical; the
-> contract is not — Personas does **not** use next-intl or ICU. Read
-> "The contract" below before assuming anything ICU-shaped.
+This skill is **portable**: nothing repo-specific lives in this file. Every
+repo-specific fact — where the catalogs are, what the placeholder syntax is,
+which commands gate correctness — lives in the target repo's
+`docs/i18n/contract.md`, which the first run bootstraps (Phase 0). The method
+below is the same everywhere; the contract is not.
 
 ---
 
 ## When to use
 
+- "Translate the app to X" / "add language X" (a new locale).
 - "Review/improve the Czech (or any) translations."
 - "The German is machine-y, make it read natively."
-- "Translate the app to X" / "add language X" (a new locale).
-- A periodic sweep to catch strings that drifted out of parity, were added in
-  English only, or **were merged into a locale as verbatim English**.
+- A periodic sweep for strings that drifted out of parity, were added in the
+  source language only, or sit in a locale file as verbatim source-language text.
 
 ## When NOT to use
 
-- Adding/renaming **English** keys — that's normal feature work (edit
-  `en.json` + the `t.section.key` call site). This skill *consumes* en as the
-  source of truth; it doesn't invent English copy. If the English itself is
-  wrong, flag it, don't silently rewrite it.
-- Backend log messages, Sentry breadcrumbs, console output. Not user-facing.
+- Adding/renaming **source-language** keys — that's normal feature work. This
+  skill *consumes* the source catalog as truth; it doesn't invent source copy.
+  If the source copy is wrong or ambiguous, flag it, don't silently rewrite it.
+- Non-user-facing strings: backend logs, telemetry breadcrumbs, console output.
+- Content owned by another subsystem (e.g. email/SMS template bodies living
+  outside the catalog) unless the contract says they're in scope.
 
 ---
 
-## The contract you must never break (this repo)
+## Phase 0 — the repo contract (`docs/i18n/contract.md`)
 
-`src/i18n/locales/<locale>.json`, source of truth `en.json` (~16.2k leaf keys,
-59 top-level sections). 14 languages: `en, zh, ar, hi, ru, id, es, fr, bn, ja,
-vi, de, ko, cs`. A `Proxy` in `src/i18n/useTranslation.ts` deep-merges each
-locale section over its English counterpart, so a missing leaf silently renders
-English — **which is exactly why silent gaps survive for months.**
+**Read it first. If it doesn't exist, discover and write it before translating
+anything.** The contract is the repo-specific half of this skill: what would be
+hardcoded in a vendored copy. It must answer, with verified paths and commands:
 
-### Interpolation — NOT ICU
+1. **Catalog layout** — where locale files live, which locale is the source of
+   truth, how keys are structured (nested vs flat, sections/namespaces).
+2. **Format system** — ICU MessageFormat? A bare `{var}` regex interpolator?
+   gettext? Suffixed plural keys (`_one`/`_other`) selected by the call site?
+   Spell out exactly what a translator may and may not touch: placeholder
+   names, plural/select keywords, rich-tag names, HTML, emoji, separators.
+3. **Plural mechanism** — whether the translator *expands* plural branches to
+   the target language's CLDR categories (ICU) or the key set is **frozen** and
+   a missing category must be *flagged*, never faked (suffixed keys).
+4. **Fallback behavior** — does a missing/untranslated key fall back to the
+   source language *silently*? If yes, key parity proves nothing about
+   translatedness, and the `gaps` mode + an untranslated-values check are
+   load-bearing.
+5. **The gates** — every command that must pass before finishing (parity/ICU
+   checks, typecheck, untranslated-value scan), plus any **post-edit build
+   step** without which the edit is a silent no-op (e.g. a chunk-splitting or
+   codegen script the runtime actually loads from).
+6. **Do-not-translate seeds** — brand names, product proper nouns, technical
+   identifiers; note any product-name-vs-common-noun traps ("Personas" the app
+   vs "personas" the plural noun — judge by call site, not spelling).
+7. **Call-site lookup** — how to find where a key renders (the `t()` idiom to
+   grep for).
+8. **Operational notes** — worktree/parallel-safety rules, dead-key detection,
+   anything "learned the hard way" in this repo.
 
-`interpolate()` in `src/i18n/useTranslation.ts` does one thing:
-
-```ts
-template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`)
-```
-
-Consequences, all learned the hard way:
-
-- **`\w` is ASCII-only.** A placeholder whose name you translated
-  (`{شخصيةs}`, `{페르소나s}`, `{персонаs}`) does not match the regex at all and
-  renders **literally on screen**. Even an ASCII-but-recased `{Personas}` fails,
-  because the lookup is case-sensitive against `vars.personas`.
-  → **Never translate, recase, or pluralize a placeholder NAME.** `{count}`
-  stays `{count}` in every locale, forever.
-- **There is no `{n, plural, …}` syntax.** Do not invent one; it will render raw.
-- **Plurals are separate keys**, selected by the call site:
-  `foo_one` / `foo_other` / `foo_many` / `foo_zero`. The key set is **frozen** —
-  you translate each suffixed key's *value*, you never add or remove a category.
-  You cannot fix a language's plural rules from here; if a locale genuinely needs
-  a category the key set lacks, **flag it**, don't fake it.
-  - Corollary: in a `_one` value, `count` is always 1. Dropping `{count}` for an
-    idiomatic singular (Arabic `خطوة واحدة` for `"{count} step"`) is **correct
-    transcreation**, not a bug — but the placeholder-parity gate in
-    `translate-merge.mjs` will reject it. Keep `{count}` unless you also relax
-    the gate for `_one` keys.
-- **`_comment*` key segments are translator notes.** Never rendered, never
-  translated — copied verbatim (`translate-extract.mjs` splits them out).
-
-### Do-not-translate
-
-Brand names (Personas, Claude, GitHub, GitLab, Slack, Sentry, Obsidian, Discord,
-Notion, YouTube), technical identifiers (API, CLI, JSON, HTTPS, cron, webhook,
-SQLite, MCP, P2P, ONNX), enum/token codes, CSS classes, URLs, code identifiers,
-user-generated content.
-
-> **Careful:** "Personas" the product ≠ "personas" the plural common noun. In
-> `common.all_personas` = "All personas" the word is a noun and **must** be
-> translated. Judge by the call site, not by the spelling.
-
-### The gates — run ALL before finishing
-
-| Gate | What it catches |
-|---|---|
-| `npm run check:i18n:strict` | key parity: missing keys, stale/extra keys |
-| `npm run check:i18n:untranslated` | **values that are still verbatim English** |
-| `node scripts/i18n/split-locales.mjs` | regenerates the chunks the runtime loads |
-| `npm run check:i18n-dead` | keys no source file references (don't translate these) |
-
-**`check:i18n:strict` is not enough.** It asserts a key *exists*, never that its
-value was translated. In July 2026 it reported 0 missing across all 13 locales
-while **41,536 live strings rendered as raw English** (~24% of the app; entire
-`monitor`, `twin`, and `plugins` surfaces untranslated in every language).
-`check:i18n:untranslated` exists to close that hole. Believe it, not the
-key-parity report.
-
-**After editing any `locales/*.json` you MUST run `split-locales.mjs`** — the
-runtime loads `src/i18n/section-locales/<lang>/<section>.json`, not the locale
-file you just edited. Committing one without the other ships a no-op.
+To discover it: read the i18n runtime source (the `t()` implementation and the
+interpolator tell you the real rules, whatever the docs claim), the check
+scripts, `package.json` scripts, and any existing `docs/i18n/`. Verify each
+claim against code before writing it down. When a later run finds the contract
+wrong or stale, fix the contract in the same change — it is a doc like any
+other.
 
 ---
 
-## The two artifacts (create once, maintain forever)
+## The four artifacts (create once, maintain forever)
 
-The memory that makes run N+1 consistent with run N. They live under `docs/i18n/`:
+The memory that makes run N+1 consistent with run N. All live in the target
+repo under `docs/i18n/` — they are project truth, not skill-internal state:
 
-1. **`docs/i18n/glossary.md`** — the termbase. *What to call things.* Personas'
-   domain nouns/verbs with the canonical translation per locale + a note. One
-   decision per term, applied everywhere: persona, agent, capability, connector,
-   credential, vault, recipe, template, trigger, execution, run, schedule,
-   deployment, healing, observability, fleet, orchestration, draft, promote.
-   Plus the Do-Not-Translate list above.
-2. **`docs/i18n/style-<locale>.md`** — the voice guide. *How to sound.* Register
-   (Personas is a **professional developer tool** → formal address: Czech
-   *vykání*, German *Sie*, French *vous*, Japanese *です・ます*, Korean
-   *합쇼체/해요체*), sentence case vs Title Case (most non-English UIs use
-   sentence case), punctuation/typography (Czech `„…"`, French narrow NBSP before
-   `:!?»`, CJK full-width punctuation, real ellipsis `…`), tone, loanword policy
-   (decide per term IN THE GLOSSARY and be consistent), and length discipline for
-   UI chrome.
+1. **`contract.md`** — the engineering contract (Phase 0, above).
+2. **`glossary.md`** — the termbase. *What to call things.* One canonical
+   translation per domain term per locale, plus the Do-Not-Translate list.
+   Seed it from the product's domain nouns on bootstrap; add a row whenever you
+   make a term decision mid-run so it sticks. One decision per term, applied
+   everywhere.
+3. **`style-<locale>.md`** — the voice guide. *How to sound.* Register (a B2B
+   or developer tool usually takes formal address: Czech *vykání*, German
+   *Sie*, French *vous*, Japanese *です・ます*), sentence case vs Title Case
+   (most non-English UIs use sentence case), punctuation/typography (Czech
+   `„…"` quotes, French narrow NBSP before `;:!?` and `« »` guillemets, CJK
+   full-width punctuation, real ellipsis `…`, NBSP conventions), tone, loanword
+   policy (decide per term IN THE GLOSSARY, be consistent), grammar traps a
+   mechanical translation gets wrong (number agreement, aspect, gender for
+   unknown referents), and length discipline for UI chrome.
+4. **`exemplars-<locale>.md`** — the gold pairs. *Register by demonstration.*
+   ~8 source→locale pairs harvested from the locale's best already-reviewed
+   strings, one per string class: button/CTA, heading, tooltip, error/status,
+   empty-state **transcreation** (the money example — show the rhythm, not the
+   words), a correctly localized plural, a public/end-user-facing string, a
+   legal/consent string. Each pair carries a one-line "why this is right" note.
+   In-domain exemplars are the best-evidenced quality lever after the glossary —
+   a style guide *describes* the voice, exemplars *demonstrate* it. Keep the
+   file at ~8; replace a pair only when a better one ships.
 
-Before translating anything, **read both**. If they don't exist, the first run
-creates them. When you make a new term decision mid-run, write it to the glossary
-so it sticks.
+Before translating anything, **read all four**. Bootstrap any that are missing
+(for exemplars on a brand-new locale: translate the 8 class-examples first,
+polish them hard, seed the file from those).
 
 ---
 
 ## Modes (dispatch on the argument)
 
-- **`review <locale> [section]`** — audit EXISTING translations for quality and
-  fix them. Optional dotted-section prefix (e.g. `vault.dependencies`) scopes it.
-- **`gaps [locale|all]`** — translate strings whose value is still verbatim
-  English (`check:i18n:untranslated` IS the work list). **Run this before
-  `review`** — a polished 76% under a raw-English 24% is the wrong order.
-- **`full <locale>`** — (re)translate every key for one locale.
+- **`review <locale> [scope]`** — audit EXISTING translations and fix them.
+  The default when a locale already exists. `review` = Pass B + Pass C only.
+  Optional key-prefix scope (e.g. `pipeline.controlCenter`).
+- **`gaps [locale|all]`** — translate values that are still verbatim source
+  language. Only meaningful when the contract says fallback is silent — there,
+  **run `gaps` before `review`**: a polished 76% under a raw-English 24% is the
+  wrong order.
+- **`full <locale>`** — (re)translate every key for one locale (Pass A → B → C).
 - **`sync [locale|all]`** — the incremental heartbeat: keys missing from the
-  locale, plus keys whose English source CHANGED since the locale was last
-  touched (`git log -1 --format=%cI src/i18n/locales/<l>.json`).
+  locale, plus keys whose source value CHANGED since the locale was last
+  touched (`git log -1 --format=%cI <locale file>`, then diff the source
+  catalog over that window; when history is ambiguous, review the whole
+  namespace the changed key sits in — siblings move together).
 - **`new <locale>`** — adopt a language: bootstrap `style-<locale>.md` + the
-  glossary column, add it to the 14, then translate every key.
+  glossary column + exemplars, register the locale wherever the contract says
+  locales are declared, then translate every key.
 
-If no locale is given, operate on every non-`en` locale.
+If no locale is given, operate on every non-source locale. **Log what you
+skip** — a capped run that doesn't say so reads as "fully synced".
 
 ---
 
-## The method — per string, before you type the translation
+## The method — a three-pass loop per namespace batch
+
+Single-pass translation is a ceiling. Run every batch through
+**draft → estimate → refine**: translate it, audit it with a typed error
+rubric, then rewrite ONLY what the audit flagged. The gate is the point —
+unanchored "look again and improve" loops measurably *degrade* strings that
+were already right.
+
+### Pass A — Translate
 
 Machine translation fails because it translates the *string*; you translate the
-string **in its place in the product**. Batch by section so a whole surface stays
-coherent:
+string **in its place in the product**. Batch by namespace/section so a whole
+surface stays coherent. For each key:
 
-1. **Locate the use.** `Grep` for `t.<section>.<key>` across `src/` to find the
-   call site. Read enough of the component to answer:
-   - **Element type** → register + length. A `<button>` wants a short imperative;
-     a heading a noun phrase; a tooltip a fuller hint; an `aria-label` a
-     descriptive sentence; an error calm and actionable; a `placeholder` an
+1. **Locate the use.** Grep the call site (the contract says how). Read enough
+   of the component to answer:
+   - **Element type** → register + length. A button wants a short imperative; a
+     heading a noun phrase; a tooltip a fuller hint; an `aria-label` a
+     descriptive sentence; an error calm and actionable; a placeholder an
      example, not a command.
-   - **Siblings** → the other keys in the same object form one UI cluster;
-     translate them as a set so terms and grammar agree.
-   - **Length budget** → does it sit in a chip, badge, or narrow column? Prefer
-     the shorter idiomatic form; don't let a button wrap. Watch German and
-     French, which run 20-35% longer than English.
-2. **Classify → strategy.**
-   - *UI chrome* (buttons, labels, tabs, menus): concise, conventional, match the
-     target OS/app idiom.
-   - *Body / empty-state / onboarding*: **transcreate** — carry the feeling and
-     rhythm, not the words. This is where literal dies.
-   - *Errors / status*: plain, non-alarming, actionable.
-   - *Legal / consent*: precise, sober; preserve legally-loaded meaning.
-3. **Apply the glossary + style guide.** Canonical term for every domain word;
-   the locale's register, casing, punctuation.
-4. **Preserve the interpolation skeleton.** Every `{var}` survives byte-identical.
-   Move it to where the target grammar wants it. Keep emoji and `·` separators.
-5. **Sanity-read it as a native.** Would a native speaker write this on a real
-   product, or does it smell of English word order? If unsure, mark it.
+   - **Audience** → operator vs end-user/public pages (often different warmth).
+   - **Siblings** → keys in the same object form one UI cluster; translate them
+     as a set so terms and grammar agree.
+   - **Length budget** → chip/pill/narrow column? Prefer the shorter idiomatic
+     form; don't let a button wrap. German and French run 20–35% longer than
+     English; plan for it.
+2. **Classify → strategy.** *UI chrome*: concise, conventional, match the
+   target OS/app idiom. *Body/marketing/empty-state*: **transcreate** — carry
+   the feeling and rhythm, not the words; this is where literal dies.
+   *Legal/consent*: precise, sober, preserve legally-loaded meaning.
+   *Status/errors*: plain, non-alarming, actionable.
+3. **Apply glossary + style guide + exemplars.** Canonical term for every
+   domain word; the locale's register, casing, punctuation, plural rules; write
+   *toward* the gold pairs' voice. Keep the translating frame terse — a
+   one-line persona ("bilingual product copywriter for a <locale> B2B SaaS")
+   beats a long translation brief, and chain-of-thought does not help the
+   translate step.
+4. **Preserve the format skeleton** exactly as the contract defines it: every
+   placeholder byte-identical, plural branches expanded or frozen per the
+   contract, tags/HTML/emoji kept. Move placeholders to where the target
+   grammar wants them — that is usually a different position than English.
+5. **Sanity-read as a native.** Would a native speaker write this on a real
+   product, or does it smell of source-language word order? If unsure, mark it.
+
+### Pass B — Estimate (typed MQM audit)
+
+Fresh eyes on the batch Pass A just wrote — or, in `review` mode, on the
+existing catalog. Audit each key and emit **zero or more typed errors**, not a
+holistic verdict — error spans with category+severity correlate with native
+judgment; "rate this 1–10" does not.
+
+Per error record: `key · quoted span · category · severity · anchor · fix`.
+
+Categories (MQM-derived):
+- **accuracy** — mistranslation, omission, addition; wrong meaning in context.
+- **terminology** — glossary term ignored, or one concept rendered two ways
+  across the app.
+- **fluency** — grammar (case, aspect, agreement), calque/source word order,
+  register break (informal where the tool needs formal; stiff where an
+  end-user page should be warm).
+- **style** — reads translated rather than written; misses the exemplars' voice.
+- **locale-convention** — Title Case aped from the source, wrong quote glyphs,
+  straight `...` for `…`, missing NBSP, wrong/missing plural handling per the
+  contract.
+- **format** — lost/renamed placeholder, brace imbalance, translated syntax
+  keyword, changed tag name. Always **critical**.
+- **length** — visibly longer than source in a tight control.
+- **leftover-source** — untranslated source text or a wrongly-translated brand
+  term.
+
+Severity: **critical** (wrong meaning, format break, legal/consent distortion) ·
+**major** (a native speaker would stumble or be confused) · **minor** (polish).
+
+**Every finding must cite an anchor** — a glossary row, a style-guide rule, an
+exemplar, the contract's placeholder rules, a call-site length budget. A
+finding with no anchor is taste, not an error; drop it or queue it for a
+native. For high-visibility surfaces (nav, landing, empty states), ask one
+extra localizer question per string: *would a native product team ship this
+wording on this control?* — a style finding if the answer is no.
+
+### Pass C — Refine (gated)
+
+- Rewrite **only** keys with ≥1 **critical/major** error, feeding the error
+  records into the rewrite. Re-check what you changed.
+- **Minor**-only keys: apply the fix if mechanical (typography, casing);
+  otherwise leave and note.
+- Clean keys: **do not touch.** No drive-by rephrasing — churn on already-good
+  strings is regression, not improvement.
+- For genuinely ambiguous strings (a pun, a domain term with no settled local
+  equivalent, a legal phrase), **don't guess silently**: apply your best
+  version AND record it in `docs/i18n/review-<locale>.md` with its error
+  record and severity, so a native speaker can triage. The user is not a
+  native reviewer by default — surface these.
 
 ---
 
-## Review lens (for `review`, and as self-QA on anything you generate)
+## Working at scale
 
-- **Calque / literal word order** — English wearing a costume.
-- **Register mismatch** — informal where a professional tool needs formal.
-- **Terminology drift** — one concept translated two ways across the app.
-- **Format break** — renamed/lost placeholder, brace imbalance, changed emoji.
-- **Casing/punctuation** — Title Case aped from English, straight `...` for `…`,
-  wrong quote glyphs, missing/incorrect spacing around CJK and French punctuation.
-- **Length risk** — visibly longer than English in a tight control.
-- **Leftover English** or a wrongly-translated brand term.
-
-For genuinely ambiguous strings (a pun, a domain term with no settled local
-equivalent), **don't guess silently**: apply your best version AND add it to the
-run's review list with a one-line note. The user is not a native reviewer by
-default — surface these.
-
----
-
-## Working at scale (16k keys × 13 locales)
-
-- **Batch by section, not by string.** Load one section's en values + its call
-  sites, translate the whole cluster in one coherent pass, write, move on. This
-  keeps sibling grammar consistent and dodges the "lost in the middle" failure of
-  one giant prompt. ~90 keys per batch is a good ceiling.
-- **Skip dead keys.** `npm run check:i18n-dead` lists keys no source file
-  references (2,671 as of 2026-07; `debt` and `planner` were 100% dead). Never
-  spend a token translating a string no user can see.
-- Keep key order identical to en for reviewable diffs.
-- A **workflow / ultracode** fan-out is the natural shape for a full sweep: one
-  agent per (locale × section) chunk, each fed the glossary + style guide + en
-  values, then a parity/QA merge. Don't spin that up unprompted — offer it.
+- **Batch by namespace/section, not by string.** Load one section's source
+  values + call sites, run the three passes on the whole cluster, write, move
+  on. Keeps sibling grammar consistent and dodges the "lost in the middle"
+  failure of one giant prompt. ~60–90 keys per batch is a good ceiling.
+- Keep key order identical to the source catalog for reviewable diffs; edit
+  namespace-block by namespace-block.
+- **Skip dead keys** if the contract provides a dead-key check — never spend a
+  token on a string no user can see.
+- A **workflow / ultracode** fan-out is the natural shape for a full
+  multi-locale sweep: one agent per (locale × section) chunk, each fed the four
+  artifacts + call sites, then a parity/QA merge, with Pass C applied centrally
+  so the catalog is never edited concurrently. Don't spin it up unprompted —
+  offer it for big jobs.
 - Never machine-blast a whole file in one edit; that's how silent format breaks
   and terminology drift ship.
 
@@ -218,44 +261,61 @@ default — surface these.
 
 ## Guardrails (learned the hard way)
 
-- **en is the source of truth.** Don't edit en values to make a translation
-  easier. If en is wrong/ambiguous, note it for the user.
-- **Don't clobber good human translations.** In `review`/`gaps`, change only what
-  is actually wrong or missing.
-- **JSON hygiene** — valid JSON, UTF-8, real diacritics (`č`, `ř`, `ž`, not ASCII
-  folds), no trailing commas, 2-space indent, trailing newline.
-- **Numbers/dates** are formatted at runtime — never hardcode a localized number.
-- **Verify, don't assume.** A catalog that "looks translated" can still be 24%
-  English. Run the gates.
-- **Parallel safety** — this skill rewrites 13 large files. Per `.claude/CLAUDE.md`,
-  do it in a `git worktree`, stage only your own paths, never `git stash`.
+- **The source locale is the source of truth.** Don't edit source values to
+  make a translation easier. Keep a running **source-defect list** instead and
+  report it: hardcoded currency in translatable strings, sentences assembled by
+  concatenation, flat strings that need plurals, duplicated catalogs — these
+  cap quality for *every* locale and are the user's to fix.
+- **Don't clobber good human translations.** In `review`/`sync`/`gaps`, change
+  only what is wrong or missing; a wholesale overwrite of a reviewed catalog
+  needs the user's OK first.
+- **File hygiene** — valid JSON/format, UTF-8, real diacritics (`č`, `ř`, `ž`,
+  not ASCII folds), the file's existing indentation, no trailing commas.
+- **Emoji/symbols** in a value are content — keep them.
+- **Numbers/dates/currency** are formatted at runtime — never hardcode a
+  localized number; keep the placeholder and let the formatter do it.
+- **Verify, don't assume.** A catalog that "looks translated" can still fail a
+  gate on one plural — or silently render 24% source-language. Run every gate
+  the contract lists, including post-edit build steps.
+- **Known non-levers — don't drift into these.** Back-translation as a quality
+  gate (fluent mistranslations round-trip cleanly; use it only as an
+  omission/placeholder sanity check). Holistic 1–10 scoring (use typed errors).
+  Long translation briefs (measured worse than a one-line persona). Extra
+  refine loops beyond Pass C without new anchors (churn, not quality).
 
 ---
 
 ## Exit checklist
 
-- [ ] `npm run check:i18n:strict` → OK (key parity, all locales).
-- [ ] `npm run check:i18n:untranslated` → OK (no verbatim-English values).
-- [ ] `node scripts/i18n/split-locales.mjs` run; `section-locales/` committed.
-- [ ] Touched locale JSON valid, same key order as en, proper diacritics.
-- [ ] `docs/i18n/glossary.md` + `docs/i18n/style-<locale>.md` updated with any new
-      term/voice decisions made this run.
-- [ ] A short **review list** surfaced: the handful of strings worth a native
-      second look (with why), and anything capped/deferred.
-- [ ] One-line summary: locale(s), # keys translated/reviewed/fixed, # flagged.
+- [ ] Every gate in `docs/i18n/contract.md` passes, including post-edit build
+      steps (a missed chunk-split/codegen ships a no-op).
+- [ ] Touched locale files valid, same key order as source, proper diacritics.
+- [ ] `docs/i18n/glossary.md` + `style-<locale>.md` updated with any new
+      term/voice decisions; `exemplars-<locale>.md` exists and still holds the
+      locale's best ~8; `contract.md` corrected if a run proved it stale.
+- [ ] `docs/i18n/review-<locale>.md` updated: the strings worth a native second
+      look, each with its typed error record and severity; anything
+      capped/deferred named explicitly.
+- [ ] The source-defect list surfaced to the user (flag only — never fixed
+      silently).
+- [ ] One-line summary: locale(s), keys audited/translated/fixed by severity,
+      # queued for native review.
 
-When every box is checked, each locale should read like it was written by a person
-who uses Personas every day — and the build stays green.
+When every box is checked, the locale should read like it was written by a
+person who uses the product every day — and the build stays green.
 
 ---
 
 ## Periodic operation
 
-`gaps` then `sync` is the heartbeat:
-- **On change**: the `i18n-no-gaps` pre-commit hook already runs
-  `check:i18n:strict`. Add `check:i18n:untranslated` to catch value-level gaps.
-- **On a schedule**: `/loop` or `/schedule` around `/i18n-translate sync all`.
-- **New market**: `/i18n-translate new <locale>` once, then it joins the rotation.
+`sync` (plus `gaps`, where fallback is silent) is the heartbeat:
+- **On change**: wire the contract's parity + untranslated checks into
+  pre-commit/CI; any finding is the cue to run `/i18n-translate sync`.
+- **On a schedule** (weekly / before a release): `/loop` or `/schedule` around
+  `/i18n-translate sync all`.
+- **New market**: `/i18n-translate new <locale>` once; it then joins the
+  rotation automatically.
 
-ARGUMENTS: `<mode> [locale] [section]` — e.g. `review cs vault.dependencies`,
-`gaps all`, `full de`, `new pl`. Default with no mode: `gaps` every non-en locale.
+ARGUMENTS: `<mode> [locale] [scope]` — e.g. `review cs pipeline.controlCenter`,
+`gaps all`, `full de`, `sync all`, `new pl`. Default with no mode: `review`
+every non-source locale (after `gaps`, where the contract makes it relevant).
