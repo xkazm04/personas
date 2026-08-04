@@ -261,6 +261,13 @@ context — the parallel rules in step 6 are what make that safe.
    findings, each grounded in \`file:line\` evidence. Zero findings is a valid
    and common result — say "nothing real" and move on. Prefer one deep finding
    over three shallow ones.
+   **Yield expectation for a FULL package: around 20 findings** on a healthy
+   in-band context (most from 5-8 lenses, the rest honestly clean). Under ~10
+   usually means you stopped at the surface — dig again before declaring
+   clean. **Risk naturally grows with repeat sweeps of the same context**:
+   round 1 harvests the low-destruction layer; later rounds are EXPECTED to
+   surface medium-risk items the first pass deferred. That is the design, not
+   scope creep — the triage gate (step 5) is what keeps it safe.
 4. **Budget: at most 30 findings per context, lifetime.** Before emitting,
    subtract what prior snapshots already reported for this scope (\`findings\`
    counts) and never re-emit a finding already reported in a prior run or
@@ -292,16 +299,20 @@ Classify every candidate finding:
 
 Routing:
 
-- **Resolve mode:** S and M items are yours to BUILD (step 6) — but the
-  destruction guard gates the queue: never auto-fix an item with risk ≥ 5,
-  and a refactor of WORKING code with no user-visible or measurable gain
-  (pure churn — envelope reshuffles, style rewrites, "cleaner" restructures)
-  goes to triage regardless of size. **L items are a decision, not a
-  drive-by** — with an operator present (interactive run), pitch each L
-  candidate in one line and ask which to emit as backlog findings;
-  unattended (Fleet/app dispatch), emit them with \`"size":"L"\` and
-  effort ≥ 8 so the app's backlog triage gates them. Never build an L item in
-  a sweep session.
+- **Resolve mode has a TRIAGE PHASE before the execution phase.** Split the
+  queue by destruction:
+  - **Low destruction** (risk ≤ 3 and not pure churn): auto-execute, no ask.
+  - **Above-medium destruction** (risk ≥ 4), **pure churn** (refactors of
+    working code with no user-visible or measurable gain), and **L items**:
+    STOP and triage with the operator in the terminal — one line per item
+    (title, value, what could break), operator picks which proceed. Accepted
+    items join the execution phase; declined ones are dropped or emitted as
+    backlog findings per the operator's word. Unattended (Fleet/app
+    dispatch, no operator): risk ≥ 4 and churn items are NEVER built — emit
+    them as findings with honest scores so the app's backlog gates them; L
+    items emit with \`"size":"L"\` and effort ≥ 8.
+  - Execution runs only AFTER triage resolves, highest value first.
+  Never build an L item in a sweep session.
 - **Ideas-only mode:** everything routes to the outbox; same L triage rule.
 
 ## 6. Resolve mode — implement the S/M findings now
