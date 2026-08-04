@@ -250,6 +250,40 @@ Wire:
 
 Why approval-gated when `use_connector` isn't: a scheduled check-in puts a future obligation on the user's attention. Unlike connector calls (which run on pre-greenlit pinned credentials), the consent isn't already present — Athena's "I'll ping you about X in 3 days" needs the user to actually agree before the row lands.
 
+## What Athena can see — the grounding index (constitution v45)
+
+Before any of the per-surface wiring below matters, she has to know what exists. For a long time she did not: she was shown the **names** of ten recently-active personas and nothing else, while ops like `run_persona`, `run_arena` and `assign_team` all take a UUID. She was proposing ids she had no listing of, and the context map and skill library were invisible to her entirely (the context map appeared only as prose telling her a background job produces one).
+
+Three blocks now ride in every system prompt, each a **name + real id + one line**:
+
+- **Personas** — name, `id`, a one-line capability summary, model tier. Ordered `enabled DESC, updated_at DESC`.
+- **Dev contexts and groups** — name, `id`, one line. Ordered `pinned DESC, updated_at DESC`.
+- **Skills** — name, scope, and the one-line `when to use` parsed from the skill's own frontmatter (same parser the Skills UI uses). Ordered alphabetically, because an index is a lookup table and not a feed.
+
+**The budget is real, not aspirational.** `INDEX_TOKEN_BUDGET = 1200` tokens × `CHARS_PER_TOKEN = 4` = 4800 chars, split 2000 / 1600 / 1200 across the three blocks, with a compile-time `const _: () = assert!(…)` keeping the split inside the total. `BoundedBlock::push_row` refuses a row that would eat the block's footer reserve, so the honesty line can never be squeezed out by content. Measured against 200 personas + 200 contexts + 200 skills: 4491 chars (~1123 tokens), showing 10 / 15 / 15 rows.
+
+**Every block ends by admitting what it hid.** The footer states `Listing N of M` and names the read op that recovers the rest, in the persona block's own words: *absent here does NOT mean absent from the app*. That sentence is the point of the whole design. A truncated list that pretends to be complete is worse than no list, because it invites her to conclude a persona does not exist.
+
+**Detail on demand — four read ops**, all auto-fire, all bounded (`READ_OP_DETAIL_CHARS = 1600`), all returning their answer as a System episode she reads on the next turn:
+
+| op | returns | on a miss |
+|---|---|---|
+| `describe_persona` | one persona in full | names up to 5 real candidates |
+| `describe_context` | one dev context in full | same |
+| `describe_skill` | one skill's full when-to-use | same |
+| `list_teams` | the team roster with ids (`LIST_TEAMS_MAX_ROWS = 25`) | — |
+
+Teams were deliberately left **out** of the always-on index and given a lookup instead: `assign_team` needs a `team_id`, but a roster is not worth permanent prompt rent.
+
+Two properties worth keeping when this is extended:
+
+- **The read ops are dispatcher arms with no executor**, and are deliberately absent from `ALLOWED_ACTIONS`. An entry there requires a matching executor arm, and those two lists have silently diverged before — an op that is only ever *read* has nothing to diverge from. A guard test asserts every read op has an arm, and an invariant test asserts `READ_OPS ∩ ALLOWED_ACTIONS = ∅`.
+- **`describe_skill` reads the filesystem**, so it is the one member of the family that still answers when the system DB is unreachable; the others fail closed and say so rather than guessing an id.
+
+The old names-only "Recently active" line was **removed** from the observability digest when this landed, so there is exactly one persona listing in the prompt rather than two that disagree about which agents matter.
+
+> **Deployment note.** The constitution is read from `~/.personas/companion-brain/constitution.md`, not from the repo at runtime. An upgraded install keeps its existing file, so Athena will not know a newly added op exists until that file is refreshed. A feature can look broken on an upgrade for this reason alone.
+
 ## Project goals (dev direction) — read + propose + react
 
 Athena is wired into the project [Goals](../goals/README.md) surface at the **read + propose, writes-gated** authority level:
