@@ -176,6 +176,14 @@ A saved database credential opens a workspace with a **Tables** browser, a **SQL
 
 Four catalog entries in `scripts/connectors/builtin/` expose URL-only webhook credentials for outbound alerting: `slack-webhook` (Slack incoming webhook), `discord-webhook` (Discord channel webhook), `teams-webhook` (Microsoft Teams incoming webhook), and `generic-webhook` (any HTTPS endpoint accepting POST). They live alongside the full Slack/Discord/Teams bot connectors but expose only a `webhook_url` password field — no scopes, no resource picker — so users can grant a least-privilege "post-only" credential. The vault encrypts the URL like any other sensitive field, and the outbound dispatcher (`engine/webhook_notifier.rs`) reads it through `get_decrypted_fields`. See [events/README.md](../events/README.md#outbound-webhook-notifications) for the routing layer.
 
+The full `slack` bot connector (not the webhook one) is also the prerequisite
+for the **team ↔ Slack bridge**: a team channel can be mirrored to a Slack
+channel in both directions, with the binding stored as a notification channel on
+one member persona. The bot token needs `chat:write` plus `channels:history` /
+`groups:history` for the inbound half, and the bot must be invited to the
+channel. Setup lives in Teams ▸ Studio ▸ Settings; see
+[teams/pipeline.md](../teams/pipeline.md#slack-bridge--mirror-a-team-channel-to-slack).
+
 ## Security constraints
 
 Credentials are stored and read through backend commands; decrypted secrets should not be passed to the webview except for deliberate non-secret metadata. API calls that need credentials should go through backend proxy/discovery commands so auth strategy, SSRF protection, rate limiting, and audit behavior remain centralized.

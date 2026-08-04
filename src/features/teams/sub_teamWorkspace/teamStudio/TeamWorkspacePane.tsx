@@ -9,6 +9,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { silentCatch } from '@/lib/silentCatch';
 import { PublishPresetButton } from './PublishPresetButton';
+import { TeamSlackBridgePanel } from './slackBridge/TeamSlackBridgePanel';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
 /**
@@ -275,6 +276,11 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <span className="typo-caption text-emerald-300">{ts.workspace_saved}</span>
         )}
       </div>
+
+      {/* Team ↔ Slack bridge. Saves onto a member persona's notification
+          channels, not onto the team row, so it has its own save button
+          rather than joining the workspace-facet save above. */}
+      <TeamSlackBridgePanel teamId={team.id} />
 
       {/* Share this team with the community (UGC preset). */}
       <PublishPresetButton teamId={team.id} />
