@@ -22,42 +22,49 @@ use crate::error::AppError;
 
 /// Band + merge thresholds (mirror the scan prompts and
 /// scripts/context/check-granularity.mjs).
-const MAX_FILES: usize = 30;
 const MIN_FILES: usize = 8;
 /// Absorbing a tiny sibling may overshoot the band a little; that beats
 /// leaving crumbs.
 const MERGE_CEILING: usize = 34;
 
-/// Module-directory unit for one file path (mirrors the JS simulation that
-/// validated the band): `src/features/<f>/<sub>`, `src-tauri` crate/module,
-/// `src/<layer>/<dir>`, else the top directory.
-fn unit_signature(path: &str) -> String {
+/// Canonical directory segments for one file path (filename dropped, roots
+/// normalized): `src/features/f/sub/deep` → ["features","f","sub","deep"],
+/// `src-tauri/db/src/repos` → ["tauri","db","repos"], `src/stores/slices` →
+/// ["src","stores","slices"], else the top directory alone.
+fn path_segments(path: &str) -> Vec<String> {
     let p = path.replace('\\', "/");
     let mut dirs: Vec<&str> = p.split('/').collect();
     dirs.pop(); // filename
     if dirs.is_empty() {
-        return "(root)".into();
+        return vec!["(root)".into()];
     }
     if dirs[0] == "src" && dirs.get(1) == Some(&"features") {
-        return match (dirs.get(2), dirs.get(3)) {
-            (Some(f), Some(sub)) => format!("features/{f}/{sub}"),
-            (Some(f), None) => format!("features/{f}"),
-            _ => "src/features".into(),
-        };
+        let mut out = vec!["features".to_string()];
+        out.extend(dirs[2..].iter().map(|s| s.to_string()));
+        return out;
     }
     if dirs[0] == "src-tauri" {
-        let meaningful: Vec<&str> = dirs[1..].iter().filter(|d| **d != "src").copied().collect();
-        let take = meaningful.len().min(2);
-        if take == 0 {
-            return "tauri".into();
-        }
-        return format!("tauri/{}", meaningful[..take].join("/"));
+        let mut out = vec!["tauri".to_string()];
+        out.extend(dirs[1..].iter().filter(|d| **d != "src").map(|s| s.to_string()));
+        return out;
     }
     if dirs[0] == "src" {
-        let take = dirs.len().min(3);
-        return dirs[..take].join("/");
+        return dirs.iter().map(|s| s.to_string()).collect();
     }
-    dirs[0].to_string()
+    vec![dirs[0].to_string()]
+}
+
+/// Signature at a directory depth — the recursive-refinement key. Depth 3 is
+/// the module level (`features/<f>/<sub>`); over-band units descend deeper.
+fn sig_at(segs: &[String], depth: usize) -> String {
+    let take = segs.len().min(depth.max(1));
+    segs[..take].join("/")
+}
+
+/// Base module unit for one file path (depth 3).
+#[cfg(test)]
+fn unit_signature(path: &str) -> String {
+    sig_at(&path_segments(path), BASE_DEPTH)
 }
 
 /// kebab name for a merged context, derived from its unit directory.
@@ -65,14 +72,31 @@ fn unit_name(unit: &str) -> String {
     let segs: Vec<String> = unit
         .split('/')
         .skip(1) // drop the "features"/"tauri"/"src" root marker
-        .map(|s| s.trim_start_matches("sub_").replace('_', "-").to_lowercase())
+        .map(|s| {
+            s.trim_start_matches("sub_")
+                .replace('_', "-")
+                .to_lowercase()
+                .trim_matches('-')
+                .to_string()
+        })
         .filter(|s| !s.is_empty())
         .collect();
-    if segs.is_empty() {
-        unit.replace('/', "-")
-    } else {
-        segs.join("-")
+    let joined = if segs.is_empty() { unit.replace('/', "-") } else { segs.join("-") };
+    // Collapse runs of '-' left by markers like `__tests__`.
+    let mut out = String::with_capacity(joined.len());
+    let mut prev_dash = false;
+    for ch in joined.chars() {
+        if ch == '-' {
+            if !prev_dash {
+                out.push(ch);
+            }
+            prev_dash = true;
+        } else {
+            out.push(ch);
+            prev_dash = false;
+        }
     }
+    out.trim_matches('-').to_string()
 }
 
 struct Ctx {
@@ -84,26 +108,70 @@ struct Ctx {
     files: Vec<String>,
     keywords: Vec<String>,
     entry_points: Vec<String>,
-    unit: String,
+    /// Canonical dir segments per file — the recursive-refinement input.
+    file_segs: Vec<Vec<String>>,
 }
 
 fn arr(s: Option<&str>) -> Vec<String> {
     s.and_then(|x| serde_json::from_str::<Vec<String>>(x).ok()).unwrap_or_default()
 }
 
-/// Compute the merge clusters. Returns (clusters, skipped_names); each cluster
-/// is the indices of contexts that become ONE context (survivor chosen later).
-fn plan_clusters(ctxs: &[Ctx]) -> (Vec<Vec<usize>>, Vec<String>) {
-    // Pass A — group contexts by their majority unit.
-    let mut by_unit: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+/// The context's majority directory signature at a depth (contexts are 93%
+/// single-dir, so majority is almost always unanimous).
+fn majority_sig(c: &Ctx, depth: usize) -> String {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for segs in &c.file_segs {
+        *counts.entry(sig_at(segs, depth)).or_default() += 1;
+    }
+    counts
+        .into_iter()
+        .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))
+        .map(|(u, _)| u)
+        .unwrap_or_else(|| "(empty)".into())
+}
+
+const BASE_DEPTH: usize = 3;
+const MAX_DEPTH: usize = 8;
+
+/// Recursively partition members: group at `depth`; groups over the ceiling
+/// descend a directory level until they fit or can no longer split (whole
+/// contexts are never broken apart).
+fn partition(ctxs: &[Ctx], members: Vec<usize>, depth: usize, out: &mut BTreeMap<String, Vec<usize>>) {
+    let mut groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    for i in members {
+        groups.entry(majority_sig(&ctxs[i], depth)).or_default().push(i);
+    }
+    for (sig, m) in groups {
+        let size: usize = m.iter().map(|i| ctxs[*i].files.len()).sum();
+        if size > MERGE_CEILING && depth < MAX_DEPTH && m.len() > 1 {
+            // Only recurse when a deeper level actually separates them.
+            let deeper: HashSet<String> = m.iter().map(|i| majority_sig(&ctxs[*i], depth + 1)).collect();
+            if deeper.len() > 1 {
+                partition(ctxs, m, depth + 1, out);
+                continue;
+            }
+        }
+        out.entry(sig).or_default().extend(m);
+    }
+}
+
+/// Compute the merge clusters. Returns ((unit, members) pairs, skipped_names);
+/// each cluster becomes ONE context (survivor chosen later).
+fn plan_clusters(ctxs: &[Ctx]) -> (Vec<(String, Vec<usize>)>, Vec<String>) {
     let mut skipped: Vec<String> = Vec::new();
+    let mut live: Vec<usize> = Vec::new();
     for (i, c) in ctxs.iter().enumerate() {
         if c.files.is_empty() {
             skipped.push(c.name.clone());
-            continue;
+        } else {
+            live.push(i);
         }
-        by_unit.entry(c.unit.clone()).or_default().push(i);
     }
+
+    // Pass A — recursive directory partition (module level, descending only
+    // where a unit overflows the band).
+    let mut by_unit: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    partition(ctxs, live, BASE_DEPTH, &mut by_unit);
 
     // Pass B — absorb units still under MIN_FILES into a sibling unit (same
     // parent directory), preferring the largest sibling that stays under the
@@ -131,7 +199,7 @@ fn plan_clusters(ctxs: &[Ctx]) -> (Vec<Vec<usize>>, Vec<String>) {
         }
     }
 
-    (by_unit.into_values().collect(), skipped)
+    (by_unit.into_iter().collect(), skipped)
 }
 
 /// Run the consolidation. `dry_run` computes and returns the plan without
@@ -146,16 +214,7 @@ pub fn consolidate_contexts(
         .iter()
         .map(|c| {
             let files = arr(Some(c.file_paths.as_str()));
-            // Majority unit over the context's files (93% have exactly one).
-            let mut counts: HashMap<String, usize> = HashMap::new();
-            for f in &files {
-                *counts.entry(unit_signature(f)).or_default() += 1;
-            }
-            let unit = counts
-                .into_iter()
-                .max_by(|a, b| a.1.cmp(&b.1).then_with(|| b.0.cmp(&a.0)))
-                .map(|(u, _)| u)
-                .unwrap_or_else(|| "(empty)".into());
+            let file_segs = files.iter().map(|f| path_segments(f)).collect();
             Ctx {
                 id: c.id.clone(),
                 name: c.name.clone(),
@@ -165,7 +224,7 @@ pub fn consolidate_contexts(
                 files,
                 keywords: arr(c.keywords.as_deref()),
                 entry_points: arr(c.entry_points.as_deref()),
-                unit,
+                file_segs,
             }
         })
         .collect();
@@ -177,7 +236,7 @@ pub fn consolidate_contexts(
     let mut merges: Vec<Value> = Vec::new();
     let mut ops: Vec<MergeOp> = Vec::new();
 
-    for cluster in &clusters {
+    for (unit, cluster) in &clusters {
         if cluster.len() < 2 {
             continue;
         }
@@ -195,7 +254,6 @@ pub fn consolidate_contexts(
         if absorbed.is_empty() {
             continue;
         }
-        let unit = &ctxs[survivor].unit;
         let mut name = unit_name(unit);
         // Keep the survivor's own name when the derived one is taken by an
         // unrelated context.
@@ -406,27 +464,35 @@ mod tests {
 
     #[test]
     fn tiny_units_absorb_into_siblings_and_pins_survive() {
-        let mk = |name: &str, unit: &str, n: usize, pinned: bool| Ctx {
-            id: name.into(),
-            name: name.into(),
-            group_id: None,
-            description: None,
-            pinned,
-            files: (0..n).map(|i| format!("{unit}/f{i}.ts")).collect(),
-            keywords: vec![],
-            entry_points: vec![],
-            unit: unit.into(),
+        let mk = |name: &str, dir: &str, n: usize, pinned: bool| {
+            let files: Vec<String> = (0..n).map(|i| format!("src/features/{dir}/f{i}.ts")).collect();
+            let file_segs = files.iter().map(|f| path_segments(f)).collect();
+            Ctx {
+                id: name.into(),
+                name: name.into(),
+                group_id: None,
+                description: None,
+                pinned,
+                files,
+                keywords: vec![],
+                entry_points: vec![],
+                file_segs,
+            }
         };
         let ctxs = vec![
-            mk("a1", "features/x/a", 4, false),
-            mk("a2", "features/x/a", 3, false),
-            mk("b", "features/x/b", 20, false),
-            mk("tiny", "features/x/c", 2, true), // pinned tiny: unit merges, pin never absorbed
+            mk("a1", "x/a", 4, false),
+            mk("a2", "x/a", 3, false),
+            mk("b", "x/b", 20, false),
+            mk("tiny", "x/c", 2, true), // pinned tiny: unit merges, pin never absorbed
         ];
         let (clusters, skipped) = plan_clusters(&ctxs);
         assert!(skipped.is_empty());
         // a1+a2 (7 files, under MIN) absorb into the b unit (20 files).
-        let big = clusters.iter().find(|c| c.len() >= 3).expect("merged cluster");
+        let big = clusters
+            .iter()
+            .map(|(_, m)| m)
+            .find(|m| m.len() >= 3)
+            .expect("merged cluster");
         assert!(big.contains(&2), "sibling target present");
         assert!(big.contains(&0) && big.contains(&1), "tiny unit absorbed");
     }
