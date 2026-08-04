@@ -19,6 +19,7 @@ import type { WarningItem } from './passport/WarningBadge';
 import { ImproveProvider } from './passport/improve/ImproveContext';
 import { useImproveEngine } from './passport/improve/useImproveEngine';
 import { mapWithConcurrency, usePassportData } from './passport/usePassportData';
+import { useAutoRescanOnFleetExit } from './passport/useAutoRescanOnFleetExit';
 import { useFactoryData } from './factoryData';
 import { collectKpiAttention } from './factoryModel';
 
@@ -37,6 +38,8 @@ export function ProjectsLayer({
   onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
 }) {
   const { passports, rawByProject, loading, error, generatedAt, rescanningProject, rescanProject, reload } = usePassportData();
+  // R22 — a finished `passport:*` dispatch auto-verifies via scoped rescan.
+  useAutoRescanOnFleetExit(rescanProject);
   const { projects: factoryProjects } = useFactoryData();
   const openSlugs = useMemo(() => new Set(passports.map((p) => p.identity.slug)), [passports]);
 

@@ -25,6 +25,7 @@ import { DeployPopover } from '@/features/teams/sub_factory/passport/improve/Dep
 import { ImprovePopover } from '@/features/teams/sub_factory/passport/improve/ImprovePopover';
 import { useImproveEngine } from '@/features/teams/sub_factory/passport/improve/useImproveEngine';
 import { usePassportData } from '@/features/teams/sub_factory/passport/usePassportData';
+import { useAutoRescanOnFleetExit } from '@/features/teams/sub_factory/passport/useAutoRescanOnFleetExit';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/SkillsWorkbench';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -103,7 +104,10 @@ export default function MastermindPage() {
 
 function MastermindInner() {
   const { t, tx } = useTranslation();
-  const { passports, rawByProject, loading, error, reload, rescan, rescanning } = usePassportData();
+  const { passports, rawByProject, loading, error, reload, rescan, rescanning, rescanProject } = usePassportData();
+  // R22 — a finished `passport:*` dispatch (island dim action, fleet dock)
+  // auto-verifies via scoped rescan, same loop closure as the Factory wall.
+  useAutoRescanOnFleetExit(rescanProject);
   const { projects: factoryProjects, error: factoryError, reload: factoryReload } = useFactoryData();
   const improve = useImproveEngine(rawByProject, reload);
   // Scene store — the single batched spine: cross-project relations (meta) +
