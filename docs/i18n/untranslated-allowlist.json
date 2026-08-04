@@ -1223,6 +1223,7 @@
   "es:agents.executions.tab_inspector",
   "es:agents.executions.tab_pipeline",
   "es:agents.executions.tokens",
+  "es:agents.executions.tokens_unit",
   "es:agents.executions.total_label",
   "es:agents.executions.zero_tokens",
   "es:agents.glyph_cap_trigger_manual",

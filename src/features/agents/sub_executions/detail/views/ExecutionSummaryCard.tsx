@@ -59,6 +59,8 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
 
 function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: FileChangeSummary[]; writeCount: number; readCount: number }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, tx } = useTranslation();
+  const e = t.agents.executions;
 
   if (fileChanges.length === 0) return null;
 
@@ -72,12 +74,14 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <FileText className="w-3 h-3" />
-        <span>{fileChanges.length} file{fileChanges.length !== 1 ? 's' : ''}</span>
+        <span>
+          {tx(fileChanges.length === 1 ? e.file_changes_count : e.file_changes_count_other, { count: fileChanges.length })}
+        </span>
         {writeCount > 0 && (
-          <span className={CAUTION_TEXT}>{writeCount} modified</span>
+          <span className={CAUTION_TEXT}>{tx(e.files_modified_count, { count: writeCount })}</span>
         )}
         {readCount > 0 && (
-          <span className={INFO_TEXT}>{readCount} read</span>
+          <span className={INFO_TEXT}>{tx(e.files_read_count, { count: readCount })}</span>
         )}
       </button>
       {expanded && (
@@ -97,6 +101,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
 
 export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSummaryCardProps) {
   const presentation = getStatusEntry(summary.status);
+  const { t } = useTranslation();
 
   return (
     <div
@@ -128,7 +133,7 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
         {summary.totalTokens != null && (
           <div className="flex items-center gap-1 text-foreground">
             <Coins className="w-3 h-3" />
-            <span className="typo-code"><Numeric value={summary.totalTokens} /> tokens</span>
+            <span className="typo-code"><Numeric value={summary.totalTokens} /> {t.agents.executions.tokens_unit}</span>
           </div>
         )}
       </div>

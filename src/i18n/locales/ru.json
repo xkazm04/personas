@@ -1505,7 +1505,14 @@
       "copy_log_failed": "Не удалось скопировать журнал",
       "lines_counter": "{visible}/{total} строк",
       "timeline_scrubber_label": "Хронология выполнения",
-      "timeline_scrubber_value": "{current} из {total}"
+      "timeline_scrubber_value": "{current} из {total}",
+      "file_changes_count": "{count} файл",
+      "file_changes_count_other": "{count} файлов",
+      "files_modified_count": "{count} изменено",
+      "files_read_count": "{count} прочитано",
+      "tokens_unit": "токенов",
+      "trace_evicted_notice": "Трассировка неполная: удалён {count} спан (лимит: 10 000)",
+      "trace_evicted_notice_other": "Трассировка неполная: удалено спанов: {count} (лимит: 10 000)"
     },
     "lab": {
       "mode_arena": "Арена",

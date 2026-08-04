@@ -528,7 +528,14 @@
     "copy_log_failed": "Không thể sao chép nhật ký vào bộ nhớ tạm",
     "lines_counter": "{visible}/{total} dòng",
     "timeline_scrubber_label": "Dòng thời gian thực thi",
-    "timeline_scrubber_value": "{current} trên {total}"
+    "timeline_scrubber_value": "{current} trên {total}",
+    "file_changes_count": "{count} tệp",
+    "file_changes_count_other": "{count} tệp",
+    "files_modified_count": "{count} đã sửa",
+    "files_read_count": "{count} đã đọc",
+    "tokens_unit": "token",
+    "trace_evicted_notice": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)",
+    "trace_evicted_notice_other": "Dấu vết không đầy đủ: đã loại bỏ {count} span (giới hạn: 10.000)"
   },
   "lab": {
     "mode_arena": "Đấu trường",

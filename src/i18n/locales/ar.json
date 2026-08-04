@@ -1505,7 +1505,14 @@
       "copy_log_failed": "تعذر نسخ السجل إلى الحافظة",
       "lines_counter": "{visible}/{total} سطر",
       "timeline_scrubber_label": "الجدول الزمني للتنفيذ",
-      "timeline_scrubber_value": "{current} من {total}"
+      "timeline_scrubber_value": "{current} من {total}",
+      "file_changes_count": "{count} ملف",
+      "file_changes_count_other": "{count} ملفات",
+      "files_modified_count": "{count} معدّل",
+      "files_read_count": "{count} مقروء",
+      "tokens_unit": "رموز",
+      "trace_evicted_notice": "التتبع غير مكتمل: تم استبعاد {count} مقطع (الحد: 10,000)",
+      "trace_evicted_notice_other": "التتبع غير مكتمل: تم استبعاد {count} مقاطع (الحد: 10,000)"
     },
     "lab": {
       "mode_arena": "الساحة",

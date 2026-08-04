@@ -4,11 +4,10 @@ import { formatDuration } from '@/lib/utils/formatters';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Clock, DollarSign, Zap, AlertCircle, Activity, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 
 
 export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const stats = useMemo(() => {
     const rootSpan = trace.spans.find(s => s.span_type === 'execution');
@@ -79,7 +78,9 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
         <div className="col-span-2 md:col-span-5 rounded-card border border-yellow-500/40 bg-yellow-500/10 p-3 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
           <span className="typo-body text-yellow-200/90">
-            <DebtText k="auto_trace_incomplete_715361d5" /> <Numeric value={evicted} /> span{evicted !== 1 ? 's' : ''} <DebtText k="auto_evicted_limit_10_000_cb8cd8c5" />
+            {tx(evicted === 1 ? e.trace_evicted_notice : e.trace_evicted_notice_other, {
+              count: evicted.toLocaleString(),
+            })}
           </span>
         </div>
       )}

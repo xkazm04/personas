@@ -528,7 +528,14 @@
     "copy_log_failed": "Gagal menyalin log ke papan klip",
     "lines_counter": "{visible}/{total} baris",
     "timeline_scrubber_label": "Linimasa eksekusi",
-    "timeline_scrubber_value": "{current} dari {total}"
+    "timeline_scrubber_value": "{current} dari {total}",
+    "file_changes_count": "{count} berkas",
+    "file_changes_count_other": "{count} berkas",
+    "files_modified_count": "{count} diubah",
+    "files_read_count": "{count} dibaca",
+    "tokens_unit": "token",
+    "trace_evicted_notice": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)",
+    "trace_evicted_notice_other": "Jejak tidak lengkap: {count} span dibuang (batas: 10.000)"
   },
   "lab": {
     "mode_arena": "Arena",

@@ -1593,6 +1593,13 @@ export type Translations = {
       lines_counter: string;
       timeline_scrubber_label: string;
       timeline_scrubber_value: string;
+      file_changes_count: string;
+      file_changes_count_other: string;
+      files_modified_count: string;
+      files_read_count: string;
+      tokens_unit: string;
+      trace_evicted_notice: string;
+      trace_evicted_notice_other: string;
     };
     lab: {
       vr_title: string;

@@ -528,7 +528,14 @@
     "copy_log_failed": "无法将日志复制到剪贴板",
     "lines_counter": "{visible}/{total} 行",
     "timeline_scrubber_label": "执行时间线",
-    "timeline_scrubber_value": "{current} / {total}"
+    "timeline_scrubber_value": "{current} / {total}",
+    "file_changes_count": "{count} 个文件",
+    "file_changes_count_other": "{count} 个文件",
+    "files_modified_count": "已修改 {count} 个",
+    "files_read_count": "已读取 {count} 个",
+    "tokens_unit": "令牌",
+    "trace_evicted_notice": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）",
+    "trace_evicted_notice_other": "追踪不完整：已丢弃 {count} 个跨度（上限：10,000）"
   },
   "lab": {
     "mode_arena": "竞技场",

@@ -1586,7 +1586,14 @@
       "chain_ended_because": "Why the chain ended",
       "lines_counter": "{visible}/{total} lines",
       "timeline_scrubber_label": "Execution timeline",
-      "timeline_scrubber_value": "{current} of {total}"
+      "timeline_scrubber_value": "{current} of {total}",
+      "file_changes_count": "{count} file",
+      "file_changes_count_other": "{count} files",
+      "files_modified_count": "{count} modified",
+      "files_read_count": "{count} read",
+      "tokens_unit": "tokens",
+      "trace_evicted_notice": "Trace incomplete: {count} span evicted (limit: 10,000)",
+      "trace_evicted_notice_other": "Trace incomplete: {count} spans evicted (limit: 10,000)"
     },
     "lab": {
       "vr_title": "Versions & Ratings",

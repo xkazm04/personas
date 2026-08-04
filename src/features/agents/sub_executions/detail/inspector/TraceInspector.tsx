@@ -34,7 +34,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8 text-foreground">
-        <LoadingSpinner size="lg" label="Loading trace" />
+        <LoadingSpinner size="lg" label={e.loading_trace} />
       </div>
     );
   }
