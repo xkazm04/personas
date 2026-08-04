@@ -163,7 +163,13 @@ Tailwind only extracts classes it can read as source text.
    `.personas/backlog-digest.json` (pending/accepted/rejected idea titles, so a scan never
    re-proposes a known idea or rephrases a rejected one) and then spawns one Fleet session
    per selected context running `/scan-sweep --lenses <keys> <context>` — the sweep reads
-   the context's code once and judges it through every bundled lens. Coverage populates via
+   the context's code once and judges it through every bundled lens. **Sweeps resolve by
+   default**: each session implements its accepted S/M findings end to end (one atomic,
+   explicit-pathspec commit per finding, verified against the repo's gates; fixed items
+   arrive as progress nodes, not backlog findings), so several sessions can safely run per
+   project, one context each. `--ideas-only` restores propose-only behavior; L moonshot
+   items are never auto-built — they are operator-triaged or flagged `size:L` for backlog
+   gating. Coverage populates via
    the memory-outbox ingest when each session exits (one `skill:scan-<lens>` node per
    evaluated lens, so per-lens coverage math needs no backend change).
 

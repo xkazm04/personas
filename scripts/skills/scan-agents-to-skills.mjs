@@ -188,18 +188,29 @@ ${sections}
 function sweepMarkdown() {
   return `---
 name: scan-sweep
-description: "Context sweep: reads one feature-area's code once and evaluates it through every scan lens matched to it (of the 22 in references/lenses.md), reporting only grounded findings. The efficient default over running single-lens scan-* skills one by one. Emits structured findings to the Personas memory outbox for backlog ingestion, plus an escalation signal when a lens deserves a focused deep pass."
-argument-hint: "[--lenses key1,key2] [context]"
+description: "End-to-end context sweep: reads one feature-area's code once, evaluates it through every scan lens (references/lenses.md), and by default FIXES the accepted S/M findings in-session with atomic commits — one session owns one context end to end. Pass --ideas-only to emit findings to the Personas memory outbox for backlog triage instead of fixing. L moonshot items are always triaged, never auto-built."
+argument-hint: "[--ideas-only] [--lenses key1,key2] [context]"
 category: Development
 contexts: tracked
 memory: project
 ---
 # Context Sweep 🧭
 
-You are running a **multi-lens sweep** over ONE context (feature area). The
-expensive part of any scan is reading the code; do it once, then judge what you
-read through each relevant lens. Depth beats breadth: a lens with nothing real
-to say returns nothing.
+You are running a **multi-lens sweep** over ONE context (feature area), end to
+end. The expensive part of any scan is reading the code; do it once, then judge
+what you read through each relevant lens. Depth beats breadth: a lens with
+nothing real to say returns nothing.
+
+**Two modes:**
+
+- **Resolve (DEFAULT)** — scan, then IMPLEMENT the accepted S/M findings right
+  in this session, one atomic commit each, and report what shipped. Only what
+  you could not or should not fix leaves the session as a backlog finding.
+- **Ideas-only (\`--ideas-only\`)** — scan and emit every finding to the memory
+  outbox for app-side triage; change no code.
+
+Several sweep sessions may run in this repo at once, each owning a different
+context — the parallel rules in step 6 are what make that safe.
 
 ## 1. Resolve scope
 
@@ -256,7 +267,7 @@ to say returns nothing.
    present in the backlog digest. When the remaining budget is smaller than
    what you found, keep the highest-impact items and say what was cut.
 
-## 5. Size classes — large items are triaged, not dumped
+## 5. Size classes — the routing decision
 
 Classify every candidate finding:
 
@@ -266,14 +277,50 @@ Classify every candidate finding:
   (the kind an architect pass would propose: new layers, protocol redesigns,
   cross-cutting migrations).
 
-S and M items flow straight to the outbox. **L items are a decision, not a
-drive-by**: if an operator is present (interactive terminal run), present the
-L candidates with a one-line pitch each and ask which to emit before writing
-them. Unattended (Fleet/app dispatch), emit them with \`"size":"L"\` and
-effort ≥ 8 so the app's backlog triage gates them — never silently promote an
-L item into work.
+Routing:
 
-## 6. Report
+- **Resolve mode:** S and M items are yours to BUILD (step 6). **L items are a
+  decision, not a drive-by** — with an operator present (interactive run),
+  pitch each L candidate in one line and ask which to emit as backlog
+  findings; unattended (Fleet/app dispatch), emit them with \`"size":"L"\` and
+  effort ≥ 8 so the app's backlog triage gates them. Never build an L item in
+  a sweep session.
+- **Ideas-only mode:** everything routes to the outbox; same L triage rule.
+
+## 6. Resolve mode — implement the S/M findings now
+
+Work the accepted list highest-impact first, one finding at a time:
+
+1. **One atomic commit per finding.** Fix, verify, commit, then start the
+   next. Never stack two findings' edits in one working state.
+2. **Verify before committing** with the repo's own gates for the surface you
+   touched (\`.claude/conventions.json\` names them; else the obvious ones —
+   type-check, lint, the module's tests). A fix that fails its gate is either
+   repaired inline or fully reverted — never committed red, never left
+   half-applied.
+3. Commit message: \`fix(<context>): <finding title>\` plus a body line naming
+   the lens — the finding's provenance survives in history.
+4. **A fix that grows beyond its size class mid-flight gets demoted, not
+   forced.** If an S fix starts touching a third file or a shared surface you
+   did not anticipate, stop, revert the attempt, and emit it as a finding
+   with the honest larger size.
+
+**Parallel-session rules (several sweeps share this repo, one context each):**
+
+- Edit ONLY inside your context's \`filePaths\`, plus their tests and any
+  generated artifacts the repo's conventions REQUIRE you to regenerate for
+  those edits. A needed change outside that boundary is not yours to make —
+  emit it as a finding naming the foreign file instead.
+- Stage with explicit pathspecs only (\`git add <file> <file>\`) and commit with
+  explicit paths — never \`git add -A\`/\`.\`/\`-u\`, never \`git stash\`, never
+  reset another session's work. Before each commit, confirm the staged list
+  is exactly your files.
+- Shared/generated surfaces other sessions also write (locale bundles,
+  generated types, checksum manifests): make the edit and its regen, commit
+  IMMEDIATELY, and keep that commit minimal — shared files must never sit
+  uncommitted while you work on the next finding.
+
+## 7. Report
 
 Header first:
 
@@ -281,20 +328,29 @@ Header first:
   \`⚠️ DEGRADED: <what was skipped and why>\` if you sampled, skipped a lens, or
   hit a limit. A degraded sweep reported as complete is worse than no sweep.
 
-Then per lens with findings, a short section per finding:
+Resolve mode leads with what SHIPPED — one line per fixed finding
+(\`✔ <title> — <commit sha>\`), then the unfixed findings; ideas-only mode
+lists findings only. Per finding, a short section:
 - **Title** — concise and actionable.
 - **Finding** — what and why it matters, with \`file:line\` evidence.
-- **Recommendation** — the concrete change.
-- **Scores** — effort / impact / risk, each 1–10.
+- **Recommendation** — the concrete change (or the commit that made it).
+- **Scores** — size S/M/L + effort / impact / risk, each 1–10.
 
-End with a one-line summary (N findings across M lenses, highest impact first).
+End with a one-line summary (X fixed, Y proposed across M lenses).
 
-## 7. Emit structured findings (memory outbox)
+## 8. Emit to the memory outbox
 
 Append to \`.personas/memory-outbox.jsonl\` (create \`.personas/\` if needed),
-ONE JSON object per line, nothing else on the line:
+ONE JSON object per line, nothing else on the line.
 
-Each reported finding:
+**A FIXED finding is a progress node, not a finding** — it must not land in
+the backlog as open work:
+
+\`\`\`json
+{"type":"node","kind":"progress","skill":"scan-<lens-key>","context":"<context name>","title":"Fixed: <finding title>","body":"<commit sha>; <one-line gist>"}
+\`\`\`
+
+Each UNFIXED finding (everything, in ideas-only mode):
 
 \`\`\`json
 {"type":"finding","skill":"scan-sweep","lens":"<lens-key>","context":"<context name>","title":"<finding title>","body":"<what + why + recommendation, condensed>","evidence":"<file:line — one-line proof>","size":"S|M|L","effort":3,"impact":7,"risk":2}
@@ -312,7 +368,7 @@ not), plus one for the sweep itself:
 
 \`\`\`json
 {"type":"node","kind":"progress","skill":"scan-<lens-key>","context":"<context name>","title":"Sweep pass: <lens-key> over <context>","body":"<n> findings; <one-line gist or 'clean'>"}
-{"type":"node","kind":"progress","skill":"scan-sweep","context":"<context name>","title":"Sweep of <context>","body":"<lenses evaluated>; <total> findings, <e> escalations"}
+{"type":"node","kind":"progress","skill":"scan-sweep","context":"<context name>","title":"Sweep of <context>","body":"<lenses evaluated>; <fixed> fixed, <open> proposed, <e> escalations"}
 \`\`\`
 
 Keep the outbox lean — the ingest caps at 200 lines / 512 KB and accepts at
@@ -322,15 +378,16 @@ IS the per-lens coverage record). The Personas app ingests and DELETES this
 file when a Fleet session exits or the Skills Manager opens; findings land in
 the project backlog deduped against everything already known.
 
-## 8. Persist a snapshot
+## 9. Persist a snapshot
 
 Append one line to \`.claude/scan-history/scan-sweep.jsonl\` (create the
 directory if needed). \`lens_keys\` = every lens actually evaluated this run —
 it is the per-context lens-coverage ledger the no-arg picker and the
-package-ordering rule read:
+package-ordering rule read. \`findings\` counts BOTH fixed and proposed (both
+spend the 30-item budget):
 
 \`\`\`json
-{"at":"<ISO-8601>","scope":"<context>","lens_keys":["<key>","<key>"],"lenses":<n>,"findings":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
+{"at":"<ISO-8601>","scope":"<context>","mode":"resolve|ideas","lens_keys":["<key>","<key>"],"lenses":<n>,"findings":<n>,"fixed":<n>,"escalations":<n>,"degraded":<true|false>,"note":"<≤80 chars>"}
 \`\`\`
 
 If prior lines exist for the SAME scope, add a trend line to the report
