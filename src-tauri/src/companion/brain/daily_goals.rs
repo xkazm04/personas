@@ -141,6 +141,9 @@ pub fn create_set(pool: &UserDbPool, titles: &[String]) -> Result<DailyGoalsSnap
         )?;
     }
     tx.commit()?;
+    // Release before get_state re-checks out — a held connection would
+    // exhaust a size-1 pool (tests) and wastes a slot in production.
+    drop(conn);
     get_state(pool)
 }
 
@@ -181,6 +184,7 @@ pub fn toggle_goal(
         )?;
     }
     tx.commit()?;
+    drop(conn);
     Ok((get_state(pool)?, just_completed))
 }
 
@@ -191,6 +195,7 @@ pub fn discard_set(pool: &UserDbPool) -> Result<DailyGoalsSnapshot, AppError> {
         "UPDATE companion_daily_goal SET status = 'discarded' WHERE status = 'active'",
         [],
     )?;
+    drop(conn);
     get_state(pool)
 }
 
