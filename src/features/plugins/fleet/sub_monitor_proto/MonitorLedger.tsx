@@ -3,12 +3,17 @@ import { motion } from 'framer-motion';
 import { MoonStar } from 'lucide-react';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import {
-  STATE_ICON, stateMeta, costRatio, costToneBg, costToneText,
+  STATE_ICON, stateMeta, costRatio, costToneBg, costToneText, ScreenHealthGlyph,
   attentionLane, LANE_ORDER, LANE_LABEL, LANE_TONE, type AttentionLane,
 } from './monitorProtoMeta';
 import type { ProtoTerminal } from './monitorTypes';
 
-const COLS = ['', 'Session', 'Project', 'Procs', 'Agents', 'Ctx', 'Effort', 'Mem', 'Age'];
+// Column 1 is the screen-movement glyph: no header, it reads as part of the
+// state chrome rather than as another metric.
+const COLS = ['', '', 'Session', 'Project', 'Procs', 'Agents', 'Ctx', 'Effort', 'Mem', 'Age'];
+
+/** First right-aligned column (`Procs` onward — everything before it is text). */
+const FIRST_NUMERIC_COL = 4;
 
 /** Shown on every stat cell of a row whose numbers are placeholders. */
 const SIM_HINT = 'Placeholder stats: this session has no bound transcript yet.';
@@ -49,7 +54,7 @@ export function MonitorLedger({
               <th
                 key={i}
                 className={`typo-label uppercase tracking-wide text-foreground opacity-50 font-normal px-2 py-1.5 border-b border-primary/15 ${
-                  i >= 3 ? 'text-right' : 'text-left'
+                  i >= FIRST_NUMERIC_COL ? 'text-right' : 'text-left'
                 }`}
               >
                 {h}
@@ -89,6 +94,9 @@ export function MonitorLedger({
                         <Icon className={`w-3.5 h-3.5 ${meta.text}`} aria-hidden="true" />
                         {t.dozing && <MoonStar className="w-3 h-3 text-indigo-300" aria-hidden="true" />}
                       </span>
+                    </td>
+                    <td className="px-2 py-1 border-b border-primary/5 w-6">
+                      <ScreenHealthGlyph health={t.screenHealth} />
                     </td>
                     <td className="px-2 py-1 border-b border-primary/5 max-w-0 w-[38%]">
                       <span className="block typo-caption text-foreground truncate">

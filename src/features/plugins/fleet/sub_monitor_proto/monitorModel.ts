@@ -40,7 +40,7 @@ function baseTerminal(s: FleetSession, nowMs: number) {
 }
 
 /** Placeholder stats for a session with no bound transcript. */
-function simulatedTerminal(s: FleetSession, nowMs: number): ProtoTerminal {
+function simulatedTerminal(s: FleetSession, nowMs: number): Omit<ProtoTerminal, 'screenHealth'> {
   const h = fnv(s.id);
   const base = baseTerminal(s, nowMs);
   const working = s.state === 'running' || s.state === 'spawning';
@@ -64,10 +64,16 @@ export function sessionToMonitorTerminal(
   nowMs: number,
   stats?: FleetMonitorStats,
 ): ProtoTerminal {
-  if (!stats || !stats.claudeSessionId) return simulatedTerminal(s, nowMs);
+  // Screen movement is measured off the PTY, not the transcript, so it is
+  // real even on a row whose numbers are placeholders.
+  const screenHealth = stats?.screenHealth ?? null;
+  if (!stats || !stats.claudeSessionId) {
+    return { ...simulatedTerminal(s, nowMs), screenHealth };
+  }
   return {
     ...baseTerminal(s, nowMs),
     simulated: false,
+    screenHealth,
     subprocs: stats.bgProcsLaunched,
     subagentsActive: stats.subagentsActive,
     subagentsTotal: stats.subagentsTotal,

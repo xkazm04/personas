@@ -1,4 +1,5 @@
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
 
 /**
  * The monitor layer's per-terminal model.
@@ -14,6 +15,8 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
  *                                     PreToolUse/PostToolUse pairing on `Task`
  * - `subprocs`                      → `fleet_monitor_stats`, from the rollup's
  *                                     count of backgrounded `Bash` runs
+ * - `screenHealth`                  → `fleet_monitor_stats`, the last screen
+ *                                     delta a render already measured
  *
  * Sessions with NO bound transcript keep the fnv placeholder for every stat
  * and set `simulated`.
@@ -43,4 +46,7 @@ export interface ProtoTerminal {
   memMb: number;
   /** Minutes since last activity signal. */
   ageMin: number;
+  /** Verdict on the session's last screen delta, or `null` when no render has
+   *  ever been taken for it. Real even on an otherwise `simulated` row. */
+  screenHealth: ScreenHealth | null;
 }

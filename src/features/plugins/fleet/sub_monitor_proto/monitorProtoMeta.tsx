@@ -1,8 +1,9 @@
 import {
   Ban, CircleCheck, CircleHelp, Clock, Loader2, MoonStar, Sparkles, SquareCheckBig,
-  Cpu, Bot, Gauge, type LucideIcon,
+  Cpu, Bot, Gauge, Activity, Waves, CircleOff, type LucideIcon,
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import type { ScreenHealth } from '@/lib/bindings/ScreenHealth';
 import { FLEET_STATE_META, type FleetStateMeta } from '../fleetStateMeta';
 import type { ProtoTerminal } from './monitorTypes';
 
@@ -21,6 +22,50 @@ export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
 const META_BY_ID = new Map(FLEET_STATE_META.map((m) => [m.id, m]));
 export function stateMeta(state: FleetSessionState): FleetStateMeta {
   return META_BY_ID.get(state) ?? FLEET_STATE_META[FLEET_STATE_META.length - 1]!;
+}
+
+/**
+ * Screen-movement verdict, as icon + tone + the sentence it means.
+ *
+ * A session whose spinner still turns while nothing progresses looks perfectly
+ * healthy by every other signal in the ledger — bytes keep arriving, so
+ * liveness keeps advancing. This column is the one place that difference shows.
+ * It is a READ of the last delta a render already took: no verdict simply means
+ * nobody has rendered that session yet.
+ */
+const SCREEN_HEALTH_META: Record<ScreenHealth, { Icon: LucideIcon; tone: string; hint: string }> = {
+  working: {
+    Icon: Activity,
+    tone: 'text-status-success',
+    hint: 'Screen is producing output.',
+  },
+  cosmetic: {
+    Icon: Waves,
+    tone: 'text-status-warning',
+    hint: 'Only chrome is moving (spinner, timer). Alive, but not producing.',
+  },
+  silent: {
+    Icon: CircleOff,
+    tone: 'text-status-error',
+    hint: 'Screen has not changed at all since the last render.',
+  },
+};
+
+/** The ledger's screen-health glyph. Renders a muted dash when unmeasured. */
+export function ScreenHealthGlyph({ health }: { health: ScreenHealth | null }) {
+  if (!health) {
+    return (
+      <span className="typo-caption text-foreground opacity-30" title="No screen render taken yet.">
+        -
+      </span>
+    );
+  }
+  const { Icon, tone, hint } = SCREEN_HEALTH_META[health];
+  return (
+    <span className="inline-flex" title={hint} aria-label={hint} role="img">
+      <Icon className={`w-3.5 h-3.5 ${tone}`} aria-hidden="true" />
+    </span>
+  );
 }
 
 /** 0..1 "resource cost" blend of effort tokens and live memory. */

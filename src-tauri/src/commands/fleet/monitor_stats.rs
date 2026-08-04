@@ -10,6 +10,8 @@
 //!   full re-read)
 //! - resident memory → the same `sysinfo` source the orphan scanner uses,
 //!   narrowed to the fleet's own PIDs ([`super::process_scan::memory_bytes_for`])
+//! - screen movement → the last delta a render already measured
+//!   ([`super::screen_activity`]); read-only, never renders anything itself
 //!
 //! Deliberately ONE command for ALL sessions: a per-session command would turn
 //! a 30-session fleet into 30 IPC round-trips per poll.
@@ -25,6 +27,7 @@ use ts_rs::TS;
 
 use super::process_scan::memory_bytes_for;
 use super::registry::registry;
+use super::screen_activity::ScreenActivity;
 use super::transcript_read::{summary_for_session, FleetTranscriptSummary};
 use super::types::FleetSessionState;
 
@@ -80,6 +83,34 @@ fn subagents_active(session_id: &str) -> i32 {
     map.get(session_id).copied().unwrap_or(0)
 }
 
+/// How much of a session's screen moved between the last two renders it
+/// happened to get — the "is it stuck?" signal.
+///
+/// Read-only by construction: it reports whatever the last render already
+/// measured and NEVER schedules one, so a session nobody has rendered simply
+/// has no verdict (`null` on the wire) rather than costing work to produce one.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum ScreenHealth {
+    /// Enough of the grid changed to be real output.
+    Working,
+    /// Only chrome moved — a spinner frame, an elapsed counter.
+    Cosmetic,
+    /// Nothing moved at all.
+    Silent,
+}
+
+impl From<ScreenActivity> for ScreenHealth {
+    fn from(a: ScreenActivity) -> Self {
+        match a {
+            ScreenActivity::Working => ScreenHealth::Working,
+            ScreenActivity::Cosmetic => ScreenHealth::Cosmetic,
+            ScreenActivity::Silent => ScreenHealth::Silent,
+        }
+    }
+}
+
 /// One session's live monitor stats. Fields the session has no source for
 /// (never bound a `claudeSessionId`, no process) read as 0 / `null` — the
 /// frontend decides what to show instead.
@@ -107,6 +138,10 @@ pub struct FleetMonitorStats {
     /// Resident memory of the session's process in MB, or `None` when the
     /// session has no live process (dozing / hibernated / exited).
     pub mem_mb: Option<i64>,
+    /// Verdict on the session's most recent screen delta, or `None` when no
+    /// render has ever been taken for it. Never an input to any state
+    /// decision — a display signal only.
+    pub screen_health: Option<ScreenHealth>,
 }
 
 /// How many times `tool` appears in a rollup's tool counts.
@@ -119,24 +154,53 @@ fn tool_count(summary: &FleetTranscriptSummary, tool: &str) -> i32 {
         .unwrap_or(0)
 }
 
+/// What one session contributes to the stats pass before the blocking work —
+/// everything that has to be read under the registry lock.
+struct SessionSeed {
+    session_id: String,
+    claude_session_id: Option<String>,
+    child_pid: Option<u32>,
+    state: FleetSessionState,
+    screen_health: Option<ScreenHealth>,
+}
+
 /// Live stats for every tracked session, in one call.
 #[tauri::command]
 pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, String> {
     // Snapshot first: `list_dto` takes and releases the registry lock, so none
     // of the blocking work below happens while the registry is held.
-    let sessions: Vec<(String, Option<String>, Option<u32>, FleetSessionState)> = registry()
+    let sessions: Vec<SessionSeed> = registry()
         .list_dto()
         .into_iter()
-        .map(|s| (s.id, s.claude_session_id, s.child_pid, s.state))
+        .map(|s| {
+            // Free read of the last render's measurement; never triggers one.
+            let screen_health = registry()
+                .screen_delta_for(&s.id)
+                .map(|d| ScreenHealth::from(d.activity()));
+            SessionSeed {
+                session_id: s.id,
+                claude_session_id: s.claude_session_id,
+                child_pid: s.child_pid,
+                state: s.state,
+                screen_health,
+            }
+        })
         .collect();
 
     tokio::task::spawn_blocking(move || {
-        let pids: Vec<u32> = sessions.iter().filter_map(|(_, _, pid, _)| *pid).collect();
+        let pids: Vec<u32> = sessions.iter().filter_map(|s| s.child_pid).collect();
         let mem = memory_bytes_for(&pids);
 
         let out = sessions
             .into_iter()
-            .map(|(session_id, claude_session_id, child_pid, state)| {
+            .map(|seed| {
+                let SessionSeed {
+                    session_id,
+                    claude_session_id,
+                    child_pid,
+                    state,
+                    screen_health,
+                } = seed;
                 let rollup = claude_session_id.as_deref().and_then(summary_for_session);
                 // No process → nothing can still be open. Drop the counter so a
                 // session that dozed or died mid-Task doesn't keep a phantom.
@@ -166,6 +230,7 @@ pub async fn fleet_monitor_stats() -> Result<Vec<FleetMonitorStats>, String> {
                     mem_mb: child_pid
                         .and_then(|p| mem.get(&p))
                         .map(|bytes| (bytes / BYTES_PER_MB) as i64),
+                    screen_health,
                 }
             })
             .collect();
@@ -206,6 +271,21 @@ mod tests {
     }
 
     // The counter map is process-global, so each test uses its own session id.
+
+    #[test]
+    fn screen_activity_maps_onto_the_wire_verdict() {
+        // The UI column is a straight relabel of the existing classifier — no
+        // second opinion about what counts as stuck.
+        let cases = [
+            (ScreenActivity::Working, "\"working\""),
+            (ScreenActivity::Cosmetic, "\"cosmetic\""),
+            (ScreenActivity::Silent, "\"silent\""),
+        ];
+        for (activity, wire) in cases {
+            let health = ScreenHealth::from(activity);
+            assert_eq!(serde_json::to_string(&health).unwrap(), wire);
+        }
+    }
 
     #[test]
     fn pairs_subagent_open_and_close() {
