@@ -25,6 +25,7 @@
 //!   POST /kpi-update                        → fix a KPI's definition (description, measure_config, …)
 //!   POST /kpi-rebind                        → re-point a KPI at a context { kpi_id, context_id }
 //!   POST /export-context-map                → re-write context-map.json + CLAUDE.md from the DB (after repairs)
+//!   POST /consolidate-contexts              → merge micro-contexts into the 10-30 band, re-pointing every anchored artifact { project_id, dry_run }
 //!
 //! The last four exist for the `project-populate` skill, which conducts the
 //! app's own scan lanes from a terminal: it gates each lane on freshness, then
@@ -85,6 +86,7 @@ pub fn router(app: AppHandle) -> Router {
         .route("/prune-nonsource-contexts", post(prune_nonsource_contexts))
         .route("/merge-context-groups", post(merge_context_groups))
         .route("/export-context-map", post(export_context_map))
+        .route("/consolidate-contexts", post(consolidate_contexts_route))
         .route("/use-cases/{project_id}", get(list_use_cases))
         .route("/use-case-decision", post(use_case_decision))
         .route("/kpi-sim/prepare", post(kpi_sim_prepare))
@@ -349,6 +351,43 @@ async fn export_context_map(
     Ok(Json(
         serde_json::json!({ "project_id": b.project_id, "root_path": root, "contexts": contexts }),
     ))
+}
+
+#[derive(Deserialize)]
+struct ConsolidateContextsBody {
+    project_id: String,
+    /// Compute + return the merge plan without touching the database.
+    #[serde(default)]
+    dry_run: bool,
+}
+
+/// Merge micro-contexts into the 10-30-file band without a rescan, keeping
+/// every anchored artifact (KPIs, use-case slices, ideas, goals, memory
+/// nodes) attached via re-pointing. See context_consolidate.rs. Repair, then
+/// export: a non-dry run rewrites context-map.json + the backlog digest.
+async fn consolidate_contexts_route(
+    State(s): State<DevToolsHttp>,
+    Json(b): Json<ConsolidateContextsBody>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let project = require_project(&s, &b.project_id)?;
+    let pool = db(&s);
+    let mut out = crate::commands::infrastructure::context_consolidate::consolidate_contexts(
+        &pool,
+        &b.project_id,
+        b.dry_run,
+    )
+    .map_err(err)?;
+    if !b.dry_run {
+        let exported =
+            write_context_map_artifacts(&pool, &b.project_id, &project.root_path).map_err(err)?;
+        let _ = crate::commands::infrastructure::context_map_export::write_backlog_digest(
+            &pool,
+            &b.project_id,
+            &project.root_path,
+        );
+        out["exportedContexts"] = serde_json::json!(exported);
+    }
+    Ok(Json(out))
 }
 
 #[derive(Deserialize)]

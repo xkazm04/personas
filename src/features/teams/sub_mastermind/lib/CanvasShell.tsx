@@ -55,6 +55,8 @@ export interface IslandCtx {
   /** Island tapped (header click in edit, any click in connect) — the shell
    *  routes it: connect endpoint vs project sidebar. */
   onIslandTap: (slug: string) => void;
+  /** Banner Ship chip clicked — deep-link into the project's Factory Ship tab. */
+  onShipOpen: (slug: string) => void;
   /** Connect mode: pointer went down on an island — starts the rubber-band
    *  drag (release over another island creates the link; a plain click falls
    *  back to the tap flow). */
@@ -75,7 +77,7 @@ export interface IslandCtx {
   onCategoryOpen: (slug: string, category: CategoryNode, e: React.MouseEvent) => void;
 }
 
-export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
+export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjectOpen, onShipOpen, onFactoryOpen, onSkillsOpen, onDimOpen, onPersonasOpen, onCategoryOpen, onOpenTerminal, onDispatchFleet, onDispatchGroupFleet, canOpenTerminal, renderIsland }: VariantProps & {
   renderIsland: (island: Island, ctx: IslandCtx) => ReactNode;
 }) {
   const { t, tx } = useTranslation();
@@ -328,6 +330,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
   // doesn't invalidate every island's props.
   const onIslandCommitStable = useEventCallback(onIslandCommit);
   const onFleetOpenStable = useEventCallback(onFleetOpen);
+  const onShipOpenStable = useEventCallback(onShipOpen);
   const onDimOpenStable = useEventCallback(onDimOpen);
   const onPersonasOpenStable = useEventCallback(onPersonasOpen);
   const onCategoryOpenStable = useEventCallback(onCategoryOpen);
@@ -574,6 +577,7 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
     onIslandCommit: onIslandCommitStable,
     onFleetOpen: onFleetOpenStable,
     onIslandTap,
+    onShipOpen: onShipOpenStable,
     onConnectStart,
     onIslandFocus,
     onIslandMenu,
@@ -743,8 +747,12 @@ export function CanvasShell({ scene, mode, onIslandCommit, onFleetOpen, onProjec
             x={menu.x}
             y={menu.y}
             terminalEnabled={canOpenTerminal(menu.slug)}
+            navEnabled={!scene.demo}
             onOpenTerminal={() => { onOpenTerminal(menu.slug); setMenu(null); setHighlight(null); }}
             onDispatchFleet={() => { onDispatchFleet(menu.slug); setMenu(null); setHighlight(null); }}
+            onOpenFactory={() => onFactoryOpen(menu.slug)}
+            onOpenShip={() => onShipOpen(menu.slug)}
+            onOpenSkills={() => onSkillsOpen(menu.slug)}
             onDimOpen={(node, e) => { onDimOpen(menu.slug, node, e); setHighlight(null); }}
             onHoverDim={(key) => setHighlight(key ? { slug: menu.slug, key } : null)}
             onClose={() => { setMenu(null); setHighlight(null); }}

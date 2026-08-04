@@ -447,5 +447,7 @@
   "triage_summary_title": "Cette session",
   "triage_summary_undone": "Annulées",
   "triage_undo": "Annuler {verdict}",
-  "triage_undo_hint": "Remet la carte dans la file d'attente. Ce que le verdict avait déjà déclenché n'est pas annulé."
+  "triage_undo_hint": "Remet la carte dans la file d'attente. Ce que le verdict avait déjà déclenché n'est pas annulé.",
+  "conv_bridge_title": "Canal Slack lié. Les messages envoyés là-bas arrivent dans cette conversation.",
+  "stream_kind_slack": "Slack"
 }

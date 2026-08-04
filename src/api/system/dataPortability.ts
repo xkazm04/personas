@@ -16,11 +16,15 @@ export const getExportStats = () =>
 export const exportFull = (includeMemories: boolean, passphrase?: string) =>
   invoke<boolean>("export_full", { includeMemories, passphrase: passphrase ?? null });
 
-export const exportSelective = (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) =>
-  invoke<boolean>("export_selective", { personaIds, teamIds, credentialIds, includeMemories, includeKpis, passphrase: passphrase ?? null });
+export const exportSelective = (personaIds: string[], teamIds: string[], credentialIds: string[], projectIds: string[], workspaceIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) =>
+  invoke<boolean>("export_selective", { personaIds, teamIds, credentialIds, projectIds, workspaceIds, includeMemories, includeKpis, passphrase: passphrase ?? null });
 
-export const importPortabilityBundle = (passphrase?: string) =>
-  invoke<PortabilityImportResult | null>("import_portability_bundle", { passphrase: passphrase ?? null });
+export const importPortabilityBundle = (passphrase?: string, projectResolutionsJson?: string, filePathOverride?: string) =>
+  invoke<PortabilityImportResult | null>("import_portability_bundle", {
+    passphrase: passphrase ?? null,
+    projectResolutionsJson: projectResolutionsJson ?? null,
+    filePathOverride: filePathOverride ?? null,
+  });
 
 export const previewCompetitiveImport = () =>
   invoke<CompetitiveImportPreview[] | null>("preview_competitive_import");

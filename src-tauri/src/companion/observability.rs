@@ -203,12 +203,15 @@ pub fn format_for_prompt(d: &ObservabilityDigest) -> String {
         "- **Agents**: {} total, {} enabled\n",
         d.personas_total, d.personas_enabled
     ));
-    if !d.top_personas.is_empty() {
-        out.push_str(&format!(
-            "  - Recently active: {}\n",
-            d.top_personas.join(", ")
-        ));
-    }
+    // NOTE: the names-only "Recently active: a, b, c" line that used to sit
+    // here is gone. `prompt::format_persona_index` is now the single
+    // authoritative persona listing in the system prompt — it carries the
+    // UUID every persona-targeting op needs, plus tier and a capability
+    // line. A second, id-less list disagreeing with it about which agents
+    // matter is exactly how Athena ended up naming agents she could not act
+    // on. `top_personas` is still collected on the digest struct (cheap, and
+    // it keeps the digest a faithful snapshot for any non-prompt consumer);
+    // it is simply not rendered into the prompt any more.
 
     out.push_str(&format!(
         "- **Executions**: {} running, {} queued; in last 24h — {} completed, {} failed\n",

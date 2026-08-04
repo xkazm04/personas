@@ -447,5 +447,7 @@
   "triage_summary_title": "هذه الجلسة",
   "triage_summary_undone": "مسترجع",
   "triage_undo": "تراجع عن {verdict}",
-  "triage_undo_hint": "يعيد البطاقة إلى قائمة الانتظار. أي إجراء بدأه القرار بالفعل لن يُلغى."
+  "triage_undo_hint": "يعيد البطاقة إلى قائمة الانتظار. أي إجراء بدأه القرار بالفعل لن يُلغى.",
+  "conv_bridge_title": "قناة Slack مرتبطة. الرسائل المرسلة هناك تصل إلى هذه المحادثة.",
+  "stream_kind_slack": "Slack"
 }

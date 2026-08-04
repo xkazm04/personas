@@ -3,7 +3,7 @@
 // dimension sections in Focus ink) — it fits the width well; scenario-specific
 // content layers come in a later round.
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Factory, Flag, Wrench, X } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -15,11 +15,15 @@ import type { AppPassport } from '@/features/teams/sub_factory/passport/passport
 
 import { MemorySection } from './MemorySection';
 
-export function ProjectSidebar({ passport, name, onClose }: {
+export function ProjectSidebar({ passport, name, onClose, onOpenFactory, onOpenShip, onOpenSkills }: {
   passport: AppPassport | null;
   /** Island name — fallback header for demo islands without a passport. */
   name: string;
   onClose: () => void;
+  /** Deep links into the deeper layers for this project (real projects only). */
+  onOpenFactory: () => void;
+  onOpenShip: () => void;
+  onOpenSkills: () => void;
 }) {
   const { t } = useTranslation();
   // Headline rows live on the cover already — mirror the wall's filtering.
@@ -46,6 +50,30 @@ export function ProjectSidebar({ passport, name, onClose }: {
           <X className="w-4 h-4" aria-hidden />
         </button>
       </div>
+
+      {/* doors into the deeper layers — the sidebar is a landing, not a silo */}
+      {passport && (
+        <div className="flex gap-1.5 px-4 py-2.5 border-b border-primary/10">
+          {([
+            { key: 'factory', Icon: Factory, label: t.mastermind.open_in_factory, onGo: onOpenFactory },
+            { key: 'ship', Icon: Flag, label: t.mastermind.open_ship_plan, onGo: onOpenShip },
+            { key: 'skills', Icon: Wrench, label: t.mastermind.open_skills, onGo: onOpenSkills },
+          ] as const).map(({ key, Icon, label, onGo }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={onGo}
+              title={label}
+              aria-label={label}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-interactive typo-caption border border-primary/15 text-foreground/70 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+              data-testid={`mm-sidebar-open-${key}`}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+              <span className="truncate">{t.mastermind[`door_${key}` as const]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="px-4 py-3">
         {passport ? (

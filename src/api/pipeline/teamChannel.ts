@@ -5,8 +5,13 @@ import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
 
 /** The lenses `list_team_channel` can be filtered to. Omitting `kinds` blends
  *  all of them except `deliberation` (deliberation turns are opt-in — they are
- *  not part of the plain conversation). */
-export type ChannelKind = 'step' | 'event' | 'memory' | 'message' | 'deliberation';
+ *  not part of the plain conversation).
+ *
+ *  `slack` is an EXTERNAL participant lens: messages that arrived over a team's
+ *  Slack bridge (`author_kind='slack'`). They are people talking, not machine
+ *  rows, so they blend into the conversation by default and only split out when
+ *  you ask for them. */
+export type ChannelKind = 'step' | 'event' | 'memory' | 'message' | 'deliberation' | 'slack';
 
 /** Exclusive COMPOSITE keyset cursor. `at` alone is only second-resolution, so
  *  a burst of rows sharing one second across a page boundary would be dropped;

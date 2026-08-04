@@ -2,7 +2,6 @@
 // Canonical error explanation module.
 //
 // Merges the previously-duplicated ERROR_PATTERNS from:
-//   - sub_executions/detail/executionDetailTypes.ts
 //   - sub_executions/executionDetailHelpers.ts
 //   - sub_executions/libs/useExecutionDetail.ts
 // and incorporates additional patterns from errorRegistry.ts (budget,

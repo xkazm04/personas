@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, LayoutGrid, BookOpen, Play } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, BookOpen, Play, Table2 } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -12,6 +12,14 @@ import { DESKTOP_FOOTER_HEIGHT_PX } from '@/features/shared/chrome/DesktopFooter
 import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { MonitorView } from './sub_monitor_proto/MonitorView';
+
+// Two grid views: the classic terminal tiles and the minimized monitor
+// ledger (fused /prototype winner). Module-scoped so the chosen view
+// survives close/reopen.
+type GridViewId = 'tiles' | 'monitor';
+let lastGridView: GridViewId = 'tiles';
 
 interface Props {
   open: boolean;
@@ -79,6 +87,24 @@ export function FleetTerminalOverlay({
   // render mid-flush and left the overlay wedged open — visibly mounted but
   // no longer closeable from the footer. The orb reads the same store flag, so
   // nothing was lost by deleting the write.
+
+  const [view, setView] = useState<GridViewId>(lastGridView);
+  const changeView = useCallback((v: GridViewId) => {
+    lastGridView = v;
+    setView(v);
+  }, []);
+
+  // Two-phase open (perf): paint the overlay frame + tile chrome/status blocks
+  // on the FIRST frame, and only mount the expensive tile bodies (xterm attach,
+  // WebGL context creation) a beat later. Opening the grid used to pay the
+  // whole xterm cost inside the opening render, which is what made the switch
+  // feel heavy.
+  const [bodiesReady, setBodiesReady] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setTimeout(() => setBodiesReady(true), 200);
+    return () => window.clearTimeout(id);
+  }, [open]);
 
   // Per-tile Terminal/Insights view (P2.1 in the grid). Membership = showing
   // Insights; default (absent) = the live terminal.
@@ -161,6 +187,20 @@ export function FleetTerminalOverlay({
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
         <FleetAttentionLegend />
+        {/* Tiles ↔ Monitor view switcher (strings i18n'd once the monitor
+            graduates from prototype). */}
+        <SegmentedTabs
+          tabs={[
+            { id: 'tiles' as const, label: <LayoutGrid className="w-3.5 h-3.5" />, ariaLabel: 'Terminal tiles' },
+            { id: 'monitor' as const, label: <Table2 className="w-3.5 h-3.5" />, ariaLabel: 'Monitor' },
+          ]}
+          activeTab={view}
+          onTabChange={changeView}
+          fullWidth={false}
+          size="sm"
+          ariaLabel="Grid view"
+          className="ml-2"
+        />
         <button
           type="button"
           data-testid="fleet-overlay-spawn"
@@ -187,7 +227,10 @@ export function FleetTerminalOverlay({
         </button>
       </div>
 
-      {/* Grid — square columns capped at 4; rows auto-fill, scroll past 4×4. */}
+      {view === 'monitor' ? (
+        <MonitorView sessions={sessions} onSelect={onSelect} onOverlayClose={onClose} />
+      ) : (
+      /* Grid — square columns capped at 4; rows auto-fill, scroll past 4×4. */
       <div
         data-testid="fleet-overlay-grid"
         className="flex-1 min-h-0 grid gap-1.5 p-1.5 overflow-y-auto"
@@ -201,7 +244,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
-            live={needsLiveAttention(s) || s.id === activeSessionId}
+            live={bodiesReady && (needsLiveAttention(s) || s.id === activeSessionId)}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}
             onSelect={onSelect}
@@ -214,6 +257,7 @@ export function FleetTerminalOverlay({
           />
         ))}
       </div>
+      )}
     </div>,
     document.body,
   );

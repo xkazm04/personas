@@ -447,5 +447,7 @@
   "triage_summary_title": "Sesi ini",
   "triage_summary_undone": "Dibatalkan",
   "triage_undo": "Batalkan {verdict}",
-  "triage_undo_hint": "Mengembalikan kartu ke antrean. Apa pun yang sudah dipicu oleh keputusan ini tidak akan dibatalkan."
+  "triage_undo_hint": "Mengembalikan kartu ke antrean. Apa pun yang sudah dipicu oleh keputusan ini tidak akan dibatalkan.",
+  "conv_bridge_title": "Kanal Slack tertaut. Pesan yang dikirim di sana masuk ke percakapan ini.",
+  "stream_kind_slack": "Slack"
 }

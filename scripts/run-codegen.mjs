@@ -50,6 +50,10 @@ const TASKS = {
   // index of shared components (referenced from CLAUDE.md). Keeps it fresh so
   // new/removed shared components surface without a manual step.
   catalog:   "scripts/docs/gen-shared-catalog.mjs",
+  // Regenerates the context→lens keyword matcher
+  // (src/features/plugins/dev-tools/constants/scanMatchRules.gen.ts) from
+  // scan_agents.toml so the TS matcher can never drift from the lens registry.
+  "scan-match": "scripts/skills/gen-scan-match-rules.mjs",
   // Regenerates src-tauri/src/companion/generated_anchors.rs (the Rust allow-list
   // of guidance anchors) from the frontend anchorCatalog.ts so Athena's
   // point_at / compose_walkthrough validation never drifts from the catalog.
@@ -64,8 +68,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "guidance-anchors", "system-skills"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "guidance-anchors", "system-skills"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "scan-match", "guidance-anchors", "system-skills"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

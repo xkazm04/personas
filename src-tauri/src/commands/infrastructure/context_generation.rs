@@ -221,9 +221,13 @@ running right now, so anything you emit outside your scope collides with theirs.
 - Groups are shared across scans. Reuse an existing group name when one fits;
   create a new one only when your subtree genuinely introduces a domain no other
   scope would own.
-- Expect roughly one context per 5-15 files. A subtree of 300 files should
-  produce something like 20-50 contexts, not 5. If you find yourself writing a
-  context with 40 files in it, split it.
+- Granularity is a HARD BAND: one context per 10-30 files (sweet spot 15-20).
+  A subtree of 300 files should produce something like 12-20 contexts, not 50.
+- Align each context to a directory subtree: take the DEEPEST directory whose
+  file count lands inside the band. Never fragment one module directory into
+  several contexts, and never emit a context under 8 files — merge it into its
+  sibling module instead (a genuinely isolated leaf directory is the only
+  exception). Split only above 30 files, along child-directory lines.
 "#,
             existing_groups = existing_groups,
         ),
@@ -286,7 +290,7 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 - Groups should be mutually exclusive (a file should belong to only one context)
 
 ## Context Guidelines
-- **Granularity**: Each context should contain **5-15 related files** (prefer smaller, focused contexts over large catch-alls). If a context exceeds 15 files, split it into sub-contexts
+- **Granularity (HARD BAND)**: Each context contains **10-30 related files** (sweet spot 15-20). Under 8 files → merge into the sibling module context; over 30 → split along child-directory lines. Align every context to a directory subtree — the DEEPEST directory whose file count fits the band — and never fragment one module directory into several contexts
 - **Naming**: Use kebab-style descriptive names (e.g., "login-flow", "invoice-generation", "metric-aggregation")
 - **Description (REQUIRED)**: Write 2-3 sentences explaining: (1) what business problem this code solves, (2) how it works at a high level, (3) key dependencies or data flows
 - **file_paths**: JSON array of relative paths. Be precise — list individual files, not directories
@@ -1884,6 +1888,44 @@ fn write_harness_docs(
                 format!("[Warn] Failed to write harness docs: {e}. Contexts are still in the DB."),
             );
         }
+    }
+    // Backlog awareness for repo-side scan skills — same best-effort contract.
+    if let Err(e) = super::context_map_export::write_backlog_digest(pool, project_id, root_path) {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!("[Warn] Failed to write backlog digest: {e}."),
+        );
+    }
+    // Granularity report — the observable guard against micro-context drift
+    // (the 2026-08 map converged at 769 contexts averaging 5 files because the
+    // old prompt asked for 5-15). Band: 10-30 files per context.
+    if let Ok(contexts) = repo::list_contexts_by_project(pool, project_id, None) {
+        let count = |pred: &dyn Fn(usize) -> bool| {
+            contexts
+                .iter()
+                .filter(|c| {
+                    let n = serde_json::from_str::<Vec<String>>(&c.file_paths)
+                        .map(|v| v.len())
+                        .unwrap_or(0);
+                    pred(n)
+                })
+                .count()
+        };
+        let under = count(&|n| n < 10);
+        let over = count(&|n| n > 30);
+        let total = contexts.len();
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Harness] Granularity: {}/{} contexts inside the 10-30 file band ({} under, {} over).",
+                total - under - over,
+                total,
+                under,
+                over
+            ),
+        );
     }
 }
 

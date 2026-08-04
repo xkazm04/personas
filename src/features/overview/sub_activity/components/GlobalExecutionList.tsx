@@ -15,7 +15,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
-import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
+import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';

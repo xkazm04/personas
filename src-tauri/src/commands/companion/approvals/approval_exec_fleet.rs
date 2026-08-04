@@ -997,6 +997,18 @@ pub(crate) fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteRe
 /// resolved command, so the cwd cannot be trusted from the rationale — it must
 /// be constrained to the registered-project allowlist (`dev_projects`).
 pub(crate) fn validate_fleet_cwd(app: &tauri::AppHandle, cwd: &str) -> Result<(), AppError> {
+    let state = app.state::<Arc<AppState>>();
+    validate_fleet_cwd_in_db(&state.db, cwd)
+}
+
+/// The containment rule itself, against the system DB that holds `dev_projects`.
+///
+/// Split out of [`validate_fleet_cwd`] (2026-08-04, WP2) so the *plan* surface can
+/// apply the identical boundary at proposal time: `dispatcher::show_fleet_plan`
+/// runs inside the companion turn and holds a `DbPool`, not an `AppHandle`. One
+/// implementation, two callers — a second hand-written copy of this check is the
+/// exact way a containment boundary rots.
+pub(crate) fn validate_fleet_cwd_in_db(db: &crate::db::DbPool, cwd: &str) -> Result<(), AppError> {
     let trimmed = cwd.trim();
     if trimmed.is_empty() {
         return Err(AppError::Validation(
@@ -1014,8 +1026,7 @@ pub(crate) fn validate_fleet_cwd(app: &tauri::AppHandle, cwd: &str) -> Result<()
             "fleet cwd `{trimmed}` is not a directory"
         )));
     }
-    let state = app.state::<Arc<AppState>>();
-    let projects = crate::db::repos::dev_tools::list_projects(&state.db, None)?;
+    let projects = crate::db::repos::dev_tools::list_projects(db, None)?;
     let allowed = projects.iter().any(|p| {
         std::fs::canonicalize(&p.root_path)
             .map(|root| canon_cwd.starts_with(&root))
@@ -1482,3 +1493,567 @@ pub(crate) async fn execute_fleet_resume(
     )))
 }
 
+// ── Conversational fleet plan (WP2, 2026-08-04) ─────────────────────────
+//
+// The chat-first path from "spin up three sessions on X" (typed OR spoken) to
+// real terminals. Athena proposes a plan with `show_fleet_plan`; the editable
+// chat card is where the user corrects it; confirming calls
+// `companion_dispatch_fleet_plan` below, which re-runs the SAME validation the
+// proposal passed and then hands off to the existing `fleet_spawn` /
+// `fleet_dispatch` executors. Nothing here widens `validate_fleet_cwd`.
+
+/// Sessions one plan may carry. Mirrors the hard cap inside
+/// [`execute_fleet_dispatch`] so a plan can never be built that the executor
+/// would reject at the end.
+pub(crate) const FLEET_PLAN_MAX_ROWS: usize = 8;
+/// Longest per-row objective. Long enough for a real brief, short enough that
+/// a runaway generation cannot become a command line.
+pub(crate) const FLEET_PLAN_OBJECTIVE_MAX: usize = 1200;
+/// Longest operation intent (the one-line label the Operation is filed under).
+pub(crate) const FLEET_PLAN_INTENT_MAX: usize = 300;
+/// Longest skill name. Skills are slugs (`scan-sweep`, `uat`), never prose.
+pub(crate) const FLEET_PLAN_SKILL_MAX: usize = 64;
+
+/// One validated row of a fleet plan: where it runs, what it is asked to do,
+/// and optionally which installed skill leads the prompt.
+#[derive(Debug, Clone)]
+pub(crate) struct FleetPlanRow {
+    pub cwd: String,
+    pub objective: String,
+    pub skill: Option<String>,
+}
+
+impl FleetPlanRow {
+    /// The positional prompt this row spawns with. A chosen skill LEADS the
+    /// prompt as `/skill <objective>` — that is how a skill is injected at
+    /// spawn (same shape as `skillCommand` in the Skills Workbench).
+    ///
+    /// This is the whole argv contribution of a row: exactly one positional
+    /// token. `fleet::pty::spawn_session` owns flag ordering and appends
+    /// `--mcp-config` LAST, after the caller's args, because that flag is
+    /// variadic and would otherwise swallow the prompt. Callers must never
+    /// hand-assemble flags here.
+    pub fn prompt(&self) -> String {
+        match self.skill.as_deref() {
+            Some(s) => format!("/{s} {}", self.objective),
+            None => self.objective.clone(),
+        }
+    }
+
+    /// Fleet role label — becomes the visible session name `athena-<role>`.
+    pub fn role(&self, index: usize) -> String {
+        self.skill
+            .clone()
+            .unwrap_or_else(|| format!("plan-{}", index + 1))
+    }
+}
+
+/// Validate a proposed fleet plan against every boundary the executors enforce,
+/// at PROPOSAL time rather than at fire time. Returns the trimmed intent plus
+/// the validated rows, or a single human-readable reason.
+///
+/// Rules, in order: non-empty bounded intent · 1..=[`FLEET_PLAN_MAX_ROWS`] rows ·
+/// per row a non-empty bounded objective, a bounded slug-shaped optional skill,
+/// and a `cwd` inside a registered dev project (the shared
+/// [`validate_fleet_cwd_in_db`] — never a second copy of that rule).
+pub(crate) fn validate_fleet_plan(
+    db: &crate::db::DbPool,
+    intent: &str,
+    rows: &[serde_json::Value],
+) -> Result<(String, Vec<FleetPlanRow>), String> {
+    let intent = intent.trim();
+    if intent.is_empty() {
+        return Err("`operation_intent` must be a non-empty one-line summary".into());
+    }
+    if intent.chars().count() > FLEET_PLAN_INTENT_MAX {
+        return Err(format!(
+            "`operation_intent` is too long (max {FLEET_PLAN_INTENT_MAX} characters)"
+        ));
+    }
+    if rows.is_empty() {
+        return Err("`rows` must contain at least one session".into());
+    }
+    if rows.len() > FLEET_PLAN_MAX_ROWS {
+        return Err(format!(
+            "{} sessions exceeds the fleet cap of {FLEET_PLAN_MAX_ROWS} per operation",
+            rows.len()
+        ));
+    }
+    let mut out = Vec::with_capacity(rows.len());
+    for (i, row) in rows.iter().enumerate() {
+        let n = i + 1;
+        let objective = row
+            .get("objective")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if objective.is_empty() {
+            return Err(format!("row {n}: `objective` must not be empty"));
+        }
+        if objective.chars().count() > FLEET_PLAN_OBJECTIVE_MAX {
+            return Err(format!(
+                "row {n}: `objective` is too long (max {FLEET_PLAN_OBJECTIVE_MAX} characters)"
+            ));
+        }
+        let cwd = row
+            .get("cwd")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        // Containment — the boundary, not a formatting check. A session spawned
+        // from this row runs `claude --dangerously-skip-permissions` in `cwd`.
+        validate_fleet_cwd_in_db(db, cwd).map_err(|e| format!("row {n}: {e}"))?;
+        let skill = match row.get("skill").and_then(|v| v.as_str()).map(str::trim) {
+            None | Some("") => None,
+            Some(s) => {
+                let s = s.trim_start_matches('/');
+                if s.chars().count() > FLEET_PLAN_SKILL_MAX {
+                    return Err(format!("row {n}: `skill` name is too long"));
+                }
+                // Slug charset only: a skill name becomes the leading `/token`
+                // of the spawned prompt, so whitespace or shell-ish characters
+                // there are always a mistake.
+                if s.is_empty()
+                    || !s
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == ':')
+                {
+                    return Err(format!(
+                        "row {n}: `skill` must be a skill name like `scan-sweep`, not free text"
+                    ));
+                }
+                Some(s.to_string())
+            }
+        };
+        out.push(FleetPlanRow {
+            cwd: cwd.to_string(),
+            objective: objective.to_string(),
+            skill,
+        });
+    }
+    Ok((intent.to_string(), out))
+}
+
+/// Confirm-and-dispatch for the editable in-chat fleet plan.
+///
+/// The card the user just edited is the consent surface, so there is no second
+/// approval gate — but the plan is re-validated here against the live
+/// `dev_projects` registry, because the rows arriving are the USER-EDITED ones,
+/// not the ones Athena proposed. One row spawns a single session
+/// (`fleet_spawn`); two or more become one Operation with N role sessions
+/// (`fleet_dispatch`).
+#[tauri::command]
+pub async fn companion_dispatch_fleet_plan(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    operation_intent: String,
+    rows: Vec<serde_json::Value>,
+) -> Result<String, AppError> {
+    ipc_auth::require_auth(&state).await?;
+    let (intent, plan) =
+        validate_fleet_plan(&state.db, &operation_intent, &rows).map_err(AppError::Validation)?;
+
+    let (action, params) = fleet_plan_dispatch_params(&intent, &plan);
+    tracing::info!(
+        intent = %intent,
+        sessions = plan.len(),
+        action = action,
+        "companion: dispatching confirmed fleet plan"
+    );
+    let result = match action {
+        "fleet_spawn" => execute_fleet_spawn(&app, &params),
+        _ => execute_fleet_dispatch(&app, &params),
+    };
+    // Durable audit — this is the compensating control, not a nicety. The
+    // operator explicitly accepted that a typed or spoken request can start
+    // terminals with no click, so "what was started, where, and on whose say-so"
+    // has to survive the process: a `tracing::info!` is not auditable after the
+    // fact. The ledger already records autopilot auto-fires, so an
+    // operator-confirmed plan is written to the SAME table with a distinct
+    // `decision_class` — one place to read Athena's whole fleet decision surface,
+    // with the two origins told apart. Best-effort, and recorded for the failure
+    // path too: a dispatch that blew up half-way still spawned something.
+    let outcome = if result.is_ok() {
+        FLEET_PLAN_OUTCOME_CONFIRMED
+    } else {
+        FLEET_PLAN_OUTCOME_CONFIRMED_FAILED
+    };
+    record_fleet_plan_decision(&state.db, action, &intent, &plan, outcome);
+    Ok(result?.message)
+}
+
+/// Ledger `outcome` for a plan the operator confirmed and that dispatched.
+/// Deliberately distinct from the autopilot's `auto_fired` / `deferred`, so a
+/// reader can tell "a human pressed Confirm" from "the boldness dial fired".
+pub(crate) const FLEET_PLAN_OUTCOME_CONFIRMED: &str = "operator_confirmed";
+/// Same, for a confirmed plan whose executor returned an error.
+pub(crate) const FLEET_PLAN_OUTCOME_CONFIRMED_FAILED: &str = "operator_confirmed_failed";
+/// Ledger `decision_class` marking the origin as the editable chat plan card.
+pub(crate) const FLEET_PLAN_DECISION_CLASS: &str = "operator_confirmed_plan";
+
+/// The audit payload for one confirmed plan: the operation intent, the row
+/// count, and per row the cwd plus the RESOLVED PROMPT that session actually
+/// received (skill included, since `/skill …` changes what the session does).
+///
+/// Pure and separate from the write so the recorded shape is testable.
+pub(crate) fn fleet_plan_audit_rationale(intent: &str, plan: &[FleetPlanRow]) -> String {
+    let rows: Vec<String> = plan
+        .iter()
+        .enumerate()
+        .map(|(i, r)| format!("{}. `{}` :: {}", i + 1, r.cwd, r.prompt()))
+        .collect();
+    format!(
+        "operator-confirmed plan card · intent: {intent} · {} session(s)\n{}",
+        plan.len(),
+        rows.join("\n"),
+    )
+}
+
+/// Append one confirmed-plan row to the fleet decision ledger. Routed through
+/// [`record_fleet_decision`] so plan confirms and autopilot auto-fires share the
+/// one choke point (and its debug-log tap) instead of growing a second writer.
+pub(crate) fn record_fleet_plan_decision(
+    db: &crate::db::DbPool,
+    action: &str,
+    intent: &str,
+    plan: &[FleetPlanRow],
+    outcome: &str,
+) {
+    let params = serde_json::json!({
+        // No `session_id` / `confidence`: nothing existed to decide about and
+        // nobody self-reported — a human confirmed a plan.
+        "decision_class": FLEET_PLAN_DECISION_CLASS,
+        "rationale": fleet_plan_audit_rationale(intent, plan),
+    });
+    record_fleet_decision(db, action, &params.to_string(), outcome, None);
+}
+
+/// Pick the executor for a validated plan and build its params.
+///
+/// One row is a single session (`fleet_spawn`); two or more are one Operation
+/// with N roles (`fleet_dispatch`). Pure so the selection and the assembled
+/// argv are testable without an `AppHandle`.
+///
+/// Each row contributes exactly ONE positional token (`FleetPlanRow::prompt`).
+/// No flags are assembled here: `fleet::pty::spawn_session` appends the
+/// variadic `--mcp-config` after the caller's args, and anything emitted after
+/// it would be swallowed as a config path.
+pub(crate) fn fleet_plan_dispatch_params(
+    intent: &str,
+    plan: &[FleetPlanRow],
+) -> (&'static str, serde_json::Value) {
+    if plan.len() == 1 {
+        let row = &plan[0];
+        return (
+            "fleet_spawn",
+            serde_json::json!({ "cwd": row.cwd, "args": [row.prompt()] }),
+        );
+    }
+    let role_specs: Vec<serde_json::Value> = plan
+        .iter()
+        .enumerate()
+        .map(|(i, row)| {
+            serde_json::json!({
+                "role": row.role(i),
+                "cwd": row.cwd,
+                "args": [row.prompt()],
+            })
+        })
+        .collect();
+    (
+        "fleet_dispatch",
+        serde_json::json!({
+            "operation_intent": intent,
+            "role_specs": role_specs,
+        }),
+    )
+}
+
+#[cfg(test)]
+mod fleet_plan_tests {
+    use super::*;
+    use r2d2::Pool;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// A system DB carrying just enough of `dev_projects` for
+    /// `list_projects` (the columns it reads with `?`), with `root` registered.
+    fn pool_with_project(root: &std::path::Path) -> crate::db::DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = Pool::builder().max_size(1).build(manager).expect("pool");
+        let conn = pool.get().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE dev_projects (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                root_path TEXT NOT NULL, description TEXT, status TEXT NOT NULL,
+                tech_stack TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO dev_projects (id, name, root_path, description, status, tech_stack,
+                created_at, updated_at)
+             VALUES ('proj_1', 'Fixture', ?1, '', 'active', '', '2026-08-04', '2026-08-04')",
+            rusqlite::params![root.to_string_lossy()],
+        )
+        .unwrap();
+        pool
+    }
+
+    /// A real directory inside a registered project (canonicalize needs one).
+    fn fixture_project() -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "personas-fleet-plan-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::canonicalize(&dir).unwrap()
+    }
+
+    fn row(cwd: &str, objective: &str, skill: Option<&str>) -> serde_json::Value {
+        match skill {
+            Some(s) => serde_json::json!({ "cwd": cwd, "objective": objective, "skill": s }),
+            None => serde_json::json!({ "cwd": cwd, "objective": objective }),
+        }
+    }
+
+    #[test]
+    fn accepts_a_plan_inside_a_registered_project() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let (intent, plan) =
+            validate_fleet_plan(&pool, "  tidy the repo  ", &[row(&cwd, " write tests ", None)])
+                .expect("plan should validate");
+        assert_eq!(intent, "tidy the repo");
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].objective, "write tests");
+    }
+
+    #[test]
+    fn rejects_a_cwd_outside_every_registered_project() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        // A real, accessible directory that is simply not registered.
+        let outside = std::fs::canonicalize(std::env::temp_dir()).unwrap();
+        let err = validate_fleet_plan(
+            &pool,
+            "escape",
+            &[row(&outside.to_string_lossy(), "do something", None)],
+        )
+        .expect_err("an unregistered cwd must not produce a plan");
+        assert!(err.contains("registered dev project"), "{err}");
+    }
+
+    #[test]
+    fn rejects_a_missing_or_nonexistent_cwd() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        assert!(validate_fleet_plan(&pool, "x", &[row("", "objective", None)]).is_err());
+        let ghost = root.join("definitely-not-here");
+        assert!(validate_fleet_plan(
+            &pool,
+            "x",
+            &[row(&ghost.to_string_lossy(), "objective", None)]
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn rejects_more_rows_than_the_dispatch_cap() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let rows: Vec<serde_json::Value> = (0..FLEET_PLAN_MAX_ROWS + 1)
+            .map(|i| row(&cwd, &format!("objective {i}"), None))
+            .collect();
+        let err = validate_fleet_plan(&pool, "too much", &rows).expect_err("cap must hold");
+        assert!(err.contains(&FLEET_PLAN_MAX_ROWS.to_string()), "{err}");
+        // Exactly at the cap still validates.
+        assert!(validate_fleet_plan(&pool, "at the cap", &rows[..FLEET_PLAN_MAX_ROWS]).is_ok());
+    }
+
+    #[test]
+    fn rejects_an_empty_objective_and_an_empty_intent() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let err = validate_fleet_plan(&pool, "intent", &[row(&cwd, "   ", None)])
+            .expect_err("a blank objective is not a session brief");
+        assert!(err.contains("objective"), "{err}");
+        assert!(validate_fleet_plan(&pool, "  ", &[row(&cwd, "real objective", None)]).is_err());
+        assert!(validate_fleet_plan(&pool, "intent", &[]).is_err());
+    }
+
+    #[test]
+    fn rejects_a_skill_that_is_free_text() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        assert!(
+            validate_fleet_plan(&pool, "i", &[row(&cwd, "o", Some("run the scan sweep please"))])
+                .is_err()
+        );
+        // A real slug passes, with or without a leading slash.
+        for s in ["scan-sweep", "/scan-sweep"] {
+            let (_, plan) =
+                validate_fleet_plan(&pool, "i", &[row(&cwd, "o", Some(s))]).expect("slug ok");
+            assert_eq!(plan[0].skill.as_deref(), Some("scan-sweep"));
+        }
+    }
+
+    #[test]
+    fn one_row_spawns_and_many_rows_dispatch() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+
+        let (intent, one) =
+            validate_fleet_plan(&pool, "single", &[row(&cwd, "objective one", None)]).unwrap();
+        let (action, params) = fleet_plan_dispatch_params(&intent, &one);
+        assert_eq!(action, "fleet_spawn");
+        assert_eq!(params["cwd"], cwd);
+        assert_eq!(params["args"][0], "objective one");
+        assert!(params.get("role_specs").is_none());
+
+        let (intent, many) = validate_fleet_plan(
+            &pool,
+            "an operation",
+            &[
+                row(&cwd, "objective one", None),
+                row(&cwd, "objective two", None),
+            ],
+        )
+        .unwrap();
+        let (action, params) = fleet_plan_dispatch_params(&intent, &many);
+        assert_eq!(action, "fleet_dispatch");
+        assert_eq!(params["operation_intent"], "an operation");
+        assert_eq!(params["role_specs"].as_array().unwrap().len(), 2);
+        assert_eq!(params["role_specs"][1]["args"][0], "objective two");
+    }
+
+    /// The rows arriving at dispatch are the USER-EDITED ones, so what the card
+    /// sent is exactly what each session is asked to do — and a chosen skill
+    /// LEADS the prompt as its own single positional token, never a flag.
+    #[test]
+    fn edited_rows_are_what_dispatch_receives() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let edited = vec![
+            row(&cwd, "the objective the user rewrote", Some("scan-sweep")),
+            row(&cwd, "a second, different objective", None),
+        ];
+        let (intent, plan) = validate_fleet_plan(&pool, "edited plan", &edited).unwrap();
+        let (_, params) = fleet_plan_dispatch_params(&intent, &plan);
+        let specs = params["role_specs"].as_array().unwrap();
+        assert_eq!(
+            specs[0]["args"][0],
+            "/scan-sweep the objective the user rewrote"
+        );
+        assert_eq!(specs[0]["role"], "scan-sweep");
+        assert_eq!(specs[1]["args"][0], "a second, different objective");
+        assert_eq!(specs[1]["role"], "plan-2");
+        // Exactly one positional token per session: `spawn_session` appends the
+        // variadic `--mcp-config` after these, and anything trailing it would be
+        // eaten as a config path.
+        for spec in specs {
+            assert_eq!(spec["args"].as_array().unwrap().len(), 1);
+            assert!(!spec["args"][0].as_str().unwrap().starts_with("--"));
+        }
+    }
+    /// The confirm path's compensating control. The operator accepted that a
+    /// typed or spoken request can start terminals with no click, so the durable
+    /// ledger row IS the audit — assert it is written, that it carries the
+    /// intent, every cwd and every RESOLVED prompt, and that its origin is
+    /// distinguishable from an autopilot auto-fire.
+    #[test]
+    fn a_confirmed_plan_writes_a_ledger_row() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE fleet_decisions (id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
+                    claude_session_id TEXT, screen_hash TEXT NOT NULL, action TEXT NOT NULL,
+                    outcome TEXT NOT NULL, confidence TEXT, decision_class TEXT,
+                    defer_reason TEXT, rationale TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')));",
+            )
+            .unwrap();
+        let cwd = root.to_string_lossy().to_string();
+        let (intent, plan) = validate_fleet_plan(
+            &pool,
+            "harden the auth surface",
+            &[
+                row(&cwd, "write the missing tests", Some("scan-sweep")),
+                row(&cwd, "review the token refresh", None),
+            ],
+        )
+        .unwrap();
+
+        record_fleet_plan_decision(
+            &pool,
+            "fleet_dispatch",
+            &intent,
+            &plan,
+            FLEET_PLAN_OUTCOME_CONFIRMED,
+        );
+
+        let conn = pool.get().unwrap();
+        let (action, outcome, class, rationale, confidence) = conn
+            .query_row(
+                "SELECT action, outcome, decision_class, rationale, confidence FROM fleet_decisions",
+                [],
+                |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                        r.get::<_, Option<String>>(3)?,
+                        r.get::<_, Option<String>>(4)?,
+                    ))
+                },
+            )
+            .expect("exactly one ledger row must be written on confirm");
+
+        assert_eq!(action, "fleet_dispatch");
+        assert_eq!(outcome, FLEET_PLAN_OUTCOME_CONFIRMED);
+        // Origin: an operator pressed Confirm, NOT the boldness dial firing.
+        assert_eq!(class.as_deref(), Some(FLEET_PLAN_DECISION_CLASS));
+        assert_ne!(outcome, "auto_fired");
+        // Nobody self-reported confidence; a human decided.
+        assert!(confidence.is_none());
+
+        let rationale = rationale.expect("audit payload");
+        assert!(rationale.contains("harden the auth surface"), "{rationale}");
+        assert!(rationale.contains("2 session(s)"), "{rationale}");
+        assert!(rationale.contains(&cwd), "{rationale}");
+        // The RESOLVED prompt, skill included — what the session actually got.
+        assert!(
+            rationale.contains("/scan-sweep write the missing tests"),
+            "{rationale}"
+        );
+        assert!(rationale.contains("review the token refresh"), "{rationale}");
+    }
+
+    #[test]
+    fn a_failed_confirm_is_still_recorded_and_told_apart() {
+        let root = fixture_project();
+        let pool = pool_with_project(&root);
+        let cwd = root.to_string_lossy().to_string();
+        let (intent, plan) =
+            validate_fleet_plan(&pool, "one session", &[row(&cwd, "go", None)]).unwrap();
+        // No `fleet_decisions` table here: the ledger write is best-effort and
+        // must never turn into a failed dispatch.
+        record_fleet_plan_decision(
+            &pool,
+            "fleet_spawn",
+            &intent,
+            &plan,
+            FLEET_PLAN_OUTCOME_CONFIRMED_FAILED,
+        );
+        assert_ne!(
+            FLEET_PLAN_OUTCOME_CONFIRMED_FAILED,
+            FLEET_PLAN_OUTCOME_CONFIRMED
+        );
+        assert!(fleet_plan_audit_rationale(&intent, &plan).contains("1 session(s)"));
+    }
+}

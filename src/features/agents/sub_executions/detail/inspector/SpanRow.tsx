@@ -1,24 +1,23 @@
+import { memo, useCallback } from 'react';
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
-export function SpanRow({
-  node,
-  totalMs,
-  expanded,
-  onToggle,
-  hasChildren,
-}: {
+interface SpanRowProps {
   node: SpanNode;
   totalMs: number;
   expanded: boolean;
-  onToggle: () => void;
+  /** Stable across renders -- takes the span id so the parent needs no per-row closure. */
+  onToggle: (spanId: string) => void;
   hasChildren: boolean;
-}) {
+}
+
+function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRowProps) {
   const { span, depth } = node;
   const config = getSpanTypeConfig(span.span_type);
+  const handleToggle = useCallback(() => onToggle(span.span_id), [onToggle, span.span_id]);
 
   return (
     <div
@@ -29,7 +28,16 @@ export function SpanRow({
       {/* Left: name + type badge */}
       <div className="flex items-center gap-1.5 min-w-0" style={{ paddingLeft: `${depth * 16}px` }}>
         {hasChildren ? (
-          <button type="button" onClick={onToggle} className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0">
+          <button
+            type="button"
+            onClick={handleToggle}
+            aria-expanded={expanded}
+            /* The span name is system/user data, not UI copy -- combined with
+               aria-expanded a screen reader announces "<name>, button,
+               collapsed/expanded", so no translated string is needed. */
+            aria-label={span.name}
+            className="p-0.5 rounded hover:bg-primary/10 flex-shrink-0"
+          >
             {expanded ? (
               <ChevronDown className="w-3 h-3 text-foreground" />
             ) : (
@@ -71,3 +79,35 @@ export function SpanRow({
     </div>
   );
 }
+
+/**
+ * Every live span event rebuilds the unified trace, so `node` and `node.span`
+ * are always fresh object references -- a reference-equality memo would never
+ * hit. Compare the fields the row actually renders instead; a growing trace
+ * then only re-renders the rows whose own data moved.
+ */
+function propsEqual(a: SpanRowProps, b: SpanRowProps): boolean {
+  if (
+    a.totalMs !== b.totalMs ||
+    a.expanded !== b.expanded ||
+    a.hasChildren !== b.hasChildren ||
+    a.onToggle !== b.onToggle ||
+    a.node.depth !== b.node.depth
+  ) {
+    return false;
+  }
+  const x = a.node.span;
+  const y = b.node.span;
+  return (
+    x.span_id === y.span_id &&
+    x.name === y.name &&
+    x.span_type === y.span_type &&
+    x.start_ms === y.start_ms &&
+    x.end_ms === y.end_ms &&
+    x.duration_ms === y.duration_ms &&
+    x.cost_usd === y.cost_usd &&
+    x.error === y.error
+  );
+}
+
+export const SpanRow = memo(SpanRowImpl, propsEqual);

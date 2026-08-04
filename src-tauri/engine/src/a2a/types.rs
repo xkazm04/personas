@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 // =============================================================================
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentCard {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -26,6 +27,7 @@ pub struct AgentCard {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentCapabilities {
     /// False — synchronous result only. `message/stream` is out of scope here.
     pub streaming: bool,
@@ -36,6 +38,7 @@ pub struct AgentCapabilities {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentSkill {
     pub id: String,
     pub name: String,
@@ -128,15 +131,49 @@ impl A2AMessage {
 // JSON-RPC response
 // =============================================================================
 
+/// JSON-RPC response envelope, generic over the per-method result payload.
+///
+/// Every A2A method answers with the same `{ jsonrpc, id, result?, error? }`
+/// shape and only the `result` type varies, so the envelope is written once
+/// here and specialised by the aliases below.
 #[derive(Debug, Clone, Serialize)]
-pub struct A2AResponse {
+pub struct A2AEnvelope<T> {
     pub jsonrpc: &'static str,
     pub id: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<A2AResultMessage>,
+    pub result: Option<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<A2AError>,
 }
+
+impl<T> A2AEnvelope<T> {
+    pub fn success(id: serde_json::Value, result: T) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
+        Self {
+            jsonrpc: "2.0",
+            id,
+            result: None,
+            error: Some(A2AError {
+                code,
+                message: message.into(),
+            }),
+        }
+    }
+}
+
+/// Response envelope for `message/send`.
+pub type A2AResponse = A2AEnvelope<A2AResultMessage>;
+
+/// Response envelope for `tasks/get` / `tasks/cancel`.
+pub type A2ATaskResponse = A2AEnvelope<A2ATask>;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct A2AResultMessage {
@@ -145,6 +182,18 @@ pub struct A2AResultMessage {
     pub parts: Vec<A2AResponsePart>,
     #[serde(rename = "messageId")]
     pub message_id: String,
+}
+
+impl A2AResultMessage {
+    /// Build a single-text-part agent message with a fresh message id.
+    pub fn text(text: String) -> Self {
+        Self {
+            kind: "message",
+            role: "agent",
+            parts: vec![A2AResponsePart { kind: "text", text }],
+            message_id: uuid::Uuid::new_v4().to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -221,78 +270,23 @@ pub struct A2AArtifact {
 /// Personas writes statuses like "queued", "running", "completed", "success",
 /// "failed", "error", "cancelled", "timeout". The A2A spec's terminal vocabulary
 /// is more compact: submitted / working / completed / canceled / failed.
+///
+/// Unrecognised statuses map to the NON-terminal "working". Every known failure
+/// mode is listed explicitly below, so anything left over is by definition a
+/// status this function has not been taught yet — most likely a new in-flight
+/// state added on the Personas side. Reporting such a task as "failed" is the
+/// expensive mistake: "failed" is terminal, so clients stop polling and a live
+/// execution is presented as dead. "working" is merely premature — the next
+/// poll corrects it once the task reaches a state we do recognise.
 pub fn map_status_to_a2a_state(personas_status: &str) -> &'static str {
     match personas_status {
         "queued" | "submitted" | "pending" => "submitted",
         "running" | "starting" | "in_progress" => "working",
         "completed" | "success" => "completed",
         "cancelled" | "canceled" => "canceled",
-        // "timeout" maps to failed (terminal, not user-cancelled). Anything
-        // unrecognised falls through to failed so clients always see a
-        // terminal state instead of an unknown one.
-        _ => "failed",
-    }
-}
-
-/// Result envelope for `tasks/get` / `tasks/cancel` responses.
-#[derive(Debug, Clone, Serialize)]
-pub struct A2ATaskResponse {
-    pub jsonrpc: &'static str,
-    pub id: serde_json::Value,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub result: Option<A2ATask>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<A2AError>,
-}
-
-impl A2ATaskResponse {
-    pub fn success(id: serde_json::Value, task: A2ATask) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: Some(task),
-            error: None,
-        }
-    }
-
-    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: None,
-            error: Some(A2AError {
-                code,
-                message: message.into(),
-            }),
-        }
-    }
-}
-
-impl A2AResponse {
-    pub fn success(id: serde_json::Value, text: String) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: Some(A2AResultMessage {
-                kind: "message",
-                role: "agent",
-                parts: vec![A2AResponsePart { kind: "text", text }],
-                message_id: uuid::Uuid::new_v4().to_string(),
-            }),
-            error: None,
-        }
-    }
-
-    pub fn error(id: serde_json::Value, code: i32, message: impl Into<String>) -> Self {
-        Self {
-            jsonrpc: "2.0",
-            id,
-            result: None,
-            error: Some(A2AError {
-                code,
-                message: message.into(),
-            }),
-        }
+        // Terminal failures (incl. "timeout" — terminal, not user-cancelled).
+        "failed" | "error" | "timeout" => "failed",
+        _ => "working",
     }
 }
 
@@ -352,9 +346,10 @@ mod tests {
         assert_eq!(map_status_to_a2a_state("failed"), "failed");
         assert_eq!(map_status_to_a2a_state("error"), "failed");
         assert_eq!(map_status_to_a2a_state("timeout"), "failed");
-        // Unknown / future statuses fall through to a terminal state instead
-        // of leaking an A2A-invalid value to the client.
-        assert_eq!(map_status_to_a2a_state("nonsense-future-state"), "failed");
+        // Unknown / future statuses fall through to a NON-terminal state: a
+        // client that is told "failed" stops polling, which would strand a
+        // still-running execution. "working" self-corrects on the next poll.
+        assert_eq!(map_status_to_a2a_state("nonsense-future-state"), "working");
     }
 
     #[test]
@@ -442,7 +437,10 @@ mod tests {
 
     #[test]
     fn success_response_serializes_with_correct_shape() {
-        let resp = A2AResponse::success(serde_json::json!("req-1"), "hi back".into());
+        let resp = A2AResponse::success(
+            serde_json::json!("req-1"),
+            A2AResultMessage::text("hi back".into()),
+        );
         let json = serde_json::to_value(&resp).unwrap();
         assert_eq!(json["jsonrpc"], "2.0");
         assert_eq!(json["id"], "req-1");
@@ -465,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn agent_card_serializes_with_camel_case_field_names_kept_as_is() {
+    fn agent_card_serializes_field_names_in_spec_camel_case() {
         let card = AgentCard {
             name: "Test".into(),
             description: Some("desc".into()),
@@ -476,14 +474,37 @@ mod tests {
                 push_notifications: false,
                 state_transition_history: false,
             },
-            skills: vec![],
+            skills: vec![AgentSkill {
+                id: "skill-1".into(),
+                name: "Skill".into(),
+                description: "does a thing".into(),
+                tags: vec![],
+                examples: vec![],
+                input_modes: vec!["text".into()],
+                output_modes: vec!["text".into()],
+            }],
             default_input_modes: vec!["text".into()],
             default_output_modes: vec!["text".into()],
         };
         let json = serde_json::to_value(&card).unwrap();
         assert_eq!(json["name"], "Test");
         assert_eq!(json["url"], "http://localhost:9420/a2a/test");
+        // The A2A spec names every multi-word field in camelCase; snake_case
+        // keys are simply invisible to a conformant client.
+        assert_eq!(json["defaultInputModes"][0], "text");
+        assert_eq!(json["defaultOutputModes"][0], "text");
+        assert!(json.get("default_input_modes").is_none());
+        assert!(json.get("default_output_modes").is_none());
         assert_eq!(json["capabilities"]["streaming"], false);
-        assert_eq!(json["default_input_modes"][0], "text");
+        assert_eq!(json["capabilities"]["pushNotifications"], false);
+        assert_eq!(json["capabilities"]["stateTransitionHistory"], false);
+        assert!(json["capabilities"].get("push_notifications").is_none());
+        assert!(json["capabilities"]
+            .get("state_transition_history")
+            .is_none());
+        assert_eq!(json["skills"][0]["inputModes"][0], "text");
+        assert_eq!(json["skills"][0]["outputModes"][0], "text");
+        assert!(json["skills"][0].get("input_modes").is_none());
+        assert!(json["skills"][0].get("output_modes").is_none());
     }
 }

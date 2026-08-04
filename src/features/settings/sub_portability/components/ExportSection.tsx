@@ -8,6 +8,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { ExportSelectionModal } from './ExportSelectionModal';
+import { ImportConflictPanel } from './ImportConflictPanel';
 import type { PortabilityImportResult } from '@/api/system/dataPortability';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -20,8 +21,10 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], projectIds: string[], workspaceIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
   onImport: (passphrase?: string) => void;
+  onImportWithResolutions: (resolutions: Record<string, string>) => void;
+  onDismissConflicts: () => void;
 }
 
 export function ExportSection({
@@ -33,6 +36,8 @@ export function ExportSection({
   onCloseExportModal,
   onExportSelective,
   onImport,
+  onImportWithResolutions,
+  onDismissConflicts,
 }: ExportSectionProps) {
   const [importPassphrase, setImportPassphrase] = useState('');
   const [showImportInput, setShowImportInput] = useState(false);
@@ -118,6 +123,16 @@ export function ExportSection({
         )}
       </div>
 
+      {/* Project conflict resolution (pass 2) */}
+      {importResult && importResult.project_conflicts.length > 0 && (
+        <ImportConflictPanel
+          conflicts={importResult.project_conflicts}
+          busy={importStatus === 'loading'}
+          onConfirm={onImportWithResolutions}
+          onDismiss={onDismissConflicts}
+        />
+      )}
+
       {/* Import result */}
       {importResult && (
         <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
@@ -143,6 +158,24 @@ export function ExportSection({
             )}
             {importResult.kpis_created > 0 && (
               <span>{s.import_kpis.replace('{count}', String(importResult.kpis_created))}</span>
+            )}
+            {importResult.projects_imported > 0 && (
+              <span>{s.import_projects.replace('{count}', String(importResult.projects_imported))}</span>
+            )}
+            {importResult.projects_skipped > 0 && (
+              <span>{s.import_projects_skipped.replace('{count}', String(importResult.projects_skipped))}</span>
+            )}
+            {importResult.knowledge_imported > 0 && (
+              <span>{s.import_knowledge.replace('{count}', String(importResult.knowledge_imported))}</span>
+            )}
+            {importResult.knowledge_skipped_duplicates > 0 && (
+              <span>{s.import_knowledge_skipped.replace('{count}', String(importResult.knowledge_skipped_duplicates))}</span>
+            )}
+            {importResult.skills_written > 0 && (
+              <span>{s.import_skills_written.replace('{count}', String(importResult.skills_written))}</span>
+            )}
+            {importResult.skills_deferred > 0 && (
+              <span>{s.import_skills_deferred.replace('{count}', String(importResult.skills_deferred))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (

@@ -46,6 +46,7 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
       <button
         type="button"
         onClick={() => setShowMemories(!showMemories)}
+        aria-expanded={showMemories}
         className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors mb-2"
       >
         {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

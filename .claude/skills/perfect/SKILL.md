@@ -251,13 +251,9 @@ This skill declares `contexts: tracked` — the Personas app measures per-contex
 {"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from .claude/codebase-context.md>","skill":"perfect"}
 ```
 
-**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use the **product-level context names the local app DB actually holds** — 49 names under 8 groups, listed in `.claude/codebase-context.md`.
+**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use **`.personas/contexts.txt`** — the registered-name list dumped straight from the app's `dev_contexts`, regenerated after each context scan. That file is the only authority, and it is the one thing to re-check when coverage sits at 0% with no error anywhere.
 
-**Do NOT source outbox names from repo-root `context-map.json`.** Its contents have changed twice and the reason to distrust it has changed with them, so check provenance rather than remembering a shape:
-- Until ~2026-07 it was a Vibeman auto-map (`$schema: vibeman.dev`, 236 mechanical names like `tauri:engine [3/10]`).
-- As of 2026-08-04 it is **769 contexts / 16 groups in perfect app-export shape** (`version: 2` integer, no `$schema`, `generator: personas-context-scan`) whose `project.root` is `C:\Users\kazda\kiro\personas` — **a different machine**. It passes every shape test and is still not this app's map.
-
-Either way its names anchor to nothing locally. Verify with the `project.root`/`project.id` check in Phase 0 step 2 before trusting the file for anything the app reads. The 769-map is fine for the loop's own queue (its file refs all resolve here); it is not fine for the outbox.
+Do NOT use the two files that look authoritative and are not. `.claude/codebase-context.md` is a 2026-06-16 render of the old 49-context/8-group map; the app has rescanned since and now holds ~767 contexts across 16 groups, so almost every name in it now anchors to nothing. Repo-root `context-map.json` is a foreign Vibeman snapshot (236 mechanical names like `tauri:engine [3/10]`) written by a different tool on a different machine — the root `CLAUDE.md` documents that divergence. Neither has ever been the ingest's matching set.
 
 Always set both `"skill":"perfect"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). Skip silently when not Personas-managed.
 

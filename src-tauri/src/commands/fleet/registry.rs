@@ -71,6 +71,10 @@ pub struct OutputRing {
     /// Result of the most recent comparison — the "is this session actually
     /// working, or just animating?" signal. See [`super::screen_activity`].
     last_delta: Option<screen_activity::ScreenDelta>,
+    /// Renders taken so far, saturating. Only used to know whether
+    /// `last_delta` had a real predecessor to compare against — see
+    /// [`Self::informative_screen_delta`].
+    renders: u32,
 }
 
 impl OutputRing {
@@ -85,6 +89,7 @@ impl OutputRing {
             gen_tx: watch::channel(0).0,
             prev_line_hashes: Vec::new(),
             last_delta: None,
+            renders: 0,
         }
     }
 
@@ -205,10 +210,28 @@ impl OutputRing {
             at_ms: now_ms(),
         });
         self.prev_line_hashes = next;
+        self.renders = self.renders.saturating_add(1);
     }
 
     /// Most recent screen comparison, if any render has happened.
+    ///
+    /// Includes the uninformative first sample — this is the debug/telemetry
+    /// view. State rules want [`Self::informative_screen_delta`].
     pub fn last_screen_delta(&self) -> Option<screen_activity::ScreenDelta> {
+        self.last_delta
+    }
+
+    /// The most recent comparison that actually compared against something.
+    ///
+    /// The first render has no predecessor, so every line reads as new and the
+    /// verdict is `Working` regardless of reality (see [`Self::record_delta`]).
+    /// Returning `None` until a second render has happened is what keeps that
+    /// artefact out of the staleness rules: a caller with `None` must behave
+    /// exactly as it did before screen activity existed.
+    pub fn informative_screen_delta(&self) -> Option<screen_activity::ScreenDelta> {
+        if self.renders < 2 {
+            return None;
+        }
         self.last_delta
     }
 }

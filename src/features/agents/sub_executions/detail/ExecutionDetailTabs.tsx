@@ -1,3 +1,4 @@
+import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { ListTree, Search, Activity, Zap, Play, Compass, Link2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isTerminalState } from '@/lib/execution/executionState';
@@ -16,8 +17,18 @@ interface ExecutionDetailTabsProps {
   executionStatus: string;
 }
 
+interface TabDescriptor {
+  id: DetailTab;
+  label: string;
+  icon: ReactNode;
+  /** Violet treatment for the "extra" tabs (director review, replay sandbox). */
+  special?: boolean;
+}
+
 export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, hasPipeline, hasChain, executionStatus }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
+  const listRef = useRef<HTMLDivElement>(null);
+
   const tabClass = (tab: DetailTab, special?: boolean) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
       activeTab === tab
@@ -27,46 +38,62 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, has
         : 'text-foreground hover:text-foreground/95 border border-transparent'
     }`;
 
+  // Only the tabs that are actually rendered take part in arrow-key navigation.
+  const tabs: TabDescriptor[] = [
+    { id: 'detail', label: t.agents.executions.tab_detail, icon: <ListTree className="w-3.5 h-3.5" /> },
+    ...(hasDirectorReview
+      ? [{ id: 'director' as const, label: t.agents.executions.tab_director, icon: <Compass className="w-3.5 h-3.5" />, special: true }]
+      : []),
+    ...(hasToolSteps
+      ? [{ id: 'inspector' as const, label: t.agents.executions.tab_inspector, icon: <Search className="w-3.5 h-3.5" /> }]
+      : []),
+    { id: 'trace', label: t.agents.executions.tab_trace, icon: <Activity className="w-3.5 h-3.5" /> },
+    ...(hasPipeline
+      ? [{ id: 'pipeline' as const, label: t.agents.executions.tab_pipeline, icon: <Zap className="w-3.5 h-3.5" /> }]
+      : []),
+    ...(hasChain
+      ? [{ id: 'chain' as const, label: t.agents.executions.tab_chain, icon: <Link2 className="w-3.5 h-3.5" /> }]
+      : []),
+    ...(isTerminalState(executionStatus)
+      ? [{ id: 'replay' as const, label: t.agents.executions.tab_replay, icon: <Play className="w-3.5 h-3.5" />, special: true }]
+      : []),
+  ];
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    const index = tabs.findIndex((tab) => tab.id === activeTab);
+    if (index === -1) return;
+    event.preventDefault();
+    const delta = event.key === 'ArrowRight' ? 1 : -1;
+    const next = tabs[(index + delta + tabs.length) % tabs.length];
+    if (!next) return;
+    setActiveTab(next.id);
+    listRef.current?.querySelector<HTMLButtonElement>(`[data-tab-id="${next.id}"]`)?.focus();
+  };
+
   return (
-    <div className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit">
-      <button type="button" onClick={() => setActiveTab('detail')} className={tabClass('detail')}>
-        <ListTree className="w-3.5 h-3.5" />
-        {t.agents.executions.tab_detail}
-      </button>
-      {hasDirectorReview && (
-        <button type="button" onClick={() => setActiveTab('director')} className={tabClass('director', true)}>
-          <Compass className="w-3.5 h-3.5" />
-          {t.agents.executions.tab_director}
+    <div
+      ref={listRef}
+      role="tablist"
+      onKeyDown={handleKeyDown}
+      className="flex gap-1 p-1 rounded-modal bg-secondary/40 border border-primary/10 w-fit"
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          data-tab-id={tab.id}
+          aria-selected={activeTab === tab.id}
+          // Roving tabindex: the tab strip is a single tab stop, arrows move within it.
+          tabIndex={activeTab === tab.id ? 0 : -1}
+          onClick={() => setActiveTab(tab.id)}
+          className={tabClass(tab.id, tab.special)}
+        >
+          {tab.icon}
+          {tab.label}
         </button>
-      )}
-      {hasToolSteps && (
-        <button type="button" onClick={() => setActiveTab('inspector')} className={tabClass('inspector')}>
-          <Search className="w-3.5 h-3.5" />
-          {t.agents.executions.tab_inspector}
-        </button>
-      )}
-      <button type="button" onClick={() => setActiveTab('trace')} className={tabClass('trace')}>
-        <Activity className="w-3.5 h-3.5" />
-        {t.agents.executions.tab_trace}
-      </button>
-      {hasPipeline && (
-        <button type="button" onClick={() => setActiveTab('pipeline')} className={tabClass('pipeline')}>
-          <Zap className="w-3.5 h-3.5" />
-          {t.agents.executions.tab_pipeline}
-        </button>
-      )}
-      {hasChain && (
-        <button type="button" onClick={() => setActiveTab('chain')} className={tabClass('chain')}>
-          <Link2 className="w-3.5 h-3.5" />
-          {t.agents.executions.tab_chain}
-        </button>
-      )}
-      {isTerminalState(executionStatus) && (
-        <button type="button" onClick={() => setActiveTab('replay')} className={tabClass('replay', true)}>
-          <Play className="w-3.5 h-3.5" />
-          {t.agents.executions.tab_replay}
-        </button>
-      )}
+      ))}
     </div>
   );
 }

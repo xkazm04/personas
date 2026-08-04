@@ -2,7 +2,7 @@
 
 **Location:** Projects (sidebar) → Development → Mastermind
 **Source:** `src/features/teams/sub_mastermind/`
-**Status:** experimental prototype (built via iterative `/prototype` rounds, 2026-07). Two canvas variants still develop in parallel behind a switcher; consolidation to a single variant is pending.
+**Status:** consolidated (2026-08). The Hex Mosaic is the final view mode — the variant switcher and the Inverse Grid prototype are retired. Mastermind is also the **primary channel** into the deeper dev-tools layers: it deep-links into Factory L2 (Overview/Ship), and the Skills manager with project context.
 
 Mastermind renders every dev-tools project as an **island** on an infinite pan/zoom canvas — Civilization-style islands with Figma-style manipulation. The goal: understand the whole portfolio's scope and state at first sight (healthy / building / warning / critical / erroring), and react directly on the canvas (run scans, dispatch upgrades, open terminals) without leaving it.
 
@@ -27,13 +27,13 @@ Mastermind renders every dev-tools project as an **island** on an infinite pan/z
 ## 3. Architecture
 
 ```
-MastermindPage (data joins, popover/sidebar state, mode + variant state)
-└── variant wrapper (MastermindHexMosaic | MastermindInverseGrid) — thin
+MastermindPage (data joins, popover/sidebar state, mode state)
+└── MastermindHexMosaic — thin wrapper
     └── CanvasShell (shared: sea, camera, groups/links/notes tools,
         │            hover focus, connect gesture, zoom chrome)
-        └── renderIsland(island, ctx) → MosaicIsland | InverseIsland
-            ├── IslandBanner (counter-scaled header = drag handle)
-            ├── dimension cells (MosaicCell hexes | DimTile rects)
+        └── renderIsland(island, ctx) → MosaicIsland
+            ├── IslandBanner (counter-scaled header = drag handle + Ship milestone chip)
+            ├── dimension cells (MosaicCell hexes)
             ├── StatColumns (side stats, band-gated — REAL sensors via lib/islandStats: KPI attainment, live Sentry errors, 30d LLM spend via lib/llmSpend, tests/auto/prod from the passport; demo islands keep statsMock)
             └── FleetBadges (terminals + personas ops row)
 ```
@@ -42,7 +42,7 @@ Key libs (all under `lib/`):
 
 | Module | Responsibility |
 | --- | --- |
-| `types.ts` | Scene model (`Island`, `DimNode`, `IslandEdge`, `FleetNode`, `GroupRect`, `UserLink`, `CanvasNote`), zoom bands, `CanvasMode`, `VariantProps` contract |
+| `types.ts` | Scene model (`Island`, `DimNode`, `IslandEdge`, `FleetNode`, `GroupRect`, `UserLink`, `CanvasNote`), zoom bands, `CanvasMode`, `VariantProps` page↔canvas contract, `IslandShip` (banner Ship chip) |
 | `sceneStore.ts` | **The data spine** (zustand): batch-fetches relations + idea scans + monitoring with per-family fetch STATUS; surgical event-driven invalidation instead of polling; ≤1 IPC per family at open |
 | `deriveScene.ts` | Passports (+ KPI/scan/live extras) → `Scene`; demo scene fallback when nothing is scanned |
 | `dimRegistry.ts` | **Single source of truth for dimensions** — label, `derive()`, icon, wall `rowKey`, action kind, far-payload kind. Adding a dimension = one entry here |
@@ -58,7 +58,7 @@ Key libs (all under `lib/`):
 | `useEventCallback.ts` | Stable-identity callbacks so memoized islands skip re-renders |
 | `ListPopover.tsx` | **The one list-popover shell** — positioned surface, header band (glyph/dot + title + trailing), scrolling list, and `usePopoverDismiss` (Escape + outside click, attached next tick). All six list popovers (goals, KPIs, personas, stack lists, categories, fleet sessions) render their own ROWS into it; only the shell is shared. `anchor="absolute"` for the fleet list, which lives inside CanvasShell and lets the shell own dismissal. |
 
-**Render scale (optimizer pass, hundreds of islands):** island props carry a **quantized z** (~6% steps — islands re-render ~12× per zoom doubling, not per frame); `positioned` islands in MastermindPage are **content-stable** (per-slug cache; a fleet tick re-renders only the affected island); neighbor-dimming on hover writes opacity **imperatively** to the island `<g>`s (`data-mm-island`); halos are shared per-state **radialGradients** / layered plates, not per-island Gaussian filters; passports publish **two-phase** (evidence-less first paint, probe evidence merged in a second commit).
+**Render scale (optimizer pass, hundreds of islands):** island props carry a **quantized z** (~6% steps — islands re-render ~12× per zoom doubling, not per frame); `positioned` islands in MastermindPage are **content-stable** (per-slug cache; a fleet tick re-renders only the affected island); neighbor-dimming on hover writes opacity **imperatively** to the island `<g>`s (`data-mm-island`); halos are shared per-state **radialGradients** / layered plates, not per-island Gaussian filters; passports publish **two-phase** (evidence-less first paint, probe evidence merged in a second commit). Cold-open staggering is two independent wave systems: CanvasShell **mounts** visible islands `MOUNT_WAVE` (5) per animation frame, and MastermindPage's **hydration waves** cap how many already-painted islands may **adopt changed content** per pass (`HYDRATE_WAVE` = 6, drained one rAF at a time) — so the ~9 data families resolving in quick succession after mount roll across the canvas island-by-island instead of reconciling the whole world in one synchronous commit. Islands over budget briefly keep their previous painted content (identical reference → memo skip); single-island updates (drag, busy flag, one fleet tick) always fit the first wave.
 | `CanvasShell.tsx` | Everything shared per §1/§7/§8; owns groups/links/notes state + editors |
 | `DataHealthBar.tsx` | Page chrome naming FAILED data families (relations/scans/monitoring/KPI/fleet) + retry; renders nothing when clean |
 
@@ -123,31 +123,30 @@ Tests live in `__tests__/` (deriveScene status/edges/ideas/live/unknown, dimActi
 
 Rollup rule, pessimistic about problems and strict about green: any `alert` → `alert`; else any `risk` → `risk`; else any `unknown` → `unknown` (a failed data family must never read as healthy); else all-`absent` → `absent`; else all-`solid` → `solid`; else `partial`. Each cell renders the category icon (`Cpu` / `PackageCheck` / `Sparkles` / `Compass`) in that colour plus a `solid/total` ratio, with a native `<title>` carrying "*{solid} of {total} wired*". A category holding `alert` or `risk` dimensions also gets a corner **attention badge** with that count — the colour says *something* is wrong, the badge says *how many*. `attention` deliberately excludes `absent`: a gap you chose is not a problem (pinned by a test).
 
-Geometry: four oversized cells in a symmetric quad around the core (`CAT_AXIAL` in `MosaicIsland`, `CAT_RING` in `InverseIsland`). Cluster extents are **always measured from the full lattice**, so the halo/plate, banner, stat columns and fleet badges hold still across the band change — only the cells inside swap. In **edit** mode a click opens **`CategoryPopover`** — the category's dimensions sorted worst status first (`STATUS_RANK`), rendered as the SAME rows the island context menu uses (shared `MenuGlyph`, same actionable/inert convention), each actionable row routing through the same `onDimOpen`. So a red Delivery cell at far zoom tells you *which* dimension is red and lets you act on it without zooming in first. A **double-click** frames the island instead (the drill-in gesture that explodes it back into real cells). In connect/group/note mode the cell is inert so it never swallows the mode's own drag.
+Geometry: four oversized cells in a symmetric quad around the core (`CAT_AXIAL` in `MosaicIsland`). Cluster extents are **always measured from the full lattice**, so the halo/plate, banner, stat columns and fleet badges hold still across the band change — only the cells inside swap. In **edit** mode a click opens **`CategoryPopover`** — the category's dimensions sorted worst status first (`STATUS_RANK`), rendered as the SAME rows the island context menu uses (shared `MenuGlyph`, same actionable/inert convention), each actionable row routing through the same `onDimOpen`. So a red Delivery cell at far zoom tells you *which* dimension is red and lets you act on it without zooming in first. A **double-click** frames the island instead (the drill-in gesture that explodes it back into real cells). In connect/group/note mode the cell is inert so it never swallows the mode's own drag.
 
 This is what lifts the ~15-cell ceiling: a 16th dimension needs a registry entry and a lattice slot as before, but the far-zoom read no longer degrades with the count.
 
-**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and both cell renderers pick it up — plus one lattice coord in each variant (MosaicIsland `AXIAL`, InverseIsland `RING`). Lattice capacity: both now hold 15. The far/mid **dimension-categories** collapse (below) has since landed, so the zoomed-out read no longer degrades with the count — a 16th dimension needs a registry entry plus one lattice coord in each variant.
+**Adding a dimension:** one entry in `dimRegistry.ts` (see its `addingADimension` note) — deriveScene, glyphs, menus, actions and the cell renderer pick it up — plus one lattice coord in MosaicIsland `AXIAL` (currently 15). The far/mid **dimension-categories** collapse (below) has since landed, so the zoomed-out read no longer degrades with the count.
 
 ## 6. Zoom bands and level-of-detail
 
-`ZOOM_THRESHOLDS` in `types.ts` — the single source of truth: `far < 0.34 ≤ mid < 0.72 ≤ near < 1.05 ≤ close`.
+`ZOOM_THRESHOLDS` in `types.ts` — the single source of truth: `far < 0.20 ≤ mid < 0.50 ≤ near < 0.80 ≤ close` (i.e. Mid triggers at 20% zoom, Near at 50%, Close at 80%).
 
 | Band | Cells render | Identity |
 | --- | --- | --- |
 | far | **4 category cells** (see §5 Dimension categories) — fullscale icon in the rolled-up status colour + `solid/total` ratio | counter-scaled **banner** (name + state dot + blockers + A·P scores) at 20 px screen |
 | mid | same 4 category cells | banner 18 px |
-| near | the full lattice **explodes back** — icon + uppercase label per dimension | banner 17 px; stat columns visible |
-| close | + tool detail + ordinal progress bar | banner 16 px |
+| near | the full lattice **explodes back** — the dimension icon fills the hex as a low-opacity watermark and the **state value** (ordinal progress `2/4`, freshness `12d`, or a status mark for boolean dims) is the foreground, uppercase label below | banner 17 px; stat columns visible |
+| close | inspection detail — small icon + label + tool detail + ordinal progress bar | banner 16 px |
 
 The banner is rendered in world space but **counter-scaled by 1/z** (the Civilization city-label trick), so identity holds at any distance. Native `<title>` tooltips on every cell name the dimension + tool regardless of LOD. Stat columns hide at far. The dev-only `ZoomBadge` (top-right, `import.meta.env.DEV`) shows exact z / % / band for tuning.
 
-## 7. Canvas variants
+## 7. Canvas view
 
-- **Hex Puzzle** (`MosaicIsland`) — core + dimensions snapped edge-to-edge on the axial hex lattice (ring-1 six + contiguous ring-2 caps); state halo behind the honeycomb; reads as an interlocking mosaic when far.
-- **Inverse Grid** (`InverseIsland`) — the grid turned inside out: core in the **centre** cell, dimensions in a 3×3 layer around it, layer-2 opening along the top row for 9+.
+- **Hex Mosaic** (`MosaicIsland`, final) — core + dimensions snapped edge-to-edge on the axial hex lattice (ring-1 six + contiguous ring-2 caps); state halo behind the honeycomb; reads as an interlocking mosaic when far.
 
-Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, fleet "Cells", stats Panels/Strip/Gauges.
+Retired along the way (deleted, in git history): Archipelago (R1 winner, later baseline), Command Grid, Grid Board, Inverse Grid (+ its `DimTile` renderer and the variant switcher), fleet "Cells", stats Panels/Strip/Gauges.
 
 ## 8. Interaction model (Figma-like, edit-first)
 
@@ -189,14 +188,22 @@ Deploys/scans launched here appear in the titlebar activity dock and busy-spin t
 
 ## 11. Sidebars
 
-- **Left — project list** (`ProjectListSidebar`): hidden by default behind a panel icon; name-asc rows with state dot + eye toggle hiding/showing the island on the canvas (persisted in the layout doc; the list always shows all). Header **+** = the Projects manager's `ProjectModal` (same create/update store actions, path-dedup, background context scan), then passport reload.
-- **Right — project passport** (`ProjectSidebar`): opens on header click; renders the wall's exported `CoverBody` (R18 Statband, `stats={null}`) + every dimension section with `InkWallCell`, dividers brightened for the panel backdrop (`border-foreground/12`).
+- **Left — project list** (`ProjectListSidebar`): hidden by default behind a panel icon; name-asc rows (name click opens the project sidebar) with state dot + eye toggle hiding/showing the island on the canvas (persisted in the layout doc; the list always shows all). Header **+** = the Projects manager's `ProjectModal` (same create/update store actions, path-dedup, background context scan), then passport reload.
+- **Right — project passport** (`ProjectSidebar`): opens on header click (or a left-list row click); a **door row** under the header deep-links this project into Factory / its Ship plan / the Skills manager; below it the wall's exported `CoverBody` (R18 Statband, `stats={null}`) + every dimension section with `InkWallCell`, dividers brightened for the panel backdrop (`border-foreground/12`).
+
+## 11b. Primary-channel doors (cross-module navigation)
+
+Mastermind hands projects off to the deeper layers with context instead of duplicating their UI:
+
+- **Ship milestone chip** on the banner (every zoom band): one batched `projectWallSummary` IPC + `buildCoverRoadmap` (the passport wall's own reducer) gives each island `Island.ship` — next milestone, shipped/total, late forecast (late = warning tint, all-shipped = success). Clicking it (edit mode) opens the project's **Factory Ship tab**.
+- **Island context menu** rows *Open in Factory / Open Ship plan / Open Skills manager* (disabled on the demo scene).
+- **Project sidebar door row** — Factory / Ship / Skills buttons.
+- Mechanics (`lib/navigate.ts`): Factory rides `pendingFactoryFocus {projectId, l2Tab}` in `uiSlice`, consumed + cleared by `FactoryShell` (the only way to land Factory on a specific project from outside — its nav state is local). Skills rides `setActiveProject(projectId)` + the plugins/dev-tools tab setters.
 
 Both sidebars, the context menu, and the list popovers share the app sidebar-menu language: `bg-secondary/95 backdrop-blur` + `border-primary/15` + `shadow-elevation-4` surfaces, `bg-primary/5` header bands with `typo-label text-foreground/90`, `typo-body text-foreground/70 hover:bg-secondary/40` rows.
 
 ## 12. Known gaps / deferred
 
-- **Variant consolidation** — Hex Puzzle vs Inverse Grid still A/B; the winner absorbs the loser and the switcher goes away.
 - `auth` stays inert on purpose. Making it actionable is a **Passport-wall** change, not a canvas one: there is no `auth` row in `deployActions`/`connectors`, the wall renders it as a plain presence cell, and `passportModel` marks `stack.auth` view-only. A canvas action would break `dimActions`' invariant that a cell is clickable exactly when its wall row shows a gear. The registry marks it `viewOnly: true` so its cells say so in the tooltip.
 - **KPI popover rows are inert** — the per-KPI jump into the Factory KPI dashboard is the next step.
 - **Fleet-lane scan dispatch** (see §10 deviation).

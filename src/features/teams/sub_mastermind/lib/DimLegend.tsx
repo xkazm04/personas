@@ -3,7 +3,7 @@
 // who can't read the encoding is looking at decoration.
 //
 // Collapsed by default: the key is orientation, not a permanent panel, and the
-// canvas has to stay the thing you look at. Each swatch reproduces DimTile's
+// canvas has to stay the thing you look at. Each swatch reproduces the cell's
 // real geometry (rx 8, mix(ink,16) fill, mix(ink,50) stroke, dashed for
 // `absent`) rather than approximating with a dot, so the key matches what the
 // map actually draws. Every row carries a text label — colour never carries
@@ -29,7 +29,7 @@ const statusLabel = (t: Translations, s: DimStatus) =>
     absent: t.mastermind.legend_absent,
   })[s];
 
-/** One swatch, drawn the way DimTile draws the real cell. */
+/** One swatch, drawn the way the mosaic cell draws the real hex. */
 function Swatch({ status }: { status: DimStatus }) {
   const absent = status === 'absent';
   const ink = DIM_INK[status];

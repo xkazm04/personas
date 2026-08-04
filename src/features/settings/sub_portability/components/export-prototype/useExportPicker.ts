@@ -3,12 +3,16 @@ import { listPersonas } from '@/api/agents/personas';
 import { listCredentials } from '@/api/vault/credentials';
 import { listTeams, listTeamMembers } from '@/api/pipeline/teams';
 import { listAllKpis } from '@/api/devTools/kpis';
+import { listProjects } from '@/api/devTools/devTools';
+import { listWorkspaces } from '@/api/devTools/workspaces';
 import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
 import { silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
 import type { ExportInventory, ExportKind, ExportPicker, OnExport } from './types';
 
 const EMPTY_INVENTORY: ExportInventory = {
@@ -16,6 +20,8 @@ const EMPTY_INVENTORY: ExportInventory = {
   personas: [],
   teams: [],
   credentials: [],
+  projects: [],
+  workspaces: [],
   personaTeams: new Map(),
   teamMemberCount: new Map(),
   teamKpiCount: new Map(),
@@ -33,6 +39,8 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     teams: PersonaTeam[];
     credentials: PersonaCredential[];
     kpis: DevKpi[];
+    projects: DevProject[];
+    workspaces: DevWorkspace[];
     memberMap: Map<string, string[]>; // teamId → personaIds
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +48,8 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
   const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set());
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [selectedCredentials, setSelectedCredentials] = useState<Set<string>>(new Set());
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState<Set<string>>(new Set());
   const [includeKpiSetup, setIncludeKpiSetup] = useState(true);
   const [includeMemories, setIncludeMemories] = useState(true);
   const [passphrase, setPassphrase] = useState('');
@@ -53,7 +63,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
     setIncludeKpiSetup(true);
 
     (async () => {
-      const [personas, teams, credentials, kpis] = await Promise.all([
+      const [personas, teams, credentials, kpis, projects, workspaces] = await Promise.all([
         listPersonas().catch((e) => {
           silentCatch('useExportPicker:listPersonas')(e);
           return [] as Persona[];
@@ -70,6 +80,14 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
           silentCatch('useExportPicker:listAllKpis')(e);
           return [] as DevKpi[];
         }),
+        listProjects().catch((e) => {
+          silentCatch('useExportPicker:listProjects')(e);
+          return [] as DevProject[];
+        }),
+        listWorkspaces().catch((e) => {
+          silentCatch('useExportPicker:listWorkspaces')(e);
+          return [] as DevWorkspace[];
+        }),
       ]);
 
       const memberLists = await Promise.all(
@@ -85,10 +103,12 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
       const memberMap = new Map<string, string[]>(memberLists);
 
       if (cancelled) return;
-      setRaw({ personas, teams, credentials, kpis, memberMap });
+      setRaw({ personas, teams, credentials, kpis, projects, workspaces, memberMap });
       setSelectedPersonas(new Set(personas.map((p) => p.id)));
       setSelectedTeams(new Set(teams.map((t) => t.id)));
       setSelectedCredentials(new Set(credentials.map((c) => c.id)));
+      setSelectedProjects(new Set(projects.map((p) => p.id)));
+      setSelectedWorkspaces(new Set(workspaces.map((w) => w.id)));
       setLoading(false);
     })();
 
@@ -99,7 +119,7 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
 
   const inv: ExportInventory = useMemo(() => {
     if (!raw) return EMPTY_INVENTORY;
-    const { personas, teams, credentials, kpis, memberMap } = raw;
+    const { personas, teams, credentials, kpis, projects, workspaces, memberMap } = raw;
 
     // personaId → teams (membership-based).
     const personaTeams = new Map<string, PersonaTeam[]>();
@@ -155,6 +175,8 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
         (a, b) => Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name),
       ),
       credentials: [...credentials].sort((a, b) => a.name.localeCompare(b.name)),
+      projects: [...projects].sort((a, b) => a.name.localeCompare(b.name)),
+      workspaces: [...workspaces].sort((a, b) => a.name.localeCompare(b.name)),
       personaTeams,
       teamMemberCount,
       teamKpiCount,
@@ -172,7 +194,11 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
         ? setSelectedPersonas
         : kind === 'teams'
           ? setSelectedTeams
-          : setSelectedCredentials,
+          : kind === 'credentials'
+            ? setSelectedCredentials
+            : kind === 'projects'
+              ? setSelectedProjects
+              : setSelectedWorkspaces,
     [],
   );
 
@@ -182,8 +208,12 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
         ? selectedPersonas
         : kind === 'teams'
           ? selectedTeams
-          : selectedCredentials,
-    [selectedPersonas, selectedTeams, selectedCredentials],
+          : kind === 'credentials'
+            ? selectedCredentials
+            : kind === 'projects'
+              ? selectedProjects
+              : selectedWorkspaces,
+    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces],
   );
 
   const isSelected = useCallback((kind: ExportKind, id: string) => setFor(kind).has(id), [setFor]);
@@ -222,12 +252,24 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
       personas: { selected: selectedPersonas.size, total: inv.personas.length },
       teams: { selected: selectedTeams.size, total: inv.teams.length },
       credentials: { selected: selectedCredentials.size, total: inv.credentials.length },
+      projects: { selected: selectedProjects.size, total: inv.projects.length },
+      knowledge: { selected: selectedWorkspaces.size, total: inv.workspaces.length },
     }),
-    [selectedPersonas, selectedTeams, selectedCredentials, inv],
+    [selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, inv],
   );
 
-  const totalItems = inv.personas.length + inv.teams.length + inv.credentials.length;
-  const totalSelected = selectedPersonas.size + selectedTeams.size + selectedCredentials.size;
+  const totalItems =
+    inv.personas.length +
+    inv.teams.length +
+    inv.credentials.length +
+    inv.projects.length +
+    inv.workspaces.length;
+  const totalSelected =
+    selectedPersonas.size +
+    selectedTeams.size +
+    selectedCredentials.size +
+    selectedProjects.size +
+    selectedWorkspaces.size;
   const isFullExport = totalItems > 0 && totalSelected === totalItems;
   const passphraseValid = passphrase.length === 0 || passphrase.length >= 8;
 
@@ -239,17 +281,21 @@ export function useExportPicker(isOpen: boolean, onExport: OnExport): ExportPick
       Array.from(selectedPersonas),
       Array.from(selectedTeams),
       Array.from(selectedCredentials),
+      Array.from(selectedProjects),
+      Array.from(selectedWorkspaces),
       includeMemories,
       includeKpiSetup,
       passphrase.length >= 8 ? passphrase : undefined,
     );
-  }, [onExport, selectedPersonas, selectedTeams, selectedCredentials, includeMemories, includeKpiSetup, passphrase]);
+  }, [onExport, selectedPersonas, selectedTeams, selectedCredentials, selectedProjects, selectedWorkspaces, includeMemories, includeKpiSetup, passphrase]);
 
   return {
     inv: { ...inv, loading: loading || inv.loading },
     selectedPersonas,
     selectedTeams,
     selectedCredentials,
+    selectedProjects,
+    selectedWorkspaces,
     includeKpiSetup,
     includeMemories,
     passphrase,

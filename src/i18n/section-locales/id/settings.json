@@ -594,7 +594,11 @@
       "select_filtered": "Pilih {count} yang ditampilkan",
       "selected_of": "{selected} / {total}",
       "team_label": "Keanggotaan tim",
-      "trust_label_full": "Skor kepercayaan"
+      "trust_label_full": "Skor kepercayaan",
+      "row_knowledge": "Pengetahuan workspace",
+      "row_projects": "Proyek dev",
+      "scope_knowledge": "Pengetahuan",
+      "scope_projects": "Proyek dev"
     },
     "storage_confirm": "Hapus {count} jalankan selesai yang lebih lama dari 24 jam?",
     "storage_confirm_yes": "Hapus",
@@ -604,7 +608,22 @@
     "storage_removable": "Dapat dihapus",
     "storage_subtitle": "Penggunaan database lokal dan pembersihan jalankan yang selesai.",
     "storage_title": "Penyimpanan",
-    "storage_total": "Total jalankan"
+    "storage_total": "Total jalankan",
+    "dev_projects": "Proyek Dev",
+    "workspace_knowledge": "Pengetahuan workspace",
+    "choose_resolution": "Pilih penyelesaian konflik",
+    "duplicate": "Duplikat",
+    "import_knowledge": "{count} item pengetahuan",
+    "import_knowledge_skipped": "{count} item pengetahuan duplikat dilewati",
+    "import_projects": "{count} proyek",
+    "import_projects_skipped": "{count} proyek dilewati",
+    "import_skills_deferred": "{count} file skill ditunda",
+    "import_skills_written": "{count} file skill ditulis",
+    "matched_by_name": "cocok berdasarkan nama",
+    "matched_by_root_path": "cocok berdasarkan jalur folder",
+    "project_conflict_hint": "Proyek dalam bundel ini cocok dengan yang sudah ada di workspace ini. Pilih cara mengimpor masing-masing:",
+    "projects_exist": "{count} proyek dev sudah ada",
+    "projects_exist_plural": "{count} proyek dev sudah ada"
   },
   "config": {
     "title": "Resolusi Konfigurasi",

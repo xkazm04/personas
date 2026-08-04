@@ -756,6 +756,19 @@ const bridge: TestBridge = {
       composeError: c.explainComposeError,
       decisionId: c.pendingDecision?.id ?? null,
       decisionExplained: c.decisionExplained,
+      // Athena has exactly two communication dimensions. A pending decision is
+      // ALWAYS on one of them: the orb bubble when the orb exists (minimized,
+      // or lifted over an open Fleet grid), otherwise the in-chat decision card
+      // (`athena-chat-decision`). `'none'` here means an invisible decision —
+      // the exact regression the third-dimension removal must never introduce.
+      decisionSurface: !c.pendingDecision
+        ? null
+        : c.state === 'minimized' || sys.fleetGridOpen
+          ? 'orb'
+          : 'chat',
+      // In-place failure token for an answered-but-failed decision (this
+      // replaced a toast — the decision stays pending and retryable).
+      decisionError: c.decisionError,
       sidebarSection: sys.sidebarSection,
       homeTab: sys.homeTab,
       contextual: ctx
@@ -2016,13 +2029,19 @@ const bridge: TestBridge = {
     includeMemories: boolean | null = true,
     passphrase: string | null = null,
     filePath = '',
+    projectIds: string[] | null = null,
+    workspaceIds: string[] | null = null,
+    includeKpis: boolean | null = null,
   ) {
     try {
       const wrote = await invoke<boolean>('export_selective_to_path', {
         personaIds,
         teamIds,
         credentialIds,
+        projectIds: projectIds ?? [],
+        workspaceIds: workspaceIds ?? [],
         includeMemories,
+        includeKpis,
         passphrase,
         filePath,
       });
@@ -2034,12 +2053,18 @@ const bridge: TestBridge = {
 
   /** Debug-only round-trip helper: import a portability bundle from a known
    *  path, bypassing the OS file picker. Returns the PortabilityImportResult
-   *  shape so the smoke test can assert on counts and warnings. */
-  async importPortabilityFromPath(passphrase: string | null, filePath: string) {
+   *  shape so the smoke test can assert on counts and warnings.
+   *  `projectResolutionsJson` drives the pass-2 dev-project conflict
+   *  resolution (JSON map bundleProjectId → replace|skip|duplicate). */
+  async importPortabilityFromPath(
+    passphrase: string | null,
+    filePath: string,
+    projectResolutionsJson: string | null = null,
+  ) {
     try {
       const result = await invoke<Record<string, unknown> | null>(
         'import_portability_bundle_from_path',
-        { passphrase, filePath },
+        { passphrase, filePath, projectResolutionsJson },
       );
       return { success: true, result };
     } catch (e: unknown) {

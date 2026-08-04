@@ -11,14 +11,44 @@ Companion is the Athena assistant plugin. It has two UI surfaces: a plugin setti
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
 | Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `CompanionPanel.tsx`, `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
-| Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel, **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`FooterNotice`, `voiceTurnRequest`) |
+| Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel (or summons/hides the orb), **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, thread-attention badge. No text surface — see "Two dimensions" below | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`voiceTurnRequest`) |
+
+## Two dimensions: chat and orb
+
+Athena communicates on exactly **two** surfaces, and nowhere else:
+
+- **CHAT** (`CompanionPanel`) — the full-information dimension. Everything she has
+  to say in words lives here: replies, approval cards, proactive cards, the
+  in-chat decision card, and the ledger of what she did without asking.
+- **ORB** (`AthenaOrbLayer` + `OrbDecisionBubble` / `GuideCaption` / the orb's
+  glow, captions, and avatar postures) — the quick-info and decision dimension.
+
+There is deliberately **no third dimension**. Athena raises no toasts, no footer
+notice popovers, and no corner pop-ups. Surfaces that used to do so, and where
+their content went:
+
+| Removed surface | Where it went |
+| --- | --- |
+| Footer notice popover ("Analysis completed" / proactive subject) | ORB state — the orb's one-shot message reaction on a finished turn, its `speaking` posture while an unread spoken reply waits, the footer Play button, and the thread-attention badge. The words are in chat. |
+| "Athena auto-decided" fleet toast | ORB pulse + a durable in-chat ledger (`AthenaActionsStrip`, backed by `companionStore.athenaActions`). Backend `fleet_decisions` remains the audit trail. |
+| Orb-decision failure toast | Rendered in place on the surface the user clicked — `decisionError` in `OrbDecisionBubble` and `ChatDecisionCard`. The decision stays pending, so the same chips are a retry. |
+| Athena rows in the Channels live corner pop-ups | Filtered out at the `LiveChannelOverlay` sink; they still render in the Channels → Timeline. Other authors are unaffected. |
+
+Because the orb is now a real dimension, the decision queue (`useDecisionQueue`)
+is **always on** — it is no longer gated behind `companionHandsFreeDecisions` /
+`companionAutonomousMode`, which now govern only how far Athena may act *without
+asking*. And because `OrbDecisionBubble` cannot render while the chat panel is
+open (there is no orb to dock against), `ChatDecisionCard` renders the same
+pending decision inside chat under exactly the complementary condition — so a
+pending decision of ANY source (approval, incident, human review, message
+attention, ad-hoc) is always on one surface or the other, never neither.
 
 ## Footer avatar & hold-to-talk
 
 The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`), not a generic glyph — her idle/thinking/speaking video reflects what she's doing at a glance. The button has two gestures:
 
 - **Tap** — opens/collapses the chat panel (the original behavior).
-- **Press-and-hold** (≥220ms) — arms dictation; a mic badge + pulse appear on the avatar. On release, the final transcript is handed to the always-mounted `CompanionPanel` via the `voiceTurnRequest` store slot, which runs the standard `send()` pipeline. The reply streams and (when a voice engine is configured) auto-plays, surfacing through the existing notice popover + Play button — **all without the panel ever opening.** A hold's trailing synthetic `click` is suppressed so releasing doesn't also toggle the panel.
+- **Press-and-hold** (≥220ms) — arms dictation; a mic badge + pulse appear on the avatar. On release, the final transcript is handed to the always-mounted `CompanionPanel` via the `voiceTurnRequest` store slot, which runs the standard `send()` pipeline. The reply streams and (when a voice engine is configured) auto-plays, surfacing through the orb's state change + the Play button — **all without the panel ever opening.** A hold's trailing synthetic `click` is suppressed so releasing doesn't also toggle the panel.
 
 `voiceTurnRequest` is deliberately separate from `pendingPrompt`: `pendingPrompt` seeds the composer draft and is only consumed while the panel (and Composer) is mounted, whereas `voiceTurnRequest` is consumed by an always-mounted effect so a footer-initiated turn works with the panel closed.
 
@@ -121,7 +151,7 @@ Athena runs **many conversations at once — one mind, many threads.** Each conv
 **Telling threads apart (orb identity).** With many threads live, the single orb has to say *which* conversation it's handling, or replies blur together. Two rules keep it unambiguous:
 
 - **Audio is single-owner and focused-only.** Only the thread you're actively in ever speaks: the reply auto-play fires solely in the active-thread send path, and background/proactive turns spawn *voice-off* (`send_turn(…, voice=false, …)`). So you never hear two threads at once, and whatever you *do* hear is the thread you last sent to — background replies stay silent and surface as a badge, never speech.
-- **Visual names the thread.** When a **background** thread finishes, the orb raises a named, one-click-jumpable notice — *"Athena replied in ‹thread›"* — that switches to and opens that conversation (`FooterNotice.conversationId`, set by `useConversationRoster`). And when the **active** thread finishes while the panel is minimized *and* more than one thread exists, its completion notice is named the same way, so the reply you're hearing carries a matching on-screen thread label. Single-thread users keep the plain "analysis complete" cue.
+- **Visual is orb state; the name is in chat.** When a **background** thread finishes, `useConversationRoster` pulses the orb's message reaction — a state change, not a text surface. *Which* thread replied is carried by the footer/orb thread-attention badge (count of other threads awaiting you) and, at full fidelity, by the conversation switcher inside chat. This replaced a named footer-notice popover: naming a thread is full information, and full information belongs in the chat window (see "Two dimensions").
 
 ## Approvals and navigation
 
@@ -418,6 +448,67 @@ When adding a new design-family op, mirror the addition in `DesignCapabilitiesWi
 Lighter cousin of `show_decision_log`. Athena emits `show_recent_decisions { persona_context, limit? }` when she wants to remind the user of prior choices without derailing into a full audit-trail render. The widget fetches via `companion_list_design_decisions` on mount and renders 1-5 chips of the shape `<label> → <choice>` (no rationale, no timeline). Renders nothing if the fetch comes back empty — softer than the full DecisionLogWidget; shouldn't hold a slot with an empty state.
 
 Constitution bumped to v18. With this, Athena has two complementary surfaces for recalling design decisions: heavy (`show_decision_log` for a deliberate audit-trail render) and light (`show_recent_decisions` for a glanceable "by the way…" reminder).
+
+## `show_fleet_plan` — the editable multi-session plan card (conversational dispatch)
+
+The path from a sentence to running terminals. Athena emits
+`show_fleet_plan { operation_intent, rows: [{ cwd, objective, skill? }], title? }`;
+the dispatcher validates it and pushes a `fleet_plan` chat card;
+`AthenaFleetPlanCard` renders it in the chat with every row editable (objective,
+skill) and removable; **Confirm** calls `companion_dispatch_fleet_plan`, which
+re-validates and hands off to the existing executors. Nothing spawns before that
+click, and **Cancel** dismisses the card with no side effect at all.
+
+- **One row → `fleet_spawn`** (a single session). **Two or more → `fleet_dispatch`**
+  (one Operation with N role sessions, `role = <skill>` or `plan-<n>`).
+- **Validation happens at the door**, in `dispatcher.rs`, so a card that renders
+  is a plan that can actually run: non-empty bounded `operation_intent`; 1-8 rows
+  (the `fleet_dispatch` cap); a non-empty bounded objective per row; a slug-shaped
+  optional skill; and every `cwd` inside a registered dev project via the shared
+  `validate_fleet_cwd_in_db`. A rejected plan produces a dispatcher warning Athena
+  reads on her next turn and the op line is stripped from the reply. If the project
+  registry is not reachable for that turn the arm **fails closed** — no card.
+- **Argv is backend-owned.** A row contributes exactly one positional token: the
+  objective, or `/<skill> <objective>` when a skill is chosen.
+  `fleet::pty::spawn_session` appends the variadic `--mcp-config` *last*, after
+  the caller's args; anything emitted after it would be swallowed as a config
+  path, so no caller assembles flags.
+- **Typed and spoken requests are the same path.** Voice reaches `send()` through
+  `useHoldToTalk` → `setVoiceTurnRequest`, so "get three agents on the flaky
+  tests" spoken out loud produces the same plan card as the typed version.
+- The card is CHAT-only by design (the full-information dimension). It is
+  deliberately not a cockpit widget and not pinnable: it is an actionable
+  proposal that starts real processes, so it must not be re-rendered outside the
+  conversation that consented to it.
+
+### Containment posture (2026-08-04, operator's explicit call)
+
+`fleet_spawn` and `fleet_dispatch` are now on `AUTOAPPROVE_ALLOWLIST`, so they
+follow the boldness dial like the other fleet actions. Stated plainly: **with the
+default `Bold` dial in autonomous mode, a typed or spoken request can start real
+`claude --dangerously-skip-permissions` sessions with no click in between.** The
+risk is accepted; an assistant that cannot start work is not a conductor. Two
+things bound it and neither may be weakened:
+
+1. `validate_fleet_cwd` confines every spawn to a **registered dev project**
+   directory. That is the boundary.
+2. The editable plan card is the **correction path** — for anything beyond a
+   single obvious session, the constitution directs Athena to propose a plan the
+   user can edit rather than a bare auto-firing spawn.
+
+Cautious and Balanced dials keep gating these behind the confidence matrix.
+
+**Every dispatch is audited.** Because a request can start terminals with no
+click, the durable record is the compensating control — a log line is not
+auditable after the fact. Confirming a plan appends a row to the same
+`fleet_decisions` ledger the autopilot writes to, carrying the operation intent,
+the session count, and per row the cwd plus the **resolved prompt** that session
+received (skill included). Origin is distinguishable: `decision_class =
+operator_confirmed_plan` and `outcome = operator_confirmed` /
+`operator_confirmed_failed`, versus the autopilot's `auto_fired` / `deferred`. A
+confirm whose executor errored is recorded too, since a half-failed dispatch
+still started something. The ledger write is best-effort and can never fail a
+dispatch.
 
 ## Slash-command palette
 

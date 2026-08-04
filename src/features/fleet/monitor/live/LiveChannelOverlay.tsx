@@ -45,6 +45,14 @@ function LiveFeedSink({
       const id = tg.item.id;
       if (seen.current.has(id)) continue;
       seen.current.add(id);
+      // Athena speaks on exactly two dimensions: the chat window (full
+      // information) and the orb (quick info / decision). A corner pop-up is a
+      // third one, so her rows never pop here — they stay in the Channels
+      // timeline (MergedRow still renders them with full author metadata) and,
+      // when they need the operator, reach them through the orb/chat. Every
+      // other author (persona / director / directive / step / event / memory /
+      // slack) is unaffected.
+      if (tg.item.kind === 'athena') continue;
       // First populated run absorbs history; only near-mount arrivals pop.
       const atMs = Date.parse(tg.item.at);
       const isLive = established.current || (Number.isFinite(atMs) && atMs >= mountAt.current - NEW_GRACE_MS);

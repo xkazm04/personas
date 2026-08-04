@@ -69,9 +69,11 @@ export function TalkBubble({ item, onOpen }: { item: TeamChannelItem; onOpen: (i
       >
         {!mine && (
           <span className="flex items-center gap-1.5 mb-0.5">
-            {(item.kind === 'athena' || item.kind === 'director') &&
+            {/* Non-persona voices wear their own glyph — Slack included, so a
+                bridged human is legible as an outside participant at a glance. */}
+            {(item.kind === 'athena' || item.kind === 'director' || item.kind === 'slack') &&
               (() => {
-                const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director'];
+                const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director' | 'slack'];
                 return <M.Icon className={`w-3 h-3 ${M.iconColor}`} />;
               })()}
             <span className="typo-caption font-medium" style={{ color: accent }}>

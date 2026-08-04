@@ -14,20 +14,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useExportPicker } from './export-prototype/useExportPicker';
 import { ScopeRail } from './export-prototype/ScopeRail';
 import { ManifestCart } from './export-prototype/ManifestCart';
-import { PersonaPickRow, TeamPickRow, CredentialRow } from './export-prototype/rows';
-import type { ExportKind } from './export-prototype/types';
+import { PersonaPickRow, TeamPickRow, CredentialRow, ProjectPickRow, WorkspacePickRow } from './export-prototype/rows';
+import type { ExportKind, OnExport } from './export-prototype/types';
 
 interface ExportSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (
-    personaIds: string[],
-    teamIds: string[],
-    credentialIds: string[],
-    includeMemories: boolean,
-    includeKpis: boolean,
-    passphrase?: string,
-  ) => void;
+  onExport: OnExport;
   exporting: boolean;
 }
 
@@ -67,6 +60,14 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
     }
     if (scope === 'teams') {
       return inv.teams.filter((tm) => !q || tm.name.toLowerCase().includes(q)).map((x) => x.id);
+    }
+    if (scope === 'projects') {
+      return inv.projects
+        .filter((pr) => !q || pr.name.toLowerCase().includes(q) || pr.root_path.toLowerCase().includes(q))
+        .map((x) => x.id);
+    }
+    if (scope === 'knowledge') {
+      return inv.workspaces.filter((w) => !q || w.name.toLowerCase().includes(q)).map((x) => x.id);
     }
     return inv.credentials
       .filter((c) => !q || c.name.toLowerCase().includes(q) || c.serviceType.toLowerCase().includes(q))
@@ -212,6 +213,28 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
                       offTrackCount={inv.teamOffTrackCount.get(tm.id) ?? 0}
                       selected={picker.isSelected('teams', tm.id)}
                       onToggle={() => picker.toggle('teams', tm.id)}
+                    />
+                  ))
+              ) : scope === 'projects' ? (
+                inv.projects
+                  .filter((pr) => shownSet.has(pr.id))
+                  .map((pr) => (
+                    <ProjectPickRow
+                      key={pr.id}
+                      project={pr}
+                      selected={picker.isSelected('projects', pr.id)}
+                      onToggle={() => picker.toggle('projects', pr.id)}
+                    />
+                  ))
+              ) : scope === 'knowledge' ? (
+                inv.workspaces
+                  .filter((w) => shownSet.has(w.id))
+                  .map((w) => (
+                    <WorkspacePickRow
+                      key={w.id}
+                      workspace={w}
+                      selected={picker.isSelected('knowledge', w.id)}
+                      onToggle={() => picker.toggle('knowledge', w.id)}
                     />
                   ))
               ) : (

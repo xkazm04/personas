@@ -594,7 +594,11 @@
       "select_filtered": "Seleccionar {count} mostrados",
       "selected_of": "{selected} / {total}",
       "team_label": "Pertenencia a equipo",
-      "trust_label_full": "Puntuación de confianza"
+      "trust_label_full": "Puntuación de confianza",
+      "row_knowledge": "Conocimiento del workspace",
+      "row_projects": "Proyectos dev",
+      "scope_knowledge": "Conocimiento",
+      "scope_projects": "Proyectos dev"
     },
     "storage_confirm": "¿Eliminar {count} ejecuciones finalizadas con más de 24 horas?",
     "storage_confirm_yes": "Eliminar",
@@ -604,7 +608,22 @@
     "storage_removable": "Eliminable",
     "storage_subtitle": "Uso de la base de datos local y limpieza de ejecuciones finalizadas.",
     "storage_title": "Almacenamiento",
-    "storage_total": "Total de ejecuciones"
+    "storage_total": "Total de ejecuciones",
+    "dev_projects": "Proyectos de desarrollo",
+    "workspace_knowledge": "Conocimiento del workspace",
+    "choose_resolution": "Elegir resolución del conflicto",
+    "duplicate": "Duplicar",
+    "import_knowledge": "{count} elementos de conocimiento",
+    "import_knowledge_skipped": "{count} elementos de conocimiento duplicados omitidos",
+    "import_projects": "{count} proyectos",
+    "import_projects_skipped": "{count} proyectos omitidos",
+    "import_skills_deferred": "{count} archivos de skill aplazados",
+    "import_skills_written": "{count} archivos de skill escritos",
+    "matched_by_name": "coincide por nombre",
+    "matched_by_root_path": "coincide por ruta de carpeta",
+    "project_conflict_hint": "Estos proyectos del paquete coinciden con otros ya existentes en este workspace. Elige cómo importar cada uno:",
+    "projects_exist": "{count} proyecto dev ya existe",
+    "projects_exist_plural": "{count} proyectos dev ya existen"
   },
   "config": {
     "title": "Resolución de Configuración",

@@ -52,6 +52,26 @@ pub(crate) const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // transcript, so a hallucinated target revives nothing.
     "fleet_wake",
     "fleet_resume",
+    // WP2 (2026-08-04) — CONTAINMENT CHANGE, operator's explicit call, risk
+    // accepted. `fleet_spawn` and `fleet_dispatch` START NEW TERMINALS. Stated
+    // plainly: with the boldness dial on `Bold` (the DEFAULT, and full-auto
+    // since 2026-07-24), a single request typed into the chat — OR SPOKEN OUT
+    // LOUD, since voice reaches the same `send()` path — can put up to 8 real
+    // `claude --dangerously-skip-permissions` processes on the user's machine
+    // with no click in between. That is the intended behaviour, not an
+    // oversight: an assistant that cannot start work is not a conductor.
+    //
+    // Two things keep it bounded, and neither may be weakened:
+    //   1. `validate_fleet_cwd` — every spawn is confined to a REGISTERED DEV
+    //      PROJECT directory. It is the boundary; nothing above it is.
+    //   2. The editable in-chat plan card (`show_fleet_plan` →
+    //      `AthenaFleetPlanCard` → `companion_dispatch_fleet_plan`) is the
+    //      CORRECTION PATH: for anything but a trivial one-liner Athena should
+    //      propose a plan the user can edit and confirm, rather than emitting a
+    //      bare `fleet_spawn`/`fleet_dispatch` that auto-fires.
+    // Cautious/Balanced still gate these behind the confidence matrix.
+    "fleet_spawn",
+    "fleet_dispatch",
     // DELIBERATELY NOT LISTED: `backlog_apply_triage`.
     //
     // A batch triage decides up to 30 backlog items at once, and the reject arm
@@ -173,10 +193,14 @@ pub async fn auto_resolve_if_allowed(
                 return Ok(true);
             }
         }
-    } else if matches!(approval.action.as_str(), "fleet_wake" | "fleet_resume") {
-        // Recovery actions (Phase 4): same boldness × class × confidence bar, but
-        // NO screen re-check — the target is hibernated/orphaned, so there's no
-        // live prompt that could have drifted since Athena reasoned on it.
+    } else if matches!(
+        approval.action.as_str(),
+        "fleet_wake" | "fleet_resume" | "fleet_spawn" | "fleet_dispatch"
+    ) {
+        // Recovery actions (Phase 4) and the session-STARTING actions (WP2:
+        // `fleet_spawn` / `fleet_dispatch`): same boldness × class × confidence
+        // bar, but NO screen re-check — there is no live prompt that could have
+        // drifted (the target is hibernated, orphaned, or does not exist yet).
         let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
         if !fleet_action_auto_fires(&approval.params_json, boldness) {
             tracing::info!(
@@ -224,6 +248,11 @@ pub async fn auto_resolve_if_allowed(
         "fleet_intervene" => execute_fleet_intervene(app, &params),
         "fleet_wake" => execute_fleet_wake(app, &params).await,
         "fleet_resume" => execute_fleet_resume(app, &params).await,
+        // WP2 — see the containment note on AUTOAPPROVE_ALLOWLIST. Both
+        // executors run `validate_fleet_cwd` on every cwd before any process
+        // starts, so an auto-fire still cannot leave the registered projects.
+        "fleet_spawn" => execute_fleet_spawn(app, &params),
+        "fleet_dispatch" => execute_fleet_dispatch(app, &params),
         _ => unreachable!("allowlist mismatch"),
     };
     // The persisted episode is what renders in the companion chat, so it carries
@@ -684,3 +713,27 @@ mod confidence_gate_tests {
     }
 }
 
+
+#[cfg(test)]
+mod containment_posture_tests {
+    use super::AUTOAPPROVE_ALLOWLIST;
+
+    /// WP2's deliberate containment change, pinned so it can never be widened
+    /// or reverted silently. `fleet_spawn` / `fleet_dispatch` START TERMINALS —
+    /// under autonomous mode with the default `Bold` dial, a typed OR SPOKEN
+    /// request can put real `--dangerously-skip-permissions` sessions on the
+    /// machine with no click. The editable plan card is the correction path;
+    /// `validate_fleet_cwd` is the boundary.
+    #[test]
+    fn session_starting_fleet_actions_follow_the_boldness_dial() {
+        assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_spawn"));
+        assert!(AUTOAPPROVE_ALLOWLIST.contains(&"fleet_dispatch"));
+    }
+
+    /// The counterweight: a batch that would rewrite durable memory still
+    /// requires a human click. Widening the fleet surface did not widen this.
+    #[test]
+    fn backlog_triage_still_requires_a_click() {
+        assert!(!AUTOAPPROVE_ALLOWLIST.contains(&"backlog_apply_triage"));
+    }
+}

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Play, X, Mic } from 'lucide-react';
+import { Play, Mic } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCompanionStore } from './companionStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -17,43 +16,42 @@ import { useConversationRoster, useThreadAttentionCount } from './useConversatio
 /**
  * Athena's footer cluster. Lives in DesktopFooter's right cluster.
  *
- * Two-button structure plus a notice popover:
+ * Two buttons, no message surface. Athena speaks on exactly two dimensions —
+ * the CHAT window (full information) and the ORB (quick info / decision). The
+ * footer cluster is an *initiation* surface, not a third dimension: it once
+ * hosted a notice popover ("Analysis completed", "Athena reached out") that was
+ * removed with the rest of the third dimension. A finished reply now shows up
+ * as ORB STATE only (the orb's one-shot message reaction + `speaking` posture,
+ * plus the avatar/Play affordances below), and the words themselves live in
+ * chat where the user can actually read them.
+ *
  *   1. Athena avatar — her live video avatar (idle ⇄ thinking ⇄ speaking)
  *      is the initiation surface. A short tap opens/collapses the chat
- *      panel; a press-and-hold arms dictation and fires a voice turn
- *      through Athena's full pipeline without opening the panel (the
- *      reply surfaces via the notice popover, the Play button, and
- *      auto-played TTS). Recolors/pulses while she streams, while a
- *      notice is pending, and while the mic is armed.
+ *      panel (or summons/hides the orb); a press-and-hold arms dictation and
+ *      fires a voice turn through Athena's full pipeline without opening the
+ *      panel (the reply surfaces via the orb, the Play button, and TTS).
+ *      Recolors/pulses while she streams and while the mic is armed. Carries
+ *      the multi-thread attention badge.
  *   2. Play icon — plays the latest spoken summary if there's an unread
  *      one. Hidden when the user has no voice engine configured. Greyed
  *      when there's nothing to play; pulses gently while there's an
  *      unread playback waiting (user agency over autoplay).
- *   3. Popover — "Analysis completed" / "Athena reached out" subject
- *      shown above the icon when a `footerNotice` lands. Auto-dismisses
- *      after 6s, on click, or when the panel opens. If voice is enabled,
- *      the subject is also spoken once (guarded so it does not collide
- *      with the full reply playback already in flight).
  *
  * Responsibilities:
  *   - Fire `companion_init` once on first mount (idempotent backend-side).
  *   - Reflect Athena's streaming/speaking state on the avatar.
  *   - Drive hold-to-talk dictation → `voiceTurnRequest` (consumed by the
  *     always-mounted CompanionPanel's `send()` pipeline).
- *   - Play the chime AND set `footerNotice` to `analysis_complete` when
- *     streaming flips false (a turn just finished).
- *   - Watch `proactive` arrivals and set `footerNotice` to `proactive`.
- *   - Render the popover + drive optional subject TTS.
+ *   - Play the reply chime when streaming flips false (a turn just finished).
  */
 export default function CompanionFooterIcon() {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   // Keep the multi-conversation roster live (hydrate + refresh on turn-summary)
   // from here, since the footer orb is always mounted — the chat panel isn't.
   useConversationRoster();
   const attentionCount = useThreadAttentionCount();
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
-  const setActiveConversationId = useCompanionStore((s) => s.setActiveConversationId);
   const initialized = useCompanionStore((s) => s.initialized);
   const setInitialized = useCompanionStore((s) => s.setInitialized);
   const setBrainPath = useCompanionStore((s) => s.setBrainPath);
@@ -62,15 +60,9 @@ export default function CompanionFooterIcon() {
   const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
   const setPlaybackAudioUrl = useCompanionStore((s) => s.setPlaybackAudioUrl);
   const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
-  const proactive = useCompanionStore((s) => s.proactive);
-  const footerNotice = useCompanionStore((s) => s.footerNotice);
-  const setFooterNotice = useCompanionStore((s) => s.setFooterNotice);
-  const markFooterNoticeSpoken = useCompanionStore((s) => s.markFooterNoticeSpoken);
-  const clearFooterNotice = useCompanionStore((s) => s.clearFooterNotice);
   const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 
@@ -96,151 +88,25 @@ export default function CompanionFooterIcon() {
   const synthesisVoiceId = voice.voiceId;
   const hasUnreadPlayback =
     pendingPlayback != null && !pendingPlayback.played;
-  const replyPlaybackInFlight =
-    pendingPlayback != null && !pendingPlayback.played;
 
-  // Chime + notice on streaming true → false transition (turn just
-  // completed). Skip the very first render's transition (the ref starts
-  // as `undefined`, so we only fire after we've actually observed a true
-  // value at least once). Respects the user's sound toggle for the chime;
-  // the popover always shows so the user has a visible cue independent
-  // of the audio toggle.
+  // Chime on the streaming true → false transition (turn just completed).
+  // Skip the very first render's transition (the ref starts as `undefined`, so
+  // we only fire after we've actually observed a true value at least once).
+  // Respects the user's sound toggle.
+  //
+  // This used to ALSO mint a `footerNotice` popover naming the thread. That was
+  // the third communication dimension and is gone: the visible cue is now ORB
+  // STATE (the orb plays its one-shot message reaction off the same `streaming`
+  // transition and flips to the `speaking` posture while an unread spoken reply
+  // waits), the audible cue is the chime plus the reply's own TTS, and the words
+  // live in chat. The Play button + the thread-attention badge below carry the
+  // "there is something unheard / another thread replied" state.
   const prevStreamingRef = useRef<boolean | undefined>(undefined);
   useEffect(() => {
     const prev = prevStreamingRef.current;
-    if (prev === true && streaming === false) {
-      if (soundEnabled) playReplyChime();
-      // Name the thread when more than one exists — so a reply spoken while the
-      // panel is minimized carries a visual "which conversation" (audio only
-      // ever speaks the focused thread; naming closes the identity gap). With a
-      // single thread the generic label stays, and clicking it opens that thread.
-      const convs = useCompanionStore.getState().conversations;
-      const active = convs.find(
-        (c) => c.id === useCompanionStore.getState().activeConversationId,
-      );
-      const nameThread = convs.length > 1 && !!active?.title;
-      setFooterNotice({
-        id: `analysis_${Date.now()}`,
-        kind: 'analysis_complete',
-        subject: nameThread
-          ? tx(t.plugins.companion.replied_in_thread, { thread: active!.title! })
-          : t.plugins.companion.footer_notice_analysis_completed,
-        ttsSpoken: false,
-        createdAt: Date.now(),
-        conversationId: nameThread ? active?.id : undefined,
-      });
-    }
+    if (prev === true && streaming === false && soundEnabled) playReplyChime();
     prevStreamingRef.current = streaming;
-  }, [streaming, soundEnabled, setFooterNotice, t, tx]);
-
-  // Proactive arrivals — surface the freshest one as a popover. We
-  // track the latest seen id so reordering / list refetches do not
-  // re-trigger the popover for messages the user already saw.
-  const lastProactiveIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    // Newest proactive is at index 0 (appendProactive prepends).
-    const latest = proactive[0];
-    if (!latest) {
-      lastProactiveIdRef.current = null;
-      return;
-    }
-    if (lastProactiveIdRef.current === latest.id) return;
-    // Skip the first observed id when we already have a populated list
-    // (e.g., the panel hydrated on mount with historical unresolved
-    // nudges — those were not "just delivered").
-    if (lastProactiveIdRef.current === null && proactive.length > 0) {
-      lastProactiveIdRef.current = latest.id;
-      return;
-    }
-    lastProactiveIdRef.current = latest.id;
-    // First sentence of the message as the subject — falls back to the
-    // generic label when the message is empty.
-    const firstSentence = latest.message?.split(/(?<=[.!?])\s/)[0]?.trim();
-    const subject =
-      firstSentence && firstSentence.length > 0
-        ? firstSentence.length > 80
-          ? `${firstSentence.slice(0, 77)}…`
-          : firstSentence
-        : t.plugins.companion.footer_notice_proactive_default;
-    setFooterNotice({
-      id: latest.id,
-      kind: 'proactive',
-      subject,
-      ttsSpoken: false,
-      createdAt: Date.now(),
-    });
-  }, [proactive, setFooterNotice, t]);
-
-  // Auto-dismiss the popover after 6 seconds. Resets every time the
-  // notice id changes. Cleared synchronously when the panel opens.
-  useEffect(() => {
-    if (!footerNotice) return;
-    const timer = window.setTimeout(() => {
-      // Re-check inside the timer — a fresh notice may have replaced
-      // this one already, in which case we should not clear.
-      const current = useCompanionStore.getState().footerNotice;
-      if (current?.id === footerNotice.id) clearFooterNotice();
-    }, 6000);
-    return () => window.clearTimeout(timer);
-  }, [footerNotice, clearFooterNotice]);
-
-  // Hide the popover when the panel opens — the user has already
-  // engaged, no need to keep the cue around.
-  useEffect(() => {
-    if (isOpen && footerNotice) clearFooterNotice();
-  }, [isOpen, footerNotice, clearFooterNotice]);
-
-  // Speak the subject when voice is enabled and the engine is ready.
-  // Skip when a full-reply TTS is already in flight (the reply
-  // playback already gives the user the audible cue, and double-playing
-  // a one-liner over a longer summary just garbles both).
-  useEffect(() => {
-    if (!footerNotice || footerNotice.ttsSpoken) return;
-    if (!voiceEnabled || !voiceConfigured || !synthesisVoiceId) return;
-    // Streaming-finish path: the reply's full TTS will play right after
-    // this effect runs (CompanionPanel.send synthesizes + plays it).
-    // Suppress the subject TTS so they don't overlap.
-    if (
-      footerNotice.kind === 'analysis_complete' &&
-      replyPlaybackInFlight
-    ) {
-      markFooterNoticeSpoken();
-      return;
-    }
-    let cancelled = false;
-    markFooterNoticeSpoken();
-    synthesizeTts(
-      footerNotice.subject,
-      synthesisCredentialId,
-      synthesisVoiceId,
-      voiceSettings,
-      voice.engine,
-    )
-      .then((url) => {
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        const { done } = playAudio(url);
-        done
-          .catch(silentCatch('companion_footer_notice_tts_play'))
-          .finally(() => URL.revokeObjectURL(url));
-      })
-      .catch(silentCatch('companion_footer_notice_tts_synthesize'));
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    footerNotice,
-    voiceEnabled,
-    voiceConfigured,
-    synthesisCredentialId,
-    synthesisVoiceId,
-    voiceSettings,
-    voice.engine,
-    replyPlaybackInFlight,
-    markFooterNoticeSpoken,
-  ]);
+  }, [streaming, soundEnabled]);
 
   // ---------------------------------------------------------------------
   // Hold-to-talk: press-and-hold the avatar to dictate a message and fire
@@ -290,11 +156,9 @@ export default function CompanionFooterIcon() {
   // also collapses the layout slot — the other footer icons close ranks.
   if (!footerEnabled) return null;
 
-  // Color/animation when streaming OR when there's a pending notice.
-  // When the panel's open AND streaming, the panel itself shows the
-  // streaming bubble — but we still color the footer icon so the cue
-  // is reachable from anywhere in the app.
-  const hasNotice = footerNotice != null;
+  // Color/animation when streaming. When the panel's open AND streaming, the
+  // panel itself shows the streaming bubble — but we still color the footer
+  // icon so the cue is reachable from anywhere in the app.
   // Athena's avatar reflects what she's doing: thinking while she streams
   // (or while the user is dictating), speaking while an unread spoken
   // summary is waiting, idle otherwise.
@@ -307,7 +171,7 @@ export default function CompanionFooterIcon() {
     ? 'bg-primary/20 ring-2 ring-primary/50'
     : isOpen
       ? 'bg-primary/15'
-      : streaming || hasNotice
+      : streaming
         ? 'hover:bg-primary/10'
         : 'hover:bg-secondary/50';
 
@@ -337,46 +201,6 @@ export default function CompanionFooterIcon() {
 
   return (
     <div className="relative inline-flex items-center gap-0.5">
-      <AnimatePresence>
-        {footerNotice && (
-          <motion.button
-            key={footerNotice.id}
-            type="button"
-            onClick={() => {
-              // A thread-scoped notice jumps to (and opens) that conversation;
-              // a thread-agnostic one just dismisses. Either way it clears.
-              const n = useCompanionStore.getState().footerNotice;
-              if (n?.conversationId) {
-                setActiveConversationId(n.conversationId);
-                setState('open');
-              }
-              clearFooterNotice();
-            }}
-            initial={{ opacity: 0, y: 4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.96 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            data-testid="footer-companion-notice"
-            data-companion-notice-kind={footerNotice.kind}
-            className="absolute bottom-full left-0 mb-2 inline-flex items-center gap-2 max-w-[320px] px-3 py-1.5 rounded-card border border-primary/30 bg-background shadow-elevation-3 text-left focus-ring hover:bg-secondary/60 transition-colors z-50"
-            title={
-              footerNotice.conversationId
-                ? t.plugins.companion.switch_conversation
-                : t.plugins.companion.footer_notice_dismiss
-            }
-            aria-label={`${footerNotice.subject} — ${
-              footerNotice.conversationId
-                ? t.plugins.companion.switch_conversation
-                : t.plugins.companion.footer_notice_dismiss
-            }`}
-          >
-            <span className="typo-caption text-foreground/90 truncate">
-              {footerNotice.subject}
-            </span>
-            <X className="w-3 h-3 flex-shrink-0 text-foreground" />
-          </motion.button>
-        )}
-      </AnimatePresence>
       <button
         type="button"
         onClick={() => {

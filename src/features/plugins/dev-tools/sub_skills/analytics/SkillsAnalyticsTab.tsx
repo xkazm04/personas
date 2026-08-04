@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { CoveragePipeline } from './CoveragePipeline';
+import { DeepScanRecommendations } from './DeepScanRecommendations';
 import { SkillHistoryTable } from './SkillHistoryTable';
 import { SkillScoreboard } from './SkillScoreboard';
 import { StaticScanCard } from './StaticScanCard';
@@ -39,6 +40,7 @@ export function SkillsAnalyticsTab({ projectId, proj, totalContexts, busy, onDis
       <SkillHistoryTable runs={runs} onRerun={busy ? undefined : onDispatch} onOpenInfo={onOpenInfo} />
       <StaticScanCard projectId={projectId} />
       <CoveragePipeline projectId={projectId} busy={busy} onDispatch={onDispatch} />
+      <DeepScanRecommendations projectId={projectId} busy={busy} onDispatch={onDispatch} />
     </div>
   );
 }

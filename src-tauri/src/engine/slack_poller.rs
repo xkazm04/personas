@@ -20,6 +20,21 @@
 //! POSTs the execution's final output back to the same thread via
 //! `chat.postMessage` and records the resulting message `ts`.
 //!
+//! ## Two kinds of inbound channel (the bridge fork)
+//!
+//! The sweep above is the ORIGINAL path and still serves plain Slack
+//! notification channels unchanged. A spec that additionally carries the
+//! `teamBridge` discriminator (see `engine/slack_bridge.rs`) is a TEAM channel
+//! bridge and takes a different branch entirely: its messages become
+//! `team_channel_messages` rows with `author_kind = 'slack'` and
+//! `consumer = 'inject'` — Slack participants DRIVE the team, reaching its
+//! personas at the next step boundary like an operator directive — and no
+//! execution is dispatched, so no threaded reply is owed either (the outbound
+//! half, `engine/team_slack_relay.rs`, carries the team's side back).
+//!
+//! The fork is strictly on the discriminator, so wiring a bridge cannot change
+//! what an existing notification channel does.
+//!
 //! ## Why polling, not the Events API / Socket Mode
 //!
 //! The Events API (push) is the right long-term answer, but polling is enough
@@ -33,17 +48,20 @@
 //! upgrade removes that per-tick ceiling entirely.
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Duration;
 
 use rusqlite::{params, OptionalExtension};
 use serde_json::{json, Value as JsonValue};
 use tauri::AppHandle;
 
+use crate::db::models::CreateChannelMessageInput;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::credentials as credential_repo;
+use crate::db::repos::resources::team_channel as channel_repo;
 use crate::db::DbPool;
 use crate::engine::channel_reply::build_reply_text;
+use crate::engine::slack_bridge::{self, TeamBridgeSpec, SLACK_AUTHOR_KIND};
 use crate::error::AppError;
 use crate::notifications;
 use crate::AppState;
@@ -93,10 +111,11 @@ pub async fn run_poller(pool: DbPool, app: AppHandle, state: Arc<AppState>) {
         // idles and resumes within one tick on promotion.
         if state.leadership.is_leader() {
             match tick(&pool, &app, &state).await {
-                Ok(report) if report.picked + report.replied > 0 => {
+                Ok(report) if report.picked + report.replied + report.ingested > 0 => {
                     tracing::debug!(
                         picked = report.picked,
                         replied = report.replied,
+                        ingested = report.ingested,
                         "slack_poller: tick complete"
                     );
                 }
@@ -112,6 +131,9 @@ pub async fn run_poller(pool: DbPool, app: AppHandle, state: Arc<AppState>) {
 struct TickReport {
     picked: usize,
     replied: usize,
+    /// Messages written into a team channel by the bridge fork (WP2). Counted
+    /// apart from `picked` because no execution was dispatched for them.
+    ingested: usize,
 }
 
 async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<TickReport, AppError> {
@@ -144,6 +166,26 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
             if !poll_inbound {
                 continue;
             }
+
+            // ── Bridge fork ───────────────────────────────────────────────
+            // A spec carrying the `teamBridge` discriminator (see
+            // `engine/slack_bridge.rs`) is a TEAM channel bridge: its inbound
+            // messages become `team_channel_messages` rows, NOT persona
+            // executions. Everything below this fork is the pre-existing
+            // notification-channel path and must stay byte-identical — a plain
+            // Slack channel with `pollInbound` on keeps firing executions.
+            if let Some(bridge) = slack_bridge::parse_bridge(&persona.id, &channel) {
+                match ingest_bridge_channel(pool, &bridge).await {
+                    Ok(n) => report.ingested += n,
+                    Err(e) => tracing::warn!(
+                        bridge = %bridge.key(),
+                        error = %e,
+                        "slack_poller: bridge ingest failed"
+                    ),
+                }
+                continue;
+            }
+
             // The messaging picker stores the Slack channel id under `channel`
             // (DESTINATION_FIELDS slack key); accept channelId/channel_id too.
             let Some(channel_id) = config
@@ -300,6 +342,390 @@ async fn poll_channel(
     }
 
     Ok(dispatched)
+}
+
+// ---------------------------------------------------------------------------
+// Bridge ingest (WP2) — Slack message -> team_channel_messages
+// ---------------------------------------------------------------------------
+//
+// A bridged channel does NOT execute a persona per message. Slack participants
+// drive the team the way the operator does: their message lands in
+// `team_channel_messages` with `consumer = 'inject'`, so it reaches the team's
+// personas at the next step boundary exactly like a directive. The bridge's job
+// is therefore ingestion + identity, not dispatch.
+//
+// Bookkeeping reuses the poller's existing tables verbatim: `slack_poll_state`
+// for the cursor and `slack_inbound_messages` (PK channel_id+message_ts) for
+// dedup. Bridge rows carry the carrier persona in `persona_id` and leave
+// `execution_id` NULL — which also keeps them out of `list_pending_replies`,
+// so the reply pass never tries to answer a bridged message (the OUTBOUND relay
+// is what carries the team's side back to Slack).
+
+/// Per-bridge consecutive-failure breaker. Same shape and rationale as
+/// `team_slack_relay`'s: the poller owns no long-lived struct, and a
+/// permanently broken channel (bot removed, token revoked, channel archived)
+/// would otherwise be re-hit every 5s forever with nothing but a `warn!` to
+/// show for it. In-memory only — a restart re-probes every bridge.
+const BRIDGE_FAILURE_THRESHOLD: u32 = 5;
+const BRIDGE_PROBE_EVERY: u32 = 12;
+
+static BRIDGE_FAILURES: LazyLock<Mutex<HashMap<String, u32>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn breaker_lock() -> std::sync::MutexGuard<'static, HashMap<String, u32>> {
+    BRIDGE_FAILURES.lock().unwrap_or_else(|poisoned| {
+        tracing::warn!(
+            "slack_poller bridge breaker mutex poisoned; recovering inner data after a \
+             prior panic held this lock"
+        );
+        poisoned.into_inner()
+    })
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BreakerAction {
+    /// Healthy: poll normally.
+    Poll,
+    /// Broken but due for a recovery probe: try one poll.
+    Probe,
+    /// Broken and not a probe: skip this bridge entirely this tick.
+    Skip,
+}
+
+fn breaker_decide(key: &str) -> BreakerAction {
+    let count = breaker_lock().get(key).copied().unwrap_or(0);
+    if count < BRIDGE_FAILURE_THRESHOLD {
+        BreakerAction::Poll
+    } else if (count - BRIDGE_FAILURE_THRESHOLD) % BRIDGE_PROBE_EVERY == 0 {
+        BreakerAction::Probe
+    } else {
+        BreakerAction::Skip
+    }
+}
+
+/// Record a poll result. Returns `true` if the bridge is now considered broken.
+fn breaker_record(key: &str, ok: bool) -> bool {
+    let mut map = breaker_lock();
+    if ok {
+        map.remove(key);
+        false
+    } else {
+        let count = map.entry(key.to_string()).or_insert(0);
+        *count = count.saturating_add(1);
+        *count >= BRIDGE_FAILURE_THRESHOLD
+    }
+}
+
+/// Advance the probe cadence for a broken bridge whose tick we skipped.
+fn breaker_note_skip(key: &str) {
+    let mut map = breaker_lock();
+    let count = map.entry(key.to_string()).or_insert(BRIDGE_FAILURE_THRESHOLD);
+    *count = count.saturating_add(1);
+}
+
+/// Our own Slack bot user id per credential (`auth.test`), and resolved display
+/// names per `credential:user` (`users.info`). Both are process-lifetime caches:
+/// a workspace's bot identity never changes, and a display name changing
+/// mid-session is not worth an API call per message.
+static BOT_USER_IDS: LazyLock<Mutex<HashMap<String, String>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+static DISPLAY_NAMES: LazyLock<Mutex<HashMap<String, String>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn cache_get(cache: &Mutex<HashMap<String, String>>, key: &str) -> Option<String> {
+    cache.lock().ok()?.get(key).cloned()
+}
+
+fn cache_put(cache: &Mutex<HashMap<String, String>>, key: &str, value: &str) {
+    if let Ok(mut map) = cache.lock() {
+        map.insert(key.to_string(), value.to_string());
+    }
+}
+
+/// `GET`-shaped Slack Web API call returning the decoded body, erroring on both
+/// HTTP failure and Slack's `{"ok": false}` 200s.
+async fn slack_get(bot_token: &str, url: &str) -> Result<JsonValue, AppError> {
+    let resp = shared_http_client()
+        .get(url)
+        .header("Authorization", format!("Bearer {}", bot_token))
+        .header("User-Agent", "Personas-Desktop/1.0 (Slack poller)")
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(format!("Slack GET failed: {e}")))?;
+    let payload: JsonValue = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Slack JSON decode failed: {e}")))?;
+    if !payload.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+        let err = payload
+            .get("error")
+            .and_then(JsonValue::as_str)
+            .unwrap_or("unknown");
+        return Err(AppError::Internal(format!("Slack API not ok: {err}")));
+    }
+    Ok(payload)
+}
+
+/// Our own bot user id for this credential — the echo guard's other half.
+///
+/// `slack_bridge::is_echo` stops team rows that CAME from Slack from being
+/// relayed back out; this stops the messages the relay POSTed from being read
+/// back in. Without it a single bridged message ping-pongs forever.
+/// `auth.test` is the same endpoint the Slack connector healthcheck uses.
+async fn resolve_bot_user_id(bot_token: &str, credential_id: &str) -> Result<String, AppError> {
+    if let Some(cached) = cache_get(&BOT_USER_IDS, credential_id) {
+        return Ok(cached);
+    }
+    let payload = slack_get(bot_token, "https://slack.com/api/auth.test").await?;
+    let user_id = payload
+        .get("user_id")
+        .and_then(JsonValue::as_str)
+        .unwrap_or("")
+        .to_string();
+    if user_id.is_empty() {
+        return Err(AppError::Internal(
+            "Slack auth.test returned no user_id; cannot guard against echoing our own posts"
+                .into(),
+        ));
+    }
+    cache_put(&BOT_USER_IDS, credential_id, &user_id);
+    Ok(user_id)
+}
+
+/// Human display name for a Slack user id. Falls back to the id itself: an
+/// unresolvable name must never cost us the message.
+async fn resolve_display_name(bot_token: &str, credential_id: &str, user_id: &str) -> String {
+    if user_id.is_empty() {
+        return String::new();
+    }
+    let key = format!("{credential_id}:{user_id}");
+    if let Some(cached) = cache_get(&DISPLAY_NAMES, &key) {
+        return cached;
+    }
+    let url = format!("https://slack.com/api/users.info?user={user_id}");
+    let name = match slack_get(bot_token, &url).await {
+        Ok(payload) => {
+            let user = payload.get("user");
+            let profile = user.and_then(|u| u.get("profile"));
+            ["display_name", "real_name"]
+                .iter()
+                .find_map(|k| {
+                    profile
+                        .and_then(|p| p.get(*k))
+                        .and_then(JsonValue::as_str)
+                        .filter(|s| !s.trim().is_empty())
+                })
+                .or_else(|| {
+                    user.and_then(|u| u.get("name"))
+                        .and_then(JsonValue::as_str)
+                        .filter(|s| !s.trim().is_empty())
+                })
+                .unwrap_or(user_id)
+                .to_string()
+        }
+        Err(e) => {
+            tracing::debug!(
+                user_id = user_id,
+                error = %e,
+                "slack_poller: users.info failed; falling back to the raw Slack user id"
+            );
+            user_id.to_string()
+        }
+    };
+    cache_put(&DISPLAY_NAMES, &key, &name);
+    name
+}
+
+/// Should this Slack message become a team channel row?
+///
+/// Pure so the four drop reasons — our own bot, any other bot/integration,
+/// join/leave/system subtypes, empty text — are testable without HTTP. Dedup is
+/// NOT decided here: it needs the DB.
+fn should_ingest(msg: &SlackMessage, bot_user_id: &str) -> bool {
+    if msg.is_bot || msg.has_subtype {
+        return false;
+    }
+    // Our own posts come back through conversations.history. They usually carry
+    // a bot_id (caught above), but a token posting as a user would not.
+    if !bot_user_id.is_empty() && msg.user == bot_user_id {
+        return false;
+    }
+    !msg.text.trim().is_empty()
+}
+
+/// Ingest one bridged channel, gated by the per-bridge breaker.
+async fn ingest_bridge_channel(
+    pool: &DbPool,
+    bridge: &TeamBridgeSpec,
+) -> Result<usize, AppError> {
+    let key = bridge.key();
+    if breaker_decide(&key) == BreakerAction::Skip {
+        breaker_note_skip(&key);
+        return Ok(0);
+    }
+    let result = ingest_bridge_inner(pool, bridge).await;
+    let now_broken = breaker_record(&key, result.is_ok());
+    if let Err(e) = &result {
+        tracing::warn!(
+            bridge = %key,
+            now_broken,
+            error = %e,
+            "slack_poller: bridge poll failed; backing this channel off"
+        );
+    }
+    result
+}
+
+async fn ingest_bridge_inner(
+    pool: &DbPool,
+    bridge: &TeamBridgeSpec,
+) -> Result<usize, AppError> {
+    let persona_id = &bridge.persona_id;
+    let channel_id = &bridge.slack_channel_id;
+
+    let bot_token = load_bot_token(pool, &bridge.credential_id).ok_or_else(|| {
+        AppError::Validation(format!(
+            "Slack credential {} has no bot_token field",
+            bridge.credential_id
+        ))
+    })?;
+    let bot_user_id = resolve_bot_user_id(&bot_token, &bridge.credential_id).await?;
+
+    let cursor = read_cursor(pool, persona_id, channel_id)?;
+    let messages = fetch_new_messages(&bot_token, channel_id, cursor.as_deref()).await?;
+    if messages.is_empty() {
+        touch_cursor(pool, persona_id, channel_id)?;
+        return Ok(0);
+    }
+
+    // Chronological, matching the execution path: Slack returns newest-first.
+    let ordered: Vec<SlackMessage> = messages.into_iter().rev().collect();
+
+    // The cursor advances past dropped messages too — a bot post or a join
+    // event is decided, not deferred — so compute it over the WHOLE page.
+    let newest = newest_ts(&ordered, cursor.as_deref());
+
+    let selected = select_ingestable(pool, channel_id, &ordered, &bot_user_id)?;
+
+    // Names are resolved only for messages that will actually land, so a
+    // channel full of bot noise costs no users.info calls.
+    let mut pairs: Vec<(SlackMessage, String)> = Vec::with_capacity(selected.len());
+    for msg in selected {
+        let name = resolve_display_name(&bot_token, &bridge.credential_id, &msg.user).await;
+        pairs.push((msg, name));
+    }
+
+    let ingested = persist_bridge_messages(pool, bridge, &pairs)?;
+
+    if let Some(ts) = newest {
+        write_cursor(pool, persona_id, channel_id, &ts)?;
+    }
+
+    Ok(ingested)
+}
+
+/// Newest `ts` across a page, never regressing below the existing cursor.
+fn newest_ts(messages: &[SlackMessage], cursor: Option<&str>) -> Option<String> {
+    let mut newest = cursor.map(str::to_string);
+    for msg in messages {
+        if newest
+            .as_deref()
+            .map(|c| compare_ts(&msg.ts, c).is_gt())
+            .unwrap_or(true)
+        {
+            newest = Some(msg.ts.clone());
+        }
+    }
+    newest
+}
+
+/// The messages from one page that should become team channel rows: everything
+/// [`should_ingest`] accepts and `slack_inbound_messages` has not already seen.
+fn select_ingestable(
+    pool: &DbPool,
+    channel_id: &str,
+    messages: &[SlackMessage],
+    bot_user_id: &str,
+) -> Result<Vec<SlackMessage>, AppError> {
+    let mut out = Vec::new();
+    for msg in messages {
+        if !should_ingest(msg, bot_user_id) {
+            continue;
+        }
+        if message_already_logged(pool, channel_id, &msg.ts)? {
+            continue;
+        }
+        out.push(msg.clone());
+    }
+    Ok(out)
+}
+
+/// Write the selected messages into the bridged team's channel and log each one
+/// as seen. Returns how many landed.
+///
+/// `consumer = 'inject'` is the whole point: a Slack participant reaches the
+/// team's personas at the next step boundary, exactly like an operator
+/// directive. `addressed_to = None` = the whole team.
+fn persist_bridge_messages(
+    pool: &DbPool,
+    bridge: &TeamBridgeSpec,
+    pairs: &[(SlackMessage, String)],
+) -> Result<usize, AppError> {
+    let mut ingested = 0usize;
+    for (msg, display_name) in pairs {
+        let write = channel_repo::create_external(
+            pool,
+            CreateChannelMessageInput {
+                team_id: bridge.team_id.clone(),
+                author_kind: SLACK_AUTHOR_KIND.to_string(),
+                author_id: Some(msg.user.clone()).filter(|s| !s.is_empty()),
+                body: msg.text.clone(),
+                addressed_to: None,
+                reply_to: None,
+                assignment_id: None,
+                consumer: Some("inject".into()),
+            },
+            display_name,
+        );
+        let error = match write {
+            Ok(_) => {
+                ingested += 1;
+                None
+            }
+            Err(e) => Some(e.to_string()),
+        };
+
+        let thread_ts = if msg.thread_ts.is_empty() {
+            msg.ts.clone()
+        } else {
+            msg.thread_ts.clone()
+        };
+
+        // Logged either way: this row IS the dedup key, so recording a failed
+        // write as seen is deliberate — retrying a body SQLite rejected would
+        // fail identically every tick.
+        log_inbound_message(
+            pool,
+            &msg.ts,
+            &bridge.slack_channel_id,
+            &bridge.persona_id,
+            &bridge.credential_id,
+            &msg.user,
+            &thread_ts,
+            None, // no execution: bridged messages drive the team, not a run
+            error.as_deref(),
+        )?;
+
+        if let Some(err) = &error {
+            tracing::warn!(
+                bridge = %bridge.key(),
+                message_ts = %msg.ts,
+                error = %err,
+                "slack_poller: bridge message could not be written to the team channel"
+            );
+        }
+    }
+    Ok(ingested)
 }
 
 // ---------------------------------------------------------------------------
@@ -834,6 +1260,210 @@ mod tests {
         ];
         assert_eq!(page_min_ts(&page).as_deref(), Some("1716981234.030000"));
         assert_eq!(page_min_ts(&[]), None);
+    }
+
+    // -----------------------------------------------------------------------
+    // Bridge fork (WP2)
+    // -----------------------------------------------------------------------
+
+    use crate::db::models::{ChannelScopeV2, ChannelSpecV2, ChannelSpecV2Type};
+    use serde_json::json;
+
+    const BOT: &str = "UBOT";
+    const TEAM: &str = "team-1";
+
+    fn spec(config: serde_json::Value) -> ChannelSpecV2 {
+        ChannelSpecV2 {
+            channel_type: ChannelSpecV2Type::Slack,
+            enabled: true,
+            credential_id: Some("cred-1".into()),
+            use_case_ids: ChannelScopeV2::All("*".into()),
+            event_filter: None,
+            config: Some(config),
+        }
+    }
+
+    fn a_bridge() -> TeamBridgeSpec {
+        slack_bridge::parse_bridge(
+            "p1",
+            &spec(json!({
+                "teamBridge": true,
+                "teamId": TEAM,
+                "channel": "C1",
+                "pollInbound": true,
+            })),
+        )
+        .expect("fixture must parse as a bridge")
+    }
+
+    fn human(ts: &str, user: &str, text: &str) -> SlackMessage {
+        SlackMessage {
+            ts: ts.to_string(),
+            text: text.to_string(),
+            user: user.to_string(),
+            thread_ts: String::new(),
+            is_bot: false,
+            has_subtype: false,
+        }
+    }
+
+    /// THE regression guard. The fork is strictly on the `teamBridge`
+    /// discriminator, so every Slack notification channel in the field — the
+    /// ones that fire persona executions today — must still miss it. If this
+    /// ever returns Some, real users' inbound Slack automation silently stops
+    /// running.
+    #[test]
+    fn a_plain_inbound_slack_channel_never_takes_the_bridge_fork() {
+        // Exactly the shape the pre-bridge poller path serves.
+        let plain = spec(json!({ "pollInbound": true, "channel": "C1" }));
+        assert!(slack_bridge::parse_bridge("p1", &plain).is_none());
+        // …and a bridge-shaped config missing the discriminator is still plain.
+        let almost = spec(json!({ "pollInbound": true, "channel": "C1", "teamId": TEAM }));
+        assert!(slack_bridge::parse_bridge("p1", &almost).is_none());
+        // The real thing does fork.
+        assert!(slack_bridge::parse_bridge("p1", &spec(json!({
+            "teamBridge": true, "teamId": TEAM, "channel": "C1", "pollInbound": true,
+        }))).is_some());
+    }
+
+    /// The echo guard's inbound half. `slack_bridge::is_echo` keeps Slack-authored
+    /// team rows from being relayed back out; this keeps the relay's own posts
+    /// from being read back in. Both are needed or a message ping-pongs forever.
+    #[test]
+    fn our_own_posts_and_machine_noise_are_never_ingested() {
+        assert!(should_ingest(&human("1.0", "U123", "hello"), BOT));
+
+        // Our own bot user id — the message the outbound relay just posted.
+        assert!(!should_ingest(&human("1.0", BOT, "hello"), BOT));
+
+        // Any other bot / integration.
+        let mut bot = human("1.0", "U123", "hello");
+        bot.is_bot = true;
+        assert!(!should_ingest(&bot, BOT));
+
+        // channel_join / channel_leave / file_share … — system noise.
+        let mut joined = human("1.0", "U123", "has joined the channel");
+        joined.has_subtype = true;
+        assert!(!should_ingest(&joined, BOT));
+
+        // Empty / whitespace-only bodies would be an empty channel row.
+        assert!(!should_ingest(&human("1.0", "U123", "   "), BOT));
+
+        // An unresolved bot id must not swallow every message.
+        assert!(should_ingest(&human("1.0", "U123", "hello"), ""));
+    }
+
+    /// A bridged message lands in the team channel exactly once, however many
+    /// ticks re-read the same Slack page (the backward drain deliberately
+    /// re-fetches boundary messages).
+    #[test]
+    fn a_bridged_message_lands_once_and_is_idempotent_across_ticks() {
+        let pool = crate::db::init_test_db().unwrap();
+        let bridge = a_bridge();
+        let page = vec![
+            human("1716981234.000100", "U123", "first"),
+            human("1716981234.000200", "U456", "second"),
+        ];
+
+        // Tick 1.
+        let selected = select_ingestable(&pool, &bridge.slack_channel_id, &page, BOT).unwrap();
+        assert_eq!(selected.len(), 2);
+        let pairs: Vec<(SlackMessage, String)> = selected
+            .into_iter()
+            .map(|m| {
+                let name = if m.user == "U123" { "Ada" } else { "Grace" };
+                (m, name.to_string())
+            })
+            .collect();
+        assert_eq!(persist_bridge_messages(&pool, &bridge, &pairs).unwrap(), 2);
+
+        // Tick 2 re-reads the same page: nothing is selected, nothing is written.
+        let again = select_ingestable(&pool, &bridge.slack_channel_id, &page, BOT).unwrap();
+        assert!(again.is_empty(), "dedup is the slack_inbound_messages PK");
+
+        let conn = pool.get().unwrap();
+        let rows: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM team_channel_messages WHERE team_id = ?1",
+                params![TEAM],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(rows, 2);
+
+        // Shape of what landed: external author kind, Slack user id as author,
+        // resolved name as the label, and 'inject' so it reaches the personas
+        // at the next step boundary like a directive.
+        let (kind, author, label, consumer): (String, String, String, String) = conn
+            .query_row(
+                "SELECT author_kind, author_id, author_label, consumer
+                 FROM team_channel_messages WHERE team_id = ?1 AND body = 'first'",
+                params![TEAM],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(kind, SLACK_AUTHOR_KIND);
+        assert_eq!(author, "U123");
+        assert_eq!(label, "Ada");
+        assert_eq!(consumer, "inject");
+
+        // No execution was dispatched, so the reply pass must not owe a reply.
+        let exec_rows: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM slack_inbound_messages WHERE execution_id IS NOT NULL",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(exec_rows, 0);
+        assert!(list_pending_replies(&pool, 10).unwrap().is_empty());
+    }
+
+    /// Dropped messages must still advance the cursor, or a channel whose newest
+    /// message is a bot post re-reads it forever.
+    #[test]
+    fn the_cursor_advances_past_messages_we_drop() {
+        let mut bot = human("1716981234.000900", "UBOT", "relayed");
+        bot.is_bot = true;
+        let page = vec![human("1716981234.000100", "U1", "hi"), bot];
+        assert_eq!(
+            newest_ts(&page, Some("1716981233.000000")).as_deref(),
+            Some("1716981234.000900")
+        );
+        // Never regresses below an existing cursor.
+        assert_eq!(
+            newest_ts(&[], Some("1716981233.000000")).as_deref(),
+            Some("1716981233.000000")
+        );
+    }
+
+    // --- Breaker (unique keys per test: the map is a process-wide static) ---
+
+    #[test]
+    fn bridge_breaker_backs_off_after_repeated_failures_and_recovers() {
+        let k = "poller-breaker-trip";
+        assert_eq!(breaker_decide(k), BreakerAction::Poll);
+        for i in 1..=BRIDGE_FAILURE_THRESHOLD {
+            assert_eq!(breaker_record(k, false), i >= BRIDGE_FAILURE_THRESHOLD);
+        }
+        // Broken: one probe, then skips until the probe cadence comes round.
+        assert_eq!(breaker_decide(k), BreakerAction::Probe);
+        breaker_note_skip(k);
+        assert_eq!(breaker_decide(k), BreakerAction::Skip);
+        // A successful probe clears it.
+        assert!(!breaker_record(k, true));
+        assert_eq!(breaker_decide(k), BreakerAction::Poll);
+    }
+
+    #[test]
+    fn bridge_breaker_tolerates_transient_failures() {
+        let k = "poller-breaker-transient";
+        for _ in 0..(BRIDGE_FAILURE_THRESHOLD - 1) {
+            assert!(!breaker_record(k, false));
+            assert_eq!(breaker_decide(k), BreakerAction::Poll);
+        }
+        breaker_record(k, true);
+        assert_eq!(breaker_decide(k), BreakerAction::Poll);
     }
 
     #[test]

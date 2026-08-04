@@ -136,20 +136,65 @@ The **Skills** tab (`sub_skills/`) now has two page tabs:
 
 **Overview (default)** — the workspace library and the active project's skills side by side.
 The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
-`~/.claude/skills`; Preset always shows the full 22-lens catalog (grouped Technical / User
-Experience / Business / Mastermind, each row carrying its lens icon + color). Adopting a
+`~/.claude/skills`; Preset leads with the **scan-sweep hero row** — the consolidated
+multi-lens context sweep is the ONLY scan entry point (the 22 single-lens `scan-*` skills
+were retired 2026-08-04; their briefs live on in the sweep's `references/lenses.md`, their
+visual identities survive for lens chips and historical usage rows, and a focused deep pass
+is `/scan-sweep --lenses <key> <context>`). Adopting a
 preset installs from the app bundle (`skill_files_install_system`); adopting a custom skill
 dispatches the Dev-runner customization task. Project rows keep memory bindings, context
-coverage bars, and the **Use** dialog (Fleet | CMD dispatch target + Recommended / This one /
+coverage bars, and the **Use** dialog (Fleet | Terminal dispatch target + Recommended / This one /
 All context selection folded into the run as a trailing arg).
+
+The preset catalog also carries one non-scan system skill: **`i18n-translate`**
+(`.claude/skills/i18n-translate/SKILL.md`, in `SYSTEM_SKILLS` in both
+`skill_files.rs` and `sync-system-skills.mjs`, hand-listed in `presetSkills.ts`
+like `scan-sweep`). It is a portable copywriting-grade localization loop
+(draft → typed MQM estimate → gated refine, validated on the kp repo's Czech
+catalog); everything repo-specific — catalog paths, placeholder syntax, gates,
+post-edit build steps — lives in the *target* repo's `docs/i18n/contract.md`,
+which the skill discovers and bootstraps on first run (Personas' own contract:
+`docs/i18n/contract.md` here). It has no scan lens and no match rules, so the
+coverage pipeline never proposes it; the "prefer the sweep" nudge in
+`UseSkillDialog` is gated on the `scan-` prefix so it doesn't apply.
+
+Row columns (Skill · Coverage · Usage · Last used · Action) sit on a **fixed** column
+template including the Action track. Each row is its own CSS grid, so an `auto` last
+column sized to that row's own content — a project row with two action icons pushed
+Coverage/Usage/Last used a full icon-width left of a one-icon row, and the header
+matched neither. The track is spelled out literally (`4rem`) in both templates because
+Tailwind only extracts classes it can read as source text.
 
 **Analytics** — the scanner concepts generalized to skills:
 
-1. **Coverage pipeline** (Auto-Scan successor) — every mapped context matched to its best
-   preset lens by the keyword rules (`constants/presetSkills.ts` → `SCAN_MATCH_RULES`),
-   ranked least-covered first (Memory-Ledger node counts), checkbox-bounded; **Run** spawns
-   one Fleet session per selected context (`/scan-<key> <context>`). Coverage populates via
-   the memory-outbox ingest when each session exits.
+1. **Coverage pipeline** (Auto-Scan successor, sweep edition) — every mapped context
+   matched to its full **lens bundle** by the keyword rules (generated from
+   `scan_agents.toml` into `constants/scanMatchRules.gen.ts` — the TOML's `match` field is
+   the single source, so a lens can never ship unmatchable again), ranked least-covered
+   first (Memory-Ledger node counts), checkbox-bounded; **Run** first refreshes
+   `.personas/backlog-digest.json` (pending/accepted/rejected idea titles, so a scan never
+   re-proposes a known idea or rephrases a rejected one) and then spawns one Fleet session
+   per selected context running `/scan-sweep --lenses <keys> <context>` — the sweep reads
+   the context's code once and judges it through every bundled lens. **Sweeps resolve by
+   default**: each session implements its accepted S/M findings end to end (one atomic,
+   explicit-pathspec commit per finding, verified against the repo's gates; fixed items
+   arrive as progress nodes, not backlog findings), so several sessions can safely run per
+   project, one context each. `--ideas-only` restores propose-only behavior; L moonshot
+   items are never auto-built — they are operator-triaged or flagged `size:L` for backlog
+   gating. Coverage populates via
+   the memory-outbox ingest when each session exits (one `skill:scan-<lens>` node per
+   evaluated lens, so per-lens coverage math needs no backend change).
+
+   **Findings door + Tier 2.** Sweeps emit structured `finding` / `escalation` lines into
+   the same memory outbox; ingest (`memory_ledger.rs`) routes findings into `dev_ideas`
+   through `create_finding` (origin `scan_sweep`, standard dedup guard, `IDEA_BACKLOG_CAP`
+   backpressure) so they land in Overview → Approvals → Backlog with a Scan-sweep badge.
+   A **NEW** escalation (a lens that hit a critical finding or 3 real findings in one
+   context) auto-dispatches a focused `/scan-<lens> <context>` Fleet session on ingest —
+   at most 2 per ingest, toast per spawn, killable via the **Auto deep scans** toggle in
+   the **Recommended deep scans** panel (which lists every open escalation for manual
+   dispatch). The escalation finding's dedup key is the cooldown: re-escalations are
+   absorbed until the operator resolves or archives the finding.
 2. **Skill performance** (Agent Scoreboard successor) — per installed skill: transcript
    invokes (30d), context coverage, fleet run outcomes, and — for `scan-*` presets — the
    ideas accept/impl rates carried over from the agent-keyed history.
@@ -529,7 +574,7 @@ There is one execution path and it is deliberately simple:
 
 1. The frontend posts `dev_tools_run_scan(project_id, agent_keys[], context_id?)` via Tauri IPC.
 2. `src-tauri/src/commands/infrastructure/idea_scanner.rs` spawns an async job and returns a `scan_id` immediately.
-3. The job fans out one LLM call per agent per targeted context, streaming token usage and partial ideas through `IDEA_SCAN_OUTPUT` events.
+3. The job spawns ONE headless Claude CLI process for the whole run — all selected lenses concatenated into a single prompt (`build_idea_scan_prompt`) — streaming token usage and partial ideas through `IDEA_SCAN_OUTPUT` events.
 4. Each returned idea is persisted as a `DevIdea` row with `scan_type = agent.key` and effort/impact/risk extracted from the response.
 5. On completion, `IDEA_SCAN_STATUS` fires with `completed | completed_with_warning | failed | cancelled`; the frontend re-runs `fetchIdeas(project_id)` and the scoreboard recomputes.
 
@@ -537,7 +582,7 @@ Because the agent key is stored as a string, *adding a new agent is a single-fil
 
 ### Auto-match rules
 
-The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (see `SCAN_MATCH_RULES` in `sub_scanner/ideaScannerHelpers.ts`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
+The Scanner has an **Auto-Scan** mode that loops every mapped context and picks agents by regex match over the context's name, description, keywords, tech stack, API surface, and file paths (each agent's `match` field in `scan_agents.toml`, generated into `constants/scanMatchRules.gen.ts` by `scripts/skills/gen-scan-match-rules.mjs`). Example: a context whose keywords include `auth|login|token|secret` gets Security Auditor, a context tagged `mobile|responsive|viewport` gets Mobile Specialist. Contexts with no match fall back to Architecture Analyst + Code Optimizer as a sensible baseline.
 
 ### Agent Scoreboard (Proposal B)
 
@@ -546,6 +591,12 @@ A collapsible section in the Scanner aggregates per-agent performance from store
 ### PR Bridge (Proposal A)
 
 A collapsible card on every completed task in the Runner. Source in `sub_runner/PrBridge.tsx`. It parses `DevProject.github_url`, looks up the originating `DevIdea` via `DevTask.source_idea_id`, slugifies the idea title into a branch name, builds a commit message + PR body with the agent citation, and wires three actions: *Copy PR body*, *Prepare branch & commit* (uses existing `dev_tools_create_branch` + `dev_tools_commit_changes` Tauri commands), *Open draft PR on GitHub* (uses `@tauri-apps/plugin-shell` and GitHub's `quick_pull=1&title=…&body=…` pre-fill URL). Non-GitHub hosts (GitLab, Bitbucket) are detected and degrade gracefully to a "copy manually" message.
+
+---
+
+## Portability
+
+Dev projects travel with workspace exports via **Settings › Data Portability** (the "Dev projects" scope in the export picker). A project ships as its row plus the full planning graph (goals, contexts, ideas, tasks, use cases, competitions, pipelines, standards, milestones, project KPIs, memories) and its on-disk `.claude/skills/` library; telemetry/scan-cache tables, credential-id columns, and global skills deliberately do not travel. Importing a bundle whose project collides with an existing one (same `root_path` or name) surfaces a per-project **Skip / Duplicate / Replace** resolution panel in the Data tab. See [`docs/features/settings/README.md`](../../settings/README.md) § Data portability.
 
 ---
 
@@ -640,9 +691,30 @@ rows only (left: category; right: context-tracked vs standard, no category),
 installed state is an icon, and the 30-day window is stated once per panel
 footer. Row actions are **icon-only** (Adopt ↓ / Share ↑ / Use ▶) and each opens
 a **confirmation modal** showing the skill's description before firing; the
-**Use** action (project side) dispatches the skill as a background Fleet session
-(`/skill args`, optional args field + live preview) via the SkillsWorkbench
-dispatch lane.
+**Use** action (project side) dispatches the skill (`/skill args`, optional args
+field + live preview) via the SkillsWorkbench, over one of two transports:
+
+- **Fleet** — a background session inside the app (`runDispatch` → `spawnSession`).
+- **Terminal** — `runConsole` → `fleet_spawn_external_console`, which opens a NEW
+  OS console window already `cd`'d to the repo root with the Claude CLI running and
+  the `/skill …` command seeded, carrying `--dangerously-skip-permissions` to match
+  the Fleet lane (a skill run walks the whole repo). The window is the operator's:
+  the app keeps no handle, cannot steer or kill it, and it outlives the app.
+  Windows-only today; when no console can be spawned the exact command falls back
+  to the clipboard, which is what this lane used to do unconditionally.
+
+**"All contexts" batches differently per transport, because a batch costs
+differently per transport.** Fleet spawns one background session per context — it
+manages them, so N is free. A console is an OS window the operator closes by hand,
+so this lane opens **exactly one** regardless of N (on this repo, "all" is 767).
+`consolePrompt()` builds the seed: a single run stays a bare `/skill args` so the
+CLI recognizes the slash command, while a batch becomes prose listing every command
+and asking for them one at a time — text appended to a slash command would be
+swallowed as arguments, so the batch seed deliberately does not lead with one. Past
+~4 KB of command list the batch travels as `.personas/skill-batch.md` (written via
+`fleet_write_dispatch_brief`) and the prompt points at it, staying clear of the
+~32 KB Windows command-line ceiling and letting the operator re-run the batch after
+closing the window. Pinned in `skillsWorkbenchData.test.ts`.
 Reuses the unified skills-workbench ops (adopt/share = Sonnet-pinned Dev-runner
 LLM tasks). Rows carry transcript-mined usage (`skill_usage` — automatic, no
 skill instrumentation needed), a **memory-binding icon** (internal ledger /

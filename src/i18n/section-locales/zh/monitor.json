@@ -447,5 +447,7 @@
   "triage_summary_title": "本次会话",
   "triage_summary_undone": "已撤回",
   "triage_undo": "撤销{verdict}",
-  "triage_undo_hint": "将卡片放回队列。该裁定已触发的操作不会被撤销。"
+  "triage_undo_hint": "将卡片放回队列。该裁定已触发的操作不会被撤销。",
+  "conv_bridge_title": "已关联的 Slack 频道。在该频道发送的消息会出现在此对话中。",
+  "stream_kind_slack": "Slack"
 }

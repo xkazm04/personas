@@ -11,10 +11,11 @@ import type { SkillEntry } from '@/api/devTools/devTools';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { isPresetSkill, presetVisual } from '../constants/presetSkills';
+import { isPresetSkill, presetVisual, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import type { SkillsManagerVariantProps, ProjRow, WsRow } from './SkillsManagerPage';
 import { CoverageBar, LastUsed, MemoryBindingButton, UsageCount } from './skillsManagerBits';
 import { SkillActionConfirm } from './SkillActionConfirm';
+import { SweepHeroRow } from './SweepHeroRow';
 import { UseSkillDialog } from './UseSkillDialog';
 
 type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; skill: SkillEntry; tracked: boolean };
@@ -22,10 +23,17 @@ type Pending = { kind: 'adopt' | 'share'; skill: SkillEntry } | { kind: 'use'; s
 type SortKey = 'name' | 'coverage' | 'usage' | 'lastused';
 type SortDir = 'asc' | 'desc';
 
-/** Shared column grid — header and every row align to it. */
-const COLS = 'grid grid-cols-[minmax(0,1fr)_3.5rem_5.25rem_auto] items-center gap-3';
+/** Action column width. FIXED, not `auto`: every row is its own grid, so an
+ *  `auto` last column sizes to that row's own content — a project row with two
+ *  icons then shifted Coverage/Usage/Last left by an icon's width relative to a
+ *  one-icon row, and the header (a wider text label) matched neither. One fixed
+ *  track wide enough for the two-icon case AND the "Action" label keeps every
+ *  column flush across rows, panels and the header. Both templates spell the
+ *  track out literally: Tailwind only extracts classes it can see as source
+ *  text, so the width must not be interpolated in. */
+const COLS = 'grid grid-cols-[minmax(0,1fr)_3.5rem_5.25rem_4rem] items-center gap-3';
 /** Project-panel template — adds a dedicated Coverage column after the name. */
-const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_6.5rem_3.5rem_5.25rem_auto] items-center gap-3';
+const PROJ_COLS = 'grid grid-cols-[minmax(0,1fr)_6.5rem_3.5rem_5.25rem_4rem] items-center gap-3';
 
 function useSort(): { key: SortKey; dir: SortDir; toggle: (k: SortKey) => void } {
   const [key, setKey] = useState<SortKey>('name');
@@ -114,7 +122,7 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
       {coverage && <SortHead k="coverage" label={d.skills_col_coverage} />}
       <SortHead k="usage" label={d.skills_sort_usage} />
       <SortHead k="lastused" label={d.skills_col_lastused} />
-      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{d.skills_col_action}</span>
+      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
     </div>
   );
 }
@@ -161,13 +169,19 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
     () => ws.filter((r) => isPresetSkill(r.entry.name) === (libTab === 'preset')),
     [ws, libTab],
   );
+  const sweepRow = useMemo(
+    () => (libTab === 'preset' ? libRows.find((r) => r.entry.name === SWEEP_SKILL_NAME) ?? null : null),
+    [libRows, libTab],
+  );
 
   // Left — grouped (name-asc), sorted within each group. Custom tab groups by
-  // frontmatter category; Preset tab groups by the lens's category group so
-  // the four scanner families read as one block each.
+  // frontmatter category; the Preset tab (sweep hero row + the few remaining
+  // presets — the 22 single-lens scan skills were retired 2026-08-04) groups
+  // by category group.
   const wsGroups = useMemo(() => {
     const byCat = new Map<string, WsRow[]>();
-    for (const r of libRows) {
+    const grouped = libTab === 'preset' ? libRows.filter((r) => r.entry.name !== SWEEP_SKILL_NAME) : libRows;
+    for (const r of grouped) {
       const cat = libTab === 'preset'
         ? (presetVisual(r.entry.name)?.categoryGroup ?? 'Other')
         : (r.entry.category ?? 'Other');
@@ -278,6 +292,15 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
         )}
         footer={d.skills_footer_usage}
       >
+        {libTab === 'preset' && sweepRow && (
+          <SweepHeroRow
+            row={sweepRow}
+            projectName={projectName}
+            busy={busy}
+            onInfo={onOpenInfo}
+            onAdopt={(entry) => setPending({ kind: 'adopt', skill: entry })}
+          />
+        )}
         {wsGroups.map(([cat, rows]) => (
           <div key={cat}>
             <GroupDivider>{groupLabel(cat)}</GroupDivider>

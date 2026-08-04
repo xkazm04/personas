@@ -523,7 +523,14 @@
     "copy_log_failed": "লগ ক্লিপবোর্ডে কপি করা যায়নি",
     "lines_counter": "{visible}/{total} লাইন",
     "timeline_scrubber_label": "এক্সিকিউশন টাইমলাইন",
-    "timeline_scrubber_value": "{total}-এর মধ্যে {current}"
+    "timeline_scrubber_value": "{total}-এর মধ্যে {current}",
+    "file_changes_count": "{count} ফাইল",
+    "file_changes_count_other": "{count} ফাইল",
+    "files_modified_count": "{count} পরিবর্তিত",
+    "files_read_count": "{count} পঠিত",
+    "tokens_unit": "টোকেন",
+    "trace_evicted_notice": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)",
+    "trace_evicted_notice_other": "ট্রেস অসম্পূর্ণ: {count} স্প্যান বাদ দেওয়া হয়েছে (সীমা: 10,000)"
   },
   "lab": {
     "mode_arena": "আরেনা",

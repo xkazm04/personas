@@ -3676,6 +3676,29 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Display name of an EXTERNAL author (the team <-> Slack bridge, WP2).
+    // Internal authors resolve their name from `author_id` (a persona id) or
+    // from `author_kind` itself, so this stays NULL for every row the app
+    // writes; a Slack participant has neither, and the read-model surfaces this
+    // column as `TeamChannelItem.label` (which for channel rows was previously
+    // a redundant copy of `author_kind`). Plain column, ALTER-ADD style,
+    // matching `deliberation_id` above.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_channel_messages.author_label",
+            description: "Add author_label to team_channel_messages (Slack bridge inbound)",
+            already_applied: |conn| has_column(conn, "team_channel_messages", "author_label"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE team_channel_messages ADD COLUMN author_label TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Persona deliberation identity (typed PersonaCore JSON) — authored at the
     // template level (D5), read by the moderator (D2/D3). Inert until then.
     run_step(

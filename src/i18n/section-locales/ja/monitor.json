@@ -447,5 +447,7 @@
   "triage_summary_title": "今回のセッション",
   "triage_summary_undone": "取り消し",
   "triage_undo": "{verdict}を取り消す",
-  "triage_undo_hint": "カードをキューに戻します。判定によってすでに開始された処理は取り消されません。"
+  "triage_undo_hint": "カードをキューに戻します。判定によってすでに開始された処理は取り消されません。",
+  "conv_bridge_title": "連携中の Slack チャンネル。そこに送信されたメッセージはこの会話に届きます。",
+  "stream_kind_slack": "Slack"
 }

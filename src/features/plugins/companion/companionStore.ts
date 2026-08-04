@@ -84,20 +84,6 @@ export interface PendingPlayback {
 }
 
 /**
- * Lightweight "Athena has something new" cue surfaced above the footer
- * icon. Lives in the store rather than as component state because two
- * surfaces emit notices (streaming-finish in the footer icon itself, and
- * proactive deliveries that arrive via the always-mounted CompanionPanel
- * Tauri listeners) and one surface renders them. Cleared when the user
- * opens the panel, clicks the popover, or after a short auto-dismiss.
- *
- * `ttsSpoken` is flipped after the optional spoken announcement so the
- * effect doesn't fire twice if the component re-renders for unrelated
- * reasons (e.g., voice settings tweak mid-flight).
- */
-export type FooterNoticeKind = 'analysis_complete' | 'proactive';
-
-/**
  * Live-turn scratch state for ONE conversation — everything that only
  * matters while (or right after) a turn streams in that thread. Keyed by
  * conversation id in `liveTurns`; the flat fields on the store mirror the
@@ -114,19 +100,25 @@ export type LiveTurn = {
 /** One message the user sent while that conversation's turn was streaming. */
 export type QueuedMessage = { id: string; text: string; mode: 'queue' | 'interrupt' };
 
-export interface FooterNotice {
+/**
+ * One thing Athena did on the user's behalf without asking (autonomous /
+ * hands-free fleet auto-decisions). CHAT is the full-information dimension,
+ * so these accumulate into a durable in-session ledger the chat panel renders;
+ * the ORB only carries the quick "she just acted" reaction. Deliberately NOT a
+ * transient popup — the previous toast disappeared after 10s and left no trace.
+ */
+/** How many autonomous actions the in-session ledger keeps. */
+const ATHENA_ACTION_CAP = 50;
+
+export interface AthenaAction {
   id: string;
-  kind: FooterNoticeKind;
-  subject: string;
-  ttsSpoken: boolean;
+  /** Fleet session the instruction went to. */
+  sessionId: string;
+  /** Human project label (may be empty when the registry has no meta). */
+  projectLabel: string;
+  /** What Athena actually sent. */
+  text: string;
   createdAt: number;
-  /**
-   * Multi-conversation: which thread this notice is about. When set, clicking
-   * the orb notice **jumps to that conversation** (and opens the panel) instead
-   * of just dismissing — so a background reply names its thread and is one click
-   * away. Absent for thread-agnostic notices (e.g. fleet analysis complete).
-   */
-  conversationId?: string;
 }
 
 interface CompanionStore {
@@ -268,12 +260,14 @@ interface CompanionStore {
   /** Mark the active playback as already heard (footer Play hides itself). */
   markPlaybackPlayed: () => void;
 
-  // Footer notice — "Athena has something new" cue shown above the bot
-  // icon. One slot, latest-wins. See FooterNotice docstring.
-  footerNotice: FooterNotice | null;
-  setFooterNotice: (notice: FooterNotice | null) => void;
-  markFooterNoticeSpoken: () => void;
-  clearFooterNotice: () => void;
+  /**
+   * Session ledger of autonomous actions Athena took without asking. Newest
+   * first, bounded. Rendered in CHAT (`AthenaActionsStrip`); the orb reacts
+   * with a pulse only. See {@link AthenaAction}.
+   */
+  athenaActions: AthenaAction[];
+  recordAthenaAction: (action: AthenaAction) => void;
+  clearAthenaActions: () => void;
 
   /**
    * One-shot prompt injected into the composer by external surfaces
@@ -559,6 +553,15 @@ interface CompanionStore {
   markDecisionExplained: () => void;
 
   /**
+   * A decision the user answered whose action FAILED. The decision deliberately
+   * stays pending so they can retry — this token (`'run-failed'`) is what tells
+   * the surfaces they acted on (the orb bubble, the chat decision card) to say
+   * so *in place*. Reset whenever a new decision surfaces or the user retries.
+   */
+  decisionError: string | null;
+  setDecisionError: (v: string | null) => void;
+
+  /**
    * Explain-in-Cockpit composing state. True from the moment `0` escalates
    * into a `decision-explain` turn until either the `explain_in_cockpit`
    * event lands (CompanionPanel listener clears it) or the turn finishes
@@ -815,15 +818,14 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
         : s,
     ),
 
-  footerNotice: null,
-  setFooterNotice: (footerNotice) => set({ footerNotice }),
-  markFooterNoticeSpoken: () =>
+  athenaActions: [],
+  recordAthenaAction: (action) =>
     set((s) =>
-      s.footerNotice
-        ? { footerNotice: { ...s.footerNotice, ttsSpoken: true } }
-        : s,
+      s.athenaActions.some((a) => a.id === action.id)
+        ? s
+        : { athenaActions: [action, ...s.athenaActions].slice(0, ATHENA_ACTION_CAP) },
     ),
-  clearFooterNotice: () => set({ footerNotice: null }),
+  clearAthenaActions: () => set({ athenaActions: [] }),
 
   pendingPrompt: null,
   setPendingPrompt: (pendingPrompt: PendingPromptPayload | null) => set({ pendingPrompt }),
@@ -1135,11 +1137,24 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   pendingDecision: null,
   decisionExplained: false,
   setPendingDecision: (decision) =>
-    set({ pendingDecision: decision, decisionExplained: false, explainComposeError: null }),
+    set({
+      pendingDecision: decision,
+      decisionExplained: false,
+      explainComposeError: null,
+      decisionError: null,
+    }),
   clearPendingDecision: () =>
-    set({ pendingDecision: null, decisionExplained: false, explainComposeError: null }),
+    set({
+      pendingDecision: null,
+      decisionExplained: false,
+      explainComposeError: null,
+      decisionError: null,
+    }),
   markDecisionExplained: () =>
     set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
+
+  decisionError: null,
+  setDecisionError: (decisionError) => set({ decisionError }),
 
   explainComposing: false,
   explainComposeError: null,

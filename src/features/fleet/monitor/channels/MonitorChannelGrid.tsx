@@ -2,6 +2,8 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
+import { listTeamSlackBridgesSafe } from '@/api/pipeline/teamSlackBridges';
+import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 import { Stream } from './Stream';
 import { ConversationBriefing } from './ConversationBriefing';
 import { ChannelMap } from './map/ChannelMap';
@@ -45,6 +47,29 @@ function MonitorChannelGridImpl({
     }
     return map;
   }, [personas]);
+
+  // Slack bridges CANNOT be derived from `personas` here: the roster comes from
+  // `list_personas`, a lean projection that returns `notification_channels`
+  // blank, so every persona would look unbridged. The backend resolves them
+  // instead — the same scan the poller and the outbound relay run — and this is
+  // the one component in the channel workspace that needs the index, so it is
+  // fetched once here and passed down.
+  const [bridges, setBridges] = useState<Record<string, TeamSlackBridge>>({});
+  useEffect(() => {
+    let cancelled = false;
+    void listTeamSlackBridgesSafe().then((rows) => {
+      if (cancelled) return;
+      const index: Record<string, TeamSlackBridge> = {};
+      for (const row of rows) {
+        if (index[row.teamId]) continue; // first bridge wins, as in the engine
+        index[row.teamId] = { personaId: row.personaId, channel: row.slackChannelId };
+      }
+      setBridges(index);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const channelTeams = useMemo(
     () => teams.filter((tm) => (membersByTeam.get(tm.id)?.length ?? 0) > 0),
@@ -156,7 +181,7 @@ function MonitorChannelGridImpl({
       ) : layout === 'map' ? (
         <ChannelMap teams={workspaceTeams} onDrillIn={drillIn} layoutControl={layoutSwitcher} />
       ) : (
-        <ConversationBriefing teams={workspaceTeams} layoutControl={layoutSwitcher} />
+        <ConversationBriefing teams={workspaceTeams} bridges={bridges} layoutControl={layoutSwitcher} />
       )}
     </div>
   );

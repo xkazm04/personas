@@ -252,8 +252,10 @@ activeConversationId: string;
 
 - **Stays global (Athena's, not a thread's):** `jobsById`, `inTurnToolJobs` (each
   job just gains a `conversationId` tag for pinning), `pendingPlayback` (one voice
-  — see risks), `pendingDecision` (one at a time, tagged with its thread),
-  `footerNotice`.
+  — see risks), `pendingDecision` (one at a time, tagged with its thread).
+  (`footerNotice` was listed here historically; the footer notice popover was
+  removed with the rest of Athena's third communication dimension — see
+  README.md "Two dimensions".)
 - **Migration hook:** on first load, wrap the existing flat state into
   `conversations['default']` and set it active — lossless.
 - **Resolver hook** `useActiveConversation()` returns the active slice; migrate the

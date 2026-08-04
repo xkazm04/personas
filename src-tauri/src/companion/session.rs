@@ -763,7 +763,12 @@ pub async fn send_turn(
     // text. The episode stores the cleaned text — what the user sees in
     // the chat — so future turns' transcript is clean too.
     let mut dispatched =
-        match crate::companion::dispatcher::dispatch(&user_db, &session_id, &assistant_text) {
+        match crate::companion::dispatcher::dispatch_with_sys(
+            &user_db,
+            Some(&sys_db),
+            &session_id,
+            &assistant_text,
+        ) {
             Ok(d) => d,
             Err(e) => {
                 tracing::warn!(error = %e, "companion dispatcher failed; using raw text");

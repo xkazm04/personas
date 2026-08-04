@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FlaskConical } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
 import { ExecutionInspector } from '@/features/agents/sub_executions/detail/inspector/ExecutionInspector';
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
-import { hasNonEmptyJson } from './executionDetailTypes';
+import { hasNonEmptyJson } from '@/lib/utils/parseJson';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
-import { ExecutionDetailContent } from './ExecutionDetailContent';
+import { ExecutionDetailContent } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { ChainTraceView } from './chain/ChainTraceView';
 import { useChainTrace } from '../libs/useChainTrace';
 import { getExecution } from '@/api/agents/executions';
-import { silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { X } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -21,6 +21,7 @@ import { useDryRun } from '../libs/useDryRun';
 import { DryRunModal } from '../components/runner/DryRunModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
+import { trackInteraction } from '@/lib/analytics';
 
 interface ExecutionDetailProps {
   execution: PersonaExecution;
@@ -38,10 +39,20 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
   const chain = useChainTrace(execution.id, execution.persona_id, nested);
   useExecutionScope(execution.id, execution.persona_id);
 
+  // Which detail tabs actually get opened. Rides the existing analytics sink
+  // (Sentry today, pluggable later) rather than adding a parallel pipeline --
+  // the tab id is an identifier string, no execution content is attached.
+  const selectTab = useCallback((tab: DetailTab) => {
+    // Track outside the state updater -- StrictMode double-invokes updaters
+    // and would double-count every switch.
+    if (tab !== activeTab) trackInteraction('execution_detail', 'tab_open', tab);
+    setActiveTab(tab);
+  }, [activeTab]);
+
   const openChainExecution = (executionId: string) => {
     getExecution(executionId, execution.persona_id)
       .then(setChainOpen)
-      .catch(silentCatch('execution-detail:openChainExecution'));
+      .catch(toastCatch('execution-detail:openChainExecution'));
   };
   const dryRun = useDryRun({
     personaId: execution.persona_id,
@@ -64,7 +75,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <ExecutionDetailTabs
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={selectTab}
           hasToolSteps={hasToolSteps}
           hasDirectorReview={!!directorReviewMd}
           hasPipeline={hasPipeline}

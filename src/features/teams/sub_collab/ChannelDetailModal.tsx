@@ -36,7 +36,9 @@ function fullBody(item: TeamChannelItem): { text: string | null; fields: Array<[
     const v = humanizePayload(item.extra);
     return { text: v.primary ?? item.body, fields: v.fields, artifact: v.artifact };
   }
-  // memory / directive / agent voices — the body IS the content.
+  // memory / directive / agent voices / bridged Slack messages — the body IS
+  // the content. A Slack row carries no payload to decompose; its author is
+  // rendered by the header (authorName → the bridged display name).
   return { text: item.body, fields: [], artifact: null };
 }
 
@@ -64,7 +66,12 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
   const detail = useMemo(() => (item ? fullBody(item) : { text: null, fields: [] as Array<[string, string]>, artifact: null }), [item]);
   const raw = useMemo(() => (item ? prettyRaw(item) : null), [item]);
 
-  const eventLabel = item?.kind === 'memory' ? `memory · ${item.label}` : item?.label ?? '';
+  // A Slack row's `label` carries the author's display name (already the
+  // headline), so the machine line says the kind instead of repeating it.
+  const eventLabel =
+    item?.kind === 'memory' ? `memory · ${item.label}`
+      : item?.kind === 'slack' ? 'slack'
+        : item?.label ?? '';
 
   return (
     <BaseModal
@@ -79,12 +86,16 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
         <>
           <div className="flex items-center gap-3 px-5 py-4 border-b border-primary/10">
             <span className="flex items-center justify-center w-9 h-9 rounded-full bg-secondary/60 border flex-shrink-0" style={{ borderColor: accent }}>
-              {persona ? (
+              {/* Voiced authors (athena / director / slack) win over the persona
+                  sprite: a bridged Slack row parks its Slack user id in
+                  `personaId`, and an external human must never wear a team
+                  member's face. */}
+              {item.kind === 'athena' || item.kind === 'director' || item.kind === 'slack' ? (
+                (() => { const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director' | 'slack']; return <M.Icon className={`w-4 h-4 ${M.iconColor}`} />; })()
+              ) : persona ? (
                 <PersonaIcon icon={persona.icon} color={persona.color} size="w-5 h-5" />
               ) : item.kind === 'memory' ? (
                 <Pin className="w-4 h-4 text-amber-300/80" />
-              ) : item.kind === 'athena' || item.kind === 'director' ? (
-                (() => { const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director']; return <M.Icon className={`w-4 h-4 ${M.iconColor}`} />; })()
               ) : (
                 <span className="typo-caption text-foreground">·</span>
               )}

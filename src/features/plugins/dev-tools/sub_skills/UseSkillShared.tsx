@@ -71,7 +71,7 @@ export function DialogFooter({ target, busy, onConfirm, onClose }: {
         data-testid="use-skill-confirm"
       >
         <Icon className="w-3 h-3" aria-hidden />
-        {target === 'cmd' ? t.plugins.dev_tools.skills_use_copy_cta : t.plugins.dev_tools.skills_confirm_use_cta}
+        {target === 'cmd' ? t.plugins.dev_tools.skills_use_launch_cta : t.plugins.dev_tools.skills_confirm_use_cta}
       </button>
     </div>
   );

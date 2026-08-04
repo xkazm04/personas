@@ -2,15 +2,21 @@
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import type { DevWorkspace } from '@/lib/bindings/DevWorkspace';
 
-/** The three user-pickable categories. KPIs are NOT pickable on their own —
- *  they ride along with their team via the all-or-none `includeKpiSetup` flag. */
-export type ExportKind = 'personas' | 'teams' | 'credentials';
+/** The five user-pickable categories. KPIs are NOT pickable on their own —
+ *  they ride along with their team via the all-or-none `includeKpiSetup` flag.
+ *  `projects` = Dev Tools projects; `knowledge` = workspaces whose knowledge
+ *  library ships (workspace ids over IPC). */
+export type ExportKind = 'personas' | 'teams' | 'credentials' | 'projects' | 'knowledge';
 
 export type OnExport = (
   personaIds: string[],
   teamIds: string[],
   credentialIds: string[],
+  projectIds: string[],
+  workspaceIds: string[],
   includeMemories: boolean,
   includeKpis: boolean,
   passphrase?: string,
@@ -21,6 +27,8 @@ export interface ExportInventory {
   personas: Persona[];
   teams: PersonaTeam[];
   credentials: PersonaCredential[];
+  projects: DevProject[];
+  workspaces: DevWorkspace[];
   /** personaId → the teams it belongs to (membership, not just home team). */
   personaTeams: Map<string, PersonaTeam[]>;
   /** team.id → member persona count. */
@@ -41,6 +49,8 @@ export interface ExportPicker {
   selectedPersonas: Set<string>;
   selectedTeams: Set<string>;
   selectedCredentials: Set<string>;
+  selectedProjects: Set<string>;
+  selectedWorkspaces: Set<string>;
   includeKpiSetup: boolean;
   includeMemories: boolean;
   passphrase: string;

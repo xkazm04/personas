@@ -447,5 +447,7 @@
   "triage_summary_title": "Phiên này",
   "triage_summary_undone": "Đã hoàn tác",
   "triage_undo": "Hoàn tác {verdict}",
-  "triage_undo_hint": "Đưa thẻ trở lại hàng đợi. Những gì quyết định đã kích hoạt sẽ không được thu hồi."
+  "triage_undo_hint": "Đưa thẻ trở lại hàng đợi. Những gì quyết định đã kích hoạt sẽ không được thu hồi.",
+  "conv_bridge_title": "Kênh Slack đã liên kết. Tin nhắn gửi ở đó sẽ xuất hiện trong cuộc trò chuyện này.",
+  "stream_kind_slack": "Slack"
 }

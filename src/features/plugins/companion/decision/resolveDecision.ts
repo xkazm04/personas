@@ -20,7 +20,6 @@
  */
 import { silentCatch } from '@/lib/silentCatch';
 import { companionSendMessage, companionRecordUxSignal } from '@/api/companion';
-import { useToastStore } from '@/stores/toastStore';
 import { useCompanionStore } from '../companionStore';
 import type { DecisionOption, PendingDecision } from './types';
 
@@ -32,18 +31,21 @@ import type { DecisionOption, PendingDecision } from './types';
  * approve/reject (concurrent resolution, pool error, executor failure) left the
  * user believing they approved/denied while the system did neither — and the
  * decision vanished from the queue so it never re-surfaced. On failure we now
- * keep the decision pending and surface an error so the user can retry.
+ * keep the decision pending and surface the error IN PLACE — on the very
+ * surface the user just acted on (`decisionError`, rendered by the orb bubble
+ * and the chat decision card) rather than in a detached toast that could land
+ * anywhere on screen and vanish before they read it.
  */
 export async function runDecisionOption(option: DecisionOption): Promise<void> {
-  const source = useCompanionStore.getState().pendingDecision?.source ?? 'unknown';
+  const store = useCompanionStore.getState();
+  const source = store.pendingDecision?.source ?? 'unknown';
+  // Clear any previous failure so a retry doesn't render a stale error.
+  if (store.decisionError) store.setDecisionError(null);
   try {
     await option.run();
   } catch (err) {
     silentCatch('companion/resolveDecision:run')(err);
-    useToastStore.getState().addToast(
-      'Could not complete that decision — please try again',
-      'error',
-    );
+    useCompanionStore.getState().setDecisionError('run-failed');
     return; // keep the decision pending; do NOT record it as resolved
   }
   // F3 — he resolved a decision hands-free via the orb (vs falling through to chat).

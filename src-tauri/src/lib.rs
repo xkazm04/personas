@@ -1191,6 +1191,18 @@ pub fn run() {
             app.manage(state_arc.session_pool.clone());
             app.manage(state_arc.ambient_context.clone());
 
+            // Athena's proactive scheduler — the 5-min autonomy loop (fleet
+            // reassess passes, execution review, message triage, stale-approval
+            // GC). Started here, alongside the other always-on loops, because
+            // it previously hung off `companion_init`, which the frontend calls
+            // from a lazily-mounted footer icon: a chunk that never mounted (or
+            // failed to) silently meant no autonomy at all, with no retry.
+            // Idempotent (`OnceLock`) and still no-ops per tick while
+            // autonomous mode is off, so this starts a loop, not autonomy.
+            // Must follow `app.manage(state_arc)` — the tick reads
+            // `Arc<AppState>` back out of Tauri's state map.
+            commands::companion::start_proactive_scheduler(&state_arc, app.handle());
+
             // Side effects the engine fires into the shell. Registered here
             // because every target — tray, notifications, the companion's
             // proactive lane — sits above the engine. Unregistered, they are
@@ -1490,6 +1502,22 @@ pub fn run() {
                 });
             }
             st.checkpoint("slack_poller");
+
+            // Team channel -> Slack relay (outbound half of the team bridge).
+            // For every persona channel spec carrying `teamBridge: true`, mirror
+            // new team_channel_messages / team_assignment_events rows into the
+            // bound Slack channel on a 5s watermark-driven tick, reusing the
+            // notification stack's Slack sender. Leader-gated; never mirrors
+            // rows authored by Slack (the echo guard). See
+            // `engine/team_slack_relay.rs` and `engine/slack_bridge.rs`.
+            {
+                let pool_for_bridge = pool.clone();
+                let app_for_bridge = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::team_slack_relay::run_relay(pool_for_bridge, app_for_bridge).await;
+                });
+            }
+            st.checkpoint("team_slack_relay");
 
             // Test automation HTTP server.
             //
@@ -2508,6 +2536,7 @@ pub fn run() {
             commands::teams::team_channel::count_team_channel_kinds,
             commands::teams::team_channel::post_team_directive,
             commands::teams::team_channel::companion_post_team_message,
+            commands::teams::team_channel::list_team_slack_bridges,
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,
             commands::teams::team_memories::delete_team_memory,
@@ -2821,6 +2850,7 @@ pub fn run() {
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
+            commands::companion::approvals::companion_dispatch_fleet_plan,
             commands::companion::approvals::companion_daily_brief,
             commands::companion::browser_test::browser_bridge_status,
             commands::companion::browser_test::browser_bridge_regenerate_token,
@@ -3159,6 +3189,7 @@ pub fn run() {
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_prepare,
             commands::infrastructure::kpi_sim::dev_tools_kpi_sim_ingest,
             commands::infrastructure::memory_ledger::dev_tools_memory_ingest,
+            commands::infrastructure::context_map_export::dev_tools_export_backlog_digest,
             commands::infrastructure::memory_ledger::dev_tools_memory_list,
             commands::infrastructure::memory_ledger::dev_tools_memory_coverage,
             commands::infrastructure::memory_ledger::dev_tools_memory_project_vault,

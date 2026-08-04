@@ -8,4 +8,10 @@
  * the conversation), so the rail was showing "Deliberation 0" for teams with
  * hundreds of turns. Counting has to happen where the rows are.
  */
-export type ChannelKindCounts = { step: number, event: number, memory: number, message: number, deliberation: number, };
+export type ChannelKindCounts = { step: number, event: number, memory: number, message: number, deliberation: number, 
+/**
+ * Channel rows authored by an external Slack participant. Counted
+ * separately from `message` for the same reason the lens splits them: they
+ * are people outside the team talking in it.
+ */
+slack: number, };

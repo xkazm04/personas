@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { MessageSquare, Sparkles, Compass } from 'lucide-react';
+import { MessageSquare, Sparkles, Compass, Hash } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { memberColor, FAMILY_TEXT } from '@/lib/channel/eventModel';
@@ -64,8 +64,19 @@ export interface AuthorMeta {
   tag: string;
 }
 
-/** Per-author-kind voice for multi-author channel messages (user/persona/athena/director). */
-export const AUTHOR_KIND_META: Record<'persona' | 'athena' | 'director', AuthorMeta> = {
+/** The author kinds that have their own voice (everything that is not a plain
+ *  persona post, a user directive, or a machine row). Exported so callers stop
+ *  hand-writing the `as 'athena' | 'director'` cast at every render site. */
+export type AuthorKind = 'persona' | 'athena' | 'director' | 'slack';
+
+/** Is this item authored by a voice with dedicated meta in {@link AUTHOR_KIND_META}? */
+export function isAuthorKind(kind: string): kind is AuthorKind {
+  return kind === 'persona' || kind === 'athena' || kind === 'director' || kind === 'slack';
+}
+
+/** Per-author-kind voice for multi-author channel messages
+ *  (user/persona/athena/director/slack). */
+export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
   persona: {
     label: 'channel',
     Icon: MessageSquare,
@@ -90,6 +101,17 @@ export const AUTHOR_KIND_META: Record<'persona' | 'athena' | 'director', AuthorM
     bubble: 'border-sky-500/25 bg-sky-500/5',
     tag: 'text-sky-300',
   },
+  // An EXTERNAL human, arriving over the team's Slack bridge. Deliberately its
+  // own voice: a bridged message is neither the operator ("You") nor one of the
+  // team's personas, and reading as either would be a lie about who is talking.
+  slack: {
+    label: 'Slack',
+    Icon: Hash,
+    accent: 'rgb(45 212 191)',
+    iconColor: 'text-teal-300',
+    bubble: 'border-teal-500/25 bg-teal-500/5',
+    tag: 'text-teal-300',
+  },
 };
 
 /** Soft background tint class for an author's avatar chip, keyed by channel-item
@@ -100,12 +122,32 @@ export function avatarBgFor(kind: string): string {
     case 'athena': return 'bg-violet-500/15';
     case 'director': return 'bg-sky-500/15';
     case 'directive': return 'bg-emerald-500/15';
+    case 'slack': return 'bg-teal-500/15';
     default: return 'bg-secondary/60';
   }
 }
 
+/**
+ * The display name of an external Slack author.
+ *
+ * The read-model has no dedicated column for an external participant, so the
+ * bridge carries the resolved Slack display name in `label` — which for channel
+ * messages otherwise just repeats `author_kind` and is therefore redundant with
+ * `kind`. If the bridge could not resolve a name we fall back to the raw Slack
+ * user id (parked in `personaId`, the read-model's `author_id` column) rather
+ * than inventing one.
+ */
+export function slackAuthorName(item: TeamChannelItem): string {
+  const label = item.label?.trim();
+  if (label && label !== 'slack') return label;
+  return item.personaId ?? AUTHOR_KIND_META.slack.label;
+}
+
 /** Resolve a display name for any channel item. */
 export function authorName(item: TeamChannelItem, persona: Persona | undefined): string {
+  // Slack first: a bridged author id can never index a persona, but guarding
+  // here keeps an id collision from ever renaming an external human.
+  if (item.kind === 'slack') return slackAuthorName(item);
   if (persona) return persona.name.replace(/^T: /, '');
   if (item.kind === 'directive') return 'You';
   if (item.kind === 'athena') return 'Athena';
@@ -115,6 +157,7 @@ export function authorName(item: TeamChannelItem, persona: Persona | undefined):
 
 /** Resolve the accent colour for any channel item (member colour for people). */
 export function itemAccent(item: TeamChannelItem, persona: Persona | undefined): string {
+  if (item.kind === 'slack') return AUTHOR_KIND_META.slack.accent;
   if (item.kind === 'athena') return AUTHOR_KIND_META.athena.accent;
   if (item.kind === 'director') return AUTHOR_KIND_META.director.accent;
   if (item.kind === 'directive') return 'rgb(52 211 153)'; // user / emerald

@@ -91,6 +91,19 @@ impl ScreenDelta {
         ScreenActivity::Working
     }
 
+    /// Whether this sample can carry weight in a state decision.
+    ///
+    /// A screen at or below [`MIN_CLASSIFIABLE_LINES`] reports `Working` for
+    /// ANY movement (see [`Self::activity`]) — a deliberate fail-safe so a
+    /// small pane is never called stuck. That fail-safe becomes a hazard the
+    /// moment a rule reads `Working` as *evidence*: a two-line screen would
+    /// then vouch for a session forever, which is a "never stale" hole rather
+    /// than a corroboration. Rules ask this first and fall back to their
+    /// screen-free behaviour when it is false.
+    pub fn classifiable(&self) -> bool {
+        self.total_lines > MIN_CLASSIFIABLE_LINES
+    }
+
     /// `changed/total working` — compact enough for a ticker line.
     pub fn summary(&self) -> String {
         format!(
@@ -221,6 +234,16 @@ mod tests {
         assert_ne!(fnv1a(b"ab"), fnv1a(b"ba"));
         assert_ne!(fnv1a(b"a"), fnv1a(b"a "));
         assert_eq!(fnv1a(b"same"), fnv1a(b"same"));
+    }
+
+    #[test]
+    fn tiny_screens_are_not_classifiable_evidence() {
+        // The `Working`-on-a-tiny-screen fail-safe must never be READ as proof
+        // of work — that would make a 2-line pane un-stale-able forever.
+        assert!(!delta(1, 4).classifiable());
+        assert!(!delta(0, 2).classifiable());
+        assert!(delta(1, 5).classifiable());
+        assert!(delta(3, 24).classifiable());
     }
 
     #[test]

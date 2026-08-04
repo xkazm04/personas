@@ -523,7 +523,14 @@
     "copy_log_failed": "Protokoll konnte nicht kopiert werden",
     "lines_counter": "{visible}/{total} Zeilen",
     "timeline_scrubber_label": "Ausführungs-Zeitleiste",
-    "timeline_scrubber_value": "{current} von {total}"
+    "timeline_scrubber_value": "{current} von {total}",
+    "file_changes_count": "{count} Datei",
+    "file_changes_count_other": "{count} Dateien",
+    "files_modified_count": "{count} geändert",
+    "files_read_count": "{count} gelesen",
+    "tokens_unit": "Tokens",
+    "trace_evicted_notice": "Trace unvollständig: {count} Span entfernt (Limit: 10.000)",
+    "trace_evicted_notice_other": "Trace unvollständig: {count} Spans entfernt (Limit: 10.000)"
   },
   "lab": {
     "mode_arena": "Arena",

@@ -1,6 +1,6 @@
 // Dimension categories — the far/mid level of detail for an island body.
 //
-// Both lattices sit at the ~15-cell comfort ceiling (see mastermind.md §5), and
+// The lattice sits at the ~15-cell comfort ceiling (see mastermind.md §5), and
 // 15 same-sized dots is not a readable shape from orbit anyway. So the zoomed-out
 // bands collapse the dimensions into their four registry `category` groups —
 // runtime / delivery / agentic / product — and near/close explodes them back to

@@ -106,6 +106,11 @@ export function buildConversation(items: TeamChannelItem[], now = Date.now()): C
       continue;
     }
 
+    // Everything else is TALK — including bridged `slack` messages. That is the
+    // point: an inbound Slack message is a person saying something in the
+    // channel, so it reads as conversation, not as a system event. It needs no
+    // ConversationRow variant of its own; the differentiation is in the bubble's
+    // authorship (see TalkBubble / AUTHOR_KIND_META.slack), not in the fold.
     rows.push({ kind: 'talk', key: `talk:${item.id}`, at: item.at, item });
   }
 

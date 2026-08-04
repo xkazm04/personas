@@ -523,7 +523,14 @@
     "copy_log_failed": "Log se nepodařilo zkopírovat do schránky",
     "lines_counter": "{visible}/{total} řádků",
     "timeline_scrubber_label": "Časová osa spuštění",
-    "timeline_scrubber_value": "{current} z {total}"
+    "timeline_scrubber_value": "{current} z {total}",
+    "file_changes_count": "{count} soubor",
+    "file_changes_count_other": "{count} souborů",
+    "files_modified_count": "{count} změněno",
+    "files_read_count": "{count} přečteno",
+    "tokens_unit": "tokenů",
+    "trace_evicted_notice": "Trasování je neúplné: {count} span odstraněn (limit: 10 000)",
+    "trace_evicted_notice_other": "Trasování je neúplné: {count} spanů odstraněno (limit: 10 000)"
   },
   "lab": {
     "mode_arena": "Aréna",

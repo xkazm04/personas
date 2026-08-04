@@ -3,8 +3,9 @@
 //   far/mid  → FOUR category hexes (runtime/delivery/agentic/product), each a
 //              fullscale icon in its rolled-up status colour — 15 same-sized
 //              dots is not a shape you can read from orbit
-//   near     → the full lattice explodes back: icon + uppercase label per dim
-//   close    → + tool detail + progress
+//   near     → the full lattice explodes back: full-hex watermark icon with the
+//              STATE VALUE (progress / days / status mark) as the foreground
+//   close    → inspection detail: small icon + label + tool detail + progress
 // The cluster's extents are always measured from the FULL lattice, so the
 // halo, banner, stat columns and fleet badges never move across a band change —
 // only the cells inside swap.
@@ -26,6 +27,20 @@ import type { IslandCtx } from '../lib/CanvasShell';
 import type { DimNode, Island, ZoomBand } from '../lib/types';
 
 const CELL = 56;
+
+/** Near-band state value — the reading that replaces the old small icon:
+ *  ordinal progress ("2/4"), numeric payload ("12d" freshness, goal count), or
+ *  a status mark for boolean dimensions. ASCII-safe marks; colour carries the
+ *  severity, the mark carries the shape. */
+const STATUS_MARK: Record<DimNode['status'], string> = {
+  solid: '✓', partial: '~', risk: '!', alert: '!!', absent: '–', unknown: '?',
+};
+const cellValue = (node: DimNode): string => {
+  const kind = DIM_REGISTRY[node.key]?.payloadKind;
+  if (kind !== 'icon' && node.days != null) return `${node.days}${kind === 'days' ? 'd' : ''}`;
+  if (node.steps > 0 && node.status !== 'absent') return `${node.reached}/${node.steps}`;
+  return STATUS_MARK[node.status];
+};
 // Axial cells: ring-1 six + contiguous ring-2 caps for dimensions 7-12.
 // Order matches the dimension registry's DIM_ORDER 1:1 (index N → dimension N).
 // LATTICE SLOTS 16+: a 16th dimension needs one more [q,r] axial coord appended
@@ -54,7 +69,7 @@ const catXY = (q: number, r: number) => {
 // scalars, so a render-free pan (camera transform only) re-renders zero islands.
 // It re-renders only when its own props change — a committed z/band on zoom, a
 // mode switch, or its own dim/highlight state.
-export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
+export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, onHover, onIslandCommit, onIslandTap, onShipOpen, onConnectStart, onIslandFocus, onIslandMenu, highlightKey, onFleetList, onDimOpen, onPersonasOpen, onCategoryOpen }: { island: Island } & IslandCtx) {
   const { t } = useTranslation();
   const ink = STATE_INK[island.state];
   const rootRef = useRef<SVGGElement>(null);
@@ -156,6 +171,7 @@ export const MosaicIsland = memo(function MosaicIsland({ island, z, band, mode, 
         topWorldY={topY - 10}
         handleProps={mode === 'edit' ? { handlers: { ...drag }, cursor: 'move' } : undefined}
         onContextMenu={(e) => onIslandMenu(island.slug, e)}
+        onShipOpen={mode === 'edit' ? () => onShipOpen(island.slug) : undefined}
       />
       {band !== 'far' && <StatColumns stats={island.stats} z={z} leftX={leftX} rightX={rightX} />}
       <FleetBadges
@@ -295,24 +311,36 @@ function MosaicCell({ node, x, y, band, highlighted, hint, onAction }: {
           // fullscale icon — the cell IS the icon when zoomed out
           <DimGlyph node={node} x={-27} y={-27} size={54} strokeWidth={1.5} color={absent ? 'var(--muted-foreground)' : ink} />
         )
+      ) : band === 'near' ? (
+        // Near band — state recognition first: the dimension's icon fills the
+        // whole hex as a low-opacity watermark, and the STATE VALUE takes the
+        // icon's old foreground spot (ordinal progress, freshness days, or a
+        // status mark for boolean dimensions). The label stays for identity.
+        <>
+          <g opacity={0.16} pointerEvents="none">
+            <DimGlyph node={node} x={-38} y={-38} size={76} strokeWidth={1.1} color={absent ? 'var(--muted-foreground)' : ink} />
+          </g>
+          <text y={9} textAnchor="middle" fontSize={26} fontWeight={700} fill={absent ? 'var(--muted-foreground)' : ink} style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {cellValue(node)}
+          </text>
+          <text y={34} textAnchor="middle" fontSize={9.5} letterSpacing="0.08em" fontWeight={600} fill={absent ? 'var(--muted-foreground)' : mix('var(--foreground)', 70)} style={{ textTransform: 'uppercase' }}>
+            {node.label}
+          </text>
+        </>
       ) : (
         <>
           <DimGlyph node={node} x={-11} y={-30} size={22} strokeWidth={1.75} color={absent ? 'var(--muted-foreground)' : ink} />
           <text y={8} textAnchor="middle" fontSize={12} letterSpacing="0.08em" fontWeight={600} fill={absent ? 'var(--muted-foreground)' : mix('var(--foreground)', 90)} style={{ textTransform: 'uppercase' }}>
             {node.label}
           </text>
-          {band === 'close' && (
-            <>
-              <text y={24} textAnchor="middle" fontSize={9.5} fontStyle="italic" fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 65)}>
-                {node.detail ?? (absent ? t.mastermind.cell_empty : '')}
-              </text>
-              {node.steps > 0 && !absent && (
-                <g transform="translate(0 34)">
-                  <rect x={-20} y={-2} width={40} height={3.5} rx={1.75} fill={mix('var(--foreground)', 10)} />
-                  <rect x={-20} y={-2} width={(40 * node.reached) / node.steps} height={3.5} rx={1.75} fill={ink} />
-                </g>
-              )}
-            </>
+          <text y={24} textAnchor="middle" fontSize={9.5} fontStyle="italic" fill={absent ? mix('var(--muted-foreground)', 85) : mix('var(--foreground)', 65)}>
+            {node.detail ?? (absent ? t.mastermind.cell_empty : '')}
+          </text>
+          {node.steps > 0 && !absent && (
+            <g transform="translate(0 34)">
+              <rect x={-20} y={-2} width={40} height={3.5} rx={1.75} fill={mix('var(--foreground)', 10)} />
+              <rect x={-20} y={-2} width={(40 * node.reached) / node.steps} height={3.5} rx={1.75} fill={ink} />
+            </g>
           )}
         </>
       )}
