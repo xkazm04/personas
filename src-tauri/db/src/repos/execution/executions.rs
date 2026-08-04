@@ -1415,10 +1415,10 @@ pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<
              ORDER BY created_at DESC
              LIMIT 20",
             )?;
-            let statuses: Vec<String> = stmt
-                .query_map(params![persona_id], |row| row.get::<_, String>(0))?
-                .filter_map(|r| r.ok())
-                .collect();
+            let statuses: Vec<String> = crate::repos::utils::collect_rows(
+                stmt.query_map(params![persona_id], |row| row.get::<_, String>(0))?,
+                "persona_executions::get_consecutive_failure_count",
+            );
 
             let count = statuses
                 .iter()
@@ -1655,18 +1655,22 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
             let mut stmt = conn.prepare_cached(
                 "SELECT id, persona_id, status, started_at, created_at FROM persona_executions WHERE status IN ('running', 'queued')",
             )?;
-            let candidates: Vec<(String, String, String, Option<String>, String)> = stmt
-                .query_map([], |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                        row.get::<_, String>(2)?,
-                        row.get::<_, Option<String>>(3)?,
-                        row.get::<_, String>(4)?,
-                    ))
-                })?
-                .filter_map(|r| r.ok())
-                .collect();
+            // A row that fails to map here is a zombie candidate that would
+            // never be reaped — log it (collect_rows) instead of dropping it
+            // silently.
+            let candidates: Vec<(String, String, String, Option<String>, String)> =
+                crate::repos::utils::collect_rows(
+                    stmt.query_map([], |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, String>(1)?,
+                            row.get::<_, String>(2)?,
+                            row.get::<_, Option<String>>(3)?,
+                            row.get::<_, String>(4)?,
+                        ))
+                    })?,
+                    "persona_executions::sweep_zombie_executions",
+                );
 
             let mut surface_ids = Vec::new();
             for (id, persona_id, status, started_at, created_at) in candidates {
@@ -1780,10 +1784,10 @@ pub fn cleanup_old_executions(
          WHERE status IN ('completed', 'failed', 'incomplete', 'cancelled')
            AND created_at < datetime('now', ?1)",
             )?;
-            let persona_ids: Vec<String> = persona_stmt
-                .query_map(params![cutoff], |row| row.get::<_, String>(0))?
-                .filter_map(|r| r.ok())
-                .collect();
+            let persona_ids: Vec<String> = crate::repos::utils::collect_rows(
+                persona_stmt.query_map(params![cutoff], |row| row.get::<_, String>(0))?,
+                "persona_executions::cleanup_old_executions",
+            );
 
             let mut total_deleted: usize = 0;
 

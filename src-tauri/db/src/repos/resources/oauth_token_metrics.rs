@@ -63,8 +63,8 @@ pub fn get_by_credential(
              ORDER BY created_at DESC
              LIMIT ?2",
         )?;
-            let rows = stmt
-                .query_map(params![credential_id, limit], |row| {
+            let rows = crate::repos::utils::collect_rows(
+                stmt.query_map(params![credential_id, limit], |row| {
                     Ok(OAuthTokenMetric {
                         id: row.get(0)?,
                         credential_id: row.get(1)?,
@@ -77,9 +77,9 @@ pub fn get_by_credential(
                         error_message: row.get(8)?,
                         created_at: row.get(9)?,
                     })
-                })?
-                .filter_map(|r| r.ok())
-                .collect();
+                })?,
+                "oauth_token_metrics::get_by_credential",
+            );
             Ok(rows)
         }
     )
@@ -159,10 +159,10 @@ pub fn get_lifetime_summary(
              ORDER BY created_at DESC
              LIMIT 5",
             )?;
-            let recent_predicted: Vec<i64> = stmt
-                .query_map(params![credential_id], |row| row.get(0))?
-                .filter_map(|r| r.ok())
-                .collect();
+            let recent_predicted: Vec<i64> = crate::repos::utils::collect_rows(
+                stmt.query_map(params![credential_id], |row| row.get(0))?,
+                "oauth_token_metrics::get_lifetime_summary",
+            );
 
             // Detect if lifetime is trending shorter: each value is smaller than its predecessor
             let lifetime_trending_shorter = if recent_predicted.len() >= 3 {

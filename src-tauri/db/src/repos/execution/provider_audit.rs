@@ -52,8 +52,8 @@ pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>
          ORDER BY created_at DESC
          LIMIT ?1",
         )?;
-        let rows = stmt
-            .query_map(params![limit], |row| {
+        let rows = crate::repos::utils::collect_rows(
+            stmt.query_map(params![limit], |row| {
                 Ok(ProviderAuditEntry {
                     id: row.get(0)?,
                     execution_id: row.get(1)?,
@@ -69,9 +69,9 @@ pub fn list(pool: &DbPool, limit: Option<i64>) -> Result<Vec<ProviderAuditEntry>
                     status: row.get(11)?,
                     created_at: row.get(12)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?,
+            "provider_audit::list",
+        );
         Ok(rows)
     })
 }
@@ -94,8 +94,8 @@ pub fn list_by_persona(
          ORDER BY created_at DESC
          LIMIT ?2",
         )?;
-        let rows = stmt
-            .query_map(params![persona_id, limit], |row| {
+        let rows = crate::repos::utils::collect_rows(
+            stmt.query_map(params![persona_id, limit], |row| {
                 Ok(ProviderAuditEntry {
                     id: row.get(0)?,
                     execution_id: row.get(1)?,
@@ -111,9 +111,9 @@ pub fn list_by_persona(
                     status: row.get(11)?,
                     created_at: row.get(12)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?,
+            "provider_audit::list_by_persona",
+        );
         Ok(rows)
     })
 }
@@ -159,8 +159,8 @@ pub fn get_usage_timeseries(
          ORDER BY engine_kind, day ASC",
         )?;
         let offset_str = format!("-{} days", days);
-        let rows = stmt
-            .query_map(params![offset_str], |row| {
+        let rows = crate::repos::utils::collect_rows(
+            stmt.query_map(params![offset_str], |row| {
                 Ok(ProviderUsageTimeseries {
                     engine_kind: row.get(0)?,
                     date: row.get(1)?,
@@ -168,9 +168,9 @@ pub fn get_usage_timeseries(
                     total_cost_usd: row.get(3)?,
                     avg_duration_ms: row.get(4)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?,
+            "provider_audit::get_usage_timeseries",
+        );
         Ok(rows)
     })
 }
@@ -188,8 +188,8 @@ pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppErro
          GROUP BY engine_kind
          ORDER BY execution_count DESC",
         )?;
-        let rows = stmt
-            .query_map([], |row| {
+        let rows = crate::repos::utils::collect_rows(
+            stmt.query_map([], |row| {
                 Ok(ProviderUsageStats {
                     engine_kind: row.get(0)?,
                     execution_count: row.get(1)?,
@@ -197,9 +197,9 @@ pub fn get_usage_stats(pool: &DbPool) -> Result<Vec<ProviderUsageStats>, AppErro
                     avg_duration_ms: row.get(3)?,
                     failover_count: row.get(4)?,
                 })
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+            })?,
+            "provider_audit::get_usage_stats",
+        );
         Ok(rows)
     })
 }
