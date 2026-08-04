@@ -296,6 +296,13 @@ pub fn companion_dev_op_set_verdict(
     verdict: Option<String>,
 ) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
+    // Same gate as the ledger read, but loud: a verdict is a write and
+    // must never land from a release build.
+    if !dev_mode_enabled(&state.db) {
+        return Err(AppError::Validation(
+            "dev mode is off — verdicts only apply to dev-mode runs".into(),
+        ));
+    }
     crate::companion::dev_mode::set_verdict(&state.user_db, &op_id, verdict.as_deref())
 }
 
