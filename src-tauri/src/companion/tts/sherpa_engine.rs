@@ -160,6 +160,22 @@ pub fn extract_selected(
         if !keep(&first) {
             continue;
         }
+        // Tar-slip guard. Only the FIRST component is vetted above, so an entry
+        // like `<kept-dir>/../../../evil.dll` would escape `dest_dir` —
+        // `tar::Entry::unpack` performs no traversal sanitization of its own
+        // (that is `unpack_in`'s job). Any traversal / absolute / drive-prefix
+        // component means the archive is not what we pinned: refuse it.
+        if rel.components().any(|c| {
+            !matches!(
+                c,
+                std::path::Component::Normal(_) | std::path::Component::CurDir
+            )
+        }) {
+            return Err(AppError::Internal(format!(
+                "archive entry `{}` escapes the extraction directory — refusing",
+                rel.display()
+            )));
+        }
         let dest = dest_dir.join(rel);
         if entry.header().entry_type().is_dir() {
             std::fs::create_dir_all(&dest)
