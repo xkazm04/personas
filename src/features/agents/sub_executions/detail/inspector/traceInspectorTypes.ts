@@ -1,4 +1,5 @@
 import type { SpanType } from '@/lib/bindings/SpanType';
+import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
 
 // Re-export the canonical UnifiedSpan-based tree helpers + SpanNode type
@@ -7,6 +8,58 @@ import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
 // copy of buildSpanTree/flattenTree/SpanNode that drifted.)
 export type { SpanNode } from '../../libs/traceHelpers';
 export { buildSpanTree, flattenTree } from '../../libs/traceHelpers';
+
+// ============================================================================
+// Live span-event application
+// ============================================================================
+
+/** Payload of the `execution-trace-span` Tauri event. */
+export interface TraceSpanEvent {
+  execution_id: string;
+  span: TraceSpan;
+  event_type: string;
+}
+
+/** A buffered span event awaiting the initial trace fetch. */
+export type BufferedSpanEvent = Pick<TraceSpanEvent, 'span' | 'event_type'>;
+
+/**
+ * Apply one live `execution-trace-span` event to a flat span list.
+ *
+ * Pure and idempotent on `span_id`, which is what lets the same event be
+ * replayed out of a buffer over a freshly fetched trace that may already
+ * contain it (see `useTraceData`'s fetch-window buffer).
+ *
+ * Rules:
+ *  - `start` for an unknown span appends it.
+ *  - `start` for a span already present is a no-op (dedupe).
+ *  - `end` for a known span replaces it with the completed record.
+ *  - `end` for a span we never saw a `start` for still materialises the span
+ *    — dropping it would lose a leaf whose start event was missed (e.g. it
+ *    arrived while the listener was still registering).
+ *  - Any other `event_type` is ignored.
+ *
+ * Returns the input array by reference when nothing changed, so callers can
+ * use identity to skip a state update.
+ */
+export function applySpanEvent(
+  spans: TraceSpan[],
+  span: TraceSpan,
+  eventType: string,
+): TraceSpan[] {
+  if (eventType !== 'start' && eventType !== 'end') return spans;
+
+  const idx = spans.findIndex((s) => s.span_id === span.span_id);
+  if (idx === -1) {
+    return [...spans, span];
+  }
+  if (eventType === 'end') {
+    const next = [...spans];
+    next[idx] = span;
+    return next;
+  }
+  return spans;
+}
 
 // ============================================================================
 // Span type config
