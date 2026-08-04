@@ -332,11 +332,21 @@ pub async fn triage_unread_messages(
     // (message_id, persona, title, note) for the per-item decision-queue rows (C1).
     let mut attention_refs: Vec<(String, String, String, String)> = Vec::new();
     let mut touched = 0usize;
+    // Ids already acted on this pass. A model that emits two verdicts for the
+    // same message would otherwise mark it read twice, push it onto the card
+    // twice, and — because `touched` could then exceed `batch.len()` — make the
+    // `batch.len() - touched` below underflow (panic in debug, absurd count in
+    // release). First verdict per id wins; the rest are logged and skipped.
+    let mut seen_ids: std::collections::HashSet<&str> = std::collections::HashSet::new();
     for v in &decision.items {
         // Ignore hallucinated ids — only messages from this batch count.
         let Some(m) = batch.iter().find(|m| m.id == v.id) else {
             continue;
         };
+        if !seen_ids.insert(m.id.as_str()) {
+            tracing::warn!(id = %m.id, "message_triage: duplicate verdict for one message — keeping the first");
+            continue;
+        }
         touched += 1;
         let action = effective_action(&m.priority, v.action.as_str());
         if action != v.action {
@@ -377,7 +387,7 @@ pub async fn triage_unread_messages(
             }
         }
     }
-    let untouched = batch.len() - touched;
+    let untouched = batch.len().saturating_sub(touched);
     if untouched > 0 {
         // Verdict-less messages stay unread with no annotation — the
         // user keeps them; the cursor still moves on (no livelock).
