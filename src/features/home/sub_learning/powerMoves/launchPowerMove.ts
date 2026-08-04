@@ -26,6 +26,11 @@ export function launchPowerMove(move: PowerMove): void {
   if (nav.overviewTab || nav.eventBusTab || nav.pluginTab) {
     window.setTimeout(() => {
       const s = useSystemStore.getState();
+      // The user can navigate again inside the delay (another power move, the
+      // sidebar, a tour). Applying the sub-tab then would yank them to a tab
+      // of a section they already left, so land it only if the section we
+      // routed to is still the one on screen.
+      if (s.sidebarSection !== nav.section) return;
       if (nav.overviewTab) useOverviewStore.getState().setOverviewTab(nav.overviewTab);
       if (nav.eventBusTab) s.setEventBusTab(nav.eventBusTab);
       if (nav.pluginTab) s.setPluginTab(nav.pluginTab);
