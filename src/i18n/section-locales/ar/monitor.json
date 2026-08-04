@@ -382,5 +382,7 @@
   "triage_why_raised": "سبب إثارتها",
   "triage_announce_card": "قيد البتّ الآن: {kind} — {title}",
   "triage_announce_verdict": "تم التسجيل: {verdict}.",
-  "triage_body_region": "تفاصيل البطاقة — مرّر بمفاتيح الأسهم"
+  "triage_body_region": "تفاصيل البطاقة — مرّر بمفاتيح الأسهم",
+  "conv_bridge_title": "قناة Slack مرتبطة. الرسائل المرسلة هناك تصل إلى هذه المحادثة.",
+  "stream_kind_slack": "Slack"
 }

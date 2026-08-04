@@ -90,6 +90,10 @@ function writeLastSeen(teamId: string, at: string): void {
  * Unread = items newer than the last-seen watermark that the user did not write.
  * A never-read team counts as fully unread, which is what a messenger sidebar
  * should show on first run.
+ *
+ * Bridged `slack` rows DO count: they are other people talking into the channel,
+ * which is the single most unread-worthy thing that can arrive. Only the user's
+ * own directives are excluded — you never have unread mail from yourself.
  */
 export function countUnread(state: ChannelTeamState): number {
   let n = 0;

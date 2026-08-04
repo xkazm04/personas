@@ -605,6 +605,13 @@ pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 
+/// Per-bridge team -> Slack relay watermark. Full key:
+/// `team_slack_bridge_cursor:<team_id>_<slack_channel_id>_<stream>` where
+/// `stream` is `msg` (team_channel_messages) or `step` (team_assignment_events);
+/// value: a `<created_at>|<row id>` composite cursor, the same shape the
+/// webhook notifier stores. Engine bookkeeping, never user-set.
+pub const TEAM_SLACK_BRIDGE_CURSOR_PREFIX: &str = "team_slack_bridge_cursor:";
+
 /// Per-project **autopilot** mode. Full key: `autopilot_mode:<project_id>`,
 /// value ∈ {`off`, `measure`, `suggest`, `full`}. Owns whether that project's
 /// KPI → goal → team loop runs unattended (see `engine/autopilot.rs`). Absent =
@@ -803,6 +810,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     HEALTH_WATCH_PREFIX,
     CLOUD_SYNC_CURSOR_PREFIX,
     AUTOPILOT_MODE_PREFIX,
+    TEAM_SLACK_BRIDGE_CURSOR_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -1109,8 +1117,11 @@ const AUDIT_EXCLUDED_KEYS: &[&str] = &[
     MASTERMIND_LAYOUT,
 ];
 
-/// Prefix families that are internal bookkeeping (per-table cloud-sync cursors).
-const AUDIT_EXCLUDED_PREFIXES: &[&str] = &[CLOUD_SYNC_CURSOR_PREFIX];
+/// Prefix families that are internal bookkeeping (per-table cloud-sync cursors,
+/// per-bridge team -> Slack relay watermarks). These advance on every engine
+/// tick; auditing them would bury real config changes in the History tab.
+const AUDIT_EXCLUDED_PREFIXES: &[&str] =
+    &[CLOUD_SYNC_CURSOR_PREFIX, TEAM_SLACK_BRIDGE_CURSOR_PREFIX];
 
 /// Map a settings key to its audit CATEGORY, or `None` if the key is internal
 /// bookkeeping that must NOT be audited (see [`AUDIT_EXCLUDED_KEYS`] /

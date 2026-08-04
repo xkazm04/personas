@@ -5,7 +5,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
-import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, authorName, itemAccent, avatarBgFor } from '@/features/teams/sub_collab/collabRender';
+import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, authorName, itemAccent, avatarBgFor, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { cleanName } from '../grid/fleetGridModel';
 import { MERGED_ROW_HEIGHT, type TaggedItem } from './types';
@@ -35,7 +35,10 @@ export function resolveCompact(item: TeamChannelItem): { event: string; tone: st
   if (item.kind === 'directive') {
     return { event: 'directive', tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };
   }
-  const meta = AUTHOR_KIND_META[item.kind as 'persona' | 'athena' | 'director'] ?? AUTHOR_KIND_META.persona;
+  // Every voiced author kind (persona / athena / director / slack) resolves from
+  // the shared meta — which is why `slack` needs no special case here and, more
+  // importantly, cannot silently fall through to the generic persona voice.
+  const meta = isAuthorKind(item.kind) ? AUTHOR_KIND_META[item.kind] : AUTHOR_KIND_META.persona;
   return { event: meta.label, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
 }
 
@@ -66,9 +69,21 @@ export const MergedRow = memo(function MergedRow({
 
   // Author differentiation — Athena (autonomous) and your directives must NOT
   // read as the same actor. Each non-persona author gets its own avatar + tint.
-  const authorMeta = item.kind === 'athena' || item.kind === 'director' ? AUTHOR_KIND_META[item.kind] : null;
+  // Slack joins them: an external human must not borrow a persona sprite, so
+  // its meta is resolved BEFORE the persona branch below (the read-model parks
+  // the Slack user id in `personaId`, which could otherwise collide).
+  const authorMeta =
+    item.kind === 'athena' || item.kind === 'director' || item.kind === 'slack'
+      ? AUTHOR_KIND_META[item.kind]
+      : null;
   const avatarBg = avatarBgFor(item.kind);
-  const rowTint = item.kind === 'athena' ? 'bg-violet-500/[0.05]' : item.kind === 'directive' ? 'bg-emerald-500/[0.04]' : '';
+  const rowTint = item.kind === 'athena'
+    ? 'bg-violet-500/[0.05]'
+    : item.kind === 'directive'
+      ? 'bg-emerald-500/[0.04]'
+      : item.kind === 'slack'
+        ? 'bg-teal-500/[0.04]'
+        : '';
 
   return (
     <button
@@ -84,8 +99,8 @@ export const MergedRow = memo(function MergedRow({
         </span>
       )}
       <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 ${avatarBg}`}>
-        {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
-          : authorMeta ? <authorMeta.Icon className={`w-3 h-3 ${authorMeta.iconColor}`} />
+        {authorMeta ? <authorMeta.Icon className={`w-3 h-3 ${authorMeta.iconColor}`} />
+          : persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
           : item.kind === 'directive' ? <User className="w-3 h-3 text-emerald-400" />
           : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" />
           : alert ? <AlertCircle className="w-3 h-3 text-status-warning" />

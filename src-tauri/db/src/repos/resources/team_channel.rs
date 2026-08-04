@@ -2,7 +2,7 @@
 //! messages; the read-model (`list_team_channel`) and the orchestrator's
 //! step-boundary injection both read through here.
 
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::models::{CreateChannelMessageInput, TeamChannelMessage};
 use crate::DbPool;
@@ -29,6 +29,32 @@ pub fn create(
     pool: &DbPool,
     input: CreateChannelMessageInput,
 ) -> Result<TeamChannelMessage, AppError> {
+    insert(pool, input, None)
+}
+
+/// Post a message authored by an EXTERNAL participant — today only the team
+/// <-> Slack bridge (`engine/slack_poller.rs`).
+///
+/// The only difference from [`create`] is `author_label`: an external author has
+/// no persona row to resolve a name from, so the bridge resolves it once (Slack
+/// `users.info`) and stores it on the message. The read-model surfaces it as
+/// `TeamChannelItem.label`. Kept as its own entry point rather than a new field
+/// on `CreateChannelMessageInput` so the ~10 internal call sites stay untouched
+/// and no internal writer can accidentally set a display name it doesn't own.
+pub fn create_external(
+    pool: &DbPool,
+    input: CreateChannelMessageInput,
+    author_label: &str,
+) -> Result<TeamChannelMessage, AppError> {
+    let label = author_label.trim();
+    insert(pool, input, if label.is_empty() { None } else { Some(label) })
+}
+
+fn insert(
+    pool: &DbPool,
+    input: CreateChannelMessageInput,
+    author_label: Option<&str>,
+) -> Result<TeamChannelMessage, AppError> {
     timed_query!("team_channel", "team_channel::create", {
         let body = input.body.trim();
         if body.is_empty() {
@@ -45,8 +71,8 @@ pub fn create(
         conn.execute(
             "INSERT INTO team_channel_messages
                 (id, team_id, author_kind, author_id, body, addressed_to, reply_to,
-                 assignment_id, consumer, deliveries, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'))",
+                 assignment_id, consumer, deliveries, created_at, author_label)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, datetime('now'), ?10)",
             params![
                 id,
                 input.team_id,
@@ -57,6 +83,7 @@ pub fn create(
                 input.reply_to,
                 input.assignment_id,
                 consumer,
+                author_label,
             ],
         )
         .map_err(AppError::Database)?;
@@ -100,6 +127,61 @@ pub fn list_for_team(
         Ok(rows
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?)
+    })
+}
+
+/// Oldest-first page of a team's messages strictly after a `(created_at, id)`
+/// cursor. The relay cursor for the team -> Slack bridge
+/// (`engine/team_slack_relay.rs`); the composite tiebreaker means two messages
+/// sharing a `created_at` second (the column is `datetime('now')`, so this is
+/// common) can't drop one of the pair.
+///
+/// Pass `None` for both cursor parts to read from the beginning. Compares on
+/// the RAW column for the same sargability reason as `list_for_team`.
+pub fn list_for_team_after(
+    pool: &DbPool,
+    team_id: &str,
+    after_created_at: Option<&str>,
+    after_id: Option<&str>,
+    limit: i64,
+) -> Result<Vec<TeamChannelMessage>, AppError> {
+    timed_query!("team_channel", "team_channel::list_for_team_after", {
+        let conn = pool.get()?;
+        let at = after_created_at.unwrap_or("");
+        let id = after_id.unwrap_or("");
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_channel_messages
+             WHERE team_id = ?1
+               AND (created_at > ?2 OR (created_at = ?2 AND id > ?3))
+             ORDER BY created_at ASC, id ASC LIMIT ?4",
+        )?;
+        let rows = stmt.query_map(params![team_id, at, id, limit], |r| row_to_message(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
+/// Newest `(created_at, id)` for a team, or `None` when the team has no
+/// messages. Used to seed a relay cursor forward so a newly configured bridge
+/// mirrors only what happens after it is wired, never the team's whole history.
+pub fn newest_cursor_for_team(
+    pool: &DbPool,
+    team_id: &str,
+) -> Result<Option<(String, String)>, AppError> {
+    timed_query!("team_channel", "team_channel::newest_cursor_for_team", {
+        let conn = pool.get()?;
+        let row = conn
+            .query_row(
+                "SELECT created_at, id FROM team_channel_messages
+                 WHERE team_id = ?1
+                 ORDER BY created_at DESC, id DESC LIMIT 1",
+                params![team_id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            )
+            .optional()
+            .map_err(AppError::Database)?;
+        Ok(row)
     })
 }
 

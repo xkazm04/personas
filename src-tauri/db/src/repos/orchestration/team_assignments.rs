@@ -366,6 +366,59 @@ pub fn list_events(
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Oldest-first page of a TEAM's assignment events strictly after a
+/// `(created_at, id)` cursor. `team_assignment_events` is keyed by assignment,
+/// so the team scope comes from a join on `team_assignments`.
+///
+/// The relay cursor for the team -> Slack bridge's step feed
+/// (`engine/team_slack_relay.rs`). Composite tiebreaker for the same reason as
+/// `team_channel::list_for_team_after`: `created_at` is second-resolution.
+pub fn list_events_for_team_after(
+    pool: &DbPool,
+    team_id: &str,
+    after_created_at: Option<&str>,
+    after_id: Option<&str>,
+    limit: i64,
+) -> Result<Vec<TeamAssignmentEvent>, AppError> {
+    let conn = pool.get()?;
+    let at = after_created_at.unwrap_or("");
+    let id = after_id.unwrap_or("");
+    let mut stmt = conn.prepare(
+        "SELECT e.id, e.assignment_id, e.step_id, e.kind, e.payload, e.created_at
+         FROM team_assignment_events e
+         JOIN team_assignments a ON a.id = e.assignment_id
+         WHERE a.team_id = ?1
+           AND (e.created_at > ?2 OR (e.created_at = ?2 AND e.id > ?3))
+         ORDER BY e.created_at ASC, e.id ASC
+         LIMIT ?4",
+    )?;
+    let rows = stmt.query_map(params![team_id, at, id, limit], row_to_event)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Newest `(created_at, id)` among a team's assignment events, or `None` when
+/// the team has none. Seeds a relay cursor forward so a newly wired bridge
+/// never replays historical step events.
+pub fn newest_event_cursor_for_team(
+    pool: &DbPool,
+    team_id: &str,
+) -> Result<Option<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT e.created_at, e.id
+         FROM team_assignment_events e
+         JOIN team_assignments a ON a.id = e.assignment_id
+         WHERE a.team_id = ?1
+         ORDER BY e.created_at DESC, e.id DESC
+         LIMIT 1",
+    )?;
+    let mut rows = stmt.query(params![team_id])?;
+    match rows.next().map_err(AppError::Database)? {
+        Some(row) => Ok(Some((row.get(0)?, row.get(1)?))),
+        None => Ok(None),
+    }
+}
+
 pub fn get_step(pool: &DbPool, step_id: &str) -> Result<TeamAssignmentStep, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(

@@ -382,5 +382,7 @@
   "triage_why_raised": "Por qué se planteó",
   "triage_announce_card": "Decidiendo ahora: {kind} — {title}",
   "triage_announce_verdict": "Registrado: {verdict}.",
-  "triage_body_region": "Detalles de la tarjeta — desplázate con las flechas"
+  "triage_body_region": "Detalles de la tarjeta — desplázate con las flechas",
+  "conv_bridge_title": "Canal de Slack vinculado. Los mensajes enviados allí llegan a esta conversación.",
+  "stream_kind_slack": "Slack"
 }

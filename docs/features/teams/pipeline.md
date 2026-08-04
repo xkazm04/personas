@@ -171,6 +171,57 @@ personas-web (`/api/presets/publish`, backed by the `shared_presets` table). Thi
 is the UGC half of the preset flywheel: any user's good team becomes an adoptable
 community preset. It records the `shared` activation milestone (growth F3).
 
+### Slack bridge — mirror a team channel to Slack
+
+The workspace pane also hosts the **Slack bridge** section
+(`teamStudio/slackBridge/TeamSlackBridgePanel.tsx`), which wires one team's
+channel to one Slack channel in both directions.
+
+**Prerequisite: a Slack connection.** The bridge needs a Slack bot token stored
+in the Vault (the `slack` connector, see
+[connections/README.md](../connections/README.md)). With no Slack credential the
+panel shows an explanatory empty state instead of an empty dropdown; add the
+connection first and it appears as a bridge target. For inbound polling the bot
+must also be a **member** of the channel and the token needs `channels:history`
+(public) or `groups:history` (private).
+
+**What crosses the wire.**
+
+| Direction | Toggle | What moves |
+| --- | --- | --- |
+| Inbound | Bring Slack messages in | The poller reads the Slack channel and delivers new messages into the team channel. They reach personas the way a directive does, so a human can steer the team from Slack. |
+| Outbound | Send team messages out | What people and personas say in the team channel. |
+| Outbound | Send directives out | The instructions handed to team members. |
+| Outbound | Send step events out | Every execution step. High volume — off by default. |
+
+Messages that arrived from Slack are never mirrored back (the echo guard in
+`engine/slack_bridge.rs`), so the two halves cannot loop.
+
+**Where the binding lives.** There is no bridge table. A bridge is an ordinary
+shape-v2 notification channel on **one member persona**, marked
+`config.teamBridge: true` with the team id, the Slack channel id, and the four
+direction flags; the credential is the spec's `credential_id`. Storing it there
+is what lets the existing Slack poller and notification dispatcher work
+unchanged. Two consequences the UI makes visible:
+
+- The panel asks **which team member carries the bridge**, and warns inline when
+  that persona is disabled — the poller and the relay both scan
+  `personas::get_enabled`, so a disabled carrier silently stops the wire.
+- Writes merge into the persona's existing channel list. Non-bridge Slack
+  notification specs on the same persona are preserved untouched
+  (`src/lib/channel/teamBridgeSpec.ts`, unit-tested). A persona whose channels
+  still use the pre-v2 format cannot host a bridge and says so.
+
+The channel picker is live: `builtin-slack` declares a `channels` resource, so
+`list_connector_resources` returns the channels the bot can actually reach
+(cached 600s). If that call fails or returns nothing, the field falls back to a
+plain channel-id input.
+
+Read surfaces (the Monitor's Conversations view) get bridges from the backend
+command `list_team_slack_bridges`, **not** from the persona roster —
+`list_personas` is a lean projection that returns `notification_channels` blank,
+so a frontend-derived index would always read "unbridged".
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.

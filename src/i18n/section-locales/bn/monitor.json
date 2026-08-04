@@ -382,5 +382,7 @@
   "triage_why_raised": "কেন এটি উত্থাপিত হয়েছে",
   "triage_announce_card": "এখন সিদ্ধান্ত নেওয়া হচ্ছে: {kind} — {title}",
   "triage_announce_verdict": "রেকর্ড করা হয়েছে: {verdict}।",
-  "triage_body_region": "কার্ডের বিবরণ — অ্যারো কী দিয়ে স্ক্রল করুন"
+  "triage_body_region": "কার্ডের বিবরণ — অ্যারো কী দিয়ে স্ক্রল করুন",
+  "conv_bridge_title": "সংযুক্ত Slack চ্যানেল। সেখানে পাঠানো বার্তা এই কথোপকথনে আসে।",
+  "stream_kind_slack": "Slack"
 }

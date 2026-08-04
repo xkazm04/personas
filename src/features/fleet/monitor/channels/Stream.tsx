@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Radio, Search, X, Layers, Users, Signal, Brain } from 'lucide-react';
+import { Radio, Search, X, Layers, Users, Signal, Brain, Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { memberColor, type EventFamily } from '@/lib/channel/eventModel';
 import type { ChannelKind } from '@/api/pipeline/teamChannel';
+import type { ChannelKindCounts } from '@/lib/bindings/ChannelKindCounts';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { LensStream } from './LensStream';
 import { useLensFeed } from './useLensFeed';
@@ -55,6 +56,7 @@ const KIND_META: Record<ChannelKind, { labelKey: keyof Translations['monitor']; 
   memory: { labelKey: 'stream_kind_memory', icon: Brain },
   message: { labelKey: 'stream_kind_message', icon: Users },
   deliberation: { labelKey: 'stream_kind_deliberation', icon: Radio },
+  slack: { labelKey: 'stream_kind_slack', icon: Hash },
 };
 
 /** One facet row: a value, a live count, on/off. */
@@ -164,17 +166,25 @@ export function Stream({ teams, onToggle, allOn, onSetAll, layoutControl, initia
    * the rows actually are.
    */
   const kindTotals = useMemo(() => {
-    const totals: Record<ChannelKind, number> = { step: 0, event: 0, memory: 0, message: 0, deliberation: 0 };
+    // `null` = not counted by the server. The rail renders that as '·', never as
+    // a zero — a false zero is exactly the quiet lie this rail exists to avoid.
+    const totals: Record<ChannelKind, number | null> = {
+      step: 0, event: 0, memory: 0, message: 0, deliberation: 0, slack: null,
+    };
     let any = false;
     for (const tm of selected) {
       const c = counts[tm.teamId];
       if (!c) continue;
       any = true;
-      totals.step += c.step;
-      totals.event += c.event;
-      totals.memory += c.memory;
-      totals.message += c.message;
-      totals.deliberation += c.deliberation;
+      totals.step = (totals.step ?? 0) + c.step;
+      totals.event = (totals.event ?? 0) + c.event;
+      totals.memory = (totals.memory ?? 0) + c.memory;
+      totals.message = (totals.message ?? 0) + c.message;
+      totals.deliberation = (totals.deliberation ?? 0) + c.deliberation;
+      // The Slack column joins `ChannelKindCounts` with the bridge backend; read
+      // it tolerantly so this rail neither breaks nor lies before it lands.
+      const slack = (c as ChannelKindCounts & { slack?: number }).slack;
+      if (slack !== undefined) totals.slack = (totals.slack ?? 0) + slack;
     }
     return any ? totals : null;
   }, [selected, counts]);

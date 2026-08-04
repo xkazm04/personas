@@ -106,10 +106,12 @@ pub mod runner;
 #[cfg(feature = "p2p")]
 pub mod share_link;
 pub mod shared_event_relay;
+pub mod slack_bridge;
 pub mod slack_poller;
 pub mod smee_relay;
 pub mod subscription;
 pub mod team_preset_adopter;
+pub mod team_slack_relay;
 pub mod tool_runner;
 // F8 deterministic-verification primitive; consumed by the F7 fix-loop.
 #[allow(dead_code)]
