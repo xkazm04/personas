@@ -14345,9 +14345,6 @@
       "read_aloud_synthesizing": "جارٍ التركيب…",
       "read_aloud_stop": "إيقاف",
       "read_aloud_failed": "فشلت القراءة بصوت عالٍ",
-      "footer_notice_analysis_completed": "تم التحليل",
-      "footer_notice_proactive_default": "لدى Athena ملاحظة لك",
-      "footer_notice_dismiss": "تجاهل",
       "proactive_kind_athena_scheduled": "بجدولة من Athena",
       "proactive_kind_ambient_match": "إشارة سياقية",
       "proactive_kind_fleet_failed": "فشل جلسة الأسطول",
@@ -14822,7 +14819,6 @@
       "thread_status_idle": "خامل",
       "thread_status_working": "قيد التنفيذ",
       "rename_conversation": "إعادة تسمية المحادثة",
-      "replied_in_thread": "ردت Athena في {thread}",
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "محلي، يستنسخ صوتك",
       "voice_pocket_cloned_badge": "مستنسخ",
@@ -14857,7 +14853,10 @@
       "voice_pocket_hf_gate_desc": "لإدارة أصواتك المستنسخة الخاصة، يلزم توفر رمز وصول Hugging Face في خزنة بيانات الاعتماد — فهو يربط ترخيص نموذج استنساخ الصوت بحسابك. أضف بيانات اعتماد Hugging Face، ثم عد إلى هنا.",
       "voice_pocket_hf_gate_title": "مطلوب حساب Hugging Face",
       "persona_overview_kpi_trust_clamped": "كانت درجة الثقة خارج النطاق وتم تحديدها عند 100%.",
-      "action_label_backlog_apply_triage": "تطبيق أحكام فرز قائمة الأعمال"
+      "action_label_backlog_apply_triage": "تطبيق أحكام فرز قائمة الأعمال",
+      "athena_actions_clear": "مسح",
+      "athena_actions_title": "تصرفت Athena نيابة عنك",
+      "decision_run_failed": "لم يتم تنفيذ ذلك. اختر خيارًا مرة أخرى لإعادة المحاولة."
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

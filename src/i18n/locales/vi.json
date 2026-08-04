@@ -14345,9 +14345,6 @@
       "read_aloud_synthesizing": "Đang tổng hợp…",
       "read_aloud_stop": "Dừng",
       "read_aloud_failed": "Đọc to thất bại",
-      "footer_notice_analysis_completed": "Đã hoàn tất phân tích",
-      "footer_notice_proactive_default": "Athena có một ghi chú dành cho bạn",
-      "footer_notice_dismiss": "Bỏ qua",
       "proactive_kind_athena_scheduled": "do Athena lên lịch",
       "proactive_kind_ambient_match": "tín hiệu ngữ cảnh",
       "proactive_kind_fleet_failed": "phiên của đội thất bại",
@@ -14822,7 +14819,6 @@
       "thread_status_idle": "không hoạt động",
       "thread_status_working": "đang xử lý",
       "rename_conversation": "Đổi tên cuộc trò chuyện",
-      "replied_in_thread": "Athena đã trả lời trong {thread}",
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Cục bộ, nhân bản giọng nói của bạn",
       "voice_pocket_cloned_badge": "Đã nhân bản",
@@ -14857,7 +14853,10 @@
       "voice_pocket_hf_gate_desc": "Để tự quản lý các giọng nói đã nhân bản của bạn, cần có mã truy cập Hugging Face trong Kho lưu trữ thông tin xác thực — mã này gắn giấy phép của mô hình nhân bản giọng nói với tài khoản của bạn. Hãy thêm thông tin xác thực Hugging Face, sau đó quay lại đây.",
       "voice_pocket_hf_gate_title": "Yêu cầu tài khoản Hugging Face",
       "persona_overview_kpi_trust_clamped": "Điểm tin cậy nằm ngoài phạm vi và đã được giới hạn ở mức 100%.",
-      "action_label_backlog_apply_triage": "Áp dụng phán quyết phân loại tồn đọng"
+      "action_label_backlog_apply_triage": "Áp dụng phán quyết phân loại tồn đọng",
+      "athena_actions_clear": "Xóa",
+      "athena_actions_title": "Athena đã hành động thay bạn",
+      "decision_run_failed": "Thao tác không thành công. Chọn lại một tùy chọn để thử lại."
     },
     "artist_gallery": {
       "loading_viewer": "Đang tải trình xem…",

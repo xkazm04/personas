@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useCompanionStore } from '../companionStore';
 import type { PendingDecision } from '../decision/types';
 
@@ -74,5 +74,44 @@ describe('companionStore decision actions', () => {
     const s = useCompanionStore.getState();
     expect(s.pendingDecision?.id).toBe('dec_b');
     expect(s.decisionExplained).toBe(false);
+  });
+});
+
+// A failed decision used to be reported by a toast — a third communication
+// dimension outside both the orb and the chat window. It is now reported by
+// `decisionError`, which both decision surfaces render IN PLACE.
+describe('runDecisionOption failure reporting', () => {
+  beforeEach(() => {
+    useCompanionStore.getState().clearPendingDecision();
+  });
+
+  it('keeps the decision pending and sets decisionError, raising no toast', async () => {
+    const { runDecisionOption } = await import('../decision/resolveDecision');
+    const { useToastStore } = await import('@/stores/toastStore');
+    const addToast = vi.spyOn(useToastStore.getState(), 'addToast');
+
+    useCompanionStore.getState().setPendingDecision(makeDecision());
+    await runDecisionOption({
+      key: 'resolve',
+      label: 'Resolve',
+      run: () => Promise.reject(new Error('boom')),
+    });
+
+    const s = useCompanionStore.getState();
+    expect(s.pendingDecision?.id).toBe('dec_1'); // still answerable — retry in place
+    expect(s.decisionError).toBe('run-failed');
+    expect(addToast).not.toHaveBeenCalled();
+    addToast.mockRestore();
+  });
+
+  it('a retry clears the previous failure before running', async () => {
+    const { runDecisionOption } = await import('../decision/resolveDecision');
+    useCompanionStore.getState().setPendingDecision(makeDecision());
+    useCompanionStore.getState().setDecisionError('run-failed');
+
+    await runDecisionOption({ key: 'resolve', label: 'Resolve', run: () => {} });
+    const s = useCompanionStore.getState();
+    expect(s.pendingDecision).toBeNull(); // resolved
+    expect(s.decisionError).toBeNull();
   });
 });

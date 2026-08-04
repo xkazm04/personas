@@ -76,6 +76,8 @@ import { InlineChatCard } from './InlineChatCard';
 import { CompanionAssignmentCards } from './CompanionAssignmentCards';
 import { useCompanionAssignmentBridge } from './useCompanionAssignmentBridge';
 import { ProactiveCard } from './ProactiveCard';
+import { AthenaActionsStrip } from './AthenaActionsStrip';
+import { ChatDecisionCard } from './decision/ChatDecisionCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { WakeCadence } from './WakeCadence';
 import { FleetBoldnessDial } from './FleetBoldnessDial';
@@ -1830,6 +1832,19 @@ function Body(props: BodyProps) {
             inline card per pending guidance/approval request.
           */}
           <McpRequestPanel />
+          {/*
+            The pending orb decision, rendered here whenever the orb bubble
+            cannot be (chat open + fleet grid closed). Athena's two dimensions
+            are the orb and this window; without this card a decision surfaced
+            while the panel is open would have NO surface at all — see
+            `ChatDecisionCard`.
+          */}
+          <ChatDecisionCard />
+          {/*
+            Durable record of what Athena did WITHOUT asking (fleet
+            auto-decisions). Replaces the 10s toast that used to carry it.
+          */}
+          <AthenaActionsStrip />
           {/*
             Proactive nudges land at the top of the transcript so they
             stay glanceable even when scroll-pinned at the bottom.

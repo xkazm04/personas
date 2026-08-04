@@ -2033,9 +2033,6 @@
     "read_aloud_synthesizing": "Synthèse…",
     "read_aloud_stop": "Arrêter",
     "read_aloud_failed": "Lecture échouée",
-    "footer_notice_analysis_completed": "Analyse terminée",
-    "footer_notice_proactive_default": "Athena a une note pour vous",
-    "footer_notice_dismiss": "Ignorer",
     "proactive_kind_athena_scheduled": "planifié par Athena",
     "proactive_kind_ambient_match": "signal contextuel",
     "proactive_kind_fleet_failed": "session de flotte échouée",
@@ -2510,7 +2507,6 @@
     "thread_status_idle": "inactif",
     "thread_status_working": "en cours",
     "rename_conversation": "Renommer la conversation",
-    "replied_in_thread": "Athena a répondu dans {thread}",
     "voice_engine_pocket": "Pocket",
     "voice_engine_pocket_caption": "Local, clone votre voix",
     "voice_pocket_cloned_badge": "Clonée",
@@ -2545,7 +2541,10 @@
     "voice_pocket_hf_gate_desc": "La gestion de vos propres voix clonées nécessite un token d'accès Hugging Face dans le Coffre-fort des identifiants — il rattache la licence du modèle de clonage vocal à votre compte. Ajoutez un identifiant Hugging Face, puis revenez ici.",
     "voice_pocket_hf_gate_title": "Compte Hugging Face requis",
     "persona_overview_kpi_trust_clamped": "Le score de confiance était hors limites et a été plafonné à 100 %.",
-    "action_label_backlog_apply_triage": "Appliquer les verdicts de tri du backlog"
+    "action_label_backlog_apply_triage": "Appliquer les verdicts de tri du backlog",
+    "athena_actions_clear": "Effacer",
+    "athena_actions_title": "Athena a agi en votre nom",
+    "decision_run_failed": "Cela n'a pas abouti. Choisissez de nouveau une option pour réessayer."
   },
   "artist_gallery": {
     "loading_viewer": "Chargement du visualiseur…",

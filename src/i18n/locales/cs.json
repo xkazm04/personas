@@ -14345,9 +14345,6 @@
       "read_aloud_synthesizing": "Syntéza…",
       "read_aloud_stop": "Zastavit",
       "read_aloud_failed": "Čtení nahlas selhalo",
-      "footer_notice_analysis_completed": "Analýza dokončena",
-      "footer_notice_proactive_default": "Athena pro vás má poznámku",
-      "footer_notice_dismiss": "Zavřít",
       "proactive_kind_athena_scheduled": "naplánováno Athenou",
       "proactive_kind_ambient_match": "kontextový podnět",
       "proactive_kind_fleet_failed": "relace flotily selhala",
@@ -14822,7 +14819,6 @@
       "thread_status_idle": "nečinné",
       "thread_status_working": "pracuje",
       "rename_conversation": "Přejmenovat konverzaci",
-      "replied_in_thread": "Athena odpověděla v {thread}",
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Lokální, klonuje váš hlas",
       "voice_pocket_cloned_badge": "Klonovaný",
@@ -14857,7 +14853,10 @@
       "voice_pocket_hf_gate_desc": "Správa vašich vlastních klonovaných hlasů vyžaduje přístupový token Hugging Face v Trezoru přihlašovacích údajů — ten propojuje licenci modelu pro klonování hlasu s vaším účtem. Přidejte přihlašovací údaje Hugging Face a poté se sem vraťte.",
       "voice_pocket_hf_gate_title": "Vyžadován účet Hugging Face",
       "persona_overview_kpi_trust_clamped": "Skóre důvěry bylo mimo rozsah a bylo omezeno na 100 %.",
-      "action_label_backlog_apply_triage": "Použít verdikty triage backlogu"
+      "action_label_backlog_apply_triage": "Použít verdikty triage backlogu",
+      "athena_actions_clear": "Vymazat",
+      "athena_actions_title": "Athena jednala za vás",
+      "decision_run_failed": "Akce neproběhla. Zkuste to znovu výběrem možnosti."
     },
     "artist_gallery": {
       "loading_viewer": "Načítání prohlížeče…",

@@ -14311,7 +14311,6 @@ export type Translations = {
       archive_conversation: string;
       rename_conversation: string;
       switch_conversation: string;
-      replied_in_thread: string;
       thread_status_awaiting: string;
       thread_status_working: string;
       thread_status_idle: string;
@@ -14688,9 +14687,6 @@ export type Translations = {
       proactive_label: string;
       proactive_engage: string;
       proactive_dismiss: string;
-      footer_notice_analysis_completed: string;
-      footer_notice_proactive_default: string;
-      footer_notice_dismiss: string;
       proactive_kind_goal: string;
       proactive_kind_backlog: string;
       proactive_kind_cadence: string;
@@ -15158,6 +15154,9 @@ export type Translations = {
       voice_pocket_delete_title: string;
       voice_pocket_delete_body: string;
       action_label_backlog_apply_triage: string;
+      decision_run_failed: string;
+      athena_actions_title: string;
+      athena_actions_clear: string;
     };
     artist_gallery: {
       loading_viewer: string;

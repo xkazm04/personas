@@ -756,6 +756,19 @@ const bridge: TestBridge = {
       composeError: c.explainComposeError,
       decisionId: c.pendingDecision?.id ?? null,
       decisionExplained: c.decisionExplained,
+      // Athena has exactly two communication dimensions. A pending decision is
+      // ALWAYS on one of them: the orb bubble when the orb exists (minimized,
+      // or lifted over an open Fleet grid), otherwise the in-chat decision card
+      // (`athena-chat-decision`). `'none'` here means an invisible decision —
+      // the exact regression the third-dimension removal must never introduce.
+      decisionSurface: !c.pendingDecision
+        ? null
+        : c.state === 'minimized' || sys.fleetGridOpen
+          ? 'orb'
+          : 'chat',
+      // In-place failure token for an answered-but-failed decision (this
+      // replaced a toast — the decision stays pending and retryable).
+      decisionError: c.decisionError,
       sidebarSection: sys.sidebarSection,
       homeTab: sys.homeTab,
       contextual: ctx

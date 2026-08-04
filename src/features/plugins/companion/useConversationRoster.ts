@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { silentCatch } from '@/lib/silentCatch';
-import { useTranslation } from '@/i18n/useTranslation';
 import {
   COMPANION_TURN_SUMMARY_EVENT,
   companionListConversations,
@@ -22,16 +21,16 @@ import { NOTICES_CONVERSATION_ID, useCompanionStore } from './companionStore';
  *   viewing that finishes a turn bumps its switcher + orb badge without being
  *   opened (design §5 "background-thread replies don't hijack you").
  * - When that finishing thread is one the user ISN'T viewing (and isn't the
- *   Athena/Notices thread, whose proactive popover owns its own notice), it
- *   raises a **named, jumpable orb notice** ("Athena replied in <thread>") so
- *   the user can tell WHICH conversation replied and jump to it in one click —
- *   the visual counterpart to the audio, which only ever speaks the focused
- *   thread (see docs/features/companion/README.md, "Telling threads apart").
+ *   Athena/Notices thread, whose proactive cards own their own surface), it
+ *   pulses the **orb's message reaction** — orb state only. It used to raise a
+ *   named footer popover; that third communication dimension is gone. WHICH
+ *   thread replied is carried by the thread attention badge and the in-chat
+ *   conversation switcher (see docs/features/companion/README.md, "Telling
+ *   threads apart").
  * - Maintains the invariant that the thread the user is *viewing* is read: its
  *   unread is zeroed locally and persisted, so it never shows its own unread.
  */
 export function useConversationRoster() {
-  const { t, tx } = useTranslation();
   const setConversations = useCompanionStore((s) => s.setConversations);
 
   const refresh = useCallback(async (): Promise<ConversationRow[]> => {
@@ -63,9 +62,8 @@ export function useConversationRoster() {
         refresh()
           .then((rows) => {
             const active = useCompanionStore.getState().activeConversationId;
-            // Only surface a "which thread?" cue for a background reply — the
-            // thread you're viewing needs none, and the Notices thread has its
-            // own richer proactive popover.
+            // Only react for a BACKGROUND reply — the thread you're viewing
+            // needs no cue, and the Notices thread has its own proactive cards.
             if (
               !completedId ||
               completedId === active ||
@@ -75,20 +73,17 @@ export function useConversationRoster() {
             }
             const thread = rows.find((r) => r.id === completedId);
             if (!thread || thread.unreadCount <= 0n) return;
-            useCompanionStore.getState().setFooterNotice({
-              id: `thread_${completedId}_${event.payload.turnId ?? ''}`,
-              kind: 'proactive',
-              subject: tx(t.plugins.companion.replied_in_thread, {
-                thread: thread.title ?? '—',
-              }),
-              ttsSpoken: false,
-              createdAt: Date.now(),
-              conversationId: completedId,
-            });
+            // ORB STATE ONLY. This used to mint a footer-notice popover naming
+            // the thread — a third communication dimension, now deleted. The
+            // orb plays its one-shot message reaction so the user sees Athena
+            // react; WHICH thread (and its words) is carried by the thread
+            // attention badge + the conversation switcher inside chat, which is
+            // the full-information dimension.
+            useCompanionStore.getState().pulseMessageReaction();
           })
           .catch(silentCatch('companion_list_conversations'));
       },
-      [refresh, t, tx],
+      [refresh],
     ),
     'companion_roster_turn_summary',
   );

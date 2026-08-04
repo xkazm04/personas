@@ -14345,9 +14345,6 @@
       "read_aloud_synthesizing": "Synthese…",
       "read_aloud_stop": "Stopp",
       "read_aloud_failed": "Vorlesen fehlgeschlagen",
-      "footer_notice_analysis_completed": "Analyse abgeschlossen",
-      "footer_notice_proactive_default": "Athena hat eine Notiz für Sie",
-      "footer_notice_dismiss": "Verwerfen",
       "proactive_kind_athena_scheduled": "von Athena geplant",
       "proactive_kind_ambient_match": "Kontexthinweis",
       "proactive_kind_fleet_failed": "Flottensitzung fehlgeschlagen",
@@ -14822,7 +14819,6 @@
       "thread_status_idle": "inaktiv",
       "thread_status_working": "läuft",
       "rename_conversation": "Unterhaltung umbenennen",
-      "replied_in_thread": "Athena hat in {thread} geantwortet",
       "voice_engine_pocket": "Pocket",
       "voice_engine_pocket_caption": "Lokal, klont deine Stimme",
       "voice_pocket_cloned_badge": "Geklont",
@@ -14857,7 +14853,10 @@
       "voice_pocket_hf_gate_desc": "Zum Verwalten Ihrer eigenen geklonten Stimmen ist ein Hugging-Face-Zugriffstoken im Anmeldedaten-Tresor erforderlich — es verknüpft die Lizenz des Voice-Cloning-Modells mit Ihrem Konto. Fügen Sie eine Hugging-Face-Anmeldeinformation hinzu und kehren Sie dann hierher zurück.",
       "voice_pocket_hf_gate_title": "Hugging-Face-Konto erforderlich",
       "persona_overview_kpi_trust_clamped": "Der Vertrauenswert lag außerhalb des Bereichs und wurde auf 100 % begrenzt.",
-      "action_label_backlog_apply_triage": "Backlog-Triage-Urteile anwenden"
+      "action_label_backlog_apply_triage": "Backlog-Triage-Urteile anwenden",
+      "athena_actions_clear": "Löschen",
+      "athena_actions_title": "Athena hat für dich gehandelt",
+      "decision_run_failed": "Das hat nicht geklappt. Wähle erneut eine Option, um es zu wiederholen."
     },
     "artist_gallery": {
       "loading_viewer": "Viewer wird geladen…",

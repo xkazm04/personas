@@ -80,10 +80,13 @@ vi.mock('@/stores/systemStore', () => {
 });
 
 import { useFleetCompanionBridge } from '../useFleetCompanionBridge';
+import { useCompanionStore } from '../companionStore';
+import { useToastStore } from '@/stores/toastStore';
 
 const FLEET_STATE = 'fleet-session-state';
 const FLEET_EXITED = 'fleet-session-exited';
 const FLEET_REGISTRY = 'fleet-registry-changed';
+const FLEET_AUTO_DECIDED = 'athena://fleet/auto-decided';
 
 describe('useFleetCompanionBridge', () => {
   beforeEach(() => {
@@ -91,6 +94,7 @@ describe('useFleetCompanionBridge', () => {
     vi.mocked(tauriInvoke.invokeWithTimeout).mockClear();
     fleetRefresh.mockClear();
     unlisten.mockClear();
+    useCompanionStore.getState().clearAthenaActions();
   });
 
   it('registers listeners for the three FLEET_* events on mount', async () => {
@@ -241,5 +245,53 @@ describe('useFleetCompanionBridge', () => {
     await new Promise((r) => setTimeout(r, 250));
     expect(fleetRefresh).toHaveBeenCalledTimes(1);
     expect(tauriInvoke.invokeWithTimeout).not.toHaveBeenCalled();
+  });
+
+  // ── Athena's two dimensions: orb + chat, never a toast ────────────────────
+  describe('athena://fleet/auto-decided', () => {
+    it('records a durable chat entry and pulses the orb — and raises NO toast', async () => {
+      const addToast = vi.spyOn(useToastStore.getState(), 'addToast');
+      const beforePulse = useCompanionStore.getState().messageReactionPulse;
+
+      renderHook(() => useFleetCompanionBridge());
+      await waitFor(() => expect(handlers.has(FLEET_AUTO_DECIDED)).toBe(true));
+
+      act(() => {
+        handlers.get(FLEET_AUTO_DECIDED)!({
+          payload: {
+            sessionId: SAMPLE_SESSION.id,
+            projectLabel: 'personas',
+            text: 'continue with the refactor',
+          },
+        });
+      });
+
+      // CHAT — the durable record the operator can still read minutes later.
+      const actions = useCompanionStore.getState().athenaActions;
+      expect(actions).toHaveLength(1);
+      expect(actions[0]).toMatchObject({
+        sessionId: SAMPLE_SESSION.id,
+        projectLabel: 'personas',
+        text: 'continue with the refactor',
+      });
+
+      // ORB — a state change, not a text surface.
+      expect(useCompanionStore.getState().messageReactionPulse).toBe(beforePulse + 1);
+
+      // The third dimension is gone: no toast, ever.
+      expect(addToast).not.toHaveBeenCalled();
+      addToast.mockRestore();
+    });
+
+    it('the bridge module imports no toast surface at all', async () => {
+      // Structural guard: even a future edit that reaches for `addToast` in a
+      // different code path fails here, because the module must not depend on
+      // the toast store. Athena speaks on the orb and in chat only.
+      const src = await import('../useFleetCompanionBridge?raw').then(
+        (m) => (m as { default: string }).default,
+      );
+      expect(src).toContain('athena://fleet/auto-decided'); // guard: source really loaded
+      expect(src).not.toMatch(/toastStore|addToast/);
+    });
   });
 });

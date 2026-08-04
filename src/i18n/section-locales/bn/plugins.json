@@ -2033,9 +2033,6 @@
     "read_aloud_synthesizing": "সংশ্লেষণ হচ্ছে…",
     "read_aloud_stop": "থামান",
     "read_aloud_failed": "পড়া ব্যর্থ",
-    "footer_notice_analysis_completed": "বিশ্লেষণ সম্পন্ন",
-    "footer_notice_proactive_default": "Athena-র কাছে আপনার জন্য একটি নোট আছে",
-    "footer_notice_dismiss": "খারিজ করুন",
     "proactive_kind_athena_scheduled": "Athena-নির্ধারিত",
     "proactive_kind_ambient_match": "প্রাসঙ্গিক ইঙ্গিত",
     "proactive_kind_fleet_failed": "ফ্লিট সেশন ব্যর্থ হয়েছে",
@@ -2510,7 +2507,6 @@
     "thread_status_idle": "নিষ্ক্রিয়",
     "thread_status_working": "চলছে",
     "rename_conversation": "কথোপকথনের নাম পরিবর্তন করুন",
-    "replied_in_thread": "Athena {thread}-এ উত্তর দিয়েছে",
     "voice_engine_pocket": "Pocket",
     "voice_engine_pocket_caption": "স্থানীয়, আপনার কণ্ঠস্বর ক্লোন করে",
     "voice_pocket_cloned_badge": "ক্লোন করা হয়েছে",
@@ -2545,7 +2541,10 @@
     "voice_pocket_hf_gate_desc": "নিজের ক্লোন করা ভয়েস পরিচালনা করতে ক্রেডেনশিয়াল ভল্টে একটি Hugging Face অ্যাক্সেস টোকেন প্রয়োজন — এটি ভয়েস-ক্লোনিং মডেলের লাইসেন্সকে আপনার অ্যাকাউন্টের সাথে সংযুক্ত করে। একটি Hugging Face ক্রেডেনশিয়াল যোগ করুন, তারপর এখানে ফিরে আসুন।",
     "voice_pocket_hf_gate_title": "Hugging Face অ্যাকাউন্ট প্রয়োজন",
     "persona_overview_kpi_trust_clamped": "ট্রাস্ট স্কোর সীমার বাইরে ছিল এবং ১০০%-এ সীমাবদ্ধ করা হয়েছে।",
-    "action_label_backlog_apply_triage": "ব্যাকলগ ট্রায়াজ সিদ্ধান্ত প্রয়োগ করুন"
+    "action_label_backlog_apply_triage": "ব্যাকলগ ট্রায়াজ সিদ্ধান্ত প্রয়োগ করুন",
+    "athena_actions_clear": "মুছুন",
+    "athena_actions_title": "Athena আপনার পক্ষে কাজ করেছে",
+    "decision_run_failed": "এটি সম্পন্ন হয়নি। আবার চেষ্টা করতে একটি বিকল্প বেছে নিন।"
   },
   "artist_gallery": {
     "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

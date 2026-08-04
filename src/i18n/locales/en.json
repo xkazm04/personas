@@ -14305,7 +14305,6 @@
       "archive_conversation": "Archive conversation",
       "rename_conversation": "Rename conversation",
       "switch_conversation": "Switch conversation",
-      "replied_in_thread": "Athena replied in {thread}",
       "thread_status_awaiting": "awaiting you",
       "thread_status_working": "working",
       "thread_status_idle": "idle",
@@ -14682,9 +14681,6 @@
       "proactive_label": "Athena reached out",
       "proactive_engage": "Engage",
       "proactive_dismiss": "Not now",
-      "footer_notice_analysis_completed": "Analysis completed",
-      "footer_notice_proactive_default": "Athena has a note for you",
-      "footer_notice_dismiss": "Dismiss",
       "proactive_kind_goal": "goal target approaching",
       "proactive_kind_backlog": "aging promise",
       "proactive_kind_cadence": "cadence check-in",
@@ -15151,7 +15147,10 @@
       "voice_pocket_hf_gate_desc": "Managing your own cloned voices requires a Hugging Face access token in the Credential Vault — it anchors the voice-cloning model license to your account. Add a Hugging Face credential, then come back here.",
       "voice_pocket_delete_title": "Remove voice",
       "voice_pocket_delete_body": "The reference recording for this voice will be deleted from this computer.",
-      "action_label_backlog_apply_triage": "Apply backlog triage verdicts"
+      "action_label_backlog_apply_triage": "Apply backlog triage verdicts",
+      "decision_run_failed": "That did not go through. Pick an option again to retry.",
+      "athena_actions_title": "Athena acted on your behalf",
+      "athena_actions_clear": "Clear"
     },
     "artist_gallery": {
       "loading_viewer": "Loading viewer…",
