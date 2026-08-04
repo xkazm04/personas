@@ -7,7 +7,13 @@ import type { UnifiedTrace, UnifiedSpan, UnifiedSpanType } from '@/lib/execution
 import { mergeBackendSpans } from '@/lib/execution/pipeline';
 import { getExecutionTrace } from '@/api/agents/executions';
 import { useAgentStore } from '@/stores/agentStore';
-import { buildSpanTree, flattenTree, applySpanEvent } from './traceInspectorTypes';
+import {
+  buildSpanTree,
+  flattenTree,
+  applySpanEvent,
+  buildParentIndex,
+  computeVisibleNodes,
+} from './traceInspectorTypes';
 import type { SpanNode, BufferedSpanEvent, TraceSpanEvent } from './traceInspectorTypes';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -165,24 +171,21 @@ export function useTraceData(executionId: string, personaId: string) {
     return null;
   }, [pipelineTrace, trace, executionId]);
 
-  // Build tree + visible flat list from unified trace
-  const { visibleNodes, totalMs } = useMemo(() => {
-    if (!unifiedTrace) return { visibleNodes: [] as SpanNode[], totalMs: 0 };
+  // Build tree + flat list + total from the unified trace. Deliberately does
+  // NOT depend on `collapsedSpans` — expanding a node must not rebuild the
+  // tree, and at the tracer's 10,000-span ceiling that rebuild is the whole
+  // cost of the interaction.
+  const { allNodes, parentIndex, totalMs } = useMemo(() => {
+    if (!unifiedTrace) {
+      return {
+        allNodes: [] as SpanNode[],
+        parentIndex: new Map<string, string | null>(),
+        totalMs: 0,
+      };
+    }
 
     const tree = buildSpanTree(unifiedTrace.spans);
     const allFlat = flattenTree(tree);
-
-    const isAncestorCollapsed = (node: SpanNode): boolean => {
-      let currentParentId = node.span.parent_span_id;
-      while (currentParentId) {
-        if (collapsedSpans.has(currentParentId)) return true;
-        const parent = unifiedTrace.spans.find(s => s.span_id === currentParentId);
-        currentParentId = parent?.parent_span_id ?? null;
-      }
-      return false;
-    };
-
-    const visible = allFlat.filter(n => !isAncestorCollapsed(n));
 
     // Prefer backend total_duration_ms when available (richest signal),
     // fall back to unified trace timing, then to max(end_ms).
@@ -191,11 +194,26 @@ export function useTraceData(executionId: string, personaId: string) {
       total = unifiedTrace.completedAt - unifiedTrace.startedAt;
     }
     if (!total) {
-      total = Math.max(0, ...unifiedTrace.spans.map(s => s.end_ms ?? s.start_ms + (s.duration_ms ?? 0)));
+      // Loop rather than `Math.max(0, ...spans)` — spreading a 10k-element
+      // array into a call is a needless argument-list stress test.
+      for (const s of unifiedTrace.spans) {
+        const end = s.end_ms ?? s.start_ms + (s.duration_ms ?? 0);
+        if (end > total) total = end;
+      }
     }
 
-    return { visibleNodes: visible, totalMs: total };
-  }, [unifiedTrace, collapsedSpans, trace]);
+    return {
+      allNodes: allFlat,
+      parentIndex: buildParentIndex(unifiedTrace.spans),
+      totalMs: total,
+    };
+  }, [unifiedTrace, trace]);
+
+  // Only the visible-set derivation reruns on a collapse toggle.
+  const visibleNodes = useMemo(
+    () => computeVisibleNodes(allNodes, collapsedSpans, parentIndex),
+    [allNodes, collapsedSpans, parentIndex],
+  );
 
   // Children lookup for expand/collapse icons
   const childrenMap = useMemo(() => {

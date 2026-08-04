@@ -1,6 +1,8 @@
 import type { SpanType } from '@/lib/bindings/SpanType';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
+import type { SpanNode as SpanNodeType } from '../../libs/traceHelpers';
 
 // Re-export the canonical UnifiedSpan-based tree helpers + SpanNode type
 // from libs/traceHelpers so the inspector and SystemTraceViewer share one
@@ -8,6 +10,71 @@ import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
 // copy of buildSpanTree/flattenTree/SpanNode that drifted.)
 export type { SpanNode } from '../../libs/traceHelpers';
 export { buildSpanTree, flattenTree } from '../../libs/traceHelpers';
+
+// ============================================================================
+// Collapse / visibility derivation
+// ============================================================================
+
+/**
+ * `span_id -> parent_span_id` index, built once per trace.
+ *
+ * The collapse walk needs to climb the ancestor chain of every node. Resolving
+ * each hop with `spans.find(...)` made that O(n) per hop — quadratic against
+ * the backend tracer's 10,000-span ceiling (`src-tauri/core/src/trace.rs`).
+ */
+export function buildParentIndex(spans: UnifiedSpan[]): Map<string, string | null> {
+  const index = new Map<string, string | null>();
+  for (const span of spans) {
+    index.set(span.span_id, span.parent_span_id ?? null);
+  }
+  return index;
+}
+
+/**
+ * Filter a flattened span list down to the nodes no collapsed ancestor hides.
+ *
+ * Ancestor chains are resolved through `parentIndex` (O(1) per hop) and each
+ * chain verdict is memoised for the whole path, so the pass is O(n) amortised
+ * regardless of tree depth. A malformed trace with a parent cycle terminates
+ * via the path-length bound rather than spinning forever.
+ */
+export function computeVisibleNodes(
+  nodes: SpanNodeType[],
+  collapsedSpans: ReadonlySet<string>,
+  parentIndex: ReadonlyMap<string, string | null>,
+): SpanNodeType[] {
+  if (collapsedSpans.size === 0) return nodes;
+
+  // span_id -> "this span or one of its ancestors is collapsed"
+  const chainCollapsed = new Map<string, boolean>();
+
+  const isChainCollapsed = (startId: string | null): boolean => {
+    const path: string[] = [];
+    let current = startId;
+    let verdict = false;
+
+    while (current) {
+      const cached = chainCollapsed.get(current);
+      if (cached !== undefined) {
+        verdict = cached;
+        break;
+      }
+      if (collapsedSpans.has(current)) {
+        chainCollapsed.set(current, true);
+        verdict = true;
+        break;
+      }
+      path.push(current);
+      if (path.length > parentIndex.size) break; // cycle guard
+      current = parentIndex.get(current) ?? null;
+    }
+
+    for (const id of path) chainCollapsed.set(id, verdict);
+    return verdict;
+  };
+
+  return nodes.filter((node) => !isChainCollapsed(node.span.parent_span_id ?? null));
+}
 
 // ============================================================================
 // Live span-event application

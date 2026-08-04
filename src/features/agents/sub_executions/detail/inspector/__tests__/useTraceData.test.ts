@@ -21,12 +21,27 @@ vi.mock('@/stores/agentStore', () => ({
     selector({ pipelineTrace: null }),
 }));
 
+// Pass-through spy so the collapse tests can prove a toggle does NOT rebuild
+// the span tree.
+vi.mock('../traceInspectorTypes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../traceInspectorTypes')>();
+  return { ...actual, buildSpanTree: vi.fn(actual.buildSpanTree) };
+});
+
 import { listen } from '@tauri-apps/api/event';
 import * as executionsApi from '@/api/agents/executions';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { useTraceData } from '../useTraceData';
-import { applySpanEvent } from '../traceInspectorTypes';
+import {
+  applySpanEvent,
+  buildParentIndex,
+  buildSpanTree,
+  computeVisibleNodes,
+  flattenTree,
+} from '../traceInspectorTypes';
+import type { SpanNode } from '../traceInspectorTypes';
 
 const getExecutionTraceMock = vi.mocked(executionsApi.getExecutionTrace);
 const listenMock = vi.mocked(listen);
@@ -280,5 +295,164 @@ describe('useTraceData — span events during the initial fetch window', () => {
     });
 
     expect(result.current.trace).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Collapse derivation — O(1) parent lookup, no tree rebuild on toggle
+// ---------------------------------------------------------------------------
+
+/**
+ * The pre-optimisation collapse walk, verbatim in behaviour: resolve every
+ * ancestor hop with a linear scan over the whole span array. Kept here as the
+ * equivalence oracle (and as the baseline the timing check measures against).
+ */
+function legacyVisibleNodes(
+  spans: UnifiedSpan[],
+  nodes: SpanNode[],
+  collapsedSpans: Set<string>,
+): SpanNode[] {
+  const isAncestorCollapsed = (node: SpanNode): boolean => {
+    let currentParentId = node.span.parent_span_id;
+    while (currentParentId) {
+      if (collapsedSpans.has(currentParentId)) return true;
+      const parent = spans.find((s) => s.span_id === currentParentId);
+      currentParentId = parent?.parent_span_id ?? null;
+    }
+    return false;
+  };
+  return nodes.filter((n) => !isAncestorCollapsed(n));
+}
+
+function uSpan(id: string, parent: string | null, startMs = 0): UnifiedSpan {
+  return {
+    span_id: id,
+    parent_span_id: parent,
+    span_type: 'tool_call',
+    name: id,
+    start_ms: startMs,
+    end_ms: startMs + 1,
+    duration_ms: 1,
+    cost_usd: null,
+    error: null,
+    metadata: null,
+  } as UnifiedSpan;
+}
+
+/** `roots` chains of `depth` spans each — a realistic nested-trace shape. */
+function chainForest(roots: number, depth: number): UnifiedSpan[] {
+  const spans: UnifiedSpan[] = [];
+  for (let r = 0; r < roots; r++) {
+    let parent: string | null = null;
+    for (let d = 0; d < depth; d++) {
+      const id = `r${r}-d${d}`;
+      spans.push(uSpan(id, parent, d));
+      parent = id;
+    }
+  }
+  return spans;
+}
+
+describe('computeVisibleNodes — behaviour parity with the linear-scan walk', () => {
+  const spans: UnifiedSpan[] = [
+    uSpan('root', null, 0),
+    uSpan('a', 'root', 1),
+    uSpan('a1', 'a', 2),
+    uSpan('a1x', 'a1', 3),
+    uSpan('b', 'root', 4),
+    uSpan('b1', 'b', 5),
+    uSpan('orphan', 'missing-parent', 6),
+    uSpan('root2', null, 7),
+    uSpan('c', 'root2', 8),
+  ];
+  const nodes = flattenTree(buildSpanTree(spans));
+  const parentIndex = buildParentIndex(spans);
+
+  const scenarios: Array<[string, string[]]> = [
+    ['nothing collapsed', []],
+    ['a leaf collapsed (no visible effect)', ['a1x']],
+    ['a mid node collapsed', ['a1']],
+    ['nested collapse — ancestor and descendant both collapsed', ['a', 'a1']],
+    ['a root collapsed', ['root']],
+    ['both roots collapsed', ['root', 'root2']],
+    ['a collapsed id not present in the trace', ['ghost']],
+    ['the missing parent of an orphan collapsed', ['missing-parent']],
+  ];
+
+  for (const [label, collapsed] of scenarios) {
+    it(`matches the oracle: ${label}`, () => {
+      const set = new Set(collapsed);
+      expect(computeVisibleNodes(nodes, set, parentIndex).map((n) => n.span.span_id))
+        .toEqual(legacyVisibleNodes(spans, nodes, set).map((n) => n.span.span_id));
+    });
+  }
+
+  it('returns the input array by reference when nothing is collapsed', () => {
+    expect(computeVisibleNodes(nodes, new Set(), parentIndex)).toBe(nodes);
+  });
+
+  it('terminates on a parent cycle instead of spinning', () => {
+    const cyclic = [uSpan('x', 'y'), uSpan('y', 'x')];
+    const cyclicNodes = flattenTree(buildSpanTree(cyclic));
+    expect(() =>
+      computeVisibleNodes(cyclicNodes, new Set(['z']), buildParentIndex(cyclic)),
+    ).not.toThrow();
+  });
+});
+
+describe('useTraceData — toggling a span does not rebuild the tree', () => {
+  it('reuses the memoised tree across collapse toggles', async () => {
+    const spans = [
+      span('root'),
+      span('a', { parent_span_id: 'root', start_ms: 1 }),
+      span('a1', { parent_span_id: 'a', start_ms: 2 }),
+    ];
+    getExecutionTraceMock.mockResolvedValue(trace(spans));
+
+    const { result } = await mountHook();
+    await act(async () => { await Promise.resolve(); });
+
+    expect(result.current.visibleNodes).toHaveLength(3);
+    const buildsAfterMount = vi.mocked(buildSpanTree).mock.calls.length;
+    expect(buildsAfterMount).toBeGreaterThan(0);
+
+    act(() => { result.current.toggleSpan('a'); });
+
+    expect(result.current.visibleNodes.map((n) => n.span.span_id)).toEqual(['root', 'a']);
+    expect(vi.mocked(buildSpanTree).mock.calls.length).toBe(buildsAfterMount);
+
+    act(() => { result.current.toggleSpan('a'); });
+
+    expect(result.current.visibleNodes).toHaveLength(3);
+    expect(vi.mocked(buildSpanTree).mock.calls.length).toBe(buildsAfterMount);
+  });
+});
+
+describe('computeVisibleNodes — 2,000+ span fixture', () => {
+  it('beats the linear-scan walk and stays identical', () => {
+    const spans = chainForest(100, 25); // 2,500 spans, avg ancestor depth ~12
+    expect(spans).toHaveLength(2500);
+
+    const nodes = flattenTree(buildSpanTree(spans));
+    const parentIndex = buildParentIndex(spans);
+    // Collapse one node halfway down every chain — the realistic worst case
+    // where most nodes must climb before the verdict is known.
+    const collapsed = new Set(Array.from({ length: 100 }, (_, r) => `r${r}-d12`));
+
+    const t0 = performance.now();
+    const legacy = legacyVisibleNodes(spans, nodes, collapsed);
+    const legacyMs = performance.now() - t0;
+
+    const t1 = performance.now();
+    const optimised = computeVisibleNodes(nodes, collapsed, parentIndex);
+    const optimisedMs = performance.now() - t1;
+
+    expect(optimised.map((n) => n.span.span_id)).toEqual(legacy.map((n) => n.span.span_id));
+    // Reported for the record; the assertion is deliberately loose so a noisy
+    // CI box can't flake it, while still failing if the quadratic walk returns.
+    console.info(
+      `[trace-collapse] 2500 spans — legacy ${legacyMs.toFixed(1)}ms, optimised ${optimisedMs.toFixed(1)}ms`,
+    );
+    expect(optimisedMs).toBeLessThan(legacyMs / 5);
   });
 });
