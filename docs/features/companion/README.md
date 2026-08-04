@@ -505,6 +505,46 @@ click, and **Cancel** dismisses the card with no side effect at all.
   proposal that starts real processes, so it must not be re-rendered outside the
   conversation that consented to it.
 
+## `show_ship_milestone` — the editable milestone card (conversational ship planning)
+
+The same contract as the plan card above, aimed at the Ship layer. Athena emits
+`show_ship_milestone { project_slug, name, goal, rows: [{ item_kind, item_id, description? }], title? }`;
+the dispatcher validates it and pushes a `ship_milestone` chat card;
+`AthenaShipMilestoneCard` renders it with the name, the goal and every item's
+reason line editable and every item removable; **Create** calls
+`companion_create_ship_milestone`, which re-validates and then goes through the
+ordinary `create_milestone` + `set_milestone_item` repo functions. Nothing is
+written before that click, and **Cancel** dismisses the card with no side effect.
+
+- **Validation happens at the door**, against the real registry: the
+  `project_slug` resolves to a `dev_projects` row (id, exact name, or name
+  substring); every `item_id` resolves to a use case or goal **belonging to that
+  project** (a use case matches on id / slug / name, a goal on id / title); the
+  caps mirror the plan card's (`SHIP_MILESTONE_MAX_ROWS = FLEET_PLAN_MAX_ROWS` = 8
+  items, 300-char name, 1200-char goal and per-item description); and a duplicate
+  member is refused rather than silently merged by the upsert. A rejection names
+  the **real candidate ids**, so it doubles as the discovery path — Athena reads
+  it on her next turn and re-proposes grounded instead of guessing again. If the
+  project registry is not reachable for that turn the arm **fails closed** — no
+  card, and a warning telling her to say so.
+- **Use cases and goals only.** `dev_milestone_items.item_kind` is
+  CHECK-constrained to those two, and the constitution states the reason: a KPI
+  is the outcome layer *above* a milestone (the milestone is the work, the KPI is
+  the number that moves when it lands), so KPIs are never members of a cut.
+- **Born `planned`.** Creation passes no status at all: `create_milestone`
+  refuses `shipped` outright, and `active` would stamp `cut_at` and freeze scope
+  the operator has not agreed to. Cutting and shipping stay transitions the Ship
+  tab owns.
+- **Re-validated on confirm**, because the rows arriving are the USER-EDITED
+  ones. A backend refusal renders inside the card (`athena-ship-error`) instead
+  of the card claiming a milestone appeared.
+- Chat-only and **not** in the cockpit widget registry, for the same reason as
+  the plan card: an actionable proposal that writes must not be pinnable.
+
+Constitution bumped to **v48**. Test ids: `athena-ship-card`,
+`athena-ship-row-<i>`, `athena-ship-confirm`, `athena-ship-cancel`,
+`athena-ship-error`.
+
 ### Containment posture (2026-08-04, operator's explicit call)
 
 `fleet_spawn` and `fleet_dispatch` are now on `AUTOAPPROVE_ALLOWLIST`, so they

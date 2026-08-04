@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { AthenaFleetPlanCard } from './fleet/AthenaFleetPlanCard';
+import { AthenaShipMilestoneCard } from './ship/AthenaShipMilestoneCard';
 
 /**
  * Kinds that render long-form content and should NOT be height-clamped
@@ -64,6 +65,15 @@ export function InlineChatCard({ card }: { card: ChatCard }) {
   // it. Chat is its only dimension.
   if (card.kind === 'fleet_plan') {
     return <AthenaFleetPlanCard config={card.config} title={card.title} />;
+  }
+
+  // `ship_milestone` makes the same call as `fleet_plan` and for the same
+  // reason: it is an actionable proposal that WRITES on confirm (a milestone
+  // plus its scope members), so it is deliberately absent from the cockpit
+  // widget registry. A pinned copy would be a create button with no
+  // conversation behind it.
+  if (card.kind === 'ship_milestone') {
+    return <AthenaShipMilestoneCard config={card.config} title={card.title} />;
   }
 
   const Component = cockpitWidgetRegistry[card.kind];

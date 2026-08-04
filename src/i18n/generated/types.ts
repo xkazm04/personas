@@ -15273,6 +15273,23 @@ export type Translations = {
       fleet_plan_confirm: string;
       fleet_plan_cancel: string;
       fleet_plan_containment_note: string;
+      ship_milestone_heading: string;
+      ship_milestone_item_count_one: string;
+      ship_milestone_item_count_other: string;
+      ship_milestone_empty: string;
+      ship_milestone_name_label: string;
+      ship_milestone_name_placeholder: string;
+      ship_milestone_goal_label: string;
+      ship_milestone_goal_placeholder: string;
+      ship_milestone_description_label: string;
+      ship_milestone_description_placeholder: string;
+      ship_milestone_kind_use_case: string;
+      ship_milestone_kind_goal: string;
+      ship_milestone_remove_row: string;
+      ship_milestone_confirm: string;
+      ship_milestone_cancel: string;
+      ship_milestone_planned_note: string;
+      ship_milestone_created: string;
     };
     artist_gallery: {
       loading_viewer: string;

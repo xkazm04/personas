@@ -393,8 +393,10 @@ const LIST_TEAMS_MAX_ROWS: usize = 25;
 /// "N of M" footer, so truncation can never eat the honesty line.
 const LIST_TEAMS_FOOTER_RESERVE: usize = 180;
 
-/// Fuzzy-match candidates offered when a lookup misses.
-const READ_OP_SUGGESTIONS: usize = 5;
+/// Fuzzy-match candidates offered when a lookup misses. Shared with the
+/// card-op validators (`approval_exec_ship`), so a rejection anywhere in the
+/// op surface offers the same number of real alternatives.
+pub(crate) const READ_OP_SUGGESTIONS: usize = 5;
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
 /// `src/features/agents/sub_lab/components/shared/LabTab.tsx`.
@@ -1860,6 +1862,91 @@ pub fn dispatch_with_sys(
                     }
                 }
             }
+            // ─────────────────────────────────────────────────────────────
+            // WP3 — the editable ship milestone.
+            //
+            // The same contract as `show_fleet_plan` one arm up, aimed at the
+            // Ship layer instead of the fleet: Athena proposes a WHOLE
+            // milestone (name, goal, scope members), the chat card is where
+            // the operator edits and drops rows, and nothing is written until
+            // Confirm. Auto-fire, no approval card — the card IS the consent
+            // surface — and NOT an `ALLOWED_ACTIONS` entry, so there is no
+            // executor arm and no second list to drift.
+            //
+            // Every id is resolved HERE against the real registry, by the same
+            // validator the confirm path re-runs. A milestone whose members
+            // do not exist is not a milestone.
+            // ─────────────────────────────────────────────────────────────
+            Ok(env) if env.op == "propose_action" && env.action == "show_ship_milestone" => {
+                let project_slug = env
+                    .params
+                    .get("project_slug")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let name = env.params.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                let goal = env.params.get("goal").and_then(|v| v.as_str()).unwrap_or("");
+                let rows = env
+                    .params
+                    .get("rows")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                // Resolving a project, its use cases and its goals all need the
+                // system DB. Without it there is no way to tell a real id from
+                // an invented one, so we fail CLOSED rather than render a card
+                // whose Confirm button would write a milestone full of
+                // hallucinated members.
+                let Some(db) = sys_db else {
+                    out.warnings.push(
+                        "show_ship_milestone could not be validated: the project registry is \
+                         not reachable from this turn. Tell the user rather than proposing a \
+                         milestone."
+                            .into(),
+                    );
+                    continue;
+                };
+                match crate::commands::companion::approvals::validate_ship_milestone(
+                    db,
+                    project_slug,
+                    name,
+                    goal,
+                    &rows,
+                ) {
+                    Ok(plan) => {
+                        let rows_json: Vec<serde_json::Value> = plan
+                            .rows
+                            .iter()
+                            .map(|r| {
+                                serde_json::json!({
+                                    "item_kind": r.item_kind,
+                                    "item_id": r.item_id,
+                                    "description": r.description,
+                                })
+                            })
+                            .collect();
+                        out.chat_cards.push(ChatCard {
+                            kind: "ship_milestone".to_string(),
+                            title: env
+                                .params
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string()),
+                            config: serde_json::json!({
+                                "project_id": plan.project_id,
+                                "name": plan.name,
+                                "goal": plan.goal,
+                                "rows": rows_json,
+                            }),
+                        });
+                    }
+                    Err(reason) => {
+                        out.warnings
+                            .push(format!("rejected show_ship_milestone: {reason}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+            }
             Ok(env)
                 if env.op == "propose_action"
                     && env.action == "show_persona_creation_offer" =>
@@ -2864,6 +2951,35 @@ mod tests {
             .warnings
             .iter()
             .any(|w| w.contains("show_fleet_plan") || w.contains("project registry")));
+    }
+
+    // ── show_ship_milestone ─────────────────────────────────────────────
+
+    /// Same doctrine as the plan card: the ONLY thing separating a proposed
+    /// `item_id` from a `dev_milestone_items` row full of invented members is
+    /// the registry lookup, which needs the system DB. `dispatch_op` builds a
+    /// user pool only, so this is exactly the unreachable-registry path.
+    #[test]
+    fn show_ship_milestone_fails_closed_without_the_project_registry() {
+        let op = r###"{"op":"propose_action","action":"show_ship_milestone","params":{"project_slug":"personas","name":"M1","goal":"cut it","rows":[{"item_kind":"use_case","item_id":"uc_1"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(
+            out.chat_cards.is_empty(),
+            "no card without a way to prove the ids are real"
+        );
+        assert!(out
+            .warnings
+            .iter()
+            .any(|w| w.contains("show_ship_milestone") || w.contains("project registry")));
+    }
+
+    /// A card op sits OUTSIDE both lists by design: no executor arm, no
+    /// auto-fired read. The invariant test below asserts the two lists never
+    /// overlap; this asserts the new op joined neither.
+    #[test]
+    fn show_ship_milestone_is_a_card_op_not_an_action_or_a_read_op() {
+        assert!(!ALLOWED_ACTIONS.contains(&"show_ship_milestone"));
+        assert!(!READ_OPS.contains(&"show_ship_milestone"));
     }
 
     // ── show_persona_walkthrough ────────────────────────────────────────
