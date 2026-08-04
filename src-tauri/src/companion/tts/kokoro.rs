@@ -243,7 +243,10 @@ pub async fn synthesize(
         .arg(request.text)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // On the KOKORO_TIMEOUT path the `wait_with_output` future is dropped;
+        // without this the sidecar is never killed and keeps running detached.
+        .kill_on_drop(true);
 
     // Hide the console window on Windows — DETACHED_PROCESS avoids a
     // (DETACHED_PROCESS avoids a conhost flash; all stdio is piped/null).

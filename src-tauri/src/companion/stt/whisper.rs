@@ -157,7 +157,12 @@ pub async fn transcribe(
         .arg("-np") // no prints — suppress system info / progress
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // On the WHISPER_TIMEOUT path below the `wait_with_output` future is
+        // dropped — without this the child is never killed and (being spawned
+        // detached on Windows) outlives the app, pinning every core while the
+        // TempDir holding its input WAV is yanked from under it.
+        .kill_on_drop(true);
     if let Some(lang) = language {
         cmd.arg("-l").arg(lang);
     }

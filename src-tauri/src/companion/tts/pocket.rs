@@ -386,7 +386,11 @@ async fn synthesize_sidecar(
         .arg(request.text)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        // On the POCKET_SIDECAR_TIMEOUT path the `wait_with_output` future is
+        // dropped; without this the sidecar is never killed and keeps running
+        // detached against a TempDir that is about to disappear.
+        .kill_on_drop(true);
 
     // Hide the console window on Windows — same reasoning as kokoro.rs.
     #[cfg(windows)]
