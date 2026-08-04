@@ -218,6 +218,9 @@ pub(crate) fn global_skills_dir() -> Option<PathBuf> {
 const SYSTEM_SKILLS: &[&str] = &[
     "passport-onboard",
     "project-populate",
+    // Portable localization loop (draft → typed MQM estimate → gated refine);
+    // repo specifics live in the target repo's docs/i18n/contract.md.
+    "i18n-translate",
     // Preset scan skills — generated from scan_agents.toml by
     // scripts/skills/scan-agents-to-skills.mjs (one per Idea Scanner lens).
     "scan-code-optimizer",
