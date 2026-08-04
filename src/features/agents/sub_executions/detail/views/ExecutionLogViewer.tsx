@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ChevronDown, ChevronRight, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
@@ -46,6 +46,16 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
       });
     }
   }, [logContent, executionId, personaId, t.agents.executions.copy_log_failed]);
+
+  // Splitting + classifying the whole log is O(lines) and was re-run on every
+  // render -- including the copied-state flip that fires twice per copy.
+  const styledLines = useMemo(() => {
+    if (logContent === null) return null;
+    return logContent.split('\n').map((line) => ({
+      line,
+      cls: TERMINAL_STYLE_MAP[classifyLine(line)] || 'text-foreground/90',
+    }));
+  }, [logContent]);
 
   const handleToggleLog = useCallback(async () => {
     if (showLog) {
@@ -99,17 +109,13 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
                 {logError}
               </div>
             )}
-            {logContent !== null && !logLoading && (
+            {styledLines !== null && !logLoading && (
               <div className="p-4 bg-background/50 border border-border/30 rounded-modal typo-code overflow-x-auto max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
-                {logContent.split('\n').map((line, i) => {
-                  const style = classifyLine(line);
-                  const cls = TERMINAL_STYLE_MAP[style];
-                  return (
-                    <div key={i} className={cls || 'text-foreground/90'}>
-                      {line}
-                    </div>
-                  );
-                })}
+                {styledLines.map((entry, i) => (
+                  <div key={i} className={entry.cls}>
+                    {entry.line}
+                  </div>
+                ))}
               </div>
             )}
           </div>
