@@ -72,6 +72,7 @@ pub mod kb_ingest;
 #[cfg(feature = "ml")]
 pub mod kb_scan;
 pub mod knowledge;
+pub mod kp_reporter;
 pub mod llm_topology;
 pub mod management_api;
 pub mod mcp_tools;
@@ -2431,6 +2432,33 @@ async fn handle_execution_result(
     // Budget enforcement (only on success)
     if result.success {
         check_budget_enforcement(pool, persona_id, exec_id);
+    }
+
+    // KP bridge (WP4) — per-execution counters push to the KP hiring app, for
+    // personas hired through a KP request (design_context.kpLink). Best-effort
+    // fire-and-forget like knowledge::extract_and_persist above: a KP outage
+    // never touches the execution path, and personas without a kp_link return
+    // after one persona-row read. Cancelled runs are skipped by contract — the
+    // periodic monthly rollup (kp_reporter tick) covers them, as it does the
+    // cancel/cloud/daemon/zombie terminal writes that never reach this handler.
+    {
+        let kp_status = match status {
+            ExecutionState::Completed => Some("success"),
+            ExecutionState::Failed | ExecutionState::Incomplete => Some("failure"),
+            _ => None,
+        };
+        if let Some(kp_status) = kp_status {
+            kp_reporter::push_execution_event(
+                pool,
+                persona_id,
+                exec_id,
+                kp_status,
+                result.cost_usd,
+                result.input_tokens as i64,
+                result.output_tokens as i64,
+                result.duration_ms as i64,
+            );
+        }
     }
 
     // Chain triggers -- extract chain depth/visited/trace_id from execution's input_data

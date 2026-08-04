@@ -1097,10 +1097,6 @@ pub(crate) fn notify_kp_lifecycle(
         tracing::warn!(event, "kp lifecycle push skipped: no reportToken in params");
         return;
     };
-    let url = format!(
-        "{}/api/agents/report/{token}",
-        base_url.trim_end_matches('/')
-    );
     let mut body = serde_json::json!({ "kind": "lifecycle", "event": event });
     if let Some(reason) = reason {
         body["reason"] = serde_json::Value::String(reason);
@@ -1109,21 +1105,16 @@ pub(crate) fn notify_kp_lifecycle(
         body["personaId"] = serde_json::Value::String(persona_id);
         body["personaName"] = serde_json::Value::String(persona_name);
     }
-    let event = event.to_string();
+    // Delegate the actual send to the WP4 shared push core (SHARED_HTTP, 5s
+    // timeout, warn-only, token never logged) so there is exactly ONE code
+    // path that talks to the KP report endpoint. No persona id here: at
+    // approval time the persona may not exist yet, and approval-time 404s
+    // must not count toward any persona's severed-link streak.
+    let base_url = base_url.to_string();
+    let token = token.to_string();
     tauri::async_runtime::spawn(async move {
-        let result = crate::SHARED_HTTP
-            .post(&url)
-            .timeout(std::time::Duration::from_secs(5))
-            .json(&body)
-            .send()
+        crate::engine::kp_reporter::post_kp_report(&base_url, &token, &body, None, None, "lifecycle")
             .await;
-        match result {
-            Ok(resp) if resp.status().is_success() => {}
-            Ok(resp) => {
-                tracing::warn!(event = %event, status = %resp.status(), "KP lifecycle push rejected by the KP app")
-            }
-            Err(e) => tracing::warn!(event = %event, error = %e, "KP lifecycle push failed"),
-        }
     });
 }
 

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::db::models::{PersonaToolDefinition, ToolKind, VirtualToolId};
+use crate::db::repos::execution::tool_usage as tool_usage_repo;
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
@@ -109,6 +110,12 @@ impl From<AppError> for DirectInvokeError {
 ///
 /// Applies per-tool rate limiting, wraps invocations in a timeout, and logs
 /// structured audit entries for every execution.
+///
+/// `execution_id`: the `persona_executions` row this invocation belongs to,
+/// when the caller runs inside one — it feeds the per-execution
+/// `persona_tool_usage` connector counter (KP bridge WP4). `None` for manual
+/// Tool Runner invocations, which have no execution row (the counter's
+/// `execution_id` FK is NOT NULL, so recording is skipped).
 pub async fn invoke_tool_direct(
     pool: &DbPool,
     tool: &PersonaToolDefinition,
@@ -116,6 +123,7 @@ pub async fn invoke_tool_direct(
     persona_name: &str,
     input_json: &str,
     rate_limiter: Option<&RateLimiter>,
+    execution_id: Option<&str>,
 ) -> Result<ToolInvocationResult, AppError> {
     let start = Instant::now();
 
@@ -204,7 +212,7 @@ pub async fn invoke_tool_direct(
     }
 
     // Resolve credential env vars using the existing runner infrastructure
-    let (env_vars, _hints, cred_failures, _injected_connectors) =
+    let (env_vars, _hints, cred_failures, _injected_connectors, injected_credential_ids) =
         super::runner::resolve_credential_env_vars(
             pool,
             std::slice::from_ref(tool),
@@ -275,7 +283,7 @@ pub async fn invoke_tool_direct(
                                     refreshed,
                                     "Retrying API tool after forced OAuth refresh"
                                 );
-                                let (retry_env_vars, _hints, cred_failures, _connectors) =
+                                let (retry_env_vars, _hints, cred_failures, _connectors, _cred_ids) =
                                     super::runner::resolve_credential_env_vars(
                                         pool,
                                         std::slice::from_ref(tool),
@@ -355,7 +363,10 @@ pub async fn invoke_tool_direct(
         }
     };
 
-    // Structured audit logging (best-effort, never fails the call)
+    // Structured audit logging (best-effort, never fails the call). The
+    // credential id is the one resolved for this dispatch (first injected —
+    // a single tool resolves at most one connector credential); the pre-flight
+    // failure path above still logs `None` because nothing was resolved yet.
     if let Err(log_err) = tool_audit_log::insert(
         pool,
         &tool.id,
@@ -363,7 +374,7 @@ pub async fn invoke_tool_direct(
         &invocation_result.tool_type,
         Some(persona_id),
         Some(persona_name),
-        None,
+        injected_credential_ids.first().map(|s| s.as_str()),
         if invocation_result.success {
             "success"
         } else {
@@ -374,6 +385,21 @@ pub async fn invoke_tool_direct(
         invocation_result.error_kind.map(|k| k.as_str()),
     ) {
         tracing::warn!("Failed to write tool audit log: {log_err}");
+    }
+
+    // KP bridge (WP4) — per-execution connector counter (persona_tool_usage).
+    // Best-effort like the audit write above: a counter failure must NEVER
+    // fail the tool call. Only recordable inside a real execution (NOT NULL
+    // FK on execution_id); hot path, so no extra queries — one insert.
+    if let Some(exec_id) = execution_id {
+        if let Err(e) = tool_usage_repo::record(pool, exec_id, persona_id, &tool.name, 1) {
+            tracing::debug!(
+                tool_name = %tool.name,
+                execution_id = %exec_id,
+                error = %e,
+                "Failed to record persona_tool_usage counter"
+            );
+        }
     }
 
     Ok(invocation_result)
@@ -1442,7 +1468,7 @@ mod direct_invoke_contract_tests {
     async fn builtin_tool_is_typed_unsupported_not_misconfigured() {
         let pool = init_test_db().unwrap();
         let t = tool("builtin://gmail_read", None, "email");
-        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None, None)
             .await
             .expect("must be Ok(typed result), never a raw Err");
         assert!(!r.success);
@@ -1460,7 +1486,7 @@ mod direct_invoke_contract_tests {
         let pool = init_test_db().unwrap();
         // No script, no guide, not automation — tool_kind() is Err.
         let t = tool("", None, "api");
-        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None)
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", None, None)
             .await
             .expect("must be Ok(typed result), never a raw Err");
         assert!(!r.success);
@@ -1480,7 +1506,7 @@ mod direct_invoke_contract_tests {
             .check(&key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW)
             .is_ok()
         {}
-        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", Some(&rl))
+        let r = invoke_tool_direct(&pool, &t, "p1", "Persona", "{}", Some(&rl), None)
             .await
             .expect("must be Ok(typed result), never a raw Err");
         assert!(!r.success);

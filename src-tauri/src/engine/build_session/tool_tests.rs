@@ -96,7 +96,7 @@ pub async fn run_tool_tests(
         .filter_map(tool_runner::tool_def_from_ir)
         .collect();
 
-    let (mut env_vars, mut hints, cred_failures, mut injected_connectors) =
+    let (mut env_vars, mut hints, cred_failures, mut injected_connectors, _cred_ids) =
         engine_runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
             .await;
 
@@ -146,6 +146,7 @@ pub async fn run_tool_tests(
                 persona_name,
             )
             .await
+            .map(|cred_id| cred_id.is_some())
             .unwrap_or(false)
         } else {
             match crate::db::repos::resources::credentials::get_by_service_type(pool, name) {

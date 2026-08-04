@@ -1613,6 +1613,68 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
     )
 }
 
+/// Current-calendar-month execution aggregate for one persona, computed under
+/// the same [`MONTHLY_SPEND_PREDICATE`] discipline as [`get_monthly_spend`]
+/// (terminal statuses only, UTC month boundary, `_ops` chat excluded) so the
+/// numbers an external reporter pushes can never drift from what the Personas
+/// budget UI shows. Consumed by the KP outbound reporter
+/// (`engine/kp_reporter.rs`, agent-candidate bridge WP4).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PersonaMonthlyRollup {
+    /// Terminal runs this month (completed + failed + incomplete + cancelled).
+    pub runs: i64,
+    /// Runs that finished `completed`.
+    pub successes: i64,
+    /// `runs - successes` (failed + incomplete + cancelled).
+    pub failures: i64,
+    pub cost_usd: f64,
+    pub tokens_in: i64,
+    pub tokens_out: i64,
+}
+
+pub fn get_monthly_rollup(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<PersonaMonthlyRollup, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_monthly_rollup",
+        {
+            let conn = pool.get()?;
+            // Shares MONTHLY_SPEND_PREDICATE verbatim with get_monthly_spend /
+            // the budget UI feed — see the invariant on the const above.
+            let sql = format!(
+                "SELECT COUNT(*),
+                        COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0),
+                        COALESCE(SUM(cost_usd), 0.0),
+                        COALESCE(SUM(input_tokens), 0),
+                        COALESCE(SUM(output_tokens), 0)
+                 FROM persona_executions
+                 WHERE persona_id = ?1 AND {}",
+                MONTHLY_SPEND_PREDICATE
+            );
+            let (runs, successes, cost_usd, tokens_in, tokens_out): (i64, i64, f64, i64, i64) =
+                conn.query_row(&sql, params![persona_id], |row| {
+                    Ok((
+                        row.get(0)?,
+                        row.get(1)?,
+                        row.get(2)?,
+                        row.get(3)?,
+                        row.get(4)?,
+                    ))
+                })?;
+            Ok(PersonaMonthlyRollup {
+                runs,
+                successes,
+                failures: runs - successes,
+                cost_usd,
+                tokens_in,
+                tokens_out,
+            })
+        }
+    )
+}
+
 /// Default zombie threshold for RUNNING executions: 30 minutes.
 const DEFAULT_ZOMBIE_THRESHOLD_SECS: i64 = 30 * 60;
 
@@ -2138,5 +2200,79 @@ mod tests {
     fn list_active_chains_empty_when_nothing_running() {
         let pool = init_test_db().unwrap();
         assert!(list_active_chains(&pool).unwrap().is_empty());
+    }
+
+    /// KP bridge (WP4): the monthly rollup must share MONTHLY_SPEND_PREDICATE's
+    /// three axes exactly — terminal statuses only, UTC start-of-month boundary,
+    /// `_ops` chat excluded — or KP's numbers drift from the Personas budget UI.
+    /// Rows are pinned to computed instants relative to the current UTC month
+    /// start (fixed clock), not to sleeps.
+    #[test]
+    fn test_get_monthly_rollup_window_statuses_and_ops_exclusion() {
+        use chrono::{Datelike, TimeZone, Utc};
+
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "KP Rollup Agent");
+
+        let now = Utc::now();
+        let month_start = Utc
+            .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+            .unwrap();
+        let in_month = (month_start + chrono::Duration::seconds(1)).to_rfc3339();
+        let prior_month = (month_start - chrono::Duration::days(1)).to_rfc3339();
+
+        let stamp = |id: &str,
+                     status: &str,
+                     cost: f64,
+                     tin: i64,
+                     tout: i64,
+                     created_at: &str,
+                     input_data: Option<&str>| {
+            let conn = pool.get().unwrap();
+            conn.execute(
+                "UPDATE persona_executions
+                 SET status = ?1, cost_usd = ?2, input_tokens = ?3, output_tokens = ?4,
+                     created_at = ?5, input_data = ?6
+                 WHERE id = ?7",
+                rusqlite::params![status, cost, tin, tout, created_at, input_data, id],
+            )
+            .unwrap();
+        };
+
+        let mk = || create(&pool, &persona_id, None, None, None, None).unwrap().id;
+
+        // Counted: three terminal in-month runs (1 success, 2 failures).
+        stamp(&mk(), "completed", 1.0, 100, 10, &in_month, None);
+        stamp(&mk(), "failed", 0.5, 50, 5, &in_month, None);
+        stamp(&mk(), "incomplete", 0.25, 25, 2, &in_month, None);
+        // Excluded: still running (non-terminal).
+        stamp(&mk(), "running", 9.0, 900, 90, &in_month, None);
+        // Excluded: _ops chat query, even though terminal + in-month.
+        stamp(
+            &mk(),
+            "completed",
+            9.0,
+            900,
+            90,
+            &in_month,
+            Some(r#"{"_ops": true}"#),
+        );
+        // Excluded: terminal but prior month.
+        stamp(&mk(), "completed", 9.0, 900, 90, &prior_month, None);
+
+        let rollup = get_monthly_rollup(&pool, &persona_id).unwrap();
+        assert_eq!(rollup.runs, 3);
+        assert_eq!(rollup.successes, 1);
+        assert_eq!(rollup.failures, 2);
+        assert!((rollup.cost_usd - 1.75).abs() < 1e-9);
+        assert_eq!(rollup.tokens_in, 175);
+        assert_eq!(rollup.tokens_out, 17);
+
+        // A persona with no executions yields an all-zero rollup, not an error.
+        let other = make_persona(&pool, "KP Rollup Empty Agent");
+        let empty = get_monthly_rollup(&pool, &other).unwrap();
+        assert_eq!(empty.runs, 0);
+        assert_eq!(empty.failures, 0);
+        assert_eq!(empty.tokens_in, 0);
     }
 }

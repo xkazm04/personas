@@ -82,6 +82,40 @@ pub fn record(
     })
 }
 
+/// Current-calendar-month invocation totals per tool for one persona.
+///
+/// Month boundary is the same UTC `datetime('now', 'start of month')`
+/// expression as `executions::MONTHLY_SPEND_PREDICATE`, so the connector
+/// counters the KP outbound reporter (`engine/kp_reporter.rs`) sends ride the
+/// same window as the cost/run rollup. Internal CLI tools are excluded — KP
+/// only cares about connector-shaped usage, matching the analytics charts.
+pub fn get_monthly_totals_by_tool(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<(String, i64)>, AppError> {
+    timed_query!("tool_usage", "tool_usage::get_monthly_totals_by_tool", {
+        let conn = pool.get()?;
+        let sql = format!(
+            "SELECT tool_name, COALESCE(SUM(invocation_count), 0)
+             FROM persona_tool_usage
+             WHERE persona_id = ?1
+               AND created_at >= datetime('now', 'start of month')
+               AND {}
+             GROUP BY tool_name
+             ORDER BY tool_name ASC",
+            internal_tools_exclusion("tool_name")
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params![persona_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        let totals = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        Ok(totals)
+    })
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
@@ -271,5 +305,70 @@ mod tests {
         // Empty execution
         let empty = get_by_execution(&pool, "nonexistent-exec").unwrap();
         assert_eq!(empty.len(), 0);
+    }
+
+    /// KP bridge (WP4): monthly connector totals group by tool, stay inside
+    /// the current UTC calendar month, and drop internal CLI tools — the same
+    /// axes the execution rollup uses.
+    #[test]
+    fn test_get_monthly_totals_by_tool_window_and_grouping() {
+        use chrono::{Datelike, TimeZone, Utc};
+
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "KP Connector Totals Agent".into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let exec = executions::create(&pool, &persona.id, None, None, None, None).unwrap();
+
+        // In-month: gmail twice (3 + 2 calls), slack once, plus an internal
+        // CLI tool that must not surface as a connector.
+        record(&pool, &exec.id, &persona.id, "gmail", 3).unwrap();
+        record(&pool, &exec.id, &persona.id, "gmail", 2).unwrap();
+        record(&pool, &exec.id, &persona.id, "slack", 1).unwrap();
+        record(&pool, &exec.id, &persona.id, "Bash", 7).unwrap();
+
+        // Prior-month gmail row: backdate to just before the month boundary.
+        let backdated = record(&pool, &exec.id, &persona.id, "gmail", 50).unwrap();
+        let now = Utc::now();
+        let prior = (Utc
+            .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+            .unwrap()
+            - chrono::Duration::days(1))
+        .to_rfc3339();
+        pool.get()
+            .unwrap()
+            .execute(
+                "UPDATE persona_tool_usage SET created_at = ?1 WHERE id = ?2",
+                params![prior, backdated.id],
+            )
+            .unwrap();
+
+        let totals = get_monthly_totals_by_tool(&pool, &persona.id).unwrap();
+        assert_eq!(
+            totals,
+            vec![("gmail".to_string(), 5), ("slack".to_string(), 1)]
+        );
+
+        // Unknown persona: empty, not an error.
+        assert!(get_monthly_totals_by_tool(&pool, "nope").unwrap().is_empty());
     }
 }

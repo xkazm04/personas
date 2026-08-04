@@ -2792,6 +2792,30 @@ pub async fn promote_build_draft_inner(
     };
     let (design_context_str, design_result_str) =
         build_design_json(&ir, &use_cases.structured, &tool_names, &credential_links);
+    // KP bridge (WP4): promote rebuilds design_context from the build IR,
+    // which would silently drop the typed `kp_link` the kp_hire_request
+    // approval stamped on the draft persona — and with it every future
+    // outbound KP report. Read it off the pre-promote row, re-inject it into
+    // the fresh envelope, and keep it for the post-commit `activated` push.
+    let kp_link: Option<(crate::db::models::KpLink, String)> =
+        persona_repo::get_by_id(&state.db, &persona_id)
+            .ok()
+            .and_then(|p| {
+                let promoted_name = ir.name.clone().unwrap_or_else(|| p.name.clone());
+                p.parsed_design_context()
+                    .kp_link
+                    .map(|link| (link, promoted_name))
+            });
+    let design_context_str = match &kp_link {
+        Some((link, _)) => match serde_json::from_str::<serde_json::Value>(&design_context_str) {
+            Ok(mut v) => {
+                v["kpLink"] = serde_json::to_value(link).unwrap_or(serde_json::Value::Null);
+                v.to_string()
+            }
+            Err(_) => design_context_str,
+        },
+        None => design_context_str,
+    };
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
 
     // ================================================================
@@ -2845,6 +2869,13 @@ pub async fn promote_build_draft_inner(
     // COMMIT — all entities are persisted atomically
     // ================================================================
     tx.commit().map_err(AppError::Database)?;
+
+    // KP bridge (WP4) — the persona update above flipped `lifecycle = 'active'`;
+    // if this persona was hired through a KP request, tell the KP app.
+    // Best-effort fire-and-forget, mirroring the post-commit stamps below.
+    if let Some((link, name)) = &kp_link {
+        crate::engine::kp_reporter::push_lifecycle_event(link, "activated", &persona_id, name);
+    }
 
     // Design D — stamp the authored core dials into `core_profile` (the
     // deliberation moderator routes by it; persona turns speak from it).

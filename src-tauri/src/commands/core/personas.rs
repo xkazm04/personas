@@ -700,6 +700,9 @@ async fn delete_persona_inner(
     // Capture the persona's custom-icon asset id (if any) so we can reclaim the
     // orphaned icon file after the row is gone.
     let mut custom_icon_asset: Option<String> = None;
+    // KP bridge (WP4): capture the KP link + name before the row disappears so
+    // the `retired` lifecycle push below can still address the KP app.
+    let mut kp_link: Option<(crate::db::models::KpLink, String)> = None;
     if let Ok(persona) = repo::get_by_id(&state.db, id) {
         if let Some(reason) = deletion_forbidden_reason(&persona) {
             return Err(AppError::Forbidden(reason));
@@ -709,6 +712,10 @@ async fn delete_persona_inner(
             .as_deref()
             .and_then(|i| i.strip_prefix("custom-icon:"))
             .map(|s| s.to_string());
+        kp_link = persona
+            .parsed_design_context()
+            .kp_link
+            .map(|link| (link, persona.name.clone()));
     }
 
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
@@ -830,6 +837,12 @@ async fn delete_persona_inner(
             crate::commands::core::persona_icons::delete_icon_file_if_orphaned(
                 state, app, &asset_id,
             );
+        }
+        // KP bridge (WP4) — a KP-hired persona was deleted: push `retired` to
+        // the KP app. Best-effort fire-and-forget; the link + name were
+        // captured in Phase 1a before the row was removed.
+        if let Some((link, name)) = &kp_link {
+            crate::engine::kp_reporter::push_lifecycle_event(link, "retired", id, name);
         }
     }
 

@@ -758,6 +758,7 @@ pub fn parse_design_context(raw: Option<&str>) -> DesignContextData {
             || data.dev_project_id.is_some()
             || data.archetype_id.is_some()
             || data.memory_strategy_id.is_some()
+            || data.kp_link.is_some()
         {
             return data;
         }
