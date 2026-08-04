@@ -56,6 +56,44 @@ export function toServiceMap(def: PlatformDefinition): Record<string, string> {
   return map;
 }
 
+/**
+ * Node-type mappings ordered longest-pattern-first.
+ *
+ * Matching walks the list in order and takes the first hit, so declaration
+ * order silently decided the winner when one pattern is a prefix/substring of
+ * another — Make declares `google` before `google-sheets`, which made every
+ * `google-sheets:*` and `google-drive:*` module resolve to the generic
+ * `google` service and left those mappings unreachable. Sorting by pattern
+ * length makes the most specific mapping win regardless of authoring order.
+ */
+const _sortedMappings = new WeakMap<PlatformDefinition, NodeTypeMapping[]>();
+
+function mappingsBySpecificity(def: PlatformDefinition): NodeTypeMapping[] {
+  const cached = _sortedMappings.get(def);
+  if (cached) return cached;
+  const sorted = [...def.nodeTypeMap].sort(
+    (a, b) => b.sourcePattern.length - a.sourcePattern.length,
+  );
+  _sortedMappings.set(def, sorted);
+  return sorted;
+}
+
+/**
+ * Resolve an already-normalized identifier (lowercased, punctuation-stripped)
+ * to its target service by substring match, most specific mapping first.
+ * Returns undefined when no mapping applies so the caller can pick its own
+ * fallback.
+ */
+export function resolveServiceByInclusion(
+  def: PlatformDefinition,
+  candidate: string,
+): string | undefined {
+  for (const mapping of mappingsBySpecificity(def)) {
+    if (candidate.includes(mapping.sourcePattern)) return mapping.targetService;
+  }
+  return undefined;
+}
+
 /** Resolve a node type string to its target service using a PlatformDefinition. */
 export function resolveNodeType(def: PlatformDefinition, nodeType: string): string {
   const lower = nodeType.toLowerCase();
@@ -65,7 +103,7 @@ export function resolveNodeType(def: PlatformDefinition, nodeType: string): stri
   // Remove common suffixes
   const cleaned = name.replace(/trigger$/, '').replace(/node$/, '');
 
-  for (const mapping of def.nodeTypeMap) {
+  for (const mapping of mappingsBySpecificity(def)) {
     if (cleaned.startsWith(mapping.sourcePattern) || cleaned === mapping.sourcePattern) {
       return mapping.targetService;
     }

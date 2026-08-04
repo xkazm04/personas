@@ -4,7 +4,7 @@
  */
 
 import type { AgentIR } from '@/lib/types/designTypes';
-import { MAKE_DEFINITION, toServiceMap, classifyNodeRole } from '../platformDefinitions';
+import { MAKE_DEFINITION, resolveServiceByInclusion, classifyNodeRole } from '../platformDefinitions';
 import { runExtractionPipeline, type NormalizedNode } from './workflowPipeline';
 
 interface MakeModule {
@@ -29,18 +29,13 @@ interface MakeExport {
   scheduling?: Record<string, unknown>;
 }
 
-const MAKE_SERVICE_MAP = toServiceMap(MAKE_DEFINITION);
-
 function extractServiceName(moduleId: string | undefined): string {
   if (!moduleId) return 'unknown';
   const lower = moduleId.toLowerCase();
   const colonPart = lower.split(':')[0] || lower;
   const cleaned = colonPart.replace(/[^a-z0-9-]/g, '');
 
-  for (const [key, value] of Object.entries(MAKE_SERVICE_MAP)) {
-    if (cleaned.includes(key)) return value;
-  }
-  return cleaned || 'unknown';
+  return resolveServiceByInclusion(MAKE_DEFINITION, cleaned) ?? (cleaned || 'unknown');
 }
 
 export function parseMakeWorkflow(json: unknown): AgentIR {
