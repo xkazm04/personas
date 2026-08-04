@@ -32,6 +32,7 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -66,6 +67,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}

@@ -82,6 +82,7 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
         <button
           type="button"
           onClick={handleToggleLog}
+          aria-expanded={showLog}
           className="flex items-center gap-2 typo-body text-foreground/90 hover:text-foreground transition-colors"
         >
           {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
