@@ -2,10 +2,6 @@
 
 ## Active
 
-### athena-dev-day — conversation-log button + dev-mode v2 repairs (op_id, index rollup, dead pipeline, verdict gate) + daily-goals gamification — session fable-5
-- Started: 2026-08-04. Status: started. Work isolates in `.claude/worktrees/athena-dev-day` (branch `worktree-athena-dev-day`), atomic commits per fix/feature.
-- Paths: `src/features/plugins/companion/{CompanionPanel.tsx,devConversationLog.ts,DevConversationLogButton.tsx,useDailyGoals.ts,DailyGoalsBar.tsx,DailyGoalsModal.tsx,__tests__/**}`, `src-tauri/src/companion/{dev_mode.rs,session.rs,prompt.rs,brain/daily_goals.rs,brain/mod.rs}`, `src-tauri/src/commands/companion/{debug_export.rs,daily_goals.rs,feedback.rs,chat.rs,mod.rs,approvals/approval_exec_dev.rs}`, `src-tauri/db/src/lib.rs` (COMPANION_SCHEMA append), `src-tauri/src/lib.rs` (invoke_handler), `src/api/companion.ts`, `src/lib/bindings/DailyGoal*.ts`, `src/lib/commandNames.generated.ts`, `src/i18n/locales/*.json` + regenerated section-locales/generated, `docs/features/companion/**`.
-- NOTE overlap: `spark-ship-athena-orchestration` (design phase, no tree edits yet) declares intended paths on `companion/prompt.rs` + `dispatcher.rs`; my prompt.rs touch is one addendum wire-in next to dev_mode's. Will keep it minimal and atomic.
 
 
 ### perfect-round-3 — /perfect round 3 cursor 1 — session opus-5[1m] — **COMPLETE**, commits `4b96433ef`(ledger) `2a1857a7c` `0f6d449d8` `9a75a2d52` `e301f74a2` `a5e8455c8`
@@ -92,6 +88,12 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### athena-dev-day — conversation-log export + dev-mode v2 repairs + daily-goals ritual — COMPLETE, master ff to 1d200dede — session fable-5
+- 2026-08-04/05. Three arcs for a full day of live Athena testing: (1) dev-only conversation-log export button (header FileDown → gitignored `logs/athena-conversations/`, joins messages with narration/steps/summaries/recall/actions); (2) dev-mode v2 repairs — full op_id in the dispatch card (truncated id made every dev_merge fail), context-map index rolled up to group level (~30KB → ~5KB per prompt at 208 contexts), dead wrench-send pipeline cut from the per-turn hot path (`companion_request_improvement` deregistered), verdict write gated like the read; (3) daily-goals gamification subheader (streak + up to 3 manually-evaluated goal chips + BaseModal entry; `companion_daily_goal` in the user DB, local-day streak walk with grace; Athena sees set+streak via prompt addendum with a never-mark-done rule).
+- Commits: a23462704 (op_id) 12651a18c (index rollup) 5e9835476 (dead pipeline) a3dc1aa1c (verdict gate) 145c61262 (conversation log) 24bac4d49 (goals backend) 418eb7ef8 (goals UI) 8544d079d (i18n x14) 9f8830ffe (docs) d22fe27ab (pool-release fix) + merge 1d200dede.
+- Gates: tsc 0 err · companion vitest 343/343 (1 decisionStore CPU-contention flake, passes isolated) · cargo check 0 err · `npm run test:rust` 2201 pass with my 8 daily_goals tests green; 2 failures PRE-EXISTING at base 0f29077e7 in untouched files (`companion::tours::manifest_hash_is_stable`, `engine::fitness_driver::success_rate_is_last_resort_quality_basis` — Darwin Mode / Generative Tours arcs, need an owner) · clippy: 0 warnings in new code (repo baseline ~170 pre-existing) · i18n strict + untranslated clean x14.
+- Re-confirmed the TS_RS_EXPORT_DIR worktree hazard (bindings landed in stray `<worktree>/bindings/`; hand-placed the 2 new files, verified zero drift to the 409 others). NOTE for whoever owns it: master's app_lib TEST build was broken at 8c998d545 (`ship_ingest.rs` tests reference dropped `DevMilestoneItem.rating` field + old `set_milestone_item` arity) — visible when compiling tests on main checkout, unrelated to this arc.
 
 ### spark-ship-athena-orchestration — /spark round 5 COMPLETE, merged 666346859
 - 2026-08-04/05. Ship milestones gain item descriptions + a 1-5 operator rating shown BESIDE the automation verdict (state duality; disagreement counted and surfaced, never gating), an editable Athena compose card, and a /ship-milestone skill whose result returns through one gated ingest door. Four camelCase ratchet offenders adopted.
