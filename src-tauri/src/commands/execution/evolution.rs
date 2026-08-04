@@ -29,6 +29,24 @@ fn extract_panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
 // Policy management
 // ============================================================================
 
+/// The only mutation strategies the evolution runtime dispatches on.
+const VALID_MUTATION_STRATEGIES: &[&str] = &["mechanical", "critique", "hybrid"];
+
+/// Validate an optional `mutation_strategy` at the IPC trust boundary.
+/// `None` (field omitted) stays `None` — the repo treats that as "leave the
+/// stored value alone". An unrecognised value is an error, never a silent drop.
+fn validate_mutation_strategy(raw: Option<String>) -> Result<Option<String>, AppError> {
+    match raw {
+        None => Ok(None),
+        Some(s) if VALID_MUTATION_STRATEGIES.contains(&s.as_str()) => Ok(Some(s)),
+        Some(s) => Err(AppError::Validation(format!(
+            "Invalid mutation_strategy '{}'. Must be one of: {}",
+            s,
+            VALID_MUTATION_STRATEGIES.join(", ")
+        ))),
+    }
+}
+
 /// Get the evolution policy for a persona (or null if none exists).
 #[tauri::command]
 pub fn evolution_get_policy(
@@ -62,13 +80,15 @@ pub fn evolution_upsert_policy(
         None => None,
     };
 
-    // Boundary validation: only accept the three known strategies. Unknown
-    // values fall back to None so the runtime treats the policy as legacy
-    // mechanical, rather than silently dispatching to an undefined branch.
-    let strategy = mutation_strategy.and_then(|s| match s.as_str() {
-        "mechanical" | "critique" | "hybrid" => Some(s),
-        _ => None,
-    });
+    // Boundary validation: only accept the three known strategies. REJECT
+    // anything else instead of dropping it to `None` — the repo's UPDATE
+    // COALESCEs every `None` field onto the stored value, so a silent drop did
+    // NOT mean "legacy mechanical" (as an earlier comment here claimed): it
+    // silently kept whatever strategy was already persisted while reporting
+    // success, so the caller believed a strategy it never got. Mirrors the
+    // explicit-reject boundary used by `lab_tag_version` and
+    // `upsert_knowledge_annotation`.
+    let strategy = validate_mutation_strategy(mutation_strategy)?;
 
     let input = UpsertEvolutionPolicyInput {
         persona_id,
@@ -336,5 +356,38 @@ pub fn evolution_check_eligibility(
     match evolution_repo::get_policy_for_persona(&state.db, &persona_id)? {
         Some(policy) => Ok(evolution::should_evolve(&state.db, &policy)),
         None => Ok(false),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_the_three_known_strategies() {
+        for s in ["mechanical", "critique", "hybrid"] {
+            assert_eq!(
+                validate_mutation_strategy(Some(s.to_string())).unwrap(),
+                Some(s.to_string())
+            );
+        }
+    }
+
+    #[test]
+    fn omitted_strategy_stays_none() {
+        assert_eq!(validate_mutation_strategy(None).unwrap(), None);
+    }
+
+    #[test]
+    fn unknown_strategy_is_rejected_not_silently_dropped() {
+        // The regression this guards: returning Ok(None) here made the repo's
+        // COALESCE keep the PREVIOUS strategy while the caller saw success.
+        let err = validate_mutation_strategy(Some("genetic".into()))
+            .expect_err("unknown strategy must be a validation error");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "expected a validation error, got {err:?}"
+        );
+        assert!(format!("{err:?}").contains("mechanical"));
     }
 }
