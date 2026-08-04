@@ -16,6 +16,28 @@ use crate::error::AppError;
 /// of the window — "dozens of events" should not wait out the timer.
 pub const QUEUE_CAP: usize = 25;
 
+/// Surface id for the fleet's PERIODIC re-assessment passes
+/// (`reassess_stale_awaiting` / `reassess_stuck_sessions` /
+/// `reassess_idle_needs_next`), run once per proactive tick.
+///
+/// Until this existed the cadence dial governed exec triage, message triage
+/// and channel reactions but not the fleet, so a user who set "every 2 hours"
+/// still got fleet wakes every 5 minutes and `stats_24h` aggregated none of
+/// them: the dial's own impact line understated what autonomy did.
+///
+/// Two things are deliberately NOT behind this window:
+/// - the push/hook fast path (`orchestrate_on_awaiting` from
+///   `fleet::hooks::receive_hook`), which fires on the real state transition.
+///   A session that just raised a question needs attention when it needs it,
+///   not at the top of the next window.
+/// - a fleet with any `AwaitingInput` session, which the caller passes as a
+///   priority signal. Waiting on a human is human-blocking by definition, and
+///   the periodic sweep is the backstop that finds the ones whose hook wake
+///   was lost (the 2026-07-24 usage-limit outage left 8 of 16 sessions
+///   invisible with questions on screen). The window throttles autonomy
+///   churn; it must never re-open that hole.
+pub const FLEET_SURFACE: &str = "fleet_reassess";
+
 #[derive(Debug, Clone, Copy)]
 pub struct WakeGate {
     pub due: bool,

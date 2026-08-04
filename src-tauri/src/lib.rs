@@ -1191,6 +1191,18 @@ pub fn run() {
             app.manage(state_arc.session_pool.clone());
             app.manage(state_arc.ambient_context.clone());
 
+            // Athena's proactive scheduler — the 5-min autonomy loop (fleet
+            // reassess passes, execution review, message triage, stale-approval
+            // GC). Started here, alongside the other always-on loops, because
+            // it previously hung off `companion_init`, which the frontend calls
+            // from a lazily-mounted footer icon: a chunk that never mounted (or
+            // failed to) silently meant no autonomy at all, with no retry.
+            // Idempotent (`OnceLock`) and still no-ops per tick while
+            // autonomous mode is off, so this starts a loop, not autonomy.
+            // Must follow `app.manage(state_arc)` — the tick reads
+            // `Arc<AppState>` back out of Tauri's state map.
+            commands::companion::start_proactive_scheduler(&state_arc, app.handle());
+
             // Side effects the engine fires into the shell. Registered here
             // because every target — tray, notifications, the companion's
             // proactive lane — sits above the engine. Unregistered, they are

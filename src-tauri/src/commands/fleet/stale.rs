@@ -17,6 +17,7 @@ use tauri::AppHandle;
 
 
 use super::registry::{now_ms, registry};
+use super::screen_activity::{ScreenActivity, ScreenDelta};
 use super::transcript_read::transcript_size;
 use super::types::FleetSessionState;
 
@@ -43,6 +44,19 @@ fn growth_map() -> &'static Mutex<HashMap<String, (u64, i64)>> {
 static AWAITING_BASELINE: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
 fn awaiting_baseline() -> &'static Mutex<HashMap<String, u64>> {
     AWAITING_BASELINE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Per-session "the rendered screen has looked frozen since" timestamp.
+///
+/// One sample only says the last two renders matched, which a healthy session
+/// produces all the time (two renders taken either side of a pause). The
+/// frozen-by-screen verdict therefore needs the silence to PERSIST across
+/// ticks, and this map is that memory. Cleared the instant any evidence is
+/// lost (a moving screen, transcript growth, a state change out of `Running`,
+/// or an unusable sample) so the verdict can never be reached on stale data.
+static SCREEN_SILENT_SINCE: OnceLock<Mutex<HashMap<String, i64>>> = OnceLock::new();
+fn silent_since_map() -> &'static Mutex<HashMap<String, i64>> {
+    SCREEN_SILENT_SINCE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 /// A session that hasn't seen activity in this long is flagged Stale.
@@ -231,6 +245,91 @@ fn is_frozen_mid_run(
         && now - idle_since_ms >= threshold_ms
 }
 
+// ---------------------------------------------------------------------------
+// Screen-movement corroboration (see `super::screen_activity`).
+//
+// Freshness has always been `max(last_grew, last_activity)` — growth alone
+// falsely staled sessions during long tool ops, hooks alone let hung sessions
+// look alive. Screen movement is a THIRD corroborating input, never a
+// replacement: it can veto a `Stale` verdict the flat-log rule would have
+// produced, and it can reach the frozen verdict on its own evidence, but it
+// removes no existing trigger and every rule below degrades to exactly
+// today's behaviour when the evidence is unusable.
+// ---------------------------------------------------------------------------
+
+/// What the screen says about a session, once the caveats are applied.
+/// `None` means "no usable evidence" and every caller must then behave as it
+/// did before this signal existed. Evidence is dropped when:
+///
+/// - nothing ever rendered this session, or only once (the first render has no
+///   predecessor and always reads `Working` — `OutputRing::record_delta`),
+/// - the screen is too small to separate chrome from content
+///   (`ScreenDelta::classifiable`), or
+/// - the sample is older than the window of the rule asking. Renders are a
+///   byproduct of other work, so a session nobody looked at recently carries a
+///   measurement that says nothing about NOW.
+fn usable_activity(delta: Option<ScreenDelta>, now: i64, max_age_ms: i64) -> Option<ScreenActivity> {
+    let d = delta?;
+    if !d.classifiable() || d.at_ms <= 0 || now - d.at_ms > max_age_ms {
+        return None;
+    }
+    Some(d.activity())
+}
+
+/// Corroboration rule 1 — a screen that is demonstrably producing content is
+/// not stale, whatever the transcript says. Suppression only: it can hold a
+/// session in its current state, never move it to one.
+fn screen_vetoes_stale(activity: Option<ScreenActivity>) -> bool {
+    matches!(activity, Some(ScreenActivity::Working))
+}
+
+/// Fold this tick's verdict into the per-session silence clock, returning the
+/// new "silent since" (`None` = no sustained silence to speak of).
+///
+/// Deliberately strict: any of growth, a non-`Running` state, or a sample that
+/// is not a usable `Silent` resets the clock. A session parked in
+/// `AwaitingInput` shows a static screen by definition — letting that
+/// accumulate and then firing the moment it flips to `Running` is exactly the
+/// false positive this reset prevents.
+fn track_silence(
+    prev: Option<i64>,
+    state: FleetSessionState,
+    grew: bool,
+    activity: Option<ScreenActivity>,
+    now: i64,
+) -> Option<i64> {
+    if grew || !matches!(state, FleetSessionState::Running) {
+        return None;
+    }
+    match activity {
+        Some(ScreenActivity::Silent) => Some(prev.unwrap_or(now)),
+        _ => None,
+    }
+}
+
+/// Corroboration rule 2 — the frozen verdict reached from the screen instead
+/// of from the PTY. Additive to [`is_frozen_mid_run`]: that rule catches a
+/// process emitting no bytes at all, this one catches a process still
+/// repainting an unchanged grid while nothing is logged and no hook fires.
+///
+/// Requires the silence to have PERSISTED for the whole threshold (see
+/// [`SCREEN_SILENT_SINCE`]) on top of the same no-growth-and-no-hooks
+/// conjunction the PTY rule uses, so the screen never flags a session the
+/// transcript says is working.
+fn is_frozen_by_screen(
+    state: FleetSessionState,
+    activity: Option<ScreenActivity>,
+    silent_since_ms: Option<i64>,
+    idle_since_ms: i64,
+    now: i64,
+    threshold_ms: i64,
+) -> bool {
+    matches!(state, FleetSessionState::Running)
+        && matches!(activity, Some(ScreenActivity::Silent))
+        && silent_since_ms.is_some_and(|since| now - since >= threshold_ms)
+        && now - idle_since_ms >= threshold_ms
+}
+
 /// True when a session looks like it never attached: still `Spawning`, no
 /// Claude session id bound, and no activity for `idle_ms` past the threshold.
 /// The transcript watcher bumps activity (by cwd, even pre-cc-id) for sessions
@@ -312,8 +411,9 @@ fn tick_once(app: &AppHandle) {
     let mut revived: Vec<String> = Vec::new();
     {
         // Lock the await-baseline map alongside the registry (consistent order:
-        // baseline before registry) so the AwaitingInput revive check is atomic
-        // with the state mutation.
+        // silence clock before baseline before registry) so the AwaitingInput
+        // revive check is atomic with the state mutation.
+        let mut silent = silent_since_map().lock().unwrap_or_else(|e| e.into_inner());
         let mut base = awaiting_baseline().lock().unwrap_or_else(|e| e.into_inner());
         let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
@@ -350,6 +450,31 @@ fn tick_once(app: &AppHandle) {
             // provenance tooltip can show "transcript grew Xs ago".
             if let Some(&g) = last_grew.get(&session.id) {
                 session.last_grew_ms = g;
+            }
+
+            // Screen-movement corroboration. FREE: reads whatever the last
+            // render already measured and never triggers one, so a session
+            // nobody looked at simply has no evidence (`None`) and every rule
+            // below falls back to its screen-free behaviour. Two windows
+            // because the two rules ask different questions of the same
+            // sample — "did content move inside the staleness window" vs "has
+            // the grid been frozen across the stall window".
+            let delta = session
+                .output
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .informative_screen_delta();
+            let screen_stale = usable_activity(delta, now, cutoff_ms);
+            let screen_stall = usable_activity(delta, now, stalled_ms);
+            let silent_since =
+                track_silence(silent.get(&session.id).copied(), session.state, grew, screen_stall, now);
+            match silent_since {
+                Some(since) => {
+                    silent.insert(session.id.clone(), since);
+                }
+                None => {
+                    silent.remove(&session.id);
+                }
             }
 
             // AwaitingInput robustness — revive on growth that happens strictly
@@ -412,6 +537,29 @@ fn tick_once(app: &AppHandle) {
                     )
                 });
                 newly_stale.push(session.id.clone());
+                silent.remove(&session.id);
+                continue;
+            }
+
+            // Same verdict reached from the screen: bytes are still arriving
+            // (so the PTY rule above stayed quiet) but the rendered grid has
+            // not moved for the whole stall window and nothing was logged.
+            // That is the "alive-looking but stuck" case byte-presence can
+            // never see.
+            if is_frozen_by_screen(session.state, screen_stall, silent_since, idle_since, now, stalled_ms) {
+                session.state = FleetSessionState::Stale;
+                session.state_reason = Some(if stalled_secs >= 60 {
+                    format!(
+                        "The screen has not changed for {} min and nothing was logged. Claude looks stuck mid-run; safe to kill, or wake it with a prompt.",
+                        stalled_secs / 60
+                    )
+                } else {
+                    format!(
+                        "The screen has not changed for {stalled_secs}s and nothing was logged. Claude looks stuck mid-run; safe to kill, or wake it with a prompt."
+                    )
+                });
+                newly_stale.push(session.id.clone());
+                silent.remove(&session.id);
                 continue;
             }
 
@@ -421,6 +569,15 @@ fn tick_once(app: &AppHandle) {
                     session.state_reason = Some("Transcript growing — session is active".into());
                     revived.push(session.id.clone());
                 }
+                // Corroboration veto: the transcript is flat, but the screen
+                // is demonstrably producing content (more than the status
+                // area moved, on a screen big enough to tell, within the
+                // staleness window). Leave the session alone — a long tool op
+                // that streams to the console without flushing JSONL is the
+                // exact case the flat-log cutoff used to mislabel. Bounded by
+                // the sample's freshness, so a screen that stops moving hands
+                // the decision straight back to the flat-log rule.
+                Some(FleetSessionState::Stale) if screen_vetoes_stale(screen_stale) => {}
                 Some(FleetSessionState::Stale) => {
                     session.state = FleetSessionState::Stale;
                     session.state_reason = Some(if stale_secs >= 60 {
@@ -436,6 +593,9 @@ fn tick_once(app: &AppHandle) {
         // Drop baselines for sessions that left the registry entirely (the
         // in-loop removals already cover non-AwaitingInput live sessions).
         base.retain(|k, _| map.contains_key(k));
+        // Same for the silence clock — a session that left the registry must
+        // not leave a clock behind for a future id to inherit.
+        silent.retain(|k, _| map.contains_key(k));
     }
 
     // Emit state changes outside the lock.
@@ -1144,6 +1304,107 @@ mod tests {
         assert!(!is_frozen_mid_run(AwaitingInput, SILENT, SILENT, NOW, STALL_MS));
         assert!(!is_frozen_mid_run(Spawning, SILENT, SILENT, NOW, STALL_MS));
         assert!(!is_frozen_mid_run(Stale, SILENT, SILENT, NOW, STALL_MS));
+    }
+
+    // ---- screen-movement corroboration ------------------------------------
+
+    /// A delta measured `age_ms` before NOW.
+    fn screen(changed: usize, total: usize, age_ms: i64) -> Option<ScreenDelta> {
+        Some(ScreenDelta { changed_lines: changed, total_lines: total, at_ms: NOW - age_ms })
+    }
+
+    #[test]
+    fn no_delta_means_no_evidence_and_todays_behaviour() {
+        // The fallback that makes the whole feature additive: nothing rendered
+        // → no verdict → the flat-log rule and the PTY frozen rule decide
+        // exactly as they did before.
+        assert_eq!(usable_activity(None, NOW, CUTOFF), None);
+        assert!(!screen_vetoes_stale(None));
+        assert!(!is_frozen_by_screen(FleetSessionState::Running, None, Some(0), OLD, NOW, STALL_MS));
+        // And the transition itself is untouched.
+        assert_eq!(
+            staleness_transition(FleetSessionState::Running, false, OLD, NOW, CUTOFF),
+            Some(FleetSessionState::Stale),
+        );
+    }
+
+    #[test]
+    fn unusable_samples_are_discarded() {
+        // Too small to classify — `Working` there is a fail-safe, not evidence.
+        assert_eq!(usable_activity(screen(1, 4, 0), NOW, CUTOFF), None);
+        assert_eq!(usable_activity(screen(0, 3, 0), NOW, CUTOFF), None);
+        // Older than the window asking → says nothing about now.
+        assert_eq!(usable_activity(screen(9, 24, CUTOFF + 1), NOW, CUTOFF), None);
+        // Fresh + classifiable → a real verdict.
+        assert_eq!(usable_activity(screen(9, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Working));
+        assert_eq!(usable_activity(screen(0, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Silent));
+        assert_eq!(usable_activity(screen(1, 24, 1_000), NOW, CUTOFF), Some(ScreenActivity::Cosmetic));
+    }
+
+    #[test]
+    fn a_working_screen_vetoes_the_flat_log_stale_verdict() {
+        // The flat-log rule still SAYS stale...
+        assert_eq!(
+            staleness_transition(FleetSessionState::Running, false, OLD, NOW, CUTOFF),
+            Some(FleetSessionState::Stale),
+        );
+        // ...but content is visibly moving, so the tick suppresses it.
+        assert!(screen_vetoes_stale(usable_activity(screen(9, 24, 1_000), NOW, CUTOFF)));
+        // A spinner is not content, and neither is a frozen grid.
+        assert!(!screen_vetoes_stale(usable_activity(screen(1, 24, 1_000), NOW, CUTOFF)));
+        assert!(!screen_vetoes_stale(usable_activity(screen(0, 24, 1_000), NOW, CUTOFF)));
+        // A tiny screen must never become a "never stale" hole.
+        assert!(!screen_vetoes_stale(usable_activity(screen(1, 3, 1_000), NOW, CUTOFF)));
+    }
+
+    #[test]
+    fn silence_clock_starts_holds_and_resets() {
+        use FleetSessionState::*;
+        let silent = Some(ScreenActivity::Silent);
+        // Starts at the first silent observation, then holds that instant.
+        assert_eq!(track_silence(None, Running, false, silent, NOW), Some(NOW));
+        assert_eq!(track_silence(Some(OLD), Running, false, silent, NOW), Some(OLD));
+        // Any evidence of life clears it.
+        assert_eq!(track_silence(Some(OLD), Running, true, silent, NOW), None);
+        assert_eq!(
+            track_silence(Some(OLD), Running, false, Some(ScreenActivity::Cosmetic), NOW),
+            None,
+        );
+        assert_eq!(track_silence(Some(OLD), Running, false, None, NOW), None);
+        // A parked session shows a static screen by definition — never let
+        // that accumulate and fire when it flips back to Running.
+        assert_eq!(track_silence(Some(OLD), AwaitingInput, false, silent, NOW), None);
+        assert_eq!(track_silence(Some(OLD), Idle, false, silent, NOW), None);
+    }
+
+    #[test]
+    fn a_sustained_silent_screen_corroborates_frozen() {
+        use FleetSessionState::*;
+        let silent = Some(ScreenActivity::Silent);
+        let since = NOW - STALL_MS; // silent for the whole stall window
+        // Bytes are still arriving (the PTY rule stays quiet), nothing logged,
+        // grid frozen throughout → stuck.
+        assert!(!is_frozen_mid_run(Running, EMITTING, SILENT, NOW, STALL_MS));
+        assert!(is_frozen_by_screen(Running, silent, Some(since), SILENT, NOW, STALL_MS));
+    }
+
+    #[test]
+    fn screen_frozen_verdict_needs_every_condition() {
+        use FleetSessionState::*;
+        let silent = Some(ScreenActivity::Silent);
+        let since = NOW - STALL_MS;
+        // One tick of silence is not sustained silence.
+        assert!(!is_frozen_by_screen(Running, silent, Some(NOW), SILENT, NOW, STALL_MS));
+        // No clock at all (evidence was lost this tick).
+        assert!(!is_frozen_by_screen(Running, silent, None, SILENT, NOW, STALL_MS));
+        // Recent growth or a hook → working quietly, never flagged.
+        assert!(!is_frozen_by_screen(Running, silent, Some(since), NOW - 10_000, NOW, STALL_MS));
+        // The screen is moving.
+        assert!(!is_frozen_by_screen(Running, Some(ScreenActivity::Cosmetic), Some(since), SILENT, NOW, STALL_MS));
+        // Only Running sessions; the rest are governed by the other rules.
+        for state in [Idle, AwaitingInput, Spawning, Stale, Finished, Exited, Hibernated] {
+            assert!(!is_frozen_by_screen(state, silent, Some(since), SILENT, NOW, STALL_MS), "{state:?}");
+        }
     }
 
     const ATTACH_MS: i64 = NEVER_ATTACHED_SECS * 1000;
