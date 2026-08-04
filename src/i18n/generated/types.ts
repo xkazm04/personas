@@ -19635,5 +19635,14 @@ export type Translations = {
     duality_conflict: string;
     duality_conflict_names: string;
     duality_advisory: string;
+    run_milestone: string;
+    run_milestone_tooltip: string;
+    run_ingest: string;
+    run_ingest_tooltip: string;
+    run_ingest_title: string;
+    run_ingest_counts: string;
+    run_proposed_title: string;
+    run_proposed_hint: string;
+    run_asked_title: string;
   };
 };

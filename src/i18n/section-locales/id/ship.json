@@ -137,5 +137,14 @@
   "note_placeholder": "Mengapa ini termasuk dalam cakupan ini?",
   "rating_aria": "Nilai {name} {value} dari 5",
   "rating_unrated": "Belum dinilai",
-  "rating_value": "{value} dari 5"
+  "rating_value": "{value} dari 5",
+  "run_asked_title": "Apa yang ditanyakan proses ini",
+  "run_ingest": "Serap Proses",
+  "run_ingest_counts": "{updated} item diperbarui · {ratings} penilaian · {descriptions} deskripsi · {reported} dilaporkan tidak berubah",
+  "run_ingest_title": "Proses diserap",
+  "run_ingest_tooltip": "Membaca proses yang baru selesai dan menerapkan catatan serta penilaian per item. Ditolak, bukan diterapkan sebagian, jika hasilnya tidak valid.",
+  "run_milestone": "Jalankan Milestone",
+  "run_milestone_tooltip": "Buka sesi Claude Code yang menjalankan potongan ini dengan /ship-milestone, lalu bawa kembali hasilnya dengan Serap Proses.",
+  "run_proposed_hint": "Proses ini menyarankan item-item berikut; tidak ada yang ditambahkan secara otomatis. Tambahkan sendiri dari composer jika Anda setuju.",
+  "run_proposed_title": "{count} penambahan yang diusulkan"
 }

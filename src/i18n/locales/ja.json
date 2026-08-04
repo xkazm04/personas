@@ -19628,6 +19628,15 @@
     "note_placeholder": "なぜこれが対象に含まれているのですか?",
     "rating_aria": "{name}を5段階中{value}で評価",
     "rating_unrated": "未評価",
-    "rating_value": "5段階中{value}"
+    "rating_value": "5段階中{value}",
+    "run_asked_title": "ランが尋ねた内容",
+    "run_ingest": "ランを取り込む",
+    "run_ingest_counts": "{updated} 件のアイテムを更新 · {ratings} 件の評価 · {descriptions} 件の説明 · {reported} 件は変更なしと報告",
+    "run_ingest_title": "ラン取り込み完了",
+    "run_ingest_tooltip": "最新の完了したランを読み込み、アイテムごとのメモと評価を適用します。結果が不正な形式の場合は、一部だけ適用せず拒否されます。",
+    "run_milestone": "マイルストーンを実行",
+    "run_milestone_tooltip": "/ship-milestone でこのカットを実行する Claude Code セッションを開き、完了後に「ランを取り込む」で結果を反映します。",
+    "run_proposed_hint": "ランはこれらを提案するだけで、自動的には何も追加されません。同意する場合はコンポーザーから自分で追加してください。",
+    "run_proposed_title": "{count} 件の追加提案"
   }
 }

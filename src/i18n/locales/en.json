@@ -19628,6 +19628,15 @@
     "duality_unrated": "{count} unrated",
     "duality_conflict": "Your rating and the automated reading point different ways here.",
     "duality_conflict_names": "Disagreement on: {names}",
-    "duality_advisory": "Your ratings are reported here for comparison only. They never change the ship verdict or the progress bar, which derive from the exit criteria."
+    "duality_advisory": "Your ratings are reported here for comparison only. They never change the ship verdict or the progress bar, which derive from the exit criteria.",
+    "run_milestone": "Run milestone",
+    "run_milestone_tooltip": "Open a Claude Code session that executes this cut with /ship-milestone, then bring its result back with Ingest run.",
+    "run_ingest": "Ingest run",
+    "run_ingest_tooltip": "Read the newest finished run and apply its per-item notes and ratings. Refused rather than half-applied if the result is malformed.",
+    "run_ingest_title": "Run ingested",
+    "run_ingest_counts": "{updated} item(s) updated · {ratings} rating(s) · {descriptions} description(s) · {reported} reported unchanged",
+    "run_proposed_title": "{count} proposed addition(s)",
+    "run_proposed_hint": "The run suggests these; nothing was added. Add them yourself from the composer if you agree.",
+    "run_asked_title": "What the run asked"
   }
 }

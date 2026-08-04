@@ -137,5 +137,14 @@
   "note_placeholder": "Tại sao mục này được đưa vào đợt phát hành?",
   "rating_aria": "Đánh giá {name} {value} trên 5",
   "rating_unrated": "Chưa đánh giá",
-  "rating_value": "{value} trên 5"
+  "rating_value": "{value} trên 5",
+  "run_asked_title": "Lượt chạy đã hỏi gì",
+  "run_ingest": "Nạp lượt chạy",
+  "run_ingest_counts": "{updated} mục đã cập nhật · {ratings} đánh giá · {descriptions} mô tả · {reported} được báo cáo không thay đổi",
+  "run_ingest_title": "Đã nạp lượt chạy",
+  "run_ingest_tooltip": "Đọc lượt chạy mới hoàn thành nhất và áp dụng ghi chú cùng đánh giá cho từng mục. Kết quả sẽ bị từ chối thay vì áp dụng nửa vời nếu không hợp lệ.",
+  "run_milestone": "Chạy cột mốc",
+  "run_milestone_tooltip": "Mở một phiên Claude Code thực thi phần cắt này bằng /ship-milestone, sau đó đưa kết quả trở lại bằng Nạp lượt chạy.",
+  "run_proposed_hint": "Lượt chạy đề xuất những mục này; không có gì được thêm tự động. Tự thêm chúng từ trình soạn nếu bạn đồng ý.",
+  "run_proposed_title": "{count} đề xuất bổ sung"
 }

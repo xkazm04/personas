@@ -19,6 +19,7 @@ import type { FactoryL2Data } from '../factoryL2Data';
 import { buildCriterionPrompt, ShipDispatchModal, shipDispatchKey } from './ShipDispatch';
 import { ShipItemAnnotations } from './ShipItemAnnotations';
 import { ShipMilestoneComposer } from './ShipMilestoneComposer';
+import { ShipMilestoneRun } from './ShipMilestoneRun';
 import { ShipDualitySummary, ShipGoalField } from './ShipMilestoneMeta';
 import {
   BUCKET_HUE, CRIT_HUE, bucketLabel, shipVerdict,
@@ -318,6 +319,14 @@ export function ShipPlannerTab({ data }: { data: FactoryL2Data }) {
           {/* Reporting only: the ship button above is gated by `verdict`
               (the criteria registry), never by these counts. */}
           <ShipDualitySummary duality={vm.duality} />
+          {/* Execute the cut as a CLI skill, and ingest what it reports. The
+              two sit together on purpose: the ingest is the only visibility
+              the app gets into a run that happens outside it. */}
+          {editable && (
+            <div className="mt-2">
+              <ShipMilestoneRun milestoneId={vm.id} rootPath={data.project?.root_path ?? null} />
+            </div>
+          )}
         </div>
         {editable && !composing && (
           <span className="ml-auto shrink-0 inline-flex items-center gap-2">

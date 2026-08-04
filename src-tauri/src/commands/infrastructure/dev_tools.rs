@@ -7,6 +7,8 @@ pub mod git_ops;
 pub mod goals;
 pub mod milestones;
 pub mod portfolio;
+/// The `/ship-milestone` skill's one gated door back into the app.
+pub mod ship_ingest;
 mod triage;
 pub mod workspace;
 
@@ -20,6 +22,7 @@ pub use git_ops::*;
 pub use goals::*;
 pub use milestones::*;
 pub use portfolio::*;
+pub use ship_ingest::*;
 
 use crate::db::models::{DevIdea, DevKpi, DevKpiMeasurement, DevPipeline, DevProject, DevScan, DevTask, DevUseCase, TriageRule};
 use crate::db::repos::dev_tools as repo;

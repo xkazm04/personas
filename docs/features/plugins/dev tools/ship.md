@@ -303,3 +303,136 @@ The result is a project whose first deliverable is the Personas onboarding itsel
 - The `SHIP_GOAL_REPORT.md` fallback written by goal assist has no ingestion path; the operator reads it manually.
 - The "errors this week" phrasing in blocker lines and dispatch briefs describes unresolved Sentry issues rather than a strict rolling window.
 - `FactoryShipTab.tsx:5-6` names i18n extraction as the remaining pre-ship work; that extraction has since landed (the `ship` section exists in `en.json` and all 14 locales), so the comment is stale.
+
+## 12. Executing a milestone: `/ship-milestone` and its one gated door
+
+Everything above describes *deciding* a cut. This section is about *executing*
+one, and it is the only place in the Ship layer where work happens outside the
+app.
+
+### The trade the skill makes
+
+A milestone can be executed by an in-app Athena op or by a CLI skill. The skill
+was chosen, and the trade is explicit: a Claude Code session is **invisible to
+the app's progress surface and writes no audit ledger**. The compensating
+control is that the skill reports back through a single validated command.
+Without the ingest, a milestone executes invisibly — that is the entire risk of
+running it this way, and the reason the two controls sit side by side in the UI.
+
+### Dispatch
+
+The Planner header carries **Run milestone** and **Ingest run**
+(`ShipMilestoneRun.tsx`), shown while the milestone is not yet shipped.
+
+Run milestone spawns a Fleet session in the project root with **exactly one
+positional token**, `/ship-milestone <milestoneId>`. One token is not a style
+preference: the spawner appends `--mcp-config` last, and anything placed after
+that flag is swallowed by it. The prompt is built with `skillCommand()` from
+`passport/improve/skillsWorkbenchData.ts`, the same helper the Skills workbench
+uses.
+
+`ship-milestone` is an app-owned **system skill** — it is listed in
+`SYSTEM_SKILLS` (`skill_files.rs`) and mirrored into the installer bundle by
+`scripts/sync-system-skills.mjs`, exactly as `scan-sweep` is, so a fresh clone
+or a packaged install can dispatch it without the operator having a global copy.
+
+### What the skill does
+
+Its phases are documented in `.claude/skills/ship-milestone/skill.md`:
+
+1. Register in the active-runs ledger; take a worktree for multi-file work.
+2. **Resolve the milestone** — management HTTP API on `127.0.0.1:9420` when
+   reachable, otherwise a `brief.json` in the run dir. The same fallback
+   `buildGoalAssistPrompt` already relies on (§8). Neither available means stop,
+   not guess.
+3. **Interview the operator** in batched select-style questions — one batch for
+   the target state and out-of-scope line, one batch covering every core member
+   missing a `description`, each with inferred options plus free text. This is
+   the session asking directly in its terminal; it is deliberately **not** the
+   app's structured build-session elicitation (where the CLI emits a clarifying
+   question, the runner persists it and blocks on a channel, and
+   `answer_build_question` resumes it). Nothing is persisted by the runner and
+   nothing blocks on the app, which is why the questions and answers are echoed
+   back in the result.
+4. **Compute the gaps from the duality** (§ the duality summary, `shipDuality.ts`).
+   A member is a gap when **any** of: `ready === false` (automation-blocked),
+   `rating === null` (unrated), or `rating <= 2` (rated low). Disagreements rank
+   first, then automation-blocked, then unrated. Members that are ready and
+   agree are not gaps.
+5. **Dispatch at most 8 gap-workers**, mirroring `FLEET_PLAN_MAX_ROWS` — the
+   same ceiling `SHIP_MILESTONE_MAX_ROWS` adopts, for the same reviewability
+   reason. Workers run the repo's own checks and leave the tree clean on their
+   branch, per the night-shift worker discipline.
+6. **Propose, never widen.** Work the run discovers that the milestone needs
+   goes into `proposed_additions` and stops there.
+7. Write the result and stop. The skill never marks a milestone shipped —
+   certification is the operator's, gated on the exit criteria (§5).
+
+### `result.json`
+
+`<repo>/.personas/ship-milestone/runs/<run-id>/result.json`. `.personas/` is the
+app↔skill handshake dir and is already gitignored in managed repos.
+
+```jsonc
+{
+  "schema_version": 1,
+  "milestone_id": "<id>",
+  "items": [                         // ≤100, every id already a member
+    { "item_kind": "use_case", "item_id": "<id>",
+      "changed": "what the run did for this member",
+      "suggested_rating": 4,                       // optional, 1..5
+      "suggested_description": "why it is in the cut" }   // optional, ≤1200
+  ],
+  "proposed_additions": [            // ≤8, surfaced only
+    { "item_kind": "goal", "name": "…", "rationale": "…" }
+  ],
+  "asked": [ { "question": "…", "answer": "…" } ],       // ≤20
+  "summary": "what advanced, what is blocked, what was not reached"
+}
+```
+
+Members are `use_case` or `goal` only. **KPIs are not milestone items** — they
+are the outcome layer above a milestone (§1), and the door refuses `"kpi"`.
+
+### The door
+
+`dev_tools_ship_milestone_ingest(milestoneId, runDir?)` —
+`src-tauri/src/commands/infrastructure/dev_tools/ship_ingest.rs`, modelled on
+`dev_tools_workspace_knowledge_ingest` and `dev_tools_kpi_sim_ingest`.
+
+| Guard | Behaviour |
+| --- | --- |
+| Path confinement | `runDir` is canonicalized and must sit under `<root>/.personas/ship-milestone/runs/`; omitted means the newest un-ingested run |
+| Size cap | `result.json` over 1 MiB is refused (`MAX_RESULT_BYTES`) |
+| Version check | `schema_version` must equal `SHIP_MILESTONE_RESULT_VERSION` (1); missing or unknown is refused, not best-effort parsed |
+| Identity | a `milestone_id` naming a different milestone is refused |
+| Membership | an `items` row that is not already a member is refused — it can never insert one |
+| Range / kind | `suggested_rating` outside 1..5, or an `item_kind` other than `use_case` / `goal`, is refused |
+| Caps | >100 item outcomes, >8 proposed additions |
+| Idempotency | a run dir carrying `ingested.json` is refused on a second pass; the marker is written after a successful ingest |
+
+Unlike the harvest door, which skips bad rows and reports them, this one
+**validates the whole file before writing anything**. A harvest row is an
+independent proposal; a milestone result is a report on a cut, and half of it
+applied is a lie about what the run did. A refused ingest writes nothing and no
+marker, so a corrected `result.json` can simply be re-ingested.
+
+Every accepted row is written through the ordinary `repo::set_milestone_item`
+upsert, replaying **the member's existing bucket** — the door can annotate a cut
+but never reshape one, and a pre-cut member is never re-flagged as creep.
+
+Proposed additions come back in `ShipMilestoneIngestSummary` and are rendered as
+proposals in the Planner. Nothing adds them; widening the cut stays an operator
+decision made in the composer.
+
+### Where this code lives
+
+| File | Responsibility |
+| --- | --- |
+| `.claude/skills/ship-milestone/skill.md` | The skill: phases, gap rule, interview shape, result contract |
+| `.../ship/ShipMilestoneRun.tsx` | Run + Ingest controls and the inline result panel |
+| `src/api/devTools/milestones.ts` → `shipMilestoneIngest` | IPC wrapper |
+| `src-tauri/src/commands/infrastructure/dev_tools/ship_ingest.rs` | The door: validation, path confinement, idempotency, per-member writes |
+| `src/lib/bindings/ShipMilestoneIngestSummary.ts`, `ShipMilestoneProposedAddition.ts` | ts-rs generated result types |
+| `src-tauri/src/commands/infrastructure/skill_files.rs` → `SYSTEM_SKILLS` | System-skill allowlist |
+| `scripts/sync-system-skills.mjs` | Mirrors the skill into the installer bundle |

@@ -137,5 +137,14 @@
   "note_placeholder": "Warum ist das im Umfang enthalten?",
   "rating_aria": "{name} mit {value} von 5 bewerten",
   "rating_unrated": "Unbewertet",
-  "rating_value": "{value} von 5"
+  "rating_value": "{value} von 5",
+  "run_asked_title": "Wonach der Lauf gefragt hat",
+  "run_ingest": "Lauf übernehmen",
+  "run_ingest_counts": "{updated} Element(e) aktualisiert · {ratings} Bewertung(en) · {descriptions} Beschreibung(en) · {reported} unverändert gemeldet",
+  "run_ingest_title": "Lauf übernommen",
+  "run_ingest_tooltip": "Liest den zuletzt abgeschlossenen Lauf und wendet dessen Notizen und Bewertungen pro Element an. Bei einem fehlerhaften Ergebnis wird es abgelehnt, statt nur teilweise angewendet zu werden.",
+  "run_milestone": "Meilenstein starten",
+  "run_milestone_tooltip": "Öffnet eine Claude Code Sitzung, die diesen Ausschnitt mit /ship-milestone ausführt, und übernimmt das Ergebnis anschließend mit Lauf übernehmen.",
+  "run_proposed_hint": "Der Lauf schlägt diese vor; es wurde nichts automatisch hinzugefügt. Füge sie bei Zustimmung selbst über den Composer hinzu.",
+  "run_proposed_title": "{count} vorgeschlagene Ergänzung(en)"
 }

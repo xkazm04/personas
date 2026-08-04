@@ -137,5 +137,14 @@
   "note_placeholder": "यह इस दायरे में क्यों है?",
   "rating_aria": "{name} को 5 में से {value} रेट करें",
   "rating_unrated": "अनरेटेड",
-  "rating_value": "5 में से {value}"
+  "rating_value": "5 में से {value}",
+  "run_asked_title": "रन ने क्या पूछा",
+  "run_ingest": "रन इनजेस्ट करें",
+  "run_ingest_counts": "{updated} आइटम अपडेट किए गए · {ratings} रेटिंग · {descriptions} विवरण · {reported} बिना बदलाव के रिपोर्ट किए गए",
+  "run_ingest_title": "रन इनजेस्ट किया गया",
+  "run_ingest_tooltip": "नवीनतम पूर्ण हुए रन को पढ़ें और उसके प्रति-आइटम नोट्स और रेटिंग लागू करें। यदि परिणाम त्रुटिपूर्ण है तो उसे आधा-अधूरा लागू करने के बजाय अस्वीकार कर दिया जाता है।",
+  "run_milestone": "माइलस्टोन रन करें",
+  "run_milestone_tooltip": "एक Claude Code सत्र खोलें जो /ship-milestone के साथ यह कट निष्पादित करता है, फिर रन इनजेस्ट के साथ उसका परिणाम वापस लाएं।",
+  "run_proposed_hint": "रन इनका सुझाव देता है; कुछ भी अपने आप नहीं जोड़ा गया। यदि आप सहमत हैं तो इन्हें कंपोज़र से स्वयं जोड़ें।",
+  "run_proposed_title": "{count} प्रस्तावित जोड़"
 }

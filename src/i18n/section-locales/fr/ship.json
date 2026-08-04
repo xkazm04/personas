@@ -137,5 +137,14 @@
   "note_placeholder": "Pourquoi est-ce inclus ?",
   "rating_aria": "Noter {name} {value} sur 5",
   "rating_unrated": "Non évalué",
-  "rating_value": "{value} sur 5"
+  "rating_value": "{value} sur 5",
+  "run_asked_title": "Ce que l'exécution a demandé",
+  "run_ingest": "Intégrer l'exécution",
+  "run_ingest_counts": "{updated} élément(s) mis à jour · {ratings} note(s) · {descriptions} description(s) · {reported} signalé(s) sans changement",
+  "run_ingest_title": "Exécution intégrée",
+  "run_ingest_tooltip": "Lit la dernière exécution terminée et applique ses notes et évaluations par élément. Le résultat est refusé plutôt qu'appliqué à moitié s'il est mal formé.",
+  "run_milestone": "Lancer le jalon",
+  "run_milestone_tooltip": "Ouvre une session Claude Code qui exécute cette sélection avec /ship-milestone, puis rapporte son résultat avec Intégrer l'exécution.",
+  "run_proposed_hint": "L'exécution suggère ces éléments ; rien n'a été ajouté automatiquement. Ajoutez-les vous-même depuis le compositeur si vous êtes d'accord.",
+  "run_proposed_title": "{count} ajout(s) proposé(s)"
 }

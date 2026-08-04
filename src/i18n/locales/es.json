@@ -19628,6 +19628,15 @@
     "note_placeholder": "¿Por qué está esto en el alcance?",
     "rating_aria": "Valorar {name} con {value} de 5",
     "rating_unrated": "Sin valorar",
-    "rating_value": "{value} de 5"
+    "rating_value": "{value} de 5",
+    "run_asked_title": "Lo que preguntó la ejecución",
+    "run_ingest": "Incorporar ejecución",
+    "run_ingest_counts": "{updated} elemento(s) actualizado(s) · {ratings} valoración(es) · {descriptions} descripción(es) · {reported} reportado(s) sin cambios",
+    "run_ingest_title": "Ejecución incorporada",
+    "run_ingest_tooltip": "Lee la ejecución finalizada más reciente y aplica sus notas y valoraciones por elemento. Se rechaza en lugar de aplicarse a medias si el resultado no es válido.",
+    "run_milestone": "Ejecutar hito",
+    "run_milestone_tooltip": "Abre una sesión de Claude Code que ejecuta este recorte con /ship-milestone y luego trae su resultado de vuelta con Incorporar ejecución.",
+    "run_proposed_hint": "La ejecución sugiere estos; no se añadió nada automáticamente. Agrégalos tú mismo desde el compositor si estás de acuerdo.",
+    "run_proposed_title": "{count} adición(es) propuesta(s)"
   }
 }

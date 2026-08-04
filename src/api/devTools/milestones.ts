@@ -77,6 +77,34 @@ export async function setMilestoneItem(
   });
 }
 
+export type { ShipMilestoneIngestSummary } from "@/lib/bindings/ShipMilestoneIngestSummary";
+export type { ShipMilestoneProposedAddition } from "@/lib/bindings/ShipMilestoneProposedAddition";
+import type { ShipMilestoneIngestSummary } from "@/lib/bindings/ShipMilestoneIngestSummary";
+
+/**
+ * The ONE gated door a `/ship-milestone` skill run comes back through.
+ *
+ * Reads `<repo>/.personas/ship-milestone/runs/<id>/result.json` (newest
+ * un-ingested run when `runDir` is omitted) and applies its per-member
+ * suggestions through the ordinary `set_milestone_item` upsert, replaying each
+ * member's existing bucket. Path-confined, size-capped, version-checked and
+ * idempotent; it validates the whole file before writing anything, so a
+ * malformed run is refused rather than partly applied.
+ *
+ * Proposed additions come back in the summary and are NEVER applied — widening
+ * a cut is an operator decision made here in the Ship tab.
+ */
+export async function shipMilestoneIngest(
+  milestoneId: string,
+  runDir?: string,
+): Promise<ShipMilestoneIngestSummary> {
+  return invoke<ShipMilestoneIngestSummary>(
+    "dev_tools_ship_milestone_ingest",
+    { milestoneId, runDir: runDir ?? null },
+    { timeoutMs: 60_000 },
+  );
+}
+
 export async function removeMilestoneItem(
   milestoneId: string,
   itemKind: MilestoneItemKind,

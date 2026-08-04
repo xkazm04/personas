@@ -137,5 +137,14 @@
   "note_placeholder": "为什么这一项被列入此次发布?",
   "rating_aria": "为{name}评分，满分5分中的{value}分",
   "rating_unrated": "未评分",
-  "rating_value": "{value} / 5"
+  "rating_value": "{value} / 5",
+  "run_asked_title": "此次运行询问了什么",
+  "run_ingest": "导入运行结果",
+  "run_ingest_counts": "已更新 {updated} 项 · {ratings} 条评分 · {descriptions} 条描述 · {reported} 项报告为无变化",
+  "run_ingest_title": "运行结果已导入",
+  "run_ingest_tooltip": "读取最新完成的运行,并应用其逐项备注和评分。如果结果格式有误,将被拒绝而非部分应用。",
+  "run_milestone": "运行里程碑",
+  "run_milestone_tooltip": "打开一个 Claude Code 会话,通过 /ship-milestone 执行此次筛选,完成后再用“导入运行结果”取回其结果。",
+  "run_proposed_hint": "运行会建议这些内容,但不会自动添加任何内容。如果同意,请自行从编辑器中添加。",
+  "run_proposed_title": "{count} 项建议添加内容"
 }

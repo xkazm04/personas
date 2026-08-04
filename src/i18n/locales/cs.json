@@ -19628,6 +19628,15 @@
     "note_placeholder": "Proč je toto součástí výběru?",
     "rating_aria": "Ohodnoťte {name} známkou {value} z 5",
     "rating_unrated": "Nehodnoceno",
-    "rating_value": "{value} z 5"
+    "rating_value": "{value} z 5",
+    "run_asked_title": "Co běh požadoval",
+    "run_ingest": "Zpracovat běh",
+    "run_ingest_counts": "{updated} položek aktualizováno · {ratings} hodnocení · {descriptions} popisů · {reported} nahlášeno beze změny",
+    "run_ingest_title": "Běh zpracován",
+    "run_ingest_tooltip": "Načte nejnovější dokončený běh a použije jeho poznámky a hodnocení pro jednotlivé položky. Pokud je výsledek chybný, běh se odmítne, místo aby se použil napůl.",
+    "run_milestone": "Spustit milník",
+    "run_milestone_tooltip": "Otevře relaci Claude Code, která provede tento výřez pomocí /ship-milestone, a poté jeho výsledek vrátí zpět pomocí Zpracovat běh.",
+    "run_proposed_hint": "Běh tyto položky navrhuje; nic nebylo přidáno automaticky. Pokud souhlasíte, přidejte je sami z editoru.",
+    "run_proposed_title": "{count} navržených doplnění"
   }
 }
