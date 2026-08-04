@@ -73,33 +73,40 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
       {/* Time axis header */}
       <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
-        <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
-          <div className="typo-code text-foreground uppercase tracking-wider">
-            {e.span}
-          </div>
-          <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
-            <span>{e.zero_ms}</span>
-            <span>{formatDuration(totalMs)}</span>
+        {/* The span grid has a ~400px intrinsic minimum (two minmax(200px,...)
+            columns). Without a horizontal scroller a narrow window crushes the
+            name column instead of letting the user pan the waterfall. */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[420px]">
+            <div className="grid grid-cols-[minmax(200px,1fr)_minmax(200px,2fr)] gap-2 px-2 py-1.5 border-b border-primary/10 bg-secondary/40">
+              <div className="typo-code text-foreground uppercase tracking-wider">
+                {e.span}
+              </div>
+              <div className="flex justify-between typo-code text-foreground uppercase tracking-wider">
+                <span>{e.zero_ms}</span>
+                <span>{formatDuration(totalMs)}</span>
+              </div>
+            </div>
+
+            {/* Span rows */}
+            <ScrollShadowContainer className="max-h-[500px] overflow-y-auto" wrapperClassName="relative">
+              {visibleNodes.map((node) => (
+                <div className="animate-fade-slide-in"
+                  key={node.span.span_id}
+                  style={{ contentVisibility: 'auto', containIntrinsicSize: '0 32px' }}
+                >
+                  <SpanRow
+                    node={node}
+                    totalMs={totalMs}
+                    expanded={!collapsedSpans.has(node.span.span_id)}
+                    onToggle={toggleSpan}
+                    hasChildren={childrenMap.has(node.span.span_id)}
+                  />
+                </div>
+              ))}
+            </ScrollShadowContainer>
           </div>
         </div>
-
-        {/* Span rows */}
-        <ScrollShadowContainer className="max-h-[500px] overflow-y-auto" wrapperClassName="relative">
-          {visibleNodes.map((node) => (
-              <div className="animate-fade-slide-in"
-                key={node.span.span_id}
-                style={{ contentVisibility: 'auto', containIntrinsicSize: '0 32px' }}
-              >
-                <SpanRow
-                  node={node}
-                  totalMs={totalMs}
-                  expanded={!collapsedSpans.has(node.span.span_id)}
-                  onToggle={toggleSpan}
-                  hasChildren={childrenMap.has(node.span.span_id)}
-                />
-              </div>
-            ))}
-        </ScrollShadowContainer>
       </div>
 
       {/* Error details */}
