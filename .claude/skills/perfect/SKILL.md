@@ -87,6 +87,12 @@ Every invocation starts the same way; the vault decides which phase runs.
 ### Phase 0 — Recall & register
 1. Read `Perfect.md` (+ last session's `next:` pointer). If missing → run **init** (below).
 2. Read `context-map.json`; diff against `contexts/*` — new contexts get notes + a queue slot, removed ones get archived (`status: retired` in frontmatter).
+   **First verify the map's PROVENANCE and say which source you chose and why** — this file is not automatically yours:
+   ```bash
+   node -e 'const m=require("./context-map.json");console.log(JSON.stringify(m.project||{}))'
+   # this checkout = root C:\Users\mkdol\dolla\personas · app project id 07fe9de7-ef68-4ce6-a78e-551c09acbdce
+   ```
+   As of 2026-08-04 it prints `root: C:\Users\kazda\kiro\personas`, `id: b0c1541f-…` — **a different machine's map** (769 contexts / 16 groups), while the local app DB holds **49 contexts / 8 groups** from a 2026-06-15 scan. All 4,137 of the foreign map's file refs resolve here, so it is a valid and far finer map of this source: **use it for the queue, and use the DB's 49 names for anything the app anchors to** (see § App context coverage). Shape is NOT provenance — the file passes every `version: 2` / no-`$schema` test and is still foreign.
 3. Repo rituals: read `.claude/active-runs.md`, surface overlaps, append this session's entry. Scan MEMORY.md signals that veto directions (e.g. "Langfuse REMOVED — don't re-suggest").
 4. Announce the resumption point in one sentence, then go where the state machine points: pool < 10 → **Propose**; pool ≥ 10 (or user said `build`) → **Build**.
 
@@ -123,9 +129,26 @@ Loop while `pool < 10` and the user hasn't said stop:
 2. **Worktree per builder** — prepared by the Director, NOT via Agent-tool isolation (those worktrees lack `node_modules`):
    ```bash
    git worktree add .claude/worktrees/perfect-<ctx> -b worktree-perfect-<ctx>
-   cmd //c mklink //J ".claude\\worktrees\\perfect-<ctx>\\node_modules" "..\\..\\..\\node_modules"   # junction, NOT copy
-   # Builders run Rust checks with the shared target: CARGO_TARGET_DIR=<main>/src-tauri/target cargo check / cargo test --lib
    ```
+   Then link `node_modules` **from PowerShell with ABSOLUTE paths** (junction, NOT copy):
+   ```powershell
+   $root = "<abs repo root>"; $link = "$root\.claude\worktrees\perfect-<ctx>\node_modules"
+   if (Test-Path $link) { Remove-Item $link -Force -Recurse -Confirm:$false }
+   New-Item -ItemType Junction -Path $link -Target "$root\node_modules" | Out-Null
+   Test-Path "$link\.bin\tsc"    # MUST print True before you brief anyone
+   ```
+   **Do NOT use `cmd //c mklink //J … "..\..\..\node_modules"`** (the recipe this skill shipped
+   until 2026-08-04). `mklink` resolves a RELATIVE target against the **current** directory, not
+   the link's — run from the repo root it silently points at `C:\Users\node_modules` and still
+   prints "Junction created". The failure surfaces much later as a builder that cannot find
+   `tsc`. Retrying the same command with an absolute target then fails with "The system cannot
+   find the path specified". PowerShell's `New-Item -ItemType Junction` is the form that works.
+   **"Junction created" is not evidence — the `Test-Path …\.bin\tsc` assertion is.**
+
+   Builders run Rust checks against the shared target dir:
+   `CARGO_TARGET_DIR=<main>/src-tauri/target cargo check / cargo test --lib`.
+   Write that path with **forward slashes** — Bash mangles the backslash form into a literal
+   `Usersmkdol…` directory inside the worktree.
 3. **Brief** each builder (see template below); launch with `model: "opus"`, `subagent_type: "general-purpose"`, all briefs in one message so they run concurrently. **Brief quality bar:** every brief lists the exact repo gates the builder must pass before reporting done — `npx tsc --noEmit`, `npm run lint` (no new warnings in touched files), targeted vitest, `npm run check:i18n:strict` if any string/locale touched, `cargo test export_bindings` + commit `src/lib/bindings/` if any Rust struct touched. Director review time is for judgment, not gate failures.
 4. **Mid-flight decisions**: a builder returning `DECISION NEEDED: …` gets an answer from the Director via `SendMessage` — product calls, trade-offs, and scope cuts are the Director's alone. A builder that stops without its final report gets one `SendMessage` nudge.
    **Builder-death recovery (learned round 1 — session limits WILL kill builders):** the instant a builder dies, `git add -A && git commit --no-verify` a `wip(…)` snapshot **inside its worktree** (isolated tree — add-all is safe there; never-lose-work beats commit hygiene). Then the Director either finishes the work inline (review the WIP diff, complete gaps, split into per-direction commits along file boundaries — same-file hunks may share a commit if the message says so) or re-briefs a fresh builder after the limit resets with "continue from the WIP commit".
@@ -228,7 +251,13 @@ This skill declares `contexts: tracked` — the Personas app measures per-contex
 {"type":"node","kind":"progress","title":"<=200 chars: what you did in this context","body":"optional detail","context":"<exact context name from .claude/codebase-context.md>","skill":"perfect"}
 ```
 
-**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use the **product-level context names in `.claude/codebase-context.md`** (49 names under 8 groups) — the same names as this loop's own queue in `Perfect.md`. Do NOT use repo-root `context-map.json`: it is a stale (2026-07-10) Vibeman auto-map with 236 mechanical names like `tauri:engine [3/10]`, none of which the app knows. Perfect.md's own 2026-07-14 remap note already records this divergence for the queue; it applies to the outbox too.
+**Which name — this is the part that silently fails.** The ingest anchors a node by matching `context` against the names the app actually knows, case-insensitively. A name it does not recognize is NOT an error: the node is stored with a null context and simply never counts toward coverage. Use the **product-level context names the local app DB actually holds** — 49 names under 8 groups, listed in `.claude/codebase-context.md`.
+
+**Do NOT source outbox names from repo-root `context-map.json`.** Its contents have changed twice and the reason to distrust it has changed with them, so check provenance rather than remembering a shape:
+- Until ~2026-07 it was a Vibeman auto-map (`$schema: vibeman.dev`, 236 mechanical names like `tauri:engine [3/10]`).
+- As of 2026-08-04 it is **769 contexts / 16 groups in perfect app-export shape** (`version: 2` integer, no `$schema`, `generator: personas-context-scan`) whose `project.root` is `C:\Users\kazda\kiro\personas` — **a different machine**. It passes every shape test and is still not this app's map.
+
+Either way its names anchor to nothing locally. Verify with the `project.root`/`project.id` check in Phase 0 step 2 before trusting the file for anything the app reads. The 769-map is fine for the loop's own queue (its file refs all resolve here); it is not fine for the outbox.
 
 Always set both `"skill":"perfect"` and `"context":"<name>"` — together they drive the per-skill context-coverage % (last 30 days). Skip silently when not Personas-managed.
 
