@@ -1,7 +1,8 @@
 import type { PersonaExecution } from '@/lib/types/types';
 import { formatDuration } from '@/lib/utils/formatters';
-import { AlertCircle, Activity } from 'lucide-react';
+import { AlertCircle, Activity, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 import { SpanRow } from './SpanRow';
@@ -22,6 +23,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     unifiedTrace,
     loading,
     error,
+    retry,
     collapsedSpans,
     toggleSpan,
     visibleNodes,
@@ -39,8 +41,11 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80">
-        {tx(e.failed_to_load_trace, { error })}
+      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80 space-y-2">
+        <div>{tx(e.failed_to_load_trace, { error })}</div>
+        <Button variant="secondary" size="xs" onClick={retry} icon={<RefreshCw className="w-3 h-3" />}>
+          {t.common.retry}
+        </Button>
       </div>
     );
   }

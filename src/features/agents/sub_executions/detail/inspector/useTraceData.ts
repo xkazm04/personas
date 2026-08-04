@@ -33,6 +33,8 @@ export function useTraceData(executionId: string, personaId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
+  /** Bumped by `retry()` to re-run the fetch effect after a load failure. */
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Pipeline trace from store -- merged with backend trace when execution matches.
   const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
@@ -59,7 +61,9 @@ export function useTraceData(executionId: string, personaId: string) {
       });
 
     return () => { cancelled = true; };
-  }, [executionId, personaId]);
+  }, [executionId, personaId, refreshKey]);
+
+  const retry = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   // Listen for live trace updates (complete trace emitted on finish)
   const handleTrace = useCallback((event: Event<ExecutionTrace>) => {
@@ -174,5 +178,5 @@ export function useTraceData(executionId: string, personaId: string) {
     return map;
   }, [unifiedTrace]);
 
-  return { trace, unifiedTrace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap };
+  return { trace, unifiedTrace, loading, error, retry, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap };
 }
