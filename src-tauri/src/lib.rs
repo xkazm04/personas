@@ -2863,6 +2863,8 @@ pub fn run() {
             commands::companion::brain::companion_correct_identity_claim,
             commands::companion::feedback::companion_beta_flags,
             commands::companion::feedback::companion_record_ux_signal,
+            #[cfg(debug_assertions)]
+            commands::companion::debug_export::companion_export_conversation_log,
             commands::companion::voice::companion_tts,
             commands::companion::voice::companion_tts_list_kokoro_voices,
             commands::companion::voice::companion_tts_kokoro_status,

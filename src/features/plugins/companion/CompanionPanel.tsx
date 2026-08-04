@@ -15,6 +15,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
+import { DevConversationLogButton } from './DevConversationLogButton';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
 import { QuickReplies } from './QuickReplies';
@@ -581,6 +582,7 @@ function Header({
             <Wrench className="w-4 h-4" />
           </button>
         )}
+        {devModeAvailable && <DevConversationLogButton />}
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           type="button"

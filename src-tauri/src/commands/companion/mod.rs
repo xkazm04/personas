@@ -13,6 +13,8 @@ pub mod chat;
 pub mod connectors;
 pub mod consolidate;
 pub mod conversation;
+#[cfg(debug_assertions)]
+pub mod debug_export;
 pub mod decisions;
 pub mod feedback;
 pub mod fleet_bridge;

@@ -1764,6 +1764,19 @@ export async function companionBetaFlags(): Promise<CompanionBetaFlags> {
   return invoke<CompanionBetaFlags>('companion_beta_flags');
 }
 
+/**
+ * Dev builds only (the command does not exist in release binaries):
+ * write a markdown conversation dump into the gitignored
+ * `logs/athena-conversations/` directory at the repo root. Returns the
+ * absolute path of the written file.
+ */
+export async function companionExportConversationLog(
+  fileStem: string,
+  markdown: string,
+): Promise<string> {
+  return invoke<string>('companion_export_conversation_log', { fileStem, markdown });
+}
+
 /** Tauri event channel for streaming Claude CLI lines into the panel. */
 export const COMPANION_STREAM_EVENT = 'companion://stream';
 
