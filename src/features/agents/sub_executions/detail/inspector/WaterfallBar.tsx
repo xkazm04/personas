@@ -2,13 +2,38 @@ import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 
+/** Minimum visible bar width, in percent of the track. */
+const MIN_WIDTH_PCT = 0.5;
+
+/**
+ * Track geometry for one span, clamped to the track.
+ *
+ * Pipeline spans and backend engine spans are timestamped by different clocks,
+ * so skew (or a span that outlives the reported total) can produce a start past
+ * 100% or a start+width beyond the track, which paints a bar spilling out of
+ * its row. Clamp both ends: left into [0, 100 - MIN_WIDTH_PCT], width into
+ * [MIN_WIDTH_PCT, 100 - left].
+ */
+export function waterfallGeometry(
+  startMs: number,
+  durationMs: number | null | undefined,
+  totalMs: number,
+): { leftPct: number; widthPct: number } {
+  const rawLeft = (startMs / totalMs) * 100;
+  const leftPct = Math.min(Math.max(rawLeft, 0), 100 - MIN_WIDTH_PCT);
+
+  const rawWidth = durationMs != null
+    ? (durationMs / totalMs) * 100
+    : ((totalMs - startMs) / totalMs) * 100;
+  const widthPct = Math.min(Math.max(rawWidth, MIN_WIDTH_PCT), 100 - leftPct);
+
+  return { leftPct, widthPct };
+}
+
 export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: number }) {
   if (!totalMs || totalMs === 0) return null;
 
-  const leftPct = (span.start_ms / totalMs) * 100;
-  const widthPct = span.duration_ms != null
-    ? Math.max((span.duration_ms / totalMs) * 100, 0.5)
-    : Math.max(((totalMs - span.start_ms) / totalMs) * 100, 0.5);
+  const { leftPct, widthPct } = waterfallGeometry(span.start_ms, span.duration_ms, totalMs);
 
   const config = getSpanTypeConfig(span.span_type);
 
