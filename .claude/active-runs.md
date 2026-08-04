@@ -87,6 +87,9 @@
 
 ## Recently completed
 
+### mvp-skill-authoring — new /mvp launch-readiness skill + calibration run 1 (ascent) — session fable-5 — COMPLETE, personas commit `ade16736c` (skill); calibration + ledger commit follows
+- 2026-08-04. Authored .claude/skills/mvp/** (21 items / 7 phases, delegating orchestrator) and ran it end-to-end on C:\Users\kazda\kiro\ascent: 4 parallel assessors, 4 decision rounds, 6 builders, 16 ascent commits pushed (`661ccb3c..01b0ced4`), branch protection enabled on ascent master, mvp-passport.json verdict go-with-risks, prod smoke 3/3. Calibration learnings in .claude/skills/mvp/state/calibration.md (headline: pathspec commits mandatory in shared checkouts — 3 index-race incidents). Runs 2-3 on other projects pending in-session.
+
 ### spark-cockpit-into-mastermind — /spark round 4 COMPLETE, merged f09bda71d
 - 2026-08-04. Athena reads the Mastermind canvas (worst-first triage digest + 2 read ops), acts on it (canvas_dispatch / group_dispatch / run_idea_scan as thin wrappers over the existing fleet plan validation + executors, boldness-gated, one ledger row each, demo islands refused), annotates it (author field on groups/links/notes + revert-only-hers), and composes a per-project panel rendered by SurfaceRenderer in the right dock. Home Cockpit deliberately untouched.
 - Commits: bc0bb057e (WP1 reactive layout store + provenance + doc v2) 1dc9d0514 (WP2 digest + read/action ops) 0eebf4219 (WP3 scene publish + panel + docs + i18n); merge f09bda71d.
@@ -2999,6 +3002,3 @@ timestamp — the next session can recognize it as abandoned.
 
 #### spark-agent-candidate-bridge — UPDATE 2026-08-04 (2): kp side MERGED to kp main (765cfee6, gates green). Personas branch worktree-spark-agent-candidate-bridge is COMPLETE (WP3 449861d61 + WP4 25bde5428, all gates green) and READY TO MERGE — held because master's working tree has uncommitted changes to src-tauri/db/src/repos/execution/executions.rs (another session) which the branch also modifies (adds get_monthly_rollup). Whoever owns that dirty state: commit it, then `git merge worktree-spark-agent-candidate-bridge` resolves the rest. Worktree kept alive until merged.
 
-### mvp-skill-authoring — new /mvp launch-readiness skill + first calibration run on ascent — session fable-5
-- Started: 2026-08-04. Status: started. Authors .claude/skills/mvp/** (SKILL.md + references/checklist.md), then runs the skill read-only against C:\Users\kazda\kiro\ascent (foreign repo — no personas source edits).
-- Paths: .claude/skills/mvp/**, .claude/active-runs.md only. No overlap with any active entry.
