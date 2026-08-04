@@ -2,6 +2,11 @@
 
 ## Active
 
+### prototype-fleet-monitor — /prototype: minimized Fleet monitor layer (50-terminal grid, 3 variants, mocked data) — session fable-5
+- Started: 2026-08-04. Status: started (worktree-isolated).
+- Paths: NEW files only under src/features/plugins/fleet/sub_monitor_proto/** + one tab wire-in edit to src/features/plugins/fleet/FleetPage.tsx, .claude/active-runs.md. All edits in .claude/worktrees/prototype-fleet-monitor.
+- NOTE: spark-athena-fleet-conductor declares fleet/** but is design-phase + isolates its build in its own worktree; disjoint files except FleetPage.tsx (not in its list). No collision expected.
+
 
 ### perfect-triage-r2 — /perfect round 2 on the unified triage deck — session fable-5 (Director) + Opus builders
 - Started: 2026-07-31. Status: proposing. Round 1 shipped 5 directions (`6fb0e5a34`…`c342d22b2`); scout re-checked them adversarially and found 4 residual gaps plus a cross-surface keyboard collision that decides TWO rows per keypress. Vault: `Documents/Obsidian/personas/Perfect/`.
@@ -72,6 +77,13 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### spark-athena-fleet-conductor — /spark round 3 COMPLETE, merged d0f515f30
+- 2026-08-01. Athena grounds (bounded index of personas+ids/contexts/skills + 4 read ops), conducts (editable chat plan card -> fleet_spawn/fleet_dispatch, audited to fleet_decisions), and stewards (screen-activity corroboration, scheduler off the footer-icon dependency, honest wake cadence). Two-dimension doctrine enforced: Athena toasts/popovers removed with reroutes.
+- Commits: 430c84097 (WP1 grounding) 18f3ee6a2 (WP3 two dimensions) 9e5d8ed5d (WP4 reliability) a09374536 (WP2 spawn+audit); merge d0f515f30. Also c93568faa = a concurrent session's blocking 3-line skill_files.rs change, committed on their behalf WITH OPERATOR APPROVAL to unblock the merge (their other files untouched).
+- CONTAINMENT (operator explicit call): fleet_spawn/fleet_dispatch now follow the boldness dial; with Bold (default) a typed or spoken request can start up to 8  sessions with no click. validate_fleet_cwd is the boundary; fleet_decisions ledger is the compensating control.
+- Gates: tsc 0 err, clippy 0 err, vitest 3053/3054, rust companion 360/361, stale 39/39 (all 21 pre-existing by name), i18n strict+untranslated clean x14. Two reds are pre-existing: camelCase ratchet (DevMilestone et al) + companion::tours::manifest_hash_is_stable.
+- NOT live-verified. Testids: athena-plan-*, athena-decision-*. Deployment note: constitution.md is read from ~/.personas/companion-brain/ so existing installs need a refresh to see the new op grammar.
 
 ### spark-slack-channel-bridge — /spark round 2 COMPLETE, merged 792152417
 - 2026-08-01. Slack connector bridged into Teams Channel conversation, both directions + inbound drives the team. 4 WPs: b48f64698 (outbound relay) 95cabbd54 (slack item kind) 6ed6a7f10 (team settings panel) 77eec0946 (inbound poller fork); merge 792152417. One migration: team_channel_messages.author_label. New command list_team_slack_bridges. Gates: tsc 0 err, clippy clean, vitest 3043/3044 (1 pre-existing camelCase ratchet red: DevMilestone/DevMilestoneItem/DevProjectWallSummary/HealingAnalysisResult), rust slack 38/38, i18n strict 14 locales. Worktree removed. NOT live-verified (testids team-slack-bridge-*). Vault: Obsidian/personas/Spark/.
@@ -2950,3 +2962,12 @@ timestamp — the next session can recognize it as abandoned.
 - L2 DEFERRED WITH CAUSE (not passes): hallucination check on discovered venues, repo-ingest reply-quality delta, and all scraper runtime behaviour — the first two need fixtures in a shared DB, the third needs `cargo build --features scraper` since the engine is compiled into NO profile.
 - KEY FINDINGS other sessions may care about: (1) `collect_files_recursive` never calls `validate_path_safety` → folder ingest embeds credentials.json/service-account.json; (2) `scraper` cargo feature absent from default/desktop/desktop-full while the UI gate is `import.meta.env.DEV` → dev builds show a plugin whose every command errors; (3) `find-unused-i18n-keys.mjs` cannot see `DebtText` → 539 live strings misclassified dead and excluded from the untranslated gate; (4) `dispatch_capability` returns `Ok(...)` for unimplemented capabilities so models confabulate instead of failing; (5) resumed build sessions are dead (`send_answer` → in-process map) and fail silently — already documented as a deferred follow-up in-source.
 - Ledger NOT staged.
+
+### spark-agent-candidate-bridge — /spark cross-repo: KP hires AI agents (KP job → Persona dispatch → counters feedback) — session fable-5 (Director, running from kp repo)
+- Started: 2026-08-04. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/ideas/agent-candidate-bridge.md.
+- CROSS-REPO: primary changes land in kp (C:/Users/kazda/kiro/kp — new agent-hiring module + dispatch); personas side likely touches an intake surface (webhook/management_api/dev-tools routes) + outbound counter reporting (llm_spend, connector usage). Exact personas paths TBD after scouts; will be declared here before any personas tree edit.
+- No expected collision with active entries (athena-fleet-conductor owns plugins/fleet+companion; perfect-triage-r2 owns quick-answer/monitor) — this spark's personas scope is engine/webhook + api/agents intake, disjoint until declared.
+
+#### spark-agent-candidate-bridge — UPDATE 2026-08-04: BUILD STARTED (worktree .claude/worktrees/spark-agent-candidate-bridge, branch worktree-spark-agent-candidate-bridge)
+- Declared personas paths: src-tauri/src/engine/management_api.rs (new /api/kp/* routes), src-tauri/src/commands/companion/approvals/{approval_lifecycle.rs (action catalog entry), approval_exec_core.rs (kp_hire_request executor)}, src-tauri/core/src/models/persona.rs (typed DesignContextData.kp_link), later WP4: src-tauri/src/engine/{mod.rs (post-completion hook), tool_runner.rs (credential_id threading + tool_usage::record), kp_reporter.rs (new), background.rs (subscription registration)}.
+- KNOWN OVERLAP RISK: athena-fleet-conductor declares approvals/approval_exec_fleet.rs (different file) but may touch the same action catalog in approval_lifecycle.rs — merge coordination needed at integration time, both add entries append-style.
