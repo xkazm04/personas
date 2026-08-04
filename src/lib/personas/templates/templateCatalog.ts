@@ -21,6 +21,7 @@ import {
 import { TEMPLATE_CHECKSUMS } from './templateChecksums';
 import { validateTemplateCatalogEntry } from './validateTemplate';
 import {
+  invalidateOverlayCache,
   isOverlayFilename,
   loadOverlaysForLanguage,
   mergeTemplateOverlay,
@@ -264,11 +265,18 @@ export async function getTemplateCatalogStatus(): Promise<CatalogLoadResult> {
  * the design-reviews hook to pick up template JSON edits made while the dev
  * server is running — without this, `_cached` survives remounts and serves
  * stale content even after the files change on disk.
+ *
+ * The per-language OVERLAY cache lives in templateOverlays.ts and is cleared
+ * here too: dropping only `_localizedCache` re-ran the merge against overlay
+ * modules that were still the pre-edit ones, so a translation fix (or a failed
+ * overlay fetch the Retry button was meant to recover from) survived every
+ * invalidation for the lifetime of the session.
  */
 export function invalidateTemplateCatalog(): void {
   _cached = null;
   _loading = null;
   _localizedCache.clear();
+  invalidateOverlayCache();
 }
 
 // ---------------------------------------------------------------------------
