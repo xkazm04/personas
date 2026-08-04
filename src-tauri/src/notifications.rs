@@ -1356,6 +1356,42 @@ fn test_deliver_titlebar(app: &tauri::AppHandle, spec: &ChannelSpecV2, title: &s
     let _ = emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
 }
 
+/// Deliver ONE shape-v2 external channel spec and await the result.
+///
+/// The awaited counterpart to `deliver_v2_channels` (which is fire-and-forget
+/// `tokio::spawn` fan-out). Callers that need to know whether the send actually
+/// landed — the `test_channel_delivery` command, and the team -> Slack relay in
+/// `engine/team_slack_relay.rs`, which drives a watermark and a failure breaker
+/// off the outcome — go through here rather than reimplementing the vault
+/// credential merge or the provider senders.
+///
+/// Non-external channel types (`built-in`, `titlebar`) are a caller error and
+/// return `Err("not_external")`.
+pub(crate) async fn deliver_spec_now(
+    app: &AppHandle,
+    spec: &ChannelSpecV2,
+    title: &str,
+    body: &str,
+) -> Result<(), String> {
+    // Slice 1: resolve credential_id from vault and overlay spec.config so this
+    // path sees exactly what production delivery sees.
+    let cfg = merged_channel_config(app, spec).await;
+    let ext = ExternalChannel {
+        channel_type: channel_type_str(&spec.channel_type).to_string(),
+        enabled: spec.enabled,
+        credential_id: spec.credential_id.clone(),
+        config: cfg,
+    };
+    match spec.channel_type {
+        ChannelSpecV2Type::Slack => deliver_slack(&ext, title, body).await,
+        ChannelSpecV2Type::Telegram => deliver_telegram(&ext, title, body).await,
+        ChannelSpecV2Type::Email => deliver_email(&ext, title, body).await,
+        ChannelSpecV2Type::Discord => deliver_discord(&ext, title, body).await,
+        ChannelSpecV2Type::Teams => deliver_teams(&ext, title, body).await,
+        _ => Err("not_external".into()),
+    }
+}
+
 async fn test_deliver_external(
     app: &AppHandle,
     spec: &ChannelSpecV2,
@@ -1365,24 +1401,7 @@ async fn test_deliver_external(
     let ch_type = channel_type_str(&spec.channel_type).to_string();
     let start = std::time::Instant::now();
 
-    // Slice 1: resolve credential_id from vault and overlay spec.config so the
-    // test path mirrors what real delivery sees.
-    let cfg = merged_channel_config(app, spec).await;
-    let ext = ExternalChannel {
-        channel_type: ch_type.clone(),
-        enabled: spec.enabled,
-        credential_id: spec.credential_id.clone(),
-        config: cfg,
-    };
-
-    let outcome: Result<(), String> = match spec.channel_type {
-        ChannelSpecV2Type::Slack => deliver_slack(&ext, title, body).await,
-        ChannelSpecV2Type::Telegram => deliver_telegram(&ext, title, body).await,
-        ChannelSpecV2Type::Email => deliver_email(&ext, title, body).await,
-        ChannelSpecV2Type::Discord => deliver_discord(&ext, title, body).await,
-        ChannelSpecV2Type::Teams => deliver_teams(&ext, title, body).await,
-        _ => Err("not_external".into()),
-    };
+    let outcome: Result<(), String> = deliver_spec_now(app, spec, title, body).await;
     let latency_ms = start.elapsed().as_millis() as u64;
     match outcome {
         Ok(()) => TestDeliveryResult {

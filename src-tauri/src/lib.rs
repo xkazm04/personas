@@ -1491,6 +1491,22 @@ pub fn run() {
             }
             st.checkpoint("slack_poller");
 
+            // Team channel -> Slack relay (outbound half of the team bridge).
+            // For every persona channel spec carrying `teamBridge: true`, mirror
+            // new team_channel_messages / team_assignment_events rows into the
+            // bound Slack channel on a 5s watermark-driven tick, reusing the
+            // notification stack's Slack sender. Leader-gated; never mirrors
+            // rows authored by Slack (the echo guard). See
+            // `engine/team_slack_relay.rs` and `engine/slack_bridge.rs`.
+            {
+                let pool_for_bridge = pool.clone();
+                let app_for_bridge = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::team_slack_relay::run_relay(pool_for_bridge, app_for_bridge).await;
+                });
+            }
+            st.checkpoint("team_slack_relay");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
