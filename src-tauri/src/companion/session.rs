@@ -515,20 +515,9 @@ pub async fn send_turn(
         },
     };
 
-    // Sweep any orphaned self-improve runs so their outcome shows up in
-    // this turn's transcript (the detached CLI may have finished after
-    // the previous parent-restart). Best-effort: a failure here doesn't
-    // block the chat turn.
-    #[cfg(feature = "ml")]
-    {
-        let _ =
-            crate::companion::dev_session::recover_orphan_improvements(&user_db, embedder.as_ref())
-                .await;
-    }
-    #[cfg(not(feature = "ml"))]
-    {
-        let _ = crate::companion::dev_session::recover_orphan_improvements(&user_db, None).await;
-    }
+    // The legacy self-improve orphan sweep that ran here every turn is
+    // retired with the wrench-send pipeline; `companion_init` still runs
+    // one recovery sweep per process for any historical run dirs.
 
     // Persist the turn-opening episode. User turns land as `User`;
     // autonomous continuation ticks land as `System` with a marker so

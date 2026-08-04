@@ -1,14 +1,13 @@
-//! Phase 4: self-improve loop. The "wrench-send" button on the composer
-//! pipes user feedback into a separate Claude CLI coding session at the
-//! repo root via `companion_request_improvement`. The button itself is
-//! gated by `companion_beta_flags` (off in release builds).
+//! Companion beta flags + lightweight UX signals. The Phase 4 wrench-send
+//! self-improve pipeline that lived here is retired (superseded by dev
+//! mode — docs/tests/athena/dev-mode-direction.md); `companion_init`
+//! keeps a one-shot recovery sweep for historical run dirs.
 
 use std::sync::Arc;
 
 use serde::Serialize;
 use tauri::State;
 
-use crate::companion::dev_session::{self, ImprovementOutcome};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
@@ -30,37 +29,6 @@ pub struct CompanionBetaFlags {
 pub fn companion_beta_flags() -> CompanionBetaFlags {
     CompanionBetaFlags {
         dev_mode_available: cfg!(debug_assertions),
-    }
-}
-
-#[tauri::command]
-pub async fn companion_request_improvement(
-    state: State<'_, Arc<AppState>>,
-    feedback: String,
-) -> Result<ImprovementOutcome, AppError> {
-    ipc_auth::require_auth(&state).await?;
-
-    // Defense in depth: refuse the call entirely outside dev builds even
-    // if a frontend somehow surfaces the trigger. The flag-query above
-    // already hides the UI; this is the second lock.
-    if !cfg!(debug_assertions) {
-        return Err(AppError::Internal(
-            "self-improve is disabled in release builds".into(),
-        ));
-    }
-
-    if feedback.trim().is_empty() {
-        return Err(AppError::Internal("self-improve: feedback is empty".into()));
-    }
-
-    #[cfg(feature = "ml")]
-    {
-        let embedder = state.embedding_manager.clone();
-        dev_session::run_improvement(&state.user_db, embedder.as_ref(), feedback).await
-    }
-    #[cfg(not(feature = "ml"))]
-    {
-        dev_session::run_improvement(&state.user_db, None, feedback).await
     }
 }
 
