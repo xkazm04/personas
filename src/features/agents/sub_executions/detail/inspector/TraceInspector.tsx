@@ -62,7 +62,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
 
   return (
     <div className="space-y-4">
-      {showSummary && trace && <TraceSummary trace={trace} />}
+      {showSummary && trace && <TraceSummary trace={trace} model={execution.model_used} />}
 
       {/* Time axis header */}
       <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">

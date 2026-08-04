@@ -4,6 +4,7 @@ import { formatDuration, formatCount } from '@/lib/utils/formatters';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Clock, DollarSign, Zap, AlertCircle, Activity, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { CostBreakdownBar } from './CostBreakdownBar';
 
 /**
  * Span ceiling the backend tracer evicts past — `MAX_SPANS` in
@@ -13,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
  */
 const MAX_TRACE_SPANS = 10_000;
 
-export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
+export function TraceSummary({ trace, model }: { trace: ExecutionTrace; model?: string | null }) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const stats = useMemo(() => {
@@ -80,6 +81,22 @@ export function TraceSummary({ trace }: { trace: ExecutionTrace }) {
           {stats.errorCount}
         </div>
       </div>
+
+      {/* What the money went to. The tracer only ever attributes cost to the
+          root span (see the per-span note in SpanRow), so the finest
+          decomposition this trace can honestly support is input vs output —
+          apportioned from the SAME total shown in the Cost tile above, never
+          recomputed. */}
+      {model && stats.totalInput + stats.totalOutput > 0 && (
+        <div className="col-span-2 md:col-span-5 rounded-card border border-primary/20 bg-secondary/40 p-3">
+          <CostBreakdownBar
+            model={model}
+            inputTokens={stats.totalInput}
+            outputTokens={stats.totalOutput}
+            actualCostUsd={stats.totalCost > 0 ? stats.totalCost : null}
+          />
+        </div>
+      )}
 
       {evicted > 0 && (
         <div className="col-span-2 md:col-span-5 rounded-card border border-yellow-500/40 bg-yellow-500/10 p-3 flex items-center gap-2">
