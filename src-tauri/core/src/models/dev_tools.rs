@@ -443,6 +443,7 @@ pub struct DevUseCase {
 /// and context health — the schema stores decisions, never percentages.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct DevMilestone {
     pub id: String,
     pub project_id: String,
@@ -467,6 +468,7 @@ pub struct DevMilestone {
 /// cases' slices at read time.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct DevMilestoneItem {
     pub milestone_id: String,
     /// 'use_case' | 'goal'
@@ -479,6 +481,11 @@ pub struct DevMilestoneItem {
     pub added_after_cut: bool,
     pub order_index: i32,
     pub created_at: String,
+    /// Why this member sits in this bucket. Free text, operator-authored.
+    pub description: Option<String>,
+    /// Operator's own read on the member, 1..5. NULL means UNRATED, which is
+    /// deliberately distinct from a rating of 1.
+    pub rating: Option<i32>,
 }
 
 // ============================================================================
@@ -1278,6 +1285,7 @@ pub struct ContextHealthSnapshot {
 /// `DevMilestone` rows so the roadmap builder keeps its existing input shape.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct DevProjectWallSummary {
     pub project_id: String,
     /// Rows in `dev_contexts` for this project — the statband's volume stat.

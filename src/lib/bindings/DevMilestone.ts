@@ -6,7 +6,7 @@
  * Progress and exit criteria DERIVE from the members' states, KPI coverage
  * and context health — the schema stores decisions, never percentages.
  */
-export type DevMilestone = { id: string, project_id: string, name: string, 
+export type DevMilestone = { id: string, projectId: string, name: string, 
 /**
  * The one-sentence core-value statement the cut converges on.
  */
@@ -14,9 +14,9 @@ goal: string | null,
 /**
  * 'planned' | 'active' | 'shipped'
  */
-status: string, order_index: number, target_date: string | null, 
+status: string, orderIndex: number, targetDate: string | null, 
 /**
  * When the scope was cut (certified) — members added after this stamp
  * carry `added_after_cut` and surface as scope creep.
  */
-cut_at: string | null, shipped_at: string | null, created_at: string, updated_at: string, };
+cutAt: string | null, shippedAt: string | null, createdAt: string, updatedAt: string, };

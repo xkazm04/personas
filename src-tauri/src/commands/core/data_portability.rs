@@ -632,6 +632,13 @@ pub struct DevMilestoneItemExport {
     pub added_after_cut: bool,
     pub order_index: i32,
     pub created_at: String,
+    /// Why the member sits in its bucket. `default` so bundles written before
+    /// the column existed still import.
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Operator rating 1..5; NULL = unrated.
+    #[serde(default)]
+    pub rating: Option<i32>,
 }
 
 /// Full-fidelity KPI row for a bundled dev project. Unlike the team-scoped
@@ -2247,7 +2254,7 @@ fn collect_dev_project_exports(
         let milestone_items = query_rows(
             &conn,
             "SELECT mi.milestone_id, mi.item_kind, mi.item_id, mi.bucket, mi.added_after_cut, \
-                    mi.order_index, mi.created_at \
+                    mi.order_index, mi.created_at, mi.description, mi.rating \
              FROM dev_milestone_items mi \
              JOIN dev_milestones m ON m.id = mi.milestone_id \
              WHERE m.project_id = ?1 ORDER BY mi.milestone_id, mi.order_index",
@@ -2261,6 +2268,8 @@ fn collect_dev_project_exports(
                     added_after_cut: r.get(4)?,
                     order_index: r.get(5)?,
                     created_at: r.get(6)?,
+                    description: r.get(7)?,
+                    rating: r.get(8)?,
                 })
             },
         )?;
@@ -4628,11 +4637,11 @@ fn insert_project_children(
         exec_row(
             tx,
             "INSERT OR IGNORE INTO dev_milestone_items (milestone_id, item_kind, item_id, \
-                 bucket, added_after_cut, order_index, created_at) \
-             VALUES (?1,?2,?3,?4,?5,?6,?7)",
+                 bucket, added_after_cut, order_index, created_at, description, rating) \
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
             rusqlite::params![
                 remap_req(map, &mi.milestone_id), mi.item_kind, item_id, mi.bucket,
-                mi.added_after_cut, mi.order_index, mi.created_at,
+                mi.added_after_cut, mi.order_index, mi.created_at, mi.description, mi.rating,
             ],
             &format!("Project '{pname}' milestone item"),
             warnings,
@@ -6071,7 +6080,7 @@ mod tests {
              INSERT INTO dev_use_cases (id, project_id, name, slug) VALUES ('uc1-{pid}', '{pid}', 'Login', 'login');
              INSERT INTO dev_use_case_contexts (use_case_id, context_id) VALUES ('uc1-{pid}', 'c1-{pid}');
              INSERT INTO dev_milestones (id, project_id, name, status) VALUES ('m1-{pid}', '{pid}', 'M1', 'active');
-             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id) VALUES ('m1-{pid}', 'use_case', 'uc1-{pid}');
+             INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, description, rating) VALUES ('m1-{pid}', 'use_case', 'uc1-{pid}', 'why it is core', 4);
              INSERT INTO dev_kpis (id, project_id, name, status) VALUES ('k1-{pid}', '{pid}', 'Coverage', 'active');
              INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, env) VALUES ('km1-{pid}', 'k1-{pid}', 42.0, 'manual', 'local');
              INSERT INTO dev_kpi_bindings (id, kpi_id, credential_id, service_type, procedure) VALUES ('kb1-{pid}', 'k1-{pid}', 'cred-bind', 'sentry', 'count errors');
@@ -6408,6 +6417,17 @@ mod tests {
             )
             .unwrap();
         assert_eq!(item_id, "uc1-p1");
+        // A column the export SELECT forgets is silently dropped from every
+        // bundle, so assert the annotations survived the whole trip.
+        let (desc, rating): (Option<String>, Option<i64>) = conn
+            .query_row(
+                "SELECT description, rating FROM dev_milestone_items WHERE milestone_id = 'm1-p1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(desc.as_deref(), Some("why it is core"));
+        assert_eq!(rating, Some(4), "milestone item rating round-trips");
         let edge_count: i32 = conn
             .query_row("SELECT COUNT(*) FROM memory_edges WHERE from_id = 'n1-p1'", [], |r| r.get(0))
             .unwrap();

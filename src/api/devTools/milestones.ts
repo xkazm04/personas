@@ -51,18 +51,29 @@ export async function listMilestoneItems(milestoneId: string): Promise<DevMilest
 }
 
 /** Upsert a scope member (add or re-bucket). `added_after_cut` derives on the
- *  backend: a new membership on an already-cut milestone is scope creep. */
+ *  backend: a new membership on an already-cut milestone is scope creep.
+ *
+ *  `annotations` is a PATCH, matching the backend's nullable-patch shape: omit
+ *  a key to leave that column alone, pass `null` to clear it. A `rating` is
+ *  1..5; `null` means UNRATED, which is not the same judgement as a 1. */
 export async function setMilestoneItem(
   milestoneId: string,
   itemKind: MilestoneItemKind,
   itemId: string,
   bucket: MilestoneBucket,
+  annotations?: { description?: string | null; rating?: number | null },
 ): Promise<DevMilestoneItem> {
   return invoke<DevMilestoneItem>("dev_tools_set_milestone_item", {
     milestoneId,
     itemKind,
     itemId,
     bucket,
+    // Spread only the keys actually supplied — an absent key must reach the
+    // backend as absent, not as an explicit null (which clears the column).
+    ...(annotations && "description" in annotations
+      ? { description: annotations.description ?? null }
+      : {}),
+    ...(annotations && "rating" in annotations ? { rating: annotations.rating ?? null } : {}),
   });
 }
 

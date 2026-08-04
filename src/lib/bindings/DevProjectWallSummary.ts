@@ -20,16 +20,16 @@ import type { DevMilestone } from "./DevMilestone";
  * stale in the client's cache. `milestones` likewise carries full
  * `DevMilestone` rows so the roadmap builder keeps its existing input shape.
  */
-export type DevProjectWallSummary = { project_id: string, 
+export type DevProjectWallSummary = { projectId: string, 
 /**
  * Rows in `dev_contexts` for this project — the statband's volume stat.
  */
-contexts_count: number, 
+contextsCount: number, 
 /**
  * KPI rows with `status = 'active'`; the client folds these through
  * `kpiTrack()` for the pass/total pair.
  */
-active_kpis: Array<DevKpi>, 
+activeKpis: Array<DevKpi>, 
 /**
  * Full milestone rows, ordered exactly as `list_milestones_by_project`
  * returns them (order_index, created_at).

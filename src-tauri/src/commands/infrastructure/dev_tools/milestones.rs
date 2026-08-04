@@ -80,6 +80,9 @@ pub fn dev_tools_list_milestone_items(
     repo::list_milestone_items(&state.db, &milestone_id)
 }
 
+/// `description` / `rating` use this layer's nullable-patch shape (see
+/// `dev_tools_update_context`): omit the field to leave the column alone, send
+/// an explicit `null` to clear it. `rating` is 1..5; NULL means unrated.
 #[tauri::command]
 pub fn dev_tools_set_milestone_item(
     state: State<'_, Arc<AppState>>,
@@ -87,9 +90,19 @@ pub fn dev_tools_set_milestone_item(
     item_kind: String,
     item_id: String,
     bucket: String,
+    description: Option<Option<String>>,
+    rating: Option<Option<i32>>,
 ) -> Result<DevMilestoneItem, AppError> {
     require_auth_sync(&state)?;
-    repo::set_milestone_item(&state.db, &milestone_id, &item_kind, &item_id, &bucket)
+    repo::set_milestone_item(
+        &state.db,
+        &milestone_id,
+        &item_kind,
+        &item_id,
+        &bucket,
+        description.as_ref().map(|d| d.as_deref()),
+        rating,
+    )
 }
 
 #[tauri::command]

@@ -160,17 +160,17 @@ export function useShipData(data: FactoryL2Data): ShipData {
     return milestones.map((m) => {
       const items = itemsByMs.get(m.id) ?? [];
       const members: ShipMember[] = items
-        .filter((it) => it.item_kind === 'use_case')
+        .filter((it) => it.itemKind === 'use_case')
         .map((it) => {
-          const feature = featById.get(it.item_id);
+          const feature = featById.get(it.itemId);
           return feature
-            ? { feature, bucket: it.bucket as ScopeBucket, afterCut: it.added_after_cut }
+            ? { feature, bucket: it.bucket as ScopeBucket, afterCut: it.addedAfterCut }
             : null;
         })
         .filter((x): x is ShipMember => x !== null);
       const boundGoals = items
-        .filter((it) => it.item_kind === 'goal')
-        .map((it) => goalById.get(it.item_id))
+        .filter((it) => it.itemKind === 'goal')
+        .map((it) => goalById.get(it.itemId))
         .filter((g): g is ShipGoal => Boolean(g));
 
       const core = members.filter((mm) => mm.bucket === 'core');
@@ -198,8 +198,8 @@ export function useShipData(data: FactoryL2Data): ShipData {
         goal: m.goal,
         status: m.status as ShipMilestoneVM['status'],
         targetLabel: m.status === 'shipped'
-          ? tx(t.ship.target_shipped, { date: dateLabel(m.shipped_at) ?? '' }).trim()
-          : m.target_date ? tx(t.ship.target_date, { date: m.target_date }) : null,
+          ? tx(t.ship.target_shipped, { date: dateLabel(m.shippedAt) ?? '' }).trim()
+          : m.targetDate ? tx(t.ship.target_date, { date: m.targetDate }) : null,
         members,
         boundGoals,
         footprint,

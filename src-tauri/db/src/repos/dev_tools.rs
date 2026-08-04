@@ -6882,6 +6882,8 @@ fn row_to_milestone_item(row: &Row) -> rusqlite::Result<DevMilestoneItem> {
         added_after_cut: row.get::<_, i64>("added_after_cut")? != 0,
         order_index: row.get("order_index")?,
         created_at: row.get("created_at")?,
+        description: row.get("description")?,
+        rating: row.get("rating")?,
     })
 }
 
@@ -6914,6 +6916,19 @@ pub fn create_milestone(
     let status = status.unwrap_or("planned");
     if !["planned", "active", "shipped"].contains(&status) {
         return Err(AppError::Validation(format!("Invalid milestone status `{status}`")));
+    }
+    // A milestone cannot be BORN shipped. `update_milestone` already refuses
+    // the planned → shipped jump, but creation was only checking enum
+    // membership — so the management HTTP API, a Fleet dispatch or the A2A
+    // gateway could mint a 'shipped' row with `cut_at` NULL (the INSERT's CASE
+    // only stamps for 'active') and `shipped_at` never set. That row is
+    // invisible to velocity, which reads `shipped_at`, and reports 'setup' on
+    // scope-frozen because it has no cut. Ship is a TRANSITION, not a state
+    // you can start in.
+    if status == "shipped" {
+        return Err(AppError::Validation(
+            "A milestone cannot be created shipped; create it active (cut) and then ship it".into(),
+        ));
     }
 
     timed_query!("dev_milestones", "dev_milestones::create", {
@@ -7168,18 +7183,36 @@ pub fn list_milestone_items(
 /// Upsert a scope member. `added_after_cut` is derived here, not passed in:
 /// a NEW membership created while the milestone is already 'active' (cut) is
 /// scope creep by definition; re-bucketing an existing member keeps its flag.
+///
+/// `description` and `rating` follow this file's nullable-patch convention
+/// (`update_kpi` / `update_goal`): the outer `Option` is "was this field sent
+/// at all" and the inner one is the value, so `None` leaves the column
+/// untouched and `Some(None)` clears it. That distinction matters most for
+/// `rating` — NULL is UNRATED, which is not the same judgement as a 1.
+#[allow(clippy::too_many_arguments)]
 pub fn set_milestone_item(
     pool: &DbPool,
     milestone_id: &str,
     item_kind: &str,
     item_id: &str,
     bucket: &str,
+    description: Option<Option<&str>>,
+    rating: Option<Option<i32>>,
 ) -> Result<DevMilestoneItem, AppError> {
     if !["use_case", "goal"].contains(&item_kind) {
         return Err(AppError::Validation(format!("Invalid milestone item kind `{item_kind}`")));
     }
     if !["core", "later", "never"].contains(&bucket) {
         return Err(AppError::Validation(format!("Invalid milestone bucket `{bucket}`")));
+    }
+    // Guard in the repo as well as the column CHECK: the CHECK protects the
+    // file, this returns a message the caller can show.
+    if let Some(Some(r)) = rating {
+        if !(1..=5).contains(&r) {
+            return Err(AppError::Validation(format!(
+                "Milestone item rating must be between 1 and 5, got {r}"
+            )));
+        }
     }
 
     timed_query!("dev_milestones", "dev_milestones::set_item", {
@@ -7197,12 +7230,37 @@ pub fn set_milestone_item(
                 }
                 other => AppError::Database(other),
             })?;
-        conn.execute(
-            "INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket, added_after_cut, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        // The conflict arm updates `bucket` unconditionally and the two new
+        // columns ONLY when the caller sent them — an omitted field must not
+        // be written back as NULL. `added_after_cut` is never in the SET, so
+        // re-bucketing or annotating an existing member keeps the flag it was
+        // born with.
+        let mut sets: Vec<&str> = vec!["bucket = excluded.bucket"];
+        if description.is_some() {
+            sets.push("description = excluded.description");
+        }
+        if rating.is_some() {
+            sets.push("rating = excluded.rating");
+        }
+        let sql = format!(
+            "INSERT INTO dev_milestone_items (milestone_id, item_kind, item_id, bucket, added_after_cut, created_at, description, rating)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
              ON CONFLICT(milestone_id, item_kind, item_id)
-             DO UPDATE SET bucket = excluded.bucket",
-            params![milestone_id, item_kind, item_id, bucket, after_cut as i64, now],
+             DO UPDATE SET {}",
+            sets.join(", ")
+        );
+        conn.execute(
+            &sql,
+            params![
+                milestone_id,
+                item_kind,
+                item_id,
+                bucket,
+                after_cut as i64,
+                now,
+                description.flatten(),
+                rating.flatten(),
+            ],
         )?;
         conn.query_row(
             "SELECT * FROM dev_milestone_items
@@ -7243,7 +7301,7 @@ mod milestone_tests {
         assert!(m.cut_at.is_none());
 
         // Members added before the cut are not creep.
-        let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core").unwrap();
+        let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core", None, None).unwrap();
         assert!(!a.added_after_cut);
 
         // Activating stamps cut_at once.
@@ -7251,13 +7309,13 @@ mod milestone_tests {
         assert!(m.cut_at.is_some());
 
         // New membership after the cut IS creep; re-bucketing an old one isn't.
-        let b = set_milestone_item(&pool, &m.id, "use_case", "uc-b", "later").unwrap();
+        let b = set_milestone_item(&pool, &m.id, "use_case", "uc-b", "later", None, None).unwrap();
         assert!(b.added_after_cut);
-        let a2 = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later").unwrap();
+        let a2 = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, None).unwrap();
         assert!(!a2.added_after_cut, "re-bucketing keeps the original flag");
 
         // Goals bind through the same table.
-        set_milestone_item(&pool, &m.id, "goal", "g-1", "core").unwrap();
+        set_milestone_item(&pool, &m.id, "goal", "g-1", "core", None, None).unwrap();
         let items = list_milestone_items(&pool, &m.id).unwrap();
         assert_eq!(items.len(), 3);
 
@@ -7275,8 +7333,8 @@ mod milestone_tests {
         assert!(create_milestone(&pool, &project.id, "  ", None, None, None).is_err());
         assert!(create_milestone(&pool, &project.id, "M", None, Some("bogus"), None).is_err());
         let m = create_milestone(&pool, &project.id, "M", None, None, None).unwrap();
-        assert!(set_milestone_item(&pool, &m.id, "context", "c-1", "core").is_err(), "contexts are never members");
-        assert!(set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday").is_err());
+        assert!(set_milestone_item(&pool, &m.id, "context", "c-1", "core", None, None).is_err(), "contexts are never members");
+        assert!(set_milestone_item(&pool, &m.id, "use_case", "u-1", "someday", None, None).is_err());
     }
 
     /// The batched wall read must answer EVERY requested project — including
@@ -7358,7 +7416,7 @@ mod milestone_tests {
         assert!(m.cut_at.is_some(), "a milestone born active must be cut");
 
         // …and the creep flag therefore fires on anything joined afterwards.
-        let item = set_milestone_item(&pool, &m.id, "use_case", "uc-late", "core").unwrap();
+        let item = set_milestone_item(&pool, &m.id, "use_case", "uc-late", "core", None, None).unwrap();
         assert!(item.added_after_cut, "items added after the cut are creep");
 
         // A milestone born 'planned' is still uncut.
@@ -7393,6 +7451,139 @@ mod milestone_tests {
         let m = update_milestone(&pool, &m.id, None, None, Some("shipped"), None, None).unwrap();
         assert!(m.cut_at.is_some(), "cut_at survives the ship transition");
         assert!(m.shipped_at.is_some());
+    }
+
+    /// Ship is a transition, not a birth state. A milestone created 'shipped'
+    /// would carry `cut_at` NULL (the INSERT's CASE only stamps for 'active')
+    /// and `shipped_at` NULL, so it would be invisible to velocity and read
+    /// 'setup' on scope-frozen. Refuse it, and leave NO row behind.
+    #[test]
+    fn milestone_cannot_be_created_shipped() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp5", None, None, None, None, None).unwrap();
+
+        let err = create_milestone(&pool, &project.id, "v1", None, Some("shipped"), None);
+        assert!(
+            matches!(err, Err(AppError::Validation(_))),
+            "creating shipped must be rejected, got {err:?}"
+        );
+        // Rejected means nothing was written, not a half-created row.
+        assert!(
+            list_milestones_by_project(&pool, &project.id).unwrap().is_empty(),
+            "a refused creation must leave no row"
+        );
+
+        // The legal shapes still work.
+        let planned = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+        assert_eq!(planned.status, "planned");
+        let active =
+            create_milestone(&pool, &project.id, "v2", None, Some("active"), None).unwrap();
+        assert_eq!(active.status, "active");
+        assert!(active.shipped_at.is_none());
+    }
+
+    /// `description` / `rating` round-trip through the upsert, follow the
+    /// absent-vs-explicit-null patch convention, and never disturb the
+    /// scope-creep flag an existing member was born with.
+    #[test]
+    fn milestone_item_description_and_rating_round_trip() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp6", None, None, None, None, None).unwrap();
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+
+        // Born before the cut, with both annotations.
+        let a = set_milestone_item(
+            &pool, &m.id, "use_case", "uc-a", "core",
+            Some(Some("The one flow that proves the product")), Some(Some(5)),
+        )
+        .unwrap();
+        assert_eq!(a.description.as_deref(), Some("The one flow that proves the product"));
+        assert_eq!(a.rating, Some(5));
+        assert!(!a.added_after_cut);
+
+        // Cut the milestone, then re-bucket WITHOUT sending either field:
+        // both must survive untouched, and so must the creep flag.
+        update_milestone(&pool, &m.id, None, None, Some("active"), None, None).unwrap();
+        let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, None).unwrap();
+        assert_eq!(a.bucket, "later");
+        assert_eq!(a.description.as_deref(), Some("The one flow that proves the product"));
+        assert_eq!(a.rating, Some(5), "an omitted field is left unchanged");
+        assert!(!a.added_after_cut, "annotating never rewrites the creep flag");
+
+        // Patch only the rating; the description stays.
+        let a = set_milestone_item(&pool, &m.id, "use_case", "uc-a", "later", None, Some(Some(2)))
+            .unwrap();
+        assert_eq!(a.rating, Some(2));
+        assert!(a.description.is_some());
+
+        // Explicit null CLEARS — and unrated is not rated-1.
+        let a = set_milestone_item(
+            &pool, &m.id, "use_case", "uc-a", "later", Some(None), Some(None),
+        )
+        .unwrap();
+        assert!(a.description.is_none());
+        assert!(a.rating.is_none(), "cleared means unrated, not 1");
+        assert!(!a.added_after_cut);
+
+        // A member created after the cut is still creep, annotations or not.
+        let b = set_milestone_item(
+            &pool, &m.id, "use_case", "uc-b", "core", Some(Some("late idea")), Some(Some(3)),
+        )
+        .unwrap();
+        assert!(b.added_after_cut);
+        assert_eq!(b.rating, Some(3));
+
+        // The list read carries them too (it is a `SELECT *` → row mapper).
+        let items = list_milestone_items(&pool, &m.id).unwrap();
+        let listed_b = items.iter().find(|i| i.item_id == "uc-b").unwrap();
+        assert_eq!(listed_b.description.as_deref(), Some("late idea"));
+        assert_eq!(listed_b.rating, Some(3));
+    }
+
+    /// Rating bounds are enforced twice: the repo returns a Validation error
+    /// with a message, and the column CHECK is the backstop for any writer
+    /// that bypasses the repo.
+    #[test]
+    fn milestone_item_rating_bounds_are_enforced() {
+        let pool = crate::init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/mp7", None, None, None, None, None).unwrap();
+        let m = create_milestone(&pool, &project.id, "v1", None, None, None).unwrap();
+
+        for bad in [0, 6, -1, 99] {
+            let err =
+                set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core", None, Some(Some(bad)));
+            assert!(
+                matches!(err, Err(AppError::Validation(_))),
+                "rating {bad} must be rejected, got {err:?}"
+            );
+        }
+        // A rejected write leaves no row.
+        assert!(list_milestone_items(&pool, &m.id).unwrap().is_empty());
+
+        // Bounds are inclusive.
+        for good in 1..=5 {
+            let it =
+                set_milestone_item(&pool, &m.id, "use_case", "uc-a", "core", None, Some(Some(good)))
+                    .unwrap();
+            assert_eq!(it.rating, Some(good));
+        }
+
+        // The DB CHECK itself refuses an out-of-range write that skips the repo.
+        set_milestone_item(&pool, &m.id, "use_case", "uc-b", "core", None, None).unwrap();
+        let conn = pool.get().unwrap();
+        let direct = conn.execute(
+            "UPDATE dev_milestone_items SET rating = 9
+             WHERE milestone_id = ?1 AND item_kind = 'use_case' AND item_id = 'uc-b'",
+            params![m.id],
+        );
+        assert!(direct.is_err(), "the column CHECK must reject rating 9");
+        // …but NULL is always legal: unrated is a real state.
+        conn.execute(
+            "UPDATE dev_milestone_items SET rating = NULL
+             WHERE milestone_id = ?1 AND item_kind = 'use_case' AND item_id = 'uc-b'",
+            params![m.id],
+        )
+        .unwrap();
     }
 }
 

@@ -60,6 +60,8 @@ The strip is inert when no `onOpenShip` handler is supplied.
 
 Index: `idx_dev_milestones_project (project_id, status, order_index)`.
 
+**Ship is a transition, never a birth state.** Both `create_milestone` and `update_milestone` refuse it: you cannot create a milestone `shipped`, and you cannot jump `planned` to `shipped`. A milestone must pass through `active` (be cut) first, otherwise it would carry a NULL `cut_at` and a NULL `shipped_at` and would be invisible to the velocity forecast.
+
 ### `dev_milestone_items` (`incremental.rs:6311-6326`)
 
 | Column | Notes |
@@ -70,6 +72,8 @@ Index: `idx_dev_milestones_project (project_id, status, order_index)`.
 | `bucket` | CHECK `core` / `later` / `never` |
 | `added_after_cut` | derived on the backend, never passed in |
 | `order_index`, `created_at` | |
+| `description` | nullable free text: why this member sits in this bucket |
+| `rating` | nullable INTEGER, CHECK 1..5. **NULL means unrated**, which is deliberately not the same as a rating of 1 |
 
 Primary key `(milestone_id, item_kind, item_id)`, so an item belongs to at most one bucket per milestone. Index on `(item_kind, item_id)`.
 
