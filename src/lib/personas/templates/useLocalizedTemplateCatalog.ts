@@ -25,9 +25,16 @@ export function useLocalizedTemplateCatalog(): TemplateCatalogEntry[] {
 
   useEffect(() => {
     let cancelled = false;
-    getLocalizedTemplateCatalog(language).then((entries) => {
-      if (!cancelled) setCatalog(entries);
-    });
+    getLocalizedTemplateCatalog(language)
+      .then((entries) => {
+        if (!cancelled) setCatalog(entries);
+      })
+      // The catalog load can reject (CatalogIntegrityError on duplicate ids, a
+      // failed glob chunk). Without a handler that surfaced as an unhandled
+      // rejection with no Sentry breadcrumb, and the caller just saw an empty
+      // gallery forever. Use the status variant of this hook when the UI needs
+      // to distinguish "empty" from "failed".
+      .catch(silentCatch('useLocalizedTemplateCatalog:load'));
     return () => {
       cancelled = true;
     };
