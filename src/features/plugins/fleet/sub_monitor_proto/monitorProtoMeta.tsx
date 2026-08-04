@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FLEET_STATE_META, type FleetStateMeta } from '../fleetStateMeta';
-import type { ProtoTerminal } from './mockFleet';
+import type { ProtoTerminal } from './monitorTypes';
 
 /** State → icon, complementing `FLEET_STATE_META`'s colour/label palette. */
 export const STATE_ICON: Record<FleetSessionState, LucideIcon> = {
@@ -59,6 +59,13 @@ export const LANE_LABEL: Record<AttentionLane, string> = {
   working: 'Working',
   parked: 'Parked',
   done: 'Done',
+};
+
+export const LANE_TONE: Record<AttentionLane, string> = {
+  needs_you: 'text-violet-300',
+  working: 'text-blue-300',
+  parked: 'text-emerald-300',
+  done: 'text-foreground opacity-50',
 };
 
 /** Compact icon+value stat used across all three variants. */

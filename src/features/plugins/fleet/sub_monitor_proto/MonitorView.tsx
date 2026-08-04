@@ -2,39 +2,42 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { useSystemStore } from '@/stores/systemStore';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetTileStatusBlock } from '../FleetTileStatusBlock';
 import { FleetStatusDots } from '../FleetStatusDots';
 import { sessionsToMonitorModel } from './monitorModel';
 import { TerminalStats } from './monitorProtoMeta';
-import { VariantHeatboard } from './VariantHeatboard';
-import { VariantTriageLanes } from './VariantTriageLanes';
-import { VariantLedger } from './VariantLedger';
-import type { ProtoTerminal } from './mockFleet';
-
-export type MonitorVariantId = 'heatboard' | 'lanes' | 'ledger';
+import { MonitorLedger } from './MonitorLedger';
+import type { ProtoTerminal } from './monitorTypes';
 
 /**
- * REAL-DATA monitor layer inside the fullscreen grid overlay (/prototype r2).
+ * The minimized monitor layer inside the fullscreen grid overlay — the FUSED
+ * variant (Ledger baseline + attention-lane grouping), living next to the
+ * classic tile grid behind the header switcher.
  *
- * Renders live fleet sessions through one of the three minimized variants —
- * zero xterms mounted, so this layer is near-free at any fleet size. Clicking
- * a terminal focuses it (parent `onSelect`, so the terminal manager + Athena
- * targeting follow) and expands the REAL terminal pane fullscreen via the
- * shared layoutId; Escape / back collapses to the monitor (capture-phase
- * handler so the overlay's own Escape-to-minimize doesn't fire).
+ * Zero xterms mounted while monitoring — near-free at any fleet size.
+ * Clicking a row focuses the session (parent `onSelect`, so the terminal
+ * manager + Athena targeting follow) and expands the REAL terminal pane
+ * fullscreen via the shared layoutId. Both close paths return HERE, not out
+ * of Fleet: Escape is intercepted in the capture phase (before the overlay's
+ * Escape-to-minimize), and the titlebar Back button is re-pointed at the
+ * pane while it's open, restoring the overlay's minimize interceptor after.
  *
  * Stats not yet backend-wired (subprocs / subagents / cost) are simulated
  * per-session — see monitorModel.ts.
  */
 export function MonitorView({
-  sessions, variant, onSelect,
+  sessions, onSelect, onOverlayClose,
 }: {
   sessions: FleetSession[];
-  variant: MonitorVariantId;
   onSelect: (id: string) => void;
+  /** The overlay's own minimize — restored as the Back interceptor when the
+   *  fullscreen pane closes (the overlay registered it while opening). */
+  onOverlayClose: () => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
   const model = useMemo(() => sessionsToMonitorModel(sessions), [sessions]);
   const openTerm = openId ? model.find((m) => m.id === openId) ?? null : null;
   const openSession = openId ? sessions.find((s) => s.id === openId) ?? null : null;
@@ -44,10 +47,12 @@ export function MonitorView({
     setOpenId(t.id);
   };
 
-  // Close the fullscreen pane on Escape BEFORE the overlay's own bubble-phase
-  // Escape handler minimizes the whole grid.
+  // While the fullscreen pane is open, BOTH back affordances collapse to the
+  // monitor instead of leaving it: Escape (capture, ahead of the overlay's
+  // bubble handler) and the global titlebar Back (interceptor nesting).
   useEffect(() => {
     if (!openId) return;
+    setBackInterceptor(() => setOpenId(null));
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -55,8 +60,11 @@ export function MonitorView({
       }
     };
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [openId]);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      setBackInterceptor(onOverlayClose);
+    };
+  }, [openId, setBackInterceptor, onOverlayClose]);
 
   // Session left the registry while fullscreen (killed/removed) — fall back.
   useEffect(() => {
@@ -68,10 +76,8 @@ export function MonitorView({
 
   return (
     <LayoutGroup>
-      <div className="relative flex-1 min-h-0">
-        {variant === 'heatboard' && <VariantHeatboard fleet={model} onOpen={onOpen} />}
-        {variant === 'lanes' && <VariantTriageLanes fleet={model} onOpen={onOpen} />}
-        {variant === 'ledger' && <VariantLedger fleet={model} onOpen={onOpen} />}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <MonitorLedger fleet={model} onOpen={onOpen} />
         <AnimatePresence>
           {openTerm && openSession && (
             <motion.div

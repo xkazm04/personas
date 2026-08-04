@@ -1,5 +1,5 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import type { ProtoTerminal } from './mockFleet';
+import type { ProtoTerminal } from './monitorTypes';
 
 /**
  * Adapter: REAL fleet sessions → the monitor model the three variants render.
