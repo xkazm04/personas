@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} session",
       "fleet_plan_session_count_other": "{count} sessions",
       "fleet_plan_skill_label": "Compétence",
-      "fleet_plan_skill_placeholder": "facultatif, ex. scan-sweep"
+      "fleet_plan_skill_placeholder": "facultatif, ex. scan-sweep",
+      "daily_goals_completed_celebrate": "Tous les objectifs accomplis ! Série prolongée.",
+      "daily_goals_create": "Démarrer la série",
+      "daily_goals_discard": "Abandonner cette série d'objectifs",
+      "daily_goals_done_today": "Fait pour aujourd'hui",
+      "daily_goals_goal_placeholder": "Que voulez-vous accomplir ?",
+      "daily_goals_label": "Objectifs quotidiens",
+      "daily_goals_mark_done": "Marquer comme fait",
+      "daily_goals_mark_open": "Marquer comme non fait",
+      "daily_goals_modal_hint": "Jusqu'à 3 objectifs pour aujourd'hui. Vous jugez vous-même de la réussite ; quand tous les objectifs sont atteints, la série se réinitialise et le compteur augmente.",
+      "daily_goals_modal_title": "Objectifs du jour",
+      "daily_goals_set_button": "Définir les objectifs",
+      "daily_goals_streak_hint": "Jours consécutifs avec tous les objectifs quotidiens atteints. Terminer la série du jour maintient le compteur ; un jour manqué le réinitialise.",
+      "dev_dump_log": "Enregistrer le journal de conversation dans un fichier",
+      "dev_dump_log_failed": "Échec de l'enregistrement du journal de conversation",
+      "dev_dump_log_saved": "Journal de conversation enregistré : {path}"
     },
     "artist_gallery": {
       "loading_viewer": "Chargement du visualiseur…",

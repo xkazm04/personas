@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} сеанс",
       "fleet_plan_session_count_other": "{count} сеансов",
       "fleet_plan_skill_label": "Навык",
-      "fleet_plan_skill_placeholder": "необязательно, например scan-sweep"
+      "fleet_plan_skill_placeholder": "необязательно, например scan-sweep",
+      "daily_goals_completed_celebrate": "Все цели выполнены! Серия продлена.",
+      "daily_goals_create": "Начать набор",
+      "daily_goals_discard": "Отменить этот набор целей",
+      "daily_goals_done_today": "Выполнено сегодня",
+      "daily_goals_goal_placeholder": "Что вы хотите сделать?",
+      "daily_goals_label": "Ежедневные цели",
+      "daily_goals_mark_done": "Отметить выполненным",
+      "daily_goals_mark_open": "Отметить невыполненным",
+      "daily_goals_modal_hint": "До 3 целей на сегодня. Вы сами оцениваете выполнение; когда все цели выполнены, набор очищается, а серия растёт.",
+      "daily_goals_modal_title": "Цели на сегодня",
+      "daily_goals_set_button": "Задать цели",
+      "daily_goals_streak_hint": "Дни подряд, когда все ежедневные цели выполнены. Завершение сегодняшнего набора сохраняет серию; пропущенный день сбрасывает её.",
+      "dev_dump_log": "Сохранить журнал разговора в файл",
+      "dev_dump_log_failed": "Не удалось сохранить журнал разговора",
+      "dev_dump_log_saved": "Журнал разговора сохранён: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "Загрузка просмотрщика…",

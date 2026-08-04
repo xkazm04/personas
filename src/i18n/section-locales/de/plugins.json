@@ -2590,7 +2590,22 @@
     "fleet_plan_session_count_one": "{count} Sitzung",
     "fleet_plan_session_count_other": "{count} Sitzungen",
     "fleet_plan_skill_label": "Skill",
-    "fleet_plan_skill_placeholder": "optional, z. B. scan-sweep"
+    "fleet_plan_skill_placeholder": "optional, z. B. scan-sweep",
+    "daily_goals_completed_celebrate": "Alle Ziele erreicht! Serie verlängert.",
+    "daily_goals_create": "Set starten",
+    "daily_goals_discard": "Dieses Zielset verwerfen",
+    "daily_goals_done_today": "Heute erledigt",
+    "daily_goals_goal_placeholder": "Was möchtest du erreichen?",
+    "daily_goals_label": "Tagesziele",
+    "daily_goals_mark_done": "Als erledigt markieren",
+    "daily_goals_mark_open": "Als offen markieren",
+    "daily_goals_modal_hint": "Bis zu 3 Ziele für heute. Du beurteilst die Erledigung selbst; sind alle Ziele erledigt, wird das Set geleert und die Serie wächst.",
+    "daily_goals_modal_title": "Heutige Ziele",
+    "daily_goals_set_button": "Ziele festlegen",
+    "daily_goals_streak_hint": "Aufeinanderfolgende Tage mit allen erreichten Tageszielen. Wird das heutige Set abgeschlossen, bleibt die Serie erhalten; ein verpasster Tag setzt sie zurück.",
+    "dev_dump_log": "Konversationsprotokoll in Datei speichern",
+    "dev_dump_log_failed": "Konversationsprotokoll konnte nicht gespeichert werden",
+    "dev_dump_log_saved": "Konversationsprotokoll gespeichert: {path}"
   },
   "artist_gallery": {
     "loading_viewer": "Viewer wird geladen…",

@@ -2590,7 +2590,22 @@
     "fleet_plan_session_count_one": "{count} sesión",
     "fleet_plan_session_count_other": "{count} sesiones",
     "fleet_plan_skill_label": "Habilidad",
-    "fleet_plan_skill_placeholder": "opcional, p. ej. scan-sweep"
+    "fleet_plan_skill_placeholder": "opcional, p. ej. scan-sweep",
+    "daily_goals_completed_celebrate": "¡Todas las metas cumplidas! Racha extendida.",
+    "daily_goals_create": "Iniciar el conjunto",
+    "daily_goals_discard": "Descartar este conjunto de metas",
+    "daily_goals_done_today": "Hecho por hoy",
+    "daily_goals_goal_placeholder": "¿Qué quieres lograr?",
+    "daily_goals_label": "Metas diarias",
+    "daily_goals_mark_done": "Marcar como hecho",
+    "daily_goals_mark_open": "Marcar como no hecho",
+    "daily_goals_modal_hint": "Hasta 3 metas para hoy. Tú decides cuándo se completan; cuando todas las metas estén hechas, el conjunto se reinicia y la racha crece.",
+    "daily_goals_modal_title": "Metas de hoy",
+    "daily_goals_set_button": "Definir metas",
+    "daily_goals_streak_hint": "Días consecutivos con todas las metas diarias cumplidas. Completar el conjunto de hoy mantiene la racha viva; un día sin cumplir la reinicia.",
+    "dev_dump_log": "Guardar registro de la conversación en un archivo",
+    "dev_dump_log_failed": "No se pudo guardar el registro de la conversación",
+    "dev_dump_log_saved": "Registro de conversación guardado: {path}"
   },
   "artist_gallery": {
     "loading_viewer": "Cargando visor…",

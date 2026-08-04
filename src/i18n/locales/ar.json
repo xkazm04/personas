@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} جلسة",
       "fleet_plan_session_count_other": "{count} جلسات",
       "fleet_plan_skill_label": "المهارة",
-      "fleet_plan_skill_placeholder": "اختياري، مثل scan-sweep"
+      "fleet_plan_skill_placeholder": "اختياري، مثل scan-sweep",
+      "daily_goals_completed_celebrate": "تم إنجاز جميع الأهداف! تم تمديد السلسلة.",
+      "daily_goals_create": "ابدأ المجموعة",
+      "daily_goals_discard": "تجاهل مجموعة الأهداف هذه",
+      "daily_goals_done_today": "تم إنجازه اليوم",
+      "daily_goals_goal_placeholder": "ما الذي تريد إنجازه؟",
+      "daily_goals_label": "الأهداف اليومية",
+      "daily_goals_mark_done": "وضع علامة كمنجز",
+      "daily_goals_mark_open": "وضع علامة كغير منجز",
+      "daily_goals_modal_hint": "حتى 3 أهداف لليوم. أنت من يحدد الإنجاز بنفسك؛ عند إنجاز كل هدف، تُمسح المجموعة وتزداد السلسلة.",
+      "daily_goals_modal_title": "أهداف اليوم",
+      "daily_goals_set_button": "تحديد الأهداف",
+      "daily_goals_streak_hint": "عدد الأيام المتتالية التي أُنجزت فيها جميع الأهداف اليومية. إنهاء مجموعة اليوم يحافظ على استمرار السلسلة؛ وتفويت يوم يعيد ضبطها.",
+      "dev_dump_log": "حفظ سجل المحادثة في ملف",
+      "dev_dump_log_failed": "فشل حفظ سجل المحادثة",
+      "dev_dump_log_saved": "تم حفظ سجل المحادثة: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "جارٍ تحميل العارض…",

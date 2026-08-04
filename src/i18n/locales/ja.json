@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} セッション",
       "fleet_plan_session_count_other": "{count} セッション",
       "fleet_plan_skill_label": "スキル",
-      "fleet_plan_skill_placeholder": "任意、例: scan-sweep"
+      "fleet_plan_skill_placeholder": "任意、例: scan-sweep",
+      "daily_goals_completed_celebrate": "すべての目標を達成しました!連続記録が伸びました。",
+      "daily_goals_create": "セットを開始",
+      "daily_goals_discard": "この目標セットを破棄",
+      "daily_goals_done_today": "今日は完了",
+      "daily_goals_goal_placeholder": "何を達成したいですか?",
+      "daily_goals_label": "今日の目標",
+      "daily_goals_mark_done": "完了にする",
+      "daily_goals_mark_open": "未完了にする",
+      "daily_goals_modal_hint": "今日の目標は最大3つまで。達成の判断は自分自身で行います。すべての目標を完了するとセットがクリアされ、連続記録が伸びます。",
+      "daily_goals_modal_title": "今日の目標",
+      "daily_goals_set_button": "目標を設定",
+      "daily_goals_streak_hint": "毎日の目標をすべて達成した連続日数です。今日のセットを完了すると連続記録が続き、達成できなかった日があるとリセットされます。",
+      "dev_dump_log": "会話ログをファイルに保存",
+      "dev_dump_log_failed": "会話ログの保存に失敗しました",
+      "dev_dump_log_saved": "会話ログを保存しました: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "ビューアを読み込み中…",

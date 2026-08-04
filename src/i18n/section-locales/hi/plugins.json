@@ -2590,7 +2590,22 @@
     "fleet_plan_session_count_one": "{count} सत्र",
     "fleet_plan_session_count_other": "{count} सत्र",
     "fleet_plan_skill_label": "स्किल",
-    "fleet_plan_skill_placeholder": "वैकल्पिक, जैसे scan-sweep"
+    "fleet_plan_skill_placeholder": "वैकल्पिक, जैसे scan-sweep",
+    "daily_goals_completed_celebrate": "सभी लक्ष्य पूरे हो गए! लगातार क्रम आगे बढ़ा।",
+    "daily_goals_create": "सेट शुरू करें",
+    "daily_goals_discard": "इस लक्ष्य सेट को हटाएं",
+    "daily_goals_done_today": "आज के लिए पूरा हुआ",
+    "daily_goals_goal_placeholder": "आप क्या हासिल करना चाहते हैं?",
+    "daily_goals_label": "दैनिक लक्ष्य",
+    "daily_goals_mark_done": "पूरा हुआ चिह्नित करें",
+    "daily_goals_mark_open": "अधूरा चिह्नित करें",
+    "daily_goals_modal_hint": "आज के लिए अधिकतम 3 लक्ष्य। पूरा होने का निर्णय आप स्वयं करें; जब सभी लक्ष्य पूरे हो जाएं, तो सेट साफ़ हो जाता है और क्रम आगे बढ़ता है।",
+    "daily_goals_modal_title": "आज के लक्ष्य",
+    "daily_goals_set_button": "लक्ष्य सेट करें",
+    "daily_goals_streak_hint": "लगातार वे दिन जब सभी दैनिक लक्ष्य पूरे हुए। आज का सेट पूरा करने से क्रम बना रहता है; एक दिन छूटने पर यह रीसेट हो जाता है।",
+    "dev_dump_log": "बातचीत लॉग को फ़ाइल में सहेजें",
+    "dev_dump_log_failed": "बातचीत लॉग सहेजने में विफल",
+    "dev_dump_log_saved": "बातचीत लॉग सहेजा गया: {path}"
   },
   "artist_gallery": {
     "loading_viewer": "viewer लोड हो रहा है…",

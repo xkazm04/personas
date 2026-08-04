@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "세션 {count}개",
       "fleet_plan_session_count_other": "세션 {count}개",
       "fleet_plan_skill_label": "스킬",
-      "fleet_plan_skill_placeholder": "선택 사항, 예: scan-sweep"
+      "fleet_plan_skill_placeholder": "선택 사항, 예: scan-sweep",
+      "daily_goals_completed_celebrate": "모든 목표를 달성했습니다! 연속 기록이 늘어났습니다.",
+      "daily_goals_create": "목표 세트 시작",
+      "daily_goals_discard": "이 목표 세트 삭제",
+      "daily_goals_done_today": "오늘 완료",
+      "daily_goals_goal_placeholder": "무엇을 달성하고 싶으신가요?",
+      "daily_goals_label": "일일 목표",
+      "daily_goals_mark_done": "완료로 표시",
+      "daily_goals_mark_open": "미완료로 표시",
+      "daily_goals_modal_hint": "오늘의 목표는 최대 3개까지 설정할 수 있습니다. 완료 여부는 직접 판단하며, 모든 목표를 완료하면 세트가 초기화되고 연속 기록이 늘어납니다.",
+      "daily_goals_modal_title": "오늘의 목표",
+      "daily_goals_set_button": "목표 설정",
+      "daily_goals_streak_hint": "일일 목표를 모두 달성한 연속 일수입니다. 오늘의 세트를 완료하면 연속 기록이 유지되고, 하루라도 놓치면 초기화됩니다.",
+      "dev_dump_log": "대화 로그를 파일로 저장",
+      "dev_dump_log_failed": "대화 로그 저장에 실패했습니다",
+      "dev_dump_log_saved": "대화 로그가 저장되었습니다: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "뷰어 로딩 중…",

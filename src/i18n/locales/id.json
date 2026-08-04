@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} sesi",
       "fleet_plan_session_count_other": "{count} sesi",
       "fleet_plan_skill_label": "Skill",
-      "fleet_plan_skill_placeholder": "opsional, mis. scan-sweep"
+      "fleet_plan_skill_placeholder": "opsional, mis. scan-sweep",
+      "daily_goals_completed_celebrate": "Semua target tercapai! Rentetan berlanjut.",
+      "daily_goals_create": "Mulai set",
+      "daily_goals_discard": "Buang set target ini",
+      "daily_goals_done_today": "Selesai untuk hari ini",
+      "daily_goals_goal_placeholder": "Apa yang ingin kamu capai?",
+      "daily_goals_label": "Target harian",
+      "daily_goals_mark_done": "Tandai selesai",
+      "daily_goals_mark_open": "Tandai belum selesai",
+      "daily_goals_modal_hint": "Hingga 3 target untuk hari ini. Kamu sendiri yang menilai penyelesaiannya; setelah semua target selesai, set akan dihapus dan rentetan bertambah.",
+      "daily_goals_modal_title": "Target hari ini",
+      "daily_goals_set_button": "Atur target",
+      "daily_goals_streak_hint": "Jumlah hari berturut-turut dengan semua target harian tercapai. Menyelesaikan set hari ini menjaga rentetan tetap hidup; jika terlewat satu hari, rentetan direset.",
+      "dev_dump_log": "Simpan log percakapan ke file",
+      "dev_dump_log_failed": "Gagal menyimpan log percakapan",
+      "dev_dump_log_saved": "Log percakapan disimpan: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "Memuat penampil…",

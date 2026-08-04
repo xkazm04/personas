@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count}টি সেশন",
       "fleet_plan_session_count_other": "{count}টি সেশন",
       "fleet_plan_skill_label": "স্কিল",
-      "fleet_plan_skill_placeholder": "ঐচ্ছিক, যেমন scan-sweep"
+      "fleet_plan_skill_placeholder": "ঐচ্ছিক, যেমন scan-sweep",
+      "daily_goals_completed_celebrate": "সব লক্ষ্য সম্পন্ন! ধারাবাহিকতা বাড়ল।",
+      "daily_goals_create": "সেট শুরু করুন",
+      "daily_goals_discard": "এই লক্ষ্য সেট বাতিল করুন",
+      "daily_goals_done_today": "আজকের জন্য সম্পন্ন",
+      "daily_goals_goal_placeholder": "আপনি কী অর্জন করতে চান?",
+      "daily_goals_label": "দৈনিক লক্ষ্য",
+      "daily_goals_mark_done": "সম্পন্ন হিসেবে চিহ্নিত করুন",
+      "daily_goals_mark_open": "অসম্পন্ন হিসেবে চিহ্নিত করুন",
+      "daily_goals_modal_hint": "আজকের জন্য সর্বোচ্চ ৩টি লক্ষ্য। সম্পন্ন হয়েছে কিনা তা আপনি নিজেই যাচাই করবেন; সব লক্ষ্য সম্পন্ন হলে সেটটি মুছে যায় এবং ধারাবাহিকতা বাড়ে।",
+      "daily_goals_modal_title": "আজকের লক্ষ্য",
+      "daily_goals_set_button": "লক্ষ্য নির্ধারণ করুন",
+      "daily_goals_streak_hint": "সব দৈনিক লক্ষ্য সম্পন্ন হওয়া টানা দিনের সংখ্যা। আজকের সেট শেষ করলে ধারাবাহিকতা বজায় থাকে; একদিন বাদ পড়লে তা রিসেট হয়ে যায়।",
+      "dev_dump_log": "কথোপকথনের লগ ফাইলে সংরক্ষণ করুন",
+      "dev_dump_log_failed": "কথোপকথনের লগ সংরক্ষণ করা যায়নি",
+      "dev_dump_log_saved": "কথোপকথনের লগ সংরক্ষিত হয়েছে: {path}"
     },
     "artist_gallery": {
       "loading_viewer": "ভিউয়ার লোড হচ্ছে…",

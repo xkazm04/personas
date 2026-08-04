@@ -14972,7 +14972,22 @@
       "fleet_plan_session_count_one": "{count} 个会话",
       "fleet_plan_session_count_other": "{count} 个会话",
       "fleet_plan_skill_label": "技能",
-      "fleet_plan_skill_placeholder": "可选，例如 scan-sweep"
+      "fleet_plan_skill_placeholder": "可选，例如 scan-sweep",
+      "daily_goals_completed_celebrate": "所有目标均已完成！连续记录已延长。",
+      "daily_goals_create": "开始设置",
+      "daily_goals_discard": "放弃此目标组",
+      "daily_goals_done_today": "今日已完成",
+      "daily_goals_goal_placeholder": "你想完成什么？",
+      "daily_goals_label": "每日目标",
+      "daily_goals_mark_done": "标记为完成",
+      "daily_goals_mark_open": "标记为未完成",
+      "daily_goals_modal_hint": "今天最多可设置 3 个目标。完成情况由你自行判断；当所有目标都完成后，目标组会清空，连续天数增加。",
+      "daily_goals_modal_title": "今日目标",
+      "daily_goals_set_button": "设置目标",
+      "daily_goals_streak_hint": "连续完成所有每日目标的天数。完成今天的目标组可保持连续记录；错过一天则会重置。",
+      "dev_dump_log": "将对话记录保存到文件",
+      "dev_dump_log_failed": "保存对话记录失败",
+      "dev_dump_log_saved": "对话记录已保存：{path}"
     },
     "artist_gallery": {
       "loading_viewer": "加载查看器中…",

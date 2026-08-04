@@ -2590,7 +2590,22 @@
     "fleet_plan_session_count_one": "{count} phiên",
     "fleet_plan_session_count_other": "{count} phiên",
     "fleet_plan_skill_label": "Kỹ năng",
-    "fleet_plan_skill_placeholder": "tùy chọn, ví dụ scan-sweep"
+    "fleet_plan_skill_placeholder": "tùy chọn, ví dụ scan-sweep",
+    "daily_goals_completed_celebrate": "Đã hoàn thành mọi mục tiêu! Chuỗi ngày được nối dài.",
+    "daily_goals_create": "Bắt đầu bộ mục tiêu",
+    "daily_goals_discard": "Bỏ bộ mục tiêu này",
+    "daily_goals_done_today": "Đã xong hôm nay",
+    "daily_goals_goal_placeholder": "Bạn muốn hoàn thành điều gì?",
+    "daily_goals_label": "Mục tiêu hằng ngày",
+    "daily_goals_mark_done": "Đánh dấu hoàn thành",
+    "daily_goals_mark_open": "Đánh dấu chưa xong",
+    "daily_goals_modal_hint": "Tối đa 3 mục tiêu cho hôm nay. Bạn tự đánh giá mức độ hoàn thành; khi tất cả mục tiêu xong, bộ mục tiêu sẽ được xóa và chuỗi ngày tăng lên.",
+    "daily_goals_modal_title": "Mục tiêu hôm nay",
+    "daily_goals_set_button": "Đặt mục tiêu",
+    "daily_goals_streak_hint": "Số ngày liên tiếp hoàn thành mọi mục tiêu hằng ngày. Hoàn thành bộ mục tiêu hôm nay sẽ duy trì chuỗi ngày; bỏ lỡ một ngày sẽ đặt lại về 0.",
+    "dev_dump_log": "Lưu nhật ký hội thoại vào tệp",
+    "dev_dump_log_failed": "Lưu nhật ký hội thoại thất bại",
+    "dev_dump_log_saved": "Đã lưu nhật ký hội thoại: {path}"
   },
   "artist_gallery": {
     "loading_viewer": "Đang tải trình xem…",
