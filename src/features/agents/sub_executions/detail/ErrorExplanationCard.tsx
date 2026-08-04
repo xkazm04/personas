@@ -10,7 +10,7 @@ import {
   type ErrorAction,
   SEVERITY_ICONS,
   SEVERITY_TO_TOKEN,
-} from './executionDetailTypes';
+} from '@/lib/errors/errorExplanation';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
 
 interface ErrorExplanationCardProps {

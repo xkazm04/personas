@@ -5,9 +5,9 @@ import { ExecutionInspector } from '@/features/agents/sub_executions/detail/insp
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
-import { hasNonEmptyJson } from './executionDetailTypes';
+import { hasNonEmptyJson } from '@/lib/utils/parseJson';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
-import { ExecutionDetailContent } from './ExecutionDetailContent';
+import { ExecutionDetailContent } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { ChainTraceView } from './chain/ChainTraceView';
 import { useChainTrace } from '../libs/useChainTrace';
 import { getExecution } from '@/api/agents/executions';
