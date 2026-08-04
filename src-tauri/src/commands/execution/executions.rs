@@ -1060,3 +1060,76 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
 
     serde_json::Value::Object(ctx)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Minimal `PersonaExecution` for ownership-check tests (mirrors the
+    /// constructor in `engine::management_api`'s tests).
+    fn exec_owned_by(persona_id: &str) -> PersonaExecution {
+        let now = chrono::Utc::now().to_rfc3339();
+        PersonaExecution {
+            id: "exec-1".into(),
+            persona_id: persona_id.into(),
+            trigger_id: None,
+            use_case_id: None,
+            status: "completed".into(),
+            input_data: None,
+            output_data: None,
+            claude_session_id: None,
+            log_file_path: None,
+            execution_flows: None,
+            model_used: None,
+            thinking_level: None,
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0.0,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
+            error_message: None,
+            duration_ms: None,
+            tool_steps: None,
+            retry_of_execution_id: None,
+            retry_count: 0,
+            started_at: Some(now.clone()),
+            completed_at: Some(now.clone()),
+            created_at: now,
+            execution_config: Some("{}".into()),
+            log_truncated: false,
+            is_simulation: false,
+            business_outcome: "unknown".to_string(),
+            director_score: None,
+            director_review_md: None,
+        }
+    }
+
+    /// `verify_execution_owner` is the cross-persona read barrier behind eight
+    /// IPC commands (get_execution, get_execution_log, get_execution_trace,
+    /// get_dream_replay, cancel_execution, …). It had no test of its own.
+    #[test]
+    fn owner_check_accepts_the_owning_persona() {
+        let exec = exec_owned_by("p-alice");
+        assert!(verify_execution_owner(&exec, "p-alice").is_ok());
+    }
+
+    #[test]
+    fn owner_check_rejects_a_foreign_persona_as_auth_error() {
+        let exec = exec_owned_by("p-alice");
+        let err = verify_execution_owner(&exec, "p-mallory")
+            .expect_err("a foreign persona must not read another persona's execution");
+        assert!(
+            matches!(err, AppError::Auth(_)),
+            "must be an Auth error (not NotFound/Validation), got {err:?}"
+        );
+    }
+
+    /// Guards the exact-match semantics: no prefix/substring leniency.
+    #[test]
+    fn owner_check_is_exact_match_not_prefix() {
+        let exec = exec_owned_by("p-alice");
+        assert!(verify_execution_owner(&exec, "p-alice-2").is_err());
+        assert!(verify_execution_owner(&exec, "p-ali").is_err());
+        assert!(verify_execution_owner(&exec, "").is_err());
+    }
+}
