@@ -210,12 +210,33 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
 }
 
 /**
+ * Wrapper that drops the memoized in-flight promise when the load FAILS.
+ *
+ * Without it a rejected `_loading` is replayed to every future caller for the
+ * lifetime of the session — one transient failure (a chunk that failed to
+ * fetch, a CatalogIntegrityError thrown while a template JSON was mid-edit in
+ * dev) permanently empties the gallery, and Retry only recovers because it
+ * happens to call `invalidateTemplateCatalog()` first. Successful loads still
+ * memoize exactly as before.
+ */
+async function loadAndVerifyResettable(): Promise<VerifiedEntry[]> {
+  let settled = false;
+  try {
+    const verified = await loadAndVerify();
+    settled = true;
+    return verified;
+  } finally {
+    if (!settled) _loading = null;
+  }
+}
+
+/**
  * Load and verify templates on demand. Cached after first call.
  * All consumers should use this instead of the sync TEMPLATE_CATALOG export.
  */
 export async function getTemplateCatalog(): Promise<TemplateCatalogEntry[]> {
   if (_cached) return _cached.map((v) => v.template);
-  if (!_loading) _loading = loadAndVerify();
+  if (!_loading) _loading = loadAndVerifyResettable();
   _cached = await _loading;
   return _cached.map((v) => v.template);
 }
