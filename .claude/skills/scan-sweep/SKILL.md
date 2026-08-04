@@ -115,7 +115,9 @@ Routing:
   queue by destruction:
   - **Low destruction** (risk ≤ 3 and not pure churn): auto-execute, no ask.
   - **Above-medium destruction** (risk ≥ 4), **pure churn** (refactors of
-    working code with no user-visible or measurable gain), and **L items**:
+    working code with no user-visible or measurable gain), **value-uncertain
+    product items** (instrumentation, speculative features — low risk but the
+    operator owns the value judgment), and **L items**:
     STOP and triage with the operator in the terminal — one line per item
     (title, value, what could break), operator picks which proceed. Accepted
     items join the execution phase; declined ones are dropped or emitted as
