@@ -6,13 +6,23 @@ import { formatCost, type ToolCallStep } from './inspectorTypes';
 import type { PersonaExecution } from '@/lib/types/types';
 
 /**
- * Shared primitives for the prototype Inspector variants.
+ * Presentational primitives for the Inspector tab.
  *
- * `InspectorStatStrip` is the dense, single-row replacement for the baseline's
- * five tall metric cards. `StepIO` renders one tool call's input/output as
- * syntax-highlighted JSON (via {@link HighlightedJsonBlock}) instead of the
- * baseline's plain `<pre>` previews. Both are consumed by every variant, so
- * they're extracted here from round 1.
+ * The tab shipped as a set of competing prototype variants; the survivor is the
+ * single master/detail layout in {@link ExecutionInspector} (a selectable list
+ * of tool calls on the left, the selected call's payload on the right). These
+ * two pieces stayed factored out of it because they are pure presentation with
+ * no inspector state of their own:
+ *
+ * - `InspectorStatStrip` — the run's headline metrics (input/output tokens,
+ *   cost, cache-hit rate, duration) as one dense strip above the layout.
+ * - `StepIO` — one tool call's input and output as syntax-highlighted JSON
+ *   (via {@link HighlightedJsonBlock}), rendered into the detail pane. `dense`
+ *   caps its scroll height for tighter hosts.
+ *
+ * ExecutionInspector is their only consumer today; keep them here rather than
+ * inlining, so a second surface that needs the same strip or payload block has
+ * somewhere to import from.
  */
 
 export function InspectorStatStrip({ execution }: { execution: PersonaExecution }) {
