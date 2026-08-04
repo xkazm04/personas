@@ -10,17 +10,15 @@
 // what is attached to it?" without opening anything. It costs width: fewer
 // contexts fit per row.
 import { useMemo, useState } from 'react';
-import { Gauge, Layers, Search, Sparkles, Target } from 'lucide-react';
+import { Layers, Search } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import { colorDot } from './GroupColorPicker';
 import { LedgerActions, ProposalStrip, type ContextLedgerProps } from './contextLedgerShared';
+import { RosterTile, rosterRowHeight, skipStyle, useFilteredGroups } from './contextMapPerf';
 import {
-  KPI_STATUS_SURFACE,
   KPI_STATUS_DOT,
   KPI_STATUS_LABEL_KEY,
   isNeutral,
@@ -67,18 +65,8 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
     return m;
   }, [useCaseState.useCases]);
 
-  const filteredGroups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return groups;
-    return groups
-      .map((g) => ({
-        ...g,
-        contexts: g.contexts.filter(
-          (c) => c.name.toLowerCase().includes(q) || c.keywords.some((k) => k.toLowerCase().includes(q)),
-        ),
-      }))
-      .filter((g) => g.contexts.length > 0);
-  }, [groups, query]);
+  // Deferred so a keystroke paints the input before the whole board re-filters.
+  const { filteredGroups, deferredQuery } = useFilteredGroups(groups, query);
 
   const statusOf = (id: string): ContextKpiStatus => kpiStatusByContext.get(id) ?? 'none';
 
@@ -121,7 +109,11 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
         {filteredGroups.map((g) => {
           const dot = colorDot(g.color);
           return (
-            <div key={g.id} className="flex items-start gap-3 px-3 py-2.5 hover:bg-secondary/[0.06] transition-colors">
+            <div
+              key={g.id}
+              className="flex items-start gap-3 px-3 py-2.5 hover:bg-secondary/[0.06] transition-colors"
+              style={skipStyle(rosterRowHeight(g.contexts.length))}
+            >
               {/* the group — one per row */}
               <div className="flex items-center gap-1.5 shrink-0 w-44 pt-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot.bg}`} />
@@ -131,78 +123,33 @@ export default function ContextGroupRowsStats(props: ContextLedgerProps) {
 
               {/* its contexts, inline */}
               <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-                {g.contexts.map((c) => {
-                  const status = statusOf(c.id);
-                  const selected = c.id === selectedCtxId;
-                  const dimmed = highlighted.size > 0 && !highlighted.has(c.id);
-                  const scanning = scanningContextId === c.id;
-                  return (
-                    // A div, not a button — the tile hosts its own scan button and
-                    // nested buttons are invalid HTML.
-                    <div
-                      key={c.id}
-                      className={`w-[12.5rem] rounded-card border transition-colors ${KPI_STATUS_SURFACE[status]} ${
-                        selected ? 'ring-1 ring-primary/60' : ''
-                      } ${dimmed ? 'opacity-35' : ''}`}
-                    >
-                      {/* label */}
-                      <button
-                        type="button"
-                        onClick={() => onSelectCtx(selected ? null : c.id)}
-                        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-left min-w-0"
-                      >
-                        <Tooltip content={t[KPI_STATUS_LABEL_KEY[status]]}>
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${KPI_STATUS_DOT[status]}`} />
-                        </Tooltip>
-                        <span className="typo-body font-medium text-foreground truncate">{c.name}</span>
-                      </button>
-
-                      {/* the divider, then the indicators */}
-                      <div className="border-t border-foreground/10 flex items-center gap-2.5 px-2 py-1">
-                        <Indicator
-                          icon={<Layers className="w-3 h-3" />}
-                          n={featureCountByContext.get(c.id) ?? 0}
-                          stem="text-sky-300"
-                          label={t.uc_title}
-                        />
-                        <Indicator
-                          icon={<Target className="w-3 h-3" />}
-                          n={goalCoverageByContext.get(c.id)?.count ?? 0}
-                          stem="text-violet-300"
-                          label={t.context_detail_goals_heading}
-                        />
-                        <Indicator
-                          icon={<Gauge className="w-3 h-3" />}
-                          n={kpiCoverageByContext.get(c.id) ?? 0}
-                          stem="text-rose-300"
-                          label={t.ctx_indicator_kpis}
-                        />
-
-                        <Tooltip content={t.context_scan_ideas_tooltip}>
-                          <button
-                            type="button"
-                            onClick={() => { if (!scanBusy) onScanContext(c.id); }}
-                            disabled={scanBusy}
-                            aria-label={t.context_scan_ideas_tooltip}
-                            className="ml-auto shrink-0 grid place-items-center w-5 h-5 rounded-full border border-primary/15 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {scanning ? <LoadingSpinner size="xs" /> : <Sparkles className="w-3 h-3" />}
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  );
-                })}
+                {g.contexts.map((c) => (
+                  <RosterTile
+                    key={c.id}
+                    ctx={c}
+                    status={statusOf(c.id)}
+                    selected={c.id === selectedCtxId}
+                    dimmed={highlighted.size > 0 && !highlighted.has(c.id)}
+                    featureCount={featureCountByContext.get(c.id) ?? 0}
+                    goalCount={goalCoverageByContext.get(c.id)?.count ?? 0}
+                    kpiCount={kpiCoverageByContext.get(c.id) ?? 0}
+                    scanning={scanningContextId === c.id}
+                    scanBusy={scanBusy}
+                    onSelectCtx={onSelectCtx}
+                    onScanContext={onScanContext}
+                    t={t}
+                  />
+                ))}
               </div>
             </div>
           );
         })}
 
-        {query.trim() && filteredGroups.length === 0 && (
+        {deferredQuery.trim() && filteredGroups.length === 0 && (
           <div className="flex flex-col items-center gap-1.5 py-8 text-center px-6">
             <Search className="w-6 h-6 text-foreground/30" />
             <p className="typo-caption text-foreground/60">
-              {t.context_search_no_results} “{query.trim()}”
+              {t.context_search_no_results} “{deferredQuery.trim()}”
             </p>
           </div>
         )}
@@ -224,28 +171,5 @@ function KpiLegend({ t }: { t: ReturnType<typeof useTranslation>['t']['plugins']
         </span>
       ))}
     </div>
-  );
-}
-
-/** One indicator — icon + count, muted to nothing at zero so a tile's colour
- *  comes from what it actually has. */
-function Indicator({
-  icon,
-  n,
-  stem,
-  label,
-}: {
-  icon: React.ReactNode;
-  n: number;
-  stem: string;
-  label: string;
-}) {
-  return (
-    <Tooltip content={`${n} ${label}`}>
-      <span className={`inline-flex items-center gap-0.5 typo-caption tabular-nums ${n > 0 ? stem : 'text-foreground/25'}`}>
-        {icon}
-        {n}
-      </span>
-    </Tooltip>
   );
 }
