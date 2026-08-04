@@ -1,14 +1,18 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import type { FleetMonitorStats } from '@/lib/bindings/FleetMonitorStats';
 import type { ProtoTerminal } from './monitorTypes';
 
 /**
- * Adapter: REAL fleet sessions → the monitor model the three variants render.
+ * Adapter: REAL fleet sessions → the monitor model the ledger renders.
  *
- * Real fields: id, project, label, state, dozing, headless, ageMin.
- * SIMULATED (deterministic per session id, until the backend lanes land —
- * see mockFleet.ts for the wiring plan): subprocs, subagents, tokens, memMb.
- * Simulation is seeded by the session id so values are stable across renders
- * and reloads — the UX reads real, only the numbers are placeholders.
+ * Session shape (id, project, label, state, dozing, headless, ageMin) comes
+ * from `FleetSession`; the stats come from `fleet_monitor_stats` (transcript
+ * rollup + per-PID memory), joined here by session id.
+ *
+ * A session that never bound a `claudeSessionId` has no transcript to read and
+ * therefore no stats at all — those rows keep the deterministic fnv SIMULATION
+ * (seeded by the session id so the numbers are stable across renders) and are
+ * flagged `simulated` so the ledger can mark them as placeholders.
  */
 
 /** FNV-1a — tiny stable hash for per-session simulated stats. */
@@ -21,32 +25,65 @@ function fnv(s: string): number {
   return h >>> 0;
 }
 
-export function sessionToMonitorTerminal(s: FleetSession, nowMs: number): ProtoTerminal {
-  const h = fnv(s.id);
-  const working = s.state === 'running' || s.state === 'spawning';
-  const dead = s.state === 'exited' || s.state === 'hibernated';
-  const hasProcess = !dead && !s.dozing && s.childPid != null;
-  const headless = s.mode === 'headless';
+/** The fields that come straight off the session row — never simulated. */
+function baseTerminal(s: FleetSession, nowMs: number) {
   const last = Number(s.lastActivityMs);
-  const subagentsActive = working ? h % 3 : 0;
   return {
     id: s.id,
     project: s.projectLabel,
     label: s.name ?? s.title ?? s.projectLabel,
     state: s.state,
     dozing: s.dozing,
-    headless,
+    headless: s.mode === 'headless',
+    ageMin: last > 0 ? Math.max(0, Math.round((nowMs - last) / 60_000)) : 0,
+  };
+}
+
+/** Placeholder stats for a session with no bound transcript. */
+function simulatedTerminal(s: FleetSession, nowMs: number): ProtoTerminal {
+  const h = fnv(s.id);
+  const base = baseTerminal(s, nowMs);
+  const working = s.state === 'running' || s.state === 'spawning';
+  const dead = s.state === 'exited' || s.state === 'hibernated';
+  const hasProcess = !dead && !s.dozing && s.childPid != null;
+  const subagentsActive = working ? h % 3 : 0;
+  return {
+    ...base,
+    simulated: true,
     subprocs: hasProcess && h % 5 < 2 ? 1 + (h % 3) : 0,
     subagentsActive,
     subagentsTotal: subagentsActive + ((h >> 3) % 8),
     outputTokens: (2 + ((h >> 5) % 220)) * 1000,
     contextTokens: (4 + ((h >> 8) % 150)) * 1000,
-    memMb: hasProcess ? (headless ? 40 + (h % 50) : 180 + (h % 320)) : 0,
-    ageMin: last > 0 ? Math.max(0, Math.round((nowMs - last) / 60_000)) : 0,
+    memMb: hasProcess ? (base.headless ? 40 + (h % 50) : 180 + (h % 320)) : 0,
   };
 }
 
-export function sessionsToMonitorModel(sessions: FleetSession[]): ProtoTerminal[] {
+export function sessionToMonitorTerminal(
+  s: FleetSession,
+  nowMs: number,
+  stats?: FleetMonitorStats,
+): ProtoTerminal {
+  if (!stats || !stats.claudeSessionId) return simulatedTerminal(s, nowMs);
+  return {
+    ...baseTerminal(s, nowMs),
+    simulated: false,
+    // Live subprocess / open-subagent counters arrive with the subwork lanes;
+    // until then a REAL row reports only what the backend can actually see
+    // rather than mixing a placeholder into a row marked as measured.
+    subprocs: 0,
+    subagentsActive: 0,
+    subagentsTotal: stats.subagentsTotal,
+    outputTokens: Number(stats.outputTokens),
+    contextTokens: Number(stats.contextTokens),
+    memMb: stats.memMb == null ? 0 : Number(stats.memMb),
+  };
+}
+
+export function sessionsToMonitorModel(
+  sessions: FleetSession[],
+  stats?: Map<string, FleetMonitorStats>,
+): ProtoTerminal[] {
   const now = Date.now();
-  return sessions.map((s) => sessionToMonitorTerminal(s, now));
+  return sessions.map((s) => sessionToMonitorTerminal(s, now, stats?.get(s.id)));
 }

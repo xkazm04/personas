@@ -3,24 +3,26 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 /**
  * The monitor layer's per-terminal model.
  *
- * Every field maps to a REAL data source, so this doubles as the wiring plan
- * for graduating the monitor from simulated stats to live ones:
- * - `state`, `dozing`, `headless`, `ageMin` → `FleetSession` (wired today)
- * - `subagentsTotal`                → transcript rollup `tools[]` count of the
- *                                     `Task` tool (`fleet_session_metadata`)
+ * Where each field comes from for a session with a bound transcript:
+ * - `state`, `dozing`, `headless`, `ageMin` → `FleetSession`
+ * - `subagentsTotal`                → `fleet_monitor_stats`, from the rollup's
+ *                                     `Task` tool count
+ * - `outputTokens`, `contextTokens` → `fleet_monitor_stats`, from the
+ *                                     incremental transcript rollup
+ * - `memMb`                         → `fleet_monitor_stats`, per-PID RSS
  * - `subagentsActive`               → PreToolUse/PostToolUse pairing on `Task`
- *                                     (hooks already received; small Rust delta)
+ *                                     (hooks already received; pending)
  * - `subprocs`                      → Bash `run_in_background: true` tool_use
- *                                     inputs in the transcript (RollupAcc delta)
- *                                     or a child-process scan of `childPid`
- *                                     (`fleet_detect_processes` precedent)
- * - `outputTokens`, `contextTokens` → `FleetTokenTotals` / `lastContextTokens`
- *                                     from the incremental rollup
- * - `memMb`                         → per-PID memory, same scan as the orphan
- *                                     panel (needs periodic sampling)
+ *                                     inputs in the transcript (pending)
+ *
+ * Sessions with NO bound transcript keep the fnv placeholder for every stat
+ * and set `simulated`.
  */
 export interface ProtoTerminal {
   id: string;
+  /** True when the stats below are the fnv placeholder, not measured values —
+   *  a session with no bound `claudeSessionId` has no transcript to read. */
+  simulated: boolean;
   project: string;
   label: string;
   state: FleetSessionState;

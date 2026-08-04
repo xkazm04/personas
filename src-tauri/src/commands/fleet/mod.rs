@@ -28,6 +28,7 @@ pub mod headless;
 pub mod hook_install;
 pub mod hooks;
 pub mod keys;
+pub mod monitor_stats;
 pub mod naming;
 pub mod pairing;
 pub mod persist;
