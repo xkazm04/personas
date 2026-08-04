@@ -136,15 +136,27 @@ The **Skills** tab (`sub_skills/`) now has two page tabs:
 
 **Overview (default)** — the workspace library and the active project's skills side by side.
 The library panel has a **Custom | Preset** switcher: Custom lists user-authored skills from
-`~/.claude/skills`; Preset leads with the **scan-sweep hero row** (the consolidated
-multi-lens context sweep — generated alongside the lenses, with a per-lens brief bundle in
-`references/lenses.md`) and collapses the full 22-lens catalog behind a roster toggle
-(grouped Technical / User Experience / Business / Mastermind, each row carrying its lens
-icon + color); the single-lens presets remain the focused deep-dive form. Adopting a
+`~/.claude/skills`; Preset leads with the **scan-sweep hero row** — the consolidated
+multi-lens context sweep is the ONLY scan entry point (the 22 single-lens `scan-*` skills
+were retired 2026-08-04; their briefs live on in the sweep's `references/lenses.md`, their
+visual identities survive for lens chips and historical usage rows, and a focused deep pass
+is `/scan-sweep --lenses <key> <context>`). Adopting a
 preset installs from the app bundle (`skill_files_install_system`); adopting a custom skill
 dispatches the Dev-runner customization task. Project rows keep memory bindings, context
 coverage bars, and the **Use** dialog (Fleet | Terminal dispatch target + Recommended / This one /
 All context selection folded into the run as a trailing arg).
+
+The preset catalog also carries one non-scan system skill: **`i18n-translate`**
+(`.claude/skills/i18n-translate/SKILL.md`, in `SYSTEM_SKILLS` in both
+`skill_files.rs` and `sync-system-skills.mjs`, hand-listed in `presetSkills.ts`
+like `scan-sweep`). It is a portable copywriting-grade localization loop
+(draft → typed MQM estimate → gated refine, validated on the kp repo's Czech
+catalog); everything repo-specific — catalog paths, placeholder syntax, gates,
+post-edit build steps — lives in the *target* repo's `docs/i18n/contract.md`,
+which the skill discovers and bootstraps on first run (Personas' own contract:
+`docs/i18n/contract.md` here). It has no scan lens and no match rules, so the
+coverage pipeline never proposes it; the "prefer the sweep" nudge in
+`UseSkillDialog` is gated on the `scan-` prefix so it doesn't apply.
 
 Row columns (Skill · Coverage · Usage · Last used · Action) sit on a **fixed** column
 template including the Action track. Each row is its own CSS grid, so an `auto` last

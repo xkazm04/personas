@@ -97,7 +97,8 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
               <button
                 type="button"
                 onClick={() => {
-                  onDispatch(`scan-${lens}`, contextName ?? '');
+                  // Focused deep pass = one-lens sweep (single-lens skills retired).
+                  onDispatch('scan-sweep', `--lenses ${lens} ${contextName ?? ''}`.trim());
                   setDispatched((prev) => new Set(prev).add(idea.id));
                 }}
                 disabled={busy || done}

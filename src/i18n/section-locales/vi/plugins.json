@@ -1433,8 +1433,6 @@
     "skills_auto_deep_label": "Tự động quét chuyên sâu",
     "skills_auto_deep_hint": "Khi sweep nâng cấp mức độ một lens, quét chuyên sâu sẽ tự động khởi chạy (tối đa 2 lần mỗi lần thu thập). Tắt tùy chọn này để tự điều phối thủ công từ danh sách này.",
     "skills_sweep_hero_hint": "Đọc một context một lần và đánh giá mọi lens phù hợp trong một phiên duy nhất. Đây là lựa chọn mặc định hiệu quả; các lens riêng lẻ bên dưới là dạng chuyên sâu tập trung.",
-    "skills_sweep_roster_show": "Hiện tất cả {n} lens",
-    "skills_sweep_roster_hide": "Ẩn các lens riêng lẻ",
     "skills_use_sweep_hint": "Lens này nằm trong gói sweep. Cân nhắc dùng /scan-sweep để xử lý cùng các lens khác trong một lượt.",
     "sweep_auto_deep_toast": "Đã điều phối quét chuyên sâu: {lens} trên {context}",
     "ctx_picker_clear": "Bỏ chọn",

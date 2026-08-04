@@ -13752,8 +13752,6 @@
       "skills_auto_deep_label": "Escaneos profundos automáticos",
       "skills_auto_deep_hint": "Cuando un sweep escala una lente, el escaneo enfocado se lanza automáticamente (máximo 2 por ingesta). Desactívalo para despacharlos manualmente desde esta lista.",
       "skills_sweep_hero_hint": "Lee un contexto una vez y evalúa cada lente coincidente en una sola sesión. La opción eficiente por defecto; las lentes individuales abajo son la forma enfocada de análisis profundo.",
-      "skills_sweep_roster_show": "Mostrar las {n} lentes",
-      "skills_sweep_roster_hide": "Ocultar lentes individuales",
       "skills_use_sweep_hint": "Esta lente forma parte del paquete de sweep. Considera /scan-sweep para cubrirla junto con las demás en una sola pasada.",
       "sweep_auto_deep_toast": "Escaneo profundo despachado: {lens} en {context}",
       "ctx_picker_clear": "Borrar selección",

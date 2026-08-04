@@ -34,7 +34,8 @@ export function setAutoDeepScanEnabled(on: boolean): void {
   }
 }
 
-/** The slash command a deep-scan escalation resolves to. */
+/** The slash command a deep-scan escalation resolves to. The single-lens
+ *  scan-* skills are retired — a focused deep pass is a one-lens sweep. */
 export function deepScanCommand(lens: string, context: string | null): string {
-  return context ? `/scan-${lens} ${context}` : `/scan-${lens}`;
+  return context ? `/scan-sweep --lenses ${lens} ${context}` : `/scan-sweep --lenses ${lens}`;
 }

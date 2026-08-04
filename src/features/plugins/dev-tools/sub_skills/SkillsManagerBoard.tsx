@@ -164,8 +164,6 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   const [pending, setPending] = useState<Pending | null>(null);
   // Library group: app-owned presets (icon rows) vs user-authored skills.
   const [libTab, setLibTab] = useState<'preset' | 'custom'>('custom');
-  // Preset tab: the 22 single-lens presets collapse behind the sweep hero row.
-  const [rosterOpen, setRosterOpen] = useState(false);
 
   const libRows = useMemo(
     () => ws.filter((r) => isPresetSkill(r.entry.name) === (libTab === 'preset')),
@@ -177,9 +175,9 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
   );
 
   // Left — grouped (name-asc), sorted within each group. Custom tab groups by
-  // frontmatter category; Preset tab groups by the lens's category group so
-  // the four scanner families read as one block each (the sweep hero row is
-  // rendered separately, never inside a family group).
+  // frontmatter category; the Preset tab (sweep hero row + the few remaining
+  // presets — the 22 single-lens scan skills were retired 2026-08-04) groups
+  // by category group.
   const wsGroups = useMemo(() => {
     const byCat = new Map<string, WsRow[]>();
     const grouped = libTab === 'preset' ? libRows.filter((r) => r.entry.name !== SWEEP_SKILL_NAME) : libRows;
@@ -299,14 +297,11 @@ export function SkillsManagerBoard({ ws, proj, totalContexts, busy, projectName,
             row={sweepRow}
             projectName={projectName}
             busy={busy}
-            rosterOpen={rosterOpen}
-            lensCount={libRows.length - 1}
-            onToggleRoster={() => setRosterOpen((o) => !o)}
             onInfo={onOpenInfo}
             onAdopt={(entry) => setPending({ kind: 'adopt', skill: entry })}
           />
         )}
-        {(libTab !== 'preset' || rosterOpen) && wsGroups.map(([cat, rows]) => (
+        {wsGroups.map(([cat, rows]) => (
           <div key={cat}>
             <GroupDivider>{groupLabel(cat)}</GroupDivider>
             <ul>

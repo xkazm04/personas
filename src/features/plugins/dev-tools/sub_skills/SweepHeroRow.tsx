@@ -1,7 +1,7 @@
-// Preset-tab hero row for the consolidated `scan-sweep` skill. The 22 single-
-// lens presets collapse behind it (LensRoster toggle) — the sweep is the
-// efficient default, the lenses are the focused deep-dive form.
-import { ArrowDownToLine, CheckCircle2, ChevronDown, ChevronRight } from 'lucide-react';
+// Preset-tab hero row for the consolidated `scan-sweep` skill — the ONLY scan
+// entry point (the 22 single-lens scan skills were retired 2026-08-04; a
+// focused deep pass is `/scan-sweep --lenses <key> <context>`).
+import { ArrowDownToLine, CheckCircle2 } from 'lucide-react';
 
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,21 +10,16 @@ import { presetVisual, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import type { WsRow } from './SkillsManagerPage';
 import { LastUsed, UsageCount } from './skillsManagerBits';
 
-export function SweepHeroRow({ row, projectName, busy, rosterOpen, lensCount, onToggleRoster, onInfo, onAdopt }: {
+export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
   row: WsRow;
   projectName: string;
   busy: boolean;
-  rosterOpen: boolean;
-  /** Number of single-lens presets behind the toggle. */
-  lensCount: number;
-  onToggleRoster: () => void;
   onInfo: (name: string) => void;
   onAdopt: (entry: SkillEntry) => void;
 }) {
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const visual = presetVisual(SWEEP_SKILL_NAME);
-  const Chevron = rosterOpen ? ChevronDown : ChevronRight;
 
   return (
     <div className="rounded-card border border-primary/15 bg-primary/[0.05] px-3 py-2.5 mt-2" data-testid="sweep-hero-row">
@@ -68,15 +63,6 @@ export function SweepHeroRow({ row, projectName, busy, rosterOpen, lensCount, on
         )}
       </div>
       <p className="typo-label text-foreground/50 mt-1.5">{d.skills_sweep_hero_hint}</p>
-      <button
-        type="button"
-        onClick={onToggleRoster}
-        className="mt-1.5 inline-flex items-center gap-1 typo-label text-foreground/55 hover:text-foreground transition-colors focus-ring rounded-interactive"
-        data-testid="sweep-roster-toggle"
-      >
-        <Chevron className="w-3 h-3" aria-hidden />
-        {rosterOpen ? d.skills_sweep_roster_hide : tx(d.skills_sweep_roster_show, { n: lensCount })}
-      </button>
     </div>
   );
 }

@@ -237,4 +237,5 @@ If prior lines exist for the SAME scope, add a trend line to the report
 this context, no trend yet".
 
 <!-- Generated from scan_agents.toml by scripts/skills/scan-agents-to-skills.mjs.
-     Single-lens scan-* skills remain the focused deep-dive form. -->
+     The retired single-lens scan-* skills have no successor file: a focused
+     deep pass is `/scan-sweep --lenses <key> <context>`. -->

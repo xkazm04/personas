@@ -12,7 +12,7 @@
  * Context Map to pick which presets apply to a given context.
  */
 import type { DevContext } from '@/lib/bindings/DevContext';
-import { Compass, type LucideIcon } from 'lucide-react';
+import { Compass, Languages, type LucideIcon } from 'lucide-react';
 
 import { parseJsonArray } from '../sub_context/contextMapTypes';
 import { SCAN_AGENTS, type ScanAgentDef } from './scanAgents';
@@ -50,9 +50,29 @@ const SWEEP_SKILL: PresetSkillDef = {
     'Reads one context once and evaluates it through every matched scan lens. The efficient default; single-lens scans are the focused deep-dive form.',
 };
 
-/** All preset scan skills, keyed by skill name. */
-export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map([
-  ...SCAN_AGENTS.map((a): [string, PresetSkillDef] => [
+/** Copywriting-grade localization loop — like the sweep, a hand-authored
+ *  system skill outside SCAN_AGENTS (no scanner lens, no match rules; the
+ *  coverage pipeline never proposes it). Repo specifics live in the target
+ *  repo's docs/i18n/contract.md, which the skill bootstraps on first run. */
+export const I18N_SKILL_NAME = 'i18n-translate';
+const I18N_SKILL: PresetSkillDef = {
+  name: I18N_SKILL_NAME,
+  agentKey: 'i18n-translate',
+  label: 'i18n Translate',
+  emoji: '🌐',
+  icon: Languages,
+  color: '#0D9488',
+  categoryGroup: 'user',
+  description:
+    'Copywriting-grade localization: draft → typed MQM audit → gated refine, with a per-repo contract, glossary, style guides and gold exemplars maintained in the target repo.',
+};
+
+/** Lens visual identities keyed by `scan-<key>` — NOT installable skills.
+ *  The 22 single-lens scan skills were retired (2026-08-04) in favor of the
+ *  consolidated sweep; these defs survive purely as the visual vocabulary for
+ *  lens chips, historical usage rows, and deep-scan recommendations. */
+const LENS_VISUALS: ReadonlyMap<string, PresetSkillDef> = new Map(
+  SCAN_AGENTS.map((a): [string, PresetSkillDef] => [
     `${PRESET_SKILL_PREFIX}${a.key}`,
     {
       name: `${PRESET_SKILL_PREFIX}${a.key}`,
@@ -65,7 +85,12 @@ export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map([
       description: a.description,
     },
   ]),
+);
+
+/** Installable preset skills — the sweep is the ONLY scan entry point. */
+export const PRESET_SKILLS: ReadonlyMap<string, PresetSkillDef> = new Map([
   [SWEEP_SKILL_NAME, SWEEP_SKILL],
+  [I18N_SKILL_NAME, I18N_SKILL],
 ]);
 
 /**
@@ -98,14 +123,15 @@ export function isPresetSkill(name: string): boolean {
   return PRESET_SKILLS.has(name);
 }
 
-/** Visual identity for a preset skill row; null for custom skills. */
+/** Visual identity for a skill row — resolves the sweep AND retired lens
+ *  names (historical usage rows keep their icons); null for custom skills. */
 export function presetVisual(name: string): PresetSkillDef | null {
-  return PRESET_SKILLS.get(name) ?? null;
+  return PRESET_SKILLS.get(name) ?? LENS_VISUALS.get(name) ?? null;
 }
 
-/** Reverse lookup: scan-agent key (legacy dev_scans/dev_ideas rows) → preset. */
+/** Reverse lookup: scan-agent key (lens chips, dev_scans/dev_ideas rows). */
 export function presetByAgentKey(agentKey: string): PresetSkillDef | null {
-  return PRESET_SKILLS.get(`${PRESET_SKILL_PREFIX}${agentKey}`) ?? null;
+  return LENS_VISUALS.get(`${PRESET_SKILL_PREFIX}${agentKey}`) ?? null;
 }
 
 // Context→lens keyword matcher — GENERATED from scan_agents.toml (each agent's

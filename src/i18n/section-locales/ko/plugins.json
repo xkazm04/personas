@@ -1433,8 +1433,6 @@
     "skills_auto_deep_label": "자동 딥 스캔",
     "skills_auto_deep_hint": "스윕이 렌즈를 에스컬레이션하면 집중 스캔이 자동으로 실행됩니다(수집당 최대 2회). 이 목록에서 수동으로 실행하려면 꺼두세요.",
     "skills_sweep_hero_hint": "컨텍스트를 한 번 읽고 일치하는 모든 렌즈를 한 세션에서 평가합니다. 효율적인 기본값이며, 아래 개별 렌즈는 집중 딥다이브 형식입니다.",
-    "skills_sweep_roster_show": "전체 {n}개 렌즈 표시",
-    "skills_sweep_roster_hide": "개별 렌즈 숨기기",
     "skills_use_sweep_hint": "이 렌즈는 스윕 번들의 일부입니다. 나머지와 한 번에 처리하려면 /scan-sweep 사용을 고려하세요.",
     "sweep_auto_deep_toast": "딥 스캔 실행됨: {context}의 {lens}",
     "ctx_picker_clear": "선택 해제",

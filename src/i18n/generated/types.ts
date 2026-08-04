@@ -14052,8 +14052,6 @@ export type Translations = {
       skills_auto_deep_label: string;
       skills_auto_deep_hint: string;
       skills_sweep_hero_hint: string;
-      skills_sweep_roster_show: string;
-      skills_sweep_roster_hide: string;
       skills_use_sweep_hint: string;
       sweep_auto_deep_toast: string;
       ctx_picker_title: string;

@@ -1433,8 +1433,6 @@
     "skills_auto_deep_label": "Analyses approfondies automatiques",
     "skills_auto_deep_hint": "Quand un sweep escalade une lentille, l'analyse ciblée se lance automatiquement (2 maximum par ingestion). Désactivez pour les déclencher manuellement depuis cette liste.",
     "skills_sweep_hero_hint": "Lit un contexte une seule fois et évalue chaque lentille correspondante en une session. L'option efficace par défaut ; les lentilles individuelles ci-dessous sont la forme ciblée d'analyse approfondie.",
-    "skills_sweep_roster_show": "Afficher les {n} lentilles",
-    "skills_sweep_roster_hide": "Masquer les lentilles individuelles",
     "skills_use_sweep_hint": "Cette lentille fait partie du pack de sweep. Envisagez /scan-sweep pour la couvrir avec les autres en une seule passe.",
     "sweep_auto_deep_toast": "Analyse approfondie lancée : {lens} sur {context}",
     "ctx_picker_clear": "Effacer la sélection",

@@ -13752,8 +13752,6 @@
       "skills_auto_deep_label": "Pemindaian mendalam otomatis",
       "skills_auto_deep_hint": "Saat sebuah sweep meningkatkan lensa, pemindaian terfokus akan diluncurkan secara otomatis (maksimal 2 per ingest). Nonaktifkan untuk mengirim secara manual dari daftar ini.",
       "skills_sweep_hero_hint": "Membaca satu konteks sekali dan mengevaluasi setiap lensa yang cocok dalam satu sesi. Pilihan default yang efisien; lensa individual di bawah adalah bentuk pemindaian mendalam yang terfokus.",
-      "skills_sweep_roster_show": "Tampilkan semua {n} lensa",
-      "skills_sweep_roster_hide": "Sembunyikan lensa individual",
       "skills_use_sweep_hint": "Lensa ini adalah bagian dari paket sweep. Pertimbangkan /scan-sweep untuk mencakupnya bersama yang lain dalam satu proses.",
       "sweep_auto_deep_toast": "Pemindaian mendalam dikirim: {lens} pada {context}",
       "ctx_picker_clear": "Hapus pilihan",

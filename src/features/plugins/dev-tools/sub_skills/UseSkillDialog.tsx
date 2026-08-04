@@ -16,7 +16,7 @@ import { BaseModal } from '@/features/shared/components/modals';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { skillCommand } from '@/features/teams/sub_factory/passport/improve/skillsWorkbenchData';
-import { isPresetSkill, SWEEP_SKILL_NAME } from '../constants/presetSkills';
+import { PRESET_SKILL_PREFIX, SWEEP_SKILL_NAME } from '../constants/presetSkills';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -116,7 +116,9 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
           <SkillDescription description={skill.description} />
           {/* Single-lens presets: nudge toward the consolidated sweep, which
               reads the context once and covers this lens with the rest. */}
-          {isPresetSkill(skill.name) && skill.name !== SWEEP_SKILL_NAME && (
+          {/* The hint only makes sense for single-LENS presets the sweep
+              subsumes — not for non-scan presets like i18n-translate. */}
+          {skill.name.startsWith(PRESET_SKILL_PREFIX) && skill.name !== SWEEP_SKILL_NAME && (
             <p className="typo-label text-foreground/45">{d.skills_use_sweep_hint}</p>
           )}
 

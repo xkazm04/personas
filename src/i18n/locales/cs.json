@@ -13752,8 +13752,6 @@
       "skills_auto_deep_label": "Automatické hloubkové skeny",
       "skills_auto_deep_hint": "Když sweep eskaluje objektiv, cílené skenování se spustí automaticky (max. 2 na ingest). Vypněte pro ruční spouštění z tohoto seznamu.",
       "skills_sweep_hero_hint": "Přečte kontext jednou a v jedné relaci vyhodnotí každý odpovídající objektiv. Efektivní výchozí volba; jednotlivé objektivy níže jsou cílenou hloubkovou formou.",
-      "skills_sweep_roster_show": "Zobrazit všech {n} objektivů",
-      "skills_sweep_roster_hide": "Skrýt jednotlivé objektivy",
       "skills_use_sweep_hint": "Tento objektiv je součástí sweep balíčku. Zvažte /scan-sweep, aby se pokryl spolu s ostatními v jednom průchodu.",
       "sweep_auto_deep_toast": "Hloubkový sken odeslán: {lens} na {context}",
       "ctx_picker_clear": "Zrušit výběr",

@@ -13752,8 +13752,6 @@
       "skills_auto_deep_label": "Automatische Tiefenscans",
       "skills_auto_deep_hint": "Wenn ein Sweep eine Linse eskaliert, wird der fokussierte Scan automatisch gestartet (max. 2 pro Ingest). Deaktivieren, um manuell aus dieser Liste zu starten.",
       "skills_sweep_hero_hint": "Liest einen Kontext einmal und wertet jede passende Linse in einer Sitzung aus. Die effiziente Standardoption; die einzelnen Linsen unten sind die fokussierte Tiefenform.",
-      "skills_sweep_roster_show": "Alle {n} Linsen anzeigen",
-      "skills_sweep_roster_hide": "Einzelne Linsen ausblenden",
       "skills_use_sweep_hint": "Diese Linse ist Teil des Sweep-Bundles. Verwende /scan-sweep, um sie zusammen mit den anderen in einem Durchgang abzudecken.",
       "sweep_auto_deep_toast": "Tiefenscan gestartet: {lens} bei {context}",
       "ctx_picker_clear": "Auswahl aufheben",

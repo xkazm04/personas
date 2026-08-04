@@ -1433,8 +1433,6 @@
     "skills_auto_deep_label": "自動ディープスキャン",
     "skills_auto_deep_hint": "スイープがレンズをエスカレートすると、集中スキャンが自動的に起動します(1回の取り込みにつき最大2件)。このリストから手動で実行する場合はオフにしてください。",
     "skills_sweep_hero_hint": "コンテキストを1回読み込み、一致するすべてのレンズを1つのセッションで評価します。効率的なデフォルトです。以下の個別レンズは集中型のディープダイブ形式です。",
-    "skills_sweep_roster_show": "全 {n} レンズを表示",
-    "skills_sweep_roster_hide": "個別レンズを非表示",
     "skills_use_sweep_hint": "このレンズはスイープバンドルの一部です。他と一括で処理するには /scan-sweep の使用をご検討ください。",
     "sweep_auto_deep_toast": "ディープスキャンを起動しました: {context} の {lens}",
     "ctx_picker_clear": "選択を解除",

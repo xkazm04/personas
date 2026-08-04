@@ -14046,8 +14046,6 @@
       "skills_auto_deep_label": "Auto deep scans",
       "skills_auto_deep_hint": "When a sweep escalates a lens, the focused scan launches automatically (at most 2 per ingest). Turn off to dispatch manually from this list.",
       "skills_sweep_hero_hint": "Reads a context once and evaluates every matched lens in one session. The efficient default; the individual lenses below are the focused deep-dive form.",
-      "skills_sweep_roster_show": "Show all {n} lenses",
-      "skills_sweep_roster_hide": "Hide individual lenses",
       "skills_use_sweep_hint": "This lens is part of the sweep bundle. Consider /scan-sweep to cover it with the rest in one pass.",
       "sweep_auto_deep_toast": "Deep scan dispatched: {lens} on {context}",
       "ctx_picker_title": "Choose contexts for {name}",
