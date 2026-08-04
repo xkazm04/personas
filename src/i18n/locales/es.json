@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "Escaneo profundo despachado: {lens} en {context}",
       "ctx_picker_clear": "Borrar selección",
       "ctx_picker_confirm": "Enviar {n}",
-      "ctx_picker_covered": "Cubierto por esta skill en los últimos 30 días",
       "ctx_picker_fresh_nodes": "nodos de memoria recientes",
-      "ctx_picker_lenses": "lentes coincidentes",
       "ctx_picker_never": "nunca",
       "ctx_picker_selected": "{n} de {total} seleccionados",
       "ctx_picker_summary": "{first} y {n} más",
-      "ctx_picker_title": "Elige contextos para {name}",
-      "ctx_picker_uncovered": "Sin cobertura reciente de esta skill todavía"
+      "ctx_picker_title": "Elige contextos para {name}"
     },
     "doc_signing": {
       "sign_heading": "Firmar un Documento",

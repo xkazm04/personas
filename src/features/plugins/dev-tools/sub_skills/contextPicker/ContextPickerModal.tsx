@@ -3,21 +3,20 @@
 // not survive 600-800 contexts). Multi-select: each chosen context becomes
 // one dispatched session.
 //
-// PROTOTYPE: two directional variants behind a throwaway SegmentedTabs switch
-// (Roster+ tiles vs Cross-tab lens grid). The switcher is deleted at
-// consolidation — see .claude/skills/prototype.
-import { useMemo, useState } from 'react';
+// Cross-tab won the /prototype round: rows are contexts in group bands, the
+// 22 lenses are icon columns, so a row shows the sweep package a dispatch
+// would run. Search defers (useDeferredValue) so keystrokes never pay the
+// full re-filter; row rendering is windowed + memoized in the variant.
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/features/shared/components/modals';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { ContextPickerCrossTab } from './ContextPickerCrossTab';
-import { ContextPickerRoster } from './ContextPickerRoster';
 import { filterPickerGroups, useContextPickerData } from './useContextPickerData';
 
 export function ContextPickerModal({ skillName, projectId, initial, onConfirm, onClose }: {
@@ -31,11 +30,12 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
   const { t, tx } = useTranslation();
   const d = t.plugins.dev_tools;
   const { groups, loading, totalContexts } = useContextPickerData(projectId, skillName);
-  const [variant, setVariant] = useState<'roster' | 'crosstab'>('roster');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(() => new Set(initial));
 
-  const filtered = useMemo(() => filterPickerGroups(groups, query), [groups, query]);
+  // Keystrokes render only the input; the 800-row re-filter is deferred.
+  const deferredQuery = useDeferredValue(query);
+  const filtered = useMemo(() => filterPickerGroups(groups, deferredQuery), [groups, deferredQuery]);
 
   const toggle = (name: string) => {
     setSelected((prev) => {
@@ -56,21 +56,6 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
           </span>
           <span className="typo-caption text-foreground/50 tabular-nums flex-shrink-0">
             {tx(d.ctx_picker_selected, { n: selected.size, total: totalContexts })}
-          </span>
-          {/* PROTOTYPE SWITCHER — deleted at consolidation */}
-          <span className="ml-auto flex-shrink-0">
-            <SegmentedTabs
-              tabs={[
-                { id: 'roster', label: 'Roster+' },
-                { id: 'crosstab', label: 'Cross-tab' },
-              ]}
-              activeTab={variant}
-              onTabChange={(v) => setVariant(v as 'roster' | 'crosstab')}
-              variant="segment"
-              size="sm"
-              fullWidth={false}
-              ariaLabel="Prototype variant"
-            />
           </span>
         </div>
 
@@ -96,8 +81,6 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
         <div className="flex-1 min-h-0 flex flex-col px-4 pb-2">
           {loading ? (
             <div className="py-16"><LoadingSpinner label={d.skills_loading} /></div>
-          ) : variant === 'roster' ? (
-            <ContextPickerRoster groups={filtered} selected={selected} onToggle={toggle} />
           ) : (
             <ContextPickerCrossTab groups={filtered} selected={selected} onToggle={toggle} />
           )}

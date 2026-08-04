@@ -1439,14 +1439,11 @@
     "sweep_auto_deep_toast": "딥 스캔 실행됨: {context}의 {lens}",
     "ctx_picker_clear": "선택 해제",
     "ctx_picker_confirm": "{n}개 실행",
-    "ctx_picker_covered": "지난 30일 동안 이 스킬로 처리됨",
     "ctx_picker_fresh_nodes": "최신 메모리 노드",
-    "ctx_picker_lenses": "일치하는 렌즈",
     "ctx_picker_never": "없음",
     "ctx_picker_selected": "{total}개 중 {n}개 선택됨",
     "ctx_picker_summary": "{first} 외 {n}개",
-    "ctx_picker_title": "{name}의 컨텍스트 선택",
-    "ctx_picker_uncovered": "이 스킬로 처리된 최신 내역이 없습니다"
+    "ctx_picker_title": "{name}의 컨텍스트 선택"
   },
   "doc_signing": {
     "sign_heading": "문서 서명하기",

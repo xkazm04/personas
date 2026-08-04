@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "已分派深度扫描:{context} 上的 {lens}",
       "ctx_picker_clear": "清除选择",
       "ctx_picker_confirm": "执行{n}项",
-      "ctx_picker_covered": "过去30天内该技能已覆盖",
       "ctx_picker_fresh_nodes": "最新记忆节点",
-      "ctx_picker_lenses": "匹配的视角",
       "ctx_picker_never": "从未",
       "ctx_picker_selected": "已选择{n}/{total}项",
       "ctx_picker_summary": "{first}等{n}项",
-      "ctx_picker_title": "为{name}选择上下文",
-      "ctx_picker_uncovered": "该技能尚未产生最新覆盖"
+      "ctx_picker_title": "为{name}选择上下文"
     },
     "doc_signing": {
       "sign_heading": "签署文档",

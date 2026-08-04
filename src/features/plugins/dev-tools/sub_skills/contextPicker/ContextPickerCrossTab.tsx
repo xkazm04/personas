@@ -7,7 +7,11 @@
 // to see a lens's whole footprint. The left gutter carries the skill's real
 // coverage (fresh nodes · last swept) so a row is a dispatch record, not just
 // a label. Row click toggles selection.
-import { useMemo } from 'react';
+// Perf: rows are memoized (only rows whose selection changed re-render) and
+// each group band is CSS-windowed (content-visibility) so offscreen groups
+// skip layout/paint — same mechanics as the Context Map surfaces
+// (sub_context/contextMapPerf).
+import { memo, useMemo } from 'react';
 
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -15,6 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { SCAN_AGENTS } from '../../constants/scanAgents';
 import { colorDot } from '../../sub_context/GroupColorPicker';
+import { ledgerGroupHeight, skipStyle } from '../../sub_context/contextMapPerf';
 import type { PickerGroup, PickerRow } from './useContextPickerData';
 
 export function ContextPickerCrossTab({ groups, selected, onToggle }: {
@@ -46,7 +51,7 @@ export function ContextPickerCrossTab({ groups, selected, onToggle }: {
       {groups.map((g) => {
         const dot = colorDot(g.color);
         return (
-          <div key={g.id}>
+          <div key={g.id} style={skipStyle(ledgerGroupHeight(g.rows.length))}>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5">
               <span className={`w-2.5 h-2.5 rounded-full ${dot.bg}`} />
               <span className="typo-title">{g.name}</span>
@@ -64,7 +69,7 @@ export function ContextPickerCrossTab({ groups, selected, onToggle }: {
   );
 }
 
-function CrossTabRow({ row, gridTemplate, isSelected, onToggle }: {
+const CrossTabRow = memo(function CrossTabRow({ row, gridTemplate, isSelected, onToggle }: {
   row: PickerRow;
   gridTemplate: string;
   isSelected: boolean;
@@ -118,4 +123,4 @@ function CrossTabRow({ row, gridTemplate, isSelected, onToggle }: {
       ))}
     </div>
   );
-}
+});

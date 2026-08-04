@@ -14046,9 +14046,6 @@
       "ctx_picker_clear": "Clear selection",
       "ctx_picker_confirm": "Dispatch {n}",
       "ctx_picker_summary": "{first} and {n} more",
-      "ctx_picker_covered": "Covered by this skill in the last 30 days",
-      "ctx_picker_uncovered": "No fresh coverage from this skill yet",
-      "ctx_picker_lenses": "matched lenses",
       "ctx_picker_fresh_nodes": "fresh memory nodes",
       "ctx_picker_never": "never"
     },

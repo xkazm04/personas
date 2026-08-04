@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "Tiefenscan gestartet: {lens} bei {context}",
       "ctx_picker_clear": "Auswahl aufheben",
       "ctx_picker_confirm": "{n} senden",
-      "ctx_picker_covered": "In den letzten 30 Tagen durch diesen Skill abgedeckt",
       "ctx_picker_fresh_nodes": "neue Speicherknoten",
-      "ctx_picker_lenses": "passende Perspektiven",
       "ctx_picker_never": "nie",
       "ctx_picker_selected": "{n} von {total} ausgewählt",
       "ctx_picker_summary": "{first} und {n} weitere",
-      "ctx_picker_title": "Kontexte für {name} auswählen",
-      "ctx_picker_uncovered": "Noch keine aktuelle Abdeckung durch diesen Skill"
+      "ctx_picker_title": "Kontexte für {name} auswählen"
     },
     "doc_signing": {
       "sign_heading": "Dokument signieren",

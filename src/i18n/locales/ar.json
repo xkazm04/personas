@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "تم إرسال فحص عميق: {lens} على {context}",
       "ctx_picker_clear": "مسح التحديد",
       "ctx_picker_confirm": "إرسال {n}",
-      "ctx_picker_covered": "مغطى بواسطة هذه المهارة خلال آخر 30 يومًا",
       "ctx_picker_fresh_nodes": "عقد ذاكرة جديدة",
-      "ctx_picker_lenses": "العدسات المطابقة",
       "ctx_picker_never": "أبدًا",
       "ctx_picker_selected": "{n} من {total} محدد",
       "ctx_picker_summary": "{first} و{n} أخرى",
-      "ctx_picker_title": "اختر السياقات لـ {name}",
-      "ctx_picker_uncovered": "لا توجد تغطية حديثة من هذه المهارة بعد"
+      "ctx_picker_title": "اختر السياقات لـ {name}"
     },
     "doc_signing": {
       "sign_heading": "توقيع مستند",

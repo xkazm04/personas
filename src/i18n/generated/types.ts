@@ -14052,9 +14052,6 @@ export type Translations = {
       ctx_picker_clear: string;
       ctx_picker_confirm: string;
       ctx_picker_summary: string;
-      ctx_picker_covered: string;
-      ctx_picker_uncovered: string;
-      ctx_picker_lenses: string;
       ctx_picker_fresh_nodes: string;
       ctx_picker_never: string;
     };

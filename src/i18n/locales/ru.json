@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "Запущено глубокое сканирование: {lens} для {context}",
       "ctx_picker_clear": "Очистить выбор",
       "ctx_picker_confirm": "Запустить ({n})",
-      "ctx_picker_covered": "Обработано этим навыком за последние 30 дней",
       "ctx_picker_fresh_nodes": "новые узлы памяти",
-      "ctx_picker_lenses": "совпавшие линзы",
       "ctx_picker_never": "никогда",
       "ctx_picker_selected": "Выбрано {n} из {total}",
       "ctx_picker_summary": "{first} и еще {n}",
-      "ctx_picker_title": "Выберите контексты для {name}",
-      "ctx_picker_uncovered": "Этот навык еще не давал свежего покрытия"
+      "ctx_picker_title": "Выберите контексты для {name}"
     },
     "doc_signing": {
       "sign_heading": "Подписать документ",

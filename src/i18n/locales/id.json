@@ -13749,14 +13749,11 @@
       "sweep_auto_deep_toast": "Pemindaian mendalam dikirim: {lens} pada {context}",
       "ctx_picker_clear": "Hapus pilihan",
       "ctx_picker_confirm": "Kirim {n}",
-      "ctx_picker_covered": "Sudah dicakup oleh skill ini dalam 30 hari terakhir",
       "ctx_picker_fresh_nodes": "node memori baru",
-      "ctx_picker_lenses": "lensa yang cocok",
       "ctx_picker_never": "belum pernah",
       "ctx_picker_selected": "{n} dari {total} dipilih",
       "ctx_picker_summary": "{first} dan {n} lainnya",
-      "ctx_picker_title": "Pilih konteks untuk {name}",
-      "ctx_picker_uncovered": "Belum ada cakupan terbaru dari skill ini"
+      "ctx_picker_title": "Pilih konteks untuk {name}"
     },
     "doc_signing": {
       "sign_heading": "Tandatangani Dokumen",
