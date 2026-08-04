@@ -383,7 +383,9 @@
     "triage_why_raised": "提起された理由",
     "triage_announce_card": "判断中: {kind} — {title}",
     "triage_announce_verdict": "記録しました: {verdict}。",
-    "triage_body_region": "カードの詳細 — 矢印キーでスクロール"
+    "triage_body_region": "カードの詳細 — 矢印キーでスクロール",
+    "conv_bridge_title": "連携中の Slack チャンネル。そこに送信されたメッセージはこの会話に届きます。",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "読み込み中...",

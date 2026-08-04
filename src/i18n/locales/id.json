@@ -383,7 +383,9 @@
     "triage_why_raised": "Mengapa ini diajukan",
     "triage_announce_card": "Sedang diputuskan: {kind} — {title}",
     "triage_announce_verdict": "Tercatat: {verdict}.",
-    "triage_body_region": "Detail kartu — gulir dengan tombol panah"
+    "triage_body_region": "Detail kartu — gulir dengan tombol panah",
+    "conv_bridge_title": "Kanal Slack tertaut. Pesan yang dikirim di sana masuk ke percakapan ini.",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "Memuat...",

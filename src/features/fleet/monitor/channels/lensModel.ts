@@ -22,7 +22,7 @@ import type { TaggedItem } from './types';
  * Pure: no React, no store, no IPC.
  * -------------------------------------------------------------------------- */
 
-export const ALL_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'message', 'deliberation'];
+export const ALL_KINDS: ChannelKind[] = ['step', 'event', 'memory', 'message', 'deliberation', 'slack'];
 
 export const ALL_FAMILIES: EventFamily[] = [
   'handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other',
@@ -117,8 +117,15 @@ export function matchesLens(
 }
 
 /** Map a read-model row's `kind` onto the lens vocabulary. The backend returns
- *  author kinds (directive/persona/athena/director) for channel messages; the
- *  lens collapses them all to `message`. */
+ *  author kinds (directive/persona/athena/director/slack) for channel messages;
+ *  the lens collapses the internal voices to `message` and keeps `slack` — an
+ *  external human — as its own lens.
+ *
+ *  The `default` arm is a deliberate catch-all for internal author kinds we may
+ *  add later: an unknown kind reads as a message rather than vanishing. Any kind
+ *  that must render differently (as `slack` does) needs an explicit case here
+ *  AND an entry in every `Record<ChannelKind, …>` — the typed records are what
+ *  make that completeness checkable. */
 export function itemKind(item: TaggedItem['item']): ChannelKind {
   switch (item.kind) {
     case 'step':
@@ -127,6 +134,8 @@ export function itemKind(item: TaggedItem['item']): ChannelKind {
       return 'event';
     case 'memory':
       return 'memory';
+    case 'slack':
+      return item.deliberationId ? 'deliberation' : 'slack';
     default:
       return item.deliberationId ? 'deliberation' : 'message';
   }
@@ -167,6 +176,10 @@ export function facetCounts(
   const signRows = without({ callsigns: new Set() });
   const counts = new Map<string, number>();
   for (const r of signRows) {
+    // Slack rows carry the SLACK user id in `personaId` (the read-model reuses
+    // the author_id column). It will never resolve in the persona index, so
+    // counting it here would put a nameless "SYSTEM" row in the callsign rail.
+    if (r.item.kind === 'slack') continue;
     if (r.item.personaId) counts.set(r.item.personaId, (counts.get(r.item.personaId) ?? 0) + 1);
   }
   const callsigns: Facet<string>[] = [...counts.entries()]

@@ -13,6 +13,8 @@ import { ConversationComposer } from './ConversationComposer';
 import { VirtualConversation } from './VirtualConversation';
 import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './ConversationCards';
 import { DeliberationRail } from './DeliberationRail';
+import { LinkedChannelChip } from './LinkedChannelChip';
+import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 import { ReviewsRail } from './ReviewsRail';
 import { useConversation } from './useConversation';
 import { dayLabel, type ConversationRow } from './conversationModel';
@@ -41,9 +43,12 @@ import type { StreamTeam } from './types';
 type RailTab = 'focus' | 'reviews' | 'quick';
 
 export function ConversationBriefing({
-  teams, layoutControl,
+  teams, bridges, layoutControl,
 }: {
   teams: StreamTeam[];
+  /** Slack bridges keyed by team id — derived once by the workspace host (see
+   *  `lib/channel/teamBridge`). Absent = nothing is bridged. */
+  bridges?: Record<string, TeamSlackBridge>;
   layoutControl?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -176,6 +181,8 @@ export function ConversationBriefing({
             <MessagesSquare className="w-3.5 h-3.5 text-foreground" />
           </div>
           <span className="typo-body font-semibold text-foreground">{t.monitor.conv_title}</span>
+          {/* Passive: the active project's Slack bridge, if it has one. */}
+          <LinkedChannelChip bridge={activeId ? bridges?.[activeId] : undefined} />
           <div className="ml-auto">{layoutControl}</div>
         </div>
       )}

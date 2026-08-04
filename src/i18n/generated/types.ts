@@ -201,6 +201,7 @@ export type Translations = {
     stream_kind_memory: string;
     stream_kind_message: string;
     stream_kind_deliberation: string;
+    stream_kind_slack: string;
     stream_search: string;
     stream_loading: string;
     stream_lens_one: string;
@@ -263,6 +264,7 @@ export type Translations = {
     conv_unrouted: string;
     conv_day_today: string;
     conv_day_yesterday: string;
+    conv_bridge_title: string;
     delib_loading: string;
     delib_round: string;
     delib_advance: string;

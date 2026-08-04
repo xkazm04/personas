@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Ear, ExternalLink } from 'lucide-react';
 import { memberColor, parsePayload, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import type { Persona } from '@/lib/bindings/Persona';
+import { AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import type { TaggedItem } from './types';
 import { callsign, itemKind, rowFamily } from './lensModel';
 
@@ -34,6 +35,7 @@ const KIND_TEXT: Record<string, string> = {
   memory: 'text-amber-200/90',
   message: 'text-foreground/70',
   deliberation: 'text-violet-300',
+  slack: 'text-teal-300',
 };
 
 function hhmmss(at: string): string {
@@ -71,8 +73,13 @@ export const StreamRow = memo(function StreamRow({
   const { item, team } = row;
   const kind = itemKind(item);
   const fam = rowFamily(item);
-  const sign = callsign(persona?.name);
-  const color = memberColor(persona, item.personaId);
+  // A Slack row's speaker is an external human, not a persona: its callsign is
+  // the bridged display name and its colour is the Slack voice's accent, so the
+  // log never signs an outsider's line with a team member's identity (or with
+  // the "SYSTEM" fallback `memberColor`/`callsign` would otherwise produce).
+  const isSlack = item.kind === 'slack';
+  const sign = callsign(isSlack ? slackAuthorName(item) : persona?.name);
+  const color = isSlack ? AUTHOR_KIND_META.slack.accent : memberColor(persona, item.personaId);
   const parsed = kind === 'event' ? parsePayload(item.extra) : null;
   const summary = parsed?.summary ?? item.body ?? '';
   const heard = item.consumers?.length ?? 0;

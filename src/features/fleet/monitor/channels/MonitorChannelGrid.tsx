@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
+import { buildTeamBridgeIndex } from '@/lib/channel/teamBridge';
 import { Stream } from './Stream';
 import { ConversationBriefing } from './ConversationBriefing';
 import { ChannelMap } from './map/ChannelMap';
@@ -45,6 +46,12 @@ function MonitorChannelGridImpl({
     }
     return map;
   }, [personas]);
+
+  // Slack bridges live on personas (see lib/channel/teamBridge), and this is the
+  // one component in the channel workspace that already holds them — so the
+  // index is derived ONCE here and passed down, rather than drilling `personas`
+  // through Conversations just so it can re-parse the same JSON.
+  const bridges = useMemo(() => buildTeamBridgeIndex(personas), [personas]);
 
   const channelTeams = useMemo(
     () => teams.filter((tm) => (membersByTeam.get(tm.id)?.length ?? 0) > 0),
@@ -156,7 +163,7 @@ function MonitorChannelGridImpl({
       ) : layout === 'map' ? (
         <ChannelMap teams={workspaceTeams} onDrillIn={drillIn} layoutControl={layoutSwitcher} />
       ) : (
-        <ConversationBriefing teams={workspaceTeams} layoutControl={layoutSwitcher} />
+        <ConversationBriefing teams={workspaceTeams} bridges={bridges} layoutControl={layoutSwitcher} />
       )}
     </div>
   );

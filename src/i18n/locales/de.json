@@ -383,7 +383,9 @@
     "triage_why_raised": "Warum das gemeldet wurde",
     "triage_announce_card": "Aktuell zu entscheiden: {kind} — {title}",
     "triage_announce_verdict": "Erfasst: {verdict}.",
-    "triage_body_region": "Kartendetails — mit den Pfeiltasten scrollen"
+    "triage_body_region": "Kartendetails — mit den Pfeiltasten scrollen",
+    "conv_bridge_title": "Verknüpfter Slack-Kanal. Dort gesendete Nachrichten erscheinen in dieser Unterhaltung.",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "Laden...",

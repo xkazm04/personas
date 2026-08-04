@@ -382,5 +382,7 @@
   "triage_why_raised": "提出原因",
   "triage_announce_card": "正在裁定：{kind} — {title}",
   "triage_announce_verdict": "已记录：{verdict}。",
-  "triage_body_region": "卡片详情 — 用方向键滚动"
+  "triage_body_region": "卡片详情 — 用方向键滚动",
+  "conv_bridge_title": "已关联的 Slack 频道。在该频道发送的消息会出现在此对话中。",
+  "stream_kind_slack": "Slack"
 }

@@ -383,7 +383,9 @@
     "triage_why_raised": "यह क्यों उठाया गया",
     "triage_announce_card": "अभी तय किया जा रहा है: {kind} — {title}",
     "triage_announce_verdict": "दर्ज किया गया: {verdict}।",
-    "triage_body_region": "कार्ड विवरण — तीर कुंजियों से स्क्रॉल करें"
+    "triage_body_region": "कार्ड विवरण — तीर कुंजियों से स्क्रॉल करें",
+    "conv_bridge_title": "लिंक किया गया Slack चैनल। वहां भेजे गए संदेश इस बातचीत में आते हैं।",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "लोड हो रहा है...",

@@ -383,7 +383,9 @@
     "triage_why_raised": "Proč to vzniklo",
     "triage_announce_card": "Nyní rozhodujete: {kind} — {title}",
     "triage_announce_verdict": "Zaznamenáno: {verdict}.",
-    "triage_body_region": "Podrobnosti karty — posouvejte šipkami"
+    "triage_body_region": "Podrobnosti karty — posouvejte šipkami",
+    "conv_bridge_title": "Propojený kanál Slack. Zprávy odeslané tam se objeví v této konverzaci.",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "Načítání...",

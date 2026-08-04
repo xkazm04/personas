@@ -383,7 +383,9 @@
     "triage_why_raised": "제기된 이유",
     "triage_announce_card": "지금 결정 중: {kind} — {title}",
     "triage_announce_verdict": "기록됨: {verdict}.",
-    "triage_body_region": "카드 세부 정보 — 화살표 키로 스크롤"
+    "triage_body_region": "카드 세부 정보 — 화살표 키로 스크롤",
+    "conv_bridge_title": "연결된 Slack 채널입니다. 거기서 보낸 메시지가 이 대화에 도착합니다.",
+    "stream_kind_slack": "Slack"
   },
   "common": {
     "loading": "로딩 중...",
