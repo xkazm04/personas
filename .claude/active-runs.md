@@ -2,9 +2,14 @@
 
 ## Active
 
+### spark-cockpit-into-mastermind — /spark round 4: transfer Cockpit dynamic-UI ability into the Mastermind canvas — session fable-5 (Director)
+- Started: 2026-08-04. Status: started (design phase; no tree edits until Phase 5 worktree). Vault: Documents/Obsidian/personas/Spark/.
+- Paths (intended, on build): src/features/teams/sub_mastermind/** , src/features/home/sub_cockpit/** , src-tauri/src/companion/dispatcher.rs (+ constitution.md op grammar), possibly src/features/plugins/companion/** and i18n. Build isolates in .claude/worktrees/spark-cockpit-into-mastermind.
+- No overlap: no active session declares sub_mastermind/** or sub_cockpit/**.
+
 ### prototype-fleet-monitor — /prototype: minimized Fleet monitor layer (50-terminal grid, 3 variants, mocked data) — session fable-5
-- Started: 2026-08-04. Status: started (worktree-isolated).
-- Paths: NEW files only under src/features/plugins/fleet/sub_monitor_proto/** + one tab wire-in edit to src/features/plugins/fleet/FleetPage.tsx, .claude/active-runs.md. All edits in .claude/worktrees/prototype-fleet-monitor.
+- Started: 2026-08-04. Status: rounds 1-2 MERGED to master (99becf061 + a1a8f4d7b via merge 28c13bd14); awaiting operator variant pick before consolidation.
+- Paths: src/features/plugins/fleet/sub_monitor_proto/** (renaming to sub_monitor in wave B), FleetPage.tsx, FleetTerminalOverlay.tsx, src-tauri/src/commands/fleet/** (monitor stats command, rollup counters, hook pairing), src/api/fleet/**, src/lib/bindings/** (regen), i18n locales (wave B), docs fleet.md. NOW A /perfect ARC: 5 accepted directions, Builder A (Rust stats) in .claude/worktrees/perfect-fleet-monitor, Builder B (frontend perf+graduation) follows after A merges.
 - NOTE: spark-athena-fleet-conductor declares fleet/** but is design-phase + isolates its build in its own worktree; disjoint files except FleetPage.tsx (not in its list). No collision expected.
 
 
